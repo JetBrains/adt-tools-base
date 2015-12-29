@@ -32,6 +32,7 @@ import com.android.repository.impl.installer.PackageInstaller;
 import com.android.repository.impl.manager.LocalRepoLoader;
 import com.android.repository.impl.meta.Archive;
 import com.android.repository.impl.meta.CommonFactory;
+import com.android.repository.impl.meta.GenericFactory;
 import com.android.repository.impl.meta.LocalPackageImpl;
 import com.android.repository.impl.meta.RepositoryPackages;
 import com.android.repository.impl.meta.RevisionType;
@@ -177,7 +178,8 @@ public class InstallerUtil {
             element = typeDetails.createFactory().generateElement(repo);
         } else {
             // Otherwise create a generic repo.
-            element = factory.generateElement(repo);
+            element = ((GenericFactory) manager.getGenericModule().createLatestFactory())
+                    .generateElement(repo);
         }
         try {
             SchemaModuleUtil

@@ -16,6 +16,8 @@
 
 package com.android.repository.api;
 
+import static com.android.repository.impl.meta.TypeDetails.*;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
@@ -88,6 +90,19 @@ public abstract class RepoManager {
             = "com.android.repository.impl.generated.v%d.ObjectFactory";
 
     /**
+     * Pattern for name of the xsd file used in {@link #sCommonModule}.
+     */
+    private static final String GENERIC_XSD_PATTERN = "generic-%02d.xsd";
+
+    /**
+     * Pattern for fully-qualified name of the {@code ObjectFactory} used in {@link
+     * #sCommonModule}.
+     */
+    private static final String GENERIC_OBJECT_FACTORY_PATTERN
+            = "com.android.repository.impl.generated.generic.v%d.ObjectFactory";
+
+
+    /**
      * The base {@link SchemaModule} that is created by {@code RepoManagerImpl} itself.
      */
     private static SchemaModule sCommonModule;
@@ -98,6 +113,21 @@ public abstract class RepoManager {
         }
         catch (Exception e) {
             // This should never happen unless there's something wrong with the common repo schema.
+            assert false : "Failed to create SchemaModule: " + e;
+        }
+    }
+
+    /**
+     * The {@link SchemaModule} that contains an implementation of {@link GenericType}.
+     */
+    private static SchemaModule sGenericModule;
+    static {
+        try {
+            sGenericModule = new SchemaModule(GENERIC_OBJECT_FACTORY_PATTERN, GENERIC_XSD_PATTERN,
+                    RepoManager.class);
+        }
+        catch (Exception e) {
+            // This should never happen unless there's something wrong with the generic repo schema.
             assert false : "Failed to create SchemaModule: " + e;
         }
     }
@@ -131,6 +161,15 @@ public abstract class RepoManager {
     @NonNull
     public static SchemaModule getCommonModule() {
         return sCommonModule;
+    }
+
+    /**
+     * Gets the {@link SchemaModule} created by the RepoManager that includes the trivial generic
+     * {@code typeDetails} type.
+     */
+    @NonNull
+    public static SchemaModule getGenericModule() {
+        return sGenericModule;
     }
 
     /**

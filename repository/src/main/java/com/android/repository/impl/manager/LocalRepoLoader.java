@@ -25,6 +25,7 @@ import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RepoManager;
 import com.android.repository.api.Repository;
 import com.android.repository.api.SchemaModule;
+import com.android.repository.impl.meta.GenericFactory;
 import com.android.repository.impl.meta.LocalPackageImpl;
 import com.android.repository.impl.meta.SchemaModuleUtil;
 import com.android.repository.impl.meta.TypeDetails;
@@ -178,7 +179,7 @@ public final class LocalRepoLoader {
 
             TypeDetails typeDetails = p.getTypeDetails();
             ElementFactory<Repository> factory = typeDetails != null ? typeDetails.createFactory()
-                    : impl.createFactory();
+                    : ((GenericFactory)RepoManager.getGenericModule().createLatestFactory());
             SchemaModuleUtil.marshal(factory.generateElement(repo),
                                      mRepoManager.getSchemaModules(), fos,
                                      mRepoManager.getResourceResolver(progress), progress);
@@ -203,6 +204,7 @@ public final class LocalRepoLoader {
             @NonNull ProgressIndicator progress) {
         Repository repo;
         try {
+            progress.logInfo("Parsing " + packageXml);
             repo = (Repository) SchemaModuleUtil.unmarshal(mFop.newFileInputStream(packageXml),
                     mRepoManager.getSchemaModules(), mRepoManager.getResourceResolver(progress),
                     progress);

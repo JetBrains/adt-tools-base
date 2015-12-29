@@ -7,6 +7,7 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlIDREF;
 import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.XmlType;
+import com.android.repository.api.License;
 
 
 /**
@@ -20,12 +21,12 @@ import javax.xml.bind.annotation.XmlType;
  *                 license element inside a package.
  *             
  * 
- * <p>Java class for licensesType complex type.
+ * <p>Java class for licenseRefType complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="licensesType"&gt;
+ * &lt;complexType name="licenseRefType"&gt;
  *   &lt;complexContent&gt;
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType"&gt;
  *       &lt;attribute name="ref" type="{http://www.w3.org/2001/XMLSchema}IDREF" /&gt;
@@ -37,19 +38,19 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "licensesType")
+@XmlType(name = "licenseRefType")
 @SuppressWarnings({
     "override",
     "unchecked"
 })
-public class LicensesType
+public class LicenseRefType
     extends com.android.repository.impl.meta.RepoPackageImpl.UsesLicense
 {
 
     @XmlAttribute(name = "ref")
     @XmlIDREF
     @XmlSchemaType(name = "IDREF")
-    protected Object ref;
+    protected LicenseType ref;
 
     /**
      * Gets the value of the ref property.
@@ -59,7 +60,7 @@ public class LicensesType
      *     {@link Object }
      *     
      */
-    public Object getRef() {
+    public LicenseType getRef() {
         return ref;
     }
 
@@ -71,8 +72,12 @@ public class LicensesType
      *     {@link Object }
      *     
      */
-    public void setRef(Object value) {
+    public void setRefInternal(LicenseType value) {
         this.ref = value;
+    }
+
+    public void setRef(License value) {
+        setRefInternal(((LicenseType) value));
     }
 
     public ObjectFactory createFactory() {

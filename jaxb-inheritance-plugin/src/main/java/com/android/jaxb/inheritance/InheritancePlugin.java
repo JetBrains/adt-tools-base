@@ -28,12 +28,12 @@ import com.sun.codemodel.JCodeModel;
 import com.sun.codemodel.JDefinedClass;
 import com.sun.codemodel.JExpr;
 import com.sun.codemodel.JExpression;
+import com.sun.codemodel.JFieldVar;
 import com.sun.codemodel.JInvocation;
 import com.sun.codemodel.JMethod;
 import com.sun.codemodel.JMod;
 import com.sun.codemodel.JOp;
 import com.sun.codemodel.JPackage;
-import com.sun.codemodel.JStringLiteral;
 import com.sun.codemodel.JType;
 import com.sun.tools.xjc.Options;
 import com.sun.tools.xjc.Plugin;
@@ -144,7 +144,7 @@ public class InheritancePlugin extends Plugin {
 
         JDefinedClass objFactory = handleObjectFactoryCustomization(outline, filename);
 
-        Map<JType, Class> supers = Maps.newHashMap();
+        Map<String, Class> supers = Maps.newHashMap();
         for (ClassOutline classOutline : outline.getClasses()) {
             classOutline.implClass.javadoc()
                     .add(0, String.format(HEADER_COMMENT, filename, "\n\n"));
@@ -227,14 +227,14 @@ public class InheritancePlugin extends Plugin {
      * }
      * </code></pre>
      */
-    private static void convertMethod(Map<JType, Class> supers, JCodeModel model,
+    private static void convertMethod(Map<String, Class> supers, JCodeModel model,
             ClassOutline classOutline, JMethod method) {
         if (method.listParamTypes().length > 0) {
             // Right now there's no way to get a method with more than one param, so that's all we
             // support.
             JType paramType = method.listParamTypes()[0];
             // TODO: better way to do android check
-            if (isAndroid(paramType) && (supers.containsKey(paramType) || (
+            if (isAndroid(paramType) && (supers.containsKey(paramType.fullName()) || (
                     paramType instanceof JClass && ((JClass) paramType)._extends() != null &&
                             !((JClass) paramType)._extends().name().equals("Object")))) {
                 String name = method.name();
@@ -277,10 +277,10 @@ public class InheritancePlugin extends Plugin {
      * prefix.
      */
     private static void createGenerateElementMethod(Outline outline, JDefinedClass objFactory,
-            Map<JType, Class> supers) throws SAXException {
+            Map<String, Class> supers) throws SAXException {
         List<JMethod> origMethods = Lists.newArrayList(objFactory.methods());
         for (JMethod m : origMethods) {
-            Class superType = supers.get(m.type());
+            Class superType = supers.get(m.type().fullName());
             if (superType != null) {
                 try {
                     m.type(outline.getCodeModel().parseType(superType.getName()));
@@ -311,7 +311,7 @@ public class InheritancePlugin extends Plugin {
      * the child to parent mapping to superCollector.
      */
     private static void addAndCollectParents(ClassOutline classOutline,
-            Map<JType, Class> superCollector)
+            Map<String, Class> superCollector)
             throws SAXException {
         for (CPluginCustomization c : classOutline.target.getCustomizations()) {
             Element customizationElement = c.element;
@@ -324,7 +324,7 @@ public class InheritancePlugin extends Plugin {
                 if (classOutline.implClass._extends().name().equals("Object") &&
                         !superclass.isInterface()) {
                     classOutline.implClass._extends(superclass);
-                    superCollector.put(classOutline.implClass, superclass);
+                    superCollector.put(classOutline.implClass.fullName(), superclass);
                 } else {
                     classOutline.implClass._implements(superclass);
                 }
@@ -448,7 +448,7 @@ public class InheritancePlugin extends Plugin {
      * Given a type, return either the supertype, or (if it's a generic type), the same generic
      * with the parameter being the supertype of the original parameter.
      */
-    private static JType convertType(JType type, Map<JType, Class> supers, JCodeModel model) {
+    private static JType convertType(JType type, Map<String, Class> supers, JCodeModel model) {
         if (type.erasure() != type && type instanceof JClass) {
             boolean found = false;
             List<JClass> newParams = Lists.newArrayList();
@@ -467,8 +467,8 @@ public class InheritancePlugin extends Plugin {
         return convertBasicType(type, supers, model);
     }
 
-    private static JType convertBasicType(JType type, Map<JType, Class> supers, JCodeModel model) {
-        Class superClass = supers.get(type);
+    private static JType convertBasicType(JType type, Map<String, Class> supers, JCodeModel model) {
+        Class superClass = supers.get(type.fullName());
         if (superClass != null) {
             return model.ref(superClass);
         } else if (type instanceof JClass) {
@@ -493,6 +493,14 @@ public class InheritancePlugin extends Plugin {
             if (component instanceof XSParticle) {
                 XSTerm term = ((XSParticle)component).getTerm();
                 if (term instanceof XSElementDecl) {
+                    if (((XSElementDecl) term).getDefaultValue() != null) {
+                        // If the a default value is specified in the schema, it won't actually be
+                        // applied if the element is missing altogether. We must apply it ourselves.
+                        JFieldVar fieldRef = classOutline.implClass.fields()
+                                .get(info.getName(false));
+                        fieldRef.init(JExpr.lit(((XSElementDecl) term).getDefaultValue().value));
+                    }
+
                     XSType type = ((XSElementDecl)term).getType();
                     if (type instanceof XSSimpleType) {
                         // TODO: support other facets
@@ -510,7 +518,8 @@ public class InheritancePlugin extends Plugin {
                             }
                             conditions.add(enumExpr);
 
-                            // Also create a "get valid options" method.
+                            // Also create a "get valid options" method. This allows e.g. a choice
+                            // between the valid options to be presented in the UI.
                             JMethod method = classOutline.implClass
                                     .method(JMod.PUBLIC, codeModel.ref(String.class).array(),
                                             "getValid" + info.getName(true) + "s");

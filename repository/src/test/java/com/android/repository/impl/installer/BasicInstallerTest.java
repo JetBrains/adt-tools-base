@@ -112,7 +112,7 @@ public class BasicInstallerTest extends TestCase {
 
         // Register a source provider to get the repo
         mgr.registerSourceProvider(new ConstantSourceProvider(repoUrl.toString(), "dummy",
-                ImmutableList.of(mgr.getCommonModule())));
+                ImmutableList.of(mgr.getGenericModule())));
         FakeProgressRunner runner = new FakeProgressRunner();
 
         // Load
@@ -186,7 +186,7 @@ public class BasicInstallerTest extends TestCase {
 
         // Register the source provider
         mgr.registerSourceProvider(new ConstantSourceProvider(repoUrl.toString(), "dummy",
-                ImmutableList.of(RepoManager.getCommonModule())));
+                ImmutableList.of(RepoManager.getGenericModule())));
         FakeProgressRunner runner = new FakeProgressRunner();
 
         // Load

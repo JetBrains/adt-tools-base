@@ -28,7 +28,9 @@
          -p com.android.repository.impl.generated.v1 \
          repository/src/main/java/com/android/repository/api/repo-common-01.xsd \
          -extension -Xandroid-inheritance -d repository/src/main/java/ \
-         -b repository/src/main/java/com/android/repository/api/global.xjb -no-header
+         -b repository/src/main/java/com/android/repository/api/global.xjb \
+         -b repository/src/main/java/com/android/repository/impl/meta/common-custom.xjb \
+         -no-header
     from tools/base with jaxb-inheritance-plugin.jar, repository classes, guava, and the
     transitive dependencies of org.glassfish.jaxb:jaxb-xjc:17.0 on the classpath.
 
@@ -55,21 +57,19 @@
         </xsd:appinfo>
     </xsd:annotation>
 
-    <!-- The root element -->
-    <xsd:element name="repository" type="repo:repositoryType"/>
-
     <xsd:complexType name="repositoryType">
         <xsd:annotation>
             <xsd:documentation>
                 The repository, consisting of a licenses and packages.
             </xsd:documentation>
-            <xsd:appinfo>
-                <plugin:super name="com.android.repository.api.Repository"/>
-            </xsd:appinfo>
         </xsd:annotation>
         <xsd:sequence>
             <xsd:element name="license"
                          type="repo:licenseType"
+                         minOccurs="0"
+                         maxOccurs="unbounded"/>
+            <xsd:element name="channel"
+                         type="repo:channelType"
                          minOccurs="0"
                          maxOccurs="unbounded"/>
             <xsd:choice>
@@ -89,7 +89,7 @@
         </xsd:annotation>
         <xsd:sequence>
             <!-- Any type-specific details for this package -->
-            <xsd:element name="type-details" type="repo:typeDetails" minOccurs="0"/>
+            <xsd:element name="type-details" type="repo:typeDetails"/>
             <!-- The full revision (major.minor.micro.preview), incremented each
                  time a new package is generated. -->
             <xsd:element name="revision" type="repo:revisionType"/>
@@ -97,7 +97,7 @@
             <xsd:element name="display-name" type="xsd:string"/>
             <!-- The optional license of this package. If present, users will have
                  to agree to it before downloading. -->
-            <xsd:element name="uses-license" minOccurs="0" type="repo:licensesType"/>
+            <xsd:element name="uses-license" minOccurs="0" type="repo:licenseRefType"/>
             <!-- References to other packages that this package depends on. -->
             <xsd:element name="dependencies" minOccurs="0" type="repo:dependenciesType"/>
         </xsd:sequence>
@@ -115,14 +115,12 @@
             <xsd:documentation>
                 A remote package, available for download.
             </xsd:documentation>
-            <xsd:appinfo>
-                <plugin:super name="com.android.repository.impl.meta.RemotePackageImpl"/>
-            </xsd:appinfo>
         </xsd:annotation>
         <xsd:sequence>
             <xsd:group ref="repo:packageFields"/>
             <!-- The channel this package is in. E.g. "01-stable" -->
-            <xsd:element name="channel" type="repo:channelType" minOccurs="0"/>
+            <xsd:element name="channelRef" minOccurs="0" type="repo:channelRefType"/>
+
             <!-- A list of file archives for this package. -->
             <xsd:element name="archives" minOccurs="1" type="repo:archivesType"/>
         </xsd:sequence>
@@ -134,9 +132,6 @@
             <xsd:documentation>
                 A locally-installed package.
             </xsd:documentation>
-            <xsd:appinfo>
-                <plugin:super name="com.android.repository.impl.meta.LocalPackageImpl"/>
-            </xsd:appinfo>
         </xsd:annotation>
         <xsd:group ref="repo:packageFields"/>
         <xsd:attributeGroup ref="repo:packageAttributes"/>
@@ -147,9 +142,6 @@
             <xsd:documentation>
                 A list of dependencies.
             </xsd:documentation>
-            <xsd:appinfo>
-                <plugin:super name="com.android.repository.impl.meta.RepoPackageImpl$Dependencies"/>
-            </xsd:appinfo>
         </xsd:annotation>
         <xsd:sequence>
             <xsd:element name="dependency" type="repo:dependencyType" maxOccurs="unbounded"/>
@@ -161,25 +153,19 @@
             <xsd:documentation>
                 A list of archives.
             </xsd:documentation>
-            <xsd:appinfo>
-                <plugin:super name="com.android.repository.impl.meta.RepoPackageImpl$Archives"/>
-            </xsd:appinfo>
         </xsd:annotation>
         <xsd:sequence minOccurs="1" maxOccurs="unbounded">
             <xsd:element name="archive" type="repo:archiveType"/>
         </xsd:sequence>
     </xsd:complexType>
 
-    <xsd:complexType name="licensesType">
+    <xsd:complexType name="licenseRefType">
         <xsd:annotation>
             <xsd:documentation>
                 Describes the license used by a package. The license MUST be defined
                 using a license node and referenced using the ref attribute of the
                 license element inside a package.
             </xsd:documentation>
-            <xsd:appinfo>
-                <plugin:super name="com.android.repository.impl.meta.RepoPackageImpl$UsesLicense"/>
-            </xsd:appinfo>
         </xsd:annotation>
         <xsd:attribute name="ref" type="xsd:IDREF"/>
     </xsd:complexType>
@@ -192,9 +178,6 @@
                 appropriate information.
                 This content of this element is not used by the repository framework.
             </xsd:documentation>
-            <xsd:appinfo>
-                <plugin:super name="com.android.repository.impl.meta.TypeDetails"/>
-            </xsd:appinfo>
         </xsd:annotation>
     </xsd:complexType>
 
@@ -204,9 +187,6 @@
                 A dependency of one package on another, including a minimum revision of the
                 depended-upon package.
             </xsd:documentation>
-            <xsd:appinfo>
-                <plugin:super name="com.android.repository.api.Dependency"/>
-            </xsd:appinfo>
         </xsd:annotation>
         <xsd:all>
             <xsd:element name="min-revision" type="repo:revisionType" minOccurs="0"/>
@@ -242,9 +222,6 @@
                 A license definition. Such a license must be used later as a reference
                 using a uses-license element in one of the package elements.
             </xsd:documentation>
-            <xsd:appinfo>
-                <plugin:super name="com.android.repository.api.License"/>
-            </xsd:appinfo>
         </xsd:annotation>
         <xsd:simpleContent>
             <xsd:extension base="xsd:string">
@@ -263,9 +240,6 @@
                 Each archive contains a &lt;complete&gt; element and zero or more
                 &lt;patch&gt; elements.
             </xsd:documentation>
-            <xsd:appinfo>
-                <plugin:super name="com.android.repository.impl.meta.Archive"/>
-            </xsd:appinfo>
         </xsd:annotation>
         <xsd:all>
             <xsd:element name="host-os" type="repo:osType" minOccurs="0"/>
@@ -282,9 +256,6 @@
             <xsd:documentation>
                 A list of patches.
             </xsd:documentation>
-            <xsd:appinfo>
-                <plugin:super name="com.android.repository.impl.meta.Archive$PatchesType"/>
-            </xsd:appinfo>
         </xsd:annotation>
         <xsd:sequence minOccurs="1" maxOccurs="unbounded">
             <xsd:element name="patch" type="repo:patchType"/>
@@ -323,9 +294,6 @@
             <xsd:documentation>
                 A zip file containing a complete version of this package.
             </xsd:documentation>
-            <xsd:appinfo>
-                <plugin:super name="com.android.repository.impl.meta.Archive$CompleteType"/>
-            </xsd:appinfo>
         </xsd:annotation>
         <xsd:group ref="repo:archiveFields"/>
     </xsd:complexType>
@@ -336,9 +304,6 @@
                 A zip file containing a binary diff between a previous version of this package
                 (specified in &lt;base-on&gt;) and the current version.
             </xsd:documentation>
-            <xsd:appinfo>
-                <plugin:super name="com.android.repository.impl.meta.Archive$PatchType"/>
-            </xsd:appinfo>
         </xsd:annotation>
         <xsd:sequence>
             <xsd:element name="based-on" type="repo:revisionType"/>
@@ -346,23 +311,32 @@
         </xsd:sequence>
     </xsd:complexType>
 
-    <xsd:simpleType name="channelType">
+    <xsd:complexType name="channelType">
         <xsd:annotation>
             <xsd:documentation>
-                The channel for this package. Current channels are:
-                00-stable
-                10-beta
-                20-dev
-                30-canary
+                A channel definition. Packages may contain a reference to a channel.
+                Channels are ordered by id, with the lowest id being most stable.
+                Only packages from channels at least as stable as that specified in the
+                user's preferences will be loaded.
             </xsd:documentation>
         </xsd:annotation>
-        <xsd:restriction base="xsd:string">
-            <xsd:enumeration value="00-stable"/>
-            <xsd:enumeration value="10-beta"/>
-            <xsd:enumeration value="20-dev"/>
-            <xsd:enumeration value="30-canary"/>
-        </xsd:restriction>
-    </xsd:simpleType>
+        <xsd:simpleContent>
+            <xsd:extension base="xsd:string">
+                <xsd:attribute name="id">
+                    <xsd:simpleType>
+                        <xsd:restriction base="xsd:ID">
+                            <xsd:pattern value="channel-[0-9]"/>
+                        </xsd:restriction>
+                    </xsd:simpleType>
+                </xsd:attribute>
+            </xsd:extension>
+        </xsd:simpleContent>
+
+    </xsd:complexType>
+
+    <xsd:complexType name="channelRefType">
+        <xsd:attribute name="ref" type="xsd:IDREF"/>
+    </xsd:complexType>
 
     <xsd:complexType name="revisionType">
         <xsd:annotation>
@@ -370,9 +344,6 @@
                 A full revision, with a major.minor.micro and an
                 optional preview number. The major number is mandatory.
             </xsd:documentation>
-            <xsd:appinfo>
-                <plugin:super name="com.android.repository.impl.meta.RevisionType"/>
-            </xsd:appinfo>
         </xsd:annotation>
         <xsd:all>
             <xsd:element name="major" type="xsd:int"/>
@@ -400,4 +371,5 @@
             <xsd:pattern value="linux|macosx|windows"/>
         </xsd:restriction>
     </xsd:simpleType>
+
 </xsd:schema>

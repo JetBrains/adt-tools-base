@@ -38,5 +38,6 @@ public interface SettingsController {
      * Gets the current channel. Only packages of channels at least as stable as specified will be
      * downloaded.
      */
-    String getChannel();
+    @Nullable
+    Channel getChannel();
 }

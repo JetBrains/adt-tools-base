@@ -15,12 +15,13 @@
   -->
 
 <repo:repository
-        xmlns:repo="http://schemas.android.com/repository/android/common/01"
+        xmlns:repo="http://schemas.android.com/repository/android/generic/01"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <license id="lic2" type="text">
         license text 2
     </license>
     <localPackage path="dummy;bar">
+        <type-details xsi:type="repo:genericDetailsType"/>
         <revision>
             <major>4</major>
             <minor>5</minor>

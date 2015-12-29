@@ -19,6 +19,7 @@ package com.android.repository.api;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.impl.meta.Archive;
+import com.android.repository.impl.meta.RemotePackageImpl;
 
 /**
  * An package available for download. In addition to what's provided by {@link RepoPackage},
@@ -45,19 +46,9 @@ public interface RemotePackage extends RepoPackage {
     Archive getArchive();
 
     /**
-     * Gets the channel for this package. Channels are sorted in lexicographic order, with the
-     * first being the most stable.
+     * Gets the update channel (e.g. beta, stable) for this package. Channels are sorted in
+     * lexicographic order, with the first (and default) being the most stable.
      */
-    @Nullable
-    String getChannel();
-
-    /**
-     * @return {@code true} if the given value is a valid channel name.
-     */
-    boolean isValidChannel(String value);
-
-    /**
-     * @return The valid values for the channel.
-     */
-    String[] getValidChannels();
+    @NonNull
+    Channel getChannel();
 }

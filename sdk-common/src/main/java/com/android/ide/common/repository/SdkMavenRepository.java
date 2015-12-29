@@ -94,7 +94,7 @@ public enum SdkMavenRepository {
      * @param sdkHome the SDK installation location
      * @return true if the repository is installed
      */
-    public boolean isInstalled(@Nullable File sdkHome, FileOp fileOp) {
+    public boolean isInstalled(@Nullable File sdkHome, @NonNull FileOp fileOp) {
         return getRepositoryLocation(sdkHome, true, fileOp) != null;
     }
 

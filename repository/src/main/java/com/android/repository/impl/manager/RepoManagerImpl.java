@@ -137,6 +137,7 @@ public class RepoManagerImpl extends RepoManager {
     public RepoManagerImpl(@Nullable FileOp fop) {
         mFop = fop;
         registerSchemaModule(getCommonModule());
+        registerSchemaModule(getGenericModule());
     }
 
     @Nullable
@@ -236,7 +237,8 @@ public class RepoManagerImpl extends RepoManager {
     public LSResourceResolver getResourceResolver(@NonNull  ProgressIndicator progress) {
         List<SchemaModule> allModules = ImmutableList.<SchemaModule>builder().addAll(
                 getSchemaModules()).add(
-                getCommonModule()).build();
+                getCommonModule()).add(
+                getGenericModule()).build();
         return SchemaModuleUtil.createResourceResolver(allModules, progress);
     }
 

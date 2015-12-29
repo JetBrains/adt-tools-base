@@ -1,10 +1,8 @@
 
 package com.android.repository.impl.generated.v1;
 
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.annotation.XmlElementDecl;
 import javax.xml.bind.annotation.XmlRegistry;
-import javax.xml.namespace.QName;
+import com.android.repository.api.Channel;
 import com.android.repository.api.Dependency;
 import com.android.repository.api.License;
 import com.android.repository.api.Repository;
@@ -38,7 +36,6 @@ public class ObjectFactory
     extends CommonFactory
 {
 
-    private final static QName _Repository_QNAME = new QName("http://schemas.android.com/repository/android/common/01", "repository");
 
     /**
      * Create a new ObjectFactory that can be used to create new instances of schema derived classes for package: com.android.repository.impl.generated.v1
@@ -88,11 +85,11 @@ public class ObjectFactory
     }
 
     /**
-     * Create an instance of {@link LicensesType }
+     * Create an instance of {@link LicenseRefType }
      * 
      */
-    public com.android.repository.impl.meta.RepoPackageImpl.UsesLicense createLicensesType() {
-        return new LicensesType();
+    public com.android.repository.impl.meta.RepoPackageImpl.UsesLicense createLicenseRefType() {
+        return new LicenseRefType();
     }
 
     /**
@@ -144,24 +141,27 @@ public class ObjectFactory
     }
 
     /**
+     * Create an instance of {@link ChannelType }
+     * 
+     */
+    public Channel createChannelType() {
+        return new ChannelType();
+    }
+
+    /**
+     * Create an instance of {@link ChannelRefType }
+     * 
+     */
+    public RemotePackageImpl.ChannelRef createChannelRefType() {
+        return new ChannelRefType();
+    }
+
+    /**
      * Create an instance of {@link com.android.repository.impl.generated.v1.RevisionType }
      * 
      */
     public com.android.repository.impl.meta.RevisionType createRevisionType() {
         return new com.android.repository.impl.generated.v1.RevisionType();
-    }
-
-    /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link RepositoryType }{@code >}}
-     * 
-     */
-    @XmlElementDecl(namespace = "http://schemas.android.com/repository/android/common/01", name = "repository")
-    public JAXBElement<RepositoryType> createRepository(RepositoryType value) {
-        return new JAXBElement<RepositoryType>(_Repository_QNAME, RepositoryType.class, null, value);
-    }
-
-    public JAXBElement<Repository> generateElement(Repository value) {
-        return ((JAXBElement) createRepository(((RepositoryType) value)));
     }
 
 }

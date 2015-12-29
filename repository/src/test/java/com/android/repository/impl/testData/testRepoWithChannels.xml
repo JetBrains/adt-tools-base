@@ -14,17 +14,23 @@
   ~ limitations under the License.
   -->
 
-<repo:repository
+<generic:repository
         xmlns:repo="http://schemas.android.com/repository/android/common/01"
+        xmlns:generic="http://schemas.android.com/repository/android/generic/01"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <channel id="channel-0">blah</channel>
+    <channel id="channel-1"/>
+    <channel id="channel-2"/>
+    <channel id="channel-3"/>
     <remotePackage path="dummy;foo">
+        <type-details xsi:type="generic:genericDetailsType"/>
         <revision>
             <major>1</major>
             <minor>2</minor>
             <micro>3</micro>
         </revision>
         <display-name>Test package</display-name>
-        <channel>00-stable</channel>
+        <channelRef ref="channel-0"/>
         <archives>
             <archive>
                 <complete>
@@ -37,13 +43,14 @@
         </archives>
     </remotePackage>
     <remotePackage path="dummy;foo">
+        <type-details xsi:type="generic:genericDetailsType"/>
         <revision>
             <major>1</major>
             <minor>2</minor>
             <micro>5</micro>
         </revision>
         <display-name>Test package</display-name>
-        <channel>20-dev</channel>
+        <channelRef ref="channel-2"/>
         <archives>
             <archive>
                 <complete>
@@ -56,13 +63,14 @@
         </archives>
     </remotePackage>
     <remotePackage path="dummy;foo">
+        <type-details xsi:type="generic:genericDetailsType"/>
         <revision>
             <major>1</major>
             <minor>2</minor>
             <micro>4</micro>
         </revision>
         <display-name>Test package</display-name>
-        <channel>10-beta</channel>
+        <channelRef ref="channel-1"/>
         <archives>
             <archive>
                 <complete>
@@ -75,6 +83,7 @@
         </archives>
     </remotePackage>
     <remotePackage path="dummy;bar">
+        <type-details xsi:type="generic:genericDetailsType"/>
         <revision>
             <major>4</major>
             <minor>5</minor>
@@ -92,13 +101,14 @@
         </archives>
     </remotePackage>
     <remotePackage path="dummy;bar">
+        <type-details xsi:type="generic:genericDetailsType"/>
         <revision>
             <major>4</major>
             <minor>5</minor>
             <micro>7</micro>
         </revision>
         <display-name>Test package 2</display-name>
-        <channel>30-canary</channel>
+        <channelRef ref="channel-3"/>
         <archives>
             <archive>
                 <complete>
@@ -109,5 +119,5 @@
             </archive>
         </archives>
     </remotePackage>
-</repo:repository>
+</generic:repository>
 

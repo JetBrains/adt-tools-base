@@ -103,7 +103,7 @@ public class LegacyLocalRepoTest extends TestCase {
         progress.assertNoErrorsOrWarnings();
 
         Collection<SchemaModule> extensions = ImmutableList
-                .of(RepoManager.getCommonModule());
+                .of(RepoManager.getGenericModule());
 
         // Now read the new package
         Repository repo = (Repository) SchemaModuleUtil.unmarshal(

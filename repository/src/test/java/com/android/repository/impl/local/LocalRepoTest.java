@@ -25,9 +25,11 @@ import com.android.repository.api.Repository;
 import com.android.repository.impl.manager.LocalRepoLoader;
 import com.android.repository.impl.manager.RepoManagerImpl;
 import com.android.repository.impl.meta.CommonFactory;
+import com.android.repository.impl.meta.GenericFactory;
 import com.android.repository.impl.meta.LocalPackageImpl;
 import com.android.repository.impl.meta.RevisionType;
 import com.android.repository.impl.meta.SchemaModuleUtil;
+import com.android.repository.impl.meta.TypeDetails;
 import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.repository.testframework.MockFileOp;
 import com.google.common.collect.ImmutableSet;
@@ -57,7 +59,7 @@ public class LocalRepoTest extends TestCase {
         mockFop.recordExistingFolder("/repo/random");
         mockFop.recordExistingFile("/repo/random/package.xml",
                 "<repo:repository\n"
-                        + "        xmlns:repo=\"http://schemas.android.com/repository/android/common/01\"\n"
+                        + "        xmlns:repo=\"http://schemas.android.com/repository/android/generic/01\"\n"
                         + "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
                         + "\n"
                         + "    <license type=\"text\" id=\"license1\">\n"
@@ -66,6 +68,7 @@ public class LocalRepoTest extends TestCase {
                         + "    </license>\n"
                         + "\n"
                         + "    <localPackage path=\"random\">\n"
+                        + "        <type-details xsi:type=\"repo:genericDetailsType\"/>\n"
                         + "        <revision>\n"
                         + "            <major>3</major>\n"
                         + "        </revision>\n"
@@ -91,7 +94,7 @@ public class LocalRepoTest extends TestCase {
         progress.assertNoErrorsOrWarnings();
         assertEquals(new Revision(3), p.getVersion());
         assertEquals("This is the license for this platform.", p.getLicense().getValue());
-        assertTrue(p.getTypeDetails() == null);
+        assertTrue(p.getTypeDetails() instanceof TypeDetails.GenericType);
         assertEquals("The first Android platform ever", p.getDisplayName());
         // TODO: validate package in more detail
     }
@@ -101,6 +104,8 @@ public class LocalRepoTest extends TestCase {
         RepoManager manager = new RepoManagerImpl(new MockFileOp());
 
         CommonFactory factory = (CommonFactory)manager.getCommonModule().createLatestFactory();
+        GenericFactory genericFactory = (GenericFactory) manager.getGenericModule()
+                .createLatestFactory();
         Repository repo = factory.createRepositoryType();
         LocalPackageImpl p = factory.createLocalPackage();
         License license = factory.createLicenseType("some license text", "license1");
@@ -108,6 +113,7 @@ public class LocalRepoTest extends TestCase {
         p.setPath("dummy;path");
         p.setVersion(new Revision(1, 2));
         p.setDisplayName("package name");
+        p.setTypeDetails((TypeDetails) genericFactory.createGenericDetailsType());
         Dependency dep = factory.createDependencyType();
         dep.setPath("depId1");
         RevisionType r = factory.createRevisionType(new Revision(1, 2, 3));
@@ -120,15 +126,17 @@ public class LocalRepoTest extends TestCase {
         repo.setLocalPackage(p);
         repo.getLicense().add(license);
         FakeProgressIndicator progress = new FakeProgressIndicator();
-        SchemaModuleUtil.marshal(repo.createFactory().generateElement(repo),
-                ImmutableSet.of(manager.getCommonModule()), output,
+        SchemaModuleUtil.marshal(
+                ((GenericFactory) RepoManager.getGenericModule().createLatestFactory())
+                        .generateElement(repo),
+                ImmutableSet.of(manager.getGenericModule()), output,
                 manager.getResourceResolver(progress), progress);
         progress.assertNoErrorsOrWarnings();
 
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 
         dbf.setNamespaceAware(true);
-        dbf.setSchema(SchemaModuleUtil.getSchema(ImmutableSet.of(manager.getCommonModule()),
+        dbf.setSchema(SchemaModuleUtil.getSchema(ImmutableSet.of(manager.getGenericModule()),
                 SchemaModuleUtil.createResourceResolver(ImmutableSet.of(manager.getCommonModule()),
                         progress),
                 progress));
@@ -156,9 +164,11 @@ public class LocalRepoTest extends TestCase {
         // can change.
         String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
                 + "<ns2:repository "
-                + "xmlns:ns2=\"http://schemas.android.com/repository/android/common/01\">"
+                + "xmlns:ns2=\"http://schemas.android.com/repository/android/generic/01\">"
                 + "<license type=\"text\" id=\"license1\">some license text</license>"
                 + "<localPackage path=\"dummy;path\">"
+                + "<type-details xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
+                + "xsi:type=\"ns2:genericDetailsType\"/>"
                 + "<revision><major>1</major><minor>2</minor></revision>"
                 + "<display-name>package name</display-name>"
                 + "<uses-license ref=\"license1\"/>"

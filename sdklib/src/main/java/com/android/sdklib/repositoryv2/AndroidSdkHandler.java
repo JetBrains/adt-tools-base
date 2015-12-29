@@ -138,6 +138,11 @@ public final class AndroidSdkHandler {
     private final File mLocation;
 
     /**
+     * Provider for user-specified {@link RepositorySource}s.
+     */
+    private LocalSourceProvider mUserSourceProvider;
+
+    /**
      * Loader capable of loading old-style repository xml files, with namespace like
      * http://schemas.android.com/sdk/android/repository/NN or similar.
      *
@@ -193,7 +198,8 @@ public final class AndroidSdkHandler {
                 mLatestBuildTool = null;
 
                 result = getRepoConfig(progress)
-                  .createRepoManager(progress, mLocation, sRemoteFallback, mFop);
+                        .createRepoManager(progress, mLocation, sRemoteFallback,
+                                mUserSourceProvider, mFop);
                 // Invalidate system images, targets, the latest build tool, and the legacy local
                 // package manager when local packages change
                 result.registerLocalChangeListener(new RepoManager.RepoLoadedCallback() {
@@ -313,13 +319,20 @@ public final class AndroidSdkHandler {
      */
     @Nullable
     public RepositorySourceProvider getUserSourceProvider(@NonNull ProgressIndicator progress) {
-        return getRepoConfig(progress).getUserSourceProvider();
+        if (mUserSourceProvider == null) {
+            RepoConfig repoConfig = getRepoConfig(progress);
+            mUserSourceProvider = repoConfig.createUserSourceProvider(progress, mFop);
+            // Load the repo as well, so it can be set on the provider
+            mRepoManager = null;
+            getSdkManager(progress);
+        }
+        return mUserSourceProvider;
     }
 
     @NonNull
     private RepoConfig getRepoConfig(@NonNull ProgressIndicator progress) {
         if (sRepoConfig == null) {
-            sRepoConfig = new RepoConfig(progress, mFop);
+            sRepoConfig = new RepoConfig(progress);
         }
         return sRepoConfig;
     }
@@ -358,11 +371,6 @@ public final class AndroidSdkHandler {
         private RemoteListSourceProvider mAddonsListSourceProvider;
 
         /**
-         * Provider for user-specified {@link RepositorySource}s.
-         */
-        private LocalSourceProvider mUserSourceProvider;
-
-        /**
          * Provider for the main new-style {@link RepositorySource}
          */
         private ConstantSourceProvider mRepositorySourceProvider;
@@ -378,7 +386,7 @@ public final class AndroidSdkHandler {
          *
          * @param progress Used for error logging.
          */
-        public RepoConfig(@NonNull ProgressIndicator progress, @NonNull FileOp fileOp) {
+        public RepoConfig(@NonNull ProgressIndicator progress) {
             try {
                 mAddonModule = new SchemaModule(
                         "com.android.sdklib.repositoryv2.generated.addon.v%d.ObjectFactory",
@@ -420,18 +428,28 @@ public final class AndroidSdkHandler {
             String url = String.format("%srepository2-%d.xml", getBaseUrl(progress),
               mRepositoryModule.getNamespaceVersionMap().size());
             mRepositorySourceProvider = new ConstantSourceProvider(url, "Android Repository",
-                    ImmutableSet.of(mRepositoryModule));
+                    ImmutableSet.of(mRepositoryModule, RepoManager.getGenericModule()));
 
             url = String.format("%srepository-%d.xml", getBaseUrl(progress), LATEST_LEGACY_VERSION);
             mLegacyRepositorySourceProvider = new ConstantSourceProvider(url,
                     "Legacy Android Repository", ImmutableSet.of(mRepositoryModule));
+        }
+
+        /**
+         * Creates a customizable {@link RepositorySourceProvider}. Can be null if there's a problem
+         * with the user's environment.
+         */
+        @Nullable
+        public LocalSourceProvider createUserSourceProvider(@NonNull ProgressIndicator progress,
+                @NonNull FileOp fileOp) {
             try {
-                mUserSourceProvider = new LocalSourceProvider(new File(
-                        AndroidLocation.getFolder(), LOCAL_ADDONS_FILENAME), ImmutableList
-                        .of(mSysImgModule, mAddonModule), fileOp);
+                return new LocalSourceProvider(
+                        new File(AndroidLocation.getFolder(), LOCAL_ADDONS_FILENAME),
+                        ImmutableList.of(mSysImgModule, mAddonModule), fileOp);
             } catch (AndroidLocation.AndroidLocationException e) {
                 progress.logWarning("Couldn't find android folder", e);
             }
+            return null;
         }
 
         @NonNull
@@ -482,19 +500,11 @@ public final class AndroidSdkHandler {
             return mAddonsListSourceProvider;
         }
 
-        /**
-         * Gets the customizable {@link RepositorySourceProvider}. Can be null if there's a problem
-         * with the user's environment.
-         */
-        @Nullable
-        public LocalSourceProvider getUserSourceProvider() {
-            return mUserSourceProvider;
-        }
-
         @NonNull
         public RepoManager createRepoManager(@NonNull ProgressIndicator progress,
                 @Nullable File localLocation,
-                @Nullable FallbackRemoteRepoLoader remoteFallbackLoader, @NonNull FileOp fop) {
+                @Nullable FallbackRemoteRepoLoader remoteFallbackLoader,
+                @Nullable LocalSourceProvider userProvider, @NonNull FileOp fop) {
             RepoManager result = RepoManager.create(fop);
 
             // Create the schema modules etc. if they haven't been already.
@@ -506,11 +516,11 @@ public final class AndroidSdkHandler {
             // result.registerSourceProvider(mRepositorySourceProvider);
             result.registerSourceProvider(mLegacyRepositorySourceProvider);
             result.registerSourceProvider(mAddonsListSourceProvider);
-            if (mUserSourceProvider != null) {
-                result.registerSourceProvider(mUserSourceProvider);
+            if (userProvider != null) {
+                result.registerSourceProvider(userProvider);
                 // The customizable source provider needs a handle on the repo manager, so it can
                 // mark the cached packages invalid if the sources change.
-                mUserSourceProvider.setRepoManager(result);
+                userProvider.setRepoManager(result);
             }
 
 

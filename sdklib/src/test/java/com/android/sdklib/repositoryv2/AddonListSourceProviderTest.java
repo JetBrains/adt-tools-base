@@ -84,6 +84,7 @@ public class AddonListSourceProviderTest extends TestCase {
     }
 
     public void testLocalSource() throws Exception {
+        AndroidLocation.resetFolder();
         MockFileOp fop = new MockFileOp();
         File testFile = new File(getClass().getResource("testdata/repositories.xml").toURI());
         fop.recordExistingFile(

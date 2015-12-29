@@ -17,14 +17,9 @@
 
 <!--
     Extension to repo-common for the primary repository, containing the repository root element and
-    the typedetails subclasses for:
-    platform
-    source
-    tool
-    platform-tool
-    build-tool
-    doc
-    and associated classes.
+    the typedetails subclasses for platforms and sources, and associated classes.
+    Note that repo XMLs can also contain generic type-details, and so that schema should be included
+    as well when unmarshalling core repository XMLs.
 
     JAXB-usable classes can be generated from this schema as follows:
     java com.sun.tools.internal.xjc.Driver \
@@ -114,34 +109,4 @@
         </xsd:complexContent>
     </xsd:complexType>
 
-    <xsd:complexType name="_xjcWorkaround">
-        <xsd:annotation>
-            <xsd:documentation>
-                Due to a bug/limitation in xjc, if you import a schema you must reference all
-                imported types that include plugin customizations, or it is impossible to
-                acknowledge that the customizations are processed.
-                This type will be removed from classes generated from this schema by InheritancePlugin.
-            </xsd:documentation>
-        </xsd:annotation>
-        <xsd:all>
-            <xsd:element name="dummy-license" type="common:licenseType"/>
-            <xsd:element name="dummy-revision" type="common:revisionType"/>
-            <xsd:element name="dummy-archive" type="common:archiveType"/>
-            <xsd:element name="dummy-dependency" type="common:dependencyType"/>
-            <xsd:element name="dummy-remote" type="common:remotePackage"/>
-            <xsd:element name="dummy-local" type="common:localPackage"/>
-            <xsd:element name="dummy-os" type="common:osType"/>
-            <xsd:element name="dummy-licenses" type="common:licensesType"/>
-            <xsd:element name="dummy-dependencies" type="common:dependenciesType"/>
-            <xsd:element name="dummy-archives" type="common:archivesType"/>
-            <xsd:element name="dummy-type" type="common:typeDetails"/>
-            <xsd:element name="dummy-repository" type="common:repositoryType"/>
-            <xsd:element name="dummy-complete" type="common:completeType"/>
-            <xsd:element name="dummy-patch" type="common:patchType"/>
-            <xsd:element name="dummy-patches" type="common:patchesType"/>
-            <xsd:element name="dummy-api" type="sdk-common:apiDetailsType"/>
-            <xsd:element name="dummy-iddisp" type="sdk-common:idDisplayType"/>
-            <xsd:element name="dummy-library" type="sdk-common:libraryType"/>
-        </xsd:all>
-    </xsd:complexType>
 </xsd:schema>

@@ -31,7 +31,7 @@ import com.android.repository.impl.meta.TrimStringAdapter;
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType"&gt;
  *       &lt;sequence&gt;
  *         &lt;group ref="{http://schemas.android.com/repository/android/common/01}packageFields"/&gt;
- *         &lt;element name="channel" type="{http://schemas.android.com/repository/android/common/01}channelType" minOccurs="0"/&gt;
+ *         &lt;element name="channelRef" type="{http://schemas.android.com/repository/android/common/01}channelRefType" minOccurs="0"/&gt;
  *         &lt;element name="archives" type="{http://schemas.android.com/repository/android/common/01}archivesType"/&gt;
  *       &lt;/sequence&gt;
  *       &lt;attGroup ref="{http://schemas.android.com/repository/android/common/01}packageAttributes"/&gt;
@@ -49,7 +49,7 @@ import com.android.repository.impl.meta.TrimStringAdapter;
     "displayName",
     "usesLicense",
     "dependencies",
-    "channel",
+    "channelRef",
     "archives"
 })
 @SuppressWarnings({
@@ -60,7 +60,7 @@ public class RemotePackage
     extends RemotePackageImpl
 {
 
-    @XmlElement(name = "type-details")
+    @XmlElement(name = "type-details", required = true)
     protected com.android.repository.impl.generated.v1.TypeDetails typeDetails;
     @XmlElement(required = true)
     protected com.android.repository.impl.generated.v1.RevisionType revision;
@@ -68,10 +68,9 @@ public class RemotePackage
     @XmlJavaTypeAdapter(TrimStringAdapter.class)
     protected String displayName;
     @XmlElement(name = "uses-license")
-    protected LicensesType usesLicense;
+    protected LicenseRefType usesLicense;
     protected DependenciesType dependencies;
-    @XmlJavaTypeAdapter(TrimStringAdapter.class)
-    protected String channel;
+    protected ChannelRefType channelRef;
     @XmlElement(required = true)
     protected ArchivesType archives;
     @XmlAttribute(name = "path", required = true)
@@ -157,10 +156,10 @@ public class RemotePackage
      * 
      * @return
      *     possible object is
-     *     {@link LicensesType }
+     *     {@link LicenseRefType }
      *     
      */
-    public LicensesType getUsesLicense() {
+    public LicenseRefType getUsesLicense() {
         return usesLicense;
     }
 
@@ -169,10 +168,10 @@ public class RemotePackage
      * 
      * @param value
      *     allowed object is
-     *     {@link LicensesType }
+     *     {@link LicenseRefType }
      *     
      */
-    public void setUsesLicenseInternal(LicensesType value) {
+    public void setUsesLicenseInternal(LicenseRefType value) {
         this.usesLicense = value;
     }
 
@@ -201,27 +200,27 @@ public class RemotePackage
     }
 
     /**
-     * Gets the value of the channel property.
+     * Gets the value of the channelRef property.
      * 
      * @return
      *     possible object is
-     *     {@link String }
+     *     {@link ChannelRefType }
      *     
      */
-    public String getChannel() {
-        return channel;
+    public ChannelRefType getChannelRef() {
+        return channelRef;
     }
 
     /**
-     * Sets the value of the channel property.
+     * Sets the value of the channelRef property.
      * 
      * @param value
      *     allowed object is
-     *     {@link String }
+     *     {@link ChannelRefType }
      *     
      */
-    public void setChannel(String value) {
-        this.channel = value;
+    public void setChannelRefInternal(ChannelRefType value) {
+        this.channelRef = value;
     }
 
     /**
@@ -296,14 +295,6 @@ public class RemotePackage
         this.obsolete = value;
     }
 
-    public String[] getValidChannels() {
-        return new String[] {"00-stable", "10-beta", "20-dev", "30-canary"};
-    }
-
-    public boolean isValidChannel(String value) {
-        return ((value == null)||((((value.equals("00-stable"))||(value.equals("10-beta")))||(value.equals("20-dev")))||(value.equals("30-canary"))));
-    }
-
     public void setTypeDetails(com.android.repository.impl.meta.TypeDetails value) {
         setTypeDetailsInternal(((com.android.repository.impl.generated.v1.TypeDetails) value));
     }
@@ -313,11 +304,15 @@ public class RemotePackage
     }
 
     public void setUsesLicense(com.android.repository.impl.meta.RepoPackageImpl.UsesLicense value) {
-        setUsesLicenseInternal(((LicensesType) value));
+        setUsesLicenseInternal(((LicenseRefType) value));
     }
 
     public void setDependencies(com.android.repository.impl.meta.RepoPackageImpl.Dependencies value) {
         setDependenciesInternal(((DependenciesType) value));
+    }
+
+    public void setChannelRef(RemotePackageImpl.ChannelRef value) {
+        setChannelRefInternal(((ChannelRefType) value));
     }
 
     public void setArchives(com.android.repository.impl.meta.RepoPackageImpl.Archives value) {

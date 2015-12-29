@@ -60,14 +60,6 @@ public abstract class Repository {
     @NonNull
     public abstract CommonFactory createFactory();
 
-    /**
-     * Convenience method to create a {@link JAXBElement} containing this repository.
-     */
-    @NonNull
-    public JAXBElement<Repository> createElement() {
-        return createFactory().generateElement(this);
-    }
-
     @NonNull
     public List<? extends RemotePackage> getRemotePackage() {
         // Stub.

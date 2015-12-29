@@ -15,7 +15,6 @@
  */
 package com.android.sdklib.repositoryv2;
 
-import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.repository.Revision;
 import com.android.repository.api.License;
 import com.android.repository.api.RemotePackage;
@@ -25,6 +24,7 @@ import com.android.repository.api.SchemaModule;
 import com.android.repository.impl.meta.Archive;
 import com.android.repository.impl.meta.RemotePackageImpl;
 import com.android.repository.impl.meta.SchemaModuleUtil;
+import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.repository.testframework.MockFileOp;
 import com.android.sdklib.repositoryv2.meta.DetailsTypes;
 import com.google.common.collect.ImmutableList;
@@ -52,9 +52,9 @@ public class UnmarshalTest extends TestCase {
         SchemaModule repoEx = handler.getRepositoryModule(progress);
         SchemaModule addonEx = handler.getAddonModule(progress);
         RepoManager mgr = handler.getSdkManager(progress);
-        Repository repo = (Repository) SchemaModuleUtil
-                .unmarshal(xmlStream, ImmutableList.of(repoEx, addonEx),
-                        mgr.getResourceResolver(progress), progress);
+        Repository repo = (Repository) SchemaModuleUtil.unmarshal(xmlStream,
+                ImmutableList.of(repoEx, addonEx, RepoManager.getGenericModule()),
+                mgr.getResourceResolver(progress), progress);
         progress.assertNoErrorsOrWarnings();
         List<? extends License> licenses = repo.getLicense();
         assertEquals(licenses.size(), 2);

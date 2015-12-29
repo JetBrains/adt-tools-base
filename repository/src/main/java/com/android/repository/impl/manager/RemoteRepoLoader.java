@@ -18,6 +18,7 @@ package com.android.repository.impl.manager;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.repository.api.Channel;
 import com.android.repository.api.Downloader;
 import com.android.repository.api.FallbackRemoteRepoLoader;
 import com.android.repository.api.ProgressIndicator;
@@ -143,19 +144,16 @@ public class RemoteRepoLoader {
                             RemotePackage existing = result.get(pkg.getPath());
                             if (existing != null
                               && existing.getVersion().compareTo(pkg.getVersion()) > 0) {
-                                // If there are multiple version of the same package available,
+                                // If there are multiple versions of the same package available,
                                 // pick the latest.
                                 continue;
                             }
-                            String defaultChannel = pkg.getValidChannels()[0];
-                            String settingsChannel =
+                            Channel settingsChannel =
                                     settings == null || settings.getChannel() == null
-                                            ? defaultChannel : settings.getChannel();
-                            String newChannel = pkg.getChannel() == null ? defaultChannel
-                                    : pkg.getChannel();
+                                            ? Channel.DEFAULT : settings.getChannel();
 
                             if (pkg.getArchive() != null
-                                    && newChannel.compareTo(settingsChannel) <= 0) {
+                                    && pkg.getChannel().compareTo(settingsChannel) <= 0) {
                                 pkg.setSource(source);
                                 result.put(pkg.getPath(), pkg);
                             }

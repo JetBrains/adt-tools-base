@@ -26,7 +26,9 @@
          -p com.android.sdklib.repositoryv2.generated.common.v1 \
          com/android/sdklib/repositoryv2/sdk-common-01.xsd \
          -extension -Xandroid-inheritance \
-         -b repository/src/main/java/com/android/repository/api/global.xjb -no-header
+         -b repository/src/main/java/com/android/repository/api/global.xjb \
+         -b sdklib/src/main/java/com/android/sdklib/repositoryv2/sdk-common-custom.xjb \
+         -no-header
 
     with tools.jar, jaxb-inheritance-plugin.jar, and the repository classes on the classpath.
     Note that you can not use the xjc executable, as it does not support 3rd-party plugins.
@@ -62,9 +64,6 @@
                 Abstract subclass of type-details adding elements to specify the android version
                 a package corresponds to.
             </xsd:documentation>
-            <xsd:appinfo>
-                <plugin:super name="com.android.sdklib.repositoryv2.meta.DetailsTypes$ApiDetailsType"/>
-            </xsd:appinfo>
         </xsd:annotation>
         <xsd:complexContent>
             <xsd:extension base="common:typeDetails">
@@ -94,9 +93,6 @@
             <xsd:documentation>
                 A string with both user-friendly and easily-parsed versions.
             </xsd:documentation>
-            <xsd:appinfo>
-                <plugin:super name="com.android.sdklib.repositoryv2.IdDisplay"/>
-            </xsd:appinfo>
         </xsd:annotation>
         <xsd:all>
             <xsd:element name="id" type="sdk:idType"/>
@@ -109,9 +105,6 @@
             <xsd:documentation>
                 a library provided by this addon
             </xsd:documentation>
-            <xsd:appinfo>
-                <plugin:super name="com.android.sdklib.repositoryv2.meta.DetailsTypes$Library"/>
-            </xsd:appinfo>
         </xsd:annotation>
         <xsd:sequence>
             <xsd:element name="description" type="xsd:string" minOccurs="1"/>
@@ -125,31 +118,4 @@
                        type="xsd:boolean"/>
     </xsd:complexType>
 
-    <xsd:complexType name="_xjcWorkaround">
-        <xsd:annotation>
-            <xsd:documentation>
-                Due to a bug/limitation in xjc, if you import a schema you must reference all
-                imported types that include plugin customizations, or it is impossible to
-                acknowledge that the customizations are processed.
-                This type will be removed from classes generated from this schema by InheritancePlugin.
-            </xsd:documentation>
-        </xsd:annotation>
-        <xsd:all>
-            <xsd:element name="dummy-license"      type="common:licenseType"/>
-            <xsd:element name="dummy-revision"     type="common:revisionType"/>
-            <xsd:element name="dummy-archive"      type="common:archiveType"/>
-            <xsd:element name="dummy-dependency"   type="common:dependencyType"/>
-            <xsd:element name="dummy-remote"       type="common:remotePackage"/>
-            <xsd:element name="dummy-local"        type="common:localPackage"/>
-            <xsd:element name="dummy-os"           type="common:osType"/>
-            <xsd:element name="dummy-licenses"     type="common:licensesType"/>
-            <xsd:element name="dummy-dependencies" type="common:dependenciesType"/>
-            <xsd:element name="dummy-archives"     type="common:archivesType"/>
-            <xsd:element name="dummy-type"         type="common:typeDetails"/>
-            <xsd:element name="dummy-repository"   type="common:repositoryType"/>
-            <xsd:element name="dummy-complete"     type="common:completeType"/>
-            <xsd:element name="dummy-patch"        type="common:patchType"/>
-            <xsd:element name="dummy-patches"      type="common:patchesType"/>
-        </xsd:all>
-    </xsd:complexType>
 </xsd:schema>
