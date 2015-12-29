@@ -50,8 +50,10 @@ import com.android.tools.lint.checks.MissingClassDetector;
 import com.android.tools.lint.checks.MissingIdDetector;
 import com.android.tools.lint.checks.NamespaceDetector;
 import com.android.tools.lint.checks.ObsoleteLayoutParamsDetector;
+import com.android.tools.lint.checks.ParcelDetector;
 import com.android.tools.lint.checks.PropertyFileDetector;
 import com.android.tools.lint.checks.PxUsageDetector;
+import com.android.tools.lint.checks.ReadParcelableDetector;
 import com.android.tools.lint.checks.RtlDetector;
 import com.android.tools.lint.checks.ScrollViewChildDetector;
 import com.android.tools.lint.checks.SecurityDetector;
@@ -461,17 +463,19 @@ public abstract class Reporter {
                         AccessibilityDetector.ISSUE,
                         AlwaysShowActionDetector.ISSUE,
                         AndroidAutoDetector.INVALID_USES_TAG_ISSUE,
-                        AndroidTvDetector.MISSING_LEANBACK_SUPPORT,
                         AndroidTvDetector.MISSING_BANNER,
+                        AndroidTvDetector.MISSING_LEANBACK_SUPPORT,
                         AndroidTvDetector.PERMISSION_IMPLIES_UNSUPPORTED_HARDWARE,
                         AndroidTvDetector.UNSUPPORTED_TV_HARDWARE,
                         AnnotationDetector.SWITCH_TYPE_DEF,
                         ApiDetector.INLINED,
+                        ApiDetector.OVERRIDE,
                         ApiDetector.UNSUPPORTED,
-                        AppIndexingApiDetector.ISSUE_URL_ERROR,
+                        ApiDetector.UNUSED,
+                        AppCompatCallDetector.ISSUE,
                         AppIndexingApiDetector.ISSUE_APP_INDEXING,
                         AppIndexingApiDetector.ISSUE_APP_INDEXING_API,
-                        AppCompatCallDetector.ISSUE,
+                        AppIndexingApiDetector.ISSUE_URL_ERROR,
                         ByteOrderMarkDetector.BOM,
                         CommentDetector.STOP_SHIP,
                         DetectMissingPrefix.MISSING_NAMESPACE,
@@ -479,6 +483,7 @@ public abstract class Reporter {
                         GradleDetector.COMPATIBILITY,
                         GradleDetector.DEPENDENCY,
                         GradleDetector.DEPRECATED,
+                        GradleDetector.NOT_INTERPOLATED,
                         GradleDetector.PLUS,
                         GradleDetector.REMOTE_VERSION,
                         GradleDetector.STRING_INTEGER,
@@ -497,10 +502,12 @@ public abstract class Reporter {
                         MissingIdDetector.ISSUE,
                         NamespaceDetector.RES_AUTO,
                         ObsoleteLayoutParamsDetector.ISSUE,
+                        ParcelDetector.ISSUE,
                         PropertyFileDetector.ESCAPE,
                         PropertyFileDetector.HTTP,
                         PxUsageDetector.DP_ISSUE,
                         PxUsageDetector.PX_ISSUE,
+                        ReadParcelableDetector.ISSUE,
                         RtlDetector.COMPAT,
                         ScrollViewChildDetector.ISSUE,
                         SecurityDetector.EXPORTED_SERVICE,
@@ -508,6 +515,7 @@ public abstract class Reporter {
                         SignatureOrSystemDetector.ISSUE,
                         SupportAnnotationDetector.CHECK_PERMISSION,
                         SupportAnnotationDetector.CHECK_RESULT,
+                        SupportAnnotationDetector.MISSING_PERMISSION,
                         TextFieldDetector.ISSUE,
                         TextViewDetector.SELECTABLE,
                         TitleDetector.ISSUE,

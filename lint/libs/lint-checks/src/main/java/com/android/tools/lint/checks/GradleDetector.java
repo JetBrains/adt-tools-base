@@ -107,7 +107,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
 
     /** Incompatible Android Gradle plugin */
     public static final Issue GRADLE_PLUGIN_COMPATIBILITY = Issue.create(
-            "AndroidGradlePluginVersion", //$NON-NLS-1$
+            "GradlePluginVersion", //$NON-NLS-1$
             "Incompatible Android Gradle Plugin",
             "Not all versions of the Android Gradle plugin are compatible with all versions " +
             "of the SDK. If you update your tools, or if you are trying to open a project that " +
