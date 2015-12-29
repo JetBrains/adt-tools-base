@@ -65,6 +65,7 @@ import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
@@ -424,12 +425,24 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
 
         EnumSet<ResourceType> types = getResourceTypes(context, argument);
 
-        if (types != null && types.contains(ResourceType.COLOR)) {
+        if (types != null && types.contains(ResourceType.COLOR)
+                && !isIgnoredInIde(COLOR_USAGE, context, argument)) {
             String message = String.format(
                     "Should pass resolved color instead of resource id here: " +
                             "`getResources().getColor(%1$s)`", argument.toString());
             context.report(COLOR_USAGE, argument, context.getLocation(argument), message);
         }
+    }
+
+    private static boolean isIgnoredInIde(@NonNull Issue issue, @NonNull JavaContext context,
+            @NonNull Node node) {
+        // Historically, the IDE would treat *all* support annotation warnings as
+        // handled by the id "ResourceType", so look for that id too for issues
+        // deliberately suppressed prior to Android Studio 2.0.
+        Issue synonym = Issue.create("ResourceType", issue.getBriefDescription(TextFormat.RAW),
+                issue.getExplanation(TextFormat.RAW), issue.getCategory(), issue.getPriority(),
+                issue.getDefaultSeverity(), issue.getImplementation());
+        return context.getDriver().isSuppressed(context, synonym, node);
     }
 
     private void checkPermission(
@@ -447,6 +460,9 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             // annotations in the surrounding context
             permissions  = addLocalPermissions(context, permissions, node);
             if (!requirement.isSatisfied(permissions)) {
+                if (isIgnoredInIde(MISSING_PERMISSION, context, node)) {
+                    return;
+                }
                 Operation operation;
                 String name;
                 if (result != null) {
@@ -511,7 +527,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 }
             }
 
-            if (!handlesMissingPermission) {
+            if (!handlesMissingPermission && !isIgnoredInIde(MISSING_PERMISSION, context, node)) {
                 String message = getUnhandledPermissionMessage();
                 context.report(MISSING_PERMISSION, node, context.getLocation(node), message);
             }
@@ -710,6 +726,10 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 issue = CHECK_PERMISSION;
             }
 
+            if (isIgnoredInIde(issue, context, node)) {
+                return;
+            }
+
             String message = String.format("The result of `%1$s` is not used",
                     methodName);
             if (suggested != null) {
@@ -729,7 +749,8 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             @NonNull ResolvedMethod method,
             @NonNull String annotation) {
         String threadContext = getThreadContext(context, node);
-        if (threadContext != null && !isCompatibleThread(threadContext, annotation)) {
+        if (threadContext != null && !isCompatibleThread(threadContext, annotation)
+                && !isIgnoredInIde(THREAD, context, node)) {
             String message = String.format("Method %1$s must be called from the `%2$s` thread, currently inferred thread is `%3$s` thread",
                     method.getName(), describeThread(annotation), describeThread(threadContext));
             context.report(THREAD, node, context.getLocation(node), message);
@@ -848,6 +869,10 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         } else if (actual != null && (!Sets.intersection(actual, expectedType).isEmpty()
                 || expectedType.contains(DRAWABLE)
                 && (actual.contains(COLOR) || actual.contains(MIPMAP)))) {
+            return;
+        }
+
+        if (isIgnoredInIde(RESOURCE_TYPE, context, argument)) {
             return;
         }
 
@@ -988,6 +1013,10 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 return;
             }
 
+            if (isIgnoredInIde(RANGE, context, argument)) {
+                return;
+            }
+
             context.report(RANGE, argument, context.getLocation(argument), message);
         }
     }
@@ -1059,7 +1088,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         boolean toInclusive = getBoolean(annotation, ATTR_TO_INCLUSIVE, true);
 
         String message = getFloatRangeError(value, from, to, fromInclusive, toInclusive, argument);
-        if (message != null) {
+        if (message != null && !isIgnoredInIde(RANGE, context, argument)) {
             context.report(RANGE, argument, context.getLocation(argument), message);
         }
     }
@@ -1172,7 +1201,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             unit = "size";
         }
         String message = getSizeError(actual, exact, min, max, multiple, unit);
-        if (message != null) {
+        if (message != null && !isIgnoredInIde(RANGE, context, argument)) {
             context.report(RANGE, argument, context.getLocation(argument), message);
         }
     }
@@ -1298,6 +1327,9 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 checkTypeDefConstant(context, annotation, expression.astOperand(), errorNode, true,
                         allAnnotations);
             } else if (operator == UnaryOperator.BINARY_NOT) {
+                if (isIgnoredInIde(TYPE_DEF, context, expression)) {
+                    return;
+                }
                 context.report(TYPE_DEF, expression, context.getLocation(expression),
                         "Flag not allowed here");
             } else if (operator == UnaryOperator.UNARY_MINUS) {
@@ -1324,6 +1356,9 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 if (operator == BinaryOperator.BITWISE_AND
                         || operator == BinaryOperator.BITWISE_OR
                         || operator == BinaryOperator.BITWISE_XOR) {
+                    if (isIgnoredInIde(TYPE_DEF, context, expression)) {
+                        return;
+                    }
                     context.report(TYPE_DEF, expression, context.getLocation(expression),
                             "Flag not allowed here");
                 }
@@ -1432,6 +1467,13 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     private static void reportTypeDef(@NonNull JavaContext context, @NonNull Node node,
             @Nullable Node errorNode, boolean flag, @NonNull Object[] allowedValues,
             @NonNull Iterable<ResolvedAnnotation> allAnnotations) {
+        if (errorNode == null) {
+            errorNode = node;
+        }
+        if (isIgnoredInIde(TYPE_DEF, context, errorNode)) {
+            return;
+        }
+
         String values = listAllowedValues(allowedValues);
         String message;
         if (flag) {
@@ -1450,9 +1492,6 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             }
         }
 
-        if (errorNode == null) {
-            errorNode = node;
-        }
         context.report(TYPE_DEF, errorNode, context.getLocation(errorNode), message);
     }
 
@@ -1467,6 +1506,9 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 if (node instanceof ResolvedField) {
                     ResolvedField field = (ResolvedField) node;
                     String containingClassName = field.getContainingClassName();
+                    if (containingClassName == null) {
+                        continue;
+                    }
                     containingClassName = containingClassName.substring(containingClassName.lastIndexOf('.') + 1);
                     s = containingClassName + "." + field.getName();
                 } else {
