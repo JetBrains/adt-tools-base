@@ -384,7 +384,7 @@ public class ApiDetector extends ResourceXmlDetector
                 }
                 context.report(UNSUPPORTED,
                         location,
-                        String.format("The SDK platform-tools version ((%1$s)) is too old "
+                        String.format("The SDK platform-tools version (%1$s) is too old "
                                         + " to check APIs compiled with API %2$d; please update",
                                 revision.toShortString(),
                                 compileSdkVersion));
