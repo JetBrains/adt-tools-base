@@ -38,7 +38,7 @@ public interface RepoPackage extends Comparable<RepoPackage> {
     /**
      * Gets the {@link TypeDetails} for this package.
      */
-    @Nullable
+    @NonNull
     TypeDetails getTypeDetails();
 
     /**

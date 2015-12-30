@@ -23,10 +23,12 @@ import com.android.repository.api.Dependency;
 import com.android.repository.api.License;
 import com.android.repository.api.LocalPackage;
 import com.android.repository.api.RemotePackage;
+import com.android.repository.api.RepoManager;
 import com.android.repository.api.RepoPackage;
 import com.android.repository.api.RepositorySource;
 import com.android.repository.impl.meta.Archive;
 import com.android.repository.impl.meta.CommonFactory;
+import com.android.repository.impl.meta.GenericFactory;
 import com.android.repository.impl.meta.TypeDetails;
 import com.google.common.base.Objects;
 import com.google.common.collect.ComparisonChain;
@@ -75,7 +77,7 @@ public class FakePackage implements LocalPackage, RemotePackage {
         mChannel = channel;
     }
 
-    @Nullable
+    @NonNull
     @Override
     public Channel getChannel() {
         return mChannel == null ? Channel.DEFAULT : mChannel;
@@ -85,10 +87,11 @@ public class FakePackage implements LocalPackage, RemotePackage {
         mDetails = details;
     }
 
-    @Nullable
+    @NonNull
     @Override
     public TypeDetails getTypeDetails() {
-        return mDetails;
+        return mDetails == null ? (TypeDetails) ((GenericFactory) RepoManager.getGenericModule()
+                .createLatestFactory()).createGenericDetailsType() : mDetails;
     }
 
     @NonNull
@@ -100,7 +103,7 @@ public class FakePackage implements LocalPackage, RemotePackage {
     @NonNull
     @Override
     public String getDisplayName() {
-        return null;
+        return "fake package";
     }
 
     @Nullable

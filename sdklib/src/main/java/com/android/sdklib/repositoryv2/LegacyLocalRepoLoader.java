@@ -111,6 +111,10 @@ public class LegacyLocalRepoLoader implements FallbackLocalRepoLoader {
         }
 
         info = mPkgs.get(dir);
+        if (info != null && info.getDesc().getType().equals(PkgType.PKG_SAMPLE)) {
+            // We don't want to include sample packages
+            return null;
+        }
         if (info == null) {
             Logger.getLogger(getClass().getName())
                     .warning(String.format("Ignoring unparsable legacy package found at: %s", dir));
@@ -140,7 +144,7 @@ public class LegacyLocalRepoLoader implements FallbackLocalRepoLoader {
         }
 
         @Override
-        @Nullable
+        @NonNull
         public TypeDetails getTypeDetails() {
             int layoutVersion = 0;
             if (mWrapped instanceof LocalPlatformPkgInfo) {

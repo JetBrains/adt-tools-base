@@ -16,7 +16,6 @@
 package com.android.sdklib.repositoryv2;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.repository.api.FallbackLocalRepoLoader;
 import com.android.repository.api.FallbackRemoteRepoLoader;
 import com.android.repository.api.ProgressIndicator;
@@ -26,7 +25,6 @@ import com.android.repository.api.SchemaModule;
 import com.android.repository.impl.meta.GenericFactory;
 import com.android.repository.impl.meta.TypeDetails;
 import com.android.sdklib.AndroidVersion;
-import com.android.sdklib.SdkManager.LayoutlibVersion;
 import com.android.sdklib.SdkVersionInfo;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgType;
@@ -46,7 +44,7 @@ public class LegacyRepoUtils {
     /**
      * Convert a {@link IPkgDesc} and other old-style information into a {@link TypeDetails}.
      */
-    @Nullable
+    @NonNull
     public static TypeDetails createTypeDetails(@NonNull IPkgDesc desc,
             int layoutLibVersion, ProgressIndicator progress) {
 
@@ -118,9 +116,6 @@ public class LegacyRepoUtils {
             assert androidVersion != null;
             details.setApiLevel(androidVersion.getApiLevel());
             return (TypeDetails) details;
-        } else if (desc.getType() == PkgType.PKG_SAMPLE) {
-            // Obsolete, ignore
-            return null;
         } else if (desc.getType() == PkgType.PKG_SOURCE) {
             DetailsTypes.SourceDetailsType details = repoFactory.createSourceDetailsType();
             assert androidVersion != null;
