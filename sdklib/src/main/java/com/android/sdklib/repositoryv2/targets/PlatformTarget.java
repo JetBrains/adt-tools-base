@@ -371,6 +371,11 @@ public class PlatformTarget implements IAndroidTarget {
         return mSkins.toArray(new File[mSkins.size()]);
     }
 
+    public int getLayoutlibApi() {
+        return mDetails.getLayoutlib().getApi();
+    }
+
+
     @Nullable
     @Override
     public File getDefaultSkin() {

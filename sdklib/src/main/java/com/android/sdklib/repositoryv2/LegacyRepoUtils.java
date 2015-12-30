@@ -48,7 +48,7 @@ public class LegacyRepoUtils {
      */
     @Nullable
     public static TypeDetails createTypeDetails(@NonNull IPkgDesc desc,
-            @Nullable LayoutlibVersion layoutLibVersion, ProgressIndicator progress) {
+            int layoutLibVersion, ProgressIndicator progress) {
 
         AndroidSdkHandler handler = AndroidSdkHandler.getInstance(null);
         SdkCommonFactory sdkFactory = (SdkCommonFactory) handler
@@ -70,12 +70,10 @@ public class LegacyRepoUtils {
             assert androidVersion != null;
             details.setApiLevel(androidVersion.getApiLevel());
             details.setCodename(androidVersion.getCodename());
-            if (layoutLibVersion != null) {
-                DetailsTypes.PlatformDetailsType.LayoutlibType layoutLib = repoFactory
-                        .createLayoutlibType();
-                layoutLib.setApi(layoutLibVersion.getApi());
-                details.setLayoutlib(layoutLib);
-            }
+            DetailsTypes.PlatformDetailsType.LayoutlibType layoutLib = repoFactory
+              .createLayoutlibType();
+            layoutLib.setApi(layoutLibVersion);
+            details.setLayoutlib(layoutLib);
             return (TypeDetails) details;
         } else if (desc.getType() == PkgType.PKG_SYS_IMAGE ||
                 desc.getType() == PkgType.PKG_ADDON_SYS_IMAGE) {
