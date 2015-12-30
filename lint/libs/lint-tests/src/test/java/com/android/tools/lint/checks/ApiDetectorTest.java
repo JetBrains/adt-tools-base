@@ -1974,6 +1974,25 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testSupportLibraryCalls() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/SupportLibraryApiTest.java:22: Error: Call requires API level 21 (current min is 14): android.widget.ImageButton#setBackgroundTintList [NewApi]\n"
+                + "        button.setBackgroundTintList(colors); // ERROR\n"
+                + "               ~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+                lintProject(
+                        copy("apicheck/minsdk14.xml", "AndroidManifest.xml"),
+                        copy("bytecode/SupportLibraryApiTest.java.txt",
+                                "src/test/pkg/SupportLibraryApiTest.java"),
+                        copy("bytecode/SupportLibraryApiTest.class.data",
+                                "bin/classes/test/pkg/SupportLibraryApiTest.class"),
+                        copy("bytecode/FloatingActionButton.java.txt",
+                                "src/android/support/design/widget/FloatingActionButton.java"),
+                        copy("bytecode/FloatingActionButton.class.data",
+                                "bin/classes/android/support/design/widget/FloatingActionButton.class")
+                ));
+    }
+
     @Override
     protected TestLintClient createClient() {
         if (getName().equals("testMissingApiDatabase")) {

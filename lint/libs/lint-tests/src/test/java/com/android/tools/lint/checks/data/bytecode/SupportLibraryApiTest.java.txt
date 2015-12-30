@@ -1,0 +1,24 @@
+package test.pkg;
+
+import android.content.Context;
+import android.content.res.ColorStateList;
+import android.support.design.widget.FloatingActionButton;
+import android.util.AttributeSet;
+import android.widget.ImageButton;
+
+public class SupportLibraryApiTest extends FloatingActionButton {
+    public SupportLibraryApiTest(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+        super(context, attrs, defStyleAttr, defStyleRes);
+    }
+
+    public void test1(ColorStateList colors) {
+        setBackgroundTintList(colors); // OK: FAB overrides ImageButton with lower minSDK
+        this.setBackgroundTintList(colors); // OK: FAB overrides ImageButton with lower minSDK
+    }
+
+    public void test2(FloatingActionButton fab, ImageButton button,
+                    ColorStateList colors) {
+        fab.setBackgroundTintList(colors); // OK: FAB overrides ImageButton with lower minSDK
+        button.setBackgroundTintList(colors); // ERROR
+    }
+}
