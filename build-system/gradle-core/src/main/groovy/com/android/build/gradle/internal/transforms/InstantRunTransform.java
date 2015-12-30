@@ -41,6 +41,7 @@ import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.api.transform.QualifiedContent.ContentType;
+import com.android.ide.common.util.UrlClassLoaderUtil;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.base.Throwables;
@@ -56,6 +57,7 @@ import org.objectweb.asm.Opcodes;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -242,6 +244,7 @@ public class InstantRunTransform extends Transform {
             wrapUpOutputs(classesTwoOutput, classesThreeOutput);
         } finally {
             Thread.currentThread().setContextClassLoader(currentClassLoader);
+            UrlClassLoaderUtil.attemptToClose(urlClassLoader);
             variantScope.getInstantRunBuildContext().stopRecording(
                     InstantRunBuildContext.TaskType.INSTANT_RUN_TRANSFORM);
         }
