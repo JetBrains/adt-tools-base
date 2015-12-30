@@ -216,15 +216,15 @@ public class ArchiveType
     }
 
     public boolean isValidHostOs(String value) {
-        return value.matches("^linux|macosx|windows$");
+        return ((value == null)||(value.matches("^linux|macosx|windows$")));
     }
 
     public boolean isValidHostBits(String value) {
-        return value.matches("^32|64$");
+        return ((value == null)||(value.matches("^32|64$")));
     }
 
     public boolean isValidJvmBits(String value) {
-        return value.matches("^32|64$");
+        return ((value == null)||(value.matches("^32|64$")));
     }
 
     public void setMinJvmVersion(com.android.repository.impl.meta.RevisionType value) {

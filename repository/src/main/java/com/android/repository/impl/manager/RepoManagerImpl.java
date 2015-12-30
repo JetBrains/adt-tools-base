@@ -19,7 +19,6 @@ package com.android.repository.impl.manager;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
-import com.android.annotations.concurrency.Immutable;
 import com.android.repository.api.Downloader;
 import com.android.repository.api.FallbackLocalRepoLoader;
 import com.android.repository.api.FallbackRemoteRepoLoader;
@@ -39,7 +38,6 @@ import com.android.repository.io.FileOp;
 import com.android.repository.io.impl.FileOpImpl;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import org.w3c.dom.ls.LSResourceResolver;
@@ -139,6 +137,7 @@ public class RepoManagerImpl extends RepoManager {
     public RepoManagerImpl(@Nullable FileOp fop) {
         mFop = fop;
         registerSchemaModule(getCommonModule());
+        registerSchemaModule(getGenericModule());
     }
 
     @Nullable
@@ -238,7 +237,8 @@ public class RepoManagerImpl extends RepoManager {
     public LSResourceResolver getResourceResolver(@NonNull  ProgressIndicator progress) {
         List<SchemaModule> allModules = ImmutableList.<SchemaModule>builder().addAll(
                 getSchemaModules()).add(
-                getCommonModule()).build();
+                getCommonModule()).add(
+                getGenericModule()).build();
         return SchemaModuleUtil.createResourceResolver(allModules, progress);
     }
 
@@ -458,7 +458,7 @@ public class RepoManagerImpl extends RepoManager {
                 if (!mSourceProviders.isEmpty() && mDownloader != null) {
                     RemoteRepoLoader remoteLoader = new RemoteRepoLoader(mSourceProviders,
                             getResourceResolver(indicator), mFallbackRemoteRepoLoader);
-                    Multimap<String, RemotePackage> remotes = remoteLoader
+                    Map<String, RemotePackage> remotes = remoteLoader
                             .fetchPackages(indicator, mDownloader, mSettings);
                     indicator.setText("Computing updates...");
                     indicator.setFraction(0.75);

@@ -16,17 +16,17 @@
 
 package com.android.sdklib.repositoryv2;
 
+import com.android.repository.Revision;
+import com.android.repository.api.ConstantSourceProvider;
+import com.android.repository.api.LocalPackage;
+import com.android.repository.api.RepoManager;
+import com.android.repository.api.RepoManager.RepoLoadedCallback;
+import com.android.repository.impl.manager.RepoManagerImpl;
+import com.android.repository.impl.meta.RepositoryPackages;
 import com.android.repository.testframework.FakeDownloader;
 import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.repository.testframework.FakeProgressRunner;
 import com.android.repository.testframework.FakeSettingsController;
-import com.android.repository.Revision;
-import com.android.repository.api.ConstantSourceProvider;
-import com.android.repository.api.LocalPackage;
-import com.android.repository.api.RepoManager.RepoLoadedCallback;
-import com.android.repository.api.RepoManager;
-import com.android.repository.impl.manager.RepoManagerImpl;
-import com.android.repository.impl.meta.RepositoryPackages;
 import com.android.repository.testframework.MockFileOp;
 import com.google.common.collect.ImmutableList;
 
@@ -46,14 +46,14 @@ import java.util.zip.ZipOutputStream;
 public class MavenInstallerTest extends TestCase {
 
     public void testInstallFirst() throws Exception {
+        File root = new File("/repo");
         MockFileOp fop = new MockFileOp();
-        AndroidSdkHandler androidSdkHandler = new AndroidSdkHandler(fop);
+        AndroidSdkHandler androidSdkHandler = new AndroidSdkHandler(root, fop);
         RepoManager mgr = new RepoManagerImpl(fop);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         mgr.registerSchemaModule(androidSdkHandler.getCommonModule(progress));
         mgr.registerSchemaModule(androidSdkHandler.getAddonModule(progress));
         progress.assertNoErrorsOrWarnings();
-        File root = new File("/repo");
         mgr.setLocalPath(root);
         FakeDownloader downloader = new FakeDownloader(fop);
         URL repoUrl = new URL("http://example.com/dummy.xml");
@@ -90,8 +90,7 @@ public class MavenInstallerTest extends TestCase {
 
         // Install
         new MavenInstaller().install(
-                pkgs.getRemotePackages().get("com;android;group1;artifact1;1.2.3").iterator()
-                        .next(),
+                pkgs.getRemotePackages().get("com;android;group1;artifact1;1.2.3"),
                 downloader, new FakeSettingsController(false), runner.getProgressIndicator(), mgr,
                 fop);
         runner.getProgressIndicator().assertNoErrorsOrWarnings();
@@ -147,13 +146,13 @@ public class MavenInstallerTest extends TestCase {
                         + "    <lastUpdated>20151006162600</lastUpdated>\n"
                         + "  </versioning>\n"
                         + "</metadata>\n");
-        AndroidSdkHandler androidSdkHandler = new AndroidSdkHandler(fop);
+        File root = new File("/repo");
+        AndroidSdkHandler androidSdkHandler = new AndroidSdkHandler(root, fop);
         RepoManager mgr = new RepoManagerImpl(fop);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         mgr.registerSchemaModule(androidSdkHandler.getCommonModule(progress));
         mgr.registerSchemaModule(androidSdkHandler.getAddonModule(progress));
         progress.assertNoErrorsOrWarnings();
-        File root = new File("/repo");
         mgr.setLocalPath(root);
         FakeDownloader downloader = new FakeDownloader(fop);
         URL repoUrl = new URL("http://example.com/dummy.xml");
@@ -191,8 +190,7 @@ public class MavenInstallerTest extends TestCase {
 
         // Install
         new MavenInstaller().install(
-                pkgs.getRemotePackages().get("com;android;group1;artifact1;1.2.3").iterator()
-                        .next(),
+                pkgs.getRemotePackages().get("com;android;group1;artifact1;1.2.3"),
                 downloader, new FakeSettingsController(false), runner.getProgressIndicator(), mgr,
                 fop);
         runner.getProgressIndicator().assertNoErrorsOrWarnings();
@@ -241,6 +239,12 @@ public class MavenInstallerTest extends TestCase {
                         + "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
                         + "\n"
                         + "    <localPackage path=\"com;example;groupId;artifactId;1.2.3\">\n"
+                        + "        <type-details xsi:type=\"repo:extraDetailsType\">\n"
+                        + "            <vendor>\n"
+                        + "                <id>cyclop</id>\n"
+                        + "                <display>The big bus</display>\n"
+                        + "            </vendor>\n"
+                        + "        </type-details>\n"
                         + "        <revision>\n"
                         + "            <major>3</major>\n"
                         + "        </revision>\n"
@@ -255,6 +259,12 @@ public class MavenInstallerTest extends TestCase {
                         + "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
                         + "\n"
                         + "    <localPackage path=\"com;example;groupId;artifactId;1.2.4\">\n"
+                        + "        <type-details xsi:type=\"repo:extraDetailsType\">\n"
+                        + "            <vendor>\n"
+                        + "                <id>cyclop</id>\n"
+                        + "                <display>The big bus</display>\n"
+                        + "            </vendor>\n"
+                        + "        </type-details>\n"
                         + "        <revision>\n"
                         + "            <major>3</major>\n"
                         + "        </revision>\n"
@@ -281,9 +291,10 @@ public class MavenInstallerTest extends TestCase {
                         + "  </versioning>\n"
                         + "</metadata>\n");
 
-        AndroidSdkHandler androidSdkHandler = new AndroidSdkHandler(fop);
+        File root = new File("/repo");
+        AndroidSdkHandler androidSdkHandler = new AndroidSdkHandler(root, fop);
         RepoManager mgr = new RepoManagerImpl(fop);
-        mgr.setLocalPath(new File("/repo"));
+        mgr.setLocalPath(root);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         mgr.registerSchemaModule(androidSdkHandler.getCommonModule(progress));
         mgr.registerSchemaModule(androidSdkHandler.getAddonModule(progress));

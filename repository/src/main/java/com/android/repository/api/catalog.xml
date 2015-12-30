@@ -27,6 +27,8 @@
          prefer="public">
     <public publicId="http://schemas.android.com/repository/android/common/01"
             uri="repo-common-01.xsd"/>
+    <public publicId="http://schemas.android.com/repository/android/generic/01"
+            uri="generic-01.xsd"/>
     <public publicId="http://schemas.android.com/repository/android/sites-common/1"
             uri="repo-sites-common-1.xsd"/>
 </catalog>

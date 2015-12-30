@@ -19,6 +19,7 @@ package com.android.repository.impl.meta;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.Revision;
+import com.android.repository.api.Channel;
 import com.android.repository.api.Dependency;
 import com.android.repository.api.License;
 import com.android.repository.api.LocalPackage;
@@ -89,7 +90,7 @@ public abstract class RepoPackageImpl implements RepoPackage {
     public void setLicense(@Nullable License l) {
         UsesLicense ul = null;
         if (l != null) {
-            ul = createFactory().createLicensesType();
+            ul = createFactory().createLicenseRefType();
             ul.setRef(l);
         }
         setUsesLicense(ul);
@@ -220,9 +221,9 @@ public abstract class RepoPackageImpl implements RepoPackage {
     @XmlTransient
     public abstract static class UsesLicense {
         @NonNull
-        public abstract Object getRef();
+        public abstract License getRef();
 
-        public void setRef(@NonNull Object ref) {
+        public void setRef(@NonNull License ref) {
             // Stub
         }
     }

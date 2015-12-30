@@ -18,11 +18,6 @@ package com.android.repository.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.google.common.collect.Sets;
-
-import java.util.Iterator;
-import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * Represents a (revisionless) package, either local, remote, or both. If both a local and remote
@@ -32,69 +27,54 @@ import java.util.TreeSet;
  */
 public class UpdatablePackage implements Comparable<UpdatablePackage> {
 
-    private LocalPackage mLocalInfo;
+    private LocalPackage mLocalPackage;
 
-    private TreeSet<RemotePackage> mRemoteInfos = Sets.newTreeSet();
+    private RemotePackage mRemotePackage;
 
-    public UpdatablePackage(@NonNull LocalPackage localInfo) {
-        init(localInfo, null);
+    public UpdatablePackage(@NonNull LocalPackage localPackage) {
+        init(localPackage, null);
     }
 
-    public UpdatablePackage(@NonNull RemotePackage remoteInfo) {
-        init(null, remoteInfo);
+    public UpdatablePackage(@NonNull RemotePackage remotePackage) {
+        init(null, remotePackage);
     }
 
-    public UpdatablePackage(@NonNull LocalPackage localInfo, @NonNull RemotePackage remoteInfo) {
-        init(localInfo, remoteInfo);
+    public UpdatablePackage(@NonNull LocalPackage localPackage,
+            @NonNull RemotePackage remotePackage) {
+        init(localPackage, remotePackage);
     }
 
     private void init(@Nullable LocalPackage localPkg, @Nullable RemotePackage remotePkg) {
         assert localPkg != null || remotePkg != null;
-        mLocalInfo = localPkg;
+        mLocalPackage = localPkg;
         if (remotePkg != null) {
-            addRemote(remotePkg);
+            setRemote(remotePkg);
         }
     }
 
     /**
-     * Adds the given remote package if this package doesn't already have a remote, or if the given
-     * remote is more recent. If it is a preview, it will be returned by {@link #getRemote(boolean)}
-     * only if it is specified that preview packages are desired.
-     *
-     * @param remote The remote package.
+     * Sets the remote package for this {@code UpdatablePackage}.
      */
-    public void addRemote(@NonNull RemotePackage remote) {
-        mRemoteInfos.add(remote);
+    public void setRemote(@NonNull RemotePackage remote) {
+        mRemotePackage = remote;
     }
 
     @Nullable
     public LocalPackage getLocal() {
-        return mLocalInfo;
+        return mLocalPackage;
     }
 
     @Nullable
-    public RemotePackage getRemote(boolean includePreview) {
-        Iterator<RemotePackage> iter = mRemoteInfos.descendingIterator();
-        while (iter.hasNext()) {
-            RemotePackage p = iter.next();
-            if (!p.getVersion().isPreview() || includePreview) {
-                return p;
-            }
-        }
-        return null;
+    public RemotePackage getRemote() {
+        return mRemotePackage;
     }
 
-    public boolean hasPreview() {
-        RemotePackage remote = getRemote(true);
-        return remote != null && remote.getVersion().isPreview();
-    }
-
-    public boolean hasRemote(boolean includePreview) {
-        return getRemote(includePreview) != null;
+    public boolean hasRemote() {
+        return getRemote() != null;
     }
 
     public boolean hasLocal() {
-        return mLocalInfo != null;
+        return mLocalPackage != null;
     }
 
     @Override
@@ -104,31 +84,21 @@ public class UpdatablePackage implements Comparable<UpdatablePackage> {
 
     /**
      * Gets a {@link RepoPackage} (either local or remote) corresponding to this updatable package.
-     * This will be the first of:
-     * <ol>
-     *     <li>The {@link LocalPackage} if the package is installed</li>
-     *     <li>The preview {@link RemotePackage} if there is a remote preview</li>
-     *     <li>The remote package otherwise.</li>
-     * </ol>
+     * This will be the local package if there is one, and the remote otherwise.
      */
     @NonNull
     public RepoPackage getRepresentative() {
         if (hasLocal()) {
-            return mLocalInfo;
+            return mLocalPackage;
         }
-        // getRemote(true) must be non-null if there's no local
+        // getRemote() must be non-null if there's no local
         //noinspection ConstantConditions
-        return getRemote(true);
+        return getRemote();
     }
 
-    public boolean isUpdate(boolean includePreview) {
-        RemotePackage remote = getRemote(includePreview);
-        return mLocalInfo != null && remote != null
-                && mLocalInfo.getVersion().compareTo(remote.getVersion()) < 0;
-    }
-
-    @NonNull
-    public Set<RemotePackage> getAllRemotes() {
-        return mRemoteInfos;
+    public boolean isUpdate() {
+        RemotePackage remote = getRemote();
+        return mLocalPackage != null && remote != null
+                && mLocalPackage.getVersion().compareTo(remote.getVersion()) < 0;
     }
 }

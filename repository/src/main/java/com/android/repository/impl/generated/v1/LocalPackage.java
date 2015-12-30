@@ -54,7 +54,7 @@ public class LocalPackage
     extends LocalPackageImpl
 {
 
-    @XmlElement(name = "type-details")
+    @XmlElement(name = "type-details", required = true)
     protected com.android.repository.impl.generated.v1.TypeDetails typeDetails;
     @XmlElement(required = true)
     protected com.android.repository.impl.generated.v1.RevisionType revision;
@@ -62,7 +62,7 @@ public class LocalPackage
     @XmlJavaTypeAdapter(TrimStringAdapter.class)
     protected String displayName;
     @XmlElement(name = "uses-license")
-    protected LicensesType usesLicense;
+    protected LicenseRefType usesLicense;
     protected DependenciesType dependencies;
     @XmlAttribute(name = "path", required = true)
     @XmlJavaTypeAdapter(CollapsedStringAdapter.class)
@@ -147,10 +147,10 @@ public class LocalPackage
      * 
      * @return
      *     possible object is
-     *     {@link LicensesType }
+     *     {@link LicenseRefType }
      *     
      */
-    public LicensesType getUsesLicense() {
+    public LicenseRefType getUsesLicense() {
         return usesLicense;
     }
 
@@ -159,10 +159,10 @@ public class LocalPackage
      * 
      * @param value
      *     allowed object is
-     *     {@link LicensesType }
+     *     {@link LicenseRefType }
      *     
      */
-    public void setUsesLicenseInternal(LicensesType value) {
+    public void setUsesLicenseInternal(LicenseRefType value) {
         this.usesLicense = value;
     }
 
@@ -247,7 +247,7 @@ public class LocalPackage
     }
 
     public void setUsesLicense(com.android.repository.impl.meta.RepoPackageImpl.UsesLicense value) {
-        setUsesLicenseInternal(((LicensesType) value));
+        setUsesLicenseInternal(((LicenseRefType) value));
     }
 
     public void setDependencies(com.android.repository.impl.meta.RepoPackageImpl.Dependencies value) {

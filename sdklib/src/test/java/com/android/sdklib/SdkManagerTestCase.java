@@ -129,8 +129,7 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
      */
     protected void createSdkAvdManagers() throws AndroidLocationException {
         mSdkManager = SdkManager.createManager(mFakeSdk.getAbsolutePath(), mLog);
-        mSdkHandler = new AndroidSdkHandler(new MockFileOp());
-        mSdkHandler.setLocation(mFakeSdk);
+        mSdkHandler = new AndroidSdkHandler(mFakeSdk, new MockFileOp());
         assertNotNull("SdkManager location was invalid", mSdkManager);
         // Note: it's safe to use the default AvdManager implementation since makeFakeAndroidHome
         // above overrides the ANDROID_HOME folder to use a temp folder; consequently all

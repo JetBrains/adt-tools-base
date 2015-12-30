@@ -22,7 +22,6 @@ import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.repository.Revision;
-import com.android.repository.api.ConsoleProgressIndicator;
 import com.android.repository.api.License;
 import com.android.repository.api.RepoManager;
 import com.android.repository.impl.meta.CommonFactory;
@@ -41,7 +40,6 @@ import com.android.sdklib.repository.SdkAddonConstants;
 import com.android.sdklib.repository.SdkRepoConstants;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDesc;
-import com.android.sdklib.repositoryv2.AndroidSdkHandler;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.w3c.dom.Node;
@@ -163,9 +161,7 @@ public abstract class Package implements IDescription, IListDescription, Compara
 
         license = getProperty(props, PkgProps.PKG_LICENSE, license);
         if (license != null) {
-            AndroidSdkHandler handler = AndroidSdkHandler.getInstance();
-            RepoManager sdkManager = handler.getSdkManager(new ConsoleProgressIndicator());
-            CommonFactory f = (CommonFactory) sdkManager.getCommonModule().createLatestFactory();
+            CommonFactory f = (CommonFactory) RepoManager.getCommonModule().createLatestFactory();
             mLicense = f
                     .createLicenseType(license, getProperty(props, PkgProps.PKG_LICENSE_REF, null));
         }
@@ -320,9 +316,8 @@ public abstract class Package implements IDescription, IListDescription, Compara
             Node ref = usesLicense.getAttributes().getNamedItem(SdkRepoConstants.ATTR_REF);
             if (ref != null) {
                 String licenseRef = ref.getNodeValue();
-                AndroidSdkHandler handler = AndroidSdkHandler.getInstance();
-                RepoManager sdkManager = handler.getSdkManager(new ConsoleProgressIndicator());
-                CommonFactory f = (CommonFactory) sdkManager.getCommonModule().createLatestFactory();
+                CommonFactory f = (CommonFactory) RepoManager.getCommonModule()
+                        .createLatestFactory();
                 return f.createLicenseType(licenses.get(licenseRef), licenseRef);
             }
         }

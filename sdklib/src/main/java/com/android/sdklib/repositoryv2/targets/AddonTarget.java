@@ -353,7 +353,7 @@ public class AddonTarget implements IAndroidTarget {
         Table<IdDisplay, String, ISystemImage> result = HashBasedTable.create();
         for (ISystemImage img : imgMgr
                 .lookup(mDetails.getTag(), DetailsTypes.getAndroidVersion(mDetails),
-                        mDetails.getVendor(), progress)) {
+                        mDetails.getVendor())) {
             result.put(img.getTag(), img.getAbiType(), img);
         }
 

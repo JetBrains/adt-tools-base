@@ -44,4 +44,7 @@ public abstract class TypeDetails {
      */
     @NonNull
     public abstract ElementFactory<Repository> createFactory();
+
+    @XmlTransient
+    public interface GenericType {}
 }

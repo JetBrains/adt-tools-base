@@ -18,9 +18,17 @@ package com.android.repository.testframework;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.Revision;
-import com.android.repository.api.*;
+import com.android.repository.api.Channel;
+import com.android.repository.api.Dependency;
+import com.android.repository.api.License;
+import com.android.repository.api.LocalPackage;
+import com.android.repository.api.RemotePackage;
+import com.android.repository.api.RepoManager;
+import com.android.repository.api.RepoPackage;
+import com.android.repository.api.RepositorySource;
 import com.android.repository.impl.meta.Archive;
 import com.android.repository.impl.meta.CommonFactory;
+import com.android.repository.impl.meta.RemotePackageImpl;
 import com.android.repository.impl.meta.TypeDetails;
 import com.google.common.collect.ImmutableList;
 
@@ -39,6 +47,7 @@ public class FakePackage implements LocalPackage, RemotePackage {
     private final Revision mVersion;
     private final Collection<Dependency> mDependencies;
     private TypeDetails mDetails;
+    private Channel mChannel;
 
     public FakePackage(String path, Revision version, Collection<Dependency> dependencies) {
         mPath = path;
@@ -60,6 +69,16 @@ public class FakePackage implements LocalPackage, RemotePackage {
     @Override
     public Archive getArchive() {
         return null;
+    }
+
+    public void setChannel(Channel channel) {
+        mChannel = channel;
+    }
+
+    @Nullable
+    @Override
+    public Channel getChannel() {
+        return mChannel == null ? Channel.DEFAULT : mChannel;
     }
 
     public void setTypeDetails(TypeDetails details) {

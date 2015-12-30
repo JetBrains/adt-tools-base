@@ -32,6 +32,7 @@ import com.android.repository.impl.installer.PackageInstaller;
 import com.android.repository.impl.manager.LocalRepoLoader;
 import com.android.repository.impl.meta.Archive;
 import com.android.repository.impl.meta.CommonFactory;
+import com.android.repository.impl.meta.GenericFactory;
 import com.android.repository.impl.meta.LocalPackageImpl;
 import com.android.repository.impl.meta.RepositoryPackages;
 import com.android.repository.impl.meta.RevisionType;
@@ -177,7 +178,8 @@ public class InstallerUtil {
             element = typeDetails.createFactory().generateElement(repo);
         } else {
             // Otherwise create a generic repo.
-            element = factory.generateElement(repo);
+            element = ((GenericFactory) manager.getGenericModule().createLatestFactory())
+                    .generateElement(repo);
         }
         try {
             SchemaModuleUtil
@@ -249,7 +251,7 @@ public class InstallerUtil {
         Queue<RemotePackage> current = Lists.newLinkedList();
         for (RemotePackage request : requests) {
             UpdatablePackage updatable = consolidatedPackages.get(request.getPath());
-            if (!updatable.hasLocal() || updatable.isUpdate(true)) {
+            if (!updatable.hasLocal() || updatable.isUpdate()) {
                 current.add(request);
                 roots.add(request);
                 requiredPackages.add(request);
@@ -286,8 +288,7 @@ public class InstallerUtil {
                                 requiredMinRevision.compareTo(localDependency.getVersion()) <= 0)) {
                     continue;
                 }
-                // TODO: channels
-                RemotePackage remoteDependency = updatableDependency.getRemote(true);
+                RemotePackage remoteDependency = updatableDependency.getRemote();
                 if (remoteDependency == null || (requiredMinRevision != null
                         && requiredMinRevision.compareTo(remoteDependency.getVersion()) > 0)) {
                     logger.logWarning(String
@@ -314,7 +315,7 @@ public class InstallerUtil {
             for (Dependency d : root.getAllDependencies()) {
                 Collection<Dependency> nodeDeps = allDependencies.get(d.getPath());
                 if (nodeDeps.size() == 1) {
-                    roots.add(consolidatedPackages.get(d.getPath()).getRemote(true));
+                    roots.add(consolidatedPackages.get(d.getPath()).getRemote());
                 }
                 nodeDeps.remove(d);
             }

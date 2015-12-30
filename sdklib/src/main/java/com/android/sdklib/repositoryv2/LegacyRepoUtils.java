@@ -23,6 +23,7 @@ import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RepoManager;
 import com.android.repository.api.RepoPackage;
 import com.android.repository.api.SchemaModule;
+import com.android.repository.impl.meta.GenericFactory;
 import com.android.repository.impl.meta.TypeDetails;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.SdkManager.LayoutlibVersion;
@@ -49,7 +50,7 @@ public class LegacyRepoUtils {
     public static TypeDetails createTypeDetails(@NonNull IPkgDesc desc,
             @Nullable LayoutlibVersion layoutLibVersion, ProgressIndicator progress) {
 
-        AndroidSdkHandler handler = AndroidSdkHandler.getInstance();
+        AndroidSdkHandler handler = AndroidSdkHandler.getInstance(null);
         SdkCommonFactory sdkFactory = (SdkCommonFactory) handler
                 .getCommonModule(progress).createLatestFactory();
         SchemaModule repoExt = handler.getRepositoryModule(progress);
@@ -58,6 +59,8 @@ public class LegacyRepoUtils {
         RepoFactory repoFactory = (RepoFactory) repoExt.createLatestFactory();
         AddonFactory addonFactory = (AddonFactory) addonExt.createLatestFactory();
         SysImgFactory sysImgFactory = (SysImgFactory) sysImgExt.createLatestFactory();
+        GenericFactory genericFactory = (GenericFactory) RepoManager.getGenericModule()
+                .createLatestFactory();
 
         AndroidVersion androidVersion = desc.getAndroidVersion();
 
@@ -136,7 +139,7 @@ public class LegacyRepoUtils {
             }
             return (TypeDetails) details;
         } else {
-            return null;
+            return (TypeDetails) genericFactory.createGenericDetailsType();
         }
     }
 

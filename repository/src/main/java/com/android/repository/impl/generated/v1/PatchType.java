@@ -155,7 +155,7 @@ public class PatchType
     }
 
     public boolean isValidChecksum(String value) {
-        return value.matches("^([0-9a-fA-F]){40}$");
+        return ((value != null)&&(value.matches("^([0-9a-fA-F]){40}$")));
     }
 
     public void setBasedOn(com.android.repository.impl.meta.RevisionType value) {

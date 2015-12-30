@@ -20,8 +20,8 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.repository.Revision;
+import com.android.repository.api.Channel;
 import com.android.repository.api.Dependency;
-import com.android.repository.api.ElementFactory;
 import com.android.repository.api.License;
 import com.android.repository.api.Repository;
 
@@ -34,7 +34,7 @@ import com.android.repository.api.Repository;
  * needed outside the repository framework.
  */
 @SuppressWarnings("MethodMayBeStatic")
-public abstract class CommonFactory extends ElementFactory<Repository> {
+public abstract class CommonFactory {
     @NonNull
     public abstract Repository createRepositoryType();
 
@@ -48,7 +48,23 @@ public abstract class CommonFactory extends ElementFactory<Repository> {
     public abstract LocalPackageImpl createLocalPackage();
 
     @NonNull
+    public abstract RemotePackageImpl createRemotePackage();
+
+    @NonNull
     protected abstract RevisionType createRevisionType();
+
+    @NonNull
+    public abstract Channel createChannelType();
+
+    /**
+     * Convenience method to create a {@link Channel} with the given numeric id.
+     */
+    @NonNull
+    public Channel createChannelType(int id) {
+        Channel res = createChannelType();
+        res.setId("channel-" + id);
+        return res;
+    }
 
     /**
      * Creates a {@link RevisionType} from the specified {@link Revision}.
@@ -71,7 +87,7 @@ public abstract class CommonFactory extends ElementFactory<Repository> {
     }
 
     @NonNull
-    public abstract RepoPackageImpl.UsesLicense createLicensesType();
+    public abstract RepoPackageImpl.UsesLicense createLicenseRefType();
 
     /**
      * Convenience method to create a license with the given id and value.
@@ -111,4 +127,6 @@ public abstract class CommonFactory extends ElementFactory<Repository> {
 
     @NonNull
     protected abstract Archive.PatchType createPatchType();
+
+    public abstract RemotePackageImpl.ChannelRef createChannelRefType();
 }

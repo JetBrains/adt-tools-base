@@ -33,12 +33,9 @@ import com.google.common.io.ByteStreams;
 
 import junit.framework.TestCase;
 
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
 import java.net.URL;
 import java.util.Map;
 import java.util.zip.ZipEntry;
@@ -115,7 +112,7 @@ public class BasicInstallerTest extends TestCase {
 
         // Register a source provider to get the repo
         mgr.registerSourceProvider(new ConstantSourceProvider(repoUrl.toString(), "dummy",
-                ImmutableList.of(mgr.getCommonModule())));
+                ImmutableList.of(mgr.getGenericModule())));
         FakeProgressRunner runner = new FakeProgressRunner();
 
         // Load
@@ -131,7 +128,7 @@ public class BasicInstallerTest extends TestCase {
         assertEquals(2, pkgs.getRemotePackages().size());
 
         // Install one of the packages.
-        new BasicInstaller().install(pkgs.getRemotePackages().get("dummy;bar").iterator().next(),
+        new BasicInstaller().install(pkgs.getRemotePackages().get("dummy;bar"),
                 downloader, new FakeSettingsController(false), runner.getProgressIndicator(), mgr,
                 fop);
         runner.getProgressIndicator().assertNoErrorsOrWarnings();
@@ -189,7 +186,7 @@ public class BasicInstallerTest extends TestCase {
 
         // Register the source provider
         mgr.registerSourceProvider(new ConstantSourceProvider(repoUrl.toString(), "dummy",
-                ImmutableList.of(RepoManager.getCommonModule())));
+                ImmutableList.of(RepoManager.getGenericModule())));
         FakeProgressRunner runner = new FakeProgressRunner();
 
         // Load
@@ -206,7 +203,7 @@ public class BasicInstallerTest extends TestCase {
         assertEquals(new Revision(3), oldPkg.getVersion());
 
         // Ensure the new package is found with the right version
-        RemotePackage update = pkgs.getRemotePackages().get("dummy;bar").iterator().next();
+        RemotePackage update = pkgs.getRemotePackages().get("dummy;bar");
         assertEquals(new Revision(4, 5, 6), update.getVersion());
 
         // Install the update

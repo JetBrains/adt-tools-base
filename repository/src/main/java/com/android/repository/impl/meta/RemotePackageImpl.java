@@ -18,6 +18,7 @@ package com.android.repository.impl.meta;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.repository.api.Channel;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.Repository;
 import com.android.repository.api.RepositorySource;
@@ -72,4 +73,19 @@ public abstract class RemotePackageImpl extends RepoPackageImpl implements Remot
         return mSource;
     }
 
+    protected abstract ChannelRef getChannelRef();
+
+    @NonNull
+    @Override
+    public Channel getChannel() {
+        return getChannelRef() == null ? Channel.DEFAULT : getChannelRef().getRef();
+    }
+
+    @XmlTransient
+    public abstract static class ChannelRef {
+        @NonNull
+        public abstract Channel getRef();
+
+        public abstract void setRef(@NonNull Channel channel);
+    }
 }

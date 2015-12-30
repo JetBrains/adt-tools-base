@@ -6,6 +6,7 @@ import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlType;
+import com.android.repository.api.Channel;
 import com.android.repository.api.License;
 import com.android.repository.api.Repository;
 import com.android.repository.impl.meta.LocalPackageImpl;
@@ -31,6 +32,7 @@ import com.android.repository.impl.meta.RemotePackageImpl;
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType"&gt;
  *       &lt;sequence&gt;
  *         &lt;element name="license" type="{http://schemas.android.com/repository/android/common/01}licenseType" maxOccurs="unbounded" minOccurs="0"/&gt;
+ *         &lt;element name="channel" type="{http://schemas.android.com/repository/android/common/01}channelType" maxOccurs="unbounded" minOccurs="0"/&gt;
  *         &lt;choice&gt;
  *           &lt;element name="remotePackage" type="{http://schemas.android.com/repository/android/common/01}remotePackage" maxOccurs="unbounded" minOccurs="0"/&gt;
  *           &lt;element name="localPackage" type="{http://schemas.android.com/repository/android/common/01}localPackage" minOccurs="0"/&gt;
@@ -46,6 +48,7 @@ import com.android.repository.impl.meta.RemotePackageImpl;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "repositoryType", propOrder = {
     "license",
+    "channel",
     "remotePackage",
     "localPackage"
 })
@@ -58,6 +61,7 @@ public class RepositoryType
 {
 
     protected List<LicenseType> license;
+    protected List<ChannelType> channel;
     protected List<RemotePackage> remotePackage;
     protected LocalPackage localPackage;
 
@@ -88,6 +92,35 @@ public class RepositoryType
             license = new ArrayList<LicenseType>();
         }
         return this.license;
+    }
+
+    /**
+     * Gets the value of the channel property.
+     * 
+     * <p>
+     * This accessor method returns a reference to the live list,
+     * not a snapshot. Therefore any modification you make to the
+     * returned list will be present inside the JAXB object.
+     * This is why there is not a <CODE>set</CODE> method for the channel property.
+     * 
+     * <p>
+     * For example, to add a new item, do as follows:
+     * <pre>
+     *    getChannel().add(newItem);
+     * </pre>
+     * 
+     * 
+     * <p>
+     * Objects of the following type(s) are allowed in the list
+     * {@link ChannelType }
+     * 
+     * 
+     */
+    public List<ChannelType> getChannelInternal() {
+        if (channel == null) {
+            channel = new ArrayList<ChannelType>();
+        }
+        return this.channel;
     }
 
     /**
@@ -145,6 +178,10 @@ public class RepositoryType
 
     public List<License> getLicense() {
         return ((List) getLicenseInternal());
+    }
+
+    public List<Channel> getChannel() {
+        return ((List) getChannelInternal());
     }
 
     public List<RemotePackageImpl> getRemotePackage() {

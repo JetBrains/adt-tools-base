@@ -48,8 +48,7 @@ public class AndroidTargetManagerTest extends TestCase {
         recordSysImg13(fop);
         recordGoogleApisSysImg23(fop);
 
-        AndroidSdkHandler handler = new AndroidSdkHandler(fop);
-        handler.setLocation(new File("/sdk"));
+        AndroidSdkHandler handler = new AndroidSdkHandler(new File("/sdk"), fop);
         FakeProgressIndicator progress = new FakeProgressIndicator();
 
         AndroidTargetManager mgr = handler.getAndroidTargetManager(progress);
@@ -74,8 +73,7 @@ public class AndroidTargetManagerTest extends TestCase {
         recordSysImg13(fop);
         recordGoogleApisSysImg23(fop);
 
-        AndroidSdkHandler handler = new AndroidSdkHandler(fop);
-        handler.setLocation(new File("/sdk"));
+        AndroidSdkHandler handler = new AndroidSdkHandler(new File("/sdk"), fop);
         FakeProgressIndicator progress = new FakeProgressIndicator();
 
         AndroidTargetManager mgr = handler.getAndroidTargetManager(progress);
@@ -225,10 +223,12 @@ public class AndroidTargetManagerTest extends TestCase {
                         + "<ns2:sdk-repository "
                         + "xmlns:ns2=\"http://schemas.android.com/sdk/android/repo/repository2/01\" "
                         + "xmlns:ns3=\"http://schemas.android.com/sdk/android/repo/sys-img2/01\" "
-                        + "xmlns:ns4=\"http://schemas.android.com/repository/android/common/01\" "
+                        + "xmlns:ns4=\"http://schemas.android.com/repository/android/generic/01\" "
                         + "xmlns:ns5=\"http://schemas.android.com/sdk/android/repo/addon2/01\">"
                         + "<license id=\"license-19E6313A\" type=\"text\">License text\n"
                         + "</license><localPackage path=\"build-tools;23.0.2\" obsolete=\"false\">"
+                        + "<type-details xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
+                        + "xsi:type=\"ns4:genericDetailsType\"/>"
                         + "<revision><major>23</major><minor>0</minor><micro>2</micro></revision>"
                         + "<display-name>Android SDK Build-Tools 23.0.2</display-name>"
                         + "<uses-license ref=\"license-19E6313A\"/></localPackage>"
