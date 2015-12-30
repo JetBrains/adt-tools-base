@@ -259,6 +259,14 @@ public final class DetailsTypes {
     }
 
     /**
+     * Gets the path/unique id for the LLDB of the given {@link Revision}.
+     */
+    public static String getLldbPath(Revision revision) {
+        return SdkConstants.FD_LLDB + RepoPackage.PATH_SEPARATOR + revision.getMajor() + "."
+                + revision.getMinor();
+    }
+
+    /**
      * Gets the default path/unique id for the given addon
      *
      * TODO: move this into AddonDetailsType when we support java 8
@@ -280,7 +288,8 @@ public final class DetailsTypes {
      *
      * TODO: move this into SysImgDetailsType when we support java 8
      */
-    public static String getSysImgPath(IdDisplay vendorGoogle, AndroidVersion version, IdDisplay name, String abi) {
+    public static String getSysImgPath(IdDisplay vendor, AndroidVersion version, IdDisplay name,
+            String abi) {
         return new StringBuilder()
                 .append(SdkConstants.FD_SYSTEM_IMAGES)
                 .append(RepoPackage.PATH_SEPARATOR)

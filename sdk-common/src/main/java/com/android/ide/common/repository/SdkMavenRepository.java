@@ -108,11 +108,14 @@ public enum SdkMavenRepository {
         if (sdkHandler != null) {
             ProgressIndicator progress = new ConsoleProgressIndicator();
             RepoManager mgr = sdkHandler.getSdkManager(progress);
-            String path = String.format("extras;%s;%s", mDir, FD_M2_REPOSITORY);
-            return mgr.getPackages().getLocalPackages().containsKey(path);
+            return mgr.getPackages().getLocalPackages().containsKey(getPackageId());
         }
 
         return false;
+    }
+
+    public String getPackageId() {
+        return String.format("extras;%s;%s", mDir, FD_M2_REPOSITORY);
     }
 
     /**
@@ -244,13 +247,5 @@ public enum SdkMavenRepository {
     @NonNull
     public String getDirName() {
         return mDir;
-    }
-
-    /**
-     * @return SDK package description for this repository
-     */
-    public IPkgDesc getPackageDescription() {
-        return PkgDesc.Builder.newExtra(new IdDisplay(mDir, ""), FD_M2_REPOSITORY, myDisplayName,
-                                        null, new Revision(1)).create();
     }
 }
