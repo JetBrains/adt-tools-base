@@ -121,7 +121,7 @@ public class RecyclerViewDetector extends Detector implements Detector.JavaScann
         if (!iterator.hasNext()) {
             return;
         }
-        iterator.next();
+        VariableDefinition viewHolder = iterator.next();
         if (!iterator.hasNext()) {
             return;
         }
@@ -133,18 +133,27 @@ public class RecyclerViewDetector extends Detector implements Detector.JavaScann
                     (ResolvedVariable) reference);
             declaration.accept(visitor);
             if (visitor.variableEscapes()) {
-                // Get children of type
-                String message = "Do not treat position as fixed; only use immediately and call "
-                        + "`getAdapterPosition()` to look it up later";
-                context.report(ISSUE, parameter, context.getLocation(parameter),
-                        message);
+                reportError(context, viewHolder, parameter);
             }
         } else if (parameter.astModifiers().isFinal()) {
-            String message = "Do not treat position as fixed; only use immediately and call "
-                    + "`getAdapterPosition()` to look it up later";
-            context.report(ISSUE, parameter, context.getLocation(parameter),
-                    message);
+            reportError(context, viewHolder, parameter);
         }
+    }
+
+    private static void reportError(@NonNull JavaContext context, VariableDefinition viewHolder,
+            VariableDefinition parameter) {
+        String variablePrefix;
+        VariableDefinitionEntry first = viewHolder.astVariables().first();
+        if (first != null) {
+            variablePrefix = first.astName().astValue();
+        } else {
+            variablePrefix = "ViewHolder";
+        }
+        String message = String.format("Do not treat position as fixed; only use immediately "
+                + "and call `%1$s.getAdapterPosition()` to look it up later",
+                variablePrefix);
+        context.report(ISSUE, parameter, context.getLocation(parameter),
+                message);
     }
 
     /**
