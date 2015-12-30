@@ -290,6 +290,10 @@ public class JavaVisitor {
                 // Attempting to access PSI during startup before indices are ready; ignore these.
                 // See http://b.android.com/176644 for an example.
                 return;
+            } else if (e.getClass().getSimpleName().equals("ProcessCanceledException")) {
+                // Cancelling inspections in the IDE
+                context.getDriver().cancel();
+                return;
             }
 
             // Work around ECJ bugs; see https://code.google.com/p/android/issues/detail?id=172268
