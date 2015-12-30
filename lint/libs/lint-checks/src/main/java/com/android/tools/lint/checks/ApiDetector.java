@@ -989,7 +989,7 @@ public class ApiDetector extends ResourceXmlDetector
                             // so no need to keep checking up the chain
                             // -- unless it's the support library which is also in
                             // the android/ namespace:
-                            if (owner.startsWith("android/support/")) { //$NON-NLS-1$
+                            if (owner.startsWith("android/support/") && api == -1) { //$NON-NLS-1$
                                 owner = context.getDriver().getSuperClass(owner);
                             } else {
                                 owner = null;

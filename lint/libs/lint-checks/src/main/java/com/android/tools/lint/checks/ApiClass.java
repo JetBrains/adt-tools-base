@@ -267,7 +267,7 @@ public class ApiClass implements Comparable<ApiClass> {
         }
 
         Integer i = mMethods.get(name);
-        assert i == null;
+        assert i == null || i == since : i;
         mMethods.put(name, since);
         if (deprecatedIn > 0) {
             mDeprecatedMembersIn.put(name, deprecatedIn);
