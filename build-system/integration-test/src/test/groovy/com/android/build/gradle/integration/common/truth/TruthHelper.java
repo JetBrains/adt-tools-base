@@ -46,7 +46,7 @@ import com.google.common.truth.MapSubject;
 import com.google.common.truth.MultimapSubject;
 import com.google.common.truth.MultisetSubject;
 import com.google.common.truth.ObjectArraySubject;
-import com.google.common.truth.OptionalSubject;
+import com.google.common.truth.GuavaOptionalSubject;
 import com.google.common.truth.PrimitiveBooleanArraySubject;
 import com.google.common.truth.PrimitiveByteArraySubject;
 import com.google.common.truth.PrimitiveCharArraySubject;
@@ -67,6 +67,8 @@ import java.util.Map;
 
 /**
  * Helper for custom Truth factories.
+ *
+ * TODO: Remove methods that should be imported directly by statically importing Truth.assertThat
  */
 public class TruthHelper {
     @NonNull
@@ -204,7 +206,7 @@ public class TruthHelper {
         return assert_().that(target);
     }
 
-    public static <T> OptionalSubject<T> assertThat(@Nullable Optional<T> target) {
+    public static <T> GuavaOptionalSubject assertThat(@Nullable Optional<T> target) {
         return assert_().that(target);
     }
 

@@ -13,7 +13,7 @@ dependencies {
     testCompile project(':base:sdk-common')
     testCompile project(':base:lint')
 
-    testCompile 'com.google.truth:truth:0.26'
+    testCompile 'com.google.truth:truth:0.28'
     testCompile 'org.jacoco:org.jacoco.agent:0.7.4.201502262128'
 
     // Add dependency on plugin code.  Exclude transitive dependencies to avoid conflict due to
