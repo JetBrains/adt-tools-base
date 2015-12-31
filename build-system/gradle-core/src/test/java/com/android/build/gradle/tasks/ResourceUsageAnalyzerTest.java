@@ -31,7 +31,6 @@ import com.google.common.io.Files;
 
 import junit.framework.TestCase;
 
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -43,8 +42,6 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
-
-import javax.imageio.ImageIO;
 
 /** TODO: Test Resources#getIdentifier() handling */
 @SuppressWarnings("SpellCheckingInspection")
@@ -94,6 +91,7 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                 + "@drawable/ic_launcher : reachable=true\n"
                 + "@drawable/unused : reachable=false\n"
                 + "@id/action_settings : reachable=true\n"
+                + "@id/action_settings2 : reachable=false\n"
                 + "@layout/activity_main : reachable=true\n"
                 + "    @dimen/activity_vertical_margin\n"
                 + "    @dimen/activity_horizontal_margin\n"
@@ -108,6 +106,7 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                 + "@raw/my_used_raw_drawable : reachable=true\n"
                 + "@raw/styles2 : reachable=false\n"
                 + "@string/action_settings : reachable=true\n"
+                + "@string/action_settings2 : reachable=false\n"
                 + "@string/alias : reachable=false\n"
                 + "    @string/app_name\n"
                 + "@string/app_name : reachable=true\n"
@@ -214,6 +213,7 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                     + "res/layout/activity_main.xml\n"
                     + "res/menu\n"
                     + "res/menu/main.xml\n"
+                    + "res/menu/menu2.xml\n"
                     + "res/raw\n"
                     + "res/raw/android_wear_micro_apk.apk\n"
                     + "res/raw/index1.html\n"
@@ -245,6 +245,7 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                     + "res/layout/activity_main.xml\n"
                     + "res/menu\n"
                     + "res/menu/main.xml\n"
+                    + "res/menu/menu2.xml\n"
                     + "res/raw\n"
                     + "res/raw/android_wear_micro_apk.apk\n"
                     + (REPLACE_DELETED_WITH_EMPTY ? "res/raw/index1.html\n" : "")
@@ -365,6 +366,16 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                 + "        android:showAsAction=\"never\" />\n"
                 + "</menu>");
 
+        createFile(resources, "menu/menu2.xml", ""
+                + "<menu xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    tools:context=\".MainActivity\" >\n"
+                + "    <item android:id=\"@+id/action_settings2\"\n"
+                + "        android:title=\"@string/action_settings2\"\n"
+                + "        android:orderInCategory=\"100\"\n"
+                + "        android:showAsAction=\"never\" />\n"
+                + "</menu>");
+
         createFile(resources, "values/values.xml", ""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                 + "<resources>\n"
@@ -376,6 +387,7 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                 + "    <dimen name=\"activity_vertical_margin\">16dp</dimen>\n"
                 + "\n"
                 + "    <string name=\"action_settings\">Settings</string>\n"
+                + "    <string name=\"action_settings2\">Settings2</string>\n"
                 + "    <string name=\"alias\"> @string/app_name </string>\n"
                 + "    <string name=\"app_name\">ShrinkUnitTest</string>\n"
                 + "    <string name=\"hello_world\">Hello world!</string>\n"
@@ -580,6 +592,7 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                 + "    }\n"
                 + "    public static final class id {\n"
                 + "        public static final int action_settings=0x7f080000;\n"
+                + "        public static final int action_settings2=0x7f080001;\n"
                 + "    }\n"
                 + "    public static final class layout {\n"
                 + "        public static final int activity_main=0x7f030000;\n"
@@ -596,6 +609,7 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                 + "    }"
                 + "    public static final class string {\n"
                 + "        public static final int action_settings=0x7f050000;\n"
+                + "        public static final int action_settings2=0x7f050004;\n"
                 + "        public static final int alias=0x7f050001;\n"
                 + "        public static final int app_name=0x7f050002;\n"
                 + "        public static final int hello_world=0x7f050003;\n"
@@ -1052,10 +1066,13 @@ public class ResourceUsageAnalyzerTest extends TestCase {
     }
 
     public void testIsResourceClass() {
-        assertTrue(ResourceUsageAnalyzer.isResourceClass("android/support/v7/appcompat/R$attr.class"));
-        assertTrue(ResourceUsageAnalyzer.isResourceClass("android/support/v7/appcompat/R$attr.class"));
-        assertTrue(ResourceUsageAnalyzer.isResourceClass("android/support/v7/appcompat/R$bool.class"));
-        assertFalse(ResourceUsageAnalyzer.isResourceClass("android/support/v7/appcompat/R.class"));
-        assertFalse(ResourceUsageAnalyzer.isResourceClass("com/google/samples/apps/iosched/ui/BrowseSessionsActivity.class"));
+        File dummy = new File("dummy");
+        ResourceUsageAnalyzer analyzer = new ResourceUsageAnalyzer(dummy, dummy, dummy,
+                dummy, dummy);
+        assertTrue(analyzer.isResourceClass("android/support/v7/appcompat/R$attr.class"));
+        assertTrue(analyzer.isResourceClass("android/support/v7/appcompat/R$attr.class"));
+        assertTrue(analyzer.isResourceClass("android/support/v7/appcompat/R$bool.class"));
+        assertFalse(analyzer.isResourceClass("android/support/v7/appcompat/R.class"));
+        assertFalse(analyzer.isResourceClass("com/google/samples/apps/iosched/ui/BrowseSessionsActivity.class"));
     }
 }
