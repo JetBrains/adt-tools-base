@@ -1126,7 +1126,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
             return;
         }
 
-        StringTracker tracker = new StringTracker(context, method, call, 0);
+        StringTracker tracker = new StringTracker(context, method, call, specifiesLocale ? 1 : 0);
         method.accept(tracker);
         String name = tracker.getFormatStringName();
         if (name == null) {
@@ -1581,13 +1581,45 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                 // See if we're on the right hand side of an assignment
                 lombok.ast.Node current = node.getParent().getParent();
                 String reference = ((Select) current).astIdentifier().astValue();
-
+                lombok.ast.Node prev = current;
                 while (current != mTop && !(current instanceof VariableDefinitionEntry)) {
                     if (current == mTargetNode) {
-                        mName = reference;
-                        mDone = true;
-                        return false;
+                        // Make sure the reference we found was part of the
+                        // target parameter (e.g. for a string format check,
+                        // the actual formatting string, not one of the arguments
+                        // supplied to the formatting string)
+                        boolean isParameterArg = false;
+                        Iterator<Expression> iterator = null;
+                        if (mTargetNode instanceof MethodInvocation) {
+                            MethodInvocation call = (MethodInvocation) mTargetNode;
+                            iterator = call.astArguments().iterator();
+                        } else if (mTargetNode instanceof ConstructorInvocation) {
+                            ConstructorInvocation call = (ConstructorInvocation) mTargetNode;
+                            iterator = call.astArguments().iterator();
+                        }
+                        if (iterator != null) {
+                            Expression arg = null;
+                            for (int i = 0; i <= mArgIndex; i++) {
+                                if (iterator.hasNext()) {
+                                    arg = iterator.next();
+                                } else {
+                                    arg = null;
+                                }
+                            }
+                            if (arg == prev) {
+                                isParameterArg = true;
+                            }
+                        } else {
+                            // Constructor?
+                            isParameterArg = true;
+                        }
+                        if (isParameterArg) {
+                            mName = reference;
+                            mDone = true;
+                            return false;
+                        }
                     }
+                    prev = current;
                     current = current.getParent();
                 }
                 if (current instanceof VariableDefinitionEntry) {

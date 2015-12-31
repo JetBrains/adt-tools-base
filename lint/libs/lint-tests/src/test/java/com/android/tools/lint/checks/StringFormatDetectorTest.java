@@ -23,7 +23,7 @@ import com.android.tools.lint.detector.api.Detector;
 import java.util.HashSet;
 import java.util.Set;
 
-@SuppressWarnings("javadoc")
+@SuppressWarnings({"javadoc", "ClassNameDiffersFromFileName"})
 public class StringFormatDetectorTest extends AbstractCheckTest {
     @Override
     protected Detector getDetector() {
@@ -675,6 +675,40 @@ public class StringFormatDetectorTest extends AbstractCheckTest {
                                 + "    <string name=\"zero_args\">Hello</string>\n"
                                 + "    <string name=\"one_arg\">Hello %1$s</string>\n"
                                 + "    <string name=\"two_args\">Hello %1$s %2$s</string>\n"
+                                + "</resources>\n"
+                                + "\n")
+                ));
+    }
+
+    public void testIssue197940() throws Exception {
+        // Regression test for
+        //   https://code.google.com/p/android/issues/detail?id=197940
+        //    197940: The linter alerts about a wrong String.format format, but it's ok
+        assertEquals("No warnings.",
+
+                lintProject(
+                        java("src/test/pkg/FormatCheck.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.content.res.Resources;\n"
+                                + "\n"
+                                + "public class FormatCheck {\n"
+
+                                + "    private static String test(Resources resources) {\n"
+                                + "        return String.format(\"%s\", resources.getString(R.string.a_b_c));\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public static final class R {\n"
+                                + "        public static final class string {\n"
+                                + "            public static final int a_b_c = 0x7f0a0000;\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "}\n"),
+                        xml("res/values/strings.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<resources>\n"
+                                + "    <string name=\"a_b_c\">A b c </string>\n\n"
+                                + "    <string name=\"a_b_c_2\">A %1$s c </string>\n\n"
                                 + "</resources>\n"
                                 + "\n")
                 ));
