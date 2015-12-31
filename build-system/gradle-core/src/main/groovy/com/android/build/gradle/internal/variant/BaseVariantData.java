@@ -622,6 +622,10 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
                 sourceSets.add(project.fileTree(scope.getAidlSourceOutputDir()));
             }
 
+            if (scope.getGlobalScope().getExtension().getDataBinding().isEnabled()) {
+                sourceSets.add(project.fileTree(scope.getClassOutputForDataBinding()));
+            }
+
             if (!variantConfiguration.getRenderscriptNdkModeEnabled()
                     && getScope().getRenderscriptCompileTask() != null) {
                 sourceSets.add(project.fileTree(scope.getRenderscriptSourceOutputDir()));

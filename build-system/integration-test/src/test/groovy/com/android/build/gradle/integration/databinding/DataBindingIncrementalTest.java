@@ -16,7 +16,10 @@
 
 package com.android.build.gradle.integration.databinding;
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.runner.FilterableParameterized;
 import com.android.build.gradle.integration.common.truth.DexClassSubject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.ide.common.process.ProcessException;
@@ -25,30 +28,51 @@ import com.google.common.io.Files;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.xml.sax.SAXException;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
+import java.util.List;
+
+import javax.xml.parsers.ParserConfigurationException;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
 
-import java.io.File;
-import java.io.IOException;
 
-import javax.xml.parsers.ParserConfigurationException;
-
+@RunWith(FilterableParameterized.class)
 public class DataBindingIncrementalTest {
+
     @Rule
     public GradleTestProject project;
 
-    private static final String UP_TO_DATE_LAYOUT_PROCESS =
-            ":dataBindingProcessLayoutsDebug UP-TO-DATE";
+    private static final String EXPORT_INFO_TASK = ":dataBindingExportBuildInfoDebug";
+
+    private static final String PROCESS_LAYOUTS_TASK = ":dataBindingProcessLayoutsDebug";
+
     private static final String MAIN_ACTIVITY_BINDING_CLASS =
             "Landroid/databinding/testapp/databinding/ActivityMainBinding;";
+
     private static final String ACTIVITY_MAIN_XML = "src/main/res/layout/activity_main.xml";
 
-    public DataBindingIncrementalTest() {
+    private static final String ACTIVITY_MAIN_JAVA
+            = "src/main/java/android/databinding/testapp/MainActivity.java";
+
+    @Parameterized.Parameters(name = "experimental_{0}")
+    public static List<Boolean> parameters() {
+        return Arrays.asList(true, false);
+    }
+
+    public DataBindingIncrementalTest(boolean experimental) {
         project = GradleTestProject.builder()
-                .fromTestProject("databindingIncremental")
+                .fromTestProject("databindingIncremental",
+                        experimental ? "forexperimental" : null)
                 .captureStdOut(true)
+                .forExperimentalPlugin(experimental)
                 .create();
     }
 
@@ -59,12 +83,26 @@ public class DataBindingIncrementalTest {
     }
 
     @Test
-    public void compileWithoutChange() {
+    public void compileWithoutChange() throws UnsupportedEncodingException {
         project.execute("assembleDebug");
-        assertNotUpToDate();
+        assertUpToDate(EXPORT_INFO_TASK, false);
+        assertUpToDate(PROCESS_LAYOUTS_TASK, false);
         project.getStdout().reset();
         project.execute("assembleDebug");
-        assertUpToDate();
+        assertUpToDate(EXPORT_INFO_TASK, true);
+        assertUpToDate(PROCESS_LAYOUTS_TASK, true);
+        assertRecompile();
+    }
+
+    @Test
+    public void changeJavaCode() throws IOException {
+        project.execute("assembleDebug");
+        TestFileUtils.replaceLine(project.file(ACTIVITY_MAIN_JAVA), 44, "return false;");
+        project.getStdout().reset();
+        project.execute("assembleDebug");
+        assertUpToDate(EXPORT_INFO_TASK, false);
+        assertUpToDate(PROCESS_LAYOUTS_TASK, true);
+        assertRecompile();
     }
 
     @Test
@@ -77,12 +115,14 @@ public class DataBindingIncrementalTest {
                 "<TextView android:text='@{foo2 + \" \" + foo2}'");
         project.getStdout().reset();
         project.execute("assembleDebug");
-        assertNotUpToDate();
+        assertUpToDate(EXPORT_INFO_TASK, false);
+        assertUpToDate(PROCESS_LAYOUTS_TASK, false);
 
         DexClassSubject bindingClass = assertThatApk(project.getApk("debug")).hasMainDexFile()
                 .that().hasClass(MAIN_ACTIVITY_BINDING_CLASS).that();
         bindingClass.doesNotHaveMethod("setFoo");
         bindingClass.hasMethod("setFoo2");
+        assertRecompile();
     }
 
     @Test
@@ -93,10 +133,12 @@ public class DataBindingIncrementalTest {
                 "<variable name=\"foo\" type=\"String\"/><variable name=\"foo2\" type=\"String\"/>");
         project.getStdout().reset();
         project.execute("assembleDebug");
-        assertNotUpToDate();
+        assertUpToDate(EXPORT_INFO_TASK, false);
+        assertUpToDate(PROCESS_LAYOUTS_TASK, false);
         assertThatApk(project.getApk("debug")).hasMainDexFile()
                 .that().hasClass(MAIN_ACTIVITY_BINDING_CLASS)
                 .that().hasMethods("setFoo", "setFoo2");
+        assertRecompile();
     }
 
     @Test
@@ -107,16 +149,23 @@ public class DataBindingIncrementalTest {
                 "android:id=\"@+id/myTextView\"");
         project.getStdout().reset();
         project.execute("assembleDebug");
-        assertNotUpToDate();
+
+        assertUpToDate(EXPORT_INFO_TASK, false);
+        assertUpToDate(PROCESS_LAYOUTS_TASK, false);
+
         assertThatApk(project.getApk("debug")).hasMainDexFile()
                 .that().hasClass(MAIN_ACTIVITY_BINDING_CLASS)
                 .that().hasField("myTextView");
+
         TestFileUtils.replaceLine(project.file(ACTIVITY_MAIN_XML), 30, "");
         project.getStdout().reset();
         project.execute("assembleDebug");
+        assertUpToDate(EXPORT_INFO_TASK, false);
+        assertUpToDate(PROCESS_LAYOUTS_TASK, false);
         assertThatApk(project.getApk("debug")).hasMainDexFile()
                 .that().hasClass(MAIN_ACTIVITY_BINDING_CLASS)
                 .that().doesNotHaveField("myTextView");
+        assertRecompile();
     }
 
     @Test
@@ -129,10 +178,14 @@ public class DataBindingIncrementalTest {
         Files.copy(mainActivity, activity2);
         project.getStdout().reset();
         project.execute("assembleDebug");
-        assertNotUpToDate();
+
+        assertUpToDate(EXPORT_INFO_TASK, false);
+        assertUpToDate(PROCESS_LAYOUTS_TASK, false);
+
         assertThatApk(project.getApk("debug")).hasMainDexFile()
                 .that().hasClass("Landroid/databinding/testapp/databinding/Activity2Binding;")
                 .that().hasMethod("setFoo");
+        assertRecompile();
     }
 
     @Test
@@ -149,6 +202,7 @@ public class DataBindingIncrementalTest {
         project.execute("assembleDebug");
         assertThatApk(project.getApk("debug")).doesNotContainClass(
                 "Landroid/databinding/testapp/databinding/Activity2Binding;");
+        assertRecompile();
     }
 
     @Test
@@ -159,23 +213,41 @@ public class DataBindingIncrementalTest {
         Files.copy(mainActivity, activity2);
         project.getStdout().reset();
         project.execute("assembleDebug");
+
+        assertUpToDate(EXPORT_INFO_TASK, false);
+        assertUpToDate(PROCESS_LAYOUTS_TASK, false);
+
         assertThatApk(project.getApk("debug")).containsClass(
                 activity2ClassName);
         TestFileUtils.replaceLine(project.file("src/main/res/layout/activity2.xml"), 19,
                 "<data class=\"MyCustomName\">");
         project.getStdout().reset();
         project.execute("assembleDebug");
+
+        assertUpToDate(EXPORT_INFO_TASK, false);
+        assertUpToDate(PROCESS_LAYOUTS_TASK, false);
+
         assertThatApk(project.getApk("debug")).doesNotContainClass(
                 activity2ClassName);
         assertThatApk(project.getApk("debug")).containsClass(
                 "Landroid/databinding/testapp/databinding/MyCustomName;");
+        assertRecompile();
     }
 
-    private void assertNotUpToDate() {
-        assertThat(project.getStdout().toString()).doesNotContain(UP_TO_DATE_LAYOUT_PROCESS);
+    private void assertRecompile() {
+        project.getStdout().reset();
+        project.execute("assembleDebug");
+
+        assertUpToDate(EXPORT_INFO_TASK, true);
+        assertUpToDate(PROCESS_LAYOUTS_TASK, true);
     }
 
-    private void assertUpToDate() {
-        assertThat(project.getStdout().toString()).contains(UP_TO_DATE_LAYOUT_PROCESS);
+    private void assertUpToDate(String task, boolean isUpToDate) {
+        String line = task + " UP-TO-DATE";
+        if (isUpToDate) {
+            assertThat(project.getStdout().toString()).contains(line);
+        } else {
+            assertThat(project.getStdout().toString()).doesNotContain(line);
+        }
     }
 }
