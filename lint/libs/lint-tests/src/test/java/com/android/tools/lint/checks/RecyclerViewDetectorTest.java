@@ -22,16 +22,16 @@ import com.android.tools.lint.detector.api.Detector;
 public class RecyclerViewDetectorTest extends AbstractCheckTest {
     public void test() throws Exception {
         assertEquals(""
-                + "src/test/pkg/RecyclerViewTest.java:69: Warning: Do not treat position as fixed; only use immediately and call getAdapterPosition() to look it up later [RecyclerView]\n"
+                + "src/test/pkg/RecyclerViewTest.java:69: Warning: Do not treat position as fixed; only use immediately and call holder.getAdapterPosition() to look it up later [RecyclerView]\n"
                 + "        public void onBindViewHolder(ViewHolder holder, int position) {\n"
                 + "                                                        ~~~~~~~~~~~~\n"
-                + "src/test/pkg/RecyclerViewTest.java:82: Warning: Do not treat position as fixed; only use immediately and call getAdapterPosition() to look it up later [RecyclerView]\n"
+                + "src/test/pkg/RecyclerViewTest.java:82: Warning: Do not treat position as fixed; only use immediately and call holder.getAdapterPosition() to look it up later [RecyclerView]\n"
                 + "        public void onBindViewHolder(ViewHolder holder, final int position) {\n"
                 + "                                                        ~~~~~~~~~~~~~~~~~~\n"
-                + "src/test/pkg/RecyclerViewTest.java:102: Warning: Do not treat position as fixed; only use immediately and call getAdapterPosition() to look it up later [RecyclerView]\n"
+                + "src/test/pkg/RecyclerViewTest.java:102: Warning: Do not treat position as fixed; only use immediately and call holder.getAdapterPosition() to look it up later [RecyclerView]\n"
                 + "        public void onBindViewHolder(ViewHolder holder, final int position) {\n"
                 + "                                                        ~~~~~~~~~~~~~~~~~~\n"
-                + "src/test/pkg/RecyclerViewTest.java:111: Warning: Do not treat position as fixed; only use immediately and call getAdapterPosition() to look it up later [RecyclerView]\n"
+                + "src/test/pkg/RecyclerViewTest.java:111: Warning: Do not treat position as fixed; only use immediately and call holder.getAdapterPosition() to look it up later [RecyclerView]\n"
                 + "        public void onBindViewHolder(ViewHolder holder, final int position, List<Object> payloads) {\n"
                 + "                                                        ~~~~~~~~~~~~~~~~~~\n"
                 + "0 errors, 4 warnings\n",
