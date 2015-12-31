@@ -57,7 +57,7 @@ public class ShrinkResourcesTransform extends Transform {
 
     /** Whether we've already warned about how to turn off shrinking. Used to avoid
      * repeating the same multi-line message for every repeated abi split. */
-    private static boolean ourWarned;
+    private static boolean ourWarned = true; // Logging disabled until shrinking is on by default.
 
     /**
      * Associated variant data that the strip task will be run against. Used to locate
