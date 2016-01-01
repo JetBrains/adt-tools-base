@@ -182,6 +182,15 @@ public class ShrinkResourcesTransform extends Transform {
 
         BaseVariantData<?> variantData = variantOutputData.variantData;
         ProcessAndroidResources processResourcesTask = variantData.generateRClassTask;
+
+        File reportFile = null;
+        if (mappingFile != null) {
+            File logDir = mappingFile.getParentFile();
+            if (logDir != null) {
+                reportFile = new File(logDir, "resources.txt");
+            }
+        }
+
         try {
 
             // Analyze resources and usages and strip out unused
@@ -190,7 +199,8 @@ public class ShrinkResourcesTransform extends Transform {
                     minifiedOutJar,
                     mergedManifest,
                     mappingFile,
-                    resourceDir);
+                    resourceDir,
+                    reportFile);
             analyzer.setVerbose(logger.isEnabled(LogLevel.INFO));
             analyzer.setDebug(logger.isEnabled(LogLevel.DEBUG));
             analyzer.analyze();
@@ -271,6 +281,7 @@ public class ShrinkResourcesTransform extends Transform {
                 System.out.println(sb.toString());
             }
 
+            analyzer.dispose();
         } catch (Exception e) {
             System.out.println("Failed to shrink resources: " + e.toString() + "; ignoring");
             logger.quiet("Failed to shrink resources: ignoring", e);

@@ -59,6 +59,7 @@ import com.android.tools.lint.client.api.DefaultConfiguration;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.utils.AsmUtils;
 import com.android.utils.XmlUtils;
+import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
@@ -82,10 +83,15 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -226,6 +232,10 @@ public class ResourceUsageAnalyzer {
     private final File mMergedManifest;
     private final File mMergedResourceDir;
 
+    private final File mReportFile;
+    private final StringWriter mDebugOutput;
+    private final PrintWriter mDebugPrinter;
+
     private boolean mVerbose;
     private boolean mDebug;
     private boolean mDryRun;
@@ -264,12 +274,44 @@ public class ResourceUsageAnalyzer {
             @NonNull File classes,
             @NonNull File manifest,
             @Nullable File mapping,
-            @NonNull File resources) {
+            @NonNull File resources,
+            @Nullable File reportFile) {
         mResourceClassDir = rDir;
         mProguardMapping = mapping;
         mClasses = classes;
         mMergedManifest = manifest;
         mMergedResourceDir = resources;
+
+        mReportFile = reportFile;
+        if (reportFile != null || mDebug) {
+            mDebugOutput = new StringWriter(8*1024);
+            mDebugPrinter = new PrintWriter(mDebugOutput);
+        } else {
+            mDebugOutput = null;
+            mDebugPrinter = null;
+        }
+    }
+
+    public void dispose() {
+        if (mDebugOutput != null) {
+            String output = mDebugOutput.toString();
+
+            if (mDebug) {
+                System.out.println(output);
+            }
+
+            if (mReportFile != null) {
+                File dir = mReportFile.getParentFile();
+                if (dir != null) {
+                    if ((dir.exists() || dir.mkdir()) && dir.canWrite()) {
+                        try {
+                            Files.write(output, mReportFile, Charsets.UTF_8);
+                        } catch (IOException ignore) {
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public void analyze() throws IOException, ParserConfigurationException, SAXException {
@@ -449,15 +491,27 @@ public class ResourceUsageAnalyzer {
                             zos.write(bytes);
                             zos.closeEntry();
 
-                            if (isVerbose()) {
-                                System.out.println(
-                                    "Skipped unused resource " + name + ": " + entry.getSize()
-                                            + " bytes (replaced with small dummy file of size "
-                                            + bytes.length + " bytes)");
+                            if (isVerbose() || mDebugPrinter != null) {
+                                String message = "Skipped unused resource " + name + ": " + entry
+                                        .getSize()
+                                        + " bytes (replaced with small dummy file of size "
+                                        + bytes.length + " bytes)";
+                                if (isVerbose()) {
+                                    System.out.println(message);
+                                }
+                                if (mDebugPrinter != null) {
+                                    mDebugPrinter.println(message);
+                                }
                             }
-                        } else if (isVerbose()) {
-                            System.out.println("Skipped unused resource " + name + ": "
-                                    + entry.getSize() + " bytes");
+                        } else if (isVerbose() || mDebugPrinter != null) {
+                            String message = "Skipped unused resource " + name + ": "
+                                    + entry.getSize() + " bytes";
+                            if (isVerbose()) {
+                                System.out.println(message);
+                            }
+                            if (mDebugPrinter != null) {
+                                mDebugPrinter.println(message);
+                            }
                         }
                         entry = zis.getNextEntry();
                     }
@@ -819,8 +873,8 @@ public class ResourceUsageAnalyzer {
             }
         }
 
-        if (mDebug) {
-            System.out.println("The root reachable resources are:\n" +
+        if (mDebugPrinter != null) {
+            mDebugPrinter.println("\nThe root reachable resources are:\n" +
                     Joiner.on(",\n   ").join(roots));
         }
 
@@ -838,8 +892,8 @@ public class ResourceUsageAnalyzer {
 
         mUnused = unused;
 
-        if (mDebug) {
-            System.out.println(dumpResourceModel());
+        if (mDebugPrinter != null) {
+            mDebugPrinter.println(dumpResourceModel());
         }
     }
 
@@ -857,11 +911,11 @@ public class ResourceUsageAnalyzer {
     }
 
     private void dumpReferences() {
-        if (mDebug) {
-            System.out.println("Resource Reference Graph:");
+        if (mDebugPrinter != null) {
+            mDebugPrinter.println("Resource Reference Graph:");
             for (Resource resource : mResources) {
                 if (resource.references != null) {
-                    System.out.println(resource + " => " + resource.references);
+                    mDebugPrinter.println(resource + " => " + resource.references);
                 }
             }
         }
@@ -880,13 +934,13 @@ public class ResourceUsageAnalyzer {
             return;
         }
 
-        if (mDebug) {
+        if (mDebugPrinter != null) {
             List<String> strings = new ArrayList<String>(mStrings);
             Collections.sort(strings);
-            System.out.println("android.content.res.Resources#getIdentifier present: "
+            mDebugPrinter.println("android.content.res.Resources#getIdentifier present: "
                     + mFoundGetIdentifier);
-            System.out.println("Web content present: " + mFoundWebContent);
-            System.out.println("Referenced Strings:");
+            mDebugPrinter.println("Web content present: " + mFoundWebContent);
+            mDebugPrinter.println("Referenced Strings:");
             for (String s : strings) {
                 s = s.trim().replace("\n", "\\n");
                 if (s.length() > 40) {
@@ -894,7 +948,7 @@ public class ResourceUsageAnalyzer {
                 } else if (s.isEmpty()) {
                     continue;
                 }
-                System.out.println("  " + s);
+                mDebugPrinter.println("  " + s);
             }
         }
 
@@ -944,7 +998,7 @@ public class ResourceUsageAnalyzer {
                         for (Map<String, Resource> map : mTypeToName.values()) {
                             resource = map.get(name);
                             if (mDebug && resource != null) {
-                                System.out.println("Marking " + resource + " used because it "
+                                mDebugPrinter.println("Marking " + resource + " used because it "
                                         + "matches string pool constant " + string);
                             }
                             markReachable(resource);
@@ -986,8 +1040,8 @@ public class ResourceUsageAnalyzer {
                 for (Map<String, Resource> map : mTypeToName.values()) {
                     for (Resource resource : map.values()) {
                         if (resource.name.startsWith(name)) {
-                            if (mDebug) {
-                                System.out.println("Marking " + resource + " used because its "
+                            if (mDebugPrinter != null) {
+                                mDebugPrinter.println("Marking " + resource + " used because its "
                                         + "prefix matches string pool constant " + string);
                             }
                             markReachable(resource);
@@ -1005,8 +1059,8 @@ public class ResourceUsageAnalyzer {
                         for (Map<String, Resource> map : mTypeToName.values()) {
                             for (Resource resource : map.values()) {
                                 if (pattern.matcher(resource.name).matches()) {
-                                    if (mDebug) {
-                                        System.out.println("Marking " + resource + " used because "
+                                    if (mDebugPrinter != null) {
+                                        mDebugPrinter.println("Marking " + resource + " used because "
                                                 + "it format-string matches string pool constant "
                                                 + string);
                                     }
@@ -1041,7 +1095,7 @@ public class ResourceUsageAnalyzer {
                     }
                     Resource resource = getResource(type, name);
                     if (mDebug && resource != null) {
-                        System.out.println("Marking " + resource + " used because it "
+                        mDebugPrinter.println("Marking " + resource + " used because it "
                                 + "matches string pool constant " + string);
                     }
                     markReachable(resource);
@@ -1055,7 +1109,7 @@ public class ResourceUsageAnalyzer {
                 for (Map<String, Resource> map : mTypeToName.values()) {
                     Resource resource = map.get(name);
                     if (mDebug && resource != null) {
-                        System.out.println("Marking " + resource + " used because it "
+                        mDebugPrinter.println("Marking " + resource + " used because it "
                                 + "matches string pool constant " + string);
                     }
                     markReachable(resource);
@@ -2069,11 +2123,11 @@ public class ResourceUsageAnalyzer {
                 mGuessKeep = false;
             } else if (VALUE_SAFE.equals(value)) {
                 mGuessKeep = true;
-            } else if (mDebug) {
-                System.out.println("Ignoring unknown " + ATTR_SHRINK_MODE + " " + value);
+            } else if (mDebugPrinter != null) {
+                mDebugPrinter.println("Ignoring unknown " + ATTR_SHRINK_MODE + " " + value);
             }
-            if (mDebug) {
-                System.out.println("Setting shrink mode to " + value);
+            if (mDebugPrinter != null) {
+                mDebugPrinter.println("Setting shrink mode to " + value);
             }
         }
     }
@@ -2124,8 +2178,8 @@ public class ResourceUsageAnalyzer {
 
         Resource resource = getResource(url.type, url.name);
         if (resource != null) {
-            if (mDebug) {
-                System.out.println("Marking " + resource + " used because it "
+            if (mDebugPrinter != null) {
+                mDebugPrinter.println("Marking " + resource + " used because it "
                         + "matches keep attribute " + value);
             }
             markReachable(resource);
@@ -2138,8 +2192,8 @@ public class ResourceUsageAnalyzer {
                 if (nameMap != null) {
                     for (Resource r : nameMap.values()) {
                         if (pattern.matcher(r.name).matches()) {
-                            if (mDebug) {
-                                System.out.println("Marking " + r + " used because it "
+                            if (mDebugPrinter != null) {
+                                mDebugPrinter.println("Marking " + r + " used because it "
                                         + "matches keep globbing pattern " + url.name);
                             }
 
@@ -2148,8 +2202,8 @@ public class ResourceUsageAnalyzer {
                     }
                 }
             } catch (PatternSyntaxException ignored) {
-                if (mDebug) {
-                    System.out.println("Could not compute keep globbing pattern for " +
+                if (mDebugPrinter != null) {
+                    mDebugPrinter.println("Could not compute keep globbing pattern for " +
                             url.name + ": tried regexp " + regexp + "(" + ignored + ")");
                 }
             }
@@ -2172,8 +2226,8 @@ public class ResourceUsageAnalyzer {
 
         Resource resource = getResource(url.type, url.name);
         if (resource != null) {
-            if (mDebug) {
-                System.out.println("Marking " + resource + " used because it "
+            if (mDebugPrinter != null) {
+                mDebugPrinter.println("Marking " + resource + " used because it "
                         + "matches remove attribute " + value);
             }
             markUnreachable(resource);
@@ -2186,8 +2240,8 @@ public class ResourceUsageAnalyzer {
                 if (nameMap != null) {
                     for (Resource r : nameMap.values()) {
                         if (pattern.matcher(r.name).matches()) {
-                            if (mDebug) {
-                                System.out.println("Marking " + r + " used because it "
+                            if (mDebugPrinter != null) {
+                                mDebugPrinter.println("Marking " + r + " used because it "
                                         + "matches remove globbing pattern " + url.name);
                             }
 
@@ -2196,8 +2250,8 @@ public class ResourceUsageAnalyzer {
                     }
                 }
             } catch (PatternSyntaxException ignored) {
-                if (mDebug) {
-                    System.out.println("Could not compute remove globbing pattern for " +
+                if (mDebugPrinter != null) {
+                    mDebugPrinter.println("Could not compute remove globbing pattern for " +
                             url.name + ": tried regexp " + regexp + "(" + ignored + ")");
                 }
             }
@@ -2679,7 +2733,7 @@ public class ResourceUsageAnalyzer {
                 Integer value = (Integer) cst;
                 Resource resource = mValueToResource.get(value);
                 if (markReachable(resource) && mDebug) {
-                    System.out.println("Marking " + resource + " reachable: referenced from " +
+                    mDebugPrinter.println("Marking " + resource + " reachable: referenced from " +
                             context + " in " + mJarFile + ":" + mCurrentClass);
                 }
             } else if (cst instanceof int[]) {
@@ -2687,7 +2741,7 @@ public class ResourceUsageAnalyzer {
                 for (int value : values) {
                     Resource resource = mValueToResource.get(value);
                     if (markReachable(resource) && mDebug) {
-                        System.out.println("Marking " + resource + " reachable: referenced from " +
+                        mDebugPrinter.println("Marking " + resource + " reachable: referenced from " +
                                 context + " in " + mJarFile + ":" + mCurrentClass);
                     }
                 }
