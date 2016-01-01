@@ -64,6 +64,11 @@ public class AndroidTargetManager {
     private final AndroidSdkHandler mSdkHandler;
 
     /**
+     * Map of package paths to errors encountered while loading creating the target.
+     */
+    private Map<String, String> mLoadErrors;
+
+    /**
      * Create a manager using the new {@link AndroidSdkHandler}/{@link RepoManager} mechanism for
      * finding packages.
      */
@@ -78,6 +83,7 @@ public class AndroidTargetManager {
     @NonNull
     public Collection<IAndroidTarget> getTargets(@NonNull ProgressIndicator progress) {
         if (mTargets == null) {
+            Map<String, String> newErrors = Maps.newHashMap();
             List<IAndroidTarget> result = Lists.newArrayList();
             RepoManager manager = mSdkHandler.getSdkManager(progress);
             Map<AndroidVersion, PlatformTarget> platformTargets = Maps.newHashMap();
@@ -89,7 +95,7 @@ public class AndroidTargetManager {
                         result.add(target);
                         platformTargets.put(target.getVersion(), target);
                     } catch (IllegalArgumentException e) {
-                        // Pass
+                        newErrors.put(p.getPath(), e.getMessage());
                     }
                 }
             }
@@ -101,11 +107,12 @@ public class AndroidTargetManager {
                     PlatformTarget baseTarget = platformTargets.get(addonVersion);
                     if (baseTarget != null) {
                         result.add(new AddonTarget(p, baseTarget,
-                          mSdkHandler.getSystemImageManager(progress), mFop, progress));
+                          mSdkHandler.getSystemImageManager(progress), mFop));
                     }
                 }
             }
             mTargets = result;
+            mLoadErrors = newErrors;
         }
         return mTargets;
     }
@@ -176,5 +183,13 @@ public class AndroidTargetManager {
             }
         }
         return null;
+    }
+
+    /**
+     * Returns the error, if any, encountered when error creating a target for a package.
+     */
+    @Nullable
+    public String getErrorForPackage(@NonNull String path) {
+        return mLoadErrors.get(path);
     }
 }

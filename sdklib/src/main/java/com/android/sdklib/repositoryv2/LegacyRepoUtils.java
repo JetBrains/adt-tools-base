@@ -16,7 +16,6 @@
 package com.android.sdklib.repositoryv2;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.repository.api.FallbackLocalRepoLoader;
 import com.android.repository.api.FallbackRemoteRepoLoader;
 import com.android.repository.api.ProgressIndicator;
@@ -26,7 +25,6 @@ import com.android.repository.api.SchemaModule;
 import com.android.repository.impl.meta.GenericFactory;
 import com.android.repository.impl.meta.TypeDetails;
 import com.android.sdklib.AndroidVersion;
-import com.android.sdklib.SdkManager.LayoutlibVersion;
 import com.android.sdklib.SdkVersionInfo;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgType;
@@ -46,9 +44,9 @@ public class LegacyRepoUtils {
     /**
      * Convert a {@link IPkgDesc} and other old-style information into a {@link TypeDetails}.
      */
-    @Nullable
+    @NonNull
     public static TypeDetails createTypeDetails(@NonNull IPkgDesc desc,
-            @Nullable LayoutlibVersion layoutLibVersion, ProgressIndicator progress) {
+            int layoutLibVersion, ProgressIndicator progress) {
 
         AndroidSdkHandler handler = AndroidSdkHandler.getInstance(null);
         SdkCommonFactory sdkFactory = (SdkCommonFactory) handler
@@ -70,12 +68,10 @@ public class LegacyRepoUtils {
             assert androidVersion != null;
             details.setApiLevel(androidVersion.getApiLevel());
             details.setCodename(androidVersion.getCodename());
-            if (layoutLibVersion != null) {
-                DetailsTypes.PlatformDetailsType.LayoutlibType layoutLib = repoFactory
-                        .createLayoutlibType();
-                layoutLib.setApi(layoutLibVersion.getApi());
-                details.setLayoutlib(layoutLib);
-            }
+            DetailsTypes.PlatformDetailsType.LayoutlibType layoutLib = repoFactory
+              .createLayoutlibType();
+            layoutLib.setApi(layoutLibVersion);
+            details.setLayoutlib(layoutLib);
             return (TypeDetails) details;
         } else if (desc.getType() == PkgType.PKG_SYS_IMAGE ||
                 desc.getType() == PkgType.PKG_ADDON_SYS_IMAGE) {
@@ -120,9 +116,6 @@ public class LegacyRepoUtils {
             assert androidVersion != null;
             details.setApiLevel(androidVersion.getApiLevel());
             return (TypeDetails) details;
-        } else if (desc.getType() == PkgType.PKG_SAMPLE) {
-            // Obsolete, ignore
-            return null;
         } else if (desc.getType() == PkgType.PKG_SOURCE) {
             DetailsTypes.SourceDetailsType details = repoFactory.createSourceDetailsType();
             assert androidVersion != null;

@@ -32,7 +32,6 @@ import com.android.repository.impl.meta.TypeDetails;
 import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.IAndroidTarget;
-import com.android.sdklib.SdkManager.LayoutlibVersion;
 import com.android.sdklib.internal.androidTarget.PlatformTarget;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.descriptors.PkgType;
@@ -112,6 +111,10 @@ public class LegacyLocalRepoLoader implements FallbackLocalRepoLoader {
         }
 
         info = mPkgs.get(dir);
+        if (info != null && info.getDesc().getType().equals(PkgType.PKG_SAMPLE)) {
+            // We don't want to include sample packages
+            return null;
+        }
         if (info == null) {
             Logger.getLogger(getClass().getName())
                     .warning(String.format("Ignoring unparsable legacy package found at: %s", dir));
@@ -141,13 +144,18 @@ public class LegacyLocalRepoLoader implements FallbackLocalRepoLoader {
         }
 
         @Override
-        @Nullable
+        @NonNull
         public TypeDetails getTypeDetails() {
-            LayoutlibVersion layoutVersion = null;
+            int layoutVersion = 0;
             if (mWrapped instanceof LocalPlatformPkgInfo) {
                 IAndroidTarget target = ((LocalPlatformPkgInfo) mWrapped).getAndroidTarget();
                 if (target instanceof PlatformTarget) {
-                    layoutVersion = ((PlatformTarget) target).getLayoutlibVersion();
+                    layoutVersion = ((PlatformTarget) target).getLayoutlibVersion().getApi();
+                }
+                else if (target instanceof com.android.sdklib.repositoryv2.targets.PlatformTarget) {
+                    layoutVersion
+                            = ((com.android.sdklib.repositoryv2.targets.PlatformTarget) target)
+                            .getLayoutlibApi();
                 }
             }
             return LegacyRepoUtils

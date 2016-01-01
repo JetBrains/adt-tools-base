@@ -41,12 +41,9 @@ import javax.xml.bind.annotation.XmlTransient;
 public abstract class RepoPackageImpl implements RepoPackage {
 
     @Override
-    @Nullable
+    @NonNull
     @XmlTransient
-    public TypeDetails getTypeDetails() {
-        // Stub
-        return null;
-    }
+    public abstract TypeDetails getTypeDetails();
 
     @NonNull
     @Override

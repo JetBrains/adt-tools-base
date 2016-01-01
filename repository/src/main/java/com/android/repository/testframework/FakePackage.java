@@ -28,8 +28,10 @@ import com.android.repository.api.RepoPackage;
 import com.android.repository.api.RepositorySource;
 import com.android.repository.impl.meta.Archive;
 import com.android.repository.impl.meta.CommonFactory;
-import com.android.repository.impl.meta.RemotePackageImpl;
+import com.android.repository.impl.meta.GenericFactory;
 import com.android.repository.impl.meta.TypeDetails;
+import com.google.common.base.Objects;
+import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.ImmutableList;
 
 import java.io.File;
@@ -75,7 +77,7 @@ public class FakePackage implements LocalPackage, RemotePackage {
         mChannel = channel;
     }
 
-    @Nullable
+    @NonNull
     @Override
     public Channel getChannel() {
         return mChannel == null ? Channel.DEFAULT : mChannel;
@@ -85,10 +87,11 @@ public class FakePackage implements LocalPackage, RemotePackage {
         mDetails = details;
     }
 
-    @Nullable
+    @NonNull
     @Override
     public TypeDetails getTypeDetails() {
-        return mDetails;
+        return mDetails == null ? (TypeDetails) ((GenericFactory) RepoManager.getGenericModule()
+                .createLatestFactory()).createGenericDetailsType() : mDetails;
     }
 
     @NonNull
@@ -100,7 +103,7 @@ public class FakePackage implements LocalPackage, RemotePackage {
     @NonNull
     @Override
     public String getDisplayName() {
-        return null;
+        return "fake package";
     }
 
     @Nullable
@@ -134,7 +137,19 @@ public class FakePackage implements LocalPackage, RemotePackage {
 
     @Override
     public int compareTo(@NonNull RepoPackage o) {
-        return 0;
+        return ComparisonChain.start().compare(getPath(), o.getPath())
+                .compare(getVersion(), o.getVersion()).result();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof RepoPackage && ((RepoPackage) obj).getPath().equals(getPath())
+                && ((RepoPackage) obj).getVersion().equals(getVersion());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(getPath(), getVersion());
     }
 
     @NonNull

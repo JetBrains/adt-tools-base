@@ -432,7 +432,8 @@ public final class AndroidSdkHandler {
 
             url = String.format("%srepository-%d.xml", getBaseUrl(progress), LATEST_LEGACY_VERSION);
             mLegacyRepositorySourceProvider = new ConstantSourceProvider(url,
-                    "Legacy Android Repository", ImmutableSet.of(mRepositoryModule));
+                    "Legacy Android Repository",
+                    ImmutableSet.of(mRepositoryModule, RepoManager.getGenericModule()));
         }
 
         /**

@@ -87,18 +87,16 @@ public class AddonTarget implements IAndroidTarget {
      *                   associated with this target.
      * @param fop        {@link FileOp} to use for file operations. For normal use should be {@link
      *                   FileOpUtils#create()}.
-     * @param progress   {@link ProgressIndicator}, for logging.
      */
     public AddonTarget(@NonNull LocalPackage p, @NonNull IAndroidTarget baseTarget,
-            @NonNull SystemImageManager sysImgMgr, @NonNull FileOp fop,
-            @NonNull ProgressIndicator progress) {
+            @NonNull SystemImageManager sysImgMgr, @NonNull FileOp fop) {
         mPackage = p;
         mBasePlatform = baseTarget;
         TypeDetails details = p.getTypeDetails();
         assert details instanceof DetailsTypes.AddonDetailsType;
         mDetails = (DetailsTypes.AddonDetailsType) details;
 
-        mSystemImages = getAddonSystemImages(sysImgMgr, progress);
+        mSystemImages = getAddonSystemImages(sysImgMgr);
 
         // Gather skins for this target. We'll only keep a single skin with each name.
         Map<String, File> skins = Maps.newHashMap();
@@ -348,8 +346,7 @@ public class AddonTarget implements IAndroidTarget {
      * Get all the system images supported by an add-on target.
      */
     @NonNull
-    private Table<IdDisplay, String, ISystemImage> getAddonSystemImages(SystemImageManager imgMgr,
-            ProgressIndicator progress) {
+    private Table<IdDisplay, String, ISystemImage> getAddonSystemImages(SystemImageManager imgMgr) {
         Table<IdDisplay, String, ISystemImage> result = HashBasedTable.create();
         for (ISystemImage img : imgMgr
                 .lookup(mDetails.getTag(), DetailsTypes.getAndroidVersion(mDetails),
