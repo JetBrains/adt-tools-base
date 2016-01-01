@@ -644,6 +644,7 @@ public class LintDriver {
             List<Detector> resourceFileDetectors = mScopeDetectors.get(Scope.RESOURCE_FILE);
             if (resourceFileDetectors != null) {
                 for (Detector detector : resourceFileDetectors) {
+                    // This is wrong; it should allow XmlScanner instead of ResourceXmlScanner!
                     assert detector instanceof ResourceXmlDetector : detector;
                 }
             }
@@ -1720,7 +1721,8 @@ public class LintDriver {
                             visitor.getParser());
                     fireEvent(EventType.SCANNING_FILE, context);
                     visitor.visitFile(context, file);
-                } else if (binaryChecks != null && LintUtils.isBitmapFile(file)) {
+                } else if (binaryChecks != null && (LintUtils.isBitmapFile(file) ||
+                            type == ResourceFolderType.RAW)) {
                     ResourceContext context = new ResourceContext(this, project, main, file, type);
                     fireEvent(EventType.SCANNING_FILE, context);
                     visitor.visitBinaryResource(context);

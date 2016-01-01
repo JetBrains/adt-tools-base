@@ -27,6 +27,7 @@ import com.android.sdklib.BuildToolInfo;
 import com.android.tools.lint.LintCliClient;
 import com.android.tools.lint.LintCliFlags;
 import com.android.tools.lint.Warning;
+import com.android.tools.lint.checks.UnusedResourceDetector;
 import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.client.api.LintRequest;
 import com.android.tools.lint.detector.api.Issue;

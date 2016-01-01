@@ -30,6 +30,7 @@ import com.android.tools.lint.Reporter
 import com.android.tools.lint.Warning
 import com.android.tools.lint.checks.BuiltinIssueRegistry
 import com.android.tools.lint.checks.GradleDetector
+import com.android.tools.lint.checks.UnusedResourceDetector
 import com.android.tools.lint.client.api.IssueRegistry
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.Severity
@@ -86,6 +87,11 @@ public class Lint extends BaseTask {
      * across variants and reports these
      */
     public void lintAllVariants(@NonNull AndroidProject modelProject) {
+        // In the Gradle integration we iterate over each variant, and
+        // attribute unused resources to each variant, so don't make
+        // each variant run go and inspect the inactive variant sources
+        UnusedResourceDetector.sIncludeInactiveReferences = false;
+
         Map<Variant,List<Warning>> warningMap = Maps.newHashMap()
         for (Variant variant : modelProject.getVariants()) {
             try {

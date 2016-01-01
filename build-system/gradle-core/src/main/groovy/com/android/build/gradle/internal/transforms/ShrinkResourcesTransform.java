@@ -52,6 +52,11 @@ import java.util.Set;
  * Since this transform only reads the data from the stream but does not output anything
  * back into the stream, it is a no-op transform, asking only for referenced scopes, and not
  * "consumed" scopes.
+ * <p>
+ * To run the tests specifically related to resource shrinking:
+ * <pre>
+ * ./gradlew :base:int:test -Dtest.single=ShrinkResourcesTest
+ * </pre>
  */
 public class ShrinkResourcesTransform extends Transform {
 
@@ -191,16 +196,15 @@ public class ShrinkResourcesTransform extends Transform {
             }
         }
 
+        // Analyze resources and usages and strip out unused
+        ResourceUsageAnalyzer analyzer = new ResourceUsageAnalyzer(
+                sourceDir,
+                minifiedOutJar,
+                mergedManifest,
+                mappingFile,
+                resourceDir,
+                reportFile);
         try {
-
-            // Analyze resources and usages and strip out unused
-            ResourceUsageAnalyzer analyzer = new ResourceUsageAnalyzer(
-                    sourceDir,
-                    minifiedOutJar,
-                    mergedManifest,
-                    mappingFile,
-                    resourceDir,
-                    reportFile);
             analyzer.setVerbose(logger.isEnabled(LogLevel.INFO));
             analyzer.setDebug(logger.isEnabled(LogLevel.DEBUG));
             analyzer.analyze();
@@ -280,11 +284,11 @@ public class ShrinkResourcesTransform extends Transform {
 
                 System.out.println(sb.toString());
             }
-
-            analyzer.dispose();
         } catch (Exception e) {
             System.out.println("Failed to shrink resources: " + e.toString() + "; ignoring");
             logger.quiet("Failed to shrink resources: ignoring", e);
+        } finally {
+            analyzer.dispose();
         }
     }
 

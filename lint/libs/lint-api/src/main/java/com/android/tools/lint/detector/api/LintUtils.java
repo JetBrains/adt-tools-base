@@ -261,6 +261,22 @@ public class LintUtils {
     }
 
     /**
+     * Returns the corresponding R field name for the given XML resource name
+     * @param styleName the XML name
+     * @return the corresponding R field name
+     */
+    public static String getFieldName(@NonNull String styleName) {
+        for (int i = 0, n = styleName.length(); i < n; i++) {
+            char c = styleName.charAt(i);
+            if (c == '.' || c == '-' || c == ':') {
+                return styleName.replace('.', '_').replace('-', '_').replace(':', '_');
+            }
+        }
+
+        return styleName;
+    }
+
+    /**
      * Returns the given id without an {@code @id/} or {@code @+id} prefix
      *
      * @param id the id to strip

@@ -361,7 +361,10 @@ public abstract class Detector {
                 @NonNull MethodNode method, @NonNull MethodInsnNode call);
     }
 
-    /** Specialized interface for detectors that scan binary resource files */
+    /**
+     * Specialized interface for detectors that scan binary resource files
+     * (typically bitmaps but also files in res/raw)
+     */
     public interface BinaryResourceScanner {
         /**
          * Called for each resource folder

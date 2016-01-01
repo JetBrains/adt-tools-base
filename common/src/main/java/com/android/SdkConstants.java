@@ -1465,4 +1465,15 @@ public final class SdkConstants {
         TAG_IMPORT, TAG_LAYOUT, TAG_DATA};
     public static final String[] ATTRS_DATA_BINDING = new String[]{ATTR_NAME,
         ATTR_TYPE, ATTR_CLASS, ATTR_ALIAS};
+
+    /** Name of keep attribute in XML */
+    public static final String ATTR_KEEP = "keep";
+    /** Name of discard attribute in XML (to mark resources as not referenced, despite guesses) */
+    public static final String ATTR_DISCARD = "discard";
+    /** Name of attribute in XML to control whether we should guess resources to keep */
+    public static final String ATTR_SHRINK_MODE = "shrinkMode";
+    /** {@linkplain #ATTR_SHRINK_MODE} value to only shrink explicitly encountered resources */
+    public static final String VALUE_STRICT = "strict";
+    /** {@linkplain #ATTR_SHRINK_MODE} value to keep possibly referenced resources */
+    public static final String VALUE_SAFE = "safe";
 }

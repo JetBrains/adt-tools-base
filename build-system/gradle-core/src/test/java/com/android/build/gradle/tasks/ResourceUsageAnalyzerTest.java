@@ -18,12 +18,12 @@ package com.android.build.gradle.tasks;
 
 import static com.android.build.gradle.tasks.ResourceUsageAnalyzer.NO_MATCH;
 import static com.android.build.gradle.tasks.ResourceUsageAnalyzer.REPLACE_DELETED_WITH_EMPTY;
-import static com.android.build.gradle.tasks.ResourceUsageAnalyzer.Resource;
 import static com.android.build.gradle.tasks.ResourceUsageAnalyzer.convertFormatStringToRegexp;
 import static java.io.File.separatorChar;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.tasks.ResourceUsageModel.Resource;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
@@ -98,12 +98,14 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                 + "    @string/hello_world\n"
                 + "    @style/MyStyle_Child\n"
                 + "@menu/main : reachable=true\n"
-                + "    @id/action_settings\n"
                 + "    @string/action_settings\n"
+                + "@menu/menu2 : reachable=false\n"
+                + "    @string/action_settings2\n"
                 + "@raw/android_wear_micro_apk : reachable=true\n"
                 + "@raw/index1 : reachable=false\n"
+                + "    @raw/my_used_raw_drawable\n"
                 + "@raw/my_js : reachable=false\n"
-                + "@raw/my_used_raw_drawable : reachable=true\n"
+                + "@raw/my_used_raw_drawable : reachable=false\n"
                 + "@raw/styles2 : reachable=false\n"
                 + "@string/action_settings : reachable=true\n"
                 + "@string/action_settings2 : reachable=false\n"
@@ -117,7 +119,7 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                 + "    @style/MyStyle\n"
                 + "@xml/android_wear_micro_apk : reachable=true\n"
                 + "    @raw/android_wear_micro_apk\n",
-                analyzer.dumpResourceModel());
+                analyzer.getModel().dumpResourceModel());
 
         File unusedBitmap = new File(resources, "drawable-xxhdpi" + separatorChar + "unused.png");
         assertTrue(unusedBitmap.exists());
@@ -1045,7 +1047,7 @@ public class ResourceUsageAnalyzerTest extends TestCase {
     }
 
     private static void checkState(ResourceUsageAnalyzer analyzer) {
-        List<Resource> resources = analyzer.getAllResources();
+        List<Resource> resources = analyzer.getModel().getResources();
         Collections.sort(resources, new Comparator<Resource>() {
             @Override
             public int compare(Resource resource1, Resource resource2) {
