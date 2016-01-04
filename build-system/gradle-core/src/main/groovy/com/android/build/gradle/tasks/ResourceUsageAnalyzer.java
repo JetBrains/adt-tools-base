@@ -366,6 +366,8 @@ public class ResourceUsageAnalyzer {
             (byte)-126
     };
 
+    public static final long TINY_PNG_CRC = 0x88b2a3b0L;
+
     // A 3x3 pixel PNG of type BufferedImage.TYPE_INT_ARGB with 9-patch markers
     public static final byte[] TINY_9PNG = new byte[] {
             (byte)-119, (byte)  80, (byte)  78, (byte)  71, (byte)  13, (byte)  10,
@@ -382,6 +384,8 @@ public class ResourceUsageAnalyzer {
             (byte)   0, (byte)   0, (byte)   0, (byte)  73, (byte)  69, (byte)  78,
             (byte)  68, (byte) -82, (byte)  66, (byte)  96, (byte)-126
     };
+
+    public static final long TINY_9PNG_CRC = 0x1148f987L;
 
     // The XML document <x/> as binary-packed with AAPT
     public static final byte[] TINY_XML = new byte[] {
@@ -404,6 +408,8 @@ public class ResourceUsageAnalyzer {
             (byte)  -1, (byte)  -1, (byte)  -1, (byte)  -1, (byte)   0, (byte)   0,
             (byte)   0, (byte)   0
     };
+
+    public static final long TINY_XML_CRC = 0xd7e65643L;
 
     /**
      * "Removes" resources from an .ap_ file by writing it out while filtering out
@@ -474,18 +480,28 @@ public class ResourceUsageAnalyzer {
                                 && !name.equals("res/raw/keep.xml")) {
                             // Create a new entry so that the compressed len is recomputed.
                             byte[] bytes;
+                            long crc;
                             if (name.endsWith(DOT_9PNG)) {
                                 bytes = TINY_9PNG;
+                                crc = TINY_9PNG_CRC;
                             } else if (name.endsWith(DOT_PNG)) {
                                 bytes = TINY_PNG;
+                                crc = TINY_PNG_CRC;
                             } else if (name.endsWith(DOT_XML)) {
                                 bytes = TINY_XML;
+                                crc = TINY_XML_CRC;
                             } else {
                                 bytes = new byte[0];
+                                crc = 0L;
                             }
                             JarEntry outEntry = new JarEntry(name);
                             if (entry.getTime() != -1L) {
                                 outEntry.setTime(entry.getTime());
+                            }
+                            if (entry.getMethod() == JarEntry.STORED) {
+                                outEntry.setMethod(JarEntry.STORED);
+                                outEntry.setSize(bytes.length);
+                                outEntry.setCrc(crc);
                             }
                             zos.putNextEntry(outEntry);
                             zos.write(bytes);
