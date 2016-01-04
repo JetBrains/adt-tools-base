@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 
 public final class Map extends Type {
-
     String mAlias;
 
     Type mKeyType;
@@ -71,7 +70,7 @@ public final class Map extends Type {
 
     @Override
     public void encode(@NotNull Encoder e) throws IOException {
-        TypeTag.mapTag().encode(e);
+        TypeTag.MapTag.encode(e);
         mKeyType.encode(e);
         mValueType.encode(e);
         e.nonCompactString(mAlias);

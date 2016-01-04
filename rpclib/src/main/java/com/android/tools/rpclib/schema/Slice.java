@@ -23,7 +23,6 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 
 public final class Slice extends Type {
-
     String mAlias;
 
     Type mValueType;
@@ -48,7 +47,7 @@ public final class Slice extends Type {
 
     @Override
     public void encodeValue(@NotNull Encoder e, Object value) throws IOException {
-        if (Primitive.isMethod(mValueType, Method.uint8())) {
+        if (Primitive.isMethod(mValueType, Method.Uint8)) {
             assert (value instanceof byte[]);
             byte[] array = (byte[])value;
             e.uint32(array.length);
@@ -65,7 +64,7 @@ public final class Slice extends Type {
 
     @Override
     public Object decodeValue(@NotNull Decoder d) throws IOException {
-        if (Primitive.isMethod(mValueType, Method.uint8())) {
+        if (Primitive.isMethod(mValueType, Method.Uint8)) {
             byte[] array = new byte[d.uint32()];
             d.read(array, array.length);
             return array;
@@ -80,7 +79,7 @@ public final class Slice extends Type {
 
     @Override
     public void encode(@NotNull Encoder e) throws IOException {
-        TypeTag.sliceTag().encode(e);
+        TypeTag.SliceTag.encode(e);
         mValueType.encode(e);
         e.nonCompactString(mAlias);
     }
