@@ -17,71 +17,92 @@
  */
 package com.android.tools.rpclib.schema;
 
-import org.jetbrains.annotations.NotNull;
 import com.android.tools.rpclib.binary.Decoder;
 import com.android.tools.rpclib.binary.Encoder;
+import com.google.common.collect.ImmutableMap;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 
 public final class TypeTag {
-    public static final byte PrimitiveTag = 0;
-    public static TypeTag primitiveTag() { return new TypeTag(PrimitiveTag); }
-    public static final byte StructTag = 1;
-    public static TypeTag structTag() { return new TypeTag(StructTag); }
-    public static final byte PointerTag = 2;
-    public static TypeTag pointerTag() { return new TypeTag(PointerTag); }
-    public static final byte InterfaceTag = 3;
-    public static TypeTag interfaceTag() { return new TypeTag(InterfaceTag); }
-    public static final byte VariantTag = 4;
-    public static TypeTag variantTag() { return new TypeTag(VariantTag); }
-    public static final byte AnyTag = 5;
-    public static TypeTag anyTag() { return new TypeTag(AnyTag); }
-    public static final byte SliceTag = 6;
-    public static TypeTag sliceTag() { return new TypeTag(SliceTag); }
-    public static final byte ArrayTag = 7;
-    public static TypeTag arrayTag() { return new TypeTag(ArrayTag); }
-    public static final byte MapTag = 8;
-    public static TypeTag mapTag() { return new TypeTag(MapTag); }
+    public static final TypeTag PrimitiveTag = new TypeTag((byte)0, "PrimitiveTag");
+    public static final byte PrimitiveTagValue = 0;
+    public static final TypeTag StructTag = new TypeTag((byte)1, "StructTag");
+    public static final byte StructTagValue = 1;
+    public static final TypeTag PointerTag = new TypeTag((byte)2, "PointerTag");
+    public static final byte PointerTagValue = 2;
+    public static final TypeTag InterfaceTag = new TypeTag((byte)3, "InterfaceTag");
+    public static final byte InterfaceTagValue = 3;
+    public static final TypeTag VariantTag = new TypeTag((byte)4, "VariantTag");
+    public static final byte VariantTagValue = 4;
+    public static final TypeTag AnyTag = new TypeTag((byte)5, "AnyTag");
+    public static final byte AnyTagValue = 5;
+    public static final TypeTag SliceTag = new TypeTag((byte)6, "SliceTag");
+    public static final byte SliceTagValue = 6;
+    public static final TypeTag ArrayTag = new TypeTag((byte)7, "ArrayTag");
+    public static final byte ArrayTagValue = 7;
+    public static final TypeTag MapTag = new TypeTag((byte)8, "MapTag");
+    public static final byte MapTagValue = 8;
 
-    public final byte value;
+    private static final ImmutableMap<Byte, TypeTag> VALUES = ImmutableMap.<Byte, TypeTag>builder()
+        .put((byte)0, PrimitiveTag)
+        .put((byte)1, StructTag)
+        .put((byte)2, PointerTag)
+        .put((byte)3, InterfaceTag)
+        .put((byte)4, VariantTag)
+        .put((byte)5, AnyTag)
+        .put((byte)6, SliceTag)
+        .put((byte)7, ArrayTag)
+        .put((byte)8, MapTag)
+        .build();
 
-    public TypeTag(byte value) {
-        this.value = value;
+    private final byte mValue;
+    private final String mName;
+
+    private TypeTag(byte v, String n) {
+        mValue = v;
+        mName = n;
+    }
+
+    public byte getValue() {
+        return mValue;
+    }
+
+    public String getName() {
+        return mName;
     }
 
     public void encode(@NotNull Encoder e) throws IOException {
-        e.uint8(value);
+        e.uint8(mValue);
     }
 
     public static TypeTag decode(@NotNull Decoder d) throws IOException {
-        byte value = d.uint8();
-        return new TypeTag(value);
+        return findOrCreate(d.uint8());
+    }
+
+    public static TypeTag find(byte value) {
+        return VALUES.get(value);
+    }
+
+    public static TypeTag findOrCreate(byte value) {
+        TypeTag result = VALUES.get(value);
+        return (result == null) ? new TypeTag(value, null) : result;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || !(o instanceof TypeTag)) return false;
-        return value == ((TypeTag)o).value;
+        return mValue == ((TypeTag)o).mValue;
     }
 
     @Override
     public int hashCode() {
-        return value;
+        return mValue;
     }
 
     @Override
     public String toString() {
-        switch(value) {
-            case PrimitiveTag: return "PrimitiveTag";
-            case StructTag: return "StructTag";
-            case PointerTag: return "PointerTag";
-            case InterfaceTag: return "InterfaceTag";
-            case VariantTag: return "VariantTag";
-            case AnyTag: return "AnyTag";
-            case SliceTag: return "SliceTag";
-            case ArrayTag: return "ArrayTag";
-            case MapTag: return "MapTag";
-            default: return "TypeTag(" + value + ")";
-        }
+        return (mName == null) ? "TypeTag(" + mValue + ")" : mName;
     }
 }

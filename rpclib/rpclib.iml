@@ -13,5 +13,6 @@
     <orderEntry type="module" module-name="android-annotations" />
     <orderEntry type="library" scope="TEST" name="JUnit4" level="project" />
     <orderEntry type="module" module-name="platform-api" />
+    <orderEntry type="library" name="Guava" level="project" />
   </component>
 </module>
