@@ -80,7 +80,7 @@ public class ResourceUsageAnalyzerTest extends TestCase {
         File resources = createResourceFolder(dir);
 
         ResourceUsageAnalyzer analyzer = new ResourceUsageAnalyzer(rDir, classes,
-            mergedManifest, mapping, resources);
+            mergedManifest, mapping, resources, null);
         analyzer.analyze();
         checkState(analyzer);
         assertEquals(""
@@ -261,6 +261,8 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                 assertTrue(Arrays.equals(ResourceUsageAnalyzer.TINY_PNG,
                         getZipContents(compressedFile, "res/drawable-xxhdpi/unused.png")));
             }
+
+            analyzer.dispose();
 
             uncompressedFile.delete();
             compressedFile.delete();
@@ -1068,7 +1070,7 @@ public class ResourceUsageAnalyzerTest extends TestCase {
     public void testIsResourceClass() {
         File dummy = new File("dummy");
         ResourceUsageAnalyzer analyzer = new ResourceUsageAnalyzer(dummy, dummy, dummy,
-                dummy, dummy);
+                dummy, dummy, null);
         assertTrue(analyzer.isResourceClass("android/support/v7/appcompat/R$attr.class"));
         assertTrue(analyzer.isResourceClass("android/support/v7/appcompat/R$attr.class"));
         assertTrue(analyzer.isResourceClass("android/support/v7/appcompat/R$bool.class"));
