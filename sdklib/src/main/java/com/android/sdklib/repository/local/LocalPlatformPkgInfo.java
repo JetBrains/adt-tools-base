@@ -232,12 +232,20 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
 
         try {
             String propApi = platformProp.get(PkgProps.LAYOUTLIB_API);
+            if (propApi == null) {
+                // In old packages it was sometimes specified differently
+                propApi = platformProp.get("sdk." + PkgProps.LAYOUTLIB_API.toLowerCase());
+            }
             String propRev = platformProp.get(PkgProps.LAYOUTLIB_REV);
+            if (propRev == null) {
+                // In old packages it was sometimes specified differently
+                propRev = platformProp.get("sdk." + PkgProps.LAYOUTLIB_REV.toLowerCase());
+            }
             int llApi = propApi == null ? LayoutlibVersion.NOT_SPECIFIED :
                     Integer.parseInt(propApi);
             int llRev = propRev == null ? LayoutlibVersion.NOT_SPECIFIED :
                     Integer.parseInt(propRev);
-            if (llApi > LayoutlibVersion.NOT_SPECIFIED &&
+            if (llApi > LayoutlibVersion.NOT_SPECIFIED ||
                     llRev >= LayoutlibVersion.NOT_SPECIFIED) {
                 layoutlibVersion = new LayoutlibVersion(llApi, llRev);
             }
