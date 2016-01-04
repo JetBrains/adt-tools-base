@@ -1178,6 +1178,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
                         ResourceSet resourceSet =
                                 new ResourceSet(dependency.getFolder().getName(), validateEnabled);
                         resourceSet.addSource(resFolder);
+                        resourceSet.setFromDependency(true);
                         resourceSets.add(resourceSet);
                     }
                 }

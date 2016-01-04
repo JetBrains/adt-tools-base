@@ -53,6 +53,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
 
     private ResourceSet mGeneratedSet;
     private ResourcePreprocessor mPreprocessor;
+    private boolean isFromDependency;
 
     public ResourceSet(String name) {
         this(name, true /*validateEnabled*/);
@@ -254,7 +255,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
         }
 
         ResourceFile generatedSetResourceFile = mGeneratedSet.getDataFile(changedFile);
-        boolean needsPreprocessing = mPreprocessor.needsPreprocessing(changedFile);
+        boolean needsPreprocessing = needsPreprocessing(changedFile);
 
         if (resourceFile != null && generatedSetResourceFile == null && needsPreprocessing) {
             // It didn't use to need preprocessing, but it does now.
@@ -408,9 +409,8 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
             if (getValidateEnabled()) {
                 FileResourceNameValidator.validate(file, folderData.type);
             }
-            String name = getNameForFile(file);
 
-            if (mPreprocessor.needsPreprocessing(file)) {
+            if (needsPreprocessing(file)) {
                 return ResourceFile.generatedFiles(
                         file,
                         getResourceItemsForGeneratedFiles(file),
@@ -418,7 +418,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
             } else {
                 return new ResourceFile(
                         file,
-                        new ResourceItem(name, folderData.type, null),
+                        new ResourceItem(getNameForFile(file), folderData.type, null),
                         folderData.qualifiers);
             }
         } else {
@@ -432,6 +432,14 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
                 throw e;
             }
         }
+    }
+
+    /**
+     * Determine if the given file needs preprocessing. We don't preprocess files that come from
+     * dependencies, since they should have been preprocessed when creating the AAR.
+     */
+    private boolean needsPreprocessing(@NonNull File file) {
+        return !this.isFromDependency && mPreprocessor.needsPreprocessing(file);
     }
 
     @NonNull
@@ -467,6 +475,14 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
             name = name.substring(0, pos);
         }
         return name;
+    }
+
+    public boolean isFromDependency() {
+        return isFromDependency;
+    }
+
+    public void setFromDependency(boolean fromDependency) {
+        isFromDependency = fromDependency;
     }
 
     /**
