@@ -1370,17 +1370,24 @@ public class AndroidBuilder {
                             + minimumBuildTools.toShortString());
                 }
             } else {
-                File dxJar = new File(
-                        mTargetInfo.getBuildTools().getPath(BuildToolInfo.PathId.DX_JAR));
-                DexWrapper dexWrapper = DexWrapper.obtain(dxJar);
-                try {
-                    ProcessResult result =
-                            dexWrapper.run(builder, dexOptions, processOutputHandler, mLogger);
-                    result.assertNormalExitValue();
-                } finally {
-                    dexWrapper.release();
+
+                // if the dx.jar is on the classpath, automatically revert to out of process.
+                if (DexWrapper.noMainDexOnClasspath()) {
+                    File dxJar = new File(
+                            mTargetInfo.getBuildTools().getPath(BuildToolInfo.PathId.DX_JAR));
+                    DexWrapper dexWrapper = DexWrapper.obtain(dxJar);
+                    try {
+                        ProcessResult result =
+                                dexWrapper.run(builder, dexOptions, processOutputHandler, mLogger);
+                        result.assertNormalExitValue();
+                    } finally {
+                        dexWrapper.release();
+                    }
+                    return;
+                } else {
+                    getLogger().warning("dx.jar is on Android Gradle plugin classpath, "
+                            + "reverted to out of process dexing");
                 }
-                return;
             }
         }
         // fall through, use external process.
