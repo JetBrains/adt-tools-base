@@ -362,7 +362,7 @@ res/layout/used21.xml"""
                 + "deflated  AndroidManifest.xml\n"
                 + (REPLACE_DELETED_WITH_EMPTY ? "deflated  res/xml/my_xml.xml\n" : "")
                 + "deflated  res/raw/unknown\n"
-                + (REPLACE_DELETED_WITH_EMPTY ? "deflated  res/raw/unused_icon.png\n" : "")
+                + (REPLACE_DELETED_WITH_EMPTY ? "  stored  res/raw/unused_icon.png\n" : "")
                 + (REPLACE_DELETED_WITH_EMPTY ? "deflated  res/raw/unused_index.html\n" : "")
                 + "deflated  res/drawable/used1.xml\n"
                 + "  stored  res/raw/used_icon.png\n"
@@ -397,6 +397,8 @@ res/layout/used21.xml"""
             }
             assertEquals(name1, name2)
             if (!entry1.isDirectory()) {
+                assertEquals(name1, entry1.getMethod(), entry2.getMethod());
+
                 byte[] bytes1 = ByteStreams.toByteArray(zis1)
                 byte[] bytes2 = ByteStreams.toByteArray(zis2)
 

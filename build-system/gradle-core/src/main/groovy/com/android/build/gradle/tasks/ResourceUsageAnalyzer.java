@@ -16,27 +16,15 @@
 
 package com.android.build.gradle.tasks;
 
-import static com.android.SdkConstants.ANDROID_STYLE_RESOURCE_PREFIX;
-import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_NAME;
-import static com.android.SdkConstants.ATTR_PARENT;
 import static com.android.SdkConstants.ATTR_TYPE;
 import static com.android.SdkConstants.DOT_9PNG;
 import static com.android.SdkConstants.DOT_CLASS;
-import static com.android.SdkConstants.DOT_GIF;
 import static com.android.SdkConstants.DOT_JAR;
-import static com.android.SdkConstants.DOT_JPEG;
-import static com.android.SdkConstants.DOT_JPG;
 import static com.android.SdkConstants.DOT_PNG;
 import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.FD_RES_VALUES;
-import static com.android.SdkConstants.PREFIX_ANDROID;
-import static com.android.SdkConstants.STYLE_RESOURCE_PREFIX;
-import static com.android.SdkConstants.TAG_ITEM;
 import static com.android.SdkConstants.TAG_RESOURCES;
-import static com.android.SdkConstants.TAG_STYLE;
-import static com.android.SdkConstants.TOOLS_URI;
-import static com.android.utils.SdkUtils.endsWith;
 import static com.android.utils.SdkUtils.endsWithIgnoreCase;
 import static com.google.common.base.Charsets.UTF_8;
 import static org.objectweb.asm.ClassReader.SKIP_DEBUG;
@@ -46,22 +34,16 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
-import com.android.ide.common.resources.ResourceUrl;
-import com.android.ide.common.resources.configuration.DensityQualifier;
-import com.android.ide.common.resources.configuration.FolderConfiguration;
-import com.android.ide.common.resources.configuration.ResourceQualifier;
+import com.android.build.gradle.tasks.ResourceUsageModel.Resource;
 import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.resources.FolderTypeRelationship;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
 import com.android.tools.lint.checks.StringFormatDetector;
-import com.android.tools.lint.client.api.DefaultConfiguration;
-import com.android.tools.lint.detector.api.LintUtils;
 import com.android.utils.AsmUtils;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
-import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -75,27 +57,20 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -105,6 +80,7 @@ import java.util.jar.JarOutputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -210,18 +186,6 @@ public class ResourceUsageAnalyzer {
      */
     @SuppressWarnings("SpellCheckingInspection") // arsc
     public static final boolean TWO_PASS_AAPT = false;
-    public static final int TYPICAL_RESOURCE_COUNT = 200;
-
-    /** Name of keep attribute in XML */
-    private static final String ATTR_KEEP = "keep";
-    /** Name of discard attribute in XML (to mark resources as not referenced, despite guesses) */
-    private static final String ATTR_DISCARD = "discard";
-    /** Name of attribute in XML to control whether we should guess resources to keep */
-    private static final String ATTR_SHRINK_MODE = "shrinkMode";
-    /** {@linkplain #ATTR_SHRINK_MODE} value to only shrink explicitly encountered resources */
-    private static final String VALUE_STRICT = "strict";
-    /** {@linkplain #ATTR_SHRINK_MODE} value to keep possibly referenced resources */
-    private static final String VALUE_SAFE = "safe";
 
     /** Special marker regexp which does not match a resource name */
     static final String NO_MATCH = "-nomatch-";
@@ -243,14 +207,6 @@ public class ResourceUsageAnalyzer {
     /** The computed set of unused resources */
     private List<Resource> mUnused;
 
-    /** List of all known resources (parsed from R.java) */
-    private List<Resource> mResources = Lists.newArrayListWithExpectedSize(TYPICAL_RESOURCE_COUNT);
-    /** Map from R field value to corresponding resource */
-    private Map<Integer, Resource> mValueToResource =
-            Maps.newHashMapWithExpectedSize(TYPICAL_RESOURCE_COUNT);
-    /** Map from resource type to map from resource name to resource object */
-    private Map<ResourceType, Map<String, Resource>> mTypeToName =
-            Maps.newEnumMap(ResourceType.class);
     /** Map from resource class owners (VM format class) to corresponding resource types.
      * This will typically be the fully qualified names of the R classes, as well as
      * any renamed versions of those discovered in the mapping.txt file from ProGuard */
@@ -261,13 +217,6 @@ public class ResourceUsageAnalyzer {
 
     /** Obfuscated name of android/support/v7/internal/widget/ResourcesWrapper.java */
     private String mResourcesWrapper;
-
-    /**
-     * Whether we should attempt to guess resources that should be kept based on looking
-     * at the string pool and assuming some of the strings can be used to dynamically construct
-     * the resource names. Can be turned off via {@code tools:guessKeep="false"}.
-     */
-    private boolean mGuessKeep = true;
 
     public ResourceUsageAnalyzer(
             @NonNull File rDir,
@@ -317,12 +266,13 @@ public class ResourceUsageAnalyzer {
     public void analyze() throws IOException, ParserConfigurationException, SAXException {
         gatherResourceValues(mResourceClassDir);
         recordMapping(mProguardMapping);
-        recordUsages(mClasses);
+        recordClassUsages(mClasses);
         recordManifestUsages(mMergedManifest);
         recordResources(mMergedResourceDir);
         keepPossiblyReferencedResources();
         dumpReferences();
-        findUnused();
+        mModel.processToolsAttributes();
+        mUnused = mModel.findUnused();
     }
 
     public boolean isDryRun() {
@@ -366,6 +316,8 @@ public class ResourceUsageAnalyzer {
             (byte)-126
     };
 
+    public static final long TINY_PNG_CRC = 0x88b2a3b0L;
+
     // A 3x3 pixel PNG of type BufferedImage.TYPE_INT_ARGB with 9-patch markers
     public static final byte[] TINY_9PNG = new byte[] {
             (byte)-119, (byte)  80, (byte)  78, (byte)  71, (byte)  13, (byte)  10,
@@ -382,6 +334,8 @@ public class ResourceUsageAnalyzer {
             (byte)   0, (byte)   0, (byte)   0, (byte)  73, (byte)  69, (byte)  78,
             (byte)  68, (byte) -82, (byte)  66, (byte)  96, (byte)-126
     };
+
+    public static final long TINY_9PNG_CRC = 0x1148f987L;
 
     // The XML document <x/> as binary-packed with AAPT
     public static final byte[] TINY_XML = new byte[] {
@@ -404,6 +358,8 @@ public class ResourceUsageAnalyzer {
             (byte)  -1, (byte)  -1, (byte)  -1, (byte)  -1, (byte)   0, (byte)   0,
             (byte)   0, (byte)   0
     };
+
+    public static final long TINY_XML_CRC = 0xd7e65643L;
 
     /**
      * "Removes" resources from an .ap_ file by writing it out while filtering out
@@ -441,7 +397,7 @@ public class ResourceUsageAnalyzer {
                         String name = entry.getName();
                         boolean directory = entry.isDirectory();
                         Resource resource = getResourceByJarPath(name);
-                        if (resource == null || resource.reachable) {
+                        if (resource == null || resource.isReachable()) {
                             // We can't just compress all files; files that are not
                             // compressed in the source .ap_ file must be left uncompressed
                             // here, since for example RAW files need to remain uncompressed in
@@ -474,18 +430,28 @@ public class ResourceUsageAnalyzer {
                                 && !name.equals("res/raw/keep.xml")) {
                             // Create a new entry so that the compressed len is recomputed.
                             byte[] bytes;
+                            long crc;
                             if (name.endsWith(DOT_9PNG)) {
                                 bytes = TINY_9PNG;
+                                crc = TINY_9PNG_CRC;
                             } else if (name.endsWith(DOT_PNG)) {
                                 bytes = TINY_PNG;
+                                crc = TINY_PNG_CRC;
                             } else if (name.endsWith(DOT_XML)) {
                                 bytes = TINY_XML;
+                                crc = TINY_XML_CRC;
                             } else {
                                 bytes = new byte[0];
+                                crc = 0L;
                             }
                             JarEntry outEntry = new JarEntry(name);
                             if (entry.getTime() != -1L) {
                                 outEntry.setTime(entry.getTime());
+                            }
+                            if (entry.getMethod() == JarEntry.STORED) {
+                                outEntry.setMethod(JarEntry.STORED);
+                                outEntry.setSize(bytes.length);
+                                outEntry.setCrc(crc);
                             }
                             zos.putNextEntry(outEntry);
                             zos.write(bytes);
@@ -647,9 +613,11 @@ public class ResourceUsageAnalyzer {
                     xml = Files.toString(values, UTF_8);
                 }
                 Document document = XmlUtils.parseDocument(xml, true);
-                Element root = document.getDocumentElement();
 
-                for (Resource resource : mResources) {
+                assert false;
+                /* This doesn't work; we don't need this when we have stable aapt id's anyway
+                Element root = document.getDocumentElement();
+                for (Resource resource : mModel.getAllResources()) {
                     if (resource.type == ResourceType.ID && !resource.hasDefault) {
                         Element item = document.createElement(TAG_ITEM);
                         item.setAttribute(ATTR_TYPE, resource.type.getName());
@@ -670,6 +638,7 @@ public class ResourceUsageAnalyzer {
                         item.appendChild(document.createTextNode(s));
                     }
                 }
+                */
 
                 String formatted = XmlPrettyPrinter.prettyPrint(document, xml.endsWith("\n"));
                 rewritten.put(values, formatted);
@@ -724,13 +693,13 @@ public class ResourceUsageAnalyzer {
 
     private void stripUnused(Element element, List<String> removed) {
         if (TWO_PASS_AAPT) {
-            ResourceType type = getResourceType(element);
+            ResourceType type = ResourceUsageModel.getResourceType(element);
             if (type == ResourceType.ATTR) {
                 // Not yet properly handled
                 return;
             }
 
-            Resource resource = getResource(element);
+            Resource resource = mModel.getResource(element);
             if (resource != null) {
                 if (resource.type == ResourceType.DECLARE_STYLEABLE ||
                         resource.type == ResourceType.ATTR) {
@@ -739,7 +708,7 @@ public class ResourceUsageAnalyzer {
                     return;
                 }
 
-                if (!resource.reachable &&
+                if (!resource.isReachable() &&
                         (resource.type == ResourceType.STYLE ||
                                 resource.type == ResourceType.PLURALS ||
                                 resource.type == ResourceType.ARRAY)) {
@@ -760,7 +729,7 @@ public class ResourceUsageAnalyzer {
                 }
             }
 
-            if (resource != null && !resource.reachable) {
+            if (resource != null && !resource.isReachable()) {
                 if (mVerbose) {
                     removed.add(resource.getUrl());
                 }
@@ -801,21 +770,6 @@ public class ResourceUsageAnalyzer {
         }
     }
 
-    private static String getFieldName(Element element) {
-        return getFieldName(element.getAttribute(ATTR_NAME));
-    }
-
-    @Nullable
-    private Resource getResource(Element element) {
-        ResourceType type = getResourceType(element);
-        if (type != null) {
-            String name = getFieldName(element);
-            return getResource(type, name);
-        }
-
-        return null;
-    }
-
     @Nullable
     private Resource getResourceByJarPath(String path) {
         // Jars use forward slash paths, not File.separator
@@ -828,13 +782,16 @@ public class ResourceUsageAnalyzer {
                 if (folderType != null) {
                     int nameStart = folderEnd + 1;
                     int nameEnd = path.indexOf('.', nameStart);
+                    if (nameEnd == -1) {
+                        nameEnd = path.length();
+                    }
                     if (nameEnd != -1) {
                         String name = path.substring(nameStart, nameEnd);
                         List<ResourceType> types =
                                 FolderTypeRelationship.getRelatedResourceTypes(folderType);
                         for (ResourceType type : types) {
                             if (type != ResourceType.ID) {
-                                Resource resource = getResource(type, name);
+                                Resource resource = mModel.getResource(type, name);
                                 if (resource != null) {
                                     return resource;
                                 }
@@ -848,76 +805,9 @@ public class ResourceUsageAnalyzer {
         return null;
     }
 
-    private static ResourceType getResourceType(Element element) {
-        String tagName = element.getTagName();
-        if (tagName.equals(TAG_ITEM)) {
-            String typeName = element.getAttribute(ATTR_TYPE);
-            if (!typeName.isEmpty()) {
-                return ResourceType.getEnum(typeName);
-            }
-        } else if ("string-array".equals(tagName) || "integer-array".equals(tagName)) {
-            return ResourceType.ARRAY;
-        } else {
-            return ResourceType.getEnum(tagName);
-        }
-        return null;
-    }
-
-    private void findUnused() {
-        List<Resource> roots = Lists.newArrayList();
-
-        for (Resource resource : mResources) {
-            if (resource.reachable && resource.type != ResourceType.ID
-                    && resource.type != ResourceType.ATTR) {
-                roots.add(resource);
-            }
-        }
-
-        if (mDebugPrinter != null) {
-            mDebugPrinter.println("\nThe root reachable resources are:\n" +
-                    Joiner.on(",\n   ").join(roots));
-        }
-
-        Map<Resource,Boolean> seen = new IdentityHashMap<Resource,Boolean>(mResources.size());
-        for (Resource root : roots) {
-            visit(root, seen);
-        }
-
-        List<Resource> unused = Lists.newArrayListWithExpectedSize(mResources.size());
-        for (Resource resource : mResources) {
-            if (!resource.reachable && resource.isRelevantType()) {
-                unused.add(resource);
-            }
-        }
-
-        mUnused = unused;
-
-        if (mDebugPrinter != null) {
-            mDebugPrinter.println(dumpResourceModel());
-        }
-    }
-
-    private static void visit(Resource root, Map<Resource, Boolean> seen) {
-        if (seen.containsKey(root)) {
-            return;
-        }
-        seen.put(root, Boolean.TRUE);
-        root.reachable = true;
-        if (root.references != null) {
-            for (Resource referenced : root.references) {
-                visit(referenced, seen);
-            }
-        }
-    }
-
     private void dumpReferences() {
         if (mDebugPrinter != null) {
-            mDebugPrinter.println("Resource Reference Graph:");
-            for (Resource resource : mResources) {
-                if (resource.references != null) {
-                    mDebugPrinter.println(resource + " => " + resource.references);
-                }
-            }
+            mDebugPrinter.print(mModel.dumpReferences());
         }
     }
 
@@ -928,7 +818,7 @@ public class ResourceUsageAnalyzer {
             return;
         }
 
-        if (!mGuessKeep) {
+        if (!mModel.isSafeMode()) {
             // User specifically asked for us not to guess resources to keep; they will
             // explicitly mark them as kept if necessary instead
             return;
@@ -954,13 +844,12 @@ public class ResourceUsageAnalyzer {
 
         int shortest = Integer.MAX_VALUE;
         Set<String> names = Sets.newHashSetWithExpectedSize(50);
-        for (Map<String, Resource> map : mTypeToName.values()) {
-            for (String name : map.keySet()) {
-                names.add(name);
-                int length = name.length();
-                if (length < shortest) {
-                    shortest = length;
-                }
+        for (Resource resource : mModel.getResources()) {
+            String name = resource.name;
+            names.add(name);
+            int length = name.length();
+            if (length < shortest) {
+                shortest = length;
             }
         }
 
@@ -982,9 +871,9 @@ public class ResourceUsageAnalyzer {
             //  (4) If mFoundWebContent is true, look for android_res/ URL strings as well
 
             if (mFoundWebContent) {
-                Resource resource = getResourceFromFilePath(string);
+                Resource resource = mModel.getResourceFromFilePath(string);
                 if (resource != null) {
-                    markReachable(resource);
+                    ResourceUsageModel.markReachable(resource);
                     continue;
                 } else {
                     int start = 0;
@@ -995,13 +884,13 @@ public class ResourceUsageAnalyzer {
                     int dot = string.indexOf('.', start);
                     String name = string.substring(start, dot != -1 ? dot : string.length());
                     if (names.contains(name)) {
-                        for (Map<String, Resource> map : mTypeToName.values()) {
+                        for (Map<String, Resource> map : mModel.getResourceMaps()) {
                             resource = map.get(name);
                             if (mDebug && resource != null) {
                                 mDebugPrinter.println("Marking " + resource + " used because it "
                                         + "matches string pool constant " + string);
                             }
-                            markReachable(resource);
+                            ResourceUsageModel.markReachable(resource);
                         }
                     }
                 }
@@ -1037,15 +926,13 @@ public class ResourceUsageAnalyzer {
 
                 // Check for a simple prefix match, e.g. as in
                 // getResources().getIdentifier("ic_video_codec_" + codecName, "drawable", ...)
-                for (Map<String, Resource> map : mTypeToName.values()) {
-                    for (Resource resource : map.values()) {
-                        if (resource.name.startsWith(name)) {
-                            if (mDebugPrinter != null) {
-                                mDebugPrinter.println("Marking " + resource + " used because its "
-                                        + "prefix matches string pool constant " + string);
-                            }
-                            markReachable(resource);
+                for (Resource resource : mModel.getResources()) {
+                    if (resource.name.startsWith(name)) {
+                        if (mDebugPrinter != null) {
+                            mDebugPrinter.println("Marking " + resource + " used because its "
+                                    + "prefix matches string pool constant " + string);
                         }
+                        ResourceUsageModel.markReachable(resource);
                     }
                 }
             } else if (!haveSlash) {
@@ -1056,16 +943,14 @@ public class ResourceUsageAnalyzer {
 
                     try {
                         Pattern pattern = Pattern.compile(convertFormatStringToRegexp(string));
-                        for (Map<String, Resource> map : mTypeToName.values()) {
-                            for (Resource resource : map.values()) {
-                                if (pattern.matcher(resource.name).matches()) {
-                                    if (mDebugPrinter != null) {
-                                        mDebugPrinter.println("Marking " + resource + " used because "
-                                                + "it format-string matches string pool constant "
-                                                + string);
-                                    }
-                                    markReachable(resource);
+                        for (Resource resource : mModel.getResources()) {
+                            if (pattern.matcher(resource.name).matches()) {
+                                if (mDebugPrinter != null) {
+                                    mDebugPrinter.println("Marking " + resource + " used because "
+                                            + "it format-string matches string pool constant "
+                                            + string);
                                 }
+                                ResourceUsageModel.markReachable(resource);
                             }
                         }
                     } catch (PatternSyntaxException ignored) {
@@ -1093,12 +978,12 @@ public class ResourceUsageAnalyzer {
                     if (type == null) {
                         continue;
                     }
-                    Resource resource = getResource(type, name);
+                    Resource resource = mModel.getResource(type, name);
                     if (mDebug && resource != null) {
                         mDebugPrinter.println("Marking " + resource + " used because it "
                                 + "matches string pool constant " + string);
                     }
-                    markReachable(resource);
+                    ResourceUsageModel.markReachable(resource);
                     continue;
                 }
 
@@ -1106,13 +991,13 @@ public class ResourceUsageAnalyzer {
             }
 
             if (names.contains(name)) {
-                for (Map<String, Resource> map : mTypeToName.values()) {
+                for (Map<String, Resource> map : mModel.getResourceMaps()) {
                     Resource resource = map.get(name);
                     if (mDebug && resource != null) {
                         mDebugPrinter.println("Marking " + resource + " used because it "
                                 + "matches string pool constant " + string);
                     }
-                    markReachable(resource);
+                    ResourceUsageModel.markReachable(resource);
                 }
             } else if (Character.isDigit(name.charAt(0))) {
                 // Just a number? There are cases where it calls getIdentifier by
@@ -1122,7 +1007,7 @@ public class ResourceUsageAnalyzer {
                 try {
                     int id = Integer.parseInt(name);
                     if (id != 0) {
-                        markReachable(mValueToResource.get(id));
+                        ResourceUsageModel.markReachable(mModel.getResource(id));
                     }
                 } catch (NumberFormatException e) {
                     // pass
@@ -1211,69 +1096,21 @@ public class ResourceUsageAnalyzer {
     private void recordResources(@NonNull ResourceFolderType folderType, File folder)
             throws ParserConfigurationException, SAXException, IOException {
         File[] files = folder.listFiles();
-        FolderConfiguration config = FolderConfiguration.getConfigForFolder(folder.getName());
-        boolean isDefaultFolder = false;
-        if (config != null) {
-            isDefaultFolder = true;
-            for (int i = 0, n = FolderConfiguration.getQualifierCount(); i < n; i++) {
-                ResourceQualifier qualifier = config.getQualifier(i);
-                // Densities are special: even if they're present in just (say) drawable-hdpi
-                // we'll match it on any other density
-                if (qualifier != null && !(qualifier instanceof DensityQualifier)) {
-                    isDefaultFolder = false;
-                    break;
-                }
-            }
-        }
-
         if (files != null) {
             for (File file : files) {
                 String path = file.getPath();
-                boolean isXml = endsWithIgnoreCase(path, DOT_XML);
-
-                Resource from = null;
-                // Record resource for the whole file
-                if (folderType != ResourceFolderType.VALUES
-                        && (isXml
-                            || endsWith(path, DOT_PNG) //also true for endsWith(name, DOT_9PNG)
-                            || endsWith(path, DOT_JPG)
-                            || endsWith(path, DOT_GIF)
-                            || endsWith(path, DOT_JPEG))) {
-                    List<ResourceType> types = FolderTypeRelationship.getRelatedResourceTypes(
-                            folderType);
-                    ResourceType type = types.get(0);
-                    assert type != ResourceType.ID : folderType;
-                    String name = file.getName();
-                    name = name.substring(0, name.indexOf('.'));
-                    Resource resource = getResource(type, name);
-                    if (resource != null) {
-                        resource.addLocation(file);
-                        if (isDefaultFolder) {
-                            resource.hasDefault = true;
-                        }
-                        from = resource;
+                mModel.file = file;
+                try {
+                    boolean isXml = endsWithIgnoreCase(path, DOT_XML);
+                    if (isXml) {
+                        String xml = Files.toString(file, UTF_8);
+                        Document document = XmlUtils.parseDocument(xml, true);
+                        mModel.visitXmlDocument(file, folderType, document);
+                    } else {
+                        mModel.visitBinaryResource(folderType, file);
                     }
-                }
-
-                if (isXml) {
-                    // For value files, and drawables and colors etc also pull in resource
-                    // references inside the file
-                    recordXmlResourcesUsages(file, isDefaultFolder, from);
-                    if (folderType == ResourceFolderType.XML) {
-                        tokenizeUnknownText(Files.toString(file, UTF_8));
-                    }
-                } else if (folderType == ResourceFolderType.RAW) {
-                    // Is this an HTML, CSS or JavaScript document bundled with the app?
-                    // If so tokenize and look for resource references.
-                    if (endsWithIgnoreCase(path, ".html") || endsWithIgnoreCase(path, ".htm")) {
-                        tokenizeHtml(from, Files.toString(file, UTF_8));
-                    } else if (endsWithIgnoreCase(path, ".css")) {
-                        tokenizeCss(from, Files.toString(file, UTF_8));
-                    } else if (endsWithIgnoreCase(path, ".js")) {
-                        tokenizeJs(from, Files.toString(file, UTF_8));
-                    } else if (file.isFile() && !LintUtils.isBitmapFile(file)) {
-                        tokenizeUnknownBinary(file);
-                    }
+                } finally {
+                    mModel.file = null;
                 }
             }
         }
@@ -1333,929 +1170,7 @@ public class ResourceUsageAnalyzer {
             throws IOException, ParserConfigurationException, SAXException {
         String xml = Files.toString(manifest, UTF_8);
         Document document = XmlUtils.parseDocument(xml, true);
-        recordManifestUsages(document.getDocumentElement());
-    }
-
-    private void recordXmlResourcesUsages(@NonNull File file, boolean isDefaultFolder,
-            @Nullable Resource from)
-            throws IOException, ParserConfigurationException, SAXException {
-        String xml = Files.toString(file, UTF_8);
-        Document document = XmlUtils.parseDocument(xml, true);
-        recordResourceReferences(file, isDefaultFolder, document.getDocumentElement(), from);
-    }
-
-    private void tokenizeHtml(@Nullable Resource from, @NonNull String  html) {
-        // Look for
-        //    (1) URLs of the form /android_res/drawable/foo.ext
-        //        which we will use to keep R.drawable.foo
-        // and
-        //    (2) Filenames. If the web content is loaded with something like
-        //        WebView.loadDataWithBaseURL("file:///android_res/drawable/", ...)
-        //        this is similar to Resources#getIdentifier handling where all
-        //        *potentially* aliased filenames are kept to play it safe.
-
-        // Simple HTML tokenizer
-        int length = html.length();
-        final int STATE_TEXT = 1;
-        final int STATE_SLASH = 2;
-        final int STATE_ATTRIBUTE_NAME = 3;
-        final int STATE_BEFORE_TAG = 4;
-        final int STATE_IN_TAG = 5;
-        final int STATE_BEFORE_ATTRIBUTE = 6;
-        final int STATE_ATTRIBUTE_BEFORE_EQUALS = 7;
-        final int STATE_ATTRIBUTE_AFTER_EQUALS = 8;
-        final int STATE_ATTRIBUTE_VALUE_NONE = 9;
-        final int STATE_ATTRIBUTE_VALUE_SINGLE = 10;
-        final int STATE_ATTRIBUTE_VALUE_DOUBLE = 11;
-        final int STATE_CLOSE_TAG = 12;
-
-        int state = STATE_TEXT;
-        int offset = 0;
-        int valueStart = 0;
-        int tagStart = 0;
-        String tag = null;
-        String attribute = null;
-        int attributeStart = 0;
-        int prev = -1;
-        while (offset < length) {
-            if (offset == prev) {
-                // Purely here to prevent potential bugs in the state machine from looping
-                // infinitely
-                offset++;
-            }
-            prev = offset;
-
-
-            char c = html.charAt(offset);
-
-            // MAke sure I handle doctypes properly.
-            // Make sure I handle cdata properly.
-            // Oh and what about <style> tags? tokenize everything inside as CSS!
-            // ANd <script> tag content as js!
-            switch (state) {
-                case STATE_TEXT: {
-                    if (c == '<') {
-                        state = STATE_SLASH;
-                        offset++;
-                        continue;
-                    }
-
-                    // Other text is just ignored
-                    offset++;
-                    break;
-                }
-
-                case STATE_SLASH: {
-                    if (c == '!') {
-                        if (html.startsWith("!--", offset)) {
-                            // Comment
-                            int end = html.indexOf("-->", offset + 3);
-                            if (end == -1) {
-                                offset = length;
-                                break;
-                            }
-                            offset = end + 3;
-                            continue;
-                        } else if (html.startsWith("![CDATA[", offset)) {
-                            // Skip CDATA text content; HTML text is irrelevant to this tokenizer
-                            // anyway
-                            int end = html.indexOf("]]>", offset + 8);
-                            if (end == -1) {
-                                offset = length;
-                                break;
-                            }
-                            offset = end + 3;
-                            continue;
-                        }
-                    } else if (c == '/') {
-                        state = STATE_CLOSE_TAG;
-                        offset++;
-                        continue;
-                    } else if (c == '?') {
-                        // XML Prologue
-                        int end = html.indexOf('>', offset + 2);
-                        if (end == -1) {
-                            offset = length;
-                            break;
-                        }
-                        offset = end + 1;
-                        continue;
-                    }
-                    state = STATE_IN_TAG;
-                    tagStart = offset;
-                    break;
-                }
-
-                case STATE_CLOSE_TAG: {
-                    if (c == '>') {
-                        state = STATE_TEXT;
-                    }
-                    offset++;
-                    break;
-                }
-
-                case STATE_BEFORE_TAG: {
-                    if (!Character.isWhitespace(c)) {
-                        state = STATE_IN_TAG;
-                        tagStart = offset;
-                    }
-                    // (For an end tag we'll include / in the tag name here)
-                    offset++;
-                    break;
-                }
-                case STATE_IN_TAG: {
-                    if (Character.isWhitespace(c)) {
-                        state = STATE_BEFORE_ATTRIBUTE;
-                        tag = html.substring(tagStart, offset).trim();
-                    } else if (c == '>') {
-                        tag = html.substring(tagStart, offset).trim();
-                        endHtmlTag(from, html, offset, tag);
-                        state = STATE_TEXT;
-                    }
-                    offset++;
-                    break;
-                }
-                case STATE_BEFORE_ATTRIBUTE: {
-                    if (c == '>') {
-                        endHtmlTag(from, html, offset, tag);
-                        state = STATE_TEXT;
-                    } else //noinspection StatementWithEmptyBody
-                        if (c == '/') {
-                        // we expect an '>' next to close the tag
-                    } else if (!Character.isWhitespace(c)) {
-                        state = STATE_ATTRIBUTE_NAME;
-                        attributeStart = offset;
-                    }
-                    offset++;
-                    break;
-                }
-                case STATE_ATTRIBUTE_NAME: {
-                    if (c == '>') {
-                        endHtmlTag(from, html, offset, tag);
-                        state = STATE_TEXT;
-                    } else if (c == '=') {
-                        attribute = html.substring(attributeStart, offset);
-                        state = STATE_ATTRIBUTE_AFTER_EQUALS;
-                    } else if (Character.isWhitespace(c)) {
-                        attribute = html.substring(attributeStart, offset);
-                        state = STATE_ATTRIBUTE_BEFORE_EQUALS;
-                    }
-                    offset++;
-                    break;
-                }
-                case STATE_ATTRIBUTE_BEFORE_EQUALS: {
-                    if (c == '=') {
-                        state = STATE_ATTRIBUTE_AFTER_EQUALS;
-                    } else if (c == '>') {
-                        endHtmlTag(from, html, offset, tag);
-                        state = STATE_TEXT;
-                    } else if (!Character.isWhitespace(c)) {
-                        // Attribute value not specified (used for some boolean attributes)
-                        state = STATE_ATTRIBUTE_NAME;
-                        attributeStart = offset;
-                    }
-                    offset++;
-                    break;
-                }
-
-                case STATE_ATTRIBUTE_AFTER_EQUALS: {
-                    if (c == '\'') {
-                        // a='b'
-                        state = STATE_ATTRIBUTE_VALUE_SINGLE;
-                        valueStart = offset + 1;
-                    } else if (c == '"') {
-                        // a="b"
-                        state = STATE_ATTRIBUTE_VALUE_DOUBLE;
-                        valueStart = offset + 1;
-                    } else if (!Character.isWhitespace(c)) {
-                        // a=b
-                        state = STATE_ATTRIBUTE_VALUE_NONE;
-                        valueStart = offset + 1;
-                    }
-                    offset++;
-                    break;
-                }
-
-                case STATE_ATTRIBUTE_VALUE_SINGLE: {
-                    if (c == '\'') {
-                        state = STATE_BEFORE_ATTRIBUTE;
-                        recordHtmlAttributeValue(from, tag, attribute,
-                                html.substring(valueStart, offset));
-                    }
-                    offset++;
-                    break;
-                }
-                case STATE_ATTRIBUTE_VALUE_DOUBLE: {
-                    if (c == '"') {
-                        state = STATE_BEFORE_ATTRIBUTE;
-                        recordHtmlAttributeValue(from, tag, attribute,
-                                html.substring(valueStart, offset));
-                    }
-                    offset++;
-                    break;
-                }
-                case STATE_ATTRIBUTE_VALUE_NONE: {
-                    if (c == '>') {
-                        recordHtmlAttributeValue(from, tag, attribute,
-                                html.substring(valueStart, offset));
-                        endHtmlTag(from, html, offset, tag);
-                        state = STATE_TEXT;
-                    } else if (Character.isWhitespace(c)) {
-                        state = STATE_BEFORE_ATTRIBUTE;
-                        recordHtmlAttributeValue(from, tag, attribute,
-                                html.substring(valueStart, offset));
-                    }
-                    offset++;
-                    break;
-                }
-                default:
-                    assert false : state;
-            }
-        }
-    }
-
-    private void endHtmlTag(@Nullable Resource from, @NonNull String html, int offset,
-            @Nullable String tag) {
-        if ("script".equals(tag)) {
-            int end = html.indexOf("</script>", offset + 1);
-            if (end != -1) {
-                // Attempt to tokenize the text as JavaScript
-                String js = html.substring(offset + 1, end);
-                tokenizeJs(from, js);
-            }
-        } else if ("style".equals(tag)) {
-            int end = html.indexOf("</style>", offset + 1);
-            if (end != -1) {
-                // Attempt to tokenize the text as CSS
-                String css = html.substring(offset + 1, end);
-                tokenizeCss(from, css);
-            }
-        }
-    }
-
-    private void tokenizeJs(@Nullable Resource from, @NonNull String js) {
-        // Simple JavaScript tokenizer: only looks for literal strings,
-        // and records those as string references
-        int length = js.length();
-        final int STATE_INIT = 1;
-        final int STATE_SLASH = 2;
-        final int STATE_STRING_DOUBLE = 3;
-        final int STATE_STRING_DOUBLE_QUOTED = 4;
-        final int STATE_STRING_SINGLE = 5;
-        final int STATE_STRING_SINGLE_QUOTED = 6;
-
-        int state = STATE_INIT;
-        int offset = 0;
-        int stringStart = 0;
-        int prev = -1;
-        while (offset < length) {
-            if (offset == prev) {
-                // Purely here to prevent potential bugs in the state machine from looping
-                // infinitely
-                offset++;
-            }
-            prev = offset;
-
-            char c = js.charAt(offset);
-            switch (state) {
-                case STATE_INIT: {
-                    if (c == '/') {
-                        state = STATE_SLASH;
-                    } else if (c == '"') {
-                        stringStart = offset + 1;
-                        state = STATE_STRING_DOUBLE;
-                    } else if (c == '\'') {
-                        stringStart = offset + 1;
-                        state = STATE_STRING_SINGLE;
-                    }
-                    offset++;
-                    break;
-                }
-                case STATE_SLASH: {
-                    if (c == '*') {
-                        // Comment block
-                        state = STATE_INIT;
-                        int end = js.indexOf("*/", offset + 1);
-                        if (end == -1) {
-                            offset = length; // unterminated
-                            break;
-                        }
-                        offset = end + 2;
-                        continue;
-                    } else if (c == '/') {
-                        // Line comment
-                        state = STATE_INIT;
-                        int end = js.indexOf('\n', offset + 1);
-                        if (end == -1) {
-                            offset = length;
-                            break;
-                        }
-                        offset = end + 1;
-                        continue;
-                    } else {
-                        // division - just continue
-                        state = STATE_INIT;
-                        offset++;
-                        break;
-                    }
-                }
-                case STATE_STRING_DOUBLE: {
-                    if (c == '"') {
-                        recordJsString(js.substring(stringStart, offset));
-                        state = STATE_INIT;
-                    } else if (c == '\\') {
-                        state = STATE_STRING_DOUBLE_QUOTED;
-                    }
-                    offset++;
-                    break;
-                }
-                case STATE_STRING_DOUBLE_QUOTED: {
-                    state = STATE_STRING_DOUBLE;
-                    offset++;
-                    break;
-                }
-                case STATE_STRING_SINGLE: {
-                    if (c == '\'') {
-                        recordJsString(js.substring(stringStart, offset));
-                        state = STATE_INIT;
-                    } else if (c == '\\') {
-                        state = STATE_STRING_SINGLE_QUOTED;
-                    }
-                    offset++;
-                    break;
-                }
-                case STATE_STRING_SINGLE_QUOTED: {
-                    state = STATE_STRING_SINGLE;
-                    offset++;
-                    break;
-                }
-                default:
-                    assert false : state;
-            }
-        }
-    }
-
-    private void tokenizeCss(@Nullable Resource from, @NonNull String  css) {
-        // Simple CSS tokenizer: Only looks for URL references, and records those
-        // filenames. Skips everything else (unrelated to images).
-        int length = css.length();
-        final int STATE_INIT = 1;
-        final int STATE_SLASH = 2;
-        int state = STATE_INIT;
-        int offset = 0;
-        int prev = -1;
-        while (offset < length) {
-            if (offset == prev) {
-                // Purely here to prevent potential bugs in the state machine from looping
-                // infinitely
-                offset++;
-            }
-            prev = offset;
-
-            char c = css.charAt(offset);
-            switch (state) {
-                case STATE_INIT: {
-                    if (c == '/') {
-                        state = STATE_SLASH;
-                    } else if (c == 'u' && css.startsWith("url(", offset) && offset > 0) {
-                        char prevChar = css.charAt(offset-1);
-                        if (Character.isWhitespace(prevChar) || prevChar == ':') {
-                            int end = css.indexOf(')', offset);
-                            offset += 4; // skip url(
-                            while (offset < length && Character.isWhitespace(css.charAt(offset))) {
-                                offset++;
-                            }
-                            if (end != -1 && end > offset + 1) {
-                                while (end > offset
-                                        && Character.isWhitespace(css.charAt(end - 1))) {
-                                    end--;
-                                }
-                                if ((css.charAt(offset) == '"'
-                                        && css.charAt(end - 1) == '"')
-                                        || (css.charAt(offset) == '\''
-                                        && css.charAt(end - 1) == '\'')) {
-                                    // Strip " or '
-                                    offset++;
-                                    end--;
-                                }
-                                recordCssUrl(from, css.substring(offset, end).trim());
-                            }
-                            offset = end + 1;
-                            continue;
-                        }
-
-                    }
-                    offset++;
-                    break;
-                }
-                case STATE_SLASH: {
-                    if (c == '*') {
-                        // CSS comment? Skip the whole block rather than staying within the
-                        // character tokenizer.
-                        int end = css.indexOf("*/", offset + 1);
-                        if (end == -1) {
-                            offset = length;
-                            break;
-                        }
-                        offset = end + 2;
-                        continue;
-                    }
-                    state = STATE_INIT;
-                    offset++;
-                    break;
-                }
-                default:
-                    assert false : state;
-            }
-        }
-    }
-
-    private static byte[] sAndroidResBytes;
-
-    /** Look through binary/unknown files looking for resource URLs */
-    private void tokenizeUnknownBinary(@NonNull File file) {
-        try {
-            if (sAndroidResBytes == null) {
-                sAndroidResBytes = ANDROID_RES.getBytes(SdkConstants.UTF_8);
-            }
-            byte[] bytes = Files.toByteArray(file);
-            int index = 0;
-            while (index != -1) {
-                index = indexOf(bytes, sAndroidResBytes, index);
-                if (index != -1) {
-                    index += sAndroidResBytes.length;
-
-                    // Find the end of the URL
-                    int begin = index;
-                    int end = begin;
-                    for (; end < bytes.length; end++) {
-                        byte c = bytes[end];
-                        if (c != '/' && !Character.isJavaIdentifierPart((char)c)) {
-                            // android_res/raw/my_drawable.png => @raw/my_drawable
-                            String url = "@" + new String(bytes, begin, end - begin, UTF_8);
-                            markReachable(getResourceFromUrl(url));
-                            break;
-                        }
-                    }
-                }
-            }
-        } catch (IOException e) {
-            // Ignore
-        }
-    }
-
-    /**
-     * Returns the index of the given target array in the first array, looking from the given
-     * index
-     */
-    private static int indexOf(byte[] array, byte[] target, int fromIndex) {
-        outer:
-        for (int i = fromIndex; i < array.length - target.length + 1; i++) {
-            for (int j = 0; j < target.length; j++) {
-                if (array[i + j] != target[j]) {
-                    continue outer;
-                }
-            }
-            return i;
-        }
-        return -1;
-    }
-
-    /** Look through text files of unknown structure looking for resource URLs */
-    private void tokenizeUnknownText(@NonNull String text) {
-        int index = 0;
-        while (index != -1) {
-            index = text.indexOf(ANDROID_RES, index);
-            if (index != -1) {
-                index += ANDROID_RES.length();
-
-                // Find the end of the URL
-                int begin = index;
-                int end = begin;
-                int length = text.length();
-                for (; end < length; end++) {
-                    char c = text.charAt(end);
-                    if (c != '/' && !Character.isJavaIdentifierPart(c)) {
-                        // android_res/raw/my_drawable.png => @raw/my_drawable
-                        markReachable(getResourceFromUrl("@" + text.substring(begin, end)));
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-    private void recordCssUrl(@Nullable Resource from, @NonNull String value) {
-        if (!referencedUrl(from, value)) {
-            referencedString(value);
-            mFoundWebContent = true;
-        }
-    }
-
-    /**
-     * See if the given URL is a URL that we can resolve to a specific resource; if so,
-     * record it and return true, otherwise returns false.
-     */
-    private boolean referencedUrl(@Nullable Resource from, @NonNull String url) {
-        Resource resource = getResourceFromFilePath(url);
-        if (resource != null) {
-            if (from != null) {
-                from.addReference(resource);
-            } else {
-                // We don't have an inclusion context, so just assume this resource is reachable
-                markReachable(resource);
-            }
-            return true;
-        }
-
-        return false;
-    }
-
-    private void recordHtmlAttributeValue(@Nullable Resource from, @Nullable String tagName,
-            @Nullable String attribute, @NonNull String value) {
-        if ("href".equals(attribute) || "src".equals(attribute)) {
-            // In general we'd need to unescape the HTML here (e.g. remove entities) but
-            // those wouldn't be valid characters in the resource name anyway
-            if (!referencedUrl(from, value)) {
-                referencedString(value);
-                mFoundWebContent = true;
-            }
-
-            // If this document includes another, record the reachability of that script/resource
-            if (from != null) {
-                from.addReference(getResourceFromFilePath(attribute));
-            }
-        }
-    }
-
-    private void recordJsString(@NonNull String string) {
-        referencedString(string);
-    }
-
-    @Nullable
-    private Resource getResource(@NonNull ResourceType type, @NonNull String name) {
-        Map<String, Resource> nameMap = mTypeToName.get(type);
-        if (nameMap != null) {
-            return nameMap.get(getFieldName(name));
-        }
-        return null;
-    }
-
-    @Nullable
-    private Resource getResourceFromUrl(@NonNull String possibleUrlReference) {
-        ResourceUrl url = ResourceUrl.parse(possibleUrlReference);
-        if (url != null && !url.framework) {
-            return getResource(url.type, url.name);
-        }
-
-        return null;
-    }
-
-    @Nullable
-    private Resource getResourceFromFilePath(@NonNull String url) {
-        int nameSlash = url.lastIndexOf('/');
-        if (nameSlash == -1) {
-            return null;
-        }
-
-        // Look for
-        //   (1) a full resource URL: /android_res/type/name.ext
-        //   (2) a partial URL that uniquely identifies a given resource: drawable/name.ext
-        // e.g. file:///android_res/drawable/bar.png
-        int androidRes = url.indexOf(ANDROID_RES);
-        if (androidRes != -1) {
-            androidRes += ANDROID_RES.length();
-            int slash = url.indexOf('/', androidRes);
-            if (slash != -1) {
-                String folderName = url.substring(androidRes, slash);
-                ResourceFolderType folderType = ResourceFolderType.getFolderType(folderName);
-                if (folderType != null) {
-                    List<ResourceType> types = FolderTypeRelationship.getRelatedResourceTypes(
-                            folderType);
-                    if (!types.isEmpty()) {
-                        ResourceType type = types.get(0);
-                        int nameBegin = slash + 1;
-                        int dot = url.indexOf('.', nameBegin);
-                        String name = url.substring(nameBegin, dot != -1 ? dot : url.length());
-                        return getResource(type, name);
-                    }
-                }
-            }
-        }
-
-        // Some other relative path. Just look from the end:
-        int typeSlash = url.lastIndexOf('/', nameSlash - 1);
-        ResourceType type = ResourceType.getEnum(url.substring(typeSlash + 1, nameSlash));
-        if (type != null) {
-            int nameBegin = nameSlash + 1;
-            int dot = url.indexOf('.', nameBegin);
-            String name = url.substring(nameBegin, dot != -1 ? dot : url.length());
-            return getResource(type, name);
-        }
-
-        return null;
-    }
-
-    private void recordManifestUsages(Node node) {
-        short nodeType = node.getNodeType();
-        if (nodeType == Node.ELEMENT_NODE) {
-            Element element = (Element) node;
-            NamedNodeMap attributes = element.getAttributes();
-            for (int i = 0, n = attributes.getLength(); i < n; i++) {
-                Attr attr = (Attr) attributes.item(i);
-                markReachable(getResourceFromUrl(attr.getValue()));
-            }
-        } else if (nodeType == Node.TEXT_NODE) {
-            // Does this apply to any manifests??
-            String text = node.getNodeValue().trim();
-            markReachable(getResourceFromUrl(text));
-        }
-
-        NodeList children = node.getChildNodes();
-        for (int i = 0, n = children.getLength(); i < n; i++) {
-            Node child = children.item(i);
-            recordManifestUsages(child);
-        }
-    }
-
-
-    private void recordResourceReferences(@NonNull File file, boolean isDefaultFolder,
-            @NonNull Node node, @Nullable Resource from) {
-        short nodeType = node.getNodeType();
-        if (nodeType == Node.ELEMENT_NODE) {
-            Element element = (Element) node;
-            if (from != null) {
-                NamedNodeMap attributes = element.getAttributes();
-                for (int i = 0, n = attributes.getLength(); i < n; i++) {
-                    Attr attr = (Attr) attributes.item(i);
-
-                    // Ignore tools: namespace attributes, unless it's
-                    // a keep attribute
-                    if (TOOLS_URI.equals(attr.getNamespaceURI())) {
-                        handleToolsAttribute(attr);
-                        // Skip all other tools: attributes
-                        continue;
-                    }
-
-                    Resource resource = getResourceFromUrl(attr.getValue());
-                    if (resource != null) {
-                        from.addReference(resource);
-                    }
-                }
-
-                // Android Wear. We *could* limit ourselves to only doing this in files
-                // referenced from a manifest meta-data element, e.g.
-                // <meta-data android:name="com.google.android.wearable.beta.app"
-                //    android:resource="@xml/wearable_app_desc"/>
-                // but given that that property has "beta" in the name, it seems likely
-                // to change and therefore hardcoding it for that key risks breakage
-                // in the future.
-                if ("rawPathResId".equals(element.getTagName())) {
-                    StringBuilder sb = new StringBuilder();
-                    NodeList children = node.getChildNodes();
-                    for (int i = 0, n = children.getLength(); i < n; i++) {
-                        Node child = children.item(i);
-                        if (child.getNodeType() == Element.TEXT_NODE
-                                || child.getNodeType() == Element.CDATA_SECTION_NODE) {
-                            sb.append(child.getNodeValue());
-                        }
-                    }
-                    if (sb.length() > 0) {
-                        Resource resource = getResource(ResourceType.RAW, sb.toString().trim());
-                        from.addReference(resource);
-                    }
-                }
-            } else {
-                // Look for keep attributes everywhere else since they don't require a source
-                handleToolsAttribute(element.getAttributeNodeNS(TOOLS_URI, ATTR_KEEP));
-                handleToolsAttribute(element.getAttributeNodeNS(TOOLS_URI, ATTR_DISCARD));
-                handleToolsAttribute(element.getAttributeNodeNS(TOOLS_URI, ATTR_SHRINK_MODE));
-            }
-
-            Resource definition = getResource(element);
-            if (definition != null) {
-                from = definition;
-                definition.addLocation(file);
-                if (isDefaultFolder) {
-                    definition.hasDefault = true;
-                }
-            }
-
-            String tagName = element.getTagName();
-            if (TAG_STYLE.equals(tagName)) {
-                if (element.hasAttribute(ATTR_PARENT)) {
-                    String parent = element.getAttribute(ATTR_PARENT);
-                    if (!parent.isEmpty() && !parent.startsWith(ANDROID_STYLE_RESOURCE_PREFIX) &&
-                            !parent.startsWith(PREFIX_ANDROID)) {
-                        String parentStyle = parent;
-                        if (!parentStyle.startsWith(STYLE_RESOURCE_PREFIX)) {
-                            parentStyle = STYLE_RESOURCE_PREFIX + parentStyle;
-                        }
-                        Resource ps = getResourceFromUrl(getFieldName(parentStyle));
-                        if (ps != null && definition != null) {
-                            definition.addReference(ps);
-                        }
-                    }
-                } else {
-                    // Implicit parent styles by name
-                    String name = getFieldName(element);
-                    while (true) {
-                        int index = name.lastIndexOf('_');
-                        if (index != -1) {
-                            name = name.substring(0, index);
-                            Resource ps = getResourceFromUrl(
-                                    STYLE_RESOURCE_PREFIX + getFieldName(name));
-                            if (ps != null && definition != null) {
-                                definition.addReference(ps);
-                            }
-                        } else {
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if (TAG_ITEM.equals(tagName)) {
-                // In style? If so the name: attribute can be a reference
-                if (element.getParentNode() != null
-                        && element.getParentNode().getNodeName().equals(TAG_STYLE)) {
-                    String name = element.getAttributeNS(ANDROID_URI, ATTR_NAME);
-                    if (!name.isEmpty() && !name.startsWith("android:")) {
-                        Resource resource = getResource(ResourceType.ATTR, name);
-                        if (definition == null) {
-                            Element style = (Element) element.getParentNode();
-                            definition = getResource(style);
-                            if (definition != null) {
-                                from = definition;
-                                definition.addReference(resource);
-                            }
-                        }
-                    }
-                }
-            }
-        } else if (nodeType == Node.TEXT_NODE || nodeType == Node.CDATA_SECTION_NODE) {
-            String text = node.getNodeValue().trim();
-            Resource textResource = getResourceFromUrl(getFieldName(text));
-            if (textResource != null && from != null) {
-                from.addReference(textResource);
-            }
-        }
-
-        NodeList children = node.getChildNodes();
-        for (int i = 0, n = children.getLength(); i < n; i++) {
-            Node child = children.item(i);
-            recordResourceReferences(file, isDefaultFolder, child, from);
-        }
-    }
-
-    private void handleToolsAttribute(@Nullable Attr attr) {
-        if (attr == null) {
-            return;
-        }
-        String localName = attr.getLocalName();
-        String value = attr.getValue();
-        if (ATTR_KEEP.equals(localName)) {
-            handleKeepAttribute(value);
-        } else if (ATTR_DISCARD.equals(localName)) {
-            handleRemoveAttribute(value);
-        } else if (ATTR_SHRINK_MODE.equals(localName)) {
-            if (VALUE_STRICT.equals(value)) {
-                mGuessKeep = false;
-            } else if (VALUE_SAFE.equals(value)) {
-                mGuessKeep = true;
-            } else if (mDebugPrinter != null) {
-                mDebugPrinter.println("Ignoring unknown " + ATTR_SHRINK_MODE + " " + value);
-            }
-            if (mDebugPrinter != null) {
-                mDebugPrinter.println("Setting shrink mode to " + value);
-            }
-        }
-    }
-
-    public static String getFieldName(@NonNull String styleName) {
-        return styleName.replace('.', '_').replace('-', '_').replace(':', '_');
-    }
-
-    /**
-     * Marks the given resource (if non-null) as reachable, and returns true if
-     * this is the first time the resource is marked reachable
-     */
-    private static boolean markReachable(@Nullable Resource resource) {
-        if (resource != null) {
-            boolean wasReachable = resource.reachable;
-            resource.reachable = true;
-            return !wasReachable;
-        }
-
-        return false;
-    }
-
-    private static void markUnreachable(@Nullable Resource resource) {
-        if (resource != null) {
-            resource.reachable = false;
-        }
-    }
-
-    /**
-     * Called for a tools:keep attribute containing a resource URL where that resource name
-     * is not referencing a known resource
-     *
-     * @param value The keep value
-     */
-    private void handleKeepAttribute(@NonNull String value) {
-        // Handle comma separated lists of URLs and globs
-        if (value.indexOf(',') != -1) {
-            for (String portion : Splitter.on(',').omitEmptyStrings().trimResults().split(value)) {
-                handleKeepAttribute(portion);
-            }
-            return;
-        }
-
-        ResourceUrl url = ResourceUrl.parse(value);
-        if (url == null || url.framework) {
-            return;
-        }
-
-        Resource resource = getResource(url.type, url.name);
-        if (resource != null) {
-            if (mDebugPrinter != null) {
-                mDebugPrinter.println("Marking " + resource + " used because it "
-                        + "matches keep attribute " + value);
-            }
-            markReachable(resource);
-        } else if (url.name.contains("*") || url.name.contains("?")) {
-            // Look for globbing patterns
-            String regexp = DefaultConfiguration.globToRegexp(getFieldName(url.name));
-            try {
-                Pattern pattern = Pattern.compile(regexp);
-                Map<String, Resource> nameMap = mTypeToName.get(url.type);
-                if (nameMap != null) {
-                    for (Resource r : nameMap.values()) {
-                        if (pattern.matcher(r.name).matches()) {
-                            if (mDebugPrinter != null) {
-                                mDebugPrinter.println("Marking " + r + " used because it "
-                                        + "matches keep globbing pattern " + url.name);
-                            }
-
-                            markReachable(r);
-                        }
-                    }
-                }
-            } catch (PatternSyntaxException ignored) {
-                if (mDebugPrinter != null) {
-                    mDebugPrinter.println("Could not compute keep globbing pattern for " +
-                            url.name + ": tried regexp " + regexp + "(" + ignored + ")");
-                }
-            }
-        }
-    }
-
-    private void handleRemoveAttribute(@NonNull String value) {
-        // Handle comma separated lists of URLs and globs
-        if (value.indexOf(',') != -1) {
-            for (String portion : Splitter.on(',').omitEmptyStrings().trimResults().split(value)) {
-                handleRemoveAttribute(portion);
-            }
-            return;
-        }
-
-        ResourceUrl url = ResourceUrl.parse(value);
-        if (url == null || url.framework) {
-            return;
-        }
-
-        Resource resource = getResource(url.type, url.name);
-        if (resource != null) {
-            if (mDebugPrinter != null) {
-                mDebugPrinter.println("Marking " + resource + " used because it "
-                        + "matches remove attribute " + value);
-            }
-            markUnreachable(resource);
-        } else if (url.name.contains("*") || url.name.contains("?")) {
-            // Look for globbing patterns
-            String regexp = DefaultConfiguration.globToRegexp(getFieldName(url.name));
-            try {
-                Pattern pattern = Pattern.compile(regexp);
-                Map<String, Resource> nameMap = mTypeToName.get(url.type);
-                if (nameMap != null) {
-                    for (Resource r : nameMap.values()) {
-                        if (pattern.matcher(r.name).matches()) {
-                            if (mDebugPrinter != null) {
-                                mDebugPrinter.println("Marking " + r + " used because it "
-                                        + "matches remove globbing pattern " + url.name);
-                            }
-
-                            markUnreachable(r);
-                        }
-                    }
-                }
-            } catch (PatternSyntaxException ignored) {
-                if (mDebugPrinter != null) {
-                    mDebugPrinter.println("Could not compute remove globbing pattern for " +
-                            url.name + ": tried regexp " + regexp + "(" + ignored + ")");
-                }
-            }
-        }
+        mModel.visitXmlDocument(manifest, null, document);
     }
 
     private Set<String> mStrings;
@@ -2295,18 +1210,18 @@ public class ResourceUsageAnalyzer {
         }
     }
 
-    private void recordUsages(File file) throws IOException {
+    private void recordClassUsages(File file) throws IOException {
         if (file.isDirectory()) {
             File[] children = file.listFiles();
             if (children != null) {
                 for (File child : children) {
-                    recordUsages(child);
+                    recordClassUsages(child);
                 }
             }
         } else if (file.isFile()) {
             if (file.getPath().endsWith(DOT_CLASS)) {
                 byte[] bytes = Files.toByteArray(file);
-                recordUsages(file, file.getName(), bytes);
+                recordClassUsages(file, file.getName(), bytes);
             } else if (file.getPath().endsWith(DOT_JAR)) {
                 ZipInputStream zis = null;
                 try {
@@ -2324,7 +1239,7 @@ public class ResourceUsageAnalyzer {
                                     !isResourceClass(name)) {
                                 byte[] bytes = ByteStreams.toByteArray(zis);
                                 if (bytes != null) {
-                                    recordUsages(file, name, bytes);
+                                    recordClassUsages(file, name, bytes);
                                 }
                             }
 
@@ -2340,7 +1255,7 @@ public class ResourceUsageAnalyzer {
         }
     }
 
-    private void recordUsages(File file, String name, byte[] bytes) {
+    private void recordClassUsages(File file, String name, byte[] bytes) {
         ClassReader classReader = new ClassReader(bytes);
         classReader.accept(new UsageVisitor(file, name), SKIP_DEBUG | SKIP_FRAMES);
     }
@@ -2443,7 +1358,7 @@ public class ResourceUsageAnalyzer {
                             end = s.indexOf('=', start);
                             assert end != -1;
                             String styleable = s.substring(start, end).trim();
-                            addResource(ResourceType.DECLARE_STYLEABLE, styleable, null);
+                            mModel.addResource(ResourceType.DECLARE_STYLEABLE, styleable, null);
 
                             // TODO: Read in all the action bar ints!
                             // For now, we're simply treating all R.attr fields as used
@@ -2472,7 +1387,7 @@ public class ResourceUsageAnalyzer {
                             end = s.indexOf(';', start);
                             assert end != -1;
                             String value = s.substring(start, end).trim();
-                            addResource(type, name, value);
+                            mModel.addResource(type, name, value);
                         }
                     }
                 } else if (c == '}') {
@@ -2483,127 +1398,13 @@ public class ResourceUsageAnalyzer {
         }
     }
 
-    private void addResource(@NonNull ResourceType type, @NonNull String name,
-            @Nullable String value) {
-        int realValue = value != null ? Integer.decode(value) : -1;
-        Resource resource = getResource(type, name);
-        if (resource != null) {
-            //noinspection VariableNotUsedInsideIf
-            if (value != null) {
-                if (resource.value == -1) {
-                    resource.value = realValue;
-                } else {
-                    assert realValue == resource.value;
-                }
-            }
-            return;
-        }
-
-        resource = new Resource(type, name, realValue);
-        mResources.add(resource);
-        if (realValue != -1) {
-            mValueToResource.put(realValue, resource);
-        }
-        Map<String, Resource> nameMap = mTypeToName.get(type);
-        if (nameMap == null) {
-            nameMap = Maps.newHashMapWithExpectedSize(30);
-            mTypeToName.put(type, nameMap);
-        }
-        nameMap.put(name, resource);
-
-        // TODO: Assert that we don't set the same resource multiple times to different values.
-        // Could happen if you pass in stale data!
-    }
-
     public int getUnusedResourceCount() {
         return mUnused.size();
     }
 
     @VisibleForTesting
-    List<Resource> getAllResources() {
-        return mResources;
-    }
-
-    public static class Resource {
-        /** Type of resource */
-        public ResourceType type;
-        /** Name of resource */
-        public String name;
-        /** Integer id location */
-        public int value;
-        /** Whether this resource can be reached from one of the roots (manifest, code) */
-        public boolean reachable;
-        /** Whether this resource has a default definition (e.g. present in a resource folder
-         * with no qualifiers). For id references, an inline definition (@+id) does not count as
-         * a default definition.*/
-        public boolean hasDefault;
-        /** Resources this resource references. For example, a layout can reference another via
-         * an include; a style reference in a layout references that layout style, and so on. */
-        public List<Resource> references;
-        public final List<File> declarations = Lists.newArrayList();
-
-        private Resource(ResourceType type, String name, int value) {
-            this.type = type;
-            this.name = name;
-            this.value = value;
-        }
-
-        @Override
-        public String toString() {
-            return type + ":" + name + ":" + value;
-        }
-
-        @SuppressWarnings("RedundantIfStatement") // Generated by IDE
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-
-            Resource resource = (Resource) o;
-
-            if (name != null ? !name.equals(resource.name) : resource.name != null) {
-                return false;
-            }
-            if (type != resource.type) {
-                return false;
-            }
-
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = type != null ? type.hashCode() : 0;
-            result = 31 * result + (name != null ? name.hashCode() : 0);
-            return result;
-        }
-
-        public void addLocation(@NonNull File file) {
-            declarations.add(file);
-        }
-
-        public void addReference(@Nullable Resource resource) {
-            if (resource != null) {
-                if (references == null) {
-                    references = Lists.newArrayList();
-                } else if (references.contains(resource)) {
-                    return;
-                }
-                references.add(resource);
-            }
-        }
-
-        public String getUrl() {
-            return '@' + type.getName() + '/' + name;
-        }
-
-        public boolean isRelevantType() {
-            return type != ResourceType.ID; // && getFolderType() != ResourceFolderType.VALUES;
-        }
+    ResourceUsageModel getModel() {
+        return mModel;
     }
 
     /**
@@ -2636,9 +1437,9 @@ public class ResourceUsageAnalyzer {
                     if (opcode == Opcodes.GETSTATIC) {
                         ResourceType type = mResourceClassOwners.get(owner);
                         if (type != null) {
-                            Resource resource = getResource(type, name);
+                            Resource resource = mModel.getResource(type, name);
                             if (resource != null) {
-                                markReachable(resource);
+                                ResourceUsageModel.markReachable(resource);
                             }
                         }
                     }
@@ -2731,16 +1532,16 @@ public class ResourceUsageAnalyzer {
         private void handleCodeConstant(@Nullable Object cst, @NonNull String context) {
             if (cst instanceof Integer) {
                 Integer value = (Integer) cst;
-                Resource resource = mValueToResource.get(value);
-                if (markReachable(resource) && mDebug) {
+                Resource resource = mModel.getResource(value);
+                if (ResourceUsageModel.markReachable(resource) && mDebug) {
                     mDebugPrinter.println("Marking " + resource + " reachable: referenced from " +
                             context + " in " + mJarFile + ":" + mCurrentClass);
                 }
             } else if (cst instanceof int[]) {
                 int[] values = (int[]) cst;
                 for (int value : values) {
-                    Resource resource = mValueToResource.get(value);
-                    if (markReachable(resource) && mDebug) {
+                    Resource resource = mModel.getResource(value);
+                    if (ResourceUsageModel.markReachable(resource) && mDebug) {
                         mDebugPrinter.println("Marking " + resource + " reachable: referenced from " +
                                 context + " in " + mJarFile + ":" + mCurrentClass);
                     }
@@ -2752,33 +1553,35 @@ public class ResourceUsageAnalyzer {
         }
     }
 
-    @VisibleForTesting
-    String dumpResourceModel() {
-        StringBuilder sb = new StringBuilder(1000);
-        Collections.sort(mResources, new Comparator<Resource>() {
-            @Override
-            public int compare(Resource resource1,
-                    Resource resource2) {
-                int delta = resource1.type.compareTo(resource2.type);
-                if (delta != 0) {
-                    return delta;
-                }
-                return resource1.name.compareTo(resource2.name);
-            }
-        });
+    private final ResourceShrinkerUsageModel mModel =
+            new ResourceShrinkerUsageModel();
 
-        for (Resource resource : mResources) {
-            sb.append(resource.getUrl()).append(" : reachable=").append(resource.reachable);
-            sb.append("\n");
-            if (resource.references != null) {
-                for (Resource referenced : resource.references) {
-                    sb.append("    ");
-                    sb.append(referenced.getUrl());
-                    sb.append("\n");
-                }
+    private class ResourceShrinkerUsageModel extends ResourceUsageModel {
+        public File file;
+
+        @NonNull
+        @Override
+        protected List<Resource> findRoots(@NonNull List<Resource> resources) {
+            List<Resource> roots = super.findRoots(resources);
+            if (mDebugPrinter != null) {
+                mDebugPrinter.println("\nThe root reachable resources are:\n" +
+                        Joiner.on(",\n   ").join(roots));
             }
+
+            return roots;
         }
 
-        return sb.toString();
+        @Override
+        protected Resource declareResource(ResourceType type, String name, Node node) {
+            Resource resource = super.declareResource(type, name, node);
+            resource.addLocation(file);
+            return resource;
+        }
+
+        @Override
+        protected void referencedString(@NonNull String string) {
+            ResourceUsageAnalyzer.this.referencedString(string);
+            mFoundWebContent = true;
+        }
     }
 }

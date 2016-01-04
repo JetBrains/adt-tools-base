@@ -1486,7 +1486,7 @@ public class EcjParser extends JavaParser {
         @NonNull
         @Override
         public String getSimpleName() {
-            return stripTypeVariables(new String(mBinding.shortReadableName()));
+            return stripTypeVariables(new String(mBinding.sourceName()));
         }
 
         @Override
