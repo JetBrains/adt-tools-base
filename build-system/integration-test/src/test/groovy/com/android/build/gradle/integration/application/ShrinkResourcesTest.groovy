@@ -177,7 +177,6 @@ res/layout/used21.xml"""
 AndroidManifest.xml
 classes.dex
 res/drawable/force_remove.xml
-res/raw/keep.xml
 res/layout/l_used_a.xml
 res/layout/l_used_b2.xml
 res/layout/l_used_c.xml
@@ -445,7 +444,6 @@ res/layout/used21.xml"""
         //noinspection SpellCheckingInspection
         assertEquals(""
                 + "AndroidManifest.xml\n"
-                + (REPLACE_DELETED_WITH_EMPTY ? "res/raw/keep.xml\n" : "")
                 + "resources.arsc\n"
                 + (REPLACE_DELETED_WITH_EMPTY ? "res/layout/unused1.xml\n" : "")
                 + (REPLACE_DELETED_WITH_EMPTY ? "res/layout/unused2.xml\n" : "")

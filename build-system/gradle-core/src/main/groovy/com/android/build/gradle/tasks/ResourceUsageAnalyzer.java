@@ -212,9 +212,9 @@ public class ResourceUsageAnalyzer {
     private static final String ATTR_DISCARD = "discard";
     /** Name of attribute in XML to control whether we should guess resources to keep */
     private static final String ATTR_SHRINK_MODE = "shrinkMode";
-    /** @{linkplain #ATTR_SHRINK_MODE} value to only shrink explicitly encountered resources */
+    /** {@linkplain #ATTR_SHRINK_MODE} value to only shrink explicitly encountered resources */
     private static final String VALUE_STRICT = "strict";
-    /** @{linkplain #ATTR_SHRINK_MODE} value to keep possibly referenced resources */
+    /** {@linkplain #ATTR_SHRINK_MODE} value to keep possibly referenced resources */
     private static final String VALUE_SAFE = "safe";
 
     /** Special marker regexp which does not match a resource name */
@@ -245,6 +245,12 @@ public class ResourceUsageAnalyzer {
      * This will typically be the fully qualified names of the R classes, as well as
      * any renamed versions of those discovered in the mapping.txt file from ProGuard */
     private Map<String, ResourceType> mResourceClassOwners = Maps.newHashMapWithExpectedSize(20);
+
+    /** Obfuscated name of android/support/v7/widget/SuggestionsAdapter.java */
+    private String mSuggestionsAdapter;
+
+    /** Obfuscated name of android/support/v7/internal/widget/ResourcesWrapper.java */
+    private String mResourcesWrapper;
 
     /**
      * Whether we should attempt to guess resources that should be kept based on looking
@@ -420,7 +426,10 @@ public class ResourceUsageAnalyzer {
                             }
 
                             zos.closeEntry();
-                        } else if (REPLACE_DELETED_WITH_EMPTY && !directory) {
+                        } else //noinspection PointlessBooleanExpression
+                            if (REPLACE_DELETED_WITH_EMPTY && !directory
+                                // Canonical name for resource file that only contains keep rules
+                                && !name.equals("res/raw/keep.xml")) {
                             // Create a new entry so that the compressed len is recomputed.
                             byte[] bytes;
                             if (name.endsWith(DOT_9PNG)) {
@@ -461,6 +470,26 @@ public class ResourceUsageAnalyzer {
             }
         } finally {
             Closeables.close(zis, false);
+        }
+
+        // If net negative, copy original back. This is unusual, but can happen
+        // in some circumstances, such as the one described in
+        // https://plus.google.com/+SaidTahsinDane/posts/X9sTSwoVUhB
+        // "Removed unused resources: Binary resource data reduced from 588KB to 595KB: Removed -1%"
+        // Guard against that, and worst case, just use the original.
+        long before = source.length();
+        long after = dest.length();
+        if (after > before) {
+            String message = "Resource shrinking did not work (grew from " + before + " to "
+                    + after + "); using original instead";
+            if (isVerbose()) {
+                System.out.println(message);
+            }
+            if (mDebugPrinter != null) {
+                mDebugPrinter.println(message);
+            }
+
+            Files.copy(source, dest);
         }
     }
 
@@ -1208,6 +1237,21 @@ public class ResourceUsageAnalyzer {
             }
             int index = line.indexOf(RESOURCE);
             if (index == -1) {
+                // Record obfuscated names of a few known appcompat usages of
+                // Resources#getIdentifier that are unlikely to be used for general
+                // resource name reflection
+                if (line.startsWith("android.support.v7.widget.SuggestionsAdapter ")) {
+                    mSuggestionsAdapter = line.substring(line.indexOf(ARROW) + ARROW.length(),
+                            line.indexOf(':') != -1 ? line.indexOf(':') : line.length())
+                                .trim().replace('.','/') + DOT_CLASS;
+                } else if (line.startsWith("android.support.v7.internal.widget.ResourcesWrapper ")
+                        || line.startsWith("android.support.v7.widget.ResourcesWrapper ")
+                        || (mResourcesWrapper == null // Recently wrapper moved
+                           && line.startsWith("android.support.v7.widget.TintContextWrapper$TintResources "))) {
+                    mResourcesWrapper = line.substring(line.indexOf(ARROW) + ARROW.length(),
+                            line.indexOf(':') != -1 ? line.indexOf(':') : line.length())
+                            .trim().replace('.','/') + DOT_CLASS;
+                }
                 continue;
             }
             int arrow = line.indexOf(ARROW, index + 3);
@@ -1226,6 +1270,8 @@ public class ResourceUsageAnalyzer {
             String target = line.substring(arrow + ARROW.length(), end).trim();
             String ownerName = AsmUtils.toInternalName(target);
             mResourceClassOwners.put(ownerName, type);
+            // For fast lookup in isResourceClass
+            mResourceClassOwners.put(ownerName + DOT_CLASS, type);
         }
     }
 
@@ -2245,9 +2291,12 @@ public class ResourceUsageAnalyzer {
         classReader.accept(new UsageVisitor(file, name), SKIP_DEBUG | SKIP_FRAMES);
     }
 
-    /** Returns whether the given class path points to an aapt-generated compiled R class */
+    /** Returns whether the given class file name points to an aapt-generated compiled R class */
     @VisibleForTesting
-    static boolean isResourceClass(@NonNull String name) {
+    boolean isResourceClass(@NonNull String name) {
+        if (mResourceClassOwners.containsKey(name)) {
+            return true;
+        }
         assert name.endsWith(DOT_CLASS) : name;
         int index = name.lastIndexOf('/');
         if (index != -1 && name.startsWith("R$", index + 1)) {
@@ -2549,6 +2598,14 @@ public class ResourceUsageAnalyzer {
                             && name.equals("getIdentifier")
                             && desc.equals(
                             "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I")) {
+
+                        if (mCurrentClass.equals(mResourcesWrapper) ||
+                                mCurrentClass.equals(mSuggestionsAdapter)) {
+                            // "benign" usages: don't trigger reflection mode just because
+                            // the user has included appcompat
+                            return;
+                        }
+
                         mFoundGetIdentifier = true;
                         // TODO: Check previous instruction and see if we can find a literal
                         // String; if so, we can more accurately dispatch the resource here
