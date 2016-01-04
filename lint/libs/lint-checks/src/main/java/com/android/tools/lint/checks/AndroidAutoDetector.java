@@ -258,13 +258,17 @@ public class AndroidAutoDetector extends ResourceXmlDetector
         for (Element child : LintUtils.getChildren(element)) {
 
             if (TAG_USES.equals(child.getTagName())) {
-                String attrValue = child.getAttribute(SdkConstants.ATTR_NAME);
+                String attrValue = child.getAttribute(ATTR_NAME);
                 if (VAL_NAME_MEDIA.equals(attrValue)) {
                     mIsAutomotiveMediaApp |= isMetadataResource;
                 } else if (!VAL_NAME_NOTIFICATION.equals(attrValue)
                         && context.isEnabled(INVALID_USES_TAG_ISSUE)) {
                     // Error invalid value for attribute.
                     Attr node = child.getAttributeNode(ATTR_NAME);
+                    if (node == null) {
+                        // no name specified
+                        continue;
+                    }
                     context.report(INVALID_USES_TAG_ISSUE, node,
                             context.getLocation(node),
                             "Expecting one of `" + VAL_NAME_MEDIA + "` or `" +
