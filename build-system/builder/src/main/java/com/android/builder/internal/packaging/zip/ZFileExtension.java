@@ -25,8 +25,8 @@ import java.io.IOException;
 /**
  * An extension of a {@link ZFile}. Extensions are notified when files are open, updated, closed and
  * when files are added or removed from the zip. These notifications are received after the zip
- * has been updated in memory for open, add or remove and when the zip has been updated on disk for
- * updated or closed.
+ * has been updated in memory for open, when files are added or removed and when the zip has been
+ * updated on disk or closed.
  * <p>
  * An extension is also notified before the file is updated, allowing it to modify the file before
  * the update happens. If it does, then all extensions are notified of the changes on the zip file.
@@ -72,11 +72,30 @@ public abstract class ZFileExtension {
      * The zip will be updated. This method allows the extension to register changes to the zip
      * file before the file is written. The default implementation does nothing and returns
      * {@code null}.
+     * <p>
+     * After this notification is received, the extension will receive further
+     * {@link #added(StoredEntry, StoredEntry)} and {@link #removed(StoredEntry)} notifications if
+     * it or other extensions add or remove files before update.
+     * <p>
+     * When no more files are updated, the {@link #entriesWritten()} notification is sent.
      * @return an optional runnable to run when notification of all listeners has ended
+     * @throws IOException failed to process the event
      */
     @Nullable
     public IOExceptionRunnable beforeUpdate() throws IOException {
         return null;
+    }
+
+    /**
+     * This notification is sent when all entries have been written in the file but the central
+     * directory and the EOCD have not yet been written. No entries should be added, removed or
+     * updated during this notification. Updates to the zip file that solely affect the central
+     * directory and/or the EOCD can be made.
+     * <p>
+     * After this notification, {@link #updated()} is sent.
+     * @throws IOException failed to process the event
+     */
+    public void entriesWritten() throws IOException {
     }
 
     /**

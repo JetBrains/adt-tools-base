@@ -638,6 +638,17 @@ public class ZFile implements Closeable {
         deleteDirectoryAndEocd();
         mMap.truncate();
 
+        notify(new IOExceptionFunction<ZFileExtension, IOExceptionRunnable>() {
+            @Nullable
+            @Override
+            public IOExceptionRunnable apply(@Nullable ZFileExtension input) throws IOException {
+                Verify.verifyNotNull(input);
+                assert input != null;
+                input.entriesWritten();
+                return null;
+            }
+        });
+
         appendCentralDirectory();
         appendEocd();
 
