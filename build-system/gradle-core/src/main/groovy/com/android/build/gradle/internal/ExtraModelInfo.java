@@ -106,7 +106,7 @@ public class ExtraModelInfo extends ErrorReporter {
 
     @Override
     @NonNull
-    public SyncIssue handleSyncError(@NonNull String data, int type, @NonNull String msg) {
+    public SyncIssue handleSyncError(@Nullable String data, int type, @NonNull String msg) {
         SyncIssue issue;
         switch (getMode()) {
             case STANDARD:

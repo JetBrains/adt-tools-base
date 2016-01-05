@@ -175,7 +175,9 @@ public class TransformManager extends FilterableStreamCollection {
 
         if (inputStreams.isEmpty() && referencedStreams.isEmpty()) {
             // didn't find any match. Means there is a broken order somewhere in the streams.
-            errorReporter.handleSyncError("", SyncIssue.TYPE_GENERIC,
+            errorReporter.handleSyncError(
+                    null,
+                    SyncIssue.TYPE_GENERIC,
                     String.format(
                             "Unable to add Transform '%s' on variant '%s': requested streams not available: %s+%s / %s",
                             transform.getName(), scope.getVariantConfiguration().getFullName(),
@@ -390,13 +392,13 @@ public class TransformManager extends FilterableStreamCollection {
         // check some scopes are not consumed.
         Set<Scope> scopes = transform.getScopes();
         if (scopes.contains(Scope.PROVIDED_ONLY)) {
-            errorReporter.handleSyncError("", SyncIssue.TYPE_GENERIC,
+            errorReporter.handleSyncError(null, SyncIssue.TYPE_GENERIC,
                     String.format("PROVIDED_ONLY scope cannot be consumed by Transform '%1$s'",
                             transform.getName()));
             return false;
         }
         if (scopes.contains(Scope.TESTED_CODE)) {
-            errorReporter.handleSyncError("", SyncIssue.TYPE_GENERIC,
+            errorReporter.handleSyncError(null, SyncIssue.TYPE_GENERIC,
                     String.format("TESTED_CODE scope cannot be consumed by Transform '%1$s'",
                             transform.getName()));
             return false;
@@ -413,7 +415,7 @@ public class TransformManager extends FilterableStreamCollection {
         for (ContentType contentType : contentTypes) {
             if (!(contentType instanceof QualifiedContent.DefaultContentType
                     || contentType instanceof ExtendedContentType)) {
-                errorReporter.handleSyncError("", SyncIssue.TYPE_GENERIC,
+                errorReporter.handleSyncError(null, SyncIssue.TYPE_GENERIC,
                         String.format("Custom content types (%1$s) are not supported in transforms (%2$s)",
                                 contentType.getClass().getName(), transform.getName()));
                 return false;
