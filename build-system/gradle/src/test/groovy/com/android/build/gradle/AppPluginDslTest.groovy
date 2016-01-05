@@ -632,23 +632,29 @@ public class AppPluginDslTest extends BaseTest {
 
         project.android {
             compileSdkVersion COMPILE_SDK_VERSION
-            buildToolsVersion '20.0.0'
+            buildToolsVersion '23.0.2'
 
             productFlavors {
                 f1 {
                 }
 
                 f2  {
-                    generatedDensities = ["ldpi"]
-                    generatedDensities += ["mdpi"]
+                    vectorDrawables {
+                        generatedDensities = ["ldpi"]
+                        generatedDensities += ["mdpi"]
+                    }
                 }
 
                 f3 {
-                    generatedDensities = defaultConfig.generatedDensities - ["ldpi", "mdpi"]
+                    vectorDrawables {
+                        generatedDensities = defaultConfig.generatedDensities - ["ldpi", "mdpi"]
+                    }
                 }
 
-                f4  {
-                    generatedDensities = []
+                f4.vectorDrawables.generatedDensities = []
+
+                oldSyntax {
+                    generatedDensities = ["ldpi"]
                 }
             }
         }
@@ -666,6 +672,61 @@ public class AppPluginDslTest extends BaseTest {
                 ["hdpi", "xhdpi", "xxhdpi", "xxxhdpi"] as Set
 
         assert project.mergeF4DebugResources.generatedDensities == [] as Set
+
+        assert project.mergeOldSyntaxDebugResources.generatedDensities == ["ldpi"] as Set
+    }
+
+    public void testUseSupportLibrary_default() throws Exception {
+        Project project = ProjectBuilder.builder().withProjectDir(
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
+
+        project.apply plugin: 'com.android.application'
+
+        project.android {
+            compileSdkVersion COMPILE_SDK_VERSION
+            buildToolsVersion '20.0.0'
+        }
+
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
+        plugin.createAndroidTasks(false)
+
+        assert project.mergeDebugResources.disableVectorDrawables == false
+    }
+
+    public void testUseSupportLibrary_flavors() throws Exception {
+        Project project = ProjectBuilder.builder().withProjectDir(
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
+
+        project.apply plugin: 'com.android.application'
+
+        project.android {
+            compileSdkVersion COMPILE_SDK_VERSION
+            buildToolsVersion '20.0.0'
+
+            productFlavors {
+                f1 {
+                }
+
+                f2  {
+                    vectorDrawables {
+                        useSupportLibrary = true
+                    }
+                }
+
+                f3 {
+                    vectorDrawables {
+                        useSupportLibrary = false
+                    }
+                }
+            }
+        }
+
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
+        plugin.createAndroidTasks(false)
+
+        assert project.mergeF1DebugResources.disableVectorDrawables == false
+        assert project.mergeF2DebugResources.disableVectorDrawables == true
+        assert project.mergeF3DebugResources.disableVectorDrawables == false
     }
 
     private static void checkTestedVariant(@NonNull String variantName,

@@ -23,15 +23,9 @@ import com.android.builder.model.AndroidProject;
 import com.android.builder.model.DimensionAware;
 import com.android.builder.model.Variant;
 
-import org.gradle.api.Named;
 import org.gradle.model.Managed;
-import org.gradle.model.ModelSet;
-import org.gradle.model.Unmanaged;
 
-import java.util.List;
 import java.util.Set;
-
-import java.io.File;
 
 /**
  * A Managed product flavor.
@@ -196,5 +190,5 @@ public interface ProductFlavor extends DimensionAware, BaseConfig {
     NdkOptions getNdk();
 
     @NonNull
-    Set<String> getGeneratedDensities();
+    VectorDrawablesOptions getVectorDrawables();
 }

@@ -27,6 +27,7 @@ import com.android.builder.core.DefaultProductFlavor;
 import com.android.builder.core.ErrorReporter;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.ClassField;
+import com.android.builder.model.VectorDrawablesOptions;
 import com.android.builder.model.SyncIssue;
 import com.google.common.base.Strings;
 
@@ -37,6 +38,7 @@ import org.gradle.internal.reflect.Instantiator;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * DSL object used to configure product flavors.
@@ -501,5 +503,28 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
         for (Object file : files) {
             getJarJarRuleFiles().add(project.file(file));
         }
+    }
+
+    /**
+     * Deprecated equivalent of {@code vectorDrawablesOptions.generatedDensities}.
+     *
+     * @deprecated
+     */
+    @Deprecated
+    @Nullable
+    public Set<String> getGeneratedDensities() {
+        return getVectorDrawables().getGeneratedDensities();
+    }
+
+    @Deprecated
+    public void setGeneratedDensities(@Nullable Iterable<String> densities) {
+        getVectorDrawables().setGeneratedDensities(densities);
+    }
+
+    /**
+     * Configures {@link VectorDrawablesOptions}.
+     */
+    public void vectorDrawables(Action<VectorDrawablesOptions> action) {
+        action.execute(getVectorDrawables());
     }
 }

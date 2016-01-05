@@ -253,7 +253,8 @@ public abstract class BaseExtension implements AndroidConfig {
         for (Density density : densities) {
             strings.add(density.getResourceValue());
         }
-        defaultConfig.setGeneratedDensities(strings);
+        defaultConfig.getVectorDrawables().setGeneratedDensities(strings);
+        defaultConfig.getVectorDrawables().setUseSupportLibrary(false);
     }
 
     /**

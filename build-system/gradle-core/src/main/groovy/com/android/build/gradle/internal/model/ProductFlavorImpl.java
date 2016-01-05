@@ -18,9 +18,11 @@ package com.android.build.gradle.internal.model;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.core.DefaultVectorDrawablesOptions;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SigningConfig;
+import com.android.builder.model.VectorDrawablesOptions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 
@@ -53,8 +55,7 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
     private Boolean mTestHandleProfiling = null;
     private Boolean mTestFunctionalTest = null;
     private Set<String> mResourceConfigurations = null;
-    private Set<String> mGeneratedDensities = null;
-
+    private DefaultVectorDrawablesOptions mVectorDrawablesOptions = null;
 
     @NonNull
     static ProductFlavorImpl cloneFlavor(
@@ -93,7 +94,8 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
         clonedFlavor.mTestInstrumentationRunnerArguments = Maps.newHashMap(
                 productFlavor.getTestInstrumentationRunnerArguments());
 
-        clonedFlavor.mGeneratedDensities = productFlavor.getGeneratedDensities();
+        clonedFlavor.mVectorDrawablesOptions =
+                DefaultVectorDrawablesOptions.copyOf(productFlavor.getVectorDrawables());
 
         return clonedFlavor;
     }
@@ -202,10 +204,10 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
         return null;
     }
 
-    @Nullable
+    @NonNull
     @Override
-    public Set<String> getGeneratedDensities() {
-        return mGeneratedDensities;
+    public VectorDrawablesOptions getVectorDrawables() {
+        return mVectorDrawablesOptions;
     }
 
     @Nullable
@@ -233,6 +235,7 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
                 ", mTestHandleProfiling=" + mTestHandleProfiling +
                 ", mTestFunctionalTest=" + mTestFunctionalTest +
                 ", mResourceConfigurations=" + mResourceConfigurations +
+                ", mVectorDrawablesOptions=" + mVectorDrawablesOptions +
                 "} " + super.toString();
     }
 }
