@@ -32,8 +32,9 @@ public class DexParser implements PatternAwareOutputParser {
     static final String DEX_TOOL_NAME = "Dex";
 
     public static final String DEX_LIMIT_EXCEEDED_ERROR =
-            "Your app has more methods references than can fit in a single dex file.\n"
-                    + "See https://developer.android.com/tools/building/multidex.html";
+            "The number of method references in a .dex file cannot exceed 64K.\n"
+                    + "Learn how to resolve this issue at "
+                    + "https://developer.android.com/tools/building/multidex.html";
 
     static final String COULD_NOT_CONVERT_BYTECODE_TO_DEX = "Error converting bytecode to dex:\n"
             + "Cause: %s";
