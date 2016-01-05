@@ -441,6 +441,12 @@ public class AaptPackageProcessBuilder extends ProcessEnvBuilder<AaptPackageProc
             builder.addArgs("--output-text-symbols", mSymbolOutputDir);
         }
 
+        // All the vector XML files that are outside of an "-anydpi-v21" directory were left there
+        // intentionally, for the support library to consume. Leave them alone.
+        if (buildToolInfo.getRevision().getMajor() >= 23) {
+            builder.addArgs("--no-version-vectors");
+        }
+
         return builder.createProcess();
     }
 
