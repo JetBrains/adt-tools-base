@@ -17,6 +17,20 @@ import static org.objectweb.asm.Opcodes.*;
 package com.android.build.gradle.shrinker.parser;
 }
 
+@members {
+  @Override
+  public void emitErrorMessage(String msg) {
+    throw new RuntimeException(msg);
+  }
+}
+
+@lexer::members {
+  @Override
+  public void emitErrorMessage(String msg) {
+    throw new RuntimeException(msg);
+  }
+}
+
 prog [Flags flags, String baseDirectory]
   :
   (
