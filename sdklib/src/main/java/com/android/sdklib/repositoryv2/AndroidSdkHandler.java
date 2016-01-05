@@ -199,7 +199,7 @@ public final class AndroidSdkHandler {
 
                 result = getRepoConfig(progress)
                         .createRepoManager(progress, mLocation, sRemoteFallback,
-                                mUserSourceProvider, mFop);
+                                getUserSourceProvider(progress), mFop);
                 // Invalidate system images, targets, the latest build tool, and the legacy local
                 // package manager when local packages change
                 result.registerLocalChangeListener(new RepoManager.RepoLoadedCallback() {
@@ -318,7 +318,7 @@ public final class AndroidSdkHandler {
      * with the user's environment.
      */
     @Nullable
-    public RepositorySourceProvider getUserSourceProvider(@NonNull ProgressIndicator progress) {
+    public LocalSourceProvider getUserSourceProvider(@NonNull ProgressIndicator progress) {
         if (mUserSourceProvider == null) {
             RepoConfig repoConfig = getRepoConfig(progress);
             mUserSourceProvider = repoConfig.createUserSourceProvider(progress, mFop);
