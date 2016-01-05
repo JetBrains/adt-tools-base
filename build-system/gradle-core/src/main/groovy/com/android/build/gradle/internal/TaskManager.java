@@ -49,7 +49,6 @@ import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
-import com.android.build.gradle.internal.incremental.BuildInfoGeneratorTask;
 import com.android.build.gradle.internal.incremental.InstantRunAnchorTask;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
@@ -89,7 +88,6 @@ import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.transforms.InstantRunBuildType;
 import com.android.build.gradle.internal.transforms.InstantRunDex;
 import com.android.build.gradle.internal.transforms.InstantRunSlicer;
-import com.android.build.gradle.internal.transforms.InstantRunSplitApkBuilder;
 import com.android.build.gradle.internal.transforms.JacocoTransform;
 import com.android.build.gradle.internal.transforms.JarMergingTransform;
 import com.android.build.gradle.internal.transforms.MergeJavaResourcesTransform;
@@ -142,7 +140,6 @@ import com.android.builder.sdk.TargetInfo;
 import com.android.builder.testing.ConnectedDeviceProvider;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
-import com.android.sdklib.AndroidVersion;
 import com.android.utils.StringHelper;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
@@ -224,7 +221,7 @@ public abstract class TaskManager {
 
     private Logger logger;
 
-    protected boolean isNdkTaskNeeded = true;
+    protected boolean isComponentModelPlugin = false;
 
     // Task names
     // TODO: Convert to AndroidTask.
@@ -1274,7 +1271,7 @@ public abstract class TaskManager {
         createAidlTask(tasks, variantScope);
 
         // Add NDK tasks
-        if (isNdkTaskNeeded) {
+        if (!isComponentModelPlugin) {
             createNdkTasks(variantScope);
         }
 
@@ -1331,6 +1328,10 @@ public abstract class TaskManager {
                 && !config.getType().isForTesting()
                 && !config.getUseJack()
                 && globalScope.isActive(OptionalCompilationStep.INSTANT_DEV)) {
+            if (isComponentModelPlugin) {
+                return IncrementalMode.FULL;
+            }
+
             // while both LOCAL_RES and LOCAL_JAVA could be active, LOCAL_RES is higher priority.
             if (globalScope.isActive(OptionalCompilationStep.LOCAL_RES_ONLY)) {
                 return IncrementalMode.LOCAL_RES_ONLY;

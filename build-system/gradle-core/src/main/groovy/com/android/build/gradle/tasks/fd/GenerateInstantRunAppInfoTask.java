@@ -229,9 +229,7 @@ public class GenerateInstantRunAppInfoTask extends BaseTask {
             BaseVariantOutputData variantOutput = variantScope.getVariantData()
                     .getOutputs().get(0);
 
-            BaseVariantOutputData variantOutputData = variantOutput.getScope()
-                    .getVariantOutputData();
-            task.mergedManifest = variantOutputData.manifestProcessorTask.getManifestOutputFile();
+            task.mergedManifest = variantOutput.getScope().getManifestOutputFile();
         }
     }
 }

@@ -27,6 +27,7 @@ import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.pipeline.TransformStream;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.scope.AndroidTask;
+import com.android.build.gradle.internal.scope.VariantOutputScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.transforms.ExtractJarsTransform;
 import com.android.build.gradle.internal.transforms.InstantRunSplitApkBuilder;
@@ -197,7 +198,7 @@ public class ApplicationTaskManager extends TaskManager {
         }
 
         // Add NDK tasks
-        if (isNdkTaskNeeded) {
+        if (!isComponentModelPlugin) {
             ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_NDK_TASK,
                     new Recorder.Block<Void>() {
                         @Override
@@ -314,9 +315,11 @@ public class ApplicationTaskManager extends TaskManager {
 
             // make the task that generates the AppInfo dependent on the first merge manifest task
             // so we can get its output file.
-            BaseVariantOutputData outputData = Iterators
-                    .get(variantScope.getVariantData().getOutputs().iterator(), 0);
-            generateAppInfoAndroidTask.dependsOn(tasks, outputData.manifestProcessorTask);
+            VariantOutputScope variantOutputScope =
+                    variantScope.getVariantData().getOutputs().get(0).getScope();
+            generateAppInfoAndroidTask.dependsOn(
+                    tasks,
+                    variantOutputScope.getManifestProcessorTask());
 
             // also add a new stream for the injector task output.
             variantScope.getTransformManager().addStream(OriginalStream.builder()

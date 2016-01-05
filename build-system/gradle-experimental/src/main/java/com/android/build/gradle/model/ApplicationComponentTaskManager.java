@@ -48,7 +48,7 @@ public class ApplicationComponentTaskManager extends ApplicationTaskManager {
             ToolingModelBuilderRegistry toolingRegistry) {
         super(project, androidBuilder, dataBindingBuilder, extension, sdkHandler, dependencyManager,
                 toolingRegistry);
-        isNdkTaskNeeded = false;
+        isComponentModelPlugin = true;
     }
 
     @Override
