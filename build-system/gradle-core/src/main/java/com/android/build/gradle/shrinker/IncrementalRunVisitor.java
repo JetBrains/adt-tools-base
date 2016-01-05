@@ -22,11 +22,15 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
+import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 import java.util.Collection;
 import java.util.Set;
+
+import bsh.org.objectweb.asm.Type;
 
 /**
  * Visitor for handling modified classes in an incremental run.
@@ -44,6 +48,8 @@ class IncrementalRunVisitor<T> extends DependencyFinderVisitor<T> {
     private Set<T> mMethods;
 
     private Set<T> mFields;
+
+    private Set<String> mAnnotations;
 
     public IncrementalRunVisitor(
             @NonNull ShrinkerGraph<T> graph,
@@ -64,10 +70,10 @@ class IncrementalRunVisitor<T> extends DependencyFinderVisitor<T> {
         checkSuperclass(klass, superName);
         checkInterfaces(klass, interfaces);
         checkModifiers(klass, access);
-        // TODO: Check annotations
 
         mMethods = mGraph.getMethods(klass);
         mFields = mGraph.getFields(klass);
+        mAnnotations = Sets.newHashSet(mGraph.getAnnotations(klass));
         mClassesToWrite.add(klass);
         super.visit(version, access, name, signature, superName, interfaces);
     }
@@ -120,7 +126,7 @@ class IncrementalRunVisitor<T> extends DependencyFinderVisitor<T> {
     }
 
     @Override
-    public FieldVisitor visitField(int access, String name, String desc, String signature,
+    public FieldVisitor visitField(int access, final String name, String desc, String signature,
             Object value) {
         T field = mGraph.getMemberReference(mClassName, name, desc);
         if (!mFields.remove(field)) {
@@ -141,15 +147,27 @@ class IncrementalRunVisitor<T> extends DependencyFinderVisitor<T> {
                             desc));
         }
 
-        // TODO: Check annotations
+        final Set<String> memberAnnotations = Sets.newHashSet(mGraph.getAnnotations(field));
+        FieldVisitor superVisitor = super.visitField(access, name, desc, signature, value);
+        return new FieldVisitor(Opcodes.ASM5, superVisitor) {
+            @Override
+            public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
+                checkForAddedAnnotation(desc, memberAnnotations, mClassName + "." + name);
+                return super.visitAnnotation(desc, visible);
+            }
 
-        return super.visitField(access, name, desc, signature, value);
+            @Override
+            public void visitEnd() {
+                checkForRemovedAnnotation(memberAnnotations, mClassName + "." + name);
+                super.visitEnd();
+            }
+        };
     }
 
     @Override
-    public MethodVisitor visitMethod(int access, String name, String desc, String signature,
+    public MethodVisitor visitMethod(int access, final String name, String desc, String signature,
             String[] exceptions) {
-        T method = mGraph.getMemberReference(mClassName, name, desc);
+        final T method = mGraph.getMemberReference(mClassName, name, desc);
 
         if (!mMethods.remove(method)) {
             throw new IncrementalShrinker.IncrementalRunImpossibleException(
@@ -169,9 +187,27 @@ class IncrementalRunVisitor<T> extends DependencyFinderVisitor<T> {
                             desc));
         }
 
-        // TODO: Check annotations
+        final Set<String> memberAnnotations = Sets.newHashSet(mGraph.getAnnotations(method));
+        MethodVisitor superVisitor = super.visitMethod(access, name, desc, signature, exceptions);
+        return new MethodVisitor(Opcodes.ASM5, superVisitor) {
+            @Override
+            public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
+                checkForAddedAnnotation(desc, memberAnnotations, mClassName + "." + name);
+                return super.visitAnnotation(desc, visible);
+            }
 
-        return super.visitMethod(access, name, desc, signature, exceptions);
+            @Override
+            public void visitEnd() {
+                checkForRemovedAnnotation(memberAnnotations, mClassName + "." + name);
+                super.visitEnd();
+            }
+        };
+    }
+
+    @Override
+    public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
+        checkForAddedAnnotation(desc, mAnnotations, mClassName);
+        return super.visitAnnotation(desc, visible);
     }
 
     @Override
@@ -211,6 +247,30 @@ class IncrementalRunVisitor<T> extends DependencyFinderVisitor<T> {
                             "Method %s.%s removed.",
                             mClassName,
                             mGraph.getMethodNameAndDesc(method)));
+        }
+
+        checkForRemovedAnnotation(mAnnotations, mClassName);
+    }
+
+    private static void checkForAddedAnnotation(String desc, Set<String> annotations, String target) {
+        String name = Type.getType(desc).getInternalName();
+        if (!annotations.remove(name)) {
+            throw new IncrementalShrinker.IncrementalRunImpossibleException(
+                    String.format(
+                            "Annotation %s on %s added.",
+                            name,
+                            target));
+        }
+    }
+
+    private static void checkForRemovedAnnotation(Set<String> annotations, String target) {
+        String annotation = Iterables.getFirst(annotations, null);
+        if (annotation != null) {
+            throw new IncrementalShrinker.IncrementalRunImpossibleException(
+                    String.format(
+                            "Annotation %s on %s removed.",
+                            annotation,
+                            target));
         }
     }
 }

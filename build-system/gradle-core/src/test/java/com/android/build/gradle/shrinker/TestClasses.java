@@ -1391,6 +1391,44 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
+        public static byte[] main_noAnnotations() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/Main", null,
+                    "java/lang/Object", null);
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mv.visitCode();
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(ACC_PUBLIC + ACC_STATIC, "main", "()V", null, null);
+                mv.visitCode();
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(0, 0);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(ACC_PUBLIC + ACC_STATIC, "notAnnotated", "()V", null, null);
+                mv.visitCode();
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(0, 0);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+
         public static byte[] main_annotatedClass() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
@@ -1428,6 +1466,13 @@ public class TestClasses implements Opcodes {
             }
             {
                 mv = cw.visitMethod(ACC_PUBLIC + ACC_STATIC, "main", "()V", null, null);
+                mv.visitCode();
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(0, 0);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(ACC_PUBLIC + ACC_STATIC, "notAnnotated", "()V", null, null);
                 mv.visitCode();
                 mv.visitInsn(RETURN);
                 mv.visitMaxs(0, 0);

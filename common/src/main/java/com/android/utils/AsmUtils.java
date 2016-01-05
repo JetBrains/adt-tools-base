@@ -17,6 +17,7 @@
 package com.android.utils;
 
 import com.android.annotations.NonNull;
+import com.google.common.base.Preconditions;
 
 /**
  * Utilities for working with ASM.
@@ -41,6 +42,7 @@ public class AsmUtils {
      */
     @NonNull
     public static String getClassName(@NonNull String memberName) {
+        Preconditions.checkArgument(memberName.contains("."), "Class name passed as argument.");
         return memberName.substring(0, memberName.indexOf('.'));
     }
 }

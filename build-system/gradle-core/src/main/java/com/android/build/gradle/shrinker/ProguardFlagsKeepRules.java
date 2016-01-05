@@ -205,7 +205,6 @@ public class ProguardFlagsKeepRules implements KeepRules {
         if (spec == null) {
             return true;
         }
-        // TODO: annotations.
 
         FluentIterable<T> superTypes =
                 TypeHierarchyTraverser.superclassesAndInterfaces(graph, mShrinkerLogger)

@@ -25,6 +25,7 @@ import com.android.build.api.transform.Status;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.gradle.shrinker.AbstractShrinker.CounterSet;
 import com.android.build.gradle.shrinker.IncrementalShrinker.IncrementalRunImpossibleException;
+import com.android.build.gradle.shrinker.TestClasses.Annotations;
 import com.android.build.gradle.shrinker.TestClassesForIncremental.Cycle;
 import com.android.build.gradle.shrinker.TestClassesForIncremental.Simple;
 import com.android.ide.common.internal.WaitableExecutor;
@@ -287,6 +288,82 @@ public class IncrementalShrinkerTest extends AbstractShrinkerTest {
         mException.expectMessage("test/Bbb modifiers changed");
         incrementalRun(ImmutableMap.of(
                 "Bbb", Status.CHANGED));
+    }
+
+    @Test
+    public void simple_testIncrementalUpdate_classAnnotationAdded() throws Exception {
+        // Given:
+        Files.write(Annotations.main_annotatedClass(), new File(mTestPackageDir, "Main.class"));
+        Files.write(TestClasses.Annotations.myAnnotation(), new File(mTestPackageDir, "MyAnnotation.class"));
+        Files.write(TestClasses.Annotations.nested(), new File(mTestPackageDir, "Nested.class"));
+        Files.write(TestClasses.Annotations.myEnum(), new File(mTestPackageDir, "MyEnum.class"));
+        Files.write(TestClasses.emptyClass("SomeClass"), new File(mTestPackageDir, "SomeClass.class"));
+        Files.write(TestClasses.emptyClass("SomeOtherClass"), new File(mTestPackageDir, "SomeOtherClass.class"));
+
+        fullRun("Main", "main:()V");
+
+        Files.write(Annotations.main_noAnnotations(), new File(mTestPackageDir, "Main.class"));
+
+        mException.expect(IncrementalRunImpossibleException.class);
+        mException.expectMessage("Annotation test/MyAnnotation on test/Main removed");
+        incrementalRun(ImmutableMap.of("Main", Status.CHANGED));
+    }
+
+    @Test
+    public void simple_testIncrementalUpdate_classAnnotationRemoved() throws Exception {
+        // Given:
+        Files.write(Annotations.main_noAnnotations(), new File(mTestPackageDir, "Main.class"));
+        Files.write(TestClasses.Annotations.myAnnotation(), new File(mTestPackageDir, "MyAnnotation.class"));
+        Files.write(TestClasses.Annotations.nested(), new File(mTestPackageDir, "Nested.class"));
+        Files.write(TestClasses.Annotations.myEnum(), new File(mTestPackageDir, "MyEnum.class"));
+        Files.write(TestClasses.emptyClass("SomeClass"), new File(mTestPackageDir, "SomeClass.class"));
+        Files.write(TestClasses.emptyClass("SomeOtherClass"), new File(mTestPackageDir, "SomeOtherClass.class"));
+
+        fullRun("Main", "main:()V");
+
+        Files.write(Annotations.main_annotatedClass(), new File(mTestPackageDir, "Main.class"));
+
+        mException.expect(IncrementalRunImpossibleException.class);
+        mException.expectMessage("Annotation test/MyAnnotation on test/Main added");
+        incrementalRun(ImmutableMap.of("Main", Status.CHANGED));
+    }
+
+    @Test
+    public void simple_testIncrementalUpdate_methodAnnotationAdded() throws Exception {
+        // Given:
+        Files.write(Annotations.main_noAnnotations(), new File(mTestPackageDir, "Main.class"));
+        Files.write(TestClasses.Annotations.myAnnotation(), new File(mTestPackageDir, "MyAnnotation.class"));
+        Files.write(TestClasses.Annotations.nested(), new File(mTestPackageDir, "Nested.class"));
+        Files.write(TestClasses.Annotations.myEnum(), new File(mTestPackageDir, "MyEnum.class"));
+        Files.write(TestClasses.emptyClass("SomeClass"), new File(mTestPackageDir, "SomeClass.class"));
+        Files.write(TestClasses.emptyClass("SomeOtherClass"), new File(mTestPackageDir, "SomeOtherClass.class"));
+
+        fullRun("Main", "main:()V");
+
+        Files.write(Annotations.main_annotatedMethod(), new File(mTestPackageDir, "Main.class"));
+
+        mException.expect(IncrementalRunImpossibleException.class);
+        mException.expectMessage("Annotation test/MyAnnotation on test/Main.main added");
+        incrementalRun(ImmutableMap.of("Main", Status.CHANGED));
+    }
+
+    @Test
+    public void simple_testIncrementalUpdate_methodAnnotationRemoved() throws Exception {
+        // Given:
+        Files.write(Annotations.main_annotatedMethod(), new File(mTestPackageDir, "Main.class"));
+        Files.write(TestClasses.Annotations.myAnnotation(), new File(mTestPackageDir, "MyAnnotation.class"));
+        Files.write(TestClasses.Annotations.nested(), new File(mTestPackageDir, "Nested.class"));
+        Files.write(TestClasses.Annotations.myEnum(), new File(mTestPackageDir, "MyEnum.class"));
+        Files.write(TestClasses.emptyClass("SomeClass"), new File(mTestPackageDir, "SomeClass.class"));
+        Files.write(TestClasses.emptyClass("SomeOtherClass"), new File(mTestPackageDir, "SomeOtherClass.class"));
+
+        fullRun("Main", "main:()V");
+
+        Files.write(Annotations.main_noAnnotations(), new File(mTestPackageDir, "Main.class"));
+
+        mException.expect(IncrementalRunImpossibleException.class);
+        mException.expectMessage("Annotation test/MyAnnotation on test/Main.main removed");
+        incrementalRun(ImmutableMap.of("Main", Status.CHANGED));
     }
 
     @Test

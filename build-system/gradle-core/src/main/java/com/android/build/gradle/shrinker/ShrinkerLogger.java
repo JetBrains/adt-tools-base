@@ -64,7 +64,12 @@ public class ShrinkerLogger {
             return;
         }
 
-        String fromClassName = AsmUtils.getClassName(from);
+        String fromClassName;
+        if (from.contains(".")) {
+            fromClassName = AsmUtils.getClassName(from);
+        } else {
+            fromClassName = from;
+        }
         String toClassName = AsmUtils.getClassName(to);
         for (FilterSpecification dontWarnSpec : mDontWarnSpecs) {
             if (dontWarnSpec.matches(fromClassName) || dontWarnSpec.matches(toClassName)) {

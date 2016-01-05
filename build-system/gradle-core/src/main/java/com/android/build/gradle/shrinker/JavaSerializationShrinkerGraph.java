@@ -25,6 +25,7 @@ import com.android.build.gradle.shrinker.AbstractShrinker.CounterSet;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.android.utils.AsmUtils;
 import com.android.utils.FileUtils;
+import com.google.common.base.Preconditions;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -442,6 +443,7 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
 
     @Override
     public void addAnnotation(@NonNull String classOrMember, @NonNull String annotationName) {
+        Preconditions.checkArgument(!annotationName.endsWith(";"));
         mAnnotations.put(classOrMember, annotationName);
     }
 

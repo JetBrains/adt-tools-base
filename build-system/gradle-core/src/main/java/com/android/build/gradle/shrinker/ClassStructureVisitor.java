@@ -64,7 +64,7 @@ public class ClassStructureVisitor<T> extends ClassVisitor {
         return new MethodVisitor(Opcodes.ASM5, superVisitor) {
             @Override
             public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-                mGraph.addAnnotation(method, desc);
+                mGraph.addAnnotation(method, Type.getType(desc).getInternalName());
                 return super.visitAnnotation(desc, visible);
             }
         };
@@ -79,7 +79,7 @@ public class ClassStructureVisitor<T> extends ClassVisitor {
         return new FieldVisitor(Opcodes.ASM5, superVisitor) {
             @Override
             public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-                mGraph.addAnnotation(field, desc);
+                mGraph.addAnnotation(field, Type.getType(desc).getInternalName());
                 return super.visitAnnotation(desc, visible);
             }
         };

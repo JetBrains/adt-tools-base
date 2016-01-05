@@ -40,6 +40,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
@@ -83,6 +84,8 @@ public abstract class AbstractShrinkerTest {
                     Collections.<FilterSpecification>emptyList(),
                     LoggerFactory.getLogger(getClass()));
 
+    protected int mExpectedWarnings;
+
     @Before
     public void setUp() throws Exception {
         mTestPackageDir = tmpDir.newFolder("app-classes", "test");
@@ -104,6 +107,16 @@ public abstract class AbstractShrinkerTest {
                 Mockito.any(Format.class))).thenReturn(mOutDir);
 
         mInputs = ImmutableList.of(transformInput);
+    }
+
+    @Before
+    public void resetWarningsCounter() throws Exception {
+        mExpectedWarnings = 0;
+    }
+
+    @After
+    public void checkLogger() throws Exception {
+        assertEquals(mExpectedWarnings, mShrinkerLogger.getWarningsCount());
     }
 
     protected void assertClassSkipped(String className) {
@@ -188,5 +201,12 @@ public abstract class AbstractShrinkerTest {
     @NonNull
     protected File getOutputClassFile(String className) {
         return FileUtils.join(mOutDir, "test", className + ".class");
+    }
+
+    @NonNull
+    protected KeepRules parseKeepRules(String rules) throws IOException {
+        ProguardConfig config = new ProguardConfig();
+        config.parse(rules);
+        return new ProguardFlagsKeepRules(config.getFlags(), mShrinkerLogger);
     }
 }

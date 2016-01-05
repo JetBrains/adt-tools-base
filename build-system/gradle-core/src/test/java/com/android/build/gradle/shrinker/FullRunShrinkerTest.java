@@ -16,13 +16,10 @@
 
 package com.android.build.gradle.shrinker;
 
-import static com.google.common.truth.Truth.assertThat;
-
 import com.android.annotations.NonNull;
 import com.android.build.api.transform.TransformInput;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 
 import org.junit.Before;
@@ -31,7 +28,6 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.Map;
 
 /**
  * Tests for {@link FullRunShrinker}.
@@ -688,7 +684,7 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
     }
 
     @Test
-    public void annotations_keepRules() throws Exception {
+    public void annotations_keepRules_class() throws Exception {
         Files.write(TestClasses.Annotations.main_annotatedClass(), new File(mTestPackageDir, "Main.class"));
         Files.write(TestClasses.Annotations.myAnnotation(), new File(mTestPackageDir, "MyAnnotation.class"));
         Files.write(TestClasses.Annotations.nested(), new File(mTestPackageDir, "Nested.class"));
@@ -696,21 +692,31 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
         Files.write(TestClasses.emptyClass("SomeClass"), new File(mTestPackageDir, "SomeClass.class"));
         Files.write(TestClasses.emptyClass("SomeOtherClass"), new File(mTestPackageDir, "SomeOtherClass.class"));
 
-        run(new KeepRules() {
-            @Override
-            public <T> Map<T, DependencyType> getSymbolsToKeep(T klass, ShrinkerGraph<T> graph) {
-                Map<T, DependencyType> result = Maps.newHashMap();
-                for (String annotation : graph.getAnnotations(klass)) {
-                    if (annotation.equals("test/MyAnnotation")) {
-                        result.put(klass, DependencyType.REQUIRED_CLASS_STRUCTURE);
-                    }
-                }
+        run(parseKeepRules("-keep @test.MyAnnotation class **"));
 
-                return result;
-            }
-        });
+        assertMembersLeft("Main", "<init>:()V");
+    }
 
-        assertMembersLeft("Main");
+    @Test
+    public void annotations_keepRules_method() throws Exception {
+        Files.write(
+                TestClasses.Annotations.main_annotatedMethod(),
+                new File(mTestPackageDir, "Main.class"));
+        Files.write(
+                TestClasses.Annotations.myAnnotation(),
+                new File(mTestPackageDir, "MyAnnotation.class"));
+        Files.write(TestClasses.Annotations.nested(), new File(mTestPackageDir, "Nested.class"));
+        Files.write(TestClasses.Annotations.myEnum(), new File(mTestPackageDir, "MyEnum.class"));
+        Files.write(
+                TestClasses.emptyClass("SomeClass"),
+                new File(mTestPackageDir, "SomeClass.class"));
+        Files.write(
+                TestClasses.emptyClass("SomeOtherClass"),
+                new File(mTestPackageDir, "SomeOtherClass.class"));
+
+        run(parseKeepRules("-keep class ** { @test/MyAnnotation *(...);}"));
+
+        assertMembersLeft("Main", "<init>:()V", "main:()V");
     }
 
     @Test
@@ -999,7 +1005,7 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
 
         // Then:
         assertMembersLeft("Main", "main:()V");
-        assertThat(mShrinkerLogger.getWarningsCount()).isGreaterThan(0);
+        mExpectedWarnings = 1;
     }
 
     @Test
@@ -1013,7 +1019,7 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
         // Make sure we kept the method, even though we encountered unrecognized classes.
         assertMembersLeft("Main", "main:()V", "transform:(Ljava/lang/ClassLoader;Ljava/lang/String;Ljava/lang/Class;Ljava/security/ProtectionDomain;[B)[B");
         assertImplements("Main", "java/lang/instrument/ClassFileTransformer");
-        assertThat(mShrinkerLogger.getWarningsCount()).isGreaterThan(0);
+        mExpectedWarnings = 1;
     }
 
     private void run(String className, String... methods) throws IOException {
