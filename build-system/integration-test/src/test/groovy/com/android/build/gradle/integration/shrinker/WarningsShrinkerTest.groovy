@@ -19,11 +19,13 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import groovy.transform.CompileStatic
+import org.gradle.tooling.GradleConnectionException
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import static com.android.build.gradle.integration.common.utils.GradleExceptionsHelper.getTaskFailureMessage
 /**
  * Tests for -dontwarn handling
  */
@@ -190,6 +192,14 @@ class WarningsShrinkerTest {
         assertThat(output).doesNotContain("Unsafe")
         assertThat(output).doesNotContain("Nullable")
         assertThat(output).doesNotContain("com/google/common/cache")
+    }
+
+    @Test
+    public void "Parser errors are properly reported"() throws Exception {
+        rules << "-foo"
+
+        GradleConnectionException failure = project.executeExpectingFailure("assembleDebug")
+        assertThat(getTaskFailureMessage(failure)).contains("'-foo' expecting EOF")
     }
 
     private void changeCode() {
