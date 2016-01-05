@@ -32,7 +32,6 @@ import java.io.File;
  * {@link ISystemImage} based on a {@link RepoPackage} (either system image, platform, or addon).
  */
 public class SystemImage implements ISystemImage {
-
     /**
      * Tag to apply to system images if none other is specified.
      */

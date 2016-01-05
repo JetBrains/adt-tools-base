@@ -103,7 +103,7 @@ public class LegacyRepoUtils {
             details.setAbi(desc.getPath());
             assert androidVersion != null;
             details.setApiLevel(androidVersion.getApiLevel());
-            com.android.sdklib.repository.descriptors.IdDisplay tagIdDisplay = desc.getTag();
+            IdDisplay tagIdDisplay = desc.getTag();
             if (tagIdDisplay != null) {
                 IdDisplay tag = sdkFactory.createIdDisplayType();
                 tag.setId(tagIdDisplay.getId());
@@ -112,7 +112,7 @@ public class LegacyRepoUtils {
             } else {
                 details.setTag(SystemImage.DEFAULT_TAG);
             }
-            com.android.sdklib.repository.descriptors.IdDisplay vendorIdDisplay = desc.getVendor();
+            IdDisplay vendorIdDisplay = desc.getVendor();
             if (vendorIdDisplay != null) {
                 IdDisplay vendor = sdkFactory.createIdDisplayType();
                 vendor.setId(vendorIdDisplay.getId());
@@ -122,14 +122,14 @@ public class LegacyRepoUtils {
             return (TypeDetails) details;
         } else if (desc.getType() == PkgType.PKG_ADDON) {
             DetailsTypes.AddonDetailsType details = addonFactory.createAddonDetailsType();
-            com.android.sdklib.repository.descriptors.IdDisplay vendorIdDisplay = desc.getVendor();
+            IdDisplay vendorIdDisplay = desc.getVendor();
             if (vendorIdDisplay != null) {
                 IdDisplay vendor = sdkFactory.createIdDisplayType();
                 vendor.setId(vendorIdDisplay.getId());
                 vendor.setDisplay(vendorIdDisplay.getDisplay());
                 details.setVendor(vendor);
             }
-            com.android.sdklib.repository.descriptors.IdDisplay nameIdDisplay = desc.getName();
+            IdDisplay nameIdDisplay = desc.getName();
             if (nameIdDisplay != null) {
                 IdDisplay tag = sdkFactory.createIdDisplayType();
                 tag.setId(nameIdDisplay.getId());
@@ -171,7 +171,7 @@ public class LegacyRepoUtils {
             return (TypeDetails) details;
         } else if (desc.getType() == PkgType.PKG_EXTRA) {
             DetailsTypes.ExtraDetailsType details = addonFactory.createExtraDetailsType();
-            com.android.sdklib.repository.descriptors.IdDisplay vendorIdDisplay = desc.getVendor();
+            IdDisplay vendorIdDisplay = desc.getVendor();
             if (vendorIdDisplay != null) {
                 IdDisplay vendor = sdkFactory.createIdDisplayType();
                 vendor.setId(vendorIdDisplay.getId());
@@ -290,4 +290,52 @@ public class LegacyRepoUtils {
         }
         return result;
     }
+
+    public static String getLegacyPath(@NonNull IPkgDesc desc) {
+        switch (desc.getType()) {
+            case PKG_TOOLS:
+                return SdkConstants.FD_TOOLS;
+            case PKG_PLATFORM_TOOLS:
+                return SdkConstants.FD_PLATFORM_TOOLS;
+            case PKG_BUILD_TOOLS:
+                return DetailsTypes.getBuildToolsPath(desc.getRevision());
+            case PKG_DOC:
+                return SdkConstants.FD_DOCS;
+            case PKG_PLATFORM:
+                return DetailsTypes.getPlatformPath(desc.getAndroidVersion());
+            case PKG_ADDON:
+                return DetailsTypes.getAddonPath(desc.getVendor(),
+                        desc.getAndroidVersion(), desc.getName());
+            case PKG_SYS_IMAGE:
+            case PKG_ADDON_SYS_IMAGE:
+                return DetailsTypes.getSysImgPath(
+                        desc.getVendor(),
+                        desc.getAndroidVersion(), desc.getTag(),
+                        desc.getPath());
+            case PKG_SOURCE:
+                return DetailsTypes.getSourcesPath(desc.getAndroidVersion());
+            case PKG_EXTRA:
+                String path = SdkConstants.FD_EXTRAS;
+
+                String vendor = desc.getVendor().getId();
+                if (vendor != null && vendor.length() > 0) {
+                    path += RepoPackage.PATH_SEPARATOR + vendor;
+                }
+
+                String name = desc.getPath();
+                if (name != null && name.length() > 0) {
+                    path += RepoPackage.PATH_SEPARATOR + name;
+                }
+
+                return path;
+            case PKG_NDK:
+                return SdkConstants.FD_NDK;
+            case PKG_LLDB:
+                return SdkConstants.FD_LLDB;
+            default:
+                // This should never happen.
+                return "unknown";
+        }
+    }
+
 }

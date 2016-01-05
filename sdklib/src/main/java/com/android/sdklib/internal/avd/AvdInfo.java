@@ -23,10 +23,10 @@ import com.android.prefs.AndroidLocation.AndroidLocationException;
 import com.android.repository.io.FileOp;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
-import com.android.sdklib.SystemImage;
 import com.android.sdklib.devices.Abi;
 import com.android.sdklib.devices.Device;
 import com.android.sdklib.repositoryv2.IdDisplay;
+import com.android.sdklib.repositoryv2.targets.SystemImage;
 
 import java.io.File;
 import java.util.Collections;

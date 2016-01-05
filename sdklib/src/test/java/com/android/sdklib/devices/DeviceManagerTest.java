@@ -17,16 +17,17 @@
 package com.android.sdklib.devices;
 
 import com.android.repository.Revision;
+import com.android.repository.testframework.FakePackage;
 import com.android.resources.Keyboard;
 import com.android.resources.Navigation;
 import com.android.sdklib.ISystemImage;
 import com.android.sdklib.SdkManagerTestCase;
-import com.android.sdklib.SystemImage;
 import com.android.sdklib.devices.Device.Builder;
 import com.android.sdklib.devices.DeviceManager.DeviceFilter;
 import com.android.sdklib.devices.DeviceManager.DeviceStatus;
 import com.android.sdklib.mock.MockLog;
 import com.android.sdklib.repository.descriptors.IdDisplay;
+import com.android.sdklib.repositoryv2.targets.SystemImage;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -335,9 +336,8 @@ public class DeviceManagerTest extends SdkManagerTestCase {
             File location = getSdkHandler().getLocation();
             SystemImage imageWithDevice = new SystemImage(
               new File(location, "system-images/android-22/android-wear/x86"),
-              ISystemImage.LocationType.IN_SYSTEM_IMAGE,
               new IdDisplay("android-wear", "android-wear"), new IdDisplay("Google", "Google1"),
-              "x86", new File[]{}, new Revision(22, 1));
+              "x86", new File[]{}, new FakePackage("dummy", new Revision(1), null));
             DeviceManager manager = DeviceManager.createInstance(location, log);
             int count = manager.getDevices(EnumSet.allOf(DeviceFilter.class)).size();
             Device d = manager.getDevice("wear_round", "Google");
