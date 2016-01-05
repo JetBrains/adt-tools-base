@@ -22,12 +22,26 @@ import com.android.annotations.NonNull;
  * Shared path-related logic between Android Studio and the Instant Run server.
  */
 public final class Paths {
-
+    /** Name of the dex folder in the app's data directory */
     public static final String DEX_DIRECTORY_NAME = "dex";
+
     /** Temp directory on the device */
     public static final String DEVICE_TEMP_DIR = "/data/local/tmp";
+
     /** The name of the build timestamp file on the device in the data folder */
     public static final String BUILD_ID_TXT = "build-id.txt";
+
+    /** Name of file to write resource data into, if not extracting resources */
+    public static final String RESOURCE_FILE_NAME = "resources.ap_";
+
+    /** Name for restart files */
+    public static final String RESTART_DEX_FILE_NAME = "classes.dex";
+
+    /** Name for reload dex files */
+    public static final String RELOAD_DEX_FILE_NAME = "classes.dex.3";
+
+    /** Prefix for dex shard files */
+    public static final String DEX_SLICE_PREFIX = "slice-";
 
     @NonNull
     public static String getDataDirectory(@NonNull String applicationId) {
@@ -37,6 +51,11 @@ public final class Paths {
     @NonNull
     public static String getDexFileDirectory(@NonNull String applicationId) {
         return getDataDirectory(applicationId) + "/" + DEX_DIRECTORY_NAME;
+    }
+
+    @NonNull
+    public static String getInboxDirectory(@NonNull String applicationId) {
+        return getDataDirectory(applicationId) + "/inbox";
     }
 
     @NonNull

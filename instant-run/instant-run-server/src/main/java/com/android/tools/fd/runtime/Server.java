@@ -29,8 +29,9 @@ import static com.android.tools.fd.common.ProtocolConstants.UPDATE_MODE_HOT_SWAP
 import static com.android.tools.fd.common.ProtocolConstants.UPDATE_MODE_NONE;
 import static com.android.tools.fd.common.ProtocolConstants.UPDATE_MODE_WARM_SWAP;
 import static com.android.tools.fd.runtime.BootstrapApplication.LOG_TAG;
-import static com.android.tools.fd.runtime.FileManager.CLASSES_DEX_3_SUFFIX;
 import static com.android.tools.fd.runtime.FileManager.CLASSES_DEX_SUFFIX;
+import static com.android.tools.fd.runtime.Paths.RELOAD_DEX_FILE_NAME;
+import static com.android.tools.fd.runtime.Paths.RESOURCE_FILE_NAME;
 
 import com.android.annotations.NonNull;
 
@@ -38,6 +39,7 @@ import android.app.Activity;
 import android.app.Application;
 import android.net.LocalServerSocket;
 import android.net.LocalSocket;
+import android.os.Handler;
 import android.util.Log;
 
 import java.io.DataInputStream;
@@ -47,6 +49,8 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import dalvik.system.DexClassLoader;
 
@@ -55,6 +59,11 @@ import dalvik.system.DexClassLoader;
  * when provided
  */
 public class Server {
+    /**
+     * Temporary debugging: have the server emit a message to the log every 30 seconds to
+     * indicate whether it's still alive
+     */
+    private static final boolean POST_ALIVE_STATUS = false;
 
     private LocalServerSocket mServerSocket;
 
@@ -98,13 +107,28 @@ public class Server {
     }
 
     private class SocketServerThread extends Thread {
-
         @Override
         public void run() {
-            try {
-                // We expect to bail out of this loop by an exception (SocketException when the
-                // socket is closed by stop() above)
-                while (true) {
+            if (POST_ALIVE_STATUS) {
+                final Handler handler = new Handler();
+                Timer timer = new Timer();
+                TimerTask task = new TimerTask() {
+                    @Override
+                    public void run() {
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                Log.i(LOG_TAG, "Instant Run server still here...");
+                            }
+                        });
+                    }
+                };
+
+                timer.schedule(task, 1, 30000L);
+            }
+
+            while (true) {
+                try {
                     LocalServerSocket serverSocket = mServerSocket;
                     if (serverSocket == null) {
                         break; // stopped?
@@ -126,10 +150,10 @@ public class Server {
                         mServerSocket.close();
                         break;
                     }
-                }
-            } catch (IOException e) {
-                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                    Log.i(LOG_TAG, "Fatal error accepting connection on local socket", e);
+                } catch (Throwable e) {
+                    if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                        Log.i(LOG_TAG, "Fatal error accepting connection on local socket", e);
+                    }
                 }
             }
         }
@@ -317,15 +341,18 @@ public class Server {
         }
     }
 
-    private boolean hasResources(@NonNull List<ApplicationPatch> changes) {
+    private static boolean isResourcePath(String path) {
+        return path.equals(RESOURCE_FILE_NAME) || path.startsWith("res/");
+    }
+
+    private static boolean hasResources(@NonNull List<ApplicationPatch> changes) {
         // Any non-code patch is a resource patch (normally resources.ap_ but could
         // also be individual resource files such as res/layout/activity_main.xml)
         for (ApplicationPatch change : changes) {
             String path = change.getPath();
-            if (path.endsWith(CLASSES_DEX_SUFFIX) || path.endsWith(CLASSES_DEX_3_SUFFIX)) {
-                continue;
+            if (isResourcePath(path)) {
+                return true;
             }
-            return true;
 
         }
         return false;
@@ -341,9 +368,25 @@ public class Server {
             String path = change.getPath();
             if (path.endsWith(CLASSES_DEX_SUFFIX)) {
                 handleColdSwapPatch(change);
-            } else if (path.endsWith(CLASSES_DEX_3_SUFFIX)) {
+
+                // Gradle sometimes sends a restart dex even when there is a hotswap patch,
+                // so don't take the presence of a restart dex as a conclusion that we must
+                // do a coldswap. Check.
+                boolean canHotSwap = false;
+                for (ApplicationPatch c : changes) {
+                    if (c.getPath().equals(RELOAD_DEX_FILE_NAME)) {
+                        canHotSwap = true;
+                        break;
+                    }
+                }
+
+                if (!canHotSwap) {
+                    updateMode = UPDATE_MODE_COLD_SWAP;
+                }
+
+            } else if (path.equals(RELOAD_DEX_FILE_NAME)) {
                 updateMode = handleHotSwapPatch(updateMode, change);
-            } else {
+            } else if (isResourcePath(path)) {
                 updateMode = handleResourcePatch(updateMode, change, path);
             }
         }
@@ -355,7 +398,7 @@ public class Server {
         return updateMode;
     }
 
-    private int handleResourcePatch(int updateMode, @NonNull ApplicationPatch patch,
+    private static int handleResourcePatch(int updateMode, @NonNull ApplicationPatch patch,
             @NonNull String path) {
         if (Log.isLoggable(LOG_TAG, Log.INFO)) {
             Log.i(LOG_TAG, "Received resource changes (" + path + ")");
@@ -418,11 +461,18 @@ public class Server {
         return updateMode;
     }
 
-    private void handleColdSwapPatch(@NonNull ApplicationPatch patch) {
-        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-            Log.i(LOG_TAG, "Received restart code patch");
+    private static void handleColdSwapPatch(@NonNull ApplicationPatch patch) {
+        if (patch.path.startsWith(Paths.DEX_SLICE_PREFIX)) {
+            File file = FileManager.writeDexShard(patch.getBytes(), patch.path);
+            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                Log.i(LOG_TAG, "Received dex shard " + file);
+            }
+        } else {
+            File file = FileManager.writeDexFile(patch.getBytes(), true);
+            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                Log.i(LOG_TAG, "Received restart code patch - " + file);
+            }
         }
-        FileManager.writeDexFile(patch.getBytes(), true);
     }
 
     private void restart(int updateMode, boolean incrementalResources, boolean toast) {
