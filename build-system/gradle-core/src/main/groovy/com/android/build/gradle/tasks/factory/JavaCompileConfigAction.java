@@ -117,7 +117,11 @@ public class JavaCompileConfigAction implements TaskConfigAction<AndroidJavaComp
         if (AndroidGradleOptions.isJavaCompileIncremental(project) ||
                 (globalScope.isActive(OptionalCompilationStep.INSTANT_DEV) &&
                         AndroidGradleOptions.isInstantRunJavaCompileIncremental(project))) {
-            javacTask.getOptions().setIncremental(true);
+            //TODO: Find out why the data binding annotation processor seems to be incompatible
+            // with incremental java compilation.
+            if (!globalScope.getExtension().getDataBinding().isEnabled()) {
+                javacTask.getOptions().setIncremental(true);
+            }
         }
     }
 }
