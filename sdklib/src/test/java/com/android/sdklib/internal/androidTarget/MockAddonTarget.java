@@ -20,15 +20,15 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.Revision;
+import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
+import com.android.repository.testframework.FakePackage;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
-import com.android.sdklib.ISystemImage.LocationType;
-import com.android.sdklib.SystemImage;
-import com.android.repository.io.FileOp;
 import com.android.sdklib.repositoryv2.IdDisplay;
+import com.android.sdklib.repositoryv2.targets.SystemImage;
 import com.google.common.collect.ImmutableList;
 
 import java.io.File;
@@ -83,11 +83,11 @@ public class MockAddonTarget implements IAndroidTarget {
         if (mSystemImages == null) {
             SystemImage si = new SystemImage(
                     FileOpUtils.append(getLocation(), SdkConstants.OS_IMAGES_FOLDER),
-                    LocationType.IN_LEGACY_FOLDER,
                     SystemImage.DEFAULT_TAG,
+                    new com.android.sdklib.repository.descriptors.IdDisplay("google", "Google Inc."),
                     SdkConstants.ABI_ARMEABI,
                     FileOp.EMPTY_FILE_ARRAY,
-                    Revision.parseRevision("22.1.0"));
+                    new FakePackage("/sdk/dummy", new Revision(21, 1, 0), null));
             mSystemImages = new SystemImage[] { si };
         }
         return mSystemImages;

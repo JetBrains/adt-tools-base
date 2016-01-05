@@ -21,7 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.repository.Revision;
 import com.android.sdklib.AndroidVersion;
 import com.android.repository.api.License;
-import com.android.repository.Revision;
+import com.android.sdklib.repositoryv2.IdDisplay;
 
 /**
  * Implementation detail of {@link IPkgDescExtra} for extra packages.
@@ -60,7 +60,7 @@ public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
               minPlatformToolsRev,
               null,     //customIsUpdateFor
               null,
-              new IdDisplay(nameDisplay, nameDisplay));
+              new com.android.sdklib.repository.descriptors.IdDisplay(nameDisplay, nameDisplay));
         mOldPaths = oldPaths != null ? oldPaths : new String[0];
     }
 

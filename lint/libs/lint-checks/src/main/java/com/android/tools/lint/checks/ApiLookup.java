@@ -20,12 +20,12 @@ import static com.android.SdkConstants.ANDROID_PKG;
 import static com.android.SdkConstants.DOT_XML;
 import static com.android.tools.lint.detector.api.LintUtils.assertionsEnabled;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
-import com.android.sdklib.repository.descriptors.PkgType;
-import com.android.sdklib.repository.local.LocalPkgInfo;
-import com.android.sdklib.repository.local.LocalSdk;
+import com.android.repository.api.LocalPackage;
+import com.android.sdklib.repositoryv2.AndroidSdkHandler;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.utils.Pair;
@@ -141,14 +141,12 @@ public class ApiLookup {
     @VisibleForTesting
     @Nullable
     static String getPlatformVersion(@NonNull LintClient client) {
-        LocalSdk sdk = client.getSdk();
-        if (sdk != null) {
-            LocalPkgInfo pkgInfo = sdk.getPkgInfo(PkgType.PKG_PLATFORM_TOOLS);
-            if (pkgInfo != null) {
-                return pkgInfo.getDesc().getRevision().toShortString();
-            }
+        AndroidSdkHandler sdk = client.getSdk();
+        LocalPackage pkgInfo = sdk
+                .getLocalPackage(SdkConstants.FD_PLATFORM_TOOLS, client.getLogger());
+        if (pkgInfo != null) {
+            return pkgInfo.getVersion().toShortString();
         }
-
         return null;
     }
 

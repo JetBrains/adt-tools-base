@@ -26,7 +26,8 @@ import com.android.repository.api.License;
 import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
-import com.android.sdklib.SystemImage;
+import com.android.sdklib.repositoryv2.IdDisplay;
+import com.android.sdklib.repositoryv2.targets.SystemImage;
 
 import java.io.File;
 import java.util.Locale;
@@ -372,7 +373,7 @@ public class PkgDesc implements IPkgDesc {
                     AndroidTargetHash.PLATFORM_HASH_PREFIX + sanitize(
                             getAndroidVersion().getApiString()),
                     sanitize(SystemImage.DEFAULT_TAG.equals(getTag()) ? "android"
-                            : getTag().getId()),
+                                                                      : getTag().getId()),
                     sanitize(getPath()));   // path==abi
             break;
 
@@ -581,7 +582,8 @@ public class PkgDesc implements IPkgDesc {
         result = result
                 .replace("$API", hasAndroidVersion() ? getAndroidVersion().getApiString() : "");
         result = result.replace("$PATH", hasPath() ? getPath() : "");
-        result = result.replace("$TAG",  hasTag() && !getTag().equals(SystemImage.DEFAULT_TAG) ?
+        result = result.replace("$TAG",  hasTag() && !getTag().equals(
+                SystemImage.DEFAULT_TAG) ?
                                                 getTag().getDisplay() : "");
         result = result.replace("$VEND",  hasVendor() ? getVendor().getDisplay() : "");
         String name = "";

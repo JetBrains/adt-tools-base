@@ -52,18 +52,18 @@ import static com.android.tools.lint.detector.api.Location.SearchDirection.FORWA
 import static com.android.tools.lint.detector.api.Location.SearchDirection.NEAREST;
 import static com.android.utils.SdkUtils.getResourceFieldName;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidProject;
 import com.android.repository.Revision;
+import com.android.repository.api.LocalPackage;
 import com.android.resources.ResourceFolderType;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.SdkVersionInfo;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
-import com.android.sdklib.repository.descriptors.PkgType;
-import com.android.sdklib.repository.local.LocalPkgInfo;
-import com.android.sdklib.repository.local.LocalSdk;
+import com.android.sdklib.repositoryv2.AndroidSdkHandler;
 import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
 import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
@@ -340,16 +340,13 @@ public class ApiDetector extends ResourceXmlDetector
                         "Can't find API database; API check not performed");
             } else {
                 // See if you don't have at least version 23.0.1 of platform tools installed
-                LocalSdk sdk = context.getClient().getSdk();
-                if (sdk == null) {
-                    return;
-                }
-                LocalPkgInfo pkgInfo = sdk.getPkgInfo(PkgType.PKG_PLATFORM_TOOLS);
+                AndroidSdkHandler sdk = context.getClient().getSdk();
+                LocalPackage pkgInfo = sdk.getLocalPackage(SdkConstants.FD_PLATFORM_TOOLS,
+                        context.getClient().getLogger());
                 if (pkgInfo == null) {
                     return;
                 }
-                IPkgDesc desc = pkgInfo.getDesc();
-                Revision revision = desc.getRevision();
+                Revision revision = pkgInfo.getVersion();
 
                 // The platform tools must be at at least the same revision
                 // as the compileSdkVersion!

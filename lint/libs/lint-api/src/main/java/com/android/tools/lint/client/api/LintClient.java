@@ -35,10 +35,11 @@ import com.android.ide.common.repository.ResourceVisibilityLookup;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.res2.ResourceItem;
 import com.android.prefs.AndroidLocation;
+import com.android.repository.api.ProgressIndicatorAdapter;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.SdkVersionInfo;
-import com.android.sdklib.repository.local.LocalSdk;
+import com.android.sdklib.repositoryv2.AndroidSdkHandler;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
@@ -83,6 +84,7 @@ import java.util.Set;
 @Beta
 public abstract class LintClient {
     private static final String PROP_BIN_DIR  = "com.android.tools.lint.bindir";  //$NON-NLS-1$
+    private RepoLogger mLogger;
 
     protected LintClient(@NonNull String clientName) {
         sClientName = clientName;
@@ -738,18 +740,17 @@ public abstract class LintClient {
     @NonNull
     public IAndroidTarget[] getTargets() {
         if (mTargets == null) {
-            LocalSdk localSdk = getSdk();
-            if (localSdk != null) {
-                mTargets = localSdk.getTargets();
-            } else {
-                mTargets = new IAndroidTarget[0];
-            }
+            AndroidSdkHandler sdkHandler = getSdk();
+            RepoLogger logger = getLogger();
+            Collection<IAndroidTarget> targets = sdkHandler.getAndroidTargetManager(logger)
+                    .getTargets(logger);
+            mTargets = targets.toArray(new IAndroidTarget[targets.size()]);
         }
 
         return mTargets;
     }
 
-    protected LocalSdk mSdk;
+    protected AndroidSdkHandler mSdk;
 
     /**
      * Returns the SDK installation (used to look up platforms etc)
@@ -757,13 +758,13 @@ public abstract class LintClient {
      * @return the SDK if known
      */
     @Nullable
-    public LocalSdk getSdk() {
-         if (mSdk == null) {
-             File sdkHome = getSdkHome();
-             if (sdkHome != null) {
-                 mSdk = new LocalSdk(sdkHome);
-             }
-         }
+    public AndroidSdkHandler getSdk() {
+        if (mSdk == null) {
+            File sdkHome = getSdkHome();
+            if (sdkHome != null) {
+                mSdk = AndroidSdkHandler.getInstance(sdkHome);
+            }
+        }
 
         return mSdk;
     }
@@ -818,16 +819,12 @@ public abstract class LintClient {
      */
     @Nullable
     public BuildToolInfo getBuildTools(@NonNull Project project) {
-        LocalSdk sdk = getSdk();
-        if (sdk != null) {
-            // Build systems like Eclipse and ant just use the latest available
-            // build tools, regardless of project metadata. In Gradle, this
-            // method is overridden to use the actual build tools specified in the
-            // project.
-            return sdk.getLatestBuildTool();
-        }
-
-        return null;
+        AndroidSdkHandler sdk = getSdk();
+        // Build systems like Eclipse and ant just use the latest available
+        // build tools, regardless of project metadata. In Gradle, this
+        // method is overridden to use the actual build tools specified in the
+        // project.
+        return sdk.getLatestBuildTool(getLogger());
     }
 
     /**
@@ -1208,5 +1205,30 @@ public abstract class LintClient {
      */
     public static boolean isGradle() {
         return CLIENT_GRADLE.equals(sClientName);
+    }
+
+    public RepoLogger getLogger() {
+        if (mLogger == null) {
+            mLogger = new RepoLogger();
+        }
+        return mLogger;
+    }
+
+    public class RepoLogger extends ProgressIndicatorAdapter {
+
+        @Override
+        public void logError(@NonNull String s, @Nullable Throwable e) {
+            log(Severity.ERROR, e, s);
+        }
+
+        @Override
+        public void logInfo(@NonNull String s) {
+            log(Severity.INFORMATIONAL, null, s);
+        }
+
+        @Override
+        public void logWarning(@NonNull String s, @Nullable Throwable e) {
+            log(Severity.WARNING, e, s);
+        }
     }
 }
