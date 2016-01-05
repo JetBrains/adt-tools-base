@@ -16,6 +16,9 @@
 
 package com.android.build.gradle.managed;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+
 import org.gradle.model.Managed;
 import org.gradle.model.Unmanaged;
 
@@ -38,10 +41,19 @@ public interface NativeSourceFolder {
     /**
      * List of compiler flags for all C files.
      */
+    @NonNull
     List<String> getCFlags();
 
     /**
      * List of compiler flags for all C++ files.
      */
+    @NonNull
     List<String> getCppFlags();
+
+    /**
+     * The working directory for the compiler.
+     */
+    @Nullable
+    File getWorkingDirectory();
+    void setWorkingDirectory(File dir);
 }

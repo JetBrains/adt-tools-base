@@ -20,8 +20,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.managed.NativeSourceFolder;
 
-import org.gradle.model.Unmanaged;
-
 import java.io.File;
 import java.util.List;
 
@@ -35,6 +33,8 @@ public class NativeSourceFolderValue {
     List<String> cFlags;
     @Nullable
     List<String> cppFlags;
+    @Nullable
+    File workingDirectory;
 
     void copyTo(@NonNull NativeSourceFolder folder) {
         folder.setSrc(src);
@@ -46,5 +46,6 @@ public class NativeSourceFolderValue {
             folder.getCppFlags().clear();
             folder.getCppFlags().addAll(cppFlags);
         }
+        folder.setWorkingDirectory(workingDirectory);
     }
 }

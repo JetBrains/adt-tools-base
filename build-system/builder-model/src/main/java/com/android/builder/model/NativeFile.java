@@ -32,4 +32,9 @@ public interface NativeFile {
     * The name of a {@link NativeSettings} for the source file.
     */
    String getSettingsName();
+
+   /**
+    * The working directory for the compiler.
+    */
+   File getWorkingDirectory();
 }

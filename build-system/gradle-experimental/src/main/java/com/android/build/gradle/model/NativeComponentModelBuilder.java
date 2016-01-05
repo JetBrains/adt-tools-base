@@ -109,14 +109,20 @@ public class NativeComponentModelBuilder implements ToolingModelBuilder {
         for (NativeLibrary lib : config.getLibraries()) {
             List<NativeFolder> folders = Lists.newArrayList();
             for (NativeSourceFolder src : lib.getFolders()) {
-                folders.add(new NativeFolderImpl(src.getSrc(),
-                        ImmutableMap.of(
-                                "c", getSettingsName(src.getCFlags()),
-                                "c++", getSettingsName(src.getCppFlags()))));
+                folders.add(
+                        new NativeFolderImpl(
+                                src.getSrc(),
+                                ImmutableMap.of(
+                                        "c", getSettingsName(src.getCFlags()),
+                                        "c++", getSettingsName(src.getCppFlags())),
+                                src.getWorkingDirectory()));
             }
             List<com.android.builder.model.NativeFile> files = Lists.newArrayList();
             for (NativeSourceFile src : lib.getFiles()) {
-                files.add(new NativeFileImpl(src.getSrc(), getSettingsName(src.getFlags())));
+                files.add(new NativeFileImpl(
+                        src.getSrc(),
+                        getSettingsName(src.getFlags()),
+                        src.getWorkingDirectory()));
             }
             NativeArtifact artifact = new NativeArtifactImpl(
                     lib.getName(),
