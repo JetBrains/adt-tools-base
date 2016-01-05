@@ -24,7 +24,6 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 
 public final class AnyType extends Type {
-
     public AnyType() {
     }
 
@@ -48,7 +47,7 @@ public final class AnyType extends Type {
 
     @Override
     public void encode(@NotNull Encoder e) throws IOException {
-        TypeTag.anyTag().encode(e);
+        TypeTag.AnyTag.encode(e);
     }
 
     @Override

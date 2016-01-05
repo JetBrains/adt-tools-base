@@ -24,7 +24,6 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 
 public final class Variant extends Type {
-
     String mName;
 
     public Variant(String name) {
@@ -48,7 +47,7 @@ public final class Variant extends Type {
 
     @Override
     public void encode(@NotNull Encoder e) throws IOException {
-        TypeTag.variantTag().encode(e);
+        TypeTag.VariantTag.encode(e);
         e.nonCompactString(mName);
     }
 

@@ -17,80 +17,101 @@
  */
 package com.android.tools.rpclib.schema;
 
-import org.jetbrains.annotations.NotNull;
 import com.android.tools.rpclib.binary.Decoder;
 import com.android.tools.rpclib.binary.Encoder;
+import com.google.common.collect.ImmutableMap;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 
 public final class Method {
-    public static final byte Bool = 0;
-    public static Method bool() { return new Method(Bool); }
-    public static final byte Int8 = 1;
-    public static Method int8() { return new Method(Int8); }
-    public static final byte Uint8 = 2;
-    public static Method uint8() { return new Method(Uint8); }
-    public static final byte Int16 = 3;
-    public static Method int16() { return new Method(Int16); }
-    public static final byte Uint16 = 4;
-    public static Method uint16() { return new Method(Uint16); }
-    public static final byte Int32 = 5;
-    public static Method int32() { return new Method(Int32); }
-    public static final byte Uint32 = 6;
-    public static Method uint32() { return new Method(Uint32); }
-    public static final byte Int64 = 7;
-    public static Method int64() { return new Method(Int64); }
-    public static final byte Uint64 = 8;
-    public static Method uint64() { return new Method(Uint64); }
-    public static final byte Float32 = 9;
-    public static Method float32() { return new Method(Float32); }
-    public static final byte Float64 = 10;
-    public static Method float64() { return new Method(Float64); }
-    public static final byte String = 11;
-    public static Method string() { return new Method(String); }
+    public static final Method Bool = new Method((byte)0, "Bool");
+    public static final byte BoolValue = 0;
+    public static final Method Int8 = new Method((byte)1, "Int8");
+    public static final byte Int8Value = 1;
+    public static final Method Uint8 = new Method((byte)2, "Uint8");
+    public static final byte Uint8Value = 2;
+    public static final Method Int16 = new Method((byte)3, "Int16");
+    public static final byte Int16Value = 3;
+    public static final Method Uint16 = new Method((byte)4, "Uint16");
+    public static final byte Uint16Value = 4;
+    public static final Method Int32 = new Method((byte)5, "Int32");
+    public static final byte Int32Value = 5;
+    public static final Method Uint32 = new Method((byte)6, "Uint32");
+    public static final byte Uint32Value = 6;
+    public static final Method Int64 = new Method((byte)7, "Int64");
+    public static final byte Int64Value = 7;
+    public static final Method Uint64 = new Method((byte)8, "Uint64");
+    public static final byte Uint64Value = 8;
+    public static final Method Float32 = new Method((byte)9, "Float32");
+    public static final byte Float32Value = 9;
+    public static final Method Float64 = new Method((byte)10, "Float64");
+    public static final byte Float64Value = 10;
+    public static final Method String = new Method((byte)11, "String");
+    public static final byte StringValue = 11;
 
-    public final byte value;
+    private static final ImmutableMap<Byte, Method> VALUES = ImmutableMap.<Byte, Method>builder()
+        .put((byte)0, Bool)
+        .put((byte)1, Int8)
+        .put((byte)2, Uint8)
+        .put((byte)3, Int16)
+        .put((byte)4, Uint16)
+        .put((byte)5, Int32)
+        .put((byte)6, Uint32)
+        .put((byte)7, Int64)
+        .put((byte)8, Uint64)
+        .put((byte)9, Float32)
+        .put((byte)10, Float64)
+        .put((byte)11, String)
+        .build();
 
-    public Method(byte value) {
-        this.value = value;
+    private final byte mValue;
+    private final String mName;
+
+    private Method(byte v, String n) {
+        mValue = v;
+        mName = n;
+    }
+
+    public byte getValue() {
+        return mValue;
+    }
+
+    public String getName() {
+        return mName;
     }
 
     public void encode(@NotNull Encoder e) throws IOException {
-        e.uint8(value);
+        e.uint8(mValue);
     }
 
     public static Method decode(@NotNull Decoder d) throws IOException {
-        byte value = d.uint8();
-        return new Method(value);
+        return findOrCreate(d.uint8());
+    }
+
+    public static Method find(byte value) {
+        return VALUES.get(value);
+    }
+
+    public static Method findOrCreate(byte value) {
+        Method result = VALUES.get(value);
+        return (result == null) ? new Method(value, null) : result;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || !(o instanceof Method)) return false;
-        return value == ((Method)o).value;
+        return mValue == ((Method)o).mValue;
     }
 
     @Override
     public int hashCode() {
-        return value;
+        return mValue;
     }
 
     @Override
     public String toString() {
-        switch(value) {
-            case Bool: return "Bool";
-            case Int8: return "Int8";
-            case Uint8: return "Uint8";
-            case Int16: return "Int16";
-            case Uint16: return "Uint16";
-            case Int32: return "Int32";
-            case Uint32: return "Uint32";
-            case Int64: return "Int64";
-            case Uint64: return "Uint64";
-            case Float32: return "Float32";
-            case Float64: return "Float64";
-            case String: return "String";
-            default: return "Method(" + value + ")";
-        }
+        return (mName == null) ? "Method(" + mValue + ")" : mName;
     }
 }
