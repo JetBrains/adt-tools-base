@@ -23,7 +23,7 @@ import static java.io.File.separatorChar;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.tasks.ResourceUsageModel.Resource;
+import com.android.tools.lint.checks.ResourceUsageModel.Resource;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
