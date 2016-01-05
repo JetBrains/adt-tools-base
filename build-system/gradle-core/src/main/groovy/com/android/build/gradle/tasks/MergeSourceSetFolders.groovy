@@ -119,6 +119,11 @@ public class MergeSourceSetFolders extends IncrementalTask {
             for (Map.Entry<File, FileStatus> entry : changedInputs.entrySet()) {
                 File changedFile = entry.getKey()
 
+                // Ignore directories.
+                if (changedFile.isDirectory()) {
+                    continue;
+                }
+
                 merger.findDataSetContaining(changedFile, fileValidity)
                 if (fileValidity.status == FileValidity.FileStatus.UNKNOWN_FILE) {
                     doFullTaskAction()
