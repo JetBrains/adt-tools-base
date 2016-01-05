@@ -108,10 +108,14 @@ public class Features {
      */
     public static final int CHOREOGRAPHER = 18;
     /**
+     * Ability to use a layout specific to the Theme Editor Preview for the navigation bar.
+     */
+    public static final int THEME_PREVIEW_NAVIGATION_BAR = 19;
+    /**
      * Last known feature.
      * <p/>
      * This should be avoided on the LayoutLib since, since using this makes updating the API used
      * by the LayoutLib without implementing any newly added features.
      */
-    public static final int LAST_FEATURE = CHOREOGRAPHER;
+    public static final int LAST_FEATURE = THEME_PREVIEW_NAVIGATION_BAR;
 }
