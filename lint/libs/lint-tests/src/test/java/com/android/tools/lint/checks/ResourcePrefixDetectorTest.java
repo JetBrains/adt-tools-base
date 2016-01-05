@@ -110,6 +110,14 @@ public class ResourcePrefixDetectorTest extends AbstractCheckTest {
             checkLint(Arrays.asList(master, library)).replace("/TESTROOT/",""));
     }
 
+    public void testSuppressGeneratedRs() throws Exception {
+        assertEquals("No warnings.",
+                lintProject(
+                        copy("res/layout/layout1.xml", "res/raw/blend.bc")
+                ));
+
+    }
+
     // TODO: Test suppressing root level tag
 
     @Override

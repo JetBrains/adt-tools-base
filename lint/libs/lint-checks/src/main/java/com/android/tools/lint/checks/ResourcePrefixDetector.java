@@ -188,6 +188,14 @@ public class ResourcePrefixDetector extends ResourceXmlDetector implements
             if (folderType != null && folderType != ResourceFolderType.VALUES) {
                 String name = LintUtils.getBaseName(context.file.getName());
                 if (!name.startsWith(mPrefix)) {
+                    // Turns out the Gradle plugin will generate raw resources
+                    // for renderscript. We don't want to flag these.
+                    // We don't have a good way to recognize them today.
+                    String path = context.file.getPath();
+                    if (path.endsWith(".bc") && folderType == ResourceFolderType.RAW) {
+                        return;
+                    }
+
                     Location location = Location.create(context.file);
                     context.report(ISSUE, location, getErrorMessage(name));
                 }

@@ -98,8 +98,6 @@ public class CheckAll {
 
     // TODO: Investigate and clear these lists.
     private static final ImmutableSet<String> BROKEN_ASSEMBLE = ImmutableSet.of(
-            "shrink",
-            "extractRsEnabledAnnotations",
             "ndkRsHelloCompute", // TODO: Fails in C++ code, not sure what the issue is.
 
             // These are all right:

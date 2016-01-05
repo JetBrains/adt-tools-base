@@ -66,6 +66,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -703,7 +704,14 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements JavaS
         @NonNull
         @Override
         protected String readText(@NonNull File file) {
-            return context.getClient().readFile(file);
+            if (context != null) {
+                return context.getClient().readFile(file);
+            }
+            try {
+                return Files.toString(file, UTF_8);
+            } catch (IOException e) {
+                return ""; // Lint API
+            }
         }
 
         @Override
