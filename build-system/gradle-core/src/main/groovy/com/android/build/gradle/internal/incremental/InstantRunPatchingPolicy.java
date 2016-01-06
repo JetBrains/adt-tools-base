@@ -72,14 +72,14 @@ public enum InstantRunPatchingPolicy {
             }
         }
         if (version.getApiLevel() < 21) {
-            logger.quiet(String.format("InstantRun patching policy %1$s", PRE_LOLLIPOP));
+            logger.info(String.format("InstantRun patching policy %1$s", PRE_LOLLIPOP));
             return PRE_LOLLIPOP;
         } else {
             if (version.getApiLevel() == 21) {
-                logger.quiet(String.format("InstantRun patching policy %1$s", LOLLIPOP));
+                logger.info(String.format("InstantRun patching policy %1$s", LOLLIPOP));
                 return LOLLIPOP;
             } else  {
-                logger.quiet(String.format("InstantRun patching policy %s", MARSHMALLOW_AND_ABOVE));
+                logger.info(String.format("InstantRun patching policy %s", MARSHMALLOW_AND_ABOVE));
                 return MARSHMALLOW_AND_ABOVE;
             }
         }
