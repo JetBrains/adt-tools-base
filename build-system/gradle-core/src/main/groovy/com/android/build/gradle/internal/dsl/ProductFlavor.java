@@ -468,7 +468,7 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
     @Deprecated
     public void setFlavorDimension(String dimension) {
         LoggingUtil.displayDeprecationWarning(logger, project,
-                "'flavorDimension' will be removed by Android Gradle Plugin 2.0, " +
+                "'flavorDimension' will be removed in a future version of Android Gradle Plugin, " +
                         "it has been replaced by 'dimension'.");
         setDimension(dimension);
     }
@@ -480,7 +480,7 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
     @Deprecated
     public String getFlavorDimension() {
         LoggingUtil.displayDeprecationWarning(logger, project,
-                "'flavorDimension' will be removed by Android Gradle Plugin 2.0, " +
+                "'flavorDimension' will be removed in a future version of Android Gradle Plugin, " +
                         "it has been replaced by 'dimension'.");
         return getDimension();
     }
