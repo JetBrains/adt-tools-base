@@ -48,9 +48,8 @@ dependencies {
     includeInJar project(':base:instant-run:instant-run-server')
 
     testCompile 'junit:junit:4.12'
-    testCompile 'com.google.truth:truth:0.26'
+    testCompile 'com.google.truth:truth:0.28'
     testCompile 'org.mockito:mockito-all:1.9.5'
-    testCompile 'com.google.truth:truth:0.26'
     testCompile 'com.google.guava:guava:17.0'
     testCompile project(':base:project-test-lib')
     testCompile project(':base:testutils')

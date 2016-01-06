@@ -21,7 +21,7 @@ dependencies {
     compile project(':base:instant-run:instant-run-common')
 
     testCompile 'junit:junit:4.12'
-    testCompile 'com.google.truth:truth:0.26'
+    testCompile 'com.google.truth:truth:0.28'
     testCompile 'org.mockito:mockito-all:1.9.5'
     testCompile project(':base:instant-run:instant-run-client')
 }
