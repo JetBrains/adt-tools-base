@@ -60,6 +60,7 @@ public abstract class ZFileExtension {
     /**
      * The zip file has been open and the zip's contents have been read. The default implementation
      * does nothing and returns {@code null}.
+     *
      * @return an optional runnable to run when notification of all listeners has ended
      * @throws IOException failed to process the event
      */
@@ -78,6 +79,7 @@ public abstract class ZFileExtension {
      * it or other extensions add or remove files before update.
      * <p>
      * When no more files are updated, the {@link #entriesWritten()} notification is sent.
+     *
      * @return an optional runnable to run when notification of all listeners has ended
      * @throws IOException failed to process the event
      */
@@ -93,6 +95,7 @@ public abstract class ZFileExtension {
      * directory and/or the EOCD can be made.
      * <p>
      * After this notification, {@link #updated()} is sent.
+     *
      * @throws IOException failed to process the event
      */
     public void entriesWritten() throws IOException {
@@ -100,9 +103,11 @@ public abstract class ZFileExtension {
 
     /**
      * The zip file has been updated on disk. The default implementation does nothing.
+     *
      * @return an optional runnable to run when notification of all listeners has ended
+     * @throws IOException failed to perform update tasks
      */
-    public void updated() {
+    public void updated() throws IOException {
     }
 
     /**
@@ -116,6 +121,7 @@ public abstract class ZFileExtension {
     /**
      * A new entry has been added to the zip, possibly replacing an entry in there. The
      * default implementation does nothing and returns {@code null}.
+     *
      * @param entry the entry that was added
      * @param replaced the entry that was replaced, if any
      * @return an optional runnable to run when notification of all listeners has ended
@@ -130,6 +136,7 @@ public abstract class ZFileExtension {
      * been replaced. Those entries are notified using <em>replaced</em> in
      * {@link #added(StoredEntry, StoredEntry)}. The default implementation does nothing and
      * returns {@code null}.
+     *
      * @param entry the entry that was deleted
      * @return an optional runnable to run when notification of all listeners has ended
      */
