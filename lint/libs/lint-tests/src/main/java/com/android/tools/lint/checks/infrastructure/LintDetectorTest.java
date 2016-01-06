@@ -46,6 +46,7 @@ import com.android.tools.lint.client.api.Configuration;
 import com.android.tools.lint.client.api.DefaultConfiguration;
 import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.client.api.JavaParser;
+import com.android.tools.lint.client.api.JavaVisitor;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.client.api.LintRequest;
@@ -113,6 +114,27 @@ public abstract class LintDetectorTest extends SdkTestCase {
     protected void setUp() throws Exception {
         super.setUp();
         BuiltinIssueRegistry.reset();
+        JavaVisitor.clearCrashCount();
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        super.tearDown();
+        List<Issue> issues;
+        try {
+            // Some detectors extend LintDetectorTest but don't actually
+            // provide issues and assert instead; gracefully ignore those
+            // here
+            issues = getIssues();
+        } catch (Throwable t) {
+            issues = Collections.emptyList();
+        }
+        for (Issue issue : issues) {
+            if (issue.getImplementation().getScope().contains(Scope.JAVA_FILE)) {
+                assertEquals(0, JavaVisitor.getCrashCount());
+                break;
+            }
+        }
     }
 
     protected abstract Detector getDetector();

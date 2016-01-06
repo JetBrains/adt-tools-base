@@ -21,6 +21,7 @@ import static com.android.SdkConstants.R_CLASS;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
 import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
 import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
 import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
@@ -331,6 +332,24 @@ public class JavaVisitor {
                 mParser.dispose(context, compilationUnit);
             }
         }
+    }
+
+    /**
+     * For testing only: returns the number of exceptions thrown during Java AST analysis
+     *
+     * @return the number of internal errors found
+     */
+    @VisibleForTesting
+    public static int getCrashCount() {
+        return sExceptionCount;
+    }
+
+    /**
+     * For testing only: clears the crash counter
+     */
+    @VisibleForTesting
+    public static void clearCrashCount() {
+        sExceptionCount = 0;
     }
 
     public void prepare(@NonNull List<JavaContext> contexts) {
