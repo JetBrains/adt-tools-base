@@ -17,7 +17,9 @@
 package com.android.build.gradle.internal.model;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.builder.model.SyncIssue;
+import com.google.common.base.Objects;
 
 /**
  * Creates a key from a SyncIssue to use in a map.
@@ -25,14 +27,15 @@ import com.android.builder.model.SyncIssue;
 public class SyncIssueKey {
 
     private final int type;
-    @NonNull
+
+    @Nullable
     private final String data;
 
     public static SyncIssueKey from(@NonNull SyncIssue syncIssue) {
         return new SyncIssueKey(syncIssue.getType(), syncIssue.getData());
     }
 
-    private SyncIssueKey(int type, @NonNull String data) {
+    private SyncIssueKey(int type, @Nullable String data) {
         this.type = type;
         this.data = data;
     }
@@ -48,13 +51,11 @@ public class SyncIssueKey {
 
         SyncIssueKey that = (SyncIssueKey) o;
 
-        return type == that.type && data.equals(that.data);
+        return type == that.type && Objects.equal(this.data, that.data);
     }
 
     @Override
     public int hashCode() {
-        int result = type;
-        result = 31 * result + data.hashCode();
-        return result;
+        return Objects.hashCode(type, data);
     }
 }
