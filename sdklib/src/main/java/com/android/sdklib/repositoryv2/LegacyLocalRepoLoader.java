@@ -33,7 +33,6 @@ import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
-import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.androidTarget.PlatformTarget;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.descriptors.PkgType;
@@ -152,8 +151,7 @@ public class LegacyLocalRepoLoader implements FallbackLocalRepoLoader {
             if (mWrapped instanceof LocalPlatformPkgInfo) {
                 IAndroidTarget target = ((LocalPlatformPkgInfo) mWrapped).getAndroidTarget();
                 if (target instanceof PlatformTarget) {
-                    SdkManager.LayoutlibVersion layoutlibVersion = ((PlatformTarget)target).getLayoutlibVersion();
-                    layoutVersion = layoutlibVersion == null ? 1 : layoutlibVersion.getApi();
+                    layoutVersion = ((PlatformTarget)target).getLayoutlibApi();
                 }
                 else if (target instanceof com.android.sdklib.repositoryv2.targets.PlatformTarget) {
                     layoutVersion

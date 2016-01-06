@@ -74,7 +74,6 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
 
     private MockLog mLog;
 
-    private SdkManager mSdkManager;
     private AndroidSdkHandler mSdkHandler;
 
     private int mRepoXsdLevel;
@@ -86,11 +85,8 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
         return mLog;
     }
 
-    /**
-     * Returns the {@link SdkManager} for this test case.
-     */
-    public SdkManager getSdkManager() {
-        return mSdkManager;
+    public AndroidSdkHandler getSdkHandler() {
+        return mSdkHandler;
     }
 
     /**
@@ -111,9 +107,7 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
      * will be reparsed.
      */
     protected void createSdkAvdManagers() throws AndroidLocationException {
-        mSdkManager = SdkManager.createManager(mFakeSdk.getAbsolutePath(), mLog);
         mSdkHandler = new AndroidSdkHandler(mFakeSdk, new MockFileOp());
-        assertNotNull("SdkManager location was invalid", mSdkManager);
     }
 
     /**
@@ -190,30 +184,13 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
         File sysImgDir = systemImage.getLocation();
         String vendor = systemImage.getAddonVendor() == null ? null
                 : systemImage.getAddonVendor().getId();
-        if (systemImage.getLocationType() == LocationType.IN_LEGACY_FOLDER) {
-            // legacy mode. Path should look like SDK/platforms/platform-N/userdata.img
-            makeFakeLegacySysImg(sysImgDir.getParentFile(), systemImage.getAbiType());
-
-        } else if (systemImage.getLocationType() == LocationType.IN_IMAGES_SUBFOLDER) {
-            // not-so-legacy mode.
-            // Path should look like SDK/platforms/platform-N/images/userdata.img
-            makeFakeSysImgInternal(
-                    sysImgDir,
-                    systemImage.getTag().getId(),
-                    systemImage.getAbiType(),
-                    deviceId,
-                    vendor);
-
-        } else if (systemImage.getLocationType() == LocationType.IN_SYSTEM_IMAGE) {
-            // system-image folder mode.
-            // Path should like SDK/system-images/platform-N/tag/abi/userdata.img+source.properties
-            makeFakeSysImgInternal(
-                    sysImgDir,
-                    systemImage.getTag().getId(),
-                    systemImage.getAbiType(),
-                    deviceId,
-                    vendor);
-        }
+        // Path should like SDK/system-images/platform-N/tag/abi/userdata.img+source.properties
+        makeFakeSysImgInternal(
+          sysImgDir,
+          systemImage.getTag().getId(),
+          systemImage.getAbiType(),
+          deviceId,
+          vendor);
     }
 
     /**
