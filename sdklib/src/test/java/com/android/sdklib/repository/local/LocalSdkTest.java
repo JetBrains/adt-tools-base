@@ -675,8 +675,8 @@ public class LocalSdkTest extends TestCase {
         assertNotNull(t);
 
         assertEquals(
-                "[SystemImage tag=tag-1, ABI=x86, location in system image='/sdk/system-images/android-18/tag-1/x86', " +
-                 "SystemImage tag=tag-2, ABI=mips, location in system image='/sdk/system-images/android-18/tag-2/mips']",
+                "[SystemImage tag=tag-1, ABI=x86, location='/sdk/system-images/android-18/tag-1/x86', " +
+                 "SystemImage tag=tag-2, ABI=mips, location='/sdk/system-images/android-18/tag-2/mips']",
                  sanitizePath(Arrays.toString(t.getSystemImages())));
 
         assertEquals("/sdk/platforms/android-18/skins/WVGA800",
@@ -878,7 +878,7 @@ public class LocalSdkTest extends TestCase {
         assertNotNull(t);
 
         assertEquals(
-                "[SystemImage tag=default, ABI=armeabi, location in legacy folder='/sdk/add-ons/addon-vendor_name-2/images']",
+                "[SystemImage tag=default, ABI=armeabi, location='/sdk/add-ons/addon-vendor_name-2/images']",
                  sanitizePath(Arrays.toString(t.getSystemImages())));
 
         assertEquals(
@@ -985,9 +985,9 @@ public class LocalSdkTest extends TestCase {
 
         assertEquals(
                 "[SystemImage addon-vendor=vendor, tag=default, ABI=armeabi-v7a, " +
-                "location in images subfolder='/sdk/add-ons/addon-vendor_name-2/images/armeabi-v7a', " +
+                "location='/sdk/add-ons/addon-vendor_name-2/images/armeabi-v7a', " +
                 "SystemImage addon-vendor=vendor, tag=default, ABI=x86, " +
-                "location in images subfolder='/sdk/add-ons/addon-vendor_name-2/images/x86']",
+                "location='/sdk/add-ons/addon-vendor_name-2/images/x86']",
                  sanitizePath(Arrays.toString(t.getSystemImages())));
 
         assertEquals(
@@ -1140,8 +1140,8 @@ public class LocalSdkTest extends TestCase {
         assertNotNull(t);
 
         assertEquals(
-                "[SystemImage addon-vendor=vendor, tag=name, ABI=armeabi-v7a, location in system image='/sdk/system-images/addon-vendor_name-2/armeabi-v7a', " +
-                 "SystemImage addon-vendor=vendor, tag=name, ABI=x86, location in system image='/sdk/system-images/addon-vendor_name-2/x86']",
+                "[SystemImage addon-vendor=vendor, tag=name, ABI=armeabi-v7a, location='/sdk/system-images/addon-vendor_name-2/armeabi-v7a', " +
+                 "SystemImage addon-vendor=vendor, tag=name, ABI=x86, location='/sdk/system-images/addon-vendor_name-2/x86']",
                  sanitizePath(Arrays.toString(t.getSystemImages())));
 
         assertEquals(

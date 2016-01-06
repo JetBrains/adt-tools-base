@@ -27,7 +27,6 @@ import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.IAndroidTarget.OptionalLibrary;
 import com.android.sdklib.ISystemImage;
 import com.android.sdklib.ISystemImage.LocationType;
-import com.android.sdklib.SdkManager.LayoutlibVersion;
 import com.android.sdklib.SystemImage;
 import com.android.sdklib.internal.androidTarget.OptionalLibraryImpl;
 import com.android.sdklib.internal.androidTarget.PlatformTarget;
@@ -71,12 +70,15 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
     @NonNull
     private final IPkgDesc mDesc;
 
+
     /**
      * Android target, lazyly loaded from #getAndroidTarget
      */
     private IAndroidTarget mTarget;
 
     private boolean mLoaded;
+
+    private static final int LAYOUTLIB_VERSION_NOT_SPECIFIED = 0;
 
     public LocalPlatformPkgInfo(@NonNull LocalSdk localSdk,
             @NonNull File localDir,
@@ -223,7 +225,7 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
         // saved by the SDK Manager when installing the package.
 
         int revision = 1;
-        LayoutlibVersion layoutlibVersion = null;
+        int layoutlibApi = 1;
         try {
             revision = Integer.parseInt(platformProp.get(PkgProps.PKG_REVISION));
         } catch (NumberFormatException e) {
@@ -241,13 +243,13 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
                 // In old packages it was sometimes specified differently
                 propRev = platformProp.get("sdk." + PkgProps.LAYOUTLIB_REV.toLowerCase());
             }
-            int llApi = propApi == null ? LayoutlibVersion.NOT_SPECIFIED :
+            int llApi = propApi == null ? LAYOUTLIB_VERSION_NOT_SPECIFIED :
                     Integer.parseInt(propApi);
-            int llRev = propRev == null ? LayoutlibVersion.NOT_SPECIFIED :
+            int llRev = propRev == null ? LAYOUTLIB_VERSION_NOT_SPECIFIED :
                     Integer.parseInt(propRev);
-            if (llApi > LayoutlibVersion.NOT_SPECIFIED ||
-                    llRev >= LayoutlibVersion.NOT_SPECIFIED) {
-                layoutlibVersion = new LayoutlibVersion(llApi, llRev);
+            if (llApi > LAYOUTLIB_VERSION_NOT_SPECIFIED ||
+                    llRev >= LAYOUTLIB_VERSION_NOT_SPECIFIED) {
+                layoutlibApi = llApi;
             }
         } catch (NumberFormatException e) {
             // do nothing, we'll ignore the layoutlib version if it's invalid
@@ -269,7 +271,7 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
                 apiVersion,
                 apiName,
                 revision,
-                layoutlibVersion,
+                layoutlibApi,
                 systemImages,
                 platformProp,
                 getOptionalLibraries(platformFolder),
