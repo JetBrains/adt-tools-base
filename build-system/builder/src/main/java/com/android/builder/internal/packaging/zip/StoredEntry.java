@@ -23,6 +23,7 @@ import com.google.common.base.Verify;
 import com.google.common.io.ByteSource;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
+import com.google.common.primitives.Ints;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -330,9 +331,8 @@ public class StoredEntry {
      * @throws IOException failed to read the local header
      */
     private void readLocalHeader() throws IOException {
-        byte localHeader[] = mFile.read(mCdh.getOffset(), mCdh.getOffset()
-                + FIXED_LOCAL_FILE_HEADER_SIZE);
-        Verify.verify(localHeader.length == FIXED_LOCAL_FILE_HEADER_SIZE);
+        byte[] localHeader = new byte[FIXED_LOCAL_FILE_HEADER_SIZE];
+        mFile.directFullyRead(mCdh.getOffset(), localHeader);
 
         ByteSource byteSource = ByteSource.wrap(localHeader);
         F_LOCAL_SIGNATURE.verify(byteSource);
@@ -354,15 +354,17 @@ public class StoredEntry {
         F_FILE_NAME_LENGTH.verify(byteSource, mCdh.getName().length());
         long extraLength = F_EXTRA_LENGTH.read(byteSource);
         long fileNameStart = mCdh.getOffset() + F_EXTRA_LENGTH.endOffset();
-        String fileName = new String(mFile.read(fileNameStart,
-                fileNameStart + mCdh.getName().length()), Charsets.US_ASCII);
+        byte[] fileNameData = new byte[mCdh.getName().length()];
+        mFile.directFullyRead(fileNameStart, fileNameData);
+        String fileName = new String(fileNameData, Charsets.US_ASCII);
         if (!fileName.equals(mCdh.getName())) {
             throw new IOException("Central directory reports file as being named '" + mCdh.getName()
                     + "' but local header reports file being named '" + fileName + "'.");
         }
 
         long localExtraStart = fileNameStart + fileName.length();
-        mLocalExtra = mFile.read(localExtraStart, localExtraStart + extraLength);
+        mLocalExtra = new byte[Ints.checkedCast(extraLength)];
+        mFile.directFullyRead(localExtraStart, mLocalExtra);
     }
 
     /**
@@ -378,10 +380,7 @@ public class StoredEntry {
         long ddStart = mCdh.getOffset() + FIXED_LOCAL_FILE_HEADER_SIZE
                 + mCdh.getName().length() + mLocalExtra.length + mCdh.getCompressedSize();
         byte ddData[] = new byte[DataDescriptorType.DATA_DESCRIPTOR_WITH_SIGNATURE.size];
-        InputStream dataDescriptorIs = mFile.open(ddStart,
-                ddStart + DataDescriptorType.DATA_DESCRIPTOR_WITH_SIGNATURE.size);
-        ByteStreams.readFully(dataDescriptorIs, ddData);
-        dataDescriptorIs.close();
+        mFile.directFullyRead(ddStart, ddData);
 
         ByteSource ddSource = ByteSource.wrap(ddData);
 
@@ -438,7 +437,7 @@ public class StoredEntry {
                 long dataStart = mCdh.getOffset() + getLocalHeaderSize();
                 long dataEnd = dataStart + mCdh.getCompressedSize();
 
-                return mFile.open(dataStart, dataEnd);
+                return mFile.directOpen(dataStart, dataEnd);
             }
 
             @Override
