@@ -22,6 +22,7 @@ import com.android.build.gradle.internal.LoggingUtil;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dependency.SymbolFileProviderImpl;
 import com.android.build.gradle.internal.dsl.AaptOptions;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
@@ -100,6 +101,8 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     private File mergeBlameLogFolder;
 
+    private InstantRunBuildContext instantRunBuildContext;
+
     @Override
     protected void doFullTaskAction() throws IOException {
         // we have to clean the source folder output in case the package name changed.
@@ -108,6 +111,7 @@ public class ProcessAndroidResources extends IncrementalTask {
             FileUtils.emptyFolder(srcOut);
         }
 
+        @Nullable
         File resOutBaseNameFile = getPackageOutputFile();
 
         AaptPackageProcessBuilder aaptPackageCommandBuilder =
@@ -146,6 +150,10 @@ public class ProcessAndroidResources extends IncrementalTask {
             throw new RuntimeException(e);
         } catch (ProcessException e) {
             throw new RuntimeException(e);
+        }
+        if (resOutBaseNameFile != null) {
+            instantRunBuildContext.addChangedFile(
+                    InstantRunBuildContext.FileType.RESOURCES, resOutBaseNameFile);
         }
     }
 
@@ -326,6 +334,9 @@ public class ProcessAndroidResources extends IncrementalTask {
 
             processResources.setMergeBlameLogFolder(
                     scope.getVariantScope().getResourceBlameLogDir());
+
+            processResources.instantRunBuildContext =
+                    scope.getVariantScope().getInstantRunBuildContext();
         }
 
         @NonNull
@@ -363,6 +374,7 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     @InputDirectory
     @Optional
+    @Nullable
     public File getAssetsDir() {
         return assetsDir;
     }
@@ -373,6 +385,7 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     @OutputDirectory
     @Optional
+    @Nullable
     public File getSourceOutputDir() {
         return sourceOutputDir;
     }
@@ -383,6 +396,7 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     @OutputDirectory
     @Optional
+    @Nullable
     public File getTextSymbolOutputDir() {
         return textSymbolOutputDir;
     }
@@ -393,6 +407,7 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     @OutputFile
     @Optional
+    @Nullable
     public File getPackageOutputFile() {
         return packageOutputFile;
     }
@@ -403,6 +418,7 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     @OutputFile
     @Optional
+    @Nullable
     public File getProguardOutputFile() {
         return proguardOutputFile;
     }
@@ -422,6 +438,7 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     @Input
     @Optional
+    @Nullable
     public String getPreferredDensity() {
         return preferredDensity;
     }
@@ -437,6 +454,7 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     @Nested
     @Optional
+    @Nullable
     public List<SymbolFileProviderImpl> getLibraries() {
         return libraries;
     }
@@ -448,6 +466,7 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     @Input
     @Optional
+    @Nullable
     public String getPackageForR() {
         return packageForR;
     }
@@ -458,6 +477,7 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     @Input
     @Optional
+    @Nullable
     public Collection<String> getSplits() {
         return splits;
     }

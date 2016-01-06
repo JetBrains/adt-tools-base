@@ -93,7 +93,11 @@ public class InstantRunBuildContext {
         /**
          * Pure split (code only) that can be installed individually on M+ devices.
          */
-        SPLIT
+        SPLIT,
+        /**
+         * Resources: res.ap_ file
+         */
+        RESOURCES,
     }
 
     /**
@@ -197,8 +201,8 @@ public class InstantRunBuildContext {
          * deployed on the device.
          */
         public boolean isAccumulative() {
-            return fileType ==
-                    FileType.DEX || fileType == FileType.SPLIT || fileType == FileType.MAIN;
+            return fileType == FileType.DEX || fileType == FileType.SPLIT ||
+                    fileType == FileType.MAIN || fileType == FileType.RESOURCES;
         }
 
         public void setLocation(@NonNull File location) {
@@ -272,7 +276,8 @@ public class InstantRunBuildContext {
         }
         // validate the patching policy and the received file type to record the file or not.
         // RELOAD and MAIN are always record.
-        if (fileType != FileType.RELOAD_DEX && fileType != FileType.MAIN) {
+        if (fileType != FileType.RELOAD_DEX && fileType != FileType.MAIN &&
+                fileType != FileType.RESOURCES) {
             switch (patchingPolicy) {
                 case PRE_LOLLIPOP:
                     if (fileType != FileType.RESTART_DEX) {
@@ -303,6 +308,8 @@ public class InstantRunBuildContext {
             if (patchingPolicy == InstantRunPatchingPolicy.LOLLIPOP) {
                 currentBuild.artifacts.clear();
             }
+
+            // TODO: Remove unnecessary res.ap_ files.
         }
         currentBuild.artifacts.add(new Artifact(fileType, file));
     }
@@ -356,8 +363,8 @@ public class InstantRunBuildContext {
                     foundColdRestart = true;
                 }
             }
-            // remove all DEX and SPLIT files from older built artifacts if we have already seen
-            // a newer version, we only need to most recent one.
+            // remove all DEX, SPLIT and Resources files from older built artifacts if we have
+            // already seen a newer version, we only need to most recent one.
             for (Artifact artifact : new ArrayList<Artifact>(previousBuild.artifacts)) {
                 if (artifact.isAccumulative()) {
                     // we don't remove artifacts from the first build.
