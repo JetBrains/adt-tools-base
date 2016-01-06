@@ -131,6 +131,11 @@ public class SystemImage implements ISystemImage {
         return mAndroidVersion;
     }
 
+    @NonNull
+    public RepoPackage getPackage() {
+        return mPackage;
+    }
+
     @Override
     public int compareTo(ISystemImage o) {
         int res = getTag().compareTo(o.getTag());
