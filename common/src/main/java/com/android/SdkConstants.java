@@ -596,7 +596,7 @@ public final class SdkConstants {
     public static final String CLASS_NAME_DATA_BINDING_COMPONENT = "DataBindingComponent"; //$NON-NLS-1$
     public static final String CLASS_DATA_BINDING_BASE_BINDING = "android.databinding.ViewDataBinding";
 
-    /* Android Design Support Class Constants */
+    /* Android Support Class Constants */
     public static final String CLASS_COORDINATOR_LAYOUT = "android.support.design.widget.CoordinatorLayout"; //$NON-NLS-1$
     public static final String CLASS_APP_BAR_LAYOUT = "android.support.design.widget.AppBarLayout"; //$NON-NLS-1$
     public static final String CLASS_FLOATING_ACTION_BUTTON = "android.support.design.widget.FloatingActionButton"; //$NON-NLS-1$
@@ -606,6 +606,17 @@ public final class SdkConstants {
     public static final String CLASS_TAB_LAYOUT = "android.support.design.widget.TabLayout"; //$NON-NLS-1$
     public static final String CLASS_TEXT_INPUT_LAYOUT = "android.support.design.widget.TextInputLayout"; //$NON-NLS-1$
     public static final String CLASS_NESTED_SCROLL_VIEW = "android.support.v4.widget.NestedScrollView";  //$NON-NLS-1$
+    public static final String CLASS_GRID_LAYOUT_V7 = "android.support.v7.widget.GridLayout";  //$NON-NLS-1$
+    public static final String CLASS_TOOLBAR_V7 = "android.support.v7.widget.Toolbar";  //$NON-NLS-1$
+    public static final String CLASS_RECYCLER_VIEW = "android.support.v7.widget.RecyclerView";  //$NON-NLS-1$
+    public static final String CLASS_CARD_VIEW = "android.support.v7.widget.CardView";  //$NON-NLS-1$
+    public static final String CLASS_AD_VIEW = "com.google.android.gms.ads.AdView";  //$NON-NLS-1$
+    public static final String CLASS_MAP_FRAGMENT = "com.google.android.gms.maps.MapFragment";  //$NON-NLS-1$
+    public static final String CLASS_MAP_VIEW = "com.google.android.gms.maps.MapView";  //$NON-NLS-1$
+    public static final String CLASS_BROWSE_FRAGMENT = "android.support.v17.leanback.app.BrowseFragment";  //$NON-NLS-1$
+    public static final String CLASS_DETAILS_FRAGMENT = "android.support.v17.leanback.app.DetailsFragment";  //$NON-NLS-1$
+    public static final String CLASS_PLAYBACK_OVERLAY_FRAGMENT = "android.support.v17.leanback.app.PlaybackOverlayFragment";  //$NON-NLS-1$
+    public static final String CLASS_SEARCH_FRAGMENT = "android.support.v17.leanback.app.SearchFragment";  //$NON-NLS-1$
 
 
     /** Returns the appropriate name for the 'android' command, which is 'android.exe' for
@@ -815,6 +826,7 @@ public final class SdkConstants {
     public static final String BUTTON = "Button";                      //$NON-NLS-1$
     public static final String COMPOUND_BUTTON = "CompoundButton";     //$NON-NLS-1$
     public static final String ADAPTER_VIEW = "AdapterView";           //$NON-NLS-1$
+    public static final String STACK_VIEW = "StackView";               //$NON-NLS-1$
     public static final String GALLERY = "Gallery";                    //$NON-NLS-1$
     public static final String GRID_VIEW = "GridView";                 //$NON-NLS-1$
     public static final String TAB_HOST = "TabHost";                   //$NON-NLS-1$
@@ -832,6 +844,7 @@ public final class SdkConstants {
     public static final String TABLE_ROW = "TableRow";                 //$NON-NLS-1$
     public static final String TAB_WIDGET = "TabWidget";               //$NON-NLS-1$
     public static final String IMAGE_BUTTON = "ImageButton";           //$NON-NLS-1$
+    public static final String ZOOM_BUTTON = "ZoomButton";             //$NON-NLS-1$
     public static final String SEEK_BAR = "SeekBar";                   //$NON-NLS-1$
     public static final String VIEW_STUB = "ViewStub";                 //$NON-NLS-1$
     public static final String SPINNER = "Spinner";                    //$NON-NLS-1$
@@ -843,15 +856,19 @@ public final class SdkConstants {
     public static final String ABS_SPINNER = "AbsSpinner";             //$NON-NLS-1$
     public static final String ABS_SEEK_BAR = "AbsSeekBar";            //$NON-NLS-1$
     public static final String VIEW_ANIMATOR = "ViewAnimator";         //$NON-NLS-1$
+    public static final String VIEW_FLIPPER = "ViewFlipper";           //$NON-NLS-1$
     public static final String VIEW_SWITCHER = "ViewSwitcher";         //$NON-NLS-1$
+    public static final String TEXT_SWITCHER = "TextSwitcher";         //$NON-NLS-1$
+    public static final String IMAGE_SWITCHER = "ImageSwitcher";       //$NON-NLS-1$
     public static final String EXPANDABLE_LIST_VIEW = "ExpandableListView";    //$NON-NLS-1$
     public static final String HORIZONTAL_SCROLL_VIEW = "HorizontalScrollView"; //$NON-NLS-1$
     public static final String MULTI_AUTO_COMPLETE_TEXT_VIEW = "MultiAutoCompleteTextView"; //$NON-NLS-1$
     public static final String AUTO_COMPLETE_TEXT_VIEW = "AutoCompleteTextView"; //$NON-NLS-1$
     public static final String CHECKABLE = "Checkable";                //$NON-NLS-1$
     public static final String TEXTURE_VIEW = "TextureView";           //$NON-NLS-1$
+    public static final String DIALER_FILTER = "DialerFilter";         //$NON-NLS-1$
 
-    /* Android Design Support Tag Constants */
+    /* Android Support Tag Constants */
     public static final String COORDINATOR_LAYOUT = CLASS_COORDINATOR_LAYOUT;
     public static final String APP_BAR_LAYOUT = CLASS_APP_BAR_LAYOUT;
     public static final String FLOATING_ACTION_BUTTON = CLASS_FLOATING_ACTION_BUTTON;
@@ -860,6 +877,18 @@ public final class SdkConstants {
     public static final String SNACKBAR = CLASS_SNACKBAR;
     public static final String TAB_LAYOUT = CLASS_TAB_LAYOUT;
     public static final String TEXT_INPUT_LAYOUT = CLASS_TEXT_INPUT_LAYOUT;
+    public static final String NESTED_SCROLL_VIEW = CLASS_NESTED_SCROLL_VIEW;
+    public static final String GRID_LAYOUT_V7 = CLASS_GRID_LAYOUT_V7;
+    public static final String TOOLBAR_V7 = CLASS_TOOLBAR_V7;
+    public static final String RECYCLER_VIEW = CLASS_RECYCLER_VIEW;
+    public static final String CARD_VIEW = CLASS_CARD_VIEW;
+    public static final String AD_VIEW = CLASS_AD_VIEW;
+    public static final String MAP_FRAGMENT = CLASS_MAP_FRAGMENT;
+    public static final String MAP_VIEW = CLASS_MAP_VIEW;
+    public static final String BROWSE_FRAGMENT = CLASS_BROWSE_FRAGMENT;
+    public static final String DETAILS_FRAGMENT = CLASS_DETAILS_FRAGMENT;
+    public static final String PLAYBACK_OVERLAY_FRAGMENT = CLASS_PLAYBACK_OVERLAY_FRAGMENT;
+    public static final String SEARCH_FRAGMENT = CLASS_SEARCH_FRAGMENT;
 
     // Tags: Drawables
     public static final String TAG_BITMAP = "bitmap";                  //$NON-NLS-1$
@@ -1290,8 +1319,11 @@ public final class SdkConstants {
 
     // Some common layout element names
     public static final String CALENDAR_VIEW = "CalendarView";          //$NON-NLS-1$
+    public static final String CHRONOMETER = "Chronometer";             //$NON-NLS-1$
+    public static final String TEXT_CLOCK = "TextClock";                //$NON-NLS-1$
     public static final String SPACE = "Space";                         //$NON-NLS-1$
     public static final String GESTURE_OVERLAY_VIEW = "GestureOverlayView";//$NON-NLS-1$
+    public static final String QUICK_CONTACT_BADGE = "QuickContactBadge";//$NON-NLS-1$
 
     public static final String ATTR_HANDLE = "handle";                  //$NON-NLS-1$
     public static final String ATTR_CONTENT = "content";                //$NON-NLS-1$
@@ -1356,6 +1388,27 @@ public final class SdkConstants {
 
     /** The android.app. package prefix */
     public static final String ANDROID_APP_PKG = ANDROID_PKG_PREFIX + "app."; //$NON-NLS-1$
+
+    /** The android.support.v4. package prefix */
+    public static final String ANDROID_SUPPORT_V4_PKG = ANDROID_SUPPORT_PKG_PREFIX + "v4."; //$NON-NLS-1$
+
+    /** The android.support.v7. package prefix */
+    public static final String ANDROID_SUPPORT_V7_PKG = ANDROID_SUPPORT_PKG_PREFIX + "v7."; //$NON-NLS-1$
+
+    /** The android.support.design. package prefix */
+    public static final String ANDROID_SUPPORT_DESIGN_PKG = ANDROID_SUPPORT_PKG_PREFIX + "design."; //$NON-NLS-1$
+
+    /** The android.support.v17.leanback. package prefix */
+    public static final String ANDROID_SUPPORT_LEANBACK_V17_PKG = ANDROID_SUPPORT_PKG_PREFIX + "v17.leanback."; //$NON-NLS-1$
+
+    /** The com.google.android.gms. package prefix */
+    public static final String GOOGLE_PLAY_SERVICES_PKG = "com.google.android.gms."; //$NON-NLS-1$
+
+    /** The com.google.android.gms.ads. package prefix */
+    public static final String GOOGLE_PLAY_SERVICES_ADS_PKG = GOOGLE_PLAY_SERVICES_PKG + "ads."; //$NON-NLS-1$
+
+    /** The com.google.android.gms.ads. package prefix */
+    public static final String GOOGLE_PLAY_SERVICES_MAPS_PKG = GOOGLE_PLAY_SERVICES_PKG + "maps."; //$NON-NLS-1$
 
     /** The LayoutParams inner-class name suffix, .LayoutParams */
     public static final String DOT_LAYOUT_PARAMS = ".LayoutParams"; //$NON-NLS-1$
@@ -1448,7 +1501,14 @@ public final class SdkConstants {
     public static final String GRADLE_PLUGIN_LATEST_VERSION = GRADLE_PLUGIN_RECOMMENDED_VERSION;
     public static final String MIN_BUILD_TOOLS_VERSION = "19.1.0";
     public static final String SUPPORT_LIB_ARTIFACT = "com.android.support:support-v4";
+    public static final String DESIGN_LIB_ARTIFACT = "com.android.support:design";
     public static final String APPCOMPAT_LIB_ARTIFACT = "com.android.support:appcompat-v7";
+    public static final String CARD_VIEW_LIB_ARTIFACT = "com.android.support:cardview-v7";
+    public static final String GRID_LAYOUT_LIB_ARTIFACT = "com.android.support:gridlayout-v7";
+    public static final String RECYCLER_VIEW_LIB_ARTIFACT = "com.android.support:recyclerview-v7";
+    public static final String MAPS_ARTIFACT = "com.google.android.gms:play-services";
+    public static final String ADS_ARTIFACT = "com.google.android.gms:play-services-ads";
+    public static final String LEANBACK_V17_ARTIFACT = "com.android.support:leanback-v17";
 
     // Annotations
     public static final String SUPPORT_ANNOTATIONS_PREFIX = "android.support.annotation.";
