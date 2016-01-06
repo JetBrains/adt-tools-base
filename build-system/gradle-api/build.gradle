@@ -37,11 +37,11 @@ task javadocZip(type: Zip) {
 }
 
 group = 'com.android.tools.build'
-archivesBaseName = 'transform-api'
+archivesBaseName = 'gradle-api'
 version = rootProject.ext.buildVersion
 
-project.ext.pomName = 'Android Transform API'
-project.ext.pomDesc = 'API for transforms during build'
+project.ext.pomName = 'Android Gradle API'
+project.ext.pomDesc = 'APIs to customize Android Gradle Builds'
 
 apply from: "$rootDir/buildSrc/base/publish.gradle"
 apply from: "$rootDir/buildSrc/base/bintray.gradle"
