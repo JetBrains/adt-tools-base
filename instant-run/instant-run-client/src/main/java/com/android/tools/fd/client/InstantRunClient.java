@@ -293,7 +293,7 @@ public class InstantRunClient {
         }
     }
 
-    public void push(@Nullable IDevice device,
+    public void pushPatches(@Nullable IDevice device,
             @NonNull final String buildId,
             @NonNull final List<ApplicationPatch> changes,
             @NonNull UpdateMode updateMode,
@@ -348,8 +348,6 @@ public class InstantRunClient {
         }
 
         mUserFeedback.notifyEnd(updateMode);
-
-
     }
 
     /**
@@ -476,21 +474,111 @@ public class InstantRunClient {
     }
 
     /**
-     * Dex swap the app on the given device. Should only be called if canDexSwap returned true
-     *
-     * @return true if installation succeeded
+     * Transfer the file as a slice/sharded dex file. This means
+     * that its remote path should be the slice name, in the dex
+     * directory.
      */
-    public boolean installDex(@NonNull File restart, @NonNull String buildId,
-            @NonNull IDevice device) {
-        if (!restart.exists()) {
-            // TODO: is this really a "no changes" scenario?
-            // TODO: to reproduce: launch app, terminate it, restart IDE, re-launch (no changes to code in the IDE)
-            LOG.warning("Couldn't find restart file %s", restart);
-            return false;
+    public static final int TRANSFER_MODE_SLICE = 1;
+
+    /**
+     * Transfer the file as a dex coldswap overlay file. This means
+     * that its remote path should be a new, unique (and numerically
+     * highest) dex file name in the dex folder.
+     */
+    public static final int TRANSFER_MODE_NEW_DEX = 2;
+
+    /**
+     * Transfer the file as a hotswap overlay file. This means
+     * that its remote path should be a temporary file.
+     */
+    public static final int TRANSFER_MODE_HOTSWAP = 3;
+
+    /**
+     * Transfer the file as a resource file. This means that it
+     * should be written to the inactive resource file section
+     * in the app data directory.
+     */
+    public static final int TRANSFER_MODE_RESOURCES = 4;
+
+    /**
+     * File to be transferred to the device. For use with
+     * {@link #pushFiles(List, IDevice, String)}
+     */
+    public static class FileTransfer {
+        public final int mode;
+        public final File source;
+        public final String name;
+
+        public FileTransfer(int mode, @NonNull File source, @NonNull String name) {
+            this.mode = mode;
+            this.source = source;
+            this.name = name;
         }
 
+        @NonNull
+        public static FileTransfer createRestartDex(@NonNull File source) {
+            return new FileTransfer(TRANSFER_MODE_NEW_DEX, source, Paths.RESTART_DEX_FILE_NAME);
+        }
+
+        @NonNull
+        public static FileTransfer createSliceDex(@NonNull File source, @NonNull String name) {
+            return new FileTransfer(TRANSFER_MODE_SLICE, source, name);
+        }
+
+        @NonNull
+        public static FileTransfer createResourceFile(@NonNull File source) {
+            return new FileTransfer(TRANSFER_MODE_RESOURCES, source, Paths.RESOURCE_FILE_NAME);
+        }
+
+        @NonNull
+        public static FileTransfer createHotswapPatch(@NonNull File source) {
+            return new FileTransfer(TRANSFER_MODE_HOTSWAP, source, Paths.RELOAD_DEX_FILE_NAME);
+        }
+
+        @NonNull
+        public ApplicationPatch getPatch() throws IOException {
+            byte[] bytes = Files.toByteArray(source);
+            String path;
+            // These path names are specially handled on the client side
+            // (e.g. it interprets "classes.dex" as meaning create a new
+            // unique class file in the class folder
+            switch (mode) {
+                case TRANSFER_MODE_SLICE:
+                    path = Paths.DEX_SLICE_PREFIX + name;
+                    break;
+                case TRANSFER_MODE_NEW_DEX:
+                case TRANSFER_MODE_HOTSWAP:
+                case TRANSFER_MODE_RESOURCES:
+                    path = name;
+                    break;
+                default:
+                    throw new IllegalArgumentException(Integer.toString(mode));
+            }
+
+            return new ApplicationPatch(path, bytes);
+        }
+
+        @Override
+        public String toString() {
+            return source + " as " + name + " with mode " + mode;
+        }
+    }
+
+    /**
+     * Install dex and resource files on the given device (using adb to push files
+     * to the device when the app isn't running so we can't send it patches via
+     * the socket connection.)
+     *
+     * @param files the files to push to the device, and the paths to push them as.
+     * @param device   the device to push to
+     * @return true if installation succeeded
+     */
+    public boolean pushFiles(
+            @NonNull List<FileTransfer> files,
+            @NonNull IDevice device,
+            @NonNull final String buildId) {
         if (packageName == null) {
-            LOG.warning("Package name is null, cannot install dex.");
+            LOG.warning("Package name is null, cannot install patches.");
             return false;
         }
 
@@ -499,6 +587,7 @@ public class InstantRunClient {
 
             // Ensure the dir exists
             CollectingOutputReceiver receiver = new CollectingOutputReceiver();
+            //noinspection SpellCheckingInspection
             device.executeShellCommand("run-as " + packageName + " mkdir -p " + dexFolder, receiver);
             receiver = new CollectingOutputReceiver();
             String output = receiver.getOutput();
@@ -508,37 +597,42 @@ public class InstantRunClient {
 
             // List the files in the dex folder to compute a new .dex file name that follows the existing
             // naming pattern but is numbered higher than any existing .dex files
-            device.executeShellCommand("run-as " + packageName + " ls " + dexFolder, receiver);
-            int max = getMaxDexFileNumber(receiver.getOutput());
-            String fileName = String
-                    .format("%s0x%04x%s", CLASSES_DEX_PREFIX, max + 1, CLASSES_DEX_SUFFIX);
-            String target = dexFolder + "/" + fileName;
+            int max = -1;
+            for (FileTransfer file : files) {
+                String path;
+                switch (file.mode) {
+                    case TRANSFER_MODE_SLICE:
+                        path = dexFolder + '/' + file.name;
+                        break;
+                    case TRANSFER_MODE_NEW_DEX:
+                        // Compute a unique name
+                        if (max == -1) {
+                            device.executeShellCommand("run-as " + packageName + " ls " + dexFolder, receiver);
+                            max = getMaxDexFileNumber(receiver.getOutput());
+                        }
+                        path = dexFolder + '/' +
+                               String.format("%s0x%04x%s", CLASSES_DEX_PREFIX, ++max, CLASSES_DEX_SUFFIX);
+                        break;
+                    case TRANSFER_MODE_RESOURCES:
+                        path = Paths.getInboxDirectory(packageName) + '/' + Paths.RESOURCE_FILE_NAME;
+                        break;
+                    case TRANSFER_MODE_HOTSWAP:
+                        throw new IllegalArgumentException("Hotswap patches can only be applied when the app is running");
+                    default:
+                        throw new IllegalArgumentException(Integer.toString(file.mode));
+                }
 
-            // Copy the restart .dex file over to the device in the dex folder with the new, unique name
-            String remote = copyToDeviceScratchFile(device, packageName, restart);
-            String cmd = "run-as " + packageName + " cp " + remote + " " + target;
-            receiver = new CollectingOutputReceiver();
-            device.executeShellCommand(cmd, receiver);
-            output = receiver.getOutput();
-            if (!output.trim().isEmpty()) {
-                LOG.warning("Unexpected shell output: " + output);
+                // Copy the restart .dex file over to the device in the dex folder with the new name
+                String remote = copyToDeviceScratchFile(device, packageName, file.source);
+                String cmd = "run-as " + packageName + " cp " + remote + " " + path;
+                receiver = new CollectingOutputReceiver();
+                device.executeShellCommand(cmd, receiver);
+                output = receiver.getOutput();
+                if (!output.trim().isEmpty()) {
+                    LOG.warning("Unexpected shell output for " + cmd + ": " + output);
+                    return false;
+                }
             }
-
-            // TODO: Push a .dex.index file too? We can't do it right now;
-            // on the device side we iterate through the .dex file and write
-            // entries like this:
-            //    DexFile dexFile = new DexFile(file);
-            //    Enumeration<String> entries = dexFile.entries();
-            //    while (entries.hasMoreElements()) {
-            //      String nextPath = entries.nextElement();
-            //      if (nextPath.indexOf('$') != -1) {
-            //          (write entry, one per line)
-            // However, we don't have a DexFile implementation here.
-            // Instead, rely on this being handled on the server side. (For now
-            // this means the classes won't be cleaned up.)
-
-            // Record the new build id on the device
-            transferLocalIdToDeviceId(device, buildId);
 
             return true;
         } catch (IOException ioe) {
@@ -551,9 +645,10 @@ public class InstantRunClient {
             LOG.warning("%s", e);
         } catch (SyncException e) {
             LOG.warning("%s", e);
+        } finally {
+            transferLocalIdToDeviceId(device, buildId);
         }
 
         return false;
     }
-
 }

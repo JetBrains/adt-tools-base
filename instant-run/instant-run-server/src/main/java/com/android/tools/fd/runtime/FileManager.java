@@ -16,8 +16,12 @@
 
 package com.android.tools.fd.runtime;
 
+import static com.android.tools.fd.runtime.AppInfo.applicationId;
+import static com.android.tools.fd.runtime.BootstrapApplication.LOG_TAG;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+
 import android.util.Log;
 
 import java.io.BufferedInputStream;
@@ -51,10 +55,6 @@ import java.util.zip.ZipInputStream;
 
 import dalvik.system.DexFile;
 
-import static android.content.Context.DEVICE_POLICY_SERVICE;
-import static com.android.tools.fd.runtime.AppInfo.applicationId;
-import static com.android.tools.fd.runtime.BootstrapApplication.LOG_TAG;
-
 /**
  * Class which handles locating existing code and resource files on the device,
  * as well as writing new versions of these.
@@ -68,7 +68,8 @@ public class FileManager {
     private static final boolean USE_EXTRACTED_RESOURCES = false;
 
     /** Name of file to write resource data into, if not extracting resources */
-    private static final String RESOURCE_FILE_NAME = "resources.ap_";
+    private static final String RESOURCE_FILE_NAME = Paths.RESOURCE_FILE_NAME;
+
     /** Name of folder to write extracted resource data into, if extracting resources */
     private static final String RESOURCE_FOLDER_NAME = "resources";
 
@@ -86,9 +87,6 @@ public class FileManager {
 
     /** Suffix for classes.dex files */
     public static final String CLASSES_DEX_SUFFIX = ".dex";
-
-    /** Suffix for classes.dex for hot-swapping files */
-    public static final String CLASSES_DEX_3_SUFFIX = ".dex.3";
 
     /** Filename suffix for dex index files */
     private static final String EXT_INDEX_FILE = ".index";
@@ -117,9 +115,20 @@ public class FileManager {
     /**
      * Returns the folder used for .dex files used during the next app start
      */
-    @NonNull
-    private static File getDexFileFolder(File base) {
-        return new File(base, Paths.DEX_DIRECTORY_NAME);
+    @Nullable
+    private static File getDexFileFolder(File base, boolean createIfNecessary) {
+        File file = new File(base, Paths.DEX_DIRECTORY_NAME);
+        if (createIfNecessary) {
+            if (!file.isDirectory()) {
+                boolean created = file.mkdirs();
+                if (!created) {
+                    Log.e(LOG_TAG, "Failed to create directory " + file);
+                    return null;
+                }
+            }
+        }
+
+        return file;
     }
 
     /**
@@ -234,6 +243,31 @@ public class FileManager {
         }
     }
 
+    /** Looks in the inbox for new changes sent while the app wasn't running and apply them */
+    public static void checkInbox() {
+        File inbox = new File(Paths.getInboxDirectory(applicationId));
+        if (inbox.isDirectory()) {
+            File resources = new File(inbox, RESOURCE_FILE_NAME);
+            if (resources.isFile()) {
+                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                    Log.i(LOG_TAG, "Processing resource file from inbox (" + resources + ")");
+                }
+                byte[] bytes = readRawBytes(resources);
+                if (bytes != null) {
+                    FileManager.startUpdate();
+                    FileManager.writeAaptResources(RESOURCE_FILE_NAME, bytes);
+                    FileManager.finishUpdate(true);
+                    boolean deleted = resources.delete();
+                    if (!deleted) {
+                        if (Log.isLoggable(LOG_TAG, Log.ERROR)) {
+                            Log.e(LOG_TAG, "Couldn't remove inbox resource file: " + resources);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     /** Returns the current/active resource file, if it exists */
     @Nullable
     public static File getExternalResourceFile() {
@@ -253,14 +287,20 @@ public class FileManager {
 
         // Get rid of reload dex files from previous runs, if any
         FileManager.purgeTempDexFiles(dataFolder);
+
         // Get rid of patches no longer applicable
+        // TODO: Only do this for API level < 21
         FileManager.purgeMaskedDexFiles(dataFolder);
 
         List<String> list = new ArrayList<String>();
 
         // We don't need "double buffering" for dex files - we never rewrite files, so we
         // can accumulate in the same dir
-        File[] dexFiles = getDexFileFolder(dataFolder).listFiles();
+        File dexFolder = getDexFileFolder(dataFolder, false);
+        if (dexFolder == null) {
+            return list;
+        }
+        File[] dexFiles = dexFolder.listFiles();
         if (dexFiles == null) {
             Log.v(LOG_TAG, "Cannot find newer dex classes, not patching them in");
             // TODO: Sort?
@@ -280,17 +320,13 @@ public class FileManager {
         return list;
     }
 
-    /** Produces the next available dex file name */
+    /** Produces the next available dex file path */
     @Nullable
     public static File getNextDexFile() {
         // Find the file name of the next dex file to write
-        File dexFolder = getDexFileFolder(getDataFolder());
-        if (!dexFolder.exists()) {
-            boolean created = dexFolder.mkdirs();
-            if (!created) {
-                Log.e(LOG_TAG, "Failed to create directory " + dexFolder);
-                return null;
-            }
+        File dexFolder = getDexFileFolder(getDataFolder(), true);
+        if (dexFolder == null) {
+            return null;
         }
         File[] files = dexFolder.listFiles();
         int max = -1;
@@ -378,7 +414,7 @@ public class FileManager {
                 output.close();
             }
         } catch (IOException ioe) {
-            Log.e(LOG_TAG, "Failed to write resource file " + destination, ioe);
+            Log.e(LOG_TAG, "Failed to write file " + destination, ioe);
         }
         return false;
     }
@@ -389,9 +425,8 @@ public class FileManager {
     }
 
     public static boolean extractZip(@NonNull File resourceDir, @NonNull InputStream inputStream) {
+        ZipInputStream zipInputStream = new ZipInputStream(inputStream);
         try {
-            ZipInputStream zipInputStream = new ZipInputStream(inputStream);
-
             ZipEntry entry = zipInputStream.getNextEntry();
             byte[] buffer = new byte[2000];
 
@@ -427,11 +462,15 @@ public class FileManager {
                 entry = zipInputStream.getNextEntry();
             }
 
-            zipInputStream.close();
             return true;
         } catch (IOException ioe) {
             Log.e(LOG_TAG, "Failed to extract zip contents into directory " + resourceDir, ioe);
             return false;
+        } finally {
+            try {
+                zipInputStream.close();
+            } catch (IOException ignore) {
+            }
         }
     }
 
@@ -447,15 +486,36 @@ public class FileManager {
     }
 
     @Nullable
+    public static File writeDexShard(@NonNull byte[] bytes, @NonNull String name) {
+        File dexFolder = getDexFileFolder(getDataFolder(), true);
+        if (dexFolder == null) {
+            return null;
+        }
+        File file = new File(dexFolder, name);
+        writeRawBytes(file, bytes);
+        return file;
+    }
+
+    @Nullable
     public static File writeDexFile(@NonNull byte[] bytes, boolean writeIndex) {
         File file = getNextDexFile();
         if (file != null) {
-            writeRawBytes(file, bytes);
-            if (writeIndex) {
-                File indexFile = getIndexFile(file);
+            writeDexFile(bytes, writeIndex, file);
+        }
+
+        return file;
+    }
+
+    @Nullable
+    public static File writeDexFile(@NonNull byte[] bytes, boolean writeIndex,
+            @NonNull File file) {
+        writeRawBytes(file, bytes);
+        if (writeIndex) {
+            File indexFile = getIndexFile(file);
+            try {
+                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(
+                        new FileOutputStream(indexFile), getUtf8Charset()));
                 try {
-                    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(
-                            new FileOutputStream(indexFile), getUtf8Charset()));
                     DexFile dexFile = new DexFile(file);
                     Enumeration<String> entries = dexFile.entries();
                     while (entries.hasMoreElements()) {
@@ -470,14 +530,15 @@ public class FileManager {
                         writer.write(nextPath);
                         writer.write('\n');
                     }
+                } finally {
                     writer.close();
-
-                    if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                        Log.i(LOG_TAG, "Wrote restart patch index " + indexFile);
-                    }
-                } catch (IOException ioe) {
-                    Log.e(LOG_TAG, "Failed to write dex index file " + indexFile);
                 }
+
+                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                    Log.i(LOG_TAG, "Wrote restart patch index " + indexFile);
+                }
+            } catch (IOException ioe) {
+                Log.e(LOG_TAG, "Failed to write dex index file " + indexFile);
             }
         }
 
@@ -566,8 +627,8 @@ public class FileManager {
      * because there are newer versions available)
      */
     public static void purgeMaskedDexFiles(@NonNull File dataFolder) {
-        File dexFolder = getDexFileFolder(dataFolder);
-        if (!dexFolder.isDirectory()) {
+        File dexFolder = getDexFileFolder(dataFolder, false);
+        if (dexFolder == null) {
             return;
         }
         File[] files = dexFolder.listFiles();
@@ -586,26 +647,27 @@ public class FileManager {
             String path = file.getPath();
             if (path.endsWith(EXT_INDEX_FILE)) {
                 try {
+                    boolean containsUniqueClasses = false;
                     InputStreamReader is = new InputStreamReader(new FileInputStream(file), utf8);
                     BufferedReader reader = new BufferedReader(is);
+                    try {
 
-                    boolean containsUniqueClasses = false;
-
-                    while (true) {
-                        String line = reader.readLine();
-                        if (line == null) {
-                            break;
+                        while (true) {
+                            String line = reader.readLine();
+                            if (line == null) {
+                                break;
+                            }
+                            if (line.isEmpty()) {
+                                continue;
+                            }
+                            if (!classes.contains(line)) {
+                                classes.add(line);
+                                containsUniqueClasses = true;
+                            }
                         }
-                        if (line.isEmpty()) {
-                            continue;
-                        }
-                        if (!classes.contains(line)) {
-                            classes.add(line);
-                            containsUniqueClasses = true;
-                        }
+                    } finally {
+                        reader.close();
                     }
-
-                    reader.close();
 
                     if (!containsUniqueClasses) {
                         File dexFile = getDexFile(file);
