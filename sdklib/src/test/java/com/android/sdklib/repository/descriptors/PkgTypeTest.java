@@ -16,15 +16,15 @@
 
 package com.android.sdklib.repository.descriptors;
 
+import junit.framework.TestCase;
+
 import java.util.HashMap;
 import java.util.Map;
-
-import junit.framework.TestCase;
 
 public class PkgTypeTest extends TestCase {
 
     public final void testPkgTypeTool() {
-        IPkgCapabilities p = PkgType.PKG_TOOLS;
+        PkgType p = PkgType.PKG_TOOLS;
         assertFalse(p.hasAndroidVersion());
         assertFalse(p.hasPath());
         assertFalse(p.hasTag());
@@ -34,7 +34,7 @@ public class PkgTypeTest extends TestCase {
     }
 
     public final void testPkgTypePlatformTool() {
-        IPkgCapabilities p = PkgType.PKG_PLATFORM_TOOLS;
+        PkgType p = PkgType.PKG_PLATFORM_TOOLS;
         assertFalse(p.hasAndroidVersion());
         assertFalse(p.hasPath());
         assertFalse(p.hasTag());
@@ -44,7 +44,7 @@ public class PkgTypeTest extends TestCase {
     }
 
     public final void testPkgTypeDoc() {
-        IPkgCapabilities p = PkgType.PKG_DOC;
+        PkgType p = PkgType.PKG_DOC;
         assertTrue (p.hasAndroidVersion());
         assertFalse(p.hasPath());
         assertFalse(p.hasTag());
@@ -54,7 +54,7 @@ public class PkgTypeTest extends TestCase {
     }
 
     public final void testPkgTypeBuildTool() {
-        IPkgCapabilities p = PkgType.PKG_BUILD_TOOLS;
+        PkgType p = PkgType.PKG_BUILD_TOOLS;
 
         assertFalse(p.hasAndroidVersion());
         assertFalse(p.hasPath());
@@ -65,7 +65,7 @@ public class PkgTypeTest extends TestCase {
     }
 
     public final void testPkgTypeExtra() {
-        IPkgCapabilities p = PkgType.PKG_EXTRA;
+        PkgType p = PkgType.PKG_EXTRA;
 
         assertFalse(p.hasAndroidVersion());
         assertTrue (p.hasPath());
@@ -76,7 +76,7 @@ public class PkgTypeTest extends TestCase {
     }
 
     public final void testPkgTypeSource() throws Exception {
-        IPkgCapabilities p = PkgType.PKG_SOURCE;
+        PkgType p = PkgType.PKG_SOURCE;
 
         assertTrue (p.hasAndroidVersion());
         assertFalse(p.hasPath());
@@ -87,7 +87,7 @@ public class PkgTypeTest extends TestCase {
     }
 
     public final void testPkgTypeSample() throws Exception {
-        IPkgCapabilities p = PkgType.PKG_SAMPLE;
+        PkgType p = PkgType.PKG_SAMPLE;
 
         assertTrue (p.hasAndroidVersion());
         assertFalse(p.hasPath());
@@ -98,7 +98,7 @@ public class PkgTypeTest extends TestCase {
     }
 
     public final void testPkgTypePlatform() throws Exception {
-        IPkgCapabilities p = PkgType.PKG_PLATFORM;
+        PkgType p = PkgType.PKG_PLATFORM;
 
         assertTrue (p.hasAndroidVersion());
         assertTrue (p.hasPath());               // platform path is its hash string
@@ -109,7 +109,7 @@ public class PkgTypeTest extends TestCase {
     }
 
     public final void testPkgTypeAddon() throws Exception {
-        IPkgCapabilities p = PkgType.PKG_ADDON;
+        PkgType p = PkgType.PKG_ADDON;
 
         assertTrue (p.hasAndroidVersion());
         assertTrue (p.hasPath());               // add-on path is its hash string
@@ -120,7 +120,7 @@ public class PkgTypeTest extends TestCase {
     }
 
     public final void testPkgTypeSysImg() throws Exception {
-        IPkgCapabilities p = PkgType.PKG_SYS_IMAGE;
+        PkgType p = PkgType.PKG_SYS_IMAGE;
 
         assertTrue (p.hasAndroidVersion());
         assertTrue (p.hasPath());               // sys-img path is its ABI string
@@ -131,7 +131,7 @@ public class PkgTypeTest extends TestCase {
     }
 
     public final void testPkgTypeAddonSysImg() throws Exception {
-        IPkgCapabilities p = PkgType.PKG_ADDON_SYS_IMAGE;
+        PkgType p = PkgType.PKG_ADDON_SYS_IMAGE;
 
         assertTrue (p.hasAndroidVersion());
         assertTrue (p.hasPath());               // sys-img path is its ABI string

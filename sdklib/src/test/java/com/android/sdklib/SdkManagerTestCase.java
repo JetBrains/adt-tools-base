@@ -22,6 +22,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.prefs.AndroidLocation;
 import com.android.prefs.AndroidLocation.AndroidLocationException;
+import com.android.repository.Revision;
 import com.android.repository.io.FileOpUtils;
 import com.android.repository.testframework.MockFileOp;
 import com.android.resources.Density;
@@ -47,16 +48,11 @@ import com.android.sdklib.devices.Software;
 import com.android.sdklib.devices.State;
 import com.android.sdklib.devices.Storage;
 import com.android.sdklib.devices.Storage.Unit;
-import com.android.sdklib.internal.avd.AvdManager;
-import com.android.repository.io.FileOp;
 import com.android.sdklib.mock.MockLog;
-import com.android.repository.Revision;
 import com.android.sdklib.repository.PkgProps;
-import com.android.sdklib.repository.SdkRepoConstants;
 import com.android.sdklib.repository.local.LocalPlatformPkgInfo;
 import com.android.sdklib.repository.local.LocalSysImgPkgInfo;
 import com.android.sdklib.repositoryv2.AndroidSdkHandler;
-import com.android.utils.ILogger;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -81,8 +77,6 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
     private SdkManager mSdkManager;
     private AndroidSdkHandler mSdkHandler;
 
-    private AvdManager mAvdManager;
-
     private int mRepoXsdLevel;
 
     /**
@@ -97,17 +91,6 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
      */
     public SdkManager getSdkManager() {
         return mSdkManager;
-    }
-
-    public AndroidSdkHandler getSdkHandler() {
-        return mSdkHandler;
-    }
-
-    /**
-     * Returns the {@link AvdManager} for this test case.
-     */
-    public AvdManager getAvdManager() {
-        return mAvdManager;
     }
 
     /**
@@ -131,27 +114,6 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
         mSdkManager = SdkManager.createManager(mFakeSdk.getAbsolutePath(), mLog);
         mSdkHandler = new AndroidSdkHandler(mFakeSdk, new MockFileOp());
         assertNotNull("SdkManager location was invalid", mSdkManager);
-        // Note: it's safe to use the default AvdManager implementation since makeFakeAndroidHome
-        // above overrides the ANDROID_HOME folder to use a temp folder; consequently all
-        // the AVDs created here will be located in this temp folder and will not alter
-        // or pollute the default user's AVD folder.
-        mAvdManager = new AvdManager(mSdkHandler, mLog) {
-            @Override
-            protected boolean createSdCard(
-                    String toolLocation,
-                    String size,
-                    String location,
-                    ILogger log) {
-                if (new File(toolLocation).exists()) {
-                    log.info("[EXEC] %1$s %2$s %3$s\n", toolLocation, size, location);
-                    return true;
-                } else {
-                    log.error(null, "Failed to create the SD card.\n");
-                    return false;
-                }
-
-            }
-        };
     }
 
     /**
@@ -160,7 +122,7 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
      */
     @Override
     public void setUp() throws Exception {
-        setUp(SdkRepoConstants.NS_LATEST_VERSION);
+        setUp(AndroidSdkHandler.LATEST_LEGACY_VERSION);
     }
 
     /**
