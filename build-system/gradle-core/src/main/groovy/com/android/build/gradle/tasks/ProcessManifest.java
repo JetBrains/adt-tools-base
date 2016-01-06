@@ -77,6 +77,7 @@ public class ProcessManifest extends ManifestProcessorTask {
                 aaptFriendlyManifestOutputFilePath,
                 ManifestMerger2.MergeType.LIBRARY,
                 variantConfiguration.getManifestPlaceholders(),
+                Collections.<ManifestMerger2.Invoker.Feature>emptyList(),
                 getReportFile());
     }
 

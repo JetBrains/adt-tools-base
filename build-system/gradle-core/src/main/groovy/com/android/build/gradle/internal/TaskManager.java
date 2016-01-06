@@ -136,7 +136,6 @@ import com.android.build.gradle.tasks.factory.ProcessJavaResConfigAction;
 import com.android.build.gradle.tasks.factory.UnitTestConfigAction;
 import com.android.build.gradle.tasks.fd.FastDeployRuntimeExtractorTask;
 import com.android.build.gradle.tasks.fd.GenerateInstantRunAppInfoTask;
-import com.android.build.gradle.tasks.fd.InjectBootstrapApplicationTask;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
@@ -148,6 +147,7 @@ import com.android.builder.sdk.TargetInfo;
 import com.android.builder.testing.ConnectedDeviceProvider;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
+import com.android.manifmerger.ManifestMerger2;
 import com.android.utils.StringHelper;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
@@ -604,8 +604,13 @@ public abstract class TaskManager {
                 scope.setCompatibleScreensManifestTask(csmTask);
             }
 
+            List<ManifestMerger2.Invoker.Feature> optionalFeatures = getIncrementalMode(
+                    variantScope.getVariantConfiguration()) != IncrementalMode.NONE
+                    ? ImmutableList.of(ManifestMerger2.Invoker.Feature.INSTANT_RUN_REPLACEMENT)
+                    : ImmutableList.<ManifestMerger2.Invoker.Feature>of();
+
             scope.setManifestProcessorTask(androidTasks.create(tasks,
-                    new MergeManifests.ConfigAction(scope)));
+                    new MergeManifests.ConfigAction(scope, optionalFeatures)));
 
             if (csmTask != null) {
                 scope.getManifestProcessorTask().dependsOn(tasks, csmTask);
@@ -2479,14 +2484,6 @@ public abstract class TaskManager {
                                 variantData.classesJarTask);
                     }
                 }
-            }
-
-            // modify the manifest file and generate the new AppInfo.
-            if (getIncrementalMode(config) != IncrementalMode.NONE) {
-                AndroidTask<InjectBootstrapApplicationTask> rewriteTask = androidTasks.create(
-                        tasks, new InjectBootstrapApplicationTask.ConfigAction(variantOutputScope));
-                rewriteTask.dependsOn(tasks, variantOutputScope.getManifestProcessorTask());
-                variantScope.getSourceGenTask().dependsOn(tasks, rewriteTask);
             }
         }
 
