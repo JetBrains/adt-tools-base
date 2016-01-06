@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Verify;
 import com.google.common.io.ByteSource;
+import com.google.common.primitives.Ints;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -131,7 +132,7 @@ class Eocd {
 
         Verify.verify(totalRecords1 <= Integer.MAX_VALUE);
 
-        mTotalRecords = (int) totalRecords1;
+        mTotalRecords = Ints.checkedCast(totalRecords1);
         mDirectorySize = directorySize;
         mDirectoryOffset = directoryOffset;
 

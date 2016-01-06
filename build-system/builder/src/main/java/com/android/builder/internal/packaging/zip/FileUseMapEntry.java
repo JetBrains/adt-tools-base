@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
+import com.google.common.primitives.Ints;
 
 import java.util.Comparator;
 
@@ -42,7 +43,7 @@ class FileUseMapEntry<T> {
             new Comparator<FileUseMapEntry<?>>() {
         @Override
         public int compare(@NonNull FileUseMapEntry<?> o1, @NonNull FileUseMapEntry<?> o2) {
-            return (int) (o1.getStart() - o2.getStart());
+            return Ints.checkedCast(o1.getStart() - o2.getStart());
         }
     };
 

@@ -23,6 +23,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Verify;
 import com.google.common.collect.Sets;
 import com.google.common.io.ByteSource;
+import com.google.common.primitives.Ints;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -200,7 +201,7 @@ abstract class ZipField {
 
         if (mSize == 2) {
             Preconditions.checkArgument(value <= 0x0000ffff, "value (%s) > 0x0000ffff", value);
-            LittleEndianUtils.writeUnsigned2Le(output, (int) value);
+            LittleEndianUtils.writeUnsigned2Le(output, Ints.checkedCast(value));
         } else {
             Verify.verify(mSize == 4);
             Preconditions.checkArgument(value <= 0x00000000ffffffffL,

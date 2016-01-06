@@ -17,6 +17,7 @@
 package com.android.builder.internal.packaging.zip;
 
 import com.android.annotations.NonNull;
+import com.google.common.primitives.Ints;
 
 import java.io.IOException;
 
@@ -136,7 +137,7 @@ class GPFlags {
                     + "going on.");
         }
 
-        int methodBit = (int) (bits & BIT_METHOD);
+        int methodBit = Ints.checkedCast(bits & BIT_METHOD);
         if (methodBit != 0) {
             throw new IOException("Unsupported method bit: " + methodBit + ".");
         }
