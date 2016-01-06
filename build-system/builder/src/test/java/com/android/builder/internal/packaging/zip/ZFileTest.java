@@ -26,6 +26,8 @@ import static org.junit.Assert.assertTrue;
 import com.android.builder.internal.packaging.zip.utils.CachedFileContents;
 import com.android.testutils.TestUtils;
 import com.google.common.base.Charsets;
+import com.google.common.base.Function;
+import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
@@ -593,5 +595,105 @@ public class ZFileTest {
         assertNotNull(a);
         assertArrayEquals(new byte[] { 1, 2, 3 }, a.read());
 
+    }
+
+    @Test
+    public void addFileRecursively() throws Exception {
+        File tdir = mTemporaryFolder.newFolder();
+        File tfile = new File(tdir, "blah-blah");
+        Files.write("blah", tfile, Charsets.US_ASCII);
+
+        File zip = new File(tdir, "f.zip");
+        ZFile zf = new ZFile(zip);
+        zf.addAllRecursively(tfile, new Function<File, CompressionMethod>() {
+            @Override
+            public CompressionMethod apply(File input) {
+                return CompressionMethod.DEFLATE;
+            }
+        });
+
+        StoredEntry blahEntry = zf.get("blah-blah");
+        assertNotNull(blahEntry);
+        String contents = new String(blahEntry.read(), Charsets.US_ASCII);
+        assertEquals("blah", contents);
+        zf.close();
+    }
+
+    @Test
+    public void addDirectoryRecursively() throws Exception {
+        File tdir = mTemporaryFolder.newFolder();
+
+        String boom = Strings.repeat("BOOM!", 100);
+        String kaboom = Strings.repeat("KABOOM!", 100);
+
+        Files.write(boom, new File(tdir, "danger"), Charsets.US_ASCII);
+        Files.write(kaboom, new File(tdir, "do not touch"), Charsets.US_ASCII);
+        File safeDir = new File(tdir, "safe");
+        safeDir.mkdir();
+
+        String iLoveChocolate = Strings.repeat("I love chocolate! ", 200);
+        String iLoveOrange = Strings.repeat("I love orange! ", 50);
+        String loremIpsum = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean vitae "
+                + "turpis quis justo scelerisque vulputate in et magna. Suspendisse eleifend "
+                + "ultricies nisi, placerat consequat risus accumsan et. Pellentesque habitant "
+                + "morbi tristique senectus et netus et malesuada fames ac turpis egestas. "
+                + "Integer vitae leo purus. Nulla facilisi. Duis ligula libero, lacinia a "
+                + "malesuada a, viverra tempor sapien. Donec eget consequat sapien, ultrices"
+                + "interdum diam. Maecenas ipsum erat, suscipit at iaculis a, mollis nec risus. "
+                + "Quisque tristique ac velit sed auctor. Nulla lacus diam, tristique id sem non, "
+                + "pellentesque commodo mauris.";
+
+        Files.write(iLoveChocolate, new File(safeDir, "eat.sweet"), Charsets.US_ASCII);
+        Files.write(iLoveOrange, new File(safeDir, "eat.fruit"), Charsets.US_ASCII);
+        Files.write(loremIpsum, new File(safeDir, "bedtime.reading.txt"), Charsets.US_ASCII);
+
+        File zip = new File(tdir, "f.zip");
+        ZFile zf = new ZFile(zip);
+        zf.addAllRecursively(tdir, new Function<File, CompressionMethod>() {
+            @Override
+            public CompressionMethod apply(File input) {
+                if (input.getName().startsWith("eat.")) {
+                    return CompressionMethod.STORE;
+                } else {
+                    return CompressionMethod.DEFLATE;
+                }
+            }
+        });
+
+        assertEquals(6, zf.entries().size());
+
+        StoredEntry boomEntry = zf.get("danger");
+        assertNotNull(boomEntry);
+        assertEquals(CompressionMethod.DEFLATE, boomEntry.getCentralDirectoryHeader().getMethod());
+        assertEquals(boom, new String(boomEntry.read(), Charsets.US_ASCII));
+
+        StoredEntry kaboomEntry = zf.get("do not touch");
+        assertNotNull(kaboomEntry);
+        assertEquals(CompressionMethod.DEFLATE, kaboomEntry.getCentralDirectoryHeader().getMethod());
+        assertEquals(kaboom, new String(kaboomEntry.read(), Charsets.US_ASCII));
+
+        StoredEntry safeEntry = zf.get("safe/");
+        assertNotNull(safeEntry);
+        assertEquals(0, safeEntry.read().length);
+
+        StoredEntry chocolateEntry = zf.get("safe/eat.sweet");
+        assertNotNull(chocolateEntry);
+        assertEquals(CompressionMethod.STORE,
+                chocolateEntry.getCentralDirectoryHeader().getMethod());
+        assertEquals(iLoveChocolate, new String(chocolateEntry.read(), Charsets.US_ASCII));
+
+        StoredEntry orangeEntry = zf.get("safe/eat.fruit");
+        assertNotNull(orangeEntry);
+        assertEquals(CompressionMethod.STORE,
+                orangeEntry.getCentralDirectoryHeader().getMethod());
+        assertEquals(iLoveOrange, new String(orangeEntry.read(), Charsets.US_ASCII));
+
+        StoredEntry loremIpsumEntry = zf.get("safe/bedtime.reading.txt");
+        assertNotNull(loremIpsumEntry);
+        assertEquals(CompressionMethod.DEFLATE,
+                loremIpsumEntry.getCentralDirectoryHeader().getMethod());
+        assertEquals(loremIpsum, new String(loremIpsumEntry.read(), Charsets.US_ASCII));
+
+        zf.close();
     }
 }

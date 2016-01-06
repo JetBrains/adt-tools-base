@@ -23,6 +23,8 @@ import com.android.builder.internal.packaging.zip.utils.LittleEndianUtils;
 import com.android.builder.internal.packaging.zip.utils.RandomAccessFileUtils;
 import com.android.builder.internal.utils.IOExceptionFunction;
 import com.android.builder.internal.utils.IOExceptionRunnable;
+import com.android.utils.FileUtils;
+import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Verify;
 import com.google.common.collect.Lists;
@@ -34,6 +36,7 @@ import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
 import com.google.common.io.Closer;
 import com.google.common.primitives.Ints;
+import com.google.common.io.Files;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -1276,6 +1279,7 @@ public class ZFile implements Closeable {
     }
 
     /**
+<<<<<<< HEAD
      * Directly writes data in the zip file. <strong>Incorrect use of this method may corrupt the
      * zip file</strong>. Invoking this method may force the zip to be reopened in read/write
      * mode.
@@ -1374,5 +1378,45 @@ public class ZFile implements Closeable {
 
         mRaf.seek(offset);
         RandomAccessFileUtils.fullyRead(mRaf, data);
+    }
+
+    /**
+     * Adds all files and directories recursively.
+     * @param file a file or directory; if it is a directory, all files and directories will be
+     * added recursively
+     * @param method a function that decides what compression method to apply to each file
+     * @throws IOException failed to some (or all ) of the files
+     */
+    public void addAllRecursively(@NonNull File file,
+            @NonNull Function<File, CompressionMethod> method) throws IOException {
+        /*
+         * The case of file.isFile() is different because if file.isFile() we will add it to the
+         * zip in the root. However, if file.isDirectory() we won't add it and add its chilren.
+         */
+        if (file.isFile()) {
+            CompressionMethod cm = Verify.verifyNotNull(method.apply(file),
+                    "method.apply() returned null");
+
+            add(file.getName(), new FileEntrySource(file), cm);
+            return;
+        }
+
+        for (File f : Files.fileTreeTraverser().preOrderTraversal(file).skip(1)) {
+            String path = FileUtils.relativePath(f, file);
+            path = FileUtils.toSystemIndependentPath(path);
+
+            EntrySource source;
+            CompressionMethod cm;
+            if (f.isDirectory()) {
+                source = new ByteArrayEntrySource(new byte[0]);
+                cm = CompressionMethod.STORE;
+            } else {
+                source = new FileEntrySource(f);
+                cm = method.apply(f);
+                Verify.verifyNotNull(cm, "method.apply() returned null");
+            }
+
+            add(path, source, cm);
+        }
     }
 }
