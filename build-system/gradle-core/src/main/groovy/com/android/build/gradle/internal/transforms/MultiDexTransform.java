@@ -173,6 +173,7 @@ public class MultiDexTransform extends BaseProguardAction {
         dontoptimize();
         dontpreverify();
         dontwarn();
+        dontnote();
         forceprocessing();
         applyConfigurationFile(manifestKeepListFile);
 

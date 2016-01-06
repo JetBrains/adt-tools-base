@@ -113,7 +113,11 @@ public abstract class BaseProguardAction extends ProguardConfigurable {
     }
 
     public void dontwarn() {
-        configuration.warn = ImmutableList.of();
+        configuration.warn = Lists.newArrayList("**");
+    }
+
+    public void dontnote() {
+        configuration.note = Lists.newArrayList("**");
     }
 
     public void forceprocessing() {
