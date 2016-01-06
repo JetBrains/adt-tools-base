@@ -20,7 +20,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.Revision;
 import com.android.sdklib.AndroidVersion;
-import com.android.sdklib.repository.IListDescription;
 import com.android.repository.api.License;
 
 import java.io.File;
@@ -37,7 +36,7 @@ import java.io.File;
  * To query packages capabilities, rely on {@link #getType()} and the {@code IPkgDesc.hasXxx()}
  * methods provided by {@link IPkgDesc}.
  */
-public interface IPkgDesc extends Comparable<IPkgDesc>, IPkgCapabilities, IListDescription {
+public interface IPkgDesc extends Comparable<IPkgDesc> {
 
     /**
      * Returns the type of the package.
@@ -169,5 +168,19 @@ public interface IPkgDesc extends Comparable<IPkgDesc>, IPkgCapabilities, IListD
      * @return True if the revision of this package is a preview.
      */
     boolean isPreview();
+
+    String getListDescription();
+
+    boolean hasVendor();
+
+    boolean hasAndroidVersion();
+
+    boolean hasPath();
+
+    boolean hasTag();
+
+    boolean hasMinToolsRev();
+
+    boolean hasMinPlatformToolsRev();
 }
 

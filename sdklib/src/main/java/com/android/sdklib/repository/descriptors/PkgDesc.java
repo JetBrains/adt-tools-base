@@ -158,7 +158,6 @@ public class PkgDesc implements IPkgDesc {
         return getType().hasVendor();
     }
 
-    @Override
     public boolean hasName() {
         return getType().hasName();
     }

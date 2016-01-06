@@ -19,7 +19,6 @@ package com.android.sdklib.repository.descriptors;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.sdklib.AndroidVersion;
-import com.android.sdklib.internal.repository.LocalSdkParser;
 import com.android.repository.Revision;
 import com.android.sdklib.repository.local.LocalSdk;
 
@@ -28,11 +27,9 @@ import java.util.EnumSet;
 /**
  * Package types handled by the {@link LocalSdk}.
  * <p/>
- * Integer bit values are provided via {@link #getIntValue()} for backward
- * compatibility with the older {@link LocalSdkParser} class.
- * The integer bit values also indicate the natural ordering of the packages.
+ * Integer bit values indicate the natural ordering of the packages.
  */
-public enum PkgType implements IPkgCapabilities {
+public enum PkgType {
 
     // Boolean attributes below, in that order:
     //      api, path, tag, vend, min-t-r, min-pt-r, name
@@ -174,37 +171,30 @@ public enum PkgType implements IPkgCapabilities {
         return mFolderName;
     }
 
-    @Override
     public boolean hasAndroidVersion() {
         return mHasAndroidVersion;
     }
 
-    @Override
     public boolean hasPath() {
         return mHasPath;
     }
 
-    @Override
     public boolean hasTag() {
         return mHasTag;
     }
 
-    @Override
     public boolean hasVendor() {
         return mHasVendor;
     }
 
-    @Override
     public boolean hasName() {
         return mHasName;
     }
 
-    @Override
     public boolean hasMinToolsRev() {
         return mHasMinToolsRev;
     }
 
-    @Override
     public boolean hasMinPlatformToolsRev() {
         return mHasMinPlatformToolsRev;
     }
