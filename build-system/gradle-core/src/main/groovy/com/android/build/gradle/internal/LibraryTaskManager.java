@@ -257,7 +257,7 @@ public class LibraryTaskManager extends TaskManager {
         }
 
         // Add dependencies on NDK tasks if NDK plugin is applied.
-        if (isNdkTaskNeeded) {
+        if (!isComponentModelPlugin) {
             // Add NDK tasks
             ThreadRecorder.get().record(ExecutionType.LIB_TASK_MANAGER_CREATE_NDK_TASK,
                     new Recorder.Block<Void>() {

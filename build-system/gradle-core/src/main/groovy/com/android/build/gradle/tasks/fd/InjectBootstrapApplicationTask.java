@@ -95,10 +95,7 @@ public class InjectBootstrapApplicationTask extends BaseTask {
             task.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             task.setVariantName(scope.getVariantScope().getVariantConfiguration().getFullName());
             BaseVariantOutputData outputData = scope.getVariantOutputData();
-            if (outputData.manifestProcessorTask != null) {
-                File manifest = outputData.manifestProcessorTask.getManifestOutputFile();
-                task.setManifestFile(manifest);
-            }
+            task.setManifestFile(outputData.getScope().getManifestOutputFile());
         }
     }
 
