@@ -33,7 +33,7 @@ import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
-import com.android.build.gradle.internal.incremental.BuildInfoGeneratorTask;
+import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.incremental.InstantRunAnchorTask;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
@@ -420,11 +420,11 @@ public class ModelBuilder implements ToolingModelBuilder {
         }
 
         InstantRunImpl instantRun = new InstantRunImpl(
-                InstantRunAnchorTask.InstantRunAnchorTaskConfigAction.getName(scope),
+                InstantRunAnchorTask.ConfigAction.getName(scope),
                 new File(scope.getRestartDexOutputFolder(), "classes.dex"),
                 new File(scope.getReloadDexOutputFolder(), "classes.dex"),
                 // todo : move this to a shared location.
-                BuildInfoGeneratorTask.ConfigAction.getBuildInfoFile(scope));
+                InstantRunWrapperTask.ConfigAction.getBuildInfoFile(scope));
 
         return new AndroidArtifactImpl(
                 name,

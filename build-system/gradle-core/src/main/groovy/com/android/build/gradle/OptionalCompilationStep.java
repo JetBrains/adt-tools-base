@@ -36,9 +36,7 @@ public enum OptionalCompilationStep {
      */
     LOCAL_RES_ONLY,
     /**
-     * presence will force production of the restart.dex (instead of potentially producing it
-     * depending on the verifier result). The reload.dex will not be produced when this flag is
-     * set.
+     * presence will force production of all the necessary artifacts to do an application restart.
      */
-    RESTART_DEX_ONLY
+    RESTART_ONLY
 }

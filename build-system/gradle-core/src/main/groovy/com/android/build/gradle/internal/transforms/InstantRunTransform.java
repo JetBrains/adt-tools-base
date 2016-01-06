@@ -193,7 +193,7 @@ public class InstantRunTransform extends Transform {
                                     break;
                                 case CHANGED:
                                     // an existing file was changed, we regenerate the classes.2 and
-                                    // classes.3 files at they are both needed to support restart and
+                                    // classes.3 files as they are both needed to support restart and
                                     // reload.
                                     transformToClasses2Format(
                                             inputDir,
@@ -254,8 +254,11 @@ public class InstantRunTransform extends Transform {
             throws IOException {
 
         // generate the patch file and add to the list of files to process next.
-        File patchFile = writePatchFileContents(generatedClasses3Names.build(), classes3Folder);
-        generatedClasses3Files.add(Status.CHANGED, patchFile.getAbsolutePath());
+        ImmutableList<String> generatedClassNames = generatedClasses3Names.build();
+        if (!generatedClassNames.isEmpty()) {
+            File patchFile = writePatchFileContents(generatedClassNames, classes3Folder);
+            generatedClasses3Files.add(Status.CHANGED, patchFile.getAbsolutePath());
+        }
 
         // read the previous iterations output and append it to this iteration changes.
         File incremental = InstantRunBuildType.RESTART.getIncrementalChangesFile(variantScope);

@@ -286,7 +286,7 @@ public class InstantRunSlicer extends Transform {
         boolean changesAreCompatible =
                 variantScope.getInstantRunBuildContext().hasPassedVerification();
         boolean restartDexRequested =
-                variantScope.getGlobalScope().isActive(OptionalCompilationStep.RESTART_DEX_ONLY);
+                variantScope.getGlobalScope().isActive(OptionalCompilationStep.RESTART_ONLY);
 
         if (!changesAreCompatible || restartDexRequested) {
             processChangesSinceLastRestart(inputs, outputProvider);

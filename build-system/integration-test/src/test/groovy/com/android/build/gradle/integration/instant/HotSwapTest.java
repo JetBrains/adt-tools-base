@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.instant;
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
@@ -101,7 +102,8 @@ public class HotSwapTest {
         sProject.execute("clean");
         InstantRun instantRunModel = getInstantRunModel(sProject.getSingleModel());
 
-        sProject.execute(getInstantRunArgs(apiLevel), "assembleDebug");
+        sProject.execute(getInstantRunArgs(apiLevel, OptionalCompilationStep.RESTART_ONLY),
+                "assembleDebug");
         ApkSubject debugApk = expect.about(ApkSubject.FACTORY)
                 .that(sProject.getApk("debug"));
         List<String> entries = debugApk.entries();
@@ -166,9 +168,9 @@ public class HotSwapTest {
         Document document = XmlUtils.parseUtfXmlFile(
                 instantRunModel.getInfoFile(), false /* namespaceAware */);
 
-        NodeList artifacts = document.getElementsByTagName("artifact");
-        expect.that(artifacts.getLength()).isEqualTo(1);
-        NamedNodeMap attributes = artifacts.item(0).getAttributes();
+        List<Node> artifacts = getLastBuildArtifacts(document);
+        expect.that(artifacts.size()).isEqualTo(1);
+        NamedNodeMap attributes = artifacts.get(0).getAttributes();
         expect.that(attributes.getLength()).isEqualTo(2);
 
 
@@ -192,6 +194,23 @@ public class HotSwapTest {
         File apkFile = new File(attributes.getNamedItem("location").getNodeValue());
         checkUpdatedClassPresence(apkFile);
 
+    }
+
+    /**
+     * Returns the top-level artifact nodes (corresponding to the last build)
+     */
+    @NonNull
+    private static List<Node> getLastBuildArtifacts(@NonNull Document document) {
+        Node instantRun = document.getFirstChild();
+        NodeList childNodes = instantRun.getChildNodes();
+        ImmutableList.Builder<Node> artifacts = ImmutableList.builder();
+        for (int i=0; i<childNodes.getLength(); i++) {
+            Node item = childNodes.item(i);
+            if (item.getNodeName().equals("artifact")) {
+                artifacts.add(item);
+            }
+        }
+        return artifacts.build();
     }
 
     private DexClassSubject checkUpdatedClassPresence(File dexFile)

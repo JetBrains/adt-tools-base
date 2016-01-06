@@ -31,6 +31,7 @@ import static com.google.common.base.Verify.verifyNotNull;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.QualifiedContent.ContentType;
 import com.android.build.api.transform.QualifiedContent.DefaultContentType;
 import com.android.build.api.transform.QualifiedContent.Scope;
@@ -49,6 +50,8 @@ import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
+import com.android.build.gradle.internal.incremental.BuildInfoLoaderTask;
+import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.incremental.InstantRunAnchorTask;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
@@ -85,9 +88,12 @@ import com.android.build.gradle.internal.tasks.multidex.CreateManifestKeepList;
 import com.android.build.gradle.internal.test.TestDataImpl;
 import com.android.build.gradle.internal.test.report.ReportType;
 import com.android.build.gradle.internal.transforms.DexTransform;
+import com.android.build.gradle.internal.transforms.ExtractJarsTransform;
 import com.android.build.gradle.internal.transforms.InstantRunBuildType;
 import com.android.build.gradle.internal.transforms.InstantRunDex;
 import com.android.build.gradle.internal.transforms.InstantRunSlicer;
+import com.android.build.gradle.internal.transforms.InstantRunTransform;
+import com.android.build.gradle.internal.transforms.InstantRunVerifierTransform;
 import com.android.build.gradle.internal.transforms.JacocoTransform;
 import com.android.build.gradle.internal.transforms.JarMergingTransform;
 import com.android.build.gradle.internal.transforms.MergeJavaResourcesTransform;
@@ -128,6 +134,8 @@ import com.android.build.gradle.tasks.ZipAlign;
 import com.android.build.gradle.tasks.factory.JavaCompileConfigAction;
 import com.android.build.gradle.tasks.factory.ProcessJavaResConfigAction;
 import com.android.build.gradle.tasks.factory.UnitTestConfigAction;
+import com.android.build.gradle.tasks.fd.FastDeployRuntimeExtractorTask;
+import com.android.build.gradle.tasks.fd.GenerateInstantRunAppInfoTask;
 import com.android.build.gradle.tasks.fd.InjectBootstrapApplicationTask;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.VariantConfiguration;
@@ -148,6 +156,7 @@ import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 
 import org.gradle.api.Action;
@@ -1294,7 +1303,8 @@ public abstract class TaskManager {
             createDataBindingTasks(tasks, variantScope);
         }
 
-        createPackagingTask(tasks, variantScope, false /*publishApk*/);
+        createPackagingTask(tasks, variantScope, false /*publishApk*/,
+                null /* buildInfoGeneratorTask */);
 
         tasks.named(ASSEMBLE_ANDROID_TEST, new Action<Task>() {
             @Override
@@ -1306,12 +1316,6 @@ public abstract class TaskManager {
         createConnectedTestForVariant(tasks, variantScope);
     }
 
-    /**
-     * Create InstantRun related tasks that should be ran right after the java compilation task.
-     */
-    protected void createIncrementalSupportTasks(TaskFactory tasks, VariantScope variantScope) {
-        // by default, do not run incremental tasks.
-    }
 
     protected enum IncrementalMode {
         NONE, FULL, LOCAL_JAVA_ONLY, LOCAL_RES_ONLY;
@@ -1865,7 +1869,7 @@ public abstract class TaskManager {
      * proguard and jacoco
      *
      */
-    public AndroidTask<InstantRunAnchorTask> createPostCompilationTasks(TaskFactory tasks,
+    public void createPostCompilationTasks(@NonNull TaskFactory tasks,
             @NonNull final VariantScope variantScope) {
 
         checkNotNull(variantScope.getJavacTask());
@@ -1907,8 +1911,6 @@ public abstract class TaskManager {
             }
         }
 
-        createIncrementalSupportTasks(tasks, variantScope);
-
         // ----- Minify next -----
 
         if (isMinifyEnabled) {
@@ -1918,14 +1920,27 @@ public abstract class TaskManager {
 
         // ----- 10x support
 
-        AndroidTask<InstantRunAnchorTask> instantRunTask = null;
+        AndroidTask<InstantRunWrapperTask> incrementalBuildWrapperTask = null;
         if (getIncrementalMode(variantScope.getVariantConfiguration()) != IncrementalMode.NONE) {
-            instantRunTask = createIncrementalPostCompilationTasks(tasks, variantScope);
-            variantScope.setInstantRunAnchorTask(instantRunTask);
+
+            // we are creating two anchor tasks
+            // 1. allActionAnchorTask to anchor tasks that should be executed whether a full build or
+            //    incremental build is invoked.
+            // 2. incrementalAnchorTask to anchor tasks that should only be executed when an
+            //    incremental build is requested.
+            // the incrementalAnchorTask will therefore depend on the allActionAnchorTask.
+
+            AndroidTask<InstantRunAnchorTask> allActionsAnchorTask =
+                    createInstantRunAllActionsTasks(tasks, variantScope);
+            variantScope.setInstantRunAnchorTask(allActionsAnchorTask);
+            incrementalBuildWrapperTask = createInstantRunIncrementalTasks(tasks, variantScope);
+            variantScope.setInstantRunIncrementalTask(incrementalBuildWrapperTask);
+            incrementalBuildWrapperTask.dependsOn(tasks, allActionsAnchorTask);
+
             // when dealing with platforms that can handle multi dexes natively, automatically
             // turn on multi dexing so shards are packaged as individual dex files.
             if (InstantRunPatchingPolicy.PRE_LOLLIPOP !=
-                    variantScope.getInstantRunBuildContext().getPatchingPolicty()) {
+                    variantScope.getInstantRunBuildContext().getPatchingPolicy()) {
                 isMultiDexEnabled = true;
             }
         }
@@ -1987,27 +2002,113 @@ public abstract class TaskManager {
 
         // if we are in instant-run mode and the patching policy is relying on mult-dex shards,
         // we should run the dexing as part of the incremental build.
-        if (instantRunTask != null &&
+        if (incrementalBuildWrapperTask != null &&
                 InstantRunPatchingPolicy.PRE_LOLLIPOP !=
-                    variantScope.getInstantRunBuildContext().getPatchingPolicty()) {
-            instantRunTask.dependsOn(tasks, dexTask);
+                    variantScope.getInstantRunBuildContext().getPatchingPolicy()) {
+            incrementalBuildWrapperTask.dependsOn(tasks, dexTask);
         }
-        return instantRunTask;
+    }
+
+    /**
+     * Create InstantRun related tasks that should be ran right after the java compilation task.
+     */
+    @NonNull
+    protected AndroidTask<InstantRunAnchorTask> createInstantRunAllActionsTasks(
+            @NonNull TaskFactory tasks, @NonNull VariantScope variantScope) {
+
+        AndroidTask<InstantRunAnchorTask> allActionAnchorTask = getAndroidTasks().create(tasks,
+                new InstantRunAnchorTask.ConfigAction(variantScope, "Tasks"));
+
+        AndroidTask<BuildInfoLoaderTask> buildInfoLoaderTask = getAndroidTasks().create(tasks,
+                new BuildInfoLoaderTask.ConfigAction(variantScope, getLogger()));
+
+        TransformManager transformManager = variantScope.getTransformManager();
+
+        ExtractJarsTransform extractJarsTransform = new ExtractJarsTransform(
+                ImmutableSet.<QualifiedContent.ContentType>of(
+                        QualifiedContent.DefaultContentType.CLASSES),
+                ImmutableSet.of(Scope.SUB_PROJECTS));
+        AndroidTask<TransformTask> extractJarsTask = transformManager
+                .addTransform(tasks, variantScope, extractJarsTransform);
+
+        // always run the verifier first, since if it detects incompatible changes, we
+        // should skip bytecode enhancements of the changed classes.
+        InstantRunVerifierTransform verifierTransform = new InstantRunVerifierTransform(variantScope);
+        AndroidTask<TransformTask> verifierTask = variantScope.getTransformManager()
+                .addTransform(tasks, variantScope, verifierTransform);
+        verifierTask.dependsOn(tasks, extractJarsTask);
+
+        InstantRunTransform instantRunTransform = new InstantRunTransform(variantScope);
+        AndroidTask<TransformTask> instantRunTask = transformManager
+                .addTransform(tasks, variantScope, instantRunTransform);
+        instantRunTask.dependsOn(tasks, buildInfoLoaderTask, verifierTask);
+
+        AndroidTask<FastDeployRuntimeExtractorTask> extractorTask = getAndroidTasks().create(
+                tasks, new FastDeployRuntimeExtractorTask.ConfigAction(variantScope));
+
+        // also add a new stream for the extractor task output.
+        variantScope.getTransformManager().addStream(OriginalStream.builder()
+                .addContentTypes(TransformManager.CONTENT_CLASS)
+                .addScope(Scope.EXTERNAL_LIBRARIES)
+                .setJar(variantScope.getIncrementalRuntimeSupportJar())
+                .setDependency(extractorTask.get(tasks))
+                .build());
+
+        AndroidTask<GenerateInstantRunAppInfoTask> generateAppInfoAndroidTask = getAndroidTasks()
+                .create(tasks, new GenerateInstantRunAppInfoTask.ConfigAction(variantScope));
+
+        // create the AppInfo.class for this variant.
+        GenerateInstantRunAppInfoTask generateInstantRunAppInfoTask
+                = generateAppInfoAndroidTask.get(tasks);
+
+        // make the task that generates the AppInfo dependent on the first merge manifest task
+        // so we can get its output file.
+        BaseVariantOutputData outputData = Iterators
+                .get(variantScope.getVariantData().getOutputs().iterator(), 0);
+        generateAppInfoAndroidTask.dependsOn(tasks, outputData.manifestProcessorTask);
+
+        // also add a new stream for the injector task output.
+        variantScope.getTransformManager().addStream(OriginalStream.builder()
+                .addContentTypes(TransformManager.CONTENT_CLASS)
+                .addScope(Scope.EXTERNAL_LIBRARIES)
+                .setJar(generateInstantRunAppInfoTask.getOutputFile())
+                .setDependency(generateInstantRunAppInfoTask)
+                .build());
+
+        allActionAnchorTask.dependsOn(tasks, instantRunTask);
+        return allActionAnchorTask;
     }
 
     /**
      * Creates all InstantRun related transforms after compilation.
      */
-    @Nullable
-    public AndroidTask<InstantRunAnchorTask> createIncrementalPostCompilationTasks(
-            TaskFactory tasks, @NonNull final VariantScope scope) {
+    @NonNull
+    public AndroidTask<InstantRunWrapperTask> createInstantRunIncrementalTasks(
+            @NonNull TaskFactory tasks, @NonNull final VariantScope scope) {
 
-        AndroidTask<InstantRunAnchorTask> instantRunAnchor = androidTasks.create(tasks,
-                new InstantRunAnchorTask.InstantRunAnchorTaskConfigAction(scope, getLogger()));
+        // we are creating two anchor tasks
+        // 1. allActionAnchorTask to anchor tasks that should be executed whether a full build or
+        //    incremental build is invoked.
+        // 2. incrementalAnchorTask to anchor tasks that should only be executed when an
+        //    incremental build is requested.
+        // the incrementalAnchorTask will therefore depend on the allActionAnchorTask.
+        AndroidTask<InstantRunAnchorTask> incrementalAnchorTask = androidTasks.create(tasks,
+                new InstantRunAnchorTask.ConfigAction(scope));
 
+        // create the incremental version of the build-info.xml, another task will take care
+        // of generating the build-info.xml when a full build is invoked.
+        AndroidTask<InstantRunWrapperTask> incrementalWrapperTask = getAndroidTasks().create(tasks,
+                new InstantRunWrapperTask.ConfigAction(
+                        scope, InstantRunWrapperTask.TaskType.INCREMENTAL, getLogger()));
+
+        // this will force build-info.xml to be generated only when the external task is directly
+        // invoked by the IDE.
+        incrementalAnchorTask.dependsOn(tasks, incrementalWrapperTask);
+
+        scope.getInstantRunBuildContext().setApiLevel(
+                InstantRunPatchingPolicy.getApiLevel(getLogger(), project));
         InstantRunPatchingPolicy patchingPolicy =
-                InstantRunPatchingPolicy.getPatchingPolicy(getLogger(), project);
-        scope.getInstantRunBuildContext().setPatchingPolicy(patchingPolicy);
+                scope.getInstantRunBuildContext().getPatchingPolicy();
 
         DexOptions dexOptions = scope.getGlobalScope().getExtension().getDexOptions();
         if (patchingPolicy == InstantRunPatchingPolicy.PRE_LOLLIPOP) {
@@ -2020,18 +2121,22 @@ public abstract class TaskManager {
                     getLogger(),
                     ImmutableSet.<ContentType>of(
                             DefaultContentType.CLASSES));
-            instantRunAnchor.dependsOn(tasks,
-                    scope.getTransformManager().addTransform(tasks, scope, classesTwoTransform));
+            AndroidTask<TransformTask> classesTwoDexing = scope.getTransformManager()
+                    .addTransform(tasks, scope, classesTwoTransform);
+            incrementalWrapperTask.dependsOn(tasks, classesTwoDexing);
         } else {
             // if we are at API 21 or above, we generate multi-dexes.
+            // this transform and all its dependencies will also run in full build mode as
+            // it is automatically enrolled by the transform manager.
             InstantRunSlicer slicer = new InstantRunSlicer(getLogger(), scope);
-            instantRunAnchor.dependsOn(tasks,
-                    scope.getTransformManager().addTransform(tasks, scope, slicer));
+            AndroidTask<TransformTask> slicing = scope.getTransformManager()
+                    .addTransform(tasks, scope, slicer);
+            incrementalWrapperTask.dependsOn(tasks, slicing);
 
         }
 
         // we always produce the reload.dex irrespective of the targeted version.
-        InstantRunDex classesThreeTransform = new InstantRunDex(
+        InstantRunDex reloadDexTransform = new InstantRunDex(
                 scope,
                 InstantRunBuildType.RELOAD,
                 androidBuilder,
@@ -2040,12 +2145,11 @@ public abstract class TaskManager {
                 ImmutableSet.<ContentType>of(
                         ExtendedContentType.CLASSES_ENHANCED));
 
-        AndroidTask<TransformTask> transformThreeTask = scope.getTransformManager()
-                .addTransform(tasks, scope, classesThreeTransform);
+        AndroidTask<TransformTask> classesThreeDexing = scope.getTransformManager()
+                .addTransform(tasks, scope, reloadDexTransform);
 
-
-        instantRunAnchor.dependsOn(tasks, transformThreeTask);
-        return instantRunAnchor;
+        incrementalWrapperTask.dependsOn(tasks, classesThreeDexing);
+        return incrementalWrapperTask;
     }
 
     protected void handleJacocoDependencies(@NonNull VariantScope variantScope) {
@@ -2154,9 +2258,13 @@ public abstract class TaskManager {
      * Creates the final packaging task, and optionally the zipalign task (if the variant is signed)
      *
      * @param publishApk if true the generated APK gets published.
+     * @param fullBuildInfoGeneratorTask task that generates the build-info.xml for full build.
      */
-    public void createPackagingTask(@NonNull TaskFactory tasks, @NonNull VariantScope variantScope,
-            boolean publishApk) {
+    public void createPackagingTask(@NonNull TaskFactory tasks,
+            @NonNull VariantScope variantScope,
+            boolean publishApk,
+            @Nullable AndroidTask<InstantRunWrapperTask> fullBuildInfoGeneratorTask) {
+
         final ApkVariantData variantData = (ApkVariantData) variantScope.getVariantData();
         GradleVariantConfiguration config = variantData.getVariantConfiguration();
 
@@ -2172,7 +2280,7 @@ public abstract class TaskManager {
 
             final String outputName = variantOutputData.getFullName();
             InstantRunPatchingPolicy instantRunPatchingPolicy =
-                    InstantRunPatchingPolicy.getPatchingPolicy(getLogger(), project);
+                    variantScope.getInstantRunBuildContext().getPatchingPolicy();
 
             // when building for instant run with targeting API 23 or above, do not put the
             // dex files in the main APK, they will be packaged as pure splits
@@ -2240,6 +2348,10 @@ public abstract class TaskManager {
             }
 
             checkState(variantData.assembleVariantTask != null);
+            if (fullBuildInfoGeneratorTask != null) {
+                fullBuildInfoGeneratorTask.dependsOn(tasks, appTask);
+                variantData.assembleVariantTask.dependsOn(fullBuildInfoGeneratorTask.getName());
+            }
 
             // Add an assemble task
             if (multiOutput) {

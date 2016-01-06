@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.build.gradle.internal.transforms.InstantRunBuildType;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 
@@ -30,11 +31,18 @@ import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
+import java.util.Locale;
 
 /**
- * Task to generate the build-info.xml on each gradle invocation with InstantRun enabled.
+ * InstantRun related tasks wrapping code, this task is added twice to the task trees, once
+ * for the full build (assembleVariant), once for the incremental build. Only one of these two
+ * task will execute from the IDE.
+ *
+ * Task responsibility :
+ * <ul>generate the build-info.xml on each gradle invocation with InstantRun enabled.</ul>
+ * <ul>delete incremental change files when doing a full build.</ul>
  */
-public class BuildInfoGeneratorTask extends BaseTask {
+public class InstantRunWrapperTask extends BaseTask {
 
     @OutputFile
     File buildInfoFile;
@@ -42,12 +50,18 @@ public class BuildInfoGeneratorTask extends BaseTask {
     @Input
     String buildId;
 
+    TaskType taskType;
+    File incrementChangesFile;
+
     Logger logger;
 
     InstantRunBuildContext instantRunBuildContext;
 
     @TaskAction
     public void executeAction() {
+        // done with the instant run context.
+        instantRunBuildContext.close();
+
         // saves the build information xml file.
         try {
             String xml = instantRunBuildContext.toXml();
@@ -56,32 +70,47 @@ public class BuildInfoGeneratorTask extends BaseTask {
                         instantRunBuildContext.getBuildId(), xml);
             }
             Files.createParentDirs(buildInfoFile);
-            Files.write(instantRunBuildContext.toXml(), buildInfoFile, Charsets.UTF_8);
+            Files.write(xml, buildInfoFile, Charsets.UTF_8);
         } catch (Exception e) {
-
             throw new RuntimeException(
                     String.format("Exception while saving build-info.xml : %s", e.getMessage()));
         }
+
+        // if this is a full build, delete the incremental files recorders.
+        if (taskType == TaskType.FULL && incrementChangesFile.exists()) {
+            if (!incrementChangesFile.delete()) {
+                logger.warn(String.format("Cannot delete %1$s", incrementChangesFile));
+            }
+        }
     }
 
-    public static class ConfigAction implements TaskConfigAction<BuildInfoGeneratorTask> {
+    public enum TaskType {
+        INCREMENTAL,
+        FULL
+    }
 
-        public static String getName(VariantScope scope) {
-            return scope.getTaskName("incremental", "BuildInfoGenerator");
-        }
+    public static class ConfigAction implements TaskConfigAction<InstantRunWrapperTask> {
 
         public static File getBuildInfoFile(VariantScope scope) {
             return new File(scope.getRestartDexOutputFolder(), "build-info.xml");
         }
 
         private final String taskName;
+        private final TaskType taskType;
+        private final File incrementalChangesFile;
         private final VariantScope variantScope;
         private final Logger logger;
 
-        public ConfigAction(VariantScope scope, Logger logger) {
-            this.taskName = ConfigAction.getName(scope);
+        public ConfigAction(@NonNull VariantScope scope,
+                @NonNull TaskType taskType,
+                @NonNull Logger logger) {
+            this.taskName = scope.getTaskName(taskType.name().toLowerCase(Locale.getDefault()),
+                    "BuildInfoGenerator");
             this.variantScope = scope;
             this.logger = logger;
+            this.taskType = taskType;
+            this.incrementalChangesFile =
+                    InstantRunBuildType.RESTART.getIncrementalChangesFile(variantScope);
         }
 
         @NonNull
@@ -92,17 +121,19 @@ public class BuildInfoGeneratorTask extends BaseTask {
 
         @NonNull
         @Override
-        public Class<BuildInfoGeneratorTask> getType() {
-            return BuildInfoGeneratorTask.class;
+        public Class<InstantRunWrapperTask> getType() {
+            return InstantRunWrapperTask.class;
         }
 
         @Override
-        public void execute(@NonNull BuildInfoGeneratorTask task) {
+        public void execute(@NonNull InstantRunWrapperTask task) {
             task.setDescription("InstantRun task to build incremental artifacts");
             task.setVariantName(variantScope.getVariantConfiguration().getFullName());
             task.buildInfoFile = getBuildInfoFile(variantScope);
             task.instantRunBuildContext = variantScope.getInstantRunBuildContext();
             task.logger = logger;
+            task.taskType = taskType;
+            task.incrementChangesFile = incrementalChangesFile;
             task.buildId = String.valueOf(task.instantRunBuildContext.getBuildId());
         }
     }

@@ -105,7 +105,7 @@ public class InstantRunDex extends Transform {
         boolean changesAreCompatible =
                 variantScope.getInstantRunBuildContext().hasPassedVerification();
         boolean restartDexRequested =
-                variantScope.getGlobalScope().isActive(OptionalCompilationStep.RESTART_DEX_ONLY);
+                variantScope.getGlobalScope().isActive(OptionalCompilationStep.RESTART_ONLY);
 
         switch(buildType) {
             case RELOAD:

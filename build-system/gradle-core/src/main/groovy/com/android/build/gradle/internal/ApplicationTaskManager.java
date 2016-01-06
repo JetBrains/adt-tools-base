@@ -17,34 +17,24 @@
 package com.android.build.gradle.internal;
 
 import com.android.annotations.NonNull;
-import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.gradle.AndroidConfig;
-import com.android.build.gradle.internal.incremental.BuildInfoGeneratorTask;
+import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
-import com.android.build.gradle.internal.pipeline.OriginalStream;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.pipeline.TransformStream;
-import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
 import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.gradle.internal.transforms.ExtractJarsTransform;
 import com.android.build.gradle.internal.transforms.InstantRunSplitApkBuilder;
-import com.android.build.gradle.internal.transforms.InstantRunTransform;
-import com.android.build.gradle.internal.transforms.InstantRunVerifierTransform;
 import com.android.build.gradle.internal.variant.ApplicationVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.PackageApplication;
-import com.android.build.gradle.tasks.fd.FastDeployRuntimeExtractorTask;
-import com.android.build.gradle.tasks.fd.GenerateInstantRunAppInfoTask;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterators;
 
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
@@ -79,7 +69,6 @@ public class ApplicationTaskManager extends TaskManager {
             @NonNull final TaskFactory tasks,
             @NonNull final BaseVariantData<? extends BaseVariantOutputData> variantData) {
         assert variantData instanceof ApplicationVariantData;
-        final ApplicationVariantData appVariantData = (ApplicationVariantData) variantData;
 
         final VariantScope variantScope = variantData.getScope();
 
@@ -246,8 +235,11 @@ public class ApplicationTaskManager extends TaskManager {
                 new Recorder.Block<Void>() {
                     @Override
                     public Void call() {
-                        createInstantRunPackagingTasks(tasks, variantScope);
-                        createPackagingTask(tasks, variantScope, true /*publishApk*/);
+                        @NonNull
+                        AndroidTask<InstantRunWrapperTask> fullBuildInfoGeneratorTask
+                                = createInstantRunPackagingTasks(tasks, variantScope);
+                        createPackagingTask(tasks, variantScope, true /*publishApk*/,
+                                fullBuildInfoGeneratorTask);
                         return null;
                     }
                 });
@@ -263,90 +255,24 @@ public class ApplicationTaskManager extends TaskManager {
                 });
     }
 
-
-    /**
-     * Create InstantRun related tasks that should be ran right after the java compilation task.
-     */
-    @Override
-    protected void createIncrementalSupportTasks(TaskFactory tasks, VariantScope variantScope) {
-
-        if (getIncrementalMode(variantScope.getVariantConfiguration()) != IncrementalMode.NONE) {
-            TransformManager transformManager = variantScope.getTransformManager();
-
-            ExtractJarsTransform extractJarsTransform = new ExtractJarsTransform(
-                    ImmutableSet.<QualifiedContent.ContentType>of(
-                            QualifiedContent.DefaultContentType.CLASSES),
-                    ImmutableSet.of(Scope.SUB_PROJECTS));
-            AndroidTask<TransformTask> extractJarsTask = transformManager
-                    .addTransform(tasks, variantScope, extractJarsTransform);
-
-            // always run the verifier first, since if it detects incompatible changes, we
-            // should skip bytecode enhancements of the changed classes.
-            InstantRunVerifierTransform verifierTransform =
-                    new InstantRunVerifierTransform(variantScope);
-            AndroidTask<TransformTask> verifierTask = transformManager
-                    .addTransform(tasks, variantScope, verifierTransform);
-            verifierTask.dependsOn(tasks, extractJarsTask);
-
-            InstantRunTransform instantRunTransform = new InstantRunTransform(variantScope);
-            AndroidTask<TransformTask> instantRunTask = transformManager
-                    .addTransform(tasks, variantScope, instantRunTransform);
-            instantRunTask.dependsOn(tasks, verifierTask);
-
-            AndroidTask<FastDeployRuntimeExtractorTask> extractorTask = getAndroidTasks().create(
-                    tasks, new FastDeployRuntimeExtractorTask.ConfigAction(variantScope));
-
-            // also add a new stream for the extractor task output.
-            variantScope.getTransformManager().addStream(OriginalStream.builder()
-                    .addContentTypes(TransformManager.CONTENT_CLASS)
-                    .addScope(Scope.EXTERNAL_LIBRARIES)
-                    .setJar(variantScope.getIncrementalRuntimeSupportJar())
-                    .setDependency(extractorTask.get(tasks))
-                    .build());
-
-            AndroidTask<GenerateInstantRunAppInfoTask> generateAppInfoAndroidTask
-                    = getAndroidTasks()
-                    .create(tasks, new GenerateInstantRunAppInfoTask.ConfigAction(
-                            variantScope));
-
-            // create the AppInfo.class for this variant.
-            GenerateInstantRunAppInfoTask generateInstantRunAppInfoTask
-                    = generateAppInfoAndroidTask.get(tasks);
-
-            // make the task that generates the AppInfo dependent on the first merge manifest task
-            // so we can get its output file.
-            VariantOutputScope variantOutputScope =
-                    variantScope.getVariantData().getOutputs().get(0).getScope();
-            generateAppInfoAndroidTask.dependsOn(
-                    tasks,
-                    variantOutputScope.getManifestProcessorTask());
-
-            // also add a new stream for the injector task output.
-            variantScope.getTransformManager().addStream(OriginalStream.builder()
-                    .addContentTypes(TransformManager.CONTENT_CLASS)
-                    .addScope(Scope.EXTERNAL_LIBRARIES)
-                    .setJar(generateInstantRunAppInfoTask.getOutputFile())
-                    .setDependency(generateInstantRunAppInfoTask)
-                    .build());
-        }
-    }
-
     /**
      * Create tasks related to creating pure split APKs containing sharded dex files.
      */
-    protected void createInstantRunPackagingTasks(TaskFactory tasks, VariantScope variantScope) {
+    @NonNull
+    protected AndroidTask<InstantRunWrapperTask> createInstantRunPackagingTasks(
+            @NonNull TaskFactory tasks, @NonNull VariantScope variantScope) {
+
+        // create a buildInfoGeneratorTask that will only be invoked if a assembleVARIANT is called.
+        AndroidTask<InstantRunWrapperTask> fullBuildInfoGeneratorTask
+                = getAndroidTasks().create(tasks,
+                new InstantRunWrapperTask.ConfigAction(
+                        variantScope, InstantRunWrapperTask.TaskType.FULL, getLogger()));
+
         if (getIncrementalMode(variantScope.getVariantConfiguration())
                 != IncrementalMode.NONE) {
 
-            AndroidTask<BuildInfoGeneratorTask> buildInfoGeneratorTask
-                    = getAndroidTasks().create(tasks,
-                    new BuildInfoGeneratorTask.ConfigAction(
-                            variantScope, getLogger()));
-            variantScope.getInstantRunAnchorTask().dependsOn(
-                    tasks, buildInfoGeneratorTask);
-
-            InstantRunPatchingPolicy patchingPolicy = InstantRunPatchingPolicy
-                    .getPatchingPolicy(getLogger(), project);
+            InstantRunPatchingPolicy patchingPolicy =
+                    variantScope.getInstantRunBuildContext().getPatchingPolicy();
 
             if (patchingPolicy == InstantRunPatchingPolicy.MARSHMALLOW_AND_ABOVE) {
 
@@ -364,11 +290,18 @@ public class ApplicationTaskManager extends TaskManager {
                 }
                 variantScope.getVariantData().assembleVariantTask.dependsOn(
                         splitApk.get(tasks));
-                buildInfoGeneratorTask.dependsOn(tasks, splitApk);
 
+                // if the assembleVariant task run, make sure it also runs the task to generate
+                // the build-info.xml.
+                variantScope.getVariantData().assembleVariantTask.dependsOn(
+                        fullBuildInfoGeneratorTask.get(tasks));
+
+                // make sure the split APK task is run before we generate the build-info.xml
                 variantScope.getInstantRunAnchorTask().dependsOn(tasks, splitApk);
+                variantScope.getInstantRunIncrementalTask().dependsOn(tasks, splitApk);
             }
         }
+        return fullBuildInfoGeneratorTask;
     }
 
     @NonNull
