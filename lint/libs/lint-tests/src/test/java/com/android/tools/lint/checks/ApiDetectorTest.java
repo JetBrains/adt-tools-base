@@ -2064,6 +2064,33 @@ public class ApiDetectorTest extends AbstractCheckTest {
         return super.createClient();
     }
 
+    // bug 198295: Add a test for a case that crashes ApiDetector due to an
+    // invalid parameterIndex causing by a varargs method invocation.
+    public void testMethodWithPrimitiveAndVarargs() throws Exception {
+        // In case of a crash, there is an assertion failure in tearDown()
+        assertEquals("No warnings.",
+                lintProject(
+                        copy("apicheck/minsdk14.xml", "AndroidManifest.xml"),
+                        java("src/test/pkg/LogHelper.java", "" +
+                                "package test.pkg;\n"
+                                + "\n"
+                                + "public class LogHelper {\n"
+                                + "\n"
+                                + "    public static void log(String tag, Object... args) {\n"
+                                + "    }\n"
+                                + "}"),
+                        java("src/test/pkg/Browser.java", "" +
+                                "package test.pkg;\n"
+                                + "\n"
+                                + "public class Browser {\n"
+                                + "    \n"
+                                + "    public void onCreate() {\n"
+                                + "        LogHelper.log(\"TAG\", \"arg1\", \"arg2\", 1, \"arg4\", this /*non primitive*/);\n"
+                                + "    }\n"
+                                + "}")
+                ));
+    }
+
     @Override
     protected boolean ignoreSystemErrors() {
         //noinspection SimplifiableIfStatement

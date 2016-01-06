@@ -1925,7 +1925,7 @@ public class ApiDetector extends ResourceXmlDetector
                             break;
                         }
                     }
-                    if (parameterIndex == method.getArgumentCount()) {
+                    if (parameterIndex >= method.getArgumentCount()) {
                         // We can end up with more arguments than parameters when
                         // there is a varargs call.
                         break;
