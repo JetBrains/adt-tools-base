@@ -56,6 +56,8 @@ public class AndroidGradleOptions {
     private static final String PROPERTY_INSTANT_RUN_INCREMENTAL_JAVA_COMPILE =
             "android.instantRunIncrementalJavaCompile";
 
+    private static final String PROPERTY_USE_OLD_PACKAGING = "android.useOldPackaging";
+
     @NonNull
     public static Map<String, String> getExtraInstrumentationTestRunnerArgs(@NonNull Project project) {
         Map<String, String> argsMap = Maps.newHashMap();
@@ -91,6 +93,10 @@ public class AndroidGradleOptions {
 
     public static boolean buildModelOnlyAdvanced(@NonNull Project project) {
         return getBoolean(project, AndroidProject.PROPERTY_BUILD_MODEL_ONLY_ADVANCED);
+    }
+
+    public static boolean useOldPackaging(@NonNull Project project) {
+        return getBoolean(project, PROPERTY_USE_OLD_PACKAGING, true);
     }
 
     @Nullable
