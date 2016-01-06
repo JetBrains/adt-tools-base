@@ -33,6 +33,7 @@ import com.google.common.io.ByteSource;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
 import com.google.common.io.Closer;
+import com.google.common.primitives.Ints;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -354,8 +355,7 @@ public class ZFile implements Closeable {
         }
 
         byte[] last = new byte[lastToRead];
-        mRaf.seek(mRaf.length() - lastToRead);
-        RandomAccessFileUtils.fullyRead(mRaf, last);
+        directFullyRead(mRaf.length() - lastToRead, last);
 
         byte[] eocdSignature = new byte[] { 0x06, 0x05, 0x4b, 0x50 };
 
@@ -421,9 +421,8 @@ public class ZFile implements Closeable {
          */
         int zip64LocatorStart = eocdStart - ZIP64_EOCD_LOCATOR_SIZE;
         if (zip64LocatorStart >= 0) {
-            mRaf.seek(zip64LocatorStart);
             byte possibleZip64Locator[] = new byte[4];
-            RandomAccessFileUtils.fullyRead(mRaf, possibleZip64Locator);
+            directFullyRead(zip64LocatorStart, possibleZip64Locator);
             if (LittleEndianUtils.readUnsigned4Le(ByteSource.wrap(possibleZip64Locator)) ==
                     ZIP64_EOCD_LOCATOR_SIGNATURE) {
                 throw new IOException("Zip64 EOCD locator found but Zip64 format is not "
@@ -459,8 +458,7 @@ public class ZFile implements Closeable {
         }
 
         byte[] directoryData = new byte[(int) dirSize];
-        mRaf.seek(eocd.getDirectoryOffset());
-        RandomAccessFileUtils.fullyRead(mRaf, directoryData);
+        directFullyRead(eocd.getDirectoryOffset(), directoryData);
 
         CentralDirectory directory = CentralDirectory.makeFromData(ByteSource.wrap(directoryData),
                 eocd.getTotalRecords(), this);
@@ -469,7 +467,9 @@ public class ZFile implements Closeable {
     }
 
     /**
-     * Opens a portion of the zip for opening. The zip must be open for this method to be invoked.
+     * Opens a portion of the zip for reading. The zip must be open for this method to be invoked.
+     * Note that if the zip has not been updated, the individual zip entries may not have been
+     * written yet.
      * @param start the index within the zip file to start reading
      * @param end the index within the zip file to end reading (the actual byte pointed by
      * <em>end</em> will not be read)
@@ -478,7 +478,7 @@ public class ZFile implements Closeable {
      * @throws IOException failed to open the zip file
      */
     @NonNull
-    InputStream open(final long start, final long end) throws IOException {
+    public InputStream directOpen(final long start, final long end) throws IOException {
         Preconditions.checkState(mState != ZipFileState.CLOSED, "mState == ZipFileState.CLOSED");
         Preconditions.checkState(mRaf != null, "mRaf == null");
         Preconditions.checkArgument(start >= 0, "start < 0");
@@ -494,13 +494,14 @@ public class ZFile implements Closeable {
                     return -1;
                 }
 
-                mRaf.seek(mCurr);
-                int r = mRaf.read();
-                if (r >= 0) {
+                byte b[] = new byte[1];
+                int r = directRead(mCurr, b);
+                if (r > 0) {
                     mCurr++;
+                    return b[0];
+                } else {
+                    return -1;
                 }
-
-                return r;
             }
 
             @Override
@@ -511,7 +512,6 @@ public class ZFile implements Closeable {
                 Preconditions.checkArgument(len >= 0, "len < 0");
                 Preconditions.checkArgument(off + len <= b.length, "off + len > b.length");
 
-                mRaf.seek(mCurr);
                 long availableToRead = end - mCurr;
                 long toRead = Math.min(len, availableToRead);
 
@@ -523,7 +523,7 @@ public class ZFile implements Closeable {
                     throw new IOException("Cannot read " + toRead + " bytes.");
                 }
 
-                int r = mRaf.read(b, off, (int) toRead);
+                int r = directRead(mCurr, b, off, Ints.checkedCast(toRead));
                 if (r > 0) {
                     mCurr += r;
                 }
@@ -531,45 +531,6 @@ public class ZFile implements Closeable {
                 return r;
             }
         };
-    }
-
-    /**
-     * Reads raw data from the zip file. This is equivalent to opening the specified range using
-     * {@link #open(long, long)} and reading the input stream into a byte array.
-     * @param start the index within the zip file to start reading
-     * @param end the index within the zip file to end reading (the actual byte pointed by
-     * <em>end</em> will not be read)
-     * @return a byte array with exactly <em>end - start</em> bytes with the contents of the zip
-     * file between those two indexes
-     * @throws IOException failed to read the data
-     */
-    byte[] read(long start, long end) throws IOException {
-        Preconditions.checkState(mState != ZipFileState.CLOSED, "mState == ZipFileState.CLOSED");
-        Preconditions.checkState(mRaf != null, "mRaf == null");
-        Preconditions.checkArgument(start >= 0, "start < 0");
-        Preconditions.checkArgument(end >= start, "end < start");
-        Preconditions.checkArgument(end <= mRaf.length(), "end > mRaf.length()");
-
-        long totalL = end - start;
-        if (totalL > Integer.MAX_VALUE) {
-            throw new IOException("Cannot allocate byte array with " + totalL + " bytes.");
-        }
-
-        int total = (int) totalL;
-
-        byte data[] = new byte[total];
-
-        if (total > 0) {
-            mRaf.seek(start);
-            int missing = total;
-            while (missing > 0) {
-                int r = mRaf.read(data, total - missing, missing);
-                Verify.verify(r >= 0, "File should be big enough to read until 'end'.");
-                missing -= r;
-            }
-        }
-
-        return data;
     }
 
     /**
@@ -660,7 +621,9 @@ public class ZFile implements Closeable {
         notify(new IOExceptionFunction<ZFileExtension, IOExceptionRunnable>() {
             @Nullable
             @Override
-            public IOExceptionRunnable apply(ZFileExtension input) throws IOException {
+            public IOExceptionRunnable apply(@Nullable ZFileExtension input) throws IOException {
+                Verify.verifyNotNull(input);
+                assert input != null;
                 input.updated();
                 return null;
             }
@@ -718,8 +681,8 @@ public class ZFile implements Closeable {
         /*
          * Place the cursor and write the local header.
          */
-        mRaf.seek(offset);
-        mRaf.write(entry.toHeaderData());
+        byte[] headerData = entry.toHeaderData();
+        directWrite(offset, headerData);
 
         /*
          * Get the source data. If a compressed source exists, that's the one we want.
@@ -737,9 +700,11 @@ public class ZFile implements Closeable {
          */
         byte[] chunk = new byte[IO_BUFFER_SIZE];
         int r;
+        long writeOffset = offset + headerData.length;
         InputStream is = source.open();
         while ((r = is.read(chunk)) >= 0) {
-            mRaf.write(chunk, 0, r);
+            directWrite(writeOffset, chunk, 0, r);
+            writeOffset += r;
         }
 
         is.close();
@@ -771,8 +736,7 @@ public class ZFile implements Closeable {
         byte[] newDirectoryBytes = newDirectory.toBytes();
         long directoryOffset = mMap.size();
 
-        mRaf.seek(directoryOffset);
-        mRaf.write(newDirectoryBytes);
+        directWrite(directoryOffset, newDirectoryBytes);
         mMap.extend(directoryOffset + newDirectoryBytes.length);
 
         if (newDirectoryBytes.length > 0) {
@@ -812,8 +776,7 @@ public class ZFile implements Closeable {
         byte[] eocdBytes = eocd.toData();
         long eocdOffset = mMap.size();
 
-        mRaf.seek(eocdOffset);
-        mRaf.write(eocdBytes);
+        directWrite(eocdOffset, eocdBytes);
         mMap.extend(eocdOffset + eocdBytes.length);
 
         mEocdEntry = mMap.add(eocdOffset, eocdOffset + eocdBytes.length, eocd);
@@ -1310,5 +1273,106 @@ public class ZFile implements Closeable {
                 mIsNotifying = false;
             }
         }
+    }
+
+    /**
+     * Directly writes data in the zip file. <strong>Incorrect use of this method may corrupt the
+     * zip file</strong>. Invoking this method may force the zip to be reopened in read/write
+     * mode.
+     * @param offset the offset at which data should be written
+     * @param data the data to write, may be an empty array
+     * @param start start offset in  {@code data} where data to write is located
+     * @param count number of bytes of data to write
+     * @throws IOException failed to write the data
+     */
+    public void directWrite(long offset, @NonNull byte[] data, int start, int count)
+            throws IOException {
+        Preconditions.checkArgument(offset >= 0, "offset < 0");
+        Preconditions.checkArgument(start >= 0, "start >= 0");
+        Preconditions.checkArgument(count >= 0, "count >= 0");
+
+        if (data.length == 0) {
+            return;
+        }
+
+        Preconditions.checkArgument(start <= data.length, "start > data.length");
+        Preconditions.checkArgument(start + count <= data.length, "start + count > data.length");
+
+        reopenRw();
+        assert mRaf != null;
+
+        mRaf.seek(offset);
+        mRaf.write(data, start, count);
+    }
+
+    /**
+     * Same as {@code directWrite(offset, data, 0, data.length)}.
+     * @param offset the offset at which data should be written
+     * @param data the data to write, may be an empty array
+     * @throws IOException failed to write the data
+     */
+    public void directWrite(long offset, @NonNull byte[] data) throws IOException {
+        directWrite(offset, data, 0, data.length);
+    }
+
+    /**
+     * Directly reads data from the zip file. Invoking this method may force the zip to be reopened
+     * in read/write mode.
+     * @param offset the offset at which data should be written
+     * @param data the array where read data should be stored
+     * @param start start position in the array where to write data to
+     * @param count how many bytes of data can be written
+     * @return how many bytes of data have been written or {@code -1} if there are no more bytes
+     * to be read
+     * @throws IOException failed to write the data
+     */
+    public int directRead(long offset, @NonNull byte[] data, int start, int count)
+            throws IOException {
+        Preconditions.checkArgument(offset >= 0, "offset < 0");
+        Preconditions.checkArgument(start >= 0, "start >= 0");
+        Preconditions.checkArgument(count >= 0, "count >= 0");
+
+        if (data.length == 0) {
+            return 0;
+        }
+
+        Preconditions.checkArgument(start <= data.length, "start > data.length");
+        Preconditions.checkArgument(start + count <= data.length, "start + count > data.length");
+
+        /*
+         * Only force a reopen if the file is closed.
+         */
+        if (mRaf == null) {
+            reopenRw();
+            assert mRaf != null;
+        }
+
+        mRaf.seek(offset);
+        return mRaf.read(data, start, count);
+    }
+
+    /**
+     * Same as {@code directRead(offset, data, 0, data.length)}.
+     * @param offset the offset at which data should be read
+     * @param data receives the read data, may be an empty array
+     * @throws IOException failed to read the data
+     */
+    public int directRead(long offset, @NonNull byte[] data) throws IOException {
+        return directRead(offset, data, 0, data.length);
+    }
+
+    /**
+     * Reads exactly @code data.length} bytes of data, failing if it was not possible to read all
+     * the requested data.
+     * @param offset the offset at which to start reading
+     * @param data the array that receives the data read
+     * @throws IOException failed to read some data or there is not enough data to read
+     */
+    public void directFullyRead(long offset, @NonNull byte[] data) throws IOException {
+        Preconditions.checkArgument(offset >= 0, "offset < 0");
+        Preconditions.checkNotNull(mRaf, "File is closed");
+
+        mRaf.seek(offset);
+        RandomAccessFileUtils.fullyRead(mRaf, data);
     }
 }
