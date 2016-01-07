@@ -2091,6 +2091,26 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testMethodInvocationWithGenericTypeArgs() throws Exception {
+        // Test case for https://code.google.com/p/android/issues/detail?id=198439
+        assertEquals("No warnings.",
+                lintProject(
+                        java("src/test/pkg/Loader.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "public abstract class Loader<P> {\n"
+                                + "    private P mParam;\n"
+                                + "\n"
+                                + "    public abstract void loadInBackground(P val);\n"
+                                + "\n"
+                                + "    public void load() {\n"
+                                + "        // Invoke a method that takes a generic type.\n"
+                                + "        loadInBackground(mParam);\n"
+                                + "    }\n"
+                                + "}\n")
+                ));
+    }
+
     @Override
     protected boolean ignoreSystemErrors() {
         //noinspection SimplifiableIfStatement

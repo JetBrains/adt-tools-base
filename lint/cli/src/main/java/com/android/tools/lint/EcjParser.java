@@ -1198,6 +1198,9 @@ public class EcjParser extends JavaParser {
                 ReferenceBinding ref = (ReferenceBinding) mBinding;
                 StringBuilder sb = new StringBuilder(100);
                 char[][] name = ref.compoundName;
+                if (name == null) {
+                    return super.getInternalName();
+                }
                 for (char[] segment : name) {
                     if (sb.length() != 0) {
                         sb.append('/');
