@@ -442,7 +442,7 @@ public class VectorDrawableTest {
         assertThatApk(apk).doesNotContainResource("drawable/heart.xml");
 
         TestFileUtils.appendToFile(project.getBuildFile(),
-                "android.defaultConfig.generatedDensities = []");
+                "android.defaultConfig.vectorDrawables.useSupportLibrary = true");
 
         project.execute("assembleDebug");
         assertPngGenerationDisabled(apk);

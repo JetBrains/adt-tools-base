@@ -436,6 +436,7 @@ public class MergeResources extends IncrementalTask {
         this.generatedDensities = generatedDensities;
     }
 
+    @Input
     public boolean isDisableVectorDrawables() {
         return disableVectorDrawables;
     }
