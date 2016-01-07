@@ -31,15 +31,12 @@ import com.android.sdklib.repository.local.LocalSdk;
 import com.android.sdklib.repositoryv2.AndroidSdkHandler;
 import com.android.sdklib.repositoryv2.IdDisplay;
 import com.android.sdklib.repositoryv2.meta.DetailsTypes;
+import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Finds and allows access to all {@link IAndroidTarget}s in a given SDK, either using the old
@@ -50,7 +47,7 @@ public class AndroidTargetManager {
     /**
      * Cache of the {@link IAndroidTarget}s we created from platform and addon packages.
      */
-    private Collection<IAndroidTarget> mTargets;
+    private Map<LocalPackage, IAndroidTarget> mTargets;
 
     /**
      * Pseudo-targets created when we have a system image with no corresponding platform or addon.
@@ -68,6 +65,8 @@ public class AndroidTargetManager {
      */
     private Map<String, String> mLoadErrors;
 
+    private Comparator<LocalPackage> TARGET_COMPARATOR;
+
     /**
      * Create a manager using the new {@link AndroidSdkHandler}/{@link RepoManager} mechanism for
      * finding packages.
@@ -78,13 +77,34 @@ public class AndroidTargetManager {
     }
 
     /**
-     * Returns the targets (platforms & addons) that are available in the SDK.
+     * Returns the targets (platforms & addons) that are available in the SDK, sorted in
+     * ascending order by API level.
      */
     @NonNull
     public Collection<IAndroidTarget> getTargets(@NonNull ProgressIndicator progress) {
+        return getTargetMap(progress).values();
+    }
+
+    @NonNull
+    private Map<LocalPackage, IAndroidTarget> getTargetMap(@NonNull ProgressIndicator progress) {
         if (mTargets == null) {
             Map<String, String> newErrors = Maps.newHashMap();
-            List<IAndroidTarget> result = Lists.newArrayList();
+            TARGET_COMPARATOR = new Comparator<LocalPackage>() {
+                @Override
+                public int compare(LocalPackage o1, LocalPackage o2) {
+                    DetailsTypes.ApiDetailsType details1 = (DetailsTypes.ApiDetailsType) o1
+                            .getTypeDetails();
+                    DetailsTypes.ApiDetailsType details2 = (DetailsTypes.ApiDetailsType) o2
+                            .getTypeDetails();
+                    AndroidVersion version1 = DetailsTypes.getAndroidVersion(details1);
+                    AndroidVersion version2 = DetailsTypes.getAndroidVersion(details2);
+                    return ComparisonChain.start()
+                            .compare(version1, version2)
+                            .compare(details1.getClass().getName(), details2.getClass().getName())
+                            .result();
+                }
+            };
+            Map<LocalPackage, IAndroidTarget> result = Maps.newTreeMap(TARGET_COMPARATOR);
             RepoManager manager = mSdkHandler.getSdkManager(progress);
             Map<AndroidVersion, PlatformTarget> platformTargets = Maps.newHashMap();
             for (LocalPackage p : manager.getPackages().getLocalPackages().values()) {
@@ -92,7 +112,7 @@ public class AndroidTargetManager {
                 if (details instanceof DetailsTypes.PlatformDetailsType) {
                     try {
                         PlatformTarget target = new PlatformTarget(p, mSdkHandler, mFop, progress);
-                        result.add(target);
+                        result.put(p, target);
                         platformTargets.put(target.getVersion(), target);
                     } catch (IllegalArgumentException e) {
                         newErrors.put(p.getPath(), e.getMessage());
@@ -106,8 +126,8 @@ public class AndroidTargetManager {
                       .getAndroidVersion((DetailsTypes.AddonDetailsType) details);
                     PlatformTarget baseTarget = platformTargets.get(addonVersion);
                     if (baseTarget != null) {
-                        result.add(new AddonTarget(p, baseTarget,
-                          mSdkHandler.getSystemImageManager(progress), mFop));
+                        result.put(p, new AddonTarget(p, baseTarget,
+                          mSdkHandler.getSystemImageManager(progress), progress, mFop));
                     }
                 }
             }
@@ -126,7 +146,7 @@ public class AndroidTargetManager {
         for (IAndroidTarget target : getTargets(progress)) {
             foundImages.addAll(Arrays.asList(target.getSystemImages()));
         }
-        Map<MissingTarget, MissingTarget> missingTargets = Maps.newHashMap();
+        Map<MissingTarget, MissingTarget> missingTargets = Maps.newTreeMap();
         for (ISystemImage image : mSdkHandler.getSystemImageManager(progress).getImages()) {
             if (!foundImages.contains(image)) {
                 IdDisplay vendor = image.getAddonVendor();
@@ -148,6 +168,8 @@ public class AndroidTargetManager {
     /**
      * Returns the targets (possibly including pseudo-targets containing system images with no
      * associated target) that are available in the SDK.
+     * Returned collection is sorted with the non-missing targets included first, in ascending
+     * order by API level, and then the missing targets (if included), also ascending by api level.
      */
     @NonNull
     public Collection<IAndroidTarget> getTargets(boolean includeMissing,
@@ -155,8 +177,8 @@ public class AndroidTargetManager {
         if (includeMissing) {
             if (mMissingTargets == null) {
                 List<IAndroidTarget> result = Lists.newArrayList();
-                result.addAll(getMissingTargets(progress));
                 result.addAll(getTargets(progress));
+                result.addAll(getMissingTargets(progress));
                 mMissingTargets = result;
             }
             return mMissingTargets;
@@ -191,5 +213,10 @@ public class AndroidTargetManager {
     @Nullable
     public String getErrorForPackage(@NonNull String path) {
         return mLoadErrors.get(path);
+    }
+
+    @Nullable
+    public IAndroidTarget getTargetFromPackage(@NonNull LocalPackage p, @NonNull ProgressIndicator progress) {
+        return getTargetMap(progress).get(p);
     }
 }

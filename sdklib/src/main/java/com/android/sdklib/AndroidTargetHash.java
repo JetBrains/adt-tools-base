@@ -178,5 +178,4 @@ public abstract class AndroidTargetHash {
     public static boolean isPlatform(@NonNull String hashString) {
         return hashString.startsWith(PLATFORM_HASH_PREFIX);
     }
-
 }

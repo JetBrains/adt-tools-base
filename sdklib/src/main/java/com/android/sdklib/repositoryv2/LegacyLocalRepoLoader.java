@@ -34,10 +34,10 @@ import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
 import com.android.sdklib.SdkManager;
-import com.android.sdklib.SystemImage;
 import com.android.sdklib.internal.androidTarget.PlatformTarget;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.descriptors.PkgType;
+import com.android.sdklib.repository.local.LocalAddonPkgInfo;
 import com.android.sdklib.repository.local.LocalAddonSysImgPkgInfo;
 import com.android.sdklib.repository.local.LocalPkgInfo;
 import com.android.sdklib.repository.local.LocalPlatformPkgInfo;
@@ -161,8 +161,14 @@ public class LegacyLocalRepoLoader implements FallbackLocalRepoLoader {
                             .getLayoutlibApi();
                 }
             }
+            List<IAndroidTarget.OptionalLibrary> addonLibraries = Lists.newArrayList();
+            if (mWrapped instanceof LocalAddonPkgInfo) {
+                addonLibraries = LegacyRepoUtils
+                        .parseLegacyAdditionalLibraries(mWrapped.getLocalDir(), mProgress, mFop);
+            }
             return LegacyRepoUtils
-                    .createTypeDetails(mWrapped.getDesc(), layoutVersion, mProgress);
+              .createTypeDetails(mWrapped.getDesc(), layoutVersion, addonLibraries, getLocation(),
+                mProgress, mFop);
         }
 
         @NonNull
@@ -223,6 +229,9 @@ public class LegacyLocalRepoLoader implements FallbackLocalRepoLoader {
                     return SdkConstants.FD_DOCS;
                 case PKG_PLATFORM:
                     return DetailsTypes.getPlatformPath(mWrapped.getDesc().getAndroidVersion());
+                case PKG_ADDON:
+                    return DetailsTypes.getAddonPath(mWrapped.getDesc().getVendor(),
+                            mWrapped.getDesc().getAndroidVersion(), mWrapped.getDesc().getName());
                 case PKG_SYS_IMAGE:
                 case PKG_ADDON_SYS_IMAGE:
                     ISystemImage sysImg;

@@ -110,7 +110,9 @@
             <xsd:element name="description" type="xsd:string" minOccurs="1"/>
         </xsd:sequence>
         <!-- Path to the library jar file relative to the libs directory in the package.-->
-        <xsd:attribute name="localJarPath" use="required" type="xsd:string"/>
+        <!-- Note that this should be required, but since it's absent in the legacy XML we don't
+             have a way to populate it when a legacy xml is installed. -->
+        <xsd:attribute name="localJarPath" type="xsd:string"/>
         <!-- Name of this library -->
         <xsd:attribute name="name" use="required" type="xsd:string"/>
         <!-- Whether a manifest file entry is required for this library -->

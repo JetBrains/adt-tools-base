@@ -26,7 +26,6 @@ import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.repositoryv2.IdDisplay;
 
-import java.io.File;
 import java.util.List;
 
 import javax.xml.bind.annotation.XmlTransient;
@@ -139,6 +138,11 @@ public final class DetailsTypes {
          */
         @Nullable
         Libraries getLibraries();
+
+        /**
+         * Gets the {@link IAndroidTarget.OptionalLibrary}s provided by this package.
+         */
+        void setLibraries(@Nullable Libraries libraries);
 
         /**
          * Sets the tag for this package. Used to match addon packages with corresponding system
@@ -309,60 +313,4 @@ public final class DetailsTypes {
         return SdkConstants.FD_BUILD_TOOLS + RepoPackage.PATH_SEPARATOR + revision.toString();
     }
 
-    /**
-     * Information about a {@link IAndroidTarget.OptionalLibrary} provided by a package.
-     */
-    public abstract static class Library implements IAndroidTarget.OptionalLibrary {
-
-        /**
-         * Reference to the path of the containing package.
-         */
-        private File mPackagePath;
-
-        /**
-         * Sets the path of the containing package. Must be called before calling {@link #getJar()}.
-         */
-        public void setPackagePath(@NonNull File packagePath) {
-            mPackagePath = packagePath;
-        }
-
-        /**
-         * Absolute path to the library jar file.
-         */
-        @Override
-        @NonNull
-        public File getJar() {
-            assert mPackagePath != null;
-            String localPath = getLocalJarPath();
-            localPath = localPath.replace('/', File.separatorChar);
-            return new File(mPackagePath, SdkConstants.OS_ADDON_LIBS_FOLDER + localPath);
-        }
-
-        /**
-         * Path to the library jar file relative to the {@code libs} directory in the package.
-         */
-        @NonNull
-        public abstract String getLocalJarPath();
-
-        /**
-         * The name of the library.
-         */
-        @Override
-        @NonNull
-        public abstract String getName();
-
-        /**
-         * User-friendly description of the library.
-         */
-        @Override
-        @NonNull
-        public abstract String getDescription();
-
-        /**
-         * Whether a manifest entry is required for this library.
-         */
-        @Override
-        public abstract boolean isManifestEntryRequired();
-
-    }
 }
