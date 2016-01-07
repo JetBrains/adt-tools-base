@@ -484,8 +484,6 @@ public class VectorDrawableTest {
 
     private static void assertPngGenerationDisabled(File apk) throws Exception {
         assertThatApk(apk).containsResource("drawable/heart.xml");
-        // For some reason AAPT seems to be creating this copy.
-        assertThatApk(apk).containsResource("drawable-v21/heart.xml");
         assertThatApk(apk).containsResource("drawable/icon.png");
         assertThatApk(apk).containsResource("drawable-v22/no_need.xml");
         assertThatApk(apk).doesNotContainResource("drawable-anydpi-v21/heart.xml");
