@@ -2353,6 +2353,13 @@ public abstract class TaskManager {
                 variantData.assembleVariantTask.dependsOn(fullBuildInfoGeneratorTask.getName());
             }
 
+            // when dealing with 23 and above, we should make sure the packaging task is running
+            // as part of the incremental build in case resources have changed and need to be
+            // repackaged in the main APK.
+            if (!addDexFilesToApk) {
+                variantScope.getInstantRunIncrementalTask().dependsOn(tasks, appTask);
+            }
+
             // Add an assemble task
             if (multiOutput) {
                 // create a task for this output
