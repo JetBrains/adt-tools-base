@@ -437,7 +437,7 @@ public abstract class BasePlugin {
                 new BuildTypeFactory(instantiator, project, project.getLogger()));
         final NamedDomainObjectContainer<ProductFlavor> productFlavorContainer = project.container(
                 ProductFlavor.class,
-                new ProductFlavorFactory(instantiator, project, project.getLogger()));
+                new ProductFlavorFactory(instantiator, project, project.getLogger(), extraModelInfo));
         final NamedDomainObjectContainer<SigningConfig>  signingConfigContainer = project.container(
                 SigningConfig.class,
                 new SigningConfigFactory(instantiator));

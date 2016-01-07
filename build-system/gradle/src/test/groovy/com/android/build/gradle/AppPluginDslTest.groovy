@@ -246,20 +246,20 @@ public class AppPluginDslTest extends BaseTest {
 
             productFlavors {
                 f1 {
-                    flavorDimension   "dimension1"
+                    dimension   "dimension1"
                 }
                 f2 {
-                    flavorDimension   "dimension1"
+                    dimension   "dimension1"
                 }
 
                 fa {
-                    flavorDimension   "dimension2"
+                    dimension   "dimension2"
                 }
                 fb {
-                    flavorDimension   "dimension2"
+                    dimension   "dimension2"
                 }
                 fc {
-                    flavorDimension   "dimension2"
+                    dimension   "dimension2"
                 }
             }
         }

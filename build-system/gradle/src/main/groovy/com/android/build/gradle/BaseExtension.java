@@ -189,7 +189,7 @@ public abstract class BaseExtension implements AndroidConfig {
         logger = Logging.getLogger(this.getClass());
 
         defaultConfig = instantiator.newInstance(ProductFlavor.class, BuilderConstants.MAIN,
-                project, instantiator, project.getLogger());
+                project, instantiator, project.getLogger(), extraModelInfo);
 
         aaptOptions = instantiator.newInstance(AaptOptions.class);
         dexOptions = instantiator.newInstance(DexOptions.class);
