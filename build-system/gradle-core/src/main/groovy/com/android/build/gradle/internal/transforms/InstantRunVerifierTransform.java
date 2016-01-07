@@ -29,6 +29,7 @@ import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
+import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
@@ -139,7 +140,12 @@ public class InstantRunVerifierTransform extends Transform {
             resultSoFar = processFolderInputs(resultSoFar, isIncremental, transformInput);
             resultSoFar = processJarInputs(resultSoFar, transformInput);
         }
-        variantScope.getInstantRunBuildContext().setVerifierResult(resultSoFar);
+
+        // if we are being asked to produce the RESTART artifacts, there is no need to set the
+        // verifier result, however the transform needed to run to backup the .class files.
+        if (!variantScope.getGlobalScope().isActive(OptionalCompilationStep.RESTART_ONLY)) {
+            variantScope.getInstantRunBuildContext().setVerifierResult(resultSoFar);
+        }
     }
 
     @NonNull

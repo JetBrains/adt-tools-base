@@ -28,9 +28,11 @@ import com.android.build.api.transform.Status;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
+import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunVerifier;
+import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableList;
@@ -65,6 +67,9 @@ public class InstantRunVerifierTransformTest {
     VariantScope variantScope;
 
     @Mock
+    GlobalScope globalScope;
+
+    @Mock
     Context context;
 
     @Mock
@@ -77,6 +82,8 @@ public class InstantRunVerifierTransformTest {
     public void setUpMock() {
         when(variantScope.getIncrementalVerifierDir()).thenReturn(backupDir);
         when(variantScope.getInstantRunBuildContext()).thenReturn(instantRunBuildContext);
+        when(variantScope.getGlobalScope()).thenReturn(globalScope);
+        when(globalScope.isActive(OptionalCompilationStep.RESTART_ONLY)).thenReturn(false);
     }
 
     @Test

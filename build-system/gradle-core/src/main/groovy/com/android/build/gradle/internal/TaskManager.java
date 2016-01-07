@@ -125,6 +125,7 @@ import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.PackageSplitAbi;
 import com.android.build.gradle.tasks.PackageSplitRes;
+import com.android.build.gradle.tasks.PrePackageApplication;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.ProcessManifest;
 import com.android.build.gradle.tasks.ProcessTestManifest;
@@ -2278,6 +2279,13 @@ public abstract class TaskManager {
 
         boolean multiOutput = variantData.getOutputs().size() > 1;
 
+        AndroidTask<PrePackageApplication> prePackageApp = androidTasks.create(tasks,
+                new PrePackageApplication.ConfigAction(variantScope));
+        if (getIncrementalMode(variantScope.getVariantConfiguration())
+                != IncrementalMode.NONE) {
+            prePackageApp.dependsOn(tasks, variantScope.getInstantRunAnchorTask());
+        }
+
         // loop on all outputs. The only difference will be the name of the task, and location
         // of the generated data.
         for (final ApkVariantOutputData variantOutputData : variantData.getOutputs()) {
@@ -2298,7 +2306,7 @@ public abstract class TaskManager {
             AndroidTask<PackageApplication> packageApp = androidTasks.create(
                     tasks, new PackageApplication.ConfigAction(variantOutputScope, addDexFilesToApk));
 
-            packageApp.dependsOn(tasks, variantOutputScope.getProcessResourcesTask());
+            packageApp.dependsOn(tasks, prePackageApp, variantOutputScope.getProcessResourcesTask());
 
             packageApp.optionalDependsOn(
                     tasks,
@@ -2309,11 +2317,6 @@ public abstract class TaskManager {
                     variantData.javaCompilerTask,
                     variantOutputData.packageSplitResourcesTask,
                     variantOutputData.packageSplitAbiTask);
-
-            if (getIncrementalMode(variantScope.getVariantConfiguration())
-                    != IncrementalMode.NONE) {
-                packageApp.dependsOn(tasks, variantScope.getInstantRunAnchorTask());
-            }
 
             TransformManager transformManager = variantScope.getTransformManager();
 
