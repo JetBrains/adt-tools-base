@@ -83,7 +83,7 @@ public class IncrementalShrinker<T> extends AbstractShrinker<T> {
             throws IOException, IncrementalRunImpossibleException {
         final Set<T> classesToWrite = Sets.newConcurrentHashSet();
         final Set<File> classFilesToDelete = Sets.newConcurrentHashSet();
-        final Set<UnresolvedReference<T>> unresolvedReferences = Sets.newConcurrentHashSet();
+        final Set<PostProcessingData.UnresolvedReference<T>> unresolvedReferences = Sets.newConcurrentHashSet();
 
         Stopwatch stopwatch = Stopwatch.createStarted();
         SetMultimap<T, String> oldState = resetState();
@@ -180,7 +180,7 @@ public class IncrementalShrinker<T> extends AbstractShrinker<T> {
         return oldState;
     }
 
-    private void finishGraph(@NonNull Iterable<UnresolvedReference<T>> unresolvedReferences) {
+    private void finishGraph(@NonNull Iterable<PostProcessingData.UnresolvedReference<T>> unresolvedReferences) {
         resolveReferences(unresolvedReferences);
         waitForAllTasks();
     }
@@ -188,7 +188,7 @@ public class IncrementalShrinker<T> extends AbstractShrinker<T> {
     private void processInputs(
             @NonNull Iterable<TransformInput> inputs,
             @NonNull final Collection<T> classesToWrite,
-            @NonNull final Collection<UnresolvedReference<T>> unresolvedReferences)
+            @NonNull final Collection<PostProcessingData.UnresolvedReference<T>> unresolvedReferences)
             throws IncrementalRunImpossibleException {
         for (final TransformInput input : inputs) {
             for (JarInput jarInput : input.getJarInputs()) {
@@ -252,7 +252,7 @@ public class IncrementalShrinker<T> extends AbstractShrinker<T> {
      */
     private void processChangedClassFile(
             @NonNull File file,
-            @NonNull final Collection<UnresolvedReference<T>> unresolvedReferences,
+            @NonNull final Collection<PostProcessingData.UnresolvedReference<T>> unresolvedReferences,
             @NonNull final Collection<T> classesToWrite)
             throws IOException, IncrementalRunImpossibleException {
         ClassReader classReader = new ClassReader(Files.toByteArray(file));

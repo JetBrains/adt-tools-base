@@ -54,6 +54,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -155,9 +156,7 @@ public abstract class AbstractShrinkerTest {
                 String.format("Class %s does not exist in output.", className),
                 outFile.exists());
 
-        assertEquals(
-                "Members in class " + className + " not correct.",
-                Sets.newHashSet(members), getMembers(outFile));
+        assertThat(getMembers(outFile)).containsExactlyElementsIn(Arrays.asList(members));
     }
 
     @NonNull

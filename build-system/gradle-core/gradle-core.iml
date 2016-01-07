@@ -993,6 +993,7 @@
       </library>
     </orderEntry>
     <orderEntry type="library" name="antlr" level="project" />
+    <orderEntry type="library" name="slf4j-api" level="project" />
     <orderEntry type="module-library">
       <library>
         <CLASSES>

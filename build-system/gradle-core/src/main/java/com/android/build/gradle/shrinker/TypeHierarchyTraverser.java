@@ -34,43 +34,54 @@ public class TypeHierarchyTraverser<T> extends TreeTraverser<T> {
 
     private final boolean mIncludeInterfaces;
 
+    private final boolean mIncludeSuperclasses;
+
     private TypeHierarchyTraverser(
             ShrinkerGraph<T> graph,
             ShrinkerLogger shrinkerLogger,
+            boolean includeSuperclasses,
             boolean includeInterfaces) {
         mGraph = graph;
         mShrinkerLogger = shrinkerLogger;
+        mIncludeSuperclasses = includeSuperclasses;
         mIncludeInterfaces = includeInterfaces;
     }
 
     public static <T> TypeHierarchyTraverser<T> superclassesAndInterfaces(ShrinkerGraph<T> graph,
             ShrinkerLogger shrinkerLogger) {
-        return new TypeHierarchyTraverser<T>(graph, shrinkerLogger, true);
+        return new TypeHierarchyTraverser<T>(graph, shrinkerLogger, true, true);
     }
 
     public static <T> TypeHierarchyTraverser<T> superclasses(ShrinkerGraph<T> graph,
             ShrinkerLogger shrinkerLogger) {
-        return new TypeHierarchyTraverser<T>(graph, shrinkerLogger, false);
+        return new TypeHierarchyTraverser<T>(graph, shrinkerLogger, true, false);
+    }
+
+    public static <T> TypeHierarchyTraverser<T> interfaces(ShrinkerGraph<T> graph,
+            ShrinkerLogger shrinkerLogger) {
+        return new TypeHierarchyTraverser<T>(graph, shrinkerLogger, false, true);
     }
 
     @Override
     public Iterable<T> children(@NonNull T klass) {
         List<T> result = Lists.newArrayList();
-        try {
-            T superclass = mGraph.getSuperclass(klass);
-            if (superclass != null) {
-                if (!mGraph.isClassKnown(superclass)) {
-                    throw new ClassLookupException(mGraph.getClassName(superclass));
+        if (mIncludeSuperclasses) {
+            try {
+                T superclass = mGraph.getSuperclass(klass);
+                if (superclass != null) {
+                    if (!mGraph.isClassKnown(superclass)) {
+                        throw new ClassLookupException(mGraph.getClassName(superclass));
+                    }
+                    result.add(superclass);
                 }
-                result.add(superclass);
+            } catch (ClassLookupException e) {
+                mShrinkerLogger.invalidClassReference(mGraph.getClassName(klass), e.getClassName());
+                return Collections.emptyList();
             }
-        } catch (ClassLookupException e) {
-            mShrinkerLogger.invalidClassReference(mGraph.getClassName(klass), e.getClassName());
-            return Collections.emptyList();
         }
 
-        try {
-            if (mIncludeInterfaces) {
+        if (mIncludeInterfaces) {
+            try {
                 T[] interfaces = mGraph.getInterfaces(klass);
                 for (T iface : interfaces) {
                     if (!mGraph.isClassKnown(iface)) {
@@ -81,9 +92,9 @@ public class TypeHierarchyTraverser<T> extends TreeTraverser<T> {
                         result.add(iface);
                     }
                 }
+            } catch (ClassLookupException e) {
+                mShrinkerLogger.invalidClassReference(mGraph.getClassName(klass), e.getClassName());
             }
-        } catch (ClassLookupException e) {
-            mShrinkerLogger.invalidClassReference(mGraph.getClassName(klass), e.getClassName());
         }
 
         return result;
