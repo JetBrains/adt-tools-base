@@ -8,6 +8,7 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
 import com.android.sdklib.repositoryv2.generated.common.v1.LibraryType;
+import com.android.sdklib.repositoryv2.meta.Library;
 
 
 /**
@@ -81,7 +82,7 @@ public class LibrariesType
         return this.library;
     }
 
-    public List<com.android.sdklib.repositoryv2.meta.DetailsTypes.Library> getLibrary() {
+    public List<Library> getLibrary() {
         return ((List) getLibraryInternal());
     }
 

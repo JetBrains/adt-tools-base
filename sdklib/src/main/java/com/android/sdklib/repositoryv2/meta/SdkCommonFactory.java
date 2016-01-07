@@ -19,6 +19,8 @@ package com.android.sdklib.repositoryv2.meta;
 import com.android.annotations.NonNull;
 import com.android.sdklib.repositoryv2.IdDisplay;
 
+import java.io.File;
+
 /**
  * Parent class for {@code ObjectFactories} created by xjc from sdk-common-XX.xsd, for
  * creating sdk-specific types shared by multiple concrete schemas.
@@ -31,4 +33,29 @@ public abstract class SdkCommonFactory {
      */
     @NonNull
     public abstract IdDisplay createIdDisplayType();
+
+    /**
+     * Create a new {@link Library};
+     */
+    @NonNull
+    public abstract Library createLibraryType();
+
+    /**
+     * Convenience to create and initialize a {@link Library}.
+     */
+    public Library createLibraryType(
+            @NonNull String libraryName,
+            @NonNull String jarPath,
+            @NonNull String description,
+            @NonNull File packagePath,
+            boolean requireManifestEntry) {
+        Library result = createLibraryType();
+        result.setName(libraryName);
+        result.setLocalJarPath(jarPath);
+        result.setDescription(description);
+        result.setManifestEntryRequired(requireManifestEntry);
+        result.setPackagePath(packagePath);
+        return result;
+    }
+
 }

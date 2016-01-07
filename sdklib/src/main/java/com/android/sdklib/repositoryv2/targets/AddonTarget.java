@@ -30,15 +30,15 @@ import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
 import com.android.sdklib.repository.local.PackageParserUtils;
 import com.android.sdklib.repositoryv2.IdDisplay;
+import com.android.sdklib.repositoryv2.LegacyRepoUtils;
 import com.android.sdklib.repositoryv2.meta.DetailsTypes;
+import com.android.sdklib.repositoryv2.meta.Library;
 import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -78,18 +78,21 @@ public class AddonTarget implements IAndroidTarget {
      */
     private File mDefaultSkin;
 
+    private List<OptionalLibrary> mAdditionalLibraries;
+
     /**
      * Construct a new {@link AddonTarget}.
-     *
-     * @param p          The {@link LocalPackage} containing this target.
+     *  @param p          The {@link LocalPackage} containing this target.
      * @param baseTarget The {@link IAndroidTarget} on which this addon is based.
      * @param sysImgMgr  A {@link SystemImageManager}, used to find {@link ISystemImage}s associated
-     *                   associated with this target.
+ *                   associated with this target.
+     * @param progress
      * @param fop        {@link FileOp} to use for file operations. For normal use should be {@link
      *                   FileOpUtils#create()}.
      */
     public AddonTarget(@NonNull LocalPackage p, @NonNull IAndroidTarget baseTarget,
-            @NonNull SystemImageManager sysImgMgr, @NonNull FileOp fop) {
+            @NonNull SystemImageManager sysImgMgr, @NonNull ProgressIndicator progress,
+            @NonNull FileOp fop) {
         mPackage = p;
         mBasePlatform = baseTarget;
         TypeDetails details = p.getTypeDetails();
@@ -130,6 +133,30 @@ public class AddonTarget implements IAndroidTarget {
                 mDefaultSkin = mBasePlatform.getDefaultSkin();
             }
         }
+
+        mAdditionalLibraries = parseAdditionalLibraries(p, progress, fop);
+    }
+
+    @NonNull
+    private static List<OptionalLibrary> parseAdditionalLibraries(@NonNull LocalPackage p,
+            @NonNull ProgressIndicator progress, @NonNull FileOp fop) {
+        DetailsTypes.AddonDetailsType.Libraries libraries = ((DetailsTypes.AddonDetailsType) p
+                .getTypeDetails()).getLibraries();
+        List<OptionalLibrary> result = Lists.newArrayList();
+        if (libraries != null) {
+            for (Library library : libraries.getLibrary()) {
+                if (library.getLocalJarPath() == null) {
+                    // We must be looking at a legacy package. Abort and use the libraries derived
+                    // in the old way.
+                    return LegacyRepoUtils
+                            .parseLegacyAdditionalLibraries(p.getLocation(), progress, fop);
+                }
+                library.setPackagePath(p.getLocation());
+                result.add(library);
+            }
+        }
+
+        return result;
     }
 
     @Override
@@ -233,7 +260,7 @@ public class AddonTarget implements IAndroidTarget {
     @NonNull
     @Override
     public List<OptionalLibrary> getAdditionalLibraries() {
-        return ImmutableList.<OptionalLibrary>copyOf(mDetails.getLibraries().getLibrary());
+        return mAdditionalLibraries;
     }
 
     @Override

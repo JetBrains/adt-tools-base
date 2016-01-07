@@ -16,8 +16,11 @@
 
 package com.android.sdklib;
 
+import static com.android.sdklib.repositoryv2.meta.DetailsTypes.AddonDetailsType;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.repository.api.LocalPackage;
 import com.android.sdklib.repositoryv2.IdDisplay;
 
 import java.io.File;
@@ -78,14 +81,26 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
         /** The name of the library, as used in the manifest (&lt;uses-library&gt;). */
         @NonNull
         String getName();
-        /** Location of the jar file. */
-        @NonNull
+
+        /**
+         * Location of the jar file. Should never be {@code null} when retrieved from a target,
+         * but may be in some cases when retrieved from an {@link AddonDetailsType}.
+         */
+        @Nullable
         File getJar();
         /** Description of the library. */
         @NonNull
         String getDescription();
         /** Whether the library requires a manifest entry */
         boolean isManifestEntryRequired();
+
+        /**
+         * Path to the library jar file relative to the {@code libs} directory in the package.
+         * Can be {@code null} when retrieved from a {@link LocalPackage} that was installed from
+         * a legacy source.
+         */
+        @Nullable
+        String getLocalJarPath();
     }
 
     /**

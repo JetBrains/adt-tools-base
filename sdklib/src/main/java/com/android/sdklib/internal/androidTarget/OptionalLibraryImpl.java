@@ -17,13 +17,18 @@
 package com.android.sdklib.internal.androidTarget;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.sdklib.IAndroidTarget;
+import com.android.sdklib.repositoryv2.meta.Library;
+import com.google.common.base.Objects;
 
 import java.io.File;
 
 /**
  * Internal implementation of OptionalLibrary
+ * @deprecated in favor of {@link Library}
  */
+@Deprecated
 public class OptionalLibraryImpl implements IAndroidTarget.OptionalLibrary {
 
     @NonNull
@@ -66,5 +71,31 @@ public class OptionalLibraryImpl implements IAndroidTarget.OptionalLibrary {
     @Override
     public boolean isManifestEntryRequired() {
         return mRequireManifestEntry;
+    }
+
+    @Nullable
+    @Override
+    public String getLocalJarPath() {
+        return getJar().getName();
+    }
+
+    public boolean equals(Object o) {
+        if (!(o instanceof IAndroidTarget.OptionalLibrary)) {
+            return false;
+        }
+        IAndroidTarget.OptionalLibrary lib = (IAndroidTarget.OptionalLibrary)o;
+        return Objects.equal(lib.getLocalJarPath(), getLocalJarPath()) && lib.getName()
+                .equals(getName());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(getLocalJarPath(), getName());
+    }
+
+    @Override
+    public String toString() {
+        return String.format("OptionalLibrary[name=\"%1$s\" description=\"%2$s\" jar=\"%3$s\"]",
+                getName(), getDescription(), getLocalJarPath());
     }
 }

@@ -214,8 +214,8 @@ public class MissingTarget implements IAndroidTarget {
     public int compareTo(IAndroidTarget o) {
         Ordering order = Ordering.natural().nullsFirst();
         return ComparisonChain.start()
-          .compare(mVendor, o.getVendor(), order)
           .compare(mVersion, o.getVersion(), order)
+          .compare(mVendor, o.getVendor(), order)
           .compare(mName, o.getName(), order).result();
     }
 

@@ -32,4 +32,6 @@ public abstract class AddonFactory extends ElementFactory<Repository> {
     @NonNull
     public abstract DetailsTypes.AddonDetailsType createAddonDetailsType();
 
+    @NonNull
+    public abstract DetailsTypes.AddonDetailsType.Libraries createLibrariesType();
 }
