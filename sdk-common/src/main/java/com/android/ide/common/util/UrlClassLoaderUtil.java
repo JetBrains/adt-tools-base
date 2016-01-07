@@ -16,7 +16,7 @@
 
 package com.android.ide.common.util;
 
-import java.lang.reflect.Method;
+import java.io.Closeable;
 import java.net.URLClassLoader;
 
 public final class UrlClassLoaderUtil {
@@ -27,17 +27,12 @@ public final class UrlClassLoaderUtil {
      * URLClassLoader, on Windows, locks the .jar file forever.
      */
     public static void attemptToClose(URLClassLoader classLoader) {
-        Method closeMethod;
-        try {
-            closeMethod = classLoader.getClass().getDeclaredMethod("close");
-        } catch (NoSuchMethodException e) {
-            // On Java 6, we can't do anything
-            return;
-        }
-        try {
-            closeMethod.invoke(classLoader);
-        } catch (Throwable e) {
-            // Unable to close.
+        if (classLoader instanceof Closeable) {
+            try {
+                ((Closeable) classLoader).close();
+            } catch (Throwable e) {
+                // Ignore - unable to close.
+            }
         }
     }
 }
