@@ -220,9 +220,9 @@ public class MergeManifests extends ManifestProcessorTask {
         private final VariantOutputScope scope;
         private final List<Feature> optionalFeatures;
 
-        public ConfigAction(VariantOutputScope scope, List<Feature> optionaFeatures) {
+        public ConfigAction(VariantOutputScope scope, List<Feature> optionalFeatures) {
             this.scope = scope;
-            this.optionalFeatures = optionaFeatures;
+            this.optionalFeatures = optionalFeatures;
         }
 
         @NonNull
