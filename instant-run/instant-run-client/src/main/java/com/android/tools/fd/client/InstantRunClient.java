@@ -36,12 +36,10 @@ import com.android.ddmlib.TimeoutException;
 import com.android.tools.fd.runtime.ApplicationPatch;
 import com.android.tools.fd.runtime.Paths;
 import com.android.utils.ILogger;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Charsets;
 import com.google.common.base.Splitter;
-import com.google.common.hash.HashFunction;
-import com.google.common.hash.Hasher;
-import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
 
 import java.io.DataInputStream;
@@ -54,6 +52,10 @@ import java.net.UnknownHostException;
 import java.util.List;
 
 public class InstantRunClient {
+    private static final String LOCAL_HOST = "127.0.0.1";
+
+    /** Local port on the desktop machine via which we tunnel to the Android device */
+    private static final int DEFAULT_LOCAL_PORT = 46622; // Note: just a random number, hopefully it is a free/available port on the host
 
     /** Prefix for classes.dex files */
     private static final String CLASSES_DEX_PREFIX = "classes";
@@ -61,37 +63,43 @@ public class InstantRunClient {
     /** Suffix for classes.dex files */
     private static final String CLASSES_DEX_SUFFIX = ".dex";
 
-    private static final String LOCAL_HOST = "127.0.0.1";
 
     /** Instead of writing to the data folder, we can read/write to a local temp file instead */
-    private static final boolean USE_BUILD_ID_TEMP_FILE = !Boolean
-            .getBoolean("instantrun.use_datadir");
-
-    private final int STUDIO_PORT;
+    private static final boolean USE_BUILD_ID_TEMP_FILE =
+            !Boolean.getBoolean("instantrun.use_datadir");
 
     @NonNull
     private final UserFeedback mUserFeedback;
 
     @NonNull
-    private final ILogger LOG;
+    private final ILogger mLogger;
 
-    @Nullable
-    private final String packageName;
+    @NonNull
+    private final String mPackageName;
 
-    @SuppressWarnings({"FieldCanBeLocal", "FieldMayBeStatic"})
-    private final long token;
+    private final long mToken;
+    private final int mLocalPort;
 
     public InstantRunClient(
-            @Nullable String packageName,
-            int studio_port,
+            @NonNull String packageName,
             @NonNull UserFeedback userFeedback,
             @NonNull ILogger logger,
             long token) {
-        STUDIO_PORT = studio_port;
+        this(packageName, userFeedback, logger, token, DEFAULT_LOCAL_PORT);
+    }
+
+    @VisibleForTesting
+    InstantRunClient(
+            @NonNull String packageName,
+            @NonNull UserFeedback userFeedback,
+            @NonNull ILogger logger,
+            long token,
+            int port) {
+        mPackageName = packageName;
         mUserFeedback = userFeedback;
-        this.LOG = logger;
-        this.packageName = packageName;
-        this.token = token;
+        mLogger = logger;
+        mToken = token;
+        mLocalPort = port;
     }
 
     @NonNull
@@ -165,7 +173,7 @@ public class InstantRunClient {
                             output.writeInt(MESSAGE_PING);
                             // Wait for "pong"
                             boolean foreground = input.readBoolean();
-                            LOG.info(
+                            mLogger.info(
                                     "Ping sent and replied successfully, application seems to be running. Foreground="
                                             + foreground);
                             return foreground ? AppState.FOREGROUND : AppState.BACKGROUND;
@@ -181,46 +189,42 @@ public class InstantRunClient {
             @NonNull Communicator<T> communicator,
             @NonNull T errorValue) {
 
-        if (packageName == null) {
-            return errorValue;
-        }
-
         try {
-            device.createForward(STUDIO_PORT, packageName,
-                    IDevice.DeviceUnixSocketNamespace.ABSTRACT);
+            device.createForward(mLocalPort, mPackageName,
+                                 IDevice.DeviceUnixSocketNamespace.ABSTRACT);
             try {
-                return talkToAppWithinPortForward(communicator, errorValue);
+                return talkToAppWithinPortForward(communicator, errorValue, mLocalPort);
             } catch (UnknownHostException e) {
-                LOG.warning("%s", e);
+                mLogger.warning("%s", e);
             } catch (SocketException e) {
                 if (e.getMessage().equals("Broken pipe")) {
                     mUserFeedback.error("No connection to app; cannot sync changes");
                     return errorValue;
                 }
-                LOG.warning("%s", e);
+                mLogger.warning("%s", e);
             } catch (IOException e) {
-                LOG.warning("%s", e);
+                mLogger.warning("%s", e);
             } catch (Throwable e) {
-                LOG.warning("%s", e);
+                mLogger.warning("%s", e);
                 return errorValue;
             } finally {
-                device.removeForward(STUDIO_PORT, packageName,
-                        IDevice.DeviceUnixSocketNamespace.ABSTRACT);
+                device.removeForward(mLocalPort, mPackageName,
+                                     IDevice.DeviceUnixSocketNamespace.ABSTRACT);
             }
         } catch (TimeoutException e) {
-            LOG.warning("%s", e);
+            mLogger.warning("%s", e);
         } catch (AdbCommandRejectedException e) {
-            LOG.warning("%s", e);
+            mLogger.warning("%s", e);
         } catch (Throwable e) {
-            LOG.warning("%s", e);
+            mLogger.warning("%s", e);
         }
 
         return errorValue;
     }
 
-    private <T> T talkToAppWithinPortForward(@NonNull Communicator<T> communicator,
-            @NonNull T errorValue) throws IOException {
-        Socket socket = new Socket(LOCAL_HOST, STUDIO_PORT);
+    private static <T> T talkToAppWithinPortForward(@NonNull Communicator<T> communicator,
+      @NonNull T errorValue, int localPort) throws IOException {
+        Socket socket = new Socket(LOCAL_HOST, localPort);
         try {
             socket.setSoTimeout(8 * 1000); // Allow up to 8 second before timing out
             DataOutputStream output = new DataOutputStream(socket.getOutputStream());
@@ -252,18 +256,6 @@ public class InstantRunClient {
         }
     }
 
-    /**
-     * Checks whether the app with the given package name is already running on the given device.
-     *
-     * @return true if the app is already running and is listening for incremental updates.
-     */
-    public boolean isAppRunning(@NonNull IDevice device) {
-        AppState appState = getAppState(device);
-        // TODO: Use appState != AppState.NOT_RUNNING instead when we automatically
-        // handle fronting background activities here
-        return appState == AppState.FOREGROUND;
-    }
-
     public void showToast(@NonNull IDevice device, @NonNull final String message) {
         try {
             talkToApp(device, new Communicator<Boolean>() {
@@ -276,7 +268,7 @@ public class InstantRunClient {
                 }
             }, true);
         } catch (Throwable e) {
-            LOG.warning("%s", e);
+            mLogger.warning("%s", e);
         }
     }
 
@@ -355,11 +347,6 @@ public class InstantRunClient {
         mUserFeedback.notifyEnd(updateMode);
     }
 
-    @NonNull
-    public UserFeedback getUserFeedback() {
-        return mUserFeedback;
-    }
-
     /**
      * Called after a build &amp; successful push to device: updates the build id on the device to
      * whatever the build id was assigned by Gradle.
@@ -367,47 +354,42 @@ public class InstantRunClient {
      * @param device the device to push to
      */
     public void transferLocalIdToDeviceId(@NonNull IDevice device, @NonNull String buildId) {
-        if (packageName == null) {
-            LOG.warning("Package name is null");
-            return;
-        }
-
         try {
             if (USE_BUILD_ID_TEMP_FILE) {
-                String remoteIdFile = getDeviceIdFolder(packageName);
+                String remoteIdFile = getDeviceIdFolder(mPackageName);
                 //noinspection SSBasedInspection This should work
                 File local = File.createTempFile("build-id", "txt");
                 local.deleteOnExit();
                 Files.write(buildId, local, Charsets.UTF_8);
                 device.pushFile(local.getPath(), remoteIdFile);
             } else {
-                String remote = copyToDeviceScratchFile(device, packageName, buildId);
-                String dataDir = Paths.getDataDirectory(packageName);
+                String remote = copyToDeviceScratchFile(device, mPackageName, buildId);
+                String dataDir = Paths.getDataDirectory(mPackageName);
 
                 // We used to do this here:
                 //String cmd = "run-as " + pkg + " mkdir -p " + dataDir + "; run-as " + pkg + " cp " + remote + " " + dataDir + "/" + BUILD_ID_TXT;
                 // but it turns out "cp" is missing on API 15! Let's use cat and sh instead which seems to be available everywhere.
                 // (Note: echo is not, it's missing on API 19.)
-                String cmd = "run-as " + packageName + " mkdir -p " + dataDir + "; cat " + remote
-                        + " | run-as " + packageName + " sh -c 'cat > " + dataDir + "/"
-                        + Paths.BUILD_ID_TXT + "'";
+                String cmd = "run-as " + mPackageName + " mkdir -p " + dataDir + "; cat " + remote
+                             + " | run-as " + mPackageName + " sh -c 'cat > " + dataDir + "/"
+                             + Paths.BUILD_ID_TXT + "'";
                 CollectingOutputReceiver receiver = new CollectingOutputReceiver();
                 device.executeShellCommand(cmd, receiver);
                 String output = receiver.getOutput();
                 if (!output.trim().isEmpty()) {
-                    LOG.warning("Unexpected shell output: " + output);
+                    mLogger.warning("Unexpected shell output: " + output);
                 }
             }
         } catch (IOException ioe) {
-            LOG.warning("Couldn't write build id file", ioe);
+            mLogger.warning("Couldn't write build id file", ioe);
         } catch (AdbCommandRejectedException e) {
-            LOG.warning("%s", e);
+            mLogger.warning("%s", e);
         } catch (TimeoutException e) {
-            LOG.warning("%s", e);
+            mLogger.warning("%s", e);
         } catch (ShellCommandUnresponsiveException e) {
-            LOG.warning("%s", e);
+            mLogger.warning("%s", e);
         } catch (SyncException e) {
-            LOG.warning("%s", e);
+            mLogger.warning("%s", e);
         }
     }
 
@@ -416,13 +398,9 @@ public class InstantRunClient {
      */
     @Nullable
     public String getDeviceBuildId(@NonNull IDevice device) {
-        if (packageName == null) {
-            LOG.warning("Package name is null");
-            return null;
-        }
         try {
             if (USE_BUILD_ID_TEMP_FILE) {
-                String remoteIdFile = getDeviceIdFolder(packageName);
+                String remoteIdFile = getDeviceIdFolder(mPackageName);
                 File localIdFile = createTempFile("build-id", "txt");
                 try {
                     device.pullFile(remoteIdFile, localIdFile.getPath());
@@ -434,10 +412,10 @@ public class InstantRunClient {
                     localIdFile.delete();
                 }
             } else {
-                String remoteIdFile = Paths.getDataDirectory(packageName) + "/"
-                        + Paths.BUILD_ID_TXT;
+                String remoteIdFile = Paths.getDataDirectory(mPackageName) + "/"
+                                      + Paths.BUILD_ID_TXT;
                 CollectingOutputReceiver receiver = new CollectingOutputReceiver();
-                device.executeShellCommand("run-as " + packageName + " cat " + remoteIdFile,
+                device.executeShellCommand("run-as " + mPackageName + " cat " + remoteIdFile,
                         receiver);
                 String output = receiver.getOutput().trim();
                 String id;
@@ -453,7 +431,7 @@ public class InstantRunClient {
                             receiver);
                     output = receiver.getOutput().trim();
                     if (!output.isEmpty()) {
-                        LOG.info(output);
+                        mLogger.info(output);
                     }
                     File localIdFile = createTempFile("build-id", "txt");
                     device.pullFile(remoteTmpFile, localIdFile.getPath());
@@ -467,20 +445,20 @@ public class InstantRunClient {
             }
         } catch (IOException ignore) {
         } catch (AdbCommandRejectedException e) {
-            LOG.warning("%s", e);
+            mLogger.warning("%s", e);
         } catch (SyncException e) {
-            LOG.warning("%s", e);
+            mLogger.warning("%s", e);
         } catch (TimeoutException e) {
-            LOG.warning("%s", e);
+            mLogger.warning("%s", e);
         } catch (ShellCommandUnresponsiveException e) {
-            LOG.warning("%s", e);
+            mLogger.warning("%s", e);
         }
 
         return null;
     }
 
     private void writeToken(@NonNull DataOutputStream output) throws IOException {
-        output.writeLong(token);
+        output.writeLong(mToken);
     }
 
     /**
@@ -587,22 +565,17 @@ public class InstantRunClient {
             @NonNull List<FileTransfer> files,
             @NonNull IDevice device,
             @NonNull final String buildId) {
-        if (packageName == null) {
-            LOG.warning("Package name is null, cannot install patches.");
-            return false;
-        }
-
         try {
-            String dexFolder = Paths.getDexFileDirectory(packageName);
+            String dexFolder = Paths.getDexFileDirectory(mPackageName);
 
             // Ensure the dir exists
             CollectingOutputReceiver receiver = new CollectingOutputReceiver();
             //noinspection SpellCheckingInspection
-            device.executeShellCommand("run-as " + packageName + " mkdir -p " + dexFolder, receiver);
+            device.executeShellCommand("run-as " + mPackageName + " mkdir -p " + dexFolder, receiver);
             receiver = new CollectingOutputReceiver();
             String output = receiver.getOutput();
             if (!output.trim().isEmpty()) {
-                LOG.warning("Unexpected shell output: " + output);
+                mLogger.warning("Unexpected shell output: " + output);
             }
 
             // List the files in the dex folder to compute a new .dex file name that follows the existing
@@ -617,14 +590,14 @@ public class InstantRunClient {
                     case TRANSFER_MODE_NEW_DEX:
                         // Compute a unique name
                         if (max == -1) {
-                            device.executeShellCommand("run-as " + packageName + " ls " + dexFolder, receiver);
+                            device.executeShellCommand("run-as " + mPackageName + " ls " + dexFolder, receiver);
                             max = getMaxDexFileNumber(receiver.getOutput());
                         }
                         path = dexFolder + '/' +
                                String.format("%s0x%04x%s", CLASSES_DEX_PREFIX, ++max, CLASSES_DEX_SUFFIX);
                         break;
                     case TRANSFER_MODE_RESOURCES:
-                        path = Paths.getInboxDirectory(packageName) + '/' + Paths.RESOURCE_FILE_NAME;
+                        path = Paths.getInboxDirectory(mPackageName) + '/' + Paths.RESOURCE_FILE_NAME;
                         break;
                     case TRANSFER_MODE_HOTSWAP:
                         throw new IllegalArgumentException("Hotswap patches can only be applied when the app is running");
@@ -633,28 +606,28 @@ public class InstantRunClient {
                 }
 
                 // Copy the restart .dex file over to the device in the dex folder with the new name
-                String remote = copyToDeviceScratchFile(device, packageName, file.source);
-                String cmd = "run-as " + packageName + " cp " + remote + " " + path;
+                String remote = copyToDeviceScratchFile(device, mPackageName, file.source);
+                String cmd = "run-as " + mPackageName + " cp " + remote + " " + path;
                 receiver = new CollectingOutputReceiver();
                 device.executeShellCommand(cmd, receiver);
                 output = receiver.getOutput();
                 if (!output.trim().isEmpty()) {
-                    LOG.warning("Unexpected shell output for " + cmd + ": " + output);
+                    mLogger.warning("Unexpected shell output for " + cmd + ": " + output);
                     return false;
                 }
             }
 
             return true;
         } catch (IOException ioe) {
-            LOG.warning("Couldn't write build id file: %s", ioe);
+            mLogger.warning("Couldn't write build id file: %s", ioe);
         } catch (AdbCommandRejectedException e) {
-            LOG.warning("%s", e);
+            mLogger.warning("%s", e);
         } catch (TimeoutException e) {
-            LOG.warning("%s", e);
+            mLogger.warning("%s", e);
         } catch (ShellCommandUnresponsiveException e) {
-            LOG.warning("%s", e);
+            mLogger.warning("%s", e);
         } catch (SyncException e) {
-            LOG.warning("%s", e);
+            mLogger.warning("%s", e);
         } finally {
             transferLocalIdToDeviceId(device, buildId);
         }
