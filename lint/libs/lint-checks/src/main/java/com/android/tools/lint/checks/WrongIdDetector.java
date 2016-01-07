@@ -27,6 +27,7 @@ import static com.android.SdkConstants.NEW_ID_PREFIX;
 import static com.android.SdkConstants.RELATIVE_LAYOUT;
 import static com.android.SdkConstants.TAG_ITEM;
 import static com.android.SdkConstants.VALUE_ID;
+import static com.android.tools.lint.checks.RequiredAttributeDetector.PERCENT_RELATIVE_LAYOUT;
 import static com.android.tools.lint.detector.api.LintUtils.editDistance;
 import static com.android.tools.lint.detector.api.LintUtils.getChildren;
 import static com.android.tools.lint.detector.api.LintUtils.isSameResourceFile;
@@ -187,7 +188,7 @@ public class WrongIdDetector extends LayoutDetector {
 
     @Override
     public Collection<String> getApplicableElements() {
-        return Arrays.asList(RELATIVE_LAYOUT, TAG_ITEM);
+        return Arrays.asList(RELATIVE_LAYOUT, TAG_ITEM, PERCENT_RELATIVE_LAYOUT);
     }
 
     @Override
@@ -371,13 +372,8 @@ public class WrongIdDetector extends LayoutDetector {
 
     @Override
     public void visitElement(@NonNull XmlContext context, @NonNull Element element) {
-        if (element.getTagName().equals(RELATIVE_LAYOUT)) {
-            if (mRelativeLayouts == null) {
-                mRelativeLayouts = new ArrayList<Element>();
-            }
-            mRelativeLayouts.add(element);
-        } else {
-            assert element.getTagName().equals(TAG_ITEM);
+        String tagName = element.getTagName();
+        if (tagName.equals(TAG_ITEM)) {
             String type = element.getAttribute(ATTR_TYPE);
             if (VALUE_ID.equals(type)) {
                 String name = element.getAttribute(ATTR_NAME);
@@ -388,6 +384,13 @@ public class WrongIdDetector extends LayoutDetector {
                     mDeclaredIds.add(ID_PREFIX + name);
                 }
             }
+        } else {
+            assert tagName.equals(RELATIVE_LAYOUT) || tagName.equals(
+                    PERCENT_RELATIVE_LAYOUT);
+            if (mRelativeLayouts == null) {
+                mRelativeLayouts = new ArrayList<Element>();
+            }
+            mRelativeLayouts.add(element);
         }
     }
 

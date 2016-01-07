@@ -47,6 +47,7 @@ import static com.android.SdkConstants.VALUE_TRUE;
 import static com.android.SdkConstants.VALUE_WRAP_CONTENT;
 import static com.android.SdkConstants.VIEW;
 import static com.android.SdkConstants.VIEW_INCLUDE;
+import static com.android.tools.lint.checks.RequiredAttributeDetector.PERCENT_RELATIVE_LAYOUT;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -64,8 +65,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -357,7 +358,7 @@ public class RelativeOverlapDetector extends LayoutDetector {
 
     @Override
     public Collection<String> getApplicableElements() {
-        return Collections.singletonList(RELATIVE_LAYOUT);
+        return Arrays.asList(RELATIVE_LAYOUT, PERCENT_RELATIVE_LAYOUT);
     }
 
     @Override
