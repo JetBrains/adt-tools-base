@@ -8,7 +8,6 @@ evaluationDependsOn(':base:builder-test-api')
 dependencies {
     compile project(':base:builder-model')
     compile project(':base:builder-test-api')
-    compile project(':base:transform-api')
 
     compile project(':base:sdklib')
     compile project(':base:sdk-common')

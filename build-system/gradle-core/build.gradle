@@ -30,7 +30,7 @@ ext.proguardVersion = "5.2.1"
 dependencies {
     compile project(':base:builder')
     compile project(':base:lint')
-    compile project(':base:transform-api')
+    compile project(':base:gradle-api')
     compile project(':dataBinding:compilerCommon')
     compile 'org.ow2.asm:asm:5.0.3'
     compile 'org.ow2.asm:asm-commons:5.0.3'
