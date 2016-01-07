@@ -223,6 +223,9 @@ public class DexTransform extends Transform {
                 new ToolOutputParser(new DexParser(), logger),
                 androidBuilder.getErrorReporter());
 
+        if (!isIncremental) {
+            outputProvider.deleteAll();
+        }
         try {
             // if only one scope or no per-scope dexing, just do a single pass that
             // runs dx on everything.
@@ -280,10 +283,6 @@ public class DexTransform extends Transform {
                     if (!isIncremental) {
                         FileUtils.deleteFolder(perStreamDexFolder);
                     }
-                } else if (!isIncremental) {
-                    // in this mode there's no merge and we dex it all separately into different
-                    // output location so we have to delete everything.
-                    outputProvider.deleteAll();
                 }
 
                 // dex all the different streams separately, then merge later (maybe)
