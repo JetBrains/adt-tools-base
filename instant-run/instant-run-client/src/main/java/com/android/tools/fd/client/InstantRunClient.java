@@ -94,7 +94,7 @@ public class InstantRunClient {
     }
 
     @VisibleForTesting
-    InstantRunClient(
+    public InstantRunClient(
             @NonNull String packageName,
             @NonNull UserFeedback userFeedback,
             @NonNull ILogger logger,
