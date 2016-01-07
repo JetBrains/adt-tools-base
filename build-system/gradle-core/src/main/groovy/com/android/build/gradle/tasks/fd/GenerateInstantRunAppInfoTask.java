@@ -36,6 +36,7 @@ import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.ide.common.packaging.PackagingUtils;
 import com.android.utils.XmlUtils;
 
 import org.gradle.api.tasks.InputFile;
@@ -123,8 +124,11 @@ public class GenerateInstantRunAppInfoTask extends BaseTask {
                     }
 
                     if (!applicationId.isEmpty()) {
+                        File buildDir = getProject().getBuildDir();
+                        long token = PackagingUtils.computeApplicationHash(buildDir);
+
                         // Must be *after* extractLibrary() to replace dummy version
-                        writeAppInfoClass(applicationId, applicationClass, 0L);
+                        writeAppInfoClass(applicationId, applicationClass, token);
                     }
                 }
             } catch (ParserConfigurationException e) {

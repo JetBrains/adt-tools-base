@@ -39,6 +39,9 @@ import com.android.utils.ILogger;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Charsets;
 import com.google.common.base.Splitter;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hasher;
+import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
 
 import java.io.DataInputStream;
@@ -76,17 +79,19 @@ public class InstantRunClient {
     private final String packageName;
 
     @SuppressWarnings({"FieldCanBeLocal", "FieldMayBeStatic"})
-    private final long token = 0L;
+    private final long token;
 
     public InstantRunClient(
             @Nullable String packageName,
             int studio_port,
             @NonNull UserFeedback userFeedback,
-            @NonNull ILogger logger) {
+            @NonNull ILogger logger,
+            long token) {
         STUDIO_PORT = studio_port;
         mUserFeedback = userFeedback;
         this.LOG = logger;
         this.packageName = packageName;
+        this.token = token;
     }
 
     @NonNull
