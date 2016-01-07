@@ -314,7 +314,7 @@ public class RepoManagerImpl extends RepoManager {
             synchronized (mTaskLock) {
                 if (mTask != null) {
                     // If there's a task running already, just add our callbacks to it.
-                    mTask.addCallbacks(onLocalComplete, onSuccess, onError);
+                    mTask.addCallbacks(onLocalComplete, onSuccess, onError, runner);
                 } else {
                     // Otherwise, create a new task.
                     mTask = new LoadTask(onLocalComplete, onSuccess, onError,
@@ -381,11 +381,34 @@ public class RepoManagerImpl extends RepoManager {
      */
     private class LoadTask implements ProgressRunner.ProgressRunnable {
 
-        private final List<RepoLoadedCallback> mOnSuccesses = Lists.newArrayList();
+        /**
+         * If callbacks get added to an already-running task, they might have a different
+         * {@link ProgressRunner} than the one used to run the task. Here we keep the callback
+         * along with the runner so the callback can be invoked correctly.
+         */
+        private class Callback {
+            private RepoLoadedCallback mCallback;
+            private ProgressRunner mRunner;
+
+            public Callback(@NonNull RepoLoadedCallback callback, @Nullable ProgressRunner runner) {
+                mCallback = callback;
+                mRunner = runner;
+            }
+
+            public ProgressRunner getRunner(ProgressRunner defaultRunner) {
+                return mRunner == null ? defaultRunner : mRunner;
+            }
+
+            public RepoLoadedCallback getCallback() {
+                return mCallback;
+            }
+        }
+
+        private final List<Callback> mOnSuccesses = Lists.newArrayList();
 
         private final List<Runnable> mOnErrors = Lists.newArrayList();
 
-        private final List<RepoLoadedCallback> mOnLocalCompletes = Lists.newArrayList();
+        private final List<Callback> mOnLocalCompletes = Lists.newArrayList();
 
         private final Downloader mDownloader;
 
@@ -396,7 +419,7 @@ public class RepoManagerImpl extends RepoManager {
                 @NonNull List<Runnable> onError,
                 @Nullable Downloader downloader,
                 @Nullable SettingsController settings) {
-            addCallbacks(onLocalComplete, onSuccess, onError);
+            addCallbacks(onLocalComplete, onSuccess, onError, null);
             mDownloader = downloader;
             mSettings = settings;
         }
@@ -408,9 +431,14 @@ public class RepoManagerImpl extends RepoManager {
          */
         public void addCallbacks(@NonNull List<RepoLoadedCallback> onLocalComplete,
                 @NonNull List<RepoLoadedCallback> onSuccess,
-                @NonNull List<Runnable> onError) {
-            mOnLocalCompletes.addAll(onLocalComplete);
-            mOnSuccesses.addAll(onSuccess);
+                @NonNull List<Runnable> onError,
+                @Nullable ProgressRunner runner) {
+            for (RepoLoadedCallback local : onLocalComplete) {
+                mOnLocalCompletes.add(new Callback(local, runner));
+            }
+            for (RepoLoadedCallback success : onSuccess) {
+                mOnSuccesses.add(new Callback(success, runner));
+            }
             mOnErrors.addAll(onError);
         }
 
@@ -446,9 +474,9 @@ public class RepoManagerImpl extends RepoManager {
                     return;
                 }
                 synchronized (mTaskLock) {
-                    for (RepoLoadedCallback onLocalComplete : mOnLocalCompletes) {
-                        runner.runSyncWithoutProgress(
-                                new CallbackRunnable(onLocalComplete, packages));
+                    for (Callback onLocalComplete : mOnLocalCompletes) {
+                        onLocalComplete.getRunner(runner).runSyncWithoutProgress(
+                                new CallbackRunnable(onLocalComplete.mCallback, packages));
                     }
                     mOnLocalCompletes.clear();
                 }
@@ -468,8 +496,7 @@ public class RepoManagerImpl extends RepoManager {
                             callback.doRun(packages);
                         }
                     }
-                }
-                else if (mPackages != null) {
+                } else if (mPackages != null) {
                     // If we didn't reload the remotes, use the previous remotes.
                     packages.setRemotePkgInfos(mPackages.getRemotePackages());
                 }
@@ -498,14 +525,14 @@ public class RepoManagerImpl extends RepoManager {
                     // kicked off when needed, set mTask to null.
                     mTask = null;
                     if (success) {
-                        for (final RepoLoadedCallback onLocalComplete : mOnLocalCompletes) {
+                        for (Callback onLocalComplete : mOnLocalCompletes) {
                             // in case some were added by another call in the interim.
-                            runner.runSyncWithoutProgress(
-                                    new CallbackRunnable(onLocalComplete, mPackages));
+                            onLocalComplete.getRunner(runner).runSyncWithoutProgress(
+                                    new CallbackRunnable(onLocalComplete.getCallback(), mPackages));
                         }
-                        for (final RepoLoadedCallback onSuccess : mOnSuccesses) {
-                            runner.runSyncWithoutProgress(
-                                    new CallbackRunnable(onSuccess, mPackages));
+                        for (Callback onSuccess : mOnSuccesses) {
+                            onSuccess.getRunner(runner).runSyncWithoutProgress(
+                                    new CallbackRunnable(onSuccess.getCallback(), mPackages));
                         }
                     } else {
                         for (final Runnable onError : mOnErrors) {
