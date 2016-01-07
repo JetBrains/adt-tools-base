@@ -20,8 +20,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.NdkHandler;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.ListMultimap;
 
 import org.gradle.api.Action;
 import org.gradle.api.InvalidUserDataException;
@@ -31,7 +29,6 @@ import org.gradle.model.ModelMap;
 import org.gradle.nativeplatform.NativeBinarySpec;
 
 import java.io.File;
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -50,43 +47,8 @@ public class StlConfiguration {
             "c++_static",
             "c++_shared");
 
-    private static final ListMultimap<String, String> STL_SOURCES =
-            ImmutableListMultimap.<String, String>builder()
-                    .putAll("system", ImmutableList.of(
-                            "system/include"))
-                    .putAll("stlport", ImmutableList.of(
-                            "stlport/stlport",
-                            "gabi++/include"))
-                    .putAll("gnustl", ImmutableList.of(
-                            "gnu-libstdc++",
-                            "gnu-libstdc++/4.6/include",
-                            "gnu-libstdc++/4.6/libs/armeabi-v7a/include",
-                            "gnu-libstdc++/4.6/include/backward"))
-                    .putAll("gabi++", ImmutableList.of(
-                            "gabi++",
-                            "gabi++/include"))
-                    .putAll("c++", ImmutableList.of(
-                            "../android/support/include",
-                            "llvm-libc++",
-                            "../android/compiler-rt",
-                            "llvm-libc++/libcxx/include",
-                            "gabi++/include",
-                            "../android/support/include"))
-                    .build();
-
     public static File getStlBaseDirectory(NdkHandler ndkHandler) {
         return new File(ndkHandler.getNdkDirectory(), "sources/cxx-stl/");
-    }
-
-    public static Collection<String> getStlSources(NdkHandler ndkHandler, String stl) {
-        final File stlBase = getStlBaseDirectory(ndkHandler);
-        String stlName = stl.equals("system") ? "system" : stl.substring(0, stl.indexOf('_'));
-
-        ImmutableList.Builder<String> builder = ImmutableList.builder();
-        for (String sourceDir : STL_SOURCES.get(stlName)) {
-            builder.add(stlBase.toString() + "/" + sourceDir);
-        }
-        return builder.build();
     }
 
     public static void checkStl(String stl) {

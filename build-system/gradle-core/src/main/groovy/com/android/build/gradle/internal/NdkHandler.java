@@ -22,9 +22,9 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.Toolchain;
+import com.android.repository.Revision;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
-import com.android.repository.Revision;
 import com.android.utils.FileUtils;
 import com.android.utils.Pair;
 import com.google.common.base.Charsets;
@@ -291,13 +291,6 @@ public class NdkHandler {
             return ndkDirectory + "/platforms/" + getPlatformVersion() + "/arch-"
                     + abi.getArchitecture();
         }
-    }
-
-    /**
-     * Return the directory containing prebuilt binaries such as gdbserver.
-     */
-    public File getPrebuiltDirectory(Abi abi) {
-        return new File(ndkDirectory, "prebuilt/android-" + abi.getArchitecture());
     }
 
     /**
