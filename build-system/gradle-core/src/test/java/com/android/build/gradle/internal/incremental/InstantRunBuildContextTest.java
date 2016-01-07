@@ -225,6 +225,7 @@ public class InstantRunBuildContextTest {
         InstantRunBuildContext initial = new InstantRunBuildContext();
         initial.setApiLevel(new AndroidVersion(23, null /* codeName */));
         initial.addChangedFile(InstantRunBuildContext.FileType.SPLIT, new File("/tmp/split-0.apk"));
+        initial.close();
         String buildInfo = initial.toXml();
 
         InstantRunBuildContext first = new InstantRunBuildContext();
@@ -233,6 +234,7 @@ public class InstantRunBuildContextTest {
         first.addChangedFile(InstantRunBuildContext.FileType.RELOAD_DEX,
                 new File("reload.dex"));
         first.setVerifierResult(InstantRunVerifierStatus.COMPATIBLE);
+        first.close();
         buildInfo = first.toXml();
 
         InstantRunBuildContext second = new InstantRunBuildContext();
@@ -240,26 +242,44 @@ public class InstantRunBuildContextTest {
         second.setApiLevel(new AndroidVersion(23, null));
         second.addChangedFile(InstantRunBuildContext.FileType.SPLIT, new File("split.apk"));
         second.setVerifierResult(InstantRunVerifierStatus.CLASS_ANNOTATION_CHANGE);
+
+        second.close();
         buildInfo = second.toXml();
 
         InstantRunBuildContext third = new InstantRunBuildContext();
         third.loadFromXml(buildInfo);
         third.setApiLevel(new AndroidVersion(23, null));
+        third.addChangedFile(InstantRunBuildContext.FileType.RESOURCES,
+                new File("resources-debug.ap_"));
         third.addChangedFile(InstantRunBuildContext.FileType.RELOAD_DEX, new File("reload.dex"));
         third.setVerifierResult(InstantRunVerifierStatus.COMPATIBLE);
 
         third.close();
         buildInfo = third.toXml();
+
+        InstantRunBuildContext fourth = new InstantRunBuildContext();
+        fourth.loadFromXml(buildInfo);
+        fourth.setApiLevel(new AndroidVersion(23, null));
+        fourth.addChangedFile(InstantRunBuildContext.FileType.RESOURCES,
+                new File("resources-debug.ap_"));
+        fourth.setVerifierResult(InstantRunVerifierStatus.COMPATIBLE);
+        fourth.close();
+        buildInfo = fourth.toXml();
+
         Document document = XmlUtils.parseDocument(buildInfo, false /* namespaceAware */);
 
         List<Element> builds = getElementsByName(document.getFirstChild(),
                 InstantRunBuildContext.TAG_BUILD);
         // first build should have been removed due to the coldswap presence.
-        assertThat(builds).hasSize(3);
+        assertThat(builds).hasSize(4);
         assertThat(builds.get(1).getAttribute(InstantRunBuildContext.ATTR_TIMESTAMP)).isEqualTo(
                 String.valueOf(second.getBuildId()));
         assertThat(builds.get(2).getAttribute(InstantRunBuildContext.ATTR_TIMESTAMP)).isEqualTo(
                 String.valueOf(third.getBuildId()));
+        assertThat(getElementsByName(builds.get(2), InstantRunBuildContext.TAG_ARTIFACT))
+                .named("Superseded resources.ap_ artifact should be removed.")
+                .hasSize(1);
+
     }
 
     @Test
