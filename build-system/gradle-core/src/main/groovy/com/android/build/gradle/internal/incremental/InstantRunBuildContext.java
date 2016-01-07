@@ -18,6 +18,8 @@ package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.OptionalCompilationStep;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.sdklib.AndroidVersion;
 import com.android.utils.XmlUtils;
@@ -61,6 +63,9 @@ public class InstantRunBuildContext {
     static final String ATTR_TYPE = "type";
     static final String ATTR_LOCATION = "location";
     static final String ATTR_API_LEVEL = "api-level";
+    static final String ATTR_FORMAT= "format";
+
+    static final String CURRENT_FORMAT = "1";
 
     public enum TaskType {
         JAVAC,
@@ -113,6 +118,16 @@ public class InstantRunBuildContext {
         public Build(long buildId, @NonNull Optional<InstantRunVerifierStatus> verifierStatus) {
             this.buildId = buildId;
             this.verifierStatus = verifierStatus;
+        }
+
+        @Nullable
+        public Artifact getArtifactForType(@NonNull FileType fileType) {
+            for (Artifact artifact : artifacts) {
+                if (artifact.fileType == fileType) {
+                    return artifact;
+                }
+            }
+            return null;
         }
 
         private Element toXml(@NonNull Document document) {
@@ -298,7 +313,7 @@ public class InstantRunBuildContext {
         if (fileType == FileType.MAIN) {
             // because of signing/aligning, we can be notified several times of the main APK
             // construction, last one wins.
-            Artifact previousArtifact = getArtifactForType(FileType.MAIN);
+            Artifact previousArtifact = currentBuild.getArtifactForType(FileType.MAIN);
             if (previousArtifact != null) {
                 currentBuild.artifacts.remove(previousArtifact);
             }
@@ -309,19 +324,15 @@ public class InstantRunBuildContext {
                 currentBuild.artifacts.clear();
             }
 
-            // TODO: Remove unnecessary res.ap_ files.
-        }
-        currentBuild.artifacts.add(new Artifact(fileType, file));
-    }
-
-    @Nullable
-    public Artifact getArtifactForType(@NonNull FileType fileType) {
-        for (Artifact artifact : currentBuild.artifacts) {
-            if (artifact.fileType == fileType) {
-                return artifact;
+            // since the main APK is produced, no need to keep the RESOURCES record around in 23.
+            if (patchingPolicy == InstantRunPatchingPolicy.MARSHMALLOW_AND_ABOVE) {
+                Artifact resourcesApFile = currentBuild.getArtifactForType(FileType.RESOURCES);
+                if (resourcesApFile != null) {
+                    currentBuild.artifacts.remove(resourcesApFile);
+                }
             }
         }
-        return null;
+        currentBuild.artifacts.add(new Artifact(fileType, file));
     }
 
     @Nullable
@@ -329,6 +340,17 @@ public class InstantRunBuildContext {
         return previousBuilds.isEmpty() ? null : previousBuilds.lastEntry().getValue();
     }
 
+
+    @Nullable
+    public Artifact getPastBuildsArtifactForType(@NonNull FileType fileType) {
+        for (Build build : previousBuilds.values()) {
+            Artifact artifact = build.getArtifactForType(fileType);
+            if (artifact != null) {
+                return artifact;
+            }
+        }
+        return null;
+    }
 
     @VisibleForTesting
     Collection<Build> getPreviousBuilds() {
@@ -363,6 +385,16 @@ public class InstantRunBuildContext {
                     foundColdRestart = true;
                 }
             }
+            // when a coldswap build was found, remove all RESOURCES entries for previous builds
+            // as the resource is redelivered as part of the main split.
+            if (foundColdRestart
+                    && patchingPolicy == InstantRunPatchingPolicy.MARSHMALLOW_AND_ABOVE) {
+                Artifact resourceApArtifact = previousBuild.getArtifactForType(FileType.RESOURCES);
+                if (resourceApArtifact != null) {
+                    previousBuild.artifacts.remove(resourceApArtifact);
+                }
+            }
+
             // remove all DEX, SPLIT and Resources files from older built artifacts if we have
             // already seen a newer version, we only need to most recent one.
             for (Artifact artifact : new ArrayList<Artifact>(previousBuild.artifacts)) {
@@ -458,6 +490,7 @@ public class InstantRunBuildContext {
         }
         currentBuild.toXml(document, instantRun);
         instantRun.setAttribute(ATTR_API_LEVEL, String.valueOf(apiLevel.getApiLevel()));
+        instantRun.setAttribute(ATTR_FORMAT, CURRENT_FORMAT);
 
         for (Build build : previousBuilds.values()) {
             instantRun.appendChild(build.toXml(document));

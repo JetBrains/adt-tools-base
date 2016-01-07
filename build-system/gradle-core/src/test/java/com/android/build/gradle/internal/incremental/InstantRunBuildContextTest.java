@@ -67,6 +67,15 @@ public class InstantRunBuildContextTest {
     }
 
     @Test
+    public void testFormatPresence() throws ParserConfigurationException {
+        InstantRunBuildContext instantRunBuildContext = new InstantRunBuildContext();
+        String persistedState = instantRunBuildContext.toXml();
+        assertThat(persistedState).isNotEmpty();
+        assertThat(persistedState).contains(InstantRunBuildContext.ATTR_FORMAT
+                + "=\"" + InstantRunBuildContext.CURRENT_FORMAT + "\"");
+    }
+
+    @Test
     public void testLoadingFromCleanState()
             throws ParserConfigurationException, SAXException, IOException {
         InstantRunBuildContext instantRunBuildContext = new InstantRunBuildContext();

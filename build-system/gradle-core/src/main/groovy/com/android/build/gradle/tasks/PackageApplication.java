@@ -42,6 +42,7 @@ import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.tooling.BuildException;
 
 import java.io.File;
+import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.Collections;
@@ -147,7 +148,7 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
 
     private ApiVersion minSdkVersion;
 
-    private InstantRunBuildContext instantRunBuildContext;
+    private InstantRunBuildContext instantRunContext;
 
     @Input
     public boolean getJniDebugBuild() {
@@ -190,8 +191,27 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
         this.minSdkVersion = version;
     }
 
+    @InputFile
+    public File getMarkerFile() {
+        return markerFile;
+    }
+
+    private File markerFile;
+
     @Override
     protected void doFullTaskAction() {
+
+        // if the blocker file is there, do not run.
+        if (getMarkerFile().exists()) {
+            try {
+                if (MarkerFile.readMarkerFile(getMarkerFile()) == MarkerFile.Command.BLOCK) {
+                    return;
+                }
+            } catch (IOException e) {
+                getLogger().warn("Cannot read marker file, proceed with execution", e);
+            }
+        }
+
         try {
             Collection<File> javaResourceFiles = getJavaResourceFiles();
             getBuilder().packageApk(
@@ -232,7 +252,7 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
         }
         // mark this APK production, this will eventually be saved when instant-run is enabled.
         // this might get overriden if the apk is signed/aligned.
-        instantRunBuildContext.addChangedFile(InstantRunBuildContext.FileType.MAIN,
+        instantRunContext.addChangedFile(InstantRunBuildContext.FileType.MAIN,
                 getOutputFile());
     }
 
@@ -286,7 +306,7 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
             packageApp.setVariantName(
                     variantScope.getVariantConfiguration().getFullName());
             packageApp.setMinSdkVersion(config.getMinSdkVersion());
-            packageApp.instantRunBuildContext = variantScope.getInstantRunBuildContext();
+            packageApp.instantRunContext = variantScope.getInstantRunBuildContext();
 
             if (config.isMinifyEnabled()
                     && config.getBuildType().isShrinkResources()
@@ -400,6 +420,9 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                     return scope.getPackageApk();
                 }
             });
+
+            packageApp.markerFile =
+                    PrePackageApplication.ConfigAction.getMarkerFile(variantScope);
         }
 
         private static File getOptionalDir(File dir) {
