@@ -266,7 +266,7 @@ public class ZFile implements Closeable {
                     throw new IOException("File exceeds size limit of " + Integer.MAX_VALUE + ".");
                 }
 
-                mMap.extend((int) rafSize);
+                mMap.extend(Ints.checkedCast(rafSize));
                 readData();
 
                 notify(new IOExceptionFunction<ZFileExtension, IOExceptionRunnable>() {
@@ -351,7 +351,7 @@ public class ZFile implements Closeable {
          */
         int lastToRead = LAST_BYTES_TO_READ;
         if (lastToRead > mRaf.length()) {
-            lastToRead = (int) mRaf.length();
+            lastToRead = Ints.checkedCast(mRaf.length());
         }
 
         byte[] last = new byte[lastToRead];
@@ -391,7 +391,7 @@ public class ZFile implements Closeable {
 
                 try {
                     eocd = new Eocd(eocdBytes);
-                    eocdStart = (int) mRaf.length() - lastToRead + foundEocdSignature;
+                    eocdStart = Ints.checkedCast(mRaf.length() - lastToRead + foundEocdSignature);
 
                     /*
                      * Make sure the EOCD takes the whole file up to the end.
@@ -457,7 +457,7 @@ public class ZFile implements Closeable {
                     + mEocdEntry.getStart() + ".");
         }
 
-        byte[] directoryData = new byte[(int) dirSize];
+        byte[] directoryData = new byte[Ints.checkedCast(dirSize)];
         directFullyRead(eocd.getDirectoryOffset(), directoryData);
 
         CentralDirectory directory = CentralDirectory.makeFromData(ByteSource.wrap(directoryData),
@@ -1073,7 +1073,7 @@ public class ZFile implements Closeable {
                     throw new IOException("Cannot read source with " + sourceSize + " bytes.");
                 }
 
-                byte data[] = new byte[(int) sourceSize];
+                byte data[] = new byte[Ints.checkedCast(sourceSize)];
                 int read = 0;
                 while (read < data.length) {
                     int r = fromInput.read(data, read, data.length - read);
