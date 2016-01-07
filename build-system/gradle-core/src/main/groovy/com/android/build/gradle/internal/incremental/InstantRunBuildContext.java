@@ -342,7 +342,7 @@ public class InstantRunBuildContext {
      */
     private void purge() {
         boolean foundColdRestart = false;
-        Set<File> splitFilesAlreadyFound = new HashSet<File>();
+        Set<String> splitFilesAlreadyFound = new HashSet<String>();
         // the oldest build is by definition the full build.
         Long initialFullBuild = previousBuilds.firstKey();
         // iterate from the most recent to the oldest build, which reflect the most up to date
@@ -368,10 +368,10 @@ public class InstantRunBuildContext {
             for (Artifact artifact : new ArrayList<Artifact>(previousBuild.artifacts)) {
                 if (artifact.isAccumulative()) {
                     // we don't remove artifacts from the first build.
-                    if (splitFilesAlreadyFound.contains(artifact.getLocation())) {
+                    if (splitFilesAlreadyFound.contains(artifact.getLocation().getAbsolutePath())) {
                         previousBuild.artifacts.remove(artifact);
                     } else {
-                        splitFilesAlreadyFound.add(artifact.getLocation());
+                        splitFilesAlreadyFound.add(artifact.getLocation().getAbsolutePath());
                     }
                 }
             }
