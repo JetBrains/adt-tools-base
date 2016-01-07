@@ -2063,9 +2063,9 @@ public abstract class TaskManager {
 
         // make the task that generates the AppInfo dependent on the first merge manifest task
         // so we can get its output file.
-        BaseVariantOutputData outputData = Iterators
-                .get(variantScope.getVariantData().getOutputs().iterator(), 0);
-        generateAppInfoAndroidTask.dependsOn(tasks, outputData.manifestProcessorTask);
+        VariantOutputScope outputScope =
+                variantScope.getVariantData().getOutputs().get(0).getScope();
+        generateAppInfoAndroidTask.dependsOn(tasks, outputScope.getManifestProcessorTask());
 
         // also add a new stream for the injector task output.
         variantScope.getTransformManager().addStream(OriginalStream.builder()
