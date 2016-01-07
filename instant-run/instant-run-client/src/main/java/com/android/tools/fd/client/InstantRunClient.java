@@ -394,10 +394,10 @@ public class InstantRunClient {
     }
 
     /**
-     * Returns the build id on the device, or null if it is not found.
+     * Returns the build timestamp on the device, or null if it is not found.
      */
     @Nullable
-    public String getDeviceBuildId(@NonNull IDevice device) {
+    public String getDeviceBuildTimestamp(@NonNull IDevice device) {
         try {
             if (USE_BUILD_ID_TEMP_FILE) {
                 String remoteIdFile = getDeviceIdFolder(mPackageName);
