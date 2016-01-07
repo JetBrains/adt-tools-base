@@ -25,6 +25,7 @@ import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.IncrementalTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.builder.model.VectorDrawablesOptions;
 import com.android.builder.png.QueuedCruncher;
 import com.android.builder.png.VectorDrawableRenderer;
 import com.android.ide.common.internal.PngCruncher;
@@ -98,6 +99,8 @@ public class MergeResources extends IncrementalTask {
     private List<ResourceSet> inputResourceSets;
 
     private final FileValidity<ResourceSet> fileValidity = new FileValidity<ResourceSet>();
+
+    private boolean disableVectorDrawables;
 
     private Collection<String> generatedDensities;
 
@@ -294,12 +297,12 @@ public class MergeResources extends IncrementalTask {
         }
     }
 
-    @Nullable
+    @NonNull
     private ResourcePreprocessor getPreprocessor() {
         // Only one pre-processor for now. The code will need slight changes when we add more.
         Collection<String> generatedDensitiesNames = getGeneratedDensities();
 
-        if (generatedDensitiesNames.isEmpty()) {
+        if (isDisableVectorDrawables()) {
             // If the user doesn't want any PNGs, leave the XML file alone as well.
             return new NoOpResourcePreprocessor();
         }
@@ -433,6 +436,14 @@ public class MergeResources extends IncrementalTask {
         this.generatedDensities = generatedDensities;
     }
 
+    public boolean isDisableVectorDrawables() {
+        return disableVectorDrawables;
+    }
+
+    public void setDisableVectorDrawables(boolean disableVectorDrawables) {
+        this.disableVectorDrawables = disableVectorDrawables;
+    }
+
     public static class ConfigAction implements TaskConfigAction<MergeResources> {
 
         @NonNull
@@ -494,10 +505,19 @@ public class MergeResources extends IncrementalTask {
             mergeResourcesTask.setProcess9Patch(process9Patch);
             mergeResourcesTask.setCrunchPng(extension.getAaptOptions().getCruncherEnabled());
 
-            Set<String> generatedDensities =
-                    variantData.getVariantConfiguration().getMergedFlavor().getGeneratedDensities();
+            VectorDrawablesOptions vectorDrawablesOptions = variantData
+                    .getVariantConfiguration()
+                    .getMergedFlavor()
+                    .getVectorDrawables();
+
+            Set<String> generatedDensities = vectorDrawablesOptions.getGeneratedDensities();
+
             mergeResourcesTask.setGeneratedDensities(
                     Objects.firstNonNull(generatedDensities, Collections.<String>emptySet()));
+
+            mergeResourcesTask.setDisableVectorDrawables(
+                    vectorDrawablesOptions.getUseSupportLibrary()
+                            || mergeResourcesTask.getGeneratedDensities().isEmpty());
 
             mergeResourcesTask.setUseNewCruncher(extension.getAaptOptions().getUseNewCruncher());
 

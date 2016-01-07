@@ -30,7 +30,6 @@ import com.android.build.gradle.internal.AndroidConfigHelper;
 import com.android.build.gradle.internal.ExecutionConfigurationUtil;
 import com.android.build.gradle.internal.ExtraModelInfo;
 import com.android.build.gradle.internal.JniLibsLanguageTransform;
-import com.android.build.gradle.internal.LanguageRegistryUtils;
 import com.android.build.gradle.internal.LibraryCache;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.NativeDependencyLinkage;
@@ -59,6 +58,7 @@ import com.android.build.gradle.managed.NdkConfig;
 import com.android.build.gradle.managed.NdkOptions;
 import com.android.build.gradle.managed.ProductFlavor;
 import com.android.build.gradle.managed.SigningConfig;
+import com.android.build.gradle.managed.VectorDrawablesOptions;
 import com.android.build.gradle.managed.adaptor.AndroidConfigAdaptor;
 import com.android.build.gradle.managed.adaptor.BuildTypeAdaptor;
 import com.android.build.gradle.managed.adaptor.DataBindingOptionsAdapter;
@@ -100,8 +100,6 @@ import org.gradle.internal.reflect.Instantiator;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.language.base.FunctionalSourceSet;
 import org.gradle.language.base.LanguageSourceSet;
-import org.gradle.language.base.internal.registry.LanguageRegistration;
-import org.gradle.language.base.internal.registry.LanguageRegistry;
 import org.gradle.language.base.internal.registry.LanguageTransformContainer;
 import org.gradle.model.Defaults;
 import org.gradle.model.Model;
@@ -112,7 +110,6 @@ import org.gradle.model.RuleSource;
 import org.gradle.model.internal.core.ModelReference;
 import org.gradle.model.internal.core.ModelRegistrations;
 import org.gradle.model.internal.registry.ModelRegistry;
-import org.gradle.platform.base.BinaryContainer;
 import org.gradle.platform.base.ComponentSpecContainer;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
@@ -402,14 +399,17 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         }
 
         @Defaults
-        public static void initDefaultConfig(
-                @Path("android.defaultConfig") ProductFlavor defaultConfig) {
+        public static void initDefaultConfigVectorDrawables(
+                @Path("android.defaultConfig.vectorDrawables") VectorDrawablesOptions vectorDrawablesOptions) {
+            vectorDrawablesOptions.setUseSupportLibrary(false);
 
             Set<Density> densities = Density.getRecommendedValuesForDevice();
             Set<String> strings = Sets.newHashSetWithExpectedSize(densities.size());
             for (Density density : densities) {
                 strings.add(density.getResourceValue());
             }
+
+            vectorDrawablesOptions.setGeneratedDensities(strings);
         }
 
         @Defaults

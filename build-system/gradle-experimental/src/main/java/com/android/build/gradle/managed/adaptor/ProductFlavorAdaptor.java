@@ -22,21 +22,14 @@ import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
 import com.android.build.gradle.managed.ProductFlavor;
 import com.android.builder.core.BuilderConstants;
-import com.android.builder.internal.ClassFieldImpl;
 import com.android.builder.model.ApiVersion;
-import com.android.builder.model.ClassField;
 import com.android.builder.model.SigningConfig;
-import com.google.common.base.Objects;
+import com.android.builder.model.VectorDrawablesOptions;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 
-import java.io.File;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * An adaptor to convert a ProductFlavor to CoreProductFlavor.
@@ -166,10 +159,10 @@ public class ProductFlavorAdaptor extends BaseConfigAdaptor implements CoreProdu
                 new SigningConfigAdaptor(productFlavor.getSigningConfig());
     }
 
-    @Nullable
+    @NonNull
     @Override
-    public Set<String> getGeneratedDensities() {
-        return ImmutableSet.copyOf(productFlavor.getGeneratedDensities());
+    public VectorDrawablesOptions getVectorDrawables() {
+        return productFlavor.getVectorDrawables();
     }
 
     @Override

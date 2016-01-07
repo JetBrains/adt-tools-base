@@ -15,6 +15,12 @@
  */
 
 package com.android.build.gradle.integration.application;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertWithMessage;
+import static com.android.build.gradle.integration.common.utils.TestFileUtils.searchAndReplace;
+import static com.google.common.base.Charsets.UTF_8;
+
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.utils.FileUtils;
@@ -24,12 +30,6 @@ import com.google.common.io.Files;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
-
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertWithMessage;
-import static com.android.build.gradle.integration.common.utils.TestFileUtils.searchAndReplace;
-import static com.google.common.base.Charsets.UTF_8;
 
 import java.io.File;
 
@@ -407,22 +407,21 @@ public class VectorDrawableTest {
     @Test
     public void disablingPngGeneration() throws Exception {
         TestFileUtils.appendToFile(project.getBuildFile(),
+                "android.defaultConfig.vectorDrawables.generatedDensities = []");
+
+        project.execute("clean", "assembleDebug");
+        File apk = project.getApk("debug");
+        assertPngGenerationDisabled(apk);
+    }
+
+    @Test
+    public void disablingPngGeneration_oldDsl() throws Exception {
+        TestFileUtils.appendToFile(project.getBuildFile(),
                 "android.defaultConfig.generatedDensities = []");
 
         project.execute("clean", "assembleDebug");
         File apk = project.getApk("debug");
-        assertThatApk(apk).containsResource("drawable/heart.xml");
-        // For some reason AAPT seems to be creating this copy.
-        assertThatApk(apk).containsResource("drawable-v21/heart.xml");
-        assertThatApk(apk).containsResource("drawable/icon.png");
-        assertThatApk(apk).containsResource("drawable-v22/no_need.xml");
-        assertThatApk(apk).doesNotContainResource("drawable-anydpi-v21/heart.xml");
-        assertThatApk(apk).doesNotContainResource("drawable-hdpi-v4/heart.png");
-        assertThatApk(apk).doesNotContainResource("drawable-xhdpi-v4/heart.png");
-        assertThatApk(apk).doesNotContainResource("drawable-hdpi-v21/heart.xml");
-        assertThatApk(apk).doesNotContainResource("drawable-hdpi-v22/no_need.png");
-        assertThatApk(apk).doesNotContainResource("drawable-nodpi-v4/heart.xml");
-        assertThatApk(apk).doesNotContainResource("drawable-xhdpi-v21/heart.xml");
+        assertPngGenerationDisabled(apk);
     }
 
     @Test
@@ -446,18 +445,7 @@ public class VectorDrawableTest {
                 "android.defaultConfig.generatedDensities = []");
 
         project.execute("assembleDebug");
-        assertThatApk(apk).containsResource("drawable/heart.xml");
-        // For some reason AAPT seems to be creating this copy.
-        assertThatApk(apk).containsResource("drawable-v21/heart.xml");
-        assertThatApk(apk).containsResource("drawable/icon.png");
-        assertThatApk(apk).containsResource("drawable-v22/no_need.xml");
-        assertThatApk(apk).doesNotContainResource("drawable-anydpi-v21/heart.xml");
-        assertThatApk(apk).doesNotContainResource("drawable-hdpi-v4/heart.png");
-        assertThatApk(apk).doesNotContainResource("drawable-xhdpi-v4/heart.png");
-        assertThatApk(apk).doesNotContainResource("drawable-hdpi-v21/heart.xml");
-        assertThatApk(apk).doesNotContainResource("drawable-hdpi-v22/no_need.png");
-        assertThatApk(apk).doesNotContainResource("drawable-nodpi-v4/heart.xml");
-        assertThatApk(apk).doesNotContainResource("drawable-xhdpi-v21/heart.xml");
+        assertPngGenerationDisabled(apk);
     }
 
     @Test
@@ -478,7 +466,7 @@ public class VectorDrawableTest {
         assertThatApk(apk).doesNotContainResource("drawable/heart.xml");
 
         TestFileUtils.appendToFile(project.getBuildFile(),
-                "android.defaultConfig.generatedDensities = ['hdpi']");
+                "android.defaultConfig.vectorDrawables.generatedDensities = ['hdpi']");
 
         project.execute("assembleDebug");
         assertThatApk(apk).containsResource("drawable-anydpi-v21/heart.xml");
@@ -493,4 +481,20 @@ public class VectorDrawableTest {
         assertThatApk(apk).doesNotContainResource("drawable-xhdpi-v21/heart.xml");
         assertThatApk(apk).doesNotContainResource("drawable/heart.xml");
     }
+
+    private static void assertPngGenerationDisabled(File apk) throws Exception {
+        assertThatApk(apk).containsResource("drawable/heart.xml");
+        // For some reason AAPT seems to be creating this copy.
+        assertThatApk(apk).containsResource("drawable-v21/heart.xml");
+        assertThatApk(apk).containsResource("drawable/icon.png");
+        assertThatApk(apk).containsResource("drawable-v22/no_need.xml");
+        assertThatApk(apk).doesNotContainResource("drawable-anydpi-v21/heart.xml");
+        assertThatApk(apk).doesNotContainResource("drawable-hdpi-v4/heart.png");
+        assertThatApk(apk).doesNotContainResource("drawable-xhdpi-v4/heart.png");
+        assertThatApk(apk).doesNotContainResource("drawable-hdpi-v21/heart.xml");
+        assertThatApk(apk).doesNotContainResource("drawable-hdpi-v22/no_need.png");
+        assertThatApk(apk).doesNotContainResource("drawable-nodpi-v4/heart.xml");
+        assertThatApk(apk).doesNotContainResource("drawable-xhdpi-v21/heart.xml");
+    }
+
 }
