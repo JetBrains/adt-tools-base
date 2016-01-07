@@ -204,6 +204,10 @@ public final class SdkConstants {
     public static final String FN_EMULATOR =
         "emulator" + ext(".exe", "");                     //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 
+    /** emulator-check executable for the current OS */
+    public static final String FN_EMULATOR_CHECK =
+      "emulator-check" + ext(".exe", "");                 //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+
     /** zipalign executable (with extension for the current OS) */
     public static final String FN_ZIPALIGN =
         "zipalign" + ext(".exe", "");                     //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
