@@ -26,7 +26,7 @@ import com.android.ide.common.internal.WaitableExecutor;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
+import com.google.common.collect.TreeTraverser;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 
@@ -101,10 +101,8 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
     private void buildGraph(
             @NonNull Iterable<TransformInput> programInputs,
             @NonNull Iterable<TransformInput> libraryInputs) throws IOException {
-        final Set<T> virtualMethods = Sets.newConcurrentHashSet();
-        final Set<T> multipleInheritance = Sets.newConcurrentHashSet();
-        final Set<UnresolvedReference<T>> unresolvedReferences = Sets.newConcurrentHashSet();
         Stopwatch stopwatch = Stopwatch.createStarted();
+        final PostProcessingData<T> postProcessingData = new PostProcessingData<T>();
 
         readPlatformJars();
 
@@ -140,9 +138,7 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
                             processProgramClassFile(
                                     Files.toByteArray(classFile),
                                     classFile,
-                                    virtualMethods,
-                                    multipleInheritance,
-                                    unresolvedReferences);
+                                    postProcessingData);
                             return null;
                         }
                     });
@@ -156,9 +152,7 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
                         processProgramClassFile(
                                 bytes,
                                 jarFile,
-                                virtualMethods,
-                                multipleInheritance,
-                                unresolvedReferences);
+                                postProcessingData);
                     }
                 });
             }
@@ -166,13 +160,63 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
         waitForAllTasks();
         logTime("Read input", stopwatch);
 
-        handleOverrides(virtualMethods);
-        handleMultipleInheritance(multipleInheritance);
-        resolveReferences(unresolvedReferences);
+        handleOverrides(postProcessingData.getVirtualMethods());
+        handleMultipleInheritance(postProcessingData.getMultipleInheritance());
+        handleInterfaceInheritance(postProcessingData.getInterfaceInheritance());
+        resolveReferences(postProcessingData.getUnresolvedReferences());
         waitForAllTasks();
         logTime("Finish graph", stopwatch);
 
         mGraph.checkDependencies(mShrinkerLogger);
+    }
+
+    private void handleInterfaceInheritance(@NonNull Set<T> interfaceInheritance) {
+        for (final T klass : interfaceInheritance) {
+            mExecutor.execute(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    TreeTraverser<T> interfaceTraverser =
+                            TypeHierarchyTraverser.interfaces(mGraph, mShrinkerLogger);
+
+                    if ((mGraph.getClassModifiers(klass) & Opcodes.ACC_INTERFACE) != 0) {
+
+                        // The "children" name is unfortunate: in the type hierarchy tree traverser,
+                        // these are the interfaces that klass (which is an interface itself)
+                        // extends (directly).
+                        Iterable<T> superinterfaces = interfaceTraverser.children(klass);
+
+                        for (T superinterface : superinterfaces) {
+                            if (!mGraph.isLibraryClass(superinterface)) {
+                                // Add the arrow going "down", from the superinterface to this one.
+                                mGraph.addDependency(
+                                        superinterface,
+                                        klass,
+                                        DependencyType.SUPERINTERFACE_KEPT);
+                            } else {
+                                // The superinterface is part of the SDK, so it's always kept. As
+                                // long as there's any class that implements this interface, it
+                                // needs to be kept.
+                                mGraph.incrementAndCheck(
+                                        klass,
+                                        DependencyType.SUPERINTERFACE_KEPT,
+                                        CounterSet.SHRINK);
+                            }
+                        }
+                    }
+
+                    for (T iface : interfaceTraverser.preOrderTraversal(klass)) {
+                        if (!mGraph.isLibraryClass(iface)) {
+                            mGraph.addDependency(
+                                    klass,
+                                    iface,
+                                    DependencyType.INTERFACE_IMPLEMENTED);
+                        }
+                    }
+
+                    return null;
+                }
+            });
+        }
     }
 
     @NonNull
@@ -191,7 +235,6 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
      */
     private void handleMultipleInheritance(@NonNull Set<T> multipleInheritance) {
         for (final T klass : multipleInheritance) {
-
             mExecutor.execute(new Callable<Void>() {
                 Set<T> methods = mGraph.getMethods(klass);
 
@@ -202,8 +245,9 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
                         return null;
                     }
 
-                    T[] interfaces = mGraph.getInterfaces(klass);
-                    // TODO: Handle interface inheritance.
+                    Iterable<T> interfaces = TypeHierarchyTraverser
+                            .interfaces(mGraph, mShrinkerLogger)
+                            .preOrderTraversal(klass);
                     for (T iface : interfaces) {
                         for (T method : mGraph.getMethods(iface)) {
                             handleMethod(method);
@@ -214,50 +258,48 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
 
                 private void handleMethod(T method) {
                     if (this.methods.contains(method)) {
+                        // We implement this interface method directly in the class, which is the
+                        // common case. Nothing left to do.
                         return;
                     }
 
-                    try {
-                        T current = mGraph.getSuperclass(klass);
-                        while (current != null) {
-                            if (!isProgramClass(current)) {
-                                // We will not remove the method anyway.
-                                return;
-                            }
+                    // Otherwise, look in the superclasses for the implementation.
 
-                            T matchingMethod = mGraph.findMatchingMethod(current, method);
-                            if (matchingMethod != null) {
-                                String name = mGraph.getMethodNameAndDesc(method);
-                                String desc = name.substring(name.indexOf(':') + 1);
-                                name = name.substring(0, name.indexOf(':'));
-                                name = name + "$shrinker_fake";
-                                T fakeMethod = mGraph.addMember(
-                                        klass, name, desc,
-                                        mGraph.getMemberModifiers(method));
-
-                                // Simulate a super call.
-                                mGraph.addDependency(fakeMethod, matchingMethod,
-                                        DependencyType.REQUIRED_CLASS_STRUCTURE);
-
-                                if (!isProgramClass(mGraph.getClassForMember(method))) {
-                                    mGraph.addDependency(klass, fakeMethod,
-                                            DependencyType.REQUIRED_CLASS_STRUCTURE);
-                                } else {
-                                    mGraph.addDependency(klass, fakeMethod,
-                                            DependencyType.CLASS_IS_KEPT);
-                                    mGraph.addDependency(method, fakeMethod,
-                                            DependencyType.IF_CLASS_KEPT);
-                                }
-
-                                return;
-                            }
-
-                            current = mGraph.getSuperclass(current);
+                    FluentIterable<T> superclasses = TypeHierarchyTraverser
+                            .superclasses(mGraph, mShrinkerLogger)
+                            .preOrderTraversal(klass);
+                    for (T current : superclasses) {
+                        if (!isProgramClass(current)) {
+                            // We will not remove the method anyway.
+                            return;
                         }
-                    } catch (ClassLookupException e) {
-                        mShrinkerLogger.invalidClassReference(
-                                mGraph.getClassName(klass),
-                                e.getClassName());
+
+                        T matchingMethod = mGraph.findMatchingMethod(current, method);
+                        if (matchingMethod != null) {
+                            String name = mGraph.getMethodNameAndDesc(method);
+                            String desc = name.substring(name.indexOf(':') + 1);
+                            name = name.substring(0, name.indexOf(':'));
+                            name = name + "$shrinker_fake";
+                            T fakeMethod = mGraph.addMember(
+                                    klass, name, desc,
+                                    mGraph.getMemberModifiers(method));
+
+                            // Simulate a super call.
+                            mGraph.addDependency(fakeMethod, matchingMethod,
+                                    DependencyType.REQUIRED_CLASS_STRUCTURE);
+
+                            if (!isProgramClass(mGraph.getClassForMember(method))) {
+                                mGraph.addDependency(klass, fakeMethod,
+                                        DependencyType.REQUIRED_CLASS_STRUCTURE);
+                            } else {
+                                mGraph.addDependency(klass, fakeMethod,
+                                        DependencyType.CLASS_IS_KEPT);
+                                mGraph.addDependency(method, fakeMethod,
+                                        DependencyType.IF_CLASS_KEPT);
+                            }
+
+                            return;
+                        }
                     }
                 }
             });
@@ -350,10 +392,9 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
      * Updates the graph with nodes and edges based on the given class file.
      */
     private void processProgramClassFile(
-            byte[] bytes, @NonNull File classFile,
-            @NonNull final Set<T> virtualMethods,
-            @NonNull final Set<T> multipleInheritance,
-            @NonNull final Set<UnresolvedReference<T>> unresolvedReferences) throws IOException {
+            byte[] bytes,
+            @NonNull File classFile,
+            @NonNull final PostProcessingData<T> postProcessingData) throws IOException {
         ClassNode classNode = new ClassNode(Opcodes.ASM5);
         ClassVisitor depsFinder =
                 new DependencyFinderVisitor<T>(mGraph, classNode) {
@@ -364,17 +405,22 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
 
                     @Override
                     protected void handleMultipleInheritance(T klass) {
-                        multipleInheritance.add(klass);
+                        postProcessingData.getMultipleInheritance().add(klass);
                     }
 
                     @Override
                     protected void handleVirtualMethod(T method) {
-                        virtualMethods.add(method);
+                        postProcessingData.getVirtualMethods().add(method);
                     }
 
                     @Override
-                    protected void handleUnresolvedReference(UnresolvedReference<T> reference) {
-                        unresolvedReferences.add(reference);
+                    protected void handleInterfaceInheritance(T klass) {
+                        postProcessingData.getInterfaceInheritance().add(klass);
+                    }
+
+                    @Override
+                    protected void handleUnresolvedReference(PostProcessingData.UnresolvedReference<T> reference) {
+                        postProcessingData.getUnresolvedReferences().add(reference);
                     }
                 };
         ClassVisitor structureVisitor =

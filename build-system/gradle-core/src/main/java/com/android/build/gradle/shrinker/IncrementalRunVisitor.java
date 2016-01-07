@@ -41,7 +41,7 @@ class IncrementalRunVisitor<T> extends DependencyFinderVisitor<T> {
 
     private final Collection<T> mClassesToWrite;
 
-    private final Collection<AbstractShrinker.UnresolvedReference<T>> mUnresolvedReferences;
+    private final Collection<PostProcessingData.UnresolvedReference<T>> mUnresolvedReferences;
 
     private String mClassName;
 
@@ -54,7 +54,7 @@ class IncrementalRunVisitor<T> extends DependencyFinderVisitor<T> {
     public IncrementalRunVisitor(
             @NonNull ShrinkerGraph<T> graph,
             @NonNull Collection<T> classesToWrite,
-            @NonNull Collection<AbstractShrinker.UnresolvedReference<T>> unresolvedReferences) {
+            @NonNull Collection<PostProcessingData.UnresolvedReference<T>> unresolvedReferences) {
         super(graph, null);
         mGraph = graph;
         mClassesToWrite = classesToWrite;
@@ -224,7 +224,10 @@ class IncrementalRunVisitor<T> extends DependencyFinderVisitor<T> {
     protected void handleVirtualMethod(T method) {}
 
     @Override
-    protected void handleUnresolvedReference(AbstractShrinker.UnresolvedReference<T> reference) {
+    protected void handleInterfaceInheritance(T klass) {}
+
+    @Override
+    protected void handleUnresolvedReference(PostProcessingData.UnresolvedReference<T> reference) {
         mUnresolvedReferences.add(reference);
     }
 

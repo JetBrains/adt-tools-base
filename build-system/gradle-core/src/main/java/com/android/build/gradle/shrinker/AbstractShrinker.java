@@ -28,7 +28,6 @@ import com.android.build.api.transform.TransformOutputProvider;
 import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.android.utils.FileUtils;
-import com.google.common.base.Objects;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.base.Stopwatch;
@@ -181,8 +180,8 @@ public abstract class AbstractShrinker<T> {
      * the graph with additional edges accordingly.
      */
     protected void resolveReferences(
-            @NonNull Iterable<UnresolvedReference<T>> unresolvedReferences) {
-        for (final UnresolvedReference<T> unresolvedReference : unresolvedReferences) {
+            @NonNull Iterable<PostProcessingData.UnresolvedReference<T>> unresolvedReferences) {
+        for (final PostProcessingData.UnresolvedReference<T> unresolvedReference : unresolvedReferences) {
             mExecutor.execute(new Callable<Void>() {
                 @Override
                 public Void call() {
@@ -371,27 +370,6 @@ public abstract class AbstractShrinker<T> {
 
         /** Counters for finding classes that have to be in the main classes.dex file. */
         LEGACY_MULTIDEX
-    }
-
-    static class UnresolvedReference<T> {
-        final T method;
-        final T target;
-        final int opcode;
-
-        UnresolvedReference(@NonNull T method, @NonNull T target, int opcode) {
-            this.method = method;
-            this.target = target;
-            this.opcode = opcode;
-        }
-
-        @Override
-        public String toString() {
-            return Objects.toStringHelper(this)
-                    .add("method", method)
-                    .add("target", target)
-                    .add("opcode", opcode)
-                    .toString();
-        }
     }
 
     public static void logTime(String section, Stopwatch stopwatch) {

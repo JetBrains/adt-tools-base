@@ -591,6 +591,18 @@ public class TestClasses implements Opcodes {
                 mv.visitEnd();
             }
             {
+                mv = cw.visitMethod(ACC_PUBLIC + ACC_STATIC, "buildNamedRunnableImpl",
+                        "()Ltest/NamedRunnableImpl;", null, null);
+                mv.visitCode();
+                mv.visitTypeInsn(NEW, "test/NamedRunnableImpl");
+                mv.visitInsn(DUP);
+                mv.visitMethodInsn(INVOKESPECIAL, "test/NamedRunnableImpl", "<init>",
+                        "()V", false);
+                mv.visitInsn(ARETURN);
+                mv.visitMaxs(2, 0);
+                mv.visitEnd();
+            }
+            {
                 mv = cw.visitMethod(ACC_PUBLIC + ACC_STATIC, "callCharSequence",
                         "(Ljava/lang/CharSequence;)V",
                         null,
@@ -600,6 +612,19 @@ public class TestClasses implements Opcodes {
                 mv.visitMethodInsn(INVOKEINTERFACE, "java/lang/CharSequence", "length",
                         "()I", true);
                 mv.visitInsn(POP);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(ACC_PUBLIC + ACC_STATIC, "callRunnable",
+                        "(Ljava/lang/Runnable;)V",
+                        null,
+                        new String[]{"java/lang/Exception"});
+                mv.visitCode();
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKEINTERFACE, "java/lang/Runnable", "run",
+                        "()V", true);
                 mv.visitInsn(RETURN);
                 mv.visitMaxs(1, 1);
                 mv.visitEnd();
@@ -718,6 +743,70 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
+        /**
+         * Program interface that extends an SDK interface.
+         */
+        public static byte[] namedRunnable() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE,
+                    "test/NamedRunnable", null, "java/lang/Object",
+                    new String[]{"java/lang/Runnable"});
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "getName", "()Ljava/lang/String;", null,
+                        null);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+
+        public static byte[] namedRunnableImpl() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/NamedRunnableImpl",
+                    null, "java/lang/Object",
+                    new String[]{"test/NamedRunnable"});
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mv.visitCode();
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "getName", "()Ljava/lang/String;", null, null);
+                mv.visitCode();
+                mv.visitInsn(ACONST_NULL);
+                mv.visitInsn(ARETURN);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "run", "()V", null, null);
+                mv.visitCode();
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(0, 1);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+
         public static byte[] myInterface() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
@@ -731,6 +820,28 @@ public class TestClasses implements Opcodes {
             {
                 mv = cw.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "doSomething", "(Ljava/lang/Object;)V",
                         "(TT;)V", null);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+
+
+        public static byte[] mySubInterface() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE,
+                    "test/MySubInterface", null,
+                    "java/lang/Object",
+                    new String[]{"test/MyInterface"});
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "anotherMethod", "()V", null, null);
                 mv.visitEnd();
             }
             cw.visitEnd();
@@ -828,7 +939,7 @@ public class TestClasses implements Opcodes {
         }
 
         /**
-         * This class extends DoesSomething and implements MyInterface. Extending DoesSomething 
+         * This class extends DoesSomething and implements MyInterface. Extending DoesSomething
          * is enough to implement the interface.
          */
         public static byte[] implementationFromSuperclass() throws Exception {
@@ -861,6 +972,61 @@ public class TestClasses implements Opcodes {
                         "Ltest/ImplementationFromSuperclass;", null, l0,
                         l1, 0);
                 mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+
+        /**
+         * This class extends DoesSomething and implements MyInterface. Extending DoesSomething 
+         * is enough to implement the interface.
+         */
+        public static byte[] implementationFromSuperclass_subInterface() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER,
+                    "test/ImplementationFromSuperclass", null,
+                    "test/DoesSomething",
+                    new String[]{"test/MySubInterface"});
+
+            cw.visitSource("ImplementationFromSuperclass.java", null);
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mv.visitCode();
+                Label l0 = new Label();
+                mv.visitLabel(l0);
+                mv.visitLineNumber(22, l0);
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "test/DoesSomething",
+                        "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                Label l1 = new Label();
+                mv.visitLabel(l1);
+                mv.visitLocalVariable("this",
+                        "Ltest/ImplementationFromSuperclass;", null, l0,
+                        l1, 0);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "anotherMethod", "()V", null, null);
+                mv.visitCode();
+                Label l0 = new Label();
+                mv.visitLabel(l0);
+                mv.visitLineNumber(25, l0);
+                mv.visitInsn(RETURN);
+                Label l1 = new Label();
+                mv.visitLabel(l1);
+                mv.visitLocalVariable("this", "Ltest/ImplementationFromSuperclass;", null,
+                        l0, l1, 0);
+                mv.visitMaxs(0, 1);
                 mv.visitEnd();
             }
             cw.visitEnd();
