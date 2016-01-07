@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.managed;
 
-import com.android.build.gradle.api.VariantFilter;
+import com.android.build.api.variant.VariantFilter;
 import com.android.build.gradle.internal.CompileOptions;
 import com.android.build.gradle.internal.coverage.JacocoOptions;
 import com.android.build.gradle.internal.dsl.AaptOptions;

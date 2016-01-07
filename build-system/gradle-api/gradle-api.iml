@@ -11,6 +11,7 @@
     <orderEntry type="library" scope="TEST" name="JUnit4" level="project" />
     <orderEntry type="library" exported="" name="guava-tools" level="project" />
     <orderEntry type="module" module-name="android-annotations" exported="" />
+    <orderEntry type="module" module-name="builder-model" />
     <orderEntry type="module-library">
       <library>
         <CLASSES>

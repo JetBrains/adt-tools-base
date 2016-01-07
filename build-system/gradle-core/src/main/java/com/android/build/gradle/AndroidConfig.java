@@ -18,8 +18,8 @@ package com.android.build.gradle;
 
 import com.android.annotations.NonNull;
 import com.android.build.api.transform.Transform;
+import com.android.build.api.variant.VariantFilter;
 import com.android.build.gradle.api.AndroidSourceSet;
-import com.android.build.gradle.api.VariantFilter;
 import com.android.build.gradle.internal.CompileOptions;
 import com.android.build.gradle.internal.coverage.JacocoOptions;
 import com.android.build.gradle.internal.dsl.AaptOptions;
