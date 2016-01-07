@@ -58,6 +58,9 @@ import java.util.Map;
 @Immutable
 public class ManifestMerger2 {
 
+    static final String BOOTSTRAP_APPLICATION
+            = "com.android.tools.fd.runtime.BootstrapApplication";
+
     @NonNull
     private final File mManifestFile;
 
@@ -281,17 +284,9 @@ public class ManifestMerger2 {
                     MergingReport.Record.Severity.WARNING,
                     "Post merge validation failed");
         }
-
-        // only remove tools annotations if we are packaging an application.
-        if (mOptionalFeatures.contains(Invoker.Feature.REMOVE_TOOLS_DECLARATIONS)) {
-            finalMergedDocument =
-                    ToolsInstructionsCleaner.cleanToolsReferences(finalMergedDocument, mLogger);
-        }
-
+        // finally optional features handling.
+        finalMergedDocument = processOptionalFeatures(finalMergedDocument);
         if (finalMergedDocument != null) {
-            if (mOptionalFeatures.contains(Invoker.Feature.EXTRACT_FQCNS)) {
-                extractFcqns(finalMergedDocument);
-            }
             mergingReportBuilder.setMergedDocument(finalMergedDocument);
         }
 
@@ -305,6 +300,56 @@ public class ManifestMerger2 {
         }
 
         return mergingReport;
+    }
+
+    @Nullable
+    private XmlDocument processOptionalFeatures(@Nullable XmlDocument document) {
+        if (document == null) {
+            return null;
+        }
+        // only remove tools annotations if we are packaging an application.
+        if (mOptionalFeatures.contains(Invoker.Feature.REMOVE_TOOLS_DECLARATIONS)) {
+            document = ToolsInstructionsCleaner.cleanToolsReferences(document, mLogger);
+        }
+
+        if (document != null) {
+            if (mOptionalFeatures.contains(Invoker.Feature.EXTRACT_FQCNS)) {
+                extractFcqns(document);
+            }
+            if (mOptionalFeatures.contains(Invoker.Feature.INSTANT_RUN_REPLACEMENT)) {
+                document = instantRunReplacement(document);
+            }
+        }
+        return document;
+    }
+
+    @NonNull
+    private static XmlDocument instantRunReplacement(XmlDocument document) {
+        Optional<XmlElement> applicationOptional = document
+                .getByTypeAndKey(ManifestModel.NodeTypes.APPLICATION, null /* keyValue */);
+        if (applicationOptional.isPresent()) {
+            XmlElement application = applicationOptional.get();
+            Attr nameAttribute = application.getXml().getAttributeNodeNS(
+                    SdkConstants.ANDROID_URI, "name");
+
+            if (nameAttribute != null) {
+                String originalAppName = nameAttribute.getValue();
+                if (BOOTSTRAP_APPLICATION.equals(originalAppName)) {
+                    return document;
+                }
+                application.getXml().setAttribute(SdkConstants.ATTR_NAME, originalAppName);
+                application.getXml().setAttributeNS(
+                        SdkConstants.ANDROID_URI,
+                        nameAttribute.getName(),
+                        BOOTSTRAP_APPLICATION);
+            } else {
+                application.getXml().setAttributeNS(
+                        SdkConstants.ANDROID_URI,
+                        SdkConstants.ANDROID_NS_NAME_PREFIX + SdkConstants.ATTR_NAME,
+                        BOOTSTRAP_APPLICATION);
+            }
+        }
+        return document;
     }
 
     /**
@@ -932,7 +977,12 @@ public class ManifestMerger2 {
             /**
              * Do no perform placeholders replacement.
              */
-            NO_PLACEHOLDER_REPLACEMENT
+            NO_PLACEHOLDER_REPLACEMENT,
+
+            /**
+             * Perform InstantRun related swapping in the merged manifest file.
+             */
+            INSTANT_RUN_REPLACEMENT
         }
 
         /**

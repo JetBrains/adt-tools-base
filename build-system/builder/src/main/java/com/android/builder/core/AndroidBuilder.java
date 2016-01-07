@@ -598,6 +598,7 @@ public class AndroidBuilder {
             @Nullable String outAaptSafeManifestLocation,
             ManifestMerger2.MergeType mergeType,
             Map<String, Object> placeHolders,
+            List<Invoker.Feature> optionalFeatures,
             @Nullable File reportFile) {
 
         try {
@@ -607,6 +608,8 @@ public class AndroidBuilder {
                     .addFlavorAndBuildTypeManifests(
                             manifestOverlays.toArray(new File[manifestOverlays.size()]))
                     .addLibraryManifests(collectLibraries(libraries))
+                    .withFeatures(optionalFeatures.toArray(
+                            new Invoker.Feature[optionalFeatures.size()]))
                     .setMergeReportFile(reportFile);
 
             if (mergeType == ManifestMerger2.MergeType.APPLICATION) {

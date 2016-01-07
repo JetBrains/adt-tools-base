@@ -555,6 +555,65 @@ public class ManifestMerger2SmallTest {
                         .item(0).getAttributes().getNamedItem("package").getNodeValue());
     }
 
+    @Test
+    public void testInstantRunReplacement()
+            throws IOException, ManifestMerger2.MergeFailureException {
+        String xml = ""
+                + "<manifest\n"
+                + "    package=\"com.foo.bar\""
+                + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
+                + "    <activity t:name=\"activityOne\"/>\n"
+                + "    <application t:name=\".applicationOne\" "
+                + "         t:backupAgent=\"com.foo.example.myBackupAgent\"/>\n"
+                + "</manifest>";
+
+        File inputFile = inputAsFile("testNoPlaceHolderReplacement", xml);
+
+        MockLog mockLog = new MockLog();
+        MergingReport mergingReport = ManifestMerger2
+                .newMerger(inputFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                .withFeatures(ManifestMerger2.Invoker.Feature.INSTANT_RUN_REPLACEMENT)
+                .merge();
+
+        assertTrue(mergingReport.getResult().isSuccess());
+        XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
+        assertEquals("com.foo.bar.applicationOne",
+                xmlDocument.getXml().getElementsByTagName(SdkConstants.TAG_APPLICATION)
+                        .item(0).getAttributes().getNamedItem(
+                            SdkConstants.ATTR_NAME).getNodeValue());
+        assertEquals(ManifestMerger2.BOOTSTRAP_APPLICATION,
+                xmlDocument.getXml().getElementsByTagName(SdkConstants.TAG_APPLICATION)
+                        .item(0).getAttributes().getNamedItemNS(SdkConstants.ANDROID_URI,
+                            SdkConstants.ATTR_NAME).getNodeValue());
+    }
+
+    @Test
+    public void testInstantRunReplacementWithNoAppName()
+            throws IOException, ManifestMerger2.MergeFailureException {
+        String xml = ""
+                + "<manifest\n"
+                + "    package=\"com.foo.bar\""
+                + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
+                + "    <activity t:name=\"activityOne\"/>\n"
+                + "    <application t:backupAgent=\"com.foo.example.myBackupAgent\"/>\n"
+                + "</manifest>";
+
+        File inputFile = inputAsFile("testNoPlaceHolderReplacement", xml);
+
+        MockLog mockLog = new MockLog();
+        MergingReport mergingReport = ManifestMerger2
+                .newMerger(inputFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                .withFeatures(ManifestMerger2.Invoker.Feature.INSTANT_RUN_REPLACEMENT)
+                .merge();
+
+        assertTrue(mergingReport.getResult().isSuccess());
+        XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
+        assertEquals(ManifestMerger2.BOOTSTRAP_APPLICATION,
+                xmlDocument.getXml().getElementsByTagName(SdkConstants.TAG_APPLICATION)
+                        .item(0).getAttributes().getNamedItemNS(SdkConstants.ANDROID_URI,
+                        SdkConstants.ATTR_NAME).getNodeValue());
+    }
+
     /**
      * Utility method to save a {@link String} XML into a file.
      */
