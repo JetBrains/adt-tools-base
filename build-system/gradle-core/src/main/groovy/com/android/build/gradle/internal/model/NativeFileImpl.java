@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.model;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.builder.model.NativeFile;
 
 import java.io.File;
@@ -29,13 +30,19 @@ public class NativeFileImpl implements NativeFile, Serializable {
     private static final long serialVersionUID = 1L;
 
     @NonNull
-    private File filePath;
+    private final File filePath;
     @NonNull
-    private String settingsName;
+    private final String settingsName;
+    @Nullable
+    private final File workingDirectory;
 
-    public NativeFileImpl(@NonNull File filePath, @NonNull String settingsName) {
+    public NativeFileImpl(
+            @NonNull File filePath,
+            @NonNull String settingsName,
+            @Nullable File workingDirectory) {
         this.filePath = filePath;
         this.settingsName = settingsName;
+        this.workingDirectory = workingDirectory;
     }
 
     @Override
@@ -48,5 +55,11 @@ public class NativeFileImpl implements NativeFile, Serializable {
     @NonNull
     public String getSettingsName() {
         return settingsName;
+    }
+
+    @Override
+    @Nullable
+    public File getWorkingDirectory() {
+        return workingDirectory;
     }
 }

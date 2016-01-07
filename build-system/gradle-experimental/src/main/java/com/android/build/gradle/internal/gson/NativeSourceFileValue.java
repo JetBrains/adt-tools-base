@@ -20,8 +20,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.managed.NativeSourceFile;
 
-import org.gradle.model.Unmanaged;
-
 import java.io.File;
 import java.util.List;
 
@@ -33,6 +31,8 @@ public class NativeSourceFileValue {
     File src;
     @Nullable
     List<String> flags;
+    @Nullable
+    File workingDirectory;
 
     void copyTo(@NonNull NativeSourceFile file) {
         file.setSrc(src);
@@ -40,5 +40,6 @@ public class NativeSourceFileValue {
             file.getFlags().clear();
             file.getFlags().addAll(flags);
         }
+        file.setWorkingDirectory(workingDirectory);
     }
 }
