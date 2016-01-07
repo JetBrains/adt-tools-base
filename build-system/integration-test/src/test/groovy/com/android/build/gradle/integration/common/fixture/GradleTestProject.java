@@ -31,6 +31,7 @@ import com.android.build.gradle.integration.common.utils.SdkHelper;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.model.AndroidProject;
+import com.android.builder.model.NativeAndroidProject;
 import com.android.builder.model.SyncIssue;
 import com.android.builder.model.Version;
 import com.android.ide.common.util.ReferenceHolder;
@@ -841,21 +842,61 @@ public class GradleTestProject implements TestRule {
      * Runs gradle on the project, and returns a project model for each sub-project.
      * Throws exception on failure.
      *
+     * @param tasks Variadic list of tasks to execute.
+     *
+     * @return the AndroidProject model for the project.
+     */
+    @NonNull
+    public <T> Map<String, T> executeAndReturnMultiModel(Class<T> modelClass, String ... tasks) {
+        return executeAndReturnMultiModel(modelClass, false, tasks);
+    }
+
+    /**
+     * Runs gradle on the project, and returns a AndroidProject model for each sub-project.
+     * Throws exception on failure.
+     *
      * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
      * @param tasks Variadic list of tasks to execute.
      *
      * @return the AndroidProject model for the project.
      */
     @NonNull
-    public Map<String, AndroidProject> executeAndReturnMultiModel(boolean emulateStudio_1_0, String ... tasks) {
+    public Map<String, AndroidProject> executeAndReturnMultiModel(
+            boolean emulateStudio_1_0,
+            String ... tasks) {
+        return executeAndReturnMultiModel(AndroidProject.class, emulateStudio_1_0, tasks);
+    }
+
+    /**
+     * Runs gradle on the project, and returns a project model for each sub-project.
+     * Throws exception on failure.
+     *
+     * @param modelClass Class of the model to return
+     * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
+     * @param tasks Variadic list of tasks to execute.
+     *
+     * @return the AndroidProject model for the project.
+     */
+    @NonNull
+    public <T> Map<String, T> executeAndReturnMultiModel(
+            Class<T> modelClass,
+            boolean emulateStudio_1_0,
+            String ... tasks) {
         ProjectConnection connection = getProjectConnection();
         try {
             executeBuild(Collections.<String>emptyList(), connection, tasks,
                     EXPECT_SUCCESS);
 
+            // TODO: Make buildModel multithreaded all the time.
+            // Getting multiple NativeAndroidProject results in duplicated class implemented error
+            // in a multithreaded environment.  This is due to issues in Gradle relating to the
+            // automatic generation of the implementation class of NativeSourceSet.  Make this
+            // multithreaded when the issue is resolved.
+            boolean isMultithreaded = !NativeAndroidProject.class.equals(modelClass);
+
             return buildModel(
                     connection,
-                    new GetAndroidModelAction<AndroidProject>(AndroidProject.class),
+                    new GetAndroidModelAction<T>(modelClass, isMultithreaded),
                     emulateStudio_1_0,
                     null,
                     null);

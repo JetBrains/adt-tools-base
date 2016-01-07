@@ -25,7 +25,9 @@ import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
+import com.android.builder.model.NativeAndroidProject
 import com.android.builder.model.NativeLibrary
+import com.android.builder.model.NativeSettings
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.Rule
@@ -246,7 +248,12 @@ model {
     }
 }
 """
-        project.execute("clean", ":app:assembleDebug")
+        Map<String, NativeAndroidProject> models =
+                project.executeAndReturnMultiModel(
+                        NativeAndroidProject.class,
+                        "clean",
+                        ":app:assembleDebug")
+        NativeAndroidProject model = models.get(":app")
         File apk = project.getSubproject("app").getApk("debug")
         for (String abi : ABIS) {
             assertThatZip(apk).contains("lib/$abi/libhello-jni.so")
@@ -257,6 +264,9 @@ model {
             GradleTestProject lib2 = project.getSubproject("lib2")
             assertThat(lib2.file("build/intermediates/binaries/debug/obj/$abi/libgetstring2.a")).exists()
             assertThat(lib2.file("build/intermediates/binaries/debug/obj/$abi/libgetstring2.so")).doesNotExist()
+        }
+        for (NativeSettings settings : model.getSettings()) {
+            assertThat(settings.getCompilerFlags()).contains("-I" + lib1.file("src/main/headers"))
         }
     }
 

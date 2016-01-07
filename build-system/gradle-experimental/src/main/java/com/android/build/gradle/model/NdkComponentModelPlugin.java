@@ -88,6 +88,7 @@ import org.gradle.model.internal.type.ModelTypes;
 import org.gradle.nativeplatform.BuildTypeContainer;
 import org.gradle.nativeplatform.FlavorContainer;
 import org.gradle.nativeplatform.NativeBinarySpec;
+import org.gradle.nativeplatform.NativeDependencySet;
 import org.gradle.nativeplatform.NativeLibraryBinary;
 import org.gradle.nativeplatform.NativeLibraryBinarySpec;
 import org.gradle.nativeplatform.NativeLibrarySpec;
@@ -505,7 +506,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                         Set<File> headerDirs =
                                 ((HeaderExportingSourceSet) sourceSet).getExportedHeaders()
                                         .getSrcDirs();
-                        for (File headerDir :headerDirs) {
+                        for (File headerDir : headerDirs) {
                             if (!nativeLibrary.getExportedHeaders().contains(headerDir)) {
                                 nativeLibrary.getExportedHeaders().add(headerDir);
 
@@ -515,6 +516,13 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                                 cppFlags.add("-I" + headerDir);
                             }
                         }
+                    }
+                }
+
+                for (NativeDependencySet dependency : nativeBinary.getLibs()) {
+                    for (File includeDir : dependency.getIncludeRoots()) {
+                        cFlags.add("-I" + includeDir);
+                        cppFlags.add("-I" + includeDir);
                     }
                 }
 
