@@ -355,6 +355,11 @@ public class InstantRunClient {
         mUserFeedback.notifyEnd(updateMode);
     }
 
+    @NonNull
+    public UserFeedback getUserFeedback() {
+        return mUserFeedback;
+    }
+
     /**
      * Called after a build &amp; successful push to device: updates the build id on the device to
      * whatever the build id was assigned by Gradle.
