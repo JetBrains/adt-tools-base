@@ -3,6 +3,7 @@ package com.android.build.gradle.tasks;
 import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.annotations.ApkFile;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
@@ -25,6 +26,8 @@ import java.util.concurrent.Callable;
 
 @ParallelizableTask
 public class ZipAlign extends DefaultTask implements FileSupplier {
+
+    private boolean useOldPackaging;
 
     // ----- PUBLIC TASK API -----
 
@@ -149,7 +152,8 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
                 }
             });
             zipAlign.instantRunBuildContext = scope.getVariantScope().getInstantRunBuildContext();
+            zipAlign.useOldPackaging = AndroidGradleOptions.useOldPackaging(
+                    scope.getGlobalScope().getProject());
         }
     }
-
 }

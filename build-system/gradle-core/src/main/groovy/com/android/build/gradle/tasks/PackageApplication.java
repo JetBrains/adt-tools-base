@@ -1,6 +1,7 @@
 package com.android.build.gradle.tasks;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.annotations.ApkFile;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
@@ -51,6 +52,8 @@ import java.util.concurrent.Callable;
 
 @ParallelizableTask
 public class PackageApplication extends IncrementalTask implements FileSupplier {
+
+    private boolean useOldPackaging;
 
     public static final FilterableStreamCollection.StreamFilter sDexFilter =
             new TransformManager.StreamFilter() {
@@ -423,6 +426,8 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
 
             packageApp.markerFile =
                     PrePackageApplication.ConfigAction.getMarkerFile(variantScope);
+            packageApp.useOldPackaging = AndroidGradleOptions.useOldPackaging(
+                    variantScope.getGlobalScope().getProject());
         }
 
         private static File getOptionalDir(File dir) {
