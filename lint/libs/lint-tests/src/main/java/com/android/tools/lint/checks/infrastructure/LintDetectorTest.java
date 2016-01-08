@@ -384,8 +384,10 @@ public abstract class LintDetectorTest extends SdkTestCase {
             return true;
         }
 
-        if (issue == IssueRegistry.LINT_ERROR || issue == IssueRegistry.PARSER_ERROR) {
+        if (issue == IssueRegistry.LINT_ERROR) {
             return !ignoreSystemErrors();
+        } else if (issue == IssueRegistry.PARSER_ERROR) {
+            return !allowCompilationErrors();
         }
 
         return false;
