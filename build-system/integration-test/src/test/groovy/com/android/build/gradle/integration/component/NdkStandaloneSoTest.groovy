@@ -168,8 +168,6 @@ model {
 
         GradleTestProject lib = project.getSubproject("lib1")
         assertThat(lib.file("build/outputs/native/debug/lib/x86/libhello-jni.so")).exists();
-        assertThat(lib.file("build/outputs/native/debug/lib/x86/gdbserver")).exists();
-        assertThat(lib.file("build/outputs/native/debug/lib/x86/gdb.setup")).exists();
     }
 
     @Test

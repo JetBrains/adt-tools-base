@@ -56,11 +56,6 @@ model {
         ndk {
             moduleName "hello-jni"
         }
-        buildTypes {
-            create("jniDebug") {
-                ndk.debuggable true;
-            }
-        }
         productFlavors {
             create("x86") {
                 ndk.abiFilters.add("x86")
@@ -140,29 +135,12 @@ model {
     }
 
     @Test
-    public void "check setting isDebuggable generates gdbserver and gdb.setup"() {
-        project.execute("assembleArmJniDebug")
-
-        File apk = project.getApk("arm", "jniDebug", "unsigned")
-        assertThatZip(apk).contains("lib/armeabi/libhello-jni.so")
-        assertThatZip(apk).contains("lib/armeabi/gdbserver")
-        assertThatZip(apk).contains("lib/armeabi/gdb.setup")
-        assertThatZip(apk).contains("lib/armeabi-v7a/libhello-jni.so")
-        assertThatZip(apk).contains("lib/armeabi-v7a/gdbserver")
-        assertThatZip(apk).contains("lib/armeabi-v7a/gdb.setup")
-    }
-
-    @Test
-    public void "check release build does not contain gdbserver and gdb.setup"() {
+    public void "check release build"() {
         project.execute("assembleArmRelease")
 
         File apk = project.getApk("arm", "release", "unsigned")
         assertThatZip(apk).contains("lib/armeabi/libhello-jni.so")
-        assertThatZip(apk).doesNotContain("lib/armeabi/gdbserver")
-        assertThatZip(apk).doesNotContain("lib/armeabi/gdb.setup")
         assertThatZip(apk).contains("lib/armeabi-v7a/libhello-jni.so")
-        assertThatZip(apk).doesNotContain("lib/armeabi-v7a/gdbserver")
-        assertThatZip(apk).doesNotContain("lib/armeabi-v7a/gdb.setup")
     }
 
     @Test

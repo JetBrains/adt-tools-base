@@ -100,17 +100,9 @@ model {
         // Verify .so are built for all platform.
         File apk = project.getApk("debug")
         assertThatZip(apk).contains("lib/x86/libhello-jni.so")
-        assertThatZip(apk).contains("lib/x86/gdbserver")
-        assertThatZip(apk).contains("lib/x86/gdb.setup")
         assertThatZip(apk).contains("lib/mips/libhello-jni.so")
-        assertThatZip(apk).contains("lib/mips/gdbserver")
-        assertThatZip(apk).contains("lib/mips/gdb.setup")
         assertThatZip(apk).contains("lib/armeabi/libhello-jni.so")
-        assertThatZip(apk).contains("lib/armeabi/gdbserver")
-        assertThatZip(apk).contains("lib/armeabi/gdb.setup")
         assertThatZip(apk).contains("lib/armeabi-v7a/libhello-jni.so")
-        assertThatZip(apk).contains("lib/armeabi-v7a/gdbserver")
-        assertThatZip(apk).contains("lib/armeabi-v7a/gdb.setup")
 
         // 64-bits binaries will not be produced if platform version 19 is used.
         assertThatZip(apk).doesNotContain("lib/x86_64/libhello-jni.so")

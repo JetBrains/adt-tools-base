@@ -27,7 +27,6 @@ import com.android.build.gradle.internal.dependency.NativeLibraryArtifact;
 import com.android.build.gradle.internal.dependency.NativeLibraryArtifactAdaptor;
 import com.android.build.gradle.managed.NdkConfig;
 import com.android.build.gradle.model.NativeSourceSet;
-import com.android.build.gradle.tasks.GdbSetupTask;
 import com.android.build.gradle.tasks.StripDebugSymbolTask;
 import com.android.utils.StringHelper;
 import com.google.common.base.Objects;
@@ -40,7 +39,6 @@ import com.google.common.collect.Multimap;
 import org.gradle.api.Action;
 import org.gradle.api.Task;
 import org.gradle.api.file.SourceDirectorySet;
-import org.gradle.api.tasks.Copy;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.language.base.FunctionalSourceSet;
 import org.gradle.language.c.CSourceSet;
@@ -366,11 +364,6 @@ public class NdkConfiguration {
                     ndkConfig.getStlVersion(),
                     compileNdkTaskName);
 
-            if (Boolean.TRUE.equals(ndkConfig.getDebuggable())) {
-                // TODO: Use AndroidTaskRegistry and scopes to create tasks in experimental plugin.
-                setupNdkGdbDebug(tasks, binary, buildDir, ndkConfig, ndkHandler,
-                        compileNdkTaskName);
-            }
             createStripDebugTask(
                     tasks,
                     (SharedLibraryBinarySpec) binary,
@@ -379,48 +372,6 @@ public class NdkConfiguration {
                     ndkHandler,
                     compileNdkTaskName);
         }
-    }
-
-    /**
-     * Setup tasks to create gdb.setup and copy gdbserver for NDK debugging.
-     */
-    private static void setupNdkGdbDebug(
-            @NonNull ModelMap<Task> tasks,
-            @NonNull final NativeBinarySpec binary,
-            @NonNull final File buildDir,
-            @NonNull final NdkConfig ndkConfig,
-            @NonNull final NdkHandler handler,
-            @NonNull String buildTaskName) {
-        final String copyGdbServerTaskName = NdkNamingScheme.getTaskName(binary, "copy", "GdbServer");
-        tasks.create(copyGdbServerTaskName, Copy.class, new Action<Copy>() {
-            @Override
-            public void execute(Copy task) {
-                task.from(new File(handler.getPrebuiltDirectory(
-                        Abi.getByName(binary.getTargetPlatform().getName())),
-                        "gdbserver/gdbserver"));
-                task.into(new File(buildDir, NdkNamingScheme.getOutputDirectoryName(binary)));
-            }
-        });
-
-        final String createGdbSetupTaskName = NdkNamingScheme.getTaskName(binary, "create", "Gdbsetup");
-        tasks.create(createGdbSetupTaskName, GdbSetupTask.class, new Action<GdbSetupTask>() {
-            @Override
-            public void execute(GdbSetupTask task) {
-                task.setNdkHandler(handler);
-                task.setExtension(ndkConfig);
-                task.setBinary(binary);
-                task.setOutputDir(
-                        new File(buildDir, NdkNamingScheme.getOutputDirectoryName(binary)));
-            }
-        });
-
-        tasks.named(buildTaskName, new Action<Task>() {
-            @Override
-            public void execute(Task task) {
-                task.dependsOn(copyGdbServerTaskName);
-                task.dependsOn(createGdbSetupTaskName);
-            }
-        });
     }
 
     private static void createStripDebugTask(
