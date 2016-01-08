@@ -170,30 +170,27 @@ public class SchemaModuleUtil {
 
     /**
      * Use JAXB to create POJOs from the given XML.
-     * @param xml The XML to read. The stream will be closed after being read.
-     * @param possibleModules The {@link SchemaModule}s that are available to parse the XML.
+     *
+     * @param xml              The XML to read. The stream will be closed after being read.
+     * @param possibleModules  The {@link SchemaModule}s that are available to parse the XML.
      * @param resourceResolver Resolver for any imported XSDs.
-     * @param progress For logging.
+     * @param progress         For logging.
      * @return The unmarshalled object.
+     * @throws JAXBException if there is an error during unmarshalling.
      *
      * TODO: maybe templatize and return a nicer type.
      */
     @Nullable
     public static Object unmarshal(@NonNull InputStream xml,
             @NonNull Collection<SchemaModule> possibleModules,
-            @Nullable LSResourceResolver resourceResolver, @NonNull ProgressIndicator progress) {
+            @Nullable LSResourceResolver resourceResolver, @NonNull ProgressIndicator progress)
+            throws JAXBException {
         JAXBContext context = getContext(possibleModules);
         Schema schema = getSchema(possibleModules, resourceResolver, progress);
-        Unmarshaller u;
-        try {
-            u = context.createUnmarshaller();
-            u.setSchema(schema);
-            u.setEventHandler(createValidationEventHandler(progress));
-            return ((JAXBElement) u.unmarshal(new StreamSource(xml))).getValue();
-        } catch (JAXBException e) {
-            progress.logWarning(e.getMessage(), e);
-        }
-        return null;
+        Unmarshaller u = context.createUnmarshaller();
+        u.setSchema(schema);
+        u.setEventHandler(createValidationEventHandler(progress));
+        return ((JAXBElement) u.unmarshal(new StreamSource(xml))).getValue();
     }
 
     /**
