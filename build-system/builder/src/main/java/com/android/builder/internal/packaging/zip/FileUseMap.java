@@ -113,7 +113,7 @@ class FileUseMap {
      * @param <T> the type of data to store in the entry
      * @return the new entry
      */
-    <T> FileUseMapEntry<T> add(long start, long end, T store) {
+    <T> FileUseMapEntry<T> add(long start, long end, @NonNull T store) {
         Preconditions.checkArgument(start >= 0, "start < 0");
         Preconditions.checkArgument(end > start, "end < start");
         Preconditions.checkArgument(store != null, "store != null");
@@ -251,6 +251,29 @@ class FileUseMap {
      * @return the size
      */
     long size() {
+        return mSize;
+    }
+
+    /**
+     * Obtains the largest used offset in the map. This will be size of the map after truncation.
+     * @return the size of the file discounting the last block if it is empty
+     */
+    long usedSize() {
+        if (mSize == 0) {
+            return 0;
+        }
+
+        /*
+         * Find the last entry to see if it is an empty entry. If it is, we need to remove its size
+         * from the returned value.
+         */
+        FileUseMapEntry<?> last = mMap.last();
+        Verify.verifyNotNull(last, "last == null");
+        if (last.isFree()) {
+            mMap.remove(last);
+            return last.getStart();
+        }
+
         return mSize;
     }
 
