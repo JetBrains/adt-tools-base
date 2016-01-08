@@ -77,7 +77,7 @@ public class MergeManifests extends ManifestProcessorTask {
                 null /* aaptFriendlyManifestOutputFile */,
                 ManifestMerger2.MergeType.APPLICATION,
                 variantConfiguration.getManifestPlaceholders(),
-                optionalFeatures,
+                getOptionalFeatures(),
                 getReportFile());
     }
 
@@ -188,6 +188,11 @@ public class MergeManifests extends ManifestProcessorTask {
 
     public void setReportFile(File reportFile) {
         this.reportFile = reportFile;
+    }
+
+    @Input
+    public List<Feature> getOptionalFeatures() {
+        return optionalFeatures;
     }
 
     public VariantConfiguration getVariantConfiguration() {
