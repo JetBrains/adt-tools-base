@@ -224,6 +224,8 @@ public final class FileUtils {
 
     /**
      * Computes the relative of a file or directory with respect to a directory.
+     * For example, if the file's absolute path is {@code /a/b/c} and the directory
+     * is {@code /a}, this method returns {@code b/c}.
      *
      * @param file the path that may not correspond to any existing path in the filesystem
      * @param dir the directory to compute the path relative to
@@ -237,10 +239,28 @@ public final class FileUtils {
         return toSystemDependentPath(path);
     }
 
+    /**
+     * Converts a /-based path into a path using the system dependent separator.
+     * @param path the system independent path to convert
+     * @return the system dependent path
+     */
     @NonNull
     public static String toSystemDependentPath(@NonNull String path) {
         if (File.separatorChar != '/') {
             path = path.replace('/', File.separatorChar);
+        }
+        return path;
+    }
+
+    /**
+     * Converts a system-dependent path into a /-based path.
+     * @param path the system dependent path
+     * @return the system independent path
+     */
+    @NonNull
+    public static String toSystemIndependentPath(@NonNull String path) {
+        if (File.separatorChar != '/') {
+            path = path.replace(File.separatorChar, '/');
         }
         return path;
     }
