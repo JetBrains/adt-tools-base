@@ -17,6 +17,7 @@
 package com.android.builder.internal.packaging.zip;
 
 import com.android.annotations.NonNull;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Verify;
 import com.google.common.io.ByteSource;
@@ -64,14 +65,18 @@ class Eocd {
 
     /**
      * Field in the record: number of bytes of the Central Directory.
+     * This is not private because it is required in unit tests.
      */
-    private static final ZipField.F4 F_CD_SIZE = new ZipField.F4(F_RECORDS_TOTAL.endOffset(),
+    @VisibleForTesting
+    static final ZipField.F4 F_CD_SIZE = new ZipField.F4(F_RECORDS_TOTAL.endOffset(),
             "Directory size", new ZipFieldInvariantNonNegative());
 
     /**
      * Field in the record: offset, from the archive start, where the Central Directory starts.
+     * This is not private because it is required in unit tests.
      */
-    private static final ZipField.F4 F_CD_OFFSET = new ZipField.F4(F_CD_SIZE.endOffset(),
+    @VisibleForTesting
+    static final ZipField.F4 F_CD_OFFSET = new ZipField.F4(F_CD_SIZE.endOffset(),
             "Directory offset", new ZipFieldInvariantNonNegative());
 
     /**
