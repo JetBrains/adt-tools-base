@@ -1045,21 +1045,7 @@ public abstract class TaskManager {
                 new JavaCompileConfigAction(scope));
         scope.setJavacTask(javacTask);
 
-        IncrementalMode incrementalMode = getIncrementalMode(scope.getVariantConfiguration());
-
-        if (incrementalMode == IncrementalMode.LOCAL_RES_ONLY) {
-            // in this case only depend on the R class. We want to ignore the other
-            // source generating classes like RS, aidl, etc...
-            javacTask.optionalDependsOn(tasks, scope.getGenerateRClassTask());
-        } else if (incrementalMode != IncrementalMode.LOCAL_JAVA_ONLY) {
-            javacTask.optionalDependsOn(tasks, scope.getSourceGenTask());
-            javacTask.dependsOn(tasks, scope.getVariantData().prepareDependenciesTask);
-            // TODO - dependency information for the compile classpath is being lost.
-            // Add a temporary approximation
-            javacTask.dependsOn(tasks,
-                    scope.getVariantData().getVariantDependency().getCompileConfiguration()
-                            .getBuildDependencies());
-        }
+        setupCompileTaskDependencies(tasks, scope, variantData, javacTask);
 
         // create the output stream from this task
         scope.getTransformManager().addStream(OriginalStream.builder()
@@ -1067,15 +1053,6 @@ public abstract class TaskManager {
                 .addScope(Scope.PROJECT)
                 .setFolder(scope.getJavaOutputDir())
                 .setDependency(javacTask.getName()).build());
-
-        if (variantData.getType().isForTesting()) {
-            BaseVariantData testedVariantData =
-                    (BaseVariantData) ((TestVariantData) variantData).getTestedVariantData();
-            final JavaCompile testedJavacTask = testedVariantData.javacTask;
-            javacTask.dependsOn(tasks,
-                    testedJavacTask != null ? testedJavacTask :
-                            testedVariantData.getScope().getJavacTask());
-        }
 
         // Create jar task for uses by external modules.
         if (variantData.getVariantDependency().getClassesConfiguration() != null) {
@@ -1098,6 +1075,36 @@ public abstract class TaskManager {
         }
 
         return javacTask;
+    }
+
+    private void setupCompileTaskDependencies(@NonNull TaskFactory tasks,
+            @NonNull VariantScope scope,
+            BaseVariantData<? extends BaseVariantOutputData> variantData,
+            AndroidTask<?> compileTask) {
+        IncrementalMode incrementalMode = getIncrementalMode(scope.getVariantConfiguration());
+
+        if (incrementalMode == IncrementalMode.LOCAL_RES_ONLY) {
+            // in this case only depend on the R class. We want to ignore the other
+            // source generating classes like RS, aidl, etc...
+            compileTask.optionalDependsOn(tasks, scope.getGenerateRClassTask());
+        } else if (incrementalMode != IncrementalMode.LOCAL_JAVA_ONLY) {
+            compileTask.optionalDependsOn(tasks, scope.getSourceGenTask());
+            compileTask.dependsOn(tasks, scope.getVariantData().prepareDependenciesTask);
+            // TODO - dependency information for the compile classpath is being lost.
+            // Add a temporary approximation
+            compileTask.dependsOn(tasks,
+                    scope.getVariantData().getVariantDependency().getCompileConfiguration()
+                            .getBuildDependencies());
+        }
+
+        if (variantData.getType().isForTesting()) {
+            BaseVariantData testedVariantData =
+                    (BaseVariantData) ((TestVariantData) variantData).getTestedVariantData();
+            final JavaCompile testedJavacTask = testedVariantData.javacTask;
+            compileTask.dependsOn(tasks,
+                    testedJavacTask != null ? testedJavacTask :
+                            testedVariantData.getScope().getJavacTask());
+        }
     }
 
     /**
@@ -2247,17 +2254,13 @@ public abstract class TaskManager {
                         dataBindingBuilder.getPrintMachineReadableOutput()));
         scope.setDataBindingExportInfoTask(exportBuildInfo);
 
-        // handle incremental compilation
-        IncrementalMode incrementalMode = getIncrementalMode(scope.getVariantConfiguration());
-        if (incrementalMode == IncrementalMode.LOCAL_RES_ONLY) {
-            AndroidTask<? extends AbstractCompile> javaCompilerTask = scope.getJavaCompilerTask();
-            if (javaCompilerTask != null) {
-                javaCompilerTask.dependsOn(tasks, exportBuildInfo);
-            }
+        exportBuildInfo.dependsOn(tasks, processLayoutsTask);
+        AndroidTask<? extends AbstractCompile> javaCompilerTask = scope.getJavaCompilerTask();
+        if (javaCompilerTask != null) {
+            javaCompilerTask.dependsOn(tasks, exportBuildInfo);
         }
 
-        exportBuildInfo.dependsOn(tasks, processLayoutsTask);
-        scope.getSourceGenTask().dependsOn(tasks, exportBuildInfo);
+        setupCompileTaskDependencies(tasks, scope, scope.getVariantData(), exportBuildInfo);
     }
 
     /**

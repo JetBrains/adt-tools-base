@@ -16,33 +16,56 @@
 
 package com.android.build.gradle.internal.tasks.databinding;
 
+import com.android.SdkConstants;
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantData;
-import com.android.build.gradle.internal.variant.LibraryVariantData;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.google.common.base.CharMatcher;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
 
+import org.gradle.api.Action;
 import org.gradle.api.DefaultTask;
+import org.gradle.api.file.ConfigurableFileTree;
+import org.gradle.api.file.FileCollection;
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputDirectory;
+import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.api.tasks.TaskExecutionException;
+import org.gradle.api.tasks.incremental.IncrementalTaskInputs;
+import org.gradle.api.tasks.incremental.InputFileDetails;
 
 import android.databinding.tool.LayoutXmlProcessor;
 import android.databinding.tool.processing.Scope;
 
 import java.io.File;
+import java.util.List;
+import java.util.concurrent.Callable;
 
 /**
  * This task creates a class which includes the build environment information, which is needed for
  * the annotation processor.
  */
 public class DataBindingExportBuildInfoTask extends DefaultTask {
+
     private LayoutXmlProcessor xmlProcessor;
+
     private File sdkDir;
+
     private File xmlOutFolder;
+
     private File exportClassListTo;
+
     private boolean printMachineReadableErrors;
 
+    private File dataBindingClassOutput;
+
     @TaskAction
-    public void exportInfo() {
+    public void exportInfo(IncrementalTaskInputs inputs) {
         xmlProcessor.writeInfoClass(getSdkDir(), getXmlOutFolder(), getExportClassListTo(),
                 getLogger().isDebugEnabled(), isPrintMachineReadableErrors());
         Scope.assertNoError();
@@ -56,6 +79,17 @@ public class DataBindingExportBuildInfoTask extends DefaultTask {
         this.xmlProcessor = xmlProcessor;
     }
 
+    @InputFiles
+    public FileCollection getCompilerClasspath() {
+        return null;
+    }
+
+    @InputFiles
+    public Iterable<ConfigurableFileTree> getCompilerSources() {
+        return null;
+    }
+
+    @Input
     public File getSdkDir() {
         return sdkDir;
     }
@@ -64,6 +98,7 @@ public class DataBindingExportBuildInfoTask extends DefaultTask {
         this.sdkDir = sdkDir;
     }
 
+    @InputDirectory // output of the process layouts task
     public File getXmlOutFolder() {
         return xmlOutFolder;
     }
@@ -72,6 +107,8 @@ public class DataBindingExportBuildInfoTask extends DefaultTask {
         this.xmlOutFolder = xmlOutFolder;
     }
 
+    @Input
+    @Optional
     public File getExportClassListTo() {
         return exportClassListTo;
     }
@@ -80,6 +117,7 @@ public class DataBindingExportBuildInfoTask extends DefaultTask {
         this.exportClassListTo = exportClassListTo;
     }
 
+    @Input
     public boolean isPrintMachineReadableErrors() {
         return printMachineReadableErrors;
     }
@@ -88,8 +126,19 @@ public class DataBindingExportBuildInfoTask extends DefaultTask {
         this.printMachineReadableErrors = printMachineReadableErrors;
     }
 
+    @OutputDirectory
+    public File getOutput() {
+        return dataBindingClassOutput;
+    }
+
+    public void setDataBindingClassOutput(File dataBindingClassOutput) {
+        this.dataBindingClassOutput = dataBindingClassOutput;
+    }
+
     public static class ConfigAction implements TaskConfigAction<DataBindingExportBuildInfoTask> {
+
         private final VariantScope variantScope;
+
         private final boolean printMachineReadableErrors;
 
         public ConfigAction(VariantScope variantScope, boolean printMachineReadableErrors) {
@@ -109,16 +158,38 @@ public class DataBindingExportBuildInfoTask extends DefaultTask {
 
         @Override
         public void execute(DataBindingExportBuildInfoTask task) {
-            BaseVariantData variantData = variantScope.getVariantData();
+            final BaseVariantData<? extends BaseVariantOutputData> variantData = variantScope
+                    .getVariantData();
             task.setXmlProcessor(variantData.getLayoutXmlProcessor());
             task.setSdkDir(variantScope.getGlobalScope().getSdkHandler().getSdkFolder());
             task.setXmlOutFolder(variantScope.getLayoutInfoOutputForDataBinding());
 
+            ConventionMappingHelper.map(task, "compilerClasspath", new Callable<FileCollection>() {
+                @Override
+                public FileCollection call() {
+                    return variantScope.getJavaClasspath();
+                }
+            });
+            ConventionMappingHelper
+                    .map(task, "compilerSources", new Callable<Iterable<ConfigurableFileTree>>() {
+                        @Override
+                        public Iterable<ConfigurableFileTree> call() throws Exception {
+                            return Iterables.filter(variantData.getJavaSources(),
+                                    new Predicate<ConfigurableFileTree>() {
+                                        @Override
+                                        public boolean apply(ConfigurableFileTree input) {
+                                            File dataBindingOut = variantScope
+                                                    .getClassOutputForDataBinding();
+                                            return !dataBindingOut.equals(input.getDir());
+                                        }
+                                    });
+                        }
+                    });
+
             task.setExportClassListTo(variantData.getType().isExportDataBindingClassList() ?
                     variantScope.getGeneratedClassListOutputFileForDataBinding() : null);
             task.setPrintMachineReadableErrors(printMachineReadableErrors);
-            variantData.registerJavaGeneratingTask(task,
-                    variantScope.getClassOutputForDataBinding());
+            task.setDataBindingClassOutput(variantScope.getClassOutputForDataBinding());
         }
     }
 }

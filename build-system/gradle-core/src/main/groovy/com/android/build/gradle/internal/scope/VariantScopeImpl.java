@@ -627,8 +627,8 @@ public class VariantScopeImpl implements VariantScope {
     @Override
     @NonNull
     public File getClassOutputForDataBinding() {
-        return new File(globalScope.getIntermediatesDir(),
-                "dataBindingInfo/" + getVariantConfiguration().getDirName());
+        return new File(globalScope.getGeneratedDir(),
+                "source/dataBinding/" + getVariantConfiguration().getDirName());
     }
 
     @Override
