@@ -25,6 +25,7 @@ import static org.junit.Assert.assertTrue;
 
 import com.android.builder.internal.packaging.zip.utils.CachedFileContents;
 import com.android.testutils.TestUtils;
+import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Strings;
@@ -83,7 +84,7 @@ public class ZFileTest {
     }
 
     @Test
-    public void readEmptyZip() throws Exception {
+    public void readAlmostEmptyZip() throws Exception {
         File zf = cloneRsrc("empty-zip.zip", "a");
 
         ZFile azf = new ZFile(zf);
@@ -93,8 +94,6 @@ public class ZFileTest {
         assertNotNull(z);
         assertSame(StoredEntryType.DIRECTORY, z.getType());
     }
-
-
 
     @Test
     public void readZipWithTwoFilesOneDirectory() throws Exception {
@@ -629,7 +628,7 @@ public class ZFileTest {
         Files.write(boom, new File(tdir, "danger"), Charsets.US_ASCII);
         Files.write(kaboom, new File(tdir, "do not touch"), Charsets.US_ASCII);
         File safeDir = new File(tdir, "safe");
-        safeDir.mkdir();
+        assertTrue(safeDir.mkdir());
 
         String iLoveChocolate = Strings.repeat("I love chocolate! ", 200);
         String iLoveOrange = Strings.repeat("I love orange! ", 50);
@@ -669,7 +668,8 @@ public class ZFileTest {
 
         StoredEntry kaboomEntry = zf.get("do not touch");
         assertNotNull(kaboomEntry);
-        assertEquals(CompressionMethod.DEFLATE, kaboomEntry.getCentralDirectoryHeader().getMethod());
+        assertEquals(CompressionMethod.DEFLATE,
+                kaboomEntry.getCentralDirectoryHeader().getMethod());
         assertEquals(kaboom, new String(kaboomEntry.read(), Charsets.US_ASCII));
 
         StoredEntry safeEntry = zf.get("safe/");
@@ -695,5 +695,167 @@ public class ZFileTest {
         assertEquals(loremIpsum, new String(loremIpsumEntry.read(), Charsets.US_ASCII));
 
         zf.close();
+    }
+
+    @Test
+    public void extraDirectoryOffsetEmptyFile() throws Exception {
+        File zipNoOffsetFile = new File(mTemporaryFolder.getRoot(), "a.zip");
+        File zipWithOffsetFile = new File(mTemporaryFolder.getRoot(), "b.zip");
+
+        ZFile zipNoOffset = new ZFile(zipNoOffsetFile);
+        ZFile zipWithOffset = new ZFile(zipWithOffsetFile);
+        zipWithOffset.setExtraDirectoryOffset(31);
+
+        zipNoOffset.close();
+        zipWithOffset.close();
+
+        long zipNoOffsetSize = zipNoOffsetFile.length();
+        long zipWithOffsetSize = zipWithOffsetFile.length();
+
+        assertEquals(zipNoOffsetSize + 31, zipWithOffsetSize);
+
+        /*
+         * EOCD with no comment has 22 bytes.
+         */
+        assertEquals(0, zipNoOffset.getCentralDirectoryOffset());
+        assertEquals(0, zipNoOffset.getCentralDirectorySize());
+        assertEquals(0, zipNoOffset.getEocdOffset());
+        assertEquals(22, zipNoOffset.getEocdSize());
+        assertEquals(31, zipWithOffset.getCentralDirectoryOffset());
+        assertEquals(0, zipWithOffset.getCentralDirectorySize());
+        assertEquals(31, zipWithOffset.getEocdOffset());
+        assertEquals(22, zipWithOffset.getEocdSize());
+
+        /*
+         * The EOCDs should not differ up until the end of the Central Directory size and should
+         * not differ after the offset
+         */
+        int p1Start = 0;
+        int p1Size = Eocd.F_CD_SIZE.endOffset();
+        int p2Start = Eocd.F_CD_OFFSET.endOffset();
+        int p2Size = (int) zipNoOffsetSize - p2Start;
+
+        byte[] noOffsetData1 = FileUtils.readSegment(zipNoOffsetFile, p1Start, p1Size);
+        byte[] noOffsetData2 = FileUtils.readSegment(zipNoOffsetFile, p2Start, p2Size);
+        byte[] withOffsetData1 = FileUtils.readSegment(zipWithOffsetFile, 31, p1Size);
+        byte[] withOffsetData2 = FileUtils.readSegment(zipWithOffsetFile, 31 + p2Start, p2Size);
+
+        assertArrayEquals(noOffsetData1, withOffsetData1);
+        assertArrayEquals(noOffsetData2, withOffsetData2);
+
+        ZFile readWithOffset = new ZFile(zipWithOffsetFile);
+        assertEquals(0, readWithOffset.entries().size());
+    }
+
+    @Test
+    public void extraDirectoryOffsetNonEmptyFile() throws Exception {
+        File zipNoOffsetFile = new File(mTemporaryFolder.getRoot(), "a.zip");
+        File zipWithOffsetFile = new File(mTemporaryFolder.getRoot(), "b.zip");
+
+        ZFile zipNoOffset = new ZFile(zipNoOffsetFile);
+        ZFile zipWithOffset = new ZFile(zipWithOffsetFile);
+        zipWithOffset.setExtraDirectoryOffset(37);
+
+        zipNoOffset.add("x", new ByteArrayEntrySource(new byte[] { 1, 2 }),
+                CompressionMethod.DEFLATE);
+        zipWithOffset.add("x", new ByteArrayEntrySource(new byte[] { 1, 2 }),
+                CompressionMethod.DEFLATE);
+
+        zipNoOffset.close();
+        zipWithOffset.close();
+
+        long zipNoOffsetSize = zipNoOffsetFile.length();
+        long zipWithOffsetSize = zipWithOffsetFile.length();
+
+        assertEquals(zipNoOffsetSize + 37, zipWithOffsetSize);
+
+        /*
+         * Local file header has 30 bytes + name.
+         * Central directory entry has 46 bytes + name
+         * EOCD with no comment has 22 bytes.
+         */
+        assertEquals(30 + 1 + 2, zipNoOffset.getCentralDirectoryOffset());
+        int cdSize = (int) zipNoOffset.getCentralDirectorySize();
+        assertEquals(46 + 1, cdSize);
+        assertEquals(30 + 1 + 2 + cdSize, zipNoOffset.getEocdOffset());
+        assertEquals(22, zipNoOffset.getEocdSize());
+        assertEquals(30 + 1 + 2 + 37, zipWithOffset.getCentralDirectoryOffset());
+        assertEquals(cdSize, zipWithOffset.getCentralDirectorySize());
+        assertEquals(30 + 1 + 2 + 37 + cdSize, zipWithOffset.getEocdOffset());
+        assertEquals(22, zipWithOffset.getEocdSize());
+
+        /*
+         * The files should be equal: until the end of the first entry, from the beginning of the
+         * central directory until the offset field in the EOCD and after the offset field.
+         */
+        int p1Start = 0;
+        int p1Size = 30 + 1 + 2;
+        int p2Start = 30 + 1 + 2;
+        int p2Size = cdSize + Eocd.F_CD_SIZE.endOffset();
+        int p3Start = p2Start + cdSize + Eocd.F_CD_OFFSET.endOffset();
+        int p3Size = 22 - Eocd.F_CD_OFFSET.endOffset();
+
+        byte[] noOffsetData1 = FileUtils.readSegment(zipNoOffsetFile, p1Start, p1Size);
+        byte[] noOffsetData2 = FileUtils.readSegment(zipNoOffsetFile, p2Start, p2Size);
+        byte[] noOffsetData3 = FileUtils.readSegment(zipNoOffsetFile, p3Start, p3Size);
+        byte[] withOffsetData1 = FileUtils.readSegment(zipWithOffsetFile, p1Start, p1Size);
+        byte[] withOffsetData2 = FileUtils.readSegment(zipWithOffsetFile, 37 + p2Start, p2Size);
+        byte[] withOffsetData3 = FileUtils.readSegment(zipWithOffsetFile, 37 + p3Start, p3Size);
+
+        assertArrayEquals(noOffsetData1, withOffsetData1);
+        assertArrayEquals(noOffsetData2, withOffsetData2);
+        assertArrayEquals(noOffsetData3, withOffsetData3);
+
+        ZFile readWithOffset = new ZFile(zipWithOffsetFile);
+        assertEquals(1, readWithOffset.entries().size());
+    }
+
+    @Test
+    public void changeExtraDirectoryOffset() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
+
+        ZFile zip = new ZFile(zipFile);
+        zip.add("x", new ByteArrayEntrySource(new byte[] { 1, 2 }),
+                CompressionMethod.DEFLATE);
+        zip.close();
+
+        long noOffsetSize = zipFile.length();
+
+        zip.setExtraDirectoryOffset(177);
+        zip.close();
+
+        long withOffsetSize = zipFile.length();
+
+        assertEquals(noOffsetSize + 177, withOffsetSize);
+    }
+
+    @Test
+    public void computeOffsetWhenReadingEmptyFile() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
+
+        ZFile zip = new ZFile(zipFile);
+        zip.setExtraDirectoryOffset(18);
+        zip.close();
+
+        zip = new ZFile(zipFile);
+        assertEquals(18, zip.getExtraDirectoryOffset());
+
+        zip.close();
+    }
+
+    @Test
+    public void computeOffsetWhenReadingNonEmptyFile() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
+
+        ZFile zip = new ZFile(zipFile);
+        zip.setExtraDirectoryOffset(287);
+        zip.add("x", new ByteArrayEntrySource(new byte[] { 1, 2 }),
+                CompressionMethod.DEFLATE);
+        zip.close();
+
+        zip = new ZFile(zipFile);
+        assertEquals(287, zip.getExtraDirectoryOffset());
+
+        zip.close();
     }
 }

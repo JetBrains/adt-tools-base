@@ -107,6 +107,12 @@ import java.util.zip.DeflaterOutputStream;
  * that files that need to change location will moved to memory and will only be flushed when
  * either {@link #update()} or {@link #close()} are called.
  * <p>
+ * To allow whole-apk signing, the {@code ZFile} allows the central directory location to be
+ * offset by a fixed amount. This amount can be set using the {@link #setExtraDirectoryOffset(long)}
+ * method. Setting a non-zero value will add extra (unused) space in the zip file before the
+ * central directory. This value can be changed at any time and it will force the central directory
+ * rewritten when the file is updated or closed.
+ * <p>
  * {@code ZFile} provides an extension mechanism to allow objects to register with the file
  * and be notified when changes to the file happen. This should be used
  * to add extra features to the zip file while providing strong decoupling. See
@@ -237,9 +243,17 @@ public class ZFile implements Closeable {
     private boolean mIsNotifying;
 
     /**
+     * An extra offset for the central directory location. {@code 0} if the central directory
+     * should be written in its standard location.
+     */
+    private long mExtraDirectoryOffset;
+
+
+    /**
      * Creates a new zip file. If the zip file does not exist, then no file is created at this
-     * point and {@code ZFile} will contain an empty structure. If a zip file exists, it will be
-     * parsed and read.
+     * point and {@code ZFile} will contain an empty structure. However, an (empty) zip file will
+     * be created if either {@link #update()} or {@link #close()} are used. If a zip file exists,
+     * it will be parsed and read.
      * @param file the zip file
      * @throws IOException some file exists but could not be read
      */
@@ -258,9 +272,11 @@ public class ZFile implements Closeable {
         } else {
             mState = ZipFileState.CLOSED;
             mRaf = null;
+            mDirty = true;
         }
 
         mEntries = Maps.newHashMap();
+        mExtraDirectoryOffset = 0;
 
         try {
             if (mState != ZipFileState.CLOSED) {
@@ -327,17 +343,45 @@ public class ZFile implements Closeable {
         readEocd();
         readCentralDirectory();
 
-        Verify.verifyNotNull(mDirectoryEntry);
-        CentralDirectory directory = mDirectoryEntry.getStore();
-        assert directory != null;
+        /*
+         * Compute where the last file ends. We will need this to compute thee extra offset.
+         */
+        long entryEndOffset;
+        long directoryStartOffset;
 
-        for (StoredEntry entry : directory.getEntries().values()) {
-            long start = entry.getCentralDirectoryHeader().getOffset();
-            long end = start + entry.getInFileSize();
+        if (mDirectoryEntry != null) {
+            CentralDirectory directory = mDirectoryEntry.getStore();
+            assert directory != null;
 
-            FileUseMapEntry<StoredEntry> mapEntry = mMap.add(start, end, entry);
-            mEntries.put(entry.getCentralDirectoryHeader().getName(), mapEntry);
+            entryEndOffset = 0;
+
+            for (StoredEntry entry : directory.getEntries().values()) {
+                long start = entry.getCentralDirectoryHeader().getOffset();
+                long end = start + entry.getInFileSize();
+
+                FileUseMapEntry<StoredEntry> mapEntry = mMap.add(start, end, entry);
+                mEntries.put(entry.getCentralDirectoryHeader().getName(), mapEntry);
+
+                if (end > entryEndOffset) {
+                    entryEndOffset = end;
+                }
+            }
+
+            directoryStartOffset = mDirectoryEntry.getStart();
+        } else {
+            /*
+             * No directory means an empty zip file. Use the start of the EOCD to compute
+             * an existing offset.
+             */
+            Verify.verifyNotNull(mEocdEntry);
+            assert mEocdEntry != null;
+            directoryStartOffset = mEocdEntry.getStart();
+            entryEndOffset = 0;
         }
+
+        long extraOffset = directoryStartOffset - entryEndOffset;
+        Verify.verify(extraOffset >= 0, "extraOffset (%s) < 0", extraOffset);
+        setExtraDirectoryOffset(extraOffset);
     }
 
     /**
@@ -438,7 +482,9 @@ public class ZFile implements Closeable {
 
     /**
      * Reads the zip's central directory and populates the {@link #mDirectoryEntry} variable. This
-     * method can only be called after the EOCD has been read.
+     * method can only be called after the EOCD has been read. If the central directory is empty
+     * (if there are no files on the zip archive), then {@link #mDirectoryEntry} will be set to
+     * {@code null}.
      * @throws IOException failed to read the central directory
      */
     private void readCentralDirectory() throws IOException {
@@ -446,6 +492,7 @@ public class ZFile implements Closeable {
         Preconditions.checkNotNull(mEocdEntry.getStore(), "mEocdEntry.getStore() == null");
         Preconditions.checkState(mState != ZipFileState.CLOSED, "mState == ZipFileState.CLOSED");
         Preconditions.checkState(mRaf != null, "mRaf == null");
+        Preconditions.checkState(mDirectoryEntry == null, "mDirectoryEntry != null");
 
         Eocd eocd = mEocdEntry.getStore();
 
@@ -465,8 +512,10 @@ public class ZFile implements Closeable {
 
         CentralDirectory directory = CentralDirectory.makeFromData(ByteSource.wrap(directoryData),
                 eocd.getTotalRecords(), this);
-        mDirectoryEntry = mMap.add(eocd.getDirectoryOffset(), eocd.getDirectoryOffset()
-                + eocd.getDirectorySize(), directory);
+        if (eocd.getDirectorySize() > 0) {
+            mDirectoryEntry = mMap.add(eocd.getDirectoryOffset(), eocd.getDirectoryOffset()
+                    + eocd.getDirectorySize(), directory);
+        }
     }
 
     /**
@@ -737,10 +786,16 @@ public class ZFile implements Closeable {
 
         CentralDirectory newDirectory = CentralDirectory.makeFromEntries(newStored, this);
         byte[] newDirectoryBytes = newDirectory.toBytes();
-        long directoryOffset = mMap.size();
+        long directoryOffset = mMap.size() + mExtraDirectoryOffset;
 
+        /*
+         * It is fine to seek beyond the end of file. Seeking beyond the end of file will not extend
+         * the file. Even if we do not have any directory data to write, the extend() call below
+         * will force the file to be extended leaving exactly mExtraDirectoryOffset bytes empty at
+         * the beginning.
+         */
         directWrite(directoryOffset, newDirectoryBytes);
-        mMap.extend(directoryOffset + newDirectoryBytes.length);
+        mMap.extend(directoryOffset+ newDirectoryBytes.length);
 
         if (newDirectoryBytes.length > 0) {
             mDirectoryEntry = mMap.add(directoryOffset, directoryOffset + newDirectoryBytes.length,
@@ -762,7 +817,7 @@ public class ZFile implements Closeable {
                     "mDirectoryEntry == null && !mEntries.isEmpty()");
         }
 
-        long dirStart = 0;
+        long dirStart;
         long dirSize = 0;
 
         if (mDirectoryEntry != null) {
@@ -772,6 +827,11 @@ public class ZFile implements Closeable {
             dirStart = mDirectoryEntry.getStart();
             dirSize = mDirectoryEntry.getSize();
             Verify.verify(directory.getEntries().size() == mEntries.size());
+        } else {
+            /*
+             * If we do not have a directory, then we must leave any requested offset empty.
+             */
+            dirStart = mExtraDirectoryOffset;
         }
 
         Eocd eocd = new Eocd(mEntries.size(), dirStart, dirSize);
@@ -1279,7 +1339,6 @@ public class ZFile implements Closeable {
     }
 
     /**
-<<<<<<< HEAD
      * Directly writes data in the zip file. <strong>Incorrect use of this method may corrupt the
      * zip file</strong>. Invoking this method may force the zip to be reopened in read/write
      * mode.
@@ -1418,5 +1477,95 @@ public class ZFile implements Closeable {
 
             add(path, source, cm);
         }
+    }
+
+    /**
+     * Obtains the offset at which the central directory exists, or at which it will be written
+     * if the zip file were to be flushed immediately.
+     * @return the offset, in bytes, where the central directory is or will be written; this value
+     * includes any extra offset for the central directory
+     */
+    public long getCentralDirectoryOffset() {
+        if (mDirectoryEntry != null) {
+            return mDirectoryEntry.getStart();
+        }
+
+        /*
+         * If there are no entries, the central directory is written at the start of the file.
+         */
+        if (mEntries.isEmpty()) {
+            return mExtraDirectoryOffset;
+        }
+
+        /*
+         * The Central Directory is written after all entries. This will be at the end of the file
+         * if the
+         */
+        return mMap.usedSize() + mExtraDirectoryOffset;
+    }
+
+    /**
+     * Obtains the size of the central directory, if the central directory is written in the zip
+     * file.
+     * @return the size of the central directory or {@code -1} if the central directory has not
+     * been computed
+     */
+    public long getCentralDirectorySize() {
+        if (mDirectoryEntry != null) {
+            return mDirectoryEntry.getSize();
+        }
+
+        if (mEntries.isEmpty()) {
+            return 0;
+        }
+
+        return 1;
+    }
+
+    /**
+     * Obtains the offset of the EOCD record, if the EOCD has been written to the file.
+     * @return the offset of the EOCD or {@code -1} if none exists yet
+     */
+    public long getEocdOffset() {
+        if (mEocdEntry == null) {
+            return -1;
+        }
+
+        return mEocdEntry.getStart();
+    }
+
+    /**
+     * Obtains the size of the EOCD record, if the EOCD has been written to the file.
+     * @return the size of the EOCD of {@code -1} it none exists yet
+     */
+    public long getEocdSize() {
+        if (mEocdEntry == null) {
+            return -1;
+        }
+
+        return mEocdEntry.getSize();
+    }
+
+    /**
+     * Sets an extra offset for the central directory. See class description for details. Changing
+     * this value will mark the file as dirty and force a rewrite of the central directory when
+     * updated.
+     * @param offset the offset or {@code 0} to write the central directory at its current location
+     */
+    public void setExtraDirectoryOffset(long offset) {
+        Preconditions.checkArgument(offset >= 0, "offset < 0");
+
+        if (mExtraDirectoryOffset != offset) {
+            mExtraDirectoryOffset = offset;
+            mDirty = true;
+        }
+    }
+
+    /**
+     * Obtains the extra offset for the central directory. See class description for details.
+     * @return the offset or {@code 0} if no offset is set
+     */
+    public long getExtraDirectoryOffset() {
+        return mExtraDirectoryOffset;
     }
 }

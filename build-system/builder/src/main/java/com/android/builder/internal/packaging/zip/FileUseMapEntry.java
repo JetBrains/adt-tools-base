@@ -50,18 +50,18 @@ class FileUseMapEntry<T> {
     /**
      * The first byte in the entry.
      */
-    private long mStart;
+    private final long mStart;
 
     /**
      * The first byte no longer in the entry.
      */
-    private long mEnd;
+    private final long mEnd;
 
     /**
      * The stored data. If {@code null} then this entry represents a free entry.
      */
     @Nullable
-    private T mStore;
+    private final T mStore;
 
     /**
      * Creates a new map entry.
