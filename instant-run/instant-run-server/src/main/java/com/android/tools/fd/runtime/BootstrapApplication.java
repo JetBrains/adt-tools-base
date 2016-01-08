@@ -27,6 +27,7 @@ import android.util.Log;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
@@ -287,6 +288,12 @@ public class BootstrapApplication extends Application {
                     realApplication, externalResourcePath);
             MonkeyPatcher.monkeyPatchExistingResources(BootstrapApplication.this,
                     externalResourcePath, null);
+        } else {
+            // We still need to set the application instance in the LoadedApk etc
+            // such that getApplication() returns the new application
+            MonkeyPatcher.monkeyPatchApplication(
+                    BootstrapApplication.this, BootstrapApplication.this,
+                    realApplication, null);
         }
         super.onCreate();
         if (AppInfo.applicationId != null) {
