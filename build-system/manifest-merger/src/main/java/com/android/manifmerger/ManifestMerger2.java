@@ -349,7 +349,7 @@ public class ManifestMerger2 {
                         BOOTSTRAP_APPLICATION);
             }
         }
-        return document;
+        return document.reparse();
     }
 
     /**
