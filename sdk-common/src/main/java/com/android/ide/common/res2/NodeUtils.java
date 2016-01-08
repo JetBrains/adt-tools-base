@@ -54,6 +54,25 @@ class NodeUtils {
         return newNode;
     }
 
+    /**
+     * Duplicates a node then makes the new document adopt the duplicated node and correctly reassign
+     * namespace and prefix.
+     * @param document the new document
+     * @param node the node to duplicate then adopt.
+     * @return the new node
+     */
+    static Node duplicateAndAdoptNode(Document document, Node node) {
+        Node newNode = duplicateNode(document, node);
+        updateNamespace(newNode, document);
+        return newNode;
+    }
+
+    /**
+     * Duplicates a node. Does not adjust namespaces and prefixes.
+     * @param document the new document
+     * @param node the node to duplicate
+     * @return the new node
+     */
     static Node duplicateNode(Document document, Node node) {
         Node newNode;
         if (node.getNamespaceURI() != null) {
@@ -164,14 +183,14 @@ class NodeUtils {
 
         String ns = node.getNamespaceURI();
         if (ns != null) {
-            NamedNodeMap docAttributes = document.getAttributes();
+            NamedNodeMap docAttributes = getDocumentNamespaceAttributes(document);
 
             String prefix = getPrefixForNs(docAttributes, ns);
             if (prefix == null) {
                 prefix = getUniqueNsAttribute(docAttributes);
                 Attr nsAttr = document.createAttribute(prefix);
                 nsAttr.setValue(ns);
-                document.getChildNodes().item(0).getAttributes().setNamedItem(nsAttr);
+                docAttributes.setNamedItem(nsAttr);
             }
 
             // set the prefix on the node, by removing the xmlns: start
@@ -183,31 +202,37 @@ class NodeUtils {
     }
 
     /**
-     * Looks for an existing prefix for a a given namespace.
+     * Gets the attribute map where xmlns:prefix=uri attributes will be stored by updateNamespace.
+     */
+    @VisibleForTesting
+    @NonNull
+    static NamedNodeMap getDocumentNamespaceAttributes(Document document) {
+        NamedNodeMap attributes = document.getChildNodes().item(0).getAttributes();
+        assert attributes != null;
+        return attributes;
+    }
+
+    /**
+     * Looks for an existing prefix for a given namespace.
      * The prefix must start with "xmlns:". The whole prefix is returned.
-     * @param attributes the list of attributes to look through
-     * @param ns the namespace to find.
+     * @param attributes the attributes to look through
+     * @param namespaceURI the namespace to find.
      * @return the found prefix or null if none is found.
      */
-    private static String getPrefixForNs(NamedNodeMap attributes, String ns) {
-        if (attributes != null) {
-            for (int i = 0, n = attributes.getLength(); i < n; i++) {
-                Attr attribute = (Attr) attributes.item(i);
-                if (ns.equals(attribute.getValue()) && ns.startsWith(SdkConstants.XMLNS_PREFIX)) {
-                    return attribute.getName();
-                }
+    @VisibleForTesting
+    static String getPrefixForNs(@NonNull NamedNodeMap attributes, String namespaceURI) {
+        for (int i = 0, n = attributes.getLength(); i < n; i++) {
+            Attr attribute = (Attr)attributes.item(i);
+            if (namespaceURI.equals(attribute.getValue()) && attribute.getName().startsWith(SdkConstants.XMLNS_PREFIX)) {
+                return attribute.getName();
             }
         }
 
         return null;
     }
 
-    private static String getUniqueNsAttribute(NamedNodeMap attributes) {
-        if (attributes == null) {
-            return "xmlns:ns1";
-        }
-
-        int i = 2;
+    private static String getUniqueNsAttribute(@NonNull NamedNodeMap attributes) {
+        int i = 1;
         while (true) {
             String name = String.format("xmlns:ns%d", i++);
             if (attributes.getNamedItem(name) == null) {

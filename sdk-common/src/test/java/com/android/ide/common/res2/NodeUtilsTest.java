@@ -16,9 +16,11 @@
 
 package com.android.ide.common.res2;
 
+import com.android.SdkConstants;
 import junit.framework.TestCase;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -180,6 +182,57 @@ public class NodeUtilsTest extends TestCase {
                 node,
                 NodeUtils.duplicateNode(document2, node),
                 false));
+    }
+
+    public void testDuplicateAdoptNodeUpdatesNS() throws Exception {
+        Document document = createDocument();
+        Node rootNode = document.createElement("root");
+        String nsURI1 = "http://some.uri";
+        String nsURI2 = "http://some.other.uri";
+        NodeUtils.addAttribute(document, rootNode, null, "xmlns:prefix1", nsURI1);
+        NodeUtils.addAttribute(document, rootNode, null, "xmlns:prefix2", nsURI2);
+        document.appendChild(rootNode);
+
+        Node node1 = document.createElement("N1");
+        Node node2 = document.createElement("N2");
+        rootNode.appendChild(node1).appendChild(node2);
+
+        NodeUtils.addAttribute(document, node1, nsURI1, "prefix1:foo", "bar");
+        NodeUtils.addAttribute(document, node2, nsURI2, "prefix2:baz", "zap");
+
+        // create the other document to receive the adopted node. It must have a root node.
+        Document document2 = createDocument();
+        rootNode = document2.createElement("root");
+        document2.appendChild(rootNode);
+
+        Node adoptedNode = NodeUtils.duplicateAndAdoptNode(document2, node1);
+        assertTrue(NodeUtils.compareElementNode(node1, adoptedNode, true));
+
+        // The new document should have xmlns attributes binding the prefix to the
+        // appropriate ns, and the two should not be mixed up.
+        NamedNodeMap doc2NamespaceAttrs = NodeUtils.getDocumentNamespaceAttributes(document2);
+        String prefix1 = NodeUtils.getPrefixForNs(doc2NamespaceAttrs, nsURI1);
+        String prefix2 = NodeUtils.getPrefixForNs(doc2NamespaceAttrs, nsURI2);
+        assertNotNull(prefix1);
+        assertNotNull(prefix2);
+        assertTrue(prefix1.startsWith(SdkConstants.XMLNS_PREFIX));
+        assertTrue(prefix2.startsWith(SdkConstants.XMLNS_PREFIX));
+        assertNotSame(prefix1, prefix2);
+
+        // Also check that the new prefixes are assigned to the right attribute nodes.
+        int prefixLen = SdkConstants.XMLNS_PREFIX.length();
+        Node adoptedFoo = adoptedNode.getAttributes()
+            .getNamedItem(prefix1.substring(prefixLen) + ":" + "foo");
+        assertTrue(adoptedFoo.getNodeValue().equals("bar"));
+        Node adoptedBaz = adoptedNode.getFirstChild().getAttributes()
+            .getNamedItem(prefix2.substring(prefixLen) + ":" + "baz");
+        assertTrue(adoptedBaz.getNodeValue().equals("zap"));
+
+        // Check that the original nodes are not modified.
+        Node originalFoo = node1.getAttributes().getNamedItem("prefix1:foo");
+        assertTrue(originalFoo.getNodeValue().equals("bar"));
+        Node originalBaz = node2.getAttributes().getNamedItem("prefix2:baz");
+        assertTrue(originalBaz.getNodeValue().equals("zap"));
     }
 
     private static Document createDocument() throws ParserConfigurationException {
