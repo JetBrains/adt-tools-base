@@ -30,7 +30,7 @@ import java.util.logging.Logger;
  */
 public class MarkerFile {
 
-    enum Command {
+    public enum Command {
         RUN,
         BLOCK
     }

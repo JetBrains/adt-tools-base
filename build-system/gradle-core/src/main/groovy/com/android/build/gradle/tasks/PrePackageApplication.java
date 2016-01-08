@@ -30,6 +30,7 @@ import org.gradle.api.tasks.OutputFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Locale;
 
 /**
  * PrePackaging step class that will look if the packaging of the main APK split is necessary
@@ -40,24 +41,7 @@ import java.io.IOException;
  * triggered, the main APK must be rebuilt (even if the resources were changed in a previous
  * build).
  */
-public class PrePackageApplication extends IncrementalTask {
-
-    long buildId;
-
-    @Input
-    public long getBuildId() {
-        return buildId;
-    }
-
-    File markerFile;
-
-    @OutputFile
-    @Optional
-    public File getMarkerFile() {
-        return markerFile;
-    }
-    InstantRunBuildContext instantRunContext;
-    VariantScope variantScope;
+public class PrePackageApplication extends KickerTask {
 
     @Override
     protected void doFullTaskAction() throws IOException {
@@ -84,24 +68,15 @@ public class PrePackageApplication extends IncrementalTask {
         }
     }
 
-    public static class ConfigAction implements TaskConfigAction<PrePackageApplication> {
+    public static class ConfigAction extends KickerTask.ConfigAction<PrePackageApplication> {
 
-        @NonNull
-        private final VariantScope scope;
-
-        public ConfigAction(@NonNull VariantScope scope) {
-            this.scope = scope;
+        public ConfigAction(@NonNull String name, @NonNull VariantScope scope) {
+            super(name, scope);
         }
 
         @NonNull
         public static File getMarkerFile(@NonNull VariantScope scope) {
             return new File(scope.getInstantRunSupportDir(), "package.marker");
-        }
-
-        @NonNull
-        @Override
-        public String getName() {
-            return scope.getTaskName("instantRunMarkerTask");
         }
 
         @NonNull
@@ -112,11 +87,8 @@ public class PrePackageApplication extends IncrementalTask {
 
         @Override
         public void execute(@NonNull PrePackageApplication task) {
-            task.setVariantName(scope.getVariantConfiguration().getFullName());
-            task.buildId = scope.getInstantRunBuildContext().getBuildId();
-            task.variantScope = scope;
+            super.execute(task);
             task.markerFile = getMarkerFile(scope);
-            task.instantRunContext = scope.getInstantRunBuildContext();
         }
     }
 }

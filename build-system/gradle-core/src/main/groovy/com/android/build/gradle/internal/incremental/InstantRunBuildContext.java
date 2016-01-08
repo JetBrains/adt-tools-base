@@ -129,6 +129,17 @@ public class InstantRunBuildContext {
             return null;
         }
 
+        private boolean hasCodeArtifact() {
+            for (Artifact artifact : artifacts) {
+                FileType type = artifact.getType();
+                if (type == FileType.DEX || type == FileType.SPLIT
+                        || type == FileType.MAIN || type == FileType.RESTART_DEX) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         private Element toXml(@NonNull Document document) {
             Element build = document.createElement(TAG_BUILD);
             toXml(document, build);
@@ -338,12 +349,10 @@ public class InstantRunBuildContext {
                 currentBuild.artifacts.clear();
             }
 
-            // since the main APK is produced, no need to keep the RESOURCES record around in 23.
-            if (patchingPolicy == InstantRunPatchingPolicy.MARSHMALLOW_AND_ABOVE) {
-                Artifact resourcesApFile = currentBuild.getArtifactForType(FileType.RESOURCES);
-                if (resourcesApFile != null) {
-                    currentBuild.artifacts.remove(resourcesApFile);
-                }
+            // since the main APK is produced, no need to keep the RESOURCES record around.
+            Artifact resourcesApFile = currentBuild.getArtifactForType(FileType.RESOURCES);
+            if (resourcesApFile != null) {
+                currentBuild.artifacts.remove(resourcesApFile);
             }
         }
         currentBuild.artifacts.add(new Artifact(fileType, file));
@@ -398,6 +407,10 @@ public class InstantRunBuildContext {
                 } else {
                     foundColdRestart = true;
                 }
+            } else {
+                // no verifier status is indicative of a full build or no code change.
+                // If this is a full build, treat it as a cold restart.
+                foundColdRestart = previousBuild.hasCodeArtifact();
             }
             // when a coldswap build was found, remove all RESOURCES entries for previous builds
             // as the resource is redelivered as part of the main split.

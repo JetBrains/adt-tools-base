@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.transforms;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.api.transform.SecondaryFile;
 import com.android.build.api.transform.SecondaryInput;
 import com.android.build.api.transform.Context;
 import com.android.build.api.transform.DirectoryInput;
@@ -35,11 +36,14 @@ import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.tasks.ColdswapArtifactsKickerTask;
+import com.android.build.gradle.tasks.MarkerFile;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
@@ -141,6 +145,12 @@ public class InstantRunSlicer extends Transform {
         Collection<TransformInput> inputs = transformInvocation.getInputs();
         if (outputProvider == null) {
             logger.error(null /* throwable */, "null TransformOutputProvider for InstantRunSlicer");
+            return;
+        }
+
+        // if we are blocked, do not proceed with execution.
+        if (MarkerFile.Command.BLOCK == MarkerFile.readMarkerFile(
+                ColdswapArtifactsKickerTask.ConfigAction.getMarkerFile(variantScope))) {
             return;
         }
 
@@ -286,14 +296,7 @@ public class InstantRunSlicer extends Transform {
             @NonNull TransformOutputProvider outputProvider)
             throws IOException, TransformException, InterruptedException {
 
-        boolean changesAreCompatible =
-                variantScope.getInstantRunBuildContext().hasPassedVerification();
-        boolean restartDexRequested =
-                variantScope.getGlobalScope().isActive(OptionalCompilationStep.RESTART_ONLY);
-
-        if (!changesAreCompatible || restartDexRequested) {
-            processChangesSinceLastRestart(inputs, outputProvider);
-        }
+        processChangesSinceLastRestart(inputs, outputProvider);
 
         // in any case, we always process jar input changes incrementally.
         for (TransformInput input : inputs) {
@@ -318,6 +321,14 @@ public class InstantRunSlicer extends Transform {
             }
         }
         return null;
+    }
+
+    @NonNull
+    @Override
+    public Collection<SecondaryFile> getSecondaryFiles() {
+        return ImmutableList.of(new SecondaryFile(
+                ColdswapArtifactsKickerTask.ConfigAction.getMarkerFile(variantScope),
+                true /* supportsIncrementalChange */));
     }
 
     private void processChangesSinceLastRestart(

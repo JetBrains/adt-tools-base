@@ -373,4 +373,7 @@ public interface VariantScope extends BaseScope {
     @NonNull
     AndroidTask<InstantRunWrapperTask> getInstantRunIncrementalTask();
     void setInstantRunIncrementalTask(@NonNull AndroidTask<InstantRunWrapperTask> instantRunTask);
+
+    AndroidTask<TransformTask> getInstantRunVerifierTask();
+    void setInstantRunVerifierTask(AndroidTask<TransformTask> verifierTask);
 }

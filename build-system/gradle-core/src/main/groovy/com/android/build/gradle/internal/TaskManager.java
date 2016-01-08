@@ -111,6 +111,7 @@ import com.android.build.gradle.internal.variant.LibraryVariantData;
 import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.AndroidJarTask;
+import com.android.build.gradle.tasks.ColdswapArtifactsKickerTask;
 import com.android.build.gradle.tasks.CompatibleScreensManifest;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
@@ -2050,6 +2051,7 @@ public abstract class TaskManager {
         AndroidTask<TransformTask> verifierTask = variantScope.getTransformManager()
                 .addTransform(tasks, variantScope, verifierTransform);
         verifierTask.dependsOn(tasks, extractJarsTask);
+        variantScope.setInstantRunVerifierTask(verifierTask);
 
         InstantRunTransform instantRunTransform = new InstantRunTransform(variantScope);
         AndroidTask<TransformTask> instantRunTask = transformManager
@@ -2126,6 +2128,17 @@ public abstract class TaskManager {
                 scope.getInstantRunBuildContext().getPatchingPolicy();
 
         DexOptions dexOptions = scope.getGlobalScope().getExtension().getDexOptions();
+
+        // let's create the coldswap kicker task. It is necessary as sometimes the IDE will
+        // request an assembleDebug to get the latest coldswap bits yet without any user changes.
+        // so we need to manually kick the tasks that accumulated changes during reload.dex
+        // iterations so they produce the artifacts.
+        AndroidTask<ColdswapArtifactsKickerTask> coldswapKickerTask = getAndroidTasks().create(
+                tasks, new ColdswapArtifactsKickerTask.ConfigAction("coldswapKicker", scope));
+
+        // this kicker task is dependent on the verifier and associated tasks result.
+        coldswapKickerTask.dependsOn(tasks, scope.getInstantRunVerifierTask());
+
         if (patchingPolicy == InstantRunPatchingPolicy.PRE_LOLLIPOP) {
             // for Dalvik, we generate a restart.dex.
             InstantRunDex classesTwoTransform = new InstantRunDex(
@@ -2138,6 +2151,8 @@ public abstract class TaskManager {
                             DefaultContentType.CLASSES));
             AndroidTask<TransformTask> classesTwoDexing = scope.getTransformManager()
                     .addTransform(tasks, scope, classesTwoTransform);
+            // restart task depends on the kicker result
+            classesTwoDexing.dependsOn(tasks, coldswapKickerTask);
             incrementalWrapperTask.dependsOn(tasks, classesTwoDexing);
         } else {
             // if we are at API 21 or above, we generate multi-dexes.
@@ -2146,6 +2161,10 @@ public abstract class TaskManager {
             InstantRunSlicer slicer = new InstantRunSlicer(getLogger(), scope);
             AndroidTask<TransformTask> slicing = scope.getTransformManager()
                     .addTransform(tasks, scope, slicer);
+
+            // slicing should only happen if we need to produce the restart dexes.
+            slicing.dependsOn(tasks, coldswapKickerTask);
+
             incrementalWrapperTask.dependsOn(tasks, slicing);
 
         }
@@ -2284,8 +2303,17 @@ public abstract class TaskManager {
 
         boolean multiOutput = variantData.getOutputs().size() > 1;
 
+        /**
+         * PrePackaging step class that will look if the packaging of the main APK split is
+         * necessary when running in InstantRun mode. In InstantRun mode targeting an api 23 or
+         * above device, resources are packaged in the main split APK. However when a warm swap is
+         * possible, it is not necessary to produce immediately the new main SPLIT since the runtime
+         * use the resources.ap_ file directly. However, as soon as an incompatible change forcing a
+         * cold swap is triggered, the main APK must be rebuilt (even if the resources were changed
+         * in a previous build).
+         */
         AndroidTask<PrePackageApplication> prePackageApp = androidTasks.create(tasks,
-                new PrePackageApplication.ConfigAction(variantScope));
+                new PrePackageApplication.ConfigAction("prePackageMarkerFor", variantScope));
         if (getIncrementalMode(variantScope.getVariantConfiguration())
                 != IncrementalMode.NONE) {
             prePackageApp.dependsOn(tasks, variantScope.getInstantRunAnchorTask());

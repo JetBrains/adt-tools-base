@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.transforms;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.build.api.transform.SecondaryFile;
 import com.android.build.api.transform.SecondaryInput;
 import com.android.build.api.transform.Context;
 import com.android.build.api.transform.DirectoryInput;
@@ -33,6 +34,7 @@ import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.tasks.ColdswapArtifactsKickerTask;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.DexOptions;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
@@ -279,6 +281,16 @@ public class InstantRunDex extends Transform {
     @Override
     public Set<QualifiedContent.Scope> getReferencedScopes() {
         return Sets.immutableEnumSet(QualifiedContent.Scope.PROJECT);
+    }
+
+    @NonNull
+    @Override
+    public Collection<SecondaryFile> getSecondaryFiles() {
+        return buildType == InstantRunBuildType.RESTART
+            ? ImmutableList.of(new SecondaryFile(
+                ColdswapArtifactsKickerTask.ConfigAction.getMarkerFile(variantScope),
+                true /* supportsIncrementalChange */))
+            : ImmutableList.<SecondaryFile>of();
     }
 
     @Override
