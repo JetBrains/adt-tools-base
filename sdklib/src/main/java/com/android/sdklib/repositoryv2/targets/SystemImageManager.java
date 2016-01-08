@@ -44,7 +44,7 @@ public class SystemImageManager {
      * How far down the directory hierarchy we'll search for system images (starting from a
      * package root).
      */
-    private static final int MAX_DEPTH = 5;
+    private static final int MAX_DEPTH = 4;
 
     /**
      * The known system images and their associated packages.
@@ -124,7 +124,9 @@ public class SystemImageManager {
     private Map<SystemImage, LocalPackage> buildImageMap() {
         Map<SystemImage, LocalPackage> result = Maps.newHashMap();
         Map<AndroidVersion, File> platformSkins = Maps.newHashMap();
-        for (LocalPackage p : mRepoManager.getPackages().getLocalPackages().values()) {
+        Collection<? extends LocalPackage> packages =
+                mRepoManager.getPackages().getLocalPackages().values();
+        for (LocalPackage p : packages) {
             if (p.getTypeDetails() instanceof DetailsTypes.PlatformDetailsType) {
                 File skinDir = new File(p.getLocation(), SdkConstants.FD_SKINS);
                 if (mFop.exists(skinDir)) {
@@ -133,8 +135,13 @@ public class SystemImageManager {
                 }
             }
         }
-        for (LocalPackage p : mRepoManager.getPackages().getLocalPackages().values()) {
-            collectImages(p.getLocation(), p, 0, platformSkins, result);
+        for (LocalPackage p : packages) {
+            TypeDetails typeDetails = p.getTypeDetails();
+            if (typeDetails instanceof DetailsTypes.SysImgDetailsType ||
+                    typeDetails instanceof DetailsTypes.PlatformDetailsType ||
+                    typeDetails instanceof DetailsTypes.AddonDetailsType) {
+                collectImages(p.getLocation(), p, 0, platformSkins, result);
+            }
         }
         return result;
     }
@@ -143,10 +150,20 @@ public class SystemImageManager {
             Map<AndroidVersion, File> platformSkins,
             Map<SystemImage, LocalPackage> collector) {
         for (File f : mFop.listFiles(dir)) {
-            if (f.getName().equals(SYS_IMG_NAME)) {
+            // Instead of just f.getName().equals, we first check f.getPath().endsWith,
+            // because getPath() is a simpler getter whereas getName() computes a new
+            // string on each call
+            if (f.getPath().endsWith(SYS_IMG_NAME) && f.getName().equals(SYS_IMG_NAME)) {
                 collector.put(createSysImg(p, dir, platformSkins), p);
             }
-            if (mFop.isDirectory(f) && depth < MAX_DEPTH) {
+            if (depth < MAX_DEPTH && mFop.isDirectory(f)) {
+                String name = f.getName();
+                if (name.equals(SdkConstants.FD_DATA) ||
+                       name.equals(SdkConstants.FD_SAMPLES) ||
+                       name.equals(SdkConstants.FD_SKINS)) {
+                    // Not containers for system images, but have a lot of files
+                    continue;
+                }
                 collectImages(f, p, depth + 1, platformSkins, collector);
             }
         }
