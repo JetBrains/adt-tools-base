@@ -39,6 +39,8 @@ import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.pipeline.TransformInvocationBuilder;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.tasks.ColdswapArtifactsKickerTask;
+import com.android.build.gradle.tasks.MarkerFile;
 import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
@@ -77,9 +79,6 @@ public class InstantRunSlicerTest {
     Logger logger;
 
     @Mock
-    GlobalScope globalScope;
-
-    @Mock
     VariantScope variantScope;
 
     @Mock
@@ -92,11 +91,10 @@ public class InstantRunSlicerTest {
         MockitoAnnotations.initMocks(this);
         instantRunSupportDir = createTmpDirectory("instantRunSupport");
         when(variantScope.getInstantRunSupportDir()).thenReturn(instantRunSupportDir);
+        MarkerFile.createMarkerFile(
+                ColdswapArtifactsKickerTask.ConfigAction.getMarkerFile(variantScope),
+                MarkerFile.Command.RUN);
         when(variantScope.getInstantRunBuildContext()).thenReturn(instantRunBuildContext);
-        when(variantScope.getGlobalScope()).thenReturn(globalScope);
-        when(instantRunBuildContext.hasPassedVerification()).thenReturn(Boolean.FALSE);
-        when(globalScope.isActive(OptionalCompilationStep.RESTART_ONLY))
-                .thenReturn(Boolean.FALSE);
     }
 
     @After

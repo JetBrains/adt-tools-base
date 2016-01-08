@@ -1018,4 +1018,16 @@ public class VariantScopeImpl implements VariantScope {
             @NonNull AndroidTask<InstantRunAnchorTask> instantAllActionsTask) {
         this.instantRunAllActions = instantAllActionsTask;
     }
+
+    private AndroidTask<TransformTask> instantRunVerifierTask;
+
+    @Override
+    public AndroidTask<TransformTask> getInstantRunVerifierTask() {
+        return instantRunVerifierTask;
+    }
+
+    @Override
+    public void setInstantRunVerifierTask(AndroidTask<TransformTask> verifierTask) {
+        instantRunVerifierTask = verifierTask;
+    }
 }
