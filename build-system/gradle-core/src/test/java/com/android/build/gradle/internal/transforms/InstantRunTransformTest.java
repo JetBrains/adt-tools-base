@@ -22,7 +22,9 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
+import com.android.build.api.transform.SecondaryInput;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.build.gradle.internal.pipeline.TransformInvocationBuilder;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.api.transform.Context;
@@ -161,7 +163,11 @@ public class InstantRunTransformTest {
                 }
             }
         };
-        transform.transform(context, input.build(), ImmutableList.<TransformInput>of(), transformOutput, true);
+        transform.transform(new TransformInvocationBuilder(context)
+            .addInputs(input.build())
+            .addOutputProvider(transformOutput)
+            .setIncrementalMode(true)
+            .build());
 
         ImmutableList<File> processedFiles = filesElectedForClasses2Transformation.build();
         assertEquals("Wrong number of files elected for classes 2 processing", 2, processedFiles.size());
@@ -247,7 +253,7 @@ public class InstantRunTransformTest {
             }
         });
 
-        TransformOutputProvider TransformOutputProvider = new TransformOutputProvider() {
+        TransformOutputProvider transformOutputProvider = new TransformOutputProvider() {
             @Override
             public void deleteAll() throws IOException {
 
@@ -269,8 +275,11 @@ public class InstantRunTransformTest {
         // delete the "deleted" file.
         originalFile.delete();
 
-        transform.transform(context, input.build(),
-                ImmutableList.<TransformInput>of(), TransformOutputProvider, true);
+        transform.transform(new TransformInvocationBuilder(context)
+                .addOutputProvider(transformOutputProvider)
+                .addInputs(input.build())
+                .setIncrementalMode(true)
+                .build());
 
         ImmutableList<File> processedFiles = filesElectedForClasses2Transformation.build();
         assertEquals("Wrong number of files elected for processing", 0, processedFiles.size());

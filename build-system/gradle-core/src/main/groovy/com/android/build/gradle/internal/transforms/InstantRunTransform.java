@@ -22,6 +22,7 @@ import static com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.api.transform.SecondaryInput;
 import com.android.build.api.transform.Context;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
@@ -31,6 +32,7 @@ import com.android.build.api.transform.Status;
 import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
+import com.android.build.api.transform.TransformInvocation;
 import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.incremental.IncrementalChangeVisitor;
@@ -57,7 +59,6 @@ import org.objectweb.asm.Opcodes;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -126,18 +127,18 @@ public class InstantRunTransform extends Transform {
     }
 
     @Override
-    public void transform(@NonNull Context context, @NonNull Collection<TransformInput> inputs,
-            @NonNull Collection<TransformInput> referencedInputs,
-            @Nullable TransformOutputProvider outputProvider, boolean isIncremental)
+    public void transform(TransformInvocation invocation)
             throws IOException, TransformException, InterruptedException {
-        
+
+        TransformOutputProvider outputProvider = invocation.getOutputProvider();
         if (outputProvider == null) {
             throw new IllegalStateException("InstantRunTransform called with null output");
         }
 
         // first get all referenced input to construct a class loader capable of loading those
         // classes. This is useful for ASM as it needs to load classes
-        List<URL> referencedInputUrls = getAllClassesLocations(inputs, referencedInputs);
+        List<URL> referencedInputUrls = getAllClassesLocations(
+                invocation.getInputs(), invocation.getReferencedInputs());
 
         // This classloader could be optimized a bit, first we could create a parent class loader
         // with the android.jar only that could be stored in the GlobalScope for reuse. This
@@ -165,10 +166,10 @@ public class InstantRunTransform extends Transform {
                     ImmutableSet.<ContentType>of(ExtendedContentType.CLASSES_ENHANCED),
                     getScopes(), Format.DIRECTORY);
 
-            for (TransformInput input : inputs) {
+            for (TransformInput input : invocation.getInputs()) {
                 for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
                     File inputDir = directoryInput.getFile();
-                    if (isIncremental) {
+                    if (invocation.isIncremental()) {
                         for (Map.Entry<File, Status> fileEntry : directoryInput.getChangedFiles()
                                 .entrySet()) {
 

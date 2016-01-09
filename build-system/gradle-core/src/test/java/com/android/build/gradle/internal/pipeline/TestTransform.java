@@ -17,12 +17,15 @@
 package com.android.build.gradle.internal.pipeline;
 
 import com.android.annotations.NonNull;
+import com.android.build.api.transform.SecondaryFile;
+import com.android.build.api.transform.SecondaryInput;
 import com.android.build.api.transform.Context;
 import com.android.build.api.transform.QualifiedContent.ContentType;
 import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
+import com.android.build.api.transform.TransformInvocation;
 import com.android.build.api.transform.TransformOutputProvider;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -56,6 +59,7 @@ public class TestTransform extends Transform {
     private final Set<Scope> referencedScopes;
     private final boolean isIncremental;
     private final List<File> secondaryFileInputs;
+    private final List<SecondaryFile> mSecondaryFiles;
 
     public static Builder builder() {
         return new Builder();
@@ -91,10 +95,16 @@ public class TestTransform extends Transform {
         return referencedScopes;
     }
 
-    @NonNull
     @Override
+    @NonNull
     public Collection<File> getSecondaryFileInputs() {
         return secondaryFileInputs;
+    }
+
+    @NonNull
+    @Override
+    public Collection<SecondaryFile> getSecondaryFiles() {
+        return mSecondaryFiles;
     }
 
     @Override
@@ -103,43 +113,33 @@ public class TestTransform extends Transform {
     }
 
     @Override
-    public void transform(
-            @NonNull Context context,
-            @NonNull Collection<TransformInput> inputs,
-            @NonNull Collection<TransformInput> referencedInputs,
-            @NonNull TransformOutputProvider outputProvider,
-            boolean isIncremental) throws IOException, TransformException, InterruptedException {
-        this.inputs = inputs;
-        this.referencedInputs = referencedInputs;
-        this.output = outputProvider;
-        this.isIncrementalInputs = isIncremental;
-
+    public void transform(TransformInvocation invocation)
+            throws IOException, TransformException, InterruptedException {
+        this.invocation = invocation;
     }
 
     // --- data recorded during the fake execution
-
-    private Collection<TransformInput> inputs;
-    private Collection<TransformInput> referencedInputs;
-    private boolean isIncrementalInputs;
-    private TransformOutputProvider output;
-
+    private TransformInvocation invocation;
 
     public boolean isIncrementalInputs() {
-        return isIncrementalInputs;
+        return invocation.isIncremental();
     }
 
     public Collection<TransformInput> getInputs() {
-        return inputs;
+        return invocation.getInputs();
     }
 
     public Collection<TransformInput> getReferencedInputs() {
-        return referencedInputs;
+        return invocation.getReferencedInputs();
     }
 
     public TransformOutputProvider getOutput() {
-        return output;
+        return invocation.getOutputProvider();
     }
 
+    public Collection<SecondaryInput> getSecondaryInputs() {
+        return invocation.getSecondaryInputs();
+    }
 
     private TestTransform(
             @NonNull String name,
@@ -148,7 +148,8 @@ public class TestTransform extends Transform {
             @NonNull Set<Scope> scopes,
             @NonNull Set<Scope> refedScopes,
             boolean isIncremental,
-            @NonNull List<File> secondaryFileInputs) {
+            @NonNull List<File> secondaryFileInputs,
+            @NonNull List<SecondaryFile> secondaryInputs) {
         this.name = name;
         this.inputTypes = inputTypes;
         this.outputTypes = outputTypes;
@@ -156,6 +157,7 @@ public class TestTransform extends Transform {
         this.referencedScopes = refedScopes;
         this.isIncremental = isIncremental;
         this.secondaryFileInputs = ImmutableList.copyOf(secondaryFileInputs);
+        this.mSecondaryFiles = secondaryInputs;
     }
 
     /**
@@ -170,6 +172,7 @@ public class TestTransform extends Transform {
         private final Set<Scope> referencedScopes = EnumSet.noneOf(Scope.class);
         private boolean isIncremental = false;
         private final List<File> secondaryFileInputs = Lists.newArrayList();
+        private final List<SecondaryFile> mSecondaryFiles = Lists.newArrayList();
 
         Builder setName(String name) {
             this.name = name;
@@ -214,6 +217,11 @@ public class TestTransform extends Transform {
             return this;
         }
 
+        Builder setSecondaryInput(@NonNull SecondaryFile secondaryFile) {
+            mSecondaryFiles.add(secondaryFile);
+            return this;
+        }
+
         @NonNull
         TestTransform build() {
             String name = this.name != null ? this.name : "transform name";
@@ -231,7 +239,8 @@ public class TestTransform extends Transform {
                     scopes,
                     refedScopes,
                     isIncremental,
-                    secondaryFileInputs);
+                    secondaryFileInputs,
+                    mSecondaryFiles);
         }
     }
 }

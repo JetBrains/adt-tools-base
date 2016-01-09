@@ -19,6 +19,8 @@ package com.android.build.gradle.internal.tasks;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.api.transform.SecondaryInput;
+import com.android.build.api.transform.TransformInvocation;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.transforms.JarMerger;
 import com.android.build.api.transform.Context;
@@ -133,12 +135,8 @@ public class LibraryJarTransform extends Transform {
     }
 
     @Override
-    public void transform(
-            @NonNull Context context,
-            @NonNull Collection<TransformInput> unusedInputs,
-            @NonNull Collection<TransformInput> referencedInputs,
-            @Nullable TransformOutputProvider unusedOutputProvider,
-            boolean isIncremental) throws IOException, TransformException, InterruptedException {
+    public void transform(TransformInvocation invocation)
+            throws IOException, TransformException, InterruptedException {
         List<String> excludes = Lists.newArrayListWithExpectedSize(5);
 
         // these must be regexp to match the zip entries
@@ -169,7 +167,7 @@ public class LibraryJarTransform extends Transform {
         List<QualifiedContent> mainScope = Lists.newArrayList();
         List<QualifiedContent> locaJlJarScope = Lists.newArrayList();
 
-        for (TransformInput input : referencedInputs) {
+        for (TransformInput input : invocation.getReferencedInputs()) {
             for (QualifiedContent qualifiedContent : Iterables.concat(
                     input.getJarInputs(), input.getDirectoryInputs())) {
                 if (qualifiedContent.getScopes().contains(Scope.PROJECT)) {

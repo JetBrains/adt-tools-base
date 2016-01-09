@@ -18,6 +18,8 @@ package com.android.build.gradle.internal.transforms;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.api.transform.SecondaryInput;
+import com.android.build.api.transform.TransformInvocation;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
@@ -173,16 +175,12 @@ public class ShrinkResourcesTransform extends Transform {
     }
 
     @Override
-    public void transform(
-            @NonNull Context context,
-            @NonNull Collection<TransformInput> inputs,
-            @NonNull Collection<TransformInput> referencedInputs,
-            @Nullable TransformOutputProvider outputProvider,
-            boolean isIncremental) throws IOException, TransformException, InterruptedException {
+    public void transform(TransformInvocation invocation)
+            throws IOException, TransformException, InterruptedException {
 
         // there should be only one input since this transform is always applied after
         // proguard.
-        TransformInput input = Iterables.getOnlyElement(referencedInputs);
+        TransformInput input = Iterables.getOnlyElement(invocation.getReferencedInputs());
         File minifiedOutJar = Iterables.getOnlyElement(input.getJarInputs()).getFile();
 
         BaseVariantData<?> variantData = variantOutputData.variantData;

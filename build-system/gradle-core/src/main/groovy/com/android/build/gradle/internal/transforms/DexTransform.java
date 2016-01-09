@@ -22,6 +22,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.api.transform.SecondaryInput;
+import com.android.build.api.transform.TransformInvocation;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext.FileType;
@@ -202,18 +204,16 @@ public class DexTransform extends Transform {
     }
 
     @Override
-    public void transform(
-            @NonNull Context context,
-            @NonNull Collection<TransformInput> inputs,
-            @NonNull Collection<TransformInput> referencedInputs,
-            @Nullable TransformOutputProvider outputProvider,
-            boolean isIncremental) throws TransformException, IOException, InterruptedException {
+    public void transform(TransformInvocation transformInvocation)
+            throws TransformException, IOException, InterruptedException {
+        TransformOutputProvider outputProvider = transformInvocation.getOutputProvider();
+        boolean isIncremental = transformInvocation.isIncremental();
         checkNotNull(outputProvider, "Missing output object for transform " + getName());
 
         // Gather a full list of all inputs.
         List<JarInput> jarInputs = Lists.newArrayList();
         List<DirectoryInput> directoryInputs = Lists.newArrayList();
-        for (TransformInput input : inputs) {
+        for (TransformInput input : transformInvocation.getInputs()) {
             jarInputs.addAll(input.getJarInputs());
             directoryInputs.addAll(input.getDirectoryInputs());
         }

@@ -24,6 +24,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.api.transform.SecondaryInput;
+import com.android.build.api.transform.TransformInvocation;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -189,19 +191,17 @@ public class ProGuardTransform extends BaseProguardAction {
     }
 
     @Override
-    public void transform(
-            @NonNull Context context,
-            @NonNull final Collection<TransformInput> inputs,
-            @NonNull final Collection<TransformInput> referencedInputs,
-            @Nullable final TransformOutputProvider outputProvider,
-            boolean isIncremental) throws TransformException {
+    public void transform(final TransformInvocation invocation) throws TransformException {
         // only run one minification at a time (across projects)
         final Job<Void> job = new Job<Void>(getName(),
                 new com.android.builder.tasks.Task<Void>() {
                     @Override
                     public void run(@NonNull Job<Void> job,
                             @NonNull JobContext<Void> context) throws IOException {
-                        doMinification(inputs, referencedInputs, outputProvider);
+                        doMinification(
+                                invocation.getInputs(),
+                                invocation.getReferencedInputs(),
+                                invocation.getOutputProvider());
                     }
                 });
         try {
