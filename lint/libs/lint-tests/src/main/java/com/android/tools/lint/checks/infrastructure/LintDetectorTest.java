@@ -54,6 +54,7 @@ import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.client.api.LintRequest;
 import com.android.tools.lint.detector.api.Context;
+import com.android.tools.lint.detector.api.DefaultPosition;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
@@ -906,32 +907,45 @@ public abstract class LintDetectorTest extends SdkTestCase {
                 public void prepareJavaParse(@NonNull List<JavaContext> contexts) {
                     super.prepareJavaParse(contexts);
                     if (!allowCompilationErrors() && mEcjResult != null) {
-                        StringBuilder sb = new StringBuilder();
+                        assertTrue(!contexts.isEmpty());
+                        JavaContext first = contexts.get(0);
+                        boolean foundErrors = false;
                         for (CompilationUnitDeclaration unit : mEcjResult.getCompilationUnits()) {
                             // so maybe I don't need my map!!
                             CategorizedProblem[] problems = unit.compilationResult()
                                     .getAllProblems();
-                            if (problems != null) {
+                            if (problems != null && problems.length > 0) {
                                 for (IProblem problem : problems) {
                                     if (problem == null || !problem.isError()) {
                                         continue;
                                     }
-                                    String filename = new File(new String(
-                                            problem.getOriginatingFileName())).getName();
-                                    sb.append(filename)
-                                            .append(":")
-                                            .append(problem.isError() ? "Error" : "Warning")
-                                            .append(": ").append(problem.getSourceLineNumber())
-                                            .append(": ").append(problem.getMessage())
-                                            .append('\n');
+
+                                    foundErrors = true;
+                                    char[] path = problem.getOriginatingFileName();
+                                    File file = new File(new String(path));
+                                    JavaContext context = new JavaContext(first.getDriver(),
+                                                first.getProject(), first.getMainProject(),
+                                                file, first.getParser());
+                                    Location location = Location.create(context.file,
+                                            new DefaultPosition(problem.getSourceLineNumber() - 1,
+                                                    -1, problem.getSourceStart()),
+                                            new DefaultPosition(problem.getSourceLineNumber() - 1,
+                                                    -1, problem.getSourceEnd()));
+                                    String message = problem.getMessage();
+                                    context.report(IssueRegistry.PARSER_ERROR, location,
+                                            message);
                                 }
                             }
                         }
-                        if (sb.length() > 0) {
-                            fail("Found compilation problems in lint test not overriding "
-                                    + "allowCompilationErrors():\n" + sb);
+                        if (foundErrors) {
+                            Context context = new Context(first.getDriver(),
+                                    first.getProject(), first.getMainProject(),
+                                    first.getProject().getDir());
+                            context.report(IssueRegistry.PARSER_ERROR,
+                                    Location.create(context.file),
+                                    "Found compilation problems in lint test not overriding "
+                                            + "allowCompilationErrors()");
                         }
-
                     }
                 }
             };
