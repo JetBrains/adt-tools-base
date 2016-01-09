@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.transforms;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.api.transform.SecondaryInput;
 import com.android.build.api.transform.Context;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
@@ -28,6 +29,7 @@ import com.android.build.api.transform.Status;
 import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
+import com.android.build.api.transform.TransformInvocation;
 import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.internal.LoggerWrapper;
@@ -131,11 +133,12 @@ public class InstantRunSlicer extends Transform {
     }
 
     @Override
-    public void transform(@NonNull Context context, @NonNull Collection<TransformInput> inputs,
-            @NonNull Collection<TransformInput> referencedInputs,
-            @Nullable TransformOutputProvider outputProvider, boolean isIncremental)
+    public void transform(TransformInvocation transformInvocation)
             throws IOException, TransformException, InterruptedException {
 
+        TransformOutputProvider outputProvider = transformInvocation.getOutputProvider();
+        boolean isIncremental = transformInvocation.isIncremental();
+        Collection<TransformInput> inputs = transformInvocation.getInputs();
         if (outputProvider == null) {
             logger.error(null /* throwable */, "null TransformOutputProvider for InstantRunSlicer");
             return;

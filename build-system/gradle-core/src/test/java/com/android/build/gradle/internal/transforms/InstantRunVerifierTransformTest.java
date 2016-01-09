@@ -21,6 +21,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
+import com.android.build.api.transform.SecondaryInput;
 import com.android.build.api.transform.Context;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.JarInput;
@@ -32,6 +33,7 @@ import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunVerifier;
+import com.android.build.gradle.internal.pipeline.TransformInvocationBuilder;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.utils.FileUtils;
@@ -73,7 +75,7 @@ public class InstantRunVerifierTransformTest {
     Context context;
 
     @Mock
-    TransformOutputProvider TransformOutputProvider;
+    TransformOutputProvider transformOutputProvider;
 
     @Mock
     InstantRunBuildContext instantRunBuildContext;
@@ -125,11 +127,10 @@ public class InstantRunVerifierTransformTest {
             }
         });
 
-        transform.transform(context,
-                ImmutableList.<TransformInput>of(), /* inputs */
-                transformInputs,
-                TransformOutputProvider,
-                false /*isIncremental*/);
+        transform.transform(new TransformInvocationBuilder(context)
+            .addOutputProvider(transformOutputProvider)
+            .addReferencedInputs(transformInputs)
+            .build());
 
         // clean up.
         FileUtils.deleteFolder(tmpDir);
@@ -191,11 +192,11 @@ public class InstantRunVerifierTransformTest {
                     }
                 });
 
-        transform.transform(context,
-                ImmutableList.<TransformInput>of(), /* inputs */
-                transformInputs,
-                TransformOutputProvider,
-                true /*isIncremental*/);
+        transform.transform(new TransformInvocationBuilder(context)
+                .addOutputProvider(transformOutputProvider)
+                .addReferencedInputs(transformInputs)
+                .setIncrementalMode(true)
+                .build());
 
         // clean up.
         FileUtils.deleteFolder(tmpDir);
@@ -257,11 +258,11 @@ public class InstantRunVerifierTransformTest {
                     }
                 });
 
-        transform.transform(context,
-                ImmutableList.<TransformInput>of(), /* inputs */
-                transformInputs,
-                TransformOutputProvider,
-                true /*isIncremental*/);
+        transform.transform(new TransformInvocationBuilder(context)
+                .addOutputProvider(transformOutputProvider)
+                .addReferencedInputs(transformInputs)
+                .setIncrementalMode(true)
+                .build());
 
         // clean up.
         FileUtils.deleteFolder(tmpDir);
@@ -323,11 +324,11 @@ public class InstantRunVerifierTransformTest {
                     }
                 });
 
-        transform.transform(context,
-                ImmutableList.<TransformInput>of(), /* inputs */
-                transformInputs,
-                TransformOutputProvider,
-                true /*isIncremental*/);
+        transform.transform(new TransformInvocationBuilder(context)
+                .addOutputProvider(transformOutputProvider)
+                .addReferencedInputs(transformInputs)
+                .setIncrementalMode(true)
+                .build());
 
         // clean up.
         FileUtils.deleteFolder(tmpDir);

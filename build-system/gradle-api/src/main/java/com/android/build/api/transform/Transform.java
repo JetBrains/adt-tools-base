@@ -134,7 +134,10 @@ public abstract class Transform {
     }
 
     /**
-     * Returns a list of additional file(s) that this Transform needs to run.
+     * Returns a list of additional file(s) that this Transform needs to run. Preferably, use
+     * {@link #getSecondaryFiles()} API which allow eah secondary file to indicate if changes
+     * can be handled incrementally or not. This API will treat all additional file change as
+     * a non incremental event.
      *
      * <p/>
      * Changes to files returned in this list will trigger a new execution of the Transform
@@ -144,9 +147,32 @@ public abstract class Transform {
      *
      * <p/>
      * The default implementation returns an empty collection.
+     * @deprecated
      */
+    @Deprecated
     @NonNull
     public Collection<File> getSecondaryFileInputs() {
+        return ImmutableList.of();
+    }
+
+    /**
+     * Returns a list of additional file(s) that this Transform needs to run.
+     *
+     * <p/>
+     * Changes to files returned in this list will trigger a new execution of the Transform
+     * even if the qualified-content inputs haven't been touched.
+     * <p/>
+     * Each secondary input has the ability to be declared as necessitating a non incremental
+     * execution in case of change. This Transform can therefore declare which secondary file
+     * changes it supports in incremental mode.
+     *
+     * <p/>
+     * The default implementation returns an empty collection.
+     *
+     * @return
+     */
+    @NonNull
+    public Collection<SecondaryFile> getSecondaryFiles() {
         return ImmutableList.of();
     }
 
@@ -218,11 +244,24 @@ public abstract class Transform {
      */
     public abstract boolean isIncremental();
 
+
+    /**
+     * @deprecated
+     */
+    @Deprecated
+    public void transform(
+            @NonNull Context context,
+            @NonNull Collection<TransformInput> inputs,
+            @NonNull Collection<TransformInput> referencedInputs,
+            @Nullable TransformOutputProvider outputProvider,
+            boolean isIncremental) throws IOException, TransformException, InterruptedException {
+    }
+
     /**
      * Executes the Transform.
      *
      * <p/>
-     * The inputs are
+     * The inputs are packaged as an instance of {@link TransformInvocation}
      * <ul>
      *     <li>The <var>inputs</var> collection of {@link TransformInput}. These are the inputs
      *     that are consumed by this Transform. A transformed version of these inputs must
@@ -241,7 +280,7 @@ public abstract class Transform {
      * Even though a transform's {@link Transform#isIncremental()} returns true, this method may
      * be receive <code>false</code> in <var>isIncremental</var>. This can be due to
      * <ul>
-     *     <li>a change in secondary files ({@link #getSecondaryFileInputs()},
+     *     <li>a change in secondary files ({@link #getSecondaryFiles()},
      *     {@link #getSecondaryFileOutputs()}, {@link #getSecondaryDirectoryOutputs()})</li>
      *     <li>a change to a non file input ({@link #getParameterInputs()})</li>
      *     <li>an unexpected change to the output files/directories. This should not happen unless
@@ -259,19 +298,16 @@ public abstract class Transform {
      *     some files may be added/changed.</li>
      * </ul>
      *
-     * @param context the context in which the transform is run.
-     * @param inputs the inputs/outputs of the transform.
-     * @param referencedInputs the referenced-only inputs.
-     * @param outputProvider the output provider allowing to create content.
-     * @param isIncremental whether the transform execution is incremental.
+     * @param transformInvocation the invocation object containing the transform inputs.
      * @throws IOException if an IO error occurs.
      * @throws InterruptedException
      * @throws TransformException Generic exception encapsulating the cause.
      */
-    public abstract void transform(
-            @NonNull Context context,
-            @NonNull Collection<TransformInput> inputs,
-            @NonNull Collection<TransformInput> referencedInputs,
-            @Nullable TransformOutputProvider outputProvider,
-            boolean isIncremental) throws IOException, TransformException, InterruptedException;
+    public void transform(@NonNull TransformInvocation transformInvocation)
+            throws TransformException, InterruptedException, IOException {
+        transform(transformInvocation.getContext(), transformInvocation.getInputs(),
+                transformInvocation.getReferencedInputs(),
+                transformInvocation.getOutputProvider(),
+                transformInvocation.isIncremental());
+    }
 }

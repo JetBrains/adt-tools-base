@@ -25,6 +25,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
+import com.android.build.api.transform.SecondaryInput;
 import com.android.build.api.transform.Context;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.JarInput;
@@ -35,6 +36,7 @@ import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.internal.dsl.DexOptions;
+import com.android.build.gradle.internal.pipeline.TransformInvocationBuilder;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -82,7 +84,7 @@ public class InstantRunDexTest {
     AndroidBuilder androidBuilder;
 
     @Mock
-    TransformOutputProvider TransformOutputProvider;
+    TransformOutputProvider transformOutputProvider;
 
     @Mock
     InstantRunBuildContext instantRunBuildContext;
@@ -161,11 +163,10 @@ public class InstantRunDexTest {
         final List<File> convertedFiles = new ArrayList<File>();
         InstantRunDex instantRunDex = getTestedDex(convertedFiles, InstantRunBuildType.RELOAD);
 
-        instantRunDex.transform(context,
-                ImmutableList.<TransformInput>of() /* inputs */,
-                ImmutableList.of(getTransformInput(directoryInput)),
-                TransformOutputProvider,
-                false /* isIncremental */);
+        instantRunDex.transform(new TransformInvocationBuilder(context)
+                .addReferencedInputs(ImmutableList.of(getTransformInput(directoryInput)))
+                .addOutputProvider(transformOutputProvider)
+                .build());
 
         assertThat(variantScope.getReloadDexOutputFolder().listFiles()).isEmpty();
 
@@ -173,11 +174,10 @@ public class InstantRunDexTest {
         instantRunDex = getTestedDex(convertedFiles, InstantRunBuildType.RESTART);
         when(jarClassesBuilder.isEmpty()).thenReturn(Boolean.FALSE);
 
-        instantRunDex.transform(context,
-                ImmutableList.<TransformInput>of() /* inputs */,
-                ImmutableList.of(getTransformInput(directoryInput)),
-                TransformOutputProvider,
-                false /* isIncremental */);
+        instantRunDex.transform(new TransformInvocationBuilder(context)
+                .addReferencedInputs(ImmutableList.of(getTransformInput(directoryInput)))
+                .addOutputProvider(transformOutputProvider)
+                .build());
 
         assertThat(variantScope.getRestartDexOutputFolder().listFiles()).isNotEmpty();
         assertThat(convertedFiles).hasSize(1);
@@ -198,11 +198,10 @@ public class InstantRunDexTest {
         List<File> convertedFiles = new ArrayList<File>();
         InstantRunDex instantRunDex = getTestedDex(convertedFiles, InstantRunBuildType.RELOAD);
 
-        instantRunDex.transform(context,
-                ImmutableList.<TransformInput>of() /* inputs */,
-                ImmutableList.of(getTransformInput(directoryInput)),
-                TransformOutputProvider,
-                false /* isIncremental */);
+        instantRunDex.transform(new TransformInvocationBuilder(context)
+                .addReferencedInputs(ImmutableList.of(getTransformInput(directoryInput)))
+                .addOutputProvider(transformOutputProvider)
+                .build());
 
         assertThat(variantScope.getReloadDexOutputFolder().listFiles()).isNotEmpty();
         verify(instantRunBuildContext).addChangedFile(
@@ -217,11 +216,11 @@ public class InstantRunDexTest {
                 logger,
                 ImmutableSet.<QualifiedContent.ContentType>of());
 
-        instantRunDex.transform(context,
-                ImmutableList.<TransformInput>of() /* inputs */,
-                ImmutableList.of(getTransformInput(directoryInput)),
-                TransformOutputProvider,
-                false /* isIncremental */);
+        instantRunDex.transform(new TransformInvocationBuilder(context)
+                .addReferencedInputs(ImmutableList.of(getTransformInput(directoryInput)))
+                .addOutputProvider(transformOutputProvider)
+                .build());
+
         assertThat(variantScope.getRestartDexOutputFolder().listFiles()).isEmpty();
         verify(instantRunBuildContext, times(2)).hasPassedVerification();
         verify(instantRunBuildContext, times(1)).addChangedFile(
@@ -252,11 +251,10 @@ public class InstantRunDexTest {
                 logger,
                 ImmutableSet.<QualifiedContent.ContentType>of());
 
-        instantRunDex.transform(context,
-                ImmutableList.<TransformInput>of() /* inputs */,
-                ImmutableList.of(getTransformInput(directoryInput)),
-                TransformOutputProvider,
-                false /* isIncremental */);
+        instantRunDex.transform(new TransformInvocationBuilder(context)
+                .addReferencedInputs(ImmutableList.of(getTransformInput(directoryInput)))
+                .addOutputProvider(transformOutputProvider)
+                .build());
 
         assertThat(incrementalChanges.isFile()).isFalse();
         assertThat(variantScope.getReloadDexOutputFolder().listFiles()).isNotEmpty();
@@ -269,11 +267,10 @@ public class InstantRunDexTest {
                 logger,
                 ImmutableSet.<QualifiedContent.ContentType>of());
 
-        instantRunDex.transform(context,
-                ImmutableList.<TransformInput>of() /* inputs */,
-                ImmutableList.of(getTransformInput(directoryInput)),
-                TransformOutputProvider,
-                false /* isIncremental */);
+        instantRunDex.transform(new TransformInvocationBuilder(context)
+                .addReferencedInputs(ImmutableList.of(getTransformInput(directoryInput)))
+                .addOutputProvider(transformOutputProvider)
+                .build());
         // since the verifier passed, the restart.dex is not present.
         assertThat(variantScope.getRestartDexOutputFolder().listFiles()).isEmpty();
     }
@@ -296,11 +293,9 @@ public class InstantRunDexTest {
                 logger,
                 ImmutableSet.<QualifiedContent.ContentType>of());
 
-        instantRunDex.transform(context,
-                ImmutableList.<TransformInput>of() /* inputs */,
-                ImmutableList.<TransformInput>of() /* referencedInputs */,
-                TransformOutputProvider,
-                false /* isIncremental */);
+        instantRunDex.transform(new TransformInvocationBuilder(context)
+                .addOutputProvider(transformOutputProvider)
+                .build());
 
         assertThat(variantScope.getReloadDexOutputFolder().listFiles()).isEmpty();
 
@@ -312,11 +307,11 @@ public class InstantRunDexTest {
                 logger,
                 ImmutableSet.<QualifiedContent.ContentType>of());
 
-        instantRunDex.transform(context,
-                ImmutableList.<TransformInput>of() /* inputs */,
-                ImmutableList.of(getTransformInput(directoryInput)),
-                TransformOutputProvider,
-                false /* isIncremental */);
+        instantRunDex.transform(new TransformInvocationBuilder(context)
+                .addReferencedInputs(ImmutableList.of(getTransformInput(directoryInput)))
+                .addOutputProvider(transformOutputProvider)
+                .build());
+
         // since the verifier passed, the restart.dex is not present.
         assertThat(variantScope.getRestartDexOutputFolder().listFiles()).isEmpty();
     }

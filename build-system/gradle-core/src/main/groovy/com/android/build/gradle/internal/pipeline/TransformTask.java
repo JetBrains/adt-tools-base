@@ -18,17 +18,24 @@ package com.android.build.gradle.internal.pipeline;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.api.transform.SecondaryInput;
 import com.android.build.api.transform.Context;
+import com.android.build.api.transform.SecondaryFile;
 import com.android.build.api.transform.Status;
 import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
+import com.android.build.api.transform.TransformInvocation;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
 import com.android.ide.common.util.ReferenceHolder;
+import com.google.common.base.Function;
 import com.google.common.base.Splitter;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -58,6 +65,7 @@ import java.util.Set;
 public class TransformTask extends StreamBasedTask implements Context {
 
     private Transform transform;
+    Collection<SecondaryFile> secondaryFiles = null;
 
     public Transform getTransform() {
         return transform;
@@ -65,7 +73,17 @@ public class TransformTask extends StreamBasedTask implements Context {
 
     @InputFiles
     public Collection<File> getOtherFileInputs() {
-        return transform.getSecondaryFileInputs();
+
+        ImmutableList.Builder<File> otherFileInputs = ImmutableList.builder();
+        otherFileInputs.addAll(Iterables.transform(transform.getSecondaryFiles(),
+                new Function<SecondaryFile, File>() {
+                    @Override
+                    public File apply(SecondaryFile input) {
+                        return input.getFile();
+                    }
+                }));
+        otherFileInputs.addAll(transform.getSecondaryFileInputs());
+        return otherFileInputs.build();
     }
 
     @OutputFiles
@@ -90,6 +108,8 @@ public class TransformTask extends StreamBasedTask implements Context {
         final ReferenceHolder<List<TransformInput>> consumedInputs = ReferenceHolder.empty();
         final ReferenceHolder<List<TransformInput>> referencedInputs = ReferenceHolder.empty();
         final ReferenceHolder<Boolean> isIncremental = ReferenceHolder.empty();
+        final ReferenceHolder<Collection<SecondaryInput>> changedSecondaryInputs =
+                ReferenceHolder.empty();
 
         ThreadRecorder.get().record(ExecutionType.TASK_TRANSFORM_PREPARATION,
                 new Recorder.Block<Void>() {
@@ -135,6 +155,12 @@ public class TransformTask extends StreamBasedTask implements Context {
                                     computeNonIncTransformInput(consumedInputStreams));
                             referencedInputs.setValue(
                                     computeNonIncTransformInput(referencedInputStreams));
+                            changedSecondaryInputs.setValue(
+                                    ImmutableList.<SecondaryInput>of());
+                        } else {
+                            // gather all secondary input changes.
+                            changedSecondaryInputs.setValue(
+                                gatherSecondaryInputChanges(changedMap, removedFiles));
                         }
 
                         return null;
@@ -148,18 +174,49 @@ public class TransformTask extends StreamBasedTask implements Context {
                 new Recorder.Block<Void>() {
                     @Override
                     public Void call() throws Exception {
-                        transform.transform(
-                                TransformTask.this,
-                                consumedInputs.getValue(),
-                                referencedInputs.getValue(),
-                                outputStream != null ? outputStream.asOutput() : null,
-                                isIncremental.getValue());
+
+                        transform.transform(new TransformInvocationBuilder(TransformTask.this)
+                                .addInputs(consumedInputs.getValue())
+                                .addReferencedInputs(referencedInputs.getValue())
+                                .addSecondaryInputs(changedSecondaryInputs.getValue())
+                                .addOutputProvider(outputStream != null
+                                        ? outputStream.asOutput()
+                                        : null)
+                                .setIncrementalMode(isIncremental.getValue())
+                                .build());
                         return null;
                     }
                 },
                 new Recorder.Property("project", getProject().getName()),
                 new Recorder.Property("transform", transform.getName()),
                 new Recorder.Property("incremental", Boolean.toString(transform.isIncremental())));
+    }
+
+    private Collection<SecondaryInput> gatherSecondaryInputChanges(
+            Map<File, Status> changedMap, Set<File> removedFiles) {
+
+        ImmutableList.Builder<SecondaryInput> builder = ImmutableList.builder();
+        for (final SecondaryFile secondaryFile : getAllSecondaryInputs()) {
+            final File file = secondaryFile.getFile();
+            final Status status = changedMap.containsKey(file)
+                    ? changedMap.get(file)
+                    : removedFiles.contains(file)
+                            ? Status.REMOVED
+                            : Status.NOTCHANGED;
+
+            builder.add(new SecondaryInput() {
+                @Override
+                public SecondaryFile getSecondaryInput() {
+                    return secondaryFile;
+                }
+
+                @Override
+                public Status getStatus() {
+                    return status;
+                }
+            });
+        }
+        return builder.build();
     }
 
     /**
@@ -193,6 +250,22 @@ public class TransformTask extends StreamBasedTask implements Context {
         return list;
     }
 
+    private synchronized Collection<SecondaryFile> getAllSecondaryInputs() {
+        if (secondaryFiles == null) {
+            ImmutableList.Builder<SecondaryFile> builder = ImmutableList.builder();
+            builder.addAll(transform.getSecondaryFiles());
+            builder.addAll(Collections2.transform(transform.getSecondaryFileInputs(),
+                    new Function<File, SecondaryFile>() {
+                        @Override
+                        public SecondaryFile apply(File input) {
+                            return new SecondaryFile(input, false /* supportsIncrementalChanges */);
+                        }
+                    }));
+            secondaryFiles = builder.build();
+        }
+        return secondaryFiles;
+    }
+
     private static void gatherChangedFiles(
             @NonNull IncrementalTaskInputs incrementalTaskInputs,
             @NonNull final Map<File, Status> changedFileMap,
@@ -219,16 +292,27 @@ public class TransformTask extends StreamBasedTask implements Context {
     private boolean checkSecondaryFiles(
             @NonNull Map<File, Status> changedMap,
             @NonNull Set<File> removedFiles) {
-        for (File file : transform.getSecondaryFileInputs()) {
-            if (changedMap.containsKey(file) || removedFiles.contains(file)) {
+
+        for (SecondaryFile secondaryFile : getAllSecondaryInputs()) {
+            File file = secondaryFile.getFile();
+            if ((changedMap.containsKey(file) || removedFiles.contains(file))
+                    && !secondaryFile.supportsIncrementalBuild()) {
                 return false;
             }
         }
-
         return true;
     }
 
-    private static boolean updateIncrementalInputsWithChangedFiles(
+    private boolean isSecondaryFile(File file) {
+        for (SecondaryFile secondaryFile : getAllSecondaryInputs()) {
+            if (secondaryFile.getFile().equals(file)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean updateIncrementalInputsWithChangedFiles(
             @NonNull List<IncrementalTransformInput> consumedInputs,
             @NonNull List<IncrementalTransformInput> referencedInputs,
             @NonNull Map<File, Status> changedFilesMap,
@@ -259,7 +343,7 @@ public class TransformTask extends StreamBasedTask implements Context {
                 }
             }
 
-            if (!found) {
+            if (!found && !isSecondaryFile(removedFile)) {
                 // this deleted file breaks incremental because we cannot figure out where it's
                 // coming from and what types/scopes is associated with it.
                 return false;

@@ -22,6 +22,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.api.transform.SecondaryInput;
+import com.android.build.api.transform.TransformInvocation;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.api.transform.Context;
 import com.android.build.api.transform.DirectoryInput;
@@ -82,12 +84,8 @@ public class JarMergingTransform extends Transform {
     }
 
     @Override
-    public void transform(
-            @NonNull Context context,
-            @NonNull Collection<TransformInput> inputs,
-            @NonNull Collection<TransformInput> referencedStreams,
-            @Nullable TransformOutputProvider outputProvider,
-            boolean isIncremental) throws TransformException, IOException {
+    public void transform(TransformInvocation invocation) throws TransformException, IOException {
+        TransformOutputProvider outputProvider = invocation.getOutputProvider();
         checkNotNull(outputProvider, "Missing output object for transform " + getName());
 
         // all the output will be the same since the transform type is COMBINED.
@@ -108,7 +106,7 @@ public class JarMergingTransform extends Transform {
                 }
             });
 
-            for (TransformInput input : inputs) {
+            for (TransformInput input : invocation.getInputs()) {
                 for (JarInput jarInput : input.getJarInputs()) {
                     jarMerger.addJar(jarInput.getFile());
                 }

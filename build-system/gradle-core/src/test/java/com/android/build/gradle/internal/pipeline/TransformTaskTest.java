@@ -22,6 +22,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.android.annotations.NonNull;
+import com.android.build.api.transform.SecondaryFile;
+import com.android.build.api.transform.SecondaryInput;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
@@ -1684,6 +1686,81 @@ public class TransformTaskTest extends TaskTestUtils {
         assertThat(t.isIncrementalInputs()).isFalse();
 
         // checks on the inputs are done in the "secondary file added" tests
+    }
+
+    @Test
+    public void secondaryFileModifiedWithIncrementalCapabilities()
+            throws TransformException, InterruptedException, IOException {
+        // create a stream and add it to the pipeline
+        File jarFile = new File("jar file");
+        TransformStream projectClass = OriginalStream.builder()
+                .addContentType(DefaultContentType.CLASSES)
+                .addScope(Scope.PROJECT)
+                .setJar(jarFile)
+                .setDependency("my dependency")
+                .build();
+        transformManager.addStream(projectClass);
+
+        // create the transform, with a 2ndary file.
+        File secondaryFile = new File("secondary file");
+        TestTransform t = TestTransform.builder()
+                .setIncremental(true)
+                .setInputTypes(DefaultContentType.CLASSES)
+                .setScopes(Scope.PROJECT)
+                .setSecondaryInput(new SecondaryFile(secondaryFile, true /* supportsIncrementalBuild */))
+                .build();
+
+        // add the transform to the manager
+        AndroidTask<TransformTask> task = transformManager.addTransform(
+                taskFactory, scope, t);
+        // and get the real gradle task object
+        TransformTask transformTask = (TransformTask) taskFactory.named(task.getName());
+        assertThat(transformTask).isNotNull();
+
+        // get the current output Stream in the transform manager.
+        List<TransformStream> streams = transformManager.getStreams();
+        assertThat(streams).hasSize(1);
+
+        // call the task with incremental data including a normal, in stream changed file
+        transformTask.transform(inputBuilder()
+                .incremental()
+                .addedFile(jarFile)
+                .modifiedFile(secondaryFile)
+                .build());
+
+        // check that was passed to the transform. Incremental should be off due
+        // to secondary file
+        assertThat(t.isIncrementalInputs()).isTrue();
+
+        // assert that the secondary file change event was provided.
+        assertThat(t.getSecondaryInputs()).hasSize(1);
+        SecondaryInput change = Iterables.getOnlyElement(t.getSecondaryInputs());
+        assertThat(change.getStatus()).isEqualTo(Status.CHANGED);
+        assertThat(change.getSecondaryInput().getFile()).isEqualTo(secondaryFile);
+
+        // now delete the file.
+        transformTask.transform(inputBuilder()
+                .incremental()
+                .removedFile(secondaryFile)
+                .build());
+
+        assertThat(t.isIncrementalInputs()).isTrue();
+        assertThat(t.getSecondaryInputs()).hasSize(1);
+        change = Iterables.getOnlyElement(t.getSecondaryInputs());
+        assertThat(change.getStatus()).isEqualTo(Status.REMOVED);
+        assertThat(change.getSecondaryInput().getFile()).isEqualTo(secondaryFile);
+
+        // and add it back..
+        transformTask.transform(inputBuilder()
+                .incremental()
+                .addedFile(secondaryFile)
+                .build());
+
+        assertThat(t.isIncrementalInputs()).isTrue();
+        assertThat(t.getSecondaryInputs()).hasSize(1);
+        change = Iterables.getOnlyElement(t.getSecondaryInputs());
+        assertThat(change.getStatus()).isEqualTo(Status.ADDED);
+        assertThat(change.getSecondaryInput().getFile()).isEqualTo(secondaryFile);
     }
 
     @Test

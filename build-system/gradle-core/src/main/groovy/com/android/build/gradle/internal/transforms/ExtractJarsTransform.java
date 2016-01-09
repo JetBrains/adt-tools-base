@@ -23,6 +23,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.api.transform.SecondaryInput;
 import com.android.build.api.transform.Context;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
@@ -33,6 +34,7 @@ import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
+import com.android.build.api.transform.TransformInvocation;
 import com.android.build.api.transform.TransformOutputProvider;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.android.ide.common.packaging.PackagingUtils;
@@ -97,12 +99,10 @@ public class ExtractJarsTransform extends Transform {
     }
 
     @Override
-    public void transform(
-            @NonNull Context context,
-            @NonNull Collection<TransformInput> inputs,
-            @NonNull Collection<TransformInput> referencedInputs,
-            @Nullable TransformOutputProvider outputProvider,
-            boolean isIncremental) throws IOException, TransformException, InterruptedException {
+    public void transform(TransformInvocation transformInvocation)
+            throws IOException, TransformException, InterruptedException {
+        TransformOutputProvider outputProvider = transformInvocation.getOutputProvider();
+        boolean isIncremental = transformInvocation.isIncremental();
         checkNotNull(outputProvider, "Missing output object for transform " + getName());
 
         // as_input transform and no referenced scopes, all the inputs will in InputOutputStreams.
@@ -117,7 +117,7 @@ public class ExtractJarsTransform extends Transform {
         try {
             WaitableExecutor<Void> executor = new WaitableExecutor<Void>();
 
-            for (TransformInput input : inputs) {
+            for (TransformInput input : transformInvocation.getInputs()) {
                 if (!input.getDirectoryInputs().isEmpty()) {
                     for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
                         logger.warn("Extract Jars input contains folder. Ignoring: " +

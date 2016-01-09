@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.api.transform.SecondaryInput;
 import com.android.build.api.transform.Context;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
@@ -35,6 +36,7 @@ import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.build.gradle.internal.pipeline.TransformInvocationBuilder;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.utils.FileUtils;
@@ -121,11 +123,10 @@ public class InstantRunSlicerTest {
         File jarOutputDir = createTmpDirectory("jarOutputDir");
         final File jarOutput = new File(jarOutputDir, "output.jar");
 
-        slicer.transform(context,
-                ImmutableList.of(getInput(inputDir, changedFiles)),
-                ImmutableList.<TransformInput>of(),
-                getOutputProvider(outputDir, jarOutput),
-                false /* isIncremental */);
+        slicer.transform(new TransformInvocationBuilder(context)
+                .addInputs(ImmutableList.of(getInput(inputDir, changedFiles)))
+                .addOutputProvider(getOutputProvider(outputDir, jarOutput))
+                .build());
 
         // assert the file was copied in the output directory.
         File[] files = outputDir.listFiles();
@@ -164,11 +165,10 @@ public class InstantRunSlicerTest {
         File jarOutputDir = createTmpDirectory("jarOutputDir");
         final File jarOutput = new File(jarOutputDir, "output.jar");
 
-        slicer.transform(context,
-                ImmutableList.of(getInput(inputDir, changedFiles)),
-                ImmutableList.<TransformInput>of(),
-                getOutputProvider(outputDir, jarOutput),
-                false /* isIncremental */);
+        slicer.transform(new TransformInvocationBuilder(context)
+                .addInputs(ImmutableList.of(getInput(inputDir, changedFiles)))
+                .addOutputProvider(getOutputProvider(outputDir, jarOutput))
+                .build());
 
         // incrementally change a few slices.
         File file7 = createFile(inputDir, "file7.class", "updated file7.class");
@@ -180,11 +180,11 @@ public class InstantRunSlicerTest {
                 "REMOVED," + new File(inputDir, "file14.class").getAbsolutePath(),
                 incrementalChanges, Charsets.UTF_8);
 
-        slicer.transform(context,
-                ImmutableList.of(getInput(inputDir, changedFiles)),
-                ImmutableList.<TransformInput>of(),
-                getOutputProvider(outputDir, jarOutput),
-                true /* isIncremental */);
+        slicer.transform(new TransformInvocationBuilder(context)
+                .addInputs(ImmutableList.of(getInput(inputDir, changedFiles)))
+                .addOutputProvider(getOutputProvider(outputDir, jarOutput))
+                .setIncrementalMode(true)
+                .build());
 
         // assert the file was copied in the output directory.
         File[] slices = outputDir.listFiles();
