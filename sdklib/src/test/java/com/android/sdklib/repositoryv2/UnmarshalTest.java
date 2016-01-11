@@ -48,9 +48,9 @@ public class UnmarshalTest extends TestCase {
         assertNotNull("Missing test file: " + filename, xmlStream);
 
         AndroidSdkHandler handler = new AndroidSdkHandler(new File(filename), new MockFileOp());
+        SchemaModule repoEx = AndroidSdkHandler.getRepositoryModule();
+        SchemaModule addonEx = AndroidSdkHandler.getAddonModule();
         FakeProgressIndicator progress = new FakeProgressIndicator();
-        SchemaModule repoEx = handler.getRepositoryModule(progress);
-        SchemaModule addonEx = handler.getAddonModule(progress);
         RepoManager mgr = handler.getSdkManager(progress);
         Repository repo = (Repository) SchemaModuleUtil.unmarshal(xmlStream,
                 ImmutableList.of(repoEx, addonEx, RepoManager.getGenericModule()),

@@ -956,8 +956,8 @@ public class LocalSdk {
 
                 LocalAddonPkgInfo pkgInfo = new LocalAddonPkgInfo(
                         this, addonDir, props, vers, rev,
-                        new com.android.sdklib.repository.descriptors.IdDisplay(vendorId, vendorDisp),
-                        new com.android.sdklib.repository.descriptors.IdDisplay(nameId, nameDisp));
+                        IdDisplay.create(vendorId, vendorDisp),
+                        IdDisplay.create(nameId, nameDisp));
                 outCollection.add(pkgInfo);
 
             } catch (AndroidVersionException e) {
@@ -1035,8 +1035,7 @@ public class LocalSdk {
 
                 } else if (vendorId != null && scanAddons) {
                     String vendorDisp = props.getProperty(PkgProps.ADDON_VENDOR_DISPLAY, vendorId);
-                    IdDisplay vendor = new com.android.sdklib.repository.descriptors.IdDisplay(
-                            vendorId, vendorDisp);
+                    IdDisplay vendor = IdDisplay.create(vendorId, vendorDisp);
 
                     LocalAddonSysImgPkgInfo pkgInfo =
                             new LocalAddonSysImgPkgInfo(
@@ -1140,7 +1139,7 @@ public class LocalSdk {
                         this,
                         extraDir,
                         props,
-                        new com.android.sdklib.repository.descriptors.IdDisplay(vendorId, vendorDisp),
+                        IdDisplay.create(vendorId, vendorDisp),
                         extraDir.getName(),
                         displayName,
                         PkgDescExtra.convertOldPaths(oldPaths),

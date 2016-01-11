@@ -28,7 +28,6 @@ import com.android.repository.impl.meta.TypeDetails;
 import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.repository.testframework.MockFileOp;
 import com.android.sdklib.IAndroidTarget;
-import com.android.sdklib.internal.androidTarget.OptionalLibraryImpl;
 import com.android.sdklib.repositoryv2.meta.DetailsTypes;
 import com.android.sdklib.repositoryv2.meta.SdkCommonFactory;
 import com.google.common.collect.ImmutableList;
@@ -123,14 +122,14 @@ public class LegacyLocalRepoTest extends TestCase {
         FakeProgressIndicator progress = new FakeProgressIndicator();
         File root = new File("/sdk");
         AndroidSdkHandler sdkHandler = new AndroidSdkHandler(root, mockFop);
-        SdkCommonFactory factory = (SdkCommonFactory) sdkHandler.getCommonModule(progress)
+        SdkCommonFactory factory = (SdkCommonFactory) AndroidSdkHandler.getCommonModule()
                 .createLatestFactory();
         RepoManager mgr = sdkHandler.getSdkManager(progress);
 
         progress.assertNoErrorsOrWarnings();
 
         Collection<SchemaModule> extensions = ImmutableList
-                .of(RepoManager.getGenericModule(), sdkHandler.getAddonModule(progress));
+                .of(RepoManager.getGenericModule(), AndroidSdkHandler.getAddonModule());
 
         // Now read the new package
         Repository repo = (Repository) SchemaModuleUtil.unmarshal(

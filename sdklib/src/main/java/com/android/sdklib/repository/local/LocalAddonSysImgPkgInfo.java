@@ -49,7 +49,7 @@ public class LocalAddonSysImgPkgInfo extends LocalPkgInfo {
             @NonNull String abi,
             @NonNull Revision revision) {
         super(localSdk, localDir, sourceProps);
-        IdDisplay tag = new com.android.sdklib.repository.descriptors.IdDisplay(
+        IdDisplay tag = IdDisplay.create(
                 sourceProps.getProperty(PkgProps.SYS_IMG_TAG_ID),
                 sourceProps.getProperty(PkgProps.SYS_IMG_TAG_DISPLAY));
         String listDisplay = sourceProps.getProperty(PkgProps.PKG_LIST_DISPLAY);

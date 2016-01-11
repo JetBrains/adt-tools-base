@@ -71,12 +71,11 @@ public class LegacyRepoUtils {
             int layoutLibVersion, @NonNull Collection<OptionalLibrary> addonLibraries,
             @Nullable File packageDir, @NonNull ProgressIndicator progress, @NonNull FileOp fop) {
 
-        AndroidSdkHandler handler = AndroidSdkHandler.getInstance(null);
-        SdkCommonFactory sdkFactory = (SdkCommonFactory) handler
-                .getCommonModule(progress).createLatestFactory();
-        SchemaModule repoExt = handler.getRepositoryModule(progress);
-        SchemaModule addonExt = handler.getAddonModule(progress);
-        SchemaModule sysImgExt = handler.getSysImgModule(progress);
+        SdkCommonFactory sdkFactory = (SdkCommonFactory) AndroidSdkHandler
+                .getCommonModule().createLatestFactory();
+        SchemaModule repoExt = AndroidSdkHandler.getRepositoryModule();
+        SchemaModule addonExt = AndroidSdkHandler.getAddonModule();
+        SchemaModule sysImgExt = AndroidSdkHandler.getSysImgModule();
         RepoFactory repoFactory = (RepoFactory) repoExt.createLatestFactory();
         AddonFactory addonFactory = (AddonFactory) addonExt.createLatestFactory();
         SysImgFactory sysImgFactory = (SysImgFactory) sysImgExt.createLatestFactory();
@@ -240,9 +239,8 @@ public class LegacyRepoUtils {
         // get the optional libraries
         String librariesValue = propertyMap.get(AddonManifestIniProps.ADDON_LIBRARIES);
 
-        AndroidSdkHandler handler = AndroidSdkHandler.getInstance(null);
-        SdkCommonFactory sdkFactory = (SdkCommonFactory) handler
-                .getCommonModule(progress).createLatestFactory();
+        SdkCommonFactory sdkFactory = (SdkCommonFactory) AndroidSdkHandler.getCommonModule()
+                .createLatestFactory();
 
         Map<String, String[]> libMap = Maps.newHashMap();
         if (librariesValue != null) {

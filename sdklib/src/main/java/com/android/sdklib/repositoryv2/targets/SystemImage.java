@@ -35,8 +35,7 @@ public class SystemImage implements ISystemImage {
     /**
      * Tag to apply to system images if none other is specified.
      */
-    public static final IdDisplay DEFAULT_TAG =
-            new com.android.sdklib.repository.descriptors.IdDisplay("default", "Default");
+    public static final IdDisplay DEFAULT_TAG = IdDisplay.create("default", "Default");
 
     /**
      * Directory containing the system image.
@@ -118,6 +117,7 @@ public class SystemImage implements ISystemImage {
         return mSkins;
     }
 
+    @Override
     @NonNull
     public AndroidVersion getAndroidVersion() {
         return mAndroidVersion;

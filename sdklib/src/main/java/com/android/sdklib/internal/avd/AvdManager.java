@@ -1621,9 +1621,9 @@ public class AvdManager {
         IAndroidTarget target = null;
         FileOpFileWrapper configIniFile = null;
         Map<String, String> properties = null;
+        LoggerProgressIndicatorWrapper progress = new LoggerProgressIndicatorWrapper(log);
 
         if (targetHash != null) {
-            LoggerProgressIndicatorWrapper progress = new LoggerProgressIndicatorWrapper(log);
             target = mSdkHandler.getAndroidTargetManager(progress)
                     .getTargetFromHashString(targetHash, progress);
         }
@@ -1656,7 +1656,7 @@ public class AvdManager {
             if (tagDisp == null || tagDisp.isEmpty()) {
                 tagDisp = IdDisplay.idToDisplay(tagId);
             }
-            tag = new com.android.sdklib.repository.descriptors.IdDisplay(tagId, tagDisp);
+            tag = IdDisplay.create(tagId, tagDisp);
         }
 
         // get abi type

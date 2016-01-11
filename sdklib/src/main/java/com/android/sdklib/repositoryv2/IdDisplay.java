@@ -17,6 +17,7 @@
 package com.android.sdklib.repositoryv2;
 
 import com.android.annotations.NonNull;
+import com.android.sdklib.repositoryv2.meta.SdkCommonFactory;
 
 import java.util.Locale;
 
@@ -30,19 +31,24 @@ import javax.xml.bind.annotation.XmlTransient;
 @XmlTransient
 public abstract class IdDisplay implements Comparable<IdDisplay> {
 
+    public static IdDisplay create(String id, String display) {
+        SdkCommonFactory factory = (SdkCommonFactory) AndroidSdkHandler.getCommonModule()
+                .createLatestFactory();
+        IdDisplay result = factory.createIdDisplayType();
+        result.setId(id);
+        result.setDisplay(display);
+        return result;
+    }
+
     /**
      * Sets the machine-friendly version of the string.
      */
-    public void setId(@NonNull String id) {
-        // Stub
-    }
+    public abstract void setId(@NonNull String id);
 
     /**
      * Sets the user-friendly version of the string.
      */
-    public void setDisplay(@NonNull String display) {
-        // Stub
-    }
+    public abstract void setDisplay(@NonNull String display);
 
     /**
      * Gets the machine-friendly version of the string.

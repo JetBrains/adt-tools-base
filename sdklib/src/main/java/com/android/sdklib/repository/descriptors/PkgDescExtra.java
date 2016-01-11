@@ -19,8 +19,8 @@ package com.android.sdklib.repository.descriptors;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.Revision;
-import com.android.sdklib.AndroidVersion;
 import com.android.repository.api.License;
+import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.repositoryv2.IdDisplay;
 
 /**
@@ -60,7 +60,7 @@ public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
               minPlatformToolsRev,
               null,     //customIsUpdateFor
               null,
-              new com.android.sdklib.repository.descriptors.IdDisplay(nameDisplay, nameDisplay));
+              IdDisplay.create(nameDisplay, nameDisplay));
         mOldPaths = oldPaths != null ? oldPaths : new String[0];
     }
 
