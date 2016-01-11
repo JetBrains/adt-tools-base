@@ -16,7 +16,7 @@
 
 package com.android.builder.internal.packaging.zip.utils;
 
-import com.google.common.base.Supplier;
+import java.io.IOException;
 
 /**
  * Supplier that will cache a computed value and always supply the same value. It can be used to
@@ -43,7 +43,7 @@ import com.google.common.base.Supplier;
  * // If neither a nor b are true, we avoid doing the computation at all.
  * </pre>
  */
-public abstract class CachedSupplier<T> implements Supplier {
+public abstract class CachedSupplier<T> {
 
     /**
      * The cached data, {@code null} if computation resulted in {@code null}.
@@ -62,8 +62,14 @@ public abstract class CachedSupplier<T> implements Supplier {
         mValid = false;
     }
 
-    @Override
-    public synchronized T get() {
+
+    /**
+     * Obtains the value.
+     *
+     * @return the value, either cached (if one exists) or computed
+     * @throws IOException failed to compute the value
+     */
+    public synchronized T get() throws IOException {
         if (!mValid) {
             mCached = compute();
             mValid = true;
@@ -74,10 +80,12 @@ public abstract class CachedSupplier<T> implements Supplier {
 
     /**
      * Computes the supplier value. This method is only invoked once.
+     *
      * @return the result of the computation, {@code null} is allowed and, if returned, then
      * {@link #get()} will also return {@code null}
+     * @throws IOException failed to compute the value
      */
-    protected abstract T compute();
+    protected abstract T compute() throws IOException;
 
     /**
      * Resets the cache forcing a {@link #compute()} next time {@link #get()} is invoked.
@@ -92,6 +100,7 @@ public abstract class CachedSupplier<T> implements Supplier {
      * <p>
      * If this method is invoked, then an invocation of {@link #get()} will not trigger an
      * invocation of {@link #compute()}.
+     *
      * @param t the new cache contents; will replace any currently cache content, if one exists
      */
     public synchronized void precomputed(T t) {

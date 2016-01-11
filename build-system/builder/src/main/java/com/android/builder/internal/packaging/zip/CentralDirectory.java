@@ -17,9 +17,11 @@
 package com.android.builder.internal.packaging.zip;
 
 import com.android.annotations.NonNull;
+import com.android.builder.internal.packaging.zip.utils.CachedSupplier;
 import com.android.builder.internal.packaging.zip.utils.MsDosDateTimeUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.io.ByteSource;
 
@@ -168,26 +170,40 @@ class CentralDirectory {
      * Contains all entries in the directory mapped from their names.
      */
     @NonNull
-    private Map<String, StoredEntry> mEntries;
+    private final Map<String, StoredEntry> mEntries;
 
     /**
      * The file where this directory belongs to.
      */
     @NonNull
-    private ZFile mFile;
+    private final ZFile mFile;
+
+    /**
+     * Supplier that provides a byte representation of the central directory.
+     */
+    @NonNull
+    private final CachedSupplier<byte[]> mBytesSupplier;
 
     /**
      * Creates a new, empty, central directory, for a given zip file.
+     *
      * @param file the file
      */
     CentralDirectory(@NonNull ZFile file) {
         mEntries = Maps.newHashMap();
         mFile = file;
+        mBytesSupplier = new CachedSupplier<byte[]>() {
+            @Override
+            protected byte[] compute() throws IOException {
+                return computeByteRepresentation();
+            }
+        };
     }
 
     /**
      * Reads the central directory data from a zip file, parses it, and creates the in-memory
      * structure representing the directory.
+     *
      * @param bytes the data of the central directory
      * @param count the number of entries expected in the central directory (usually read from the
      * {@link Eocd}).
@@ -225,6 +241,7 @@ class CentralDirectory {
     /**
      * Creates a new central directory from the entries. This is used to build a new central
      * directory from entries in the zip file.
+     *
      * @param entries the entries in the zip file
      * @param file the zip file itself
      * @return the created central directory
@@ -244,6 +261,7 @@ class CentralDirectory {
 
     /**
      * Reads the next entry from the central directory and adds it to {@link #mEntries}.
+     *
      * @param bytes the central directory's data, starting at the beginning of the next entry to
      * read
      * @return the number of bytes read
@@ -331,19 +349,31 @@ class CentralDirectory {
 
     /**
      * Obtains all the entries in the central directory.
-     * @return all entries
+     *
+     * @return all entries on a non-modifiable map
      */
     @NonNull
     Map<String, StoredEntry> getEntries() {
-        return Maps.newHashMap(mEntries);
+        return ImmutableMap.copyOf(mEntries);
     }
 
     /**
      * Obtains the byte representation of the central directory.
+     *
      * @return a byte array containing the whole central directory
      * @throws IOException failed to write the byte array
      */
     byte[] toBytes() throws IOException {
+        return mBytesSupplier.get();
+    }
+
+    /**
+     * Computes the byte representation of the central directory.
+     *
+     * @return a byte array containing the whole central directory
+     * @throws IOException failed to write the byte array
+     */
+    private byte[] computeByteRepresentation() throws IOException {
         ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
 
         for (StoredEntry entry : mEntries.values()) {
