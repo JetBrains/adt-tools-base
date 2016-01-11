@@ -19,7 +19,6 @@ package com.android.sdklib.repository.local;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.repository.io.FileOp;
-import com.android.repository.io.FileOp;
 
 import java.io.File;
 import java.io.InputStream;

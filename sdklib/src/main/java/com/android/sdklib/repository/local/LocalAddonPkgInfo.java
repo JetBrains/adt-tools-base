@@ -16,43 +16,16 @@
 
 package com.android.sdklib.repository.local;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.repository.Revision;
-import com.android.repository.io.FileOp;
 import com.android.sdklib.AndroidVersion;
-import com.android.sdklib.IAndroidTarget;
-import com.android.sdklib.ISystemImage;
-import com.android.sdklib.ISystemImage.LocationType;
-import com.android.sdklib.internal.androidTarget.AddOnTarget;
-import com.android.sdklib.internal.androidTarget.PlatformTarget;
-import com.android.sdklib.internal.project.ProjectProperties;
-import com.android.sdklib.repository.AddonManifestIniProps;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDesc;
-import com.android.sdklib.repository.descriptors.PkgType;
 import com.android.sdklib.repositoryv2.IdDisplay;
-import com.android.sdklib.repositoryv2.targets.SystemImage;
-import com.android.utils.Pair;
-import com.google.common.base.Objects;
-import com.google.common.collect.SetMultimap;
-import com.google.common.collect.TreeMultimap;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @SuppressWarnings("MethodMayBeStatic")
 public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {

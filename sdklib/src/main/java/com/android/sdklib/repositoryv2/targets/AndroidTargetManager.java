@@ -26,7 +26,6 @@ import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
-import com.android.sdklib.internal.androidTarget.MissingTarget;
 import com.android.sdklib.repositoryv2.AndroidSdkHandler;
 import com.android.sdklib.repositoryv2.IdDisplay;
 import com.android.sdklib.repositoryv2.meta.DetailsTypes;
