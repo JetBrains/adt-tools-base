@@ -58,7 +58,7 @@ final class Int32Slice extends Box implements BinaryObject {
 
     static {
         ENTITY.setFields(new Field[]{
-            new Field("value", new Slice("", new Primitive("int32", Method.Int32))),
+            new Field("Value", new Slice("", new Primitive("int32", Method.Int32))),
         });
         Namespace.register(Klass.INSTANCE);
     }

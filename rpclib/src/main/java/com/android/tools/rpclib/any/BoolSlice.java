@@ -58,7 +58,7 @@ final class BoolSlice extends Box implements BinaryObject {
 
     static {
         ENTITY.setFields(new Field[]{
-            new Field("value", new Slice("", new Primitive("bool", Method.Bool))),
+            new Field("Value", new Slice("", new Primitive("bool", Method.Bool))),
         });
         Namespace.register(Klass.INSTANCE);
     }

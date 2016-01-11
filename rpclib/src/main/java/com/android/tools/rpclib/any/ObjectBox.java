@@ -58,7 +58,7 @@ final class ObjectBox extends Box implements BinaryObject {
 
     static {
         ENTITY.setFields(new Field[]{
-            new Field("value", new Interface("binary.Object")),
+            new Field("Value", new Interface("binary.Object")),
         });
         Namespace.register(Klass.INSTANCE);
     }

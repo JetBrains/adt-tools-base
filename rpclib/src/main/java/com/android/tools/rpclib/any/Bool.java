@@ -58,7 +58,7 @@ final class Bool extends Box implements BinaryObject {
 
     static {
         ENTITY.setFields(new Field[]{
-            new Field("value", new Primitive("bool", Method.Bool)),
+            new Field("Value", new Primitive("bool", Method.Bool)),
         });
         Namespace.register(Klass.INSTANCE);
     }

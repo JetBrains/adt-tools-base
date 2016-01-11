@@ -58,7 +58,7 @@ final class Int32 extends Box implements BinaryObject {
 
     static {
         ENTITY.setFields(new Field[]{
-            new Field("value", new Primitive("int32", Method.Int32)),
+            new Field("Value", new Primitive("int32", Method.Int32)),
         });
         Namespace.register(Klass.INSTANCE);
     }
