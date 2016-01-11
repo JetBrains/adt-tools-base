@@ -114,12 +114,14 @@ public class InstantRunBuildContextTest {
     public void testXmlFormat() throws ParserConfigurationException, IOException, SAXException {
         InstantRunBuildContext first = new InstantRunBuildContext();
         first.setApiLevel(new AndroidVersion(23, null /* codeName */));
+        first.setDensity("xxxhdpi");
         first.addChangedFile(InstantRunBuildContext.FileType.MAIN, new File("main.apk"));
         first.addChangedFile(InstantRunBuildContext.FileType.SPLIT, new File("split.apk"));
         String buildInfo = first.toXml();
 
         InstantRunBuildContext second = new InstantRunBuildContext();
         second.setApiLevel(new AndroidVersion(21, null /* codeName */));
+        second.setDensity("xhdpi");
         second.loadFromXml(buildInfo);
         second.addChangedFile(InstantRunBuildContext.FileType.DEX, new File("classes.dex"));
         second.addChangedFile(InstantRunBuildContext.FileType.RELOAD_DEX, new File("reload.dex"));
@@ -130,6 +132,7 @@ public class InstantRunBuildContextTest {
         assertThat(instantRun.getTagName()).isEqualTo("instant-run");
         assertThat(instantRun.getAttribute(InstantRunBuildContext.ATTR_TIMESTAMP)).isEqualTo(
                 String.valueOf(second.getBuildId()));
+        assertThat(instantRun.getAttribute(InstantRunBuildContext.ATTR_DENSITY)).isEqualTo("xhdpi");
 
         // check the most recent build (called second) records :
         List<Element> secondArtifacts = getElementsByName(instantRun,

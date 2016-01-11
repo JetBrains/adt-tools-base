@@ -18,8 +18,6 @@ package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.OptionalCompilationStep;
-import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.sdklib.AndroidVersion;
 import com.android.utils.XmlUtils;
@@ -63,6 +61,7 @@ public class InstantRunBuildContext {
     static final String ATTR_TYPE = "type";
     static final String ATTR_LOCATION = "location";
     static final String ATTR_API_LEVEL = "api-level";
+    static final String ATTR_DENSITY = "density";
     static final String ATTR_FORMAT= "format";
 
     static final String CURRENT_FORMAT = "1";
@@ -234,6 +233,7 @@ public class InstantRunBuildContext {
     private final long[] taskDurationInMs = new long[TaskType.values().length];
     private InstantRunPatchingPolicy patchingPolicy;
     private AndroidVersion apiLevel = AndroidVersion.DEFAULT;
+    private String density = null;
     private final Build currentBuild = new Build(
             System.currentTimeMillis(), Optional.<InstantRunVerifierStatus>absent());
     private final TreeMap<Long, Build> previousBuilds = new TreeMap<Long, Build>();
@@ -278,6 +278,15 @@ public class InstantRunBuildContext {
 
     public AndroidVersion getApiLevel() {
         return apiLevel;
+    }
+
+    @Nullable
+    public String getDensity() {
+        return density;
+    }
+
+    public void setDensity(@Nullable String density) {
+        this.density = density;
     }
 
     @Nullable
@@ -490,6 +499,9 @@ public class InstantRunBuildContext {
         }
         currentBuild.toXml(document, instantRun);
         instantRun.setAttribute(ATTR_API_LEVEL, String.valueOf(apiLevel.getApiLevel()));
+        if (density != null) {
+            instantRun.setAttribute(ATTR_DENSITY, density);
+        }
         instantRun.setAttribute(ATTR_FORMAT, CURRENT_FORMAT);
 
         for (Build build : previousBuilds.values()) {
