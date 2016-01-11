@@ -651,6 +651,9 @@ public class ZFile implements Closeable {
         deleteDirectoryAndEocd();
         mMap.truncate();
 
+        computeCentralDirectory();
+        computeEocd();
+
         notify(new IOExceptionFunction<ZFileExtension, IOExceptionRunnable>() {
             @Nullable
             @Override
@@ -769,12 +772,14 @@ public class ZFile implements Closeable {
     }
 
     /**
-     * Writes the central directory to the end of the zip file. This creates a new
-     * {@link #mDirectoryEntry} unless the directory is empty in which case {@link #mDirectoryEntry}
-     * is left as {@code null}.
+     * Computes the central directory. The central directory must not have been computed yet. When
+     * this method finishes, the central directory has been computed {@link #mDirectoryEntry},
+     * unless the directory is empty in which case {@link #mDirectoryEntry}
+     * is left as {@code null}. Nothing is written to disk as a result of this method's invocation.
+     *
      * @throws IOException failed to append the central directory
      */
-    private void appendCentralDirectory() throws IOException {
+    private void computeCentralDirectory() throws IOException {
         Preconditions.checkState(mState == ZipFileState.OPEN_RW, "mState != ZipFileState.OPEN_RW");
         Preconditions.checkNotNull(mRaf, "mRaf == null");
         Preconditions.checkState(mDirectoryEntry == null, "mDirectoryEntry == null");
@@ -788,13 +793,6 @@ public class ZFile implements Closeable {
         byte[] newDirectoryBytes = newDirectory.toBytes();
         long directoryOffset = mMap.size() + mExtraDirectoryOffset;
 
-        /*
-         * It is fine to seek beyond the end of file. Seeking beyond the end of file will not extend
-         * the file. Even if we do not have any directory data to write, the extend() call below
-         * will force the file to be extended leaving exactly mExtraDirectoryOffset bytes empty at
-         * the beginning.
-         */
-        directWrite(directoryOffset, newDirectoryBytes);
         mMap.extend(directoryOffset+ newDirectoryBytes.length);
 
         if (newDirectoryBytes.length > 0) {
@@ -804,12 +802,67 @@ public class ZFile implements Closeable {
     }
 
     /**
-     * Writes the EOCD to the end of the zip file. This creates a new {@link #mEocdEntry}. The
+     * Writes the central directory to the end of the zip file. {@link #mDirectoryEntry} may be
+     * {@code null} only if there are no files in the archive.
+     *
+     * @throws IOException failed to append the central directory
+     */
+    private void appendCentralDirectory() throws IOException {
+        Preconditions.checkState(mState == ZipFileState.OPEN_RW, "mState != ZipFileState.OPEN_RW");
+        Preconditions.checkNotNull(mRaf, "mRaf == null");
+
+        if (mEntries.isEmpty()) {
+            Preconditions.checkState(mDirectoryEntry == null, "mDirectoryEntry != null");
+            return;
+        }
+
+        Preconditions.checkNotNull(mDirectoryEntry, "mDirectoryEntry != null");
+
+        CentralDirectory newDirectory = mDirectoryEntry.getStore();
+        Verify.verifyNotNull(newDirectory, "newDirectory != null");
+
+        byte[] newDirectoryBytes = newDirectory.toBytes();
+        long directoryOffset = mDirectoryEntry.getStart();
+
+        /*
+         * It is fine to seek beyond the end of file. Seeking beyond the end of file will not extend
+         * the file. Even if we do not have any directory data to write, the extend() call below
+         * will force the file to be extended leaving exactly mExtraDirectoryOffset bytes empty at
+         * the beginning.
+         */
+        directWrite(directoryOffset, newDirectoryBytes);
+    }
+
+    /**
+     * Obtains the byte array representation of the central directory. The central directory must
+     * have been already computed. If there are no entries in the zip, the central directory will be
+     * empty.
+     *
+     * @return the byte representation, or an empty array if there are no entries in the zip
+     * @throws IOException failed to compute the central directory byte representation
+     */
+    @NonNull
+    public byte[] getCentralDirectoryBytes() throws IOException {
+        if (mEntries.isEmpty()) {
+            Preconditions.checkState(mDirectoryEntry == null, "mDirectoryEntry != null");
+            return new byte[0];
+        }
+
+        Preconditions.checkNotNull(mDirectoryEntry, "mDirectoryEntry == null");
+
+        CentralDirectory cd = mDirectoryEntry.getStore();
+        Verify.verifyNotNull(cd, "cd == null");
+        return cd.toBytes();
+    }
+
+    /**
+     * Computes the EOCD. This creates a new {@link #mEocdEntry}. The
      * central directory must already be written. If {@link #mDirectoryEntry} is {@code null}, then
      * the zip file must not have any entries.
+     *
      * @throws IOException failed to write the EOCD
      */
-    private void appendEocd() throws IOException {
+    private void computeEocd() throws IOException {
         Preconditions.checkState(mState == ZipFileState.OPEN_RW, "mState != ZipFileState.OPEN_RW");
         Preconditions.checkNotNull(mRaf, "mRaf == null");
         if (mDirectoryEntry == null) {
@@ -836,13 +889,48 @@ public class ZFile implements Closeable {
 
         Eocd eocd = new Eocd(mEntries.size(), dirStart, dirSize);
 
-        byte[] eocdBytes = eocd.toData();
+        byte[] eocdBytes = eocd.toBytes();
         long eocdOffset = mMap.size();
 
-        directWrite(eocdOffset, eocdBytes);
         mMap.extend(eocdOffset + eocdBytes.length);
 
         mEocdEntry = mMap.add(eocdOffset, eocdOffset + eocdBytes.length, eocd);
+    }
+
+    /**
+     * Writes the EOCD to the end of the zip file. This creates a new {@link #mEocdEntry}. The
+     * central directory must already be written. If {@link #mDirectoryEntry} is {@code null}, then
+     * the zip file must not have any entries.
+     * @throws IOException failed to write the EOCD
+     */
+    private void appendEocd() throws IOException {
+        Preconditions.checkState(mState == ZipFileState.OPEN_RW, "mState != ZipFileState.OPEN_RW");
+        Preconditions.checkNotNull(mRaf, "mRaf == null");
+        Preconditions.checkNotNull(mEocdEntry, "mEocdEntry == null");
+
+        Eocd eocd = mEocdEntry.getStore();
+        Verify.verifyNotNull(eocd, "eocd == null");
+
+        byte[] eocdBytes = eocd.toBytes();
+        long eocdOffset = mEocdEntry.getStart();
+
+        directWrite(eocdOffset, eocdBytes);
+    }
+
+    /**
+     * Obtains the byte array representation of the EOCD. The EOCD must have already been computed
+     * for this method to be invoked.
+     *
+     * @return the byte representation of the EOCD
+     * @throws IOException failed to obtain the byte representation of the EOCD
+     */
+    @NonNull
+    public byte[] getEocdBytes() throws IOException {
+        Preconditions.checkNotNull(mEocdEntry, "mEocdEntry == null");
+
+        Eocd eocd = mEocdEntry.getStore();
+        Verify.verifyNotNull(eocd, "eocd == null");
+        return eocd.toBytes();
     }
 
     /**

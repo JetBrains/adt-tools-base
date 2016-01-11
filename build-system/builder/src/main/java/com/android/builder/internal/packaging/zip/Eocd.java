@@ -17,6 +17,8 @@
 package com.android.builder.internal.packaging.zip;
 
 import com.android.annotations.NonNull;
+import com.android.builder.internal.packaging.zip.utils.CachedSupplier;
+import com.android.builder.internal.utils.IOExceptionWrapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Verify;
@@ -104,11 +106,19 @@ class Eocd {
     /**
      * Contents of the EOCD comment.
      */
+    @NonNull
     private final byte[] mComment;
+
+    /**
+     * Supplier of the byte representation of the EOCD.
+     */
+    @NonNull
+    private final CachedSupplier<byte[]> mByteSupplier;
 
     /**
      * Creates a new EOCD, reading it from a byte source. This method will parse the byte source
      * and obtain the EOCD. It will check that the byte source starts with the EOCD signature.
+     *
      * @param bytes the byte source with the EOCD data
      * @throws IOException failed to read information or the EOCD data is corrupt or invalid
      */
@@ -147,11 +157,18 @@ class Eocd {
         }
 
         mComment = bytes.slice(F_COMMENT_SIZE.endOffset(), commentSize).read();
+        mByteSupplier = new CachedSupplier<byte[]>() {
+            @Override
+            protected byte[] compute() throws IOException {
+                return computeByteRepresentation();
+            }
+        };
     }
 
     /**
      * Creates a new EOCD. This is used when generating an EOCD for an Central Directory that has
      * just been generated. The EOCD will be generated without any comment.
+     *
      * @param totalRecords total number of records in the directory
      * @param directoryOffset offset, since beginning of archive, where the Central Directory is
      * located
@@ -166,10 +183,21 @@ class Eocd {
         mDirectoryOffset = directoryOffset;
         mDirectorySize = directorySize;
         mComment = new byte[0];
+        mByteSupplier = new CachedSupplier<byte[]>() {
+            @Override
+            protected byte[] compute() {
+                try {
+                    return computeByteRepresentation();
+                } catch (IOException e) {
+                    throw new IOExceptionWrapper(e);
+                }
+            }
+        };
     }
 
     /**
      * Obtains the number of records in the Central Directory.
+     *
      * @return the number of records
      */
     int getTotalRecords() {
@@ -178,7 +206,8 @@ class Eocd {
 
     /**
      * Obtains the offset since the beginning of the zip archive where the Central Directory is
-     * located
+     * located.
+     *
      * @return the offset where the Central Directory is located
      */
     long getDirectoryOffset() {
@@ -186,7 +215,8 @@ class Eocd {
     }
 
     /**
-     * Obtains the size of the Central Directory
+     * Obtains the size of the Central Directory.
+     *
      * @return the number of bytes that make up the Central Directory
      */
     long getDirectorySize() {
@@ -195,6 +225,7 @@ class Eocd {
 
     /**
      * Obtains the size of the EOCD.
+     *
      * @return the size, in bytes, of the EOCD
      */
     long getEocdSize() {
@@ -203,11 +234,23 @@ class Eocd {
 
     /**
      * Generates the EOCD data.
+     *
      * @return a byte representation of the EOCD that has exactly {@link #getEocdSize()} bytes
      * @throws IOException failed to generate the EOCD data
      */
     @NonNull
-    byte[] toData() throws IOException {
+    byte[] toBytes() throws IOException {
+        return mByteSupplier.get();
+    }
+
+    /**
+     * Computes the byte representation of the EOCD.
+     *
+     * @return a byte representation of the EOCD that has exactly {@link #getEocdSize()} bytes
+     * @throws IOException failed to generate the EOCD data
+     */
+    @NonNull
+    private byte[] computeByteRepresentation() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
         F_SIGNATURE.write(out);
