@@ -209,6 +209,23 @@ public class InstantRunVerifier {
                         && Objects.equal(first.value, second.value);
             }
         });
+
+        if (diff == Diff.CHANGE) {
+            // Detect R$something classes, and report changes in them separately.
+            String name = originalClass.name;
+            int index = name.lastIndexOf('/');
+            if (index != -1 &&
+                    name.startsWith("R$", index + 1) &&
+                    (originalClass.access & Opcodes.ACC_PUBLIC) != 0 &&
+                    (originalClass.access & Opcodes.ACC_FINAL) != 0 &&
+                    originalClass.outerClass == null &&
+                    originalClass.interfaces.isEmpty() &&
+                    originalClass.superName.equals("java/lang/Object") &&
+                    name.length() > 3 && Character.isLowerCase(name.charAt(2))) {
+                return R_CLASS_CHANGE;
+            }
+        }
+
         switch (diff) {
             case NONE:
                 return COMPATIBLE;
