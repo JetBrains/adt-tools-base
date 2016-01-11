@@ -90,8 +90,9 @@ public abstract class ZFileExtension {
 
     /**
      * This notification is sent when all entries have been written in the file but the central
-     * directory and the EOCD have not yet been written. No entries should be added, removed or
-     * updated during this notification. Updates to the zip file that solely affect the central
+     * directory and the EOCD have not yet been written. The central directory and EOCD have
+     * been computed already and can no longer be modified. No entries should be added, removed or
+     * updated during this notification. No updates to the zip file that affect the central
      * directory and/or the EOCD can be made.
      * <p>
      * After this notification, {@link #updated()} is sent.

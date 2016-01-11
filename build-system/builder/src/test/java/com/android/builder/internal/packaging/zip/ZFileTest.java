@@ -858,4 +858,57 @@ public class ZFileTest {
 
         zip.close();
     }
+
+    @Test
+    public void obtainingCDAndEocdWhenEntriesWrittenOnEmptyZip() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
+
+        final byte[][] cd = new byte[1][];
+        final byte[][] eocd = new byte[1][];
+
+        final ZFile zip = new ZFile(zipFile);
+        zip.addZFileExtension(new ZFileExtension() {
+            @Override
+            public void entriesWritten() throws IOException {
+                cd[0] = zip.getCentralDirectoryBytes();
+                eocd[0] = zip.getEocdBytes();
+            }
+        });
+
+        zip.close();
+
+        assertNotNull(cd[0]);
+        assertEquals(0, cd[0].length);
+        assertNotNull(eocd[0]);
+        assertEquals(22, eocd[0].length);
+    }
+
+    @Test
+    public void obtainingCDAndEocdWhenEntriesWrittenOnNonEmptyZip() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
+
+        final byte[][] cd = new byte[1][];
+        final byte[][] eocd = new byte[1][];
+
+        final ZFile zip = new ZFile(zipFile);
+        zip.add("foo", new ByteArrayEntrySource(new byte[0]), CompressionMethod.DEFLATE);
+        zip.addZFileExtension(new ZFileExtension() {
+            @Override
+            public void entriesWritten() throws IOException {
+                cd[0] = zip.getCentralDirectoryBytes();
+                eocd[0] = zip.getEocdBytes();
+            }
+        });
+
+        zip.close();
+
+        /*
+         * Central directory entry has 46 bytes + name
+         * EOCD with no comment has 22 bytes.
+         */
+        assertNotNull(cd[0]);
+        assertEquals(46 + 3, cd[0].length);
+        assertNotNull(eocd[0]);
+        assertEquals(22, eocd[0].length);
+    }
 }
