@@ -44,6 +44,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import javax.xml.bind.JAXBException;
 import javax.xml.bind.annotation.XmlTransient;
 
 /**
@@ -175,8 +176,13 @@ public class RemoteListSourceProviderImpl extends RemoteListSourceProvider {
         }
         LSResourceResolver resourceResolver = SchemaModuleUtil
                 .createResourceResolver(schemas, progress);
-        SiteList sl = (SiteList) SchemaModuleUtil
-                .unmarshal(xml, schemas, resourceResolver, progress);
+        SiteList sl = null;
+        try {
+            sl = (SiteList) SchemaModuleUtil
+                    .unmarshal(xml, schemas, resourceResolver, progress);
+        } catch (JAXBException e) {
+            progress.logWarning("Failed to parse source list at " + url);
+        }
         List<RepositorySource> result = Lists.newArrayList();
         if (sl != null) {
             for (RemoteSource s : sl.getSite()) {

@@ -40,6 +40,8 @@ import java.io.OutputStream;
 import java.util.Collections;
 import java.util.Map;
 
+import javax.xml.bind.JAXBException;
+
 /**
  * A utility class that finds {@link LocalPackage}s under a given path based on {@code package.xml}
  * files.
@@ -146,6 +148,13 @@ public final class LocalRepoLoader {
             if (p != null) {
                 writePackage(p, packageXml, progress);
             }
+            else if (mFop.exists(packageXml)) {
+                File bad = new File(packageXml.getPath() + ".bad");
+                progress.logWarning(String.format(
+                        "Invalid package.xml found and failed to parse using fallback. Renaming %1$s to %2$s",
+                        packageXml, bad));
+                mFop.renameTo(packageXml, bad);
+            }
         }
         if (p != null) {
             collector.put(p.getPath(), p);
@@ -201,7 +210,7 @@ public final class LocalRepoLoader {
      */
     @Nullable
     private LocalPackage parsePackage(@NonNull File packageXml,
-            @NonNull ProgressIndicator progress) {
+            @NonNull ProgressIndicator progress) throws JAXBException {
         Repository repo;
         try {
             progress.logInfo("Parsing " + packageXml);

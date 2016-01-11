@@ -15,7 +15,9 @@
  */
 package com.android.sdklib.repositoryv2;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.repository.api.FallbackLocalRepoLoader;
 import com.android.repository.api.FallbackRemoteRepoLoader;
 import com.android.repository.api.ProgressIndicator;
@@ -24,16 +26,33 @@ import com.android.repository.api.RepoPackage;
 import com.android.repository.api.SchemaModule;
 import com.android.repository.impl.meta.GenericFactory;
 import com.android.repository.impl.meta.TypeDetails;
+import com.android.repository.io.FileOp;
+import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.IAndroidTarget.OptionalLibrary;
 import com.android.sdklib.SdkVersionInfo;
+import com.android.sdklib.internal.project.ProjectProperties;
+import com.android.sdklib.repository.AddonManifestIniProps;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgType;
 import com.android.sdklib.repositoryv2.meta.AddonFactory;
 import com.android.sdklib.repositoryv2.meta.DetailsTypes;
+import com.android.sdklib.repositoryv2.meta.Library;
 import com.android.sdklib.repositoryv2.meta.RepoFactory;
 import com.android.sdklib.repositoryv2.meta.SdkCommonFactory;
 import com.android.sdklib.repositoryv2.meta.SysImgFactory;
 import com.android.sdklib.repositoryv2.targets.SystemImage;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Utilities used by the {@link FallbackLocalRepoLoader} and {@link FallbackRemoteRepoLoader}s to
@@ -41,12 +60,16 @@ import com.android.sdklib.repositoryv2.targets.SystemImage;
  */
 public class LegacyRepoUtils {
 
+    private static final Pattern PATTERN_LIB_DATA = Pattern.compile(
+            "^([a-zA-Z0-9._-]+\\.jar);(.*)$", Pattern.CASE_INSENSITIVE);    //$NON-NLS-1$
+
     /**
      * Convert a {@link IPkgDesc} and other old-style information into a {@link TypeDetails}.
      */
     @NonNull
     public static TypeDetails createTypeDetails(@NonNull IPkgDesc desc,
-            int layoutLibVersion, ProgressIndicator progress) {
+            int layoutLibVersion, @NonNull Collection<OptionalLibrary> addonLibraries,
+            @Nullable File packageDir, @NonNull ProgressIndicator progress, @NonNull FileOp fop) {
 
         AndroidSdkHandler handler = AndroidSdkHandler.getInstance(null);
         SdkCommonFactory sdkFactory = (SdkCommonFactory) handler
@@ -115,6 +138,31 @@ public class LegacyRepoUtils {
             }
             assert androidVersion != null;
             details.setApiLevel(androidVersion.getApiLevel());
+            if (!addonLibraries.isEmpty()) {
+                DetailsTypes.AddonDetailsType.Libraries librariesType = addonFactory.createLibrariesType();
+                List<Library> libraries = librariesType.getLibrary();
+                for (OptionalLibrary addonLib : addonLibraries) {
+                    Library lib = sdkFactory.createLibraryType();
+                    lib.setDescription(addonLib.getDescription());
+                    lib.setName(addonLib.getName());
+                    String jarPath = addonLib.getJar().getPath();
+                    if (packageDir != null) {
+                        lib.setPackagePath(packageDir);
+                        try {
+                            jarPath = FileOpUtils
+                                    .makeRelative(new File(packageDir, SdkConstants.FD_ADDON_LIBS),
+                                            new File(jarPath), fop);
+                        } catch (IOException e) {
+                            progress.logWarning("Error finding library", e);
+                        }
+                    }
+                    if (!jarPath.isEmpty()) {
+                        lib.setLocalJarPath(jarPath);
+                    }
+                    libraries.add(lib);
+                }
+                details.setLibraries(librariesType);
+            }
             return (TypeDetails) details;
         } else if (desc.getType() == PkgType.PKG_SOURCE) {
             DetailsTypes.SourceDetailsType details = repoFactory.createSourceDetailsType();
@@ -164,5 +212,82 @@ public class LegacyRepoUtils {
             return result;
         }
         return legacy.getInstallId();
+    }
+
+    public static List<OptionalLibrary> parseLegacyAdditionalLibraries(
+            @NonNull File packageLocation, @NonNull ProgressIndicator progress,
+            @NonNull FileOp fop) {
+        List<OptionalLibrary> result = Lists.newArrayList();
+        File addOnManifest = new File(packageLocation, SdkConstants.FN_MANIFEST_INI);
+
+        if (!fop.isFile(addOnManifest)) {
+            return result;
+        }
+        Map<String, String> propertyMap;
+        try {
+            propertyMap = ProjectProperties.parsePropertyStream(
+                    fop.newFileInputStream(addOnManifest),
+                    addOnManifest.getPath(),
+                    null);
+
+        } catch (FileNotFoundException e) {
+            progress.logWarning("Failed to find " + addOnManifest, e);
+            return result;
+        }
+        if (propertyMap == null) {
+            return result;
+        }
+        // get the optional libraries
+        String librariesValue = propertyMap.get(AddonManifestIniProps.ADDON_LIBRARIES);
+
+        AndroidSdkHandler handler = AndroidSdkHandler.getInstance(null);
+        SdkCommonFactory sdkFactory = (SdkCommonFactory) handler
+                .getCommonModule(progress).createLatestFactory();
+
+        Map<String, String[]> libMap = Maps.newHashMap();
+        if (librariesValue != null) {
+            librariesValue = librariesValue.trim();
+            if (!librariesValue.isEmpty()) {
+                // split in the string into the libraries name
+                String[] libraryNames = librariesValue.split(";");     //$NON-NLS-1$
+                if (libraryNames.length > 0) {
+                    for (String libName : libraryNames) {
+                        libName = libName.trim();
+
+                        // get the library data from the properties
+                        String libData = propertyMap.get(libName);
+
+                        if (libData != null) {
+                            // split the jar file from the description
+                            Matcher m = PATTERN_LIB_DATA.matcher(libData);
+                            if (m.matches()) {
+                                libMap.put(libName, new String[]{
+                                        m.group(1), m.group(2)});
+                            } else {
+                                progress.logWarning(String.format(
+                                        "Ignoring library '%1$s', property value has wrong format\n\t%2$s",
+                                        libName, libData));
+                            }
+                        } else {
+                            progress.logWarning(
+                                    String.format("Ignoring library '%1$s', missing property value",
+                                            libName));
+                        }
+                    }
+                }
+            }
+            for (Map.Entry<String, String[]> entry : libMap.entrySet()) {
+                String jarFile = entry.getValue()[0];
+                String desc = entry.getValue()[1];
+                Library lib = sdkFactory.createLibraryType();
+                lib.setName(entry.getKey());
+                lib.setPackagePath(packageLocation);
+                lib.setDescription(desc);
+                lib.setLocalJarPath(jarFile);
+                lib.setManifestEntryRequired(true);
+                result.add(lib);
+            }
+        }
+        return result;
     }
 }

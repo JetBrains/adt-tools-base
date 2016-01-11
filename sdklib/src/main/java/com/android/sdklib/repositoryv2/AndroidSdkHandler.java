@@ -19,6 +19,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.prefs.AndroidLocation;
+import com.android.repository.Revision;
 import com.android.repository.api.ConstantSourceProvider;
 import com.android.repository.api.FallbackRemoteRepoLoader;
 import com.android.repository.api.LocalPackage;
@@ -248,6 +249,14 @@ public final class AndroidSdkHandler {
     @Nullable
     public File getLocation() {
         return mLocation;
+    }
+
+    /**
+     * Convenience to get a package from the local repo.
+     */
+    @Nullable
+    public LocalPackage getLocalPackage(String path, ProgressIndicator progress) {
+        return getSdkManager(progress).getPackages().getLocalPackages().get(path);
     }
 
     /**
@@ -562,15 +571,35 @@ public final class AndroidSdkHandler {
         if (mLatestBuildTool == null) {
             RepoManager manager = getSdkManager(progress);
             BuildToolInfo info = null;
-            for (LocalPackage p : manager.getPackages().getLocalPackages().values()) {
-                if (p.getPath().startsWith(SdkConstants.FD_BUILD_TOOLS) &&
-                    (info == null || info.getRevision().compareTo(p.getVersion()) < 0)) {
+            for (LocalPackage p : manager.getPackages()
+                    .getLocalPackagesForPrefix(SdkConstants.FD_BUILD_TOOLS)) {
+                if (info == null || info.getRevision().compareTo(p.getVersion()) < 0) {
                      info = new BuildToolInfo(p.getVersion(), p.getLocation());
                 }
             }
             mLatestBuildTool = info;
         }
         return mLatestBuildTool;
+    }
+
+    /**
+     * Creates a the {@link BuildToolInfo} for the specificed build tools revision, if available.
+     *
+     * @param revision The build tools revision requested
+     * @param progress {@link ProgressIndicator} for logging.
+     * @return The {@link BuildToolInfo} corresponding to the specified build tools package, or
+     * {@code} null if that revision is not installed.
+     */
+    @Nullable
+    public BuildToolInfo getBuildToolInfo(@NonNull Revision revision,
+            @NonNull ProgressIndicator progress) {
+        RepositoryPackages packages = getSdkManager(progress).getPackages();
+        LocalPackage p = packages.getLocalPackages()
+                .get(DetailsTypes.getBuildToolsPath(revision));
+        if (p == null) {
+            return null;
+        }
+        return new BuildToolInfo(p.getVersion(), p.getLocation());
     }
 
     /**

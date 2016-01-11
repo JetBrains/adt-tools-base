@@ -24,7 +24,6 @@ import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
-import com.android.sdklib.SdkManager.LayoutlibVersion;
 import com.android.sdklib.repositoryv2.IdDisplay;
 import com.android.utils.SparseArray;
 import com.google.common.collect.ImmutableList;
@@ -56,7 +55,7 @@ public final class PlatformTarget implements IAndroidTarget {
     private File[] mSkins;
     private final ISystemImage[] mSystemImages;
     private final List<OptionalLibrary> mOptionalLibraries;
-    private final LayoutlibVersion mLayoutlibVersion;
+    private final int mLayoutlibApi;
     private final BuildToolInfo mBuildToolInfo;
 
     /**
@@ -67,7 +66,7 @@ public final class PlatformTarget implements IAndroidTarget {
      * @param apiVersion the API Level + codename.
      * @param versionName the version name of the platform.
      * @param revision the revision of the platform component.
-     * @param layoutlibVersion The {@link LayoutlibVersion}. May be null.
+     * @param layoutlibApi The layoutlib api level.
      * @param systemImages list of supported system images
      * @param properties the platform properties
      */
@@ -77,7 +76,7 @@ public final class PlatformTarget implements IAndroidTarget {
             AndroidVersion apiVersion,
             String versionName,
             int revision,
-            LayoutlibVersion layoutlibVersion,
+            int layoutlibApi,
             ISystemImage[] systemImages,
             Map<String, String> properties,
             List<OptionalLibrary> optionalLibraries,
@@ -90,7 +89,7 @@ public final class PlatformTarget implements IAndroidTarget {
         mVersion = apiVersion;
         mVersionName = versionName;
         mRevision = revision;
-        mLayoutlibVersion = layoutlibVersion;
+        mLayoutlibApi = layoutlibApi;
         mBuildToolInfo = buildToolInfo;
         mSystemImages = systemImages == null ? new ISystemImage[0] : systemImages;
         Arrays.sort(mSystemImages);
@@ -131,12 +130,6 @@ public final class PlatformTarget implements IAndroidTarget {
         mPaths.put(ANT, mRootFolderOsPath + SdkConstants.OS_PLATFORM_ANT_FOLDER);
     }
 
-    /**
-     * Returns the {@link LayoutlibVersion}. May be null.
-     */
-    public LayoutlibVersion getLayoutlibVersion() {
-        return mLayoutlibVersion;
-    }
 
     @Override
     @Nullable
@@ -419,5 +412,9 @@ public final class PlatformTarget implements IAndroidTarget {
 
     public void setSourcesPath(String osLocation) {
         mPaths.put(SOURCES, osLocation);
+    }
+
+    public int getLayoutlibApi() {
+        return mLayoutlibApi;
     }
 }

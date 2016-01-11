@@ -65,10 +65,6 @@ public interface ISystemImage extends Comparable<ISystemImage> {
     @NonNull
     File getLocation();
 
-    /** Indicates the location strategy for this system image in the SDK. */
-    @NonNull
-    LocationType getLocationType();
-
     /** Returns the tag of the system image. */
     @NonNull
     IdDisplay getTag();

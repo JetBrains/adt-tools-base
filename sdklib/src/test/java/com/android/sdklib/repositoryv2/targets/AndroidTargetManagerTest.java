@@ -20,6 +20,7 @@ import com.android.repository.testframework.MockFileOp;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
+import com.android.sdklib.internal.androidTarget.OptionalLibraryImpl;
 import com.android.sdklib.repositoryv2.AndroidSdkHandler;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -55,14 +56,16 @@ public class AndroidTargetManagerTest extends TestCase {
         Collection<IAndroidTarget> targets = mgr.getTargets(progress);
         progress.assertNoErrorsOrWarnings();
         assertEquals(4, targets.size());
-        Set<IAndroidTarget> sorted = Sets.newTreeSet(targets);
-        Iterator<IAndroidTarget> iter = sorted.iterator();
+        Iterator<IAndroidTarget> iter = targets.iterator();
 
+        IAndroidTarget addon13 = iter.next();
         IAndroidTarget platform13 = iter.next();
         verifyPlatform13(platform13);
-        verifyAddon13(iter.next(), platform13);
+        verifyAddon13(addon13, platform13);
+        IAndroidTarget addon23 = iter.next();
         IAndroidTarget platform23 = iter.next();
-        verifyAddon23(iter.next(), platform23);
+        verifyPlatform23(platform23);
+        verifyAddon23(addon23, platform23);
     }
 
     public void testMissing() throws Exception {
@@ -83,12 +86,53 @@ public class AndroidTargetManagerTest extends TestCase {
         // necessary dependencies to actually create a target.
         assertEquals(4, targets.size());
 
-        Set<IAndroidTarget> sorted = Sets.newTreeSet(targets);
-        Iterator<IAndroidTarget> iter = sorted.iterator();
+        Iterator<IAndroidTarget> iter = targets.iterator();
+        verifyPlatform23(iter.next());
         verifyMissing13(iter.next());
         verifyMissingAddon13(iter.next());
-        verifyPlatform23(iter.next());
         verifyMissingAddon23(iter.next());
+    }
+
+    public void testLegacyAddon() throws Exception {
+        MockFileOp fop = new MockFileOp();
+        recordPlatform23(fop);
+        recordLegacyGoogleApis23(fop);
+        recordBuildTool23(fop);
+        recordGoogleApisSysImg23(fop);
+
+        AndroidSdkHandler handler = new AndroidSdkHandler(new File("/sdk"), fop);
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+        AndroidTargetManager mgr = handler.getAndroidTargetManager(progress);
+        Collection<IAndroidTarget> targets = mgr.getTargets(progress);
+        progress.assertNoErrorsOrWarnings();
+        assertEquals(2, targets.size());
+        Iterator<IAndroidTarget> iter = targets.iterator();
+
+        IAndroidTarget addon23 = iter.next();
+        IAndroidTarget platform23 = iter.next();
+        verifyPlatform23(platform23);
+        verifyAddon23(addon23, platform23);
+    }
+
+    public void testInstalledLegacyAddon() throws Exception {
+        MockFileOp fop = new MockFileOp();
+        recordPlatform23(fop);
+        recordInstalledLegacyGoogleApis23(fop);
+        recordBuildTool23(fop);
+        recordGoogleApisSysImg23(fop);
+
+        AndroidSdkHandler handler = new AndroidSdkHandler(new File("/sdk"), fop);
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+        AndroidTargetManager mgr = handler.getAndroidTargetManager(progress);
+        Collection<IAndroidTarget> targets = mgr.getTargets(progress);
+        progress.assertNoErrorsOrWarnings();
+        assertEquals(2, targets.size());
+        Iterator<IAndroidTarget> iter = targets.iterator();
+
+        IAndroidTarget addon23 = iter.next();
+        IAndroidTarget platform23 = iter.next();
+        verifyAddon23(addon23, platform23);
+        verifyPlatform23(platform23);
     }
 
     private static void verifyPlatform13(IAndroidTarget target) {
@@ -199,6 +243,22 @@ public class AndroidTargetManagerTest extends TestCase {
         assertEquals(1, images.length);
         assertEquals(new File("/sdk/system-images/android-23/google_apis/x86_64"),
                 images[0].getLocation());
+
+        Set<IAndroidTarget.OptionalLibrary> desired
+                = Sets.<IAndroidTarget.OptionalLibrary>newHashSet(
+                new OptionalLibraryImpl("com.google.android.maps",
+                        new File("/sdk/add-ons/addon-google_apis-google-23/libs/maps.jar"), "",
+                        false),
+                new OptionalLibraryImpl("com.android.future.usb.accessory",
+                        new File("/sdk/add-ons/addon-google_apis-google-23/libs/usb.jar"), "",
+                        false),
+                new OptionalLibraryImpl("com.google.android.media.effects",
+                        new File("/sdk/add-ons/addon-google_apis-google-23/libs/effects.jar"), "",
+                        false));
+
+        Set<IAndroidTarget.OptionalLibrary> libraries = Sets
+                .newHashSet(target.getAdditionalLibraries());
+        assertEquals(desired, libraries);
     }
 
     private static void verifyMissingAddon23(IAndroidTarget target) {
@@ -411,16 +471,36 @@ public class AndroidTargetManagerTest extends TestCase {
                         + "xmlns:ns3=\"http://schemas.android.com/sdk/android/repo/sys-img2/01\" "
                         + "xmlns:ns4=\"http://schemas.android.com/repository/android/common/01\" "
                         + "xmlns:ns5=\"http://schemas.android.com/sdk/android/repo/addon2/01\">"
-                        + "<license id=\"license-1E15FA4A\" type=\"text\">Terms and Conditions\n"
-                        + "</license><localPackage path=\"add-ons;addon-google_apis-google-23-1\" "
-                        + "obsolete=\"false\"><type-details "
-                        + "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
-                        + "xsi:type=\"ns5:addonDetailsType\"><api-level>23</api-level><vendor>"
-                        + "<id>google</id><display>Google Inc.</display></vendor><tag>"
-                        + "<id>google_apis</id><display>Google APIs</display></tag></type-details>"
-                        + "<revision><major>1</major><minor>0</minor><micro>0</micro></revision>"
-                        + "<display-name>Google APIs, Android 23</display-name><uses-license "
-                        + "ref=\"license-1E15FA4A\"/></localPackage></ns5:sdk-addon>\n");
+                        + "<license id=\"license-1E15FA4A\" type=\"text\">"
+                        + "    Terms and Conditions\n"
+                        + "</license>"
+                        + "<localPackage path=\"add-ons;addon-google_apis-google-23-1\" "
+                        + "obsolete=\"false\">"
+                        + "  <type-details xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
+                        + "                xsi:type=\"ns5:addonDetailsType\">"
+                        + "    <api-level>23</api-level>"
+                        + "    <vendor><id>google</id><display>Google Inc.</display></vendor>"
+                        + "    <tag><id>google_apis</id><display>Google APIs</display></tag>"
+                        + "    <libraries>"
+                        + "      <library name=\"com.google.android.maps\" localJarPath=\"maps.jar\">"
+                        + "        <description>API for Google Maps</description>"
+                        + "      </library>"
+                        + "      <library name=\"com.android.future.usb.accessory\" localJarPath=\"usb.jar\">"
+                        + "        <description>API for USB Accessories</description>"
+                        + "      </library>"
+                        + "      <library name=\"com.google.android.media.effects\" localJarPath=\"effects.jar\">"
+                        + "        <description>Collection of video effects</description>"
+                        + "      </library>"
+                        + "    </libraries>"
+                        + "  </type-details>"
+                        + "  <revision>"
+                        + "    <major>1</major>"
+                        + "    <minor>0</minor>"
+                        + "    <micro>0</micro>"
+                        + "  </revision>"
+                        + "  <display-name>Google APIs, Android 23</display-name>"
+                        + "  <uses-license ref=\"license-1E15FA4A\"/>"
+                        + "</localPackage></ns5:sdk-addon>\n");
     }
 
     private static void recordGoogleTvAddon13(MockFileOp fop) {
@@ -497,6 +577,102 @@ public class AndroidTargetManagerTest extends TestCase {
                         + "<display-name>Google APIs Intel x86 Atom_64 System Image</display-name>"
                         + "<uses-license ref=\"license-9A5C00D5\"/></localPackage>"
                         + "</ns3:sdk-sys-img>\n");
+    }
+
+    private static void recordLegacyGoogleApis23(MockFileOp fop) {
+        fop.recordExistingFile("/sdk/add-ons/addon-google_apis-google-23/source.properties",
+                "Addon.NameDisplay=Google APIs\n"
+                        + "Addon.NameId=google_apis\n"
+                        + "Addon.VendorDisplay=Google Inc.\n"
+                        + "Addon.VendorId=google\n"
+                        + "AndroidVersion.ApiLevel=23\n"
+                        + "Pkg.Desc=Android + Google APIs\n"
+                        + "Pkg.Revision=1\n"
+                        + "Pkg.SourceUrl=https\\://dl.google.com/android/repository/addon.xml\n");
+        fop.recordExistingFile("/sdk/add-ons/addon-google_apis-google-23/manifest.ini",
+                "name=Google APIs\n"
+                        + "name-id=google_apis\n"
+                        + "vendor=Google Inc.\n"
+                        + "vendor-id=google\n"
+                        + "description=Android + Google APIs\n"
+                        + "\n"
+                        + "# version of the Android platform on which this add-on is built.\n"
+                        + "api=23\n"
+                        + "\n"
+                        + "# revision of the add-on\n"
+                        + "revision=1\n"
+                        + "\n"
+                        + "# list of libraries, separated by a semi-colon.\n"
+                        + "libraries=com.google.android.maps;com.android.future.usb.accessory;com.google.android.media.effects\n"
+                        + "\n"
+                        + "# details for each library\n"
+                        + "com.google.android.maps=maps.jar;API for Google Maps\n"
+                        + "com.android.future.usb.accessory=usb.jar;API for USB Accessories\n"
+                        + "com.google.android.media.effects=effects.jar;Collection of video effects\n"
+                        + "\n"
+                        + "SystemImage.GpuSupport=true\n");
+    }
+
+    private static void recordInstalledLegacyGoogleApis23(MockFileOp fop) {
+        fop.recordExistingFile("/sdk/add-ons/addon-google_apis-google-23/package.xml",
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
+                        + "<ns5:sdk-addon "
+                        + "xmlns:ns2=\"http://schemas.android.com/sdk/android/repo/repository2/01\" "
+                        + "xmlns:ns3=\"http://schemas.android.com/sdk/android/repo/sys-img2/01\" "
+                        + "xmlns:ns4=\"http://schemas.android.com/repository/android/common/01\" "
+                        + "xmlns:ns5=\"http://schemas.android.com/sdk/android/repo/addon2/01\">"
+                        + "<license id=\"license-1E15FA4A\" type=\"text\">"
+                        + "    Terms and Conditions\n"
+                        + "</license>"
+                        + "<localPackage path=\"add-ons;addon-google_apis-google-23-1\" "
+                        + "obsolete=\"false\">"
+                        + "  <type-details xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
+                        + "                xsi:type=\"ns5:addonDetailsType\">"
+                        + "    <api-level>23</api-level>"
+                        + "    <vendor><id>google</id><display>Google Inc.</display></vendor>"
+                        + "    <tag><id>google_apis</id><display>Google APIs</display></tag>"
+                        + "    <libraries>"
+                        + "      <library name=\"com.google.android.maps\">"
+                        + "        <description>API for Google Maps</description>"
+                        + "      </library>"
+                        + "      <library name=\"com.android.future.usb.accessory\">"
+                        + "        <description>API for USB Accessories</description>"
+                        + "      </library>"
+                        + "      <library name=\"com.google.android.media.effects\">"
+                        + "        <description>Collection of video effects</description>"
+                        + "      </library>"
+                        + "    </libraries>"
+                        + "  </type-details>"
+                        + "  <revision>"
+                        + "    <major>1</major>"
+                        + "    <minor>0</minor>"
+                        + "    <micro>0</micro>"
+                        + "  </revision>"
+                        + "  <display-name>Google APIs, Android 23</display-name>"
+                        + "  <uses-license ref=\"license-1E15FA4A\"/>"
+                        + "</localPackage></ns5:sdk-addon>\n");
+        fop.recordExistingFile("/sdk/add-ons/addon-google_apis-google-23/manifest.ini",
+                "name=Google APIs\n"
+                        + "name-id=google_apis\n"
+                        + "vendor=Google Inc.\n"
+                        + "vendor-id=google\n"
+                        + "description=Android + Google APIs\n"
+                        + "\n"
+                        + "# version of the Android platform on which this add-on is built.\n"
+                        + "api=23\n"
+                        + "\n"
+                        + "# revision of the add-on\n"
+                        + "revision=1\n"
+                        + "\n"
+                        + "# list of libraries, separated by a semi-colon.\n"
+                        + "libraries=com.google.android.maps;com.android.future.usb.accessory;com.google.android.media.effects\n"
+                        + "\n"
+                        + "# details for each library\n"
+                        + "com.google.android.maps=maps.jar;API for Google Maps\n"
+                        + "com.android.future.usb.accessory=usb.jar;API for USB Accessories\n"
+                        + "com.google.android.media.effects=effects.jar;Collection of video effects\n"
+                        + "\n"
+                        + "SystemImage.GpuSupport=true\n");
     }
 
 }

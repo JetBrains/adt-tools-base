@@ -1,6 +1,8 @@
 
 package com.android.sdklib.repositoryv2.generated.common.v1;
 
+import com.android.sdklib.repositoryv2.meta.Library;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
@@ -28,7 +30,7 @@ import javax.xml.bind.annotation.XmlType;
  *       &lt;sequence&gt;
  *         &lt;element name="description" type="{http://www.w3.org/2001/XMLSchema}string"/&gt;
  *       &lt;/sequence&gt;
- *       &lt;attribute name="localJarPath" use="required" type="{http://www.w3.org/2001/XMLSchema}string" /&gt;
+ *       &lt;attribute name="localJarPath" type="{http://www.w3.org/2001/XMLSchema}string" /&gt;
  *       &lt;attribute name="name" use="required" type="{http://www.w3.org/2001/XMLSchema}string" /&gt;
  *       &lt;attribute name="manifestEntryRequired" type="{http://www.w3.org/2001/XMLSchema}boolean" default="true" /&gt;
  *     &lt;/restriction&gt;
@@ -47,12 +49,12 @@ import javax.xml.bind.annotation.XmlType;
     "unchecked"
 })
 public class LibraryType
-    extends com.android.sdklib.repositoryv2.meta.DetailsTypes.Library
+    extends Library
 {
 
     @XmlElement(required = true)
     protected String description;
-    @XmlAttribute(name = "localJarPath", required = true)
+    @XmlAttribute(name = "localJarPath")
     protected String localJarPath;
     @XmlAttribute(name = "name", required = true)
     protected String name;

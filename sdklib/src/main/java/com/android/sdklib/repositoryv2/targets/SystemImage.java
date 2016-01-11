@@ -97,13 +97,6 @@ public class SystemImage implements ISystemImage {
 
     @NonNull
     @Override
-    @Deprecated
-    public LocationType getLocationType() {
-        throw new UnsupportedOperationException();
-    }
-
-    @NonNull
-    @Override
     public IdDisplay getTag() {
         return mTag;
     }

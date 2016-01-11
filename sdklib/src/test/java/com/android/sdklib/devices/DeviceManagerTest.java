@@ -29,7 +29,11 @@ import com.android.sdklib.mock.MockLog;
 import com.android.sdklib.repository.descriptors.IdDisplay;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
 
 public class DeviceManagerTest extends SdkManagerTestCase {
 
@@ -46,7 +50,7 @@ public class DeviceManagerTest extends SdkManagerTestCase {
 
     private DeviceManager createDeviceManager() {
         log = super.getLog();
-        File sdkLocation = getSdkManager().getLocalSdk().getLocation();
+        File sdkLocation = getSdkHandler().getLocation();
         return DeviceManager.createInstance(sdkLocation, log);
     }
 
@@ -328,7 +332,7 @@ public class DeviceManagerTest extends SdkManagerTestCase {
 
     public final void testDeviceOverrides() throws Exception {
         try {
-            File location = getSdkManager().getLocalSdk().getLocation();
+            File location = getSdkHandler().getLocation();
             SystemImage imageWithDevice = new SystemImage(
               new File(location, "system-images/android-22/android-wear/x86"),
               ISystemImage.LocationType.IN_SYSTEM_IMAGE,

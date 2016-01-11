@@ -44,6 +44,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import javax.xml.bind.JAXBException;
+
 /**
  * Utility class that loads {@link Repository}s from {@link RepositorySource}s.
  */
@@ -128,9 +130,14 @@ public class RemoteRepoLoader {
                         }
                     };
 
-                    Repository repo = (Repository) SchemaModuleUtil
-                            .unmarshal(repoStream, source.getPermittedModules(),
-                                    mResourceResolver, unmarshalProgress);
+                    Repository repo = null;
+                    try {
+                        repo = (Repository) SchemaModuleUtil
+                                .unmarshal(repoStream, source.getPermittedModules(),
+                                        mResourceResolver, unmarshalProgress);
+                    } catch (JAXBException e) {
+                        errors.add(e.toString());
+                    }
 
                     Collection<? extends RemotePackage> parsedPackages = null;
                     if (repo != null) {

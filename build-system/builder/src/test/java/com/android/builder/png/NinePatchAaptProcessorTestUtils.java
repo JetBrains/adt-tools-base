@@ -16,19 +16,18 @@
 
 package com.android.builder.png;
 
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.ide.common.internal.PngCruncher;
 import com.android.ide.common.internal.PngException;
-import com.android.sdklib.BuildToolInfo;
-import com.android.sdklib.SdkManager;
 import com.android.repository.Revision;
+import com.android.repository.testframework.FakeProgressIndicator;
+import com.android.sdklib.BuildToolInfo;
+import com.android.sdklib.repositoryv2.AndroidSdkHandler;
 import com.android.testutils.TestUtils;
-import com.android.utils.ILogger;
-import com.android.utils.StdLogger;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
@@ -69,10 +68,10 @@ public class NinePatchAaptProcessorTestUtils {
      * @throws RuntimeException if the latest build tools is older than revision.
      */
     static File getAapt(Revision revision) {
-        ILogger logger = new StdLogger(StdLogger.Level.VERBOSE);
-        SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), logger);
-        assert sdkManager != null;
-        BuildToolInfo buildToolInfo = sdkManager.getLatestBuildTool();
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+        BuildToolInfo buildToolInfo = AndroidSdkHandler.getInstance(getSdkDir())
+                .getLatestBuildTool(progress);
+        progress.assertNoErrorsOrWarnings();
         if (buildToolInfo == null || buildToolInfo.getRevision().compareTo(revision) < 0) {
             throw new RuntimeException("Test requires build-tools " + revision.toShortString());
         }
