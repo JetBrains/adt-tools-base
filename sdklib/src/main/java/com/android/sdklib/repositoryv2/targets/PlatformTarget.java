@@ -29,7 +29,6 @@ import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
 import com.android.sdklib.SdkVersionInfo;
-import com.android.sdklib.internal.androidTarget.OptionalLibraryImpl;
 import com.android.sdklib.internal.project.ProjectProperties;
 import com.android.sdklib.repository.local.PackageParserUtils;
 import com.android.sdklib.repositoryv2.AndroidSdkHandler;

@@ -23,6 +23,7 @@ import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.annotations.concurrency.GuardedBy;
 import com.android.repository.Revision;
+import com.android.repository.api.RepoManager;
 import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.AndroidTargetHash;
@@ -35,6 +36,7 @@ import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDescExtra;
 import com.android.sdklib.repository.descriptors.PkgType;
+import com.android.sdklib.repositoryv2.AndroidSdkHandler;
 import com.android.sdklib.repositoryv2.IdDisplay;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
@@ -166,7 +168,9 @@ import java.util.Properties;
  *      to totally remove it when the SdkManager class goes away.
  * </ul>
  * @version 2 of the {@code SdkManager} class, essentially.
+ * @deprecated in favor of {@link AndroidSdkHandler}/{@link RepoManager}.
  */
+@Deprecated
 public class LocalSdk {
 
     /** Location of the SDK. Maybe null. Can be changed. */

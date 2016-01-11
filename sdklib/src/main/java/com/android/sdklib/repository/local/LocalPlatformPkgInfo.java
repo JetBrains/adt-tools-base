@@ -18,29 +18,17 @@ package com.android.sdklib.repository.local;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
-import com.android.annotations.VisibleForTesting;
 import com.android.repository.Revision;
 import com.android.repository.io.FileOp;
 import com.android.sdklib.AndroidVersion;
-import com.android.sdklib.IAndroidTarget.OptionalLibrary;
-import com.android.sdklib.internal.androidTarget.OptionalLibraryImpl;
 import com.android.sdklib.internal.project.ProjectProperties;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDesc;
-import com.google.common.base.Charsets;
-import com.google.common.collect.Lists;
-import com.google.common.io.Files;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.lang.reflect.Type;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -89,7 +77,7 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
     public int getLayoutlibApi() {
         Map<String, String> platformProp = getPlatformProps();
         int layoutlibApi = 1;
-        
+
         if (platformProp == null) {
             return layoutlibApi;
         }
@@ -171,46 +159,4 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
         }
         return myPlatformProp;
     }
-
-    public static class Library {
-
-        String name;
-
-        String jar;
-
-        boolean manifest;
-    }
-
-
-    @VisibleForTesting
-    static List<OptionalLibrary> getLibsFromJson(@NonNull File jsonFile) {
-
-        Gson gson = new Gson();
-
-        try {
-            Type collectionType = new TypeToken<Collection<Library>>() {
-            }.getType();
-            Collection<Library> libs = gson
-                    .fromJson(Files.newReader(jsonFile, Charsets.UTF_8), collectionType);
-
-            // convert into the right format.
-            List<OptionalLibrary> optionalLibraries = Lists.newArrayListWithCapacity(libs.size());
-
-            File rootFolder = jsonFile.getParentFile();
-            for (Library lib : libs) {
-                optionalLibraries.add(new OptionalLibraryImpl(
-                        lib.name,
-                        new File(rootFolder, lib.jar),
-                        lib.name,
-                        lib.manifest));
-            }
-
-            return optionalLibraries;
-        } catch (FileNotFoundException e) {
-            // shouldn't happen since we've checked the file is here, but can happen in
-            // some cases (too many files open).
-            return Collections.emptyList();
-        }
-    }
-
 }

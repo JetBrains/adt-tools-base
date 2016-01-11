@@ -20,7 +20,6 @@ import com.android.repository.testframework.MockFileOp;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
-import com.android.sdklib.internal.androidTarget.OptionalLibraryImpl;
 import com.android.sdklib.repositoryv2.AndroidSdkHandler;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
