@@ -58,7 +58,7 @@ final class Float32Slice extends Box implements BinaryObject {
 
     static {
         ENTITY.setFields(new Field[]{
-            new Field("value", new Slice("", new Primitive("float32", Method.Float32))),
+            new Field("Value", new Slice("", new Primitive("float32", Method.Float32))),
         });
         Namespace.register(Klass.INSTANCE);
     }

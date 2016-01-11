@@ -58,7 +58,7 @@ final class Int8Slice extends Box implements BinaryObject {
 
     static {
         ENTITY.setFields(new Field[]{
-            new Field("value", new Slice("", new Primitive("int8", Method.Int8))),
+            new Field("Value", new Slice("", new Primitive("int8", Method.Int8))),
         });
         Namespace.register(Klass.INSTANCE);
     }

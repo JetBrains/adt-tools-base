@@ -58,7 +58,7 @@ final class Uint8 extends Box implements BinaryObject {
 
     static {
         ENTITY.setFields(new Field[]{
-            new Field("value", new Primitive("uint8", Method.Uint8)),
+            new Field("Value", new Primitive("uint8", Method.Uint8)),
         });
         Namespace.register(Klass.INSTANCE);
     }

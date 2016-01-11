@@ -21,6 +21,7 @@ import com.android.tools.rpclib.schema.*;
 import org.jetbrains.annotations.NotNull;
 
 import com.android.tools.rpclib.binary.BinaryClass;
+import com.android.tools.rpclib.binary.BinaryID;
 import com.android.tools.rpclib.binary.BinaryObject;
 import com.android.tools.rpclib.binary.Decoder;
 import com.android.tools.rpclib.binary.Encoder;
@@ -28,24 +29,19 @@ import com.android.tools.rpclib.binary.Namespace;
 
 import java.io.IOException;
 
-final class Int64Slice extends Box implements BinaryObject {
-    @Override
-    public Object unwrap() {
-        return getValue();
-    }
-
+final class Id implements BinaryObject {
     //<<<Start:Java.ClassBody:1>>>
-    private long[] mValue;
+    private BinaryID mValue;
 
-    // Constructs a default-initialized {@link Int64Slice}.
-    public Int64Slice() {}
+    // Constructs a default-initialized {@link Id}.
+    public Id() {}
 
 
-    public long[] getValue() {
+    public BinaryID getValue() {
         return mValue;
     }
 
-    public Int64Slice setValue(long[] v) {
+    public Id setValue(BinaryID v) {
         mValue = v;
         return this;
     }
@@ -54,11 +50,11 @@ final class Int64Slice extends Box implements BinaryObject {
     public BinaryClass klass() { return Klass.INSTANCE; }
 
 
-    private static final Entity ENTITY = new Entity("any","int64Slice","","");
+    private static final Entity ENTITY = new Entity("any", "id_", "", "");
 
     static {
         ENTITY.setFields(new Field[]{
-            new Field("Value", new Slice("", new Primitive("int64", Method.Int64))),
+            new Field("Value", new Array("binary.ID", new Primitive("byte", Method.Uint8), 20)),
         });
         Namespace.register(Klass.INSTANCE);
     }
@@ -72,24 +68,20 @@ final class Int64Slice extends Box implements BinaryObject {
         public Entity entity() { return ENTITY; }
 
         @Override @NotNull
-        public BinaryObject create() { return new Int64Slice(); }
+        public BinaryObject create() { return new Id(); }
 
         @Override
         public void encode(@NotNull Encoder e, BinaryObject obj) throws IOException {
-            Int64Slice o = (Int64Slice)obj;
-            e.uint32(o.mValue.length);
-            for (int i = 0; i < o.mValue.length; i++) {
-                e.int64(o.mValue[i]);
-            }
+            Id o = (Id)obj;
+            o.mValue.write(e);
+
         }
 
         @Override
         public void decode(@NotNull Decoder d, BinaryObject obj) throws IOException {
-            Int64Slice o = (Int64Slice)obj;
-            o.mValue = new long[d.uint32()];
-            for (int i = 0; i <o.mValue.length; i++) {
-                o.mValue[i] = d.int64();
-            }
+            Id o = (Id)obj;
+            o.mValue = new BinaryID(d);
+
         }
         //<<<End:Java.KlassBody:2>>>
     }
