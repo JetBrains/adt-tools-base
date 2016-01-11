@@ -86,7 +86,7 @@ public class LocalSysImgPkgInfo extends LocalPkgInfo {
             }
             assert tagId   != null;
             assert tagDisp != null;
-            return new com.android.sdklib.repository.descriptors.IdDisplay(tagId, tagDisp);
+            return IdDisplay.create(tagId, tagDisp);
         }
         return SystemImage.DEFAULT_TAG;
     }

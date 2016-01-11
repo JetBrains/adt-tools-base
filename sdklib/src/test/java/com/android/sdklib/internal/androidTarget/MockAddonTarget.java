@@ -84,7 +84,7 @@ public class MockAddonTarget implements IAndroidTarget {
             SystemImage si = new SystemImage(
                     FileOpUtils.append(getLocation(), SdkConstants.OS_IMAGES_FOLDER),
                     SystemImage.DEFAULT_TAG,
-                    new com.android.sdklib.repository.descriptors.IdDisplay("google", "Google Inc."),
+                    IdDisplay.create("google", "Google Inc."),
                     SdkConstants.ABI_ARMEABI,
                     FileOp.EMPTY_FILE_ARRAY,
                     new FakePackage("/sdk/dummy", new Revision(21, 1, 0), null));

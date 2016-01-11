@@ -16,14 +16,17 @@
 
 package com.android.sdklib.repository.descriptors;
 
-import com.android.repository.io.FileOpUtils;
-import com.android.sdklib.AndroidVersion;
 import com.android.repository.Revision;
+import com.android.repository.api.ProgressIndicator;
+import com.android.repository.io.FileOpUtils;
+import com.android.repository.testframework.FakeProgressIndicator;
+import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.repositoryv2.IdDisplay;
+
+import junit.framework.TestCase;
 
 import java.io.File;
 import java.util.Arrays;
-
-import junit.framework.TestCase;
 
 public class PkgDescTest extends TestCase {
 
@@ -399,7 +402,7 @@ public class PkgDescTest extends TestCase {
     //----
 
     public final void testPkgDescExtra() {
-        IdDisplay vendor = new IdDisplay("vendor", "The Vendor");
+        IdDisplay vendor = IdDisplay.create("vendor", "The Vendor");
         IPkgDesc p = PkgDesc.Builder
                 .newExtra(vendor,
                           "extra_path",
@@ -438,7 +441,7 @@ public class PkgDescTest extends TestCase {
     }
 
     public final void testPkgDescExtra_Update() {
-        IdDisplay vendor = new IdDisplay("vendor", "The Vendor");
+        IdDisplay vendor = IdDisplay.create("vendor", "The Vendor");
         final Revision rev123 = new Revision(1, 2, 3);
         final IPkgDesc p123  = PkgDesc.Builder
                 .newExtra(vendor, "extra_path", "My Extra", new String[0], rev123)
@@ -462,7 +465,7 @@ public class PkgDescTest extends TestCase {
         assertTrue (p124.compareTo(p123) > 0);
 
         // does not update a different vendor
-        IdDisplay vendor2 = new IdDisplay("different-vendor", "Not the same Vendor");
+        IdDisplay vendor2 = IdDisplay.create("different-vendor", "Not the same Vendor");
         final IPkgDesc a124  = PkgDesc.Builder
                 .newExtra(vendor2, "extra_path", "My Extra", new String[0], rev124)
                 .create();
@@ -674,8 +677,8 @@ public class PkgDescTest extends TestCase {
     //----
 
     public final void testPkgDescAddon() throws Exception {
-        IdDisplay vendor = new IdDisplay("vendor", "The Vendor");
-        IdDisplay name   = new IdDisplay("addon_name", "The Add-on");
+        IdDisplay vendor = IdDisplay.create("vendor", "The Vendor");
+        IdDisplay name   = IdDisplay.create("addon_name", "The Add-on");
         IPkgDesc p1 = PkgDesc.Builder
                 .newAddon(new AndroidVersion("19"), new Revision(1), vendor, name)
                 .create();
@@ -697,9 +700,10 @@ public class PkgDescTest extends TestCase {
         assertNull (p1.getMinPlatformToolsRev());
 
         assertTrue(p1.hasVendor());
-        assertEquals(new IdDisplay("vendor", "only the id is compared with"), p1.getVendor());
+        assertEquals(IdDisplay.create("vendor", "only the id is compared with"),
+                p1.getVendor());
 
-        assertEquals(new IdDisplay("addon_name", "ignored"), p1.getName());
+        assertEquals(IdDisplay.create("addon_name", "ignored"), p1.getName());
 
         assertEquals("addon-addon_name-vendor-19", p1.getInstallId());
         assertEquals(FileOpUtils.append(mRoot, "add-ons", "addon-addon_name-vendor-19"),
@@ -714,8 +718,8 @@ public class PkgDescTest extends TestCase {
     public final void testPkgDescAddon_Update() throws Exception {
         final AndroidVersion api19 = new AndroidVersion("19");
         final Revision rev1 = new Revision(1);
-        IdDisplay vendor = new IdDisplay("vendor", "The Vendor");
-        IdDisplay name   = new IdDisplay("addon_name", "The Add-on");
+        IdDisplay vendor = IdDisplay.create("vendor", "The Vendor");
+        IdDisplay name   = IdDisplay.create("addon_name", "The Add-on");
         final IPkgDesc p19_1  = PkgDesc.Builder.newAddon(api19, rev1, vendor, name)
                                                .create();
         final IPkgDesc p19_1b = PkgDesc.Builder.newAddon(api19, rev1, vendor, name)
@@ -743,14 +747,14 @@ public class PkgDescTest extends TestCase {
         assertTrue (p19_2.compareTo(p18_1) > 0);
 
         // does not update a different vendor
-        IdDisplay vendor2 = new IdDisplay("another_vendor", "Another Vendor");
+        IdDisplay vendor2 = IdDisplay.create("another_vendor", "Another Vendor");
         final IPkgDesc a19_2  = PkgDesc.Builder.newAddon(api19, rev2, vendor2, name)
                                                .create();
         assertFalse(a19_2.isUpdateFor(p19_1));
         assertTrue (a19_2.compareTo(p19_1) < 0);
 
         // does not update a different add-on name
-        IdDisplay name2   = new IdDisplay("another_name", "Another Add-on");
+        IdDisplay name2   = IdDisplay.create("another_name", "Another Add-on");
         final IPkgDesc n19_2  = PkgDesc.Builder.newAddon(api19, rev2, vendor, name2)
                                                .create();
         assertFalse(n19_2.isUpdateFor(p19_1));
@@ -760,7 +764,7 @@ public class PkgDescTest extends TestCase {
     //----
 
     public final void testPkgDescSysImg_Platform() throws Exception {
-        IdDisplay tag = new IdDisplay("tag", "My Tag");
+        IdDisplay tag = IdDisplay.create("tag", "My Tag");
         IPkgDesc p = PkgDesc.Builder.newSysImg(
                 new AndroidVersion("19"),
                 tag,
@@ -794,7 +798,7 @@ public class PkgDescTest extends TestCase {
     }
 
     public final void testPkgDescSysImg_Platform_Update() throws Exception {
-        IdDisplay tag1 = new IdDisplay("tag1", "My Tag 1");
+        IdDisplay tag1 = IdDisplay.create("tag1", "My Tag 1");
         final AndroidVersion api19 = new AndroidVersion("19");
         final Revision rev1 = new Revision(1);
         final IPkgDesc p19_1  = PkgDesc.Builder.newSysImg(api19, tag1, "eabi", rev1).create();
@@ -826,7 +830,7 @@ public class PkgDescTest extends TestCase {
         assertTrue (p19_2c.compareTo(p19_1) > 0);
 
         // does not update a different tag
-        IdDisplay tag2 = new IdDisplay("tag2", "My Tag 2");
+        IdDisplay tag2 = IdDisplay.create("tag2", "My Tag 2");
         final IPkgDesc p19_t2 =
                 PkgDesc.Builder.newSysImg(api19, tag2, "eabi", new Revision(2)).create();
         assertFalse(p19_t2.isUpdateFor(p19_1));
@@ -834,8 +838,8 @@ public class PkgDescTest extends TestCase {
     }
 
     public final void testPkgDescSysImg_Addon() throws Exception {
-        IdDisplay vendor = new IdDisplay("vendor", "The Vendor");
-        IdDisplay name   = new IdDisplay("addon_name", "The Add-on");
+        IdDisplay vendor = IdDisplay.create("vendor", "The Vendor");
+        IdDisplay name   = IdDisplay.create("addon_name", "The Add-on");
         IPkgDesc p = PkgDesc.Builder.newAddonSysImg(
                 new AndroidVersion("19"),
                 vendor,
@@ -860,10 +864,10 @@ public class PkgDescTest extends TestCase {
         assertNull (p.getMinPlatformToolsRev());
 
         assertTrue(p.hasVendor());
-        assertEquals(new IdDisplay("vendor", "only the id is compared with"), p.getVendor());
+        assertEquals(IdDisplay.create("vendor", "only the id is compared with"), p.getVendor());
 
         assertTrue(p.hasTag());
-        assertEquals(new IdDisplay("addon_name", "ignored"), p.getTag());
+        assertEquals(IdDisplay.create("addon_name", "ignored"), p.getTag());
 
         assertEquals("sys-img-eabi-addon-addon_name-vendor-19", p.getInstallId());
         assertEquals(FileOpUtils.append(mRoot, "system-images", "addon-addon_name-vendor-19", "eabi"),

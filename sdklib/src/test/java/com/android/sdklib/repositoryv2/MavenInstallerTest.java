@@ -48,12 +48,9 @@ public class MavenInstallerTest extends TestCase {
     public void testInstallFirst() throws Exception {
         File root = new File("/repo");
         MockFileOp fop = new MockFileOp();
-        AndroidSdkHandler androidSdkHandler = new AndroidSdkHandler(root, fop);
         RepoManager mgr = new RepoManagerImpl(fop);
-        FakeProgressIndicator progress = new FakeProgressIndicator();
-        mgr.registerSchemaModule(androidSdkHandler.getCommonModule(progress));
-        mgr.registerSchemaModule(androidSdkHandler.getAddonModule(progress));
-        progress.assertNoErrorsOrWarnings();
+        mgr.registerSchemaModule(AndroidSdkHandler.getCommonModule());
+        mgr.registerSchemaModule(AndroidSdkHandler.getAddonModule());
         mgr.setLocalPath(root);
         FakeDownloader downloader = new FakeDownloader(fop);
         URL repoUrl = new URL("http://example.com/dummy.xml");
@@ -75,8 +72,7 @@ public class MavenInstallerTest extends TestCase {
 
         // Register a source provider to get the repo
         mgr.registerSourceProvider(new ConstantSourceProvider(repoUrl.toString(), "dummy",
-                ImmutableList.of(androidSdkHandler.getAddonModule(progress))));
-        progress.assertNoErrorsOrWarnings();
+                ImmutableList.of(AndroidSdkHandler.getAddonModule())));
         FakeProgressRunner runner = new FakeProgressRunner();
 
         // Load
@@ -147,12 +143,9 @@ public class MavenInstallerTest extends TestCase {
                         + "  </versioning>\n"
                         + "</metadata>\n");
         File root = new File("/repo");
-        AndroidSdkHandler androidSdkHandler = new AndroidSdkHandler(root, fop);
         RepoManager mgr = new RepoManagerImpl(fop);
-        FakeProgressIndicator progress = new FakeProgressIndicator();
-        mgr.registerSchemaModule(androidSdkHandler.getCommonModule(progress));
-        mgr.registerSchemaModule(androidSdkHandler.getAddonModule(progress));
-        progress.assertNoErrorsOrWarnings();
+        mgr.registerSchemaModule(AndroidSdkHandler.getCommonModule());
+        mgr.registerSchemaModule(AndroidSdkHandler.getAddonModule());
         mgr.setLocalPath(root);
         FakeDownloader downloader = new FakeDownloader(fop);
         URL repoUrl = new URL("http://example.com/dummy.xml");
@@ -174,8 +167,7 @@ public class MavenInstallerTest extends TestCase {
 
         // Register a source provider to get the repo
         mgr.registerSourceProvider(new ConstantSourceProvider(repoUrl.toString(), "dummy",
-                ImmutableList.of(androidSdkHandler.getAddonModule(progress))));
-        progress.assertNoErrorsOrWarnings();
+                ImmutableList.of(AndroidSdkHandler.getAddonModule())));
         FakeProgressRunner runner = new FakeProgressRunner();
 
         // Load
@@ -292,12 +284,10 @@ public class MavenInstallerTest extends TestCase {
                         + "</metadata>\n");
 
         File root = new File("/repo");
-        AndroidSdkHandler androidSdkHandler = new AndroidSdkHandler(root, fop);
         RepoManager mgr = new RepoManagerImpl(fop);
         mgr.setLocalPath(root);
-        FakeProgressIndicator progress = new FakeProgressIndicator();
-        mgr.registerSchemaModule(androidSdkHandler.getCommonModule(progress));
-        mgr.registerSchemaModule(androidSdkHandler.getAddonModule(progress));
+        mgr.registerSchemaModule(AndroidSdkHandler.getCommonModule());
+        mgr.registerSchemaModule(AndroidSdkHandler.getAddonModule());
 
         FakeProgressRunner runner = new FakeProgressRunner();
         FakeDownloader downloader = new FakeDownloader(fop);
@@ -312,6 +302,7 @@ public class MavenInstallerTest extends TestCase {
         assertTrue(locals.containsKey("com;example;groupId;artifactId;1.2.4"));
 
         MavenInstaller installer = new MavenInstaller();
+        FakeProgressIndicator progress = new FakeProgressIndicator();
         installer.uninstall(locals.get("com;example;groupId;artifactId;1.2.4"), progress, mgr, fop);
         progress.assertNoErrorsOrWarnings();
         MavenInstaller.MavenMetadata metadata = MavenInstaller
