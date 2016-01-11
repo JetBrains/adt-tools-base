@@ -56,6 +56,8 @@ public enum InstantRunVerifierStatus {
     // change of field type or kind (static | instance)
     FIELD_TYPE_CHANGE,
 
+    R_CLASS_CHANGE,
+
     // reflection use
     REFLECTION_USED
 }
