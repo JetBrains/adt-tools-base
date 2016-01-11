@@ -19,7 +19,9 @@ package com.android.build.gradle.internal.incremental;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.utils.FileUtils;
+import com.android.utils.ILogger;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -49,6 +51,8 @@ import java.util.Iterator;
 import java.util.List;
 
 public class IncrementalVisitor extends ClassVisitor {
+
+    private static final ILogger LOG = LoggerWrapper.getLogger(IncrementalVisitor.class);
 
     /**
      * Defines the output type from this visitor.
@@ -107,7 +111,7 @@ public class IncrementalVisitor extends ClassVisitor {
         super(Opcodes.ASM5, classVisitor);
         this.classNode = classNode;
         this.parentNodes = parentNodes;
-        System.out.println(getClass().getSimpleName() + " Visiting " + classNode.name);
+        LOG.info("%s: Visiting %s", getClass().getSimpleName(), classNode.name);
     }
 
     @NonNull
@@ -402,7 +406,7 @@ public class IncrementalVisitor extends ClassVisitor {
         while (currentParentName != null) {
             File parentFile = new File(binaryFolder, currentParentName + ".class");
             if (parentFile.exists()) {
-                System.out.println("parsing " + parentFile);
+                LOG.info("Parsing %s.", parentFile);
                 InputStream parentFileClassReader = new BufferedInputStream(new FileInputStream(parentFile));
                 ClassReader parentClassReader = new ClassReader(parentFileClassReader);
                 ClassNode parentNode = new ClassNode();
@@ -422,7 +426,7 @@ public class IncrementalVisitor extends ClassVisitor {
                     currentParentName = parentNode.superName;
                 } catch (IOException e) {
                     // Could not locate parent class. This is as far as we can go locating parents.
-                    System.out.printf("IncrementalVisitor parseParents could not locate class %s.\n", currentParentName);
+                    LOG.error(e, "IncrementalVisitor parseParents could not locate class %s.\n", currentParentName);
                     currentParentName = null;
                 }
             }
