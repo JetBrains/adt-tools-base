@@ -43,6 +43,7 @@ import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -1096,11 +1097,26 @@ public class GradleTestProject implements TestRule {
         return null;
     }
 
+    private static void syncFileSystem() {
+        try {
+            if (System.getProperty("os.name").contains("Linux")) {
+                if (Runtime.getRuntime().exec("/bin/sync").waitFor() != 0) {
+                    throw new IOException("Failed to sync file system.");
+                }
+            }
+        } catch (IOException e) {
+            System.err.println(Throwables.getStackTraceAsString(e));
+        } catch (InterruptedException e) {
+            System.err.println(Throwables.getStackTraceAsString(e));
+        }
+    }
+
     private void executeBuild(
             final List<String> arguments,
             ProjectConnection connection,
             final String[] tasks,
             ResultHandler<Void> resultHandler) {
+        syncFileSystem();
         List<String> args = Lists.newArrayListWithCapacity(5 + arguments.size());
         args.add("-i");
         args.add("-u");
