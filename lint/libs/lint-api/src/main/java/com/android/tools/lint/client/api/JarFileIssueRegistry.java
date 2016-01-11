@@ -74,6 +74,9 @@ class JarFileIssueRegistry extends IssueRegistry {
             }
         }
 
+        // Ensure that the scope-to-detector map doesn't return stale results
+        IssueRegistry.reset();
+
         JarFileIssueRegistry registry = new JarFileIssueRegistry(client, jarFile);
         sCache.put(jarFile, new SoftReference<JarFileIssueRegistry>(registry));
         return registry;

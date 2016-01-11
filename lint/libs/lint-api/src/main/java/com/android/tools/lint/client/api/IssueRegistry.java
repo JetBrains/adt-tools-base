@@ -322,10 +322,7 @@ public abstract class IssueRegistry {
 
     /**
      * Reset the registry such that it recomputes its available issues.
-     * <p>
-     * NOTE: This is only intended for testing purposes.
      */
-    @VisibleForTesting
     protected static void reset() {
         sIdToIssue = null;
         sCategories = null;
