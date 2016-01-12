@@ -23,6 +23,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.api.transform.SecondaryInput;
 import com.android.build.api.transform.Context;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
@@ -33,6 +34,7 @@ import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
+import com.android.build.api.transform.TransformInvocation;
 import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
@@ -228,13 +230,9 @@ public class MergeJavaResourcesTransform extends Transform {
     }
 
     @Override
-    public void transform(
-            @NonNull Context context,
-            @NonNull Collection<TransformInput> inputs,
-            @NonNull Collection<TransformInput> referencedInputs,
-            @Nullable TransformOutputProvider outputProvider,
-            boolean isIncremental) throws IOException, TransformException {
+    public void transform(TransformInvocation invocation) throws IOException, TransformException {
 
+        TransformOutputProvider outputProvider = invocation.getOutputProvider();
         checkNotNull(outputProvider, "Missing output object for transform " + getName());
 
         // folder to copy the files that were originally in folders.
@@ -242,12 +240,12 @@ public class MergeJavaResourcesTransform extends Transform {
         // jar to copy the files that came from jars.
         File outJar = null;
 
-        if (!isIncremental) {
+        if (!invocation.isIncremental()) {
             outputProvider.deleteAll();
 
             // gather all the inputs.
             ListMultimap<String, QualifiedContent> sourceFileList = ArrayListMultimap.create();
-            for (TransformInput input : inputs) {
+            for (TransformInput input : invocation.getInputs()) {
                 for (JarInput jarInput : input.getJarInputs()) {
                     gatherListFromJar(jarInput, sourceFileList);
                 }

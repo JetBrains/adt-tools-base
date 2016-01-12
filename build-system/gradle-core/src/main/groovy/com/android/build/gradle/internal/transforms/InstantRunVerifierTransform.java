@@ -20,6 +20,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.build.api.transform.SecondaryInput;
 import com.android.build.api.transform.Context;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.JarInput;
@@ -28,6 +29,7 @@ import com.android.build.api.transform.Status;
 import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
+import com.android.build.api.transform.TransformInvocation;
 import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.internal.LoggerWrapper;
@@ -108,18 +110,16 @@ public class InstantRunVerifierTransform extends Transform {
     }
 
     @Override
-    public void transform(@NonNull Context context, @NonNull Collection<TransformInput> inputs,
-            @NonNull Collection<TransformInput> referencedInputs,
-            @Nullable TransformOutputProvider outputProvider, boolean isIncremental)
+    public void transform(TransformInvocation invocation)
             throws IOException, TransformException, InterruptedException {
 
-        if (referencedInputs.isEmpty()) {
+        if (invocation.getReferencedInputs().isEmpty()) {
             throw new RuntimeException("Empty list of referenced inputs");
         }
         try {
             variantScope.getInstantRunBuildContext().startRecording(
                     InstantRunBuildContext.TaskType.VERIFIER);
-            doTransform(referencedInputs, isIncremental);
+            doTransform(invocation.getReferencedInputs(), invocation.isIncremental());
         } finally {
             variantScope.getInstantRunBuildContext().stopRecording(
                     InstantRunBuildContext.TaskType.VERIFIER);
