@@ -11,6 +11,10 @@ import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
 import com.android.build.gradle.internal.tasks.FileSupplier;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
+import com.android.builder.internal.packaging.ZFiles;
+import com.android.builder.internal.packaging.zip.ZFile;
+import com.google.common.base.Preconditions;
+import com.google.common.io.Files;
 
 import org.gradle.api.Action;
 import org.gradle.api.DefaultTask;
@@ -22,15 +26,18 @@ import org.gradle.api.tasks.TaskAction;
 import org.gradle.process.ExecSpec;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.Callable;
 
 @ParallelizableTask
 public class ZipAlign extends DefaultTask implements FileSupplier {
 
-    private boolean useOldPackaging;
-
     // ----- PUBLIC TASK API -----
 
+    /**
+     * Resulting zip file.
+     * @return the resulting zip file; may be the same as the input file
+     */
     @OutputFile
     public File getOutputFile() {
         return outputFile;
@@ -40,6 +47,10 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
         this.outputFile = outputFile;
     }
 
+    /**
+     * Input zip file to align.
+     * @return the input zip file to align
+     */
     @InputFile
     public File getInputFile() {
         return inputFile;
@@ -51,14 +62,26 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
 
     // ----- PRIVATE TASK API -----
 
-    private File outputFile;
-    @ApkFile
-    private File inputFile;
-    @ApkFile
-    private File zipAlignExe;
+    /**
+     * Should we use the old packaging code?
+     */
+    private boolean useOldPackaging;
 
     private InstantRunBuildContext instantRunBuildContext;
 
+    private File outputFile;
+
+    @ApkFile
+    private File inputFile;
+
+    @ApkFile
+    private File zipAlignExe;
+
+    /**
+     * Obtains the executable used to perform zip-align. Not used if using the new packaging
+     * code.
+     * @return the zip align executable
+     */
     @InputFile
     public File getZipAlignExe() {
         return zipAlignExe;
@@ -69,16 +92,43 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
     }
 
     @TaskAction
-    public void zipAlign() {
-        getProject().exec(new Action<ExecSpec>() {
-            @Override
-            public void execute(ExecSpec execSpec) {
-                execSpec.executable(getZipAlignExe());
-                execSpec.args("-f", "4");
-                execSpec.args(getInputFile());
-                execSpec.args(getOutputFile());
+    public void zipAlign() throws IOException {
+        File inputFile = getInputFile();
+        File outputFile = getOutputFile();
+
+        Preconditions.checkNotNull(inputFile, "inputFile == null");
+        Preconditions.checkNotNull(outputFile, "outputFile == null");
+
+        if (!inputFile.isFile()) {
+            throw new IOException("Path '" + inputFile.getAbsolutePath()
+                    + "' does not represent a file.");
+        }
+
+        if (outputFile.exists() && !outputFile.isFile()) {
+            throw new IOException("Path '" + inputFile.getAbsolutePath()
+                    + "' exists but is not a file.");
+        }
+
+        if (useOldPackaging) {
+            getProject().exec(new Action<ExecSpec>() {
+                @Override
+                public void execute(ExecSpec execSpec) {
+                    execSpec.executable(getZipAlignExe());
+                    execSpec.args("-f", "4");
+                    execSpec.args(getInputFile());
+                    execSpec.args(getOutputFile());
+                }
+            });
+        } else {
+            if (!inputFile.equals(outputFile)) {
+                Files.copy(inputFile, outputFile);
             }
-        });
+
+            ZFile apkFile = ZFiles.apk(outputFile);
+            apkFile.realign();
+            apkFile.close();
+        }
+
         // mark this APK production, this will eventually be saved when instant-run is enabled.
         instantRunBuildContext.addChangedFile(InstantRunBuildContext.FileType.MAIN,
                 getOutputFile());
@@ -119,7 +169,9 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
 
         @Override
         public void execute(ZipAlign zipAlign) {
-            ((ApkVariantOutputData) scope.getVariantOutputData()).zipAlignTask = zipAlign;
+            ApkVariantOutputData variantData = (ApkVariantOutputData) scope.getVariantOutputData();
+            variantData.zipAlignTask = zipAlign;
+
             ConventionMappingHelper.map(zipAlign, "inputFile", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
