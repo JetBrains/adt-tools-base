@@ -14,43 +14,40 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.common.fixture.app
+package com.android.build.gradle.integration.common.fixture.app;
 
-import com.android.annotations.NonNull
-import com.android.annotations.Nullable
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.TestProject
+import com.android.build.gradle.integration.common.fixture.TestProject;
+import com.google.common.collect.ImmutableMap;
 
 /**
  * Simple test application with an Android library that prints "hello world!".
  */
-class HelloWorldLibraryApp extends MultiModuleTestProject implements TestProject {
+public class HelloWorldLibraryApp extends MultiModuleTestProject implements TestProject {
     public HelloWorldLibraryApp() {
-        super(":app" : new EmptyAndroidTestApp(), ":lib" : HelloWorldApp.noBuildFile());
+        super(ImmutableMap.of(":app", new EmptyAndroidTestApp(), ":lib", HelloWorldApp.noBuildFile()));
 
         AndroidTestApp app = (AndroidTestApp) getSubproject(":app");
 
         // Create AndroidManifest.xml that uses the Activity from the library.
         app.addFile(new TestSourceFile("src/main", "AndroidManifest.xml",
-"""<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-      package="com.example.app"
-      android:versionCode="1"
-      android:versionName="1.0">
-
-    <uses-sdk android:minSdkVersion="3" />
-    <application android:label="@string/app_name">
-        <activity
-            android:name="com.example.helloworld.HelloWorld"
-            android:label="@string/app_name">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-    </application>
-</manifest>
-"""));
+"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+"<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
+"      package=\"com.example.app\"\n" +
+"      android:versionCode=\"1\"\n" +
+"      android:versionName=\"1.0\">\n" +
+"\n" +
+"    <uses-sdk android:minSdkVersion=\"3\" />\n" +
+"    <application android:label=\"@string/app_name\">\n" +
+"        <activity\n" +
+"            android:name=\"com.example.helloworld.HelloWorld\"\n" +
+"            android:label=\"@string/app_name\">\n" +
+"            <intent-filter>\n" +
+"                <action android:name=\"android.intent.action.MAIN\" />\n" +
+"                <category android:name=\"android.intent.category.LAUNCHER\" />\n" +
+"            </intent-filter>\n" +
+"        </activity>\n" +
+"    </application>\n" +
+"</manifest>\n"));
 
     }
 }

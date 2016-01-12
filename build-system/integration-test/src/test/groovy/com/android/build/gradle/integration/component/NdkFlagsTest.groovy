@@ -64,7 +64,7 @@ Java_com_example_hellojni_HelloJni_stringFromJNI(JNIEnv* env, jobject thiz)
             .forExperimentalPlugin(true)
             .create();
 
-    static AndroidTestApp cppApp = new HelloWorldJniApp(useCppSource: true)
+    static AndroidTestApp cppApp = HelloWorldJniApp.builder().useCppSource().build()
     static {
         TestSourceFile orig = cppApp.getFile("hello-jni.cpp")
         cppApp.removeFile(orig)

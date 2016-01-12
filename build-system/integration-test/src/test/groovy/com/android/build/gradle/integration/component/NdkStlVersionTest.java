@@ -25,7 +25,7 @@ public class NdkStlVersionTest {
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
-            .fromTestApp(HelloWorldJniApp.builder().useCppSource(true).build())
+            .fromTestApp(HelloWorldJniApp.builder().useCppSource().build())
             .forExperimentalPlugin(true).create();
 
     @Before
