@@ -201,29 +201,35 @@ public class ExtractJarsTransform extends Transform {
             // loop on the entries of the intermediary package and put them in the final package.
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
-                String name = entry.getName();
+                try {
+                    String name = entry.getName();
 
-                // do not take directories
-                if (entry.isDirectory()) {
-                    continue;
-                }
-
-                Action action = getAction(name, extractCode);
-                if (action == Action.COPY) {
-                    File outputFile = new File(outJarFolder, name.replace('/', File.separatorChar));
-                    mkdirs(outputFile.getParentFile());
-
-                    Closer closer2 = Closer.create();
-                    try {
-                        java.io.OutputStream outputStream = closer2.register(
-                                new BufferedOutputStream(new FileOutputStream(outputFile)));
-                        ByteStreams.copy(zis, outputStream);
-                        outputStream.flush();
-                    } finally {
-                        closer2.close();
+                    // do not take directories
+                    if (entry.isDirectory()) {
+                        continue;
                     }
+
+                    Action action = getAction(name, extractCode);
+                    if (action == Action.COPY) {
+                        File outputFile = new File(outJarFolder,
+                                name.replace('/', File.separatorChar));
+                        mkdirs(outputFile.getParentFile());
+
+                        Closer closer2 = Closer.create();
+                        try {
+                            java.io.OutputStream outputStream = closer2.register(
+                                    new BufferedOutputStream(new FileOutputStream(outputFile)));
+                            ByteStreams.copy(zis, outputStream);
+                            outputStream.flush();
+                        } finally {
+                            closer2.close();
+                        }
+                    }
+                } finally {
+                    zis.closeEntry();
                 }
             }
+
         } finally {
             closer.close();
         }

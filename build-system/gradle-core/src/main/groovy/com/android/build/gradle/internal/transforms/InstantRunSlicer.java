@@ -60,6 +60,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -282,7 +283,12 @@ public class InstantRunSlicer extends Transform {
                                     jarEntry.getName(), jarInput.getName()));
                 } else {
                     dependenciesJar.putNextEntry(jarEntry);
-                    ByteStreams.copy(jarFile.getInputStream(jarEntry), dependenciesJar);
+                    InputStream inputStream = jarFile.getInputStream(jarEntry);
+                    try {
+                        ByteStreams.copy(inputStream, dependenciesJar);
+                    } finally {
+                        inputStream.close();
+                    }
                     dependenciesJar.closeEntry();
                     entries.add(jarEntry.getName());
                 }

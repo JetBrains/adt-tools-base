@@ -316,7 +316,7 @@ public class InstantRunTransform extends Transform {
             into.add(directoryInput.getFile().toURI().toURL());
         }
         for (JarInput jarInput : transformInput.getJarInputs()) {
-            into.add(new URL("jar:" + jarInput.getFile().toURI().toURL() + "!/"));
+            into.add(jarInput.getFile().toURI().toURL());
         }
     }
 
