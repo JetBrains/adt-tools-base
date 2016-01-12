@@ -4,6 +4,8 @@
     <excluded-names>
       <name>com.sun</name>
       <name>java.awt.List</name>
+      <name>junit.framework</name>
+      <name>org.testng</name>
     </excluded-names>
   </component>
 </project>

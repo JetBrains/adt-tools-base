@@ -185,6 +185,11 @@ public class InstantRunBuildContext {
         public List<Artifact> getArtifacts() {
             return artifacts;
         }
+
+        @NonNull
+        public Optional<InstantRunVerifierStatus> getVerifierStatus() {
+            return verifierStatus;
+        }
     }
 
     /**
@@ -465,7 +470,7 @@ public class InstantRunBuildContext {
     }
 
     private void loadFromDocument(@NonNull Document document) {
-        Element instantRun = ((Element) document.getFirstChild());
+        Element instantRun = (Element) document.getFirstChild();
         Build lastBuild = Build.fromXml(instantRun);
         previousBuilds.put(lastBuild.buildId, lastBuild);
         NodeList buildNodes = instantRun.getChildNodes();

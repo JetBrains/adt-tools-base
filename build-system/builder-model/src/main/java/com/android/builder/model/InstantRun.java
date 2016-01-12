@@ -32,9 +32,11 @@ public interface InstantRun {
     @NonNull
     String getIncrementalAssembleTaskName();
 
+    @Deprecated
     @NonNull
     File getRestartDexFile();
 
+    @Deprecated
     @NonNull
     File getReloadDexFile();
 
