@@ -31,7 +31,7 @@ import java.util.List;
 public class BuiltinIssueRegistry extends IssueRegistry {
     private static final List<Issue> sIssues;
 
-    static final int INITIAL_CAPACITY = 253;
+    static final int INITIAL_CAPACITY = 254;
 
     static {
         List<Issue> issues = new ArrayList<Issue>(INITIAL_CAPACITY);
@@ -77,6 +77,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(ClickableViewAccessibilityDetector.ISSUE);
         issues.add(CommentDetector.EASTER_EGG);
         issues.add(CommentDetector.STOP_SHIP);
+        issues.add(CordovaVersionDetector.ISSUE);
         issues.add(CustomViewDetector.ISSUE);
         issues.add(CutPasteDetector.ISSUE);
         issues.add(DateFormatDetector.DATE_FORMAT);
