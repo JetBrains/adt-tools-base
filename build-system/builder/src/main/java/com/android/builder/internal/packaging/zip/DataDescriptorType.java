@@ -49,6 +49,7 @@ public enum DataDescriptorType {
 
     /**
      * Creates a new data descriptor.
+     *
      * @param size the number of bytes the data descriptor spans
      */
     DataDescriptorType(int size) {

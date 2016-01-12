@@ -167,6 +167,7 @@ public class StoredEntry {
 
     /**
      * Creates a new stored entry.
+     *
      * @param header the header with the entry information; if the header does not contain an
      * offset it means that this entry is not yet written in the zip file
      * @param file the zip file containing the entry
@@ -236,6 +237,7 @@ public class StoredEntry {
 
     /**
      * Obtains the size of the local header of this entry.
+     *
      * @return the local header size in bytes
      */
     int getLocalHeaderSize() {
@@ -245,6 +247,7 @@ public class StoredEntry {
 
     /**
      * Obtains the size of the whole entry on disk, including local header and data descriptor.
+     *
      * @return the number of bytes
      */
     long getInFileSize() {
@@ -254,6 +257,7 @@ public class StoredEntry {
 
     /**
      * Obtains a stream that allows reading from the entry.
+     *
      * @return a stream that will return as many bytes as the uncompressed entry size
      * @throws IOException failed to open the stream
      */
@@ -264,6 +268,7 @@ public class StoredEntry {
 
     /**
      * Obtains the contents of the file.
+     *
      * @return a byte array with the contents of the file (uncompressed if the file was compressed)
      * @throws IOException failed to read the file
      */
@@ -282,6 +287,7 @@ public class StoredEntry {
 
     /**
      * Obtains the type of entry.
+     *
      * @return the type of entry
      */
     @NonNull
@@ -293,6 +299,7 @@ public class StoredEntry {
     /**
      * Deletes this entry from the zip file. Invoking this method doesn't update the zip itself.
      * To eventually write updates to disk, {@link ZFile#update()} must be called.
+     *
      * @throws IOException failed to delete the entry
      */
     public void delete() throws IOException {
@@ -302,6 +309,7 @@ public class StoredEntry {
     /**
      * Deletes this entry from the zip file. Invoking this method doesn't update the zip itself.
      * To eventually write updates to disk, {@link ZFile#update()} must be called.
+     *
      * @param notify should listeners be notified of the deletion? This will only be
      * {@code false} if the entry is being removed as part of a replacement
      * @throws IOException failed to delete the entry
@@ -314,6 +322,7 @@ public class StoredEntry {
 
     /**
      * Obtains the CDH associated with this entry.
+     *
      * @return the CDH
      */
     @NonNull
@@ -327,7 +336,8 @@ public class StoredEntry {
      * exists on disk; new entries do not have local headers.
      * <p>
      * This method will define the {@link #mLocalExtra} field that is only defined in the
-     * local descriptor
+     * local descriptor.
+     *
      * @throws IOException failed to read the local header
      */
     private void readLocalHeader() throws IOException {
@@ -373,7 +383,8 @@ public class StoredEntry {
      * described there matches the data provided in the Central Directory.
      * <p>
      * This method will set the {@link #mDataDescriptorType} field to the appropriate type of
-     * data descriptor record
+     * data descriptor record.
+     *
      * @throws IOException failed to read the data descriptor record
      */
     private void readDataDescriptorRecord() throws IOException {
@@ -407,6 +418,7 @@ public class StoredEntry {
      * source that will contain its data. Eventually, when the zip is written, this source is
      * replaced with one created by calling {@link #createSourceFromZip()}. This method can only
      * be called for files, not for directories.
+     *
      * @param source the source that defines the contents of this entry
      */
     void setSource(@NonNull EntrySource source) {
@@ -419,6 +431,7 @@ public class StoredEntry {
 
     /**
      * Creates a new {@link #mSource} that reads file data from the zip file.
+     *
      * @return the source
      */
     @NonNull
@@ -465,6 +478,7 @@ public class StoredEntry {
     /**
      * Obtains the source data for this entry. This method can only be called for files, it
      * cannot be called for directories.
+     *
      * @return the entry source
      */
     @NonNull
@@ -474,6 +488,7 @@ public class StoredEntry {
 
     /**
      * Obtains the type of data descriptor used in the entry.
+     *
      * @return the type of data descriptor
      */
     @NonNull
@@ -483,6 +498,7 @@ public class StoredEntry {
 
     /**
      * Obtains the local header data.
+     *
      * @return the header data
      * @throws IOException failed to get header byte data
      */
@@ -512,6 +528,7 @@ public class StoredEntry {
      * Requests that this entry be realigned. If this entry is already aligned according to the
      * rules in {@link ZFile} then this method does nothing. Otherwise it will move the file's data
      * into memory and place it in a different area of the zip.
+     *
      * @return has this file been changed? Note that if the entry has not yet been written on the
      * file, realignment does not count as a change as nothing needs to be updated in the file;
      * also, if the entry has been changed, this object may have been marked as deleted and a new
