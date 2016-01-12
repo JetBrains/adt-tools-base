@@ -49,7 +49,7 @@ public final class RpcError extends RpcException implements BinaryObject {
     public BinaryClass klass() { return Klass.INSTANCE; }
 
 
-    private static final Entity ENTITY = new Entity("rpc","Error","","");
+    private static final Entity ENTITY = new Entity("rpc", "Error", "", "");
 
     static {
         ENTITY.setFields(new Field[]{

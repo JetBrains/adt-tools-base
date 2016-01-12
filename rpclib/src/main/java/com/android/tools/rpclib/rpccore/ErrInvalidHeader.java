@@ -45,7 +45,7 @@ public final class ErrInvalidHeader extends RpcException implements BinaryObject
     public BinaryClass klass() { return Klass.INSTANCE; }
 
 
-    private static final Entity ENTITY = new Entity("rpc","ErrInvalidHeader","","");
+    private static final Entity ENTITY = new Entity("rpc", "ErrInvalidHeader", "", "");
 
     static {
         ENTITY.setFields(new Field[]{

@@ -54,7 +54,7 @@ final class Int8Slice extends Box implements BinaryObject {
     public BinaryClass klass() { return Klass.INSTANCE; }
 
 
-    private static final Entity ENTITY = new Entity("any","int8Slice","","");
+    private static final Entity ENTITY = new Entity("any", "int8Slice", "", "");
 
     static {
         ENTITY.setFields(new Field[]{

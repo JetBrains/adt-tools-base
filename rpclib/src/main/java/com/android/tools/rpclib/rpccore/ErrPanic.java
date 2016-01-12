@@ -45,7 +45,7 @@ public final class ErrPanic extends RpcException implements BinaryObject {
     public BinaryClass klass() { return Klass.INSTANCE; }
 
 
-    private static final Entity ENTITY = new Entity("rpc","ErrPanic","","");
+    private static final Entity ENTITY = new Entity("rpc", "ErrPanic", "", "");
 
     static {
         ENTITY.setFields(new Field[]{

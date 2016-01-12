@@ -54,7 +54,7 @@ final class Int64 extends Box implements BinaryObject {
     public BinaryClass klass() { return Klass.INSTANCE; }
 
 
-    private static final Entity ENTITY = new Entity("any","int64_","","");
+    private static final Entity ENTITY = new Entity("any", "int64_", "", "");
 
     static {
         ENTITY.setFields(new Field[]{
