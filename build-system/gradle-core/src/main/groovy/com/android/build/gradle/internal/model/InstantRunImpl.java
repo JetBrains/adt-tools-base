@@ -31,16 +31,18 @@ public class InstantRunImpl implements InstantRun, Serializable {
     @NonNull private final File restartDexFile;
     @NonNull private final File reloadDexFile;
     @NonNull private final File infoFile;
+    private final boolean isSupported;
 
     public InstantRunImpl(
             @NonNull String incrementalBuildTaskName,
             @NonNull File restartDexFile,
             @NonNull File reloadDexFile,
-            @NonNull File infoFile) {
+            @NonNull File infoFile, boolean isSupported) {
         this.incrementalBuildTaskName = incrementalBuildTaskName;
         this.restartDexFile = restartDexFile;
         this.reloadDexFile = reloadDexFile;
         this.infoFile = infoFile;
+        this.isSupported = isSupported;
     }
 
     @NonNull
@@ -65,5 +67,10 @@ public class InstantRunImpl implements InstantRun, Serializable {
     @Override
     public File getInfoFile() {
         return infoFile;
+    }
+
+    @Override
+    public boolean isSupportedByArtifact() {
+        return isSupported;
     }
 }
