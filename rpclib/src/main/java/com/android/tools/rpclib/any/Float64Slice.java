@@ -54,7 +54,7 @@ final class Float64Slice extends Box implements BinaryObject {
     public BinaryClass klass() { return Klass.INSTANCE; }
 
 
-    private static final Entity ENTITY = new Entity("any","float64Slice","","");
+    private static final Entity ENTITY = new Entity("any", "float64Slice", "", "");
 
     static {
         ENTITY.setFields(new Field[]{

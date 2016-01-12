@@ -54,7 +54,7 @@ final class StringBox extends Box implements BinaryObject {
     public BinaryClass klass() { return Klass.INSTANCE; }
 
 
-    private static final Entity ENTITY = new Entity("any","string_","","");
+    private static final Entity ENTITY = new Entity("any", "string_", "", "");
 
     static {
         ENTITY.setFields(new Field[]{

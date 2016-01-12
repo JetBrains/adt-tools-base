@@ -54,7 +54,7 @@ final class Bool extends Box implements BinaryObject {
     public BinaryClass klass() { return Klass.INSTANCE; }
 
 
-    private static final Entity ENTITY = new Entity("any","bool_","","");
+    private static final Entity ENTITY = new Entity("any", "bool_", "", "");
 
     static {
         ENTITY.setFields(new Field[]{
