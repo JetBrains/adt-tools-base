@@ -63,6 +63,33 @@ import java.util.Map;
  * (pending as adoption continues).
  */
 public final class AndroidSdkHandler {
+    /**
+     * Schema module containing the package type information to be used in addon repos.
+     */
+    private static final SchemaModule ADDON_MODULE = new SchemaModule(
+            "com.android.sdklib.repositoryv2.generated.addon.v%d.ObjectFactory",
+            "sdk-addon-%02d.xsd", AndroidSdkHandler.class);
+
+    /**
+     * Schema module containing the package type information to be used in the primary repo.
+     */
+    private static final SchemaModule REPOSITORY_MODULE = new SchemaModule(
+            "com.android.sdklib.repositoryv2.generated.repository.v%d.ObjectFactory",
+            "sdk-repository-%02d.xsd", AndroidSdkHandler.class);
+
+    /**
+     * Schema module containing the package type information to be used in system image repos.
+     */
+    private static final SchemaModule SYS_IMG_MODULE = new SchemaModule(
+            "com.android.sdklib.repositoryv2.generated.sysimg.v%d.ObjectFactory",
+            "sdk-sys-img-%02d.xsd", AndroidSdkHandler.class);
+
+    /**
+     * Common schema module used by the other sdk-specific modules.
+     */
+    private static final SchemaModule COMMON_MODULE = new SchemaModule(
+            "com.android.sdklib.repositoryv2.generated.common.v%d.ObjectFactory",
+            "sdk-common-%02d.xsd", AndroidSdkHandler.class);
 
     /**
      * The URL of the official Google sdk-repository site. The URL ends with a /, allowing easy
@@ -225,7 +252,7 @@ public final class AndroidSdkHandler {
         if (mSystemImageManager == null) {
             getSdkManager(progress);
             mSystemImageManager = new SystemImageManager(mRepoManager,
-              (SysImgFactory) getSysImgModule(progress).createLatestFactory(), mFop);
+              (SysImgFactory) getSysImgModule().createLatestFactory(), mFop);
         }
         return mSystemImageManager;
     }
@@ -285,8 +312,8 @@ public final class AndroidSdkHandler {
      * sdk-common-XX.xsd.
      */
     @NonNull
-    public SchemaModule getCommonModule(@NonNull ProgressIndicator progress) {
-        return getRepoConfig(progress).getCommonModule();
+    public static SchemaModule getCommonModule() {
+        return COMMON_MODULE;
     }
 
     /**
@@ -294,8 +321,8 @@ public final class AndroidSdkHandler {
      * See sdk-addon-XX.xsd.
      */
     @NonNull
-    public SchemaModule getAddonModule(@NonNull ProgressIndicator progress) {
-        return getRepoConfig(progress).getAddonModule();
+    public static SchemaModule getAddonModule() {
+        return ADDON_MODULE;
     }
 
     /**
@@ -303,8 +330,8 @@ public final class AndroidSdkHandler {
      * Repository} (containin platforms etc.). See sdk-repository-XX.xsd.
      */
     @NonNull
-    public SchemaModule getRepositoryModule(@NonNull ProgressIndicator progress) {
-        return getRepoConfig(progress).getRepositoryModule();
+    public static SchemaModule getRepositoryModule() {
+        return REPOSITORY_MODULE;
     }
 
     /**
@@ -312,8 +339,8 @@ public final class AndroidSdkHandler {
      * Repository}s. See sdk-sys-img-XX.xsd.
      */
     @NonNull
-    public SchemaModule getSysImgModule(@NonNull ProgressIndicator progress) {
-        return getRepoConfig(progress).getSysImgModule();
+    public static SchemaModule getSysImgModule() {
+        return SYS_IMG_MODULE;
     }
 
     @NonNull
@@ -329,8 +356,7 @@ public final class AndroidSdkHandler {
     @Nullable
     public LocalSourceProvider getUserSourceProvider(@NonNull ProgressIndicator progress) {
         if (mUserSourceProvider == null) {
-            RepoConfig repoConfig = getRepoConfig(progress);
-            mUserSourceProvider = repoConfig.createUserSourceProvider(progress, mFop);
+            mUserSourceProvider = RepoConfig.createUserSourceProvider(progress, mFop);
             // Load the repo as well, so it can be set on the provider
             mRepoManager = null;
             getSdkManager(progress);
@@ -355,26 +381,6 @@ public final class AndroidSdkHandler {
     private static class RepoConfig {
 
         /**
-         * Schema module containing the package type information to be used in addon repos.
-         */
-        private SchemaModule mAddonModule;
-
-        /**
-         * Schema module containing the package type information to be used in the primary repo.
-         */
-        private SchemaModule mRepositoryModule;
-
-        /**
-         * Schema module containing the package type information to be used in system image repos.
-         */
-        private SchemaModule mSysImgModule;
-
-        /**
-         * Common schema module used by the other sdk-specific modules.
-         */
-        private SchemaModule mCommonModule;
-
-        /**
          * Provider for a list of {@link RepositorySource}s fetched from the google.
          */
         private RemoteListSourceProvider mAddonsListSourceProvider;
@@ -396,53 +402,33 @@ public final class AndroidSdkHandler {
          * @param progress Used for error logging.
          */
         public RepoConfig(@NonNull ProgressIndicator progress) {
+            // Schema module for the list of update sites we download
+            SchemaModule addonListModule = new SchemaModule(
+                    "com.android.sdklib.repositoryv2.sources.generated.v%d.ObjectFactory",
+                    "sdk-sites-list-%d.xsd", RemoteSiteType.class);
+
             try {
-                mAddonModule = new SchemaModule(
-                        "com.android.sdklib.repositoryv2.generated.addon.v%d.ObjectFactory",
-                        "sdk-addon-%02d.xsd", AndroidSdkHandler.class);
-                mRepositoryModule = new SchemaModule(
-                        "com.android.sdklib.repositoryv2.generated.repository.v%d.ObjectFactory",
-                        "sdk-repository-%02d.xsd", AndroidSdkHandler.class);
-                mSysImgModule = new SchemaModule(
-                        "com.android.sdklib.repositoryv2.generated.sysimg.v%d.ObjectFactory",
-                        "sdk-sys-img-%02d.xsd", AndroidSdkHandler.class);
-                mCommonModule = new SchemaModule(
-                        "com.android.sdklib.repositoryv2.generated.common.v%d.ObjectFactory",
-                        "sdk-common-%02d.xsd", AndroidSdkHandler.class);
-
-                // Schema module for the list of update sites we download
-                SchemaModule addonListModule = new SchemaModule(
-                        "com.android.sdklib.repositoryv2.sources.generated.v%d.ObjectFactory",
-                        "sdk-sites-list-%d.xsd", RemoteSiteType.class);
-
-                try {
-                    // Specify what modules are allowed to be used by what sites.
-                    Map<Class<? extends RepositorySource>, Collection<SchemaModule>> siteTypes
-                            = ImmutableMap.<Class<? extends RepositorySource>, Collection<SchemaModule>>builder()
-                            .put(RemoteSiteType.AddonSiteType.class, ImmutableSet.of(mAddonModule))
-                            .put(RemoteSiteType.SysImgSiteType.class,
-                                    ImmutableSet.of(mSysImgModule)).build();
-                    mAddonsListSourceProvider = RemoteListSourceProvider
-                            .create(getAddonListUrl(progress), addonListModule, siteTypes);
-                } catch (URISyntaxException e) {
-                    progress.logError("Failed to set up addons source provider", e);
-                }
-
-            } catch (InstantiationException e) {
-                progress.logError("Error setting up schema modules", e);
+                // Specify what modules are allowed to be used by what sites.
+                Map<Class<? extends RepositorySource>, Collection<SchemaModule>> siteTypes
+                        = ImmutableMap.<Class<? extends RepositorySource>, Collection<SchemaModule>>builder()
+                        .put(RemoteSiteType.AddonSiteType.class, ImmutableSet.of(ADDON_MODULE))
+                        .put(RemoteSiteType.SysImgSiteType.class,
+                                ImmutableSet.of(SYS_IMG_MODULE)).build();
+                mAddonsListSourceProvider = RemoteListSourceProvider
+                        .create(getAddonListUrl(progress), addonListModule, siteTypes);
             } catch (URISyntaxException e) {
-                progress.logError("Error setting up schema modules", e);
+                progress.logError("Failed to set up addons source provider", e);
             }
 
             String url = String.format("%srepository2-%d.xml", getBaseUrl(progress),
-              mRepositoryModule.getNamespaceVersionMap().size());
+              REPOSITORY_MODULE.getNamespaceVersionMap().size());
             mRepositorySourceProvider = new ConstantSourceProvider(url, "Android Repository",
-                    ImmutableSet.of(mRepositoryModule, RepoManager.getGenericModule()));
+                    ImmutableSet.of(REPOSITORY_MODULE, RepoManager.getGenericModule()));
 
             url = String.format("%srepository-%d.xml", getBaseUrl(progress), LATEST_LEGACY_VERSION);
             mLegacyRepositorySourceProvider = new ConstantSourceProvider(url,
                     "Legacy Android Repository",
-                    ImmutableSet.of(mRepositoryModule, RepoManager.getGenericModule()));
+                    ImmutableSet.of(REPOSITORY_MODULE, RepoManager.getGenericModule()));
         }
 
         /**
@@ -450,12 +436,13 @@ public final class AndroidSdkHandler {
          * with the user's environment.
          */
         @Nullable
-        public LocalSourceProvider createUserSourceProvider(@NonNull ProgressIndicator progress,
+        public static LocalSourceProvider createUserSourceProvider(
+                @NonNull ProgressIndicator progress,
                 @NonNull FileOp fileOp) {
             try {
                 return new LocalSourceProvider(
                         new File(AndroidLocation.getFolder(), LOCAL_ADDONS_FILENAME),
-                        ImmutableList.of(mSysImgModule, mAddonModule), fileOp);
+                        ImmutableList.of(SYS_IMG_MODULE, ADDON_MODULE), fileOp);
             } catch (AndroidLocation.AndroidLocationException e) {
                 progress.logWarning("Couldn't find android folder", e);
             }
@@ -463,7 +450,7 @@ public final class AndroidSdkHandler {
         }
 
         @NonNull
-        private String getAddonListUrl(@NonNull ProgressIndicator progress) {
+        private static String getAddonListUrl(@NonNull ProgressIndicator progress) {
             return getBaseUrl(progress) + DEFAULT_SITE_LIST_FILENAME_PATTERN;
         }
 
@@ -473,7 +460,7 @@ public final class AndroidSdkHandler {
          * {@link #URL_GOOGLE_SDK_SITE}
          */
         @NonNull
-        private String getBaseUrl(@NonNull ProgressIndicator progress) {
+        private static String getBaseUrl(@NonNull ProgressIndicator progress) {
             String baseUrl = System.getenv(SDK_TEST_BASE_URL_ENV_VAR);
             if (baseUrl != null) {
                 if (!baseUrl.isEmpty() && baseUrl.endsWith("/")) {
@@ -483,26 +470,6 @@ public final class AndroidSdkHandler {
                 }
             }
             return URL_GOOGLE_SDK_SITE;
-        }
-
-        @NonNull
-        public SchemaModule getCommonModule() {
-            return mCommonModule;
-        }
-
-        @NonNull
-        public SchemaModule getAddonModule() {
-            return mAddonModule;
-        }
-
-        @NonNull
-        public SchemaModule getRepositoryModule() {
-            return mRepositoryModule;
-        }
-
-        @NonNull
-        public SchemaModule getSysImgModule() {
-            return mSysImgModule;
         }
 
         @NonNull
@@ -518,10 +485,10 @@ public final class AndroidSdkHandler {
             RepoManager result = RepoManager.create(fop);
 
             // Create the schema modules etc. if they haven't been already.
-            result.registerSchemaModule(mAddonModule);
-            result.registerSchemaModule(mRepositoryModule);
-            result.registerSchemaModule(mSysImgModule);
-            result.registerSchemaModule(mCommonModule);
+            result.registerSchemaModule(ADDON_MODULE);
+            result.registerSchemaModule(REPOSITORY_MODULE);
+            result.registerSchemaModule(SYS_IMG_MODULE);
+            result.registerSchemaModule(COMMON_MODULE);
             // TODO: add once it exists
             // result.registerSourceProvider(mRepositorySourceProvider);
             result.registerSourceProvider(mLegacyRepositorySourceProvider);

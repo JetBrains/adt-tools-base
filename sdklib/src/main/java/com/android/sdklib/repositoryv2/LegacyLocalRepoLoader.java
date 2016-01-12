@@ -32,17 +32,12 @@ import com.android.repository.impl.meta.TypeDetails;
 import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.IAndroidTarget;
-import com.android.sdklib.ISystemImage;
-import com.android.sdklib.internal.androidTarget.PlatformTarget;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.descriptors.PkgType;
 import com.android.sdklib.repository.local.LocalAddonPkgInfo;
-import com.android.sdklib.repository.local.LocalAddonSysImgPkgInfo;
 import com.android.sdklib.repository.local.LocalPkgInfo;
 import com.android.sdklib.repository.local.LocalPlatformPkgInfo;
 import com.android.sdklib.repository.local.LocalSdk;
-import com.android.sdklib.repository.local.LocalSysImgPkgInfo;
-import com.android.sdklib.repositoryv2.meta.DetailsTypes;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -149,15 +144,7 @@ public class LegacyLocalRepoLoader implements FallbackLocalRepoLoader {
         public TypeDetails getTypeDetails() {
             int layoutVersion = 0;
             if (mWrapped instanceof LocalPlatformPkgInfo) {
-                IAndroidTarget target = ((LocalPlatformPkgInfo) mWrapped).getAndroidTarget();
-                if (target instanceof PlatformTarget) {
-                    layoutVersion = ((PlatformTarget)target).getLayoutlibApi();
-                }
-                else if (target instanceof com.android.sdklib.repositoryv2.targets.PlatformTarget) {
-                    layoutVersion
-                            = ((com.android.sdklib.repositoryv2.targets.PlatformTarget) target)
-                            .getLayoutlibApi();
-                }
+                layoutVersion = ((LocalPlatformPkgInfo) mWrapped).getLayoutlibApi();
             }
             List<IAndroidTarget.OptionalLibrary> addonLibraries = Lists.newArrayList();
             if (mWrapped instanceof LocalAddonPkgInfo) {
@@ -216,52 +203,7 @@ public class LegacyLocalRepoLoader implements FallbackLocalRepoLoader {
         @Override
         @NonNull
         public String getPath() {
-            switch (mWrapped.getDesc().getType()) {
-                case PKG_TOOLS:
-                    return SdkConstants.FD_TOOLS;
-                case PKG_PLATFORM_TOOLS:
-                    return SdkConstants.FD_PLATFORM_TOOLS;
-                case PKG_BUILD_TOOLS:
-                    return DetailsTypes.getBuildToolsPath(getVersion());
-                case PKG_DOC:
-                    return SdkConstants.FD_DOCS;
-                case PKG_PLATFORM:
-                    return DetailsTypes.getPlatformPath(mWrapped.getDesc().getAndroidVersion());
-                case PKG_ADDON:
-                    return DetailsTypes.getAddonPath(mWrapped.getDesc().getVendor(),
-                            mWrapped.getDesc().getAndroidVersion(), mWrapped.getDesc().getName());
-                case PKG_SYS_IMAGE:
-                case PKG_ADDON_SYS_IMAGE:
-                    ISystemImage sysImg;
-                    if (mWrapped instanceof LocalSysImgPkgInfo) {
-                        sysImg = ((LocalSysImgPkgInfo) mWrapped).getSystemImage();
-                    } else {
-                        sysImg = ((LocalAddonSysImgPkgInfo) mWrapped).getSystemImage();
-                    }
-                    return DetailsTypes.getSysImgPath(
-                            sysImg.getAddonVendor(),
-                            mWrapped.getDesc().getAndroidVersion(), sysImg.getTag(),
-                            mWrapped.getDesc().getPath());
-                case PKG_SOURCE:
-                    return DetailsTypes.getSourcesPath(mWrapped.getDesc().getAndroidVersion());
-                case PKG_EXTRA:
-                    return getPathFromLocation();
-                case PKG_NDK:
-                    return SdkConstants.FD_NDK;
-                case PKG_LLDB:
-                    return SdkConstants.FD_LLDB;
-                default:
-                    // This should never happen.
-                    return "unknown";
-            }
-        }
-
-        private String getPathFromLocation() {
-            File location = mLocalSdk.getLocation();
-            assert location != null;
-            return mWrapped.getLocalDir().getAbsolutePath()
-                    .substring(location.getAbsolutePath().length() + 1)
-                    .replace(File.separatorChar, RepoPackage.PATH_SEPARATOR);
+            return LegacyRepoUtils.getLegacyPath(mWrapped.getDesc());
         }
 
         @Override

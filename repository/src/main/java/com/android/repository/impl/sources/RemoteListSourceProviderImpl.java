@@ -56,7 +56,10 @@ public class RemoteListSourceProviderImpl extends RemoteListSourceProvider {
      * The {@link SchemaModule} specifying the core schema for the downloaded list of sources. This
      * may be extended by the {@link SchemaModule} specified in the constructor.
      */
-    private static SchemaModule sAddonListModule;
+    private static SchemaModule sAddonListModule = new SchemaModule(
+            RemoteListSourceProviderImpl.class.getPackage().getName()
+                    + ".generated.v%d.ObjectFactory", "repo-sites-common-%d.xsd",
+            RepoManager.class);
 
     /**
      * The URL to download from.
@@ -95,15 +98,6 @@ public class RemoteListSourceProviderImpl extends RemoteListSourceProvider {
             throws URISyntaxException {
         mUrl = url;
         mAllowedModules = permittedSchemaModules;
-        if (sAddonListModule == null) {
-            try {
-                sAddonListModule = new SchemaModule(
-                        getClass().getPackage().getName() + ".generated.v%d.ObjectFactory",
-                        "repo-sites-common-%d.xsd", RepoManager.class);
-            } catch (InstantiationException e) {
-                assert false : "Problem instantiating repo-sites-common schema module!";
-            }
-        }
         mSourceListModule = sourceListModule;
     }
 

@@ -62,16 +62,11 @@ public class SchemaModule {
      *                   %d parameter, corresponding to the 1-indexed version of the schema.
      * @param resourceRoot A class instance used via {@link Class#getResource(String)} to read
      *                     the XSD file.
-     * @throws URISyntaxException If the given XSD file isn't valid.
-     * @throws InstantiationException If the {@code ObjectFactory} can't be created, or if no
-     *                                versions are found.
      */
     public SchemaModule(@NonNull String ofPattern, @NonNull String xsdPattern,
-            @NonNull Class resourceRoot)
-            throws URISyntaxException, InstantiationException {
+            @NonNull Class resourceRoot) {
         if (!ofPattern.matches(".*%[0-9.$]*d.*") || !xsdPattern.matches(".*%[0-9.$]*d.*")) {
-            throw new IllegalArgumentException(
-                    "ofPattern and xsdPattern must contain a single %d parameter");
+            assert false : "ofPattern and xsdPattern must contain a single %d parameter";
         }
         SchemaModuleVersion version = null;
         for (int i = 1; ; i++) {
@@ -86,9 +81,7 @@ public class SchemaModule {
             mVersions.put(version.getNamespace(), version);
         }
         mLatestVersion = version;
-        if (mVersions.isEmpty()) {
-            throw new InstantiationException("No versions found");
-        }
+        assert !mVersions.isEmpty() : "No versions found";
         mResourceRoot = resourceRoot;
     }
 

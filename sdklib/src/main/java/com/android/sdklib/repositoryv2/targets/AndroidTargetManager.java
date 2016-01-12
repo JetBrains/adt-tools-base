@@ -26,8 +26,6 @@ import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
-import com.android.sdklib.internal.androidTarget.MissingTarget;
-import com.android.sdklib.repository.local.LocalSdk;
 import com.android.sdklib.repositoryv2.AndroidSdkHandler;
 import com.android.sdklib.repositoryv2.IdDisplay;
 import com.android.sdklib.repositoryv2.meta.DetailsTypes;
@@ -36,11 +34,15 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
- * Finds and allows access to all {@link IAndroidTarget}s in a given SDK, either using the old
- * {@link LocalSdk} mechanism or the new {@link AndroidSdkHandler}.
+ * Finds and allows access to all {@link IAndroidTarget}s in a given SDK.
  */
 public class AndroidTargetManager {
 

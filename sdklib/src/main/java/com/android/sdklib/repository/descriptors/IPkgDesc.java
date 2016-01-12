@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.repository.Revision;
 import com.android.sdklib.AndroidVersion;
 import com.android.repository.api.License;
+import com.android.sdklib.repositoryv2.IdDisplay;
 
 import java.io.File;
 

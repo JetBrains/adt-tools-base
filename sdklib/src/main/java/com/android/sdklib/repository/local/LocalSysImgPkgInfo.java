@@ -16,22 +16,17 @@
 
 package com.android.sdklib.repository.local;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.sdklib.AndroidVersion;
-import com.android.sdklib.ISystemImage;
-import com.android.sdklib.SystemImage;
-import com.android.repository.io.FileOp;
-import com.android.repository.io.FileOp;
 import com.android.repository.Revision;
+import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
-import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.descriptors.PkgDesc;
+import com.android.sdklib.repositoryv2.IdDisplay;
+import com.android.sdklib.repositoryv2.targets.SystemImage;
 
 import java.io.File;
-import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 
@@ -91,7 +86,7 @@ public class LocalSysImgPkgInfo extends LocalPkgInfo {
             }
             assert tagId   != null;
             assert tagDisp != null;
-            return new IdDisplay(tagId, tagDisp);
+            return IdDisplay.create(tagId, tagDisp);
         }
         return SystemImage.DEFAULT_TAG;
     }
@@ -119,29 +114,6 @@ public class LocalSysImgPkgInfo extends LocalPkgInfo {
             }
         }
         return name;
-    }
-
-    public SystemImage getSystemImage() {
-        return getSystemImage(mDesc, getLocalDir(), getLocalSdk().getFileOp());
-    }
-
-    static SystemImage getSystemImage(IPkgDesc desc, File localDir, @NonNull FileOp fileOp) {
-        final IdDisplay tag = desc.getTag();
-        final String abi = desc.getPath();
-        List<File> parsedSkins = PackageParserUtils.parseSkinFolder(new File(localDir, SdkConstants.FD_SKINS), fileOp);
-        File[] skins = FileOp.EMPTY_FILE_ARRAY;
-        if (!parsedSkins.isEmpty()) {
-            skins = parsedSkins.toArray(new File[parsedSkins.size()]);
-        }
-
-        return new SystemImage(
-                localDir,
-                ISystemImage.LocationType.IN_SYSTEM_IMAGE,
-                tag,
-                desc.getVendor(),
-                abi,
-                skins,
-                desc.getRevision());
     }
 
     public static String createListDescription(String listDisplay, IdDisplay tag, String abiDisplayName, boolean obsolete) {

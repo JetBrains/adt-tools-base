@@ -23,6 +23,7 @@ import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.annotations.concurrency.GuardedBy;
 import com.android.repository.Revision;
+import com.android.repository.api.RepoManager;
 import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.AndroidTargetHash;
@@ -31,19 +32,15 @@ import com.android.sdklib.AndroidVersion.AndroidVersionException;
 import com.android.sdklib.AndroidVersionHelper;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
-import com.android.sdklib.ISystemImage;
-import com.android.sdklib.internal.androidTarget.MissingTarget;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
-import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.descriptors.PkgDescExtra;
 import com.android.sdklib.repository.descriptors.PkgType;
+import com.android.sdklib.repositoryv2.AndroidSdkHandler;
+import com.android.sdklib.repositoryv2.IdDisplay;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.ObjectArrays;
-import com.google.common.collect.Sets;
 import com.google.common.collect.TreeMultimap;
 
 import java.io.File;
@@ -54,9 +51,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 
 /**
  * This class keeps information on the current locally installed SDK.
@@ -173,7 +168,9 @@ import java.util.Set;
  *      to totally remove it when the SdkManager class goes away.
  * </ul>
  * @version 2 of the {@code SdkManager} class, essentially.
+ * @deprecated in favor of {@link AndroidSdkHandler}/{@link RepoManager}.
  */
+@Deprecated
 public class LocalSdk {
 
     /** Location of the SDK. Maybe null. Can be changed. */
@@ -188,10 +185,6 @@ public class LocalSdk {
     private final Multimap<PkgType, LocalDirInfo> mVisitedDirs = HashMultimap.create();
     /** A legacy build-tool for older platform-tools < 17. */
     private BuildToolInfo mLegacyBuildTools;
-    /** Cache of targets from local sdk. See {@link #getTargets()}. */
-    @GuardedBy(value="mLocalPackages")
-    private List<IAndroidTarget> mCachedTargets = null;
-    private Set<MissingTarget> mCachedMissingTargets = null;
 
     /**
      * Creates an initial LocalSdk instance with an unknown location.
@@ -275,36 +268,7 @@ public class LocalSdk {
                 mVisitedDirs.removeAll(filter);
                 mLocalPackages.removeAll(filter);
             }
-
-            // Clear the targets if the platforms or addons are being cleared
-            if (filters.contains(PkgType.PKG_PLATFORM) ||  filters.contains(PkgType.PKG_ADDON)) {
-                mCachedMissingTargets = null;
-                mCachedTargets = null;
-            }
         }
-    }
-
-    /**
-     * Check the tracked visited folders to see if anything has changed for the
-     * requested filter types.
-     * This does not refresh or reload any package information.
-     *
-     * @param filters A set of PkgType constants or {@link PkgType#PKG_ALL} to clear everything.
-     */
-    public boolean hasChanged(@NonNull EnumSet<PkgType> filters) {
-        for (PkgType filter : filters) {
-            Collection<LocalDirInfo> dirInfos;
-            synchronized (mLocalPackages) {
-                dirInfos = mVisitedDirs.get(filter);
-                for(LocalDirInfo dirInfo : dirInfos) {
-                    if (dirInfo.hasChanged()) {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
     }
 
     //--------- Generic querying ---------
@@ -725,117 +689,6 @@ public class LocalSdk {
                 new File(platformTools, SdkConstants.FN_ZIPALIGN));
     }
 
-    /**
-     * Returns the targets (platforms & addons) that are available in the SDK.
-     * The target list is created on demand the first time then cached.
-     * It will not refreshed unless {@link #clearLocalPkg} is called to clear platforms
-     * and/or add-ons.
-     * <p/>
-     * The array can be empty but not null.
-     */
-    @NonNull
-    public IAndroidTarget[] getTargets() {
-        synchronized (mLocalPackages) {
-            if (mCachedTargets == null) {
-                List<IAndroidTarget> result = Lists.newArrayList();
-                LocalPkgInfo[] pkgsInfos = getPkgsInfos(EnumSet.of(PkgType.PKG_PLATFORM,
-                                                                   PkgType.PKG_ADDON));
-                for (LocalPkgInfo info : pkgsInfos) {
-                    assert info instanceof LocalPlatformPkgInfo;
-                    IAndroidTarget target = ((LocalPlatformPkgInfo) info).getAndroidTarget();
-                    if (target != null) {
-                        result.add(target);
-                    }
-                }
-                mCachedTargets = result;
-            }
-            return mCachedTargets.toArray(new IAndroidTarget[mCachedTargets.size()]);
-        }
-    }
-
-    public IAndroidTarget[] getTargets(boolean includeMissing) {
-        IAndroidTarget[] result = getTargets();
-        if (includeMissing) {
-            result = ObjectArrays.concat(result, getMissingTargets(), IAndroidTarget.class);
-        }
-        return result;
-    }
-
-    @NonNull
-    public MissingTarget[] getMissingTargets() {
-        synchronized (mLocalPackages) {
-            if (mCachedMissingTargets == null) {
-                Map<MissingTarget, MissingTarget> result = Maps.newHashMap();
-                Set<ISystemImage> seen = Sets.newHashSet();
-                for (IAndroidTarget target : getTargets()) {
-                    Collections.addAll(seen, target.getSystemImages());
-                }
-                for (LocalPkgInfo local : getPkgsInfos(PkgType.PKG_ADDON_SYS_IMAGE)) {
-                    LocalAddonSysImgPkgInfo info = (LocalAddonSysImgPkgInfo)local;
-                    ISystemImage image = info.getSystemImage();
-                    if (!seen.contains(image)) {
-                        addOrphanedSystemImage(image, info.getDesc(), result);
-                    }
-                }
-                for (LocalPkgInfo local : getPkgsInfos(PkgType.PKG_SYS_IMAGE)) {
-                    LocalSysImgPkgInfo info = (LocalSysImgPkgInfo)local;
-                    ISystemImage image = info.getSystemImage();
-                    if (!seen.contains(image)) {
-                        addOrphanedSystemImage(image, info.getDesc(), result);
-                    }
-                }
-                mCachedMissingTargets = result.keySet();
-            }
-            return mCachedMissingTargets.toArray(new MissingTarget[mCachedMissingTargets.size()]);
-        }
-    }
-
-    private static void addOrphanedSystemImage(ISystemImage image, IPkgDesc desc,
-      Map<MissingTarget, MissingTarget> targets) {
-        IdDisplay vendor = desc.getVendor();
-        MissingTarget target = new MissingTarget(vendor == null ? null : vendor.getDisplay(),
-          desc.getTag().getDisplay(), desc.getAndroidVersion());
-        MissingTarget existing = targets.get(target);
-        if (existing == null) {
-            existing = target;
-            targets.put(target, target);
-        }
-        existing.addSystemImage(image);
-    }
-
-    /**
-     * Returns a target from a hash that was generated by {@link IAndroidTarget#hashString()}.
-     * This method only returns "real" targets (not {@link MissingTarget}s).
-     *
-     * @param hash the {@link IAndroidTarget} hash string.
-     * @return The matching {@link IAndroidTarget} or null.
-     */
-    @Nullable
-    public IAndroidTarget getTargetFromHashString(@Nullable String hash) {
-        return getTargetFromHashString(hash, false);
-    }
-
-    /**
-     * Returns a target from a hash that was generated by {@link IAndroidTarget#hashString()},
-     * potentially including {@link MissingTarget}s.
-     *
-     * @param hash the {@link IAndroidTarget} hash string.
-     * @param includeMissing Whether to include {@link MissingTarget}s in the result.
-     * @return The matching {@link IAndroidTarget} or null.
-     */
-    @Nullable
-    public IAndroidTarget getTargetFromHashString(@Nullable String hash, boolean includeMissing) {
-        if (hash != null) {
-            IAndroidTarget[] targets = getTargets(includeMissing);
-            for (IAndroidTarget target : targets) {
-                if (target != null && hash.equals(AndroidTargetHash.getTargetHashString(target))) {
-                    return target;
-                }
-            }
-        }
-        return null;
-    }
-
     // -------------
 
     /**
@@ -1107,8 +960,8 @@ public class LocalSdk {
 
                 LocalAddonPkgInfo pkgInfo = new LocalAddonPkgInfo(
                         this, addonDir, props, vers, rev,
-                        new IdDisplay(vendorId, vendorDisp),
-                        new IdDisplay(nameId, nameDisp));
+                        IdDisplay.create(vendorId, vendorDisp),
+                        IdDisplay.create(nameId, nameDisp));
                 outCollection.add(pkgInfo);
 
             } catch (AndroidVersionException e) {
@@ -1186,7 +1039,7 @@ public class LocalSdk {
 
                 } else if (vendorId != null && scanAddons) {
                     String vendorDisp = props.getProperty(PkgProps.ADDON_VENDOR_DISPLAY, vendorId);
-                    IdDisplay vendor = new IdDisplay(vendorId, vendorDisp);
+                    IdDisplay vendor = IdDisplay.create(vendorId, vendorDisp);
 
                     LocalAddonSysImgPkgInfo pkgInfo =
                             new LocalAddonSysImgPkgInfo(
@@ -1290,7 +1143,7 @@ public class LocalSdk {
                         this,
                         extraDir,
                         props,
-                        new IdDisplay(vendorId, vendorDisp),
+                        IdDisplay.create(vendorId, vendorDisp),
                         extraDir.getName(),
                         displayName,
                         PkgDescExtra.convertOldPaths(oldPaths),

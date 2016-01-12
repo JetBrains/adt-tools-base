@@ -50,9 +50,8 @@ public class AddonListSourceProviderTest extends TestCase {
         progress.assertNoErrorsOrWarnings();
         assertEquals(4, sources.size());
         assertEquals("ありがとうございます。", sources.get(1).getDisplayName());
-        assertEquals(ImmutableSet.of(handler.getAddonModule(progress)),
+        assertEquals(ImmutableSet.of(AndroidSdkHandler.getAddonModule()),
                 sources.get(1).getPermittedModules());
-        progress.assertNoErrorsOrWarnings();
         downloader
                 .registerUrl(new URL("https://dl.google.com/android/repository/addons_list-2.xml"),
                         getClass().getResourceAsStream("testdata/addons_list_sample_2.xml"));
@@ -61,11 +60,10 @@ public class AddonListSourceProviderTest extends TestCase {
         progress.assertNoErrorsOrWarnings();
         assertEquals(6, sources.size());
         assertEquals("ありがとうございます。", sources.get(1).getDisplayName());
-        assertEquals(ImmutableSet.of(handler.getAddonModule(progress)),
+        assertEquals(ImmutableSet.of(AndroidSdkHandler.getAddonModule()),
                 sources.get(1).getPermittedModules());
-        assertEquals(ImmutableSet.of(handler.getSysImgModule(progress)),
+        assertEquals(ImmutableSet.of(AndroidSdkHandler.getSysImgModule()),
                 sources.get(3).getPermittedModules());
-        progress.assertNoErrorsOrWarnings();
         // TODO more tests
 
         downloader
@@ -75,11 +73,10 @@ public class AddonListSourceProviderTest extends TestCase {
         sources = provider.getSources(downloader, null, progress, true);
         progress.assertNoErrorsOrWarnings();
         assertEquals(6, sources.size());
-        assertEquals(ImmutableSet.of(handler.getAddonModule(progress)),
+        assertEquals(ImmutableSet.of(AndroidSdkHandler.getAddonModule()),
                 sources.get(1).getPermittedModules());
-        assertEquals(ImmutableSet.of(handler.getSysImgModule(progress)),
+        assertEquals(ImmutableSet.of(AndroidSdkHandler.getSysImgModule()),
                 sources.get(3).getPermittedModules());
-        progress.assertNoErrorsOrWarnings();
         assertEquals("http://www.example.com/my_addons2.xml", sources.get(0).getUrl());
     }
 

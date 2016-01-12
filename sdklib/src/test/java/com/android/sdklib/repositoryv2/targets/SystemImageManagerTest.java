@@ -47,7 +47,7 @@ public class SystemImageManagerTest extends TestCase {
         FakeProgressIndicator progress = new FakeProgressIndicator();
 
         SystemImageManager mgr = new SystemImageManager(handler.getSdkManager(progress),
-                (SysImgFactory)handler.getSysImgModule(progress).createLatestFactory(), fop);
+                (SysImgFactory)AndroidSdkHandler.getSysImgModule().createLatestFactory(), fop);
         Set<SystemImage> images = Sets.newTreeSet(mgr.getImages());
         progress.assertNoErrorsOrWarnings();
         assertEquals(5, images.size());

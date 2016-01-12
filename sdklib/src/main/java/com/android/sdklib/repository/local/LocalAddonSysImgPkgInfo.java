@@ -18,13 +18,12 @@ package com.android.sdklib.repository.local;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.sdklib.AndroidVersion;
-import com.android.sdklib.ISystemImage;
-import com.android.sdklib.repository.PkgProps;
 import com.android.repository.Revision;
+import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
-import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.descriptors.PkgDesc;
+import com.android.sdklib.repositoryv2.IdDisplay;
 
 import java.io.File;
 import java.util.Properties;
@@ -50,7 +49,8 @@ public class LocalAddonSysImgPkgInfo extends LocalPkgInfo {
             @NonNull String abi,
             @NonNull Revision revision) {
         super(localSdk, localDir, sourceProps);
-        IdDisplay tag = new IdDisplay(sourceProps.getProperty(PkgProps.SYS_IMG_TAG_ID),
+        IdDisplay tag = IdDisplay.create(
+                sourceProps.getProperty(PkgProps.SYS_IMG_TAG_ID),
                 sourceProps.getProperty(PkgProps.SYS_IMG_TAG_DISPLAY));
         String listDisplay = sourceProps.getProperty(PkgProps.PKG_LIST_DISPLAY);
         if (listDisplay == null) {
@@ -72,9 +72,5 @@ public class LocalAddonSysImgPkgInfo extends LocalPkgInfo {
     @Override
     public IPkgDesc getDesc() {
         return mDesc;
-    }
-
-    public ISystemImage getSystemImage() {
-        return LocalSysImgPkgInfo.getSystemImage(mDesc, getLocalDir(), getLocalSdk().getFileOp());
     }
 }

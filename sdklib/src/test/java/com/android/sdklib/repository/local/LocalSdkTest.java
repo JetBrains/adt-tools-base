@@ -602,14 +602,8 @@ public class LocalSdkTest extends TestCase {
         assertEquals(new Revision(1), pi.getDesc().getRevision());
         assertEquals("Android SDK Platform 18", pi.getListDescription());
 
-        IAndroidTarget t1 = ((LocalPlatformPkgInfo)pi).getAndroidTarget();
-        assertNotNull(t1);
-
         LocalPkgInfo pi2 = mLS.getPkgInfo(PkgType.PKG_PLATFORM, "android-18");
         assertSame(pi, pi2);
-
-        IAndroidTarget t2 = mLS.getTargetFromHashString("android-18");
-        assertSame(t1, t2);
     }
 
     public final void testLocalSdkTest_getPkgInfo_Platforms_SysImages_Skins() {
@@ -671,28 +665,6 @@ public class LocalSdkTest extends TestCase {
         assertNotNull(pi);
         assertTrue(pi instanceof LocalPlatformPkgInfo);
 
-        IAndroidTarget t = ((LocalPlatformPkgInfo)pi).getAndroidTarget();
-        assertNotNull(t);
-
-        assertEquals(
-                "[SystemImage tag=tag-1, ABI=x86, location='/sdk/system-images/android-18/tag-1/x86', " +
-                 "SystemImage tag=tag-2, ABI=mips, location='/sdk/system-images/android-18/tag-2/mips']",
-                 sanitizePath(Arrays.toString(t.getSystemImages())));
-
-        assertEquals("/sdk/platforms/android-18/skins/WVGA800",
-                sanitizePath(t.getDefaultSkin().toString()));
-
-        assertEquals(
-                "[/sdk/system-images/android-18/tag-2/mips/skins/skinA, " +
-                 "/sdk/system-images/android-18/tag-2/mips/skins/skinB]",
-                sanitizePath(Arrays.toString(t.getSkins())));
-
-        // check the skins paths from the system image also match what's in the platform
-        assertEquals(
-                "[/sdk/system-images/android-18/tag-2/mips/skins/skinA, " +
-                 "/sdk/system-images/android-18/tag-2/mips/skins/skinB]",
-                sanitizePath(Arrays.toString(t.getSystemImages()[1].getSkins())));
-
         assertEquals("Android SDK Platform 18", pi.getListDescription());
     }
 
@@ -717,9 +689,6 @@ public class LocalSdkTest extends TestCase {
         // By default, IAndroidTarget returns the legacy path to a platform source,
         // whether that directory exist or not.
         LocalPkgInfo pi1 = mLS.getPkgInfo(PkgType.PKG_PLATFORM, new AndroidVersion(18, null));
-        IAndroidTarget t1 = ((LocalPlatformPkgInfo)pi1).getAndroidTarget();
-        assertEquals("/sdk/platforms/android-18/sources",
-                     mFOp.getAgnosticAbsPath(t1.getPath(IAndroidTarget.SOURCES)));
         assertEquals("Android SDK Platform 18", pi1.getListDescription());
         assertSame(pi1, mLS.getPkgInfo(pi1.getDesc()));
 
@@ -735,16 +704,12 @@ public class LocalSdkTest extends TestCase {
                 "Archive.Arch=ANY\n");
 
         LocalPkgInfo pi2 = mLS.getPkgInfo(PkgType.PKG_PLATFORM, new AndroidVersion(18, null));
-        IAndroidTarget t2 = ((LocalPlatformPkgInfo)pi2).getAndroidTarget();
         assertEquals("[<LocalPlatformPkgInfo <PkgDesc Type=platform Android=API 18 Path=android-18 Rev=1 MinToolsRev=21.0.0>>, " +
                       "<LocalSourcePkgInfo <PkgDesc Type=source Android=API 18 Rev=2>>]",
                  Arrays.toString(mLS.getPkgsInfos(
                          EnumSet.of(PkgType.PKG_PLATFORM, PkgType.PKG_SOURCE))));
         assertEquals("Android SDK Platform 18", pi2.getListDescription());
         assertSame(pi2, mLS.getPkgInfo(pi2.getDesc()));
-
-        assertEquals("/sdk/sources/android-18",
-                mFOp.getAgnosticAbsPath(t2.getPath(IAndroidTarget.SOURCES)));
     }
 
     public final void testLocalSdkTest_getPkgInfo_Addon_NoSysImg() {
@@ -795,14 +760,6 @@ public class LocalSdkTest extends TestCase {
         assertEquals("Some Vendor:Some Name:18", pi.getDesc().getPath());
         assertEquals("Some Name, Android 18, rev 2", pi.getListDescription());
         assertSame(pi, mLS.getPkgInfo(pi.getDesc()));
-
-        IAndroidTarget t = mLS.getTargetFromHashString("Some Vendor:Some Name:18");
-        assertSame(t, ((LocalAddonPkgInfo) pi).getAndroidTarget());
-        assertNotNull(t);
-
-        assertEquals(
-                "[]",
-                 sanitizePath(Arrays.toString(t.getSystemImages())));
     }
 
     public final void testLocalSdkTest_getPkgInfo_Addon_SysImgInLegacyFolder() {
@@ -872,19 +829,6 @@ public class LocalSdkTest extends TestCase {
         assertEquals("Some Vendor:Some Name:18", pi.getDesc().getPath());
         assertEquals("Some Name, Android 18, rev 2", pi.getListDescription());
         assertSame(pi, mLS.getPkgInfo(pi.getDesc()));
-
-        IAndroidTarget t = mLS.getTargetFromHashString("Some Vendor:Some Name:18");
-        assertSame(t, ((LocalAddonPkgInfo) pi).getAndroidTarget());
-        assertNotNull(t);
-
-        assertEquals(
-                "[SystemImage tag=default, ABI=armeabi, location='/sdk/add-ons/addon-vendor_name-2/images']",
-                 sanitizePath(Arrays.toString(t.getSystemImages())));
-
-        assertEquals(
-                "[/sdk/add-ons/addon-vendor_name-2/skins/skin_one, " +
-                 "/sdk/add-ons/addon-vendor_name-2/skins/skin_two]",
-                sanitizePath(Arrays.toString(t.getSkins())));
     }
 
     public final void testLocalSdkTest_getPkgInfo_Addon_SysImgInSubfolder() {
@@ -978,22 +922,6 @@ public class LocalSdkTest extends TestCase {
         assertEquals("Some Vendor:Some Name:18", pi.getDesc().getPath());
         assertEquals("Some Name, Android 18, rev 2", pi.getListDescription());
         assertSame(pi, mLS.getPkgInfo(pi.getDesc()));
-
-        IAndroidTarget t = mLS.getTargetFromHashString("Some Vendor:Some Name:18");
-        assertSame(t, ((LocalAddonPkgInfo) pi).getAndroidTarget());
-        assertNotNull(t);
-
-        assertEquals(
-                "[SystemImage addon-vendor=vendor, tag=default, ABI=armeabi-v7a, " +
-                "location='/sdk/add-ons/addon-vendor_name-2/images/armeabi-v7a', " +
-                "SystemImage addon-vendor=vendor, tag=default, ABI=x86, " +
-                "location='/sdk/add-ons/addon-vendor_name-2/images/x86']",
-                 sanitizePath(Arrays.toString(t.getSystemImages())));
-
-        assertEquals(
-                "[/sdk/add-ons/addon-vendor_name-2/skins/skin_one, " +
-                 "/sdk/add-ons/addon-vendor_name-2/skins/skin_two]",
-                sanitizePath(Arrays.toString(t.getSkins())));
     }
 
     public final void testLocalSdkTest_getPkgInfo_Addon_SysImgFolder() {
@@ -1134,21 +1062,6 @@ public class LocalSdkTest extends TestCase {
         assertEquals("Some Vendor:Some Name:18", pi.getDesc().getPath());
         assertEquals("Some Name, Android 18, rev 2", pi.getListDescription());
         assertSame(pi, mLS.getPkgInfo(pi.getDesc()));
-
-        IAndroidTarget t = mLS.getTargetFromHashString("Some Vendor:Some Name:18");
-        assertSame(t, ((LocalAddonPkgInfo) pi).getAndroidTarget());
-        assertNotNull(t);
-
-        assertEquals(
-                "[SystemImage addon-vendor=vendor, tag=name, ABI=armeabi-v7a, location='/sdk/system-images/addon-vendor_name-2/armeabi-v7a', " +
-                 "SystemImage addon-vendor=vendor, tag=name, ABI=x86, location='/sdk/system-images/addon-vendor_name-2/x86']",
-                 sanitizePath(Arrays.toString(t.getSystemImages())));
-
-        assertEquals(
-                "[/sdk/system-images/addon-vendor_name-2/armeabi-v7a/skins/skin_one, " +
-                 "/sdk/system-images/addon-vendor_name-2/x86/skins/skin_two]",
-                sanitizePath(Arrays.toString(t.getSkins())));
-
     }
 
     //-----

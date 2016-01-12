@@ -18,6 +18,7 @@ package com.android.sdklib.repository.descriptors;
 
 import com.android.annotations.NonNull;
 import com.android.repository.Revision;
+import com.android.sdklib.repositoryv2.IdDisplay;
 
 /**
  * {@link IPkgDescExtra} keeps information on individual extra SDK packages
@@ -26,7 +27,7 @@ import com.android.repository.Revision;
  * adds methods specific to extras.
  * <p/>
  * To create a new {@link IPkgDescExtra},
- * use {@link PkgDesc.Builder#newExtra(IdDisplay, String, String, String[], Revision)}.
+ * use {@link PkgDesc.Builder#newExtra(IdDisplay, String, String, String[], Revision)} )}.
  * <p/>
  * The extra's revision is a {@link Revision}; the attribute is however
  * accessed via {@link IPkgDesc#getRevision()} instead of introducing a new
