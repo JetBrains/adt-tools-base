@@ -66,8 +66,11 @@ public class InstantRunClient {
     private static final String CLASSES_DEX_SUFFIX = ".dex";
 
 
-    /** Instead of writing to the data folder, we can read/write to a local temp file instead */
-    private static final boolean USE_BUILD_ID_TEMP_FILE =
+    /**
+     * Instead of writing to the data folder, we can read/write to a local temp file instead.
+     * This is required because some devices (Samsung Galaxy Edge atleast) doesn't allow access into the package folder even with run-as.
+     */
+    public static final boolean USE_BUILD_ID_TEMP_FILE =
             !Boolean.getBoolean("instantrun.use_datadir");
 
     @NonNull
