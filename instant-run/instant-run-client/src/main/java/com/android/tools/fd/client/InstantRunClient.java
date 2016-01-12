@@ -40,6 +40,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Charsets;
 import com.google.common.base.Splitter;
+import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
 import java.io.DataInputStream;
@@ -50,6 +51,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.List;
+import java.util.Set;
 
 public class InstantRunClient {
     private static final String LOCAL_HOST = "127.0.0.1";
@@ -566,56 +568,61 @@ public class InstantRunClient {
             @NonNull IDevice device,
             @NonNull final String buildId) {
         try {
-            String dexFolder = Paths.getDexFileDirectory(mPackageName);
-
-            // Ensure the dir exists
-            CollectingOutputReceiver receiver = new CollectingOutputReceiver();
-            //noinspection SpellCheckingInspection
-            device.executeShellCommand("run-as " + mPackageName + " mkdir -p " + dexFolder, receiver);
-            receiver = new CollectingOutputReceiver();
-            String output = receiver.getOutput();
-            if (!output.trim().isEmpty()) {
-                mLogger.warning("Unexpected shell output: " + output);
-            }
+            Set<String> createdDirs = Sets.newHashSet();
 
             // List the files in the dex folder to compute a new .dex file name that follows the existing
             // naming pattern but is numbered higher than any existing .dex files
             int max = -1;
             for (FileTransfer file : files) {
-                String path;
+                String folder;
+                String name;
                 switch (file.mode) {
                     case TRANSFER_MODE_SLICE:
-                        path = dexFolder + '/' + file.name;
+                        folder = Paths.getDexFileDirectory(mPackageName);
+                        name = file.name;
                         break;
                     case TRANSFER_MODE_NEW_DEX:
                         // Compute a unique name
                         if (max == -1) {
-                            device.executeShellCommand("run-as " + mPackageName + " ls " + dexFolder, receiver);
+                            CollectingOutputReceiver receiver = new CollectingOutputReceiver();
+                            String dexFolder = Paths.getDexFileDirectory(mPackageName);
+                            String cmd = "run-as " + mPackageName + " ls " + dexFolder;
+                            device.executeShellCommand(cmd, receiver);
                             max = getMaxDexFileNumber(receiver.getOutput());
                         }
-                        path = dexFolder + '/' +
-                               String.format("%s0x%04x%s", CLASSES_DEX_PREFIX, ++max, CLASSES_DEX_SUFFIX);
+                        folder = Paths.getDexFileDirectory(mPackageName);
+                        name = String.format("%s0x%04x%s", CLASSES_DEX_PREFIX, ++max,
+                                CLASSES_DEX_SUFFIX);
                         break;
                     case TRANSFER_MODE_RESOURCES:
-                        path = Paths.getInboxDirectory(mPackageName) + '/' + Paths.RESOURCE_FILE_NAME;
+                        folder = Paths.getInboxDirectory(mPackageName);
+                        name = Paths.RESOURCE_FILE_NAME;
                         break;
                     case TRANSFER_MODE_HOTSWAP:
-                        throw new IllegalArgumentException("Hotswap patches can only be applied when the app is running");
+                        throw new IllegalArgumentException("Hotswap patches can only be applied "
+                                + "when the app is running");
                     default:
                         throw new IllegalArgumentException(Integer.toString(file.mode));
                 }
 
                 // Copy the restart .dex file over to the device in the dex folder with the new name
                 String remote = copyToDeviceScratchFile(device, mPackageName, file.source);
-                String cmd = "run-as " + mPackageName + " cp " + remote + " " + path;
-                receiver = new CollectingOutputReceiver();
-                device.executeShellCommand(cmd, receiver);
-                output = receiver.getOutput();
-                if (!output.trim().isEmpty()) {
-                    mLogger.warning("Unexpected shell output for " + cmd + ": " + output);
+
+                // Make sure directory exists
+                if (!createdDirs.contains(folder)) {
+                    createdDirs.add(folder);
+                    if (!runCommand(device, "run-as " + mPackageName + " mkdir -p " + folder)) {
+                        return false;
+                    }
+                }
+
+                String cmd = "run-as " + mPackageName + " cp " + remote + " " + folder + "/" + name;
+                if (!runCommand(device, cmd)) {
                     return false;
                 }
             }
+
+            transferLocalIdToDeviceId(device, buildId);
 
             return true;
         } catch (IOException ioe) {
@@ -628,10 +635,22 @@ public class InstantRunClient {
             mLogger.warning("%s", e);
         } catch (SyncException e) {
             mLogger.warning("%s", e);
-        } finally {
-            transferLocalIdToDeviceId(device, buildId);
         }
 
         return false;
+    }
+
+    private boolean runCommand(@NonNull IDevice device, @NonNull String cmd)
+      throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
+        CollectingOutputReceiver receiver;
+        String output;
+        receiver = new CollectingOutputReceiver();
+        device.executeShellCommand(cmd, receiver);
+        output = receiver.getOutput();
+        if (!output.trim().isEmpty()) {
+            mLogger.warning("Unexpected shell output for " + cmd + ": " + output);
+            return false;
+        }
+        return true;
     }
 }
