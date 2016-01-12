@@ -39,6 +39,7 @@ public class LittleEndianUtils {
 
     /**
      * Reads 4 bytes in little-endian format and converts them into a 32-bit value.
+     *
      * @param bytes from where should the bytes be read; the first 4 bytes of the source will be
      * read
      * @return the 32-bit value
@@ -63,6 +64,7 @@ public class LittleEndianUtils {
 
     /**
      * Reads 2 bytes in little-endian format and converts them into a 16-bit value.
+     *
      * @param bytes from where should the bytes be read; the first 2 bytes of the source will be
      * read
      * @return the 16-bit value
@@ -87,6 +89,7 @@ public class LittleEndianUtils {
 
     /**
      * Writes 4 bytes in little-endian format, converting them from a 32-bit value.
+     *
      * @param output the output stream where the bytes will be written
      * @param value the 32-bit value to convert
      * @throws IOException failed to write the value data
@@ -106,6 +109,7 @@ public class LittleEndianUtils {
 
     /**
      * Writes 2 bytes in little-endian format, converting them from a 16-bit value.
+     *
      * @param output the output stream where the bytes will be written
      * @param value the 16-bit value to convert
      * @throws IOException failed to write the value data

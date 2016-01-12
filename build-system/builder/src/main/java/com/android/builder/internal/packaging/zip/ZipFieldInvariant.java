@@ -24,6 +24,7 @@ interface ZipFieldInvariant {
 
     /**
      * Evalutes the invariant against a value.
+     *
      * @param value the value to check the invariant
      * @return is the invariant valid?
      */
@@ -31,6 +32,7 @@ interface ZipFieldInvariant {
 
     /**
      * Obtains the name of the invariant. Used for information purposes.
+     *
      * @return the name of the invariant
      */
     String getName();

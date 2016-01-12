@@ -28,6 +28,7 @@ class ZipFieldInvariantMaxValue implements ZipFieldInvariant {
 
     /**
      * Creates a new invariant.
+     *
      * @param max the maximum value allowed for the field
      */
     ZipFieldInvariantMaxValue(int max) {

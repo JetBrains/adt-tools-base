@@ -114,6 +114,7 @@ public class CentralDirectoryHeader implements Cloneable {
 
     /**
      * Creates data for a file.
+     *
      * @param name the file name
      * @param compressedSize the compressed file size
      * @param uncompressedSize the uncompressed file size
@@ -158,6 +159,7 @@ public class CentralDirectoryHeader implements Cloneable {
 
     /**
      * Obtains the name of the file.
+     *
      * @return the name
      */
     @NonNull
@@ -167,6 +169,7 @@ public class CentralDirectoryHeader implements Cloneable {
 
     /**
      * Obtains the size of the uncompressed file.
+     *
      * @return the size of the file
      */
     public long getUncompressedSize() {
@@ -175,6 +178,7 @@ public class CentralDirectoryHeader implements Cloneable {
 
     /**
      * Obtains the size of the compressed file.
+     *
      * @return the size of the file
      */
     public long getCompressedSize() {
@@ -184,6 +188,7 @@ public class CentralDirectoryHeader implements Cloneable {
     /**
      * Sets the compression method. Can only be called if the compression method is
      * {@link CompressionMethod#DEFLATE}.
+     *
      * @param compressedSize the compressed data size
      */
     public void setCompressedSize(long compressedSize) {
@@ -195,6 +200,7 @@ public class CentralDirectoryHeader implements Cloneable {
 
     /**
      * Obtains the compression method to use.
+     *
      * @return the compression method
      */
     @NonNull
@@ -205,6 +211,7 @@ public class CentralDirectoryHeader implements Cloneable {
     /**
      * Sets the compression method. The compression method can only be set to
      * {@link CompressionMethod#STORE} if the compressed and uncompressed sizes are equal.
+     *
      * @param method the compression method
      */
     public void setMethod(@NonNull CompressionMethod method) {
@@ -219,6 +226,7 @@ public class CentralDirectoryHeader implements Cloneable {
 
     /**
      * Obtains the CRC32 of the data.
+     *
      * @return the CRC32, 0 if not yet computed
      */
     public long getCrc32() {
@@ -227,6 +235,7 @@ public class CentralDirectoryHeader implements Cloneable {
 
     /**
      * Sets the CRC32 of the data.
+     *
      * @param crc32 the CRC 32
      */
     public void setCrc32(long crc32) {
@@ -235,6 +244,7 @@ public class CentralDirectoryHeader implements Cloneable {
 
     /**
      * Obtains the code of the program that made the zip.
+     *
      * @return the code
      */
     public long getMadeBy() {
@@ -243,6 +253,7 @@ public class CentralDirectoryHeader implements Cloneable {
 
     /**
      * Sets the code of the progtram that made the zip.
+     *
      * @param madeBy the code
      */
     public void setMadeBy(long madeBy) {
@@ -259,6 +270,7 @@ public class CentralDirectoryHeader implements Cloneable {
 
     /**
      * Sets the version needed to extract the entry.
+     *
      * @param versionExtract the version number
      */
     public void setVersionExtract(long versionExtract) {
@@ -267,6 +279,7 @@ public class CentralDirectoryHeader implements Cloneable {
 
     /**
      * Obtains the general-purpose bit flag.
+     *
      * @return the bit flag
      */
     @NonNull
@@ -276,6 +289,7 @@ public class CentralDirectoryHeader implements Cloneable {
 
     /**
      * Sets the general-purpose bit flag.
+     *
      * @param gpBit the bit flag
      */
     public void setGpBit(@NonNull GPFlags gpBit) {
@@ -284,6 +298,7 @@ public class CentralDirectoryHeader implements Cloneable {
 
     /**
      * Obtains the last modification time of the entry.
+     *
      * @return the last modification time in MS-DOS format (see
      * {@link MsDosDateTimeUtils#packTime(long)})
      */
@@ -293,6 +308,7 @@ public class CentralDirectoryHeader implements Cloneable {
 
     /**
      * Sets the last modification time of the entry.
+     *
      * @param lastModTime the last modification time in MS-DOS format (see
      * {@link MsDosDateTimeUtils#packTime(long)})
      */
@@ -302,6 +318,7 @@ public class CentralDirectoryHeader implements Cloneable {
 
     /**
      * Obtains the last modification date of the entry.
+     *
      * @return the last modification date in MS-DOS format (see
      * {@link MsDosDateTimeUtils#packDate(long)})
      */
@@ -311,6 +328,7 @@ public class CentralDirectoryHeader implements Cloneable {
 
     /**
      * Sets the last modification date of the entry.
+     *
      * @param lastModDate the last modification date in MS-DOS format (see
      * {@link MsDosDateTimeUtils#packDate(long)})
      */
@@ -320,6 +338,7 @@ public class CentralDirectoryHeader implements Cloneable {
 
     /**
      * Obtains the data in the extra field.
+     *
      * @return the data (returns an empty array if there is none)
      */
     @NonNull
@@ -329,6 +348,7 @@ public class CentralDirectoryHeader implements Cloneable {
 
     /**
      * Sets the data in the extra field.
+     *
      * @param extraField the data to set
      */
     public void setExtraField(@NonNull byte[] extraField) {
@@ -337,6 +357,7 @@ public class CentralDirectoryHeader implements Cloneable {
 
     /**
      * Obtains the entry's comment.
+     *
      * @return the comment (returns an empty array if there is no comment)
      */
     @NonNull
@@ -346,6 +367,7 @@ public class CentralDirectoryHeader implements Cloneable {
 
     /**
      * Sets the entry's comment.
+     *
      * @param comment the comment
      */
     public void setComment(@NonNull byte[] comment) {
@@ -354,6 +376,7 @@ public class CentralDirectoryHeader implements Cloneable {
 
     /**
      * Obtains the entry's internal attributes.
+     *
      * @return the entry's internal attributes
      */
     public long getInternalAttributes() {
@@ -362,6 +385,7 @@ public class CentralDirectoryHeader implements Cloneable {
 
     /**
      * Sets the entry's internal attributes.
+     *
      * @param internalAttributes the entry's internal attributes
      */
     public void setInternalAttributes(long internalAttributes) {
@@ -370,6 +394,7 @@ public class CentralDirectoryHeader implements Cloneable {
 
     /**
      * Obtains the entry's external attributes.
+     *
      * @return the entry's external attributes
      */
     public long getExternalAttributes() {
@@ -378,6 +403,7 @@ public class CentralDirectoryHeader implements Cloneable {
 
     /**
      * Sets the entry's external attributes.
+     *
      * @param externalAttributes the entry's external attributes
      */
     public void setExternalAttributes(long externalAttributes) {
@@ -386,6 +412,7 @@ public class CentralDirectoryHeader implements Cloneable {
 
     /**
      * Obtains the offset in the zip file where this entry's data is.
+     *
      * @return the offset or {@code -1} if the file is new and has no data in the zip yet
      */
     public long getOffset() {
@@ -394,6 +421,7 @@ public class CentralDirectoryHeader implements Cloneable {
 
     /**
      * Sets the offset in the zip file where this entry's data is.
+     *
      * @param offset the offset or {@code -1} if the file is new and has no data in the zip yet
      */
     public void setOffset(long offset) {

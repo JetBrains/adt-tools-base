@@ -34,7 +34,8 @@ public class ByteArrayEntrySource implements EntrySource {
     private byte[] mData;
 
     /**
-     * Creates a new source
+     * Creates a new source.
+     *
      * @param data the data to use as source
      */
     public ByteArrayEntrySource(@NonNull byte[] data) {

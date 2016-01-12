@@ -65,6 +65,7 @@ class FileUseMapEntry<T> {
 
     /**
      * Creates a new map entry.
+     *
      * @param start the start of the entry
      * @param end the end of the entry (first byte no longer in the entry)
      * @param store the data to store in the entry or {@code null} if this is a free entry
@@ -80,6 +81,7 @@ class FileUseMapEntry<T> {
 
     /**
      * Creates a new free entry.
+     *
      * @param start the start of the entry
      * @param end the end of the entry (first byte no longer in the entry)
      * @return the entry
@@ -90,6 +92,7 @@ class FileUseMapEntry<T> {
 
     /**
      * Creates a new used entry.
+     *
      * @param start the start of the entry
      * @param end the end of the entry (first byte no longer in the entry)
      * @param store the data to store in the entry
@@ -103,6 +106,7 @@ class FileUseMapEntry<T> {
 
     /**
      * Obtains the first byte in the entry.
+     *
      * @return the first byte in the entry (if the same value as {@link #getEnd()} then the entry
      * is empty and contains no data)
      */
@@ -112,6 +116,7 @@ class FileUseMapEntry<T> {
 
     /**
      * Obtains the first byte no longer in the entry.
+     *
      * @return the first byte no longer in the entry
      */
     long getEnd() {
@@ -120,6 +125,7 @@ class FileUseMapEntry<T> {
 
     /**
      * Obtains the size of the entry.
+     *
      * @return the number of bytes contained in the entry
      */
     long getSize() {
@@ -128,6 +134,7 @@ class FileUseMapEntry<T> {
 
     /**
      * Determines if this is a free entry.
+     *
      * @return is this entry free?
      */
     boolean isFree() {
@@ -136,6 +143,7 @@ class FileUseMapEntry<T> {
 
     /**
      * Obtains the data stored in the entry.
+     *
      * @return the data stored or {@code null} if this entry is a free entry
      */
     @Nullable

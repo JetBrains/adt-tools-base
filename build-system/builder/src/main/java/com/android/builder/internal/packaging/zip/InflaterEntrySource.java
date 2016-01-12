@@ -43,6 +43,7 @@ class InflaterEntrySource implements EntrySource {
 
     /**
      * Creates a new source.
+     *
      * @param deflatedSource the source of deflated data
      * @param uncompressedSize the size of deflated data after inflation
      */
