@@ -18,6 +18,7 @@ package com.android.build.gradle.shrinker;
 
 import com.android.annotations.NonNull;
 import com.android.build.api.transform.TransformInput;
+import com.android.build.gradle.shrinker.TestClasses.Interfaces;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
@@ -173,14 +174,15 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
     @Test
     public void interfaces_sdkInterface_classUsed_abstractType() throws Exception {
         // Given:
-        Files.write(TestClasses.Interfaces.main(), new File(mTestPackageDir, "Main.class"));
-        Files.write(TestClasses.Interfaces.myCharSequence(), new File(mTestPackageDir, "MyCharSequence.class"));
+        Files.write(Interfaces.main(), new File(mTestPackageDir, "Main.class"));
+        Files.write(Interfaces.myCharSequence(), new File(mTestPackageDir, "MyCharSequence.class"));
+        Files.write(Interfaces.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
+        Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
+        Files.write(Interfaces.doesSomething(), new File(mTestPackageDir, "DoesSomething.class"));
+        Files.write(Interfaces.namedRunnable(), new File(mTestPackageDir, "NamedRunnable.class"));
+        Files.write(Interfaces.namedRunnableImpl(), new File(mTestPackageDir, "NamedRunnableImpl.class"));
         Files.write(
-                TestClasses.Interfaces.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
-        Files.write(TestClasses.Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
-        Files.write(TestClasses.Interfaces.doesSomething(), new File(mTestPackageDir, "DoesSomething.class"));
-        Files.write(
-                TestClasses.Interfaces.implementationFromSuperclass(),
+                Interfaces.implementationFromSuperclass(),
                 new File(mTestPackageDir, "ImplementationFromSuperclass.class"));
 
         // When:
@@ -207,16 +209,51 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
     }
 
     @Test
+    public void interfaces_sdkInterface_implementedIndirectly() throws Exception {
+        // Given:
+        Files.write(Interfaces.main(), new File(mTestPackageDir, "Main.class"));
+        Files.write(Interfaces.namedRunnable(), new File(mTestPackageDir, "NamedRunnable.class"));
+        Files.write(Interfaces.namedRunnableImpl(), new File(mTestPackageDir, "NamedRunnableImpl.class"));
+        Files.write(Interfaces.myCharSequence(), new File(mTestPackageDir, "MyCharSequence.class"));
+        Files.write(Interfaces.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
+        Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
+        Files.write(Interfaces.doesSomething(), new File(mTestPackageDir, "DoesSomething.class"));
+        Files.write(
+                Interfaces.implementationFromSuperclass(),
+                new File(mTestPackageDir, "ImplementationFromSuperclass.class"));
+
+        // When:
+        run(
+                "Main",
+                "buildNamedRunnableImpl:()Ltest/NamedRunnableImpl;",
+                "callRunnable:(Ljava/lang/Runnable;)V");
+
+        // Then:
+        assertMembersLeft(
+                "Main",
+                "buildNamedRunnableImpl:()Ltest/NamedRunnableImpl;",
+                "callRunnable:(Ljava/lang/Runnable;)V");
+        assertMembersLeft(
+                "NamedRunnableImpl",
+                "run:()V",
+                "<init>:()V");
+
+        assertMembersLeft("NamedRunnable");
+        assertImplements("NamedRunnableImpl", "test/NamedRunnable");
+    }
+
+    @Test
     public void interfaces_sdkInterface_classUsed_concreteType() throws Exception {
         // Given:
-        Files.write(TestClasses.Interfaces.main(), new File(mTestPackageDir, "Main.class"));
-        Files.write(TestClasses.Interfaces.myCharSequence(), new File(mTestPackageDir, "MyCharSequence.class"));
+        Files.write(Interfaces.namedRunnable(), new File(mTestPackageDir, "NamedRunnable.class"));
+        Files.write(Interfaces.namedRunnableImpl(), new File(mTestPackageDir, "NamedRunnableImpl.class"));
+        Files.write(Interfaces.main(), new File(mTestPackageDir, "Main.class"));
+        Files.write(Interfaces.myCharSequence(), new File(mTestPackageDir, "MyCharSequence.class"));
+        Files.write(Interfaces.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
+        Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
+        Files.write(Interfaces.doesSomething(), new File(mTestPackageDir, "DoesSomething.class"));
         Files.write(
-                TestClasses.Interfaces.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
-        Files.write(TestClasses.Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
-        Files.write(TestClasses.Interfaces.doesSomething(), new File(mTestPackageDir, "DoesSomething.class"));
-        Files.write(
-                TestClasses.Interfaces.implementationFromSuperclass(),
+                Interfaces.implementationFromSuperclass(),
                 new File(mTestPackageDir, "ImplementationFromSuperclass.class"));
 
         // When:
@@ -245,14 +282,15 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
     @Test
     public void interfaces_implementationFromSuperclass() throws Exception {
         // Given:
-        Files.write(TestClasses.Interfaces.main(), new File(mTestPackageDir, "Main.class"));
+        Files.write(Interfaces.main(), new File(mTestPackageDir, "Main.class"));
+        Files.write(Interfaces.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
+        Files.write(Interfaces.myCharSequence(), new File(mTestPackageDir, "MyCharSequence.class"));
+        Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
+        Files.write(Interfaces.namedRunnable(), new File(mTestPackageDir, "NamedRunnable.class"));
+        Files.write(Interfaces.namedRunnableImpl(), new File(mTestPackageDir, "NamedRunnableImpl.class"));
+        Files.write(Interfaces.doesSomething(), new File(mTestPackageDir, "DoesSomething.class"));
         Files.write(
-                TestClasses.Interfaces.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
-        Files.write(TestClasses.Interfaces.myCharSequence(), new File(mTestPackageDir, "MyCharSequence.class"));
-        Files.write(TestClasses.Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
-        Files.write(TestClasses.Interfaces.doesSomething(), new File(mTestPackageDir, "DoesSomething.class"));
-        Files.write(
-                TestClasses.Interfaces.implementationFromSuperclass(),
+                Interfaces.implementationFromSuperclass(),
                 new File(mTestPackageDir, "ImplementationFromSuperclass.class"));
 
         // When:
@@ -283,16 +321,61 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
     }
 
     @Test
+    public void interfaces_implementationFromSuperclass_interfaceInheritance() throws Exception {
+        // Given:
+        Files.write(Interfaces.main(), new File(mTestPackageDir, "Main.class"));
+        Files.write(Interfaces.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
+        Files.write(Interfaces.mySubInterface(), new File(mTestPackageDir, "MySubInterface.class"));
+        Files.write(Interfaces.myCharSequence(), new File(mTestPackageDir, "MyCharSequence.class"));
+        Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
+        Files.write(Interfaces.namedRunnable(), new File(mTestPackageDir, "NamedRunnable.class"));
+        Files.write(Interfaces.namedRunnableImpl(), new File(mTestPackageDir, "NamedRunnableImpl.class"));
+        Files.write(Interfaces.doesSomething(), new File(mTestPackageDir, "DoesSomething.class"));
+        Files.write(
+                Interfaces.implementationFromSuperclass_subInterface(),
+                new File(mTestPackageDir, "ImplementationFromSuperclass.class"));
+
+        // When:
+        run(
+                "Main",
+                "useImplementationFromSuperclass:(Ltest/ImplementationFromSuperclass;)V",
+                "useMyInterface:(Ltest/MyInterface;)V");
+
+        // Then:
+        assertMembersLeft(
+                "Main",
+                "useImplementationFromSuperclass:(Ltest/ImplementationFromSuperclass;)V",
+                "useMyInterface:(Ltest/MyInterface;)V");
+        assertMembersLeft("ImplementationFromSuperclass");
+        assertMembersLeft(
+                "MyInterface",
+                "doSomething:(Ljava/lang/Object;)V");
+
+        // This is the tricky part: this method should be kept, because a subclass is using it to
+        // implement an interface.
+        assertMembersLeft(
+                "DoesSomething",
+                "doSomething:(Ljava/lang/Object;)V");
+
+        assertMembersLeft("MySubInterface");
+        assertClassSkipped("MyImpl");
+        assertClassSkipped("MyCharSequence");
+
+        assertImplements("ImplementationFromSuperclass", "test/MySubInterface");
+    }
+
+    @Test
     public void interfaces_sdkInterface_classNotUsed() throws Exception {
         // Given:
-        Files.write(TestClasses.Interfaces.main(), new File(mTestPackageDir, "Main.class"));
-        Files.write(TestClasses.Interfaces.myCharSequence(), new File(mTestPackageDir, "MyCharSequence.class"));
+        Files.write(Interfaces.main(), new File(mTestPackageDir, "Main.class"));
+        Files.write(Interfaces.myCharSequence(), new File(mTestPackageDir, "MyCharSequence.class"));
+        Files.write(Interfaces.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
+        Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
+        Files.write(Interfaces.namedRunnable(), new File(mTestPackageDir, "NamedRunnable.class"));
+        Files.write(Interfaces.namedRunnableImpl(), new File(mTestPackageDir, "NamedRunnableImpl.class"));
+        Files.write(Interfaces.doesSomething(), new File(mTestPackageDir, "DoesSomething.class"));
         Files.write(
-                TestClasses.Interfaces.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
-        Files.write(TestClasses.Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
-        Files.write(TestClasses.Interfaces.doesSomething(), new File(mTestPackageDir, "DoesSomething.class"));
-        Files.write(
-                TestClasses.Interfaces.implementationFromSuperclass(),
+                Interfaces.implementationFromSuperclass(),
                 new File(mTestPackageDir, "ImplementationFromSuperclass.class"));
 
         // When:
@@ -312,14 +395,15 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
     @Test
     public void interfaces_appInterface_abstractType() throws Exception {
         // Given:
-        Files.write(TestClasses.Interfaces.main(), new File(mTestPackageDir, "Main.class"));
-        Files.write(TestClasses.Interfaces.myCharSequence(), new File(mTestPackageDir, "MyCharSequence.class"));
+        Files.write(Interfaces.main(), new File(mTestPackageDir, "Main.class"));
+        Files.write(Interfaces.myCharSequence(), new File(mTestPackageDir, "MyCharSequence.class"));
+        Files.write(Interfaces.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
+        Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
+        Files.write(Interfaces.namedRunnable(), new File(mTestPackageDir, "NamedRunnable.class"));
+        Files.write(Interfaces.namedRunnableImpl(), new File(mTestPackageDir, "NamedRunnableImpl.class"));
+        Files.write(Interfaces.doesSomething(), new File(mTestPackageDir, "DoesSomething.class"));
         Files.write(
-                TestClasses.Interfaces.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
-        Files.write(TestClasses.Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
-        Files.write(TestClasses.Interfaces.doesSomething(), new File(mTestPackageDir, "DoesSomething.class"));
-        Files.write(
-                TestClasses.Interfaces.implementationFromSuperclass(),
+                Interfaces.implementationFromSuperclass(),
                 new File(mTestPackageDir, "ImplementationFromSuperclass.class"));
 
         // When:
@@ -348,14 +432,15 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
     @Test
     public void interfaces_appInterface_concreteType() throws Exception {
         // Given:
-        Files.write(TestClasses.Interfaces.main(), new File(mTestPackageDir, "Main.class"));
-        Files.write(TestClasses.Interfaces.myCharSequence(), new File(mTestPackageDir, "MyCharSequence.class"));
+        Files.write(Interfaces.main(), new File(mTestPackageDir, "Main.class"));
+        Files.write(Interfaces.myCharSequence(), new File(mTestPackageDir, "MyCharSequence.class"));
+        Files.write(Interfaces.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
+        Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
+        Files.write(Interfaces.namedRunnable(), new File(mTestPackageDir, "NamedRunnable.class"));
+        Files.write(Interfaces.namedRunnableImpl(), new File(mTestPackageDir, "NamedRunnableImpl.class"));
+        Files.write(Interfaces.doesSomething(), new File(mTestPackageDir, "DoesSomething.class"));
         Files.write(
-                TestClasses.Interfaces.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
-        Files.write(TestClasses.Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
-        Files.write(TestClasses.Interfaces.doesSomething(), new File(mTestPackageDir, "DoesSomething.class"));
-        Files.write(
-                TestClasses.Interfaces.implementationFromSuperclass(),
+                Interfaces.implementationFromSuperclass(),
                 new File(mTestPackageDir, "ImplementationFromSuperclass.class"));
 
         // When:
@@ -375,14 +460,15 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
     @Test
     public void interfaces_appInterface_interfaceNotUsed() throws Exception {
         // Given:
-        Files.write(TestClasses.Interfaces.main(), new File(mTestPackageDir, "Main.class"));
-        Files.write(TestClasses.Interfaces.myCharSequence(), new File(mTestPackageDir, "MyCharSequence.class"));
+        Files.write(Interfaces.main(), new File(mTestPackageDir, "Main.class"));
+        Files.write(Interfaces.myCharSequence(), new File(mTestPackageDir, "MyCharSequence.class"));
+        Files.write(Interfaces.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
+        Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
+        Files.write(Interfaces.namedRunnable(), new File(mTestPackageDir, "NamedRunnable.class"));
+        Files.write(Interfaces.namedRunnableImpl(), new File(mTestPackageDir, "NamedRunnableImpl.class"));
+        Files.write(Interfaces.doesSomething(), new File(mTestPackageDir, "DoesSomething.class"));
         Files.write(
-                TestClasses.Interfaces.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
-        Files.write(TestClasses.Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
-        Files.write(TestClasses.Interfaces.doesSomething(), new File(mTestPackageDir, "DoesSomething.class"));
-        Files.write(
-                TestClasses.Interfaces.implementationFromSuperclass(),
+                Interfaces.implementationFromSuperclass(),
                 new File(mTestPackageDir, "ImplementationFromSuperclass.class"));
 
         // When:

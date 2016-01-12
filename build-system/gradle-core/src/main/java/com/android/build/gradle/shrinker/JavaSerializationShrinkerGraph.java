@@ -197,7 +197,6 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     @Override
     public boolean incrementAndCheck(@NonNull String memberOrClass, @NonNull DependencyType type, @NonNull CounterSet counterSet) {
         try {
-
             return getCounters(counterSet).mReferenceCounters.get(memberOrClass).incrementAndCheck(type);
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
@@ -558,6 +557,8 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
         int required = 0;
         int ifClassKept = 0;
         int classIsKept = 0;
+        int superInterfaceKept = 0;
+        int interfaceImplemented = 0;
 
         synchronized boolean incrementAndCheck(DependencyType type) {
             boolean before = isReachable();
@@ -572,13 +573,23 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
                 case CLASS_IS_KEPT:
                     classIsKept++;
                     break;
+                case SUPERINTERFACE_KEPT:
+                    superInterfaceKept++;
+                    break;
+                case INTERFACE_IMPLEMENTED:
+                    interfaceImplemented++;
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown dependency type.");
             }
             boolean after = isReachable();
             return before != after;
         }
 
         synchronized boolean isReachable() {
-            return required > 0 || (ifClassKept > 0 && classIsKept > 0);
+            return required > 0
+                    || (ifClassKept > 0 && classIsKept > 0)
+                    || (superInterfaceKept > 0 && interfaceImplemented > 0);
         }
     }
 }
