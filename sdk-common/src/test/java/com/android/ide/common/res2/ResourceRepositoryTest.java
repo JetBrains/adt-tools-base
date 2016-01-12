@@ -46,14 +46,15 @@ public class ResourceRepositoryTest extends BaseTestCase {
         assertEquals(1, items.get(ResourceType.RAW).size());
         assertEquals(4, items.get(ResourceType.LAYOUT).size());
         assertEquals(1, items.get(ResourceType.COLOR).size());
-        assertEquals(4, items.get(ResourceType.STRING).size());
+        assertEquals(6, items.get(ResourceType.STRING).size());
         assertEquals(1, items.get(ResourceType.STYLE).size());
-        assertEquals(1, items.get(ResourceType.ARRAY).size());
+        assertEquals(3, items.get(ResourceType.ARRAY).size());
         assertEquals(7, items.get(ResourceType.ATTR).size());
         assertEquals(1, items.get(ResourceType.DECLARE_STYLEABLE).size());
         assertEquals(2, items.get(ResourceType.DIMEN).size());
         assertEquals(1, items.get(ResourceType.ID).size());
         assertEquals(1, items.get(ResourceType.INTEGER).size());
+        assertEquals(2, items.get(ResourceType.PLURALS).size());
     }
 
     public void testMergedResourcesByName() throws Exception {
@@ -76,8 +77,12 @@ public class ResourceRepositoryTest extends BaseTestCase {
                 "string/basic_string",
                 "string/xliff_string",
                 "string/styled_string",
+                "string/two",
+                "string/many",
                 "style/style",
                 "array/string_array",
+                "array/integer_array",
+                "array/my_colors",
                 "attr/dimen_attr",
                 "attr/string_attr",
                 "attr/enum_attr",
@@ -89,7 +94,9 @@ public class ResourceRepositoryTest extends BaseTestCase {
                 "dimen/dimen",
                 "dimen?sw600dp-v13/offset",
                 "id/item_id",
-                "integer/integer"
+                "integer/integer",
+                "plurals/plurals",
+                "plurals/plurals_with_bad_quantity"
         );
     }
 

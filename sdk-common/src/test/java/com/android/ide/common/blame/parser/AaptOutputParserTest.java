@@ -340,7 +340,9 @@ public class AaptOutputParserTest extends TestCase {
 
         writeToFile(
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-                        "<resources xmlns:ns1=\"urn:oasis:names:tc:xliff:document:1.2\">\n" +
+                        "<resources xmlns:ns1=\"urn:oasis:names:tc:xliff:document:1.2\"" +
+                        "           xmlns:tools=\"http://schemas.android.com/tools\"" +
+                        "           xmlns:alias_for_tools=\"http://schemas.android.com/tools\">\n" +
                         "\n" +
                         "    <!-- From: src/test/resources/testData/resources/baseSet/values/values.xml -->\n"
                         +
@@ -445,7 +447,7 @@ public class AaptOutputParserTest extends TestCase {
         assertEquals("[message text]", messageText, message.getText());
         assertEquals(1, message.getSourceFilePositions().size());
         SourcePosition pos = message.getSourceFilePositions().get(0).getPosition();
-        assertEquals("[position line]", 9, pos.getStartLine() + 1);
+        assertEquals("[position line]", 11, pos.getStartLine() + 1);
         assertEquals("[position column]", 35, pos.getStartColumn() + 1);
     }
 

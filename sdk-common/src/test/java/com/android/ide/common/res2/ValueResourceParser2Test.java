@@ -17,8 +17,11 @@
 package com.android.ide.common.res2;
 
 import com.android.SdkConstants;
+import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.testutils.TestUtils;
 import com.google.common.base.Charsets;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 
 import org.w3c.dom.Document;
@@ -40,7 +43,7 @@ public class ValueResourceParser2Test extends BaseTestCase {
     public void testParsedResourcesByCount() throws Exception {
         List<ResourceItem> resources = getParsedResources();
 
-        assertEquals(23, resources.size());
+        assertEquals(28, resources.size());
     }
 
     public void testParsedResourcesByName() throws Exception {
@@ -57,8 +60,12 @@ public class ValueResourceParser2Test extends BaseTestCase {
                 "string/basic_string",
                 "string/xliff_string",
                 "string/styled_string",
+                "string/two",
+                "string/many",
                 "style/style",
                 "array/string_array",
+                "array/integer_array",
+                "array/my_colors",
                 "attr/dimen_attr",
                 "attr/string_attr",
                 "attr/enum_attr",
@@ -71,12 +78,51 @@ public class ValueResourceParser2Test extends BaseTestCase {
                 "id/item_id",
                 "integer/integer",
                 "layout/layout_ref",
-                "plurals/plurals"
+                "plurals/plurals",
+                "plurals/plurals_with_bad_quantity"
         };
 
         for (String name : resourceNames) {
             assertNotNull(name, resourceMap.get(name));
         }
+    }
+
+    private static class ResourceFinder implements Predicate<ResourceItem> {
+        private final String myKeyToFind;
+
+        ResourceFinder(String keyToFind) {
+            myKeyToFind = keyToFind;
+        }
+
+        @Override
+        public boolean apply(ResourceItem input) {
+            return input.getKey().equals(myKeyToFind);
+        }
+    }
+
+    public void testParsedResourceByValues() throws Exception {
+        List<ResourceItem> resources = getParsedResources();
+        // Test tools:quantity parsing in plurals.
+        ResourceItem plurals = Iterables.find(resources, new ResourceFinder("plurals/plurals"));
+        ResourceValue pluralsValue = plurals.getResourceValue(false);
+        assertNotNull(pluralsValue);
+        assertEquals("@string/two", pluralsValue.getValue());
+
+        ResourceItem pluralsWithBadQuantity = Iterables.find(resources, new ResourceFinder("plurals/plurals_with_bad_quantity"));
+        ResourceValue pluralsValueBadQuantity = pluralsWithBadQuantity.getResourceValue(false);
+        assertNotNull(pluralsValueBadQuantity);
+        assertEquals("one", pluralsValueBadQuantity.getValue());
+
+        // Test tools:index parsing in arrays.
+        ResourceItem stringArray = Iterables.find(resources, new ResourceFinder("array/string_array"));
+        ResourceValue stringArrayValue = stringArray.getResourceValue(false);
+        assertNotNull(stringArrayValue);
+        assertEquals("GHI", stringArrayValue.getValue());
+
+        ResourceItem integerArray = Iterables.find(resources, new ResourceFinder("array/integer_array"));
+        ResourceValue integerArrayValue = integerArray.getResourceValue(false);
+        assertNotNull(integerArrayValue);
+        assertEquals("3", integerArrayValue.getValue());
     }
 
     private static List<ResourceItem> getParsedResources() throws MergingException {
