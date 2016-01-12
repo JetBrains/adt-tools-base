@@ -52,6 +52,7 @@ class FileUseMap {
 
     /**
      * Creates a new, empty file map.
+     *
      * @param size the size of the file
      */
     FileUseMap(int size) {
@@ -69,6 +70,7 @@ class FileUseMap {
      * Adds a new file to the map. The interval specified by <em>entry</em> must fit inside an
      * empty entry in the map. That entry will be replaced by entry and additional free entries
      * will be added before and after if needed to make sure no spaces exist on the map.
+     *
      * @param entry the entry to add
      */
     private void add(@NonNull FileUseMapEntry<?> entry) {
@@ -87,6 +89,7 @@ class FileUseMap {
     /**
      * Removes a file from the map, replacing it with an empty one that is then coalesced with
      * neighbors (if the neighbors are free).
+     *
      * @param entry the entry
      */
     void remove(@NonNull FileUseMapEntry<?> entry) {
@@ -107,6 +110,7 @@ class FileUseMap {
      * {@link #extend(long)}.
      * <p>
      * It is assumed that (<em>start</em>,<em>end</em>) will fall in an empty block in the map.
+     *
      * @param start the start of this entry
      * @param end the end of the entry
      * @param store extra data to store with the entry
@@ -125,6 +129,7 @@ class FileUseMap {
 
     /**
      * Finds the entry that fully contains the given one. It is assumed that one exists.
+     *
      * @param entry the entry whose container we're looking for
      * @return the container
      */
@@ -141,6 +146,7 @@ class FileUseMap {
     /**
      * Splits a container to add an entry, adding new free entries before and after the provided
      * entry if needed.
+     *
      * @param container the container entry, a free entry that is in {@link #mMap} that that
      * encloses <em>entry</em>
      * @param entry the entry that will be used to split <em>container</em>
@@ -177,7 +183,8 @@ class FileUseMap {
 
     /**
      * Coalesces a free entry replacing it and neighboring free entries with a single, larger
-     * entry. This method does nothing if <em>entry</em> does not have free neighbors
+     * entry. This method does nothing if <em>entry</em> does not have free neighbors.
+     *
      * @param entry the free entry to coalesce with neighbors
      */
     private void coalesce(@NonNull FileUseMapEntry<?> entry) {
@@ -248,6 +255,7 @@ class FileUseMap {
 
     /**
      * Obtains the size of the map.
+     *
      * @return the size
      */
     long size() {
@@ -256,6 +264,7 @@ class FileUseMap {
 
     /**
      * Obtains the largest used offset in the map. This will be size of the map after truncation.
+     *
      * @return the size of the file discounting the last block if it is empty
      */
     long usedSize() {
@@ -279,7 +288,8 @@ class FileUseMap {
 
     /**
      * Extends the map to guarantee it has at least <em>size</em> bytes. If the current size is
-     * as large as <em>size</em>, this method does nothing
+     * as large as <em>size</em>, this method does nothing.
+     *
      * @param size the new size of the map that cannot be smaller that the current size
      */
     void extend(long size) {
@@ -303,7 +313,6 @@ class FileUseMap {
      * best-fit algorithm. If no free contiguous block exists in the map that can hold the provided
      * size then the first free index at the end of the map is provided. This means that the map
      * may need to be extended before data can be added.
-     * <p>
      *
      * @param size the size of the contiguous area requested
      * @param alignOffset an offset to which alignment needs to be computed (see method description)

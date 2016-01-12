@@ -85,6 +85,7 @@ abstract class ZipField {
 
     /**
      * Creates a new field that does not contain a fixed value.
+     *
      * @param offset the field's offset in the record
      * @param size the field size
      * @param name the field's name
@@ -103,6 +104,7 @@ abstract class ZipField {
 
     /**
      * Creates a new field that contains a fixed value.
+     *
      * @param offset the field's offset in the record
      * @param size the field size
      * @param expected the expected field value
@@ -122,6 +124,7 @@ abstract class ZipField {
     /**
      * Checks whether a value verifies the field's invariants. Nothing happens if the value verifies
      * the invariants.
+     *
      * @param value the value
      * @throws IOException the invariants are not verified
      */
@@ -136,6 +139,7 @@ abstract class ZipField {
 
     /**
      * Reads a field value.
+     *
      * @param bytes the byte source with the record data
      * @return the value of the field
      * @throws IOException failed to read the field
@@ -163,6 +167,7 @@ abstract class ZipField {
     /**
      * Verifies that the field has the expected value. The field must have been created with the
      * constructor that defines the expected value.
+     *
      * @param bytes the byte source with the record data
      * @throws IOException failed to read the field or the field does not have the expected value
      */
@@ -173,6 +178,7 @@ abstract class ZipField {
 
     /**
      * Verifies that the field has an expected value.
+     *
      * @param bytes the byte source with the record data
      * @param expected the value we expect the field to have; if this field has invariants, the
      * value must verify them
@@ -189,6 +195,7 @@ abstract class ZipField {
 
     /**
      * Writes the value of the field.
+     *
      * @param output where to write the field; the field will be written at the beginning of the
      * stream
      * @param value the value to write
@@ -212,6 +219,7 @@ abstract class ZipField {
 
     /**
      * Writes the value of the field. The field must have an expected value set in the constructor.
+     *
      * @param output where to write the field; the field will be written at the beginning of the
      * stream
      * @throws IOException failed to write the value in the stream
@@ -224,6 +232,7 @@ abstract class ZipField {
     /**
      * Obtains the offset at which the field ends. This is the exact offset at which the next
      * field starts.
+     *
      * @return the end offset
      */
     int endOffset() {
@@ -237,6 +246,7 @@ abstract class ZipField {
 
         /**
          * Creates a new field.
+         *
          * @param offset the field's offset in the record
          * @param name the field's name
          * @param invariants the invariants that must be verified by the field
@@ -247,6 +257,7 @@ abstract class ZipField {
 
         /**
          * Creates a new field that contains a fixed value.
+         *
          * @param offset the field's offset in the record
          * @param expected the expected field value
          * @param name the field's name
@@ -262,6 +273,7 @@ abstract class ZipField {
     static class F4 extends ZipField {
         /**
          * Creates a new field.
+         *
          * @param offset the field's offset in the record
          * @param name the field's name
          * @param invariants the invariants that must be verified by the field
@@ -272,6 +284,7 @@ abstract class ZipField {
 
         /**
          * Creates a new field that contains a fixed value.
+         *
          * @param offset the field's offset in the record
          * @param expected the expected field value
          * @param name the field's name

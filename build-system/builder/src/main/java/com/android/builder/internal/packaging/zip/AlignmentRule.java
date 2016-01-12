@@ -46,6 +46,7 @@ public class AlignmentRule {
 
     /**
      * Creates a new alignment rule.
+     *
      * @param pattern the pattern to apply to file names to decide whether the rules applies or not
      * to a file; this will be checked using {@code matches()}, not {@code find()}
      * @param alignment the alignment value, must be non-negative
@@ -59,6 +60,7 @@ public class AlignmentRule {
 
     /**
      * Obtains the pattern used to match files.
+     *
      * @return the pattern
      */
     @NonNull
@@ -67,7 +69,8 @@ public class AlignmentRule {
     }
 
     /**
-     * Obtains the alignment value for the file
+     * Obtains the alignment value for the file.
+     *
      * @return the alignment
      */
     public int getAlignment() {

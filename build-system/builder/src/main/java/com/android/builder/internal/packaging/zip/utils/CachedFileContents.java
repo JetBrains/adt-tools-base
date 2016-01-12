@@ -64,6 +64,7 @@ public class CachedFileContents<T> {
     /**
      * Creates a new contents. When the file is written, {@link #closed(Object)} should be invoked
      * to set the cache.
+     *
      * @param file the file
      */
     public CachedFileContents(@NonNull File file) {
@@ -75,6 +76,7 @@ public class CachedFileContents<T> {
      * cache and register the file's timestamp to later detect if it has been modified.
      * <p>
      * This method can be called as many times as the file has been written.
+     *
      * @param cache an optional cache to save
      */
     public void closed(T cache) {
@@ -85,6 +87,7 @@ public class CachedFileContents<T> {
     /**
      * Are the cached contents still valid? If this method determines that the file has been
      * modified since the last time {@link #closed(Object)} was invoked.
+     *
      * @return are the cached contents still valid? If this method returns {@code false}, the
      * cache is cleared
      */
@@ -100,6 +103,7 @@ public class CachedFileContents<T> {
     /**
      * Obtains the cached data set with {@link #closed(Object)} if the file has not been modified
      * since {@link #closed(Object)} was invoked.
+     *
      * @return the last cached data or {@code null} if the file has been modified since
      * {@link #closed(Object)} has been invoked
      */

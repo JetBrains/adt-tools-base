@@ -39,6 +39,7 @@ public enum CompressionMethod {
 
     /**
      * Creates a new compression method.
+     *
      * @param methodCode the code used in the zip file that identifies the compression method
      */
     CompressionMethod(int methodCode) {
@@ -47,6 +48,7 @@ public enum CompressionMethod {
 
     /**
      * Obtains the compression method that corresponds to the provided code.
+     *
      * @param code the code
      * @return the method or {@code null} if no method has the provided code
      */

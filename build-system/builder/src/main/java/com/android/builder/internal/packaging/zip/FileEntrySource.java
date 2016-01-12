@@ -36,6 +36,7 @@ public class FileEntrySource implements EntrySource {
 
     /**
      * Creates a new entry source.
+     *
      * @param file the file where data comes from
      */
     public FileEntrySource(@NonNull File file) {

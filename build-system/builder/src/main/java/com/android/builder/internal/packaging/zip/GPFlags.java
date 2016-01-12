@@ -74,6 +74,7 @@ class GPFlags {
 
     /**
      * Creates a new flags object.
+     *
      * @param value the value of the bit mask
      */
     private GPFlags(long value) {
@@ -84,6 +85,7 @@ class GPFlags {
 
     /**
      * Obtains the flags value.
+     *
      * @return the value of the bit mask
      */
     public long getValue() {
@@ -92,6 +94,7 @@ class GPFlags {
 
     /**
      * Is the CRC computation deferred?
+     *
      * @return is the CRC computation deferred?
      */
     public boolean isDeferredCrc() {
@@ -100,6 +103,7 @@ class GPFlags {
 
     /**
      * Creates a new default bit mask.
+     *
      * @return the new bit mask
      */
     @NonNull
@@ -110,6 +114,7 @@ class GPFlags {
     /**
      * Creates the flag information from a byte. This method will also validate that only
      * supported options are defined in the flag.
+     *
      * @param bits the bit mask
      * @return the created flag information
      * @throws IOException unsupported options are used in the bit mask

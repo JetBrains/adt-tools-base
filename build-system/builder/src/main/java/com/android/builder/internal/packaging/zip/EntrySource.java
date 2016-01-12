@@ -31,6 +31,7 @@ public interface EntrySource {
     /**
      * Obtains a stream where the source data can be read from. This method can be called multiple
      * times and should return a different stream. It can be seen as a factory method.
+     *
      * @return the stream that should return exactly {@link #size()} bytes
      * @throws IOException failed to open the source
      */
@@ -39,6 +40,7 @@ public interface EntrySource {
 
     /**
      * Obtains the size of the entry source.
+     *
      * @return the number of bytes in the source
      */
     long size();
@@ -47,6 +49,7 @@ public interface EntrySource {
      * If this source is based on expansion of an inner, compressed source, obtain the inner
      * source. This may be used to perform optimizations such as avoiding
      * decompression-for-compression.
+     *
      * @return the inner compressed source, if any, or {@code null} if this source is already
      * compressed or has no inner source
      */

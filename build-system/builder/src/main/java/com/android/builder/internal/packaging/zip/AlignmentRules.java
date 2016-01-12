@@ -49,6 +49,7 @@ public class AlignmentRules {
 
     /**
      * Adds a new alignment rule to the end of the list.
+     *
      * @param rule the rule to add
      */
     public void add(@NonNull AlignmentRule rule) {
@@ -57,6 +58,7 @@ public class AlignmentRules {
 
     /**
      * Finds the alignment of a file with a certain path.
+     *
      * @param path the path
      * @return the alignment or {@code 1} if there are no rules for this file, never returns less
      * than {@code 1}

@@ -254,6 +254,7 @@ public class ZFile implements Closeable {
      * point and {@code ZFile} will contain an empty structure. However, an (empty) zip file will
      * be created if either {@link #update()} or {@link #close()} are used. If a zip file exists,
      * it will be parsed and read.
+     *
      * @param file the zip file
      * @throws IOException some file exists but could not be read
      */
@@ -304,6 +305,7 @@ public class ZFile implements Closeable {
     /**
      * Obtains all entries in the file. Entries themselves may be or not written in disk. However,
      * all of them can be open for reading.
+     *
      * @return all entries in the zip
      */
     @NonNull
@@ -318,6 +320,7 @@ public class ZFile implements Closeable {
 
     /**
      * Obtains an entry at a given path in the zip.
+     *
      * @param path the path
      * @return the entry at the path or {@code null} if none exists
      */
@@ -334,6 +337,7 @@ public class ZFile implements Closeable {
     /**
      * Reads all the data in the zip file, except the contents of the entries themselves. This
      * method will populate the directory and maps in the instance variables.
+     *
      * @throws IOException failed to read the zip file
      */
     private void readData() throws IOException {
@@ -386,6 +390,7 @@ public class ZFile implements Closeable {
 
     /**
      * Finds the EOCD marker and reads it. It will populate the {@link #mEocdEntry} variable.
+     *
      * @throws IOException failed to read the EOCD
      */
     private void readEocd() throws IOException {
@@ -485,6 +490,7 @@ public class ZFile implements Closeable {
      * method can only be called after the EOCD has been read. If the central directory is empty
      * (if there are no files on the zip archive), then {@link #mDirectoryEntry} will be set to
      * {@code null}.
+     *
      * @throws IOException failed to read the central directory
      */
     private void readCentralDirectory() throws IOException {
@@ -522,6 +528,7 @@ public class ZFile implements Closeable {
      * Opens a portion of the zip for reading. The zip must be open for this method to be invoked.
      * Note that if the zip has not been updated, the individual zip entries may not have been
      * written yet.
+     *
      * @param start the index within the zip file to start reading
      * @param end the index within the zip file to end reading (the actual byte pointed by
      * <em>end</em> will not be read)
@@ -588,6 +595,7 @@ public class ZFile implements Closeable {
     /**
      * Deletes an entry from the zip. This method does not actually delete anything on disk. It
      * just changes in-memory structures. Use {@link #update()} to update the contents on disk.
+     *
      * @param entry the entry to delete
      * @param notify should listeners be notified of the deletion? This will only be
      * {@code false} if the entry is being removed as part of a replacement
@@ -722,6 +730,7 @@ public class ZFile implements Closeable {
      * Writes an entry's data in the zip file. This includes everything: the local header and
      * the data itself. After writing, the entry is updated with the offset and its source replaced
      * with a source that reads from the zip file.
+     *
      * @param entry the entry to write
      * @param offset the offset at which the entry should be written
      * @throws IOException failed to write the entry
@@ -901,6 +910,7 @@ public class ZFile implements Closeable {
      * Writes the EOCD to the end of the zip file. This creates a new {@link #mEocdEntry}. The
      * central directory must already be written. If {@link #mDirectoryEntry} is {@code null}, then
      * the zip file must not have any entries.
+     *
      * @throws IOException failed to write the EOCD
      */
     private void appendEocd() throws IOException {
@@ -935,6 +945,7 @@ public class ZFile implements Closeable {
 
     /**
      * Closes the file, if it is open.
+     *
      * @throws IOException failed to close the file
      */
     private void innerClose() throws IOException {
@@ -957,6 +968,7 @@ public class ZFile implements Closeable {
     /**
      * Opens (or reopens) the zip file as read-write. This method will ensure that
      * {@link #mRaf} is not null and open for writing.
+     *
      * @throws IOException failed to open the file, failed to close it or the file was closed and
      * has been modified outside the control of this object
      */
@@ -1007,6 +1019,7 @@ public class ZFile implements Closeable {
      * <p>
      * Adding a file with the same name as an existing file will replace that file in the
      * archive.
+     *
      * @param name the file name (<em>i.e.</em>, path); paths should be defined using slashes
      * and the name should not end in slash
      * @param source the source for the file's data
@@ -1067,6 +1080,7 @@ public class ZFile implements Closeable {
     /**
      * Adds a new file to the archive. This will not write anything to the zip file, the change is
      * in-memory only.
+     *
      * @param newFileData the data for the new file, including correct sizes and CRC32 data. The
      * offset should be set to {@code -1} because the data should not exist anywhere.
      * @param source the data source
@@ -1133,6 +1147,7 @@ public class ZFile implements Closeable {
 
     /**
      * Performs in-memory deflation of a byte array.
+     *
      * @param in the input data
      * @return the deflated data
      * @throws IOException failed to deflate
@@ -1163,6 +1178,7 @@ public class ZFile implements Closeable {
      * This method will not perform any changes in itself, it will only update in-memory data
      * structures. To actually write the zip file, invoke either {@link #update()} or
      * {@link #close()}.
+     *
      * @param src the source archive
      * @param ignorePatterns file name patterns in <em>src</em> that should be ignored by merging;
      * merging will behave as if these files were not there; file name matching is done by using
@@ -1260,6 +1276,7 @@ public class ZFile implements Closeable {
     /**
      * Obtains the set of alignment rules in use by this file. Note that changes to the rules
      * will only apply in general to new files (see class description for details).
+     *
      * @return the rules that can be changed
      */
     @NonNull
@@ -1270,6 +1287,7 @@ public class ZFile implements Closeable {
     /**
      * Realigns all entries in the zip. This is equivalent to call {@link StoredEntry#realign()}
      * for all entries in the zip file.
+     *
      * @return has any entry been changed? Note that for entries that have not yet been written on
      * the file, realignment does not count as a change as nothing needs to be updated in the file;
      * entries that have been updated may have been recreated and the existing references outside
@@ -1289,6 +1307,7 @@ public class ZFile implements Closeable {
     /**
      * Realigns a stored entry, if necessary. Realignment is done by removing and re-adding the file
      * if it was not aligned.
+     *
      * @param entry the entry to realign
      * @return has the entry been changed? Note that if the entry has not yet been written on the
      * file, realignment does not count as a change as nothing needs to be updated in the file
@@ -1383,6 +1402,7 @@ public class ZFile implements Closeable {
 
     /**
      * Adds an extension to this zip file.
+     *
      * @param extension the listener to add
      */
     public void addZFileExtension(@NonNull ZFileExtension extension) {
@@ -1391,6 +1411,7 @@ public class ZFile implements Closeable {
 
     /**
      * Removes an extension from this zip file.
+     *
      * @param extension the listener to remove
      */
     public void removeZFileExtension(@NonNull ZFileExtension extension) {
@@ -1399,6 +1420,7 @@ public class ZFile implements Closeable {
 
     /**
      * Notifies all extensions, collecting their execution requests and running them.
+     *
      * @param function the function to apply to all listeners, it will generally invoke the
      * notification method on the listener and return the result of that invocation
      * @throws IOException failed to process some extensions
@@ -1430,6 +1452,7 @@ public class ZFile implements Closeable {
      * Directly writes data in the zip file. <strong>Incorrect use of this method may corrupt the
      * zip file</strong>. Invoking this method may force the zip to be reopened in read/write
      * mode.
+     *
      * @param offset the offset at which data should be written
      * @param data the data to write, may be an empty array
      * @param start start offset in  {@code data} where data to write is located
@@ -1458,6 +1481,7 @@ public class ZFile implements Closeable {
 
     /**
      * Same as {@code directWrite(offset, data, 0, data.length)}.
+     *
      * @param offset the offset at which data should be written
      * @param data the data to write, may be an empty array
      * @throws IOException failed to write the data
@@ -1469,6 +1493,7 @@ public class ZFile implements Closeable {
     /**
      * Directly reads data from the zip file. Invoking this method may force the zip to be reopened
      * in read/write mode.
+     *
      * @param offset the offset at which data should be written
      * @param data the array where read data should be stored
      * @param start start position in the array where to write data to
@@ -1504,6 +1529,7 @@ public class ZFile implements Closeable {
 
     /**
      * Same as {@code directRead(offset, data, 0, data.length)}.
+     *
      * @param offset the offset at which data should be read
      * @param data receives the read data, may be an empty array
      * @throws IOException failed to read the data
@@ -1515,6 +1541,7 @@ public class ZFile implements Closeable {
     /**
      * Reads exactly @code data.length} bytes of data, failing if it was not possible to read all
      * the requested data.
+     *
      * @param offset the offset at which to start reading
      * @param data the array that receives the data read
      * @throws IOException failed to read some data or there is not enough data to read
@@ -1529,6 +1556,7 @@ public class ZFile implements Closeable {
 
     /**
      * Adds all files and directories recursively.
+     *
      * @param file a file or directory; if it is a directory, all files and directories will be
      * added recursively
      * @param method a function that decides what compression method to apply to each file
@@ -1570,6 +1598,7 @@ public class ZFile implements Closeable {
     /**
      * Obtains the offset at which the central directory exists, or at which it will be written
      * if the zip file were to be flushed immediately.
+     *
      * @return the offset, in bytes, where the central directory is or will be written; this value
      * includes any extra offset for the central directory
      */
@@ -1595,6 +1624,7 @@ public class ZFile implements Closeable {
     /**
      * Obtains the size of the central directory, if the central directory is written in the zip
      * file.
+     *
      * @return the size of the central directory or {@code -1} if the central directory has not
      * been computed
      */
@@ -1612,6 +1642,7 @@ public class ZFile implements Closeable {
 
     /**
      * Obtains the offset of the EOCD record, if the EOCD has been written to the file.
+     *
      * @return the offset of the EOCD or {@code -1} if none exists yet
      */
     public long getEocdOffset() {
@@ -1624,6 +1655,7 @@ public class ZFile implements Closeable {
 
     /**
      * Obtains the size of the EOCD record, if the EOCD has been written to the file.
+     *
      * @return the size of the EOCD of {@code -1} it none exists yet
      */
     public long getEocdSize() {
@@ -1638,6 +1670,7 @@ public class ZFile implements Closeable {
      * Sets an extra offset for the central directory. See class description for details. Changing
      * this value will mark the file as dirty and force a rewrite of the central directory when
      * updated.
+     *
      * @param offset the offset or {@code 0} to write the central directory at its current location
      */
     public void setExtraDirectoryOffset(long offset) {
@@ -1651,6 +1684,7 @@ public class ZFile implements Closeable {
 
     /**
      * Obtains the extra offset for the central directory. See class description for details.
+     *
      * @return the offset or {@code 0} if no offset is set
      */
     public long getExtraDirectoryOffset() {
