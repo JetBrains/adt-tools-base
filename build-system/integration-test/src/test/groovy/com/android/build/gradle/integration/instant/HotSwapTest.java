@@ -17,28 +17,50 @@
 package com.android.build.gradle.integration.instant;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertNotNull;
 
+import com.android.annotations.NonNull;
+import com.android.build.gradle.OptionalCompilationStep;
+import com.android.build.gradle.integration.common.category.DeviceTests;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.truth.ApkSubject;
 import com.android.build.gradle.integration.common.truth.DexFileSubject;
+import com.android.build.gradle.integration.common.utils.DeviceHelper;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.builder.model.AndroidProject;
 import com.android.builder.model.InstantRun;
+import com.android.ddmlib.CollectingOutputReceiver;
+import com.android.ddmlib.IDevice;
+import com.android.ddmlib.IShellOutputReceiver;
+import com.android.ide.common.packaging.PackagingUtils;
+import com.android.sdklib.AndroidVersion;
+import com.android.tools.fd.client.AppState;
+import com.android.tools.fd.client.InstantRunClient;
+import com.android.tools.fd.client.UserFeedback;
+import com.android.utils.ILogger;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Iterables;
 import com.google.common.io.Files;
 import com.google.common.truth.Expect;
 
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Smoke test for hot swap builds.
  */
+@RunWith(MockitoJUnitRunner.class)
 public class HotSwapTest {
 
     @Rule
@@ -48,6 +70,12 @@ public class HotSwapTest {
 
     @Rule
     public Expect expect = Expect.create();
+
+    @Mock
+    UserFeedback userFeedback;
+
+    @Mock
+    ILogger iLogger;
 
     @Before
     public void activityClass() throws IOException {
@@ -60,7 +88,9 @@ public class HotSwapTest {
         InstantRun instantRunModel = InstantRunTestUtils
                 .getInstantRunModel(project.getSingleModel());
 
-        project.execute(InstantRunTestUtils.getInstantRunArgs(), "assembleDebug");
+        project.execute(
+                InstantRunTestUtils.getInstantRunArgs(19, OptionalCompilationStep.RESTART_ONLY),
+                "assembleDebug");
 
         // As no injected API level, will default to no splits.
         DexFileSubject dexFile = expect.about(ApkSubject.FACTORY)
@@ -72,10 +102,51 @@ public class HotSwapTest {
         checkHotSwapCompatibleChange(instantRunModel);
     }
 
+    @Test
+    @Category(DeviceTests.class)
+    public void connectToInstantRunServer() throws Exception {
+        project.execute("clean");
+        // Open project in simulated IDE
+        AndroidProject model = project.getSingleModel();
+        long token = PackagingUtils.computeApplicationHash(model.getBuildFolder());
+        InstantRun instantRunModel = InstantRunTestUtils.getInstantRunModel(model);
+
+        // Run first time on device
+        IDevice device = DeviceHelper.getIDevice();
+        Assume.assumeThat("Device api level", device.getVersion(), is(new AndroidVersion(23, null)));
+
+        project.execute(
+                InstantRunTestUtils.getInstantRunArgs(device, OptionalCompilationStep.RESTART_ONLY),
+                "assembleDebug");
+
+        // Deploy to device
+        InstantRunBuildContext context = new InstantRunBuildContext();
+        context.loadFromXmlFile(instantRunModel.getInfoFile());
+        assertNotNull("Last build should exist", context.getLastBuild());
+        InstantRunTestUtils.doInstall(device, context.getLastBuild().getArtifacts());
+
+        // Run app
+        InstantRunTestUtils.unlockDevice(device);
+        InstantRunTestUtils.runApp(device, "com.example.helloworld/.HelloWorld");
+
+        //Connect to device
+        InstantRunClient client =
+                new InstantRunClient("com.example.helloworld", userFeedback, iLogger, token, 8125);
+
+        // Give the app a chance to start
+        Thread.sleep(1000); // TODO: Is there a way to determine that the app is ready?
+
+        AppState appState = client.getAppState(device);
+        assertThat(appState).isEqualTo(AppState.FOREGROUND);
+
+        // Clean up
+        device.uninstallPackage("com.example.helloworld");
+    }
+
     /**
      * Check a hot-swap compatible change works as expected.
      */
-    private void checkHotSwapCompatibleChange(InstantRun instantRunModel) throws Exception {
+    private void checkHotSwapCompatibleChange(@NonNull InstantRun instantRunModel) throws Exception {
         createActivityClass("import java.util.logging.Logger;",
                 "Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).warning(\"Added some logging\");");
 
