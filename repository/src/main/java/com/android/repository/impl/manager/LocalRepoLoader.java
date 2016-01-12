@@ -23,6 +23,7 @@ import com.android.repository.api.FallbackLocalRepoLoader;
 import com.android.repository.api.LocalPackage;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RepoManager;
+import com.android.repository.api.RepoPackage;
 import com.android.repository.api.Repository;
 import com.android.repository.api.SchemaModule;
 import com.android.repository.impl.meta.GenericFactory;
@@ -157,7 +158,7 @@ public final class LocalRepoLoader {
             }
         }
         if (p != null) {
-            collector.put(p.getPath(), p);
+            addPackage(p, collector, progress);
         } else {
             for (File f : mFop.listFiles(root)) {
                 if (mFop.isDirectory(f)) {
@@ -165,6 +166,26 @@ public final class LocalRepoLoader {
                 }
             }
         }
+    }
+
+    private void addPackage(@NonNull LocalPackage p, @NonNull Map<String, LocalPackage> collector,
+            @NonNull ProgressIndicator progress) {
+        String filePath = p.getPath().replace(RepoPackage.PATH_SEPARATOR, File.separatorChar);
+        File desired = new File(mRoot, filePath);
+        File actual = p.getLocation();
+        if (!desired.equals(actual)) {
+            progress.logWarning(String.format(
+                    "Observed package id '%1$s' in inconsistent location '%2$s' (Expected '%3$s')",
+                    p.getPath(), actual.getPath(), desired.getPath()));
+            LocalPackage existing = collector.get(p.getPath());
+            if (existing != null) {
+                progress.logWarning(String.format(
+                        "Already observed package id '%1$s' in '%2$s'. Skipping duplicate at '%3$s'",
+                        p.getPath(), existing.getLocation().getPath(), actual.getPath()));
+                return;
+            }
+        }
+        collector.put(p.getPath(), p);
     }
 
     /**
