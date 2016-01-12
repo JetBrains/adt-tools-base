@@ -58,7 +58,7 @@ final class Float64Slice extends Box implements BinaryObject {
 
     static {
         ENTITY.setFields(new Field[]{
-            new Field("value", new Slice("", new Primitive("float64", Method.Float64))),
+            new Field("Value", new Slice("", new Primitive("float64", Method.Float64))),
         });
         Namespace.register(Klass.INSTANCE);
     }

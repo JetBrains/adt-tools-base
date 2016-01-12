@@ -58,7 +58,7 @@ final class Float32 extends Box implements BinaryObject {
 
     static {
         ENTITY.setFields(new Field[]{
-            new Field("value", new Primitive("float32", Method.Float32)),
+            new Field("Value", new Primitive("float32", Method.Float32)),
         });
         Namespace.register(Klass.INSTANCE);
     }

@@ -26,6 +26,8 @@ public final class Factory {
         Float32.register();
         Float64Slice.register();
         Float64.register();
+        IdSlice.register();
+        Id.register();
         Int16Slice.register();
         Int16.register();
         Int32Slice.register();

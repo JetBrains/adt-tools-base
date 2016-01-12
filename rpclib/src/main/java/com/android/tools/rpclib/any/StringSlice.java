@@ -58,7 +58,7 @@ final class StringSlice extends Box implements BinaryObject {
 
     static {
         ENTITY.setFields(new Field[]{
-            new Field("value", new Slice("", new Primitive("string", Method.String))),
+            new Field("Value", new Slice("", new Primitive("string", Method.String))),
         });
         Namespace.register(Klass.INSTANCE);
     }
