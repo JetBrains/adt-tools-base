@@ -84,7 +84,7 @@ public class MergeSourceSetFolders extends IncrementalTask {
             merger.mergeData(writer, false /*doCleanUp*/)
 
             // No exception? Write the known state.
-            merger.writeBlobTo(getIncrementalFolder(), writer)
+            merger.writeBlobTo(getIncrementalFolder(), writer, false)
         } catch (MergingException e) {
             println e.getMessage()
             merger.cleanBlob(getIncrementalFolder())
@@ -145,7 +145,7 @@ public class MergeSourceSetFolders extends IncrementalTask {
             merger.mergeData(writer, false /*doCleanUp*/)
 
             // No exception? Write the known state.
-            merger.writeBlobTo(getIncrementalFolder(), writer)
+            merger.writeBlobTo(getIncrementalFolder(), writer, false)
         } catch (MergingException e) {
             println e.getMessage()
             merger.cleanBlob(getIncrementalFolder())
