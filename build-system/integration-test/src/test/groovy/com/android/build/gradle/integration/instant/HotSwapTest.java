@@ -35,16 +35,18 @@ import com.android.build.gradle.internal.incremental.ColdswapMode;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.InstantRun;
-import com.android.ddmlib.CollectingOutputReceiver;
 import com.android.ddmlib.IDevice;
-import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ide.common.packaging.PackagingUtils;
 import com.android.sdklib.AndroidVersion;
 import com.android.tools.fd.client.AppState;
 import com.android.tools.fd.client.InstantRunClient;
+import com.android.tools.fd.client.InstantRunClient.FileTransfer;
+import com.android.tools.fd.client.UpdateMode;
 import com.android.tools.fd.client.UserFeedback;
+import com.android.tools.fd.runtime.ApplicationPatch;
 import com.android.utils.ILogger;
 import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.io.Files;
 import com.google.common.truth.Expect;
@@ -56,10 +58,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Smoke test for hot swap builds.
@@ -104,7 +106,17 @@ public class HotSwapTest {
                 .that().hasMethod("onCreate");
         dexFile.hasClass("Lcom/android/tools/fd/runtime/BootstrapApplication;");
 
-        checkHotSwapCompatibleChange(instantRunModel);
+        makeBasicHotswapChange();
+
+        project.execute(InstantRunTestUtils.getInstantRunArgs(21, ColdswapMode.MULTIAPK),
+                instantRunModel.getIncrementalAssembleTaskName());
+        InstantRunBuildContext.Artifact artifact =
+                getCompiledHotSwapCompatibleChange(instantRunModel);
+
+        expect.about(DexFileSubject.FACTORY)
+                .that(artifact.getLocation())
+                .hasClass("Lcom/example/helloworld/HelloWorld$override;")
+                .that().hasMethod("onCreate");
     }
 
     @Test
@@ -124,7 +136,7 @@ public class HotSwapTest {
 
     @Test
     @Category(DeviceTests.class)
-    public void connectToInstantRunServer() throws Exception {
+    public void doHotSwapChangeTest() throws Exception {
         project.execute("clean");
         // Open project in simulated IDE
         AndroidProject model = project.getSingleModel();
@@ -157,8 +169,34 @@ public class HotSwapTest {
         // Give the app a chance to start
         Thread.sleep(1000); // TODO: Is there a way to determine that the app is ready?
 
-        AppState appState = client.getAppState(device);
-        assertThat(appState).isEqualTo(AppState.FOREGROUND);
+        // Check the app is running
+        assertThat(client.getAppState(device)).isEqualTo(AppState.FOREGROUND);
+
+
+        // Make a hot-swap compatible change.
+        makeBasicHotswapChange();
+
+        // Now build the hot swap patch.
+        project.execute(InstantRunTestUtils.getInstantRunArgs(device, ColdswapMode.MULTIAPK),
+                instantRunModel.getIncrementalAssembleTaskName());
+
+        InstantRunBuildContext.Artifact artifact =
+                getCompiledHotSwapCompatibleChange(instantRunModel);
+
+        FileTransfer fileTransfer = FileTransfer.createHotswapPatch(artifact.getLocation());
+
+        client.pushPatches(device,
+                Long.toString(context.getBuildId()),
+                ImmutableList.of(fileTransfer.getPatch()),
+                UpdateMode.HOT_SWAP,
+                false /*restartActivity*/,
+                true /*showToast*/);
+
+        Mockito.verify(userFeedback).notifyEnd(UpdateMode.HOT_SWAP);
+        Mockito.verifyNoMoreInteractions(userFeedback);
+
+        assertThat(client.getAppState(device)).isEqualTo(AppState.FOREGROUND);
+
 
         // Clean up
         device.uninstallPackage("com.example.helloworld");
@@ -167,13 +205,8 @@ public class HotSwapTest {
     /**
      * Check a hot-swap compatible change works as expected.
      */
-    private void checkHotSwapCompatibleChange(@NonNull InstantRun instantRunModel) throws Exception {
-        createActivityClass("import java.util.logging.Logger;",
-                "Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).warning(\"Added some logging\");");
-
-        project.execute(InstantRunTestUtils.getInstantRunArgs(),
-                instantRunModel.getIncrementalAssembleTaskName());
-
+    private static InstantRunBuildContext.Artifact getCompiledHotSwapCompatibleChange(
+            @NonNull InstantRun instantRunModel) throws Exception {
         InstantRunBuildContext context = InstantRunTestUtils.loadContext(instantRunModel);
 
         assertNotNull(context.getLastBuild());
@@ -184,10 +217,12 @@ public class HotSwapTest {
 
         assertThat(artifact.getType()).isEqualTo(InstantRunBuildContext.FileType.RELOAD_DEX);
 
-        expect.about(DexFileSubject.FACTORY)
-                .that(artifact.getLocation())
-                .hasClass("Lcom/example/helloworld/HelloWorld$override;")
-                .that().hasMethod("onCreate");
+        return artifact;
+    }
+
+    private void makeBasicHotswapChange() throws IOException {
+        createActivityClass("import java.util.logging.Logger;",
+                "Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).warning(\"Added some logging\");");
     }
 
     private void createActivityClass(String imports, String newMethodBody)

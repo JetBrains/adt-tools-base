@@ -22,6 +22,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.AndroidGradleOptions;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.integration.common.utils.DeviceHelper;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
@@ -34,6 +35,7 @@ import com.android.ddmlib.CollectingOutputReceiver;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.InstallException;
+import com.android.resources.Density;
 import com.android.sdklib.AndroidVersion;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -42,7 +44,6 @@ import com.google.common.collect.Lists;
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 final class InstantRunTestUtils {
 
@@ -67,42 +68,51 @@ final class InstantRunTestUtils {
 
     @NonNull
     static List<String> getInstantRunArgs(OptionalCompilationStep... flags) {
-        return ImmutableList.of(buildOptionalCompilationStepsProperty(flags));
+        return getInstantRunArgs(null, null, flags);
     }
 
     @NonNull
     static List<String> getInstantRunArgs(int apiLevel,
             @NonNull ColdswapMode coldswapMode,
             @NonNull OptionalCompilationStep... flags) {
-        return getInstantRunArgs(new AndroidVersion(apiLevel, null), coldswapMode, flags);
+        return getInstantRunArgs(new AndroidVersion(apiLevel, null),
+                null /* density */, coldswapMode, flags);
     }
 
-    static List<String> getInstantRunArgs(@NonNull IDevice device,
+    static List<String> getInstantRunArgs(
+            @NonNull IDevice device,
             @NonNull ColdswapMode coldswapMode,
             @NonNull OptionalCompilationStep... flags) {
-        return getInstantRunArgs(device.getVersion(), coldswapMode, flags);
+        return getInstantRunArgs(device.getVersion(),
+                Density.getEnum(device.getDensity()), coldswapMode, flags);
     }
 
     @NonNull
-    static List<String> getInstantRunArgs(@NonNull AndroidVersion androidVersion,
+    private static List<String> getInstantRunArgs(
+            @Nullable AndroidVersion androidVersion,
+            @Nullable Density denisty,
             @NonNull ColdswapMode coldswapMode,
-            @NonNull OptionalCompilationStep... flags) {
-        String version =
-                String.format("-Pandroid.injected.build.api=%s", androidVersion.getApiString());
-        String mode = String.format("-Pandroid.injected.coldswap.mode=%s", coldswapMode.name());
-        return ImmutableList.of(buildOptionalCompilationStepsProperty(flags), version, mode);
-    }
-
-    @NonNull
-    private static String buildOptionalCompilationStepsProperty(
-            @NonNull OptionalCompilationStep[] optionalCompilationSteps) {
-        StringBuilder builder = new StringBuilder();
-        builder.append("-P").append(AndroidProject.OPTIONAL_COMPILATION_STEPS).append('=')
-                .append(OptionalCompilationStep.INSTANT_DEV);
-        for (OptionalCompilationStep step : optionalCompilationSteps) {
-            builder.append(',').append(step);
+            @NonNull OptionalCompilationStep[] flags) {
+        ImmutableList.Builder<String> builder = ImmutableList.builder();
+        if (androidVersion != null) {
+            builder.add(String.format(
+                    "-Pandroid.injected.build.api=%s", androidVersion.getApiString()));
         }
-        return builder.toString();
+        if (denisty != null) {
+            builder.add(String.format(
+                    "-Pandroid.injected.build.density=%s", denisty.getDpiValue()));
+        }
+
+        builder.add(String.format("-Pandroid.injected.coldswap.mode=%s", coldswapMode.name()));
+
+        StringBuilder optionalSteps = new StringBuilder()
+                .append("-P").append("android.optional.compilation").append('=')
+                .append("INSTANT_DEV");
+        for (OptionalCompilationStep step : flags) {
+            optionalSteps.append(',').append(step);
+        }
+        builder.add(optionalSteps.toString());
+        return builder.build();
     }
 
     static void doInstall(
