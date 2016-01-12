@@ -29,6 +29,12 @@ public final class Map extends Type {
 
     Type mValueType;
 
+    public Map(String alias, Type keyType, Type valueType) {
+        mAlias = alias;
+        mKeyType = keyType;
+        mValueType = valueType;
+    }
+
     public Map(@NotNull Decoder d) throws IOException {
         mKeyType = decode(d);
         mValueType = decode(d);
