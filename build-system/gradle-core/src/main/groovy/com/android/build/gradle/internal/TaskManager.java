@@ -1341,10 +1341,7 @@ public abstract class TaskManager {
      * @return the {@link IncrementalMode} for this variant.
      */
     protected IncrementalMode getIncrementalMode(@NonNull GradleVariantConfiguration config) {
-        if (config.getBuildType().isDebuggable()
-                && !config.getBuildType().isMinifyEnabled()
-                && !config.getType().isForTesting()
-                && !config.getUseJack()
+        if (config.isInstantRunSupported()
                 && globalScope.isActive(OptionalCompilationStep.INSTANT_DEV)) {
             if (isComponentModelPlugin) {
                 return IncrementalMode.FULL;

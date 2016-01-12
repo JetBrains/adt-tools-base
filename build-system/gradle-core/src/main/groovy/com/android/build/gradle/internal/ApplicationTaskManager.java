@@ -268,8 +268,7 @@ public class ApplicationTaskManager extends TaskManager {
                 new InstantRunWrapperTask.ConfigAction(
                         variantScope, InstantRunWrapperTask.TaskType.FULL, getLogger()));
 
-        if (getIncrementalMode(variantScope.getVariantConfiguration())
-                != IncrementalMode.NONE) {
+        if (getIncrementalMode(variantScope.getVariantConfiguration()) != IncrementalMode.NONE) {
 
             InstantRunPatchingPolicy patchingPolicy =
                     variantScope.getInstantRunBuildContext().getPatchingPolicy();

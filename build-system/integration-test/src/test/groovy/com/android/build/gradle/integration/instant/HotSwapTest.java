@@ -18,7 +18,9 @@ package com.android.build.gradle.integration.instant;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.OptionalCompilationStep;
@@ -28,6 +30,7 @@ import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.truth.ApkSubject;
 import com.android.build.gradle.integration.common.truth.DexFileSubject;
 import com.android.build.gradle.integration.common.utils.DeviceHelper;
+import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.InstantRun;
@@ -100,6 +103,21 @@ public class HotSwapTest {
         dexFile.hasClass("Lcom/android/tools/fd/runtime/BootstrapApplication;");
 
         checkHotSwapCompatibleChange(instantRunModel);
+    }
+
+    @Test
+    public void testModel() throws Exception {
+        InstantRun instantRunModel = InstantRunTestUtils.getInstantRunModel(
+                project.getSingleModel());
+
+        assertTrue(instantRunModel.isSupportedByArtifact());
+
+        TestFileUtils.appendToFile(project.getBuildFile(), "\nandroid.buildTypes.debug.minifyEnabled = true");
+
+        instantRunModel = InstantRunTestUtils.getInstantRunModel(
+                project.getSingleModel());
+
+        assertFalse(instantRunModel.isSupportedByArtifact());
     }
 
     @Test
