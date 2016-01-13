@@ -86,7 +86,7 @@ public class MavenInstallerTest extends TestCase {
 
         // Install
         new MavenInstaller().install(
-                pkgs.getRemotePackages().get("com;android;group1;artifact1;1.2.3"),
+                pkgs.getRemotePackages().get("m2repository;com;android;group1;artifact1;1.2.3"),
                 downloader, new FakeSettingsController(false), runner.getProgressIndicator(), mgr,
                 fop);
         runner.getProgressIndicator().assertNoErrorsOrWarnings();
@@ -119,8 +119,8 @@ public class MavenInstallerTest extends TestCase {
         // Ensure it was recognized as a package.
         Map<String, ? extends LocalPackage> locals = mgr.getPackages().getLocalPackages();
         assertEquals(1, locals.size());
-        assertTrue(locals.containsKey("com;android;group1;artifact1;1.2.3"));
-        LocalPackage newPkg = locals.get("com;android;group1;artifact1;1.2.3");
+        assertTrue(locals.containsKey("m2repository;com;android;group1;artifact1;1.2.3"));
+        LocalPackage newPkg = locals.get("m2repository;com;android;group1;artifact1;1.2.3");
         assertEquals("maven package", newPkg.getDisplayName());
         assertEquals(new Revision(3), newPkg.getVersion());
 
@@ -182,7 +182,7 @@ public class MavenInstallerTest extends TestCase {
 
         // Install
         new MavenInstaller().install(
-                pkgs.getRemotePackages().get("com;android;group1;artifact1;1.2.3"),
+                pkgs.getRemotePackages().get("m2repository;com;android;group1;artifact1;1.2.3"),
                 downloader, new FakeSettingsController(false), runner.getProgressIndicator(), mgr,
                 fop);
         runner.getProgressIndicator().assertNoErrorsOrWarnings();
@@ -215,8 +215,8 @@ public class MavenInstallerTest extends TestCase {
         // Ensure it was recognized as a package.
         Map<String, ? extends LocalPackage> locals = mgr.getPackages().getLocalPackages();
         assertEquals(1, locals.size());
-        assertTrue(locals.containsKey("com;android;group1;artifact1;1.2.3"));
-        LocalPackage newPkg = locals.get("com;android;group1;artifact1;1.2.3");
+        assertTrue(locals.containsKey("m2repository;com;android;group1;artifact1;1.2.3"));
+        LocalPackage newPkg = locals.get("m2repository;com;android;group1;artifact1;1.2.3");
         assertEquals("maven package", newPkg.getDisplayName());
         assertEquals(new Revision(3), newPkg.getVersion());
 
@@ -230,7 +230,7 @@ public class MavenInstallerTest extends TestCase {
                         + "        xmlns:repo=\"http://schemas.android.com/sdk/android/repo/addon2/01\"\n"
                         + "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
                         + "\n"
-                        + "    <localPackage path=\"com;example;groupId;artifactId;1.2.3\">\n"
+                        + "    <localPackage path=\"m2repository;com;example;groupId;artifactId;1.2.3\">\n"
                         + "        <type-details xsi:type=\"repo:extraDetailsType\">\n"
                         + "            <vendor>\n"
                         + "                <id>cyclop</id>\n"
@@ -250,7 +250,7 @@ public class MavenInstallerTest extends TestCase {
                         + "        xmlns:repo=\"http://schemas.android.com/sdk/android/repo/addon2/01\"\n"
                         + "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
                         + "\n"
-                        + "    <localPackage path=\"com;example;groupId;artifactId;1.2.4\">\n"
+                        + "    <localPackage path=\"m2repository;com;example;groupId;artifactId;1.2.4\">\n"
                         + "        <type-details xsi:type=\"repo:extraDetailsType\">\n"
                         + "            <vendor>\n"
                         + "                <id>cyclop</id>\n"
@@ -299,11 +299,11 @@ public class MavenInstallerTest extends TestCase {
 
         Map<String, ? extends LocalPackage> locals = mgr.getPackages().getLocalPackages();
         assertEquals(2, locals.size());
-        assertTrue(locals.containsKey("com;example;groupId;artifactId;1.2.4"));
+        assertTrue(locals.containsKey("m2repository;com;example;groupId;artifactId;1.2.4"));
 
         MavenInstaller installer = new MavenInstaller();
         FakeProgressIndicator progress = new FakeProgressIndicator();
-        installer.uninstall(locals.get("com;example;groupId;artifactId;1.2.4"), progress, mgr, fop);
+        installer.uninstall(locals.get("m2repository;com;example;groupId;artifactId;1.2.4"), progress, mgr, fop);
         progress.assertNoErrorsOrWarnings();
         MavenInstaller.MavenMetadata metadata = MavenInstaller
                 .unmarshalMetadata(new File(metadataPath), progress, fop);
