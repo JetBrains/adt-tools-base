@@ -54,7 +54,7 @@ final class Int32 extends Box implements BinaryObject {
     public BinaryClass klass() { return Klass.INSTANCE; }
 
 
-    private static final Entity ENTITY = new Entity("any","int32_","","");
+    private static final Entity ENTITY = new Entity("any", "int32_", "", "");
 
     static {
         ENTITY.setFields(new Field[]{

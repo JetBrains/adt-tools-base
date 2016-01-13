@@ -54,7 +54,7 @@ final class Int8 extends Box implements BinaryObject {
     public BinaryClass klass() { return Klass.INSTANCE; }
 
 
-    private static final Entity ENTITY = new Entity("any","int8_","","");
+    private static final Entity ENTITY = new Entity("any", "int8_", "", "");
 
     static {
         ENTITY.setFields(new Field[]{

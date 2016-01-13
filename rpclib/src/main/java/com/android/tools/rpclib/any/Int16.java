@@ -54,7 +54,7 @@ final class Int16 extends Box implements BinaryObject {
     public BinaryClass klass() { return Klass.INSTANCE; }
 
 
-    private static final Entity ENTITY = new Entity("any","int16_","","");
+    private static final Entity ENTITY = new Entity("any", "int16_", "", "");
 
     static {
         ENTITY.setFields(new Field[]{

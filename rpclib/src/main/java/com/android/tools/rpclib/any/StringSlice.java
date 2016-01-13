@@ -54,7 +54,7 @@ final class StringSlice extends Box implements BinaryObject {
     public BinaryClass klass() { return Klass.INSTANCE; }
 
 
-    private static final Entity ENTITY = new Entity("any","stringSlice","","");
+    private static final Entity ENTITY = new Entity("any", "stringSlice", "", "");
 
     static {
         ENTITY.setFields(new Field[]{

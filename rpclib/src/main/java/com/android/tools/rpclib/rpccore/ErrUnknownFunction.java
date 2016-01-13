@@ -45,7 +45,7 @@ public final class ErrUnknownFunction extends RpcException implements BinaryObje
     public BinaryClass klass() { return Klass.INSTANCE; }
 
 
-    private static final Entity ENTITY = new Entity("rpc","ErrUnknownFunction","","");
+    private static final Entity ENTITY = new Entity("rpc", "ErrUnknownFunction", "", "");
 
     static {
         ENTITY.setFields(new Field[]{

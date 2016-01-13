@@ -54,7 +54,7 @@ final class Int16Slice extends Box implements BinaryObject {
     public BinaryClass klass() { return Klass.INSTANCE; }
 
 
-    private static final Entity ENTITY = new Entity("any","int16Slice","","");
+    private static final Entity ENTITY = new Entity("any", "int16Slice", "", "");
 
     static {
         ENTITY.setFields(new Field[]{

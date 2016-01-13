@@ -54,7 +54,7 @@ final class BoolSlice extends Box implements BinaryObject {
     public BinaryClass klass() { return Klass.INSTANCE; }
 
 
-    private static final Entity ENTITY = new Entity("any","boolSlice","","");
+    private static final Entity ENTITY = new Entity("any", "boolSlice", "", "");
 
     static {
         ENTITY.setFields(new Field[]{

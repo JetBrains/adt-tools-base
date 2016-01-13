@@ -50,7 +50,7 @@ public final class TypeA implements BinaryObject {
     public BinaryClass klass() { return Klass.INSTANCE; }
 
 
-    private static final Entity ENTITY = new Entity("test","TypeA","","");
+    private static final Entity ENTITY = new Entity("test", "TypeA", "", "");
 
     static {
         ENTITY.setFields(new Field[]{

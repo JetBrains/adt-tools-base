@@ -45,7 +45,7 @@ public final class ErrDecodingCall extends RpcException implements BinaryObject 
     public BinaryClass klass() { return Klass.INSTANCE; }
 
 
-    private static final Entity ENTITY = new Entity("rpc","ErrDecodingCall","","");
+    private static final Entity ENTITY = new Entity("rpc", "ErrDecodingCall", "", "");
 
     static {
         ENTITY.setFields(new Field[]{

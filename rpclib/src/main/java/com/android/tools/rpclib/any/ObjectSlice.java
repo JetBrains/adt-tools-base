@@ -54,7 +54,7 @@ final class ObjectSlice extends Box implements BinaryObject {
     public BinaryClass klass() { return Klass.INSTANCE; }
 
 
-    private static final Entity ENTITY = new Entity("any","objectSlice","","");
+    private static final Entity ENTITY = new Entity("any", "objectSlice", "", "");
 
     static {
         ENTITY.setFields(new Field[]{
