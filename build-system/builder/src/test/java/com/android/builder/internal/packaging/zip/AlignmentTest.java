@@ -30,7 +30,11 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.util.Random;
 import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 public class AlignmentTest {
     @Rule
@@ -186,5 +190,33 @@ public class AlignmentTest {
         StoredEntry se1 = zf.get("file1.txt");
         assertNotNull(se1);
         assertArrayEquals(testBytes1, FileUtils.readSegment(newZFile, 1024, testBytes1.length));
+    }
+
+    @Test
+    public void realignStreamedZip() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "test.zip");
+
+        byte[] pattern = new byte[1024];
+        new Random().nextBytes(pattern);
+
+        String name = "";
+        ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFile));
+        try {
+            for (int j = 0; j < 10; j++) {
+                name = name + "a";
+                ZipEntry ze = new ZipEntry(name);
+                zos.putNextEntry(ze);
+                for (int i = 0; i < 1000; i++) {
+                    zos.write(pattern);
+                }
+            }
+        } finally {
+            zos.close();
+        }
+
+        ZFile zf = new ZFile(zipFile);
+        zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*"), 10));
+        zf.realign();
+        zf.close();
     }
 }

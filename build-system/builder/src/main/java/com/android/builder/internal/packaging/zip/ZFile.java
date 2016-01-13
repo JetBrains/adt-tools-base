@@ -1387,6 +1387,7 @@ public class ZFile implements Closeable {
         }
 
         cdh.setOffset(-1);
+        cdh.setGpBit(GPFlags.makeDefault());
 
         EntrySource newSource = new ByteArrayEntrySource(entryData);
         if (sourceDeflated) {
