@@ -181,4 +181,72 @@ public class LocalRepoTest extends TestCase {
         Document doc2 = db.parse(new ByteArrayInputStream(expected.getBytes()));
         assertTrue(doc.isEqualNode(doc2));
     }
+
+    // Test that a package in an inconsistent location gives a warning.
+    public void testWrongPath() throws Exception {
+        MockFileOp mockFop = new MockFileOp();
+        mockFop.recordExistingFile("/repo/bogus/package.xml",
+                "<repo:repository\n"
+                        + "        xmlns:repo=\"http://schemas.android.com/repository/android/generic/01\"\n"
+                        + "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
+                        + "\n"
+                        + "    <localPackage path=\"random\">\n"
+                        + "        <type-details xsi:type=\"repo:genericDetailsType\"/>\n"
+                        + "        <revision>\n"
+                        + "            <major>3</major>\n"
+                        + "        </revision>\n"
+                        + "        <display-name>The first Android platform ever</display-name>\n"
+                        + "    </localPackage>\n"
+                        + "</repo:repository>"
+        );
+
+        RepoManager manager = RepoManager.create(mockFop);
+        LocalRepoLoader localLoader = new LocalRepoLoader(new File("/repo"), manager, null,
+                mockFop);
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+        LocalPackage p = localLoader.getPackages(progress).get("random");
+        assertEquals(new Revision(3), p.getVersion());
+        assertTrue(!progress.getWarnings().isEmpty());
+    }
+
+    // Test that a package in an inconsistent is overridden by one in the right place
+    public void testDuplicate() throws Exception {
+        MockFileOp mockFop = new MockFileOp();
+        mockFop.recordExistingFile("/repo/bogus/package.xml",
+                "<repo:repository\n"
+                        + "        xmlns:repo=\"http://schemas.android.com/repository/android/generic/01\"\n"
+                        + "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
+                        + "\n"
+                        + "    <localPackage path=\"random\">\n"
+                        + "        <type-details xsi:type=\"repo:genericDetailsType\"/>\n"
+                        + "        <revision>\n"
+                        + "            <major>1</major>\n"
+                        + "        </revision>\n"
+                        + "        <display-name>The first Android platform ever</display-name>\n"
+                        + "    </localPackage>\n"
+                        + "</repo:repository>"
+        );
+        mockFop.recordExistingFile("/repo/random/package.xml",
+                "<repo:repository\n"
+                        + "        xmlns:repo=\"http://schemas.android.com/repository/android/generic/01\"\n"
+                        + "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
+                        + "\n"
+                        + "    <localPackage path=\"random\">\n"
+                        + "        <type-details xsi:type=\"repo:genericDetailsType\"/>\n"
+                        + "        <revision>\n"
+                        + "            <major>3</major>\n"
+                        + "        </revision>\n"
+                        + "        <display-name>The first Android platform ever</display-name>\n"
+                        + "    </localPackage>\n"
+                        + "</repo:repository>"
+        );
+
+        RepoManager manager = RepoManager.create(mockFop);
+        LocalRepoLoader localLoader = new LocalRepoLoader(new File("/repo"), manager, null,
+                mockFop);
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+        LocalPackage p = localLoader.getPackages(progress).get("random");
+        assertEquals(new Revision(3), p.getVersion());
+        assertTrue(!progress.getWarnings().isEmpty());
+    }
 }
