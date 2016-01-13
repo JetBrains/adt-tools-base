@@ -22,6 +22,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.shrinker.AbstractShrinker.CounterSet;
+import com.android.build.gradle.shrinker.IncrementalShrinker.IncrementalRunImpossibleException;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.android.utils.AsmUtils;
 import com.android.utils.FileUtils;
@@ -44,6 +45,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
@@ -135,7 +137,9 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
                     (ConcurrentMap) stream.readObject(),
                     (Map) stream.readObject());
         } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
+            throw new IncrementalRunImpossibleException("Can't load incremental state.");
+        } catch (InvalidClassException e) {
+            throw new IncrementalRunImpossibleException("Can't load incremental state.");
         } finally {
             stream.close();
         }
