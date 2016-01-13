@@ -20,15 +20,43 @@ import com.google.common.util.concurrent.Uninterruptibles;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.intellij.openapi.diagnostic.Logger;
 
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
+import java.util.concurrent.*;
 
 /**
  * Holds static method helpers for getting RPC call results from {@link ListenableFuture}s
  * created from RPC calls.
  */
 public class Rpc {
+    /**
+     * Blocks and waits for the result of the RPC call, or throws an exception if the RPC call was not
+     * successful.
+     *
+     * <p>{@link RpcException}s packed in {@link ExecutionException}s thrown by the
+     * {@link ListenableFuture} are unpacked and rethrown so they can be explicitly
+     * handled using {@code catch} clauses by the caller.
+     *
+     * @param <V> the result value type.
+     * @return the result value.
+     * @throws RpcException          if there was an error raised by the server.
+     * @throws ExecutionException    if there was a non-{@link RpcException} thrown by the
+     *                               {@link ListenableFuture}.
+     * @throws CancellationException if the computation was cancelled.
+     */
+    public static <V> V get(final ListenableFuture<V> future, long timeout, TimeUnit unit) throws RpcException,
+                                                                                                  TimeoutException,
+                                                                                                  ExecutionException {
+        try {
+            return Uninterruptibles.getUninterruptibly(future, timeout, unit);
+        }
+        catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (!(cause instanceof RpcException)) {
+                throw e;
+            }
+            throw (RpcException)cause;
+        }
+    }
+
     /**
      * Calls the provided {@link Callback#onStart} function and then {@link Callback#onFinish}
      * with the {@link Result} once the {@link ListenableFuture} RPC call has either successfully
