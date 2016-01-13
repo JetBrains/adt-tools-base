@@ -282,7 +282,7 @@ public final class AndroidSdkHandler {
      * Convenience to get a package from the local repo.
      */
     @Nullable
-    public LocalPackage getLocalPackage(String path, ProgressIndicator progress) {
+    public LocalPackage getLocalPackage(@NonNull String path, @NonNull ProgressIndicator progress) {
         return getSdkManager(progress).getPackages().getLocalPackages().get(path);
     }
 
@@ -522,7 +522,8 @@ public final class AndroidSdkHandler {
     /**
      * Finds the best {@link PackageInstaller} for the given {@link RepoPackage}.
      */
-    public static PackageInstaller findBestInstaller(RepoPackage p) {
+    @NonNull
+    public static PackageInstaller findBestInstaller(@NonNull RepoPackage p) {
         if (p.getTypeDetails() instanceof DetailsTypes.MavenType) {
             return new MavenInstaller();
         }
@@ -534,7 +535,7 @@ public final class AndroidSdkHandler {
      * {@link RepoPackage}, or {@code null} if none are installed.
      */
     @Nullable
-    public BuildToolInfo getLatestBuildTool(ProgressIndicator progress) {
+    public BuildToolInfo getLatestBuildTool(@NonNull ProgressIndicator progress) {
         if (mLatestBuildTool == null) {
             RepoManager manager = getSdkManager(progress);
             BuildToolInfo info = null;
