@@ -19,7 +19,7 @@
         xmlns:sdk="http://schemas.android.com/sdk/android/repo/addon2/01"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
-    <remotePackage path="com;android;group1;artifact1;1.2.3">
+    <remotePackage path="m2repository;com;android;group1;artifact1;1.2.3">
         <type-details xsi:type="sdk:mavenType">
             <vendor>
                 <id>google</id>

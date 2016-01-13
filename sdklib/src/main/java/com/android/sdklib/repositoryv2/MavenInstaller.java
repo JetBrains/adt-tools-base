@@ -98,6 +98,10 @@ public class MavenInstaller implements PackageInstaller {
     public boolean install(@NonNull RemotePackage p, @NonNull Downloader downloader,
             @Nullable SettingsController settings, @NonNull ProgressIndicator progress,
             @NonNull RepoManager manager, @NonNull FileOp fop) {
+        if (!p.getPath().startsWith(MAVEN_DIR_NAME)) {
+            progress.logError("Maven package paths must start with " + MAVEN_DIR_NAME);
+            return false;
+        }
         URL url = InstallerUtil.resolveCompleteArchiveUrl(p, progress);
         if (url == null) {
             return false;
@@ -105,7 +109,7 @@ public class MavenInstaller implements PackageInstaller {
         try {
             String path = p.getPath();
             path = path.replace(RepoPackage.PATH_SEPARATOR, File.separatorChar);
-            File dest = new File(new File(manager.getLocalPath(), MAVEN_DIR_NAME), path);
+            File dest = new File(manager.getLocalPath(), path);
 
             File in = downloader.downloadFully(url, settings, progress);
 
@@ -147,7 +151,8 @@ public class MavenInstaller implements PackageInstaller {
         PackageInfo result = new PackageInfo();
         result.version = path.getName();
         result.artifactId = path.getParentFile().getName();
-        result.groupId = p.getPath().substring(0, p.getPath().lastIndexOf(result.artifactId) - 1)
+        result.groupId = p.getPath().substring(p.getPath().indexOf(RepoPackage.PATH_SEPARATOR) + 1,
+                p.getPath().lastIndexOf(result.artifactId) - 1)
                 .replace(RepoPackage.PATH_SEPARATOR, '.');
         return result;
     }
