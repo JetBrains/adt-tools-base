@@ -128,6 +128,18 @@ public final class AndroidSdkHandler {
     private static final Object MANAGER_LOCK = new Object();
 
     /**
+     * Pattern for the URL pointing to the legacy repository xml (as defined by e.g.
+     * sdk-repository-12.xsd).
+     */
+    private static final String LEGACY_REPO_URL_PATTERN = "%srepository-%d.xml";
+
+    /**
+     * Pattern for the URL pointing to the repository xml (as defined by sdk-repository-01.xsd in
+     * repositoryv2).
+     */
+    private static final String REPO_URL_PATTERN = "%srepository2-%d.xml";
+
+    /**
      * The {@link RepoManager} initialized with our {@link SchemaModule}s, {@link
      * RepositorySource}s, and local SDK path.
      */
@@ -420,12 +432,12 @@ public final class AndroidSdkHandler {
                 progress.logError("Failed to set up addons source provider", e);
             }
 
-            String url = String.format("%srepository2-%d.xml", getBaseUrl(progress),
-              REPOSITORY_MODULE.getNamespaceVersionMap().size());
+            String url = String.format(REPO_URL_PATTERN, getBaseUrl(progress),
+                                       REPOSITORY_MODULE.getNamespaceVersionMap().size());
             mRepositorySourceProvider = new ConstantSourceProvider(url, "Android Repository",
                     ImmutableSet.of(REPOSITORY_MODULE, RepoManager.getGenericModule()));
 
-            url = String.format("%srepository-%d.xml", getBaseUrl(progress), LATEST_LEGACY_VERSION);
+            url = String.format(LEGACY_REPO_URL_PATTERN, getBaseUrl(progress), LATEST_LEGACY_VERSION);
             mLegacyRepositorySourceProvider = new ConstantSourceProvider(url,
                     "Legacy Android Repository",
                     ImmutableSet.of(REPOSITORY_MODULE, RepoManager.getGenericModule()));
@@ -489,8 +501,8 @@ public final class AndroidSdkHandler {
             result.registerSchemaModule(REPOSITORY_MODULE);
             result.registerSchemaModule(SYS_IMG_MODULE);
             result.registerSchemaModule(COMMON_MODULE);
-            // TODO: add once it exists
-            // result.registerSourceProvider(mRepositorySourceProvider);
+
+            result.registerSourceProvider(mRepositorySourceProvider);
             result.registerSourceProvider(mLegacyRepositorySourceProvider);
             result.registerSourceProvider(mAddonsListSourceProvider);
             if (userProvider != null) {
