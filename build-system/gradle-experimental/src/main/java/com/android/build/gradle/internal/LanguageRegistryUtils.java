@@ -16,8 +16,8 @@
 
 package com.android.build.gradle.internal;
 
-import org.gradle.language.base.internal.registry.LanguageRegistry;
 import org.gradle.language.base.internal.registry.LanguageRegistration;
+import org.gradle.language.base.internal.registry.LanguageRegistry;
 
 /**
  * Utitities for handling {@link LanguageRegistry}.

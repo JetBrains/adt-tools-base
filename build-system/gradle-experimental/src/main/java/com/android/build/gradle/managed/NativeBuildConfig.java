@@ -20,11 +20,8 @@ import com.android.annotations.NonNull;
 
 import org.gradle.model.Managed;
 import org.gradle.model.ModelMap;
-import org.gradle.model.ModelSet;
-import org.gradle.model.Unmanaged;
 
 import java.io.File;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 

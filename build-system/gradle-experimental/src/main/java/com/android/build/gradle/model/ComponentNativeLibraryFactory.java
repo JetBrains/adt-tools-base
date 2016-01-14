@@ -46,7 +46,6 @@ import org.gradle.nativeplatform.NativeLibraryBinary;
 import org.gradle.nativeplatform.NativeLibraryBinarySpec;
 import org.gradle.nativeplatform.SharedLibraryBinary;
 import org.gradle.nativeplatform.StaticLibraryBinary;
-import org.gradle.platform.base.BinaryContainer;
 
 import java.io.File;
 import java.util.Collection;
