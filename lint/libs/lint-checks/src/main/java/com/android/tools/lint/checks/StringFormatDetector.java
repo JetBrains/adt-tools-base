@@ -267,7 +267,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
             if (childNodes.getLength() == 1) {
                 Node child = childNodes.item(0);
                 if (child.getNodeType() == Node.TEXT_NODE) {
-                    checkTextNode(context, element, strip(child.getNodeValue()));
+                    checkTextNode(context, element, stripQuotes(child.getNodeValue()));
                 }
             } else {
                 // Concatenate children and build up a plain string.
@@ -285,7 +285,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
 
     private static void addText(StringBuilder sb, Node node) {
         if (node.getNodeType() == Node.TEXT_NODE) {
-            sb.append(strip(node.getNodeValue().trim()));
+            sb.append(stripQuotes(node.getNodeValue().trim()));
         } else {
             NodeList childNodes = node.getChildNodes();
             for (int i = 0, n = childNodes.getLength(); i < n; i++) {
@@ -294,17 +294,36 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
         }
     }
 
-    private static String strip(String s) {
-        if (s.length() < 2) {
-            return s;
-        }
-        char first = s.charAt(0);
-        char last = s.charAt(s.length() - 1);
-        if (first == last && (first == '\'' || first == '"')) {
-            return s.substring(1, s.length() - 1);
+    /**
+     * Removes all the unescaped quotes. See
+     * <a href="http://developer.android.com/guide/topics/resources/string-resource.html#FormattingAndStyling">Escaping apostrophes and quotes</a>
+     */
+    @VisibleForTesting
+    static String stripQuotes(String s) {
+        StringBuilder sb = new StringBuilder();
+        boolean isEscaped = false;
+        boolean isQuotedBlock = false;
+        for (int i = 0, len = s.length(); i < len; i++) {
+            char current = s.charAt(i);
+            if (isEscaped) {
+                sb.append(current);
+                isEscaped = false;
+            } else {
+                isEscaped = current == '\\'; // Next char will be escaped so we will just copy it
+                if (current == '"') {
+                    isQuotedBlock = !isQuotedBlock;
+                } else if (current == '\'') {
+                    if (isQuotedBlock) {
+                        // We only add single quotes when they are within a quoted block
+                        sb.append(current);
+                    }
+                } else {
+                    sb.append(current);
+                }
+            }
         }
 
-        return s;
+        return sb.toString();
     }
 
     private void checkTextNode(XmlContext context, Element element, String text) {
