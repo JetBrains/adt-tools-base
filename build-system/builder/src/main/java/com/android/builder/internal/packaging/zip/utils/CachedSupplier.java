@@ -65,7 +65,6 @@ public abstract class CachedSupplier<T> {
 
     /**
      * Obtains the value.
-     *
      * @return the value, either cached (if one exists) or computed
      * @throws IOException failed to compute the value
      */
@@ -80,7 +79,6 @@ public abstract class CachedSupplier<T> {
 
     /**
      * Computes the supplier value. This method is only invoked once.
-     *
      * @return the result of the computation, {@code null} is allowed and, if returned, then
      * {@link #get()} will also return {@code null}
      * @throws IOException failed to compute the value
@@ -100,11 +98,18 @@ public abstract class CachedSupplier<T> {
      * <p>
      * If this method is invoked, then an invocation of {@link #get()} will not trigger an
      * invocation of {@link #compute()}.
-     *
      * @param t the new cache contents; will replace any currently cache content, if one exists
      */
     public synchronized void precomputed(T t) {
         mCached = t;
         mValid = true;
+    }
+
+    /**
+     * Checks if the contents of the cache are valid.
+     * @return are there valid contents in the cache?
+     */
+    public synchronized boolean isValid() {
+        return mValid;
     }
 }

@@ -18,8 +18,6 @@ package com.android.builder.internal.packaging.sign;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.internal.packaging.zip.ByteArrayEntrySource;
-import com.android.builder.internal.packaging.zip.CompressionMethod;
 import com.android.builder.internal.packaging.zip.StoredEntry;
 import com.android.builder.internal.packaging.zip.ZFile;
 import com.android.builder.internal.packaging.zip.ZFileExtension;
@@ -248,8 +246,7 @@ public class ManifestGenerationExtension {
             return;
         }
 
-        mZFile.add(MANIFEST_NAME, new ByteArrayEntrySource(mManifestBytes.get()),
-                CompressionMethod.DEFLATE);
+        mZFile.add(MANIFEST_NAME, new ByteArrayInputStream(mManifestBytes.get()));
         mDirty = false;
     }
 

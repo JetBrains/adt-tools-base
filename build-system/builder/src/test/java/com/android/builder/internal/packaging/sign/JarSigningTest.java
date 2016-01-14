@@ -20,8 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
-import com.android.builder.internal.packaging.zip.ByteArrayEntrySource;
-import com.android.builder.internal.packaging.zip.CompressionMethod;
 import com.android.builder.internal.packaging.zip.StoredEntry;
 import com.android.builder.internal.packaging.zip.ZFile;
 import com.android.utils.Pair;
@@ -150,8 +148,8 @@ public class JarSigningTest {
     public void signJarWithPrexistingSimpleTextFilePre18() throws Exception {
         File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
         ZFile zf1 = new ZFile(zipFile);
-        zf1.add("directory/file", new ByteArrayEntrySource("useless text".getBytes(
-                Charsets.US_ASCII)), CompressionMethod.DEFLATE);
+        zf1.add("directory/file", new ByteArrayInputStream("useless text".getBytes(
+                Charsets.US_ASCII)));
         zf1.close();
 
         Pair<PrivateKey, X509Certificate> p = generateSignaturePre18();
@@ -204,8 +202,8 @@ public class JarSigningTest {
     public void signJarWithPrexistingSimpleTextFilePos18() throws Exception {
         File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
         ZFile zf1 = new ZFile(zipFile);
-        zf1.add("directory/file", new ByteArrayEntrySource("useless text".getBytes(
-                Charsets.US_ASCII)), CompressionMethod.DEFLATE);
+        zf1.add("directory/file", new ByteArrayInputStream("useless text".getBytes(
+                Charsets.US_ASCII)));
         zf1.close();
 
         Pair<PrivateKey, X509Certificate> p = generateSignaturePos18();

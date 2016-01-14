@@ -31,6 +31,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -117,7 +118,7 @@ public class ZFileNotificationTest {
 
         kl.assertClear();
 
-        zf.add("foo", new ByteArrayEntrySource(new byte[] { 1, 2 }), CompressionMethod.DEFLATE);
+        zf.add("foo", new ByteArrayInputStream(new byte[] { 1, 2 }));
         assertEquals(1, kl.added.size());
         StoredEntry addedSe = kl.added.get(0).getFirst();
         assertNull(kl.added.get(0).getSecond());
@@ -140,7 +141,7 @@ public class ZFileNotificationTest {
 
         kl.assertClear();
 
-        zf.add("foo", new ByteArrayEntrySource(new byte[] { 1, 2 }), CompressionMethod.DEFLATE);
+        zf.add("foo", new ByteArrayInputStream(new byte[] { 1, 2 }));
         kl.reset();
 
         StoredEntry foo = zf.get("foo");
@@ -163,11 +164,11 @@ public class ZFileNotificationTest {
 
         kl.assertClear();
 
-        zf.add("foo", new ByteArrayEntrySource(new byte[] { 1, 2 }), CompressionMethod.DEFLATE);
+        zf.add("foo", new ByteArrayInputStream(new byte[] { 1, 2 }));
         StoredEntry foo1 = zf.get("foo");
         kl.reset();
 
-        zf.add("foo", new ByteArrayEntrySource(new byte[] { 2, 3 }), CompressionMethod.DEFLATE);
+        zf.add("foo", new ByteArrayInputStream(new byte[] { 2, 3 }));
         StoredEntry foo2 = zf.get("foo");
 
         assertEquals(1, kl.added.size());
@@ -188,7 +189,7 @@ public class ZFileNotificationTest {
 
         kl.assertClear();
 
-        zf.add("foo", new ByteArrayEntrySource(new byte[] { 1, 2 }), CompressionMethod.DEFLATE);
+        zf.add("foo", new ByteArrayInputStream(new byte[] { 1, 2 }));
         kl.reset();
         zf.close();
 
@@ -211,7 +212,7 @@ public class ZFileNotificationTest {
 
         kl.assertClear();
 
-        zf.add("foo", new ByteArrayEntrySource(new byte[] { 1, 2 }), CompressionMethod.DEFLATE);
+        zf.add("foo", new ByteArrayInputStream(new byte[] { 1, 2 }));
         kl.reset();
         zf.update();
 
@@ -234,11 +235,11 @@ public class ZFileNotificationTest {
 
         kl.assertClear();
 
-        zf.add("foo", new ByteArrayEntrySource(new byte[] { 1, 2 }), CompressionMethod.DEFLATE);
+        zf.add("foo", new ByteArrayInputStream(new byte[] { 1, 2 }));
         zf.update();
         kl.reset();
 
-        zf.add("bar", new ByteArrayEntrySource(new byte[] { 2, 3 }), CompressionMethod.DEFLATE);
+        zf.add("bar", new ByteArrayInputStream(new byte[] { 2, 3 }));
         kl.reset();
 
         zf.update();
@@ -259,14 +260,14 @@ public class ZFileNotificationTest {
 
         kl.assertClear();
 
-        zf.add("foo", new ByteArrayEntrySource(new byte[] { 1, 2 }), CompressionMethod.DEFLATE);
+        zf.add("foo", new ByteArrayInputStream(new byte[] { 1, 2 }));
         assertEquals(1, kl.added.size());
         kl.added.clear();
         kl.assertClear();
 
         zf.removeZFileExtension(kl);
 
-        zf.add("foo", new ByteArrayEntrySource(new byte[] { 2, 3 }), CompressionMethod.DEFLATE);
+        zf.add("foo", new ByteArrayInputStream(new byte[] { 2, 3 }));
         kl.assertClear();
 
         zf.close();
@@ -292,8 +293,7 @@ public class ZFileNotificationTest {
                 once = true;
 
                 try {
-                    zf.add("foo", new ByteArrayEntrySource(new byte[] { 1, 2 }),
-                            CompressionMethod.DEFLATE);
+                    zf.add("foo", new ByteArrayInputStream(new byte[] { 1, 2 }));
                 } catch (IOException e ) {
                     death[0] = e;
                 }
@@ -313,8 +313,7 @@ public class ZFileNotificationTest {
 
                 once = true;
                 try {
-                    zf.add("bar", new ByteArrayEntrySource(new byte[] { 1, 2 }),
-                            CompressionMethod.DEFLATE);
+                    zf.add("bar", new ByteArrayInputStream(new byte[] { 1, 2 }));
                 } catch (IOException e ) {
                     death[0] = e;
                 }
@@ -324,7 +323,7 @@ public class ZFileNotificationTest {
         kl1.assertClear();
         kl2.assertClear();
 
-        zf.add("xpto", new ByteArrayEntrySource(new byte[] { 1, 2 }), CompressionMethod.DEFLATE);
+        zf.add("xpto", new ByteArrayInputStream(new byte[] { 1, 2 }));
 
         assertEquals(3, kl1.added.size());
         kl1.added.clear();

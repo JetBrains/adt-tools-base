@@ -37,6 +37,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -219,7 +220,7 @@ public class ZFileTest {
         File zipFile = new File(mTemporaryFolder.getRoot(), "test.zip");
 
         ZFile zf = new ZFile(zipFile);
-        zf.add("foo", new ByteArrayEntrySource(new byte[] { 0, 1 }), CompressionMethod.DEFLATE);
+        zf.add("foo", new ByteArrayInputStream(new byte[] { 0, 1 }));
         zf.close();
 
         ZipFile jzf = new ZipFile(zipFile);
@@ -316,7 +317,7 @@ public class ZFileTest {
 
         assertArrayEquals(new byte[] { 6, 7, 8 }, file2.read());
 
-        zf.add("file2", new ByteArrayEntrySource(new byte[] { 11, 12 }), CompressionMethod.DEFLATE);
+        zf.add("file2", new ByteArrayInputStream(new byte[] { 11, 12 }));
         zf.close();
 
         int newTotalSize = (int) zipFile.length();
@@ -359,7 +360,7 @@ public class ZFileTest {
 
         assertArrayEquals(new byte[] { 9, 0, 1, 2, 3, 4 }, file3.read());
 
-        zf.add("file3", new ByteArrayEntrySource(new byte[] { 11, 12 }), CompressionMethod.DEFLATE);
+        zf.add("file3", new ByteArrayInputStream(new byte[] { 11, 12 }));
         zf.close();
 
         int newTotalSize = (int) zipFile.length();
@@ -411,7 +412,7 @@ public class ZFileTest {
         Random r = new Random();
         r.nextBytes(newData);
 
-        zf.add("file1", new ByteArrayEntrySource(newData), CompressionMethod.DEFLATE);
+        zf.add("file1", new ByteArrayInputStream(newData));
         zf.close();
 
         int newTotalSize = (int) zipFile.length();
@@ -463,7 +464,7 @@ public class ZFileTest {
         Random r = new Random();
         r.nextBytes(newData);
 
-        zf.add("file3", new ByteArrayEntrySource(newData), CompressionMethod.DEFLATE);
+        zf.add("file3", new ByteArrayInputStream(newData));
         zf.close();
 
         int newTotalSize = (int) zipFile.length();
@@ -541,8 +542,7 @@ public class ZFileTest {
     public void addingFileDoesNotAddDirectoriesAutomatically() throws Exception {
         File zip = new File(mTemporaryFolder.getRoot(), "z.zip");
         ZFile zf = new ZFile(zip);
-        zf.add("a/b/c", new ByteArrayEntrySource(new byte[] { 1, 2, 3 }),
-                CompressionMethod.DEFLATE);
+        zf.add("a/b/c", new ByteArrayInputStream(new byte[] { 1, 2, 3 }));
         zf.update();
         assertEquals(1, zf.entries().size());
 
@@ -607,12 +607,7 @@ public class ZFileTest {
 
         File zip = new File(tdir, "f.zip");
         ZFile zf = new ZFile(zip);
-        zf.addAllRecursively(tfile, new Function<File, CompressionMethod>() {
-            @Override
-            public CompressionMethod apply(File input) {
-                return CompressionMethod.DEFLATE;
-            }
-        });
+        zf.addAllRecursively(tfile);
 
         StoredEntry blahEntry = zf.get("blah-blah");
         assertNotNull(blahEntry);
@@ -651,13 +646,13 @@ public class ZFileTest {
 
         File zip = new File(tdir, "f.zip");
         ZFile zf = new ZFile(zip);
-        zf.addAllRecursively(tdir, new Function<File, CompressionMethod>() {
+        zf.addAllRecursively(tdir, new Function<File, Boolean>() {
             @Override
-            public CompressionMethod apply(File input) {
+            public Boolean apply(File input) {
                 if (input.getName().startsWith("eat.")) {
-                    return CompressionMethod.STORE;
+                    return false;
                 } else {
-                    return CompressionMethod.DEFLATE;
+                    return true;
                 }
             }
         });
@@ -666,36 +661,37 @@ public class ZFileTest {
 
         StoredEntry boomEntry = zf.get("danger");
         assertNotNull(boomEntry);
-        assertEquals(CompressionMethod.DEFLATE, boomEntry.getCentralDirectoryHeader().getMethod());
+        assertEquals(CompressionMethod.DEFLATE,
+                boomEntry.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
         assertEquals(boom, new String(boomEntry.read(), Charsets.US_ASCII));
 
         StoredEntry kaboomEntry = zf.get("do not touch");
         assertNotNull(kaboomEntry);
         assertEquals(CompressionMethod.DEFLATE,
-                kaboomEntry.getCentralDirectoryHeader().getMethod());
+                kaboomEntry.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
         assertEquals(kaboom, new String(kaboomEntry.read(), Charsets.US_ASCII));
 
         StoredEntry safeEntry = zf.get("safe/");
         assertNotNull(safeEntry);
         assertEquals(0, safeEntry.read().length);
 
-        StoredEntry chocolateEntry = zf.get("safe/eat.sweet");
-        assertNotNull(chocolateEntry);
+        StoredEntry choc = zf.get("safe/eat.sweet");
+        assertNotNull(choc);
         assertEquals(CompressionMethod.STORE,
-                chocolateEntry.getCentralDirectoryHeader().getMethod());
-        assertEquals(iLoveChocolate, new String(chocolateEntry.read(), Charsets.US_ASCII));
+                choc.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
+        assertEquals(iLoveChocolate, new String(choc.read(), Charsets.US_ASCII));
 
         StoredEntry orangeEntry = zf.get("safe/eat.fruit");
         assertNotNull(orangeEntry);
         assertEquals(CompressionMethod.STORE,
-                orangeEntry.getCentralDirectoryHeader().getMethod());
+                orangeEntry.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
         assertEquals(iLoveOrange, new String(orangeEntry.read(), Charsets.US_ASCII));
 
-        StoredEntry loremIpsumEntry = zf.get("safe/bedtime.reading.txt");
-        assertNotNull(loremIpsumEntry);
+        StoredEntry loremEntry = zf.get("safe/bedtime.reading.txt");
+        assertNotNull(loremEntry);
         assertEquals(CompressionMethod.DEFLATE,
-                loremIpsumEntry.getCentralDirectoryHeader().getMethod());
-        assertEquals(loremIpsum, new String(loremIpsumEntry.read(), Charsets.US_ASCII));
+                loremEntry.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
+        assertEquals(loremIpsum, new String(loremEntry.read(), Charsets.US_ASCII));
 
         zf.close();
     }
@@ -759,10 +755,8 @@ public class ZFileTest {
         ZFile zipWithOffset = new ZFile(zipWithOffsetFile);
         zipWithOffset.setExtraDirectoryOffset(37);
 
-        zipNoOffset.add("x", new ByteArrayEntrySource(new byte[] { 1, 2 }),
-                CompressionMethod.DEFLATE);
-        zipWithOffset.add("x", new ByteArrayEntrySource(new byte[] { 1, 2 }),
-                CompressionMethod.DEFLATE);
+        zipNoOffset.add("x", new ByteArrayInputStream(new byte[] { 1, 2 }));
+        zipWithOffset.add("x", new ByteArrayInputStream(new byte[] { 1, 2 }));
 
         zipNoOffset.close();
         zipWithOffset.close();
@@ -818,8 +812,7 @@ public class ZFileTest {
         File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
 
         ZFile zip = new ZFile(zipFile);
-        zip.add("x", new ByteArrayEntrySource(new byte[] { 1, 2 }),
-                CompressionMethod.DEFLATE);
+        zip.add("x", new ByteArrayInputStream(new byte[] { 1, 2 }));
         zip.close();
 
         long noOffsetSize = zipFile.length();
@@ -852,8 +845,7 @@ public class ZFileTest {
 
         ZFile zip = new ZFile(zipFile);
         zip.setExtraDirectoryOffset(287);
-        zip.add("x", new ByteArrayEntrySource(new byte[] { 1, 2 }),
-                CompressionMethod.DEFLATE);
+        zip.add("x", new ByteArrayInputStream(new byte[] { 1, 2 }));
         zip.close();
 
         zip = new ZFile(zipFile);
@@ -894,7 +886,7 @@ public class ZFileTest {
         final byte[][] eocd = new byte[1][];
 
         final ZFile zip = new ZFile(zipFile);
-        zip.add("foo", new ByteArrayEntrySource(new byte[0]), CompressionMethod.DEFLATE);
+        zip.add("foo", new ByteArrayInputStream(new byte[0]));
         zip.addZFileExtension(new ZFileExtension() {
             @Override
             public void entriesWritten() throws IOException {
@@ -958,8 +950,7 @@ public class ZFileTest {
 
         String lettuceIsHealthyArmenian = "\u0533\u0561\u0566\u0561\u0580\u0020\u0561\u057C"
                 + "\u0578\u0572\u057B";
-        zip.add(lettuceIsHealthyArmenian, new ByteArrayEntrySource(new byte[] { 0 }),
-                CompressionMethod.STORE);
+        zip.add(lettuceIsHealthyArmenian, new ByteArrayInputStream(new byte[]{0}));
         zip.close();
 
         ZFile zip2 = new ZFile(zipFile);
@@ -968,5 +959,25 @@ public class ZFileTest {
         assertEquals(lettuceIsHealthyArmenian, entry.getCentralDirectoryHeader().getName());
 
         zip2.close();
+    }
+
+    @Test
+    public void zipMemoryUsageIsZeroAfterClose() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
+
+        ZFileOptions options = new ZFileOptions();
+        ZFile zip = new ZFile(zipFile, options);
+
+        assertEquals(0, options.getTracker().getBytesUsed());
+        assertEquals(0, options.getTracker().getMaxBytesUsed());
+
+        zip.add("Blah", new ByteArrayInputStream(new byte[500]));
+        long used = options.getTracker().getBytesUsed();
+        assertTrue(used > 500);
+        assertEquals(used, options.getTracker().getMaxBytesUsed());
+
+        zip.close();
+        assertEquals(0, options.getTracker().getBytesUsed());
+        assertEquals(used, options.getTracker().getMaxBytesUsed());
     }
 }

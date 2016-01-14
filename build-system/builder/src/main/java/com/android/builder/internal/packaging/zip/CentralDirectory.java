@@ -23,6 +23,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.io.ByteSource;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -327,10 +329,17 @@ class CentralDirectory {
         ByteSource fileNameBytes = bytes.slice(F_OFFSET.endOffset(), fileNameLength);
         String fileName = EncodeUtils.decode(fileNameBytes.read(), flags);
 
+        /*
+         * Tricky: to create a CentralDirectoryHeader we need the future that will hold the result
+         * of the compress information. But, to actually create the result of the compress
+         * information we need the CentralDirectoryHeader
+         */
+        ListenableFuture<CentralDirectoryHeaderCompressInfo> compressInfo =
+                Futures.immediateFuture(new CentralDirectoryHeaderCompressInfo(method,
+                        compressedSize, versionNeededToExtract));
         CentralDirectoryHeader centralDirectoryHeader = new CentralDirectoryHeader(fileName,
-                compressedSize, uncompressedSize, method, flags);
+                uncompressedSize, compressInfo, flags);
         centralDirectoryHeader.setMadeBy(madeBy);
-        centralDirectoryHeader.setVersionExtract(versionNeededToExtract);
         centralDirectoryHeader.setLastModTime(lastModTime);
         centralDirectoryHeader.setLastModDate(lastModDate);
         centralDirectoryHeader.setCrc32(crc32);
@@ -343,7 +352,7 @@ class CentralDirectory {
         centralDirectoryHeader.setComment(bytes.slice(F_OFFSET.endOffset() + fileNameLength
                 + extraFieldLength, fileCommentLength).read());
 
-        StoredEntry entry = new StoredEntry(centralDirectoryHeader, mFile);
+        StoredEntry entry = new StoredEntry(centralDirectoryHeader, mFile, null);
         if (mEntries.containsKey(fileName)) {
             throw new IOException("File file contains duplicate file '" + fileName + "'.");
         }
@@ -383,37 +392,39 @@ class CentralDirectory {
         ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
 
         for (StoredEntry entry : mEntries.values()) {
-            CentralDirectoryHeader cdr = entry.getCentralDirectoryHeader();
+            CentralDirectoryHeader cdh = entry.getCentralDirectoryHeader();
+
+            CentralDirectoryHeaderCompressInfo compressInfo = cdh.getCompressionInfoWithWait();
 
             F_SIGNATURE.write(bytesOut);
-            F_MADE_BY.write(bytesOut, cdr.getMadeBy());
-            F_VERSION_EXTRACT.write(bytesOut, cdr.getVersionExtract());
-            F_GP_BIT.write(bytesOut, cdr.getGpBit().getValue());
-            F_METHOD.write(bytesOut, cdr.getMethod().methodCode);
+            F_MADE_BY.write(bytesOut, cdh.getMadeBy());
+            F_VERSION_EXTRACT.write(bytesOut, compressInfo.getVersionExtract());
+            F_GP_BIT.write(bytesOut, cdh.getGpBit().getValue());
+            F_METHOD.write(bytesOut, compressInfo.getMethod().methodCode);
 
             if (mFile.areTimestampsIgnored()) {
                 F_LAST_MOD_TIME.write(bytesOut, 0);
                 F_LAST_MOD_DATE.write(bytesOut, 0);
             } else {
-                F_LAST_MOD_TIME.write(bytesOut, cdr.getLastModTime());
-                F_LAST_MOD_DATE.write(bytesOut, cdr.getLastModDate());
+                F_LAST_MOD_TIME.write(bytesOut, cdh.getLastModTime());
+                F_LAST_MOD_DATE.write(bytesOut, cdh.getLastModDate());
             }
 
-            F_CRC32.write(bytesOut, cdr.getCrc32());
-            F_COMPRESSED_SIZE.write(bytesOut, cdr.getCompressedSize());
-            F_UNCOMPRESSED_SIZE.write(bytesOut, cdr.getUncompressedSize());
+            F_CRC32.write(bytesOut, cdh.getCrc32());
+            F_COMPRESSED_SIZE.write(bytesOut, compressInfo.getCompressedSize());
+            F_UNCOMPRESSED_SIZE.write(bytesOut, cdh.getUncompressedSize());
 
-            F_FILE_NAME_LENGTH.write(bytesOut, cdr.getEncodedFileName().length);
-            F_EXTRA_FIELD_LENGTH.write(bytesOut, cdr.getExtraField().length);
-            F_COMMENT_LENGTH.write(bytesOut, cdr.getComment().length);
+            F_FILE_NAME_LENGTH.write(bytesOut, cdh.getEncodedFileName().length);
+            F_EXTRA_FIELD_LENGTH.write(bytesOut, cdh.getExtraField().length);
+            F_COMMENT_LENGTH.write(bytesOut, cdh.getComment().length);
             F_DISK_NUMBER_START.write(bytesOut);
-            F_INTERNAL_ATTRIBUTES.write(bytesOut, cdr.getInternalAttributes());
-            F_EXTERNAL_ATTRIBUTES.write(bytesOut, cdr.getExternalAttributes());
-            F_OFFSET.write(bytesOut, cdr.getOffset());
+            F_INTERNAL_ATTRIBUTES.write(bytesOut, cdh.getInternalAttributes());
+            F_EXTERNAL_ATTRIBUTES.write(bytesOut, cdh.getExternalAttributes());
+            F_OFFSET.write(bytesOut, cdh.getOffset());
 
-            bytesOut.write(cdr.getEncodedFileName());
-            bytesOut.write(cdr.getExtraField());
-            bytesOut.write(cdr.getComment());
+            bytesOut.write(cdh.getEncodedFileName());
+            bytesOut.write(cdh.getExtraField());
+            bytesOut.write(cdh.getComment());
         }
 
         return bytesOut.toByteArray();

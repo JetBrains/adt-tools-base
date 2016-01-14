@@ -29,6 +29,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.Random;
@@ -48,7 +49,7 @@ public class AlignmentTest {
 
         ZFile zf = new ZFile(newZFile);
         zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*\\.txt"), 1024));
-        zf.add("test.txt", new ByteArrayEntrySource(testBytes), CompressionMethod.STORE);
+        zf.add("test.txt", new ByteArrayInputStream(testBytes), false);
         zf.close();
 
         byte found[] = FileUtils.readSegment(newZFile, 1024, testBytes.length);
@@ -63,7 +64,7 @@ public class AlignmentTest {
 
         ZFile zf = new ZFile(newZFile);
         zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*\\.txt"), 1024));
-        zf.add("test.txt.foo", new ByteArrayEntrySource(testBytes), CompressionMethod.STORE);
+        zf.add("test.txt.foo", new ByteArrayInputStream(testBytes), false);
         zf.close();
 
         assertTrue(newZFile.length() < 1024);
@@ -77,8 +78,8 @@ public class AlignmentTest {
         byte testBytes1[] = "Text number 2, which is actually 1".getBytes(Charsets.US_ASCII);
 
         ZFile zf = new ZFile(newZFile);
-        zf.add("file0.txt", new ByteArrayEntrySource(testBytes0), CompressionMethod.STORE);
-        zf.add("file1.txt", new ByteArrayEntrySource(testBytes1), CompressionMethod.STORE);
+        zf.add("file1.txt", new ByteArrayInputStream(testBytes1), false);
+        zf.add("file0.txt", new ByteArrayInputStream(testBytes0), false);
         zf.close();
 
         StoredEntry se0 = zf.get("file0.txt");
@@ -115,8 +116,8 @@ public class AlignmentTest {
         byte testBytes1[] = "Text number 2, which is actually 1".getBytes(Charsets.US_ASCII);
 
         ZFile zf = new ZFile(newZFile);
-        zf.add("file0.txt", new ByteArrayEntrySource(testBytes0), CompressionMethod.STORE);
-        zf.add("file1.txt", new ByteArrayEntrySource(testBytes1), CompressionMethod.STORE);
+        zf.add("file0.txt", new ByteArrayInputStream(testBytes0), false);
+        zf.add("file1.txt", new ByteArrayInputStream(testBytes1), false);
         zf.close();
 
         assertTrue(newZFile.length() < 1024);
@@ -154,7 +155,7 @@ public class AlignmentTest {
 
         ZFile zf = new ZFile(newZFile);
         zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*\\.txt"), 1024));
-        zf.add("test.txt", new ByteArrayEntrySource(testBytes), CompressionMethod.STORE);
+        zf.add("test.txt", new ByteArrayInputStream(testBytes), false);
         zf.close();
 
         assertArrayEquals(testBytes, FileUtils.readSegment(newZFile, 1024, testBytes.length));
@@ -178,9 +179,9 @@ public class AlignmentTest {
         byte testBytes1[] = "Text number 2, which is actually 1".getBytes(Charsets.US_ASCII);
 
         ZFile zf = new ZFile(newZFile);
-        zf.add("file0.txt", new ByteArrayEntrySource(testBytes0), CompressionMethod.STORE);
+        zf.add("file0.txt", new ByteArrayInputStream(testBytes0), false);
         zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*\\.txt"), 1024));
-        zf.add("file1.txt", new ByteArrayEntrySource(testBytes1), CompressionMethod.STORE);
+        zf.add("file1.txt", new ByteArrayInputStream(testBytes1), false);
         zf.close();
 
         StoredEntry se0 = zf.get("file0.txt");

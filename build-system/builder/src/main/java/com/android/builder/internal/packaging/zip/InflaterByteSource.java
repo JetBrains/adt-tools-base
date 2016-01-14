@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.android.builder.internal.packaging.zip;
 
 import com.android.annotations.NonNull;
-import com.google.common.base.Preconditions;
+import com.android.builder.internal.packaging.zip.utils.CloseableByteSource;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -27,56 +27,39 @@ import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
 /**
- * Entry source that inflates an inner source. The inner source must contain delfated data.
+ * Byte source that inflates another byte source. It assumed the inner byte source has deflated
+ * data.
  */
-class InflaterEntrySource implements EntrySource {
-    /**
-     * The inner source of deflated data.
-     */
-    @NonNull
-    private EntrySource mDeflatedSource;
+public class InflaterByteSource extends CloseableByteSource {
 
     /**
-     * Size of uncompressed data.
+     * The stream factory for the deflated data.
      */
-    private long mUncompressedSize;
+    @NonNull
+    private final CloseableByteSource mDeflatedSource;
 
     /**
      * Creates a new source.
-     *
-     * @param deflatedSource the source of deflated data
-     * @param uncompressedSize the size of deflated data after inflation
+     * @param byteSource the factory for deflated data
      */
-    InflaterEntrySource(@NonNull EntrySource deflatedSource, long uncompressedSize) {
-        Preconditions.checkArgument(uncompressedSize >= 0, "uncompressedSize (%s) < 0",
-                uncompressedSize);
-
-        mDeflatedSource = deflatedSource;
-        mUncompressedSize = uncompressedSize;
+    public InflaterByteSource(@NonNull CloseableByteSource byteSource) {
+        mDeflatedSource = byteSource;
     }
 
-    @NonNull
     @Override
-    public InputStream open() throws IOException {
-        InputStream rawStream = mDeflatedSource.open();
-
+    public InputStream openStream() throws IOException {
         /*
          * The extra byte is a dummy byte required by the inflater. Weirdo.
          * (see the java.util.Inflater documentation). Looks like a hack...
          * "Oh, I need an extra dummy byte to allow for some... err... optimizations..."
          */
         ByteArrayInputStream hackByte = new ByteArrayInputStream(new byte[] { 0 });
-        return new InflaterInputStream(new SequenceInputStream(rawStream, hackByte),
-                new Inflater(true));
+        return new InflaterInputStream(new SequenceInputStream(mDeflatedSource.openStream(),
+                hackByte), new Inflater(true));
     }
 
     @Override
-    public long size() {
-        return mUncompressedSize;
-    }
-
-    @Override
-    public EntrySource innerCompressed() {
-        return mDeflatedSource;
+    public void innerClose() throws IOException {
+        mDeflatedSource.close();
     }
 }

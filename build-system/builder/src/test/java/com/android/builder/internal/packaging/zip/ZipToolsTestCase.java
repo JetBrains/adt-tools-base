@@ -36,7 +36,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
@@ -75,7 +77,7 @@ public abstract class ZipToolsTestCase {
         mToolStoresDirectories = toolStoresDirectories;
     }
 
-    private File rsrcFile(@NonNull String name) {
+    private static File rsrcFile(@NonNull String name) {
         File packagingRoot = TestUtils.getRoot("packaging");
         String rsrcPath = packagingRoot.getAbsolutePath() + "/" + name;
         File rsrcFile = new File(rsrcPath);
@@ -137,16 +139,14 @@ public abstract class ZipToolsTestCase {
             zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*"), 500));
         }
 
-        zf.add("root", new FileEntrySource(rsrcFile("root")), CompressionMethod.DEFLATE);
-        zf.add("images/", new ByteArrayEntrySource(new byte[0]), CompressionMethod.DEFLATE);
-        zf.add("images/lena.png", new FileEntrySource(rsrcFile("images/lena.png")),
-                CompressionMethod.DEFLATE);
-        zf.add("text-files/", new ByteArrayEntrySource(new byte[0]), CompressionMethod.DEFLATE);
-        zf.add("text-files/rfc2460.txt", new FileEntrySource(rsrcFile("text-files/rfc2460.txt")),
-                CompressionMethod.DEFLATE);
+        zf.add("root", new FileInputStream(rsrcFile("root")));
+        zf.add("images/", new ByteArrayInputStream(new byte[0]));
+        zf.add("images/lena.png", new FileInputStream(rsrcFile("images/lena.png")));
+        zf.add("text-files/", new ByteArrayInputStream(new byte[0]));
+        zf.add("text-files/rfc2460.txt", new FileInputStream(rsrcFile(
+                "text-files/rfc2460.txt")));
         zf.add("text-files/wikipedia.html",
-                new FileEntrySource(rsrcFile("text-files/wikipedia.html")),
-                CompressionMethod.DEFLATE);
+                new FileInputStream(rsrcFile("text-files/wikipedia.html")));
         zf.close();
 
         List<String> command = Lists.newArrayList(mUnzipCommand);

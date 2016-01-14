@@ -20,8 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import com.android.builder.internal.packaging.zip.ByteArrayEntrySource;
-import com.android.builder.internal.packaging.zip.CompressionMethod;
 import com.android.builder.internal.packaging.zip.StoredEntry;
 import com.android.builder.internal.packaging.zip.ZFile;
 import com.google.common.base.Charsets;
@@ -31,6 +29,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.internal.util.collections.Sets;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.util.Set;
 
@@ -43,9 +42,9 @@ public class ManifestGenerationTest {
         File zip = new File(mTemporaryFolder.getRoot(), "f.zip");
 
         ZFile zf = new ZFile(zip);
-        zf.add("abc", new ByteArrayEntrySource(new byte[] { 1 }), CompressionMethod.DEFLATE);
-        zf.add("x/", new ByteArrayEntrySource(new byte[0]), CompressionMethod.DEFLATE);
-        zf.add("x/abc", new ByteArrayEntrySource(new byte[] { 2 }), CompressionMethod.DEFLATE);
+        zf.add("abc", new ByteArrayInputStream(new byte[] { 1 }));
+        zf.add("x/", new ByteArrayInputStream(new byte[0]));
+        zf.add("x/abc", new ByteArrayInputStream(new byte[] { 2 }));
 
         ManifestGenerationExtension extension = new ManifestGenerationExtension("Me, of course",
                 "Myself");

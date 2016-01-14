@@ -18,8 +18,6 @@ package com.android.builder.internal.packaging.sign;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.internal.packaging.zip.ByteArrayEntrySource;
-import com.android.builder.internal.packaging.zip.CompressionMethod;
 import com.android.builder.internal.packaging.zip.StoredEntry;
 import com.android.builder.internal.packaging.zip.ZFile;
 import com.android.builder.internal.packaging.zip.ZFileExtension;
@@ -447,13 +445,12 @@ public class SignatureExtension {
         mSignatureFile.write(signatureBytes);
 
         mManifestExtension.zFile().add(SIGNATURE_FILE,
-                new ByteArrayEntrySource(signatureBytes.toByteArray()), CompressionMethod.DEFLATE);
+                new ByteArrayInputStream(signatureBytes.toByteArray()));
 
         String digitalSignatureFile = SIGNATURE_BASE + "." + mPrivateKey.getAlgorithm();
         try {
-            mManifestExtension.zFile().add(digitalSignatureFile, new ByteArrayEntrySource(
-                            computePkcs7Signature(signatureBytes.toByteArray())),
-                    CompressionMethod.DEFLATE);
+            mManifestExtension.zFile().add(digitalSignatureFile, new ByteArrayInputStream(
+                            computePkcs7Signature(signatureBytes.toByteArray())));
         } catch (CertificateEncodingException e) {
             throw new IOException("Failed to digitally sign signature file.", e);
         } catch (OperatorCreationException e) {

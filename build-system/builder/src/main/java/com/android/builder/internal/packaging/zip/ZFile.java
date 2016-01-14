@@ -18,13 +18,16 @@ package com.android.builder.internal.packaging.zip;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.internal.packaging.zip.utils.ByteTracker;
 import com.android.builder.internal.packaging.zip.utils.CachedFileContents;
+import com.android.builder.internal.packaging.zip.utils.CloseableByteSource;
 import com.android.builder.internal.packaging.zip.utils.LittleEndianUtils;
 import com.android.builder.internal.packaging.zip.utils.RandomAccessFileUtils;
 import com.android.builder.internal.utils.IOExceptionFunction;
 import com.android.builder.internal.utils.IOExceptionRunnable;
 import com.android.utils.FileUtils;
 import com.google.common.base.Function;
+import com.google.common.base.Functions;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Verify;
 import com.google.common.collect.Lists;
@@ -32,15 +35,18 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.hash.Hashing;
 import com.google.common.io.ByteSource;
-import com.google.common.io.ByteStreams;
-import com.google.common.io.Closeables;
 import com.google.common.io.Closer;
-import com.google.common.primitives.Ints;
 import com.google.common.io.Files;
+import com.google.common.primitives.Ints;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 
-import java.io.ByteArrayOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
@@ -48,8 +54,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.zip.Deflater;
-import java.util.zip.DeflaterOutputStream;
 
 /**
  * The {@code ZFile} provides the main interface for interacting with zip files. A {@code ZFile}
@@ -71,7 +75,8 @@ import java.util.zip.DeflaterOutputStream;
  * to disk. This provides much faster operation and allows better zip file allocation (see below).
  * It may, however, increase the memory footprint of the application. When adding large files, if
  * memory consumption is a concern, a call to {@link #update()} will actually write the file to
- * disk and discard the memory buffer.
+ * disk and discard the memory buffer. Information about allocation can be obtained from a
+ * {@link ByteTracker} that can be given to the file on creation.
  * <p>
  * {@code ZFile} keeps track of allocation inside of the zip file. If a file is deleted, its space
  * is marked as freed and will be reused for an added file if it fits in the space. Allocation of
@@ -85,7 +90,8 @@ import java.util.zip.DeflaterOutputStream;
  * <p>
  * When adding files to the zip file, unless files are explicitly required to be stored, files will
  * be deflated. However, deflating will not occur if the deflated file is larger then the stored
- * file, <em>e.g.</em> if compression would yield a bigger file.
+ * file, <em>e.g.</em> if compression would yield a bigger file. See {@link Compressor} for
+ * details on how compression works.
  * <p>
  * Because {@code ZFile} was designed to be used in a build system and not as general-purpose
  * zip utility, it is very strict (and unforgiving) about the zip format and unsupported features.
@@ -120,7 +126,7 @@ import java.util.zip.DeflaterOutputStream;
  * {@link ZFile#removeZFileExtension(ZFileExtension)}.
  * <p>
  * This class is <strong>not</strong> thread-safe. Neither are any of the classes associated with
- * it in this package.
+ * it in this package, except when otherwise noticed.
  */
 public class ZFile implements Closeable {
 
@@ -253,6 +259,18 @@ public class ZFile implements Closeable {
      */
     private boolean mNoTimestamps;
 
+    /**
+     * Compressor to use.
+     */
+    @NonNull
+    private Compressor mCompressor;
+
+    /**
+     * Byte tracker to use.
+     */
+    @NonNull
+    private final ByteTracker mTracker;
+
 
     /**
      * Creates a new zip file. If the zip file does not exist, then no file is created at this
@@ -264,7 +282,7 @@ public class ZFile implements Closeable {
      * @throws IOException some file exists but could not be read
      */
     public ZFile(@NonNull File file) throws IOException {
-        this(file, false);
+        this(file, new ZFileOptions());
     }
 
     /**
@@ -274,10 +292,10 @@ public class ZFile implements Closeable {
      * it will be parsed and read.
      *
      * @param file the zip file
-     * @param noTimestamps should all timestamps be zeroed when reading / writing the zip?
+     * @param options configuration options
      * @throws IOException some file exists but could not be read
      */
-    public ZFile(@NonNull File file, boolean noTimestamps) throws IOException {
+    public ZFile(@NonNull File file, @NonNull ZFileOptions options) throws IOException {
         mFile = file;
         mMap = new FileUseMap(0);
         mDirty = false;
@@ -285,14 +303,19 @@ public class ZFile implements Closeable {
         mAlignmentRules = new AlignmentRules();
         mExtensions = Lists.newArrayList();
         mToRun = Lists.newArrayList();
-        mNoTimestamps = noTimestamps;
+        mNoTimestamps = options.getNoTimestamps();
+        mTracker = options.getTracker();
+        mCompressor = options.getCompressor();
+
+        /*
+         * These two values will be overwritten by openReadOnly() below if the file exists.
+         */
+        mState = ZipFileState.CLOSED;
+        mRaf = null;
 
         if (file.exists()) {
-            mState = ZipFileState.OPEN_RO;
-            mRaf = new RandomAccessFile(file, "r");
+            openReadOnly();
         } else {
-            mState = ZipFileState.CLOSED;
-            mRaf = null;
             mDirty = true;
         }
 
@@ -769,15 +792,10 @@ public class ZFile implements Closeable {
         directWrite(offset, headerData);
 
         /*
-         * Get the source data. If a compressed source exists, that's the one we want.
+         * Get the raw source data to write.
          */
-        EntrySource source = entry.getSource();
-        if (source.innerCompressed() != null) {
-            source = source.innerCompressed();
-            assert source != null;
-        }
-
-        Verify.verify(source.innerCompressed() == null);
+        ProcessedAndRawByteSources source = entry.getSource();
+        ByteSource rawContents = source.getRawByteSource();
 
         /*
          * Write the source data.
@@ -785,7 +803,7 @@ public class ZFile implements Closeable {
         byte[] chunk = new byte[IO_BUFFER_SIZE];
         int r;
         long writeOffset = offset + headerData.length;
-        InputStream is = source.open();
+        InputStream is = rawContents.openStream();
         while ((r = is.read(chunk)) >= 0) {
             directWrite(writeOffset, chunk, 0, r);
             writeOffset += r;
@@ -797,7 +815,7 @@ public class ZFile implements Closeable {
          * Set the entry's offset and create the entry source.
          */
         entry.getCentralDirectoryHeader().setOffset(offset);
-        entry.createSourceFromZip();
+        entry.replaceSourceFromZip();
     }
 
     /**
@@ -986,6 +1004,22 @@ public class ZFile implements Closeable {
     }
 
     /**
+     * If the zip file is closed, opens it in read-only mode. If it is already open, does nothing.
+     * In general, it is not necessary to directly invoke this method. However, if directly
+     * reading the zip file using, for example {@link #directRead(long, byte[])}, then this
+     * method needs to be called.
+     * @throws IOException failed to open the file
+     */
+    public void openReadOnly() throws IOException {
+        if (mState != ZipFileState.CLOSED) {
+            return;
+        }
+
+        mState = ZipFileState.OPEN_RO;
+        mRaf = new RandomAccessFile(mFile, "r");
+    }
+
+    /**
      * Opens (or reopens) the zip file as read-write. This method will ensure that
      * {@link #mRaf} is not null and open for writing.
      *
@@ -1032,6 +1066,19 @@ public class ZFile implements Closeable {
     }
 
     /**
+     * Equivalent to call {@link #add(String, InputStream, boolean)} using
+     * {@code true} as {@code mayCompress}.
+     *
+     * @param name the file name (<em>i.e.</em>, path); paths should be defined using slashes
+     * and the name should not end in slash
+     * @param stream the source for the file's data
+     * @throws IOException failed to read the source data
+     */
+    public void add(@NonNull String name, @NonNull InputStream stream) throws IOException {
+        add(name, stream, true);
+    }
+
+    /**
      * Adds a file to the archive.
      * <p>
      * Adding the file will not update the archive immediately. Updating will only happen
@@ -1042,61 +1089,58 @@ public class ZFile implements Closeable {
      *
      * @param name the file name (<em>i.e.</em>, path); paths should be defined using slashes
      * and the name should not end in slash
-     * @param source the source for the file's data
-     * @param method the compression method to use for the file; even if
-     * {@link CompressionMethod#DEFLATE} is provided, {@link CompressionMethod#STORE} will be used
-     * if the result is smaller
+     * @param stream the source for the file's data
+     * @param mayCompress can the file be compressed?
      * @throws IOException failed to read the source data
      */
-    public void add(@NonNull String name, @NonNull EntrySource source,
-            @NonNull CompressionMethod method) throws IOException {
+    public void add(@NonNull String name, @NonNull InputStream stream, boolean mayCompress)
+            throws IOException {
+        CloseableByteSource source = mTracker.fromStream(stream);
+        long crc32 = source.hash(Hashing.crc32()).padToLong();
+
         boolean encodeWithUtf8 = !EncodeUtils.canAsciiEncode(name);
 
-        /*
-         * Create the data structure with information about the file. Assume we will store (and
-         * not compress) the file. We may need to change this later on.
-         */
-        CentralDirectoryHeader newFileData = new CentralDirectoryHeader(name, source.size(),
-                source.size(), CompressionMethod.STORE, GPFlags.make(encodeWithUtf8));
+        final SettableFuture<CentralDirectoryHeaderCompressInfo> compressInfo =
+                SettableFuture.create();
+        final CentralDirectoryHeader newFileData = new CentralDirectoryHeader(name,
+                source.size(), compressInfo, GPFlags.make(encodeWithUtf8));
+        newFileData.setCrc32(crc32);
 
-        /*
-         * If we could be deflating, compress upfront so we can know whether the compressed data
-         * is smaller or larger than the uncompressed data. storeData will either be {@code null}
-         * if we didn't even try to read from the source, or will contain the raw data or
-         * compressed data if we read from the source. newMethod will have the actual method that
-         * will be used.
-         */
-        byte[] storeData = null;
-        if (method == CompressionMethod.DEFLATE) {
-            ByteArrayOutputStream sourceDataBytes = new ByteArrayOutputStream();
+        ProcessedAndRawByteSources newSource;
+        if (mayCompress) {
+            ListenableFuture<CompressionResult> result = mCompressor.compress(source);
+            Futures.addCallback(result, new FutureCallback<CompressionResult>() {
+                @Override
+                public void onSuccess(CompressionResult result) {
+                    compressInfo.set(new CentralDirectoryHeaderCompressInfo(newFileData,
+                            result.getCompressionMethod(), result.getSize()));
+                }
 
-            InputStream sourceIn = source.open();
-            ByteStreams.copy(sourceIn, sourceDataBytes);
+                @Override
+                public void onFailure(@NonNull Throwable t) {
+                    compressInfo.setException(t);
+                }
+            });
 
-            storeData = sourceDataBytes.toByteArray();
+            ListenableFuture<CloseableByteSource> compressedByteSourceFuture =
+                    Futures.transform(result,
+                            new Function<CompressionResult, CloseableByteSource>() {
+                @Override
+                public CloseableByteSource apply(CompressionResult input) {
+                    return input.getSource();
+                }
+            });
 
-            byte[] deflatedData = deflate(storeData);
-            if (deflatedData.length < storeData.length) {
-                storeData = deflatedData;
-                newFileData.setMethod(CompressionMethod.DEFLATE);
-                newFileData.setCompressedSize(deflatedData.length);
-            }
-
-            newFileData.setCrc32(Hashing.crc32().hashBytes(storeData).padToLong());
+            LazyDelegateByteSource compressedByteSource = new LazyDelegateByteSource(
+                    compressedByteSourceFuture);
+            newSource = new ProcessedAndRawByteSources(source, compressedByteSource);
+        } else {
+            compressInfo.set(new CentralDirectoryHeaderCompressInfo(newFileData,
+                    CompressionMethod.STORE, source.size()));
+            newSource = new ProcessedAndRawByteSources(source, source);
         }
 
-        /*
-         * If we are changing the data we're storing (by compressing), replace the source with
-         * a new one.
-         */
-        if (storeData != null) {
-            source = new ByteArrayEntrySource(storeData);
-            if (newFileData.getMethod() == CompressionMethod.DEFLATE) {
-                source = new InflaterEntrySource(source, newFileData.getUncompressedSize());
-            }
-        }
-
-        add(newFileData, source);
+        add(newFileData, newSource);
     }
 
     /**
@@ -1108,8 +1152,8 @@ public class ZFile implements Closeable {
      * @param source the data source
      * @throws IOException failed to add the file
      */
-    private void add(@NonNull CentralDirectoryHeader newFileData, @NonNull EntrySource source)
-            throws IOException {
+    private void add(@NonNull CentralDirectoryHeader newFileData,
+            @NonNull ProcessedAndRawByteSources source) throws IOException {
         /*
          * If there is a file with the same name in the archive, remove it. We remove it by
          * calling delete() on the entry (this is the public API to remove a file from the archive).
@@ -1133,8 +1177,7 @@ public class ZFile implements Closeable {
          * what we want to happen.
          */
         Verify.verify(newFileData.getOffset() == -1);
-        final StoredEntry newEntry = new StoredEntry(newFileData, this);
-        newEntry.setSource(source);
+        final StoredEntry newEntry = new StoredEntry(newFileData, this, source);
 
         /*
          * Find a location in the zip where this entry will be added to and create the map entry.
@@ -1165,31 +1208,6 @@ public class ZFile implements Closeable {
                 return input.added(newEntry, replaceStore);
             }
         });
-    }
-
-    /**
-     * Performs in-memory deflation of a byte array.
-     *
-     * @param in the input data
-     * @return the deflated data
-     * @throws IOException failed to deflate
-     */
-    @NonNull
-    private static byte[] deflate(@NonNull byte[] in) throws IOException {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        Deflater deflater = new Deflater(Deflater.DEFAULT_COMPRESSION, true);
-
-        Closer closer = Closer.create();
-        try {
-            DeflaterOutputStream dos = closer.register(new DeflaterOutputStream(output, deflater));
-            dos.write(in);
-        } catch (IOException e) {
-            throw closer.rethrow(e);
-        } finally {
-            closer.close();
-        }
-
-        return output.toByteArray();
     }
 
     /**
@@ -1237,6 +1255,8 @@ public class ZFile implements Closeable {
 
             if (replaceCurrent) {
                 CentralDirectoryHeader fromCdr = fromEntry.getCentralDirectoryHeader();
+                CentralDirectoryHeaderCompressInfo fromCompressInfo =
+                        fromCdr.getCompressionInfoWithWait();
                 CentralDirectoryHeader newFileData;
                 try {
                     /*
@@ -1255,19 +1275,9 @@ public class ZFile implements Closeable {
                 /*
                  * Read the data (read directly the compressed source if there is one).
                  */
-                EntrySource fromSource = fromEntry.getSource();
-                boolean usingCompressed;
-                EntrySource compressedSource = fromSource.innerCompressed();
-                if (compressedSource == null) {
-                    Verify.verify(newFileData.getMethod() == CompressionMethod.STORE);
-                    usingCompressed = false;
-                } else {
-                    fromSource = compressedSource;
-                    usingCompressed = true;
-                }
-
-                InputStream fromInput = fromSource.open();
-                long sourceSize = fromSource.size();
+                ProcessedAndRawByteSources fromSource = fromEntry.getSource();
+                InputStream fromInput = fromSource.getRawByteSource().openStream();
+                long sourceSize = fromSource.getRawByteSource().size();
                 if (sourceSize > Integer.MAX_VALUE) {
                     throw new IOException("Cannot read source with " + sourceSize + " bytes.");
                 }
@@ -1284,10 +1294,16 @@ public class ZFile implements Closeable {
                  * Build the new source and wrap it around an inflater source if data came from
                  * a compressed source.
                  */
-                EntrySource newSource = new ByteArrayEntrySource(data);
-                if (usingCompressed) {
-                    newSource = new InflaterEntrySource(newSource, fromCdr.getUncompressedSize());
+                CloseableByteSource rawContents = mTracker.fromSource(fromSource.getRawByteSource());
+                CloseableByteSource processedContents;
+                if (fromCompressInfo.getMethod() == CompressionMethod.DEFLATE) {
+                    processedContents = new InflaterByteSource(rawContents);
+                } else {
+                    processedContents = rawContents;
                 }
+
+                ProcessedAndRawByteSources newSource = new ProcessedAndRawByteSources(
+                        processedContents, rawContents);
 
                 /*
                  * Add will replace any current entry with the same name.
@@ -1388,27 +1404,10 @@ public class ZFile implements Closeable {
          * Get the entry data source, but check if we have a compressed one (we don't want to
          * inflate & deflate).
          */
-        EntrySource source = entry.getSource();
-        boolean sourceDeflated = false;
-        if (source.innerCompressed() != null) {
-            source = source.innerCompressed();
-            assert source != null;
-            sourceDeflated = true;
-            Verify.verify(entry.getCentralDirectoryHeader().getMethod()
-                    == CompressionMethod.DEFLATE);
-        } else {
-            Verify.verify(entry.getCentralDirectoryHeader().getMethod() == CompressionMethod.STORE);
-        }
+        CentralDirectoryHeaderCompressInfo compressInfo =
+                entry.getCentralDirectoryHeader().getCompressionInfoWithWait();
 
-        InputStream is = source.open();
-        boolean threw = true;
-        byte entryData[] = null;
-        try {
-            entryData = ByteStreams.toByteArray(is);
-            threw = false;
-        } finally {
-            Closeables.close(is, threw);
-        }
+        ProcessedAndRawByteSources source = entry.getSource();
 
         CentralDirectoryHeader cdh;
         try {
@@ -1427,10 +1426,17 @@ public class ZFile implements Closeable {
         cdh.setOffset(-1);
         cdh.resetDeferredCrc();
 
-        EntrySource newSource = new ByteArrayEntrySource(entryData);
-        if (sourceDeflated) {
-            newSource = new InflaterEntrySource(newSource, cdh.getUncompressedSize());
+        CloseableByteSource rawContents = mTracker.fromSource(source.getRawByteSource());
+        CloseableByteSource processedContents;
+
+        if (compressInfo.getMethod() == CompressionMethod.DEFLATE) {
+            processedContents = new InflaterByteSource(rawContents);
+        } else {
+            processedContents = rawContents;
         }
+
+        ProcessedAndRawByteSources newSource = new ProcessedAndRawByteSources(processedContents,
+                rawContents);
 
         /*
          * Add the new file. This will replace the existing one.
@@ -1595,23 +1601,46 @@ public class ZFile implements Closeable {
 
     /**
      * Adds all files and directories recursively.
+     * <p>
+     * Equivalent to calling {@link #addAllRecursively(File, Function)} using a function that
+     * always returns {@code true}
      *
      * @param file a file or directory; if it is a directory, all files and directories will be
      * added recursively
-     * @param method a function that decides what compression method to apply to each file
+     * @throws IOException failed to some (or all ) of the files
+     */
+    public void addAllRecursively(@NonNull File file) throws IOException {
+        addAllRecursively(file, Functions.constant(true));
+    }
+
+    /**
+     * Adds all files and directories recursively.
+     *
+     * @param file a file or directory; if it is a directory, all files and directories will be
+     * added recursively
+     * @param mayCompress a function that decides whether files may be compressed
      * @throws IOException failed to some (or all ) of the files
      */
     public void addAllRecursively(@NonNull File file,
-            @NonNull Function<File, CompressionMethod> method) throws IOException {
+            @NonNull Function<? super File, Boolean> mayCompress) throws IOException {
         /*
          * The case of file.isFile() is different because if file.isFile() we will add it to the
          * zip in the root. However, if file.isDirectory() we won't add it and add its chilren.
          */
         if (file.isFile()) {
-            CompressionMethod cm = Verify.verifyNotNull(method.apply(file),
-                    "method.apply() returned null");
+            boolean mayCompressFile = Verify.verifyNotNull(mayCompress.apply(file),
+                    "mayCompress.apply() returned null");
 
-            add(file.getName(), new FileEntrySource(file), cm);
+            Closer closer = Closer.create();
+            FileInputStream fileInput = closer.register(new FileInputStream(file));
+            try {
+                add(file.getName(), fileInput, mayCompressFile);
+            } catch (IOException e) {
+                throw closer.rethrow(e);
+            } finally {
+                closer.close();
+            }
+
             return;
         }
 
@@ -1619,18 +1648,25 @@ public class ZFile implements Closeable {
             String path = FileUtils.relativePath(f, file);
             path = FileUtils.toSystemIndependentPath(path);
 
-            EntrySource source;
-            CompressionMethod cm;
-            if (f.isDirectory()) {
-                source = new ByteArrayEntrySource(new byte[0]);
-                cm = CompressionMethod.STORE;
-            } else {
-                source = new FileEntrySource(f);
-                cm = method.apply(f);
-                Verify.verifyNotNull(cm, "method.apply() returned null");
-            }
+            InputStream stream;
+            Closer closer = Closer.create();
+            try {
+                boolean mayCompressFile;
+                if (f.isDirectory()) {
+                    stream = closer.register(new ByteArrayInputStream(new byte[0]));
+                    mayCompressFile = false;
+                } else {
+                    stream = closer.register(new FileInputStream(f));
+                    mayCompressFile = Verify.verifyNotNull(mayCompress.apply(f),
+                            "mayCompress.apply() returned null");
+                }
 
-            add(path, source, cm);
+                add(path, stream, mayCompressFile);
+            } catch (IOException e) {
+                throw closer.rethrow(e);
+            } finally {
+                closer.close();
+            }
         }
     }
 
