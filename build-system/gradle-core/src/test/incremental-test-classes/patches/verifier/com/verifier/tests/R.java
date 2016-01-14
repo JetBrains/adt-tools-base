@@ -19,5 +19,6 @@ package com.verifier.tests;
 public final class R {
     public static final class id {
         public static final int text = 7001;
+        public static final int blob = 7005;
     }
 }
