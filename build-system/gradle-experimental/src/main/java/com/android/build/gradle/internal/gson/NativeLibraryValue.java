@@ -26,19 +26,22 @@ import org.gradle.api.Action;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Value type of {@link NativeLibrary} to be used with Gson.
  */
 public class NativeLibraryValue {
     @Nullable
-    String executable;
+    List<String> buildCommand;
     @Nullable
-    Collection<String> args;
+    String buildCommandString;
     @Nullable
     String toolchain;
     @Nullable
     String groupName;
+    @Nullable
+    String abi;
     @Nullable
     Collection<NativeSourceFolderValue> folders;
     @Nullable
@@ -49,10 +52,10 @@ public class NativeLibraryValue {
     File output;
 
     void copyTo(@NonNull NativeLibrary library) {
-        library.setExecutable(executable);
-        if (args != null) {
-            library.getArgs().clear();
-            library.getArgs().addAll(args);
+        library.setBuildCommandString(buildCommandString);
+        if (buildCommand != null) {
+            library.getBuildCommand().clear();
+            library.getBuildCommand().addAll(buildCommand);
         }
         library.setToolchain(toolchain);
         if (folders != null) {
@@ -67,6 +70,7 @@ public class NativeLibraryValue {
         }
 
         library.setGroupName(groupName);
+        library.setAbi(abi);
 
         if (files != null) {
             for (final NativeSourceFileValue folder : files) {
