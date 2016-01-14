@@ -505,6 +505,36 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testStyles() throws Exception {
+        mEnableIds = false;
+        assertEquals(""
+                + "res/values/styles.xml:5: Warning: The resource R.style.UnusedStyle appears to be unused [UnusedResources]\n"
+                + "    <style name=\"UnusedStyle\"/>\n"
+                + "           ~~~~~~~~~~~~~~~~~~\n"
+                + "res/values/styles.xml:6: Warning: The resource R.style.UnusedStyle_Sub appears to be unused [UnusedResources]\n"
+                + "    <style name=\"UnusedStyle.Sub\"/>\n"
+                + "           ~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/values/styles.xml:7: Warning: The resource R.style.UnusedStyle_Something_Sub appears to be unused [UnusedResources]\n"
+                + "    <style name=\"UnusedStyle.Something.Sub\" parent=\"UnusedStyle\"/>\n"
+                + "           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 3 warnings\n",
+
+                lintProject(
+                        xml("res/values/styles.xml", ""
+                                + "<resources>\n"
+                                + "    <style name=\"UsedStyle\" parent=\"android:Theme\"/>\n"
+                                + "    <style name=\"UsedStyle.Sub\"/>\n"
+                                + "    <style name=\"UsedStyle.Something.Sub\" parent=\"UsedStyle\"/>\n"
+
+                                + "    <style name=\"UnusedStyle\"/>\n"
+                                + "    <style name=\"UnusedStyle.Sub\"/>\n"
+                                + "    <style name=\"UnusedStyle.Something.Sub\" parent=\"UnusedStyle\"/>\n"
+
+                                + "    <style name=\"ImplicitUsed\" parent=\"android:Widget.ActionBar\"/>\n"
+                                + "</resources>")
+                ));
+    }
+
     @Override
     protected TestLintClient createClient() {
         if (!getName().startsWith("testDynamicResources")) {
