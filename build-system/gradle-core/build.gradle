@@ -64,8 +64,6 @@ jar {
     }
 }
 
-tasks.compileJava.dependsOn ":setupGradleInIde"
-
 group = 'com.android.tools.build'
 archivesBaseName = 'gradle-core'
 version = rootProject.ext.buildVersion
@@ -133,6 +131,9 @@ Task instrumentIncrementalTestBaseClasses = tasks.create(
 //    jvmArgs = [ '-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005']
     classpath = sourceSets.main.runtimeClasspath + sourceSets.test.compileClasspath
     args baseClasses, baseInstrumentedClasses, androidJar
+    inputs.files sourceSets.main.runtimeClasspath, sourceSets.test.compileClasspath, baseClasses,
+            androidJar
+    outputs.files baseInstrumentedClasses
 }
 
 // Compile other changesets. They have the default changset on their classpath.
@@ -157,14 +158,18 @@ for (File f: new File(project.projectDir, "src/test/incremental-test-classes/pat
 
     compilePatch.dependsOn compileIncrementalTestBaseClasses
 
+    File patchOutDir = new File(instrumentedIncrementalTestOutDir, f.getName())
     Task instrumentPatch = tasks.create(
             name: "instrumentIncrementalTestPatch${f.getName().capitalize()}",
             type: org.gradle.api.tasks.JavaExec) {
         main = 'com.android.build.gradle.internal.incremental.IncrementalChangeVisitor'
 //        jvmArgs = [ '-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005']
         classpath = sourceSets.main.runtimeClasspath + sourceSets.test.compileClasspath
-        args incrementalPatchClassFileDir, new File(instrumentedIncrementalTestOutDir, f.getName()),
+        args incrementalPatchClassFileDir, patchOutDir,
                 androidJar + File.pathSeparator + baseClasses
+        inputs.files sourceSets.main.runtimeClasspath, sourceSets.test.compileClasspath,
+                incrementalPatchClassFileDir, androidJar, baseClasses
+        outputs.files patchOutDir
     }
 
     instrumentPatch.dependsOn(compilePatch)
@@ -181,6 +186,10 @@ Task jarIncrementalTests = tasks.create(name: "jarIncrementalTests", type: Jar) 
 
 configurations {
     incrementalTestClasses
+}
+
+test {
+    inputs.files instrumentedIncrementalTestOutDir
 }
 
 artifacts {
