@@ -289,7 +289,15 @@ public class LegacyRepoUtils {
         return result;
     }
 
-    public static String getLegacyPath(@NonNull IPkgDesc desc) {
+    /**
+     * Gets the {@code path} (see {@link RepoPackage#getPath()}) for a legacy package.
+     * @param desc The {@link IPkgDesc} of the legacy package.
+     * @param relativeInstallPath The path of the package relative to the sdk root. Used to generate
+     *                            the path if normal methods fail.
+     * @return The path.
+     */
+    public static String getLegacyPath(@NonNull IPkgDesc desc,
+            @Nullable String relativeInstallPath) {
         switch (desc.getType()) {
             case PKG_TOOLS:
                 return SdkConstants.FD_TOOLS;
@@ -331,7 +339,11 @@ public class LegacyRepoUtils {
             case PKG_LLDB:
                 return DetailsTypes.getLldbPath(desc.getRevision());
             default:
-                // This should never happen.
+                // This shouldn't happen, but has been observed.
+                if (relativeInstallPath != null) {
+                    return relativeInstallPath
+                            .replace(File.separatorChar, RepoPackage.PATH_SEPARATOR);
+                }
                 return "unknown";
         }
     }
