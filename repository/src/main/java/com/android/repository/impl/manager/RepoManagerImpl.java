@@ -452,8 +452,6 @@ public class RepoManagerImpl extends RepoManager {
         public void run(@NonNull ProgressIndicator indicator, @NonNull ProgressRunner runner) {
             boolean success = false;
             try {
-                RepositoryPackages packages = new RepositoryPackages();
-
                 if (mLocalPath != null) {
                     if (mFallbackLocalRepoLoader != null) {
                         mFallbackLocalRepoLoader.refresh();
@@ -462,10 +460,11 @@ public class RepoManagerImpl extends RepoManager {
                             mFallbackLocalRepoLoader, mFop);
                     indicator.setText("Loading local repository...");
                     Map<String, LocalPackage> newLocals = local.getPackages(indicator);
-                    packages.setLocalPkgInfos(newLocals);
-                    if (mPackages == null || !newLocals.equals(mPackages.getLocalPackages())) {
+                    boolean fireListeners = !newLocals.equals(mPackages.getLocalPackages());
+                    mPackages.setLocalPkgInfos(newLocals);
+                    if (fireListeners) {
                         for (RepoLoadedCallback listener : mLocalListeners) {
-                            listener.doRun(packages);
+                            listener.doRun(mPackages);
                         }
                     }
                     indicator.setFraction(0.25);
@@ -476,7 +475,7 @@ public class RepoManagerImpl extends RepoManager {
                 synchronized (mTaskLock) {
                     for (Callback onLocalComplete : mOnLocalCompletes) {
                         onLocalComplete.getRunner(runner).runSyncWithoutProgress(
-                                new CallbackRunnable(onLocalComplete.mCallback, packages));
+                                new CallbackRunnable(onLocalComplete.mCallback, mPackages));
                     }
                     mOnLocalCompletes.clear();
                 }
@@ -490,18 +489,15 @@ public class RepoManagerImpl extends RepoManager {
                             .fetchPackages(indicator, mDownloader, mSettings);
                     indicator.setText("Computing updates...");
                     indicator.setFraction(0.75);
-                    packages.setRemotePkgInfos(remotes);
-                    if (mPackages == null || !remotes.equals(mPackages.getRemotePackages())) {
+                    boolean fireListeners = !remotes.equals(mPackages.getRemotePackages());
+                    mPackages.setRemotePkgInfos(remotes);
+                    if (fireListeners) {
                         for (RepoLoadedCallback callback : mRemoteListeners) {
-                            callback.doRun(packages);
+                            callback.doRun(mPackages);
                         }
                     }
-                } else if (mPackages != null) {
-                    // If we didn't reload the remotes, use the previous remotes.
-                    packages.setRemotePkgInfos(mPackages.getRemotePackages());
                 }
 
-                mPackages = packages;
                 if (indicator.isCanceled()) {
                     return;
                 }
