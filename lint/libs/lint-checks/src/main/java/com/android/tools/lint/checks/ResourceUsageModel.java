@@ -143,7 +143,7 @@ public class ResourceUsageModel {
     Resource getResourceFromUrl(@NonNull String possibleUrlReference) {
         ResourceUrl url = ResourceUrl.parse(possibleUrlReference);
         if (url != null && !url.framework) {
-            return addResource(url.type, url.name, null);
+            return addResource(url.type, LintUtils.getFieldName(url.name), null);
         }
 
         return null;
@@ -463,7 +463,6 @@ public class ResourceUsageModel {
             if (!resource.isReachable()
                     // Styles not yet handled correctly: don't mark as unused
                     && resource.type != ResourceType.ATTR
-                    && resource.type != ResourceType.STYLE
                     && resource.type != ResourceType.DECLARE_STYLEABLE
                     // Don't flag known service keys read by library
                     && !TranslationDetector.isServiceKey(resource.name)) {
@@ -912,8 +911,7 @@ public class ResourceUsageModel {
                     if (element.hasAttribute(ATTR_PARENT)) {
                         String parent = element.getAttribute(ATTR_PARENT);
                         if (!parent.isEmpty() && !parent.startsWith(ANDROID_STYLE_RESOURCE_PREFIX)
-                                &&
-                                !parent.startsWith(PREFIX_ANDROID)) {
+                                && !parent.startsWith(PREFIX_ANDROID)) {
                             String parentStyle = parent;
                             if (!parentStyle.startsWith(STYLE_RESOURCE_PREFIX)) {
                                 parentStyle = STYLE_RESOURCE_PREFIX + parentStyle;
@@ -921,12 +919,16 @@ public class ResourceUsageModel {
                             Resource ps = getResourceFromUrl(
                                     LintUtils.getFieldName(parentStyle));
                             if (ps != null && definition != null) {
+                                ps.addReference(definition);
                                 definition.addReference(ps);
                             }
+                        } else if (definition != null) {
+                            // Extending a builtin theme: treat these as used
+                            markReachable(definition);
                         }
                     } else {
                         // Implicit parent styles by name
-                        String name = ResourceUsageModel.getFieldName(element);
+                        String name = getFieldName(element);
                         while (true) {
                             int index = name.lastIndexOf('_');
                             if (index != -1) {
@@ -934,6 +936,7 @@ public class ResourceUsageModel {
                                 Resource ps = getResourceFromUrl(
                                         STYLE_RESOURCE_PREFIX + LintUtils.getFieldName(name));
                                 if (ps != null && definition != null) {
+                                    ps.addReference(definition);
                                     definition.addReference(ps);
                                 }
                             } else {
