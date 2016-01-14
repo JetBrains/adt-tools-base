@@ -713,4 +713,38 @@ public class StringFormatDetectorTest extends AbstractCheckTest {
                                 + "\n")
                 ));
     }
+
+    public void testStripQuotes() {
+        assertEquals("", StringFormatDetector.stripQuotes(""));
+        assertEquals("\\'a", StringFormatDetector.stripQuotes("\\'a'"));
+        assertEquals("", StringFormatDetector.stripQuotes("\""));
+        assertEquals("'", StringFormatDetector.stripQuotes("\"\'"));
+        assertEquals("\\\"Escaped quotes\\' and not escaped ",
+                StringFormatDetector.stripQuotes("\\\"Escaped quotes\\' and not escaped \""));
+        assertEquals("\\\\Not escaped quote", StringFormatDetector.stripQuotes("\\\\\"Not escaped quote"));
+        assertEquals("This\\'ll work", StringFormatDetector.stripQuotes("This\\'ll work"));
+        assertEquals("This'll also work", StringFormatDetector.stripQuotes("\"This'll also work\""));
+    }
+
+    public void testIssue196494() throws Exception {
+        // Regression test for
+        //   http://b.android.com/196494
+        //    196494: StringFormatCount false positive with nested/escaped quotes and xliff tags
+        assertEquals("No warnings.",
+
+                lintProject(
+                        xml("res/values/strings.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<resources>\n"
+                                + "    <string name=\"a\">%1$s in %2$s</string>\n\n"
+                                + "</resources>\n"
+                                + "\n"),
+                        xml("res/values/strings-es.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<resources xmlns:xliff=\"urn:oasis:names:tc:xliff:document:1.2\">\n"
+                                + "    <string name=\"a\">\"\\\"<xliff:g id=\"source\" example=\"hello\">%1$s</xliff:g>\\\" in %2$s</string>\n\n"
+                                + "</resources>\n"
+                                + "\n")
+                ));
+    }
 }
