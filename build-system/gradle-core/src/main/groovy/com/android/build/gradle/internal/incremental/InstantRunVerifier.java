@@ -210,7 +210,7 @@ public class InstantRunVerifier {
             }
         });
 
-        if (diff == Diff.CHANGE) {
+        if (diff != Diff.NONE) {
             // Detect R$something classes, and report changes in them separately.
             String name = originalClass.name;
             int index = name.lastIndexOf('/');
