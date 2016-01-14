@@ -143,6 +143,9 @@ public class Rpc {
         future.addListener(new Runnable() {
             @Override
             public void run() {
+                if (!controller.onStop(future)) {
+                    return;
+                }
                 try {
                     callback.onFinish(new Result<V>(future));
                 }
@@ -151,9 +154,6 @@ public class Rpc {
                 }
                 catch (Exception e) {
                     log.error(e);
-                }
-                finally {
-                    controller.onStop(future);
                 }
             }
         }, executor);
