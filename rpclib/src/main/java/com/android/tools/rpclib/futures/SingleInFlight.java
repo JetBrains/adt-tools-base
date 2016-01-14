@@ -71,9 +71,11 @@ public class SingleInFlight implements FutureController {
     }
 
     @Override
-    public void onStop(Future future) {
+    public boolean onStop(Future future) {
         if (mActive.compareAndSet(future, null)) {
             mListener.onWorkingToIdle();
+            return true;
         }
+        return false;
     }
 }

@@ -22,26 +22,28 @@ import java.util.concurrent.Future;
  * as they are started and finished.
  */
 public interface FutureController {
-  /**
-   * Called just after the {@link Future} is started.
-   *
-   * The function is free to cancel the {@link Future}.
-   */
-  void onStart(Future future);
+    /**
+     * Called just after the {@link Future} is started.
+     *
+     * The function is free to cancel the {@link Future}.
+     */
+    void onStart(Future future);
 
-  /**
-   * Called just after the {@link Future} has finished.
-   */
-  void onStop(Future future);
+    /**
+     * Called just after the {@link Future} has finished.
+     *
+     * @return true if the {@link Future} was considered active by the controller.
+     */
+    boolean onStop(Future future);
 
-  /**
-   * Helper implementation of the interface that does nothing.
-   */
-  FutureController NULL_CONTROLLER = new FutureController() {
-    @Override
-    public void onStart(Future future) {}
+    /**
+     * Helper implementation of the interface that does nothing.
+     */
+    FutureController NULL_CONTROLLER = new FutureController() {
+        @Override
+        public void onStart(Future future) {}
 
-    @Override
-    public void onStop(Future future) {}
-  };
+        @Override
+        public boolean onStop(Future future) { return true; }
+    };
 }
