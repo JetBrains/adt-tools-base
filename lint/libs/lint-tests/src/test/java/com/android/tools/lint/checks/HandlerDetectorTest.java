@@ -32,7 +32,7 @@ public class HandlerDetectorTest extends AbstractCheckTest {
                 + "                 ~~~~~\n"
                 + "src/test/pkg/HandlerTest.java:18: Warning: This Handler class should be static or leaks might occur (anonymous android.os.Handler) [HandlerLeak]\n"
                 + "        Handler anonymous = new Handler() { // ERROR\n"
-                + "                                          ^\n"
+                + "                            ~~~~~~~~~~~\n"
                 + "0 errors, 2 warnings\n",
 
             lintProject(

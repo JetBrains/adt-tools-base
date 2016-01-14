@@ -40,6 +40,7 @@ import lombok.ast.ConstructorInvocation;
 import lombok.ast.Expression;
 import lombok.ast.MethodDeclaration;
 import lombok.ast.Node;
+import lombok.ast.NormalTypeBody;
 
 /**
  * Checks that Handler implementations are top level classes or static.
@@ -127,9 +128,21 @@ public class HandlerDetector extends Detector implements Detector.JavaScanner {
             return;
         }
 
-        Node locationNode = node instanceof ClassDeclaration
-                ? ((ClassDeclaration) node).astName() : node;
-        Location location = context.getLocation(locationNode);
+        Location location;
+        Node locationNode;
+        if (node instanceof ClassDeclaration) {
+            locationNode = node;
+            location = context.getLocation(((ClassDeclaration) node).astName());
+        } else if (node instanceof NormalTypeBody
+                && node.getParent() instanceof ConstructorInvocation) {
+            ConstructorInvocation parent = (ConstructorInvocation)node.getParent();
+            locationNode = parent;
+            location = context.getRangeLocation(parent, 0, parent.astTypeReference(), 0);
+        } else {
+            locationNode = node;
+            location = context.getLocation(node);;
+        }
+
         //noinspection VariableNotUsedInsideIf
         context.report(ISSUE, locationNode, location, String.format(
                 "This Handler class should be static or leaks might occur (%1$s)",
