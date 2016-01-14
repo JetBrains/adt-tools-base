@@ -329,7 +329,7 @@ public class LegacyRepoUtils {
             case PKG_NDK:
                 return SdkConstants.FD_NDK;
             case PKG_LLDB:
-                return SdkConstants.FD_LLDB;
+                return DetailsTypes.getLldbPath(desc.getRevision());
             default:
                 // This should never happen.
                 return "unknown";
