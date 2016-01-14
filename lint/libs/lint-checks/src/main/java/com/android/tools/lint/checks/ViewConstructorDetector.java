@@ -51,7 +51,7 @@ public class ViewConstructorDetector extends Detector implements Detector.JavaSc
             "ViewConstructor", //$NON-NLS-1$
             "Missing View constructors for XML inflation",
 
-            "Some layout tools (such as the Android layout editor for Studio & Eclipse) needs to " +
+            "Some layout tools (such as the Android layout editor) need to " +
             "find a constructor with one of the following signatures:\n" +
             "* `View(Context context)`\n" +
             "* `View(Context context, AttributeSet attrs)`\n" +
