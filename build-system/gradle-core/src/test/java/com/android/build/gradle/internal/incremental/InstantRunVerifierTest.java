@@ -40,6 +40,7 @@ import com.verifier.tests.DisabledMethodChanging;
 import com.verifier.tests.MethodAddedClass;
 import com.verifier.tests.MethodCollisionClass;
 import com.verifier.tests.NewInstanceReflectionUser;
+import com.verifier.tests.R;
 import com.verifier.tests.ReflectiveUserNotChanging;
 import com.verifier.tests.RemoveClassAnnotation;
 import com.verifier.tests.RemoveInterfaceImplementation;
@@ -259,5 +260,12 @@ public class InstantRunVerifierTest {
         // changing a method implementation from a disabled class should be flagged.
         assertEquals(InstantRunVerifierStatus.INSTANT_RUN_DISABLED,
                 harness.verify(DisabledMethodChanging.class, "verifier"));
+    }
+
+    @Test
+    public void testRClassSpecialCase() throws IOException {
+        assertEquals(COMPATIBLE, harness.verify(R.class, null));
+        assertEquals(InstantRunVerifierStatus.R_CLASS_CHANGE,
+                harness.verify(R.id.class, "verifier"));
     }
 }
