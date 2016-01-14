@@ -1215,10 +1215,14 @@ public class ZFile implements Closeable {
 
             if (replaceCurrent) {
                 CentralDirectoryHeader fromCdr = fromEntry.getCentralDirectoryHeader();
-                CentralDirectoryHeader newFileData = new CentralDirectoryHeader(
-                        fromCdr.getName(), fromCdr.getCompressedSize(),
-                        fromCdr.getUncompressedSize(),
-                        fromEntry.getCentralDirectoryHeader().getMethod());
+                CentralDirectoryHeader newFileData;
+                try {
+                    newFileData = fromCdr.clone();
+                    newFileData.setOffset(-1);
+                    newFileData.setGpBit(GPFlags.makeDefault());
+                } catch (CloneNotSupportedException e) {
+                    throw new IOException("Failed to clone CDR.", e);
+                }
 
                 /*
                  * Read the data (read directly the compressed source if there is one).
@@ -1261,6 +1265,7 @@ public class ZFile implements Closeable {
                  * Add will replace any current entry with the same name.
                  */
                 add(newFileData, newSource);
+System.out.println("    Added.");
             }
         }
     }

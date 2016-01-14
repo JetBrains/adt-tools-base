@@ -98,4 +98,44 @@ public class CachedFileContentsTest {
         assertTrue(cachedFile.isValid());
         assertSame(cache, cachedFile.getCache());
     }
+
+    @Test
+    public void immediateChangesDetected() throws Exception {
+        File f = mTemporaryFolder.newFile("foo");
+        Files.write("bar", f, Charsets.US_ASCII);
+
+        CachedFileContents<Object> cachedFile = new CachedFileContents<Object>(f);
+        cachedFile.closed(null);
+
+        Files.write("xpto", f, Charsets.US_ASCII);
+        assertFalse(cachedFile.isValid());
+    }
+
+    @Test
+    public void immediateChangesDetectedEvenWithHackedTs() throws Exception {
+        File f = mTemporaryFolder.newFile("foo");
+        Files.write("bar", f, Charsets.US_ASCII);
+
+        CachedFileContents<Object> cachedFile = new CachedFileContents<Object>(f);
+        cachedFile.closed(null);
+        long lastTs = f.lastModified();
+
+        Files.write("xpto", f, Charsets.US_ASCII);
+        f.setLastModified(lastTs);
+        assertFalse(cachedFile.isValid());
+    }
+
+    @Test
+    public void immediateChangesWithNoContentChangeNotDetected() throws Exception {
+        File f = mTemporaryFolder.newFile("foo");
+        Files.write("bar", f, Charsets.US_ASCII);
+
+        CachedFileContents<Object> cachedFile = new CachedFileContents<Object>(f);
+        cachedFile.closed(null);
+        long lastTs = f.lastModified();
+
+        Files.write("bar", f, Charsets.US_ASCII);
+        f.setLastModified(lastTs);
+        assertTrue(cachedFile.isValid());
+    }
 }

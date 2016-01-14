@@ -204,7 +204,7 @@ public class StoredEntry {
 
         /*
          * It seems that zip utilities store directories as names ending with "/".
-         * This seems to be respected by all zip utilities but I could not find there anywhere
+         * This seems to be respected by all zip utilities although I could not find there anywhere
          * in the specification.
          */
         if (mCdh.getName().endsWith(Character.toString(ZFile.SEPARATOR))) {
@@ -405,8 +405,9 @@ public class StoredEntry {
         }
 
         ZipField.F4 crc32Field = new ZipField.F4(0, "CRC32");
-        ZipField.F4 compressedField = new ZipField.F4(crc32Field.endOffset(), "CRC32");
-        ZipField.F4 uncompressedField = new ZipField.F4(compressedField.endOffset(), "CRC32");
+        ZipField.F4 compressedField = new ZipField.F4(crc32Field.endOffset(), "Compressed size");
+        ZipField.F4 uncompressedField = new ZipField.F4(compressedField.endOffset(),
+                "Uncompressed size");
 
         crc32Field.verify(ddSource, mCdh.getCrc32());
         compressedField.verify(ddSource, mCdh.getCompressedSize());
