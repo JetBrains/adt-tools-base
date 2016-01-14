@@ -984,10 +984,10 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
      * See http://d.android.com/guide/topics/resources/resources-i18n.html#best-match
      */
     @Nullable
-    public Configurable findMatchingConfigurable(@Nullable List<? extends Configurable> configurables) {
+    public <T extends Configurable> T findMatchingConfigurable(@Nullable List<T> configurables) {
         // Because we skip qualifiers where reference configuration doesn't have a valid qualifier,
         // we can end up with more than one match. In this case, we just take the first one.
-        List<Configurable> matches = findMatchingConfigurables(configurables);
+        List<T> matches = findMatchingConfigurables(configurables);
         return matches.isEmpty() ? null : matches.get(0);
     }
 
@@ -1000,8 +1000,8 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
      * @return a list of items from the above list. This may be empty.
      */
     @NonNull
-    public List<Configurable> findMatchingConfigurables(
-            @Nullable List<? extends Configurable> configurables) {
+    public <T extends Configurable> List<T> findMatchingConfigurables(
+            @Nullable List<T> configurables) {
         if (configurables == null) {
             return Collections.emptyList();
         }
@@ -1017,8 +1017,8 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         // exactly match the device.
 
         // 1: eliminate resources that contradict
-        ArrayList<Configurable> matchingConfigurables = new ArrayList<Configurable>();
-        for (Configurable res : configurables) {
+        ArrayList<T> matchingConfigurables = new ArrayList<T>();
+        for (T res : configurables) {
             final FolderConfiguration configuration = res.getConfiguration();
             if (configuration != null && configuration.isMatchFor(this)) {
                 matchingConfigurables.add(res);
