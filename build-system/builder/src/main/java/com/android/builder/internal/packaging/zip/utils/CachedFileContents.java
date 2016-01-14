@@ -18,8 +18,13 @@ package com.android.builder.internal.packaging.zip.utils;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.google.common.base.Objects;
+import com.google.common.hash.HashCode;
+import com.google.common.hash.Hashing;
+import com.google.common.io.Files;
 
 import java.io.File;
+import java.io.IOException;
 
 /**
  * A cache for file contents. The cache allows closing a file and saving in memory its contents
@@ -56,6 +61,17 @@ public class CachedFileContents<T> {
     private long mLastClosed;
 
     /**
+     * Size of the file when last closed.
+     */
+    private long mSize;
+
+    /**
+     * Hash of the file when closed. {@code null} if hashing failed for some reason.
+     */
+    @Nullable
+    private HashCode mHash;
+
+    /**
      * Cached data associated with the file.
      */
     @Nullable
@@ -79,9 +95,11 @@ public class CachedFileContents<T> {
      *
      * @param cache an optional cache to save
      */
-    public void closed(T cache) {
+    public void closed(@Nullable T cache) {
         mCache = cache;
         mLastClosed = mFile.lastModified();
+        mSize = mFile.length();
+        mHash = hashFile();
     }
 
     /**
@@ -92,12 +110,29 @@ public class CachedFileContents<T> {
      * cache is cleared
      */
     public boolean isValid() {
-        if (mFile.exists() && mFile.lastModified() == mLastClosed) {
-            return true;
-        } else {
-            mCache = null;
-            return false;
+        boolean valid = true;
+
+        if (!mFile.exists()) {
+            valid = false;
         }
+
+        if (valid && mFile.lastModified() != mLastClosed) {
+            valid = false;
+        }
+
+        if (valid && mFile.length() != mSize) {
+            valid = false;
+        }
+
+        if (valid && !Objects.equal(mHash, hashFile())) {
+            valid = false;
+        }
+
+        if (!valid) {
+            mCache = null;
+        }
+
+        return valid;
     }
 
     /**
@@ -110,5 +145,14 @@ public class CachedFileContents<T> {
     @Nullable
     public T getCache() {
         return mCache;
+    }
+
+    @Nullable
+    private HashCode hashFile() {
+        try {
+            return Files.hash(mFile, Hashing.crc32());
+        } catch (IOException e) {
+            return null;
+        }
     }
 }

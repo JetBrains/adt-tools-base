@@ -278,6 +278,9 @@ public class ZFileTest {
         CachedFileContents<Object> changeDetector = new CachedFileContents<Object>(merged);
         changeDetector.closed(null);
 
+        /*
+         * Clone aZip into bZip and merge. Should have no effect on the final zip file.
+         */
         File bZip = cloneRsrc("simple-zip.zip", "b.zip");
 
         mergedZf.mergeFrom(new ZFile(bZip), Sets.<Pattern>newHashSet());
