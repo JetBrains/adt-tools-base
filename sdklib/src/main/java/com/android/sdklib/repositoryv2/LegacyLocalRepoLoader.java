@@ -43,6 +43,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -203,7 +204,14 @@ public class LegacyLocalRepoLoader implements FallbackLocalRepoLoader {
         @Override
         @NonNull
         public String getPath() {
-            return LegacyRepoUtils.getLegacyPath(mWrapped.getDesc());
+            String relativePath = null;
+            try {
+                relativePath = FileOpUtils.makeRelative(mWrapped.getLocalSdk().getLocation(),
+                        mWrapped.getLocalDir(), mFop);
+            } catch (IOException e) {
+                // nothing, we'll just not have a default path.
+            }
+            return LegacyRepoUtils.getLegacyPath(mWrapped.getDesc(), relativePath);
         }
 
         @Override
