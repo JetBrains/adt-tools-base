@@ -20,6 +20,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -168,16 +169,37 @@ public abstract class ZipToolsTestCase {
         }
 
         assertEquals(6, sizes.size());
-        assertTrue(sizes.containsKey("images/"));
-        assertEquals(0, sizes.get("images/").intValue());
-        assertTrue(sizes.containsKey("text-files/"));
-        assertEquals(0, sizes.get("text-files/").intValue());
-        assertTrue(sizes.containsKey("root"));
-        assertEquals(rsrcFile("root").length(), (long) sizes.get("root"));
-        assertEquals(rsrcFile("images/lena.png").length(), (long) sizes.get("images/lena.png"));
-        assertEquals(rsrcFile("text-files/rfc2460.txt").length(), (long) sizes.get(
-                "text-files/rfc2460.txt"));
-        assertEquals(rsrcFile("text-files/wikipedia.html").length(), (long) sizes.get(
-                "text-files/wikipedia.html"));
+
+        /*
+         * The "images" directory may show up as "images" or "images/".
+         */
+        String imagesKey = "images/";
+        if (!sizes.containsKey(imagesKey)) {
+            imagesKey = "images";
+        }
+
+        assertTrue(sizes.containsKey(imagesKey));
+        assertEquals(0, sizes.get(imagesKey).intValue());
+
+        assertSize(new String[] { "images/", "images" }, 0, sizes);
+        assertSize(new String[] { "text-files/", "text-files"}, 0, sizes);
+        assertSize(new String[] { "root" }, rsrcFile("root").length(), sizes);
+        assertSize(new String[] { "images/lena.png", "images\\lena.png" },
+                rsrcFile("images/lena.png").length(), sizes);
+        assertSize(new String[] { "text-files/rfc2460.txt", "text-files\\rfc2460.txt" },
+                rsrcFile("text-files/rfc2460.txt").length(), sizes);
+        assertSize(new String[] { "text-files/wikipedia.html", "text-files\\wikipedia.html" },
+                rsrcFile("text-files/wikipedia.html").length(), sizes);
+    }
+
+    private static void assertSize(String[] names, long size, Map<String, Integer> sizes) {
+        for (String n : names) {
+            if (sizes.containsKey(n)) {
+                assertEquals((long) sizes.get(n), size);
+                return;
+            }
+        }
+
+        fail();
     }
 }

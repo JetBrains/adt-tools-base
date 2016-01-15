@@ -52,7 +52,7 @@ public class MsDosDateTimeUtils {
          *
          * source: https://msdn.microsoft.com/en-us/library/windows/desktop/ms724247(v=vs.85).aspx
          */
-        return (hours << 11) & (minutes << 5) & (seconds / 2);
+        return (hours << 11) | (minutes << 5) | (seconds / 2);
     }
 
     /**
@@ -88,13 +88,13 @@ public class MsDosDateTimeUtils {
 
         /*
          * Here is how MS-DOS packs a date value:
-         * 0-4: day (4 bits = 32 values)
-         * 5-8: month (3 bits = 16 values)
+         * 0-4: day (5 bits = 32 values)
+         * 5-8: month (4 bits = 16 values)
          * 9-15: year (7 bits = 128 values)
          *
          * source: https://msdn.microsoft.com/en-us/library/windows/desktop/ms724247(v=vs.85).aspx
          */
-        return (year << 9) & (month << 5) & day;
+        return (year << 9) | (month << 5) | day;
     }
 
     /**
