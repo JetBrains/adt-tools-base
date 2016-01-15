@@ -20,8 +20,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.build.api.transform.SecondaryFile;
-import com.android.build.api.transform.SecondaryInput;
-import com.android.build.api.transform.Context;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.Status;
@@ -29,7 +27,6 @@ import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformInvocation;
-import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
@@ -325,7 +322,7 @@ public class InstantRunDex extends Transform {
         }
 
         @Override
-        public boolean getDexInProcess() {
+        public Boolean getDexInProcess() {
             // back door system property to force using the out of process dexer.
             return !Boolean.getBoolean("instant-run.force.dex.oop");
         }

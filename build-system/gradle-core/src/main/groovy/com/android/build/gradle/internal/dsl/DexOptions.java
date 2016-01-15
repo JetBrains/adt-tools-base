@@ -32,7 +32,7 @@ public class DexOptions implements com.android.builder.core.DexOptions {
 
     private boolean isJumboModeFlag = false;
 
-    private boolean isDexInProcess = false;
+    private Boolean isDexInProcess = null;
 
     private Integer threadCount = null;
 
@@ -86,9 +86,11 @@ public class DexOptions implements com.android.builder.core.DexOptions {
 
     /**
      * Whether to run the dx compiler in the same JVM as Gradle.
+     *
+     * <p>Default to {@code true} when a recent version of build tools is used.
      */
     @Override
-    public boolean getDexInProcess() {
+    public Boolean getDexInProcess() {
         return isDexInProcess;
     }
 
