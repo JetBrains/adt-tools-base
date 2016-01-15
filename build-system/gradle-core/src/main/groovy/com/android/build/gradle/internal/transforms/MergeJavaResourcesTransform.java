@@ -230,7 +230,7 @@ public class MergeJavaResourcesTransform extends Transform {
     }
 
     @Override
-    public void transform(TransformInvocation invocation) throws IOException, TransformException {
+    public void transform(@NonNull TransformInvocation invocation) throws IOException, TransformException {
 
         TransformOutputProvider outputProvider = invocation.getOutputProvider();
         checkNotNull(outputProvider, "Missing output object for transform " + getName());
@@ -240,7 +240,9 @@ public class MergeJavaResourcesTransform extends Transform {
         // jar to copy the files that came from jars.
         File outJar = null;
 
-        if (!invocation.isIncremental()) {
+        if (invocation.isIncremental()) {
+            throw new IllegalStateException("Incremental mode is not supported yet.");
+        } else {
             outputProvider.deleteAll();
 
             // gather all the inputs.

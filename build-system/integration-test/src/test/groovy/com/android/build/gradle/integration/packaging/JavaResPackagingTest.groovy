@@ -28,6 +28,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 
@@ -219,19 +220,26 @@ android {
 
     @Test
     void "test app project with new res file overriding dependency"() {
+        String resourcePath = "src/main/resources/com/foo/library.txt"
+
         project.execute("app:clean", "app:assembleDebug")
+        checkApk(appProject, "library.txt", "library:abcd")
+
 
         TemporaryProjectModification.doTest(appProject) {
-            it.addFile("src/main/resources/com/foo/library.txt", "new content")
+            it.addFile(resourcePath, "new content")
+            assertThat(appProject.file(resourcePath)).exists()
             project.execute("app:assembleDebug")
 
             checkApk(appProject, "library.txt", "new content")
         }
 
+        // Trying to figure out why the test is flaky?
+        assertThat(appProject.file(resourcePath)).doesNotExist()
+
         // file's been removed, checking in the other direction.
         project.execute("app:assembleDebug")
         checkApk(appProject, "library.txt", "library:abcd")
-
     }
 
     @Test
