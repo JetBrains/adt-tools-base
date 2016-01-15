@@ -28,7 +28,8 @@ android {
       buildConfigField "String", "FOO", "\"bar\""
       resValue "string", "foo", "foo2"
     }
-    proguard {
+    minified {
+      initWith debug
       minifyEnabled true
       proguardFile file('proguard-android.txt')
     }
@@ -40,6 +41,5 @@ android {
 }
 
 dependencies {
-    compile 'com.android.support:support-v4:20.0.0'
     androidTestCompile 'junit:junit:4.12'
 }
