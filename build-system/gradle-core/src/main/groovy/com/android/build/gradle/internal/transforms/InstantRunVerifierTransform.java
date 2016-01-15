@@ -189,8 +189,9 @@ public class InstantRunVerifierTransform extends Transform {
                         }
                         break;
                     case ADDED:
-                        // new file, no verification necessary, but save it for next iteration.
+                        // new file, save it for next iteration.
                         copyFile(inputFile, lastIterationFile);
+                        verificationResult = InstantRunVerifierStatus.CLASS_ADDED;
                         break;
                     case CHANGED:
                         // a new version of the class has been compiled, we should compare

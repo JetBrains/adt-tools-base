@@ -30,6 +30,9 @@ public enum InstantRunVerifierStatus {
     // InstantRun disabled on element like a method, class or package.
     INSTANT_RUN_DISABLED,
 
+    // A new class was added.
+    CLASS_ADDED,
+
     // changes in the hierarchy
     PARENT_CLASS_CHANGED,
     IMPLEMENTED_INTERFACES_CHANGE,
