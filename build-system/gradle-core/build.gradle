@@ -186,7 +186,3 @@ configurations {
 artifacts {
     incrementalTestClasses jarIncrementalTests
 }
-
-generateGrammarSource {
-    outputDirectory = new File(outputDirectory,'/com/android/build/gradle/shrinker/parser')
-}
