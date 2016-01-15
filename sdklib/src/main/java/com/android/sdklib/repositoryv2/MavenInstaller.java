@@ -119,6 +119,7 @@ public class MavenInstaller implements PackageInstaller {
             }
             fop.deleteOnExit(out);
             InstallerUtil.unzip(in, out, fop, p.getArchive().getComplete().getSize(), progress);
+            fop.delete(in);
 
             // Archives must contain a single top-level directory.
             File[] topDirContents = fop.listFiles(out);
