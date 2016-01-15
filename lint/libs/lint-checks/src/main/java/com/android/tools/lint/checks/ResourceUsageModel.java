@@ -26,8 +26,10 @@ import static com.android.SdkConstants.ATTR_PARENT;
 import static com.android.SdkConstants.ATTR_SHRINK_MODE;
 import static com.android.SdkConstants.ATTR_TYPE;
 import static com.android.SdkConstants.PREFIX_ANDROID;
+import static com.android.SdkConstants.PREFIX_BINDING_EXPR;
 import static com.android.SdkConstants.PREFIX_RESOURCE_REF;
 import static com.android.SdkConstants.PREFIX_THEME_REF;
+import static com.android.SdkConstants.PREFIX_TWOWAY_BINDING_EXPR;
 import static com.android.SdkConstants.STYLE_RESOURCE_PREFIX;
 import static com.android.SdkConstants.TAG_ITEM;
 import static com.android.SdkConstants.TAG_STYLE;
@@ -816,10 +818,13 @@ public class ResourceUsageModel {
                             resource = addResource(url.type, url.name, null);
                             from.addReference(resource);
                         }
-                    } else if (value.startsWith("@{")) {
+                    } else if (value.startsWith(PREFIX_BINDING_EXPR) ||
+                            value.startsWith(PREFIX_TWOWAY_BINDING_EXPR)) {
                         // Data binding expression: there could be multiple references here
                         int length = value.length();
-                        int index = 2; // skip @{
+                        int index = value.startsWith(PREFIX_TWOWAY_BINDING_EXPR)
+                                ? PREFIX_TWOWAY_BINDING_EXPR.length()
+                                : PREFIX_BINDING_EXPR.length();
                         while (true) {
                             index = value.indexOf('@', index);
                             if (index == -1) {
