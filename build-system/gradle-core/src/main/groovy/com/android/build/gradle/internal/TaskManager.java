@@ -140,6 +140,7 @@ import com.android.build.gradle.tasks.factory.UnitTestConfigAction;
 import com.android.build.gradle.tasks.fd.FastDeployRuntimeExtractorTask;
 import com.android.build.gradle.tasks.fd.GenerateInstantRunAppInfoTask;
 import com.android.builder.core.AndroidBuilder;
+import com.android.builder.core.DexProcessBuilder;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
 import com.android.builder.dependency.LibraryDependency;
@@ -151,6 +152,7 @@ import com.android.builder.testing.ConnectedDeviceProvider;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
 import com.android.manifmerger.ManifestMerger2;
+import com.android.repository.Revision;
 import com.android.utils.StringHelper;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
@@ -1996,6 +1998,8 @@ public abstract class TaskManager {
             multiDexClassListTask.dependsOn(tasks, manifestKeepListTask);
         }
 
+        checkDexingInProcess(extension);
+
         // create dex transform
         DexTransform dexTransform = new DexTransform(
                 extension.getDexOptions(),
@@ -2018,6 +2022,29 @@ public abstract class TaskManager {
                 InstantRunPatchingPolicy.PRE_LOLLIPOP !=
                     variantScope.getInstantRunBuildContext().getPatchingPolicy()) {
             incrementalBuildWrapperTask.dependsOn(tasks, dexTask);
+        }
+    }
+
+    private void checkDexingInProcess(AndroidConfig extension) {
+        DexOptions dexOptions = extension.getDexOptions();
+        Revision minimumVersion = DexProcessBuilder.FIXED_DX_MERGER;
+
+        if (extension.getBuildToolsRevision().compareTo(minimumVersion) < 0) {
+            // Dexing in-process is not supported.
+
+            if (Boolean.TRUE.equals(dexOptions.getDexInProcess())) {
+                // User tried to enable it, but the build-tools are too old.
+                getLogger().warn(
+                        "Running dex in-process requires build tools "
+                                + minimumVersion.toShortString());
+            }
+
+            dexOptions.setDexInProcess(false);
+        } else {
+            if (dexOptions.getDexInProcess() == null) {
+                // Dex in-process by default, if the user has no preference.
+                dexOptions.setDexInProcess(true);
+            }
         }
     }
 
