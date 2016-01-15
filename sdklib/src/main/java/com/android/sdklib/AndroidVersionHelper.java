@@ -71,12 +71,4 @@ public class AndroidVersionHelper {
         throw new AndroidVersion.AndroidVersionException(PkgProps.VERSION_API_LEVEL + " not found!",
                 error);
     }
-
-    public static void saveProperties(@NonNull AndroidVersion version, @NonNull Properties props) {
-        props.setProperty(PkgProps.VERSION_API_LEVEL, Integer.toString(version.getApiLevel()));
-        String codeName = version.getCodename();
-        if (codeName != null) {
-            props.setProperty(PkgProps.VERSION_CODENAME, codeName);
-        }
-    }
 }
