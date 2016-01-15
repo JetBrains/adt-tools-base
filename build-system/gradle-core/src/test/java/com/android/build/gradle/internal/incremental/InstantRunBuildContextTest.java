@@ -76,6 +76,21 @@ public class InstantRunBuildContextTest {
     }
 
     @Test
+    public void testDuplicateEntries() throws ParserConfigurationException {
+        InstantRunBuildContext context = new InstantRunBuildContext();
+        context.setApiLevel(new AndroidVersion(21, null /* codeName */));
+        context.addChangedFile(
+                InstantRunBuildContext.FileType.DEX, new File("/tmp/dependencies.dex"));
+        context.addChangedFile(
+                InstantRunBuildContext.FileType.DEX, new File("/tmp/dependencies.dex"));
+        context.close();
+        Build build = context.getPreviousBuilds().iterator().next();
+        assertThat(build.getArtifacts()).hasSize(1);
+        assertThat(build.getArtifacts().get(0).getType()).isEqualTo(
+                InstantRunBuildContext.FileType.DEX);
+    }
+
+    @Test
     public void testLoadingFromCleanState()
             throws ParserConfigurationException, SAXException, IOException {
         InstantRunBuildContext instantRunBuildContext = new InstantRunBuildContext();

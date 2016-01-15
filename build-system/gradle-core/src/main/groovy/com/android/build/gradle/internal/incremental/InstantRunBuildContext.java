@@ -314,6 +314,14 @@ public class InstantRunBuildContext {
         if (patchingPolicy == null) {
             return;
         }
+        // make sure we don't add the same artifacts twice.
+        for (Artifact artifact : currentBuild.artifacts) {
+            if (artifact.getType() == fileType
+                    && artifact.getLocation().getAbsolutePath().equals(file.getAbsolutePath())) {
+                return;
+            }
+        }
+
         // validate the patching policy and the received file type to record the file or not.
         // RELOAD and MAIN are always record.
         if (fileType != FileType.RELOAD_DEX && fileType != FileType.MAIN &&
