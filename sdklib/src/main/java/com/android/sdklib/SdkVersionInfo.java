@@ -87,7 +87,7 @@ public class SdkVersionInfo {
             case 17: return "4.2";
             case 18: return "4.3";
             case 19: return "4.4";
-            case 20: return "4.4";
+            case 20: return "4.4W";
             case 21: return "5.0";
             case 22: return "5.1";
             case 23: return "6.0";
