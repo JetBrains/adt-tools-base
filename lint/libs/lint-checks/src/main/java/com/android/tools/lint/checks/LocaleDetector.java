@@ -21,6 +21,7 @@ import static com.android.tools.lint.client.api.JavaParser.TYPE_STRING;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
 import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.client.api.LintClient;
@@ -42,6 +43,7 @@ import java.util.List;
 import lombok.ast.AstVisitor;
 import lombok.ast.Expression;
 import lombok.ast.MethodInvocation;
+import lombok.ast.Node;
 
 /**
  * Checks for errors related to locale handling
@@ -107,7 +109,7 @@ public class LocaleDetector extends Detector implements JavaScanner {
                 String name = method.getName();
                 if (name.equals(FORMAT_METHOD)) {
                     checkFormat(context, method, call);
-                } else if (method.getArgumentCount() == 0){
+                } else if (method.getArgumentCount() == 0) {
                     Location location = context.getNameLocation(call);
                     String message = String.format(
                             "Implicitly using the default locale is a common source of bugs: " +
@@ -116,6 +118,28 @@ public class LocaleDetector extends Detector implements JavaScanner {
                 }
             }
         }
+    }
+
+    /** Returns true if the given node is a parameter to a Logging call */
+    private static boolean isLoggingParameter(
+            @NonNull JavaContext context,
+            @NonNull MethodInvocation node) {
+        Node parent = node.getParent();
+        if (parent instanceof MethodInvocation) {
+            MethodInvocation call = (MethodInvocation)parent;
+            String name = call.astName().astValue();
+            if (name.length() == 1) { // "d", "i", "e" etc in Log
+                ResolvedNode resolved = context.resolve(call);
+                if (resolved instanceof ResolvedMethod) {
+                    ResolvedMethod method = (ResolvedMethod) resolved;
+                    if (method.getContainingClass().matches(LogDetector.LOG_CLS)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     private static void checkFormat(
@@ -138,6 +162,9 @@ public class LocaleDetector extends Detector implements JavaScanner {
 
         String format = (String) value;
         if (StringFormatDetector.isLocaleSpecific(format)) {
+            if (isLoggingParameter(context, call)) {
+                return;
+            }
             Location location = context.getLocation(call);
             String message =
                     "Implicitly using the default locale is a common source of bugs: " +

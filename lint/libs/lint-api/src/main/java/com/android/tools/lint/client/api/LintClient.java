@@ -741,10 +741,14 @@ public abstract class LintClient {
     public IAndroidTarget[] getTargets() {
         if (mTargets == null) {
             AndroidSdkHandler sdkHandler = getSdk();
-            RepoLogger logger = getLogger();
-            Collection<IAndroidTarget> targets = sdkHandler.getAndroidTargetManager(logger)
-                    .getTargets(logger);
-            mTargets = targets.toArray(new IAndroidTarget[targets.size()]);
+            if (sdkHandler != null) {
+                RepoLogger logger = getLogger();
+                Collection<IAndroidTarget> targets = sdkHandler.getAndroidTargetManager(logger)
+                        .getTargets(logger);
+                mTargets = targets.toArray(new IAndroidTarget[targets.size()]);
+            } else {
+                mTargets = new IAndroidTarget[0];
+            }
         }
 
         return mTargets;
@@ -824,7 +828,7 @@ public abstract class LintClient {
         // build tools, regardless of project metadata. In Gradle, this
         // method is overridden to use the actual build tools specified in the
         // project.
-        return sdk.getLatestBuildTool(getLogger());
+        return sdk != null ? sdk.getLatestBuildTool(getLogger()) : null;
     }
 
     /**
