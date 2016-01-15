@@ -60,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 
 import lombok.ast.ClassDeclaration;
+import lombok.ast.Modifiers;
 import lombok.ast.Node;
 
 /**
@@ -168,8 +169,15 @@ public class RegistrationDetector extends LayoutDetector implements JavaScanner 
             // anonymous class; can't be registered
             return;
         }
-        if (node.astModifiers().isAbstract()) {
+
+        Modifiers modifiers = node.astModifiers();
+        if (modifiers.isAbstract()) {
             // Abstract classes do not need to be registered
+            return;
+        }
+
+        if (modifiers.isPrivate()) {
+            // Private classes are clearly not intended to be registered
             return;
         }
 
@@ -218,6 +226,11 @@ public class RegistrationDetector extends LayoutDetector implements JavaScanner 
             @NonNull ClassDeclaration node,
             @NonNull String className,
             @NonNull String tag) {
+        if (tag.equals(TAG_RECEIVER)) {
+            // Receivers can be registered in code; don't flag these.
+            return;
+        }
+
         // Don't flag activities registered in test source sets
         if (context.getProject().isGradleProject()) {
             AndroidProject model = context.getProject().getGradleProjectModel();

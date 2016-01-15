@@ -59,13 +59,10 @@ public class RegistrationDetectorTest extends AbstractCheckTest {
                 + "src/test/pkg/TestProvider2.java:3: Warning: The <provider> test.pkg.TestProvider2 is not registered in the manifest [Registered]\n"
                 + "public class TestProvider2 extends TestProvider {\n"
                 + "             ~~~~~~~~~~~~~\n"
-                + "src/test/pkg/TestReceiver.java:7: Warning: The <receiver> test.pkg.TestReceiver is not registered in the manifest [Registered]\n"
-                + "public class TestReceiver extends BroadcastReceiver {\n"
-                + "             ~~~~~~~~~~~~\n"
                 + "src/test/pkg/TestService.java:7: Warning: The <service> test.pkg.TestService is not registered in the manifest [Registered]\n"
                 + "public class TestService extends Service {\n"
                 + "             ~~~~~~~~~~~\n"
-                + "0 errors, 6 warnings\n",
+                + "0 errors, 5 warnings\n",
 
                 lintProject(
                         // no manifest
@@ -154,6 +151,26 @@ public class RegistrationDetectorTest extends AbstractCheckTest {
                                 + "public class TestActivity extends Activity {\n"
                                 + "}\n")
                 ));
+    }
+
+    public void testSkipReceivers() throws Exception {
+        assertEquals("No warnings.",
+                lintProject(java("src/test/pkg/MyReceiver.java", ""
+                        + "package test.pkg;\n"
+                        + "\n"
+                        + "import android.app.Activity;\n"
+                        + "import android.content.BroadcastReceiver;\n"
+                        + "import android.content.Context;\n"
+                        + "import android.content.Intent;\n"
+                        + "\n"
+                        + "public class MyReceiver extends BroadcastReceiver {\n"
+                        + "    @Override\n"
+                        + "    public void onReceive(Context context, Intent intent) {\n"
+                        + "    }\n"
+                        + "\n"
+                        + "    private static class MyActivity extends Activity {\n"
+                        + "    }\n"
+                        + "}\n")));
     }
 
     @Override
