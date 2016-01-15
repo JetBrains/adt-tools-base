@@ -137,6 +137,11 @@ public class MockFileOp implements FileOp {
 
     }
 
+    @Override
+    public void deleteOnExit(File file) {
+        // nothing
+    }
+
     public void setIsWindows(boolean isWindows) {
         mIsWindows = isWindows;
     }
