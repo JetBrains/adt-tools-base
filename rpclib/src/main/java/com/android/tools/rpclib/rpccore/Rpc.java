@@ -16,6 +16,7 @@
 package com.android.tools.rpclib.rpccore;
 
 import com.android.tools.rpclib.futures.FutureController;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Uninterruptibles;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.intellij.openapi.diagnostic.Logger;
@@ -27,6 +28,8 @@ import java.util.concurrent.*;
  * created from RPC calls.
  */
 public class Rpc {
+    public static final Executor DEFAULT_EXECUTOR = MoreExecutors.sameThreadExecutor();
+
     /**
      * Blocks and waits for the result of the RPC call, or throws an exception if the RPC call was not
      * successful.
@@ -42,9 +45,8 @@ public class Rpc {
      *                               {@link ListenableFuture}.
      * @throws CancellationException if the computation was cancelled.
      */
-    public static <V> V get(final ListenableFuture<V> future, long timeout, TimeUnit unit) throws RpcException,
-                                                                                                  TimeoutException,
-                                                                                                  ExecutionException {
+    public static <V> V get(final ListenableFuture<V> future, long timeout, TimeUnit unit)
+        throws RpcException, TimeoutException, ExecutionException {
         try {
             return Uninterruptibles.getUninterruptibly(future, timeout, unit);
         }
@@ -55,6 +57,27 @@ public class Rpc {
             }
             throw (RpcException)cause;
         }
+    }
+
+    /**
+     * Calls the provided {@link Callback#onStart} function and then {@link Callback#onFinish}
+     * with the {@link Result} once the {@link ListenableFuture} RPC call has either successfully
+     * completed or thrown an exception.
+     *
+     * <p>If {@link Callback#onFinish} does not throw an uncaught,
+     * non-{@link CancellationException} then it is logged as an error to the provided
+     * {@link Logger}.
+     *
+     * <p>Both {@link Callback#onStart} and {@link Callback#onFinish} are called using the default
+     * same thread {@link Executor}.
+     *
+     * @param future   the {@link ListenableFuture} returned by the invoking the RPC call.
+     * @param log      the {@link Logger} used for logging uncaught exceptions thrown from {@link Callback#onFinish}.
+     * @param callback the {@link Callback} to handle {@link Callback#onStart} and {@link Callback#onFinish} events.
+     * @param <V>      the RPC result type.
+     */
+    public static <V> void listen(ListenableFuture<V> future, Logger log, Callback<V> callback) {
+        listen(future, DEFAULT_EXECUTOR, log, FutureController.NULL_CONTROLLER, callback);
     }
 
     /**
@@ -75,11 +98,23 @@ public class Rpc {
      * @param callback the {@link Callback} to handle {@link Callback#onStart} and {@link Callback#onFinish} events.
      * @param <V>      the RPC result type.
      */
-    public static <V> void listen(final ListenableFuture<V> future,
-                                  final Executor executor,
-                                  final Logger log,
-                                  final Callback<V> callback) {
+    public static <V> void listen(ListenableFuture<V> future, Executor executor, Logger log, Callback<V> callback) {
         listen(future, executor, log, FutureController.NULL_CONTROLLER, callback);
+    }
+
+    /**
+     * Extension of {@link #listen(ListenableFuture, Logger, FutureController, Callback)}
+     * that also takes a {@link FutureController} for controlling the {@link Future}s.
+     *
+     * @param future     the {@link ListenableFuture} returned by the invoking the RPC call.
+     * @param executor   the {@link Executor} used for invoking the {@link Callback} methods.
+     * @param log        the {@link Logger} used for logging uncaught exceptions thrown from {@link Callback#onFinish}.
+     * @param callback   the {@link Callback} to handle {@link Callback#onStart} and {@link Callback#onFinish} events.
+     * @param controller the {@link FutureController} used to manage the RPC futures.
+     * @param <V>        the RPC result type.
+     */
+    public static <V> void listen(ListenableFuture<V> future, Logger log, FutureController controller, Callback<V> callback) {
+        listen(future, DEFAULT_EXECUTOR, log, controller, callback);
     }
 
     /**
@@ -108,6 +143,9 @@ public class Rpc {
         future.addListener(new Runnable() {
             @Override
             public void run() {
+                if (!controller.onStop(future)) {
+                    return;
+                }
                 try {
                     callback.onFinish(new Result<V>(future));
                 }
@@ -116,9 +154,6 @@ public class Rpc {
                 }
                 catch (Exception e) {
                     log.error(e);
-                }
-                finally {
-                    controller.onStop(future);
                 }
             }
         }, executor);
