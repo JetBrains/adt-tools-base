@@ -23,6 +23,7 @@ import com.android.repository.api.SchemaModule;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import org.w3c.dom.bootstrap.DOMImplementationRegistry;
 import org.w3c.dom.ls.DOMImplementationLS;
@@ -37,6 +38,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import javax.xml.XMLConstants;
 import javax.xml.bind.JAXBContext;
@@ -55,6 +57,11 @@ import javax.xml.validation.SchemaFactory;
  * JAXB.
  */
 public class SchemaModuleUtil {
+
+    private static final Map<String, JAXBContext> CONTEXT_CACHE = Maps.newHashMap();
+
+    private static final Map<List<SchemaModule.SchemaModuleVersion>, Schema> SCHEMA_CACHE = Maps
+            .newHashMap();
 
     /**
      * Create an {@link LSResourceResolver} that will use the supplied {@link SchemaModule}s to
@@ -106,12 +113,15 @@ public class SchemaModuleUtil {
                 packages.add(version.getObjectFactory().getPackage().getName());
             }
         }
-        JAXBContext jc = null;
-        try {
-            jc = JAXBContext.newInstance(Joiner.on(":").join(packages),
-                    SchemaModuleUtil.class.getClassLoader());
-        } catch (JAXBException e1) {
-            assert false : "Failed to create context!\n" + e1.toString();
+        String key = Joiner.on(":").join(packages);
+        JAXBContext jc = CONTEXT_CACHE.get(key);
+        if (jc == null) {
+            try {
+                jc = JAXBContext.newInstance(key, SchemaModuleUtil.class.getClassLoader());
+                CONTEXT_CACHE.put(key, jc);
+            } catch (JAXBException e1) {
+                assert false : "Failed to create context!\n" + e1.toString();
+            }
         }
         return jc;
     }
@@ -127,7 +137,6 @@ public class SchemaModuleUtil {
     public static Schema getSchema(
             final Collection<SchemaModule> possibleModules,
             @Nullable final LSResourceResolver resourceResolver, final ProgressIndicator progress) {
-        Schema schema = null;
         SchemaFactory sf =
                 SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
         if (resourceResolver != null) {
@@ -152,18 +161,25 @@ public class SchemaModuleUtil {
         });
 
         List<StreamSource> sources = Lists.newArrayList();
+        List<SchemaModule.SchemaModuleVersion> key = Lists.newArrayList();
         for (SchemaModule module : possibleModules) {
             for (SchemaModule.SchemaModuleVersion version : module
                     .getNamespaceVersionMap()
                     .values()) {
+                key.add(version);
                 sources.add(new StreamSource(version.getXsd()));
             }
         }
 
-        try {
-            schema = sf.newSchema(sources.toArray(new StreamSource[sources.size()]));
-        } catch (SAXException e) {
-            assert false : "Invalid schema found!";
+        Schema schema = SCHEMA_CACHE.get(key);
+        if (schema == null) {
+            try {
+                schema = sf.newSchema(sources.toArray(new StreamSource[sources.size()]));
+                SCHEMA_CACHE.put(key, schema);
+            }
+            catch (SAXException e) {
+                assert false : "Invalid schema found!";
+            }
         }
         return schema;
     }
