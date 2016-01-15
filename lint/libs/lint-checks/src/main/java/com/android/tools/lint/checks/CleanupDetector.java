@@ -406,7 +406,8 @@ public class CleanupDetector extends Detector implements JavaScanner {
         return (COMMIT.equals(methodName) || COMMIT_ALLOWING_LOSS.equals(methodName)) &&
                 isMethodOnFragmentClass(context, call,
                         FRAGMENT_TRANSACTION_CLS,
-                        FRAGMENT_TRANSACTION_V4_CLS);
+                        FRAGMENT_TRANSACTION_V4_CLS,
+                        true);
     }
 
     private static boolean isShowFragmentMethodCall(@NonNull JavaContext context,
@@ -414,19 +415,24 @@ public class CleanupDetector extends Detector implements JavaScanner {
         String methodName = call.astName().astValue();
         return SHOW.equals(methodName)
                 && isMethodOnFragmentClass(context, call,
-                DIALOG_FRAGMENT, DIALOG_V4_FRAGMENT);
+                DIALOG_FRAGMENT, DIALOG_V4_FRAGMENT, true);
     }
 
     private static boolean isMethodOnFragmentClass(
             @NonNull JavaContext context,
             @NonNull MethodInvocation call,
             @NonNull String fragmentClass,
-            @NonNull String v4FragmentClass) {
+            @NonNull String v4FragmentClass,
+            boolean returnForUnresolved) {
         ResolvedNode resolved = context.resolve(call);
         if (resolved instanceof ResolvedMethod) {
             ResolvedClass containingClass = ((ResolvedMethod) resolved).getContainingClass();
             return containingClass.isSubclassOf(fragmentClass, false) ||
                     containingClass.isSubclassOf(v4FragmentClass, false);
+        } else if (resolved == null) {
+            // If we *can't* resolve the method call, caller can decide
+            // whether to consider the method called or not
+            return returnForUnresolved;
         }
 
         return false;
@@ -580,7 +586,10 @@ public class CleanupDetector extends Detector implements JavaScanner {
         public boolean visitBinaryExpression(BinaryExpression node) {
             if (node.astOperator() == BinaryOperator.ASSIGN) {
                 Expression rhs = node.astRight();
-                boolean clearLhs = true;
+                // TEMPORARILY DISABLED; see testDatabaseCursorReassignment
+                // This can result in some false positives right now. Play it
+                // safe instead.
+                boolean clearLhs = false;
                 if (rhs instanceof VariableReference) {
                     ResolvedNode resolved = mContext.resolve(rhs);
                     //noinspection SuspiciousMethodCalls

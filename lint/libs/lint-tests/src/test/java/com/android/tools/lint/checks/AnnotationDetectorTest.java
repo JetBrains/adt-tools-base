@@ -345,7 +345,7 @@ public class AnnotationDetectorTest extends AbstractCheckTest {
 
     public void testMissingSwitchFailingIntDef() throws Exception {
         assertEquals(""
-                + "src/test/pkg/X.java:8: Warning: Switch statement on an int with known associated constant missing case AT_MOST, EXACTLY, UNSPECIFIED [SwitchIntDef]\n"
+                + "src/test/pkg/X.java:8: Warning: Switch statement on an int with known associated constant missing case EXACTLY, UNSPECIFIED [SwitchIntDef]\n"
                 + "        switch (val) {\n"
                 + "        ~~~~~~\n"
                 + "0 errors, 1 warnings\n",
@@ -377,6 +377,34 @@ public class AnnotationDetectorTest extends AbstractCheckTest {
                 Collections.singletonList("LENGTH_SHORT"),
                 getMissingCases("Switch statement on an int with known associated constant missing case LENGTH_SHORT",
                                 TextFormat.TEXT));
+    }
+
+    public void testMatchEcjAndExternalFieldNames() throws Exception {
+        assertEquals("No warnings.",
+                lintProject(java("src/test/pkg/MissingEnum.java", ""
+                        + "package test.pkg;\n"
+                        + "\n"
+                        + "import android.net.wifi.WifiManager;\n"
+                        + "\n"
+                        + "public class MissingEnum {\n"
+                        + "    private WifiManager mWifiManager;\n"
+                        + "\n"
+                        + "    private void updateAccessPoints() {\n"
+                        + "        final int wifiState = mWifiManager.getWifiState();\n"
+                        + "        switch (wifiState) {\n"
+                        + "            case WifiManager.WIFI_STATE_ENABLING:\n"
+                        + "                break;\n"
+                        + "            case WifiManager.WIFI_STATE_ENABLED:\n"
+                        + "                break;\n"
+                        + "            case WifiManager.WIFI_STATE_DISABLING:\n"
+                        + "                break;\n"
+                        + "            case WifiManager.WIFI_STATE_DISABLED:\n"
+                        + "                break;\n"
+                        + "            case WifiManager.WIFI_STATE_UNKNOWN:\n"
+                        + "                break;\n"
+                        + "        }\n"
+                        + "    }\n"
+                        + "}\n")));
     }
 
     @Override

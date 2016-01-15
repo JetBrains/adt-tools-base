@@ -1005,6 +1005,13 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             }
 
             // Test source set?
+            for (SourceProviderContainer extra : model.getDefaultConfig().getExtraSourceProviders()) {
+                String artifactName = extra.getArtifactName();
+                if (AndroidProject.ARTIFACT_ANDROID_TEST.equals(artifactName)
+                        && manifestFile.equals(extra.getSourceProvider().getManifestFile())) {
+                    return true;
+                }
+            }
             for (ProductFlavorContainer container : model.getProductFlavors()) {
                 for (SourceProviderContainer extra : container.getExtraSourceProviders()) {
                     String artifactName = extra.getArtifactName();

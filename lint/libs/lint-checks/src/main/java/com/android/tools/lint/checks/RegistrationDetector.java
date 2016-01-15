@@ -31,6 +31,10 @@ import static com.android.SdkConstants.TAG_SERVICE;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.BuildTypeContainer;
+import com.android.builder.model.ProductFlavorContainer;
+import com.android.builder.model.SourceProviderContainer;
 import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Detector.JavaScanner;
@@ -43,10 +47,12 @@ import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
+import com.android.utils.SdkUtils;
 import com.google.common.collect.Maps;
 
 import org.w3c.dom.Element;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -212,6 +218,39 @@ public class RegistrationDetector extends LayoutDetector implements JavaScanner 
             @NonNull ClassDeclaration node,
             @NonNull String className,
             @NonNull String tag) {
+        // Don't flag activities registered in test source sets
+        if (context.getProject().isGradleProject()) {
+            AndroidProject model = context.getProject().getGradleProjectModel();
+            if (model != null) {
+                String javaSource = context.file.getPath();
+                // Test source set?
+
+                for (SourceProviderContainer extra : model.getDefaultConfig().getExtraSourceProviders()) {
+                    String artifactName = extra.getArtifactName();
+                    if (AndroidProject.ARTIFACT_ANDROID_TEST.equals(artifactName)) {
+                        for (File file : extra.getSourceProvider().getJavaDirectories()) {
+                            if (SdkUtils.startsWithIgnoreCase(javaSource, file.getPath())) {
+                                return;
+                            }
+                        }
+                    }
+                }
+
+                for (ProductFlavorContainer container : model.getProductFlavors()) {
+                    for (SourceProviderContainer extra : container.getExtraSourceProviders()) {
+                        String artifactName = extra.getArtifactName();
+                        if (AndroidProject.ARTIFACT_ANDROID_TEST.equals(artifactName)) {
+                            for (File file : extra.getSourceProvider().getJavaDirectories()) {
+                                if (SdkUtils.startsWithIgnoreCase(javaSource, file.getPath())) {
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         Location location = context.getNameLocation(node);
         String message = String.format("The `<%1$s> %2$s` is not registered in the manifest",
                 tag, className);

@@ -87,13 +87,7 @@ public class CleanupDetectorTest extends AbstractCheckTest {
                 + "src/test/pkg/CommitTest.java:65: Warning: This transaction should be completed with a commit() call [CommitTransaction]\n"
                 + "        getSupportFragmentManager().beginTransaction();\n"
                 + "                                    ~~~~~~~~~~~~~~~~\n"
-                + "src/test/pkg/CommitTest.java:123: Warning: This transaction should be completed with a commit() call [CommitTransaction]\n"
-                + "        transaction = getFragmentManager().beginTransaction();\n"
-                + "                                           ~~~~~~~~~~~~~~~~\n"
-                + "src/test/pkg/CommitTest.java:132: Warning: This transaction should be completed with a commit() call [CommitTransaction]\n"
-                + "        transaction = getFragmentManager().beginTransaction();\n"
-                + "                                           ~~~~~~~~~~~~~~~~\n"
-                + "0 errors, 6 warnings\n",
+                + "0 errors, 4 warnings\n",
 
             lintProject(
                     "apicheck/classpath=>.classpath",
@@ -250,5 +244,33 @@ public class CleanupDetectorTest extends AbstractCheckTest {
                         "project.properties19=>project.properties",
                         "src/test/pkg/CursorTest.java.txt=>src/test/pkg/CursorTest.java"
                 ));
+    }
+
+    public void testDatabaseCursorReassignment() throws Exception {
+        //noinspection ClassNameDiffersFromFileName,SpellCheckingInspection
+        assertEquals("No warnings.",
+                lintProject(java("src/test/pkg/CursorTest.java", ""
+                        + "package test.pkg;\n"
+                        + "\n"
+                        + "import android.app.Activity;\n"
+                        + "import android.database.Cursor;\n"
+                        + "import android.database.sqlite.SQLiteException;\n"
+                        + "import android.net.Uri;\n"
+                        + "\n"
+                        + "public class CursorTest extends Activity {\n"
+                        + "    public void testSimple() {\n"
+                        + "        Cursor cursor;\n"
+                        + "        try {\n"
+                        + "            cursor = getContentResolver().query(Uri.parse(\"blahblah\"),\n"
+                        + "                    new String[]{\"_id\", \"display_name\"}, null, null, null);\n"
+                        + "        } catch (SQLiteException e) {\n"
+                        + "            // Fallback\n"
+                        + "            cursor = getContentResolver().query(Uri.parse(\"blahblah\"),\n"
+                        + "                    new String[]{\"_id2\", \"display_name\"}, null, null, null);\n"
+                        + "        }\n"
+                        + "        assert cursor != null;\n"
+                        + "        cursor.close();\n"
+                        + "    }\n"
+                        + "}\n")));
     }
 }
