@@ -88,6 +88,7 @@ public class BasicInstaller implements PackageInstaller {
             if (out == null || !fop.mkdirs(out)) {
                 throw new IOException("Failed to create temp dir");
             }
+            fop.deleteOnExit(out);
             progress.logInfo(String.format("Installing %1$s in %2$s", p.getDisplayName(), dest));
             InstallerUtil.unzip(in, out, fop, p.getArchive().getComplete().getSize(), progress);
 

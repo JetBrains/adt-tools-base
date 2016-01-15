@@ -204,4 +204,9 @@ public interface FileOp {
      */
     @Nullable
     File[] listFiles(@NonNull File folder, @Nullable FilenameFilter filenameFilter);
+
+    /**
+     * @see File#deleteOnExit()
+     */
+    void deleteOnExit(File file);
 }
