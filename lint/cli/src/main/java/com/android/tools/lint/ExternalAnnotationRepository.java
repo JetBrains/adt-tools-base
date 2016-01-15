@@ -99,8 +99,18 @@ public class ExternalAnnotationRepository {
     @NonNull
     public static synchronized ExternalAnnotationRepository get(@NonNull LintClient client) {
         if (sSingleton == null) {
-            HashSet<AndroidLibrary> seen = Sets.newHashSet();
             Collection<Project> projects = client.getKnownProjects();
+            if (Project.isAospBuildEnvironment()) {
+                for (Project project : projects) {
+                    // If we are dealing with the AOSP frameworks project, we explicitly
+                    // set the ExternalAnnotationRepository to a no-op.
+                    if (Project.isAospFrameworksProject(project.getDir())) {
+                        return sSingleton = new ExternalAnnotationRepository(
+                                Collections.<AnnotationsDatabase>emptyList());
+                    }
+                }
+            }
+            HashSet<AndroidLibrary> seen = Sets.newHashSet();
             List<File> files = Lists.newArrayListWithExpectedSize(2);
             for (Project project : projects) {
                 if (project.isGradleProject()) {

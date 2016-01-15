@@ -24,6 +24,7 @@ import static com.android.SdkConstants.APPCOMPAT_LIB_ARTIFACT;
 import static com.android.SdkConstants.ATTR_MIN_SDK_VERSION;
 import static com.android.SdkConstants.ATTR_PACKAGE;
 import static com.android.SdkConstants.ATTR_TARGET_SDK_VERSION;
+import static com.android.SdkConstants.FN_ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.FN_PROJECT_PROGUARD_FILE;
 import static com.android.SdkConstants.OLD_PROGUARD_FILE;
 import static com.android.SdkConstants.PROGUARD_CONFIG;
@@ -33,6 +34,7 @@ import static com.android.SdkConstants.SUPPORT_LIB_ARTIFACT;
 import static com.android.SdkConstants.TAG_USES_SDK;
 import static com.android.SdkConstants.VALUE_TRUE;
 import static com.android.sdklib.SdkVersionInfo.HIGHEST_KNOWN_API;
+import static com.android.sdklib.SdkVersionInfo.LOWEST_ACTIVE_API;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -324,6 +326,18 @@ public class Project {
         } else {
             mDirectLibraries = Collections.emptyList();
         }
+
+        if (isAospBuildEnvironment()) {
+            if (isAospFrameworksRelatedProject(mDir)) {
+                // No manifest file for this project: just init the manifest values here
+                mManifestMinSdk = mManifestTargetSdk = new AndroidVersion(HIGHEST_KNOWN_API, null);
+            } else if (mBuildSdk == -1) {
+                // only set BuildSdk for projects other than frameworks and
+                // the ones that don't have one set in project.properties.
+                mBuildSdk = getClient().getHighestKnownApiLevel();
+            }
+
+        }
     }
 
     @Override
@@ -380,7 +394,7 @@ public class Project {
     @NonNull
     public List<File> getJavaSourceFolders() {
         if (mJavaSourceFolders == null) {
-            if (isAospFrameworksProject(mDir)) {
+            if (isAospFrameworksRelatedProject(mDir)) {
                 return Collections.singletonList(new File(mDir, "java")); //$NON-NLS-1$
             }
             if (isAospBuildEnvironment()) {
@@ -405,9 +419,9 @@ public class Project {
     public List<File> getJavaClassFolders() {
         if (mJavaClassFolders == null) {
             if (isAospFrameworksProject(mDir)) {
-                File top = mDir.getParentFile().getParentFile().getParentFile();
+                String top = getAospTop();
                 if (top != null) {
-                    File out = new File(top, "out");
+                    File out = new File(top, "out"); //$NON-NLS-1$
                     if (out.exists()) {
                         String relative =
                             "target/common/obj/JAVA_LIBRARIES/framework_intermediates/classes.jar";
@@ -453,6 +467,16 @@ public class Project {
                 // the single classes.jar file, so these have already been processed
                 // in getJavaClassFolders.
                 mJavaLibraries = mClient.getJavaLibraries(this, true);
+                if (isAospBuildEnvironment()) {
+                    // We still need to add the support-annotations library in the case of AOSP
+                    File out = new File(getAospTop(), "out");
+                    String relative = "target/common/obj/JAVA_LIBRARIES/"
+                            + "android-support-annotations_intermediates/classes";
+                    File annotationsDir = new File(out, relative.replace('/', File.separatorChar));
+                    if (annotationsDir.exists()) {
+                        mJavaLibraries.add(annotationsDir);
+                    }
+                }
             }
             return mJavaLibraries;
         } else {
@@ -488,7 +512,7 @@ public class Project {
         if (mResourceFolders == null) {
             List<File> folders = mClient.getResourceFolders(this);
 
-            if (folders.size() == 1 && isAospFrameworksProject(mDir)) {
+            if (folders.size() == 1 && isAospFrameworksRelatedProject(mDir)) {
                 // No manifest file for this project: just init the manifest values here
                 mManifestMinSdk = mManifestTargetSdk = new AndroidVersion(HIGHEST_KNOWN_API, null);
                 File folder = new File(folders.get(0), RES_FOLDER);
@@ -982,7 +1006,7 @@ public class Project {
     private static Boolean sAospBuild;
 
     /** Is lint running in an AOSP build environment */
-    private static boolean isAospBuildEnvironment() {
+    public static boolean isAospBuildEnvironment() {
         if (sAospBuild == null) {
             sAospBuild = getAospTop() != null;
         }
@@ -991,29 +1015,51 @@ public class Project {
     }
 
     /**
-     * Is this the frameworks AOSP project? Needs some hardcoded support since
+     * Is this the frameworks or related AOSP project? Needs some hardcoded support since
      * it doesn't have a manifest file, etc.
      *
+     * A frameworks AOSP projects can be any directory under "frameworks" that
+     * 1. Is not the "support" directory (which uses the public support annotations)
+     * 2. Doesn't have an AndroidManifest.xml (it's an app instead)
+     *
      * @param dir the project directory to check
-     * @return true if this looks like the frameworks/base/core project
+     * @return true if this looks like the frameworks/dir project and does not have
+     *         an AndroidManifest.xml
+     */
+    public static boolean isAospFrameworksRelatedProject(@NonNull File dir) {
+        if (isAospBuildEnvironment()) {
+            File frameworks = new File(getAospTop(), "frameworks"); //$NON-NLS-1$
+            String frameworksDir = frameworks.getAbsolutePath();
+            String supportDir = new File(frameworks, "support").getAbsolutePath(); //$NON-NLS-1$
+            if (dir.exists()
+                    && !dir.getAbsolutePath().startsWith(supportDir)
+                    && dir.getAbsolutePath().startsWith(frameworksDir)
+                    && !(new File(dir, FN_ANDROID_MANIFEST_XML).exists())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Is this the actual frameworks project.
+     * @param dir the project directory to check.
+     * @return true if this is the frameworks project.
      */
     public static boolean isAospFrameworksProject(@NonNull File dir) {
-        if (!dir.getPath().endsWith("core")) { //$NON-NLS-1$
+        String top = getAospTop();
+        if (top != null) {
+            File toCompare = new File(top, "frameworks" //$NON-NLS-1$
+                    + File.separator + "base"           //$NON-NLS-1$
+                    + File.separator + "core");         //$NON-NLS-1$
+            try {
+                return dir.getCanonicalFile().equals(toCompare) && dir.exists();
+            } catch (IOException e) {
+                return false;
+            }
+        } else {
             return false;
         }
-
-        File parent = dir.getParentFile();
-        if (parent == null || !parent.getName().equals("base")) { //$NON-NLS-1$
-            return false;
-        }
-
-        parent = parent.getParentFile();
-        //noinspection RedundantIfStatement
-        if (parent == null || !parent.getName().equals("frameworks")) { //$NON-NLS-1$
-            return false;
-        }
-
-        return true;
     }
 
     /** Get the root AOSP dir, if any */
@@ -1088,6 +1134,13 @@ public class Project {
         // some Android.mk files do some complicated things with it - and most
         // projects use the same module name as the directory name.
         String moduleName = mDir.getName();
+        try {
+            // Get the actual directory name instead of '.' that's possible
+            // when using this via CLI.
+            moduleName = mDir.getCanonicalFile().getName();
+        } catch (IOException ioe) {
+            // pass
+        }
 
         String top = getAospTop();
         final String[] outFolders = new String[] {
@@ -1155,32 +1208,34 @@ public class Project {
     /** In an AOSP build environment, identify the currently built image version, if available */
     private static AndroidVersion findCurrentAospVersion() {
         if (sCurrentVersion == null) {
-            File apiDir = new File(getAospTop(), "frameworks/base/api" //$NON-NLS-1$
+            File versionMk = new File(getAospTop(), "build/core/version_defaults.mk" //$NON-NLS-1$
                     .replace('/', File.separatorChar));
-            File[] apiFiles = apiDir.listFiles();
-            if (apiFiles == null) {
+
+            if (!versionMk.exists()) {
                 sCurrentVersion = AndroidVersion.DEFAULT;
                 return sCurrentVersion;
             }
-            int max = 1;
-            for (File apiFile : apiFiles) {
-                String name = apiFile.getName();
-                int index = name.indexOf('.');
-                if (index > 0) {
-                    String base = name.substring(0, index);
-                    if (Character.isDigit(base.charAt(0))) {
+            int sdkVersion = LOWEST_ACTIVE_API;
+            try {
+                Pattern p = Pattern.compile("PLATFORM_SDK_VERSION\\s*:=\\s*(.*)");
+                List<String> lines = Files.readLines(versionMk, Charsets.UTF_8);
+                for (String line : lines) {
+                    line = line.trim();
+                    Matcher matcher = p.matcher(line);
+                    if (matcher.matches()) {
+                        String version = matcher.group(1);
                         try {
-                            int version = Integer.parseInt(base);
-                            if (version > max) {
-                                max = version;
-                            }
-                        } catch (NumberFormatException nufe) {
+                            sdkVersion = Integer.parseInt(version);
+                        } catch (NumberFormatException nfe) {
                             // pass
                         }
+                        break;
                     }
                 }
+            } catch (IOException io) {
+                // pass
             }
-            sCurrentVersion = new AndroidVersion(max, null);
+            sCurrentVersion = new AndroidVersion(sdkVersion, null);
         }
 
         return sCurrentVersion;

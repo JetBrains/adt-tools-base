@@ -1048,7 +1048,7 @@ public abstract class LintClient {
      */
     @SuppressWarnings("MethodMayBeStatic") // Intentionally instance method so it can be overridden
     public boolean isProjectDirectory(@NonNull File dir) {
-        return LintUtils.isManifestFolder(dir) || Project.isAospFrameworksProject(dir);
+        return LintUtils.isManifestFolder(dir) || Project.isAospFrameworksRelatedProject(dir);
     }
 
     /**
