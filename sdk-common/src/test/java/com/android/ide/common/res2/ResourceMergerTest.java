@@ -26,6 +26,7 @@ import com.android.ide.common.blame.MergingLog;
 import com.android.ide.common.blame.SourceFile;
 import com.android.ide.common.blame.SourceFilePosition;
 import com.android.ide.common.blame.SourcePosition;
+import com.android.ide.common.internal.NopPngCruncher;
 import com.android.ide.common.internal.PngCruncher;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
@@ -56,9 +57,6 @@ import java.util.regex.Pattern;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 public class ResourceMergerTest extends BaseTestCase {
-
-    @Mock
-    PngCruncher mPngCruncher;
 
     @Mock
     ResourcePreprocessor mPreprocessor;
@@ -500,9 +498,8 @@ public class ResourceMergerTest extends BaseTestCase {
         mergeLogFolder.deleteOnExit();
 
         // write the content of the resource merger.
-        MergedResourceWriter writer = new MergedResourceWriter(resFolder, mPngCruncher,
-                false /*crunchPng*/, false /*process9Patch*/, null /*publicFile*/, mergeLogFolder,
-                mPreprocessor);
+        MergedResourceWriter writer = MergedResourceWriter.createWriterWithoutPngCruncher(
+          resFolder, null /*publicFile*/, mergeLogFolder, mPreprocessor);
         resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         // Check the content.
@@ -628,11 +625,8 @@ public class ResourceMergerTest extends BaseTestCase {
         mergeLogFolder.deleteOnExit();
 
         // write the content of the resource merger.
-        MergedResourceWriter writer = new MergedResourceWriter(
+        MergedResourceWriter writer = MergedResourceWriter.createWriterWithoutPngCruncher(
                 resFolder,
-                mPngCruncher,
-                false /*crunchPng*/,
-                false /*process9Patch*/,
                 null /*publicFile*/,
                 mergeLogFolder,
                 mPreprocessor);
@@ -1686,11 +1680,8 @@ public class ResourceMergerTest extends BaseTestCase {
 
     @NonNull
     private MergedResourceWriter getConsumer(File tempDir) {
-        return new MergedResourceWriter(
+        return MergedResourceWriter.createWriterWithoutPngCruncher(
                 tempDir,
-                mPngCruncher,
-                false /*crunchPng*/,
-                false /*process9Patch*/,
                 null /*publicFile*/,
                 null /*blameLogFolder*/,
                 mPreprocessor);
