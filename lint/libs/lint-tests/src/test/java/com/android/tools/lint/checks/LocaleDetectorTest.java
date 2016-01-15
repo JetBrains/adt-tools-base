@@ -98,4 +98,26 @@ public class LocaleDetectorTest extends AbstractCheckTest {
                             + "}\n")
                     ));
     }
+
+    public void testIgnoreLoggingWithoutLocale() throws Exception {
+        assertEquals("No warnings.",
+                lintProject(
+                        java("src/test/pkg/LogTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.util.Log;\n"
+                                + "\n"
+                                + "public class LogTest {\n"
+                                + "    private static final String TAG = \"mytag\";\n"
+                                + "\n"
+                                + "    // Don't flag String.format inside logging calls\n"
+                                + "    public void test(String dataItemName, int eventStatus) {\n"
+                                + "        if (Log.isLoggable(TAG, Log.DEBUG)) {\n"
+                                + "            Log.d(TAG, String.format(\"CQS:Event=%s, keeping status=%d\", dataItemName,\n"
+                                + "                    eventStatus));\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "}\n")
+                ));
+    }
 }

@@ -372,7 +372,7 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
                 return;
             }
             Object[] allowedValues = (Object[]) allowed;
-            Set<ResolvedField> fields = Sets.newHashSetWithExpectedSize(allowedValues.length);
+            List<ResolvedField> fields = Lists.newArrayListWithCapacity(allowedValues.length);
             for (Object o : allowedValues) {
                 if (o instanceof ResolvedField) {
                     fields.add((ResolvedField) o);
@@ -407,7 +407,23 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
                             return;
                         }
                         if (resolved instanceof ResolvedField) {
-                            fields.remove(resolved);
+                            // We can't just do
+                            //    fields.remove(resolved);
+                            // since the fields list contains instances of potentially
+                            // different types with different hash codes. The
+                            // equals method on ResolvedExternalField deliberately handles
+                            // this (but it can't make its hash code match what
+                            // the ECJ fields do, which is tied to the ECJ binding hash code.)
+                            // So instead, manually check for equals. These lists tend to
+                            // be very short anyway.
+                            ListIterator<ResolvedField> iterator = fields.listIterator();
+                            while (iterator.hasNext()) {
+                                ResolvedField field = iterator.next();
+                                if (field.equals(resolved)) {
+                                    iterator.remove();
+                                    break;
+                                }
+                            }
                         }
                     }
                 }
