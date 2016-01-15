@@ -121,6 +121,7 @@ public final class FileOpUtils {
             try {
                 fop.deleteFileOrFolder(dest);
                 FileOpUtils.recursiveCopy(src, dest, fop);
+                fop.deleteFileOrFolder(src);
             } catch (IOException e) {
                 // this is bad
                 progress.logError("Old dir was moved away, but new one failed to be moved into "
@@ -142,6 +143,7 @@ public final class FileOpUtils {
             }
         } else {
             FileOpUtils.recursiveCopy(src, dest, fop);
+            fop.deleteFileOrFolder(src);
         }
     }
 
