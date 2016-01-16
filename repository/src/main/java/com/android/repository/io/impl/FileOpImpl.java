@@ -374,6 +374,11 @@ public class FileOpImpl implements FileOp {
     }
 
     @Override
+    public void deleteOnExit(File file) {
+        file.deleteOnExit();
+    }
+
+    @Override
     public int hashCode() {
         return getClass().hashCode();
     }

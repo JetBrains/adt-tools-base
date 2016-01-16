@@ -117,7 +117,7 @@ public class MavenInstaller implements PackageInstaller {
             if (out == null || !fop.mkdirs(out)) {
                 throw new IOException("Failed to create temp dir");
             }
-
+            fop.deleteOnExit(out);
             InstallerUtil.unzip(in, out, fop, p.getArchive().getComplete().getSize(), progress);
 
             // Archives must contain a single top-level directory.
