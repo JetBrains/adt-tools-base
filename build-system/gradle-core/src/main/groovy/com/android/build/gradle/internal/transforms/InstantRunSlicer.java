@@ -282,7 +282,7 @@ public class InstantRunSlicer extends Transform {
                             String.format("Entry %1$s is duplicated, ignore the one from %2$s",
                                     jarEntry.getName(), jarInput.getName()));
                 } else {
-                    dependenciesJar.putNextEntry(jarEntry);
+                    dependenciesJar.putNextEntry(new JarEntry(jarEntry.getName()));
                     InputStream inputStream = jarFile.getInputStream(jarEntry);
                     try {
                         ByteStreams.copy(inputStream, dependenciesJar);
