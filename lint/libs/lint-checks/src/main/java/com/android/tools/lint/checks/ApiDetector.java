@@ -48,6 +48,7 @@ import static com.android.tools.lint.detector.api.ClassContext.getFqcn;
 import static com.android.tools.lint.detector.api.ClassContext.getInternalName;
 import static com.android.tools.lint.detector.api.LintUtils.getNextInstruction;
 import static com.android.tools.lint.detector.api.Location.SearchDirection.BACKWARD;
+import static com.android.tools.lint.detector.api.Location.SearchDirection.EOL_NEAREST;
 import static com.android.tools.lint.detector.api.Location.SearchDirection.FORWARD;
 import static com.android.tools.lint.detector.api.Location.SearchDirection.NEAREST;
 import static com.android.utils.SdkUtils.getResourceFieldName;
@@ -62,7 +63,6 @@ import com.android.resources.ResourceFolderType;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.SdkVersionInfo;
-import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repositoryv2.AndroidSdkHandler;
 import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
@@ -102,11 +102,13 @@ import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.IntInsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
+import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.LocalVariableNode;
 import org.objectweb.asm.tree.LookupSwitchInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.TryCatchBlockNode;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
@@ -133,7 +135,6 @@ import lombok.ast.BinaryExpression;
 import lombok.ast.BinaryOperator;
 import lombok.ast.Case;
 import lombok.ast.Cast;
-import lombok.ast.Catch;
 import lombok.ast.ConstructorDeclaration;
 import lombok.ast.ConstructorInvocation;
 import lombok.ast.Expression;
@@ -341,6 +342,9 @@ public class ApiDetector extends ResourceXmlDetector
             } else {
                 // See if you don't have at least version 23.0.1 of platform tools installed
                 AndroidSdkHandler sdk = context.getClient().getSdk();
+                if (sdk == null) {
+                    return;
+                }
                 LocalPackage pkgInfo = sdk.getLocalPackage(SdkConstants.FD_PLATFORM_TOOLS,
                         context.getClient().getLogger());
                 if (pkgInfo == null) {
@@ -847,6 +851,32 @@ public class ApiDetector extends ResourceXmlDetector
                 continue;
             }
 
+            List tryCatchBlocks = method.tryCatchBlocks;
+            if (!tryCatchBlocks.isEmpty()) {
+                List<String> checked = Lists.newArrayList();
+                for (Object o : tryCatchBlocks) {
+                    TryCatchBlockNode tryCatchBlock = (TryCatchBlockNode) o;
+                    String className = tryCatchBlock.type;
+                    if (className == null || checked.contains(className)) {
+                        continue;
+                    }
+
+                    int api = mApiDatabase.getClassVersion(className);
+                    if (api > minSdk) {
+                        // Find instruction node
+                        LabelNode label = tryCatchBlock.handler;
+                        String fqcn = getFqcn(className);
+                        String message = String.format(
+                                "Class requires API level %1$d (current min is %2$d): `%3$s`",
+                                api, minSdk, fqcn);
+                        report(context, message, label, method,
+                                className.substring(className.lastIndexOf('/') + 1), null,
+                                SearchHints.create(EOL_NEAREST).matchJavaSymbol());
+                    }
+                }
+            }
+
+
             if (CHECK_DECLARATIONS) {
                 // Check types in parameter list and types of local variables
                 List localVariables = method.localVariables;
@@ -971,6 +1001,27 @@ public class ApiDetector extends ResourceXmlDetector
                             if (isWithinSdkConditional(context, classNode, method, instruction,
                                     api)) {
                                 break;
+                            }
+
+                            if (api == 19
+                                    && owner.equals("java/lang/ReflectiveOperationException")
+                                    && !method.tryCatchBlocks.isEmpty()) {
+                                boolean direct = false;
+                                for (Object o : method.tryCatchBlocks) {
+                                    if (((TryCatchBlockNode)o).type.equals("java/lang/ReflectiveOperationException")) {
+                                        direct = true;
+                                        break;
+                                    }
+                                }
+                                if (!direct) {
+                                    message = String.format("Multi-catch with these reflection "
+                                            + "exceptions requires API level 19 (current min is"
+                                            + " %2$d) because they get compiled to the common but "
+                                            + "new super type `ReflectiveOperationException`. "
+                                            + "As a workaround either create individual catch "
+                                            + "statements, or catch `Exception`.",
+                                            api, minSdk);
+                                }
                             }
 
                             report(context, message, node, method, name, null,
@@ -1993,36 +2044,6 @@ public class ApiDetector extends ResourceXmlDetector
                         LintDriver driver = mContext.getDriver();
                         if (!driver.isSuppressed(mContext, UNSUPPORTED, node)) {
                             mContext.report(UNSUPPORTED, node, location, message);
-                        }
-                    }
-                } else {
-                    // Special case: check types of catch block variables; these apparently
-                    // need to be available at runtime even if there are no explicit calls
-                    for (Catch c : node.astCatches()) {
-                        VariableDefinition variableDefinition = c.astExceptionDeclaration();
-                        TypeReference typeReference = variableDefinition.astTypeReference();
-                        String fqcn = null;
-                        ResolvedNode resolved = mContext.resolve(typeReference);
-                        if (resolved != null) {
-                            fqcn = resolved.getSignature();
-                        } else if (typeReference.getTypeName().equals(
-                                "ReflectiveOperationException")) {
-                            fqcn = "java.lang.ReflectiveOperationException";
-                        }
-                        if (fqcn != null) {
-                            String owner = getInternalName(fqcn);
-                            int api = mApiDatabase.getClassVersion(owner);
-                            int minSdk = getMinSdk(mContext);
-                            if (api > minSdk && api > getLocalMinSdk(typeReference)) {
-                                Location location = mContext.getLocation(typeReference);
-                                String message = String.format(
-                                    "Class requires API level %1$d (current min is %2$d): `%3$s`",
-                                    api, minSdk, fqcn);
-                                LintDriver driver = mContext.getDriver();
-                                if (!driver.isSuppressed(mContext, UNSUPPORTED, typeReference)) {
-                                    mContext.report(UNSUPPORTED, typeReference, location, message);
-                                }
-                            }
                         }
                     }
                 }

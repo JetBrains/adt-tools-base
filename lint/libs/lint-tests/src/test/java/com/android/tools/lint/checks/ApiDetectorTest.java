@@ -2068,6 +2068,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
     // invalid parameterIndex causing by a varargs method invocation.
     public void testMethodWithPrimitiveAndVarargs() throws Exception {
         // In case of a crash, there is an assertion failure in tearDown()
+        //noinspection ClassNameDiffersFromFileName
         assertEquals("No warnings.",
                 lintProject(
                         copy("apicheck/minsdk14.xml", "AndroidManifest.xml"),
@@ -2093,6 +2094,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
 
     public void testMethodInvocationWithGenericTypeArgs() throws Exception {
         // Test case for https://code.google.com/p/android/issues/detail?id=198439
+        //noinspection ClassNameDiffersFromFileName
         assertEquals("No warnings.",
                 lintProject(
                         java("src/test/pkg/Loader.java", ""
@@ -2110,6 +2112,106 @@ public class ApiDetectorTest extends AbstractCheckTest {
                                 + "}\n")
                 ));
     }
+
+    public void testMultiCatch() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=198854
+        // Check disjointed exception types
+
+        //noinspection ClassNameDiffersFromFileName
+        assertEquals(""
+                + "src/test/pkg/MultiCatch.java:12: Error: Class requires API level 18 (current min is 1): android.media.UnsupportedSchemeException [NewApi]\n"
+                + "        } catch (MediaDrm.MediaDrmStateException | UnsupportedSchemeException e) {\n"
+                + "                                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/MultiCatch.java:12: Error: Class requires API level 21 (current min is 1): android.media.MediaDrm.MediaDrmStateException [NewApi]\n"
+                + "        } catch (MediaDrm.MediaDrmStateException | UnsupportedSchemeException e) {\n"
+                + "                          ~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/MultiCatch.java:18: Error: Class requires API level 21 (current min is 1): android.media.MediaDrm.MediaDrmStateException [NewApi]\n"
+                + "        } catch (MediaDrm.MediaDrmStateException\n"
+                + "                          ~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/MultiCatch.java:19: Error: Class requires API level 18 (current min is 1): android.media.UnsupportedSchemeException [NewApi]\n"
+                + "                  | UnsupportedSchemeException e) {\n"
+                + "                    ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/MultiCatch.java:26: Error: Multi-catch with these reflection exceptions requires API level 19 (current min is 1) because they get compiled to the common but new super type ReflectiveOperationException. As a workaround either create individual catch statements, or catch Exception. [NewApi]\n"
+                + "            e.printStackTrace();\n"
+                + "              ~~~~~~~~~~~~~~~\n"
+                + "5 errors, 0 warnings\n",
+
+                lintProject(
+                        java("src/test/pkg/MultiCatch.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.media.MediaDrm;\n"
+                                + "import android.media.UnsupportedSchemeException;\n"
+                                + "\n"
+                                + "import java.lang.reflect.InvocationTargetException;\n"
+                                + "\n"
+                                + "public class MultiCatch {\n"
+                                + "    public void test() {\n"
+                                + "        try {\n"
+                                + "            method1();\n"
+                                + "        } catch (MediaDrm.MediaDrmStateException | UnsupportedSchemeException e) {\n"
+                                + "            e.printStackTrace();\n"
+                                + "        }\n"
+                                + "\n"
+                                + "        try {\n"
+                                + "            method2();\n"
+                                + "        } catch (MediaDrm.MediaDrmStateException\n"
+                                + "                  | UnsupportedSchemeException e) {\n"
+                                + "            e.printStackTrace();\n"
+                                + "        }\n"
+                                + "\n"
+                                + "        try {\n"
+                                + "            String.class.getMethod(\"trim\").invoke(\"\");\n"
+                                + "        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {\n"
+                                + "            e.printStackTrace();\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public void method1() throws MediaDrm.MediaDrmStateException, UnsupportedSchemeException {\n"
+                                + "    }\n"
+                                + "    public void method2() throws MediaDrm.MediaDrmStateException, UnsupportedSchemeException {\n"
+                                + "    }\n"
+                                + "}\n"),
+                        base64("bin/classes/test/pkg/MultiCatch.class", ""
+                                + "yv66vgAAADMARgoADAAmCgASACcHACkHACwKAC0ALgoAEgAvBwAwCAAxBwAy"
+                                + "CgAJADMIADQHADUKADYANwcAOAcAOQcAOgoAOwAuBwA8AQAGPGluaXQ+AQAD"
+                                + "KClWAQAEQ29kZQEAD0xpbmVOdW1iZXJUYWJsZQEAEkxvY2FsVmFyaWFibGVU"
+                                + "YWJsZQEABHRoaXMBABVMdGVzdC9wa2cvTXVsdGlDYXRjaDsBAAR0ZXN0AQAB"
+                                + "ZQEAFUxqYXZhL2xhbmcvRXhjZXB0aW9uOwEAKExqYXZhL2xhbmcvUmVmbGVj"
+                                + "dGl2ZU9wZXJhdGlvbkV4Y2VwdGlvbjsBAA1TdGFja01hcFRhYmxlBwA9BwA+"
+                                + "AQAHbWV0aG9kMQEACkV4Y2VwdGlvbnMBAAdtZXRob2QyAQAKU291cmNlRmls"
+                                + "ZQEAD011bHRpQ2F0Y2guamF2YQwAEwAUDAAhABQHAD8BAC1hbmRyb2lkL21l"
+                                + "ZGlhL01lZGlhRHJtJE1lZGlhRHJtU3RhdGVFeGNlcHRpb24BABZNZWRpYURy"
+                                + "bVN0YXRlRXhjZXB0aW9uAQAMSW5uZXJDbGFzc2VzAQAoYW5kcm9pZC9tZWRp"
+                                + "YS9VbnN1cHBvcnRlZFNjaGVtZUV4Y2VwdGlvbgcAPQwAQAAUDAAjABQBABBq"
+                                + "YXZhL2xhbmcvU3RyaW5nAQAEdHJpbQEAD2phdmEvbGFuZy9DbGFzcwwAQQBC"
+                                + "AQAAAQAQamF2YS9sYW5nL09iamVjdAcAQwwARABFAQAgamF2YS9sYW5nL0ls"
+                                + "bGVnYWxBY2Nlc3NFeGNlcHRpb24BACtqYXZhL2xhbmcvcmVmbGVjdC9JbnZv"
+                                + "Y2F0aW9uVGFyZ2V0RXhjZXB0aW9uAQAfamF2YS9sYW5nL05vU3VjaE1ldGhv"
+                                + "ZEV4Y2VwdGlvbgcAPgEAE3Rlc3QvcGtnL011bHRpQ2F0Y2gBABNqYXZhL2xh"
+                                + "bmcvRXhjZXB0aW9uAQAmamF2YS9sYW5nL1JlZmxlY3RpdmVPcGVyYXRpb25F"
+                                + "eGNlcHRpb24BABZhbmRyb2lkL21lZGlhL01lZGlhRHJtAQAPcHJpbnRTdGFj"
+                                + "a1RyYWNlAQAJZ2V0TWV0aG9kAQBAKExqYXZhL2xhbmcvU3RyaW5nO1tMamF2"
+                                + "YS9sYW5nL0NsYXNzOylMamF2YS9sYW5nL3JlZmxlY3QvTWV0aG9kOwEAGGph"
+                                + "dmEvbGFuZy9yZWZsZWN0L01ldGhvZAEABmludm9rZQEAOShMamF2YS9sYW5n"
+                                + "L09iamVjdDtbTGphdmEvbGFuZy9PYmplY3Q7KUxqYXZhL2xhbmcvT2JqZWN0"
+                                + "OwAhABIADAAAAAAABAABABMAFAABABUAAAAvAAEAAQAAAAUqtwABsQAAAAIA"
+                                + "FgAAAAYAAQAAAAgAFwAAAAwAAQAAAAUAGAAZAAAAAQAaABQAAQAVAAAA/QAD"
+                                + "AAIAAAA2KrYAAqcACEwrtgAFKrYABqcACEwrtgAFEgcSCAO9AAm2AAoSCwO9"
+                                + "AAy2AA1XpwAITCu2ABGxAAcAAAAEAAcAAwAAAAQABwAEAAwAEAATAAMADAAQ"
+                                + "ABMABAAYAC0AMAAOABgALQAwAA8AGAAtADAAEAADABYAAAA2AA0AAAALAAQA"
+                                + "DgAHAAwACAANAAwAEQAQABUAEwASABQAFAAYABgALQAbADAAGQAxABoANQAc"
+                                + "ABcAAAAqAAQACAAEABsAHAABABQABAAbABwAAQAxAAQAGwAdAAEAAAA2ABgA"
+                                + "GQAAAB4AAAARAAZHBwAfBEYHAB8EVwcAIAQAAQAhABQAAgAVAAAAKwAAAAEA"
+                                + "AAABsQAAAAIAFgAAAAYAAQAAAB8AFwAAAAwAAQAAAAEAGAAZAAAAIgAAAAYA"
+                                + "AgADAAQAAQAjABQAAgAVAAAAKwAAAAEAAAABsQAAAAIAFgAAAAYAAQAAACEA"
+                                + "FwAAAAwAAQAAAAEAGAAZAAAAIgAAAAYAAgADAAQAAgAkAAAAAgAlACsAAAAK"
+                                + "AAEAAwAoACoAGQ==")
+
+                ));
+    }
+
+
 
     @Override
     protected boolean ignoreSystemErrors() {
