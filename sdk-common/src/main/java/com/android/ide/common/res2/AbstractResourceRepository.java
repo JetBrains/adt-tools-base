@@ -306,9 +306,8 @@ public abstract class AbstractResourceRepository {
             seenNames.add(name);
             output = new ArrayList<ResourceFile>();
             List<ResourceItem> matchingItems = typeItems.get(name);
-            List<Configurable> matches = config.findMatchingConfigurables(matchingItems);
-            for (Configurable conf : matches) {
-                ResourceItem match = (ResourceItem) conf;
+            List<ResourceItem> matches = config.findMatchingConfigurables(matchingItems);
+            for (ResourceItem match : matches) {
                 // if match is an alias, check if the name is in seen names.
                 ResourceValue resourceValue = match.getResourceValue(isFramework());
                 if (resourceValue != null) {
