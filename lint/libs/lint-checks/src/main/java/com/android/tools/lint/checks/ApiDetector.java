@@ -244,7 +244,7 @@ public class ApiDetector extends ResourceXmlDetector
                     ApiDetector.class,
                     Scope.JAVA_FILE_SCOPE));
 
-    /** Accessing an unsupported API */
+    /** Method conflicts with new inherited method */
     public static final Issue OVERRIDE = Issue.create(
             "Override", //$NON-NLS-1$
             "Method conflicts with new inherited method",
@@ -272,7 +272,7 @@ public class ApiDetector extends ResourceXmlDetector
                     ApiDetector.class,
                     Scope.CLASS_FILE_SCOPE));
 
-    /** Accessing an inlined API on older platforms */
+    /** Attribute unused on older versions */
     public static final Issue UNUSED = Issue.create(
             "UnusedAttribute", //$NON-NLS-1$
             "Attribute unused on older versions",
