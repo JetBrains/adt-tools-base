@@ -43,6 +43,8 @@ import com.android.builder.internal.ClassFieldImpl;
 import com.android.builder.internal.SymbolLoader;
 import com.android.builder.internal.SymbolWriter;
 import com.android.builder.internal.TestManifestGenerator;
+import com.android.builder.internal.aapt.Aapt;
+import com.android.builder.internal.aapt.AaptPackageConfig;
 import com.android.builder.internal.compiler.AidlProcessor;
 import com.android.builder.internal.compiler.DexWrapper;
 import com.android.builder.internal.compiler.JackConversionCache;
@@ -155,7 +157,7 @@ import java.util.zip.ZipFile;
  * then build steps can be done with
  * {@link #mergeManifests(File, List, List, String, int, String, String, String, Integer, String, String, String, ManifestMerger2.MergeType, Map, List, File)}
  * {@link #processTestManifest(String, String, String, String, String, Boolean, Boolean, File, List, Map, File, File)}
- * {@link #processResources(AaptPackageProcessBuilder, boolean, ProcessOutputHandler)}
+ * {@link #processResources(Aapt, AaptPackageConfig.Builder, boolean)}
  * {@link #compileAllAidlFiles(List, File, File, Collection, List, DependencyFileProcessor, ProcessOutputHandler)}
  * {@link #convertByteCode(Collection, File, boolean, File, DexOptions, boolean, boolean, ProcessOutputHandler)}
  * {@link #packageApk(String, Set, Collection, Collection, Set, boolean, SigningConfig, File, int, File)}
@@ -968,47 +970,55 @@ public class AndroidBuilder {
     /**
      * Process the resources and generate R.java and/or the packaged resources.
      *
-     *  @param aaptCommand aapt command invocation parameters.
-     *  @param enforceUniquePackageName if true method will fail if some libraries share the same
-     *                                 package name
-     *
+     * @param aapt the interface to the {@code aapt} tool
+     * @param aaptConfigBuilder aapt command invocation parameters; this will receive some additional
+     * data (build tools, Android target and logger) and will be used to request package invocation
+     * in {@code aapt} (see {@link Aapt#makePackage(AaptPackageConfig)})
+     * @param enforceUniquePackageName if {@code true} method will fail if some libraries share the
+     * same package name
      * @throws IOException
      * @throws InterruptedException
      * @throws ProcessException
      */
     public void processResources(
-            @NonNull AaptPackageProcessBuilder aaptCommand,
-            boolean enforceUniquePackageName,
-            @NonNull ProcessOutputHandler processOutputHandler)
+            @NonNull Aapt aapt,
+            @NonNull AaptPackageConfig.Builder aaptConfigBuilder,
+            boolean enforceUniquePackageName)
             throws IOException, InterruptedException, ProcessException {
 
         checkState(mTargetInfo != null,
                 "Cannot call processResources() before setTargetInfo() is called.");
 
-        // launch aapt: create the command line
-        ProcessInfo processInfo = aaptCommand.build(
-                mTargetInfo.getBuildTools(), mTargetInfo.getTarget(), mLogger);
+        aaptConfigBuilder.setBuildToolInfo(mTargetInfo.getBuildTools());
+        aaptConfigBuilder.setAndroidTarget(mTargetInfo.getTarget());
+        aaptConfigBuilder.setLogger(mLogger);
 
-        ProcessResult result = mProcessExecutor.execute(processInfo, processOutputHandler);
-        result.rethrowFailure().assertNormalExitValue();
+        AaptPackageConfig aaptConfig = aaptConfigBuilder.build();
+        try {
+            aapt.makePackage(aaptConfig).get();
+        } catch (Exception e) {
+            throw new ProcessException("Failed to execute aapt", e);
+        }
+
 
         // If the project has libraries, R needs to be created for each library.
-        if (aaptCommand.getSourceOutputDir() != null
-                && !aaptCommand.getLibraries().isEmpty()) {
+        if (aaptConfig.getSourceOutputDir() != null
+                && !aaptConfig.getLibraries().isEmpty()) {
             SymbolLoader fullSymbolValues = null;
 
             // First pass processing the libraries, collecting them by packageName,
             // and ignoring the ones that have the same package name as the application
             // (since that R class was already created).
-            String appPackageName = aaptCommand.getPackageForR();
+            String appPackageName = aaptConfig.getCustomPackageForR();
             if (appPackageName == null) {
-                appPackageName = VariantConfiguration.getManifestPackage(aaptCommand.getManifestFile());
+                appPackageName = VariantConfiguration.getManifestPackage(
+                        aaptConfig.getManifestFile());
             }
 
             // list of all the symbol loaders per package names.
             Multimap<String, SymbolLoader> libMap = ArrayListMultimap.create();
 
-            for (SymbolFileProvider lib : aaptCommand.getLibraries()) {
+            for (SymbolFileProvider lib : aaptConfig.getLibraries()) {
                 if (lib.isOptional()) {
                     continue;
                 }
@@ -1037,8 +1047,8 @@ public class AndroidBuilder {
                     // Doing it lazily allow us to support the case where there's no
                     // resources anywhere.
                     if (fullSymbolValues == null) {
-                        fullSymbolValues = new SymbolLoader(new File(aaptCommand.getSymbolOutputDir(), "R.txt"),
-                                mLogger);
+                        fullSymbolValues = new SymbolLoader(
+                                new File(aaptConfig.getSymbolOutputDir(), "R.txt"), mLogger);
                         fullSymbolValues.load();
                     }
 
@@ -1061,8 +1071,11 @@ public class AndroidBuilder {
                     throw new RuntimeException(msg);
                 }
 
-                SymbolWriter writer = new SymbolWriter(aaptCommand.getSourceOutputDir(), packageName,
-                        fullSymbolValues);
+                SymbolWriter writer =
+                        new SymbolWriter(
+                                aaptConfig.getSourceOutputDir().getAbsolutePath(),
+                                packageName,
+                                fullSymbolValues);
                 for (SymbolLoader symbolLoader : symbols) {
                     writer.addSymbolsToWrite(symbolLoader);
                 }

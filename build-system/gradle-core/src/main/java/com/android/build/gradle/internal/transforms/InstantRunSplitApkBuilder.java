@@ -25,12 +25,13 @@ import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext.FileType;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
-import com.android.build.gradle.internal.scope.VariantOutputScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.tasks.PackageApplication;
-import com.android.builder.core.AaptPackageProcessBuilder;
+import com.android.builder.internal.aapt.Aapt;
+import com.android.builder.internal.aapt.AaptPackageConfig;
+import com.android.builder.internal.aapt.v1.AaptV1;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.packaging.DuplicateFileException;
 import com.android.builder.packaging.PackagerException;
@@ -39,7 +40,6 @@ import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.ide.common.signing.KeytoolException;
-import com.google.common.collect.Iterables;
 import com.google.common.io.Files;
 
 import org.gradle.api.Action;
@@ -224,15 +224,19 @@ public class InstantRunSplitApkBuilder extends BaseTask {
 
         File resFilePackageFile = new File(supportDir, "resources_ap");
 
-        AaptPackageProcessBuilder aaptPackageCommandBuilder =
-                new AaptPackageProcessBuilder(androidManifest, getAaptOptions())
-                        .setDebuggable(true)
-                        .setResPackageOutput(resFilePackageFile.getAbsolutePath());
+        Aapt aapt = new AaptV1(getBuilder().getProcessExecutor(),
+                new LoggedProcessOutputHandler(getILogger()));
+        AaptPackageConfig.Builder aaptConfig = new AaptPackageConfig.Builder();
+        aaptConfig
+                .setManifestFile(androidManifest)
+                .setOptions(getAaptOptions())
+                .setDebuggable(true)
+                .setResourceOutputApk(resFilePackageFile);
 
         getBuilder().processResources(
-                aaptPackageCommandBuilder,
-                false /* enforceUniquePackageName */,
-                new LoggedProcessOutputHandler(getILogger()));
+                aapt,
+                aaptConfig,
+                false /* enforceUniquePackageName */);
 
         return resFilePackageFile;
     }

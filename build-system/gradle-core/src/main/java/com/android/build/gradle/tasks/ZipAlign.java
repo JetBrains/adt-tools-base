@@ -38,7 +38,7 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
      * Resulting zip file.
      * @return the resulting zip file; may be the same as the input file
      */
-    @OutputFile
+    //@OutputFile
     public File getOutputFile() {
         return outputFile;
     }

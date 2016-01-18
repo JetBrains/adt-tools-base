@@ -17,6 +17,7 @@
 package com.android.ide.common.process;
 
 import com.android.annotations.NonNull;
+import com.google.common.util.concurrent.ListenableFuture;
 
 /**
  * An executor for external processes.
@@ -24,17 +25,30 @@ import com.android.annotations.NonNull;
 public interface ProcessExecutor {
 
     /**
-     * Executes an external process as specified by the ProcessInfo.
+     * Executes an external process as specified by the ProcessInfo and waits for its completion.
      *
-     * The process always returns, even when the execution failed. The various possible outcomes
+     * <p>The process always returns, even when the execution failed. The various possible outcomes
      * of the execution can be queried through the ProcessResult instance.
      *
-     * @param processInfo   the specification of what to run.
+     * @param processInfo the specification of what to run
      * @param processOutputHandler the output handler
-     * @return the ProcessResult
+     * @return the process result
      */
     @NonNull
-    ProcessResult execute(
-            @NonNull ProcessInfo processInfo,
+    ProcessResult execute(@NonNull ProcessInfo processInfo,
+            @NonNull ProcessOutputHandler processOutputHandler);
+
+    /**
+     * Executes an external process asynchronously as specified by the ProcessInfo.
+     *
+     * <p>The process always returns, even when the execution failed. The various possible outcomes
+     * of the execution can be queried through the ProcessResult instance.
+     *
+     * @param processInfo the specification of what to run
+     * @param processOutputHandler the output handler
+     * @return a future that will contain the process result
+     */
+    @NonNull
+    ListenableFuture<ProcessResult> submit(@NonNull ProcessInfo processInfo,
             @NonNull ProcessOutputHandler processOutputHandler);
 }
