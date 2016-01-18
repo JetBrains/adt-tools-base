@@ -349,8 +349,12 @@ public class StoredEntry {
         F_VERSION_EXTRACT.verify(byteSource, mCdh.getVersionExtract());
         F_GP_BIT.verify(byteSource, mCdh.getGpBit().getValue());
         F_METHOD.verify(byteSource, mCdh.getMethod().methodCode);
-        F_LAST_MOD_TIME.verify(byteSource, mCdh.getLastModTime());
-        F_LAST_MOD_DATE.verify(byteSource, mCdh.getLastModDate());
+
+        if (!mFile.areTimestampsIgnored()) {
+            F_LAST_MOD_TIME.verify(byteSource, mCdh.getLastModTime());
+            F_LAST_MOD_DATE.verify(byteSource, mCdh.getLastModDate());
+        }
+
         if (mCdh.getGpBit().isDeferredCrc()) {
             F_CRC32.verify(byteSource, 0);
             F_COMPRESSED_SIZE.verify(byteSource, 0);
@@ -511,8 +515,15 @@ public class StoredEntry {
         F_VERSION_EXTRACT.write(out, mCdh.getVersionExtract());
         F_GP_BIT.write(out, mCdh.getGpBit().getValue());
         F_METHOD.write(out, mCdh.getMethod().methodCode);
-        F_LAST_MOD_TIME.write(out, mCdh.getLastModTime());
-        F_LAST_MOD_DATE.write(out, mCdh.getLastModDate());
+
+        if (mFile.areTimestampsIgnored()) {
+            F_LAST_MOD_TIME.write(out, 0);
+            F_LAST_MOD_DATE.write(out, 0);
+        } else {
+            F_LAST_MOD_TIME.write(out, mCdh.getLastModTime());
+            F_LAST_MOD_DATE.write(out, mCdh.getLastModDate());
+        }
+
         F_CRC32.write(out, mCdh.getCrc32());
         F_COMPRESSED_SIZE.write(out, mCdh.getCompressedSize());
         F_UNCOMPRESSED_SIZE.write(out, mCdh.getUncompressedSize());

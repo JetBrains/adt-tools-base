@@ -248,6 +248,11 @@ public class ZFile implements Closeable {
      */
     private long mExtraDirectoryOffset;
 
+    /**
+     * Should all timestamps be zeroed when reading / writing the zip?
+     */
+    private boolean mNoTimestamps;
+
 
     /**
      * Creates a new zip file. If the zip file does not exist, then no file is created at this
@@ -259,6 +264,20 @@ public class ZFile implements Closeable {
      * @throws IOException some file exists but could not be read
      */
     public ZFile(@NonNull File file) throws IOException {
+        this(file, false);
+    }
+
+    /**
+     * Creates a new zip file. If the zip file does not exist, then no file is created at this
+     * point and {@code ZFile} will contain an empty structure. However, an (empty) zip file will
+     * be created if either {@link #update()} or {@link #close()} are used. If a zip file exists,
+     * it will be parsed and read.
+     *
+     * @param file the zip file
+     * @param noTimestamps should all timestamps be zeroed when reading / writing the zip?
+     * @throws IOException some file exists but could not be read
+     */
+    public ZFile(@NonNull File file, boolean noTimestamps) throws IOException {
         mFile = file;
         mMap = new FileUseMap(0);
         mDirty = false;
@@ -266,6 +285,7 @@ public class ZFile implements Closeable {
         mAlignmentRules = new AlignmentRules();
         mExtensions = Lists.newArrayList();
         mToRun = Lists.newArrayList();
+        mNoTimestamps = noTimestamps;
 
         if (file.exists()) {
             mState = ZipFileState.OPEN_RO;
@@ -1695,5 +1715,14 @@ System.out.println("    Added.");
      */
     public long getExtraDirectoryOffset() {
         return mExtraDirectoryOffset;
+    }
+
+    /**
+     * Obtains whether this {@code ZFile} is ignoring timestamps.
+     *
+     * @return are the timestamps being ignored?
+     */
+    public boolean areTimestampsIgnored() {
+        return mNoTimestamps;
     }
 }

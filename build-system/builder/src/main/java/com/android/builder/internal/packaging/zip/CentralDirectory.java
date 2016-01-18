@@ -289,8 +289,16 @@ class CentralDirectory {
             throw new IOException("Unknown method in zip directory entry: " + methodCode + ".");
         }
 
-        long lastModTime = F_LAST_MOD_TIME.read(bytes);
-        long lastModDate = F_LAST_MOD_DATE.read(bytes);
+        long lastModTime;
+        long lastModDate;
+        if (mFile.areTimestampsIgnored()) {
+            lastModTime = 0;
+            lastModDate = 0;
+        } else {
+            lastModTime = F_LAST_MOD_TIME.read(bytes);
+            lastModDate = F_LAST_MOD_DATE.read(bytes);
+        }
+
         long crc32 = F_CRC32.read(bytes);
         long compressedSize = F_COMPRESSED_SIZE.read(bytes);
         long uncompressedSize = F_UNCOMPRESSED_SIZE.read(bytes);
@@ -384,8 +392,15 @@ class CentralDirectory {
             F_VERSION_EXTRACT.write(bytesOut, cdr.getVersionExtract());
             F_GP_BIT.write(bytesOut, cdr.getGpBit().getValue());
             F_METHOD.write(bytesOut, cdr.getMethod().methodCode);
-            F_LAST_MOD_TIME.write(bytesOut, cdr.getLastModTime());
-            F_LAST_MOD_DATE.write(bytesOut, cdr.getLastModDate());
+
+            if (mFile.areTimestampsIgnored()) {
+                F_LAST_MOD_TIME.write(bytesOut, 0);
+                F_LAST_MOD_DATE.write(bytesOut, 0);
+            } else {
+                F_LAST_MOD_TIME.write(bytesOut, cdr.getLastModTime());
+                F_LAST_MOD_DATE.write(bytesOut, cdr.getLastModDate());
+            }
+
             F_CRC32.write(bytesOut, cdr.getCrc32());
             F_COMPRESSED_SIZE.write(bytesOut, cdr.getCompressedSize());
             F_UNCOMPRESSED_SIZE.write(bytesOut, cdr.getUncompressedSize());
