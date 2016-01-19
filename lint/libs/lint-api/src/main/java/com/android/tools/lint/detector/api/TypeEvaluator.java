@@ -110,10 +110,20 @@ public class TypeEvaluator {
         if (resolved instanceof ResolvedField) {
             ResolvedField field = (ResolvedField) resolved;
             Node astNode = field.findAstNode();
-            if (astNode != null) {
-                TypeDescriptor type = evaluate(astNode);
-                if (type != null) {
-                    return type;
+            if (astNode instanceof VariableDeclaration) {
+                VariableDeclaration declaration = (VariableDeclaration)astNode;
+                VariableDefinition definition = declaration.astDefinition();
+                if (definition != null) {
+                    VariableDefinitionEntry first = definition.astVariables().first();
+                    if (first != null) {
+                        Expression initializer = first.astInitializer();
+                        if (initializer != null) {
+                            TypeDescriptor type = evaluate(initializer);
+                            if (type != null) {
+                                return type;
+                            }
+                        }
+                    }
                 }
             }
             return field.getType();

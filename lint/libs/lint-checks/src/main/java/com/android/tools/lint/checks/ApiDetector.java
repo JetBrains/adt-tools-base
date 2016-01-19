@@ -59,6 +59,7 @@ import com.android.builder.model.AndroidProject;
 import com.android.repository.Revision;
 import com.android.repository.api.LocalPackage;
 import com.android.resources.ResourceFolderType;
+import com.android.resources.ResourceType;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.SdkVersionInfo;
@@ -651,18 +652,20 @@ public class ApiDetector extends ResourceXmlDetector
                         // Convert @android:type/foo into android/R$type and "foo"
                         int index = text.indexOf('/', ANDROID_PREFIX.length());
                         if (index != -1) {
-                            String owner = "android/R$"    //$NON-NLS-1$
-                                    + text.substring(ANDROID_PREFIX.length(), index);
-                            String name = getResourceFieldName(text.substring(index + 1));
-                            int api = mApiDatabase.getFieldVersion(owner, name);
-                            int minSdk = getMinSdk(context);
-                            if (api > minSdk && api > context.getFolderVersion()
-                                    && api > getLocalMinSdk(element)) {
-                                Location location = context.getLocation(textNode);
-                                String message = String.format(
-                                        "`%1$s` requires API level %2$d (current min is %3$d)",
-                                        text, api, minSdk);
-                                context.report(UNSUPPORTED, element, location, message);
+                            String typeString = text.substring(ANDROID_PREFIX.length(), index);
+                            if (ResourceType.getEnum(typeString) != null) {
+                                String owner = "android/R$" + typeString;
+                                String name = getResourceFieldName(text.substring(index + 1));
+                                int api = mApiDatabase.getFieldVersion(owner, name);
+                                int minSdk = getMinSdk(context);
+                                if (api > minSdk && api > context.getFolderVersion()
+                                        && api > getLocalMinSdk(element)) {
+                                    Location location = context.getLocation(textNode);
+                                    String message = String.format(
+                                            "`%1$s` requires API level %2$d (current min is %3$d)",
+                                            text, api, minSdk);
+                                    context.report(UNSUPPORTED, element, location, message);
+                                }
                             }
                         }
                     }
