@@ -49,6 +49,7 @@ import com.android.sdklib.AndroidVersion;
 import com.android.tools.lint.checks.PermissionFinder.Operation;
 import com.android.tools.lint.checks.PermissionFinder.Result;
 import com.android.tools.lint.checks.PermissionHolder.SetPermissionLookup;
+import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.JavaParser.ResolvedAnnotation;
 import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
 import com.android.tools.lint.client.api.JavaParser.ResolvedField;
@@ -489,13 +490,14 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 if (tryCatch == null) {
                     break;
                 } else {
+                    JavaParser parser = context.getParser();
                     for (Catch aCatch : tryCatch.astCatches()) {
-                        TypeReference catchType = aCatch.astExceptionDeclaration().
-                                astTypeReference();
-                        if (isSecurityException(context,
-                                catchType)) {
-                            handlesMissingPermission = true;
-                            break;
+                        for (TypeDescriptor catchType : parser.getCatchTypes(context, aCatch)) {
+                            if (isSecurityException(context,
+                                    catchType)) {
+                                handlesMissingPermission = true;
+                                break;
+                            }
                         }
                     }
                     parent = tryCatch;
@@ -508,7 +510,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 MethodDeclaration declaration = getParentOfType(parent, MethodDeclaration.class);
                 if (declaration != null) {
                     for (TypeReference typeReference : declaration.astThrownTypeReferences()) {
-                        if (isSecurityException(context, typeReference)) {
+                        if (isSecurityException(context, context.getType(typeReference))) {
                             handlesMissingPermission = true;
                             break;
                         }
@@ -632,8 +634,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
 
     private static boolean isSecurityException(
             @NonNull JavaContext context,
-            @NonNull TypeReference typeReference) {
-        TypeDescriptor type = context.getType(typeReference);
+            @Nullable TypeDescriptor type) {
         // In earlier versions we checked not just for java.lang.SecurityException but
         // any super type as well, however that probably hides warnings in cases where
         // users don't want that; see http://b.android.com/182165

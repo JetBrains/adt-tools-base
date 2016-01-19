@@ -32,6 +32,7 @@ import com.google.common.base.Splitter;
 import java.util.Collections;
 import java.util.List;
 
+import lombok.ast.Catch;
 import lombok.ast.For;
 import lombok.ast.Identifier;
 import lombok.ast.If;
@@ -211,6 +212,19 @@ public abstract class JavaParser {
             @NonNull JavaContext context,
             @NonNull String fullyQualifiedName) {
         return null;
+    }
+
+    /**
+     * Returns the set of exception types handled by the given catch block.
+     * <p>
+     * This is a workaround for the fact that the Lombok AST API (and implementation)
+     * doesn't support multi-catch statements.
+     */
+    public List<TypeDescriptor> getCatchTypes(@NonNull JavaContext context,
+            @NonNull Catch catchBlock) {
+        TypeReference typeReference = catchBlock.astExceptionDeclaration().astTypeReference();
+        return Collections.<TypeDescriptor>singletonList(new DefaultTypeDescriptor(
+                typeReference.getTypeName()));
     }
 
     /**
