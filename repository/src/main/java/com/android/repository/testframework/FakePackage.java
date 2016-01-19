@@ -50,6 +50,7 @@ public class FakePackage implements LocalPackage, RemotePackage {
     private final Collection<Dependency> mDependencies;
     private TypeDetails mDetails;
     private Channel mChannel;
+    private Archive mArchive;
 
     public FakePackage(String path, Revision version, Collection<Dependency> dependencies) {
         mPath = path;
@@ -70,7 +71,11 @@ public class FakePackage implements LocalPackage, RemotePackage {
     @Nullable
     @Override
     public Archive getArchive() {
-        return null;
+        return mArchive;
+    }
+
+    public void setCompleteUrl(String url) {
+        mArchive = new FakeArchive(url);
     }
 
     public void setChannel(Channel channel) {
@@ -165,5 +170,43 @@ public class FakePackage implements LocalPackage, RemotePackage {
     @Override
     public String toString() {
         return mPath;
+    }
+
+    private static class FakeArchive extends Archive {
+
+        private String mCompleteUrl;
+
+        public FakeArchive(String url) {
+            mCompleteUrl = url;
+        }
+
+        @NonNull
+        @Override
+        public CompleteType getComplete() {
+            return new CompleteType() {
+                @NonNull
+                @Override
+                public String getChecksum() {
+                    return null;
+                }
+
+                @NonNull
+                @Override
+                public String getUrl() {
+                    return mCompleteUrl;
+                }
+
+                @Override
+                public long getSize() {
+                    return 0;
+                }
+            };
+        }
+
+        @NonNull
+        @Override
+        public CommonFactory createFactory() {
+            return null;
+        }
     }
 }
