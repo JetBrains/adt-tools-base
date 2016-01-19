@@ -84,13 +84,13 @@ public abstract class AbstractShrinker<T> {
      * unnecessary edges from the graph early on, where we don't yet know which class is which.
      */
     static boolean isSdkPackage(@NonNull String className) {
-        return !IGNORE_PACKAGE_NAME
-                && (className.startsWith("java/")
-                || className.startsWith("android/os/")
-                || className.startsWith("android/view/")
-                || className.startsWith("android/content/")
-                || className.startsWith("android/graphics/")
-                || className.startsWith("android/widget/"));
+        if (IGNORE_PACKAGE_NAME) {
+            return false;
+        } else {
+            return className.startsWith("java/")
+                    || (className.startsWith("android/")
+                            && !className.startsWith("android/support/"));
+        }
     }
 
     /**
