@@ -29,7 +29,6 @@ import static org.junit.Assert.assertTrue
 /**
  * Integration tests for manifest merging.
  */
-@CompileStatic
 class ManifestMergingTest {
 
     @ClassRule
