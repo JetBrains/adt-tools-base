@@ -16,6 +16,8 @@
 
 package com.android.ddmlib;
 
+import com.android.annotations.NonNull;
+
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -210,7 +212,7 @@ public final class HeapSegment implements Comparable<HeapSegment> {
         }
 
         @Override
-        public int compareTo(HeapSegmentElement other) {
+        public int compareTo(@NonNull HeapSegmentElement other) {
             if (mLength != other.mLength) {
                 return mLength < other.mLength ? -1 : 1;
             }
@@ -413,7 +415,7 @@ public final class HeapSegment implements Comparable<HeapSegment> {
     }
 
     @Override
-    public int compareTo(HeapSegment other) {
+    public int compareTo(@NonNull HeapSegment other) {
         if (mHeapId != other.mHeapId) {
             return mHeapId < other.mHeapId ? -1 : 1;
         }

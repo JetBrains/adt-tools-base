@@ -22,7 +22,6 @@ import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
 import com.android.ddmlib.testrunner.TestResult.TestStatus;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 
 import org.kxml2.io.KXmlSerializer;
 

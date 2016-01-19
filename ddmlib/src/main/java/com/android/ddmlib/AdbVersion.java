@@ -44,7 +44,7 @@ public class AdbVersion implements Comparable<AdbVersion> {
     }
 
     @Override
-    public int compareTo(AdbVersion o) {
+    public int compareTo(@NonNull AdbVersion o) {
         if (major != o.major) {
             return major - o.major;
         }
