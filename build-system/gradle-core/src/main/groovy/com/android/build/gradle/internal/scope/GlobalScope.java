@@ -213,4 +213,9 @@ public class GlobalScope {
     public String getArchivesBaseName() {
         return (String)getProject().getProperties().get("archivesBaseName");
     }
+
+    @NonNull
+    public File getJacocoAgentOutputDirectory() {
+        return new File(getIntermediatesDir(), "jacoco");
+    }
 }

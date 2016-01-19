@@ -19,9 +19,11 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
+import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.builder.core.BuilderConstants;
 import com.android.utils.StringHelper;
 
+import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.plugins.BasePlugin;
@@ -31,7 +33,8 @@ import org.gradle.api.plugins.BasePlugin;
  */
 public class ProductFlavorData<T extends CoreProductFlavor> extends VariantDimensionData {
     private final T productFlavor;
-    private final Task assembleTask;
+    @Nullable
+    private AndroidTask<DefaultTask> assembleTask;
 
     ProductFlavorData(
             @NonNull T productFlavor,
@@ -42,22 +45,18 @@ public class ProductFlavorData<T extends CoreProductFlavor> extends VariantDimen
         super(sourceSet, androidTestSourceSet, unitTestSourceSet, project);
 
         this.productFlavor = productFlavor;
-
-        if (!BuilderConstants.MAIN.equals(sourceSet.getName())) {
-            String sourceSetName = StringHelper.capitalize(sourceSet.getName());
-            assembleTask = project.getTasks().create("assemble" + sourceSetName);
-            assembleTask.setDescription("Assembles all " + sourceSetName + " builds.");
-            assembleTask.setGroup(BasePlugin.BUILD_GROUP);
-        } else {
-            assembleTask = null;
-        }
     }
 
     public T getProductFlavor() {
         return productFlavor;
     }
 
-    public Task getAssembleTask() {
+    @Nullable
+    public AndroidTask<DefaultTask> getAssembleTask() {
         return assembleTask;
+    }
+
+    public void setAssembleTask(@NonNull AndroidTask<DefaultTask> assembleTask) {
+        this.assembleTask = assembleTask;
     }
 }

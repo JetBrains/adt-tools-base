@@ -110,7 +110,7 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
         instrumentTestTask.dependsOn(tasks,
                 testTarget,
                 testTargetMetadata,
-                variantData.assembleVariantTask);
+                variantData.getScope().getAssembleTask());
 
         Task connectedAndroidTest = tasks.named(BuilderConstants.CONNECTED + VariantType.ANDROID_TEST.getSuffix());
         if (connectedAndroidTest != null) {

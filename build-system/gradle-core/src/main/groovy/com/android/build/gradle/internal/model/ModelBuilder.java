@@ -312,7 +312,7 @@ public class ModelBuilder implements ToolingModelBuilder {
         List<File> extraGeneratedSourceFolders = variantData.getExtraGeneratedSourceFolders();
         return new JavaArtifactImpl(
                 variantType.getArtifactName(),
-                variantData.assembleVariantTask.getName(),
+                variantData.getScope().getAssembleTask().getName(),
                 variantData.getScope().getCompileTask().getName(),
                 Sets.newHashSet(variantData.prepareDependenciesTask.getName(),
                         taskManager.createMockableJar.getName()),

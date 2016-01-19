@@ -78,7 +78,7 @@ public class ApplicationTaskManager extends TaskManager {
         handleMicroApp(tasks, variantScope);
 
         // Create all current streams (dependencies mostly at this point)
-        createDependencyStreams(variantScope);
+        createDependencyStreams(tasks, variantScope);
 
         // Add a task to process the manifest(s)
         ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_MERGE_MANIFEST_TASK,
@@ -287,12 +287,12 @@ public class ApplicationTaskManager extends TaskManager {
                     // TODO Optimize to avoid creating too many actions
                     splitApk.dependsOn(tasks, stream.getDependencies());
                 }
-                variantScope.getVariantData().assembleVariantTask.dependsOn(
-                        splitApk.get(tasks));
+                variantScope.getAssembleTask().dependsOn(tasks, splitApk.get(tasks));
 
                 // if the assembleVariant task run, make sure it also runs the task to generate
                 // the build-info.xml.
-                variantScope.getVariantData().assembleVariantTask.dependsOn(
+                variantScope.getAssembleTask().dependsOn(
+                        tasks,
                         fullBuildInfoGeneratorTask.get(tasks));
 
                 // make sure the split APK task is run before we generate the build-info.xml

@@ -39,6 +39,7 @@ import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
 
+import org.gradle.api.DefaultTask;
 import org.gradle.api.Task;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.Sync;
@@ -260,6 +261,10 @@ public interface VariantScope extends BaseScope {
 
     @NonNull
     File  getManifestReportFile();
+
+    AndroidTask<DefaultTask> getAssembleTask();
+
+    void setAssembleTask(@NonNull AndroidTask<DefaultTask> assembleTask);
 
     AndroidTask<Task> getPreBuildTask();
 

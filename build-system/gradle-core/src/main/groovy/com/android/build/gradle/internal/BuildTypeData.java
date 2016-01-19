@@ -18,8 +18,10 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
+import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.utils.StringHelper;
 
+import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.plugins.BasePlugin;
@@ -29,7 +31,7 @@ import org.gradle.api.plugins.BasePlugin;
  */
 public class BuildTypeData extends VariantDimensionData {
     private final CoreBuildType buildType;
-    private final Task assembleTask;
+    private AndroidTask<DefaultTask> assembleTask;
 
     BuildTypeData(
             @NonNull  CoreBuildType buildType,
@@ -41,17 +43,18 @@ public class BuildTypeData extends VariantDimensionData {
         this.buildType = buildType;
 
         String sourceSetName = StringHelper.capitalize(buildType.getName());
-
-        assembleTask = project.getTasks().create("assemble" + sourceSetName);
-        assembleTask.setDescription("Assembles all " + sourceSetName + " builds.");
-        assembleTask.setGroup(BasePlugin.BUILD_GROUP);
     }
 
     public CoreBuildType getBuildType() {
         return buildType;
     }
 
-    public Task getAssembleTask() {
+    @Nullable
+    public AndroidTask<DefaultTask> getAssembleTask() {
         return assembleTask;
+    }
+
+    public void setAssembleTask(AndroidTask<DefaultTask> assembleTask) {
+        this.assembleTask = assembleTask;
     }
 }
