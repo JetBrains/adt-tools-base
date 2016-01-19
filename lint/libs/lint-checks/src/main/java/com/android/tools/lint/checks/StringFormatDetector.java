@@ -1184,9 +1184,13 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                     !context.getScope().contains(Scope.RESOURCE_FILE)) {
                 AbstractResourceRepository resources = client
                         .getProjectResources(context.getMainProject(), true);
-                assert resources != null; // because supportsProjectResources() returned true
-                List<ResourceItem> items = resources
-                        .getResourceItem(ResourceType.STRING, name);
+                List<ResourceItem> items;
+                if (resources != null) {
+                    items = resources.getResourceItem(ResourceType.STRING, name);
+                } else {
+                    // Must be a non-Android module
+                    items = null;
+                }
                 if (items != null) {
                     for (final ResourceItem item : items) {
                         ResourceValue v = item.getResourceValue(false);
