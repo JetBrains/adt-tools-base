@@ -357,15 +357,17 @@ public class ApiClass implements Comparable<ApiClass> {
 
         for (Pair<String, Integer> superClass : mSuperClasses) {
             ApiClass clz = info.getClass(superClass.getFirst());
-            assert clz != null : superClass.getSecond();
-            clz.addAllMethods(info, set, false);
+            if (clz != null) {
+                clz.addAllMethods(info, set, false);
+            }
         }
 
         // Get methods from implemented interfaces as well;
         for (Pair<String, Integer> superClass : mInterfaces) {
             ApiClass clz = info.getClass(superClass.getFirst());
-            assert clz != null : superClass.getSecond();
-            clz.addAllMethods(info, set, false);
+            if (clz != null) {
+                clz.addAllMethods(info, set, false);
+            }
         }
     }
 
