@@ -17,9 +17,13 @@
 package com.android.build.gradle.internal.transforms;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.builder.signing.SignedJarBuilder;
 import com.android.utils.FileUtils;
+import com.android.utils.ILogger;
 import com.google.common.io.Closer;
+
+import org.gradle.api.logging.Logging;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -36,6 +40,9 @@ import java.util.zip.ZipInputStream;
 public class JarMerger {
 
     private final byte[] buffer = new byte[8192];
+
+    @NonNull
+    private final ILogger logger = new LoggerWrapper(Logging.getLogger(JarMerger.class));
 
     @NonNull
     private final File jarFile;
@@ -77,12 +84,14 @@ public class JarMerger {
 
     private void addFolder(@NonNull File folder, @NonNull String path)
             throws IOException, SignedJarBuilder.IZipEntryFilter.ZipAbortException {
+        logger.verbose("addFolder(%1$s, %2$s)", folder, path);
         File[] files = folder.listFiles();
         if (files != null) {
             for (File file : files) {
                 if (file.isFile()) {
                     String entryPath = path + file.getName();
                     if (filter == null || filter.checkEntry(entryPath)) {
+                        logger.verbose("addFolder(%1$s, %2$s): entry %3$s", folder, path, entryPath);
                         // new entry
                         jarOutputStream.putNextEntry(new JarEntry(entryPath));
 
@@ -109,6 +118,7 @@ public class JarMerger {
     }
 
     public void addJar(@NonNull File file) throws IOException {
+        logger.verbose("addJar(%1$s)", file);
         init();
 
         Closer localCloser = Closer.create();
@@ -140,6 +150,7 @@ public class JarMerger {
                 }
 
                 // add the entry to the jar archive
+                logger.verbose("addJar(%1$s): entry %2$s", file, name);
                 jarOutputStream.putNextEntry(newEntry);
 
                 // read the content of the entry from the input stream, and write it into the archive.
