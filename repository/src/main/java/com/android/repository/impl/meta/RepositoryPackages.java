@@ -123,7 +123,14 @@ public final class RepositoryPackages {
      */
     @NonNull
     public Set<UpdatablePackage> getUpdatedPkgs() {
-        return mUpdatedPkgs;
+        Set<UpdatablePackage> result = mUpdatedPkgs;
+        if (result == null) {
+            synchronized (mLock) {
+                computeUpdates();
+                result = mUpdatedPkgs;
+            }
+        }
+        return result;
     }
 
     /**
@@ -134,7 +141,14 @@ public final class RepositoryPackages {
      */
     @NonNull
     public Set<RemotePackage> getNewPkgs() {
-        return mNewPkgs;
+        Set<RemotePackage> result = mNewPkgs;
+        if (result == null) {
+            synchronized (mLock) {
+                computeUpdates();
+                result = mNewPkgs;
+            }
+        }
+        return result;
     }
 
     /**
@@ -145,7 +159,14 @@ public final class RepositoryPackages {
      */
     @NonNull
     public Map<String, UpdatablePackage> getConsolidatedPkgs() {
-        return mConsolidatedPkgs;
+        Map<String, UpdatablePackage> result = mConsolidatedPkgs;
+        if (result == null) {
+            synchronized (mLock) {
+                computeUpdates();
+                result = mConsolidatedPkgs;
+            }
+        }
+        return result;
     }
 
     /**
@@ -179,7 +200,7 @@ public final class RepositoryPackages {
     public void setLocalPkgInfos(@NonNull Map<String, ? extends LocalPackage> packages) {
         synchronized (mLock) {
             mLocalPackages = packages;
-            computeUpdates();
+            invalidate();
             computeLocalPackagePrefixes();
         }
     }
@@ -191,14 +212,19 @@ public final class RepositoryPackages {
     public void setRemotePkgInfos(@NonNull Map<String, RemotePackage> packages) {
         synchronized (mLock) {
             mRemotePackages = packages;
-            computeUpdates();
+            invalidate();
         }
+    }
+
+    private void invalidate() {
+        mConsolidatedPkgs = null;
+        mNewPkgs = null;
+        mUpdatedPkgs = null;
     }
 
     private void computeUpdates() {
         Map<String, UpdatablePackage> newConsolidatedPkgs = Maps.newTreeMap();
         Set<UpdatablePackage> updates = Sets.newHashSet();
-        mUpdatedPkgs.clear();
         for (String path : mLocalPackages.keySet()) {
             LocalPackage local = mLocalPackages.get(path);
             UpdatablePackage updatable = new UpdatablePackage(local);
