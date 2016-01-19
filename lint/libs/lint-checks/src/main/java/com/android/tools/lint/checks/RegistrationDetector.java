@@ -109,6 +109,10 @@ public class RegistrationDetector extends LayoutDetector implements JavaScanner 
 
     @Override
     public void visitElement(@NonNull XmlContext context, @NonNull Element element) {
+        if (!element.hasAttributeNS(ANDROID_URI, ATTR_NAME)) {
+            // For example, application appears in manifest and doesn't always have a name
+            return;
+        }
         String fqcn = getFqcn(context, element);
         String tag = element.getTagName();
         String frameworkClass = tagToClass(tag);

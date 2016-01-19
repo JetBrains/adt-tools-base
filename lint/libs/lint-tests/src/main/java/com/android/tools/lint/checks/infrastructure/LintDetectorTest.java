@@ -70,6 +70,8 @@ import com.android.utils.StdLogger;
 import com.android.utils.XmlUtils;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Charsets;
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
@@ -115,6 +117,8 @@ import java.util.jar.Manifest;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
+
+import javax.xml.bind.DatatypeConverter;
 
 /**
  * Test case for lint detectors.
@@ -524,6 +528,36 @@ public abstract class LintDetectorTest extends SdkTestCase {
     @NonNull
     public BinaryTestFile bytecode(@NonNull String to, @NonNull BytecodeProducer producer) {
         return new BinaryTestFile(to, producer);
+    }
+
+    public static String toBase64(@NonNull byte[] bytes) {
+        String base64 = DatatypeConverter.printBase64Binary(bytes);
+        return Joiner.on("").join(Splitter.fixedLength(60).split(base64));
+    }
+
+    public static String toBase64(@NonNull File file) throws IOException {
+        return toBase64(Files.toByteArray(file));
+    }
+
+    /**
+     * Creates a test file from the given base64 data. To create this data, use {@link
+     * #toBase64(File)} or {@link #toBase64(byte[])}, for example via {@code assertEquals("",
+     * uuencode(new File("path/to/your.class")));} </pre>
+     *
+     * @param to      the file to write as
+     * @param encoded the encoded data
+     * @return the new test file
+     */
+    public BinaryTestFile base64(@NonNull String to, @NonNull String encoded) {
+        encoded = encoded.replaceAll("\n", "");
+        final byte[] bytes = DatatypeConverter.parseBase64Binary(encoded);
+        return new BinaryTestFile(to, new BytecodeProducer() {
+            @NonNull
+            @Override
+            public byte[] produce() {
+                return bytes;
+            }
+        });
     }
 
     public class BinaryTestFile extends TestFile {
