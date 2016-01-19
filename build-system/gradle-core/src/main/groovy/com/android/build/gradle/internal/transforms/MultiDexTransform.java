@@ -135,7 +135,7 @@ public class MultiDexTransform extends BaseProguardAction {
     }
 
     @Override
-    public void transform(TransformInvocation invocation)
+    public void transform(@NonNull TransformInvocation invocation)
             throws IOException, TransformException, InterruptedException {
 
         try {

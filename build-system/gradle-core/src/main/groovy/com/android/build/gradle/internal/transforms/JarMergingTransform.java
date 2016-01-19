@@ -84,7 +84,7 @@ public class JarMergingTransform extends Transform {
     }
 
     @Override
-    public void transform(TransformInvocation invocation) throws TransformException, IOException {
+    public void transform(@NonNull TransformInvocation invocation) throws TransformException, IOException {
         TransformOutputProvider outputProvider = invocation.getOutputProvider();
         checkNotNull(outputProvider, "Missing output object for transform " + getName());
 

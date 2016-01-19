@@ -99,7 +99,7 @@ public class ExtractJarsTransform extends Transform {
     }
 
     @Override
-    public void transform(TransformInvocation transformInvocation)
+    public void transform(@NonNull TransformInvocation transformInvocation)
             throws IOException, TransformException, InterruptedException {
         TransformOutputProvider outputProvider = transformInvocation.getOutputProvider();
         boolean isIncremental = transformInvocation.isIncremental();

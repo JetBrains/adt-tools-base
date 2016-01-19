@@ -101,7 +101,7 @@ public class JacocoTransform extends Transform {
     }
 
     @Override
-    public void transform(TransformInvocation invocation)
+    public void transform(@NonNull TransformInvocation invocation)
             throws IOException, TransformException, InterruptedException {
 
         checkNotNull(invocation.getOutputProvider(),

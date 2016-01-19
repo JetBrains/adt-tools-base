@@ -144,7 +144,7 @@ public class NewShrinkerTransform extends ProguardConfigurable {
     }
 
     @Override
-    public void transform(TransformInvocation invocation)
+    public void transform(@NonNull TransformInvocation invocation)
             throws IOException, TransformException, InterruptedException {
         TransformOutputProvider output = invocation.getOutputProvider();
         Collection<TransformInput> referencedInputs = invocation.getReferencedInputs();
