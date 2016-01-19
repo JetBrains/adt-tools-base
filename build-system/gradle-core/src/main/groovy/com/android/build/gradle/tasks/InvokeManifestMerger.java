@@ -14,62 +14,89 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.tasks
+package com.android.build.gradle.tasks;
 
-import com.android.build.gradle.internal.LoggerWrapper
-import com.android.build.gradle.internal.tasks.DefaultAndroidTask
-import com.android.manifmerger.ManifestMerger2
-import com.android.manifmerger.MergingReport
-import com.android.utils.ILogger
-import com.google.common.base.Supplier
-import org.apache.tools.ant.BuildException
-import org.gradle.api.tasks.InputFile
-import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.OutputFile
-import org.gradle.api.tasks.ParallelizableTask
-import org.gradle.api.tasks.TaskAction
+import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
+import com.android.manifmerger.ManifestMerger2;
+import com.android.manifmerger.MergingReport;
+import com.android.utils.ILogger;
+import com.google.common.base.Supplier;
+import org.apache.tools.ant.BuildException;
+import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.OutputFile;
+import org.gradle.api.tasks.ParallelizableTask;
+import org.gradle.api.tasks.TaskAction;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.List;
 
 /**
  * Simple task to invoke the new Manifest Merger without any injection, features, system properties
  * or overlay manifests
  */
 @ParallelizableTask
-class InvokeManifestMerger extends DefaultAndroidTask implements Supplier<File> {
+public class InvokeManifestMerger extends DefaultAndroidTask implements Supplier<File> {
+
+    private File mMainManifestFile;
+
+    private List<File> mSecondaryManifestFiles;
+
+    private File mOutputFile;
 
     @InputFile
-    File mainManifestFile;
+    public File getMainManifestFile() {
+        return mMainManifestFile;
+    }
+
+    public void setMainManifestFile(File mainManifestFile) {
+        this.mMainManifestFile = mainManifestFile;
+    }
 
     @InputFiles
-    List<File> secondaryManifestFiles
+    public List<File> getSecondaryManifestFiles() {
+        return mSecondaryManifestFiles;
+    }
+
+    public void setSecondaryManifestFiles(List<File> secondaryManifestFiles) {
+        this.mSecondaryManifestFiles = secondaryManifestFiles;
+    }
 
     @OutputFile
-    File outputFile
+    public File getOutputFile() {
+        return mOutputFile;
+    }
+
+    public void setOutputFile(File outputFile) {
+        this.mOutputFile = outputFile;
+    }
 
     @TaskAction
-    protected void doFullTaskAction() {
+    protected void doFullTaskAction() throws ManifestMerger2.MergeFailureException, IOException {
         ILogger iLogger = new LoggerWrapper(getLogger());
         ManifestMerger2.Invoker mergerInvoker = ManifestMerger2.
-                newMerger(getMainManifestFile(), iLogger, ManifestMerger2.MergeType.APPLICATION)
-        mergerInvoker.addLibraryManifests(secondaryManifestFiles.toArray(new File[secondaryManifestFiles.size()]))
+                newMerger(getMainManifestFile(), iLogger, ManifestMerger2.MergeType.APPLICATION);
+        List<File> secondaryManifestFiles = getSecondaryManifestFiles();
+        mergerInvoker.addLibraryManifests(secondaryManifestFiles.toArray(new File[secondaryManifestFiles.size()]));
         MergingReport mergingReport = mergerInvoker.merge();
-        if (mergingReport.result.isError()) {
-            getLogger().error(mergingReport.reportString);
+        if (mergingReport.getResult().isError()) {
+            getLogger().error(mergingReport.getReportString());
             mergingReport.log(iLogger);
-            throw new BuildException(mergingReport.reportString);
+            throw new BuildException(mergingReport.getReportString());
         }
-        FileWriter fileWriter = null;
+        FileWriter fileWriter = new FileWriter(getOutputFile());
         try {
-            fileWriter = new FileWriter(getOutputFile())
-            fileWriter.append(mergingReport.getMergedDocument().get().prettyPrint())
+            fileWriter.append(mergingReport.getMergedDocument().get().prettyPrint());
         } finally {
-            if (fileWriter != null) {
-                fileWriter.close()
-            }
+            fileWriter.close();
         }
     }
 
     @Override
-    File get() {
-        return getOutputFile()
+    public File get() {
+        return getOutputFile();
     }
 }
