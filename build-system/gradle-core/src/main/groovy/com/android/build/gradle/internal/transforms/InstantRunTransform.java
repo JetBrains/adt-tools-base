@@ -127,7 +127,7 @@ public class InstantRunTransform extends Transform {
     }
 
     @Override
-    public void transform(TransformInvocation invocation)
+    public void transform(@NonNull TransformInvocation invocation)
             throws IOException, TransformException, InterruptedException {
 
         TransformOutputProvider outputProvider = invocation.getOutputProvider();

@@ -175,7 +175,7 @@ public class ShrinkResourcesTransform extends Transform {
     }
 
     @Override
-    public void transform(TransformInvocation invocation)
+    public void transform(@NonNull TransformInvocation invocation)
             throws IOException, TransformException, InterruptedException {
 
         // there should be only one input since this transform is always applied after

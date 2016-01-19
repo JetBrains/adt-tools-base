@@ -113,7 +113,7 @@ public class TestTransform extends Transform {
     }
 
     @Override
-    public void transform(TransformInvocation invocation)
+    public void transform(@NonNull TransformInvocation invocation)
             throws IOException, TransformException, InterruptedException {
         this.invocation = invocation;
     }

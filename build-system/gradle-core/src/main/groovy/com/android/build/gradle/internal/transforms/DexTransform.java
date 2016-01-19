@@ -202,7 +202,7 @@ public class DexTransform extends Transform {
     }
 
     @Override
-    public void transform(TransformInvocation transformInvocation)
+    public void transform(@NonNull TransformInvocation transformInvocation)
             throws TransformException, IOException, InterruptedException {
         TransformOutputProvider outputProvider = transformInvocation.getOutputProvider();
         boolean isIncremental = transformInvocation.isIncremental();
