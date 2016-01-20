@@ -24,6 +24,7 @@ import com.android.repository.api.RepoManager;
 import com.android.repository.impl.manager.RepoManagerImpl;
 import com.android.repository.impl.meta.RepositoryPackages;
 import com.android.repository.testframework.FakeDownloader;
+import com.android.repository.testframework.FakePackage;
 import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.repository.testframework.FakeProgressRunner;
 import com.android.repository.testframework.FakeSettingsController;
@@ -158,7 +159,7 @@ public class BasicInstallerTest extends TestCase {
     // Test installing an upgrade to an existing package.
     public void testInstallUpgrade() throws Exception {
         MockFileOp fop = new MockFileOp();
-        // Recore a couple existing packages.
+        // Record a couple existing packages.
         fop.recordExistingFile("/repo/dummy/foo/package.xml", ByteStreams
                 .toByteArray(getClass().getResourceAsStream("../testData/testPackage.xml")));
         fop.recordExistingFile("/repo/dummy/bar/package.xml", ByteStreams.toByteArray(
@@ -234,5 +235,75 @@ public class BasicInstallerTest extends TestCase {
         assertEquals(new Revision(4, 5, 6), newPkg.getVersion());
 
         // TODO: verify the actual contents of the update?
+    }
+
+    public void testInstallInChild() throws Exception {
+        MockFileOp fop = new MockFileOp();
+        fop.recordExistingFile("/sdk/foo/package.xml",
+                "<repo:repository\n"
+                        + "        xmlns:repo=\"http://schemas.android.com/repository/android/generic/01\"\n"
+                        + "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
+                        + "    <localPackage path=\"foo\">\n"
+                        + "        <type-details xsi:type=\"repo:genericDetailsType\"/>\n"
+                        + "        <revision>\n"
+                        + "            <major>3</major>\n"
+                        + "        </revision>\n"
+                        + "        <display-name>The first Android platform ever</display-name>\n"
+                        + "    </localPackage>\n"
+                        + "</repo:repository>");
+        RepoManager mgr = new RepoManagerImpl(fop);
+        mgr.setLocalPath(new File("/sdk"));
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+        mgr.loadSynchronously(0, progress, null, null);
+
+        FakePackage remote = new FakePackage("foo;bar", new Revision(1), null);
+        remote.setCompleteUrl("http://www.example.com/package.zip");
+        FakeDownloader downloader = new FakeDownloader(fop);
+
+        assertFalse(new BasicInstaller()
+                .install(remote, downloader, new FakeSettingsController(false), progress, mgr,
+                        fop));
+        boolean found = false;
+        for (String warning : progress.getWarnings()) {
+            if (warning.contains("child")) {
+                found = true;
+            }
+        }
+        assertTrue(found);
+    }
+
+    public void testInstallInParent() throws Exception {
+        MockFileOp fop = new MockFileOp();
+        fop.recordExistingFile("/sdk/foo/bar/package.xml",
+                "<repo:repository\n"
+                        + "        xmlns:repo=\"http://schemas.android.com/repository/android/generic/01\"\n"
+                        + "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
+                        + "    <localPackage path=\"foo;bar\">\n"
+                        + "        <type-details xsi:type=\"repo:genericDetailsType\"/>\n"
+                        + "        <revision>\n"
+                        + "            <major>3</major>\n"
+                        + "        </revision>\n"
+                        + "        <display-name>The first Android platform ever</display-name>\n"
+                        + "    </localPackage>\n"
+                        + "</repo:repository>");
+        RepoManager mgr = new RepoManagerImpl(fop);
+        mgr.setLocalPath(new File("/sdk"));
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+        mgr.loadSynchronously(0, progress, null, null);
+
+        FakePackage remote = new FakePackage("foo", new Revision(1), null);
+        remote.setCompleteUrl("http://www.example.com/package.zip");
+        FakeDownloader downloader = new FakeDownloader(fop);
+
+        assertFalse(new BasicInstaller()
+                .install(remote, downloader, new FakeSettingsController(false), progress, mgr,
+                        fop));
+        boolean found = false;
+        for (String warning : progress.getWarnings()) {
+            if (warning.contains("parent")) {
+                found = true;
+            }
+        }
+        assertTrue(found);
     }
 }

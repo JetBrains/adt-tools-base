@@ -110,6 +110,9 @@ public class MavenInstaller implements PackageInstaller {
             String path = p.getPath();
             path = path.replace(RepoPackage.PATH_SEPARATOR, File.separatorChar);
             File dest = new File(manager.getLocalPath(), path);
+            if (!InstallerUtil.checkValidPath(dest, manager, progress)) {
+                return false;
+            }
 
             File in = downloader.downloadFully(url, settings, progress);
 

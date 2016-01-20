@@ -331,4 +331,45 @@ public class InstallerUtil {
 
         return Lists.reverse(result);
     }
+
+    /**
+     * Checks to see whether {@code path} is a valid install path. Specifically, checks whether
+     * there are any existing packages installed in parents or children of {@code path}.
+     * Returns {@code true} if the path is valid. Otherwise returns {@code false} and logs a
+     * warning.
+     */
+    public static boolean checkValidPath(@NonNull File path, @NonNull RepoManager manager,
+            @NonNull ProgressIndicator progress) {
+        try {
+            String check = path.getCanonicalPath();
+
+            for (LocalPackage p : manager.getPackages().getLocalPackages().values()) {
+                String existing = p.getLocation().getCanonicalPath();
+                if (!existing.equals(check)) {
+                    boolean childExists = existing.startsWith(check);
+                    boolean parentExists = check.startsWith(existing);
+                    if (childExists || parentExists) {
+                        StringBuilder message = new StringBuilder();
+                        message.append("Trying to install into ")
+                                .append(check)
+                                .append(" but package \"")
+                                .append(p.getDisplayName())
+                                .append("\" already exists at ")
+                                .append(existing)
+                                .append(". It must be deleted or moved away before installing into a ")
+                                .append(childExists ? "parent" : "child")
+                                .append(" directory.");
+                        progress.logWarning(message.toString());
+                        return false;
+                    }
+                }
+            }
+        }
+        catch (IOException e) {
+            progress.logWarning("Error while trying to check install path validity", e);
+            return false;
+        }
+
+        return true;
+    }
 }
