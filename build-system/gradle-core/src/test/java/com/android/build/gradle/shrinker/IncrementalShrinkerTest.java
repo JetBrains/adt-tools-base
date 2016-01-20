@@ -178,7 +178,7 @@ public class IncrementalShrinkerTest extends AbstractShrinkerTest {
         Files.write(TestClasses.emptyClass("NotUsed"), new File(mTestPackageDir, "NotUsed.class"));
 
         mException.expect(IncrementalRunImpossibleException.class);
-        mException.expectMessage("test/NotUsed.class added");
+        mException.expectMessage(FileUtils.toSystemDependentPath("test/NotUsed.class") + " added");
         incrementalRun(ImmutableMap.of(
                 "Main", Status.CHANGED,
                 "NotUsed", Status.ADDED));
@@ -199,7 +199,8 @@ public class IncrementalShrinkerTest extends AbstractShrinkerTest {
         FileUtils.delete(notUsedClass);
 
         mException.expect(IncrementalRunImpossibleException.class);
-        mException.expectMessage("test/NotUsed.class removed");
+        mException.expectMessage(
+                FileUtils.toSystemDependentPath("test/NotUsed.class") + " removed");
         incrementalRun(ImmutableMap.of(
                 "Main", Status.CHANGED,
                 "NotUsed", Status.REMOVED));

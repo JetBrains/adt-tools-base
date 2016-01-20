@@ -20,6 +20,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext.Build;
 import com.android.sdklib.AndroidVersion;
+import com.android.utils.FileUtils;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
@@ -355,7 +356,7 @@ public class InstantRunBuildContextTest {
         assertThat(artifacts).hasSize(1);
         // split-2 changes on first build is overlapped by third change.
         assertThat(artifacts.get(0).getAttribute(InstantRunBuildContext.ATTR_LOCATION))
-                .isEqualTo("/tmp/split-1.apk");
+                .isEqualTo(new File("/tmp/split-1.apk").getAbsolutePath());
         // second has been stripped.
         assertThat(builds.get(2).getAttribute(InstantRunBuildContext.ATTR_TIMESTAMP)).isEqualTo(
                 String.valueOf(third.getBuildId()));
@@ -363,9 +364,9 @@ public class InstantRunBuildContextTest {
         assertThat(artifacts).hasSize(2);
         // split-2 changes on first build is overlapped by third change.
         assertThat(artifacts.get(0).getAttribute(InstantRunBuildContext.ATTR_LOCATION))
-                .isEqualTo("/tmp/split-2.apk");
+                .isEqualTo(new File("/tmp/split-2.apk").getAbsolutePath());
         assertThat(artifacts.get(1).getAttribute(InstantRunBuildContext.ATTR_LOCATION))
-                .isEqualTo("/tmp/split-3.apk");
+                .isEqualTo(new File("/tmp/split-3.apk").getAbsolutePath());
     }
 
     @Test

@@ -103,7 +103,7 @@ public class ClassEnhancement implements TestRule {
                 public String apply(File file) {
                     String relativePath = FileUtils.relativePath(file, outputFolder);
                     return relativePath.substring(0, relativePath.length() - 6 /*.class */)
-                            .replace('/', '.');
+                            .replace(File.separatorChar, '.');
                 }
             });
 
