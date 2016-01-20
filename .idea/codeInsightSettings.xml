@@ -5,6 +5,7 @@
       <name>com.sun</name>
       <name>java.awt.List</name>
       <name>junit.framework</name>
+      <name>org.gradle.jarjar</name>
       <name>org.testng</name>
     </excluded-names>
   </component>

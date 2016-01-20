@@ -25,8 +25,10 @@ import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext.FileType;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
+import com.android.build.gradle.internal.scope.VariantOutputScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.builder.core.AaptPackageProcessBuilder;
 import com.android.builder.model.SigningConfig;
@@ -37,20 +39,17 @@ import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.ide.common.signing.KeytoolException;
-import com.android.utils.FileUtils;
+import com.google.common.collect.Iterables;
 import com.google.common.io.Files;
 
 import org.gradle.api.Action;
 import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs;
 import org.gradle.api.tasks.incremental.InputFileDetails;
-import org.gradle.process.ExecSpec;
-import org.gradle.process.internal.ProcessBuilderFactory;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -70,13 +69,12 @@ public class InstantRunSplitApkBuilder extends BaseTask {
     private File outputDirectory;
     private SigningConfig signingConf;
     private String applicationId;
-    private int versionCode;
-    private String versionName;
     private InstantRunBuildContext instantRunBuildContext;
     private File zipAlignExe;
     private AaptOptions aaptOptions;
     private File supportDir;
 
+    private ApkVariantOutputData variantOutputData;
 
     @Input
     public String getApplicationId() {
@@ -89,22 +87,15 @@ public class InstantRunSplitApkBuilder extends BaseTask {
 
     @Input
     public int getVersionCode() {
-        return versionCode;
-    }
-
-    public void setVersionCode(int versionCode) {
-        this.versionCode = versionCode;
+        return variantOutputData.getVersionCode();
     }
 
     @Input
     @Optional
     public String getVersionName() {
-        return versionName;
+        return variantOutputData.getVersionName();
     }
 
-    public void setVersionName(String versionName) {
-        this.versionName = versionName;
-    }
 
     @InputFiles
     public Set<File> getDexFolders() {
@@ -285,8 +276,8 @@ public class InstantRunSplitApkBuilder extends BaseTask {
             task.outputDirectory = variantScope.getInstantRunSplitApkOutputFolder();
             task.signingConf = config.getSigningConfig();
             task.setApplicationId(config.getApplicationId());
-            task.setVersionCode(config.getVersionCode());
-            task.setVersionName(config.getVersionName());
+            task.variantOutputData =
+                    (ApkVariantOutputData) variantScope.getVariantData().getOutputs().get(0);
             task.setVariantName(
                     variantScope.getVariantConfiguration().getFullName());
             task.setAndroidBuilder(variantScope.getGlobalScope().getAndroidBuilder());
