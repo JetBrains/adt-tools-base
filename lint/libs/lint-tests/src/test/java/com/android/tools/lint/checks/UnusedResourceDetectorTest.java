@@ -427,6 +427,31 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testDataBindingIds() throws Exception {
+        // Make sure id's in data binding layouts aren't considered unused
+        // (since the compiler will generate accessors for these that
+        // may not be visible when running lint on edited sources)
+        // Regression test for https://code.google.com/p/android/issues/detail?id=189065
+        mEnableIds = true;
+        assertEquals("No warnings.",
+
+                lintProject(
+                        xml("res/layout/db.xml", ""
+                                + "<layout xmlns:android=\"http://schemas.android.com/apk/res/android\""
+                                + "    xmlns:tools=\"http://schemas.android.com/tools\" "
+                                + "    tools:keep=\"@layout/db\">\n"
+                                + "   <data>\n"
+                                + "       <variable name=\"user\" type=\"com.example.User\"/>\n"
+                                + "   </data>\n"
+                                + "   <LinearLayout\n"
+                                + "       android:orientation=\"vertical\"\n"
+                                + "       android:id=\"@+id/my_id\"\n"
+                                + "       android:layout_width=\"match_parent\"\n"
+                                + "       android:layout_height=\"match_parent\" />\n"
+                                + "</layout>")
+                ));
+    }
+
     public void testPublic() throws Exception {
         // Resources marked as public should not be listed as potentially unused
         mEnableIds = false;
