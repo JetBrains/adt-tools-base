@@ -56,7 +56,16 @@ public enum TextFormat {
     /**
      * HTML formatted output (note: does not include surrounding {@code <html></html>} tags)
      */
-    HTML;
+    HTML,
+
+    /**
+     * HTML formatted output (note: does not include surrounding {@code <html></html>} tags).
+     * This is like {@link #HTML}, but it does not escape unicode characters with entities.
+     * <p>
+     * (This is used for example in the IDE, where some partial HTML support in some
+     * label widgets support some HTML markup, but not numeric code character entities.)
+     */
+    HTML_WITH_UNICODE;
 
     /**
      * Converts the given text to HTML
@@ -102,6 +111,7 @@ public enum TextFormat {
                         return message;
                     case TEXT:
                     case HTML:
+                    case HTML_WITH_UNICODE:
                         return to.fromRaw(message);
                 }
             }
@@ -111,12 +121,27 @@ public enum TextFormat {
                     case RAW:
                         return message;
                     case HTML:
+                    case HTML_WITH_UNICODE:
                         return XmlUtils.toXmlTextValue(message);
                 }
             }
             case HTML: {
                 switch (to) {
                     case HTML:
+                        return message;
+                    case HTML_WITH_UNICODE:
+                        return removeNumericEntities(message);
+                    case RAW:
+                    case TEXT: {
+                        return to.fromHtml(message);
+
+                    }
+                }
+            }
+            case HTML_WITH_UNICODE: {
+                switch (to) {
+                    case HTML:
+                    case HTML_WITH_UNICODE:
                         return message;
                     case RAW:
                     case TEXT: {
@@ -194,9 +219,10 @@ public enum TextFormat {
     /** Converts to this output format from the given raw-format text */
     @NonNull
     private String fromRaw(@NonNull String text) {
-        assert this == HTML || this == TEXT : this;
+        assert this == HTML || this == HTML_WITH_UNICODE || this == TEXT : this;
         StringBuilder sb = new StringBuilder(3 * text.length() / 2);
-        boolean html = this == HTML;
+        boolean html = this == HTML || this == HTML_WITH_UNICODE;
+        boolean escapeUnicode = this == HTML;
 
         char prev = 0;
         int flushIndex = 0;
@@ -212,15 +238,15 @@ public enum TextFormat {
                     int end = text.indexOf(c, i + 1);
                     if (end != -1 && (end == n - 1 || !Character.isLetter(text.charAt(end + 1)))) {
                         if (i > flushIndex) {
-                            appendEscapedText(sb, text, html, flushIndex, i);
+                            appendEscapedText(sb, text, html, flushIndex, i, escapeUnicode);
                         }
                         if (html) {
                             String tag = c == '*' ? "b" : "code"; //$NON-NLS-1$ //$NON-NLS-2$
                             sb.append('<').append(tag).append('>');
-                            appendEscapedText(sb, text, html, i + 1, end);
+                            appendEscapedText(sb, text, html, i + 1, end, escapeUnicode);
                             sb.append('<').append('/').append(tag).append('>');
                         } else {
-                            appendEscapedText(sb, text, html, i + 1, end);
+                            appendEscapedText(sb, text, html, i + 1, end, escapeUnicode);
                         }
                         flushIndex = end + 1;
                         i = flushIndex - 1; // -1: account for the i++ in the loop
@@ -243,7 +269,7 @@ public enum TextFormat {
                 }
                 if (end > i + HTTP_PREFIX.length()) {
                     if (i > flushIndex) {
-                        appendEscapedText(sb, text, html, flushIndex, i);
+                        appendEscapedText(sb, text, html, flushIndex, i, escapeUnicode);
                     }
 
                     String url = text.substring(i, end);
@@ -261,14 +287,42 @@ public enum TextFormat {
         }
 
         if (flushIndex < n) {
-            appendEscapedText(sb, text, html, flushIndex, n);
+            appendEscapedText(sb, text, html, flushIndex, n, escapeUnicode);
+        }
+
+        return sb.toString();
+    }
+
+    private static String removeNumericEntities(@NonNull String html) {
+        if (!html.contains("&#")) {
+            return html;
+        }
+
+        StringBuilder sb = new StringBuilder(html.length());
+        for (int i = 0, n = html.length(); i < n; i++) {
+            char c = html.charAt(i);
+            if (c == '&' && i < n - 1 && html.charAt(i + 1) == '#') {
+                int end = html.indexOf(';', i + 2);
+                if (end != -1) {
+                    String decimal = html.substring(i + 2, end);
+                    try {
+                        c = (char)Integer.parseInt(decimal);
+                        sb.append(c);
+                        i = end;
+                        continue;
+                    } catch (NumberFormatException ignore) {
+                        // fall through to not escape this
+                    }
+                }
+            }
+            sb.append(c);
         }
 
         return sb.toString();
     }
 
     private static void appendEscapedText(@NonNull StringBuilder sb, @NonNull String text,
-            boolean html, int start, int end) {
+            boolean html, int start, int end, boolean escapeUnicode) {
         if (html) {
             for (int i = start; i < end; i++) {
                 char c = text.charAt(i);
@@ -279,7 +333,7 @@ public enum TextFormat {
                 } else if (c == '\n') {
                     sb.append("<br/>\n");
                 } else {
-                    if (c > 255) {
+                    if (c > 255 && escapeUnicode) {
                         sb.append("&#");                                 //$NON-NLS-1$
                         sb.append(Integer.toString(c));
                         sb.append(';');
