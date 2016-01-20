@@ -22,6 +22,7 @@ import static com.android.tools.fd.runtime.BootstrapApplication.LOG_TAG;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
+import android.os.Build;
 import android.util.Log;
 
 import java.io.BufferedInputStream;
@@ -289,8 +290,9 @@ public class FileManager {
         FileManager.purgeTempDexFiles(dataFolder);
 
         // Get rid of patches no longer applicable
-        // TODO: Only do this for API level < 21
-        FileManager.purgeMaskedDexFiles(dataFolder);
+        if (Build.VERSION.SDK_INT < 21) {
+            FileManager.purgeMaskedDexFiles(dataFolder);
+        }
 
         List<String> list = new ArrayList<String>();
 
@@ -499,7 +501,7 @@ public class FileManager {
     @Nullable
     public static File writeDexFile(@NonNull byte[] bytes, boolean writeIndex) {
         File file = getNextDexFile();
-        if (file != null) {
+        if (file != null && Build.VERSION.SDK_INT < 21) {
             writeDexFile(bytes, writeIndex, file);
         }
 
