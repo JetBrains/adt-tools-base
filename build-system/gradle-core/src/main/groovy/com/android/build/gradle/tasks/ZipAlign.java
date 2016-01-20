@@ -59,6 +59,10 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
 
     private InstantRunBuildContext instantRunBuildContext;
 
+    public void setInstantRunBuildContext(InstantRunBuildContext instantRunBuildContext) {
+        this.instantRunBuildContext = instantRunBuildContext;
+    }
+
     @InputFile
     public File getZipAlignExe() {
         return zipAlignExe;
