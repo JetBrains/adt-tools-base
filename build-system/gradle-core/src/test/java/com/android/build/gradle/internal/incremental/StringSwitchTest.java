@@ -20,6 +20,7 @@ import org.gradle.internal.reflect.NoSuchMethodException;
 import org.junit.Test;
 
 import org.objectweb.asm.*;
+import org.objectweb.asm.util.CheckClassAdapter;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.*;
 import org.objectweb.asm.tree.MethodNode;
@@ -45,88 +46,75 @@ public class StringSwitchTest {
         return string;
     }
 
-    public class TestClassLoader extends ClassLoader {
-        public TestClassLoader(ClassLoader parent) {
-            super(parent);
+    public static class TestClassDump implements Opcodes {
+
+        public static Class<?> loadClass(byte[] bytecode)
+                throws Exception {
+            ClassLoader scl = ClassLoader.getSystemClassLoader();
+            Object[] args = new Object[] {
+                    null, bytecode, 0, bytecode.length
+            };
+            Method m = ClassLoader.class.getDeclaredMethod("defineClass", String.class, byte[].class, int.class, int.class);
+            m.setAccessible(true);
+            return (Class<?>) m.invoke(scl, args);
         }
-        public Method getStringSwitchMethod(final String ...strings) {
-            try {
-                ClassReader cr = new ClassReader(
-                        StringSwitchTest.class.getResourceAsStream(
-                                "/com/android/build/gradle/internal/incremental/StringSwitchTest.class"));
-                ClassWriter cw = new ClassWriter(0);
-                ClassVisitor cv = new ClassVisitor(Opcodes.ASM5, cw) {
-                    public MethodVisitor visitMethod(int access, String name, String desc,
-                            String signature, String[] exceptions) {
-                        MethodVisitor visitor = super
-                                .visitMethod(access, name, desc, signature, exceptions);
-                        if (name.equals("switchOn")) {
-                            try {
-                                org.objectweb.asm.commons.Method m =
-                                        org.objectweb.asm.commons.Method.getMethod(
-                                                StringSwitchTest.class
-                                                        .getMethod("switchOn", String.class));
-                                final GeneratorAdapter mv = new GeneratorAdapter(access, m,
-                                        visitor);
 
-                                mv.visitCode();
+        public static Method dump (String className, String... strings) throws Exception {
 
-                                new StringSwitch() {
-                                    @Override
-                                    void visitString() {
-                                        mv.visitVarInsn(Opcodes.ALOAD, 0);
-                                    }
+            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 
-                                    @Override
-                                    void visitCase(String methodName) {
-                                        mv.push(methodName);
-                                        mv.visitInsn(Opcodes.ARETURN);
-                                    }
+            CheckClassAdapter cv = new CheckClassAdapter(cw);
 
-                                    @Override
-                                    void visitDefault() {
-                                        mv.push("No Match Found");
-                                        mv.visitInsn(Opcodes.ARETURN);
-                                    }
-                                }.visit(mv, new HashSet<String>(Arrays.asList(strings)));
+            cv.visit(52, ACC_PUBLIC + ACC_SUPER, className, null, "java/lang/Object", null);
 
-                                mv.visitMaxs(0, 0);
-                                mv.visitEnd();
-                            }  catch (Exception e) {
-                                throw new RuntimeException(e.toString());
-                            }
-                        }
-                        System.out.println(name);
-                        return visitor;
-                    }
-                };
-                cr.accept(cv, 0);
-                byte[] bytes = cw.toByteArray();
-
-                Class clazz = super.defineClass(
-                        "com.android.build.gradle.internal.incremental.StringSwitchTest", bytes, 0, bytes.length);
-                return clazz.getMethod("switchOn", String.class);
-            } catch (IllegalArgumentException e) {
-                throw e;
-            }catch (Exception e) {
-                throw new RuntimeException(e.toString());
+            {
+                MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mv.visitCode();
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
             }
+            {
+                final MethodVisitor mv = cw.visitMethod(ACC_PUBLIC + ACC_STATIC, "switchOn", "(Ljava/lang/String;)Ljava/lang/String;", null, null);
+                final GeneratorAdapter ga = new GeneratorAdapter(mv, ACC_PUBLIC + ACC_STATIC, "switchOn", "(Ljava/lang/String;)Ljava/lang/String;");
+                mv.visitCode();
+                new StringSwitch() {
+                    @Override
+                    void visitString() {
+                        mv.visitVarInsn(Opcodes.ALOAD, 0);
+                    }
+
+                    @Override
+                    void visitCase(String methodName) {
+                        mv.visitLdcInsn(methodName);
+                        mv.visitInsn(Opcodes.ARETURN);
+                    }
+
+                    @Override
+                    void visitDefault() {
+                        mv.visitLdcInsn("No Match Found");
+                        mv.visitInsn(Opcodes.ARETURN);
+                    }
+                }.visit(ga, new HashSet<String>(Arrays.asList(strings)));
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            cv.visitEnd();
+
+            byte[] bytes = cw.toByteArray();
+            return loadClass(bytes).getMethod("switchOn", String.class);
         }
     }
 
-    Method getGeneratedSwitchMethod(String ...strings) {
-        return new TestClassLoader(
-                StringSwitchTest.class.getClassLoader())
-                    .getStringSwitchMethod(strings);
-    }
-
-    void exercise(String ...strings) {
-        Method m = getGeneratedSwitchMethod(strings);
+    void exercise(String className, String ...strings) throws Exception {
+        final Method m = TestClassDump.dump(className, strings);
         for (String string : strings) {
             try {
                 String result = (String) m.invoke(null, string);
                 if (!result.equals(string)) {
-                    throw new RuntimeException(result);
+                    throw new RuntimeException(String.format("%s != %s", result, string));
                 }
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -134,8 +122,9 @@ public class StringSwitchTest {
         }
     }
 
-    @Test public void largeSet() {
+    @Test public void largeSet() throws Exception {
         exercise(
+                "LargeSet",
                 "com/example/basic/AllAccessFieldsSubclass.()V",
                 "com/example/basic/AllAccessFields.()V",
                 "com/example/basic/AllAccessMethods.()V",
@@ -233,8 +222,10 @@ public class StringSwitchTest {
         );
     }
 
-    @Test public void hashCollide() {
-        exercise("FB", "Ea");
+    @Test public void hashCollide() throws Exception {
+        exercise(
+                "HashCollide",
+                "FB", "Ea");
     }
 
 }
