@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.shrinker;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -49,6 +48,7 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
+import org.objectweb.asm.tree.InnerClassNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.slf4j.LoggerFactory;
 
@@ -137,9 +137,7 @@ public abstract class AbstractShrinkerTest {
     }
 
     protected static Set<String> getInterfaceNames(File classFile) throws IOException {
-        ClassReader classReader = new ClassReader(Files.toByteArray(classFile));
-        ClassNode classNode = new ClassNode(Opcodes.ASM5);
-        classReader.accept(classNode, ClassReader.SKIP_CODE);
+        ClassNode classNode = getClassNode(classFile);
 
         if (classNode.interfaces == null) {
             return ImmutableSet.of();
@@ -147,6 +145,29 @@ public abstract class AbstractShrinkerTest {
             //noinspection unchecked
             return ImmutableSet.copyOf(classNode.interfaces);
         }
+    }
+
+    private static List<InnerClassNode> getInnerClasses(File classFile) throws IOException {
+        ClassNode classNode = getClassNode(classFile);
+        if (classNode.innerClasses == null) {
+            return ImmutableList.of();
+        } else {
+            //noinspection unchecked
+            return classNode.innerClasses;
+        }
+    }
+
+    protected void assertSingleInnerClassesEntry(String className, String outer, String inner)
+            throws IOException {
+        List<InnerClassNode> innerClasses = getInnerClasses(getOutputClassFile(className));
+        assertThat(innerClasses).hasSize(1);
+        assertThat(innerClasses.get(0).outerName).isEqualTo(outer);
+        assertThat(innerClasses.get(0).name).isEqualTo(inner);
+    }
+
+    protected void assertNoInnerClasses(String className) throws IOException {
+        List<InnerClassNode> innerClasses = getInnerClasses(getOutputClassFile(className));
+        assertThat(innerClasses).isEmpty();
     }
 
     protected void assertMembersLeft(String className, String... members) throws IOException {
@@ -161,11 +182,11 @@ public abstract class AbstractShrinkerTest {
 
     @NonNull
     protected static Set<File> getPlatformJars() {
-        File androidHome = new File(System.getenv(SdkConstants.ANDROID_HOME_ENV));
-        checkNotNull(
-                androidHome,
-                "You need to set the %s environment variable.",
-                SdkConstants.ANDROID_HOME_ENV);
+        String androidHomePath = System.getenv(SdkConstants.ANDROID_HOME_ENV);
+
+        assertThat(androidHomePath).named("$ANDROID_HOME env variable").isNotNull();
+
+        File androidHome = new File(androidHomePath);
         File androidJar = FileUtils.join(
                 androidHome,
                 SdkConstants.FD_PLATFORMS,
@@ -177,11 +198,7 @@ public abstract class AbstractShrinkerTest {
     }
 
     private static Set<String> getMembers(File classFile) throws IOException {
-        ClassReader classReader = new ClassReader(Files.toByteArray(classFile));
-        ClassNode classNode = new ClassNode(Opcodes.ASM5);
-        classReader.accept(
-                classNode,
-                ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+        ClassNode classNode = getClassNode(classFile);
 
         Set<String> members = Sets.newHashSet();
         //noinspection unchecked - ASM API
@@ -195,6 +212,16 @@ public abstract class AbstractShrinkerTest {
         }
 
         return members;
+    }
+
+    @NonNull
+    private static ClassNode getClassNode(File classFile) throws IOException {
+        ClassReader classReader = new ClassReader(Files.toByteArray(classFile));
+        ClassNode classNode = new ClassNode(Opcodes.ASM5);
+        classReader.accept(
+                classNode,
+                ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+        return classNode;
     }
 
     @NonNull

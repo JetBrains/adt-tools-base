@@ -18,6 +18,7 @@ package com.android.build.gradle.shrinker;
 
 import com.android.annotations.NonNull;
 import com.android.build.api.transform.TransformInput;
+import com.android.build.gradle.shrinker.TestClasses.InnerClasses;
 import com.android.build.gradle.shrinker.TestClasses.Interfaces;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.google.common.collect.ImmutableMap;
@@ -896,10 +897,11 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
     @Test
     public void innerClasses_useOuter() throws Exception {
         // Given:
-        Files.write(TestClasses.InnerClasses.main_useOuterClass(), new File(mTestPackageDir, "Main.class"));
-        Files.write(TestClasses.InnerClasses.outer(), new File(mTestPackageDir, "Outer.class"));
-        Files.write(TestClasses.InnerClasses.inner(), new File(mTestPackageDir, "Outer$Inner.class"));
-        Files.write(TestClasses.InnerClasses.staticInner(), new File(mTestPackageDir, "Outer$StaticInner.class"));
+        Files.write(InnerClasses.main_useOuterClass(), new File(mTestPackageDir, "Main.class"));
+        Files.write(InnerClasses.outer(), new File(mTestPackageDir, "Outer.class"));
+        Files.write(InnerClasses.inner(), new File(mTestPackageDir, "Outer$Inner.class"));
+        Files.write(InnerClasses.staticInner(), new File(mTestPackageDir, "Outer$StaticInner.class"));
+        Files.write(InnerClasses.anonymous(), new File(mTestPackageDir, "Outer$1.class"));
 
         // When:
         run("Main", "main:()V");
@@ -909,15 +911,48 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
         assertMembersLeft("Outer", "outerMethod:()V", "<init>:()V");
         assertClassSkipped("Outer$Inner");
         assertClassSkipped("Outer$StaticInner");
+        assertClassSkipped("Outer$1");
+
+        assertNoInnerClasses("Outer");
+        assertNoInnerClasses("Main");
+    }
+
+    @Test
+    public void innerClasses_useOuter_anonymous() throws Exception {
+        // Given:
+        Files.write(
+                InnerClasses.main_useOuterClass_makeAnonymousClass(),
+                new File(mTestPackageDir, "Main.class"));
+        Files.write(InnerClasses.outer(), new File(mTestPackageDir, "Outer.class"));
+        Files.write(InnerClasses.inner(), new File(mTestPackageDir, "Outer$Inner.class"));
+        Files.write(InnerClasses.staticInner(), new File(mTestPackageDir, "Outer$StaticInner.class"));
+        Files.write(InnerClasses.anonymous(), new File(mTestPackageDir, "Outer$1.class"));
+
+        // When:
+        run("Main", "main:()V");
+
+        // Then:
+        assertMembersLeft("Main", "main:()V");
+        assertMembersLeft("Outer", "makeRunnable:()V", "<init>:()V");
+        assertMembersLeft("Outer$1",
+                "run:()V",
+                "<init>:(Ltest/Outer;)V",
+                "this$0:Ltest/Outer;");
+        assertClassSkipped("Outer$Inner");
+        assertClassSkipped("Outer$StaticInner");
+
+        assertSingleInnerClassesEntry("Outer", null, "test/Outer$1");
+        assertNoInnerClasses("Main");
     }
 
     @Test
     public void innerClasses_useInner() throws Exception {
         // Given:
-        Files.write(TestClasses.InnerClasses.main_useInnerClass(), new File(mTestPackageDir, "Main.class"));
-        Files.write(TestClasses.InnerClasses.outer(), new File(mTestPackageDir, "Outer.class"));
-        Files.write(TestClasses.InnerClasses.inner(), new File(mTestPackageDir, "Outer$Inner.class"));
-        Files.write(TestClasses.InnerClasses.staticInner(), new File(mTestPackageDir, "Outer$StaticInner.class"));
+        Files.write(InnerClasses.main_useInnerClass(), new File(mTestPackageDir, "Main.class"));
+        Files.write(InnerClasses.outer(), new File(mTestPackageDir, "Outer.class"));
+        Files.write(InnerClasses.inner(), new File(mTestPackageDir, "Outer$Inner.class"));
+        Files.write(InnerClasses.staticInner(), new File(mTestPackageDir, "Outer$StaticInner.class"));
+        Files.write(InnerClasses.anonymous(), new File(mTestPackageDir, "Outer$1.class"));
 
         // When:
         run("Main", "main:()V");
@@ -931,15 +966,21 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
                 "<init>:(Ltest/Outer;)V",
                 "this$0:Ltest/Outer;");
         assertClassSkipped("Outer$StaticInner");
+        assertClassSkipped("Outer$1");
+
+        assertSingleInnerClassesEntry("Outer", "test/Outer", "test/Outer$Inner");
+        assertSingleInnerClassesEntry("Outer$Inner", "test/Outer", "test/Outer$Inner");
+        assertSingleInnerClassesEntry("Main", "test/Outer", "test/Outer$Inner");
     }
 
     @Test
     public void innerClasses_useStaticInner() throws Exception {
         // Given:
-        Files.write(TestClasses.InnerClasses.main_useStaticInnerClass(), new File(mTestPackageDir, "Main.class"));
-        Files.write(TestClasses.InnerClasses.outer(), new File(mTestPackageDir, "Outer.class"));
-        Files.write(TestClasses.InnerClasses.inner(), new File(mTestPackageDir, "Outer$Inner.class"));
-        Files.write(TestClasses.InnerClasses.staticInner(), new File(mTestPackageDir, "Outer$StaticInner.class"));
+        Files.write(InnerClasses.main_useStaticInnerClass(), new File(mTestPackageDir, "Main.class"));
+        Files.write(InnerClasses.outer(), new File(mTestPackageDir, "Outer.class"));
+        Files.write(InnerClasses.inner(), new File(mTestPackageDir, "Outer$Inner.class"));
+        Files.write(InnerClasses.staticInner(), new File(mTestPackageDir, "Outer$StaticInner.class"));
+        Files.write(InnerClasses.anonymous(), new File(mTestPackageDir, "Outer$1.class"));
 
         // When:
         run("Main", "main:()V");
@@ -948,16 +989,22 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
         assertMembersLeft("Main", "main:()V");
         assertMembersLeft("Outer");
         assertClassSkipped("Outer$Inner");
+        assertClassSkipped("Outer$1");
         assertMembersLeft("Outer$StaticInner", "<init>:()V", "staticInnerMethod:()V");
+
+        assertSingleInnerClassesEntry("Outer", "test/Outer", "test/Outer$StaticInner");
+        assertSingleInnerClassesEntry("Main", "test/Outer", "test/Outer$StaticInner");
+        assertSingleInnerClassesEntry("Outer$StaticInner", "test/Outer", "test/Outer$StaticInner");
     }
 
     @Test
     public void innerClasses_notUsed() throws Exception {
         // Given:
-        Files.write(TestClasses.InnerClasses.main_empty(), new File(mTestPackageDir, "Main.class"));
-        Files.write(TestClasses.InnerClasses.outer(), new File(mTestPackageDir, "Outer.class"));
-        Files.write(TestClasses.InnerClasses.inner(), new File(mTestPackageDir, "Outer$Inner.class"));
-        Files.write(TestClasses.InnerClasses.staticInner(), new File(mTestPackageDir, "Outer$StaticInner.class"));
+        Files.write(InnerClasses.main_empty(), new File(mTestPackageDir, "Main.class"));
+        Files.write(InnerClasses.outer(), new File(mTestPackageDir, "Outer.class"));
+        Files.write(InnerClasses.inner(), new File(mTestPackageDir, "Outer$Inner.class"));
+        Files.write(InnerClasses.staticInner(), new File(mTestPackageDir, "Outer$StaticInner.class"));
+        Files.write(InnerClasses.anonymous(), new File(mTestPackageDir, "Outer$1.class"));
 
         // When:
         run("Main", "main:()V");
@@ -967,6 +1014,9 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
         assertClassSkipped("Outer");
         assertClassSkipped("Outer$Inner");
         assertClassSkipped("Outer$StaticInner");
+        assertClassSkipped("Outer$1");
+
+        assertNoInnerClasses("Main");
     }
 
     @Test
