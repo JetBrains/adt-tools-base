@@ -21,12 +21,16 @@ import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
+import com.android.build.gradle.internal.scope.VariantOutputScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.builder.core.AaptPackageProcessBuilder;
 import com.android.builder.core.VariantConfiguration;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessException;
+import com.google.common.base.CharMatcher;
+import com.google.common.collect.Iterables;
 
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Nested;
@@ -52,10 +56,6 @@ public class GenerateSplitAbiRes extends BaseTask {
 
     private String applicationId;
 
-    private int versionCode;
-
-    private String versionName;
-
     private String outputBaseName;
 
     private Set<String> splits;
@@ -66,6 +66,9 @@ public class GenerateSplitAbiRes extends BaseTask {
 
     private AaptOptions aaptOptions;
 
+    private ApkVariantOutputData variantOutputData;
+
+    @SuppressWarnings("unused") // Synthetic task output
     @OutputFiles
     public List<File> getOutputFiles() {
         List<File> outputFiles = new ArrayList<File>();
@@ -94,12 +97,13 @@ public class GenerateSplitAbiRes extends BaseTask {
 
             OutputStreamWriter fileWriter = new OutputStreamWriter(new FileOutputStream(tmpFile), "UTF-8");
             try {
+                String splitBaseName = CharMatcher.is('-').replaceFrom(getOutputBaseName(), '_');
                 fileWriter.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                         + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "      package=\"" + getApplicationId() + "\"\n"
                         + "      android:versionCode=\"" + getVersionCode() + "\"\n"
                         + "      android:versionName=\"" + versionNameToUse + "\"\n"
-                        + "      split=\"lib_" + split + "_" + getOutputBaseName() + "\">\n"
+                        + "      split=\"lib_" + split + "_" + splitBaseName + "\">\n"
                         + "       <uses-sdk android:minSdkVersion=\"21\"/>\n" + "</manifest> ");
                 fileWriter.flush();
             } finally {
@@ -134,21 +138,13 @@ public class GenerateSplitAbiRes extends BaseTask {
 
     @Input
     public int getVersionCode() {
-        return versionCode;
-    }
-
-    public void setVersionCode(int versionCode) {
-        this.versionCode = versionCode;
+        return variantOutputData.getVersionCode();
     }
 
     @Input
     @Optional
     public String getVersionName() {
-        return versionName;
-    }
-
-    public void setVersionName(String versionName) {
-        this.versionName = versionName;
+        return variantOutputData.getVersionName();
     }
 
     @Input
@@ -230,8 +226,8 @@ public class GenerateSplitAbiRes extends BaseTask {
             generateSplitAbiRes.setSplits(filters);
             generateSplitAbiRes.setOutputBaseName(config.getBaseName());
             generateSplitAbiRes.setApplicationId(config.getApplicationId());
-            generateSplitAbiRes.setVersionCode(config.getVersionCode());
-            generateSplitAbiRes.setVersionName(config.getVersionName());
+            generateSplitAbiRes.variantOutputData =
+                    (ApkVariantOutputData) scope.getVariantData().getOutputs().get(0);
             ConventionMappingHelper.map(generateSplitAbiRes, "debuggable", new Callable<Boolean>() {
                 @Override
                 public Boolean call() throws Exception {
