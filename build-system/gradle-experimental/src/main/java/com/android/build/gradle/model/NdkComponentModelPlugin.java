@@ -67,6 +67,7 @@ import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.internal.project.ProjectIdentifier;
 import org.gradle.api.tasks.TaskContainer;
+import org.gradle.api.tasks.util.PatternFilterable;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.language.base.FunctionalSourceSet;
 import org.gradle.language.base.LanguageSourceSet;
@@ -117,6 +118,10 @@ import javax.inject.Inject;
  * Plugin for Android NDK applications.
  */
 public class NdkComponentModelPlugin implements Plugin<Project> {
+    public static final Collection<String> C_FILE_EXTENSIONS = ImmutableList.of("c");
+    public static final Collection<String> CPP_FILE_EXTENSIONS = ImmutableList.of(
+            "C", "CPP", "c++", "cc", "cp", "cpp", "cxx");
+
     @NonNull
     private final ToolingModelBuilderRegistry toolingRegistry;
     @NonNull
@@ -194,10 +199,23 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                         @Override
                         public void execute(NativeSourceSet nativeSourceSet) {
                             nativeSourceSet.getSource().srcDir("src/" + nativeSourceSet.getParentName() + "/" + "jni");
+                            addInclude(nativeSourceSet.getcFilter(), C_FILE_EXTENSIONS);
+                            addInclude(nativeSourceSet.getCppFilter(), CPP_FILE_EXTENSIONS);
                         }
                     });
                 }
             });
+        }
+
+        /**
+         * Add include to PatternFilterable for a list of file extensions.
+         */
+        private static void addInclude(
+                @NonNull PatternFilterable filter,
+                @NonNull Iterable<String> fileExtensions) {
+            for (String ext : fileExtensions) {
+                filter.include("**/*." + ext);
+            }
         }
 
         @Model(ModelConstants.NDK_HANDLER)
@@ -447,8 +465,8 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 ModelMap<AndroidBinaryInternal> binaries,
                 final NdkHandler ndkHandler) {
 
-            config.getCFileExtensions().addAll(NdkConfiguration.C_FILE_EXTENSIONS);
-            config.getCppFileExtensions().addAll(NdkConfiguration.CPP_FILE_EXTENSIONS);
+            config.getCFileExtensions().addAll(C_FILE_EXTENSIONS);
+            config.getCppFileExtensions().addAll(CPP_FILE_EXTENSIONS);
 
             for (final AndroidBinaryInternal binary : binaries.values()) {
                 for (final NativeLibraryBinarySpec nativeBinary : binary.getNativeBinaries()) {
