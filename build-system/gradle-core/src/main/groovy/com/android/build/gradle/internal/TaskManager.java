@@ -52,6 +52,7 @@ import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.incremental.BuildInfoLoaderTask;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.incremental.InstantRunAnchorTask;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
@@ -2627,14 +2628,16 @@ public abstract class TaskManager {
      * creates a zip align. This does not use convention mapping, and is meant to let other plugin
      * create zip align tasks.
      *
-     * @param name       the name of the task
-     * @param inputFile  the input file
-     * @param outputFile the output file
+     * @param name          the name of the task
+     * @param buildContext  the InstantRun build context
+     * @param inputFile     the input file
+     * @param outputFile    the output file
      * @return the task
      */
     @NonNull
     public ZipAlign createZipAlignTask(
             @NonNull String name,
+            @NonNull InstantRunBuildContext buildContext,
             @NonNull File inputFile,
             @NonNull File outputFile) {
         // Add a task to zip align application package
@@ -2642,6 +2645,7 @@ public abstract class TaskManager {
 
         zipAlignTask.setInputFile(inputFile);
         zipAlignTask.setOutputFile(outputFile);
+        zipAlignTask.setInstantRunBuildContext(buildContext);
         ConventionMappingHelper.map(zipAlignTask, "zipAlignExe", new Callable<File>() {
             @Override
             public File call() throws Exception {

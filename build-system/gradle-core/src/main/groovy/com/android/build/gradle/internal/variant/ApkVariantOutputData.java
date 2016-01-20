@@ -22,6 +22,7 @@ import com.android.build.FilterData;
 import com.android.build.OutputFile;
 import com.android.build.gradle.api.ApkOutputFile;
 import com.android.build.gradle.internal.TaskManager;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.tasks.FileSupplier;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.SplitZipAlign;
@@ -101,7 +102,10 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
                     "ZipAlign task for variant '%s' already exists.", variantData.getName()));
         }
 
-        zipAlignTask = taskManager.createZipAlignTask(taskName, inputFile, outputFile);
+        InstantRunBuildContext instantRunBuildContext = getScope().getVariantScope()
+                .getInstantRunBuildContext();
+        zipAlignTask = taskManager.createZipAlignTask(
+                taskName, instantRunBuildContext, inputFile, outputFile);
 
         // setup dependencies
         assembleTask.dependsOn(zipAlignTask);
