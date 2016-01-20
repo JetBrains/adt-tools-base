@@ -1050,12 +1050,14 @@ public class ZFile implements Closeable {
      */
     public void add(@NonNull String name, @NonNull EntrySource source,
             @NonNull CompressionMethod method) throws IOException {
+        boolean encodeWithUtf8 = !EncodeUtils.canAsciiEncode(name);
+
         /*
          * Create the data structure with information about the file. Assume we will store (and
          * not compress) the file. We may need to change this later on.
          */
         CentralDirectoryHeader newFileData = new CentralDirectoryHeader(name, source.size(),
-                source.size(), CompressionMethod.STORE);
+                source.size(), CompressionMethod.STORE, GPFlags.make(encodeWithUtf8));
 
         /*
          * If we could be deflating, compress upfront so we can know whether the compressed data
@@ -1237,9 +1239,15 @@ public class ZFile implements Closeable {
                 CentralDirectoryHeader fromCdr = fromEntry.getCentralDirectoryHeader();
                 CentralDirectoryHeader newFileData;
                 try {
+                    /*
+                     * We make two changes in the central directory from the file to merge:
+                     * we reset the offset to force the entry to be written and we reset the
+                     * deferred CRC bit as we don't need the extra stuff after the file. It takes
+                     * space and is totally useless.
+                     */
                     newFileData = fromCdr.clone();
                     newFileData.setOffset(-1);
-                    newFileData.setGpBit(GPFlags.makeDefault());
+                    newFileData.resetDeferredCrc();
                 } catch (CloneNotSupportedException e) {
                     throw new IOException("Failed to clone CDR.", e);
                 }
@@ -1285,7 +1293,6 @@ public class ZFile implements Closeable {
                  * Add will replace any current entry with the same name.
                  */
                 add(newFileData, newSource);
-System.out.println("    Added.");
             }
         }
     }
@@ -1411,8 +1418,14 @@ System.out.println("    Added.");
             return false;
         }
 
+        /*
+         * We make two changes in the central directory when realigning:
+         * we reset the offset to force the entry to be written and we reset the
+         * deferred CRC bit as we don't need the extra stuff after the file. It takes
+         * space and is totally useless and we may need the extra space to realign the entry...
+         */
         cdh.setOffset(-1);
-        cdh.setGpBit(GPFlags.makeDefault());
+        cdh.resetDeferredCrc();
 
         EntrySource newSource = new ByteArrayEntrySource(entryData);
         if (sourceDeflated) {

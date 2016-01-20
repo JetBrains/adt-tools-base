@@ -914,4 +914,59 @@ public class ZFileTest {
         assertNotNull(eocd[0]);
         assertEquals(22, eocd[0].length);
     }
+
+    @Test
+    public void java7JarSupported() throws Exception {
+        File jar = cloneRsrc("j7.jar", "j7.jar");
+
+        ZFile j = new ZFile(jar);
+        assertEquals(8, j.entries().size());
+        j.close();
+    }
+
+    @Test
+    public void java8JarSupported() throws Exception {
+        File jar = cloneRsrc("j8.jar", "j8.jar");
+
+        ZFile j = new ZFile(jar);
+        assertEquals(8, j.entries().size());
+        j.close();
+    }
+
+    @Test
+    public void utf8NamesSupportedOnReading() throws Exception {
+        File zip = cloneRsrc("zip-with-utf8-filename.zip", "a");
+
+        ZFile f = new ZFile(zip);
+        assertEquals(1, f.entries().size());
+
+        StoredEntry entry = f.entries().iterator().next();
+        String filetMignonKorean = "\uc548\uc2eC \uc694\ub9ac";
+        String isGoodJapanese = "\u3068\u3066\u3082\u826f\u3044";
+
+        assertEquals(filetMignonKorean + " " + isGoodJapanese,
+                entry.getCentralDirectoryHeader().getName());
+        assertArrayEquals("Stuff about food is good.\n".getBytes(Charsets.US_ASCII), entry.read());
+
+        f.close();
+    }
+
+    @Test
+    public void utf8NamesSupportedOnWriting() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
+        ZFile zip = new ZFile(zipFile);
+
+        String lettuceIsHealthyArmenian = "\u0533\u0561\u0566\u0561\u0580\u0020\u0561\u057C"
+                + "\u0578\u0572\u057B";
+        zip.add(lettuceIsHealthyArmenian, new ByteArrayEntrySource(new byte[] { 0 }),
+                CompressionMethod.STORE);
+        zip.close();
+
+        ZFile zip2 = new ZFile(zipFile);
+        assertEquals(1, zip2.entries().size());
+        StoredEntry entry = zip2.entries().iterator().next();
+        assertEquals(lettuceIsHealthyArmenian, entry.getCentralDirectoryHeader().getName());
+
+        zip2.close();
+    }
 }

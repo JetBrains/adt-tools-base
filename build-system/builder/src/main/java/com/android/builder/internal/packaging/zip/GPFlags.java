@@ -57,11 +57,15 @@ class GPFlags {
     private static final int BIT_STRONG_ENCRYPTION = (1 << 6) | (1 << 13);
 
     /**
+     * If this bit is set the filename and comment fields for this file must be encoded using UTF-8.
+     */
+    private static final int BIT_EFS  = (1 << 11);
+
+    /**
      * Unused bits.
      */
     private static final int BIT_UNUSED = (1 << 7) | (1 << 8) | (1 << 9) | (1 << 10)
-            | (1 << 11) | (1 << 14) | (1 << 15);
-
+            | (1 << 14) | (1 << 15);
     /**
      * Bit flag value.
      */
@@ -73,6 +77,11 @@ class GPFlags {
     private boolean mDeferredCrc;
 
     /**
+     * Is the file name encoded in UTF-8?
+     */
+    private boolean mUtf8FileName;
+
+    /**
      * Creates a new flags object.
      *
      * @param value the value of the bit mask
@@ -81,6 +90,7 @@ class GPFlags {
         mValue = value;
 
         mDeferredCrc = ((value & BIT_DEFERRED_CRC) != 0);
+        mUtf8FileName = ((value & BIT_EFS) != 0);
     }
 
     /**
@@ -102,6 +112,15 @@ class GPFlags {
     }
 
     /**
+     * Is the file name encoded in UTF-8?
+     *
+     * @return is the file name encoded in UTF-8?
+     */
+    public boolean isUtf8FileName() {
+        return mUtf8FileName;
+    }
+
+    /**
      * Creates a new default bit mask.
      *
      * @return the new bit mask
@@ -109,6 +128,23 @@ class GPFlags {
     @NonNull
     static GPFlags makeDefault() {
         return new GPFlags(0);
+    }
+
+    /**
+     * Creates a new bit mask.
+     *
+     * @param utf8Encoding should UTF-8 encoding be used?
+     * @return the new bit mask
+     */
+    @NonNull
+    static GPFlags make(boolean utf8Encoding) {
+        long flags = 0;
+
+        if (utf8Encoding) {
+            flags |= BIT_EFS;
+        }
+
+        return new GPFlags(flags);
     }
 
     /**

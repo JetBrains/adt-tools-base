@@ -17,7 +17,6 @@
 package com.android.builder.internal.packaging.zip;
 
 import com.android.annotations.NonNull;
-import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Verify;
 import com.google.common.io.ByteSource;
@@ -213,8 +212,14 @@ public class StoredEntry {
             Verify.verify(mCdh.getCrc32() == 0, "Directory has CRC32 = %s.", mCdh.getCrc32());
             Verify.verify(mCdh.getUncompressedSize() == 0, "Directory has uncompressed size = %s.",
                     mCdh.getUncompressedSize());
-            Verify.verify(mCdh.getCompressedSize() == 0, "Directory has compressed size = %s.",
-                    mCdh.getCompressedSize());
+
+            /*
+             * Some clever (OMG!) tools, like jar will actually try to compress the directory
+             * contents and generate a 2 byte compressed data. Of course, the uncompressed size is
+             * zero and we're just wasting space.
+             */
+            Verify.verify(mCdh.getCompressedSize() == 0 || mCdh.getCompressedSize() == 2,
+                    "Directory has compressed size = %s.", mCdh.getCompressedSize());
         } else {
             mType = StoredEntryType.FILE;
         }
@@ -242,7 +247,7 @@ public class StoredEntry {
      */
     int getLocalHeaderSize() {
         Preconditions.checkState(!mDeleted, "mDeleted");
-        return FIXED_LOCAL_FILE_HEADER_SIZE + mCdh.getName().length() + mLocalExtra.length;
+        return FIXED_LOCAL_FILE_HEADER_SIZE + mCdh.getEncodedFileName().length + mLocalExtra.length;
     }
 
     /**
@@ -365,18 +370,19 @@ public class StoredEntry {
             F_UNCOMPRESSED_SIZE.verify(byteSource, mCdh.getUncompressedSize());
         }
 
-        F_FILE_NAME_LENGTH.verify(byteSource, mCdh.getName().length());
+        F_FILE_NAME_LENGTH.verify(byteSource, mCdh.getEncodedFileName().length);
         long extraLength = F_EXTRA_LENGTH.read(byteSource);
         long fileNameStart = mCdh.getOffset() + F_EXTRA_LENGTH.endOffset();
-        byte[] fileNameData = new byte[mCdh.getName().length()];
+        byte[] fileNameData = new byte[mCdh.getEncodedFileName().length];
         mFile.directFullyRead(fileNameStart, fileNameData);
-        String fileName = new String(fileNameData, Charsets.US_ASCII);
+
+        String fileName = EncodeUtils.decode(fileNameData, mCdh.getGpBit());
         if (!fileName.equals(mCdh.getName())) {
             throw new IOException("Central directory reports file as being named '" + mCdh.getName()
                     + "' but local header reports file being named '" + fileName + "'.");
         }
 
-        long localExtraStart = fileNameStart + fileName.length();
+        long localExtraStart = fileNameStart + mCdh.getEncodedFileName().length;
         mLocalExtra = new byte[Ints.checkedCast(extraLength)];
         mFile.directFullyRead(localExtraStart, mLocalExtra);
     }
@@ -527,10 +533,10 @@ public class StoredEntry {
         F_CRC32.write(out, mCdh.getCrc32());
         F_COMPRESSED_SIZE.write(out, mCdh.getCompressedSize());
         F_UNCOMPRESSED_SIZE.write(out, mCdh.getUncompressedSize());
-        F_FILE_NAME_LENGTH.write(out, mCdh.getName().length());
+        F_FILE_NAME_LENGTH.write(out, mCdh.getEncodedFileName().length);
         F_EXTRA_LENGTH.write(out, mLocalExtra.length);
 
-        out.write(mCdh.getName().getBytes(Charsets.US_ASCII));
+        out.write(mCdh.getEncodedFileName());
         out.write(mLocalExtra);
 
         return out.toByteArray();

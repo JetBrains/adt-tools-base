@@ -19,7 +19,6 @@ package com.android.builder.internal.packaging.zip;
 import com.android.annotations.NonNull;
 import com.android.builder.internal.packaging.zip.utils.CachedSupplier;
 import com.android.builder.internal.packaging.zip.utils.MsDosDateTimeUtils;
-import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
@@ -326,13 +325,12 @@ class CentralDirectory {
         }
 
         ByteSource fileNameBytes = bytes.slice(F_OFFSET.endOffset(), fileNameLength);
-        String fileName = fileNameBytes.asCharSource(Charsets.US_ASCII).read();
+        String fileName = EncodeUtils.decode(fileNameBytes.read(), flags);
 
         CentralDirectoryHeader centralDirectoryHeader = new CentralDirectoryHeader(fileName,
-                compressedSize, uncompressedSize, method);
+                compressedSize, uncompressedSize, method, flags);
         centralDirectoryHeader.setMadeBy(madeBy);
         centralDirectoryHeader.setVersionExtract(versionNeededToExtract);
-        centralDirectoryHeader.setGpBit(flags);
         centralDirectoryHeader.setLastModTime(lastModTime);
         centralDirectoryHeader.setLastModDate(lastModDate);
         centralDirectoryHeader.setCrc32(crc32);
@@ -404,7 +402,8 @@ class CentralDirectory {
             F_CRC32.write(bytesOut, cdr.getCrc32());
             F_COMPRESSED_SIZE.write(bytesOut, cdr.getCompressedSize());
             F_UNCOMPRESSED_SIZE.write(bytesOut, cdr.getUncompressedSize());
-            F_FILE_NAME_LENGTH.write(bytesOut, cdr.getName().length());
+
+            F_FILE_NAME_LENGTH.write(bytesOut, cdr.getEncodedFileName().length);
             F_EXTRA_FIELD_LENGTH.write(bytesOut, cdr.getExtraField().length);
             F_COMMENT_LENGTH.write(bytesOut, cdr.getComment().length);
             F_DISK_NUMBER_START.write(bytesOut);
@@ -412,7 +411,7 @@ class CentralDirectory {
             F_EXTERNAL_ATTRIBUTES.write(bytesOut, cdr.getExternalAttributes());
             F_OFFSET.write(bytesOut, cdr.getOffset());
 
-            bytesOut.write(cdr.getName().getBytes(Charsets.US_ASCII));
+            bytesOut.write(cdr.getEncodedFileName());
             bytesOut.write(cdr.getExtraField());
             bytesOut.write(cdr.getComment());
         }

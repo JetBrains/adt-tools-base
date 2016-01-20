@@ -113,15 +113,21 @@ public class CentralDirectoryHeader implements Cloneable {
     private long mOffset;
 
     /**
+     * Encoded file name.
+     */
+    private byte[] mEncodedFileName;
+
+    /**
      * Creates data for a file.
      *
      * @param name the file name
      * @param compressedSize the compressed file size
      * @param uncompressedSize the uncompressed file size
      * @param method the compression method used on the file
+     * @param flags flags used in the entry
      */
     CentralDirectoryHeader(@NonNull String name, long compressedSize, long uncompressedSize,
-            @NonNull CompressionMethod method) {
+            @NonNull CompressionMethod method, @NonNull GPFlags flags) {
         mName = name;
         mCompressedSize = compressedSize;
         mUncompressedSize = uncompressedSize;
@@ -138,7 +144,8 @@ public class CentralDirectoryHeader implements Cloneable {
          * Set sensible defaults for the rest.
          */
         mMadeBy = 0;
-        mGpBit = GPFlags.makeDefault();
+
+        mGpBit = flags;
         mLastModTime = MsDosDateTimeUtils.packCurrentTime();
         mLastModDate = MsDosDateTimeUtils.packCurrentDate();
         mExtraField = new byte[0];
@@ -155,6 +162,8 @@ public class CentralDirectoryHeader implements Cloneable {
         } else {
             mVersionExtract = 10;
         }
+
+        mEncodedFileName = EncodeUtils.encode(name, mGpBit);
     }
 
     /**
@@ -285,15 +294,6 @@ public class CentralDirectoryHeader implements Cloneable {
     @NonNull
     public GPFlags getGpBit() {
         return mGpBit;
-    }
-
-    /**
-     * Sets the general-purpose bit flag.
-     *
-     * @param gpBit the bit flag
-     */
-    public void setGpBit(@NonNull GPFlags gpBit) {
-        mGpBit = gpBit;
     }
 
     /**
@@ -428,11 +428,32 @@ public class CentralDirectoryHeader implements Cloneable {
         mOffset = offset;
     }
 
+    /**
+     * Obtains the encoded file name.
+     *
+     * @return the encoded file name
+     */
+    public byte[] getEncodedFileName() {
+        return mEncodedFileName;
+    }
+
+    /**
+     * Resets the deferred CRC flag in the GP flags.
+     */
+    public void resetDeferredCrc() {
+        /*
+         * We actually create a new set of flags. Since the only information we care about is the
+         * UTF-8 encoding, we'll just create a brand new object.
+         */
+        mGpBit = GPFlags.make(mGpBit.isUtf8FileName());
+    }
+
     @Override
     protected CentralDirectoryHeader clone() throws CloneNotSupportedException {
         CentralDirectoryHeader cdr = (CentralDirectoryHeader) super.clone();
         cdr.mExtraField = Arrays.copyOf(mExtraField, mExtraField.length);
         cdr.mComment = Arrays.copyOf(mComment, mComment.length);
+        cdr.mEncodedFileName = Arrays.copyOf(mEncodedFileName, mEncodedFileName.length);
         return cdr;
     }
 }
