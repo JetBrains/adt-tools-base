@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
-import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject.ClassFileScope
 import com.google.common.io.Files
 import groovy.transform.CompileStatic
 import org.junit.Before
@@ -138,7 +137,7 @@ class MultiDexTest {
     }
 
     private assertMainDexListContainsExactly(String buildType, String... expected) {
-        File listFile = project.file("build/intermediates/multi-dex/ics/${buildType}/mainDexList.txt")
+        File listFile = project.file("build/intermediates/multi-dex/ics/${buildType}/maindexlist.txt")
         Iterable<String> actual = listFile
                 .readLines()
                 .findAll{!it.isEmpty() && !it.startsWith("android/support/multidex")}
