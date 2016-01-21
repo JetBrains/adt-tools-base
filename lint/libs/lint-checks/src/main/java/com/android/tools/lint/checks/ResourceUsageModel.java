@@ -32,6 +32,7 @@ import static com.android.SdkConstants.PREFIX_THEME_REF;
 import static com.android.SdkConstants.PREFIX_TWOWAY_BINDING_EXPR;
 import static com.android.SdkConstants.STYLE_RESOURCE_PREFIX;
 import static com.android.SdkConstants.TAG_ITEM;
+import static com.android.SdkConstants.TAG_LAYOUT;
 import static com.android.SdkConstants.TAG_STYLE;
 import static com.android.SdkConstants.TOOLS_URI;
 import static com.android.SdkConstants.VALUE_SAFE;
@@ -802,17 +803,29 @@ public class ResourceUsageModel {
                     }
 
                     String value = attr.getValue();
-                    if (!(value.startsWith(PREFIX_RESOURCE_REF) || value.startsWith(PREFIX_THEME_REF))) {
+                    if (!(value.startsWith(PREFIX_RESOURCE_REF)
+                            || value.startsWith(PREFIX_THEME_REF))) {
                         continue;
                     }
                     ResourceUrl url = ResourceUrl.parse(value);
                     if (url != null && !url.framework) {
                         Resource resource;
                         if (url.create) {
-                            resource = declareResource(url.type, url.name, attr);
-                            if (!ATTR_ID.equals(attr.getLocalName()) || !ANDROID_URI.equals(attr.getNamespaceURI())) {
-                                // Declaring an id is not a reference to that id
-                                from.addReference(resource);
+                            boolean isId = ATTR_ID.equals(attr.getLocalName());
+                            if (isId && TAG_LAYOUT.equals(
+                                   element.getOwnerDocument().getDocumentElement().getTagName())) {
+                                // When using data binding (root <layout> tag) the id's will be
+                                // automatically bound (the binder will look through the layout
+                                // and find all the id's.)  Therefore, treat these as read for
+                                // now; longer term, it would be cool if we could track uses of
+                                // the binding field instead.
+                                markReachable(addResource(url.type, url.name, null));
+                            } else {
+                                resource = declareResource(url.type, url.name, attr);
+                                if (!isId || !ANDROID_URI.equals(attr.getNamespaceURI())) {
+                                    // Declaring an id is not a reference to that id
+                                    from.addReference(resource);
+                                }
                             }
                         } else {
                             resource = addResource(url.type, url.name, null);
