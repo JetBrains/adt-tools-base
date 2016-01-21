@@ -508,11 +508,6 @@ public class GradleCoordinate {
     }
 
     @NonNull
-    public GradleVersion getVersion() {
-        return GradleVersion.parse(getRevision());
-    }
-
-    @NonNull
     public String getRevision() {
         StringBuilder revision = new StringBuilder();
         for (RevisionComponent component : mRevisions) {

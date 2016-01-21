@@ -33,19 +33,19 @@ public class GradleVersion implements Comparable<GradleVersion> {
 
     private static final Pattern PREVIEW_PATTERN = Pattern.compile("([a-zA-z]+)([\\d]+)?");
 
-    private String myRawValue;
+    private String mRawValue;
 
-    private final int myMajor;
+    private final int mMajor;
 
-    private final int myMinor;
+    private final int mMinor;
 
-    private final int myMicro;
+    private final int mMicro;
 
-    private final int myPreview;
+    private final int mPreview;
 
-    private final String myPreviewType;
+    private final String mPreviewType;
 
-    private boolean mySnapshot;
+    private boolean mSnapshot;
 
     /**
      * Parses the given version. This method does the same as {@link #parse(String)}, but it does
@@ -160,38 +160,38 @@ public class GradleVersion implements Comparable<GradleVersion> {
             int preview,
             @Nullable String previewType,
             boolean snapshot) {
-        myRawValue = rawValue;
-        myMajor = major;
-        myMinor = minor;
-        myMicro = micro;
-        myPreview = preview;
-        myPreviewType = previewType;
-        mySnapshot = snapshot;
+        mRawValue = rawValue;
+        mMajor = major;
+        mMinor = minor;
+        mMicro = micro;
+        mPreview = preview;
+        mPreviewType = previewType;
+        mSnapshot = snapshot;
     }
 
     public int getMajor() {
-        return myMajor;
+        return mMajor;
     }
 
     public int getMinor() {
-        return myMinor;
+        return mMinor;
     }
 
     public int getMicro() {
-        return myMicro;
+        return mMicro;
     }
 
     public int getPreview() {
-        return myPreview;
+        return mPreview;
     }
 
     @Nullable
     public String getPreviewType() {
-        return myPreviewType;
+        return mPreviewType;
     }
 
     public boolean isSnapshot() {
-        return mySnapshot;
+        return mSnapshot;
     }
 
     public int compareTo(@NonNull String version) {
@@ -205,39 +205,39 @@ public class GradleVersion implements Comparable<GradleVersion> {
 
     public int compareTo(@NonNull GradleVersion version, boolean includePreview,
             boolean includeSnapshot) {
-        int delta = myMajor - version.myMajor;
+        int delta = mMajor - version.mMajor;
         if (delta != 0) {
             return delta;
         }
-        delta = myMinor - version.myMinor;
+        delta = mMinor - version.mMinor;
         if (delta != 0) {
             return delta;
         }
-        delta = myMicro - version.myMicro;
+        delta = mMicro - version.mMicro;
         if (delta != 0) {
             return delta;
         }
         if (includePreview) {
-            if (myPreviewType == null) {
-                if (version.myPreviewType != null) {
+            if (mPreviewType == null) {
+                if (version.mPreviewType != null) {
                     return 1;
                 }
-            } else if (version.myPreviewType == null) {
+            } else if (version.mPreviewType == null) {
                 return -1;
             } else {
-                delta = myPreviewType.compareTo(version.myPreviewType);
+                delta = mPreviewType.compareTo(version.mPreviewType);
             }
             if (delta != 0) {
                 return delta;
             }
 
-            delta = myPreview - version.myPreview;
+            delta = mPreview - version.mPreview;
             if (delta != 0) {
                 return delta;
             }
         }
         if (includeSnapshot) {
-            delta = mySnapshot == version.mySnapshot ? 0 : (mySnapshot ? -1 : 1);
+            delta = mSnapshot == version.mSnapshot ? 0 : (mSnapshot ? -1 : 1);
         }
         return delta;
     }
@@ -251,21 +251,21 @@ public class GradleVersion implements Comparable<GradleVersion> {
             return false;
         }
         GradleVersion that = (GradleVersion) o;
-        return myMajor == that.myMajor &&
-                myMinor == that.myMinor &&
-                myMicro == that.myMicro &&
-                myPreview == that.myPreview &&
-                mySnapshot == that.mySnapshot &&
-                Objects.equal(myPreviewType, that.myPreviewType);
+        return mMajor == that.mMajor &&
+                mMinor == that.mMinor &&
+                mMicro == that.mMicro &&
+                mPreview == that.mPreview &&
+                mSnapshot == that.mSnapshot &&
+                Objects.equal(mPreviewType, that.mPreviewType);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(myMajor, myMinor, myMicro, myPreview, myPreviewType, mySnapshot);
+        return Objects.hashCode(mMajor, mMinor, mMicro, mPreview, mPreviewType, mSnapshot);
     }
 
     @Override
     public String toString() {
-        return myRawValue;
+        return mRawValue;
     }
 }
