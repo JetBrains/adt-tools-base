@@ -17,32 +17,39 @@
 package com.android.build.gradle.shrinker.parser;
 
 import static com.google.common.base.Preconditions.checkState;
-
-import org.objectweb.asm.Opcodes;
+import static org.objectweb.asm.Opcodes.ACC_ANNOTATION;
+import static org.objectweb.asm.Opcodes.ACC_ENUM;
+import static org.objectweb.asm.Opcodes.ACC_INTERFACE;
 
 /**
  * Represents the "class type" part of a ProGuard class specification.
  */
 public class ClassTypeSpecification extends MatcherWithNegator<Integer> {
 
-    private static final int CLASS_TYPE_FLAGS =
-            Opcodes.ACC_INTERFACE | Opcodes.ACC_ENUM;
+    private static final int CLASS_TYPE_FLAGS = ACC_INTERFACE | ACC_ENUM;
 
     private final int mSpec;
 
     public ClassTypeSpecification(int spec) {
-        checkState((spec & CLASS_TYPE_FLAGS) == spec);
+        checkState((spec & (CLASS_TYPE_FLAGS | ACC_ANNOTATION)) == spec);
         mSpec = spec;
     }
 
     @Override
     protected boolean matchesWithoutNegator(Integer toCheck) {
-        if (mSpec == 0) {
+        int modifiers = toCheck;
+
+        //noinspection SimplifiableIfStatement
+        if (((mSpec & ACC_ANNOTATION) != 0) && ((modifiers & ACC_ANNOTATION) == 0)) {
+            // Only look at the annotation bit if the keep rule mentioned annotations.
+            return false;
+        }
+
+        if ((mSpec & CLASS_TYPE_FLAGS) == 0) {
             // "The class keyword refers to any interface or class."
             return true;
         }
 
-        int modifiers = toCheck;
-        return (modifiers & CLASS_TYPE_FLAGS) == mSpec;
+        return (modifiers & CLASS_TYPE_FLAGS) == (mSpec & CLASS_TYPE_FLAGS);
     }
 }

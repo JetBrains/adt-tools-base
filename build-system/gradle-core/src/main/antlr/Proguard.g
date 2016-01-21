@@ -161,10 +161,15 @@ private classModifierAndType[ModifierSpecification modifier] returns [ClassTypeS
   ;
 
 private classType returns [int type]
+@init {
+  $type = 0;
+}
   :
-    'interface' {$type = ACC_INTERFACE;}
-  | 'enum' {$type = ACC_ENUM;}
-  | 'class' {$type = 0;}
+  ('@' {$type |= ACC_ANNOTATION;})?
+  ('interface' {$type |= ACC_INTERFACE;}
+  | 'enum' {$type |= ACC_ENUM;}
+  | 'class'
+  )
   ;
 
 private members [ClassSpecification classSpec]
