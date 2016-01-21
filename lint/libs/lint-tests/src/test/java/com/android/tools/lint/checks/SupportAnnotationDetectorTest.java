@@ -1637,4 +1637,60 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                         copy("src/android/support/annotation/IntRange.java.txt", "src/android/support/annotation/IntRange.java"),
                         copy("src/android/support/annotation/FloatRange.java.txt", "src/android/support/annotation/FloatRange.java")));
     }
+
+    public void testIntDefInBuilder() throws Exception {
+        // Ensure that we only check constants, not instance fields, when passing
+        // fields as arguments to typedef parameters.
+        assertEquals("No warnings.",
+                lintProject(
+                        java("src/test/pkg/Product.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.support.annotation.IntDef;\n"
+                                + "\n"
+                                + "import java.lang.annotation.Retention;\n"
+                                + "import java.lang.annotation.RetentionPolicy;\n"
+                                + "\n"
+                                + "public class Product {\n"
+                                + "    @IntDef({\n"
+                                + "         STATUS_AVAILABLE, STATUS_BACK_ORDER, STATUS_UNAVAILABLE\n"
+                                + "    })\n"
+                                + "    @Retention(RetentionPolicy.SOURCE)\n"
+                                + "    public @interface Status {\n"
+                                + "    }\n"
+                                + "    public static final int STATUS_AVAILABLE = 1;\n"
+                                + "    public static final int STATUS_BACK_ORDER = 2;\n"
+                                + "    public static final int STATUS_UNAVAILABLE = 3;\n"
+                                + "\n"
+                                + "    @Status\n"
+                                + "    private final int mStatus;\n"
+                                + "    private final String mName;\n"
+                                + "\n"
+                                + "    private Product(String name, @Status int status) {\n"
+                                + "        mName = name;\n"
+                                + "        mStatus = status;\n"
+                                + "    }\n"
+                                + "    public static class Builder {\n"
+                                + "        @Status\n"
+                                + "        private int mStatus;\n"
+                                + "        private String mName;\n"
+                                + "\n"
+                                + "        public Builder(String name, @Status int status) {\n"
+                                + "            mName = name;\n"
+                                + "            mStatus = status;\n"
+                                + "        }\n"
+                                + "\n"
+                                + "        public Builder setStatus(@Status int status) {\n"
+                                + "            mStatus = status;\n"
+                                + "            return this;\n"
+                                + "        }\n"
+                                + "\n"
+                                + "        public Product build() {\n"
+                                + "            return new Product(mName, mStatus);\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "}\n"),
+                        copy("src/android/support/annotation/IntDef.java.txt", "src/android/support/annotation/IntDef.java"))
+        );
+    }
 }
