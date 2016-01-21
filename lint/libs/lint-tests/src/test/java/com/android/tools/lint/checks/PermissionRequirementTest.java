@@ -150,6 +150,14 @@ public class PermissionRequirementTest extends TestCase {
         assertSame(BinaryOperator.LOGICAL_AND, req.getOperator());
     }
 
+    public void testSingleAsArray() {
+        // Annotations let you supply a single string to an array method
+        ResolvedAnnotation.Value values = new ResolvedAnnotation.Value("allOf",
+                "android.permission.ACCESS_FINE_LOCATION");
+        ResolvedAnnotation annotation = createAnnotation(PERMISSION_ANNOTATION, values);
+        assertTrue(PermissionRequirement.create(null, annotation).isSingle());
+    }
+
     public void testRevocable() {
         assertTrue(isRevocableSystemPermission("android.permission.ACCESS_FINE_LOCATION"));
         assertTrue(isRevocableSystemPermission("android.permission.ACCESS_COARSE_LOCATION"));
