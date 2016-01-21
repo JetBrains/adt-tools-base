@@ -214,7 +214,8 @@ public final class LocalRepoLoader {
                                      mRepoManager.getSchemaModules(), fos,
                                      mRepoManager.getResourceResolver(progress), progress);
         } catch (FileNotFoundException e) {
-            progress.logWarning("File not found while marshalling " + packageXml, e);
+            progress.logInfo("File not found while marshalling " + packageXml
+                    + ". Probably the SDK is read-only");
         } finally {
             if (fos != null) {
                 try {
