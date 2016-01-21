@@ -341,10 +341,10 @@ public class InstallerUtil {
     public static boolean checkValidPath(@NonNull File path, @NonNull RepoManager manager,
             @NonNull ProgressIndicator progress) {
         try {
-            String check = path.getCanonicalPath();
+            String check = path.getCanonicalPath() + File.separator;
 
             for (LocalPackage p : manager.getPackages().getLocalPackages().values()) {
-                String existing = p.getLocation().getCanonicalPath();
+                String existing = p.getLocation().getCanonicalPath() + File.separator;
                 if (!existing.equals(check)) {
                     boolean childExists = existing.startsWith(check);
                     boolean parentExists = check.startsWith(existing);
