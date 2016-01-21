@@ -2116,6 +2116,43 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
+        public static byte[] main_useOuterClass_makeAnonymousClass() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/Main", null,
+                    "java/lang/Object", null);
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mv.visitCode();
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "main", "()V", null, null);
+                mv.visitCode();
+                mv.visitTypeInsn(NEW, "test/Outer");
+                mv.visitInsn(DUP);
+                mv.visitMethodInsn(INVOKESPECIAL, "test/Outer",
+                        "<init>", "()V", false);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "test/Outer",
+                        "makeRunnable", "()V", false);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(2, 1);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+
         public static byte[] main_useStaticInnerClass() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
@@ -2255,6 +2292,8 @@ public class TestClasses implements Opcodes {
             cw.visitInnerClass("test/Outer$Inner",
                     "test/Outer", "Inner", ACC_PUBLIC);
 
+            cw.visitInnerClass("test/Outer$1", null, null, 0);
+
             {
                 mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
                 mv.visitCode();
@@ -2262,6 +2301,18 @@ public class TestClasses implements Opcodes {
                 mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
                 mv.visitInsn(RETURN);
                 mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(0, "makeRunnable", "()V", null, null);
+                mv.visitCode();
+                mv.visitTypeInsn(NEW, "test/Outer$1");
+                mv.visitInsn(DUP);
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "test/Outer$1", "<init>", "(Ltest/Outer;)V", false);
+                mv.visitVarInsn(ASTORE, 1);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(3, 2);
                 mv.visitEnd();
             }
             {
@@ -2349,6 +2400,52 @@ public class TestClasses implements Opcodes {
                 mv.visitCode();
                 mv.visitInsn(RETURN);
                 mv.visitMaxs(0, 1);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+
+        public static byte[] anonymous() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_SUPER, "test/Outer$1", null,
+                    "java/lang/Object", new String[] { "java/lang/Runnable" });
+
+            cw.visitOuterClass("test/Outer", "makeRunnable", "()V");
+
+            cw.visitInnerClass("test/Outer$1", null, null, 0);
+
+            {
+                fv = cw.visitField(ACC_FINAL + ACC_SYNTHETIC, "this$0", "Ltest/Outer;", null, null);
+                fv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(0, "<init>", "(Ltest/Outer;)V", null, null);
+                mv.visitCode();
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitVarInsn(ALOAD, 1);
+                mv.visitFieldInsn(PUTFIELD, "test/Outer$1", "this$0", "Ltest/Outer;");
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(2, 2);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "run", "()V", null, null);
+                mv.visitCode();
+                mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+                mv.visitLdcInsn("hello");
+                mv.visitMethodInsn(INVOKEVIRTUAL,
+                        "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(2, 1);
                 mv.visitEnd();
             }
             cw.visitEnd();
