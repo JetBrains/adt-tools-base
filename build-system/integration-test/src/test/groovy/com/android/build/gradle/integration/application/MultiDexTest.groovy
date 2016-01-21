@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
+import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject.ClassFileScope
 import com.google.common.io.Files
 import groovy.transform.CompileStatic
 import org.junit.Before
@@ -27,6 +28,7 @@ import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
@@ -59,34 +61,90 @@ class MultiDexTest {
     }
 
     @Test
-    void "check APKs"() {
+    void "check normal build"() {
         project.execute("assembleDebug", "assembleAndroidTest")
+
+        assertMainDexListContainsExactly("debug",
+                "com/android/tests/basic/Used",
+                "com/android/tests/basic/DeadCode",
+                "com/android/tests/basic/Main")
 
         // manually inspect the apk to ensure that the classes.dex that was created is the same
         // one in the apk. This tests that the packaging didn't rename the multiple dex files
         // around when we packaged them.
-        File classesDex = project.file(
-                "build/" + FD_INTERMEDIATES +
-                "/transforms/dex/" +
-                "ics/debug/" +
-                "folders/1000/1f/main/" +
-                "classes.dex")
-        File apk = project.getApk("ics", "debug")
+        assertThatZip(project.getApk("ics", "debug")).containsFileWithContent(
+                "classes.dex",
+                Files.toByteArray(project.file(
+                        "build/" + FD_INTERMEDIATES +
+                                "/transforms/dex/" +
+                                "ics/debug/" +
+                                "folders/1000/1f/main/" +
+                                "classes.dex")))
 
-        assertThatZip(apk).containsFileWithContent("classes.dex", Files.toByteArray(classesDex))
+        assertThatZip(project.getApk("ics", "debug")).containsFileWithContent(
+                "classes2.dex",
+                Files.toByteArray(project.file(
+                        "build/" + FD_INTERMEDIATES +
+                        "/transforms/dex/" +
+                        "ics/debug/" +
+                        "folders/1000/1f/main/" +
+                        "classes2.dex")))
 
-        // both test apk should contain a class from Junit
+        commonApkChecks("debug")
+
+        assertThatApk(project.getTestApk("ics", "debug")).
+                doesNotContainClass("Landroid/support/multidex/MultiDexApplication;")
+        assertThatApk(project.getTestApk("lollipop", "debug")).
+                doesNotContainClass("Landroid/support/multidex/MultiDexApplication;")
+
+        // Both test APKs should contain a class from Junit.
         assertThatApk(project.getTestApk("ics", "debug")).containsClass("Lorg/junit/Assert;")
         assertThatApk(project.getTestApk("lollipop", "debug")).containsClass("Lorg/junit/Assert;")
-        assertThatApk(project.getApk("ics", "debug")).containsClass("Landroid/support/multidex/MultiDexApplication;")
-        assertThatApk(project.getTestApk("ics", "debug")).doesNotContainClass("Landroid/support/multidex/MultiDexApplication;")
-        assertThatApk(project.getApk("lollipop", "debug")).doesNotContainClass("Landroid/support/multidex/MultiDexApplication;")
-        assertThatApk(project.getTestApk("lollipop", "debug")).doesNotContainClass("Landroid/support/multidex/MultiDexApplication;")
+
+        assertThatApk(project.getApk("ics", "debug"))
+                .containsClass("Lcom/android/tests/basic/NotUsed;")
+        assertThatApk(project.getApk("ics", "debug"))
+                .containsClass("Lcom/android/tests/basic/DeadCode;")
     }
 
     @Test
-    void "check multidex without obfuscate"() {
-        project.execute("assembleIcsProguard")
+    void "check minified build"() {
+        project.execute("assembleMinified")
+
+        assertMainDexListContainsExactly("minified",
+                "com/android/tests/basic/Used",
+                "com/android/tests/basic/Main")
+
+        commonApkChecks("minified")
+
+        assertThatApk(project.getApk("ics", "minified"))
+                .doesNotContainClass("Lcom/android/tests/basic/NotUsed;")
+        assertThatApk(project.getApk("ics", "minified"))
+                .doesNotContainClass("Lcom/android/tests/basic/DeadCode;")
+    }
+
+    private void commonApkChecks(String buildType) {
+        assertThatApk(project.getApk("ics", buildType)).
+                containsClass("Landroid/support/multidex/MultiDexApplication;")
+        assertThatApk(project.getApk("lollipop", buildType)).
+                doesNotContainClass("Landroid/support/multidex/MultiDexApplication;")
+
+        assertThatApk(project.getApk("ics", buildType))
+                .containsClass("Lcom/android/tests/basic/Main;")
+        assertThatApk(project.getApk("ics", buildType))
+                .containsClass("Lcom/android/tests/basic/Used;")
+        assertThatApk(project.getApk("ics", buildType))
+                .containsClass("Lcom/android/tests/basic/Kept;")
+    }
+
+    private assertMainDexListContainsExactly(String buildType, String... expected) {
+        File listFile = project.file("build/intermediates/multi-dex/ics/${buildType}/mainDexList.txt")
+        Iterable<String> actual = listFile
+                .readLines()
+                .findAll{!it.isEmpty() && !it.startsWith("android/support/multidex")}
+                .collect{it - ~/.class$/}
+
+        assertThat(actual).containsExactlyElementsIn(expected.toList())
     }
 
     @Test
