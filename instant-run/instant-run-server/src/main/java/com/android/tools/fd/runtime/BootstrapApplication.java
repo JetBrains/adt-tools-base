@@ -162,7 +162,7 @@ public class BootstrapApplication extends Application {
     }
 
     private static void setupClassLoaders(String codeCacheDir, long apkModified) {
-        List<String> dexList = FileManager.getDexList();
+        List<String> dexList = FileManager.getDexList(apkModified);
 
         // Make sure class loader finds these
         @SuppressWarnings("unused") Class<Server> server = Server.class;
@@ -185,7 +185,8 @@ public class BootstrapApplication extends Application {
                 if (Log.isLoggable(LOG_TAG, Log.INFO)) {
                     Log.i(LOG_TAG, "Last code patch: " + lastClass);
                     Log.i(LOG_TAG, "APK last modified: " + apkModified + " " +
-                            (apkModified > codeModified ? ">" : "<") + " code patch");
+                            (apkModified > codeModified ? ">" : "<") + " " + codeModified
+                            + " code patch");
                 }
 
                 if (apkModified == 0L || codeModified <= apkModified) {

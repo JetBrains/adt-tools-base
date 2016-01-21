@@ -51,6 +51,7 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -85,6 +86,9 @@ public class FileManager {
 
     /** Prefix for classes.dex files */
     private static final String CLASSES_DEX_PREFIX = "classes";
+
+    /** Prefix for reload.dex files */
+    private static final String RELOAD_DEX_PREFIX = "reload";
 
     /** Suffix for classes.dex files */
     public static final String CLASSES_DEX_SUFFIX = ".dex";
@@ -281,9 +285,12 @@ public class FileManager {
         return file;
     }
 
-    /** Returns the list of available .dex files to be loaded, possibly empty */
+    /** Returns the list of available .dex files to be loaded, possibly empty
+     * @param apkModified main apk installation time to purge old dex files from previous
+     *                    installation.
+     */
     @NonNull
-    public static List<String> getDexList() {
+    public static List<String> getDexList(long apkModified) {
         File dataFolder = getDataFolder();
 
         // Get rid of reload dex files from previous runs, if any
@@ -291,7 +298,7 @@ public class FileManager {
 
         // Get rid of patches no longer applicable
         if (Build.VERSION.SDK_INT < 21) {
-            FileManager.purgeMaskedDexFiles(dataFolder);
+            FileManager.purgeMaskedDexFiles(dataFolder, apkModified);
         }
 
         List<String> list = new ArrayList<String>();
@@ -381,8 +388,8 @@ public class FileManager {
         if (files != null) {
             for (File file : files) {
                 String name = file.getName();
-                if (name.startsWith(CLASSES_DEX_PREFIX) && name.endsWith(CLASSES_DEX_SUFFIX)) {
-                    String middle = name.substring(CLASSES_DEX_PREFIX.length(),
+                if (name.startsWith(RELOAD_DEX_PREFIX) && name.endsWith(CLASSES_DEX_SUFFIX)) {
+                    String middle = name.substring(RELOAD_DEX_PREFIX.length(),
                             name.length() - CLASSES_DEX_SUFFIX.length());
                     try {
                         int version = Integer.decode(middle);
@@ -395,7 +402,7 @@ public class FileManager {
             }
         }
 
-        String fileName = String.format("%s0x%04x%s", CLASSES_DEX_PREFIX, max + 1,
+        String fileName = String.format("%s0x%04x%s", RELOAD_DEX_PREFIX, max + 1,
                 CLASSES_DEX_SUFFIX);
         File file = new File(dexFolder, fileName);
 
@@ -411,6 +418,7 @@ public class FileManager {
             BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(destination));
             try {
                 output.write(bytes);
+                output.flush();
                 return true;
             } finally {
                 output.close();
@@ -518,7 +526,25 @@ public class FileManager {
                 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(
                         new FileOutputStream(indexFile), getUtf8Charset()));
                 try {
-                    DexFile dexFile = new DexFile(file);
+                    // Use a temporary jar file with a unique name to avoid caching issues
+                    // when reusing the file names between restart.dex and reload.dex
+                    File tmpFile = File.createTempFile("install", ".jar");
+                    Log.i(LOG_TAG, "Temp jar file : " + tmpFile.getAbsolutePath());
+                    JarOutputStream jarOutputStream = new JarOutputStream(
+                            new BufferedOutputStream(new FileOutputStream(tmpFile)));
+                    try {
+                        jarOutputStream.putNextEntry(new ZipEntry("classes.dex"));
+                        jarOutputStream.write(bytes);
+                        jarOutputStream.closeEntry();
+                    } finally {
+                        jarOutputStream.close();
+                    }
+                    DexFile dexFile = DexFile.loadDex(
+                            tmpFile.getAbsolutePath(),
+                            new File(file.getParentFile(), tmpFile.getName()).getAbsolutePath(), 0);
+                    if (!tmpFile.delete()) {
+                        Log.i(LOG_TAG, "Cannot delete " + tmpFile.getAbsolutePath());
+                    }
                     Enumeration<String> entries = dexFile.entries();
                     while (entries.hasMoreElements()) {
                         String nextPath = entries.nextElement();
@@ -540,7 +566,7 @@ public class FileManager {
                     Log.i(LOG_TAG, "Wrote restart patch index " + indexFile);
                 }
             } catch (IOException ioe) {
-                Log.e(LOG_TAG, "Failed to write dex index file " + indexFile);
+                Log.e(LOG_TAG, "Failed to write dex index file " + indexFile, ioe);
             }
         }
 
@@ -628,7 +654,7 @@ public class FileManager {
      * of the classes in the .dex file will be found by the application class loader
      * because there are newer versions available)
      */
-    public static void purgeMaskedDexFiles(@NonNull File dataFolder) {
+    public static void purgeMaskedDexFiles(@NonNull File dataFolder, long apkModified) {
         File dexFolder = getDexFileFolder(dataFolder, false);
         if (dexFolder == null) {
             return;
@@ -642,6 +668,8 @@ public class FileManager {
         // Go back through patches in reverse order, and for any patch that contains a
         // class not seen in later patches, mark that patch file as relevant
         Set<String> classes = new HashSet<String>(200);
+        // contains the list of dex file that have an index file associated.
+        Set<String> visitedDexFiles = new HashSet<String>(files.length);
 
         Charset utf8 = getUtf8Charset();
         for (int i = files.length - 1; i >= 0; i--) {
@@ -671,8 +699,11 @@ public class FileManager {
                         reader.close();
                     }
 
-                    if (!containsUniqueClasses) {
-                        File dexFile = getDexFile(file);
+                    // check if the dex file is not older than the APK.
+                    File dexFile = getDexFile(file);
+                    visitedDexFiles.add(dexFile.getName());
+
+                    if (!containsUniqueClasses || dexFile.lastModified() < apkModified) {
                         // Nearly always true, unless user has gone in there and deleted
                         // stuff
                         if (dexFile.exists()) {
@@ -683,15 +714,32 @@ public class FileManager {
                             boolean deleted = dexFile.delete();
                             if (!deleted) {
                                 Log.e(LOG_TAG, "Could not prune " + dexFile);
+                            } else {
+                                Log.i(LOG_TAG, "pruned " + file.getAbsolutePath());
                             }
                         }
                         boolean deleted = file.delete();
                         if (!deleted) {
                             Log.e(LOG_TAG, "Could not prune " + file);
                         }
+
                     }
                 } catch (IOException ioe) {
                     Log.e(LOG_TAG, "Could not read dex index file " + file, ioe);
+                }
+            }
+        }
+
+        // have a pass to delete old dex files that have no index file associated.
+        // watch out, do not delete shard dex files...
+        for (File file : files) {
+            if (file.exists() && file.getName().endsWith(CLASSES_DEX_SUFFIX) &&
+                    !visitedDexFiles.contains(file.getName())) {
+                boolean deleted = file.delete();
+                if (!deleted) {
+                    Log.e(LOG_TAG, "Could not prune " + file);
+                } else {
+                    Log.i(LOG_TAG, "pruned " + file.getAbsolutePath());
                 }
             }
         }
