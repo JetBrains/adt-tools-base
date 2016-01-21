@@ -34,12 +34,12 @@ import java.util.Set;
  */
 public class FilterMembersVisitor extends ClassVisitor {
     private final Set<String> mMembers;
-    private final Predicate<String> mKeepInterface;
+    private final Predicate<String> mClassKeptPredicate;
 
-    public FilterMembersVisitor(Set<String> members, Predicate<String> keepInterface, ClassVisitor cv) {
+    public FilterMembersVisitor(Set<String> members, Predicate<String> classKeptPredicate, ClassVisitor cv) {
         super(Opcodes.ASM5, cv);
         mMembers = members;
-        mKeepInterface = keepInterface;
+        mClassKeptPredicate = classKeptPredicate;
     }
 
     @Override
@@ -47,7 +47,7 @@ public class FilterMembersVisitor extends ClassVisitor {
             String[] interfaces) {
         List<String> interfacesToKeep = Lists.newArrayList();
         for (String iface : interfaces) {
-            if (mKeepInterface.apply(iface)) {
+            if (mClassKeptPredicate.apply(iface)) {
                 interfacesToKeep.add(iface);
             }
         }
@@ -72,6 +72,14 @@ public class FilterMembersVisitor extends ClassVisitor {
             return super.visitMethod(access, name, desc, signature, exceptions);
         } else {
             return null;
+        }
+    }
+
+    @Override
+    public void visitInnerClass(String name, String outerName, String innerName, int access) {
+        // Remove constant pool references to removed classes.
+        if (mClassKeptPredicate.apply(name)) {
+            super.visitInnerClass(name, outerName, innerName, access);
         }
     }
 }
