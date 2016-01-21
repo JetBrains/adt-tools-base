@@ -53,7 +53,6 @@ class NoClientTest {
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder()
         .fromTestApp(helloWorldApp)
-        .captureStdOut(true)
         .create()
 
     @BeforeClass

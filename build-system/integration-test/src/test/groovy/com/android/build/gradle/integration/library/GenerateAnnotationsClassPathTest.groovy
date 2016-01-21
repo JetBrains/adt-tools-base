@@ -29,7 +29,6 @@ class GenerateAnnotationsClassPathTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("extractAnnotations")
-            .captureStdOut(true)
             .create()
 
     @BeforeClass
@@ -103,11 +102,10 @@ public class GeneratedClass {
      */
     @Test
     public void "check javaGeneratingTask adds output dir to generate annotations classpath"() {
-        project.stdout.reset()
         project.execute("clean", "assembleDebug")
         assertFalse(
                 "Extract annotation should get generated class on path.",
-                project.stdout.toString().contains("Not extracting annotations (compilation problems encountered)"))
+                project.getStdout().contains("Not extracting annotations (compilation problems encountered)"))
     }
 
 }

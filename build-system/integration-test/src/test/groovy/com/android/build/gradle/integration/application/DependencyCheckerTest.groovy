@@ -40,7 +40,6 @@ class DependencyCheckerTest {
         @Rule
         public GradleTestProject httpClientProject = GradleTestProject.builder()
                 .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-                .captureStdOut(true)
                 .create()
 
         @Test
@@ -49,7 +48,7 @@ class DependencyCheckerTest {
                     "dependencies.compile 'org.apache.httpcomponents:httpclient:4.1.1'"
 
             httpClientProject.execute("clean", "assembleDebug")
-            assertThat(httpClientProject.stdout.toString())
+            assertThat(httpClientProject.getStdout())
                     .contains("Dependency org.apache.httpcomponents:httpclient:4.1.1 is ignored")
         }
     }
@@ -60,8 +59,6 @@ class DependencyCheckerTest {
         @Rule
         public GradleTestProject minSdkProject = GradleTestProject.builder()
                 .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-                .captureStdOut(true)
-                .captureStdErr(true)
                 .create()
 
         /**

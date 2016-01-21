@@ -45,18 +45,16 @@ public class ResourceValidationTest {
     }
 
     @Rule
-    public GradleTestProject project = GradleTestProject.builder().fromTestApp(TEST_APP)
-            .captureStdErr(true).create();
+    public GradleTestProject project = GradleTestProject.builder().fromTestApp(TEST_APP).create();
 
     @Test
     public void checkResourceValidationCanBeDisabled() throws Exception {
-        project.getStderr().reset();
         GradleConnectionException e = project.executeExpectingFailure("assembleDebug");
 
         //noinspection ThrowableResultOfMethodCallIgnored
         assertThat(getTaskFailureMessage(e)).contains("file name must end with");
 
-        assertThat(project.getStderr().toString()).contains(FileUtils.join("src", "main", "res",
+        assertThat(project.getStderr()).contains(FileUtils.join("src", "main", "res",
                 "drawable", "not_a_drawable.ext"));
 
         Files.append("\nproject.ext['android.disableResourceValidation'] = true",

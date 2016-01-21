@@ -170,8 +170,6 @@ public class GradleTestProject implements TestRule {
         File sdkDir = SdkHelper.findSdkDir();
         @Nullable
         File ndkDir = findNdkDir();
-        boolean captureStdOut = false;
-        boolean captureStdErr = false;
         boolean experimentalMode = false;
         @Nullable
         private String targetGradleVersion;
@@ -198,8 +196,6 @@ public class GradleTestProject implements TestRule {
                     useMinify,
                     useJack,
                     targetGradleVersion,
-                    captureStdOut,
-                    captureStdErr,
                     sdkDir,
                     ndkDir,
                     gradleProperties,
@@ -213,16 +209,6 @@ public class GradleTestProject implements TestRule {
          */
         public Builder withName(@NonNull String name) {
             this.name = name;
-            return this;
-        }
-
-        public Builder captureStdOut(boolean captureStdOut) {
-            this.captureStdOut = captureStdOut;
-            return this;
-        }
-
-        public Builder captureStdErr(boolean captureStdErr) {
-            this.captureStdErr = captureStdErr;
             return this;
         }
 
@@ -345,8 +331,10 @@ public class GradleTestProject implements TestRule {
     private final File ndkDir;
     private final File sdkDir;
 
-    private final ByteArrayOutputStream stdout;
-    private final ByteArrayOutputStream stderr;
+    @NonNull
+    private ByteArrayOutputStream stdout = new ByteArrayOutputStream();
+    @NonNull
+    private ByteArrayOutputStream stderr = new ByteArrayOutputStream();
 
     private final Collection<String> gradleProperties;
 
@@ -369,8 +357,6 @@ public class GradleTestProject implements TestRule {
             boolean minifyEnabled,
             boolean useJack,
             String targetGradleVersion,
-            boolean captureStdOut,
-            boolean captureStdErr,
             @Nullable File sdkDir,
             @Nullable File ndkDir,
             @NonNull Collection<String> gradleProperties,
@@ -385,8 +371,6 @@ public class GradleTestProject implements TestRule {
         this.useJack = useJack;
         this.targetGradleVersion = targetGradleVersion;
         this.testProject = testProject;
-        stdout = captureStdOut ? new ByteArrayOutputStream() : null;
-        stderr = captureStdErr ? new ByteArrayOutputStream() : null;
         this.sdkDir = sdkDir;
         this.ndkDir = ndkDir;
         this.heapSize = heapSize;
@@ -411,8 +395,6 @@ public class GradleTestProject implements TestRule {
         sourceDir = new File(testDir, "src");
         ndkDir = rootProject.ndkDir;
         sdkDir = rootProject.sdkDir;
-        stdout = rootProject.stdout;
-        stderr = rootProject.stdout;
         gradleProperties = ImmutableList.of();
         testProject = null;
         experimentalMode = rootProject.isExperimentalMode();
@@ -890,8 +872,7 @@ public class GradleTestProject implements TestRule {
             String ... tasks) {
         ProjectConnection connection = getProjectConnection();
         try {
-            executeBuild(Collections.<String>emptyList(), connection, tasks,
-                    EXPECT_SUCCESS);
+            executeBuild(Collections.<String>emptyList(), connection, tasks, EXPECT_SUCCESS);
 
             // TODO: Make buildModel multithreaded all the time.
             // Getting multiple NativeAndroidProject results in duplicated class implemented error
@@ -909,6 +890,8 @@ public class GradleTestProject implements TestRule {
 
         } finally {
             connection.close();
+            System.out.print(getStdout());
+            System.err.print(getStderr());
         }
     }
 
@@ -1097,6 +1080,8 @@ public class GradleTestProject implements TestRule {
             }
         } finally {
             connection.close();
+            System.out.print(getStdout());
+            System.err.print(getStderr());
         }
 
         return null;
@@ -1138,13 +1123,10 @@ public class GradleTestProject implements TestRule {
 
         setJvmArguments(launcher);
 
-        if (stdout != null) {
-            launcher.setStandardOutput(stdout);
-        }
-        if (stderr != null) {
-            launcher.setStandardError(stderr);
-        }
-
+        stdout.reset();
+        stderr.reset();
+        launcher.setStandardOutput(stdout);
+        launcher.setStandardError(stderr);
         launcher.run(resultHandler);
     }
 
@@ -1210,28 +1192,16 @@ public class GradleTestProject implements TestRule {
         return executor.run();
     }
 
-    /**
-     * Return the stdout from all execute command.
-     */
-    public ByteArrayOutputStream getStdout() {
-        return stdout;
-    }
-
-    /** @see #getStdout() */
-    public String getStdoutString() throws UnsupportedEncodingException {
-        return stdout.toString(Charsets.UTF_8.name());
+    public String getStdout() {
+        return stdout.toString();
     }
 
     /**
      * Return the stderr from all execute command.
      */
-    public ByteArrayOutputStream getStderr() {
-        return stderr;
-    }
-
-    /** @see #getStderr() */
-    public String getStderrString() throws UnsupportedEncodingException {
-        return stderr.toString(Charsets.UTF_8.name());
+    @NonNull
+    public String getStderr() {
+        return stderr.toString();
     }
 
     /**

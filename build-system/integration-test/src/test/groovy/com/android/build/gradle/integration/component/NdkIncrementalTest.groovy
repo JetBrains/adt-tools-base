@@ -39,7 +39,6 @@ class NdkIncrementalTest {
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(new HelloWorldJniApp())
             .forExperimentalPlugin(true)
-            .captureStdOut(true)
             .create();
 
     @Before
@@ -76,11 +75,10 @@ model {
 
         project.file("src/main/jni/new-file.c") << " ";
 
-        project.stdout.reset()
         project.execute("assembleDebug")
 
         IncrementalTaskOutputVerifier verifier =
-                new IncrementalTaskOutputVerifier(project.stdout.toString());
+                new IncrementalTaskOutputVerifier(project.getStdout());
         verifier.assertThatFile(project.file("src/main/jni/new-file.c")).hasBeenAdded()
         verifier.assertThatFile(project.file("src/main/jni/hello-jni.c")).hasNotBeenChanged()
 
@@ -104,11 +102,10 @@ model {
 
         project.file("src/main/jni/empty.c").delete()
 
-        project.stdout.reset()
         project.execute("assembleDebug")
 
         IncrementalTaskOutputVerifier verifier =
-                new IncrementalTaskOutputVerifier(project.stdout.toString());
+                new IncrementalTaskOutputVerifier(project.getStdout());
         verifier.assertThatFile(project.file("src/main/jni/empty.c")).hasBeenRemoved()
         verifier.assertThatFile(project.file("src/main/jni/hello-jni.c")).hasNotBeenChanged()
 
@@ -133,11 +130,10 @@ model {
 
         project.file("src/main/jni/empty.c") << " ";
 
-        project.stdout.reset()
         project.execute("assembleDebug")
 
         IncrementalTaskOutputVerifier verifier =
-                new IncrementalTaskOutputVerifier(project.stdout.toString());
+                new IncrementalTaskOutputVerifier(project.getStdout());
         verifier.assertThatFile(project.file("src/main/jni/empty.c")).hasChanged()
         verifier.assertThatFile(project.file("src/main/jni/hello-jni.c")).hasNotBeenChanged()
 

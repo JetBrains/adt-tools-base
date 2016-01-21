@@ -39,7 +39,6 @@ public class InvalidDependencyOnAppTest {
                     new MultiModuleTestProject(ImmutableMap.of(
                             ":app", HelloWorldApp.forPlugin("com.android.application"),
                             ":dependency-app", HelloWorldApp.forPlugin("com.android.application"))))
-            .captureStdOut(true)
             .create();
 
     @Before
@@ -52,6 +51,6 @@ public class InvalidDependencyOnAppTest {
     @Test
     public void testBuildFails() throws Exception {
         project.executeExpectingFailure("assembleDebug");
-        assertThat(project.getStdoutString()).contains("resolves to an APK");
+        assertThat(project.getStdout()).contains("resolves to an APK");
     }
 }

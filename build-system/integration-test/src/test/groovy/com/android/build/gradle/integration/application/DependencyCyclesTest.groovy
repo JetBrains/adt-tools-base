@@ -33,7 +33,6 @@ class DependencyCyclesTest {
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("applibtest")
-            .captureStdErr(true)
             .create()
 
     @Test
