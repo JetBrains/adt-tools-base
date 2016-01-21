@@ -165,7 +165,7 @@ public abstract class DependencyFinderVisitor<T> extends ClassVisitor {
 
     private void handleDeclarationType(T member, Type type) {
         String className = getClassName(type);
-        if (className != null) {
+        if (className != null && !isSdkPackage(className)) {
             T classReference = mGraph.getClassReference(className);
             handleDependency(member, classReference, DependencyType.REQUIRED_CLASS_STRUCTURE);
         }
@@ -242,7 +242,7 @@ public abstract class DependencyFinderVisitor<T> extends ClassVisitor {
         @Override
         public void visitTypeInsn(int opcode, String type) {
             String className = getClassName(Type.getObjectType(type));
-            if (className != null) {
+            if (className != null && !isSdkPackage(className)) {
                 T classReference = mGraph.getClassReference(className);
                 handleDependency(mMethod, classReference, DependencyType.REQUIRED_CODE_REFERENCE);
             }
@@ -251,12 +251,14 @@ public abstract class DependencyFinderVisitor<T> extends ClassVisitor {
 
         @Override
         public void visitFieldInsn(int opcode, String owner, String name, String desc) {
-            handleDependency(
-                    mMethod,
-                    mGraph.getClassReference(owner),
-                    DependencyType.REQUIRED_CODE_REFERENCE);
-            T target = mGraph.getMemberReference(owner, name, desc);
-            handleUnresolvedReference(new UnresolvedReference<T>(mMethod, target, opcode));
+            if (!isSdkPackage(owner)) {
+                handleDependency(
+                        mMethod,
+                        mGraph.getClassReference(owner),
+                        DependencyType.REQUIRED_CODE_REFERENCE);
+                T target = mGraph.getMemberReference(owner, name, desc);
+                handleUnresolvedReference(new UnresolvedReference<T>(mMethod, target, opcode));
+            }
             super.visitFieldInsn(opcode, owner, name, desc);
         }
 
@@ -265,7 +267,7 @@ public abstract class DependencyFinderVisitor<T> extends ClassVisitor {
             if (cst instanceof Type) {
                 Type type = Type.getObjectType(((Type) cst).getInternalName());
                 String className = getClassName(type);
-                if (className != null) {
+                if (className != null && !isSdkPackage(className)) {
                     T classReference = mGraph.getClassReference(className);
                     handleDependency(
                             mMethod,
@@ -309,7 +311,7 @@ public abstract class DependencyFinderVisitor<T> extends ClassVisitor {
         @Override
         public void visitMultiANewArrayInsn(String desc, int dims) {
             String className = getClassName(desc);
-            if (className != null) {
+            if (className != null && !isSdkPackage(className)) {
                 handleDependency(
                         mMethod,
                         mGraph.getClassReference(className),
@@ -320,7 +322,7 @@ public abstract class DependencyFinderVisitor<T> extends ClassVisitor {
 
         @Override
         public void visitTryCatchBlock(Label start, Label end, Label handler, String type) {
-            if (type != null) {
+            if (type != null && !isSdkPackage(type)) {
                 handleDependency(
                         mMethod,
                         mGraph.getClassReference(type),
