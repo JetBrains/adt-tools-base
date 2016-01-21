@@ -21,6 +21,7 @@ import static com.android.SdkConstants.ANDROID_NS_NAME_PREFIX;
 import static com.android.SdkConstants.ANDROID_NS_NAME_PREFIX_LEN;
 import static com.android.SdkConstants.ANDROID_PREFIX;
 import static com.android.SdkConstants.ATTR_ID;
+import static com.android.SdkConstants.ATTR_INDEX;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_PARENT;
 import static com.android.SdkConstants.ATTR_QUANTITY;
@@ -28,6 +29,7 @@ import static com.android.SdkConstants.ATTR_TYPE;
 import static com.android.SdkConstants.ATTR_VALUE;
 import static com.android.SdkConstants.NEW_ID_PREFIX;
 import static com.android.SdkConstants.PREFIX_RESOURCE_REF;
+import static com.android.SdkConstants.TOOLS_URI;
 import static com.android.ide.common.resources.ResourceResolver.ATTR_EXAMPLE;
 import static com.android.ide.common.resources.ResourceResolver.XLIFF_G_TAG;
 import static com.android.ide.common.resources.ResourceResolver.XLIFF_NAMESPACE_PREFIX;
@@ -312,7 +314,7 @@ public class ResourceItem extends DataItem<ResourceFile>
     private ResourceValue parseXmlToResourceValue(boolean isFrameworks) {
         assert mValue != null;
 
-        NamedNodeMap attributes = mValue.getAttributes();
+        final NamedNodeMap attributes = mValue.getAttributes();
         ResourceType type = getType(mValue.getLocalName(), attributes);
         if (type == null) {
             return null;
@@ -339,10 +341,38 @@ public class ResourceItem extends DataItem<ResourceFile>
                         isFrameworks));
                 break;
             case ARRAY:
-                value = parseArrayValue(new ArrayResourceValue(name, isFrameworks));
+                value = parseArrayValue(new ArrayResourceValue(name, isFrameworks) {
+                    @Override
+                    protected int getDefaultIndex() {
+                        // Allow the user to specify a specific element to use via tools:index
+                        String toolsDefaultIndex = getAttributeValueNS(attributes, TOOLS_URI, ATTR_INDEX);
+                        if (toolsDefaultIndex != null) {
+                            try {
+                                return Integer.parseInt(toolsDefaultIndex);
+                            }
+                            catch (NumberFormatException e) {
+                                return super.getDefaultIndex();
+                            }
+                        }
+                        return super.getDefaultIndex();
+                    }
+                });
                 break;
             case PLURALS:
-                value = parsePluralsValue(new PluralsResourceValue(name, isFrameworks));
+                value = parsePluralsValue(new PluralsResourceValue(name, isFrameworks) {
+                    @Override
+                    public String getValue() {
+                        // Allow the user to specify tools:quantity.
+                        String quantity = getAttributeValueNS(attributes, TOOLS_URI, ATTR_QUANTITY);
+                        if (quantity != null) {
+                            String value = getValue(quantity);
+                            if (value != null) {
+                                return value;
+                            }
+                        }
+                        return super.getValue();
+                    }
+                });
                 break;
             case ATTR:
                 value = parseAttrValue(new AttrResourceValue(type, name, isFrameworks));
@@ -376,6 +406,16 @@ public class ResourceItem extends DataItem<ResourceFile>
     @Nullable
     private static String getAttributeValue(NamedNodeMap attributes, String attributeName) {
         Attr attribute = (Attr) attributes.getNamedItem(attributeName);
+        if (attribute != null) {
+            return attribute.getValue();
+        }
+
+        return null;
+    }
+
+    @Nullable
+    private static String getAttributeValueNS(NamedNodeMap attributes, String namespaceURI, String attributeName) {
+        Attr attribute = (Attr)attributes.getNamedItemNS(namespaceURI, attributeName);
         if (attribute != null) {
             return attribute.getValue();
         }

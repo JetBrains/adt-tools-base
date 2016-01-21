@@ -72,7 +72,7 @@ public class ResourceMergerTest extends BaseTestCase {
     public void testMergeWithNormalizationByCount() throws Exception {
         ResourceMerger merger = getResourceMerger();
 
-        assertEquals(31, merger.size());
+        assertEquals(36, merger.size());
     }
     public void testMergedResourcesWithNormalizationByName() throws Exception {
         ResourceMerger merger = getResourceMerger();
@@ -94,8 +94,12 @@ public class ResourceMergerTest extends BaseTestCase {
                 "string/xliff_string",
                 "string/xliff_with_carriage_return",
                 "string/styled_string",
+                "string/two",
+                "string/many",
                 "style/style",
                 "array/string_array",
+                "array/integer_array",
+                "array/my_colors",
                 "attr/dimen_attr",
                 "attr/string_attr",
                 "attr/enum_attr",
@@ -107,7 +111,9 @@ public class ResourceMergerTest extends BaseTestCase {
                 "dimen/dimen",
                 "dimen-sw600dp-v13/offset",
                 "id/item_id",
-                "integer/integer"
+                "integer/integer",
+                "plurals/plurals",
+                "plurals/plurals_with_bad_quantity"
         );
     }
 
