@@ -669,7 +669,6 @@ public class FileManager {
         // class not seen in later patches, mark that patch file as relevant
         Set<String> classes = new HashSet<String>(200);
         // contains the list of dex file that have an index file associated.
-        Set<String> visitedDexFiles = new HashSet<String>(files.length);
 
         Charset utf8 = getUtf8Charset();
         for (int i = files.length - 1; i >= 0; i--) {
@@ -701,7 +700,6 @@ public class FileManager {
 
                     // check if the dex file is not older than the APK.
                     File dexFile = getDexFile(file);
-                    visitedDexFiles.add(dexFile.getName());
 
                     if (!containsUniqueClasses || dexFile.lastModified() < apkModified) {
                         // Nearly always true, unless user has gone in there and deleted
@@ -726,20 +724,6 @@ public class FileManager {
                     }
                 } catch (IOException ioe) {
                     Log.e(LOG_TAG, "Could not read dex index file " + file, ioe);
-                }
-            }
-        }
-
-        // have a pass to delete old dex files that have no index file associated.
-        // watch out, do not delete shard dex files...
-        for (File file : files) {
-            if (file.exists() && file.getName().endsWith(CLASSES_DEX_SUFFIX) &&
-                    !visitedDexFiles.contains(file.getName())) {
-                boolean deleted = file.delete();
-                if (!deleted) {
-                    Log.e(LOG_TAG, "Could not prune " + file);
-                } else {
-                    Log.i(LOG_TAG, "pruned " + file.getAbsolutePath());
                 }
             }
         }
