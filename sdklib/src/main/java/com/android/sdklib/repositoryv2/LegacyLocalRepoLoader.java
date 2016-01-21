@@ -99,8 +99,7 @@ public class LegacyLocalRepoLoader implements FallbackLocalRepoLoader {
         if (!mFop.exists(new File(dir, SdkConstants.FN_SOURCE_PROP))) {
             return null;
         }
-        Logger.getLogger(getClass().getName())
-                .info(String.format("Parsing legacy package: %s", dir));
+        progress.logInfo(String.format("Parsing legacy package: %s", dir));
         LocalPkgInfo info;
         if (mPkgs == null) {
             Map<File, LocalPkgInfo> result = Maps.newHashMap();

@@ -35,6 +35,7 @@ import com.android.ide.common.repository.ResourceVisibilityLookup;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.res2.ResourceItem;
 import com.android.prefs.AndroidLocation;
+import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.ProgressIndicatorAdapter;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
@@ -84,7 +85,6 @@ import java.util.Set;
 @Beta
 public abstract class LintClient {
     private static final String PROP_BIN_DIR  = "com.android.tools.lint.bindir";  //$NON-NLS-1$
-    private RepoLogger mLogger;
 
     protected LintClient(@NonNull String clientName) {
         sClientName = clientName;
@@ -742,7 +742,7 @@ public abstract class LintClient {
         if (mTargets == null) {
             AndroidSdkHandler sdkHandler = getSdk();
             if (sdkHandler != null) {
-                RepoLogger logger = getLogger();
+                ProgressIndicator logger = getRepositoryLogger();
                 Collection<IAndroidTarget> targets = sdkHandler.getAndroidTargetManager(logger)
                         .getTargets(logger);
                 mTargets = targets.toArray(new IAndroidTarget[targets.size()]);
@@ -828,7 +828,7 @@ public abstract class LintClient {
         // build tools, regardless of project metadata. In Gradle, this
         // method is overridden to use the actual build tools specified in the
         // project.
-        return sdk != null ? sdk.getLatestBuildTool(getLogger()) : null;
+        return sdk != null ? sdk.getLatestBuildTool(getRepositoryLogger()) : null;
     }
 
     /**
@@ -1211,28 +1211,33 @@ public abstract class LintClient {
         return CLIENT_GRADLE.equals(sClientName);
     }
 
-    public RepoLogger getLogger() {
-        if (mLogger == null) {
-            mLogger = new RepoLogger();
-        }
-        return mLogger;
+    /** Returns a repository logger used by this client. */
+    @NonNull
+    public ProgressIndicator getRepositoryLogger() {
+        return new RepoLogger();
     }
 
-    public class RepoLogger extends ProgressIndicatorAdapter {
+    private static final class RepoLogger extends ProgressIndicatorAdapter {
+        // Intentionally not logging these: the SDK manager is
+        // logging events such as package.xml parsing
+        //   Parsing /path/to/sdk//build-tools/19.1.0/package.xml
+        //   Parsing /path/to/sdk//build-tools/20.0.0/package.xml
+        //   Parsing /path/to/sdk//build-tools/21.0.0/package.xml
+        // which we don't want to spam on the console.
+        // It's also warning about packages that it's encountering
+        // multiple times etc; that's not something we should include
+        // in lint command line output.
 
         @Override
         public void logError(@NonNull String s, @Nullable Throwable e) {
-            log(Severity.ERROR, e, s);
         }
 
         @Override
         public void logInfo(@NonNull String s) {
-            log(Severity.INFORMATIONAL, null, s);
         }
 
         @Override
         public void logWarning(@NonNull String s, @Nullable Throwable e) {
-            log(Severity.WARNING, e, s);
         }
     }
 }

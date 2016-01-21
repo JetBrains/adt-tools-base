@@ -142,10 +142,12 @@ public class ApiLookup {
     @Nullable
     static String getPlatformVersion(@NonNull LintClient client) {
         AndroidSdkHandler sdk = client.getSdk();
-        LocalPackage pkgInfo = sdk
-                .getLocalPackage(SdkConstants.FD_PLATFORM_TOOLS, client.getLogger());
-        if (pkgInfo != null) {
-            return pkgInfo.getVersion().toShortString();
+        if (sdk != null) {
+            LocalPackage pkgInfo = sdk
+                    .getLocalPackage(SdkConstants.FD_PLATFORM_TOOLS, client.getRepositoryLogger());
+            if (pkgInfo != null) {
+                return pkgInfo.getVersion().toShortString();
+            }
         }
         return null;
     }

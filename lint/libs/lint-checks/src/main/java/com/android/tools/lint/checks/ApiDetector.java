@@ -347,7 +347,7 @@ public class ApiDetector extends ResourceXmlDetector
                     return;
                 }
                 LocalPackage pkgInfo = sdk.getLocalPackage(SdkConstants.FD_PLATFORM_TOOLS,
-                        context.getClient().getLogger());
+                        context.getClient().getRepositoryLogger());
                 if (pkgInfo == null) {
                     return;
                 }
