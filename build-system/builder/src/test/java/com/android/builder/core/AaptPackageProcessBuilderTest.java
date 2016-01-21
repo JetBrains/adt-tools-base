@@ -73,7 +73,6 @@ public class AaptPackageProcessBuilderTest extends TestCase {
                 mIAndroidTarget = iAndroidTarget;
             }
         }
-        progress.assertNoErrorsOrWarnings();
         if (mIAndroidTarget == null) {
             throw new RuntimeException("Test requires android-21");
         }
@@ -291,7 +290,6 @@ public class AaptPackageProcessBuilderTest extends TestCase {
                 break;
             }
         }
-        progress.assertNoErrorsOrWarnings();
         if (androidTarget == null) {
             throw new RuntimeException("Test requires pre android-20");
         }
@@ -675,7 +673,6 @@ public class AaptPackageProcessBuilderTest extends TestCase {
         AndroidSdkHandler handler = AndroidSdkHandler.getInstance(getSdkDir());
         FakeProgressIndicator progress = new FakeProgressIndicator();
         BuildToolInfo buildToolInfo = handler.getBuildToolInfo(revision, progress);
-        progress.assertNoErrorsOrWarnings();
         if (buildToolInfo == null) {
             throw new RuntimeException("Test requires build-tools " + revision);
         }
@@ -687,7 +684,6 @@ public class AaptPackageProcessBuilderTest extends TestCase {
         FakeProgressIndicator progress = new FakeProgressIndicator();
         Collection<IAndroidTarget> targets = handler.getAndroidTargetManager(progress)
                 .getTargets(progress);
-        progress.assertNoErrorsOrWarnings();
         return targets;
     }
 }
