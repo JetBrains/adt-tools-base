@@ -65,7 +65,7 @@ public class StringSwitchTest {
 
             CheckClassAdapter cv = new CheckClassAdapter(cw);
 
-            cv.visit(52, ACC_PUBLIC + ACC_SUPER, className, null, "java/lang/Object", null);
+            cv.visit(Opcodes.V1_6, ACC_PUBLIC + ACC_SUPER, className, null, "java/lang/Object", null);
 
             {
                 MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
