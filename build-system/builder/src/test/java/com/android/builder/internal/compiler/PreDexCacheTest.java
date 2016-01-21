@@ -222,7 +222,7 @@ public class PreDexCacheTest extends TestCase {
         }
 
         @Override
-        public boolean getDexInProcess() {
+        public Boolean getDexInProcess() {
             return false;
         }
 

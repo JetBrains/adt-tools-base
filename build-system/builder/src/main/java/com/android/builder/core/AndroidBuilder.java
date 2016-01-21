@@ -1357,12 +1357,12 @@ public class AndroidBuilder {
             @NonNull ProcessOutputHandler processOutputHandler,
             boolean instantRunMode)
             throws ProcessException, IOException {
-        if (dexOptions.getDexInProcess()) {
+        if (Boolean.TRUE.equals(dexOptions.getDexInProcess())) {
             // Version that supports all flags that we know about, including numThreads.
             Revision minimumBuildTools = DexProcessBuilder.FIXED_DX_MERGER;
             Revision buildToolsVersion = mTargetInfo.getBuildTools().getRevision();
             if (buildToolsVersion.compareTo(minimumBuildTools) < 0) {
-                // in instant run mode, where we set the dexInProcess to true for the user, just
+                // In instant run mode, where we set the dexInProcess to true for the user, just
                 // display a warning.
                 if (instantRunMode) {
                     getLogger().warning(
