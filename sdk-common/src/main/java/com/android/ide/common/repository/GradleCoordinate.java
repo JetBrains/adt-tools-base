@@ -507,6 +507,12 @@ public class GradleCoordinate {
         return mRevisions.get(mRevisions.size() - 1) == PLUS_REV;
     }
 
+    @NonNull
+    public GradleVersion getVersion() {
+        return GradleVersion.parse(getRevision());
+    }
+
+    @NonNull
     public String getRevision() {
         StringBuilder revision = new StringBuilder();
         for (RevisionComponent component : mRevisions) {
