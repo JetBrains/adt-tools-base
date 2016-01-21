@@ -42,7 +42,7 @@ public class JarMerger {
     private final byte[] buffer = new byte[8192];
 
     @NonNull
-    private final ILogger logger = new LoggerWrapper(Logging.getLogger(JarMerger.class));
+    private final ILogger logger = LoggerWrapper.getLogger(JarMerger.class);
 
     @NonNull
     private final File jarFile;

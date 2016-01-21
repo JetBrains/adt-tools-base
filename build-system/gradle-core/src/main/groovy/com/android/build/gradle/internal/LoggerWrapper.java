@@ -31,7 +31,8 @@ public class LoggerWrapper implements ILogger {
 
     private final LogLevel infoLogLevel;
 
-    public static LoggerWrapper getLogger(Class<?> klass) {
+    @NonNull
+    public static LoggerWrapper getLogger(@NonNull Class<?> klass) {
         return new LoggerWrapper(Logging.getLogger(klass));
     }
 
