@@ -76,6 +76,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import java.io.File;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1378,15 +1379,21 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         } else {
             ResolvedNode resolved = context.resolve(argument);
             if (resolved instanceof ResolvedField) {
-                if (((ResolvedField) resolved).getType().isArray()) {
+                ResolvedField field = (ResolvedField) resolved;
+                if (field.getType().isArray()) {
                     // It's pointing to an array reference; we can't check these individual
                     // elements (because we can't jump from ResolvedNodes to AST elements; this
                     // is part of the motivation for the PSI change in lint 2.0), but we also
                     // don't want to flag it as invalid.
                     return;
                 }
-                checkTypeDefConstant(context, annotation, argument, errorNode, flag, resolved,
-                        allAnnotations);
+                int modifiers = field.getModifiers();
+                // If it's a constant (static/final) check that it's one of the allowed ones
+                if ((modifiers & Modifier.FINAL|Modifier.STATIC)
+                        == (Modifier.FINAL|Modifier.STATIC)) {
+                    checkTypeDefConstant(context, annotation, argument, errorNode, flag, resolved,
+                            allAnnotations);
+                }
             } else if (argument instanceof VariableReference) {
                 Statement statement = getParentOfType(argument, Statement.class, false);
                 if (statement != null) {
