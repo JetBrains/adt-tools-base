@@ -76,7 +76,7 @@ public class InstantRunBuildContextTest {
     }
 
     @Test
-    public void testDuplicateEntries() throws ParserConfigurationException {
+    public void testDuplicateEntries() throws ParserConfigurationException, IOException {
         InstantRunBuildContext context = new InstantRunBuildContext();
         context.setApiLevel(new AndroidVersion(21, null /* codeName */));
         context.addChangedFile(
@@ -366,6 +366,42 @@ public class InstantRunBuildContextTest {
                 .isEqualTo("/tmp/split-2.apk");
         assertThat(artifacts.get(1).getAttribute(InstantRunBuildContext.ATTR_LOCATION))
                 .isEqualTo("/tmp/split-3.apk");
+    }
+
+    @Test
+    public void testTemporaryBuildProduction()
+            throws ParserConfigurationException, IOException, SAXException {
+        InstantRunBuildContext initial = new InstantRunBuildContext();
+        initial.setApiLevel(new AndroidVersion(21, null /* codeName */));
+        initial.addChangedFile(InstantRunBuildContext.FileType.DEX, new File("/tmp/split-1.apk"));
+        initial.addChangedFile(InstantRunBuildContext.FileType.DEX, new File("/tmp/split-2.apk"));
+        String buildInfo = initial.toXml();
+
+        InstantRunBuildContext first = new InstantRunBuildContext();
+        first.loadFromXml(buildInfo);
+        first.setApiLevel(new AndroidVersion(21, null /* codeName */));
+        first.addChangedFile(InstantRunBuildContext.FileType.RESOURCES, new File("/tmp/resources_ap"));
+        first.close();
+        String tmpBuildInfo = first.toXml(false);
+
+        InstantRunBuildContext fixed = new InstantRunBuildContext();
+        fixed.loadFromXml(buildInfo);
+        fixed.mergeFrom(tmpBuildInfo);
+        fixed.setApiLevel(new AndroidVersion(21, null /* codeName */));
+        fixed.addChangedFile(InstantRunBuildContext.FileType.DEX, new File("/tmp/split-1.apk"));
+        fixed.close();
+        buildInfo = fixed.toXml();
+
+        // now check we only have 2 builds...
+        Document document = XmlUtils.parseDocument(buildInfo, false /* namespaceAware */);
+        List<Element> builds = getElementsByName(document.getFirstChild(),
+                InstantRunBuildContext.TAG_BUILD);
+        // initial builds are never removed.
+        // first build should have been removed due to the coldswap presence.
+        assertThat(builds).hasSize(2);
+        List<Element> artifacts = getElementsByName(builds.get(1),
+                InstantRunBuildContext.TAG_ARTIFACT);
+        assertThat(artifacts).hasSize(2);
     }
 
     private List<Element> getElementsByName(Node parent, String nodeName) {
