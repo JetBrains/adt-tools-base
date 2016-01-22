@@ -105,9 +105,6 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
                 + "res/layout/accessibility.xml:2: Warning: The resource R.layout.accessibility appears to be unused [UnusedResources]\n"
                 + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\" android:id=\"@+id/newlinear\" android:orientation=\"vertical\" android:layout_width=\"match_parent\" android:layout_height=\"match_parent\">\n"
                 + "^\n"
-                + "Warning: The resource R.layout.main appears to be unused [UnusedResources]\n"
-                + "Warning: The resource R.layout.other appears to be unused [UnusedResources]\n"
-                + "Warning: The resource R.string.hello appears to be unused [UnusedResources]\n"
                 + "res/layout/accessibility.xml:2: Warning: The resource R.id.newlinear appears to be unused [UnusedIds]\n"
                 + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\" android:id=\"@+id/newlinear\" android:orientation=\"vertical\" android:layout_width=\"match_parent\" android:layout_height=\"match_parent\">\n"
                 + "                                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
@@ -120,13 +117,9 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
                 + "res/layout/accessibility.xml:5: Warning: The resource R.id.android_logo2 appears to be unused [UnusedIds]\n"
                 + "    <ImageButton android:importantForAccessibility=\"yes\" android:id=\"@+id/android_logo2\" android:layout_width=\"wrap_content\" android:layout_height=\"wrap_content\" android:src=\"@drawable/android_button\" android:focusable=\"false\" android:clickable=\"false\" android:layout_weight=\"1.0\" />\n"
                 + "                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "Warning: The resource R.id.imageView1 appears to be unused [UnusedIds]\n"
-                + "Warning: The resource R.id.include1 appears to be unused [UnusedIds]\n"
-                + "Warning: The resource R.id.linearLayout2 appears to be unused [UnusedIds]\n"
-                + "0 errors, 11 warnings\n",
+                + "0 errors, 5 warnings\n",
 
             lintProject(
-                // Rename .txt files to .java
                 "src/my/pkg/Test.java.txt=>src/my/pkg/Test.java",
                 "gen/my/pkg/R.java.txt=>gen/my/pkg/R.java",
                 "AndroidManifest.xml",
