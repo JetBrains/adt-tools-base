@@ -418,6 +418,28 @@ public class InstallerUtilTest extends TestCase {
 
     public void testInstallSeparately() throws Exception {
         MockFileOp fop = new MockFileOp();
+        fop.recordExistingFile("/sdk/foo2/package.xml",
+                "<repo:repository\n"
+                        + "        xmlns:repo=\"http://schemas.android.com/repository/android/generic/01\"\n"
+                        + "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
+                        + "    <localPackage path=\"foo2\">\n"
+                        + "        <type-details xsi:type=\"repo:genericDetailsType\"/>\n"
+                        + "        <revision>\n"
+                        + "            <major>3</major>\n"
+                        + "        </revision>\n"
+                        + "        <display-name>The first Android platform ever</display-name>\n"
+                        + "    </localPackage>\n"
+                        + "</repo:repository>");
+        RepoManager mgr = new RepoManagerImpl(fop);
+        mgr.setLocalPath(new File("/sdk"));
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+        mgr.loadSynchronously(0, progress, null, null);
+        assertTrue(InstallerUtil.checkValidPath(new File("/sdk/foo"), mgr, progress));
+        progress.assertNoErrorsOrWarnings();
+    }
+
+    public void testInstallSeparately2() throws Exception {
+        MockFileOp fop = new MockFileOp();
         fop.recordExistingFile("/sdk/foo/package.xml",
                 "<repo:repository\n"
                         + "        xmlns:repo=\"http://schemas.android.com/repository/android/generic/01\"\n"
@@ -434,7 +456,7 @@ public class InstallerUtilTest extends TestCase {
         mgr.setLocalPath(new File("/sdk"));
         FakeProgressIndicator progress = new FakeProgressIndicator();
         mgr.loadSynchronously(0, progress, null, null);
-        assertTrue(InstallerUtil.checkValidPath(new File("/sdk/bar"), mgr, progress));
+        assertTrue(InstallerUtil.checkValidPath(new File("/sdk/foo2"), mgr, progress));
         progress.assertNoErrorsOrWarnings();
     }
 
