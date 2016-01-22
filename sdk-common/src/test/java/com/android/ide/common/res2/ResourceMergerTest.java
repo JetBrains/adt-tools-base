@@ -50,8 +50,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -362,13 +360,27 @@ public class ResourceMergerTest extends BaseTestCase {
         ResourceMerger merger = getResourceMerger();
 
         File folder = Files.createTempDir();
-        merger.writeBlobTo(folder,
-                getConsumer());
+        merger.writeBlobTo(folder, getConsumer());
 
         ResourceMerger loadedMerger = new ResourceMerger(0);
         assertTrue(loadedMerger.loadFromBlob(folder, true /*incrementalState*/));
 
         compareResourceMaps(merger, loadedMerger, true /*full compare*/);
+
+        // Also check that some of the node values are preserved.
+        List<ResourceItem> fromOrigValue = merger.getDataMap().get("string/xliff_with_carriage_return");
+        assertEquals(1, fromOrigValue.size());
+        ResourceItem fromOrigString = fromOrigValue.get(0);
+        assertEquals("Original String in merger",
+                     "This is should be followed by whitespace:\n        %1$s",
+                     fromOrigString.getValueText());
+
+        List<ResourceItem> fromLoadedValues = loadedMerger.getDataMap().get("string/xliff_with_carriage_return");
+        assertEquals(1, fromLoadedValues.size());
+        ResourceItem fromLoadedString = fromLoadedValues.get(0);
+        assertEquals("Loaded String in merger",
+                     "This is should be followed by whitespace:\n        %1$s",
+                     fromLoadedString.getValueText());
     }
 
     /**
@@ -1504,18 +1516,6 @@ public class ResourceMergerTest extends BaseTestCase {
             return;
         }
         fail("Exception not thrown as expected");
-    }
-
-    public void testWriteAndReadBlob() throws Exception {
-        ResourceMerger merger = getResourceMerger();
-
-        File folder = Files.createTempDir();
-        merger.writeBlobTo(folder,
-                getConsumer());
-
-        // new merger to read the blob
-        ResourceMerger loadedMerger = new ResourceMerger(0);
-        assertTrue(loadedMerger.loadFromBlob(folder, true /*incrementalState*/));
     }
 
     public void testInvalidFileNames() throws Exception {

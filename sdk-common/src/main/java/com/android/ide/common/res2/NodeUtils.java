@@ -102,10 +102,19 @@ class NodeUtils {
         NodeList children = node.getChildNodes();
         for (int i = 0 ; i < children.getLength() ; i++) {
             Node child = children.item(i);
-            if (child.getNodeType() != Node.ELEMENT_NODE) {
-                continue;
+            Node duplicatedChild;
+            switch (child.getNodeType()) {
+                case Node.ELEMENT_NODE:
+                    duplicatedChild = duplicateNode(document, child);
+                    break;
+                case Node.CDATA_SECTION_NODE:
+                    duplicatedChild = document.createCDATASection(child.getNodeValue());
+                    break;
+                case Node.TEXT_NODE:
+                    duplicatedChild = document.createTextNode(child.getNodeValue());
+                    break;
+                default: continue;
             }
-            Node duplicatedChild = duplicateNode(document, child);
             newNode.appendChild(duplicatedChild);
         }
 

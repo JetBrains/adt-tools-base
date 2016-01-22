@@ -137,6 +137,8 @@ public class NodeUtilsTest extends TestCase {
         node.appendChild(child1).appendChild(child2);
         Node cdata = document.createCDATASection("some <random> text");
         child2.appendChild(cdata);
+        Node text = document.createCDATASection("more <random> text");
+        child2.appendChild(text);
 
         // add some attributes
         NodeUtils.addAttribute(document, node, null, "foo", "bar");
@@ -166,6 +168,8 @@ public class NodeUtilsTest extends TestCase {
         node.appendChild(child1).appendChild(child2);
         Node cdata = document.createCDATASection("some <random> text");
         child2.appendChild(cdata);
+        Node text = document.createCDATASection("more <random> text");
+        child2.appendChild(text);
 
         // add some attributes
         NodeUtils.addAttribute(document, node, null, "foo", "bar");
@@ -173,7 +177,7 @@ public class NodeUtilsTest extends TestCase {
         NodeUtils.addAttribute(document, child1, "http://some.other.uri", "blah", "test");
         NodeUtils.addAttribute(document, child2, "http://another.uri", "blah", "test");
 
-        // create the other document to receive the adopted node. It must have a root node.
+        // create the other document to receive the duplicated node. It must have a root node.
         Document document2 = createDocument();
         rootNode = document2.createElement("root");
         document2.appendChild(rootNode);
@@ -181,7 +185,7 @@ public class NodeUtilsTest extends TestCase {
         assertTrue(NodeUtils.compareElementNode(
                 node,
                 NodeUtils.duplicateNode(document2, node),
-                false));
+                true));
     }
 
     public void testDuplicateAdoptNodeUpdatesNS() throws Exception {
@@ -200,7 +204,7 @@ public class NodeUtilsTest extends TestCase {
         NodeUtils.addAttribute(document, node1, nsURI1, "prefix1:foo", "bar");
         NodeUtils.addAttribute(document, node2, nsURI2, "prefix2:baz", "zap");
 
-        // create the other document to receive the adopted node. It must have a root node.
+        // create the other document to receive the duplicated and adopted node. It must have a root node.
         Document document2 = createDocument();
         rootNode = document2.createElement("root");
         document2.appendChild(rootNode);
