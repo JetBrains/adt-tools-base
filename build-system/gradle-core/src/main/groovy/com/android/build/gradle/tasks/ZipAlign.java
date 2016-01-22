@@ -67,8 +67,6 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
      */
     private boolean useOldPackaging;
 
-    private InstantRunBuildContext instantRunBuildContext;
-
     private File outputFile;
 
     @ApkFile
@@ -76,6 +74,12 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
 
     @ApkFile
     private File zipAlignExe;
+
+    private InstantRunBuildContext instantRunBuildContext;
+
+    public void setInstantRunBuildContext(InstantRunBuildContext instantRunBuildContext) {
+        this.instantRunBuildContext = instantRunBuildContext;
+    }
 
     /**
      * Obtains the executable used to perform zip-align. Not used if using the new packaging
