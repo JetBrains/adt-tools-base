@@ -23,6 +23,7 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dependency.SymbolFileProviderImpl;
 import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
@@ -103,6 +104,8 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     private InstantRunBuildContext instantRunBuildContext;
 
+    private File buildInfoFile;
+
     @Override
     protected void doFullTaskAction() throws IOException {
         // we have to clean the source folder output in case the package name changed.
@@ -144,16 +147,16 @@ public class ProcessAndroidResources extends IncrementalTask {
                     aaptPackageCommandBuilder,
                     getEnforceUniquePackageName(),
                     processOutputHandler);
+            if (resOutBaseNameFile != null) {
+                instantRunBuildContext.addChangedFile(
+                        InstantRunBuildContext.FileType.RESOURCES, resOutBaseNameFile);
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } catch (ProcessException e) {
             throw new RuntimeException(e);
-        }
-        if (resOutBaseNameFile != null) {
-            instantRunBuildContext.addChangedFile(
-                    InstantRunBuildContext.FileType.RESOURCES, resOutBaseNameFile);
         }
     }
 
@@ -337,6 +340,8 @@ public class ProcessAndroidResources extends IncrementalTask {
 
             processResources.instantRunBuildContext =
                     scope.getVariantScope().getInstantRunBuildContext();
+            processResources.buildInfoFile =
+                    InstantRunWrapperTask.ConfigAction.getTmpBuildInfoFile(scope.getVariantScope());
         }
 
         @NonNull

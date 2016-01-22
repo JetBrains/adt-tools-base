@@ -18,13 +18,18 @@ package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.builder.model.InstantRun;
 import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.sdklib.AndroidVersion;
 import com.android.utils.XmlUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.CaseFormat;
+import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
+import com.google.common.io.Files;
 
+import org.gradle.api.logging.LogLevel;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -253,6 +258,12 @@ public class InstantRunBuildContext {
     private final Build currentBuild = new Build(
             System.currentTimeMillis(), Optional.<InstantRunVerifierStatus>absent());
     private final TreeMap<Long, Build> previousBuilds = new TreeMap<Long, Build>();
+    private File tmpBuildInfo = null;
+
+
+    public void setTmpBuildInfo(File tmpBuildInfo) {
+        this.tmpBuildInfo = tmpBuildInfo;
+    }
 
     /**
      * Get the unique build id for this build invocation.
@@ -310,7 +321,8 @@ public class InstantRunBuildContext {
         return patchingPolicy;
     }
 
-    public synchronized void addChangedFile(@NonNull FileType fileType, @NonNull File file) {
+    public synchronized void addChangedFile(@NonNull FileType fileType, @NonNull File file)
+            throws IOException {
         if (patchingPolicy == null) {
             return;
         }
@@ -364,13 +376,18 @@ public class InstantRunBuildContext {
             }
         }
         currentBuild.artifacts.add(new Artifact(fileType, file));
+        // save the temporary build info file in case the build fails later on.
+        try {
+            writeTmpBuildInfo();
+        } catch (ParserConfigurationException e) {
+            throw new IOException(e);
+        }
     }
 
     @Nullable
     public Build getLastBuild() {
         return previousBuilds.isEmpty() ? null : previousBuilds.lastEntry().getValue();
     }
-
 
     @Nullable
     public Artifact getPastBuildsArtifactForType(@NonNull FileType fileType) {
@@ -478,7 +495,7 @@ public class InstantRunBuildContext {
     }
 
     private void loadFromDocument(@NonNull Document document) {
-        Element instantRun = (Element) document.getFirstChild();
+        Element instantRun = document.getDocumentElement();
         Build lastBuild = Build.fromXml(instantRun);
         previousBuilds.put(lastBuild.buildId, lastBuild);
         NodeList buildNodes = instantRun.getChildNodes();
@@ -489,6 +506,46 @@ public class InstantRunBuildContext {
                 previousBuilds.put(build.buildId, build);
             }
         }
+    }
+
+    /**
+     * Merges the artifacts of a temporary build info into this build's artifacts. If this build
+     * finishes the build-info.xml will contain the artifacts produced by this iteration as well
+     * as the artifacts produced in a previous iteration and saved into the temporary build info.
+     * @param tmpBuildInfoFile a past build build-info.xml
+     * @throws IOException
+     * @throws SAXException
+     * @throws ParserConfigurationException
+     */
+
+    public void mergeFromFile(@NonNull File tmpBuildInfoFile)
+            throws IOException, SAXException, ParserConfigurationException {
+        if (!tmpBuildInfoFile.exists()) {
+            return;
+        }
+        mergeFrom(XmlUtils.parseUtfXmlFile(tmpBuildInfoFile, false));
+    }
+
+    /**
+     * Merges the artifacts of a temporary build info into this build's artifacts. If this build
+     * finishes the build-info.xml will contain the artifacts produced by this iteration as well
+     * as the artifacts produced in a previous iteration and saved into the temporary build info.
+     * @param tmpBuildInfo a past build build-info.xml as a String
+     * @throws IOException
+     * @throws SAXException
+     * @throws ParserConfigurationException
+     */
+
+    public void mergeFrom(@NonNull String tmpBuildInfo)
+            throws IOException, SAXException, ParserConfigurationException {
+
+        mergeFrom(XmlUtils.parseDocument(tmpBuildInfo, false));
+    }
+
+    private void mergeFrom(@NonNull Document document) {
+        Element instantRun = document.getDocumentElement();
+        Build lastBuild = Build.fromXml(instantRun);
+        currentBuild.artifacts.addAll(lastBuild.artifacts);
     }
 
     /**
@@ -509,8 +566,24 @@ public class InstantRunBuildContext {
      */
     @NonNull
     public String toXml() throws ParserConfigurationException {
+        return toXml(true /* includePreviousBuilds */);
+    }
+
+    /**
+     * Serialize this context into an xml format.
+     * @param includePreviousBuilds true if previous builds should be persisted in the xml.
+     * @return the xml persisted information as a {@link String}
+     * @throws ParserConfigurationException
+     */
+    @NonNull
+    public String toXml(boolean includePreviousBuilds) throws ParserConfigurationException {
 
         Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+        toXml(document, includePreviousBuilds);
+        return XmlPrettyPrinter.prettyPrint(document, true);
+    }
+
+    private Element toXml(Document document, boolean includePreviousBuilds) {
         Element instantRun = document.createElement(TAG_INSTANT_RUN);
         document.appendChild(instantRun);
 
@@ -530,10 +603,26 @@ public class InstantRunBuildContext {
         }
         instantRun.setAttribute(ATTR_FORMAT, CURRENT_FORMAT);
 
-        for (Build build : previousBuilds.values()) {
-            instantRun.appendChild(build.toXml(document));
+        if (includePreviousBuilds) {
+            for (Build build : previousBuilds.values()) {
+                instantRun.appendChild(build.toXml(document));
+            }
         }
+        return instantRun;
+    }
 
-        return XmlPrettyPrinter.prettyPrint(document, true);
+    /**
+     * Writes a temporary build-info.xml to persist the produced artifacts in case the build
+     * fails before we have a chance to write the final build-info.xml
+     * @throws ParserConfigurationException
+     * @throws IOException
+     */
+    private void writeTmpBuildInfo() throws ParserConfigurationException, IOException {
+
+        if (tmpBuildInfo == null) {
+            return;
+        }
+        Files.createParentDirs(tmpBuildInfo);
+        Files.write(toXml(false /* includePreviousBuilds */), tmpBuildInfo, Charsets.UTF_8);
     }
 }

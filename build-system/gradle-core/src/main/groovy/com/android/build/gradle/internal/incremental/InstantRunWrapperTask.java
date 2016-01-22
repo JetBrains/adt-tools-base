@@ -51,7 +51,9 @@ public class InstantRunWrapperTask extends BaseTask {
     String buildId;
 
     TaskType taskType;
+
     File incrementChangesFile;
+    File tmpBuildInfoFile;
 
     Logger logger;
 
@@ -82,6 +84,13 @@ public class InstantRunWrapperTask extends BaseTask {
                 logger.warn(String.format("Cannot delete %1$s", incrementChangesFile));
             }
         }
+
+        // since we closed and produce the build-info.xml, delete any temporary one.
+        if (tmpBuildInfoFile.exists()) {
+            if (!tmpBuildInfoFile.delete()) {
+                logger.warn(String.format("Cannot delete %1$s", tmpBuildInfoFile));
+            }
+        }
     }
 
     public enum TaskType {
@@ -94,6 +103,11 @@ public class InstantRunWrapperTask extends BaseTask {
         public static File getBuildInfoFile(VariantScope scope) {
             return new File(scope.getRestartDexOutputFolder(), "build-info.xml");
         }
+
+        public static File getTmpBuildInfoFile(VariantScope scope) {
+            return new File(scope.getRestartDexOutputFolder(), "tmp-build-info.xml");
+        }
+
 
         private final String taskName;
         private final TaskType taskType;
@@ -130,6 +144,7 @@ public class InstantRunWrapperTask extends BaseTask {
             task.setDescription("InstantRun task to build incremental artifacts");
             task.setVariantName(variantScope.getVariantConfiguration().getFullName());
             task.buildInfoFile = getBuildInfoFile(variantScope);
+            task.tmpBuildInfoFile = getTmpBuildInfoFile(variantScope);
             task.instantRunBuildContext = variantScope.getInstantRunBuildContext();
             task.logger = logger;
             task.taskType = taskType;
