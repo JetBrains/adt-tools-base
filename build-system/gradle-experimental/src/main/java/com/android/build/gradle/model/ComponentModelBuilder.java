@@ -136,6 +136,7 @@ public class ComponentModelBuilder implements ToolingModelBuilder {
                 ndkHandler,
                 new ComponentNativeLibraryFactory(
                         binaries, ndkHandler, abiOptions, nativeDependencies, jniLibsDependencies),
-                !isApplication);
+                !isApplication,
+                AndroidProject.GENERATION_COMPONENT);
     }
 }
