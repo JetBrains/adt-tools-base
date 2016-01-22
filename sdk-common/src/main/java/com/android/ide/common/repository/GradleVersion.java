@@ -27,7 +27,8 @@ import java.util.regex.Pattern;
 /**
  * Supports versions in the given formats: <ul> <li>major (e.g. 1)</li> <li>major.minor (e.g.
  * 1.0)</li> <li>major.minor.micro (e.g. 1.1.1)</li> </ul> A version can also be a "preview" (e.g.
- * 1-alpha1, 1.0.0-rc2) or "snapshot" (e.g. 1-SNAPSHOT, 1.0.0-alpha1-SNAPSHOT).
+ * 1-alpha1, 1.0.0-rc2) or an unreleased version (or "snapshot") (e.g. 1-SNAPSHOT,
+ * 1.0.0-alpha1-SNAPSHOT).
  */
 public class GradleVersion implements Comparable<GradleVersion> {
 
@@ -109,8 +110,8 @@ public class GradleVersion implements Comparable<GradleVersion> {
 
                     List<String> previewSegments = Splitter.on(dash).splitToList(afterFirstDash);
                     int previewSegmentCount = previewSegments.size();
-                    snapshot = "SNAPSHOT"
-                            .equalsIgnoreCase(previewSegments.get(previewSegmentCount - 1));
+                    String last = previewSegments.get(previewSegmentCount - 1);
+                    snapshot = "SNAPSHOT".equalsIgnoreCase(last);
 
                     if (previewSegmentCount > 2 || (previewSegmentCount == 2 && !snapshot)) {
                         throw parsingFailure(value);
@@ -200,11 +201,18 @@ public class GradleVersion implements Comparable<GradleVersion> {
 
     @Override
     public int compareTo(@NonNull GradleVersion version) {
-        return compareTo(version, true, true);
+        return compareTo(version, false);
     }
 
-    public int compareTo(@NonNull GradleVersion version, boolean includePreview,
-            boolean includeSnapshot) {
+    public int compareIgnoringQualifiers(@NonNull String version) {
+        return compareIgnoringQualifiers(parse(version));
+    }
+
+    public int compareIgnoringQualifiers(@NonNull GradleVersion version) {
+        return compareTo(version, true);
+    }
+
+    private int compareTo(@NonNull GradleVersion version, boolean ignoreQualifiers) {
         int delta = mMajor - version.mMajor;
         if (delta != 0) {
             return delta;
@@ -217,7 +225,7 @@ public class GradleVersion implements Comparable<GradleVersion> {
         if (delta != 0) {
             return delta;
         }
-        if (includePreview) {
+        if (!ignoreQualifiers) {
             if (mPreviewType == null) {
                 if (version.mPreviewType != null) {
                     return 1;
@@ -235,8 +243,6 @@ public class GradleVersion implements Comparable<GradleVersion> {
             if (delta != 0) {
                 return delta;
             }
-        }
-        if (includeSnapshot) {
             delta = mSnapshot == version.mSnapshot ? 0 : (mSnapshot ? -1 : 1);
         }
         return delta;

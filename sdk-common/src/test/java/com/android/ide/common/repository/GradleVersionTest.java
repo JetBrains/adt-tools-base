@@ -15,9 +15,12 @@
  */
 package com.android.ide.common.repository;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 public class GradleVersionTest {
 
@@ -221,5 +224,12 @@ public class GradleVersionTest {
         assertTrue(GradleVersion.parse("1.0.0-beta1").compareTo("1.0.0-alpha2") > 0);
         assertTrue(GradleVersion.parse("1.0.0-rc1").compareTo("1.0.0-alpha2") > 0);
         assertTrue(GradleVersion.parse("2.0.0-alpha1").compareTo("1.0.0-alpha1") > 0);
+    }
+
+    @Test
+    public void testCompareWithExcludeAllComparison() {
+        assertEquals(0, GradleVersion.parse("1.0.0").compareIgnoringQualifiers("1.0.0"));
+        assertEquals(0, GradleVersion.parse("1.0.0").compareIgnoringQualifiers("1.0.0-alpha1"));
+        assertEquals(0, GradleVersion.parse("1.0.0").compareIgnoringQualifiers("1.0.0-SNAPSHOT"));
     }
 }
