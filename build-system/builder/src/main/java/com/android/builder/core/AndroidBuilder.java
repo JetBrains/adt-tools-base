@@ -52,10 +52,10 @@ import com.android.builder.internal.packaging.Packager;
 import com.android.builder.model.ClassField;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.model.SyncIssue;
-import com.android.builder.packaging.DuplicateFileException;
 import com.android.builder.packaging.PackagerException;
 import com.android.builder.packaging.SealedPackageException;
 import com.android.builder.packaging.SigningException;
+import com.android.builder.packaging.ZipAbortException;
 import com.android.builder.sdk.SdkInfo;
 import com.android.builder.sdk.TargetInfo;
 import com.android.builder.signing.SignedJarBuilder;
@@ -112,13 +112,12 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import com.google.common.io.Closer;
 import com.google.common.io.Files;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -2094,12 +2093,9 @@ public class AndroidBuilder {
      * @param jniDebugBuild whether the app should include jni debug data
      * @param signingConfig the signing configuration
      * @param outApkLocation location of the APK.
-     * @throws DuplicateFileException
      * @throws FileNotFoundException if the store location was not found
      * @throws KeytoolException
      * @throws PackagerException
-     * @throws SigningException when the key cannot be read from the keystore
-     *
      */
     public void packageApk(
             @NonNull String androidResPkgLocation,
@@ -2111,8 +2107,7 @@ public class AndroidBuilder {
             @Nullable SigningConfig signingConfig,
             @NonNull String outApkLocation,
             int minSdkVersion)
-            throws DuplicateFileException, FileNotFoundException,
-            KeytoolException, PackagerException, SigningException {
+            throws KeytoolException, PackagerException, SigningException, IOException {
         checkNotNull(androidResPkgLocation, "androidResPkgLocation cannot be null.");
         checkNotNull(outApkLocation, "outApkLocation cannot be null.");
 
@@ -2124,11 +2119,12 @@ public class AndroidBuilder {
                     signingConfig.getKeyPassword(), signingConfig.getKeyAlias());
         }
 
+        Closer closer = Closer.create();
         try {
-            Packager packager = new Packager(
+            Packager packager = closer.register(new Packager(
                     outApkLocation, androidResPkgLocation,
                     certificateInfo, mCreatedBy, mLogger,
-                    minSdkVersion);
+                    minSdkVersion));
 
             // add dex folder to the apk root.
             if (!dexFolders.isEmpty()) {
@@ -2146,11 +2142,15 @@ public class AndroidBuilder {
             for (File jniLibsLocation : jniLibsLocations) {
                 packager.addNativeLibraries(jniLibsLocation, abiFilters);
             }
-
-            packager.sealApk();
         } catch (SealedPackageException e) {
             // shouldn't happen since we control the package from start to end.
-            throw new RuntimeException(e);
+            throw closer.rethrow(e);
+        } catch (PackagerException e) {
+            throw closer.rethrow(e, PackagerException.class);
+        } catch (RuntimeException e) {
+            throw closer.rethrow(e);
+        } finally {
+            closer.close();
         }
     }
 
@@ -2163,7 +2163,7 @@ public class AndroidBuilder {
             @NonNull File dexFile,
             @Nullable SigningConfig signingConfig,
             @NonNull String outApkLocation) throws
-                FileNotFoundException, KeytoolException, PackagerException, DuplicateFileException {
+                KeytoolException, PackagerException, IOException {
 
         CertificateInfo certificateInfo = null;
         if (signingConfig != null && signingConfig.isSigningReady()) {
@@ -2173,23 +2173,29 @@ public class AndroidBuilder {
                     signingConfig.getKeyPassword(), signingConfig.getKeyAlias());
         }
 
+        Closer closer = Closer.create();
         try {
-            Packager packager = new Packager(
+            Packager packager = closer.register(new Packager(
                     outApkLocation, androidResPkgLocation,
                     certificateInfo, mCreatedBy, mLogger,
-                    23 /* minSdkVersion, MarshMallow */);
+                    23 /* minSdkVersion, MarshMallow */));
 
             packager.addFile(dexFile, "classes.dex");
-            packager.sealApk();
         } catch (SealedPackageException e) {
             // shouldn't happen since we control the package from start to end.
             throw new RuntimeException(e);
+        } catch (PackagerException e) {
+            throw closer.rethrow(e, PackagerException.class);
+        } catch (IOException e) {
+            throw closer.rethrow(e);
+        } finally {
+            closer.close();
         }
-
     }
 
     /**
      * Signs a single jar file using the passed {@link SigningConfig}.
+     *
      * @param in the jar file to sign.
      * @param signingConfig the signing configuration
      * @param out the file path for the signed jar.
@@ -2197,13 +2203,13 @@ public class AndroidBuilder {
      * @throws KeytoolException
      * @throws SigningException
      * @throws NoSuchAlgorithmException
-     * @throws SignedJarBuilder.IZipEntryFilter.ZipAbortException
+     * @throws ZipAbortException
      * @throws com.android.builder.signing.SigningException
      */
-    public void signApk(File in, SigningConfig signingConfig, File out)
+    public void signApk(@NonNull File in, @Nullable SigningConfig signingConfig, @NonNull File out)
             throws IOException, KeytoolException, SigningException, NoSuchAlgorithmException,
-            SignedJarBuilder.IZipEntryFilter.ZipAbortException,
-            com.android.builder.signing.SigningException {
+            ZipAbortException,
+            com.android.builder.signing.SigningException, IOException {
 
         CertificateInfo certificateInfo = null;
         if (signingConfig != null && signingConfig.isSigningReady()) {
@@ -2214,13 +2220,13 @@ public class AndroidBuilder {
         }
 
         SignedJarBuilder signedJarBuilder = new SignedJarBuilder(
-                new FileOutputStream(out),
+                out,
                 certificateInfo != null ? certificateInfo.getKey() : null,
                 certificateInfo != null ? certificateInfo.getCertificate() : null,
                 Packager.getLocalVersion(), mCreatedBy, 1 /* minSdkVersion */);
 
 
-        signedJarBuilder.writeZip(new FileInputStream(in));
+        signedJarBuilder.writeZip(in);
         signedJarBuilder.close();
 
     }

@@ -24,21 +24,22 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.internal.packaging.JavaResourceProcessor.IArchiveBuilder;
+import com.android.builder.packaging.ApkBuilderFactory;
+import com.android.builder.packaging.ApkCreator;
 import com.android.builder.packaging.DuplicateFileException;
 import com.android.builder.packaging.PackagerException;
-import com.android.builder.packaging.SealedPackageException;
-import com.android.builder.signing.SignedJarBuilder;
-import com.android.builder.signing.SignedJarBuilder.IZipEntryFilter;
+import com.android.builder.packaging.ZipAbortException;
+import com.android.builder.packaging.ZipEntryFilter;
+import com.android.builder.signing.SignedJarBuilderFactory;
 import com.android.ide.common.signing.CertificateInfo;
 import com.android.utils.ILogger;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
-import com.google.common.io.Closeables;
+import com.google.common.io.Closer;
 
-import java.io.BufferedInputStream;
+import java.io.Closeable;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -61,13 +62,13 @@ import java.util.regex.Pattern;
  * - Native libraries from the project or its library.
  *
  */
-public final class Packager implements IArchiveBuilder {
+public final class Packager implements IArchiveBuilder, Closeable {
 
     /**
      * Filter to detect duplicate entries
      *
      */
-    private final class DuplicateZipFilter implements IZipEntryFilter {
+    private final class DuplicateZipFilter implements ZipEntryFilter {
         private File mInputFile;
 
         void reset(File inputFile) {
@@ -98,11 +99,11 @@ public final class Packager implements IArchiveBuilder {
     /**
      * A filter to filter out binary files like .class
      */
-    private static final class NoJavaClassZipFilter implements IZipEntryFilter {
+    private static final class NoJavaClassZipFilter implements ZipEntryFilter {
         @NonNull
-        private final IZipEntryFilter parentFilter;
+        private final ZipEntryFilter parentFilter;
 
-        private NoJavaClassZipFilter(@NonNull IZipEntryFilter parentFilter) {
+        private NoJavaClassZipFilter(@NonNull ZipEntryFilter parentFilter) {
             this.parentFilter = parentFilter;
         }
 
@@ -116,9 +117,9 @@ public final class Packager implements IArchiveBuilder {
     /**
      * A filter to filter out unwanted ABIs.
      */
-    private static final class NativeLibZipFilter implements IZipEntryFilter {
+    private static final class NativeLibZipFilter implements ZipEntryFilter {
         @NonNull
-        private final IZipEntryFilter parentFilter;
+        private final ZipEntryFilter parentFilter;
         @NonNull
         private final Set<String> acceptedAbis;
         private final boolean mJniDebugMode;
@@ -128,7 +129,7 @@ public final class Packager implements IArchiveBuilder {
 
         private NativeLibZipFilter(
                 @NonNull Set<String> acceptedAbis,
-                @NonNull IZipEntryFilter parentFilter,
+                @NonNull ZipEntryFilter parentFilter,
                 boolean jniDebugMode) {
             this.acceptedAbis = acceptedAbis;
             this.parentFilter = parentFilter;
@@ -158,13 +159,18 @@ public final class Packager implements IArchiveBuilder {
         }
     }
 
-    private SignedJarBuilder mBuilder = null;
+    /**
+     * APK creator. {@code null} if not open.
+     */
+    @Nullable
+    private ApkCreator mApkCreator;
+
     private final ILogger mLogger;
     private boolean mJniDebugMode = false;
-    private boolean mIsSealed = false;
 
     private final DuplicateZipFilter mNoDuplicateFilter = new DuplicateZipFilter();
-    private final NoJavaClassZipFilter mNoJavaClassZipFilter = new NoJavaClassZipFilter(mNoDuplicateFilter);
+    private final NoJavaClassZipFilter mNoJavaClassZipFilter = new NoJavaClassZipFilter(
+            mNoDuplicateFilter);
     private final HashMap<String, File> mAddedFiles = new HashMap<String, File>();
 
     /**
@@ -181,7 +187,8 @@ public final class Packager implements IArchiveBuilder {
      *
      * @param apkLocation the file to create
      * @param resLocation the file representing the packaged resource file.
-     * @param certificateInfo the signing information used to sign the package. Optional the OS path to the debug keystore, if needed or null.
+     * @param certificateInfo the signing information used to sign the package. Optional the OS
+     *                        path to the debug keystore, if needed or null.
      * @param logger the logger.
      * @param minSdkVersion minSdkVersion of the package.
      * @throws com.android.builder.packaging.PackagerException
@@ -192,8 +199,9 @@ public final class Packager implements IArchiveBuilder {
             @Nullable CertificateInfo certificateInfo,
             @Nullable String createdBy,
             @NonNull ILogger logger,
-            int minSdkVersion) throws PackagerException {
+            int minSdkVersion) throws PackagerException, IOException {
 
+        Closer closer = Closer.create();
         try {
             File apkFile = new File(apkLocation);
             checkOutputFile(apkFile);
@@ -206,8 +214,9 @@ public final class Packager implements IArchiveBuilder {
 
             mLogger = logger;
 
-            mBuilder = new SignedJarBuilder(
-                    new FileOutputStream(apkFile, false /* append */),
+            ApkBuilderFactory factory = new SignedJarBuilderFactory();
+
+            mApkCreator = factory.make(apkFile,
                     certificateInfo != null ? certificateInfo.getKey() : null,
                     certificateInfo != null ? certificateInfo.getCertificate() : null,
                     getLocalVersion(),
@@ -221,21 +230,18 @@ public final class Packager implements IArchiveBuilder {
                 addZipFile(resFile);
             }
 
-        } catch (PackagerException e) {
-            if (mBuilder != null) {
-                mBuilder.cleanUp();
-            }
-            throw e;
-        } catch (Exception e) {
-            if (mBuilder != null) {
-                mBuilder.cleanUp();
-            }
-            throw new PackagerException(e);
+        } catch (Throwable e) {
+            closer.register(mApkCreator);
+            mApkCreator = null;
+            throw closer.rethrow(e, PackagerException.class);
+        } finally {
+            closer.close();
         }
     }
 
-    public void addDexFiles(@NonNull Set<File> dexFolders)
-            throws DuplicateFileException, SealedPackageException, PackagerException {
+    public void addDexFiles(@NonNull Set<File> dexFolders) throws PackagerException, IOException {
+        Preconditions.checkNotNull(mApkCreator, "mApkCreator == null");
+
         // If there is a single folder that's either no multi-dex or pre-21 multidex (where
         // dx has merged them all into 2+ dex files).
         // IF there are 2+ folders then we are directly adding the pre-dexing output.
@@ -264,7 +270,7 @@ public final class Packager implements IArchiveBuilder {
     }
 
     private int addContentOfDexFolder(@NonNull File dexFolder, int dexIndex)
-            throws PackagerException, SealedPackageException, DuplicateFileException {
+            throws PackagerException, IOException {
         File[] dexFiles = dexFolder.listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File file, String name) {
@@ -290,129 +296,77 @@ public final class Packager implements IArchiveBuilder {
      * Sets the JNI debug mode. In debug mode, when native libraries are present, the packaging
      * will also include one or more copies of gdbserver in the final APK file.
      *
-     * These are used for debugging native code, to ensure that gdbserver is accessible to the
+     * <p>These are used for debugging native code, to ensure that gdbserver is accessible to the
      * application.
      *
-     * There will be one version of gdbserver for each ABI supported by the application.
+     * <p>There will be one version of gdbserver for each ABI supported by the application.
      *
-     * the gbdserver files are placed in the libs/abi/ folders automatically by the NDK.
+     * <p>The gbdserver files are placed in the libs/abi/ folders automatically by the NDK.
      *
-     * @param jniDebugMode the jni-debug mode flag.
+     * @param jniDebugMode the jni-debug mode flag
      */
     public void setJniDebugMode(boolean jniDebugMode) {
         mJniDebugMode = jniDebugMode;
     }
 
     /**
-     * Adds a file to the APK at a given path
+     * Adds a file to the APK at a given path.
+     *
      * @param file the file to add
      * @param archivePath the path of the file inside the APK archive.
      * @throws PackagerException if an error occurred
-     * @throws com.android.builder.packaging.SealedPackageException if the APK is already sealed.
-     * @throws DuplicateFileException if a file conflicts with another already added to the APK
-     *                                   at the same location inside the APK archive.
+     * @throws IOException if an error occurred
      */
     @Override
-    public void addFile(File file, String archivePath) throws PackagerException,
-            SealedPackageException, DuplicateFileException {
-        if (mIsSealed) {
-            throw new SealedPackageException("APK is already sealed");
-        }
+    public void addFile(File file, String archivePath) throws PackagerException, IOException {
+        Preconditions.checkState(mApkCreator != null, "mApkCreator == null");
 
-        try {
-            doAddFile(file, archivePath, null);
-        } catch (DuplicateFileException e) {
-            mBuilder.cleanUp();
-            throw e;
-        } catch (Exception e) {
-            mBuilder.cleanUp();
-            throw new PackagerException(e, "Failed to add %s", file);
-        }
+        doAddFile(file, archivePath, null);
     }
 
     /**
      * Adds the content from a zip file.
      * All file keep the same path inside the archive.
+     *
      * @param zipFile the zip File.
      * @throws PackagerException if an error occurred
-     * @throws SealedPackageException if the APK is already sealed.
-     * @throws DuplicateFileException if a file conflicts with another already added to the APK
-     *                                   at the same location inside the APK archive.
+     * @throws IOException if an error occurred
      */
-    void addZipFile(File zipFile) throws PackagerException, SealedPackageException,
-            DuplicateFileException {
-        if (mIsSealed) {
-            throw new SealedPackageException("APK is already sealed");
-        }
+    void addZipFile(File zipFile) throws PackagerException, IOException {
+        Preconditions.checkState(mApkCreator != null, "mApkCreator == null");
 
-        FileInputStream fis = null;
-        try {
-            mLogger.verbose("%s:", zipFile);
+        mLogger.verbose("%s:", zipFile);
 
-            // reset the filter with this input.
-            mNoDuplicateFilter.reset(zipFile);
+        // reset the filter with this input.
+        mNoDuplicateFilter.reset(zipFile);
 
-            // ask the builder to add the content of the file.
-            fis = new FileInputStream(zipFile);
-            mBuilder.writeZip(fis, mNoDuplicateFilter, null /* ZipEntryExtractor */);
-        } catch (DuplicateFileException e) {
-            mBuilder.cleanUp();
-            throw e;
-        } catch (Exception e) {
-            mBuilder.cleanUp();
-            throw new PackagerException(e, "Failed to add %s", zipFile);
-        } finally {
-            try {
-                Closeables.close(fis, true /* swallowIOException */);
-            } catch (IOException e) {
-                // ignore
-            }
-        }
+        // ask the builder to add the content of the file.
+        mApkCreator.writeZip(zipFile, mNoDuplicateFilter);
     }
 
     /**
      * Adds all resources from a merged folder or jar file. There cannot be any duplicates and all
      * files present must be added unless it is a "binary" file like a .class or .dex (jack
      * produces the classes.dex in the same location as the obfuscated resources).
+     *
      * @param jarFileOrDirectory a jar file or directory reference.
      * @throws PackagerException could not add an entry to the package.
-     * @throws DuplicateFileException if an entry with the same name was already present in the
-     * package being built while adding the jarFileOrDirectory content.
+     * @throws IOException failed to release resources
      */
     public void addResources(@NonNull File jarFileOrDirectory)
-            throws PackagerException, DuplicateFileException, SealedPackageException {
-        if (mIsSealed) {
-            throw new SealedPackageException("APK is already sealed");
-        }
+            throws PackagerException, IOException {
+        Preconditions.checkState(mApkCreator != null, "mApkCreator == null");
 
         mNoDuplicateFilter.reset(jarFileOrDirectory);
-        InputStream fis = null;
-        try {
-            if (jarFileOrDirectory.isDirectory()) {
-                addResourcesFromDirectory(jarFileOrDirectory, "");
-            } else {
-                fis = new BufferedInputStream(new FileInputStream(jarFileOrDirectory));
-                mBuilder.writeZip(fis, mNoJavaClassZipFilter, null /* ZipEntryExtractor */);
-            }
-        } catch (DuplicateFileException e) {
-            mBuilder.cleanUp();
-            throw e;
-        } catch (Exception e) {
-            mBuilder.cleanUp();
-            throw new PackagerException(e, "Failed to add %s", jarFileOrDirectory);
-        } finally {
-            try {
-                if (fis != null) {
-                    Closeables.close(fis, true /* swallowIOException */);
-                }
-            } catch (IOException e) {
-                // ignore.
-            }
+        if (jarFileOrDirectory.isDirectory()) {
+            addResourcesFromDirectory(jarFileOrDirectory, "");
+        } else {
+            mApkCreator.writeZip(jarFileOrDirectory, mNoJavaClassZipFilter);
         }
     }
 
     private void addResourcesFromDirectory(@NonNull File directory, String path)
-            throws IOException, IZipEntryFilter.ZipAbortException {
+            throws IOException, ZipAbortException {
         File[] directoryFiles = directory.listFiles();
         if (directoryFiles == null) {
             return;
@@ -430,27 +384,21 @@ public final class Packager implements IArchiveBuilder {
     /**
      * Adds the native libraries from a directory or jar file.
      *
-     * The content must be the various ABI folders.
+     * <p>The content must be the various ABI folders.
      *
-     * This may or may not copy gdbserver into the apk based on whether the debug mode is set.
+     * <p>This may or may not copy gdbserver into the apk based on whether the debug mode is set.
      *
-     * @param jarFileOrDirectory a jar file or directory reference.
-     * @param abiFilters a list of abi filters to include. If empty, all abis are included.
-     *
+     * @param jarFileOrDirectory a jar file or directory reference
+     * @param abiFilters a list of abi filters to include. If empty, all abis are included
      * @throws PackagerException if an error occurred
-     * @throws SealedPackageException if the APK is already sealed.
-     * @throws DuplicateFileException if a file conflicts with another already added to the APK
-     *                                   at the same location inside the APK archive.
-     *
+     * @throws IOException failed to release resources
      * @see #setJniDebugMode(boolean)
      */
     public void addNativeLibraries(
             @NonNull File jarFileOrDirectory,
             @NonNull Set<String> abiFilters)
-            throws PackagerException, SealedPackageException, DuplicateFileException {
-        if (mIsSealed) {
-            throw new SealedPackageException("APK is already sealed");
-        }
+            throws PackagerException, IOException {
+        Preconditions.checkState(mApkCreator != null, "mApkCreator == null");
 
         mLogger.verbose("Native Libraries input: %s", jarFileOrDirectory);
 
@@ -458,28 +406,10 @@ public final class Packager implements IArchiveBuilder {
                 abiFilters, mNoDuplicateFilter, mJniDebugMode);
         mNoDuplicateFilter.reset(jarFileOrDirectory);
 
-        InputStream fis = null;
-        try {
-            if (jarFileOrDirectory.isDirectory()) {
-                addNativeLibrariesFromDirectory(jarFileOrDirectory, "", filter);
-            } else {
-                fis = new BufferedInputStream(new FileInputStream(jarFileOrDirectory));
-                mBuilder.writeZip(fis, filter, null /* ZipEntryExtractor */);
-            }
-        } catch (DuplicateFileException e) {
-            mBuilder.cleanUp();
-            throw e;
-        } catch (Exception e) {
-            mBuilder.cleanUp();
-            throw new PackagerException(e, "Failed to add %s", jarFileOrDirectory);
-        } finally {
-            try {
-                if (fis != null) {
-                    Closeables.close(fis, true /* swallowIOException */);
-                }
-            } catch (IOException e) {
-                // ignore.
-            }
+        if (jarFileOrDirectory.isDirectory()) {
+            addNativeLibrariesFromDirectory(jarFileOrDirectory, "", filter);
+        } else {
+            mApkCreator.writeZip(jarFileOrDirectory, filter);
         }
     }
 
@@ -487,7 +417,7 @@ public final class Packager implements IArchiveBuilder {
             @NonNull File directory,
             @NonNull String path,
             @NonNull NativeLibZipFilter zipFilter)
-            throws IOException, IZipEntryFilter.ZipAbortException {
+            throws IOException, ZipAbortException {
         File[] directoryFiles = directory.listFiles();
         if (directoryFiles == null) {
             return;
@@ -502,33 +432,10 @@ public final class Packager implements IArchiveBuilder {
         }
     }
 
-    /**
-     * Seals the APK, and signs it if necessary.
-     *
-     * @throws PackagerException if an error occurred
-     * @throws SealedPackageException if the APK is already sealed.
-     */
-    public void sealApk() throws PackagerException, SealedPackageException {
-        if (mIsSealed) {
-            throw new SealedPackageException("APK is already sealed");
-        }
-
-        // close and sign the application package.
-        try {
-            mBuilder.close();
-            mIsSealed = true;
-        } catch (Exception e) {
-            throw new PackagerException(e, "Failed to seal APK");
-        } finally {
-            mBuilder.cleanUp();
-            mAddedFiles.clear();
-        }
-    }
-
     private void doAddFile(
             @NonNull File file,
             @NonNull String archivePath,
-            @Nullable IZipEntryFilter filter) throws IZipEntryFilter.ZipAbortException,
+            @Nullable ZipEntryFilter filter) throws ZipAbortException,
             IOException {
         if (filter == null) {
             filter = mNoJavaClassZipFilter;
@@ -539,7 +446,7 @@ public final class Packager implements IArchiveBuilder {
         }
 
         mAddedFiles.put(archivePath, file);
-        mBuilder.writeFile(file, archivePath);
+        mApkCreator.writeFile(file, archivePath);
     }
 
     /**
@@ -575,6 +482,15 @@ public final class Packager implements IArchiveBuilder {
             try {
                 if (!file.createNewFile()) {
                     throw new PackagerException("Failed to create %s", file);
+                }
+
+                /*
+                 * We succeeded at creating the file. Now, delete it because a zero-byte file is
+                 * not a valid APK and some ApkCreator implementations (e.g., the ZFile one)
+                 * complain if open on top of an invalid zip file.
+                 */
+                if (!file.delete()) {
+                    throw new PackagerException("Failed to delete newly created %s", file);
                 }
             } catch (IOException e) {
                 throw new PackagerException(
@@ -632,4 +548,14 @@ public final class Packager implements IArchiveBuilder {
         return null;
     }
 
+    @Override
+    public void close() throws IOException {
+        if (mApkCreator == null) {
+            return;
+        }
+
+        ApkCreator builder = mApkCreator;
+        mApkCreator = null;
+        builder.close();
+    }
 }

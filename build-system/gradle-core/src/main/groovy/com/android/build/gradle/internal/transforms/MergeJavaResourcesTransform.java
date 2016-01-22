@@ -23,8 +23,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.api.transform.SecondaryInput;
-import com.android.build.api.transform.Context;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
 import com.android.build.api.transform.JarInput;
@@ -39,7 +37,8 @@ import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.builder.packaging.DuplicateFileException;
-import com.android.builder.signing.SignedJarBuilder;
+import com.android.builder.packaging.ZipEntryFilter;
+import com.android.builder.packaging.ZipAbortException;
 import com.android.ide.common.packaging.PackagingUtils;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
@@ -54,7 +53,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
@@ -433,7 +431,7 @@ public class MergeJavaResourcesTransform extends Transform {
         return new File(rootFolder, path);
     }
 
-    private static class JarFilter implements SignedJarBuilder.IZipEntryFilter {
+    private static class JarFilter implements ZipEntryFilter {
         private final Set<String> allowedPath = Sets.newHashSet();
 
         void resetList(@NonNull List<String> paths) {

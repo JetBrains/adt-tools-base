@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,20 +17,17 @@
 package com.android.builder.packaging;
 
 /**
- * An exception thrown when trying to add files to a sealed APK.
+ * Classes which implement this interface provides a method to check whether a file should
+ * be added to a Jar file.
  */
-public final class SealedPackageException extends PackagerException {
-    private static final long serialVersionUID = 1L;
+public interface ZipEntryFilter {
 
-    public SealedPackageException(String format, Object... args) {
-        super(format, args);
-    }
 
-    public SealedPackageException(Throwable cause, String format, Object... args) {
-        super(cause, format, args);
-    }
-
-    public SealedPackageException(Throwable cause) {
-        super(cause);
-    }
+    /**
+     * Checks a file for inclusion in a Jar archive.
+     * @param archivePath the archive file path of the entry
+     * @return should the file be included?
+     * @throws ZipAbortException if writing the file should be aborted.
+     */
+    boolean checkEntry(String archivePath) throws ZipAbortException;
 }
