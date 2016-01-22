@@ -239,11 +239,11 @@ public class ResourceUsageModel {
         }
     }
 
-    private static final int RESOURCE_DECLARED = 1;
-    private static final int RESOURCE_PUBLIC = 2;
-    private static final int RESOURCE_KEEP = 4;
-    private static final int RESOURCE_DISCARD = 8;
-    private static final int RESOURCE_REACHABLE = 16;
+    private static final int RESOURCE_DECLARED =    1 << 1;
+    private static final int RESOURCE_PUBLIC =      1 << 2;
+    private static final int RESOURCE_KEEP =        1 << 3;
+    private static final int RESOURCE_DISCARD =     1 << 4;
+    private static final int RESOURCE_REACHABLE =   1 << 5;
 
     public static class Resource implements Comparable<Resource> {
         private int mFlags;
