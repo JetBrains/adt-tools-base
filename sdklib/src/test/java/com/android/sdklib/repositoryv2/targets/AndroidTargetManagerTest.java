@@ -67,31 +67,6 @@ public class AndroidTargetManagerTest extends TestCase {
         verifyAddon23(addon23, platform23);
     }
 
-    public void testMissing() throws Exception {
-        MockFileOp fop = new MockFileOp();
-        recordPlatform23(fop);
-        recordGoogleTvAddon13(fop);
-        recordBuildTool23(fop);
-        recordSysImg13(fop);
-        recordGoogleApisSysImg23(fop);
-
-        AndroidSdkHandler handler = new AndroidSdkHandler(new File("/sdk"), fop);
-        FakeProgressIndicator progress = new FakeProgressIndicator();
-
-        AndroidTargetManager mgr = handler.getAndroidTargetManager(progress);
-        Collection<IAndroidTarget> targets = mgr.getTargets(true, progress);
-        progress.assertNoErrorsOrWarnings();
-        // Now we get missing targets from all target-creating packages that don't have the
-        // necessary dependencies to actually create a target.
-        assertEquals(4, targets.size());
-
-        Iterator<IAndroidTarget> iter = targets.iterator();
-        verifyPlatform23(iter.next());
-        verifyMissing13(iter.next());
-        verifyMissingAddon13(iter.next());
-        verifyMissingAddon23(iter.next());
-    }
-
     public void testLegacyAddon() throws Exception {
         MockFileOp fop = new MockFileOp();
         recordPlatform23(fop);

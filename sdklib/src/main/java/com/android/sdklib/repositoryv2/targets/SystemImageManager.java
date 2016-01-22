@@ -12,9 +12,12 @@ import com.android.sdklib.repository.local.PackageParserUtils;
 import com.android.sdklib.repositoryv2.IdDisplay;
 import com.android.sdklib.repositoryv2.meta.DetailsTypes;
 import com.android.sdklib.repositoryv2.meta.SysImgFactory;
+import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.HashBiMap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
@@ -49,7 +52,7 @@ public class SystemImageManager {
     /**
      * The known system images and their associated packages.
      */
-    private Map<SystemImage, LocalPackage> mImageToPackage;
+    private BiMap<SystemImage, LocalPackage> mImageToPackage;
 
     /**
      * Map of tag, version, and vendor to set of system image, for convenient lookup.
@@ -81,7 +84,7 @@ public class SystemImageManager {
     /**
      * Gets a map from all our {@link SystemImage}s to their containing {@link LocalPackage}s.
      */
-    public Map<SystemImage, LocalPackage> getImageMap() {
+    public BiMap<SystemImage, LocalPackage> getImageMap() {
         if (mImageToPackage == null) {
             init();
         }
@@ -102,7 +105,7 @@ public class SystemImageManager {
     }
 
     private void init() {
-        Map<SystemImage, LocalPackage> images = buildImageMap();
+        BiMap<SystemImage, LocalPackage> images = buildImageMap();
         Table<IdDisplay, AndroidVersion, Multimap<IdDisplay, SystemImage>> valuesToImage =
                 HashBasedTable.create();
         for (SystemImage img : images.keySet()) {
@@ -121,8 +124,8 @@ public class SystemImageManager {
     }
 
     @NonNull
-    private Map<SystemImage, LocalPackage> buildImageMap() {
-        Map<SystemImage, LocalPackage> result = Maps.newHashMap();
+    private BiMap<SystemImage, LocalPackage> buildImageMap() {
+        BiMap<SystemImage, LocalPackage> result = HashBiMap.create();
         Map<AndroidVersion, File> platformSkins = Maps.newHashMap();
         Collection<? extends LocalPackage> packages =
                 mRepoManager.getPackages().getLocalPackages().values();
