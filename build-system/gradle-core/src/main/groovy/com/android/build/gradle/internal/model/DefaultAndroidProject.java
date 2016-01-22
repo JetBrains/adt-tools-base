@@ -62,12 +62,17 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
     private final Collection<String> unresolvedDependencies;
     @NonNull
     private final Collection<SyncIssue> syncIssues;
+
+    private final int generation;
+
     @NonNull
     private final JavaCompileOptions javaCompileOptions;
     @NonNull
     private final LintOptions lintOptions;
     @NonNull
     private final File buildFolder;
+    @NonNull
+    private final String buildToolsVersion;
     @Nullable
     private final String resourcePrefix;
     @NonNull
@@ -101,8 +106,10 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
             @NonNull File buildFolder,
             @Nullable String resourcePrefix,
             @NonNull Collection<NativeToolchain> nativeToolchains,
+            @NonNull String buildToolsVersion,
             boolean isLibrary,
-            int apiVersion) {
+            int apiVersion,
+            int generation) {
         this.modelVersion = modelVersion;
         this.name = name;
         this.flavorDimensions = flavorDimensions;
@@ -120,7 +127,9 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
         this.resourcePrefix = resourcePrefix;
         this.isLibrary = isLibrary;
         this.apiVersion = apiVersion;
+        this.generation = generation;
         this.nativeToolchains = nativeToolchains;
+        this.buildToolsVersion = buildToolsVersion;
     }
 
     @NonNull
@@ -276,5 +285,16 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
     @Override
     public Collection<NativeToolchain> getNativeToolchains() {
         return nativeToolchains;
+    }
+
+    @NonNull
+    @Override
+    public String getBuildToolsVersion() {
+        return buildToolsVersion;
+    }
+
+    @Override
+    public int getPluginGeneration() {
+        return generation;
     }
 }
