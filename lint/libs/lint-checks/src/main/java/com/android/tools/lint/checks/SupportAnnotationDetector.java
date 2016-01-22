@@ -1389,7 +1389,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 }
                 int modifiers = field.getModifiers();
                 // If it's a constant (static/final) check that it's one of the allowed ones
-                if ((modifiers & Modifier.FINAL|Modifier.STATIC)
+                if ((modifiers & (Modifier.FINAL|Modifier.STATIC))
                         == (Modifier.FINAL|Modifier.STATIC)) {
                     checkTypeDefConstant(context, annotation, argument, errorNode, flag, resolved,
                             allAnnotations);

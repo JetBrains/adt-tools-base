@@ -1673,6 +1673,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                                 + "    public static class Builder {\n"
                                 + "        @Status\n"
                                 + "        private int mStatus;\n"
+                                + "        private final int mStatus2 = STATUS_AVAILABLE;\n"
                                 + "        private String mName;\n"
                                 + "\n"
                                 + "        public Builder(String name, @Status int status) {\n"
@@ -1687,6 +1688,10 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                                 + "\n"
                                 + "        public Product build() {\n"
                                 + "            return new Product(mName, mStatus);\n"
+                                + "        }\n"
+                                + "\n"
+                                + "        public Product build2() {\n"
+                                + "            return new Product(mName, mStatus2);\n"
                                 + "        }\n"
                                 + "    }\n"
                                 + "}\n"),
