@@ -21,12 +21,13 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.prefs.AndroidLocation.AndroidLocationException;
 import com.android.repository.io.FileOp;
-import com.android.sdklib.IAndroidTarget;
+import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.ISystemImage;
 import com.android.sdklib.devices.Abi;
 import com.android.sdklib.devices.Device;
 import com.android.sdklib.repositoryv2.IdDisplay;
 import com.android.sdklib.repositoryv2.targets.SystemImage;
+import com.google.common.base.Strings;
 
 import java.io.File;
 import java.util.Collections;
@@ -47,10 +48,6 @@ public final class AvdInfo implements Comparable<AvdInfo> {
         ERROR_PATH,
         /** Missing config.ini file in the AVD data folder */
         ERROR_CONFIG,
-        /** Missing 'target' property in the ini file */
-        ERROR_TARGET_HASH,
-        /** Target was not resolved from its hash */
-        ERROR_TARGET,
         /** Unable to parse config.ini */
         ERROR_PROPERTIES,
         /** System Image folder in config.ini doesn't exist */
@@ -66,13 +63,11 @@ public final class AvdInfo implements Comparable<AvdInfo> {
     private final String mName;
     private final File mIniFile;
     private final String mFolderPath;
-    private final String mTargetHash;
-    private final IAndroidTarget mTarget;
-    private final String mAbiType;
     /** An immutable map of properties. This must not be modified. Map can be empty. Never null. */
     private final Map<String, String> mProperties;
     private final AvdStatus mStatus;
-    private final IdDisplay mTag;
+    private final ISystemImage mSystemImage;
+
 
     /**
      * Creates a new valid AVD info. Values are immutable.
@@ -83,23 +78,16 @@ public final class AvdInfo implements Comparable<AvdInfo> {
      * @param name The name of the AVD (for display or reference)
      * @param iniFile The path to the config.ini file
      * @param folderPath The path to the data directory
-     * @param targetHash the target hash
-     * @param target The target. Can be null, if the target was not resolved.
-     * @param tag The tag id/display.
-     * @param abiType Name of the abi.
+     * @param systemImage The system image.
      * @param properties The property map. If null, an empty map will be created.
      */
     public AvdInfo(@NonNull  String name,
                    @NonNull  File iniFile,
                    @NonNull  String folderPath,
-                   @NonNull  String targetHash,
-                   @Nullable IAndroidTarget target,
-                   @NonNull  IdDisplay tag,
-                   @NonNull  String abiType,
+                   @NonNull  ISystemImage systemImage,
                    @Nullable Map<String, String> properties) {
          this(name, iniFile, folderPath,
-              targetHash, target, tag, abiType,
-              properties, AvdStatus.OK);
+              systemImage, properties, AvdStatus.OK);
     }
 
     /**
@@ -111,32 +99,23 @@ public final class AvdInfo implements Comparable<AvdInfo> {
      * @param name The name of the AVD (for display or reference)
      * @param iniFile The path to the config.ini file
      * @param folderPath The path to the data directory
-     * @param targetHash the target hash
-     * @param target The target. Can be null, if the target was not resolved.
-     * @param tag The tag id/display.
-     * @param abiType Name of the abi.
+     * @param systemImage The system image. Can be null if the image wasn't found.
      * @param properties The property map. If null, an empty map will be created.
      * @param status The {@link AvdStatus} of this AVD. Cannot be null.
      */
     public AvdInfo(@NonNull  String name,
                    @NonNull  File iniFile,
                    @NonNull  String folderPath,
-                   @NonNull  String targetHash,
-                   @Nullable IAndroidTarget target,
-                   @NonNull  IdDisplay tag,
-                   @NonNull  String abiType,
+                   @Nullable  ISystemImage systemImage,
                    @Nullable Map<String, String> properties,
                    @NonNull AvdStatus status) {
-        mName       = name;
-        mIniFile    = iniFile;
+        mName = name;
+        mIniFile = iniFile;
         mFolderPath = folderPath;
-        mTargetHash = targetHash;
-        mTarget     = target;
-        mTag        = tag;
-        mAbiType    = abiType;
+        mSystemImage = systemImage;
         mProperties = properties == null ? Collections.<String, String>emptyMap()
-                                         : Collections.unmodifiableMap(properties);
-        mStatus     = status;
+                : Collections.unmodifiableMap(properties);
+        mStatus = status;
     }
 
     /** Returns the name of the AVD. */
@@ -154,13 +133,30 @@ public final class AvdInfo implements Comparable<AvdInfo> {
     /** Returns the tag id/display of the AVD. */
     @NonNull
     public IdDisplay getTag() {
-        return mTag;
+        return IdDisplay.create(getProperties().get(AvdManager.AVD_INI_TAG_ID),
+                                getProperties().get(AvdManager.AVD_INI_TAG_DISPLAY));
     }
 
     /** Returns the processor type of the AVD. */
     @NonNull
     public String getAbiType() {
-        return mAbiType;
+        return getProperties().get(AvdManager.AVD_INI_ABI_TYPE);
+    }
+
+    @NonNull
+    public AndroidVersion getAndroidVersion() {
+        String apiStr = getProperties().get(AvdManager.AVD_INI_ANDROID_API);
+        String codename = getProperties().get(AvdManager.AVD_INI_ANDROID_CODENAME);
+        int api = 1;
+        if (!Strings.isNullOrEmpty(apiStr)) {
+            try {
+                api = Integer.parseInt(apiStr);
+            }
+            catch (NumberFormatException e) {
+                // continue with the default
+            }
+        }
+        return new AndroidVersion(api, codename);
     }
 
     @NonNull
@@ -222,17 +218,11 @@ public final class AvdInfo implements Comparable<AvdInfo> {
     }
 
     /**
-     * Returns the target hash string.
+     * Gets the system image for this AVD. Can be null if the system image is not found.
      */
-    @NonNull
-    public String getTargetHash() {
-        return mTargetHash;
-    }
-
-    /** Returns the target of the AVD, or <code>null</code> if it has not been resolved. */
     @Nullable
-    public IAndroidTarget getTarget() {
-        return mTarget;
+    public ISystemImage getSystemImage() {
+        return mSystemImage;
     }
 
     /** Returns the {@link AvdStatus} of the receiver. */
@@ -345,20 +335,15 @@ public final class AvdInfo implements Comparable<AvdInfo> {
                 return String.format("Missing AVD 'path' property in %1$s", getIniFile());
             case ERROR_CONFIG:
                 return String.format("Missing config.ini file in %1$s", mFolderPath);
-            case ERROR_TARGET_HASH:
-                return String.format("Missing 'target' property in %1$s", getIniFile());
-            case ERROR_TARGET:
-                return String.format("Unknown target '%1$s' in %2$s",
-                        mTargetHash, getIniFile());
             case ERROR_PROPERTIES:
                 return String.format("Failed to parse properties from %1$s",
                         getConfigFile());
             case ERROR_IMAGE_DIR:
+            case ERROR_IMAGE_MISSING:
                 return String.format(
-                        "Missing system image for %1$s%2$s %3$s. Run 'android update avd -n %4$s'",
-                        SystemImage.DEFAULT_TAG.equals(mTag) ? "" : (mTag.getDisplay() + " "),
-                        mAbiType,
-                        mTarget.getFullName(),
+                        "Missing system image for %1$s%2$s %3$s.'",
+                        SystemImage.DEFAULT_TAG.equals(getTag()) ? "" : (getTag().getDisplay() + " "),
+                        getAbiType(),
                         mName);
             case ERROR_DEVICE_CHANGED:
                 return String.format("%1$s %2$s configuration has changed since AVD creation",
@@ -387,23 +372,29 @@ public final class AvdInfo implements Comparable<AvdInfo> {
      */
     @Override
     public int compareTo(AvdInfo o) {
-        // first handle possible missing targets (if the AVD failed to load for unresolved targets)
-        if (mTarget == null && o != null && o.mTarget == null) {
-            return 0;
-        } if (mTarget == null) {
-            return +1;
-        } else if (o == null || o.mTarget == null) {
-            return -1;
+        int imageDiff = 0;
+        if (mSystemImage == null) {
+            if (o.mSystemImage == null) {
+                imageDiff = 0;
+            }
+            else {
+                imageDiff = -1;
+            }
+        }
+        else {
+            if (o.mSystemImage == null) {
+                imageDiff = 1;
+            }
+            else {
+                imageDiff = mSystemImage.compareTo(o.mSystemImage);
+            }
         }
 
-        // then compare the targets
-        int targetDiff = mTarget.compareTo(o.mTarget);
-
-        if (targetDiff == 0) {
-            // same target? compare on the avd name
+        if (imageDiff == 0) {
+            // same image? compare on the avd name
             return mName.compareTo(o.mName);
         }
 
-        return targetDiff;
+        return imageDiff;
     }
 }
