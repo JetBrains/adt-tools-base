@@ -140,20 +140,29 @@ public class RemoteRepoLoader {
                     }
 
                     Collection<? extends RemotePackage> parsedPackages = null;
+                    boolean legacy = false;
                     if (repo != null) {
                         parsedPackages = repo.getRemotePackage();
                     } else if (mFallback != null) {
                         // TODO: don't require downloading again
                         parsedPackages = mFallback.parseLegacyXml(source, progress);
+                        legacy = true;
                     }
                     if (parsedPackages != null && !parsedPackages.isEmpty()) {
                         for (RemotePackage pkg : parsedPackages) {
                             RemotePackage existing = result.get(pkg.getPath());
-                            if (existing != null
-                              && existing.getVersion().compareTo(pkg.getVersion()) > 0) {
-                                // If there are multiple versions of the same package available,
-                                // pick the latest.
-                                continue;
+                            if (existing != null) {
+                                int compare = existing.getVersion().compareTo(pkg.getVersion());
+                                if (compare > 0) {
+                                    // If there are multiple versions of the same package available,
+                                    // pick the latest.
+                                    continue;
+                                }
+                                if (compare == 0 && legacy) {
+                                    // If legacy and non-legacy packages are available with the same
+                                    // version, pick the non-legacy one.
+                                    continue;
+                                }
                             }
                             Channel settingsChannel =
                                     settings == null || settings.getChannel() == null
