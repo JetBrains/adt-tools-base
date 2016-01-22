@@ -83,9 +83,6 @@ import lombok.ast.CompilationUnit;
 import lombok.ast.ForwardingAstVisitor;
 import lombok.ast.Identifier;
 import lombok.ast.ImportDeclaration;
-import lombok.ast.NormalTypeBody;
-import lombok.ast.VariableDeclaration;
-import lombok.ast.VariableDefinition;
 import lombok.ast.VariableReference;
 
 /**
@@ -489,19 +486,24 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements JavaS
 
     @Override
     public void checkBinaryResource(@NonNull ResourceContext context) {
-        mModel.visitBinaryResource(context.getResourceFolderType(), context.file);
+        mModel.context = context;
+        try {
+            mModel.visitBinaryResource(context.getResourceFolderType(), context.file);
+        } finally {
+            mModel.context = null;
+        }
     }
 
     // ---- Implements XmlScanner ----
 
     @Override
     public void visitDocument(@NonNull XmlContext context, @NonNull Document document) {
-        mModel.context = context;
+        mModel.context = mModel.xmlContext = context;
         try {
             mModel.visitXmlDocument(context.file, context.getResourceFolderType(),
                     document);
         } finally {
-            mModel.context = null;
+            mModel.context = mModel.xmlContext = null;
         }
     }
 
@@ -554,48 +556,9 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements JavaS
             // Look for declarations of R class fields and record them as declarations
             String description = node.astName().astValue();
             if (description.equals(R_CLASS)) {
-                // This is an R class. We can process this class very deliberately.
-                // The R class has a very specific AST format:
-                // ClassDeclaration ("R")
-                //    NormalTypeBody
-                //        ClassDeclaration (e.g. "drawable")
-                //             NormalTypeBody
-                //                 VariableDeclaration
-                //                     VariableDefinition (e.g. "ic_launcher")
-                for (lombok.ast.Node body : node.getChildren()) {
-                    if (body instanceof NormalTypeBody) {
-                        for (lombok.ast.Node subclass : body.getChildren()) {
-                            if (subclass instanceof ClassDeclaration) {
-                                String className = ((ClassDeclaration) subclass).astName().astValue();
-                                ResourceType type = ResourceType.getEnum(className);
-                                if (type == null) {
-                                    continue;
-                                }
-                                for (lombok.ast.Node innerBody : subclass.getChildren()) {
-                                    if (innerBody instanceof NormalTypeBody) {
-                                        for (lombok.ast.Node field : innerBody.getChildren()) {
-                                            if (field instanceof VariableDeclaration) {
-                                                for (lombok.ast.Node child : field.getChildren()) {
-                                                    if (child instanceof VariableDefinition) {
-                                                        VariableDefinition def =
-                                                                (VariableDefinition) child;
-                                                        String name = def.astVariables().first()
-                                                                .astName().astValue();
-                                                        mModel.addDeclaredResource(
-                                                                type, name, null,
-                                                                mContext.getProject()
-                                                                        .getReportIssues());
-                                                    } // Else: It could be a comment node
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
+                // Don't visit R class declarations; we don't need to look at R declarations
+                // since we now look for all the same resource declarations that the R
+                // class itself was derived from.
                 return true;
             }
 
@@ -698,7 +661,8 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements JavaS
     }
 
     private static class UnusedResourceDetectorUsageModel extends ResourceUsageModel {
-        public XmlContext context;
+        public XmlContext xmlContext;
+        public Context context;
         public Set<Resource> unused = Sets.newHashSet();
 
         @NonNull
@@ -720,13 +684,13 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements JavaS
             if (context != null) {
                 resource.setDeclared(context.getProject().getReportIssues());
                 if (context.getPhase() == 2 && unused.contains(resource)) {
-                    if (context.getDriver().isSuppressed(context, getIssue(resource),
-                            node)) {
+                    if (xmlContext != null && xmlContext.getDriver().isSuppressed(xmlContext,
+                            getIssue(resource), node)) {
                         resource.setKeep(true);
                     } else {
                         // For positions we try to use the name node rather than the
                         // whole declaration element
-                        if (node == null) {
+                        if (node == null || xmlContext == null) {
                             resource.recordLocation(Location.create(context.file));
                         } else {
                             if (node instanceof Element) {
@@ -735,7 +699,7 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements JavaS
                                     node = attribute;
                                 }
                             }
-                            resource.recordLocation(context.getLocation(node));
+                            resource.recordLocation(xmlContext.getLocation(node));
                         }
                     }
                 }
