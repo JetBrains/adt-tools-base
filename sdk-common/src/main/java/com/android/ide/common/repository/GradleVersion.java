@@ -34,19 +34,25 @@ public class GradleVersion implements Comparable<GradleVersion> {
 
     private static final Pattern PREVIEW_PATTERN = Pattern.compile("([a-zA-z]+)([\\d]+)?");
 
-    private String mRawValue;
+    private final String mRawValue;
 
     private final int mMajor;
 
+    private final String mMajorSegment;
+
     private final int mMinor;
 
+    private final String mMinorSegment;
+
     private final int mMicro;
+
+    private final String mMicroSegment;
 
     private final int mPreview;
 
     private final String mPreviewType;
 
-    private boolean mSnapshot;
+    private final boolean mSnapshot;
 
     /**
      * Parses the given version. This method does the same as {@link #parse(String)}, but it does
@@ -88,18 +94,25 @@ public class GradleVersion implements Comparable<GradleVersion> {
         }
         List<String> versionSegments = Splitter.on('.').splitToList(version);
         int major;
+        String majorSegment;
         int minor = 0;
+        String minorSegment = null;
         int micro = 0;
+        String microSegment = null;
+
         int segmentCount = versionSegments.size();
 
         try {
             if (segmentCount > 0 && segmentCount <= 3) {
-                major = Integer.parseInt(versionSegments.get(0));
+                majorSegment = versionSegments.get(0);
+                major = parseSegment(majorSegment);
                 if (segmentCount > 1) {
-                    minor = Integer.parseInt(versionSegments.get(1));
+                    minorSegment = versionSegments.get(1);
+                    minor = parseSegment(minorSegment);
                 }
                 if (segmentCount == 3) {
-                    micro = Integer.parseInt(versionSegments.get(2));
+                    microSegment = versionSegments.get(2);
+                    micro = parseSegment(microSegment);
                 }
 
                 int preview = 0;
@@ -129,13 +142,20 @@ public class GradleVersion implements Comparable<GradleVersion> {
                         }
                     }
                 }
-                return new GradleVersion(value, major, minor, micro, preview, previewType,
-                        snapshot);
+                return new GradleVersion(value, major, majorSegment, minor, minorSegment, micro,
+                        microSegment, preview, previewType, snapshot);
             }
         } catch (NumberFormatException e) {
             throw parsingFailure(value, e);
         }
         throw parsingFailure(value);
+    }
+
+    private static int parseSegment(@NonNull String segment) {
+        if ("+".equals(segment)) {
+            return Integer.MAX_VALUE;
+        }
+        return Integer.parseInt(segment);
     }
 
     @NonNull
@@ -151,20 +171,27 @@ public class GradleVersion implements Comparable<GradleVersion> {
     }
 
     public GradleVersion(int major, int minor, int micro) {
-        this((major + "." + minor + "." + micro), major, minor, micro, 0, null, false);
+        this((major + "." + minor + "." + micro), major, String.valueOf(major), minor,
+                String.valueOf(minor), micro, String.valueOf(micro), 0, null, false);
     }
 
     private GradleVersion(@NonNull String rawValue,
             int major,
+            @Nullable String majorSegment,
             int minor,
+            @Nullable String minorSegment,
             int micro,
+            @Nullable String microSegment,
             int preview,
             @Nullable String previewType,
             boolean snapshot) {
         mRawValue = rawValue;
         mMajor = major;
+        mMajorSegment = majorSegment;
         mMinor = minor;
+        mMinorSegment = minorSegment;
         mMicro = micro;
+        mMicroSegment = microSegment;
         mPreview = preview;
         mPreviewType = previewType;
         mSnapshot = snapshot;
@@ -174,12 +201,27 @@ public class GradleVersion implements Comparable<GradleVersion> {
         return mMajor;
     }
 
+    @Nullable
+    public String getMajorSegment() {
+        return mMajorSegment;
+    }
+
     public int getMinor() {
         return mMinor;
     }
 
+    @Nullable
+    public String getMinorSegment() {
+        return mMinorSegment;
+    }
+
     public int getMicro() {
         return mMicro;
+    }
+
+    @Nullable
+    public String getMicroSegment() {
+        return mMicroSegment;
     }
 
     public int getPreview() {
