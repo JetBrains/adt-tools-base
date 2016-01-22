@@ -81,7 +81,6 @@ public class SdkHelper {
         FakeProgressIndicator progress = new FakeProgressIndicator();
         BuildToolInfo buildToolInfo = AndroidSdkHandler.getInstance(findSdkDir())
                 .getBuildToolInfo(revision, progress);
-        progress.assertNoErrorsOrWarnings();
         if (buildToolInfo == null) {
             throw new RuntimeException("Test requires build-tools " + revision.toString());
         }
