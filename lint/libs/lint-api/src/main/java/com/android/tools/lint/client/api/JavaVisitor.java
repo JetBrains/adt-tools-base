@@ -441,6 +441,7 @@ public class JavaVisitor {
 
             ResolvedClass resolvedClass = (ResolvedClass) resolved;
             ResolvedClass cls = resolvedClass;
+            int depth = 0;
             while (cls != null) {
                 List<VisitingDetector> list = mSuperClassDetectors.get(cls.getName());
                 if (list != null) {
@@ -464,6 +465,13 @@ public class JavaVisitor {
                 }
 
                 cls = cls.getSuperClass();
+                depth++;
+                if (depth == 500) {
+                    // Shouldn't happen in practice; this prevents the IDE from
+                    // hanging if the user has accidentally typed in an incorrect
+                    // super class which creates a cycle.
+                    break;
+                }
             }
 
             return false;
