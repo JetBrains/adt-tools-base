@@ -46,7 +46,14 @@ public class BuildInfoLoaderTask extends BaseTask {
 
     @InputFile
     @Optional
+    @NonNull
     File buildInfoFile;
+
+
+    @InputFile
+    @Optional
+    @NonNull
+    File tmpBuildInfoFile;
 
     Logger logger;
     InstantRunBuildContext instantRunBuildContext;
@@ -58,6 +65,11 @@ public class BuildInfoLoaderTask extends BaseTask {
             // load the persisted state, this will give us previous build-ids in case we need them.
             if (buildInfoFile.exists()) {
                 instantRunBuildContext.loadFromXmlFile(buildInfoFile);
+            }
+            // check for the presence of a temporary buildInfoFile and if it exists, merge its
+            // artifacts into the current build.
+            if (tmpBuildInfoFile.exists()) {
+                instantRunBuildContext.mergeFromFile(tmpBuildInfoFile);
             }
         } catch (Exception e) {
             throw new RuntimeException(
@@ -127,7 +139,11 @@ public class BuildInfoLoaderTask extends BaseTask {
         public void execute(@NonNull BuildInfoLoaderTask task) {
             task.setDescription("InstantRun task to load and backup previous iterations artifacts");
             task.setVariantName(variantScope.getVariantConfiguration().getFullName());
+            variantScope.getInstantRunBuildContext().setTmpBuildInfo(
+                    InstantRunWrapperTask.ConfigAction.getTmpBuildInfoFile(variantScope));
             task.buildInfoFile = InstantRunWrapperTask.ConfigAction.getBuildInfoFile(variantScope);
+            task.tmpBuildInfoFile =
+                    InstantRunWrapperTask.ConfigAction.getTmpBuildInfoFile(variantScope);
             task.pastBuildsFolder = variantScope.getInstantRunPastIterationsFolder();
             task.instantRunBuildContext = variantScope.getInstantRunBuildContext();
             task.logger = logger;

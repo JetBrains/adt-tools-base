@@ -255,8 +255,12 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
         }
         // mark this APK production, this will eventually be saved when instant-run is enabled.
         // this might get overriden if the apk is signed/aligned.
-        instantRunContext.addChangedFile(InstantRunBuildContext.FileType.MAIN,
-                getOutputFile());
+        try {
+            instantRunContext.addChangedFile(InstantRunBuildContext.FileType.MAIN,
+                    getOutputFile());
+        } catch (IOException e) {
+            throw new BuildException(e.getMessage(), e);
+        }
     }
 
     // ----- FileSupplierTask -----
