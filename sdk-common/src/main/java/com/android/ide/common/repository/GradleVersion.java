@@ -36,20 +36,18 @@ public class GradleVersion implements Comparable<GradleVersion> {
 
     private final String mRawValue;
 
-    private final int mMajor;
+    @NonNull
+    private final VersionSegment mMajorSegment;
 
-    private final String mMajorSegment;
+    @Nullable
+    private final VersionSegment mMinorSegment;
 
-    private final int mMinor;
-
-    private final String mMinorSegment;
-
-    private final int mMicro;
-
-    private final String mMicroSegment;
+    @Nullable
+    private final VersionSegment mMicroSegment;
 
     private final int mPreview;
 
+    @Nullable
     private final String mPreviewType;
 
     private final boolean mSnapshot;
@@ -93,26 +91,20 @@ public class GradleVersion implements Comparable<GradleVersion> {
             version = value.substring(0, dashIndex);
         }
         List<String> versionSegments = Splitter.on('.').splitToList(version);
-        int major;
-        String majorSegment;
-        int minor = 0;
-        String minorSegment = null;
-        int micro = 0;
-        String microSegment = null;
+        VersionSegment majorSegment;
+        VersionSegment minorSegment = null;
+        VersionSegment microSegment = null;
 
         int segmentCount = versionSegments.size();
 
         try {
             if (segmentCount > 0 && segmentCount <= 3) {
-                majorSegment = versionSegments.get(0);
-                major = parseSegment(majorSegment);
+                majorSegment = new VersionSegment(versionSegments.get(0));
                 if (segmentCount > 1) {
-                    minorSegment = versionSegments.get(1);
-                    minor = parseSegment(minorSegment);
+                    minorSegment = new VersionSegment(versionSegments.get(1));
                 }
                 if (segmentCount == 3) {
-                    microSegment = versionSegments.get(2);
-                    micro = parseSegment(microSegment);
+                    microSegment = new VersionSegment(versionSegments.get(2));
                 }
 
                 int preview = 0;
@@ -142,8 +134,8 @@ public class GradleVersion implements Comparable<GradleVersion> {
                         }
                     }
                 }
-                return new GradleVersion(value, major, majorSegment, minor, minorSegment, micro,
-                        microSegment, preview, previewType, snapshot);
+                return new GradleVersion(value, majorSegment, minorSegment, microSegment, preview,
+                        previewType, snapshot);
             }
         } catch (NumberFormatException e) {
             throw parsingFailure(value, e);
@@ -171,26 +163,20 @@ public class GradleVersion implements Comparable<GradleVersion> {
     }
 
     public GradleVersion(int major, int minor, int micro) {
-        this((major + "." + minor + "." + micro), major, String.valueOf(major), minor,
-                String.valueOf(minor), micro, String.valueOf(micro), 0, null, false);
+        this((major + "." + minor + "." + micro), new VersionSegment(major),
+                new VersionSegment(minor), new VersionSegment(micro), 0, null, false);
     }
 
     private GradleVersion(@NonNull String rawValue,
-            int major,
-            @Nullable String majorSegment,
-            int minor,
-            @Nullable String minorSegment,
-            int micro,
-            @Nullable String microSegment,
+            @NonNull VersionSegment majorSegment,
+            @Nullable VersionSegment minorSegment,
+            @Nullable VersionSegment microSegment,
             int preview,
             @Nullable String previewType,
             boolean snapshot) {
         mRawValue = rawValue;
-        mMajor = major;
         mMajorSegment = majorSegment;
-        mMinor = minor;
         mMinorSegment = minorSegment;
-        mMicro = micro;
         mMicroSegment = microSegment;
         mPreview = preview;
         mPreviewType = previewType;
@@ -198,29 +184,33 @@ public class GradleVersion implements Comparable<GradleVersion> {
     }
 
     public int getMajor() {
-        return mMajor;
+        return valueOf(mMajorSegment);
     }
 
-    @Nullable
-    public String getMajorSegment() {
+    @NonNull
+    public VersionSegment getMajorSegment() {
         return mMajorSegment;
     }
 
     public int getMinor() {
-        return mMinor;
+        return valueOf(mMinorSegment);
     }
 
     @Nullable
-    public String getMinorSegment() {
+    public VersionSegment getMinorSegment() {
         return mMinorSegment;
     }
 
     public int getMicro() {
-        return mMicro;
+        return valueOf(mMicroSegment);
+    }
+
+    private static int valueOf(@Nullable VersionSegment segment) {
+        return segment != null ? segment.getValue() : 0;
     }
 
     @Nullable
-    public String getMicroSegment() {
+    public VersionSegment getMicroSegment() {
         return mMicroSegment;
     }
 
@@ -255,15 +245,15 @@ public class GradleVersion implements Comparable<GradleVersion> {
     }
 
     private int compareTo(@NonNull GradleVersion version, boolean ignoreQualifiers) {
-        int delta = mMajor - version.mMajor;
+        int delta = getMajor() - version.getMajor();
         if (delta != 0) {
             return delta;
         }
-        delta = mMinor - version.mMinor;
+        delta = getMinor() - version.getMinor();
         if (delta != 0) {
             return delta;
         }
-        delta = mMicro - version.mMicro;
+        delta = getMicro() - version.getMicro();
         if (delta != 0) {
             return delta;
         }
@@ -275,7 +265,7 @@ public class GradleVersion implements Comparable<GradleVersion> {
             } else if (version.mPreviewType == null) {
                 return -1;
             } else {
-                delta = mPreviewType.compareTo(version.mPreviewType);
+                delta = mPreviewType.compareToIgnoreCase(version.mPreviewType);
             }
             if (delta != 0) {
                 return delta;
@@ -299,21 +289,72 @@ public class GradleVersion implements Comparable<GradleVersion> {
             return false;
         }
         GradleVersion that = (GradleVersion) o;
-        return mMajor == that.mMajor &&
-                mMinor == that.mMinor &&
-                mMicro == that.mMicro &&
-                mPreview == that.mPreview &&
-                mSnapshot == that.mSnapshot &&
-                Objects.equal(mPreviewType, that.mPreviewType);
+        return compareTo(that) == 0;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(mMajor, mMinor, mMicro, mPreview, mPreviewType, mSnapshot);
+        return Objects.hashCode(mMajorSegment, mMinorSegment, mMicroSegment, mPreview, mPreviewType,
+                mSnapshot);
     }
 
     @Override
     public String toString() {
         return mRawValue;
+    }
+
+    public static class VersionSegment {
+
+        private static final String PLUS = "+";
+
+        @NonNull
+        private final String mText;
+
+        private final int mValue;
+
+        VersionSegment(int value) {
+            mText = String.valueOf(value);
+            mValue = value;
+        }
+
+        VersionSegment(@NonNull String text) {
+            mText = text;
+            mValue = PLUS.equals(text) ? Integer.MAX_VALUE : Integer.parseInt(text);
+        }
+
+        @NonNull
+        public String getText() {
+            return mText;
+        }
+
+        public int getValue() {
+            return mValue;
+        }
+
+        public boolean acceptsGreaterValue() {
+            return PLUS.equals(mText);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            VersionSegment that = (VersionSegment) o;
+            return Objects.equal(mText, that.mText);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(mText);
+        }
+
+        @Override
+        public String toString() {
+            return mText;
+        }
     }
 }
