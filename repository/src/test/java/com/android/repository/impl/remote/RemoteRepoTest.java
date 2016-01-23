@@ -17,9 +17,11 @@
 package com.android.repository.impl.remote;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.repository.Revision;
 import com.android.repository.api.Channel;
 import com.android.repository.api.Downloader;
+import com.android.repository.api.FallbackRemoteRepoLoader;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
@@ -32,6 +34,7 @@ import com.android.repository.impl.meta.Archive;
 import com.android.repository.impl.meta.RemotePackageImpl;
 import com.android.repository.impl.meta.TypeDetails;
 import com.android.repository.testframework.FakeDownloader;
+import com.android.repository.testframework.FakePackage;
 import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.repository.testframework.FakeSettingsController;
 import com.android.repository.testframework.MockFileOp;
@@ -122,6 +125,117 @@ public class RemoteRepoTest extends TestCase {
         assertEquals(2, pkgs.size());
         assertEquals(new Revision(1, 2, 5), pkgs.get("dummy;foo").getVersion());
         assertEquals(new Revision(4, 5, 7), pkgs.get("dummy;bar").getVersion());
+    }
+
+    public void testFallback() throws Exception {
+        RepositorySource source = new SimpleRepositorySource("http://www.example.com",
+                "Source UI Name", true,
+                ImmutableSet.of(RepoManager.getGenericModule()),
+                null);
+        final String legacyUrl = "http://www.example.com/legacy";
+        RepositorySource legacySource = new SimpleRepositorySource(legacyUrl,
+                "Legacy UI Name", true, ImmutableSet.of(RepoManager.getGenericModule()),
+                null);
+        FakeDownloader downloader = new FakeDownloader(new MockFileOp());
+        downloader.registerUrl(new URL("http://www.example.com"),
+                getClass().getResourceAsStream("../testData/testRepo.xml"));
+        downloader.registerUrl(new URL(legacyUrl),
+                "foo".getBytes());
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+        RemoteRepoLoader loader = new RemoteRepoLoader(ImmutableList.<RepositorySourceProvider>of(
+                new FakeRepositorySourceProvider(ImmutableList.of(source, legacySource))), null,
+                new FallbackRemoteRepoLoader() {
+                    @Nullable
+                    @Override
+                    public Collection<RemotePackage> parseLegacyXml(
+                            @NonNull RepositorySource source,
+                            @NonNull ProgressIndicator progress) {
+                        assertEquals(legacyUrl, source.getUrl());
+                        FakePackage legacy = new FakePackage("legacy", new Revision(1, 2, 9),
+                                null);
+                        legacy.setCompleteUrl("http://www.example.com/legacy.zip");
+                        return ImmutableSet.<RemotePackage>of(legacy);
+                    }
+                });
+        Map<String, RemotePackage> pkgs = loader
+                .fetchPackages(progress, downloader, new FakeSettingsController(false));
+        progress.assertNoErrorsOrWarnings();
+        assertEquals(3, pkgs.size());
+        assertEquals(new Revision(1, 2, 9), pkgs.get("legacy").getVersion());
+    }
+
+    public void testNonFallbackPreferred() throws Exception {
+        RepositorySource source = new SimpleRepositorySource("http://www.example.com",
+                "Source UI Name", true,
+                ImmutableSet.of(RepoManager.getGenericModule()),
+                null);
+        final String legacyUrl = "http://www.example.com/legacy";
+        RepositorySource legacySource = new SimpleRepositorySource(legacyUrl,
+                "Legacy UI Name", true, ImmutableSet.of(RepoManager.getGenericModule()),
+                null);
+        FakeDownloader downloader = new FakeDownloader(new MockFileOp());
+        downloader.registerUrl(new URL("http://www.example.com"),
+                getClass().getResourceAsStream("../testData/testRepo.xml"));
+        downloader.registerUrl(new URL(legacyUrl),
+                "foo".getBytes());
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+        RemoteRepoLoader loader = new RemoteRepoLoader(ImmutableList.<RepositorySourceProvider>of(
+                new FakeRepositorySourceProvider(ImmutableList.of(source, legacySource))), null,
+                new FallbackRemoteRepoLoader() {
+                    @Nullable
+                    @Override
+                    public Collection<RemotePackage> parseLegacyXml(
+                            @NonNull RepositorySource source,
+                            @NonNull ProgressIndicator progress) {
+                        assertEquals(legacyUrl, source.getUrl());
+                        FakePackage legacy = new FakePackage("dummy;foo", new Revision(1, 2, 3),
+                                null);
+                        legacy.setCompleteUrl("http://www.example.com/legacy.zip");
+                        return ImmutableSet.<RemotePackage>of(legacy);
+                    }
+                });
+        Map<String, RemotePackage> pkgs = loader
+                .fetchPackages(progress, downloader, new FakeSettingsController(false));
+        progress.assertNoErrorsOrWarnings();
+        assertEquals(2, pkgs.size());
+        assertFalse(pkgs.get("dummy;foo") instanceof FakePackage);
+    }
+
+    public void testNewerFallbackPreferred() throws Exception {
+        RepositorySource source = new SimpleRepositorySource("http://www.example.com",
+                "Source UI Name", true,
+                ImmutableSet.of(RepoManager.getGenericModule()),
+                null);
+        final String legacyUrl = "http://www.example.com/legacy";
+        RepositorySource legacySource = new SimpleRepositorySource(legacyUrl,
+                "Legacy UI Name", true, ImmutableSet.of(RepoManager.getGenericModule()),
+                null);
+        FakeDownloader downloader = new FakeDownloader(new MockFileOp());
+        downloader.registerUrl(new URL("http://www.example.com"),
+                getClass().getResourceAsStream("../testData/testRepo.xml"));
+        downloader.registerUrl(new URL(legacyUrl),
+                "foo".getBytes());
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+        RemoteRepoLoader loader = new RemoteRepoLoader(ImmutableList.<RepositorySourceProvider>of(
+                new FakeRepositorySourceProvider(ImmutableList.of(source, legacySource))), null,
+                new FallbackRemoteRepoLoader() {
+                    @Nullable
+                    @Override
+                    public Collection<RemotePackage> parseLegacyXml(
+                            @NonNull RepositorySource source,
+                            @NonNull ProgressIndicator progress) {
+                        assertEquals(legacyUrl, source.getUrl());
+                        FakePackage legacy = new FakePackage("dummy;foo", new Revision(1, 2, 4),
+                                null);
+                        legacy.setCompleteUrl("http://www.example.com/legacy.zip");
+                        return ImmutableSet.<RemotePackage>of(legacy);
+                    }
+                });
+        Map<String, RemotePackage> pkgs = loader
+                .fetchPackages(progress, downloader, new FakeSettingsController(false));
+        progress.assertNoErrorsOrWarnings();
+        assertEquals(2, pkgs.size());
+        assertTrue(pkgs.get("dummy;foo") instanceof FakePackage);
     }
 
     private static class FakeRepositorySourceProvider implements RepositorySourceProvider {
