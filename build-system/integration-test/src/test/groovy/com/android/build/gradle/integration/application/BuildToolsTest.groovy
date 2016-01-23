@@ -15,9 +15,9 @@
  */
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
+import com.android.builder.model.AndroidProject
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.Sets
 import groovy.transform.CompileStatic
@@ -112,6 +112,14 @@ android {
         Set<String> affectedTasks = getTasksMatching(INPUT_CHANGED_PATTERN, project.stdout)
         assert_().withFailureMessage("Expecting tasks to be invalidated").that(affectedTasks)
                 .containsAllIn(GradleTestProject.USE_JACK ? JACK_TASKS : JAVAC_TASKS)
+    }
+
+    @Test
+    void buildToolsInModel() {
+        AndroidProject model = project.getSingleModel()
+        assertThat(model.getBuildToolsVersion())
+                .named("Build Tools Version")
+                .isEqualTo(GradleTestProject.DEFAULT_BUILD_TOOL_VERSION)
     }
 
     private static Set<String> getTasksMatching(Pattern pattern, ByteArrayOutputStream output) {

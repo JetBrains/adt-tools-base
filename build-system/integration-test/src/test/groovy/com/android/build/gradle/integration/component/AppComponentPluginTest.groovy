@@ -110,6 +110,14 @@ model {
     }
 
     @Test
+    void generationInModel() {
+        AndroidProject model = project.getSingleModel()
+        assertThat(model.getPluginGeneration())
+                .named("Plugin Generation")
+                .isEqualTo(AndroidProject.GENERATION_COMPONENT)
+    }
+
+    @Test
     @Category(DeviceTests.class)
     public void connnectedAndroidTest() {
         project.executeConnectedCheck();

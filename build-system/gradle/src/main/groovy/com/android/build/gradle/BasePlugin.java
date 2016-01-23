@@ -56,6 +56,7 @@ import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.internal.compiler.JackConversionCache;
 import com.android.builder.internal.compiler.PreDexCache;
+import com.android.builder.model.AndroidProject;
 import com.android.builder.model.SyncIssue;
 import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.ProcessRecorderFactory;
@@ -487,7 +488,8 @@ public abstract class BasePlugin {
                 extraModelInfo,
                 ndkHandler,
                 new NativeLibraryFactoryImpl(ndkHandler),
-                isLibrary());
+                isLibrary(),
+                AndroidProject.GENERATION_ORIGINAL);
         registry.register(modelBuilder);
 
         // map the whenObjectAdded callbacks on the containers.
