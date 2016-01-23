@@ -171,11 +171,17 @@ public class InstantRunTransformTest {
 
         ImmutableList<File> processedFiles = filesElectedForClasses2Transformation.build();
         assertEquals("Wrong number of files elected for classes 2 processing", 2, processedFiles.size());
-        assertEquals("Output File path", "/tmp/foo/bar/Changed.class", processedFiles.get(0).getPath());
-        assertEquals("Output File path", "/tmp/foo/bar/Added.class", processedFiles.get(1).getPath());
+        assertEquals("Output File path",
+                FileUtils.toSystemDependentPath("/tmp/foo/bar/Changed.class"),
+                processedFiles.get(0).getPath());
+        assertEquals("Output File path",
+                FileUtils.toSystemDependentPath("/tmp/foo/bar/Added.class"),
+                processedFiles.get(1).getPath());
         processedFiles = filesElectedForClasses3Transformation.build();
         assertEquals("Wrong number of files elected for classes 3 processing", 1, processedFiles.size());
-        assertEquals("Output File path", "/tmp/foo/bar/Changed.class", processedFiles.get(0).getPath());
+        assertEquals("Output File path",
+                FileUtils.toSystemDependentPath("/tmp/foo/bar/Changed.class"),
+                processedFiles.get(0).getPath());
     }
 
     @Test
