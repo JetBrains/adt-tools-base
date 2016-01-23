@@ -1391,8 +1391,9 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 // If it's a constant (static/final) check that it's one of the allowed ones
                 if ((modifiers & (Modifier.FINAL|Modifier.STATIC))
                         == (Modifier.FINAL|Modifier.STATIC)) {
-                    checkTypeDefConstant(context, annotation, argument, errorNode, flag, resolved,
-                            allAnnotations);
+                    checkTypeDefConstant(context, annotation, argument,
+                            errorNode != null ? errorNode : argument,
+                            flag, resolved, allAnnotations);
                 }
             } else if (argument instanceof VariableReference) {
                 Statement statement = getParentOfType(argument, Statement.class, false);
@@ -1458,6 +1459,23 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                     return;
                 }
             }
+
+            if (value instanceof ResolvedField) {
+                Node astNode = ((ResolvedField)value).findAstNode();
+                if (astNode instanceof VariableDeclaration) {
+                    VariableDefinition definition = ((VariableDeclaration) astNode).astDefinition();
+                    if (definition.astVariables().size() == 1) {
+                        Expression initializer = definition.astVariables().iterator().next()
+                                .astInitializer();
+                        if (initializer != null) {
+                            checkTypeDefConstant(context, annotation, initializer, errorNode,
+                                    flag, allAnnotations);
+                            return;
+                        }
+                    }
+                }
+            }
+
             reportTypeDef(context, argument, errorNode, flag, allowedValues, allAnnotations);
         }
     }

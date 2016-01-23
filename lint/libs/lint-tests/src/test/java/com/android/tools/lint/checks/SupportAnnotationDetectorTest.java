@@ -1298,16 +1298,13 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
 
     public void testCombinedIntDefAndIntRange() throws Exception {
         assertEquals(""
-                        + "src/test/pkg/X.java:27: Error: Must be one of: X.LENGTH_INDEFINITE, X.LENGTH_SHORT, X.LENGTH_LONG [WrongConstant]\n"
-                        + "        setDuration(UNRELATED); /// ERROR: Not right intdef, even if it's in the right number range\n"
-                        + "                    ~~~~~~~~~\n"
-                        + "src/test/pkg/X.java:28: Error: Must be one of: X.LENGTH_INDEFINITE, X.LENGTH_SHORT, X.LENGTH_LONG or value must be ≥ 10 (was -5) [WrongConstant]\n"
-                        + "        setDuration(-5); // ERROR (not right int def or value\n"
-                        + "                    ~~\n"
-                        + "src/test/pkg/X.java:29: Error: Must be one of: X.LENGTH_INDEFINITE, X.LENGTH_SHORT, X.LENGTH_LONG or value must be ≥ 10 (was 8) [WrongConstant]\n"
-                        + "        setDuration(8); // ERROR (not matching number range)\n"
-                        + "                    ~\n"
-                        + "3 errors, 0 warnings\n",
+                + "src/test/pkg/X.java:28: Error: Must be one of: X.LENGTH_INDEFINITE, X.LENGTH_SHORT, X.LENGTH_LONG or value must be ≥ 10 (was -5) [WrongConstant]\n"
+                + "        setDuration(-5); // ERROR (not right int def or value\n"
+                + "                    ~~\n"
+                + "src/test/pkg/X.java:29: Error: Must be one of: X.LENGTH_INDEFINITE, X.LENGTH_SHORT, X.LENGTH_LONG or value must be ≥ 10 (was 8) [WrongConstant]\n"
+                + "        setDuration(8); // ERROR (not matching number range)\n"
+                + "                    ~\n"
+                + "2 errors, 0 warnings\n",
                 lintProject(
                         getManifestWithPermissions(14, 23),
                         java("src/test/pkg/X.java", ""
@@ -1337,7 +1334,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                                 + "    }\n"
                                 + "\n"
                                 + "    public void test() {\n"
-                                + "        setDuration(UNRELATED); /// ERROR: Not right intdef, even if it's in the right number range\n"
+                                + "        setDuration(UNRELATED); /// OK within range\n"
                                 + "        setDuration(-5); // ERROR (not right int def or value\n"
                                 + "        setDuration(8); // ERROR (not matching number range)\n"
                                 + "        setDuration(8000); // OK (@IntRange applies)\n"
@@ -1674,6 +1671,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                                 + "        @Status\n"
                                 + "        private int mStatus;\n"
                                 + "        private final int mStatus2 = STATUS_AVAILABLE;\n"
+                                + "        @Status static final int DEFAULT_STATUS = Product.STATUS_UNAVAILABLE;\n"
                                 + "        private String mName;\n"
                                 + "\n"
                                 + "        public Builder(String name, @Status int status) {\n"
@@ -1692,6 +1690,10 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                                 + "\n"
                                 + "        public Product build2() {\n"
                                 + "            return new Product(mName, mStatus2);\n"
+                                + "        }\n"
+                                + "\n"
+                                + "        public static Product build3() {\n"
+                                + "            return new Product(\"\", DEFAULT_STATUS);\n"
                                 + "        }\n"
                                 + "    }\n"
                                 + "}\n"),

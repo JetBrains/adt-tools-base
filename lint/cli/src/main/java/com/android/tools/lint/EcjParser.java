@@ -96,7 +96,6 @@ import org.eclipse.jdt.internal.compiler.impl.ShortConstant;
 import org.eclipse.jdt.internal.compiler.impl.StringConstant;
 import org.eclipse.jdt.internal.compiler.lookup.AnnotationBinding;
 import org.eclipse.jdt.internal.compiler.lookup.Binding;
-import org.eclipse.jdt.internal.compiler.lookup.CatchParameterBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ElementValuePair;
 import org.eclipse.jdt.internal.compiler.lookup.FieldBinding;
 import org.eclipse.jdt.internal.compiler.lookup.LocalVariableBinding;
@@ -850,7 +849,7 @@ public class EcjParser extends JavaParser {
         return null;
     }
 
-    private TypeDeclaration findAnnotationDeclaration(@NonNull String signature) {
+    private TypeDeclaration findTypeDeclaration(@NonNull String signature) {
         if (mTypeUnits == null) {
             Collection<CompilationUnitDeclaration> units = mEcjResult.getCompilationUnits();
             mTypeUnits = Maps.newHashMapWithExpectedSize(units.size());
@@ -2128,6 +2127,29 @@ public class EcjParser extends JavaParser {
             return false;
         }
 
+        @Nullable
+        @Override
+        public Node findAstNode() {
+            // Map back from type binding to AST
+            ResolvedClass containingClass = getContainingClass();
+            TypeDeclaration typeDeclaration = findTypeDeclaration(containingClass.getName());
+            if (typeDeclaration != null) {
+                for (FieldDeclaration field : typeDeclaration.fields) {
+                    if (field.binding == mBinding) {
+                        EcjTreeConverter converter = new EcjTreeConverter();
+                        converter.visit(null, field);
+                        List<? extends Node> nodes = converter.getAll();
+                        if (nodes.size() == 1) {
+                            return nodes.get(0);
+                        }
+                        break;
+                    }
+                }
+            }
+
+            return super.findAstNode();
+        }
+
         @SuppressWarnings("RedundantIfStatement")
         @Override
         public boolean equals(Object o) {
@@ -2289,7 +2311,7 @@ public class EcjParser extends JavaParser {
                                 if (sameChars(INT_DEF_ANNOTATION, readableName)
                                         || sameChars(STRING_DEF_ANNOTATION, readableName)) {
                                     TypeDeclaration typeDeclaration =
-                                            findAnnotationDeclaration(getName());
+                                            findTypeDeclaration(getName());
                                     if (typeDeclaration != null && typeDeclaration.annotations != null) {
                                         Annotation astAnnotation = null;
                                         for (Annotation a : typeDeclaration.annotations) {
