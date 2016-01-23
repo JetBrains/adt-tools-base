@@ -15,9 +15,13 @@
  */
 package com.android.ide.common.repository;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 public class GradleVersionTest {
 
@@ -265,17 +269,28 @@ public class GradleVersionTest {
     @Test
     public void testGetSegments() {
         GradleVersion version = GradleVersion.parse("1.2.3-SNAPSHOT");
-        assertEquals("1", version.getMajorSegment());
-        assertEquals("2", version.getMinorSegment());
-        assertEquals("3", version.getMicroSegment());
+        assertNotNull(version.getMinorSegment());
+        assertNotNull(version.getMicroSegment());
+        assertEquals("1", version.getMajorSegment().getText());
+        assertEquals("2", version.getMinorSegment().getText());
+        assertEquals("3", version.getMicroSegment().getText());
+        assertFalse(version.getMajorSegment().acceptsGreaterValue());
+        assertFalse(version.getMinorSegment().acceptsGreaterValue());
+        assertFalse(version.getMicroSegment().acceptsGreaterValue());
 
         version = GradleVersion.parse("1.2.+");
-        assertEquals("1", version.getMajorSegment());
-        assertEquals("2", version.getMinorSegment());
-        assertEquals("+", version.getMicroSegment());
+        assertNotNull(version.getMinorSegment());
+        assertNotNull(version.getMicroSegment());
+        assertEquals("1", version.getMajorSegment().getText());
+        assertEquals("2", version.getMinorSegment().getText());
+        assertEquals("+", version.getMicroSegment().getText());
+        assertFalse(version.getMajorSegment().acceptsGreaterValue());
+        assertFalse(version.getMinorSegment().acceptsGreaterValue());
+        assertTrue(version.getMicroSegment().acceptsGreaterValue());
 
         version = GradleVersion.parse("+");
-        assertEquals("+", version.getMajorSegment());
+        assertEquals("+", version.getMajorSegment().getText());
+        assertTrue(version.getMajorSegment().acceptsGreaterValue());
         assertNull(version.getMinorSegment());
         assertNull(version.getMicroSegment());
     }
@@ -283,12 +298,14 @@ public class GradleVersionTest {
     @Test
     public void testConstructorWithNumbers() {
         GradleVersion version = new GradleVersion(1, 2, 3);
+        assertNotNull(version.getMinorSegment());
+        assertNotNull(version.getMicroSegment());
         assertEquals(1, version.getMajor());
-        assertEquals("1", version.getMajorSegment());
+        assertEquals("1", version.getMajorSegment().getText());
         assertEquals(2, version.getMinor());
-        assertEquals("2", version.getMinorSegment());
+        assertEquals("2", version.getMinorSegment().getText());
         assertEquals(3, version.getMicro());
-        assertEquals("3", version.getMicroSegment());
+        assertEquals("3", version.getMicroSegment().getText());
         assertEquals(0, version.getPreview());
         assertNull(version.getPreviewType());
         assertFalse(version.isSnapshot());
