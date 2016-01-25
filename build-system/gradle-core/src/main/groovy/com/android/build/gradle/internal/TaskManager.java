@@ -2029,6 +2029,8 @@ public abstract class TaskManager {
         } else {
             if (dexOptions.getDexInProcess() == null) {
                 // Dex in-process by default, if the user has no preference.
+                getLogger().info("Enabling dex in process by default "
+                        + "as build tools version is new enough.");
                 dexOptions.setDexInProcess(true);
             }
         }
