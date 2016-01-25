@@ -22,11 +22,13 @@ import com.android.builder.model.NativeAndroidProject
 import com.android.builder.model.NativeArtifact
 import com.android.builder.model.NativeSettings
 import com.android.builder.model.NativeToolchain
+import org.junit.Assert
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import static org.junit.Assert.fail
 
 /**
  * Test the ExternalNativeComponentModelPlugin.
@@ -164,6 +166,7 @@ model {
 
         assertThat(model.artifacts).hasSize(2)
         for (NativeArtifact artifact : model.artifacts) {
+            fail("Add validation for assembleTaskName when ExternalNativeComponentPlugin is restored.")
             if (artifact.getName().equals("foo")) {
                 assertThat(artifact.getName()).isEqualTo("foo")
                 assertThat(artifact.getToolChain()).isEqualTo("toolchain1")

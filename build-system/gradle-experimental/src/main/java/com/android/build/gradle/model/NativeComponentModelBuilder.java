@@ -35,7 +35,8 @@ import com.android.builder.model.NativeArtifact;
 import com.android.builder.model.NativeFolder;
 import com.android.builder.model.NativeSettings;
 import com.android.builder.model.NativeToolchain;
-import com.google.common.base.Objects;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -123,10 +124,14 @@ public class NativeComponentModelBuilder implements ToolingModelBuilder {
                         getSettingsName(src.getFlags()),
                         src.getWorkingDirectory()));
             }
+            Preconditions.checkNotNull(lib.getToolchain());
+            Preconditions.checkNotNull(lib.getAssembleTaskName());
+            Preconditions.checkNotNull(lib.getOutput());
             NativeArtifact artifact = new NativeArtifactImpl(
                     lib.getName(),
                     lib.getToolchain(),
-                    Objects.firstNonNull(lib.getGroupName(), ""),
+                    Strings.nullToEmpty(lib.getGroupName()),
+                    lib.getAssembleTaskName(),
                     folders,
                     files,
                     ImmutableList.copyOf(lib.getExportedHeaders()),

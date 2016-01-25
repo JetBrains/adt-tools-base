@@ -41,10 +41,16 @@ public interface NativeArtifact {
     String getToolChain();
 
     /**
-     * Return the group this artifact is associated with.
+     * Returns the group this artifact is associated with.
      */
     @NonNull
     String getGroupName();
+
+    /**
+     * Returns the name of the task used to generate the artifact output.
+     */
+    @NonNull
+    String getAssembleTaskName();
 
     /**
      * Returns thes source folders for the artifact.

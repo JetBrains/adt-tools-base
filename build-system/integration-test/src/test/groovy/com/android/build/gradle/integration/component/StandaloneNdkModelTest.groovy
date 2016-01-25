@@ -211,6 +211,8 @@ model {
             }
 
             assertThat(artifact.groupName).isEqualTo(variant)
+            assertThat(artifact.getAssembleTaskName()).isEqualTo(
+                    "hello-jni${abi.capitalize()}${buildType.capitalize()}${flavor.capitalize()}SharedLibrary".toString());
             assertThat(artifact.outputFile).hasName("libhello-jni.so")
             assertThat(artifact.sourceFiles).isEmpty()
             assertThat(artifact.toolChain).endsWith(abi)

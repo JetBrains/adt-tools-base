@@ -514,6 +514,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 nativeLibrary.setOutput(nativeBinary.getSharedLibraryFile());
                 Set<File> srcFolders = Sets.newHashSet();
                 nativeLibrary.setGroupName(binary.getName());
+                nativeLibrary.setAssembleTaskName(nativeBinary.getBuildTask().getName());
 
                 final List<String> cFlags = nativeBinary.getcCompiler().getArgs();
                 final List<String> cppFlags = nativeBinary.getCppCompiler().getArgs();

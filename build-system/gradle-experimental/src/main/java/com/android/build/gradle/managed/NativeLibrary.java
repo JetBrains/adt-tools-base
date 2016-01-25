@@ -49,6 +49,10 @@ public interface NativeLibrary extends Named {
     String getGroupName();
     void setGroupName(String groupName);
 
+    @Nullable
+    String getAssembleTaskName();
+    void setAssembleTaskName(String taskName);
+
     /**
      * Target ABI.
      */

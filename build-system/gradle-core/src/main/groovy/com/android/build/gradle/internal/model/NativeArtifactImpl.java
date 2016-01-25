@@ -38,6 +38,8 @@ public class NativeArtifactImpl implements NativeArtifact, Serializable {
     @NonNull
     private final String groupName;
     @NonNull
+    private final String assembleTaskName;
+    @NonNull
     private final Collection<NativeFolder> sourceFolders;
     @NonNull
     private final Collection<NativeFile> sourceFiles;
@@ -50,6 +52,7 @@ public class NativeArtifactImpl implements NativeArtifact, Serializable {
             @NonNull String name,
             @NonNull String toolChain,
             @NonNull String groupName,
+            @NonNull String assembleTaskName,
             @NonNull Collection<NativeFolder> sourceFolders,
             @NonNull Collection<NativeFile> sourceFiles,
             @NonNull Collection<File> exportedHeaders,
@@ -57,6 +60,7 @@ public class NativeArtifactImpl implements NativeArtifact, Serializable {
         this.name = name;
         this.toolChain = toolChain;
         this.groupName = groupName;
+        this.assembleTaskName = assembleTaskName;
         this.sourceFolders = sourceFolders;
         this.sourceFiles = sourceFiles;
         this.exportedHeaders = exportedHeaders;
@@ -79,6 +83,12 @@ public class NativeArtifactImpl implements NativeArtifact, Serializable {
     @NonNull
     public String getGroupName() {
         return groupName;
+    }
+
+    @Override
+    @NonNull
+    public String getAssembleTaskName() {
+        return assembleTaskName;
     }
 
     @Override
