@@ -36,6 +36,7 @@ public class PlaceholderHandler {
     // regular expression to recognize placeholders like ${name}, potentially surrounded by a
     // prefix and suffix string. this will split in 3 groups, the prefix, the placeholder name, and
     // the suffix.
+    // If this pattern is modified, studio ManifestPlaceholderResolver.PLACEHOLDER_PATTERN must be also change
     static final Pattern PATTERN = Pattern.compile("([^\\$]*)\\$\\{([^\\}]*)\\}(.*)");
 
     /**
