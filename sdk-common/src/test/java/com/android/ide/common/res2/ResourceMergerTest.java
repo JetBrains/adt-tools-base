@@ -30,7 +30,10 @@ import com.android.ide.common.internal.PngCruncher;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
 import com.android.testutils.TestUtils;
+import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -410,6 +413,83 @@ public class ResourceMergerTest extends BaseTestCase {
         assertEquals("Loaded String in merger",
                      "This is should be followed by whitespace:\n        %1$s",
                      fromLoadedString.getValueText());
+    }
+
+    public void testMergeIdGeneratingResources() throws Exception {
+        // Test loading and writing Id resources.  Test loading a single file instead of all.
+        File root = TestUtils.getRoot("resources", "idGenerating");
+        ResourceSet resourceSet = new ResourceSet("idResources");
+        resourceSet.addSource(root);
+        ResourceMerger merger = new ResourceMerger(0);
+        merger.addDataSet(resourceSet);
+
+        RecordingLogger logger = new RecordingLogger();
+
+        File layoutDir = new File(root, "layout");
+        File layoutFile = new File(layoutDir, "layout_for_id_scan.xml");
+        resourceSet.setShouldParseResourceIds(true);
+        final ResourceFile parsedFile = resourceSet.loadFile(root, layoutFile, logger);
+        assertNotNull(parsedFile);
+        assertTrue(parsedFile.getFile().equals(layoutFile));
+        assertEquals("", parsedFile.getQualifiers());
+        assertEquals(12, parsedFile.getItems().size());
+        assertEquals(1,
+                     Collections2.filter(parsedFile.getItems(), new Predicate<ResourceItem>() {
+                         @Override
+                         public boolean apply(ResourceItem input) {
+                             return input.getType() == ResourceType.LAYOUT &&
+                                    input.getName().equals("layout_for_id_scan") &&
+                                    input.getSource() != null &&
+                                    input.getSource().equals(parsedFile);
+                         }
+                     }).size());
+        assertEquals(11,
+                     Collections2.filter(parsedFile.getItems(), new Predicate<ResourceItem>() {
+                         @Override
+                         public boolean apply(ResourceItem input) {
+                             return input.getType() == ResourceType.ID &&
+                                    input.getSource() != null &&
+                                    input.getSource().equals(parsedFile);
+                         }
+                     }).size());
+
+        File folder = Files.createTempDir();
+        folder.deleteOnExit();
+        merger.writeBlobTo(folder, getConsumer());
+
+        // reload it
+        ResourceMerger loadedMerger = new ResourceMerger(0);
+        assertTrue(loadedMerger.loadFromBlob(folder, true /*incrementalState*/));
+
+        compareResourceMaps(merger, loadedMerger, true /*full compare*/);
+        checkLogger(logger);
+    }
+
+    public void testDontNormalizeQualifiers() throws Exception {
+        File root = TestUtils.getRoot("resources", "idGenerating");
+        File copiedRoot = getFolderCopy(root);
+        copiedRoot.deleteOnExit();
+        // Add some qualifiers to directory before loading.
+        File layoutDirWithQualifiers = new File(copiedRoot, "layout-xlarge-land");
+        FileUtils.renameTo(new File(copiedRoot, "layout"), layoutDirWithQualifiers);
+        File layoutFile = new File(layoutDirWithQualifiers, "layout_for_id_scan.xml");
+
+        ResourceSet resourceSet = new ResourceSet("idResources");
+        resourceSet.addSource(copiedRoot);
+        RecordingLogger logger = new RecordingLogger();
+
+        // Try first with normalization, which tacks on a -v4 qualifier.
+        ResourceFile parsedFile = resourceSet.loadFile(copiedRoot, layoutFile, logger);
+        assertNotNull(parsedFile);
+        assertEquals("xlarge-land-v4", parsedFile.getQualifiers());
+
+        // Now try without normalization.
+        resourceSet.setDontNormalizeQualifiers(true);
+        parsedFile = resourceSet.loadFile(copiedRoot, layoutFile, logger);
+        assertNotNull(parsedFile);
+        assertEquals("xlarge-land", parsedFile.getQualifiers());
+
+        checkLogger(logger);
     }
 
     /**
