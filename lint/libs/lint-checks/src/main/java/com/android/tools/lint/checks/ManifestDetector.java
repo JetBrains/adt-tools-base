@@ -171,7 +171,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
 
             "The `<uses-library>` element should be defined as a direct child of the " +
             "`<application>` tag, not the `<manifest>` tag or an `<activity>` tag. Similarly, " +
-            "a `<uses-sdk>` tag much be declared at the root level, and so on. This check " +
+            "a `<uses-sdk>` tag must be declared at the root level, and so on. This check " +
             "looks for incorrect declaration locations in the manifest, and complains " +
             "if an element is found in the wrong place.",
 
