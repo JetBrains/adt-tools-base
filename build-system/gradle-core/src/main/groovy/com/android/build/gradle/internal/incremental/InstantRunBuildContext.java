@@ -18,8 +18,6 @@ package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.builder.model.InstantRun;
 import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.sdklib.AndroidVersion;
 import com.android.utils.XmlUtils;
@@ -29,7 +27,6 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
 import com.google.common.io.Files;
 
-import org.gradle.api.logging.LogLevel;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -83,9 +80,13 @@ public class InstantRunBuildContext {
      */
     public enum FileType {
         /**
-         * Main APK file.
+         * Main APK file for 19, and 21 platforms when using the {@link ColdswapMode#MULTIDEX} mode.
          */
         MAIN,
+        /**
+         * Main APK file when application is using the {@link ColdswapMode#MULTIAPK} mode.
+         */
+        SPLIT_MAIN,
         /**
          * Reload dex file that can be used to patch application live.
          */
@@ -297,10 +298,10 @@ public class InstantRunBuildContext {
                 || currentBuild.verifierStatus.get() == InstantRunVerifierStatus.COMPATIBLE;
     }
 
-    public void setApiLevel(@NonNull AndroidVersion apiLevel) {
+    public void setApiLevel(@NonNull AndroidVersion apiLevel, @Nullable String coldswapMode) {
         this.apiLevel = apiLevel;
         // cache the patching policy.
-        this.patchingPolicy = InstantRunPatchingPolicy.getPatchingPolicy(apiLevel);
+        this.patchingPolicy = InstantRunPatchingPolicy.getPatchingPolicy(apiLevel, coldswapMode);
     }
 
     public AndroidVersion getApiLevel() {
@@ -344,28 +345,41 @@ public class InstantRunBuildContext {
                         return;
                     }
                     break;
-                case LOLLIPOP:
+                case MULTI_DEX:
                     if (fileType != FileType.DEX) {
                         return;
                     }
                     break;
-                case MARSHMALLOW_AND_ABOVE:
+                case MULTI_APK:
                     if (fileType != FileType.SPLIT) {
                         return;
+                    }
+                    // let's work around the Lollipop and Marshmallow issue that cannot deal with
+                    // just changing a split APK, we forcefully add again the MAIN apk so it is
+                    // automatically enrolled.
+                    Artifact splitMainArtifact = getPastBuildsArtifactForType(FileType.SPLIT_MAIN);
+                    if (splitMainArtifact != null) {
+                        currentBuild.artifacts.add(splitMainArtifact);
                     }
             }
         }
         if (fileType == FileType.MAIN) {
+            // in case of MAIN, we need to disambiguate whether this is a SPLIT_MAIN or just a
+            // MAIN. this is useful for the IDE so it knows which deployment method to use.
+            if (patchingPolicy == InstantRunPatchingPolicy.MULTI_APK) {
+                fileType = FileType.SPLIT_MAIN;
+            }
+
             // because of signing/aligning, we can be notified several times of the main APK
             // construction, last one wins.
-            Artifact previousArtifact = currentBuild.getArtifactForType(FileType.MAIN);
+            Artifact previousArtifact = currentBuild.getArtifactForType(fileType);
             if (previousArtifact != null) {
                 currentBuild.artifacts.remove(previousArtifact);
             }
 
             // also if we are in LOLLIPOP, the DEX files are packaged in the original main APK, so
             // we can remove individual files.
-            if (patchingPolicy == InstantRunPatchingPolicy.LOLLIPOP) {
+            if (patchingPolicy == InstantRunPatchingPolicy.MULTI_DEX) {
                 currentBuild.artifacts.clear();
             }
 
@@ -440,7 +454,7 @@ public class InstantRunBuildContext {
             // when a coldswap build was found, remove all RESOURCES entries for previous builds
             // as the resource is redelivered as part of the main split.
             if (foundColdRestart
-                    && patchingPolicy == InstantRunPatchingPolicy.MARSHMALLOW_AND_ABOVE) {
+                    && patchingPolicy == InstantRunPatchingPolicy.MULTI_APK) {
                 Artifact resourceApArtifact = previousBuild.getArtifactForType(FileType.RESOURCES);
                 if (resourceApArtifact != null) {
                     previousBuild.artifacts.remove(resourceApArtifact);

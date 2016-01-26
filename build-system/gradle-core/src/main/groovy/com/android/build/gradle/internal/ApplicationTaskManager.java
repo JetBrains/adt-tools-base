@@ -24,7 +24,6 @@ import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.pipeline.TransformStream;
 import com.android.build.gradle.internal.scope.AndroidTask;
-import com.android.build.gradle.internal.scope.VariantOutputScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.transforms.InstantRunSplitApkBuilder;
 import com.android.build.gradle.internal.variant.ApplicationVariantData;
@@ -273,7 +272,7 @@ public class ApplicationTaskManager extends TaskManager {
             InstantRunPatchingPolicy patchingPolicy =
                     variantScope.getInstantRunBuildContext().getPatchingPolicy();
 
-            if (patchingPolicy == InstantRunPatchingPolicy.MARSHMALLOW_AND_ABOVE) {
+            if (patchingPolicy == InstantRunPatchingPolicy.MULTI_APK) {
 
                 AndroidTask<InstantRunSplitApkBuilder> splitApk =
                         getAndroidTasks().create(tasks,

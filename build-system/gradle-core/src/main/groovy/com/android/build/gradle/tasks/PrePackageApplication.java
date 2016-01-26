@@ -20,17 +20,10 @@ import com.android.annotations.NonNull;
 import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
-import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.gradle.internal.tasks.IncrementalTask;
-
-import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.Optional;
-import org.gradle.api.tasks.OutputFile;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Locale;
 
 /**
  * PrePackaging step class that will look if the packaging of the main APK split is necessary
@@ -48,7 +41,7 @@ public class PrePackageApplication extends KickerTask {
 
         // when instantRun is disabled or not targeting 23 and above, we must run the packageApp
         // task.
-        if (InstantRunPatchingPolicy.MARSHMALLOW_AND_ABOVE != instantRunContext.getPatchingPolicy()
+        if (InstantRunPatchingPolicy.MULTI_APK != instantRunContext.getPatchingPolicy()
                 || variantScope.getGlobalScope().isActive(OptionalCompilationStep.RESTART_ONLY)) {
             MarkerFile.createMarkerFile(getMarkerFile(), MarkerFile.Command.RUN);
             return;

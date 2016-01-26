@@ -21,8 +21,11 @@ import static com.google.common.truth.Truth.assertThat;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.OptionalCompilationStep;
+import com.android.build.gradle.integration.common.utils.DeviceHelper;
+import com.android.build.gradle.internal.incremental.ColdswapMode;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.InstantRun;
@@ -70,20 +73,25 @@ final class InstantRunTestUtils {
 
     @NonNull
     static List<String> getInstantRunArgs(int apiLevel,
+            @NonNull ColdswapMode coldswapMode,
             @NonNull OptionalCompilationStep... flags) {
-        return getInstantRunArgs(new AndroidVersion(apiLevel, null), null, flags);
+        return getInstantRunArgs(new AndroidVersion(apiLevel, null),
+                null /* density */, coldswapMode, flags);
     }
 
     static List<String> getInstantRunArgs(
             @NonNull IDevice device,
+            @NonNull ColdswapMode coldswapMode,
             @NonNull OptionalCompilationStep... flags) {
-        return getInstantRunArgs(device.getVersion(), Density.getEnum(device.getDensity()), flags);
+        return getInstantRunArgs(device.getVersion(),
+                Density.getEnum(device.getDensity()), coldswapMode, flags);
     }
 
     @NonNull
     private static List<String> getInstantRunArgs(
             @Nullable AndroidVersion androidVersion,
             @Nullable Density denisty,
+            @NonNull ColdswapMode coldswapMode,
             @NonNull OptionalCompilationStep[] flags) {
         ImmutableList.Builder<String> builder = ImmutableList.builder();
         if (androidVersion != null) {
@@ -94,6 +102,8 @@ final class InstantRunTestUtils {
             builder.add(String.format(
                     "-Pandroid.injected.build.density=%s", denisty.getDpiValue()));
         }
+
+        builder.add(String.format("-Pandroid.injected.coldswap.mode=%s", coldswapMode.name()));
 
         StringBuilder optionalSteps = new StringBuilder()
                 .append("-P").append("android.optional.compilation").append('=')
