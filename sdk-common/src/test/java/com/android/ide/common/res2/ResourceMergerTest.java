@@ -302,6 +302,35 @@ public class ResourceMergerTest extends BaseTestCase {
         assertTrue(items.get(0).getIgnoredFromDiskMerge());
     }
 
+    public void testNotMergedSingleFileItem() throws Exception {
+        ResourceMerger merger = getResourceMerger();
+
+        List<ResourceItem> items = merger.getDataSets().get(0).getDataMap().get("drawable/patch");
+        assertEquals(1, items.size());
+        assertFalse(items.get(0).getIgnoredFromDiskMerge());
+
+        File folder = Files.createTempDir();
+        merger.writeBlobTo(folder, getConsumer());
+
+        ResourceMerger loadedMerger = new ResourceMerger(0);
+        assertTrue(loadedMerger.loadFromBlob(folder, true /*incrementalState*/));
+
+        // drawable/patch should survive blob writing / loading
+        List<ResourceItem> loadedItems = loadedMerger.getDataSets().get(0).getDataMap().get("drawable/patch");
+        assertEquals(1, loadedItems.size());
+
+        // Now mark the item ignored and try write + load again
+        loadedItems.get(0).setIgnoredFromDiskMerge(true);
+        folder = Files.createTempDir();
+        loadedMerger.writeBlobTo(folder, getConsumer());
+
+        ResourceMerger loadedMerger2 = new ResourceMerger(0);
+        assertTrue(loadedMerger2.loadFromBlob(folder, true /*incrementalState*/));
+
+        List<ResourceItem> loadedItems2 = loadedMerger2.getDataSets().get(0).getDataMap().get("drawable/patch");
+        assertEquals(0, loadedItems2.size());
+    }
+
     public void testWrittenDeclareStyleable() throws Exception {
         RecordingLogger logger =  new RecordingLogger();
 

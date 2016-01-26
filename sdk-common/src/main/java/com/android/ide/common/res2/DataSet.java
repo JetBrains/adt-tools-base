@@ -280,13 +280,7 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
                     continue;
                 }
 
-                // the node for the file and its path and qualifiers attribute
-                Node fileNode = document.createElement(NODE_FILE);
-                sourceNode.appendChild(fileNode);
-                NodeUtils.addAttribute(document, fileNode, null, ATTR_PATH,
-                        dataFile.getFile().getAbsolutePath());
-                dataFile.addExtraAttributes(document, fileNode, null);
-
+                Node fileNode = null;
                 switch (dataFile.getType()) {
                     case GENERATED_FILES:
                         // Fall through. getDetailsXml() will return the XML which describes the
@@ -295,6 +289,9 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
                         for (I item : dataFile.getItems()) {
                             if (item.isRemoved()|| consumer.ignoreItemInMerge(item)) {
                                 continue;
+                            }
+                            if (fileNode == null) {
+                                fileNode = createFileElement(document, sourceNode, dataFile);
                             }
                             Node adoptedNode = item.getDetailsXml(document);
                             if (adoptedNode != null) {
@@ -306,6 +303,10 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
                         // no need to check for isRemoved here since it's checked
                         // at the file level and there's only one item.
                         I dataItem = dataFile.getItem();
+                        if (consumer.ignoreItemInMerge(dataItem)) {
+                            continue;
+                        }
+                        fileNode = createFileElement(document, sourceNode, dataFile);
                         NodeUtils.addAttribute(document, fileNode, null, ATTR_NAME, dataItem.getName());
                         dataItem.addExtraAttributes(document, fileNode, null);
                         break;
@@ -314,6 +315,16 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
                 }
             }
         }
+    }
+
+    private Node createFileElement(@NonNull Document document, Node sourceNode, F dataFile) {
+        // the node for the file and its path and qualifiers attribute
+        Node fileNode = document.createElement(NODE_FILE);
+        sourceNode.appendChild(fileNode);
+        NodeUtils.addAttribute(document, fileNode, null, ATTR_PATH,
+                               dataFile.getFile().getAbsolutePath());
+        dataFile.addExtraAttributes(document, fileNode, null);
+        return fileNode;
     }
 
     /**
