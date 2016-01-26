@@ -18,8 +18,6 @@ package com.android.build.gradle.ndk.internal;
 
 import com.google.common.collect.ImmutableList;
 
-import org.gradle.nativeplatform.NativeBinarySpec;
-
 import java.util.List;
 
 /**

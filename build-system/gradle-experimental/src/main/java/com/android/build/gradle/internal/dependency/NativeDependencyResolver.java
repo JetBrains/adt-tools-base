@@ -109,9 +109,6 @@ public class NativeDependencyResolver {
         NamedDomainObjectSet<PrebuiltLibraries> repositories = projectModel.realize(
                 ModelPath.path("repositories"),
                 ModelType.of(Repositories.class)).withType(PrebuiltLibraries.class);
-        projectModel.realize(
-                ModelPath.path("repositories"),
-                ModelType.of(Repositories.class));
         if (repositories.isEmpty()) {
             throw new PrebuiltLibraryResolveException(
                     "Project does not have any prebuilt library repositories.");

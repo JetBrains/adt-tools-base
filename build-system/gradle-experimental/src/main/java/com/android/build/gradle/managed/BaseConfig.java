@@ -23,12 +23,9 @@ import com.android.builder.model.AndroidArtifact;
 import org.gradle.api.Named;
 import org.gradle.model.Managed;
 import org.gradle.model.ModelSet;
-import org.gradle.model.Unmanaged;
 
 import java.io.File;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**

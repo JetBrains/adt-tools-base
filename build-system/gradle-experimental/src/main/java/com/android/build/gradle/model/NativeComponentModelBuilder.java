@@ -47,7 +47,6 @@ import org.gradle.model.internal.registry.ModelRegistry;
 import org.gradle.model.internal.type.ModelType;
 import org.gradle.tooling.provider.model.ToolingModelBuilder;
 
-import java.io.File;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;

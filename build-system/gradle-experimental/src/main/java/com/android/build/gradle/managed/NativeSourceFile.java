@@ -20,7 +20,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 import org.gradle.model.Managed;
-import org.gradle.model.Unmanaged;
 
 import java.io.File;
 import java.util.List;

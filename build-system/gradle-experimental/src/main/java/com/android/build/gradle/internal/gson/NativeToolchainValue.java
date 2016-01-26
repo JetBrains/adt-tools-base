@@ -20,8 +20,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.managed.NativeToolchain;
 
-import org.gradle.api.internal.file.FileResolver;
-
 import java.io.File;
 
 /**

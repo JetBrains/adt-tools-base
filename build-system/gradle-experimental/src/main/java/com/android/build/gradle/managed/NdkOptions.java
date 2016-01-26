@@ -19,7 +19,6 @@ package com.android.build.gradle.managed;
 import com.android.annotations.NonNull;
 
 import org.gradle.model.Managed;
-import org.gradle.model.Unmanaged;
 
 import java.util.List;
 import java.util.Set;

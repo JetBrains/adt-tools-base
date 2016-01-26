@@ -29,12 +29,10 @@ import com.android.build.gradle.model.internal.AndroidComponentSpecInternal;
 import com.android.builder.core.BuilderConstants;
 import com.google.common.base.Preconditions;
 
-import org.gradle.api.Action;
 import org.gradle.api.Task;
 import org.gradle.model.ModelMap;
 import org.gradle.model.Mutate;
 import org.gradle.model.RuleSource;
-import org.gradle.platform.base.BinaryContainer;
 
 /**
  * Plugin for creating test tasks for AndroidBinary.
