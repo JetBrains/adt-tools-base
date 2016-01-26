@@ -22,7 +22,7 @@ import com.android.annotations.NonNull;
  * Information stored in the {@link CentralDirectoryHeader} that is related to compression and may
  * need to be computed lazily.
  */
-class CentralDirectoryHeaderCompressInfo {
+public class CentralDirectoryHeaderCompressInfo {
     /**
      * The compression method.
      */
@@ -80,7 +80,7 @@ class CentralDirectoryHeaderCompressInfo {
      *
      * @return the compressed data size
      */
-    long getCompressedSize() {
+    public long getCompressedSize() {
         return mCompressedSize;
     }
 
@@ -90,7 +90,7 @@ class CentralDirectoryHeaderCompressInfo {
      * @return the compression method
      */
     @NonNull
-    CompressionMethod getMethod() {
+    public CompressionMethod getMethod() {
         return mMethod;
     }
 
@@ -99,7 +99,7 @@ class CentralDirectoryHeaderCompressInfo {
      *
      * @return the minimum version
      */
-    long getVersionExtract() {
+    public long getVersionExtract() {
         return mVersionExtract;
     }
 }
