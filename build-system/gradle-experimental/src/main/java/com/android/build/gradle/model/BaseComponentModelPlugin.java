@@ -392,6 +392,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             buildType.setRenderscriptDebuggable(false);
             buildType.setRenderscriptOptimLevel(3);
             buildType.setMinifyEnabled(false);
+            buildType.setUseProguard(true);
             buildType.setZipAlignEnabled(true);
             buildType.setEmbedMicroApp(true);
             buildType.setUseJack(false);
