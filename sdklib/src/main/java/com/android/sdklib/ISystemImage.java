@@ -99,5 +99,6 @@ public interface ISystemImage extends Comparable<ISystemImage> {
     /**
      * Returns the {@link AndroidVersion} of this system image.
      */
+    @NonNull
     AndroidVersion getAndroidVersion();
 }
