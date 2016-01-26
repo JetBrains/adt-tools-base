@@ -50,6 +50,7 @@
 
     <xsd:import namespace="http://schemas.android.com/repository/android/common/01"/>
     <xsd:import namespace="http://schemas.android.com/sdk/android/repo/common/01" schemaLocation="sdk-common-01.xsd"/>
+    <xsd:import namespace="http://schemas.android.com/repository/android/generic/01"/>
 
     <!-- the root element for primary repositories -->
     <xsd:element name="sdk-repository" type="common:repositoryType"/>
