@@ -99,4 +99,22 @@ public class ChangeRecordsTest {
         assertThat(changeRecords.getChangeFor("path/to/some/file")).isEqualTo(Status.CHANGED);
         assertThat(changeRecords.getChangeFor("some/other/file")).isEqualTo(Status.CHANGED);
     }
+
+    @Test
+    public void testGetFilesForStatusAPI() {
+        ChangeRecords changeRecords = new ChangeRecords();
+        changeRecords.add(Status.ADDED, "some/added/file1");
+        changeRecords.add(Status.ADDED, "some/added/file2");
+        changeRecords.add(Status.CHANGED, "some/other/file1");
+        changeRecords.add(Status.CHANGED, "some/other/file2");
+        changeRecords.add(Status.REMOVED, "some/removed/file1");
+        changeRecords.add(Status.REMOVED, "some/removed/file2");
+
+        assertThat(changeRecords.getFilesForStatus(Status.ADDED)).containsExactly(
+                "some/added/file1", "some/added/file2");
+        assertThat(changeRecords.getFilesForStatus(Status.CHANGED)).containsExactly(
+                "some/other/file1", "some/other/file2");
+        assertThat(changeRecords.getFilesForStatus(Status.REMOVED)).containsExactly(
+                "some/removed/file1", "some/removed/file2");
+    }
 }

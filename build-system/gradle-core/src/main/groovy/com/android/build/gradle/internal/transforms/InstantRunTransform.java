@@ -22,8 +22,7 @@ import static com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.api.transform.SecondaryInput;
-import com.android.build.api.transform.Context;
+import com.android.annotations.VisibleForTesting;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
 import com.android.build.api.transform.JarInput;
@@ -127,7 +126,7 @@ public class InstantRunTransform extends Transform {
     }
 
     @Override
-    public void transform(TransformInvocation invocation)
+    public void transform(@NonNull TransformInvocation invocation)
             throws IOException, TransformException, InterruptedException {
 
         TransformOutputProvider outputProvider = invocation.getOutputProvider();
@@ -140,9 +139,9 @@ public class InstantRunTransform extends Transform {
         List<URL> referencedInputUrls = getAllClassesLocations(
                 invocation.getInputs(), invocation.getReferencedInputs());
 
-        // This classloader could be optimized a bit, first we could create a parent class loader
+        // This class loader could be optimized a bit, first we could create a parent class loader
         // with the android.jar only that could be stored in the GlobalScope for reuse. This
-        // classloader could also be store in the VariantScope for potential reuse if some
+        // class loader could also be store in the VariantScope for potential reuse if some
         // other transform need to load project's classes.
         URLClassLoader urlClassLoader = new URLClassLoader(
                 referencedInputUrls.toArray(new URL[referencedInputUrls.size()]), null) {
@@ -187,15 +186,20 @@ public class InstantRunTransform extends Transform {
                                     break;
                                 case REMOVED:
                                     // remove the classes.2 and classes.3 files.
-                                    deleteOutputFile(IncrementalSupportVisitor.VISITOR_BUILDER,
+                                    File outputFile = deleteOutputFile(
+                                            IncrementalSupportVisitor.VISITOR_BUILDER,
                                             inputDir, inputFile, classesTwoOutput);
+                                    if (outputFile != null) {
+                                        generatedClasses2Files.add(
+                                                Status.REMOVED, outputFile.getAbsolutePath());
+                                    }
                                     deleteOutputFile(IncrementalChangeVisitor.VISITOR_BUILDER,
                                             inputDir, inputFile, classesThreeOutput);
                                     break;
                                 case CHANGED:
-                                    // an existing file was changed, we regenerate the classes.2 and
-                                    // classes.3 files as they are both needed to support restart and
-                                    // reload.
+                                    // an existing file was changed, we regenerate the classes.2
+                                    // and classes.3 files as they are both needed to support
+                                    // restart and reload.
                                     transformToClasses2Format(
                                             inputDir,
                                             inputFile,
@@ -213,7 +217,8 @@ public class InstantRunTransform extends Transform {
                             }
                         }
                     } else {
-                        // non incremental mode, we need to traverse the TransformInput#getFiles() folder}
+                        // non incremental mode, we need to traverse the TransformInput#getFiles()
+                        // folder
                         for (File file : Files.fileTreeTraverser().breadthFirstTraversal(inputDir)) {
                             if (file.isDirectory()) {
                                 continue;
@@ -265,7 +270,7 @@ public class InstantRunTransform extends Transform {
         File incremental = InstantRunBuildType.RESTART.getIncrementalChangesFile(variantScope);
         if (incremental.exists()) {
             ChangeRecords previousIterationChanges = ChangeRecords.load(incremental);
-            generatedClasses2Files.addAll(previousIterationChanges);
+            merge(generatedClasses2Files, previousIterationChanges);
         }
 
         generatedClasses2Files.write(
@@ -273,6 +278,27 @@ public class InstantRunTransform extends Transform {
 
         generatedClasses3Files.write(
                 InstantRunBuildType.RELOAD.getIncrementalChangesFile(variantScope));
+    }
+
+    /**
+     * Merges a past iteration set of change records into this iteration following simple merging
+     * rules :
+     *    - if the file has been deleted during this iteration, do not merge past records.
+     * @param changeRecords this iteration change records
+     * @param pastIterationRecords past iteration change records.
+     */
+    @VisibleForTesting
+    static void merge(@NonNull ChangeRecords changeRecords,
+            @NonNull ChangeRecords pastIterationRecords) {
+
+        // do not keep previous iteration records for files that got deleted during this
+        // iteration.
+        Set<String> deletedFiles = changeRecords.getFilesForStatus(Status.REMOVED);
+        for (Map.Entry<String, Status> record : pastIterationRecords.records.entrySet()) {
+            if (!deletedFiles.contains(record.getKey())) {
+                changeRecords.add(record.getValue(), record.getKey());
+            }
+        }
     }
 
     /**
@@ -344,21 +370,26 @@ public class InstantRunTransform extends Transform {
         }
     }
 
-    private static void deleteOutputFile(
+    @Nullable
+    private static File deleteOutputFile(
             @NonNull IncrementalVisitor.VisitorBuilder visitorBuilder,
             @NonNull File inputDir, @NonNull File inputFile, @NonNull File outputDir) {
         String inputPath = FileUtils.relativePossiblyNonExistingPath(inputFile, inputDir);
         String outputPath =
                 visitorBuilder.getMangledRelativeClassFilePath(inputPath);
         File outputFile = new File(outputDir, outputPath);
-        try {
-            FileUtils.delete(outputFile);
-        } catch (IOException e) {
-            // it's not a big deal if the file cannot be deleted, hopefully
-            // no code is still referencing it, yet we should notify.
-            LOGGER.warning("Cannot delete %1$s file.\nCause: %2$s",
-                    outputFile, Throwables.getStackTraceAsString(e));
+        if (outputFile.exists()) {
+            try {
+                FileUtils.delete(outputFile);
+            } catch (IOException e) {
+                // it's not a big deal if the file cannot be deleted, hopefully
+                // no code is still referencing it, yet we should notify.
+                LOGGER.warning("Cannot delete %1$s file.\nCause: %2$s",
+                        outputFile, Throwables.getStackTraceAsString(e));
+            }
+            return outputFile;
         }
+        return null;
     }
 
     /**
