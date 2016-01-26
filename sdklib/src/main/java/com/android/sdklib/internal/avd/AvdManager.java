@@ -1482,7 +1482,7 @@ public class AvdManager {
 
         String avdPath = map.get(AVD_INFO_ABS_PATH);
 
-        if (!(mFop.isDirectory(new File(avdPath)))) {
+        if (avdPath == null || !(mFop.isDirectory(new File(avdPath)))) {
             // Try to fallback on the relative path, if present.
             String relPath = map.get(AVD_INFO_REL_PATH);
             if (relPath != null) {
@@ -1522,9 +1522,10 @@ public class AvdManager {
 
         // check the image.sysdir are valid
         boolean validImageSysdir = true;
+        String imageSysDir = null;
         ISystemImage sysImage = null;
         if (properties != null) {
-            String imageSysDir = properties.get(AVD_INI_IMAGES_1);
+            imageSysDir = properties.get(AVD_INI_IMAGES_1);
             if (imageSysDir != null) {
                 File f = new File(mSdkHandler.getLocation(), imageSysDir);
                 if (!mFop.isDirectory(f)) {
@@ -1594,9 +1595,9 @@ public class AvdManager {
             status = AvdStatus.ERROR_PATH;
         } else if (configIniFile == null) {
             status = AvdStatus.ERROR_CONFIG;
-        } else if (properties == null) {
+        } else if (properties == null || imageSysDir == null) {
             status = AvdStatus.ERROR_PROPERTIES;
-        } else if (validImageSysdir == false) {
+        } else if (!validImageSysdir) {
             status = AvdStatus.ERROR_IMAGE_DIR;
         } else if (deviceStatus == DeviceStatus.CHANGED) {
             status = AvdStatus.ERROR_DEVICE_CHANGED;
@@ -1687,7 +1688,7 @@ public class AvdManager {
      * @param log the ILogger object receiving warning/error from the parsing.
      * @return the map of (key,value) pairs, or null if the parsing failed.
      */
-    private static Map<String, String> parseIniFile(
+    public static Map<String, String> parseIniFile(
             @NonNull IAbstractFile propFile,
             @Nullable ILogger log) {
         return parseIniFileImpl(propFile, log, null);
