@@ -18,6 +18,7 @@ import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.FileSupplier;
 import com.android.build.gradle.internal.tasks.IncrementalTask;
 import com.android.build.gradle.internal.tasks.ValidateSigningTask;
+import com.android.build.gradle.internal.transforms.InstantRunSlicer;
 import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
@@ -281,11 +282,11 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
     public static class ConfigAction implements TaskConfigAction<PackageApplication> {
 
         private final VariantOutputScope scope;
-        private final boolean addDexFilesToApk;
+        private final boolean fullMode;
 
-        public ConfigAction(VariantOutputScope scope, boolean addDexFilesToApk) {
+        public ConfigAction(VariantOutputScope scope, boolean fullMode) {
             this.scope = scope;
-            this.addDexFilesToApk = addDexFilesToApk;
+            this.fullMode = fullMode;
         }
 
         @NonNull
@@ -340,10 +341,19 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                         return ImmutableSet.of(variantScope.getJackDestinationDir());
                     }
 
-                    return addDexFilesToApk
-                        ? variantScope.getTransformManager()
-                            .getPipelineOutput(sDexFilter).keySet()
-                        : ImmutableSet.<File>of();
+                    if (fullMode) {
+                        return variantScope.getTransformManager()
+                                .getPipelineOutput(sDexFilter).keySet();
+                    } else {
+                        // only add the main slice in the main APK.
+                        for (File file : variantScope.getTransformManager()
+                                .getPipelineOutput(sDexFilter).keySet()) {
+                            if (file.getName().contains(InstantRunSlicer.MAIN_SLICE_NAME)) {
+                                return ImmutableSet.of(file);
+                            }
+                        }
+                        return ImmutableSet.of();
+                    }
                 }
             });
 
