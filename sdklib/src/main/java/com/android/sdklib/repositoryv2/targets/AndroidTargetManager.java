@@ -102,6 +102,7 @@ public class AndroidTargetManager {
                     AndroidVersion version2 = DetailsTypes.getAndroidVersion(details2);
                     return ComparisonChain.start()
                             .compare(version1, version2)
+                            .compare(o1.getPath(), o2.getPath())
                             .compare(details1.getClass().getName(), details2.getClass().getName())
                             .result();
                 }
