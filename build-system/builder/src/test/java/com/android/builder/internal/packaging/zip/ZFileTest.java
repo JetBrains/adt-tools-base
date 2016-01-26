@@ -18,12 +18,16 @@ package com.android.builder.internal.packaging.zip;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
+import com.android.annotations.NonNull;
+import com.android.builder.internal.packaging.zip.compress.DeflateExecutionCompressor;
 import com.android.builder.internal.packaging.zip.utils.CachedFileContents;
+import com.android.builder.internal.packaging.zip.utils.CloseableByteSource;
 import com.android.builder.internal.packaging.zip.utils.RandomAccessFileUtils;
 import com.android.testutils.TestUtils;
 import com.android.utils.FileUtils;
@@ -49,7 +53,10 @@ import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
+import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
@@ -989,7 +996,7 @@ public class ZFileTest {
         File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
         ZFile zf = new ZFile(zipFile);
         zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*\\.txt"), 1000));
-        zf.add("test1.txt", new ByteArrayInputStream(new byte[] { 1 }), false);
+        zf.add("test1.txt", new ByteArrayInputStream(new byte[]{1}), false);
         zf.close();
 
         /*
@@ -1029,5 +1036,53 @@ public class ZFileTest {
         } finally {
             closer.close();
         }
+    }
+
+    @Test
+    public void deferredCompression() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+
+        ZFileOptions options = new ZFileOptions();
+        final boolean[] done = new boolean[1];
+        options.setCompressor(new DeflateExecutionCompressor(executor, options.getTracker(),
+                Deflater.BEST_COMPRESSION) {
+            @NonNull
+            @Override
+            protected CompressionResult immediateCompress(@NonNull CloseableByteSource source)
+                    throws Exception {
+                Thread.sleep(500);
+                CompressionResult cr = super.immediateCompress(source);
+                done[0] = true;
+                return cr;
+            }
+        });
+
+        ZFile zip = new ZFile(zipFile, options);
+        byte sequences = 100;
+        int seqCount = 1000;
+        final byte[] compressableData = new byte[sequences * seqCount];
+        for (byte i = 0; i < sequences; i++) {
+            for (int j = 0; j < seqCount; j++) {
+                compressableData[i * seqCount + j] = i;
+            }
+        }
+
+        zip.add("compressedFile", new ByteArrayInputStream(compressableData));
+        assertFalse(done[0]);
+
+        /*
+         * Even before closing, eventually all the stream will be read.
+         */
+        long tooLong = System.currentTimeMillis() + 10000;
+        while (!done[0] && System.currentTimeMillis() < tooLong) {
+            Thread.sleep(10);
+        }
+
+        assertTrue(done[0]);
+
+        zip.close();
+        executor.shutdownNow();
     }
 }

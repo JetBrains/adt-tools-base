@@ -39,7 +39,7 @@ import java.io.InputStream;
  * open ({@link #open()}) or realigned ({@link #realign()}).
  * <p>
  * Entries are not created directly. They are created using
- * {@link ZFile#add(CentralDirectoryHeader, ProcessedAndRawByteSources)} and obtained from the zip file
+ * {@link ZFile#add(String, InputStream, boolean)} and obtained from the zip file
  * using {@link ZFile#get(String)} or {@link ZFile#entries()}.
  * <p>
  * Most of the data in the an entry is in the Central Directory Header. This includes the name,
