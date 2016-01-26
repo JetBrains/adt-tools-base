@@ -31,6 +31,7 @@ import com.android.build.gradle.integration.common.truth.ApkSubject;
 import com.android.build.gradle.integration.common.truth.DexFileSubject;
 import com.android.build.gradle.integration.common.utils.DeviceHelper;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
+import com.android.build.gradle.internal.incremental.ColdswapMode;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.InstantRun;
@@ -92,7 +93,8 @@ public class HotSwapTest {
                 .getInstantRunModel(project.getSingleModel());
 
         project.execute(
-                InstantRunTestUtils.getInstantRunArgs(19, OptionalCompilationStep.RESTART_ONLY),
+                InstantRunTestUtils.getInstantRunArgs(19,
+                        ColdswapMode.MULTIAPK, OptionalCompilationStep.RESTART_ONLY),
                 "assembleDebug");
 
         // As no injected API level, will default to no splits.
@@ -134,7 +136,8 @@ public class HotSwapTest {
         Assume.assumeThat("Device api level", device.getVersion(), is(new AndroidVersion(23, null)));
 
         project.execute(
-                InstantRunTestUtils.getInstantRunArgs(device, OptionalCompilationStep.RESTART_ONLY),
+                InstantRunTestUtils.getInstantRunArgs(
+                        device, ColdswapMode.MULTIAPK, OptionalCompilationStep.RESTART_ONLY),
                 "assembleDebug");
 
         // Deploy to device

@@ -21,8 +21,10 @@ import static com.google.common.truth.Truth.assertThat;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.integration.common.utils.DeviceHelper;
+import com.android.build.gradle.internal.incremental.ColdswapMode;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.InstantRun;
@@ -70,21 +72,25 @@ final class InstantRunTestUtils {
 
     @NonNull
     static List<String> getInstantRunArgs(int apiLevel,
+            @NonNull ColdswapMode coldswapMode,
             @NonNull OptionalCompilationStep... flags) {
-        return getInstantRunArgs(new AndroidVersion(apiLevel, null), flags);
+        return getInstantRunArgs(new AndroidVersion(apiLevel, null), coldswapMode, flags);
     }
 
     static List<String> getInstantRunArgs(@NonNull IDevice device,
+            @NonNull ColdswapMode coldswapMode,
             @NonNull OptionalCompilationStep... flags) {
-        return getInstantRunArgs(device.getVersion(), flags);
+        return getInstantRunArgs(device.getVersion(), coldswapMode, flags);
     }
 
     @NonNull
     static List<String> getInstantRunArgs(@NonNull AndroidVersion androidVersion,
+            @NonNull ColdswapMode coldswapMode,
             @NonNull OptionalCompilationStep... flags) {
         String version =
                 String.format("-Pandroid.injected.build.api=%s", androidVersion.getApiString());
-        return ImmutableList.of(buildOptionalCompilationStepsProperty(flags), version);
+        String mode = String.format("-Pandroid.injected.coldswap.mode=%s", coldswapMode.name());
+        return ImmutableList.of(buildOptionalCompilationStepsProperty(flags), version, mode);
     }
 
     @NonNull
