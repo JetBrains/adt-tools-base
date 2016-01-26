@@ -122,9 +122,14 @@ public class InstantRunSplitApkBuilder extends BaseTask {
                 @Override
                 public void execute(InputFileDetails inputFileDetails) {
                     try {
-                        generateSplitApk(new DexFile(
-                                inputFileDetails.getFile(),
-                                inputFileDetails.getFile().getParentFile().getName()));
+                        // we generate APKs for all slices but the main slice which will get
+                        // packaged in the main APK.
+                        if (!inputFileDetails.getFile().getName().contains(
+                                InstantRunSlicer.MAIN_SLICE_NAME)) {
+                            generateSplitApk(new DexFile(
+                                    inputFileDetails.getFile(),
+                                    inputFileDetails.getFile().getParentFile().getName()));
+                        }
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
@@ -158,7 +163,10 @@ public class InstantRunSplitApkBuilder extends BaseTask {
             }
             for (DexFile file : allFiles) {
                 // generate a split APK for each.
-                generateSplitApk(file);
+                if (!file.dexFile.getParentFile().getName().contains(
+                        InstantRunSlicer.MAIN_SLICE_NAME)) {
+                    generateSplitApk(file);
+                }
             }
         }
     }
@@ -209,7 +217,8 @@ public class InstantRunSplitApkBuilder extends BaseTask {
                     + "      android:versionCode=\"" + getVersionCode() + "\"\n"
                     + "      android:versionName=\"" + versionNameToUse + "\"\n"
                     + "      split=\"lib_" + uniqueName + "\">\n"
-                    + "       <uses-sdk android:minSdkVersion=\"21\"/>\n" + "</manifest>\n");
+                    //+ "       <uses-sdk android:minSdkVersion=\"21\"/>\n" + "</manifest>\n");
+                    + "</manifest>\n");
             fileWriter.flush();
         } finally {
             fileWriter.close();
