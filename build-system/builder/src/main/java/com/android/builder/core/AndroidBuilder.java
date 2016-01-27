@@ -1425,14 +1425,14 @@ public class AndroidBuilder {
 
         if (requestedHeapSize > maxMemory) {
             String dslRequest = dexOptions.getJavaMaxHeapSize();
-            logger.warning("To run dex in process, the Gradle daemon needs a larger heap.\n"
+            logger.warning("To run dex in process, the Gradle daemon needs a larger heap. "
                     + "It currently has %1$d MB.\n"
-                    + "For faster builds, increase the maximum heap size for the Gradle daemon"
-                    + "to more than $2$s.\n"
-                    + "To do this set org.gradle.jvmargs=-Xmx%2$s in the "
+                    + "For faster builds, increase the maximum heap size for the Gradle daemon "
+                    + "to more than %2$s.\n"
+                    + "To do this, set org.gradle.jvmargs=-Xmx%2$s in the "
                     + "project gradle.properties.\n"
                     + "For more information see "
-                    + "https://docs.gradle.org/current/userguide/build_environment.html",
+                    + "https://docs.gradle.org/current/userguide/build_environment.html\n",
                     maxMemory / (1024 * 1024),
                     (dslRequest == null) ? "1G" :
                             dslRequest + " " + "as specified in dexOptions.javaMaxHeapSize");
