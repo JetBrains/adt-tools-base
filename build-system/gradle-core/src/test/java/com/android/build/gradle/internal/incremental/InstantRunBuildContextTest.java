@@ -80,7 +80,7 @@ public class InstantRunBuildContextTest {
     public void testDuplicateEntries() throws ParserConfigurationException, IOException {
         InstantRunBuildContext context = new InstantRunBuildContext();
         context.setApiLevel(new AndroidVersion(21, null /* codeName */),
-                ColdswapMode.MULTIDEX.name());
+                ColdswapMode.MULTIDEX.name(), null /* targetArchitecture */);
         context.addChangedFile(
                 InstantRunBuildContext.FileType.DEX, new File("/tmp/dependencies.dex"));
         context.addChangedFile(
@@ -131,7 +131,7 @@ public class InstantRunBuildContextTest {
     public void testXmlFormat() throws ParserConfigurationException, IOException, SAXException {
         InstantRunBuildContext first = new InstantRunBuildContext();
         first.setApiLevel(new AndroidVersion(23, null /* codeName */),
-                null /* coldswapMode */);
+                null /* coldswapMode */, null /* targetArchitecture */);
         first.setDensity("xxxhdpi");
         first.addChangedFile(InstantRunBuildContext.FileType.MAIN, new File("main.apk"));
         first.addChangedFile(InstantRunBuildContext.FileType.SPLIT, new File("split.apk"));
@@ -139,7 +139,7 @@ public class InstantRunBuildContextTest {
 
         InstantRunBuildContext second = new InstantRunBuildContext();
         second.setApiLevel(new AndroidVersion(23, null /* codeName */),
-                null /* coldswapMode */);
+                null /* coldswapMode */, null /* targetArchitecture */);
         second.setDensity("xhdpi");
         second.loadFromXml(buildInfo);
         second.addChangedFile(InstantRunBuildContext.FileType.SPLIT, new File("other.apk"));
@@ -201,7 +201,7 @@ public class InstantRunBuildContextTest {
             throws IOException, ParserConfigurationException, SAXException {
         InstantRunBuildContext instantRunBuildContext = new InstantRunBuildContext();
         instantRunBuildContext.setApiLevel(new AndroidVersion(23, null /* codeName */),
-                null /* coldswapMode */);
+                null /* coldswapMode */, null /* targetArchitecture */);
         instantRunBuildContext.addChangedFile(InstantRunBuildContext.FileType.MAIN,
                 new File("main.apk"));
         instantRunBuildContext.addChangedFile(InstantRunBuildContext.FileType.SPLIT,
@@ -226,13 +226,13 @@ public class InstantRunBuildContextTest {
             throws ParserConfigurationException, IOException, SAXException {
         InstantRunBuildContext initial = new InstantRunBuildContext();
         initial.setApiLevel(new AndroidVersion(23, null /* codeName */),
-                null /* coldswapMode */);
+                null /* coldswapMode */, null /* targetArchitecture */);
         initial.addChangedFile(InstantRunBuildContext.FileType.SPLIT, new File("/tmp/split-0.apk"));
         String buildInfo = initial.toXml();
 
         InstantRunBuildContext first = new InstantRunBuildContext();
         first.setApiLevel(new AndroidVersion(23, null /* codeName */),
-                null /* coldswapMode */);
+                null /* coldswapMode */, null /* targetArchitecture */);
         first.loadFromXml(buildInfo);
         first.addChangedFile(InstantRunBuildContext.FileType.RELOAD_DEX,
                 new File("reload.dex"));
@@ -242,7 +242,7 @@ public class InstantRunBuildContextTest {
         InstantRunBuildContext second = new InstantRunBuildContext();
         second.loadFromXml(buildInfo);
         second.setApiLevel(new AndroidVersion(23, null),
-                null /* coldswapMode */);
+                null /* coldswapMode */, null /* targetArchitecture */);
         second.addChangedFile(InstantRunBuildContext.FileType.SPLIT, new File("split.apk"));
         second.setVerifierResult(InstantRunVerifierStatus.CLASS_ANNOTATION_CHANGE);
 
@@ -263,7 +263,7 @@ public class InstantRunBuildContextTest {
             throws ParserConfigurationException, IOException, SAXException {
         InstantRunBuildContext initial = new InstantRunBuildContext();
         initial.setApiLevel(new AndroidVersion(23, null /* codeName */),
-                null /* coldswapMode */);
+                null /* coldswapMode */, null /* targetArchitecture */);
         initial.addChangedFile(InstantRunBuildContext.FileType.SPLIT, new File("/tmp/split-0.apk"));
         initial.close();
         String buildInfo = initial.toXml();
@@ -271,7 +271,7 @@ public class InstantRunBuildContextTest {
         InstantRunBuildContext first = new InstantRunBuildContext();
         first.loadFromXml(buildInfo);
         first.setApiLevel(new AndroidVersion(23, null /* codeName */),
-                null /* coldswapMode */);
+                null /* coldswapMode */, null /* targetArchitecture */);
         first.addChangedFile(InstantRunBuildContext.FileType.RELOAD_DEX,
                 new File("reload.dex"));
         first.setVerifierResult(InstantRunVerifierStatus.COMPATIBLE);
@@ -281,7 +281,7 @@ public class InstantRunBuildContextTest {
         InstantRunBuildContext second = new InstantRunBuildContext();
         second.loadFromXml(buildInfo);
         second.setApiLevel(new AndroidVersion(23, null),
-                null /* coldswapMode */);
+                null /* coldswapMode */, null /* targetArchitecture */);
         second.addChangedFile(InstantRunBuildContext.FileType.SPLIT, new File("split.apk"));
         second.setVerifierResult(InstantRunVerifierStatus.CLASS_ANNOTATION_CHANGE);
 
@@ -291,7 +291,7 @@ public class InstantRunBuildContextTest {
         InstantRunBuildContext third = new InstantRunBuildContext();
         third.loadFromXml(buildInfo);
         third.setApiLevel(new AndroidVersion(23, null),
-                null /* coldswapMode */);
+                null /* coldswapMode */, null /* targetArchitecture */);
         third.addChangedFile(InstantRunBuildContext.FileType.RESOURCES,
                 new File("resources-debug.ap_"));
         third.addChangedFile(InstantRunBuildContext.FileType.RELOAD_DEX, new File("reload.dex"));
@@ -303,7 +303,7 @@ public class InstantRunBuildContextTest {
         InstantRunBuildContext fourth = new InstantRunBuildContext();
         fourth.loadFromXml(buildInfo);
         fourth.setApiLevel(new AndroidVersion(23, null),
-                null /* coldswapMode */);
+                null /* coldswapMode */, null /* targetArchitecture */);
         fourth.addChangedFile(InstantRunBuildContext.FileType.RESOURCES,
                 new File("resources-debug.ap_"));
         fourth.setVerifierResult(InstantRunVerifierStatus.COMPATIBLE);
@@ -331,14 +331,14 @@ public class InstantRunBuildContextTest {
             throws ParserConfigurationException, IOException, SAXException {
         InstantRunBuildContext initial = new InstantRunBuildContext();
         initial.setApiLevel(new AndroidVersion(23, null /* codeName */),
-                null /* coldswapMode */);
+                null /* coldswapMode */, null /* targetArchitecture */);
         initial.addChangedFile(InstantRunBuildContext.FileType.SPLIT, new File("/tmp/split-0.apk"));
         String buildInfo = initial.toXml();
 
         InstantRunBuildContext first = new InstantRunBuildContext();
         first.loadFromXml(buildInfo);
         first.setApiLevel(new AndroidVersion(23, null /* codeName */),
-                null /* coldswapMode */);
+                null /* coldswapMode */, null /* targetArchitecture */);
         first.addChangedFile(InstantRunBuildContext.FileType.SPLIT, new File("/tmp/split-1.apk"));
         first.addChangedFile(InstantRunBuildContext.FileType.SPLIT, new File("/tmp/split-2.apk"));
         first.setVerifierResult(InstantRunVerifierStatus.CLASS_ANNOTATION_CHANGE);
@@ -347,7 +347,7 @@ public class InstantRunBuildContextTest {
         InstantRunBuildContext second = new InstantRunBuildContext();
         second.loadFromXml(buildInfo);
         second.setApiLevel(new AndroidVersion(23, null),
-                null /* coldswapMode */);
+                null /* coldswapMode */, null /* targetArchitecture */);
         second.addChangedFile(InstantRunBuildContext.FileType.SPLIT, new File("/tmp/split-2.apk"));
         second.setVerifierResult(InstantRunVerifierStatus.CLASS_ANNOTATION_CHANGE);
         buildInfo = second.toXml();
@@ -355,7 +355,7 @@ public class InstantRunBuildContextTest {
         InstantRunBuildContext third = new InstantRunBuildContext();
         third.loadFromXml(buildInfo);
         third.setApiLevel(new AndroidVersion(23, null),
-                null /* coldswapMode */);
+                null /* coldswapMode */, null /* targetArchitecture */);
         third.addChangedFile(InstantRunBuildContext.FileType.SPLIT, new File("/tmp/split-2.apk"));
         third.addChangedFile(InstantRunBuildContext.FileType.SPLIT, new File("/tmp/split-3.apk"));
         third.setVerifierResult(InstantRunVerifierStatus.CLASS_ANNOTATION_CHANGE);
@@ -394,7 +394,7 @@ public class InstantRunBuildContextTest {
             throws ParserConfigurationException, IOException, SAXException {
         InstantRunBuildContext initial = new InstantRunBuildContext();
         initial.setApiLevel(new AndroidVersion(21, null /* codeName */),
-                ColdswapMode.MULTIDEX.name());
+                ColdswapMode.MULTIDEX.name(), null /* targetArchitecture */);
         initial.addChangedFile(InstantRunBuildContext.FileType.DEX, new File("/tmp/split-1.apk"));
         initial.addChangedFile(InstantRunBuildContext.FileType.DEX, new File("/tmp/split-2.apk"));
         String buildInfo = initial.toXml();
@@ -402,7 +402,7 @@ public class InstantRunBuildContextTest {
         InstantRunBuildContext first = new InstantRunBuildContext();
         first.loadFromXml(buildInfo);
         first.setApiLevel(new AndroidVersion(21, null /* codeName */),
-                null /* coldswapMode */);
+                null /* coldswapMode */, null /* targetArchitecture */);
         first.addChangedFile(InstantRunBuildContext.FileType.RESOURCES, new File("/tmp/resources_ap"));
         first.close();
         String tmpBuildInfo = first.toXml(false);
@@ -411,7 +411,7 @@ public class InstantRunBuildContextTest {
         fixed.loadFromXml(buildInfo);
         fixed.mergeFrom(tmpBuildInfo);
         fixed.setApiLevel(new AndroidVersion(21, null /* codeName */),
-                ColdswapMode.MULTIDEX.name());
+                ColdswapMode.MULTIDEX.name(), null /* targetArchitecture */);
         fixed.addChangedFile(InstantRunBuildContext.FileType.DEX, new File("/tmp/split-1.apk"));
         fixed.close();
         buildInfo = fixed.toXml();
@@ -428,7 +428,72 @@ public class InstantRunBuildContextTest {
         assertThat(artifacts).hasSize(2);
     }
 
-    private List<Element> getElementsByName(Node parent, String nodeName) {
+
+    @Test
+    public void testX86InjectedArchitecture() {
+
+        InstantRunBuildContext context = new InstantRunBuildContext();
+        context.setApiLevel(
+                new AndroidVersion(20, null /* codeName */), null /* coldswapMode */, "x86");
+        assertThat(context.getPatchingPolicy()).isEqualTo(InstantRunPatchingPolicy.PRE_LOLLIPOP);
+
+        context.setApiLevel(
+                new AndroidVersion(21, null /* codeName */), null /* coldswapMode */, "x86");
+        assertThat(context.getPatchingPolicy()).isEqualTo(InstantRunPatchingPolicy.MULTI_DEX);
+
+        context.setApiLevel(
+                new AndroidVersion(23, null /* codeName */), null /* coldswapMode */, "x86");
+        assertThat(context.getPatchingPolicy()).isEqualTo(InstantRunPatchingPolicy.MULTI_DEX);
+
+        context.setApiLevel(
+                new AndroidVersion(21, null /* codeName */), ColdswapMode.MULTIDEX.name(), "x86");
+        assertThat(context.getPatchingPolicy()).isEqualTo(InstantRunPatchingPolicy.MULTI_DEX);
+
+        context.setApiLevel(
+                new AndroidVersion(23, null /* codeName */), ColdswapMode.MULTIDEX.name(), "x86");
+        assertThat(context.getPatchingPolicy()).isEqualTo(InstantRunPatchingPolicy.MULTI_DEX);
+
+        context.setApiLevel(
+                new AndroidVersion(21, null /* codeName */), ColdswapMode.MULTIAPK.name(), "x86");
+        assertThat(context.getPatchingPolicy()).isEqualTo(InstantRunPatchingPolicy.MULTI_APK);
+
+        context.setApiLevel(
+                new AndroidVersion(23, null /* codeName */), ColdswapMode.MULTIAPK.name(), "x86");
+        assertThat(context.getPatchingPolicy()).isEqualTo(InstantRunPatchingPolicy.MULTI_APK);
+    }
+
+    private void testArmInjectedArchitecture() {
+        InstantRunBuildContext context = new InstantRunBuildContext();
+        context.setApiLevel(
+                new AndroidVersion(20, null /* codeName */), null /* coldswapMode */, "arm");
+        assertThat(context.getPatchingPolicy()).isEqualTo(InstantRunPatchingPolicy.PRE_LOLLIPOP);
+
+        context.setApiLevel(
+                new AndroidVersion(21, null /* codeName */), null /* coldswapMode */, "arm");
+        assertThat(context.getPatchingPolicy()).isEqualTo(InstantRunPatchingPolicy.MULTI_APK);
+
+        context.setApiLevel(
+                new AndroidVersion(23, null /* codeName */), null /* coldswapMode */, "arm");
+        assertThat(context.getPatchingPolicy()).isEqualTo(InstantRunPatchingPolicy.MULTI_APK);
+
+        context.setApiLevel(
+                new AndroidVersion(21, null /* codeName */), ColdswapMode.MULTIAPK.name(), "arm");
+        assertThat(context.getPatchingPolicy()).isEqualTo(InstantRunPatchingPolicy.MULTI_APK);
+
+        context.setApiLevel(
+                new AndroidVersion(23, null /* codeName */), ColdswapMode.MULTIAPK.name(), "arm");
+        assertThat(context.getPatchingPolicy()).isEqualTo(InstantRunPatchingPolicy.MULTI_APK);
+
+        context.setApiLevel(
+                new AndroidVersion(21, null /* codeName */), ColdswapMode.MULTIDEX.name(), "arm");
+        assertThat(context.getPatchingPolicy()).isEqualTo(InstantRunPatchingPolicy.MULTI_DEX);
+
+        context.setApiLevel(
+                new AndroidVersion(23, null /* codeName */), ColdswapMode.MULTIDEX.name(), "arm");
+        assertThat(context.getPatchingPolicy()).isEqualTo(InstantRunPatchingPolicy.MULTI_DEX);
+    }
+
+    private static List<Element> getElementsByName(Node parent, String nodeName) {
         ImmutableList.Builder<Element> builder = ImmutableList.builder();
         NodeList childNodes = parent.getChildNodes();
         for (int i = 0; i < childNodes.getLength(); i++) {

@@ -60,20 +60,31 @@ public enum InstantRunPatchingPolicy {
      * Returns the patching policy following the {@link AndroidProject#PROPERTY_BUILD_API} value
      * passed by Android Studio.
      * @param version the {@link AndroidVersion}
+     * @param coldswapMode desired coldswap mode optionally provided.
+     * @param targetArchitecture the targeted architecture.
      * @return a {@link InstantRunPatchingPolicy} instance.
      */
     @NonNull
     public static InstantRunPatchingPolicy getPatchingPolicy(
             @NonNull AndroidVersion version,
-            @Nullable String coldswapMode) {
+            @Nullable String coldswapMode,
+            @Nullable String targetArchitecture) {
 
         if (version.getApiLevel() < 21) {
             return PRE_LOLLIPOP;
         } else {
             // whe dealing with Lollipop and above, by default, we use MULTI_APK.
+            InstantRunPatchingPolicy defaultModeForArchitecture =
+                    Strings.isNullOrEmpty(targetArchitecture)
+                            ? MULTI_APK
+                            : targetArchitecture.contains("x86")
+                                    ? MULTI_DEX
+                                    : MULTI_APK;
+
             if (Strings.isNullOrEmpty(coldswapMode)) {
-                return MULTI_APK;
+                return defaultModeForArchitecture;
             }
+            // coldswap mode was provided, it trumps everything
             ColdswapMode coldswap = ColdswapMode.valueOf(coldswapMode.toUpperCase(Locale.US));
             switch(coldswap) {
                 case MULTIAPK: return MULTI_APK;

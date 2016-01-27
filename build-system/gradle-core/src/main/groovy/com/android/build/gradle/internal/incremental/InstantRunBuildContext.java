@@ -298,10 +298,13 @@ public class InstantRunBuildContext {
                 || currentBuild.verifierStatus.get() == InstantRunVerifierStatus.COMPATIBLE;
     }
 
-    public void setApiLevel(@NonNull AndroidVersion apiLevel, @Nullable String coldswapMode) {
+    public void setApiLevel(@NonNull AndroidVersion apiLevel,
+            @Nullable String coldswapMode,
+            @Nullable String targetArchitecture) {
         this.apiLevel = apiLevel;
         // cache the patching policy.
-        this.patchingPolicy = InstantRunPatchingPolicy.getPatchingPolicy(apiLevel, coldswapMode);
+        this.patchingPolicy = InstantRunPatchingPolicy.getPatchingPolicy(
+                apiLevel, coldswapMode, targetArchitecture);
     }
 
     public AndroidVersion getApiLevel() {

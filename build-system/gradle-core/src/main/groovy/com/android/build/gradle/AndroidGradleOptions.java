@@ -115,6 +115,11 @@ public class AndroidGradleOptions {
     }
 
     @Nullable
+    public static String getBuildTargetAbi(@NonNull Project project) {
+        return getString(project, AndroidProject.PROPERTY_BUILD_ABI);
+    }
+
+    @Nullable
     public static String getColdswapMode(@NonNull Project project) {
         return getString(project, AndroidProject.PROPERTY_SIGNING_COLDSWAP_MODE);
     }
