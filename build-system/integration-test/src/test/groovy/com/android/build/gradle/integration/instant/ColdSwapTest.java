@@ -38,6 +38,7 @@ import com.google.common.io.Files;
 import com.google.common.truth.Expect;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -151,6 +152,7 @@ public class ColdSwapTest {
         checkUpdatedClassPresence(artifact.getLocation());
     }
 
+    @Ignore
     @Test
     public void withMarshmallow() throws Exception {
         final int apiLevel = 23;

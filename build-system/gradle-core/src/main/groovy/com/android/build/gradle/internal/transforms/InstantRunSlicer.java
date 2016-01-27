@@ -92,6 +92,8 @@ import javax.xml.parsers.ParserConfigurationException;
  */
 public class InstantRunSlicer extends Transform {
 
+    public static final String MAIN_SLICE_NAME = "main_slice";
+
     // somehow a number based on experimentation, to make the slices not too big, not too many.
     public static final int NUMBER_OF_SLICES_FOR_PROJECT_CLASSES = 10;
 
@@ -240,8 +242,17 @@ public class InstantRunSlicer extends Transform {
         List<JarInput> jarFilesToProcess = new ArrayList<JarInput>();
         for (TransformInput input : inputs) {
             for (JarInput jarInput : input.getJarInputs()) {
-                if (jarInput.getFile().exists()) {
-                    jarFilesToProcess.add(jarInput);
+                File jarFile = jarInput.getFile();
+                if (jarFile.getName().equals("instant-run.jar")) {
+                    // this gets packaged in the main slice.
+                    File mainSliceOutput = getMainSliceOutputFolder(outputProvider);
+                    Files.createParentDirs(mainSliceOutput);
+                    Files.copy(jarFile, mainSliceOutput);
+                } else {
+                    // otherwise, all other dependencies will be combined right below.
+                    if (jarInput.getFile().exists()) {
+                        jarFilesToProcess.add(jarInput);
+                    }
                 }
             }
         }
@@ -417,6 +428,13 @@ public class InstantRunSlicer extends Transform {
         } else {
             return getDependenciesSliceOutputFolder(transformOutputProvider, Format.DIRECTORY);
         }
+    }
+
+    @NonNull
+    private static File getMainSliceOutputFolder(@NonNull TransformOutputProvider outputProvider) {
+        return outputProvider
+                .getContentLocation(MAIN_SLICE_NAME, TransformManager.CONTENT_CLASS,
+                        Sets.immutableEnumSet(Scope.PROJECT, Scope.SUB_PROJECTS), Format.JAR);
     }
 
     @NonNull
