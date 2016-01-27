@@ -180,11 +180,7 @@ public class InstantRunDexTest {
                 .build());
 
         assertThat(variantScope.getRestartDexOutputFolder().listFiles()).isNotEmpty();
-        assertThat(convertedFiles).hasSize(1);
-
-        verify(instantRunBuildContext).addChangedFile(
-                eq(InstantRunBuildContext.FileType.RESTART_DEX),
-                any(File.class));
+        assertThat(convertedFiles).hasSize(0);
 
         // should have been deleted by the transform.
         assertThat(incrementalChanges.isFile()).isFalse();
