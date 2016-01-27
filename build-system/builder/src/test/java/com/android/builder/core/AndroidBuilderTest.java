@@ -56,6 +56,8 @@ public class AndroidBuilderTest {
     @Test
     public void testShouldDexInProcess() {
         when(dexOptions.getDexInProcess()).thenReturn(true);
+        // a ridiculous number to ensure dex in process not be disabled due to memory needs.
+        when(dexOptions.getJavaMaxHeapSize()).thenReturn("1024");
         assertTrue(shouldDexInProcess(dexOptions, new Revision(23, 0, 2), false, logger));
     }
 
