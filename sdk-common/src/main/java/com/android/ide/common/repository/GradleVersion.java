@@ -15,6 +15,8 @@
  */
 package com.android.ide.common.repository;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.google.common.base.Objects;
@@ -35,7 +37,7 @@ import java.util.regex.Pattern;
  */
 public class GradleVersion implements Comparable<GradleVersion> {
 
-    private static final Pattern PREVIEW_PATTERN = Pattern.compile("([a-zA-z]+)([\\d]+)?");
+    private static final Pattern PREVIEW_PATTERN = Pattern.compile("([a-zA-z]+)[\\-]?([\\d]+)?");
 
     private final String mRawValue;
 
@@ -87,12 +89,12 @@ public class GradleVersion implements Comparable<GradleVersion> {
     @NonNull
     public static GradleVersion parse(@NonNull String value) {
         String version = value;
-        String afterFirstDash = null;
+        String qualifiers = null;
         char dash = '-';
         int dashIndex = value.indexOf(dash);
         if (dashIndex != -1) {
             if (dashIndex < value.length() - 1) {
-                afterFirstDash = value.substring(dashIndex + 1);
+                qualifiers = value.substring(dashIndex + 1);
             }
             version = value.substring(0, dashIndex);
         }
@@ -124,19 +126,25 @@ public class GradleVersion implements Comparable<GradleVersion> {
                 String previewType = null;
                 boolean snapshot = false;
 
-                if (afterFirstDash != null) {
-
-                    List<String> previewSegments = Splitter.on(dash).splitToList(afterFirstDash);
-                    int previewSegmentCount = previewSegments.size();
-                    String last = previewSegments.get(previewSegmentCount - 1);
-                    snapshot = "SNAPSHOT".equalsIgnoreCase(last);
-
-                    if (previewSegmentCount > 2 || (previewSegmentCount == 2 && !snapshot)) {
-                        throw parsingFailure(value);
+                if (qualifiers != null) {
+                    String snapshotQualifier = "SNAPSHOT";
+                    if (qualifiers.equalsIgnoreCase(snapshotQualifier)) {
+                        snapshot = true;
+                        qualifiers = null;
                     }
-
-                    if (previewSegmentCount == 2 || (previewSegmentCount == 1 && !snapshot)) {
-                        Matcher matcher = PREVIEW_PATTERN.matcher(previewSegments.get(0));
+                    else {
+                        // find and remove "SNAPSHOT" at the end of the qualifiers.
+                        int lastDashIndex = qualifiers.lastIndexOf(dash);
+                        if (lastDashIndex != -1) {
+                            String mayBeSnapshot = qualifiers.substring(lastDashIndex + 1);
+                            if (mayBeSnapshot.equalsIgnoreCase(snapshotQualifier)) {
+                                snapshot = true;
+                                qualifiers = qualifiers.substring(0, lastDashIndex);
+                            }
+                        }
+                    }
+                    if (!isNullOrEmpty(qualifiers)) {
+                        Matcher matcher = PREVIEW_PATTERN.matcher(qualifiers);
                         if (matcher.matches()) {
                             previewType = matcher.group(1);
                             if (matcher.groupCount() == 2) {
