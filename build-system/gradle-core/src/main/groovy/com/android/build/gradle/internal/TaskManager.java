@@ -1901,7 +1901,11 @@ public abstract class TaskManager {
 
         boolean isMinifyEnabled = config.isMinifyEnabled();
         boolean isMultiDexEnabled = config.isMultiDexEnabled();
-        boolean isLegacyMultiDexMode = config.isLegacyMultiDexMode();
+        // Switch to native multidex if possible when using instant run.
+        boolean isLegacyMultiDexMode = config.isLegacyMultiDexMode() &&
+                (getIncrementalMode(variantScope.getVariantConfiguration()) == IncrementalMode.NONE
+                        || variantScope.getInstantRunBuildContext().getPatchingPolicy() ==
+                                InstantRunPatchingPolicy.PRE_LOLLIPOP);
 
         AndroidConfig extension = variantScope.getGlobalScope().getExtension();
 
