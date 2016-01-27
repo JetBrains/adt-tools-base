@@ -184,6 +184,18 @@ public class GradleVersionTest {
     }
 
     @Test
+    public void testParseThreeSegmentsWithPreview2() {
+        GradleVersion version = GradleVersion.parse("1.2.3-alpha-4");
+        assertEquals(1, version.getMajor());
+        assertEquals(2, version.getMinor());
+        assertEquals(3, version.getMicro());
+        assertEquals(4, version.getPreview());
+        assertEquals("alpha", version.getPreviewType());
+        assertFalse(version.isSnapshot());
+        assertEquals("1.2.3-alpha-4", version.toString());
+    }
+
+    @Test
     public void testParseThreeSegmentsWithPreviewAndSnapshot() {
         GradleVersion version = GradleVersion.parse("1.2.3-alpha4-SNAPSHOT");
         assertEquals(1, version.getMajor());
@@ -193,6 +205,18 @@ public class GradleVersionTest {
         assertEquals("alpha", version.getPreviewType());
         assertTrue(version.isSnapshot());
         assertEquals("1.2.3-alpha4-SNAPSHOT", version.toString());
+    }
+
+    @Test
+    public void testParseThreeSegmentsWithPreviewAndSnapshot2() {
+        GradleVersion version = GradleVersion.parse("1.2.3-alpha-4-SNAPSHOT");
+        assertEquals(1, version.getMajor());
+        assertEquals(2, version.getMinor());
+        assertEquals(3, version.getMicro());
+        assertEquals(4, version.getPreview());
+        assertEquals("alpha", version.getPreviewType());
+        assertTrue(version.isSnapshot());
+        assertEquals("1.2.3-alpha-4-SNAPSHOT", version.toString());
     }
 
     @Test
