@@ -19,7 +19,10 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.google.common.base.Objects;
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -51,6 +54,9 @@ public class GradleVersion implements Comparable<GradleVersion> {
     private final String mPreviewType;
 
     private final boolean mSnapshot;
+
+    @NonNull
+    private final List<VersionSegment> mAdditionalSegments;
 
     /**
      * Parses the given version. This method does the same as {@link #parse(String)}, but it does
@@ -96,15 +102,22 @@ public class GradleVersion implements Comparable<GradleVersion> {
         VersionSegment microSegment = null;
 
         int segmentCount = versionSegments.size();
+        List<VersionSegment> additionalSegments = Lists.newArrayList();
 
         try {
-            if (segmentCount > 0 && segmentCount <= 3) {
+            if (segmentCount > 0) {
                 majorSegment = new VersionSegment(versionSegments.get(0));
                 if (segmentCount > 1) {
                     minorSegment = new VersionSegment(versionSegments.get(1));
                 }
-                if (segmentCount == 3) {
+                if (segmentCount >= 3) {
                     microSegment = new VersionSegment(versionSegments.get(2));
+                }
+                if (segmentCount > 3) {
+                    for (int i = 3; i < segmentCount; i++) {
+                        String segment = versionSegments.get(i);
+                        additionalSegments.add(new VersionSegment(segment));
+                    }
                 }
 
                 int preview = 0;
@@ -134,20 +147,13 @@ public class GradleVersion implements Comparable<GradleVersion> {
                         }
                     }
                 }
-                return new GradleVersion(value, majorSegment, minorSegment, microSegment, preview,
-                        previewType, snapshot);
+                return new GradleVersion(value, majorSegment, minorSegment, microSegment,
+                        additionalSegments, preview, previewType, snapshot);
             }
         } catch (NumberFormatException e) {
             throw parsingFailure(value, e);
         }
         throw parsingFailure(value);
-    }
-
-    private static int parseSegment(@NonNull String segment) {
-        if ("+".equals(segment)) {
-            return Integer.MAX_VALUE;
-        }
-        return Integer.parseInt(segment);
     }
 
     @NonNull
@@ -164,13 +170,15 @@ public class GradleVersion implements Comparable<GradleVersion> {
 
     public GradleVersion(int major, int minor, int micro) {
         this((major + "." + minor + "." + micro), new VersionSegment(major),
-                new VersionSegment(minor), new VersionSegment(micro), 0, null, false);
+                new VersionSegment(minor), new VersionSegment(micro),
+                Collections.<VersionSegment>emptyList(), 0, null, false);
     }
 
     private GradleVersion(@NonNull String rawValue,
             @NonNull VersionSegment majorSegment,
             @Nullable VersionSegment minorSegment,
             @Nullable VersionSegment microSegment,
+            @NonNull List<VersionSegment> additionalSegments,
             int preview,
             @Nullable String previewType,
             boolean snapshot) {
@@ -178,6 +186,7 @@ public class GradleVersion implements Comparable<GradleVersion> {
         mMajorSegment = majorSegment;
         mMinorSegment = minorSegment;
         mMicroSegment = microSegment;
+        mAdditionalSegments = ImmutableList.copyOf(additionalSegments);
         mPreview = preview;
         mPreviewType = previewType;
         mSnapshot = snapshot;
@@ -301,6 +310,15 @@ public class GradleVersion implements Comparable<GradleVersion> {
     @Override
     public String toString() {
         return mRawValue;
+    }
+
+    /**
+     * @return version segments present after the "micro" segments. For example, parsing "1.2.3.4.5"
+     * will result in "4" and "5" to be considered "additional" version segments.
+     */
+    @NonNull
+    public List<VersionSegment> getAdditionalSegments() {
+        return mAdditionalSegments;
     }
 
     public static class VersionSegment {
