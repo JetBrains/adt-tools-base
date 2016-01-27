@@ -24,6 +24,8 @@ import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SUPER;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
+import static org.objectweb.asm.Opcodes.ICONST_0;
+import static org.objectweb.asm.Opcodes.ICONST_1;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.LCONST_0;
 import static org.objectweb.asm.Opcodes.PUTSTATIC;
@@ -47,6 +49,7 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -126,9 +129,11 @@ public class GenerateInstantRunAppInfoTask extends BaseTask {
                     if (!applicationId.isEmpty()) {
                         File buildDir = getProject().getBuildDir();
                         long token = PackagingUtils.computeApplicationHash(buildDir);
+                        // TODO: jedo
+                        boolean usingApkSplits = false; // API level 22 || multiapk setting
 
                         // Must be *after* extractLibrary() to replace dummy version
-                        writeAppInfoClass(applicationId, applicationClass, token);
+                        writeAppInfoClass(applicationId, applicationClass, token, usingApkSplits);
                     }
                 }
             } catch (ParserConfigurationException e) {
@@ -144,7 +149,8 @@ public class GenerateInstantRunAppInfoTask extends BaseTask {
     void writeAppInfoClass(
             @NonNull String applicationId,
             @Nullable String applicationClass,
-            long token)
+            long token,
+            boolean usingApkSplits)
             throws IOException {
         ClassWriter cw = new ClassWriter(0);
         FieldVisitor fv;
@@ -187,6 +193,13 @@ public class GenerateInstantRunAppInfoTask extends BaseTask {
             mv.visitInsn(LCONST_0);
         }
         mv.visitFieldInsn(PUTSTATIC, appInfoOwner, "token", "J");
+        if (usingApkSplits) {
+            mv.visitInsn(ICONST_1);
+        } else {
+            mv.visitInsn(ICONST_0);
+        }
+        mv.visitFieldInsn(PUTSTATIC, "com/android/tools/fd/runtime/AppInfo", "usingApkSplits", "Z");
+
         mv.visitInsn(RETURN);
         mv.visitMaxs(2, 0);
         mv.visitEnd();
