@@ -50,4 +50,7 @@ public class AppInfo {
      */
     @SuppressWarnings("StaticVariableNamingConvention")
     public static long token = 0L;
+
+    /** Set when building on API 23 (or API 22 if multiapk is enabled) */
+    public static boolean usingApkSplits = true;
 }
