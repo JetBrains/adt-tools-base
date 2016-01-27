@@ -740,7 +740,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
 
             List<Revision> revisions = Lists.newArrayList();
             if (major == 23) {
-                revisions.add(new Revision(23, 0, 1));
+                revisions.add(new Revision(23, 0, 2));
             } else if (major == 22) {
                 revisions.add(new Revision(22, 0, 1));
             } else if (major == 21) {
