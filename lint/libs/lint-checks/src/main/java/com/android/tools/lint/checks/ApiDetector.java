@@ -57,6 +57,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidProject;
+import com.android.ide.common.repository.GradleVersion;
 import com.android.repository.Revision;
 import com.android.repository.api.LocalPackage;
 import com.android.resources.ResourceFolderType;
@@ -1487,26 +1488,27 @@ public class ApiDetector extends ResourceXmlDetector
     }
 
     /**
-     * Checks if the current project supports features added in {@code minGradleVersion} version of the
-     * Android gradle plugin.
+     * Checks if the current project supports features added in {@code minGradleVersion} version of
+     * the Android gradle plugin.
      *
-     * @param context Current context.
-     * @param minGradleVersion Version in which support for a given feature was added, or null if it's
- *                      not supported at build time.
+     * @param context                Current context.
+     * @param minGradleVersionString Version in which support for a given feature was added, or null
+     *                               if it's not supported at build time.
      */
     private static boolean featureProvidedByGradle(@NonNull XmlContext context,
-            @Nullable String minGradleVersion) {
-        if (minGradleVersion == null) {
+            @Nullable String minGradleVersionString) {
+        if (minGradleVersionString == null) {
             return false;
         }
 
         AndroidProject gradleModel = context.getProject().getGradleProjectModel();
         if (gradleModel != null) {
-            Revision gradleModelVersion =
-                    Revision.parseRevision(gradleModel.getModelVersion());
-            if (gradleModelVersion.compareTo(
-                    Revision.parseRevision(minGradleVersion),
-                    Revision.PreviewComparison.IGNORE) >= 0) {
+            GradleVersion gradleModelVersion =
+                    GradleVersion.tryParse(gradleModel.getModelVersion());
+            GradleVersion minVersion = GradleVersion.tryParse(minGradleVersionString);
+            if (gradleModelVersion != null
+                    && minVersion != null
+                    && gradleModelVersion.compareIgnoringQualifiers(minVersion) >= 0) {
                 return true;
             }
         }
