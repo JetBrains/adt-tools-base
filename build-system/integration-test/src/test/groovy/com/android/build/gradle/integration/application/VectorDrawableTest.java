@@ -24,7 +24,6 @@ import static com.google.common.base.Charsets.UTF_8;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.utils.FileUtils;
-import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
 
 import org.junit.BeforeClass;
@@ -363,7 +362,10 @@ public class VectorDrawableTest {
 
     @Test
     public void defaultDensitiesWork() throws Exception {
-        project.execute(ImmutableList.of("-PcheckDefaultDensities=true"), "clean", "assembleDebug");
+        // Remove the lines that configure generated densities.
+        TestFileUtils.searchAndReplace(project.getBuildFile(), "generatedDensities.*\n", "");
+
+        project.execute("clean", "assembleDebug");
         File apk = project.getApk("debug");
         assertThatApk(apk).containsResource("drawable-anydpi-v21/heart.xml");
         assertThatApk(apk).containsResource("drawable-xxxhdpi-v4/heart.png");
