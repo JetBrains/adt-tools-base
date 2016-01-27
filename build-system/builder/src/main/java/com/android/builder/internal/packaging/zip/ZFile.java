@@ -53,6 +53,7 @@ import java.io.RandomAccessFile;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 /**
@@ -690,17 +691,46 @@ public class ZFile implements Closeable {
          * Write new files in the zip. We identify new files because they don't have an offset
          * in the zip where they are written although we already know, by their location in the
          * file map, where they will be written to.
+         *
+         * Before writing the files, we sort them in the order they are written in the file so that
+         * writes are made in order on disk.
+         * This is, however, unlikely to optimize anything relevant given the way the Operating
+         * System does caching, but it certainly won't hurt :)
          */
+        TreeMap<FileUseMapEntry<?>, StoredEntry> toWriteToStore =
+                new TreeMap<FileUseMapEntry<?>, StoredEntry>(FileUseMapEntry.COMPARE_BY_START);
+
+
         for (FileUseMapEntry<StoredEntry> entry : mEntries.values()) {
             StoredEntry entryStore = entry.getStore();
             assert entryStore != null;
             if (entryStore.getCentralDirectoryHeader().getOffset() == -1) {
-                writeEntry(entry.getStore(), entry.getStart());
+                toWriteToStore.put(entry, entryStore);
             }
         }
 
         deleteDirectoryAndEocd();
         mMap.truncate();
+
+        /*
+         * Add all free entries to the set.
+         */
+        for(FileUseMapEntry<?> freeArea : mMap.getFreeAreas()) {
+            toWriteToStore.put(freeArea, null);
+        }
+
+        /*
+         * Write everything to file.
+         */
+        for (FileUseMapEntry<?> fileUseMapEntry : toWriteToStore.keySet()) {
+            StoredEntry entry = toWriteToStore.get(fileUseMapEntry);
+            if (entry == null) {
+                int size = Ints.checkedCast(fileUseMapEntry.getSize());
+                directWrite(fileUseMapEntry.getStart(), new byte[size]);
+            } else {
+                writeEntry(entry, fileUseMapEntry.getStart());
+            }
+        }
 
         computeCentralDirectory();
         computeEocd();

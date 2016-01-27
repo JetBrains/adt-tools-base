@@ -19,8 +19,10 @@ package com.android.builder.internal.packaging.zip;
 import com.android.annotations.NonNull;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Verify;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -378,5 +380,25 @@ class FileUseMap {
         } else {
             return best.getStart() + bestExtraSize;
         }
+    }
+
+    /**
+     * Obtains all free areas of the map, excluding any trailing free area.
+     *
+     * @return all free areas, an empty set if there are no free areas; the areas are returned
+     * in file order, that is, if area {@code x} starts before area {@code y}, then area {@code x}
+     * will be stored before area {@code y} in the list
+     */
+    @NonNull
+    List<FileUseMapEntry<?>> getFreeAreas() {
+        List<FileUseMapEntry<?>> freeAreas = Lists.newArrayList();
+
+        for (FileUseMapEntry<?> area : mMap) {
+            if (area.isFree() && area.getEnd() != mSize) {
+                freeAreas.add(area);
+            }
+        }
+
+        return freeAreas;
     }
 }
