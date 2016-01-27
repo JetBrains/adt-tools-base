@@ -394,6 +394,69 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
     }
 
     @Test
+    public void interfaces_keepRules_interfaceOnInterface() throws Exception {
+        // Given:
+        Files.write(Interfaces.main(), new File(mTestPackageDir, "Main.class"));
+        Files.write(Interfaces.myCharSequence(), new File(mTestPackageDir, "MyCharSequence.class"));
+        Files.write(Interfaces.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
+        Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
+        Files.write(Interfaces.namedRunnable(), new File(mTestPackageDir, "NamedRunnable.class"));
+        Files.write(Interfaces.namedRunnableImpl(), new File(mTestPackageDir, "NamedRunnableImpl.class"));
+        Files.write(Interfaces.doesSomething(), new File(mTestPackageDir, "DoesSomething.class"));
+        Files.write(
+                Interfaces.implementationFromSuperclass(),
+                new File(mTestPackageDir, "ImplementationFromSuperclass.class"));
+
+        // When:
+        run(parseKeepRules("-keep interface test/MyInterface"));
+
+        // Then:
+        assertMembersLeft("MyInterface");
+    }
+
+    @Test
+    public void interfaces_keepRules_interfaceOnClass() throws Exception {
+        // Given:
+        Files.write(Interfaces.main(), new File(mTestPackageDir, "Main.class"));
+        Files.write(Interfaces.myCharSequence(), new File(mTestPackageDir, "MyCharSequence.class"));
+        Files.write(Interfaces.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
+        Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
+        Files.write(Interfaces.namedRunnable(), new File(mTestPackageDir, "NamedRunnable.class"));
+        Files.write(Interfaces.namedRunnableImpl(), new File(mTestPackageDir, "NamedRunnableImpl.class"));
+        Files.write(Interfaces.doesSomething(), new File(mTestPackageDir, "DoesSomething.class"));
+        Files.write(
+                Interfaces.implementationFromSuperclass(),
+                new File(mTestPackageDir, "ImplementationFromSuperclass.class"));
+
+        // When:
+        run(parseKeepRules("-keep interface test/Main"));
+
+        // Then:
+        assertClassSkipped("Main");
+    }
+
+    @Test
+    public void interfaces_keepRules_atInterfaceOnInterface() throws Exception {
+        // Given:
+        Files.write(Interfaces.main(), new File(mTestPackageDir, "Main.class"));
+        Files.write(Interfaces.myCharSequence(), new File(mTestPackageDir, "MyCharSequence.class"));
+        Files.write(Interfaces.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
+        Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
+        Files.write(Interfaces.namedRunnable(), new File(mTestPackageDir, "NamedRunnable.class"));
+        Files.write(Interfaces.namedRunnableImpl(), new File(mTestPackageDir, "NamedRunnableImpl.class"));
+        Files.write(Interfaces.doesSomething(), new File(mTestPackageDir, "DoesSomething.class"));
+        Files.write(
+                Interfaces.implementationFromSuperclass(),
+                new File(mTestPackageDir, "ImplementationFromSuperclass.class"));
+
+        // When:
+        run(parseKeepRules("-keep @interface test/MyInterface"));
+
+        // Then:
+        assertClassSkipped("MyInterface");
+    }
+
+    @Test
     public void interfaces_appInterface_abstractType() throws Exception {
         // Given:
         Files.write(Interfaces.main(), new File(mTestPackageDir, "Main.class"));
@@ -782,6 +845,110 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
         run(parseKeepRules("-keep @test.MyAnnotation class **"));
 
         assertMembersLeft("Main", "<init>:()V");
+    }
+
+    @Test
+    public void annotations_keepRules_atInterface() throws Exception {
+        Files.write(TestClasses.Annotations.main_annotatedClass(), new File(mTestPackageDir, "Main.class"));
+        Files.write(TestClasses.Annotations.myAnnotation(), new File(mTestPackageDir, "MyAnnotation.class"));
+        Files.write(TestClasses.Annotations.nested(), new File(mTestPackageDir, "Nested.class"));
+        Files.write(TestClasses.Annotations.myEnum(), new File(mTestPackageDir, "MyEnum.class"));
+        Files.write(TestClasses.emptyClass("SomeClass"), new File(mTestPackageDir, "SomeClass.class"));
+        Files.write(TestClasses.emptyClass("SomeOtherClass"), new File(mTestPackageDir, "SomeOtherClass.class"));
+
+        run(parseKeepRules("-keep @interface test.MyAnnotation"));
+
+        assertMembersLeft(
+                "MyAnnotation",
+                "nested:()[Ltest/Nested;",
+                "f:()I",
+                "klass:()Ljava/lang/Class;",
+                "myEnum:()Ltest/MyEnum;");
+    }
+
+    @Test
+    public void annotations_keepRules_interface() throws Exception {
+        Files.write(TestClasses.Annotations.main_annotatedClass(), new File(mTestPackageDir, "Main.class"));
+        Files.write(TestClasses.Annotations.myAnnotation(), new File(mTestPackageDir, "MyAnnotation.class"));
+        Files.write(TestClasses.Annotations.nested(), new File(mTestPackageDir, "Nested.class"));
+        Files.write(TestClasses.Annotations.myEnum(), new File(mTestPackageDir, "MyEnum.class"));
+        Files.write(TestClasses.emptyClass("SomeClass"), new File(mTestPackageDir, "SomeClass.class"));
+        Files.write(TestClasses.emptyClass("SomeOtherClass"), new File(mTestPackageDir, "SomeOtherClass.class"));
+
+        run(parseKeepRules("-keep interface test.MyAnnotation"));
+
+        assertMembersLeft(
+                "MyAnnotation",
+                "nested:()[Ltest/Nested;",
+                "f:()I",
+                "klass:()Ljava/lang/Class;",
+                "myEnum:()Ltest/MyEnum;");
+    }
+
+    @Test
+    public void annotations_keepRules_atClass() throws Exception {
+        Files.write(TestClasses.Annotations.main_annotatedClass(), new File(mTestPackageDir, "Main.class"));
+        Files.write(TestClasses.Annotations.myAnnotation(), new File(mTestPackageDir, "MyAnnotation.class"));
+        Files.write(TestClasses.Annotations.nested(), new File(mTestPackageDir, "Nested.class"));
+        Files.write(TestClasses.Annotations.myEnum(), new File(mTestPackageDir, "MyEnum.class"));
+        Files.write(TestClasses.emptyClass("SomeClass"), new File(mTestPackageDir, "SomeClass.class"));
+        Files.write(TestClasses.emptyClass("SomeOtherClass"), new File(mTestPackageDir, "SomeOtherClass.class"));
+
+        run(parseKeepRules("-keep @class test.MyAnnotation"));
+
+        assertMembersLeft(
+                "MyAnnotation",
+                "nested:()[Ltest/Nested;",
+                "f:()I",
+                "klass:()Ljava/lang/Class;",
+                "myEnum:()Ltest/MyEnum;");
+    }
+
+    @Test
+    public void annotations_keepRules_atEnum() throws Exception {
+        Files.write(TestClasses.Annotations.main_annotatedClass(), new File(mTestPackageDir, "Main.class"));
+        Files.write(TestClasses.Annotations.myAnnotation(), new File(mTestPackageDir, "MyAnnotation.class"));
+        Files.write(TestClasses.Annotations.nested(), new File(mTestPackageDir, "Nested.class"));
+        Files.write(TestClasses.Annotations.myEnum(), new File(mTestPackageDir, "MyEnum.class"));
+        Files.write(TestClasses.emptyClass("SomeClass"), new File(mTestPackageDir, "SomeClass.class"));
+        Files.write(TestClasses.emptyClass("SomeOtherClass"), new File(mTestPackageDir, "SomeOtherClass.class"));
+
+        run(parseKeepRules("-keep @enum test.MyAnnotation"));
+
+        assertClassSkipped("MyAnnotation");
+    }
+
+    @Test
+    public void annotations_keepRules_classRule() throws Exception {
+        Files.write(TestClasses.Annotations.main_annotatedClass(), new File(mTestPackageDir, "Main.class"));
+        Files.write(TestClasses.Annotations.myAnnotation(), new File(mTestPackageDir, "MyAnnotation.class"));
+        Files.write(TestClasses.Annotations.nested(), new File(mTestPackageDir, "Nested.class"));
+        Files.write(TestClasses.Annotations.myEnum(), new File(mTestPackageDir, "MyEnum.class"));
+        Files.write(TestClasses.emptyClass("SomeClass"), new File(mTestPackageDir, "SomeClass.class"));
+        Files.write(TestClasses.emptyClass("SomeOtherClass"), new File(mTestPackageDir, "SomeOtherClass.class"));
+
+        run(parseKeepRules("-keep class test.MyAnnotation"));
+
+        assertMembersLeft(
+                "MyAnnotation",
+                "nested:()[Ltest/Nested;",
+                "f:()I",
+                "klass:()Ljava/lang/Class;",
+                "myEnum:()Ltest/MyEnum;");
+    }
+
+    @Test
+    public void annotations_keepRules_wrongAtClass() throws Exception {
+        Files.write(TestClasses.Annotations.main_annotatedClass(), new File(mTestPackageDir, "Main.class"));
+        Files.write(TestClasses.Annotations.myAnnotation(), new File(mTestPackageDir, "MyAnnotation.class"));
+        Files.write(TestClasses.Annotations.nested(), new File(mTestPackageDir, "Nested.class"));
+        Files.write(TestClasses.Annotations.myEnum(), new File(mTestPackageDir, "MyEnum.class"));
+        Files.write(TestClasses.emptyClass("SomeClass"), new File(mTestPackageDir, "SomeClass.class"));
+        Files.write(TestClasses.emptyClass("SomeOtherClass"), new File(mTestPackageDir, "SomeOtherClass.class"));
+
+        run(parseKeepRules("-keep @class test.SomeClass"));
+
+        assertClassSkipped("SomeClass");
     }
 
     @Test
