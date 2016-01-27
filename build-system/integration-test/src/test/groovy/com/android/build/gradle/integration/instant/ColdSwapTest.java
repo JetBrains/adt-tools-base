@@ -92,11 +92,7 @@ public class ColdSwapTest {
                 .hasValue(InstantRunVerifierStatus.METHOD_ADDED);
         expect.that(coldSwapContext.getBuildId()).named("build id").isNotEqualTo(startBuildId);
 
-        assertThat(coldSwapContext.getLastBuild().getArtifacts()).hasSize(1);
-        Artifact artifact = Iterables.getOnlyElement(coldSwapContext.getLastBuild().getArtifacts());
-        assertThat(artifact.getType()).named("file type")
-                .isEqualTo(FileType.RESTART_DEX);
-        checkUpdatedClassPresence(artifact.getLocation());
+        assertThat(coldSwapContext.getLastBuild().getArtifacts()).hasSize(0);
     }
 
     @Test
