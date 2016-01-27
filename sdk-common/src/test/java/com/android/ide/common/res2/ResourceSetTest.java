@@ -185,6 +185,48 @@ public class ResourceSetTest extends BaseTestCase {
         assertFalse(logger.getErrorMsgs().isEmpty());
     }
 
+    public void testBrokenSetBadType() throws Exception {
+        File root = TestUtils.getRoot("resources", "brokenSetBadType");
+
+        ResourceSet set = new ResourceSet("main");
+        set.addSource(root);
+
+        boolean gotException = false;
+        RecordingLogger logger =  new RecordingLogger();
+        try {
+            set.loadFromFiles(logger);
+        } catch (MergingException e) {
+            gotException = true;
+            assertEquals(new File(root, "values" + separator + "dimens.xml").getAbsolutePath() +
+                         ": Error: Unsupported type 'dimenot'",
+                         e.getMessage());
+        }
+
+        assertTrue("ResourceSet processing should have failed, but didn't", gotException);
+        assertFalse(logger.getErrorMsgs().isEmpty());
+    }
+
+    public void testBrokenSetBadType2() throws Exception {
+        File root = TestUtils.getRoot("resources", "brokenSetBadType2");
+
+        ResourceSet set = new ResourceSet("main");
+        set.addSource(root);
+
+        boolean gotException = false;
+        RecordingLogger logger =  new RecordingLogger();
+        try {
+            set.loadFromFiles(logger);
+        } catch (MergingException e) {
+            gotException = true;
+            assertEquals(new File(root, "values" + separator + "dimens.xml").getAbsolutePath() +
+                         ": Error: Unsupported type 'dimenot2'",
+                         e.getMessage());
+        }
+
+        assertTrue("ResourceSet processing should have failed, but didn't", gotException);
+        assertFalse(logger.getErrorMsgs().isEmpty());
+    }
+
     static ResourceSet getBaseResourceSet() throws MergingException, IOException {
         File root = TestUtils.getRoot("resources", "baseSet");
 

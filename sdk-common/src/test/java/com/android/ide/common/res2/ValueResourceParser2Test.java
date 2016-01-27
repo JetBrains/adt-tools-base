@@ -18,6 +18,7 @@ package com.android.ide.common.res2;
 
 import com.android.SdkConstants;
 import com.android.ide.common.rendering.api.ResourceValue;
+import com.android.resources.ResourceType;
 import com.android.testutils.TestUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Predicate;
@@ -173,6 +174,41 @@ public class ValueResourceParser2Test extends BaseTestCase {
         assertNotNull(document.getDocumentElement());
         assertEquals("LinearLayout", document.getDocumentElement().getTagName());
 
+        //noinspection ResultOfMethodCallIgnored
+        file.delete();
+    }
+
+    public void testBoolItems() throws IOException, MergingException {
+        // BOOL types weren't covered in the baseSet/values.xml, so test that too.
+        File file = File.createTempFile(getName(), SdkConstants.DOT_XML);
+        String xml = "" +
+                     "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+                     "<resources>\n" +
+                     "\n" +
+                     "<bool name=\"truthy\"> true </bool>\n" +
+                     "<item name=\"not_truthy\" type=\"bool\">false</item>\n" +
+                     // The parser doesn't really validate if the value is only true or false.
+                     "<bool name=\"other\">excluded middle</bool>\n" +
+                     "\n" +
+                     "</resources>\n";
+
+        BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(file));
+        OutputStreamWriter writer = new OutputStreamWriter(stream, Charsets.UTF_8);
+        stream.write(0xef);
+        stream.write(0xbb);
+        stream.write(0xbf);
+        writer.write(xml);
+        writer.close();
+
+        ValueResourceParser2 parser = new ValueResourceParser2(file);
+        List<ResourceItem> items = parser.parseFile();
+        assertEquals(3, items.size());
+        assertEquals(ResourceType.BOOL, items.get(0).getType());
+        assertEquals("truthy", items.get(0).getName());
+        assertEquals(ResourceType.BOOL, items.get(1).getType());
+        assertEquals("not_truthy", items.get(1).getName());
+        assertEquals(ResourceType.BOOL, items.get(2).getType());
+        assertEquals("other", items.get(2).getName());
         //noinspection ResultOfMethodCallIgnored
         file.delete();
     }
