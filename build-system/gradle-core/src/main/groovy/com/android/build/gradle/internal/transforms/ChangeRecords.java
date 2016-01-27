@@ -22,6 +22,7 @@ import com.android.build.api.transform.Status;
 import com.android.build.api.transform.TransformException;
 import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
 
 import java.io.File;
@@ -30,6 +31,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 /**
@@ -82,6 +84,21 @@ public class ChangeRecords {
         } finally {
             fileWriter.close();
         }
+    }
+
+    /**
+     * Calculates the list of files which change record has the passed status.
+     * @return a possibly empty list of files path.
+     */
+    @NonNull
+    synchronized Set<String> getFilesForStatus(Status status) {
+        ImmutableSet.Builder<String> builder = ImmutableSet.builder();
+        for (String s : records.keySet()) {
+            if (getChangeFor(s) == status) {
+                builder.add(s);
+            }
+        }
+        return builder.build();
     }
 
     /**

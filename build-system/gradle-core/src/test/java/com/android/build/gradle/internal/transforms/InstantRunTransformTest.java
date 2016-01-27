@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.transforms;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -155,7 +156,7 @@ public class InstantRunTransformTest {
             public File getContentLocation(@NonNull String name,
                     @NonNull Set<ContentType> types,
                     @NonNull Set<Scope> scopes, @NonNull Format format) {
-                Truth.assertThat(types).hasSize(1);
+                assertThat(types).hasSize(1);
                 if (types.iterator().next().equals(QualifiedContent.DefaultContentType.CLASSES)) {
                     return new File("out");
                 } else {
@@ -270,7 +271,7 @@ public class InstantRunTransformTest {
             public File getContentLocation(@NonNull String name,
                     @NonNull Set<ContentType> types,
                     @NonNull Set<Scope> scopes, @NonNull Format format) {
-                Truth.assertThat(types).hasSize(1);
+                assertThat(types).hasSize(1);
                 if (types.iterator().next().equals(QualifiedContent.DefaultContentType.CLASSES)) {
                     return outputFolder;
                 } else {
@@ -294,6 +295,24 @@ public class InstantRunTransformTest {
         assertFalse("Enhanced class file should have been deleted.", outputEnhancedFile.exists());
 
         FileUtils.deleteFolder(tmpFolder);
+    }
+
+    @Test
+    public void testChangeRecordsMerging() {
+        ChangeRecords pastIteration = new ChangeRecords();
+        pastIteration.add(Status.CHANGED, "file/to/be/deleted");
+        pastIteration.add(Status.CHANGED, "file/that/will/remain");
+
+        ChangeRecords newIteration = new ChangeRecords();
+        newIteration.add(Status.REMOVED, "file/to/be/deleted");
+        newIteration.add(Status.CHANGED, "new/file/changed");
+
+        InstantRunTransform.merge(newIteration, pastIteration);
+        assertThat(newIteration.records.size()).isEqualTo(3);
+        assertThat(newIteration.getFilesForStatus(Status.CHANGED)).containsExactly(
+                "file/that/will/remain", "new/file/changed");
+        assertThat(newIteration.getFilesForStatus(Status.REMOVED)).containsExactly(
+                "file/to/be/deleted");
     }
 
     private static File createEmptyFile(File folder, String path)
