@@ -23,6 +23,8 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
+import java.util.List;
+
 public class GradleVersionTest {
 
     @Test
@@ -204,6 +206,67 @@ public class GradleVersionTest {
         assertTrue(version.isSnapshot());
     }
 
+    @Test
+    public void testParseWithMoreThanThreeSegments1() {
+        GradleVersion version = GradleVersion.parse("1.2.3.4");
+        assertEquals(1, version.getMajor());
+        assertEquals(2, version.getMinor());
+        assertEquals(3, version.getMicro());
+        assertEquals(0, version.getPreview());
+        assertNull(version.getPreviewType());
+        assertFalse(version.isSnapshot());
+
+        List<GradleVersion.VersionSegment> additional = version.getAdditionalSegments();
+        assertEquals(1, additional.size());
+
+        GradleVersion.VersionSegment fourth = additional.get(0);
+        assertEquals(4, fourth.getValue());
+    }
+
+    @Test
+    public void testParseWithMoreThanThreeSegments2() {
+        GradleVersion version = GradleVersion.parse("1.2.3.4.5-SNAPSHOT");
+        assertEquals(1, version.getMajor());
+        assertEquals(2, version.getMinor());
+        assertEquals(3, version.getMicro());
+        assertEquals(0, version.getPreview());
+        assertNull(version.getPreviewType());
+        assertTrue(version.isSnapshot());
+
+        List<GradleVersion.VersionSegment> additional = version.getAdditionalSegments();
+        assertEquals(2, additional.size());
+
+        GradleVersion.VersionSegment fourth = additional.get(0);
+        assertEquals(4, fourth.getValue());
+
+        GradleVersion.VersionSegment fifth = additional.get(1);
+        assertEquals(5, fifth.getValue());
+    }
+
+
+    @Test
+    public void testParseWithMoreThanThreeSegments3() {
+        GradleVersion version = GradleVersion.parse("1.2.3.4.5.6-alpha9-SNAPSHOT");
+        assertEquals(1, version.getMajor());
+        assertEquals(2, version.getMinor());
+        assertEquals(3, version.getMicro());
+        assertEquals(9, version.getPreview());
+        assertEquals("alpha", version.getPreviewType());
+        assertTrue(version.isSnapshot());
+
+        List<GradleVersion.VersionSegment> additional = version.getAdditionalSegments();
+        assertEquals(3, additional.size());
+
+        GradleVersion.VersionSegment fourth = additional.get(0);
+        assertEquals(4, fourth.getValue());
+
+        GradleVersion.VersionSegment fifth = additional.get(1);
+        assertEquals(5, fifth.getValue());
+
+        GradleVersion.VersionSegment sixth = additional.get(2);
+        assertEquals(6, sixth.getValue());
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void testInvalidVersion1() {
         GradleVersion.parse("a");
@@ -232,11 +295,6 @@ public class GradleVersionTest {
     @Test(expected = IllegalArgumentException.class)
     public void testInvalidVersion6() {
         GradleVersion.parse("1.2.3-1");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testInvalidVersion7() {
-        GradleVersion.parse("1.2.3.4");
     }
 
     @Test
