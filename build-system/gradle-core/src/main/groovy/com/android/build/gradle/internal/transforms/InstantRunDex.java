@@ -126,8 +126,15 @@ public class InstantRunDex extends Transform {
                         }
                     }
                     return;
+                } else {
+                    logger.warning("InstantRun incompatible change detected for API 20 or below,"
+                            + " full APK rebuild necessary, aborting");
+                    File incremental = buildType.getIncrementalChangesFile(variantScope);
+                    if (incremental.exists()) {
+                        incremental.delete();
+                    }
+                    return;
                 }
-                break;
             default:
                 throw new RuntimeException("Unhandled build type " + buildType);
         }
