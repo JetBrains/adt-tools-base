@@ -109,6 +109,6 @@ public interface BuildType extends BaseConfig {
 
     NdkBuildType getNdk();
 
-    boolean getUseProguard();
-    void setUseProguard(boolean useProguard);
+    Boolean getUseProguard();
+    void setUseProguard(Boolean useProguard);
 }

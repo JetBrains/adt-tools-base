@@ -183,10 +183,12 @@ public class ExtraModelInfo extends ErrorReporter {
                 errorStringBuilder.append("\n    ")
                         .append(rawMessage.replace(separator, separator + "    "));
             }
+            errorStringBuilder.append("\n");
+
         } else {
             //noinspection ConstantConditions mGson != null when errorFormatMode == MACHINE_PARSABLE
             errorStringBuilder.append(STDOUT_ERROR_TAG)
-                    .append(mGson.toJson(message));
+                    .append(mGson.toJson(message)).append("\n");
         }
 
         String messageString = errorStringBuilder.toString();
