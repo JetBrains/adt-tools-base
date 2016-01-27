@@ -24,6 +24,7 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -35,7 +36,7 @@ import java.util.regex.Pattern;
  * 1-alpha1, 1.0.0-rc2) or an unreleased version (or "snapshot") (e.g. 1-SNAPSHOT,
  * 1.0.0-alpha1-SNAPSHOT).
  */
-public class GradleVersion implements Comparable<GradleVersion> {
+public class GradleVersion implements Comparable<GradleVersion>, Serializable {
 
     private static final Pattern PREVIEW_PATTERN = Pattern.compile("([a-zA-z]+)[\\-]?([\\d]+)?");
 
@@ -329,7 +330,7 @@ public class GradleVersion implements Comparable<GradleVersion> {
         return mAdditionalSegments;
     }
 
-    public static class VersionSegment {
+    public static class VersionSegment implements Serializable {
 
         private static final String PLUS = "+";
 
