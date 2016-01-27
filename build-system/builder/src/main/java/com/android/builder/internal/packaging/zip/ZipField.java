@@ -132,7 +132,7 @@ abstract class ZipField {
         for (ZipFieldInvariant invariant : mInvariants) {
             if (!invariant.isValid(value)) {
                 throw new IOException("Value " + value + " of field " + mName + " is invalid "
-                        + "(fails '" + invariant.getName() + "'.");
+                        + "(fails '" + invariant.getName() + "').");
             }
         }
     }

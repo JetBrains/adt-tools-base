@@ -24,6 +24,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import com.android.builder.internal.packaging.zip.utils.CachedFileContents;
+import com.android.builder.internal.packaging.zip.utils.RandomAccessFileUtils;
 import com.android.testutils.TestUtils;
 import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
@@ -31,6 +32,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
+import com.google.common.io.Closer;
 import com.google.common.io.Files;
 
 import org.junit.Rule;
@@ -44,6 +46,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.RandomAccessFile;
 import java.util.Random;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -979,5 +982,52 @@ public class ZFileTest {
         zip.close();
         assertEquals(0, options.getTracker().getBytesUsed());
         assertEquals(used, options.getTracker().getMaxBytesUsed());
+    }
+
+    @Test
+    public void unusedZipAreasAreClearedOnWrite() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
+        ZFile zf = new ZFile(zipFile);
+        zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*\\.txt"), 1000));
+        zf.add("test1.txt", new ByteArrayInputStream(new byte[] { 1 }), false);
+        zf.close();
+
+        /*
+         * Write dummy data in some unused portion of the file.
+         */
+        Closer closer = Closer.create();
+        try {
+            RandomAccessFile raf = closer.register(new RandomAccessFile(zipFile, "rw"));
+
+            raf.seek(500);
+            byte[] dummyData = "Dummy".getBytes(Charsets.US_ASCII);
+            raf.write(dummyData);
+        } catch (Throwable e) {
+            throw closer.rethrow(e);
+        } finally {
+            closer.close();
+        }
+
+        zf = new ZFile(zipFile);
+        zf.touch();
+        zf.close();
+
+        closer = Closer.create();
+        try {
+            RandomAccessFile raf = closer.register(new RandomAccessFile(zipFile, "r"));
+
+            /*
+             * test1.txt won't take more than 200 bytes. Additionally, the header for
+             */
+            byte[] data = new byte[900];
+            RandomAccessFileUtils.fullyRead(raf, data);
+
+            byte[] zeroData = new byte[data.length];
+            assertArrayEquals(zeroData, data);
+        } catch (Throwable e) {
+            throw closer.rethrow(e);
+        } finally {
+            closer.close();
+        }
     }
 }
