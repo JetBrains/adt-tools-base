@@ -2191,6 +2191,36 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testDrawableThemeReferences() throws Exception {
+        // Regression test for
+        // https://code.google.com/p/android/issues/detail?id=199597
+        // Make sure that theme references in drawable XML files are checked
+        assertEquals(""
+                + "res/drawable/my_drawable.xml:3: Error: Using theme references in XML drawables requires API level 21 (current min is 9) [NewApi]\n"
+                + "    <item android:drawable=\"?android:windowBackground\"/>\n"
+                + "          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/drawable/my_drawable.xml:4: Error: Using theme references in XML drawables requires API level 21 (current min is 9) [NewApi]\n"
+                + "    <item android:drawable=\"?android:selectableItemBackground\"/>\n"
+                + "          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "2 errors, 0 warnings\n",
+
+                lintProject(
+                        manifest().minSdk(9),
+                        xml("res/drawable/my_drawable.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<layer-list xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
+                                + "    <item android:drawable=\"?android:windowBackground\"/>\n"
+                                + "    <item android:drawable=\"?android:selectableItemBackground\"/>\n"
+                                + "</layer-list>"),
+                        xml("res/drawable-v21/my_drawable.xml", "" // OK
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<layer-list xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
+                                + "    <item android:drawable=\"?android:windowBackground\"/>\n"
+                                + "    <item android:drawable=\"?android:selectableItemBackground\"/>\n"
+                                + "</layer-list>")
+        ));
+    }
+
     @Override
     protected TestLintClient createClient() {
         if (getName().equals("testMissingApiDatabase")) {
