@@ -84,8 +84,8 @@ final class Device implements IDevice {
     private static final char SEPARATOR = '-';
     private static final String UNKNOWN_PACKAGE = "";   //$NON-NLS-1$
 
-    private static final long GET_PROP_TIMEOUT_MS = 100;
-    private static final long INITIAL_GET_PROP_TIMEOUT_MS = 250;
+    private static final long GET_PROP_TIMEOUT_MS = 250;
+    private static final long INITIAL_GET_PROP_TIMEOUT_MS = 2000;
     private static final int QUERY_IS_ROOT_TIMEOUT_MS = 1000;
 
     private static final long INSTALL_TIMEOUT_MINUTES;
