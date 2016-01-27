@@ -444,31 +444,31 @@ public class ApiDetector extends ResourceXmlDetector
                         //
                         // However, as of build tools 23.0.1 aapt works around this by packaging
                         // the resources differently.
-
-                        BuildToolInfo buildToolInfo = context.getProject().getBuildTools();
-                        Revision buildTools = buildToolInfo != null
-                                ? buildToolInfo.getRevision() : null;
-                        boolean isOldBuildTools = buildTools != null &&
-                                (buildTools.getMajor() < 23 || buildTools.getMajor() == 23
-                                 && buildTools.getMinor() == 0 && buildTools.getMicro() == 0);
-                        if (name.equals(ATTR_PADDING_START) &&
-                                (buildTools == null || isOldBuildTools) &&
-                                viewMayExtendTextView(attribute.getOwnerElement())) {
-                            Location location = context.getLocation(attribute);
-                            String message = String.format(
-                                    "Attribute `%1$s` referenced here can result in a crash on "
-                                            + "some specific devices older than API %2$d "
-                                            + "(current min is %3$d)",
-                                    attribute.getLocalName(), attributeApiLevel, minSdk);
-                            //noinspection VariableNotUsedInsideIf
-                            if (buildTools != null) {
-                                message = String.format("Upgrade `buildToolsVersion` from "
-                                        + "`%1$s` to at least `23.0.1`; if not, ",
-                                            buildTools.toShortString())
-                                        + Character.toLowerCase(message.charAt(0))
-                                        + message.substring(1);
+                        if (name.equals(ATTR_PADDING_START)) {
+                            BuildToolInfo buildToolInfo = context.getProject().getBuildTools();
+                            Revision buildTools = buildToolInfo != null
+                                    ? buildToolInfo.getRevision() : null;
+                            boolean isOldBuildTools = buildTools != null &&
+                                    (buildTools.getMajor() < 23 || buildTools.getMajor() == 23
+                                     && buildTools.getMinor() == 0 && buildTools.getMicro() == 0);
+                            if ((buildTools == null || isOldBuildTools) &&
+                                    viewMayExtendTextView(attribute.getOwnerElement())) {
+                                Location location = context.getLocation(attribute);
+                                String message = String.format(
+                                        "Attribute `%1$s` referenced here can result in a crash on "
+                                                + "some specific devices older than API %2$d "
+                                                + "(current min is %3$d)",
+                                        attribute.getLocalName(), attributeApiLevel, minSdk);
+                                //noinspection VariableNotUsedInsideIf
+                                if (buildTools != null) {
+                                    message = String.format("Upgrade `buildToolsVersion` from "
+                                            + "`%1$s` to at least `23.0.1`; if not, ",
+                                                buildTools.toShortString())
+                                            + Character.toLowerCase(message.charAt(0))
+                                            + message.substring(1);
+                                }
+                                context.report(UNSUPPORTED, attribute, location, message);
                             }
-                            context.report(UNSUPPORTED, attribute, location, message);
                         }
                     } else {
                         Location location = context.getLocation(attribute);

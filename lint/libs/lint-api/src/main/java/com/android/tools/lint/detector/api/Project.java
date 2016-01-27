@@ -140,6 +140,7 @@ public class Project {
     protected GradleVersion mGradleVersion;
     private Map<String, String> mSuperClassMap;
     private ResourceVisibilityLookup mResourceVisibility;
+    private BuildToolInfo mBuildTools;
 
     /**
      * Creates a new {@link Project} for the given directory.
@@ -717,7 +718,11 @@ public class Project {
      */
     @Nullable
     public BuildToolInfo getBuildTools() {
-        return mClient.getBuildTools(this);
+        if (mBuildTools == null) {
+            mBuildTools = mClient.getBuildTools(this);
+        }
+
+        return mBuildTools;
     }
 
     /**
