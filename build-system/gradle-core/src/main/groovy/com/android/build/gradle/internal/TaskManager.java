@@ -47,7 +47,6 @@ import com.android.build.gradle.internal.dependency.LibraryDependencyImpl;
 import com.android.build.gradle.internal.dependency.ManifestDependencyImpl;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
-import com.android.build.gradle.internal.dsl.CoreBuildType;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
@@ -164,7 +163,6 @@ import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 
 import org.gradle.api.Action;
@@ -2138,7 +2136,8 @@ public abstract class TaskManager {
         incrementalAnchorTask.dependsOn(tasks, incrementalWrapperTask);
 
         scope.getInstantRunBuildContext().setApiLevel(
-                InstantRunPatchingPolicy.getApiLevel(getLogger(), project));
+                InstantRunPatchingPolicy.getApiLevel(getLogger(), project),
+                AndroidGradleOptions.getColdswapMode(project));
         scope.getInstantRunBuildContext().setDensity(
                 AndroidGradleOptions.getBuildTargetDensity(project));
         InstantRunPatchingPolicy patchingPolicy =
@@ -2352,7 +2351,7 @@ public abstract class TaskManager {
             // dex files in the main APK, they will be packaged as pure splits
             boolean addDexFilesToApk =
                     instantRunPatchingPolicy == InstantRunPatchingPolicy.PRE_LOLLIPOP ||
-                    instantRunPatchingPolicy == InstantRunPatchingPolicy.LOLLIPOP ||
+                    instantRunPatchingPolicy == InstantRunPatchingPolicy.MULTI_DEX ||
                     getIncrementalMode(variantScope.getVariantConfiguration())
                             == IncrementalMode.NONE;
 
