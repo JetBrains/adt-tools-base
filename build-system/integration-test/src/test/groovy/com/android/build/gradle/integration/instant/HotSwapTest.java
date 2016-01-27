@@ -31,6 +31,7 @@ import com.android.build.gradle.integration.common.truth.ApkSubject;
 import com.android.build.gradle.integration.common.truth.DexFileSubject;
 import com.android.build.gradle.integration.common.utils.DeviceHelper;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
+import com.android.build.gradle.internal.incremental.ColdswapMode;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.InstantRun;
@@ -94,7 +95,8 @@ public class HotSwapTest {
                 .getInstantRunModel(project.getSingleModel());
 
         project.execute(
-                InstantRunTestUtils.getInstantRunArgs(19, OptionalCompilationStep.RESTART_ONLY),
+                InstantRunTestUtils.getInstantRunArgs(19,
+                        ColdswapMode.MULTIAPK, OptionalCompilationStep.RESTART_ONLY),
                 "assembleDebug");
 
         // As no injected API level, will default to no splits.
@@ -106,7 +108,7 @@ public class HotSwapTest {
 
         makeBasicHotswapChange();
 
-        project.execute(InstantRunTestUtils.getInstantRunArgs(),
+        project.execute(InstantRunTestUtils.getInstantRunArgs(21, ColdswapMode.MULTIAPK),
                 instantRunModel.getIncrementalAssembleTaskName());
         InstantRunBuildContext.Artifact artifact =
                 getCompiledHotSwapCompatibleChange(instantRunModel);
@@ -146,7 +148,8 @@ public class HotSwapTest {
         Assume.assumeThat("Device api level", device.getVersion(), is(new AndroidVersion(23, null)));
 
         project.execute(
-                InstantRunTestUtils.getInstantRunArgs(device, OptionalCompilationStep.RESTART_ONLY),
+                InstantRunTestUtils.getInstantRunArgs(
+                        device, ColdswapMode.MULTIAPK, OptionalCompilationStep.RESTART_ONLY),
                 "assembleDebug");
 
         // Deploy to device
@@ -174,7 +177,7 @@ public class HotSwapTest {
         makeBasicHotswapChange();
 
         // Now build the hot swap patch.
-        project.execute(InstantRunTestUtils.getInstantRunArgs(device),
+        project.execute(InstantRunTestUtils.getInstantRunArgs(device, ColdswapMode.MULTIAPK),
                 instantRunModel.getIncrementalAssembleTaskName());
 
         InstantRunBuildContext.Artifact artifact =

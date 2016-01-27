@@ -114,6 +114,11 @@ public class AndroidGradleOptions {
         return getString(project, AndroidProject.PROPERTY_BUILD_API);
     }
 
+    @Nullable
+    public static String getColdswapMode(@NonNull Project project) {
+        return getString(project, AndroidProject.PROPERTY_SIGNING_COLDSWAP_MODE);
+    }
+
     public static boolean isIntegrationTest() {
         return Boolean.parseBoolean(System.getenv("INTEGRATION_TEST"));
     }
