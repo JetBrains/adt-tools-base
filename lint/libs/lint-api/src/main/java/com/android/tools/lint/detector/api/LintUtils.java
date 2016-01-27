@@ -42,6 +42,7 @@ import com.android.builder.model.ApiVersion;
 import com.android.ide.common.rendering.api.ItemResourceValue;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.rendering.api.StyleResourceValue;
+import com.android.ide.common.repository.GradleVersion;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.res2.ResourceItem;
 import com.android.ide.common.resources.ResourceUrl;
@@ -1091,7 +1092,11 @@ public class LintUtils {
         if (project != null) {
             String modelVersion = project.getModelVersion();
             try {
-                Revision version = Revision.parseRevision(modelVersion);
+                GradleVersion version = GradleVersion.tryParse(modelVersion);
+                if (version == null) {
+                    return false;
+                }
+
                 if (version.getMajor() != major) {
                     return version.getMajor() < major;
                 }
