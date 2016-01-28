@@ -31,18 +31,36 @@ public class DexParser implements PatternAwareOutputParser {
 
     static final String DEX_TOOL_NAME = "Dex";
 
-    public static final String DEX_LIMIT_EXCEEDED_ERROR =
+    static final String DEX_LIMIT_EXCEEDED_ERROR =
             "The number of method references in a .dex file cannot exceed 64K.\n"
                     + "Learn how to resolve this issue at "
                     + "https://developer.android.com/tools/building/multidex.html";
 
-    static final String COULD_NOT_CONVERT_BYTECODE_TO_DEX = "Error converting bytecode to dex:\n"
-            + "Cause: %s";
+    private static final String COULD_NOT_CONVERT_BYTECODE_TO_DEX =
+            "Error converting bytecode to dex:\nCause: %s";
 
     @Override
     public boolean parse(@NonNull String line, @NonNull OutputLineReader reader,
             @NonNull List<Message> messages, @NonNull ILogger logger)
             throws ParsingFailedException {
+        if (line.startsWith("processing ") && line.endsWith("...")) {
+            // There is one such line for every class compiled, i.e. a lot of them. Log at debug
+            // level, otherwise --info becomes unusable.
+            logger.verbose(line);
+            return true;
+        }
+
+        if (line.startsWith("writing ") && line.endsWith("size 0...")) {
+            // There is one such line for every directory in the input jars. Log at debug level.
+            logger.verbose(line);
+            return true;
+        }
+
+        if (line.startsWith("ignored resource ") && line.endsWith("/")) {
+            // There is one such line for every directory in the input jars. Log at debug level.
+            logger.verbose(line);
+            return true;
+        }
 
         if (line.startsWith("trouble writing output: Too many method references:")) {
             StringBuilder original1 = new StringBuilder(line).append('\n');
