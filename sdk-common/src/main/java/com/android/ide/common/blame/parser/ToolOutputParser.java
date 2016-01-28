@@ -60,7 +60,7 @@ public class ToolOutputParser {
         List<Message> messages = Lists.newArrayList();
         String line;
         while ((line = outputReader.readLine()) != null) {
-            if (line.isEmpty()) {
+            if (line.trim().isEmpty()) {
                 continue;
             }
             boolean handled = false;
