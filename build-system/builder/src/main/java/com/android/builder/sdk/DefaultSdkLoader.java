@@ -27,6 +27,7 @@ import static com.android.SdkConstants.FN_ANNOTATIONS_JAR;
 import com.android.annotations.NonNull;
 import com.android.repository.Revision;
 import com.android.repository.api.ProgressIndicator;
+import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.repositoryv2.AndroidSdkHandler;
@@ -110,7 +111,8 @@ public class DefaultSdkLoader implements SdkLoader {
 
     private synchronized void init(@NonNull ILogger logger) {
         if (mSdkHandler == null) {
-            mSdkHandler = AndroidSdkHandler.getInstance(mSdkLocation);
+            // Intentionally don't use sdk handler caching mechanism
+            mSdkHandler = new AndroidSdkHandler(mSdkLocation, FileOpUtils.create());
 
             File toolsFolder = new File(mSdkLocation, FD_TOOLS);
             File supportToolsFolder = new File(toolsFolder, FD_SUPPORT);
