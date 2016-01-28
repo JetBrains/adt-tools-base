@@ -257,7 +257,7 @@ public class InstantRunBuildContext {
     private AndroidVersion apiLevel = AndroidVersion.DEFAULT;
     private String density = null;
     private final Build currentBuild = new Build(
-            System.currentTimeMillis(), Optional.<InstantRunVerifierStatus>absent());
+            System.nanoTime(), Optional.<InstantRunVerifierStatus>absent());
     private final TreeMap<Long, Build> previousBuilds = new TreeMap<Long, Build>();
     private File tmpBuildInfo = null;
 
@@ -360,9 +360,12 @@ public class InstantRunBuildContext {
                     // let's work around the Lollipop and Marshmallow issue that cannot deal with
                     // just changing a split APK, we forcefully add again the MAIN apk so it is
                     // automatically enrolled.
-                    Artifact splitMainArtifact = getPastBuildsArtifactForType(FileType.SPLIT_MAIN);
-                    if (splitMainArtifact != null) {
-                        currentBuild.artifacts.add(splitMainArtifact);
+                    Artifact splitMain = currentBuild.getArtifactForType(FileType.SPLIT_MAIN);
+                    if (splitMain == null) {
+                        splitMain = getPastBuildsArtifactForType(FileType.SPLIT_MAIN);
+                        if (splitMain != null) {
+                            currentBuild.artifacts.add(splitMain);
+                        }
                     }
             }
         }
