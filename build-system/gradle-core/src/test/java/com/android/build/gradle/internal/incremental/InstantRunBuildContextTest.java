@@ -241,11 +241,8 @@ public class InstantRunBuildContextTest {
         first.close();
         buildInfo = first.toXml();
 
-        System.out.println("buildinfo " + buildInfo);
-
         InstantRunBuildContext second = new InstantRunBuildContext();
         second.loadFromXml(buildInfo);
-        System.out.println("second after loading" + second.toXml());
         second.setApiLevel(new AndroidVersion(23, null),
                 null /* coldswapMode */, null /* targetArchitecture */);
         second.addChangedFile(InstantRunBuildContext.FileType.SPLIT, new File("split.apk"));
@@ -253,7 +250,6 @@ public class InstantRunBuildContextTest {
 
         second.close();
         buildInfo = second.toXml();
-        System.out.println("second persisted " + buildInfo);
         Document document = XmlUtils.parseDocument(buildInfo, false /* namespaceAware */);
 
         List<Element> builds = getElementsByName(document.getFirstChild(),
@@ -429,7 +425,7 @@ public class InstantRunBuildContextTest {
                 null /* coldswapMode */, null /* targetArchitecture */);
         first.addChangedFile(InstantRunBuildContext.FileType.RESOURCES, new File("/tmp/resources_ap"));
         first.close();
-        String tmpBuildInfo = first.toXml(false);
+        String tmpBuildInfo = first.toXml(InstantRunBuildContext.PersistenceMode.TEMP_BUILD);
 
         InstantRunBuildContext fixed = new InstantRunBuildContext();
         fixed.loadFromXml(buildInfo);
