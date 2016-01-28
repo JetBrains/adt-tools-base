@@ -252,6 +252,21 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
     }
 
     /**
+     * Loads a single dataFile from the given source folder (rather than load / parse from all source folders).
+     *
+     * Like loadFromFiles, all loaded items are set to TOUCHED.
+     *
+     * @param sourceFolder the source folder
+     * @param dataFile     the data file within source folder
+     * @param logger       logs errors
+     * @return a DataFile if successfully loaded, and null otherwise
+     */
+    @Nullable
+    public F loadFile(@NonNull File sourceFolder, @NonNull File dataFile, @NonNull ILogger logger) throws MergingException {
+        return handleNewFile(sourceFolder, dataFile, logger);
+    }
+
+    /**
      * Appends the DataSet to a given DOM object.
      *
      * @param setNode the root node for this set.
@@ -438,7 +453,8 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
             throws MergingException {
         switch (fileStatus) {
             case NEW:
-                return handleNewFile(sourceFolder, changedFile, logger);
+                handleNewFile(sourceFolder, changedFile, logger);
+                return true;
             case CHANGED:
                 return handleChangedFile(sourceFolder, changedFile, logger);
             case REMOVED:
@@ -466,13 +482,14 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
         return checkFileForAndroidRes(file);
     }
 
-    protected boolean handleNewFile(File sourceFolder, File file, ILogger logger)
+    @Nullable
+    protected F handleNewFile(File sourceFolder, File file, ILogger logger)
             throws MergingException {
         F dataFile = createFileAndItems(sourceFolder, file, logger);
         if (dataFile != null) {
             processNewDataFile(sourceFolder, dataFile, true /*setTouched*/);
         }
-        return true;
+        return dataFile;
     }
 
     protected void processNewDataFile(@NonNull File sourceFolder,

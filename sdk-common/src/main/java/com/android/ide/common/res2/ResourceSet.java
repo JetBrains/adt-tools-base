@@ -54,6 +54,8 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
     private ResourceSet mGeneratedSet;
     private ResourcePreprocessor mPreprocessor;
     private boolean isFromDependency;
+    private boolean mShouldParseResourceIds;
+    private boolean mDontNormalizeQualifiers;
 
     public ResourceSet(String name) {
         this(name, true /*validateEnabled*/);
@@ -70,6 +72,14 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
 
     public void setPreprocessor(@NonNull ResourcePreprocessor preprocessor) {
         mPreprocessor = checkNotNull(preprocessor);
+    }
+
+    public void setShouldParseResourceIds(boolean shouldParse) {
+        mShouldParseResourceIds = shouldParse;
+    }
+
+    public void setDontNormalizeQualifiers(boolean dontNormalizeQualifiers) {
+        mDontNormalizeQualifiers = dontNormalizeQualifiers;
     }
 
     @Override
@@ -220,12 +230,13 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
                 ResourceFolderType.getFolderType(resFolder.getName()) != null;
     }
 
+    @Nullable
     @Override
-    protected boolean handleNewFile(File sourceFolder, File file, ILogger logger)
+    protected ResourceFile handleNewFile(File sourceFolder, File file, ILogger logger)
             throws MergingException {
         ResourceFile resourceFile = createFileAndItems(sourceFolder, file, logger);
         processNewResourceFile(sourceFolder, resourceFile);
-        return true;
+        return resourceFile;
     }
 
     @Override
@@ -415,6 +426,13 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
                         file,
                         getResourceItemsForGeneratedFiles(file),
                         folderData.qualifiers);
+            } else if (mShouldParseResourceIds && isIdGeneratingType(folderData)) {
+                String resourceName = getNameForFile(file);
+                IdGeneratingResourceParser parser = new IdGeneratingResourceParser(file, resourceName, folderData.type);
+                List<ResourceItem> items = parser.getIdResourceItems();
+                ResourceItem fileItem = parser.getFileResourceItem();
+                items.add(fileItem);
+                return new ResourceFile(file, items, folderData.qualifiers);
             } else {
                 return new ResourceFile(
                         file,
@@ -520,7 +538,9 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
             }
 
             // normalize it
-            folderConfiguration.normalize();
+            if (!mDontNormalizeQualifiers) {
+                folderConfiguration.normalize();
+            }
 
             // get the qualifier portion from the folder config.
             // the returned string starts with "-" so we remove that.
@@ -536,6 +556,20 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
 
         return fd;
     }
+
+    private static boolean isIdGeneratingType(FolderData folderData) {
+        if (folderData.folderType == null) {
+            return false;
+        }
+        List<ResourceType> relatedTypes = FolderTypeRelationship.getRelatedResourceTypes(folderData.folderType);
+        if (relatedTypes.size() > 1) {
+            assert relatedTypes.size() == 2 && relatedTypes.get(1) == ResourceType.ID;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
 
     @Override
     void appendToXml(@NonNull Node setNode, @NonNull Document document,

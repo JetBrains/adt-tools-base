@@ -1,0 +1,26 @@
+<menu xmlns:android_ns="http://schemas.android.com/apk/res/android">
+  <item android_ns:id="@+id/item1"
+        android_ns:title="@string/item1_title"
+        android_ns:icon="@drawable/group_item1_icon"
+        android_ns:showAsAction="ifRoom|withText"/>
+  <group android_ns:id="@+id/group">
+    <item android_ns:id="@+id/group_item1"
+          android_ns:onClick="onGroupItemClick"
+          android_ns:title="@string/group_item1_title"
+          android_ns:icon="@drawable/group_item1_icon" />
+    <item android_ns:id="@+id/group_item2"
+          android_ns:onClick="onGroupItemClick"
+          android_ns:title="@string/group_item2_title"
+          android_ns:icon="@drawable/group_item2_icon" />
+  </group>
+  <item android_ns:id="@+id/submenu"
+        android_ns:title="@string/submenu_title"
+        android_ns:showAsAction="ifRoom|withText" >
+    <menu>
+      <item android_ns:id="@+foo:id/submenu_item1"
+            android_ns:title="@string/submenu_item1_title" />
+      <item android_ns:id="@+id/submenu_item2"
+            android_ns:title="@string/submenu_item2_title" />
+   </menu>
+  </item>
+</menu>
