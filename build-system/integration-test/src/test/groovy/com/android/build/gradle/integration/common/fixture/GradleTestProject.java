@@ -283,16 +283,21 @@ public class GradleTestProject implements TestRule {
         /**
          * Create GradleTestProject from an existing test project.
          */
-        public Builder fromExternalProject(@NonNull String project) throws IOException {
-            AndroidTestApp app = new EmptyTestApp();
-            name = project;
-            // compute the root folder of the checkout, based on test-projects.
-            File parentDir = TEST_PROJECT_DIR.getCanonicalFile().getParentFile().getParentFile()
-                    .getParentFile().getParentFile().getParentFile();
-            parentDir = new File(parentDir, "external");
-            File projectDir = new File(parentDir, project);
-            addAllFiles(app, projectDir, null /*buildFileSuffix*/);
-            return fromTestApp(app);
+        public Builder fromExternalProject(@NonNull String project) {
+            try {
+                AndroidTestApp app = new EmptyTestApp();
+                name = project;
+                // compute the root folder of the checkout, based on test-projects.
+                File parentDir = null;
+                parentDir = TEST_PROJECT_DIR.getCanonicalFile().getParentFile().getParentFile()
+                        .getParentFile().getParentFile().getParentFile();
+                parentDir = new File(parentDir, "external");
+                File projectDir = new File(parentDir, project);
+                addAllFiles(app, projectDir, null /*buildFileSuffix*/);
+                return fromTestApp(app);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         /**
