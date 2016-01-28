@@ -22,12 +22,10 @@ import com.android.annotations.Nullable;
 import android.app.Application;
 import android.content.Context;
 import android.content.ContextWrapper;
-import android.os.Build;
 import android.util.Log;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
@@ -63,15 +61,6 @@ import java.util.logging.Level;
  */
 public class BootstrapApplication extends Application {
     public static final String LOG_TAG = "fd";
-
-    /**
-     * Temporary debugging flag: when this flag is enabled, we no longer perform
-     * reflection and classloader hacks to read code and resources from local directories
-     * when running on API 23 or above. Assuming this works correctly, we can inline this
-     * as soon as we stop testing other deployment modes (19, 21) on 23 devices during
-     * development.
-     */
-    private static final boolean USING_APK_SPLITS = true;
 
     static {
         com.android.tools.fd.common.Log.logging =
@@ -252,7 +241,7 @@ public class BootstrapApplication extends Application {
         // As of Marshmallow, we use APK splits and don't need to rely on
         // reflection to inject classes and resources for coldswap
         //noinspection PointlessBooleanExpression
-        if (!USING_APK_SPLITS || Build.VERSION.SDK_INT < 23) {
+        if (!AppInfo.usingApkSplits) {
             String apkFile = context.getApplicationInfo().sourceDir;
             long apkModified = apkFile != null ? new File(apkFile).lastModified() : 0L;
             createResources(apkModified);
@@ -283,7 +272,7 @@ public class BootstrapApplication extends Application {
         // As of Marshmallow, we use APK splits and don't need to rely on
         // reflection to inject classes and resources for coldswap
         //noinspection PointlessBooleanExpression
-        if (!USING_APK_SPLITS || Build.VERSION.SDK_INT < 23) {
+        if (!AppInfo.usingApkSplits) {
             MonkeyPatcher.monkeyPatchApplication(
                     BootstrapApplication.this, BootstrapApplication.this,
                     realApplication, externalResourcePath);
