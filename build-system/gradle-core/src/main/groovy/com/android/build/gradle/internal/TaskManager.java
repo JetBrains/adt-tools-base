@@ -2001,8 +2001,6 @@ public abstract class TaskManager {
             multiDexClassListTask.dependsOn(tasks, manifestKeepListTask);
         }
 
-        checkDexingInProcess(extension);
-
         // create dex transform
         DexTransform dexTransform = new DexTransform(
                 extension.getDexOptions(),
@@ -2025,31 +2023,6 @@ public abstract class TaskManager {
                 InstantRunPatchingPolicy.PRE_LOLLIPOP !=
                     variantScope.getInstantRunBuildContext().getPatchingPolicy()) {
             incrementalBuildWrapperTask.dependsOn(tasks, dexTask);
-        }
-    }
-
-    private void checkDexingInProcess(AndroidConfig extension) {
-        DexOptions dexOptions = extension.getDexOptions();
-        Revision minimumVersion = DexProcessBuilder.FIXED_DX_MERGER;
-
-        if (extension.getBuildToolsRevision().compareTo(minimumVersion) < 0) {
-            // Dexing in-process is not supported.
-
-            if (Boolean.TRUE.equals(dexOptions.getDexInProcess())) {
-                // User tried to enable it, but the build-tools are too old.
-                getLogger().warn(
-                        "Running dex in-process requires build tools "
-                                + minimumVersion.toShortString());
-            }
-
-            dexOptions.setDexInProcess(false);
-        } else {
-            if (dexOptions.getDexInProcess() == null) {
-                // Dex in-process by default, if the user has no preference.
-                getLogger().info("Enabling dex in process by default "
-                        + "as build tools version is new enough.");
-                dexOptions.setDexInProcess(true);
-            }
         }
     }
 
