@@ -63,7 +63,7 @@ public class PlatformTarget implements IAndroidTarget {
     /**
      * Default vendor for platform targets
      */
-    private static final String PLATFORM_VENDOR = "Android Open Source Project";
+    public static final String PLATFORM_VENDOR = "Android Open Source Project";
 
     /**
      * "Android NN" is the default name for platform targets.
