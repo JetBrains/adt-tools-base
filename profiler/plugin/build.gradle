@@ -1,0 +1,17 @@
+apply plugin: 'java'
+
+group = 'com.android.tools'
+archivesBaseName = 'studio-profiler-plugin'
+version = '2.1'// TODO: Pass in as an argument
+
+dependencies {
+    // Add gradleApi to classpath for compilation, but use provided configuration so that groovy is
+    // not exposed as a runtime dependency.
+    compile gradleApi()
+    compile project(':base:gradle')
+    compile project(':base:gradle-api')
+}
+
+project.ext.pomName = 'Android Studio profiler gradle plugin'
+project.ext.pomDesc = 'Plugin which allows instrumenting apps for profiler statistics'
+
