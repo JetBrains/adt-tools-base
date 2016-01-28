@@ -34,6 +34,8 @@ import static org.objectweb.asm.Opcodes.V1_6;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
@@ -41,6 +43,7 @@ import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.ide.common.packaging.PackagingUtils;
 import com.android.utils.XmlUtils;
 
+import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
@@ -60,6 +63,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.concurrent.Callable;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 
@@ -83,6 +87,13 @@ public class GenerateInstantRunAppInfoTask extends BaseTask {
     public File getMergedManifest() {
         return mergedManifest;
     }
+
+    @Input
+    boolean isUsingMultiApks() {
+        return usingMultiApks;
+    }
+
+    boolean usingMultiApks;
 
     @TaskAction
     public void generateInfoTask() throws IOException {
@@ -129,11 +140,9 @@ public class GenerateInstantRunAppInfoTask extends BaseTask {
                     if (!applicationId.isEmpty()) {
                         File buildDir = getProject().getBuildDir();
                         long token = PackagingUtils.computeApplicationHash(buildDir);
-                        // TODO: jedo
-                        boolean usingApkSplits = false; // API level 22 || multiapk setting
 
                         // Must be *after* extractLibrary() to replace dummy version
-                        writeAppInfoClass(applicationId, applicationClass, token, usingApkSplits);
+                        writeAppInfoClass(applicationId, applicationClass, token);
                     }
                 }
             } catch (ParserConfigurationException e) {
@@ -149,8 +158,7 @@ public class GenerateInstantRunAppInfoTask extends BaseTask {
     void writeAppInfoClass(
             @NonNull String applicationId,
             @Nullable String applicationClass,
-            long token,
-            boolean usingApkSplits)
+            long token)
             throws IOException {
         ClassWriter cw = new ClassWriter(0);
         FieldVisitor fv;
@@ -164,6 +172,8 @@ public class GenerateInstantRunAppInfoTask extends BaseTask {
         fv = cw.visitField(ACC_PUBLIC + ACC_STATIC, "applicationClass", "Ljava/lang/String;", null, null);
         fv.visitEnd();
         fv = cw.visitField(ACC_PUBLIC + ACC_STATIC, "token", "J", null, null);
+        fv.visitEnd();
+        fv = cw.visitField(ACC_PUBLIC + ACC_STATIC, "usingApkSplits", "Z", null, null);
         fv.visitEnd();
         mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
         mv.visitCode();
@@ -193,12 +203,12 @@ public class GenerateInstantRunAppInfoTask extends BaseTask {
             mv.visitInsn(LCONST_0);
         }
         mv.visitFieldInsn(PUTSTATIC, appInfoOwner, "token", "J");
-        if (usingApkSplits) {
+        if (isUsingMultiApks()) {
             mv.visitInsn(ICONST_1);
         } else {
             mv.visitInsn(ICONST_0);
         }
-        mv.visitFieldInsn(PUTSTATIC, "com/android/tools/fd/runtime/AppInfo", "usingApkSplits", "Z");
+        mv.visitFieldInsn(PUTSTATIC, appInfoOwner, "usingApkSplits", "Z");
 
         mv.visitInsn(RETURN);
         mv.visitMaxs(2, 0);
@@ -247,6 +257,15 @@ public class GenerateInstantRunAppInfoTask extends BaseTask {
                     .getOutputs().get(0);
 
             task.mergedManifest = variantOutput.getScope().getManifestOutputFile();
+            ConventionMappingHelper.map(task, "usingMultiApks",
+                    new Callable<Boolean>() {
+                        @Override
+                        public Boolean call() throws Exception {
+                            return variantScope.getInstantRunBuildContext().getPatchingPolicy()
+                                    == InstantRunPatchingPolicy.MULTI_APK;
+                        }
+                    });
+
         }
     }
 }

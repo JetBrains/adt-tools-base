@@ -64,7 +64,8 @@ public class InstantRunBuildContext {
     static final String ATTR_LOCATION = "location";
     static final String ATTR_API_LEVEL = "api-level";
     static final String ATTR_DENSITY = "density";
-    static final String ATTR_FORMAT= "format";
+    static final String ATTR_FORMAT = "format";
+    static final String ATTR_ABI = "abi";
 
     static final String CURRENT_FORMAT = "2";
 
@@ -256,6 +257,7 @@ public class InstantRunBuildContext {
     private InstantRunPatchingPolicy patchingPolicy;
     private AndroidVersion apiLevel = AndroidVersion.DEFAULT;
     private String density = null;
+    private String abi = null;
     private final Build currentBuild = new Build(
             System.nanoTime(), Optional.<InstantRunVerifierStatus>absent());
     private final TreeMap<Long, Build> previousBuilds = new TreeMap<Long, Build>();
@@ -300,11 +302,12 @@ public class InstantRunBuildContext {
 
     public void setApiLevel(@NonNull AndroidVersion apiLevel,
             @Nullable String coldswapMode,
-            @Nullable String targetArchitecture) {
+            @Nullable String targetAbi) {
         this.apiLevel = apiLevel;
         // cache the patching policy.
         this.patchingPolicy = InstantRunPatchingPolicy.getPatchingPolicy(
-                apiLevel, coldswapMode, targetArchitecture);
+                apiLevel, coldswapMode, targetAbi);
+        this.abi = targetAbi;
     }
 
     public AndroidVersion getApiLevel() {
@@ -580,30 +583,47 @@ public class InstantRunBuildContext {
     }
 
     /**
+     * Define the pesistence mode for this context (which results in the build-info.xml).
+     */
+    public enum PersistenceMode {
+        /**
+         * Persist this build as a final full build (and do not include any previous builds).
+         */
+        FULL_BUILD,
+        /**
+         * Persist this build as a final incremental build and include all previous builds
+         */
+        INCREMENTAL_BUILD,
+        /**
+         * Persist this build as a temporary build (that may still execute or failed to complete)
+         */
+        TEMP_BUILD
+    }
+    /**
      * Serialize this context into an xml format.
      * @return the xml persisted information as a {@link String}
      * @throws ParserConfigurationException
      */
     @NonNull
     public String toXml() throws ParserConfigurationException {
-        return toXml(true /* includePreviousBuilds */);
+        return toXml(PersistenceMode.INCREMENTAL_BUILD);
     }
 
     /**
      * Serialize this context into an xml format.
-     * @param includePreviousBuilds true if previous builds should be persisted in the xml.
+     * @param persistenceMode desired {@link PersistenceMode}
      * @return the xml persisted information as a {@link String}
      * @throws ParserConfigurationException
      */
     @NonNull
-    public String toXml(boolean includePreviousBuilds) throws ParserConfigurationException {
+    public String toXml(PersistenceMode persistenceMode) throws ParserConfigurationException {
 
         Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
-        toXml(document, includePreviousBuilds);
+        toXml(document, persistenceMode);
         return XmlPrettyPrinter.prettyPrint(document, true);
     }
 
-    private Element toXml(Document document, boolean includePreviousBuilds) {
+    private Element toXml(Document document, PersistenceMode persistenceMode) {
         Element instantRun = document.createElement(TAG_INSTANT_RUN);
         document.appendChild(instantRun);
 
@@ -621,12 +641,27 @@ public class InstantRunBuildContext {
         if (density != null) {
             instantRun.setAttribute(ATTR_DENSITY, density);
         }
+        if (abi != null) {
+            instantRun.setAttribute(ATTR_ABI, abi);
+        }
         instantRun.setAttribute(ATTR_FORMAT, CURRENT_FORMAT);
 
-        if (includePreviousBuilds) {
-            for (Build build : previousBuilds.values()) {
-                instantRun.appendChild(build.toXml(document));
-            }
+        switch(persistenceMode) {
+            case FULL_BUILD:
+                // only include the last build.
+                if (!previousBuilds.isEmpty()) {
+                    instantRun.appendChild(previousBuilds.lastEntry().getValue().toXml(document));
+                }
+                break;
+            case INCREMENTAL_BUILD:
+                for (Build build : previousBuilds.values()) {
+                    instantRun.appendChild(build.toXml(document));
+                }
+                break;
+            case TEMP_BUILD:
+                break;
+            default :
+                throw new RuntimeException("PersistenceMode not handled" + persistenceMode);
         }
         return instantRun;
     }
@@ -643,6 +678,6 @@ public class InstantRunBuildContext {
             return;
         }
         Files.createParentDirs(tmpBuildInfo);
-        Files.write(toXml(false /* includePreviousBuilds */), tmpBuildInfo, Charsets.UTF_8);
+        Files.write(toXml(PersistenceMode.TEMP_BUILD), tmpBuildInfo, Charsets.UTF_8);
     }
 }
