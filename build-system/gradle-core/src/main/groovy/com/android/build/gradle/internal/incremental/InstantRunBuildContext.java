@@ -66,7 +66,7 @@ public class InstantRunBuildContext {
     static final String ATTR_DENSITY = "density";
     static final String ATTR_FORMAT= "format";
 
-    static final String CURRENT_FORMAT = "2";
+    static final String CURRENT_FORMAT = "3";
 
     public enum TaskType {
         JAVAC,
