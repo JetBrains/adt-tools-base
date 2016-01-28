@@ -101,6 +101,7 @@ public class NodeUtilsTest extends TestCase {
         node2.appendChild(child2b);
 
         assertFalse(NodeUtils.compareElementNode(node1, node2, true));
+        assertFalse(NodeUtils.compareElementNode(node2, node1, true));
     }
 
     public void testNodesWithChildrenNodesInOtherOrder() throws Exception {
@@ -121,6 +122,7 @@ public class NodeUtilsTest extends TestCase {
         node2.appendChild(child2b);
 
         assertTrue(NodeUtils.compareElementNode(node1, node2, false));
+        assertTrue(NodeUtils.compareElementNode(node2, node1, false));
     }
 
     public void testAdoptNode() throws Exception {
@@ -237,6 +239,56 @@ public class NodeUtilsTest extends TestCase {
         assertTrue(originalFoo.getNodeValue().equals("bar"));
         Node originalBaz = node2.getAttributes().getNamedItem("prefix2:baz");
         assertTrue(originalBaz.getNodeValue().equals("zap"));
+    }
+
+    public void testElementNamespaceAliasCompareAfterAdopt() throws Exception {
+        Document document = createDocument();
+        Node rootNode = document.createElement("root");
+        String nsURI = "urn:oasis:names:tc:xliff:document:1.2";
+        NodeUtils.addAttribute(document, rootNode, null, "xmlns:xliff", nsURI);
+        document.appendChild(rootNode);
+
+        Node node1 = document.createElementNS(nsURI, "xliff:g");
+        NodeUtils.addAttribute(document, node1, null, "id", "foo_number");
+        Node node2 = document.createTextNode("%1$d");
+        rootNode.appendChild(node1).appendChild(node2);
+
+        // create the other document to receive the duplicated and adopted node. It must have a root node.
+        Document document2 = createDocument();
+        rootNode = document2.createElement("root");
+        document2.appendChild(rootNode);
+
+        Node adoptedNode = NodeUtils.duplicateAndAdoptNode(document2, node1);
+        // Adoption may rewrite the prefix in the second document so that the nodeNames are different,
+        // but the logical names (localName + namespaceURI) are the same.
+        assertNotSame(node1.getNodeName(), adoptedNode.getNodeName());
+        assertTrue(NodeUtils.compareElementNode(node1, adoptedNode, true));
+        assertTrue(NodeUtils.compareElementNode(adoptedNode, node1, true));
+    }
+
+    public void testElementDiffNamespaceCompare() throws Exception {
+        // Test that comparison fails if the nodeName is the same, but the logical names are different
+        // (different namespace).
+        Document document = createDocument();
+        Node rootNode = document.createElement("root");
+        String nsURI = "urn:oasis:names:tc:xliff:document:1.2";
+        NodeUtils.addAttribute(document, rootNode, null, "xmlns", nsURI);
+        document.appendChild(rootNode);
+
+        // Create a node with a namespace but no prefix (it is the default).
+        Node node1 = document.createElementNS(nsURI, "g");
+        rootNode.appendChild(node1);
+
+        Document documentB = createDocument();
+        Node rootNodeB = documentB.createElement("root");
+        documentB.appendChild(rootNodeB);
+
+        // Now create a node with the same local name, but in a document without namespaces.
+        Node node1B = documentB.createElement("g");
+        rootNodeB.appendChild(node1B);
+
+        assertFalse(NodeUtils.compareElementNode(node1, node1B, true));
+        assertFalse(NodeUtils.compareElementNode(node1B, node1, true));
     }
 
     private static Document createDocument() throws ParserConfigurationException {
