@@ -20,6 +20,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 
 import org.w3c.dom.Attr;
@@ -251,7 +252,14 @@ class NodeUtils {
     }
 
     static boolean compareElementNode(@NonNull Node node1, @NonNull Node node2, boolean strict) {
-        if (!node1.getNodeName().equals(node2.getNodeName())) {
+        // See if either element has a namespace. If so, compare by namespace and local name
+        // so that the prefix in the nodeName is irrelevant. Otherwise, compare the nodeName.
+        if (node1.getNamespaceURI() != null || node2.getNamespaceURI() != null) {
+            if (!Objects.equal(node1.getLocalName(), node2.getLocalName()) ||
+                !Objects.equal(node1.getNamespaceURI(), node2.getNamespaceURI())) {
+                return false;
+            }
+        } else if (!node1.getNodeName().equals(node2.getNodeName()) ){
             return false;
         }
 
