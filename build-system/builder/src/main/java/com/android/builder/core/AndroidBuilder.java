@@ -184,8 +184,6 @@ public class AndroidBuilder {
     @NonNull
     private List<LibraryRequest> mLibraryRequests = ImmutableList.of();
 
-    private Optional<Boolean> dexInProcess = Optional.absent();
-
     /**
      * Creates an AndroidBuilder.
      * <p/>
@@ -1363,8 +1361,11 @@ public class AndroidBuilder {
             boolean instantRunMode)
             throws ProcessException, IOException {
 
-        if (shouldDexInProcess(dexOptions, instantRunMode)) {
-            getLogger().info("Dexing in process.");
+
+        Revision buildToolsVersion = mTargetInfo.getBuildTools().getRevision();
+
+        if (shouldDexInProcess(dexOptions, buildToolsVersion, instantRunMode, getLogger())) {
+            getLogger().info("Dexing in process");
             File dxJar = new File(
                     mTargetInfo.getBuildTools().getPath(BuildToolInfo.PathId.DX_JAR));
             DexWrapper dexWrapper = DexWrapper.obtain(dxJar);
@@ -1376,29 +1377,12 @@ public class AndroidBuilder {
                 dexWrapper.release();
             }
         } else {
-            getLogger().info("Dexing out of process.");
+            getLogger().info("Dexing out of process");
             JavaProcessInfo javaProcessInfo = builder.build(mTargetInfo.getBuildTools(), dexOptions);
             ProcessResult result = mJavaProcessExecutor.execute(javaProcessInfo,
                     processOutputHandler);
             result.rethrowFailure().assertNormalExitValue();
         }
-    }
-
-
-    private synchronized boolean shouldDexInProcess(
-            @NonNull DexOptions dexOptions,
-            boolean instantRunMode) {
-        if (dexInProcess.isPresent()) {
-            return dexInProcess.get();
-        }
-
-        dexInProcess = Optional.of(shouldDexInProcess(
-                dexOptions,
-                mTargetInfo.getBuildTools().getRevision(),
-                instantRunMode,
-                getLogger()));
-
-        return dexInProcess.get();
     }
 
     @VisibleForTesting
