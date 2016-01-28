@@ -2137,7 +2137,8 @@ public abstract class TaskManager {
 
         scope.getInstantRunBuildContext().setApiLevel(
                 InstantRunPatchingPolicy.getApiLevel(getLogger(), project),
-                AndroidGradleOptions.getColdswapMode(project));
+                AndroidGradleOptions.getColdswapMode(project),
+                AndroidGradleOptions.getBuildTargetAbi(project));
         scope.getInstantRunBuildContext().setDensity(
                 AndroidGradleOptions.getBuildTargetDensity(project));
         InstantRunPatchingPolicy patchingPolicy =
