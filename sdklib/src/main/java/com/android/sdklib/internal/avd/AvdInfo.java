@@ -369,7 +369,6 @@ public final class AvdInfo implements Comparable<AvdInfo> {
                         mProperties.get(AvdManager.AVD_INI_DEVICE_MANUFACTURER),
                         mProperties.get(AvdManager.AVD_INI_DEVICE_NAME));
             case OK:
-                assert false;
                 return null;
         }
 
