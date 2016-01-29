@@ -140,7 +140,6 @@ public class AndroidBuilderTest {
     public void notEnoughMemoryForDexInProcess() {
         when(dexOptions.getDexInProcess()).thenReturn(true);
         when(dexOptions.getJavaMaxHeapSize()).thenReturn("10000G");
-        expectedException.expectMessage(containsString("org.gradle.jvmargs=-Xmx"));
         shouldDexInProcess(processBuilder, dexOptions, new Revision(23, 0, 2), false, logger);
     }
 
@@ -151,14 +150,6 @@ public class AndroidBuilderTest {
                 processBuilder, dexOptions, new Revision(23, 0, 1), true, logger));
     }
 
-    @Test
-    public void lowMemoryWithInstantRunAndOnlyAFewClasses() {
-        when(dexOptions.getDexInProcess()).thenReturn(null);
-        when(dexOptions.getJavaMaxHeapSize()).thenReturn("10000G");
-        when(processBuilder.getInputs()).thenReturn(Collections.singleton(smallJar));
-        assertTrue(shouldDexInProcess(
-                processBuilder, dexOptions, new Revision(23, 0, 2), true, logger));
-    }
 
     @Test
     public void lowMemoryWithInstantRunAndManyClasses() {
