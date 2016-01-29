@@ -154,8 +154,6 @@ public class AndroidBuilder {
 
     private static final Revision MIN_BUILD_TOOLS_REV = new Revision(19, 1, 0);
 
-    private static final int MAXIUMUM_CLASS_COUNT_FOR_INSTANT_RUN_IMPLICIT_DEX_IN_PROCESS = 20;
-
     private static final DependencyFileProcessor sNoOpDependencyFileProcessor = new DependencyFileProcessor() {
         @Override
         public DependencyData processFile(@NonNull File dependencyFile) {
@@ -1405,111 +1403,47 @@ public class AndroidBuilder {
             @NonNull Revision buildToolsVersion,
             boolean instantRunMode,
             @NonNull ILogger logger) {
-        // Explicitly disabled.
-        if (Boolean.FALSE.equals(dexOptions.getDexInProcess())) {
-            return false;
-        }
 
-        boolean explicitlyEnabled = Boolean.TRUE.equals(dexOptions.getDexInProcess());
-
-        if (!explicitlyEnabled && !instantRunMode) {
+        if (!Boolean.TRUE.equals(dexOptions.getDexInProcess())) {
             return false;
         }
 
         // Version that supports all flags that we know about, including numThreads.
         Revision minimumBuildTools = DexProcessBuilder.FIXED_DX_MERGER;
 
+        if (buildToolsVersion.compareTo(minimumBuildTools) < 0) {
+            throw new RuntimeException("Running dex in-process requires build tools "
+                    + minimumBuildTools.toShortString());
+        }
+
+        if (!DexWrapper.noMainDexOnClasspath()) {
+            logger.warning("dx.jar is on Android Gradle plugin classpath, which will cause issues "
+                    + "with dexing in process, reverted to out of process.");
+            return false;
+        }
+
         // Requested memory for dex
         long requestedHeapSize = parseHeapSize(dexOptions.getJavaMaxHeapSize());
         long maxMemory = Runtime.getRuntime().maxMemory();
         //TODO: Is this the right heuristic?
 
-        if (buildToolsVersion.compareTo(minimumBuildTools) < 0) {
-            if (explicitlyEnabled) {
-                throw new RuntimeException("Running dex in-process requires build tools "
-                        + minimumBuildTools.toShortString());
-            }
+        if (requestedHeapSize > maxMemory) {
+            String dslRequest = dexOptions.getJavaMaxHeapSize();
+            logger.warning(String.format(
+                    "To run dex in process, the Gradle daemon needs a larger heap. "
+                            + "It currently has %1$d MB.\n"
+                            + "For faster builds, increase the maximum heap size for the "
+                            + "Gradle daemon to more than %2$s.\n"
+                            + "To do this, set org.gradle.jvmargs=-Xmx%2$s in the "
+                            + "project gradle.properties.\n"
+                            + "For more information see "
+                            + "https://docs.gradle.org/current/userguide/build_environment.html\n",
+                    maxMemory / (1024 * 1024),
+                    (dslRequest == null) ? "1G" :
+                            dslRequest + " " + "as specified in dexOptions.javaMaxHeapSize"));
             return false;
         }
-
-        if (!DexWrapper.noMainDexOnClasspath()) {
-            if (explicitlyEnabled) {
-                throw new RuntimeException("dx.jar is on Android Gradle plugin classpath, "
-                        + "which will cause issues with dexing in process.");
-            }
-            return false;
-        }
-
-        if (explicitlyEnabled) {
-            if (requestedHeapSize > maxMemory) {
-                String dslRequest = dexOptions.getJavaMaxHeapSize();
-                throw new RuntimeException(String.format(
-                        "To run dex in process, the Gradle daemon needs a larger heap. "
-                                + "It currently has %1$d MB.\n"
-                                + "For faster builds, increase the maximum heap size for the "
-                                + "Gradle daemon to more than %2$s.\n"
-                                + "To do this, set org.gradle.jvmargs=-Xmx%2$s in the "
-                                + "project gradle.properties.\n"
-                                + "For more information see "
-                                + "https://docs.gradle.org/current/userguide/build_environment.html\n",
-                        maxMemory / (1024 * 1024),
-                        (dslRequest == null) ? "1G" :
-                                dslRequest + " " + "as specified in dexOptions.javaMaxHeapSize"));
-            }
-            return true;
-        } else {
-            // Try the instant run heuristic.
-            return isDexingASmallNumberOfFiles(builder, logger);
-        }
-    }
-
-
-    private static boolean isDexingASmallNumberOfFiles(
-            @NonNull DexProcessBuilder builder,
-            @NonNull ILogger logger) {
-        if (builder.getInputs().size() > 1) {
-            logger.info("Dex in process: Dex has multiple inputs, running out of process.");
-            return false;
-        }
-        int count = 0;
-        File classesDir = Iterables.getOnlyElement(builder.getInputs());
-        if (classesDir.isFile()) {
-            try {
-                ZipFile jarFile = new ZipFile(classesDir);
-                try {
-                    Enumeration<? extends ZipEntry> entries = jarFile.entries();
-                    while (entries.hasMoreElements()) {
-                        ZipEntry entry = entries.nextElement();
-                        if (!entry.isDirectory() &&
-                                Files.getFileExtension(entry.getName()).equals("class")) {
-                            count++;
-                        }
-                    }
-                } finally {
-                    jarFile.close();
-                }
-            } catch (IOException e) {
-                logger.warning("Dex in process: "
-                                + "Error while determining number of classes in zip file: %s.",
-                        Throwables.getStackTraceAsString(e));
-                return false;
-            }
-        } else {
-            Iterable<File> classesFiles =
-                    Files.fileTreeTraverser().preOrderTraversal(classesDir).filter(Files.isFile());
-            for (File file : classesFiles) {
-                String extension = Files.getFileExtension(file.getName());
-                if (extension.equals("class")) {
-                    count++;
-                }
-            }
-        }
-        if (count < MAXIUMUM_CLASS_COUNT_FOR_INSTANT_RUN_IMPLICIT_DEX_IN_PROCESS) {
-            logger.info("Dex in process: Only dexing %d files, running in process.", count);
-            return true;
-        } else {
-            return false;
-        }
+        return true;
     }
 
     private static final long DEFAULT_DEX_HEAP_SIZE = 1024 * 1024 * 1024; // 1 GiB
