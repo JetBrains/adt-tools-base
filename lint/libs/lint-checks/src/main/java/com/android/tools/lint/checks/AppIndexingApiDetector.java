@@ -212,7 +212,7 @@ public class AppIndexingApiDetector extends Detector
                            // shows up on a blank project, and we want to make it obvious by just looking at the error
                            // message what this is
                            "App is not indexable by Google Search; consider adding at least one Activity with an ACTION-VIEW " +
-                           "intent-filler. See issue explanation for more details.");
+                           "intent filter. See issue explanation for more details.");
         }
     }
 
