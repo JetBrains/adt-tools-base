@@ -239,7 +239,7 @@ public class InstantRunDex extends Transform {
                 outputFolder,
                 false /* multiDexEnabled */,
                 null /*getMainDexListFile */,
-                new OverridingDexOptions(dexOptions),
+                dexOptions,
                 ImmutableList.<String>of() /* getAdditionalParameters */,
                 false /* incremental */,
                 true /* optimize */,
@@ -302,48 +302,4 @@ public class InstantRunDex extends Transform {
         return false;
     }
 
-    /**
-     * DexOptions overriding values for the incremental InstantRun modes.
-     * TODO: remove once dex compilation is in memory or using Jack exclusively.
-     */
-    private static class OverridingDexOptions implements DexOptions {
-        private final DexOptions delegate;
-
-        private OverridingDexOptions(DexOptions delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public boolean getIncremental() {
-            return delegate.getIncremental();
-        }
-
-        @Override
-        public boolean getPreDexLibraries() {
-            return delegate.getPreDexLibraries();
-        }
-
-        @Override
-        public boolean getJumboMode() {
-            return delegate.getJumboMode();
-        }
-
-        @Override
-        public Boolean getDexInProcess() {
-            // back door system property to force using the out of process dexer.
-            return !Boolean.getBoolean("instant-run.force.dex.oop");
-        }
-
-        @Nullable
-        @Override
-        public String getJavaMaxHeapSize() {
-            return delegate.getJavaMaxHeapSize();
-        }
-
-        @Nullable
-        @Override
-        public Integer getThreadCount() {
-            return delegate.getThreadCount();
-        }
-    }
 }
