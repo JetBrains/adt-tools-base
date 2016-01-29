@@ -73,13 +73,8 @@ public enum InstantRunPatchingPolicy {
         if (version.getApiLevel() < 21) {
             return PRE_LOLLIPOP;
         } else {
-            // whe dealing with Lollipop and above, by default, we use MULTI_APK.
-            InstantRunPatchingPolicy defaultModeForArchitecture =
-                    Strings.isNullOrEmpty(targetArchitecture)
-                            ? MULTI_APK
-                            : targetArchitecture.contains("x86")
-                                    ? MULTI_DEX
-                                    : MULTI_APK;
+            // whe dealing with Lollipop and above, by default, we use MULTI_DEX.
+            InstantRunPatchingPolicy defaultModeForArchitecture = MULTI_DEX;
 
             if (Strings.isNullOrEmpty(coldswapMode)) {
                 return defaultModeForArchitecture;
@@ -95,6 +90,8 @@ public enum InstantRunPatchingPolicy {
                     } else {
                         return MULTI_APK;
                     }
+                case DEFAULT:
+                    return MULTI_DEX;
                 default:
                     throw new RuntimeException("Cold-swap case not handled " + coldswap);
             }
