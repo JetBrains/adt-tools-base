@@ -64,6 +64,12 @@ public class InstantRunVerifier {
             return Objects.equal(first, second);
         }
     };
+    private static final Comparator<String> STRING_COMPARATOR = new Comparator<String>() {
+        @Override
+        public boolean areEqual(String first, String second) {
+            return Objects.equal(first, second);
+        }
+    };
 
     public interface ClassBytesProvider {
         byte[] load() throws IOException;
@@ -154,7 +160,7 @@ public class InstantRunVerifier {
         }
 
         if (diffList(originalClass.interfaces, updatedClass.interfaces,
-                OBJECT_COMPARATOR) != Diff.NONE) {
+                STRING_COMPARATOR) != Diff.NONE) {
             return IMPLEMENTED_INTERFACES_CHANGE;
         }
 
