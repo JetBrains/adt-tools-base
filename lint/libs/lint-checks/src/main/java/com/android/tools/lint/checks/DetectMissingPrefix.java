@@ -37,6 +37,7 @@ import static com.android.resources.ResourceFolderType.INTERPOLATOR;
 import static com.android.resources.ResourceFolderType.LAYOUT;
 import static com.android.resources.ResourceFolderType.MENU;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
@@ -159,6 +160,7 @@ public class DetectMissingPrefix extends LayoutDetector {
                 && !TOOLS_URI.equals(uri)
                 && context.getResourceFolderType() == ResourceFolderType.LAYOUT
                 && !isCustomView(attribute.getOwnerElement())
+                && !isFragment(attribute.getOwnerElement())
                 && !attribute.getLocalName().startsWith(ATTR_LAYOUT_RESOURCE_PREFIX)
                 // TODO: Consider not enforcing that the parent is a custom view
                 // too, though in that case we should filter out views that are
@@ -180,6 +182,10 @@ public class DetectMissingPrefix extends LayoutDetector {
                     String.format("Unexpected namespace prefix \"%1$s\" found for tag `%2$s`",
                             attribute.getPrefix(), attribute.getOwnerElement().getTagName()));
         }
+    }
+
+    private static boolean isFragment(Element element) {
+        return SdkConstants.VIEW_FRAGMENT.equals(element.getTagName());
     }
 
     private static boolean isCustomView(Element element) {
