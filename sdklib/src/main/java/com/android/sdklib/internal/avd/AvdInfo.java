@@ -133,8 +133,12 @@ public final class AvdInfo implements Comparable<AvdInfo> {
     /** Returns the tag id/display of the AVD. */
     @NonNull
     public IdDisplay getTag() {
-        return IdDisplay.create(getProperties().get(AvdManager.AVD_INI_TAG_ID),
-                                getProperties().get(AvdManager.AVD_INI_TAG_DISPLAY));
+        String id = getProperties().get(AvdManager.AVD_INI_TAG_ID);
+        if (id == null) {
+            return SystemImage.DEFAULT_TAG;
+        }
+        String display = getProperties().get(AvdManager.AVD_INI_TAG_DISPLAY);
+        return IdDisplay.create(id, display == null ? id : display);
     }
 
     /** Returns the processor type of the AVD. */
