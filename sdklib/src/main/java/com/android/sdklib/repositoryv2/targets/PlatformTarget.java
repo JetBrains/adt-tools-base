@@ -39,6 +39,7 @@ import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
 import com.google.common.io.Files;
@@ -148,20 +149,21 @@ public class PlatformTarget implements IAndroidTarget {
         mBuildToolInfo = sdkHandler.getLatestBuildTool(progress);
         SystemImageManager sysImgMgr = sdkHandler.getSystemImageManager(progress);
         mSystemImages = HashBasedTable.create();
-        Map<SystemImage, LocalPackage> systemImages = sysImgMgr.getImageMap();
+        Multimap<LocalPackage, SystemImage> systemImages = sysImgMgr.getImageMap();
         mSkins = Sets
                 .newTreeSet(PackageParserUtils.parseSkinFolder(getFile(IAndroidTarget.SKINS), fop));
-        for (SystemImage img : systemImages.keySet()) {
-            LocalPackage pkg = systemImages.get(img);
-            TypeDetails typeDetails = pkg.getTypeDetails();
-            if (pkg.equals(mPackage) || (typeDetails instanceof DetailsTypes.SysImgDetailsType &&
-                    ((DetailsTypes.SysImgDetailsType) typeDetails).getVendor() == null &&
-                    ((DetailsTypes.SysImgDetailsType) typeDetails).getApiLevel() == mDetails
-                            .getApiLevel())) {
-                mSystemImages.put(img.getTag(), img.getAbiType(), img);
-                // We don't worry about duplicate skins here, so we can have them all available
-                // when assigning one to a system image and can pick the most relevant one.
-                mSkins.addAll(Arrays.asList(img.getSkins()));
+        for (LocalPackage pkg : systemImages.keySet()) {
+            for (SystemImage img : systemImages.get(pkg)) {
+                TypeDetails typeDetails = pkg.getTypeDetails();
+                if (pkg.equals(mPackage) || (typeDetails instanceof DetailsTypes.SysImgDetailsType &&
+                                             ((DetailsTypes.SysImgDetailsType) typeDetails).getVendor() == null &&
+                                             ((DetailsTypes.SysImgDetailsType) typeDetails).getApiLevel() == mDetails
+                                               .getApiLevel())) {
+                    mSystemImages.put(img.getTag(), img.getAbiType(), img);
+                    // We don't worry about duplicate skins here, so we can have them all available
+                    // when assigning one to a system image and can pick the most relevant one.
+                    mSkins.addAll(Arrays.asList(img.getSkins()));
+                }
             }
         }
     }
