@@ -8,16 +8,14 @@ import com.android.repository.api.RepoManager;
 import com.android.repository.impl.meta.TypeDetails;
 import com.android.repository.io.FileOp;
 import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.ISystemImage;
 import com.android.sdklib.repository.local.PackageParserUtils;
 import com.android.sdklib.repositoryv2.IdDisplay;
 import com.android.sdklib.repositoryv2.meta.DetailsTypes;
 import com.android.sdklib.repositoryv2.meta.SysImgFactory;
-import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.HashBiMap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
@@ -50,9 +48,14 @@ public class SystemImageManager {
     private static final int MAX_DEPTH = 4;
 
     /**
-     * The known system images and their associated packages.
+     * Map of packages to the images they contain
      */
-    private BiMap<SystemImage, LocalPackage> mImageToPackage;
+    private Multimap<LocalPackage, SystemImage> mPackageToImage;
+
+    /**
+     * Map of directories containing {@code system.img} files to {@link SystemImage}s.
+     */
+    private Map<File, SystemImage> mPathToImage;
 
     /**
      * Map of tag, version, and vendor to set of system image, for convenient lookup.
@@ -75,20 +78,20 @@ public class SystemImageManager {
      */
     @NonNull
     public Collection<SystemImage> getImages() {
-        if (mImageToPackage == null) {
+        if (mPackageToImage == null) {
             init();
         }
-        return mImageToPackage.keySet();
+        return mPackageToImage.values();
     }
 
     /**
      * Gets a map from all our {@link SystemImage}s to their containing {@link LocalPackage}s.
      */
-    public BiMap<SystemImage, LocalPackage> getImageMap() {
-        if (mImageToPackage == null) {
+    public Multimap<LocalPackage, SystemImage> getImageMap() {
+        if (mPackageToImage == null) {
             init();
         }
-        return mImageToPackage;
+        return mPackageToImage;
     }
 
     /**
@@ -105,10 +108,11 @@ public class SystemImageManager {
     }
 
     private void init() {
-        BiMap<SystemImage, LocalPackage> images = buildImageMap();
+        Multimap<LocalPackage, SystemImage> images = buildImageMap();
         Table<IdDisplay, AndroidVersion, Multimap<IdDisplay, SystemImage>> valuesToImage =
                 HashBasedTable.create();
-        for (SystemImage img : images.keySet()) {
+        Map<File, SystemImage> pathToImages = Maps.newHashMap();
+        for (SystemImage img : images.values()) {
             IdDisplay vendor = img.getAddonVendor();
             IdDisplay tag = img.getTag();
             AndroidVersion version = img.getAndroidVersion();
@@ -118,14 +122,16 @@ public class SystemImageManager {
                 valuesToImage.put(tag, version, vendorImageMap);
             }
             vendorImageMap.put(vendor, img);
+            pathToImages.put(img.getLocation(), img);
         }
         mValuesToImage = valuesToImage;
-        mImageToPackage = images;
+        mPackageToImage = images;
+        mPathToImage = pathToImages;
     }
 
     @NonNull
-    private BiMap<SystemImage, LocalPackage> buildImageMap() {
-        BiMap<SystemImage, LocalPackage> result = HashBiMap.create();
+    private Multimap<LocalPackage, SystemImage> buildImageMap() {
+        Multimap<LocalPackage, SystemImage> result = HashMultimap.create();
         Map<AndroidVersion, File> platformSkins = Maps.newHashMap();
         Collection<? extends LocalPackage> packages =
                 mRepoManager.getPackages().getLocalPackages().values();
@@ -151,13 +157,13 @@ public class SystemImageManager {
 
     private void collectImages(File dir, LocalPackage p, int depth,
             Map<AndroidVersion, File> platformSkins,
-            Map<SystemImage, LocalPackage> collector) {
+            Multimap<LocalPackage, SystemImage> collector) {
         for (File f : mFop.listFiles(dir)) {
             // Instead of just f.getName().equals, we first check f.getPath().endsWith,
             // because getPath() is a simpler getter whereas getName() computes a new
             // string on each call
             if (f.getPath().endsWith(SYS_IMG_NAME) && f.getName().equals(SYS_IMG_NAME)) {
-                collector.put(createSysImg(p, dir, platformSkins), p);
+                collector.put(p, createSysImg(p, dir, platformSkins));
             }
             if (depth < MAX_DEPTH && mFop.isDirectory(f)) {
                 String name = f.getName();
@@ -217,5 +223,13 @@ public class SystemImageManager {
             skins = new File[0];
         }
         return new SystemImage(dir, tag, vendor, abi, skins, p);
+    }
+
+    @Nullable
+    public ISystemImage getImageAt(@NonNull File imageDir) {
+        if (mPathToImage == null) {
+            init();
+        }
+        return mPathToImage.get(imageDir);
     }
 }
