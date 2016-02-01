@@ -70,7 +70,7 @@ public enum InstantRunPatchingPolicy {
             @Nullable String coldswapMode,
             @Nullable String targetArchitecture) {
 
-        if (version.getApiLevel() < 21) {
+        if (version.compareTo(AndroidVersion.ART_RUNTIME) < 0) {
             return PRE_LOLLIPOP;
         } else {
             // whe dealing with Lollipop and above, by default, we use MULTI_DEX.
@@ -98,27 +98,4 @@ public enum InstantRunPatchingPolicy {
         }
     }
 
-    /**
-     * Returns the {@link AndroidVersion} for the target device.
-     * @param logger logger to log failures
-     * @param project the project being built
-     * @return a {@link AndroidVersion} for the targeted device, following the
-     * {@link AndroidProject#PROPERTY_BUILD_API} value passed by Android Studio.
-     */
-    @NonNull
-    public static AndroidVersion getApiLevel(@NonNull Logger logger, @NonNull Project project) {
-        String apiVersion = AndroidGradleOptions.getBuildTargetApi(project);
-        AndroidVersion version = AndroidVersion.DEFAULT;
-        if (apiVersion != null) {
-            try {
-                version = new AndroidVersion(apiVersion);
-            } catch (AndroidVersion.AndroidVersionException e) {
-                logger.warn("Wrong build target version passed ", e);
-            }
-        }
-        if (logger.isQuietEnabled()) {
-            logger.info(String.format("InstantRun: apiLevel set to %d", version.getApiLevel()));
-        }
-        return version;
-    }
 }
