@@ -46,21 +46,22 @@ public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
                  @Nullable  String nameDisplay,
                  @Nullable final String[] oldPaths) {
         super(type,
-              license,
-              listDisplay,
-              descriptionShort,
-              descriptionUrl,
-              isObsolete,
-              revision,
-              androidVersion,
-              path,
-              tag,
-              vendor,
-              minToolsRev,
-              minPlatformToolsRev,
-              null,     //customIsUpdateFor
-              null,
-              IdDisplay.create(nameDisplay, nameDisplay));
+                license,
+                listDisplay,
+                descriptionShort,
+                descriptionUrl,
+                isObsolete,
+                revision,
+                androidVersion,
+                path,
+                tag,
+                vendor,
+                minToolsRev,
+                minPlatformToolsRev,
+                null,     //customIsUpdateFor
+                null,
+                IdDisplay.create(nameDisplay == null ? "" : nameDisplay,
+                        nameDisplay == null ? "" : nameDisplay));
         mOldPaths = oldPaths != null ? oldPaths : new String[0];
     }
 
