@@ -2094,6 +2094,25 @@ public abstract class TaskManager {
                 .build());
 
         allActionAnchorTask.dependsOn(tasks, instantRunTask);
+
+        DexOptions dexOptions = variantScope.getGlobalScope().getExtension().getDexOptions();
+
+        // we always produce the reload.dex irrespective of the targeted version,
+        // and if we are not in incremental mode, we need to still need to clean our output state.
+        InstantRunDex reloadDexTransform = new InstantRunDex(
+                variantScope,
+                InstantRunBuildType.RELOAD,
+                androidBuilder,
+                dexOptions,
+                getLogger(),
+                ImmutableSet.<ContentType>of(
+                        ExtendedContentType.CLASSES_ENHANCED));
+
+        AndroidTask<TransformTask> reloadDexing = variantScope.getTransformManager()
+                .addTransform(tasks, variantScope, reloadDexTransform);
+
+        allActionAnchorTask.dependsOn(tasks, reloadDexing);
+
         return allActionAnchorTask;
     }
 
@@ -2174,20 +2193,6 @@ public abstract class TaskManager {
 
         }
 
-        // we always produce the reload.dex irrespective of the targeted version.
-        InstantRunDex reloadDexTransform = new InstantRunDex(
-                scope,
-                InstantRunBuildType.RELOAD,
-                androidBuilder,
-                dexOptions,
-                getLogger(),
-                ImmutableSet.<ContentType>of(
-                        ExtendedContentType.CLASSES_ENHANCED));
-
-        AndroidTask<TransformTask> classesThreeDexing = scope.getTransformManager()
-                .addTransform(tasks, scope, reloadDexTransform);
-
-        incrementalWrapperTask.dependsOn(tasks, classesThreeDexing);
         return incrementalWrapperTask;
     }
 
