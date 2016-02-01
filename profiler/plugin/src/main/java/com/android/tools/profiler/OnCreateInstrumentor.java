@@ -107,17 +107,14 @@ public final class OnCreateInstrumentor {
         }
 
         @Override
-        public void visitMethodInsn(int opcode, String owner, String name, String desc,
-                boolean itf) {
-
+        public void visitCode() {
             // Log.d(TAG, "onCreate called"); // where TAG is the current class name
             mv.visitLdcInsn(mClassName);
             mv.visitLdcInsn(mClassName + "#onCreate called");
             mv.visitMethodInsn(INVOKESTATIC, "android/util/Log", "d",
-                    "(Ljava/lang/String;Ljava/lang/String;)I", false);
+                               "(Ljava/lang/String;Ljava/lang/String;)I", false);
             mv.visitInsn(POP);
-
-            super.visitMethodInsn(opcode, owner, name, desc, itf);
+            super.visitCode();
         }
     }
 }

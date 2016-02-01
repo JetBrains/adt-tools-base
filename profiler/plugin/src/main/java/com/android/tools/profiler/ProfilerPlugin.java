@@ -25,8 +25,6 @@ import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformInvocation;
-import com.android.build.gradle.BaseExtension;
-import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.utils.FileUtils;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
@@ -37,8 +35,12 @@ import org.gradle.api.Project;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Set;
+
+import static com.android.build.api.transform.QualifiedContent.DefaultContentType.CLASSES;
 
 /**
  * A gradle plugin which, when applied, instruments the target Android app with support code for
@@ -48,83 +50,120 @@ public class ProfilerPlugin implements Plugin<Project> {
 
     @Override
     public void apply(final Project project) {
+        final boolean enabled = getBoolean(project, "android.profiler.enabled");
+
         // TODO: The following line won't work for the experimental plugin. For that we may need to
         // register a rule that will get executed at the right time. Investigate this before
         // shipping the plugin.
-        BaseExtension android = (BaseExtension) project.getExtensions().getByName("android");
+        Object android = project.getExtensions().getByName("android");
+        try {
+            Method method = android.getClass().getMethod("registerTransform", Transform.class, Object[].class);
+            method.invoke(android, new Transform() {
+                @NonNull
+                @Override
+                public String getName() {
+                    return "studioprofiler";
+                }
 
-        android.registerTransform(new Transform() {
-            @NonNull
-            @Override
-            public String getName() {
-                return "studioprofiler";
-            }
+                @NonNull
+                @Override
+                public Set<QualifiedContent.ContentType> getInputTypes() {
+                    return ImmutableSet.<QualifiedContent.ContentType>of(CLASSES);
+                }
 
-            @NonNull
-            @Override
-            public Set<QualifiedContent.ContentType> getInputTypes() {
-                return TransformManager.CONTENT_CLASS;
-            }
+                @NonNull
+                @Override
+                public Set<QualifiedContent.Scope> getScopes() {
+                    return ImmutableSet.of(QualifiedContent.Scope.PROJECT);
+                }
 
-            @NonNull
-            @Override
-            public Set<QualifiedContent.Scope> getScopes() {
-                return ImmutableSet.of(QualifiedContent.Scope.PROJECT);
-            }
+                @Override
+                public boolean isIncremental() {
+                    return true;
+                }
 
-            @Override
-            public boolean isIncremental() {
-                return true;
-            }
+                @Override
+                public void transform(@NonNull TransformInvocation invocation)
+                  throws TransformException, InterruptedException, IOException {
 
-            @Override
-            public void transform(@NonNull TransformInvocation invocation)
-                    throws TransformException, InterruptedException, IOException {
+                    assert invocation.getOutputProvider() != null;
+                    File outputDir = invocation.getOutputProvider().getContentLocation(
+                      "main", getOutputTypes(), getScopes(), Format.DIRECTORY);
+                    FileUtils.mkdirs(outputDir);
 
-                assert invocation.getOutputProvider() != null;
-                File outputDir = invocation.getOutputProvider().getContentLocation(
-                        "main", getOutputTypes(), getScopes(), Format.DIRECTORY);
-                FileUtils.mkdirs(outputDir);
+                    for (TransformInput ti : invocation.getInputs()) {
+                        Preconditions.checkState(ti.getJarInputs().isEmpty());
 
-                for (TransformInput ti : invocation.getInputs()) {
-                    Preconditions.checkState(ti.getJarInputs().isEmpty());
-                    for (DirectoryInput di : ti.getDirectoryInputs()) {
-                        File inputDir = di.getFile();
-                        if (invocation.isIncremental()) {
-                            for (Map.Entry<File, Status> entry : di.getChangedFiles().entrySet()) {
-                                switch (entry.getValue()) {
-                                    case ADDED:
-                                    case CHANGED:
-                                        instrumentFile(outputDir, inputDir, entry.getKey());
-                                        break;
+                        for (DirectoryInput di : ti.getDirectoryInputs()) {
+                            File inputDir = di.getFile();
+                            if (invocation.isIncremental()) {
+                                for (Map.Entry<File, Status> entry : di.getChangedFiles().entrySet()) {
+                                    switch (entry.getValue()) {
+                                        case ADDED:
+                                        case CHANGED:
+                                            instrumentFile(outputDir, inputDir, entry.getKey());
+                                            break;
+                                    }
                                 }
                             }
-                        } else {
-                            for (File inputFile : FileUtils.getAllFiles(inputDir)) {
-                                instrumentFile(outputDir, inputDir, inputFile);
+                            else {
+                                for (File inputFile : FileUtils.getAllFiles(inputDir)) {
+                                    instrumentFile(outputDir, inputDir, inputFile);
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            private void instrumentFile(File outputDir, File inputDir, File inputFile)
-                    throws IOException {
-                File outputFile = new File(outputDir,
-                        FileUtils.relativePath(inputFile, inputDir));
-                Files.createParentDirs(outputFile);
+                private void instrumentFile(File outputDir, File inputDir, File inputFile)
+                  throws IOException {
+                    File outputFile = new File(outputDir,
+                                               FileUtils.relativePath(inputFile, inputDir));
+                    Files.createParentDirs(outputFile);
 
-                // TODO: This MainActivity check is temporary and here as a proof of concept that
-                // instrumenting an Android app works. Later, we'll replace this with logic that
-                // inserts a profiler support library as a dependency into the user's app as well as
-                // instrument it.
-                if (inputFile.getName().equals("MainActivity.class")) {
-                    OnCreateInstrumentor.instrument(inputFile, outputFile);
-                } else {
-                    Files.copy(inputFile, outputFile);
+                    // TODO: This MainActivity check is temporary and here as a proof of concept that
+                    // instrumenting an Android app works. Later, we'll replace this with logic that
+                    // inserts a profiler support library as a dependency into the user's app as well as
+                    // instrument it.
+                    if (enabled && inputFile.getName().equals("MainActivity.class")) {
+                        OnCreateInstrumentor.instrument(inputFile, outputFile);
+                    }
+                    else {
+                        Files.copy(inputFile, outputFile);
+                    }
                 }
-            }
-        });
+            }, new Object[]{});
+        }
+        catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+        catch (InvocationTargetException e) {
+            e.printStackTrace();
+        }
+        catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+    }
 
+    private static boolean getBoolean(
+      Project project,
+      String propertyName) {
+        return getBoolean(project, propertyName, false /*defaultValue*/);
+    }
+
+    private static boolean getBoolean(
+      Project project,
+      String propertyName,
+      boolean defaultValue) {
+        if (project.hasProperty(propertyName)) {
+            Object value = project.getProperties().get(propertyName);
+            if (value instanceof String) {
+                return Boolean.parseBoolean((String) value);
+            } else if (value instanceof Boolean) {
+                return ((Boolean) value);
+            }
+        }
+
+        return defaultValue;
     }
 }
