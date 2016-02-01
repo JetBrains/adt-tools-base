@@ -35,8 +35,12 @@ import static com.android.SdkConstants.REQUEST_FOCUS;
 import static com.android.SdkConstants.STYLE_RESOURCE_PREFIX;
 import static com.android.SdkConstants.TABLE_LAYOUT;
 import static com.android.SdkConstants.TABLE_ROW;
+import static com.android.SdkConstants.TAG_DATA;
+import static com.android.SdkConstants.TAG_IMPORT;
 import static com.android.SdkConstants.TAG_ITEM;
+import static com.android.SdkConstants.TAG_LAYOUT;
 import static com.android.SdkConstants.TAG_STYLE;
+import static com.android.SdkConstants.TAG_VARIABLE;
 import static com.android.SdkConstants.VIEW_INCLUDE;
 import static com.android.SdkConstants.VIEW_MERGE;
 import static com.android.resources.ResourceFolderType.LAYOUT;
@@ -426,6 +430,14 @@ public class RequiredAttributeDetector extends LayoutDetector implements Detecto
                 if (VIEW_MERGE.equals(tag)
                         || VIEW_INCLUDE.equals(tag)
                         || REQUEST_FOCUS.equals(tag)) {
+                    return;
+                }
+
+                // Data binding: these tags shouldn't specify width/height
+                if (tag.equals(TAG_LAYOUT)
+                        || tag.equals(TAG_VARIABLE)
+                        || tag.equals(TAG_DATA)
+                        || tag.equals(TAG_IMPORT)) {
                     return;
                 }
 
