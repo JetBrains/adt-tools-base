@@ -16,9 +16,9 @@
 package com.android.tools.rpclib.rpccore;
 
 import com.android.tools.rpclib.futures.FutureController;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Uninterruptibles;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.intellij.openapi.diagnostic.Logger;
 
 import java.util.concurrent.*;
@@ -107,7 +107,6 @@ public class Rpc {
      * that also takes a {@link FutureController} for controlling the {@link Future}s.
      *
      * @param future     the {@link ListenableFuture} returned by the invoking the RPC call.
-     * @param executor   the {@link Executor} used for invoking the {@link Callback} methods.
      * @param log        the {@link Logger} used for logging uncaught exceptions thrown from {@link Callback#onFinish}.
      * @param callback   the {@link Callback} to handle {@link Callback#onStart} and {@link Callback#onFinish} events.
      * @param controller the {@link FutureController} used to manage the RPC futures.
@@ -166,7 +165,7 @@ public class Rpc {
      */
     public static abstract class Callback <V> {
         /**
-         * Called as soon as the {@link listen} function is called.
+         * Called as soon as the {@link Rpc#listen} function is called.
          * It can be used to start loading indicators.
          */
         public void onStart() {}
@@ -200,7 +199,6 @@ public class Rpc {
          * {@link ListenableFuture} are unpacked and rethrown so they can be explicitly
          * handled using {@code catch} clauses by the caller.
          *
-         * @param <V> the result value type.
          * @return the result value.
          * @throws RpcException          if there was an error raised by the server.
          * @throws ExecutionException    if there was a non-{@link RpcException} thrown by the
