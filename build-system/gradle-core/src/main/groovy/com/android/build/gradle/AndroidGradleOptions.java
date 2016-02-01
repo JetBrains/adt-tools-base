@@ -58,6 +58,8 @@ public class AndroidGradleOptions {
 
     private static final String PROPERTY_USE_OLD_PACKAGING = "android.useOldPackaging";
 
+    private static final String ANDROID_ADDITIONAL_PLUGINS = "android.additional.plugins";
+
     @NonNull
     public static Map<String, String> getExtraInstrumentationTestRunnerArgs(@NonNull Project project) {
         Map<String, String> argsMap = Maps.newHashMap();
@@ -245,6 +247,11 @@ public class AndroidGradleOptions {
     public static boolean isInstantRunJavaCompileIncremental(@NonNull Project project) {
         return getBoolean(project, PROPERTY_INSTANT_RUN_INCREMENTAL_JAVA_COMPILE,
                 true /*defaultValue*/);
+    }
+
+    public static String[] getAdditionalPlugins(Project project) {
+        String string = getString(project, ANDROID_ADDITIONAL_PLUGINS);
+        return string == null ?  new String[]{} : string.split(",");
     }
 
     public static class SigningOptions {
