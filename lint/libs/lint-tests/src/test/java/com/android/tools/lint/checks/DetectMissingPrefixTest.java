@@ -51,6 +51,13 @@ public class DetectMissingPrefixTest extends AbstractCheckTest {
             lintFiles("res/layout/namespace2.xml"));
     }
 
+    public void testCustomAttributesOnFragment() throws Exception {
+        assertEquals(
+            "No warnings.",
+
+            lintFiles("res/layout/fragment_custom_attrs.xml"));
+    }
+
     public void testManifest() throws Exception {
         assertEquals(
             "AndroidManifest.xml:4: Error: Attribute is missing the Android namespace prefix [MissingPrefix]\n" +
