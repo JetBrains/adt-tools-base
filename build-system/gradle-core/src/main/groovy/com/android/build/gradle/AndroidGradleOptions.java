@@ -19,6 +19,7 @@ package com.android.build.gradle;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidProject;
+import com.android.sdklib.AndroidVersion;
 import com.google.common.collect.Maps;
 
 import org.gradle.api.Project;
@@ -110,14 +111,31 @@ public class AndroidGradleOptions {
     }
 
     @Nullable
-    public static String getBuildTargetApi(@NonNull Project project) {
-        return getString(project, AndroidProject.PROPERTY_BUILD_API);
-    }
-
-    @Nullable
     public static String getBuildTargetAbi(@NonNull Project project) {
         return getString(project, AndroidProject.PROPERTY_BUILD_ABI);
     }
+
+    /**
+     * Returns the {@link AndroidVersion} for the target device.
+     *
+     * @param project the project being built
+     * @return a {@link AndroidVersion} for the targeted device, following the
+     *         {@link AndroidProject#PROPERTY_BUILD_API} value passed by Android Studio.
+     */
+    @NonNull
+    public static AndroidVersion getTargetApiLevel(@NonNull Project project) {
+        String apiVersion = getString(project, AndroidProject.PROPERTY_BUILD_API);
+        AndroidVersion version = AndroidVersion.DEFAULT;
+        if (apiVersion != null) {
+            try {
+                version = new AndroidVersion(apiVersion);
+            } catch (AndroidVersion.AndroidVersionException e) {
+                project.getLogger().warn("Wrong build target version passed ", e);
+            }
+        }
+        return version;
+    }
+
 
     @Nullable
     public static String getColdswapMode(@NonNull Project project) {
