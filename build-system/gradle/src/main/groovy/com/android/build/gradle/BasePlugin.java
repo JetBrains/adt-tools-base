@@ -68,6 +68,7 @@ import com.android.utils.ILogger;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
 import org.gradle.BuildListener;
@@ -99,6 +100,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -336,6 +338,11 @@ public abstract class BasePlugin {
                         return null;
                     }
                 }, new Recorder.Property("project", project.getName()));
+
+        // Apply additional plugins
+        for (String plugin : AndroidGradleOptions.getAdditionalPlugins(project)) {
+            project.apply(ImmutableMap.of("plugin", plugin));
+        }
     }
 
     protected void configureProject() {
