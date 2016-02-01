@@ -27,23 +27,23 @@ public interface FutureController {
      *
      * The function is free to cancel the {@link Future}.
      */
-    void onStart(Future future);
+    void onStart(Future<?> future);
 
     /**
      * Called just after the {@link Future} has finished.
      *
      * @return true if the {@link Future} was considered active by the controller.
      */
-    boolean onStop(Future future);
+    boolean onStop(Future<?> future);
 
     /**
      * Helper implementation of the interface that does nothing.
      */
     FutureController NULL_CONTROLLER = new FutureController() {
         @Override
-        public void onStart(Future future) {}
+        public void onStart(Future<?> future) {}
 
         @Override
-        public boolean onStop(Future future) { return true; }
+        public boolean onStop(Future<?> future) { return true; }
     };
 }
