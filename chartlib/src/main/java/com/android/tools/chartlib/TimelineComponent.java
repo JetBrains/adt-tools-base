@@ -16,15 +16,10 @@
 package com.android.tools.chartlib;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.FontMetrics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.Stroke;
+import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyListener;
 import java.awt.geom.AffineTransform;
@@ -32,6 +27,7 @@ import java.awt.geom.Arc2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.util.*;
+import java.util.List;
 
 import javax.swing.Icon;
 
@@ -162,6 +158,8 @@ public final class TimelineComponent extends AnimatedComponent
      */
     private final List<StreamComponent> mStreamComponents = new ArrayList<StreamComponent>();
 
+    private final List<LabelRow> mLabelRows = new ArrayList<LabelRow>();
+
     /**
      * Listeners which are notified when streams are modified.
      */
@@ -265,10 +263,40 @@ public final class TimelineComponent extends AnimatedComponent
     private void addStream(String id) {
         int newStreamIndex = mStreamComponents.size();
         int streamValuesSize = mTimes != null ? mTimes.length : 0;
-        mStreamComponents.add(new StreamComponent(streamValuesSize, id, Color.BLACK, false));
+        StreamComponent component = new StreamComponent(streamValuesSize, id, Color.BLACK, false);
+        mStreamComponents.add(component);
+        mLabelRows.add(new LabelRow(component, null));
         for (Listener listener : myListeners) {
             listener.onStreamAdded(newStreamIndex, id);
         }
+    }
+
+    /**
+     * Returns true if two streams are present and linked to each other, false otherwise. If two stream are linked, their labels will be
+     * combined into one.
+     */
+    public boolean linkStreams(@NonNull String streamId1, @NonNull String streamId2) {
+        assert !streamId1.equals(streamId2) : String.format("Attempt to link a stream %1$s with itself", streamId1);
+        LabelRow labelRow1 = null;
+        LabelRow labelRow2 = null;
+        StreamComponent stream1 = null;
+        StreamComponent stream2 = null;
+        for (LabelRow row : mLabelRows) {
+            if (row.stream1.id.equals(streamId1)) {
+                labelRow1 = row;
+                stream1 = row.stream1;
+            }
+            else if (row.stream1.id.equals(streamId2)) {
+                labelRow2 = row;
+                stream2 = row.stream1;
+            }
+        }
+        if (stream1 != null && stream2 != null) {
+            labelRow1.stream2 = stream2;
+            mLabelRows.remove(labelRow2);
+            return true;
+        }
+        return false;
     }
 
     public void addListener(@NonNull Listener listener) {
@@ -522,15 +550,37 @@ public final class TimelineComponent extends AnimatedComponent
     private void drawLabels(Graphics2D g2d) {
         g2d.setFont(DEFAULT_FONT);
         FontMetrics metrics = g2d.getFontMetrics();
-        for (int i = 0; i < mStreamComponents.size() && mSize > 0; i++) {
-            StreamComponent stream = mStreamComponents.get(i);
-            g2d.setColor(stream.color);
-            int y = TOP_MARGIN + 15 + (mStreamComponents.size() - i - 1) * 20;
-            g2d.fillRect(mRight + 20, y, 15, 15);
-            g2d.setColor(TEXT_COLOR);
-            g2d.drawString(String.format("%s [%.2f %s]", stream.name, mStreamComponents.get(i).currentValue, mUnits), mRight + 40,
-                           y + 7 + metrics.getAscent() * .5f);
+        int y = TOP_MARGIN + 15;
+        for (int i = mLabelRows.size() - 1; i >= 0 && mSize > 0; i--, y += 20) {
+            LabelRow labelRow = mLabelRows.get(i);
+            StreamComponent stream1 = labelRow.stream1;
+            if (labelRow.stream2 == null) {
+                g2d.setColor(stream1.color);
+                g2d.fillRect(mRight + 20, y, 15, 15);
+                g2d.setColor(TEXT_COLOR);
+                g2d.drawString(String.format("%s [%.2f %s]", stream1.name, stream1.currentValue, mUnits), mRight + 40,
+                               y + 7 + metrics.getAscent() * .5f);
+            }
+            else {
+                StreamComponent stream2 = labelRow.stream2;
+                fillTriangle(new Point(mRight + 20, y), new Point(mRight + 35, y), new Point(mRight + 20, y + 15), stream2.color, g2d);
+                fillTriangle(new Point(mRight + 35, y), new Point(mRight + 35, y + 15), new Point(mRight + 20, y + 15), stream1.color, g2d);
+                g2d.setColor(TEXT_COLOR);
+                g2d.drawString(String
+                                 .format("%1$s, %2$s [%3$.2f %4$s, %5$.2f %6$s]", stream1.name, stream2.name, stream1.currentValue,
+                                         mUnits, stream2.currentValue, mUnits), mRight + 40, y + 7 + metrics.getAscent() * .5f);
+            }
         }
+    }
+
+    private void fillTriangle(Point p1, Point p2, Point p3, Color color, Graphics2D g2d) {
+        g2d.setColor(color);
+        Path2D path = new Path2D.Float();
+        path.moveTo(p1.getX(), p1.getY());
+        path.lineTo(p2.getX(), p2.getY());
+        path.lineTo(p3.getX(), p3.getY());
+        path.lineTo(p1.getX(), p1.getY());
+        g2d.fill(path);
     }
 
     private void drawTimeMarkers(Graphics2D g2d) {
@@ -656,6 +706,27 @@ public final class TimelineComponent extends AnimatedComponent
         }
     }
 
+    private void removeStreamFromLabelRow(StreamComponent streamComponent) {
+        Iterator<LabelRow> iterator = mLabelRows.iterator();
+        while (iterator.hasNext()) {
+            LabelRow labelRow = iterator.next();
+            if (streamComponent.equals(labelRow.stream1)) {
+                if (labelRow.stream2 != null) {
+                    labelRow.stream1 = labelRow.stream2;
+                    labelRow.stream2 = null;
+                }
+                else {
+                    iterator.remove();
+                }
+                break;
+            }
+            else if (streamComponent.equals(labelRow.stream2)) {
+                labelRow.stream2 = null;
+                break;
+            }
+        }
+    }
+
     private void updateStreams() {
         int streamCountFromData = mData.getStreamCount();
         int streamIndex = 0;
@@ -667,6 +738,7 @@ public final class TimelineComponent extends AnimatedComponent
             }
             else {
                 iterator.remove();
+                removeStreamFromLabelRow(streamComponent);
             }
         }
         for (int i = streamIndex; i < streamCountFromData; i++) {
@@ -830,6 +902,18 @@ public final class TimelineComponent extends AnimatedComponent
             this.name = id;
             this.color = color;
             this.isMirrored = isMirrored;
+        }
+    }
+
+    private static class LabelRow {
+
+        @NonNull public StreamComponent stream1;
+
+        @Nullable public StreamComponent stream2;
+
+        public LabelRow(@NonNull StreamComponent stream1, @Nullable StreamComponent stream2) {
+            this.stream1 = stream1;
+            this.stream2 = stream2;
         }
     }
 

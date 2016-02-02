@@ -21,6 +21,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
@@ -430,6 +431,7 @@ public class AnimatedComponentVisualTests extends JDialog {
         final AtomicInteger variance = new AtomicInteger(10);
         final AtomicInteger delay = new AtomicInteger(100);
         final AtomicInteger type = new AtomicInteger(0);
+        final List<String> labelSharingStreams = new ArrayList<String>();
         final int maxNumStreams = 10;
         new Thread() {
             @Override
@@ -494,6 +496,17 @@ public class AnimatedComponentVisualTests extends JDialog {
             public void onStreamAdded(int stream, String id) {
                 timeline.configureStream(stream, id, COLORS[stream % COLORS.length],
                                          stream % 2 == 1 && timelineBehavior == TimelineBehavior.MIRRORED);
+                synchronized (labelSharingStreams) {
+                    if (labelSharingStreams.contains(id)) {
+                        int streamIndex = labelSharingStreams.indexOf(id);
+                        String anotherStreamId = labelSharingStreams.get(streamIndex % 2 == 0 ? streamIndex + 1 : streamIndex - 1);
+                        boolean combined = timeline.linkStreams(id, anotherStreamId);
+                        if (combined) {
+                            labelSharingStreams.remove(id);
+                            labelSharingStreams.remove(anotherStreamId);
+                        }
+                    }
+                }
             }
         };
         timeline.addListener(listener);
@@ -539,20 +552,31 @@ public class AnimatedComponentVisualTests extends JDialog {
         controls.add(createEventButton(2, events, variance));
         final JButton addStreamButton = createButton("Add a stream");
         final JButton removeStreamButton = createButton("Remove a stream");
+        final JButton addLinkedStreamsButton = createButton("Add label sharing streams");
         removeStreamButton.setEnabled(false);
         addStreamButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                changeStreamSize(streamSize, streamSize.get() + 1, addStreamButton, removeStreamButton, maxNumStreams, 2);
+                changeStreamSize(streamSize, streamSize.get() + 1, addStreamButton, removeStreamButton, addLinkedStreamsButton, maxNumStreams, 2);
             }
         });
         removeStreamButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                changeStreamSize(streamSize, streamSize.get() - 1, addStreamButton, removeStreamButton, maxNumStreams, 2);
+                changeStreamSize(streamSize, streamSize.get() - 1, addStreamButton, removeStreamButton, addLinkedStreamsButton, maxNumStreams, 2);
+            }
+        });
+        addLinkedStreamsButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                int size = streamSize.get();
+                changeStreamSize(streamSize, size + 2, addStreamButton, removeStreamButton, addLinkedStreamsButton, maxNumStreams, 2);
+                labelSharingStreams.add("Data " + size);
+                labelSharingStreams.add("Data " + (size + 1));
             }
         });
         controls.add(addStreamButton);
+        controls.add(addLinkedStreamsButton);
         controls.add(removeStreamButton);
         controls.add(createCheckbox("Stack streams", new ItemListener() {
             @Override
@@ -576,11 +600,13 @@ public class AnimatedComponentVisualTests extends JDialog {
                                   int newStreamSize,
                                   JButton addStreamButton,
                                   JButton removeStreamButton,
+                                  JButton addLabelSharingButton,
                                   int maxSize,
                                   int minSize) {
         streamSize.set(newStreamSize);
         addStreamButton.setEnabled(newStreamSize < maxSize);
         removeStreamButton.setEnabled(newStreamSize > minSize);
+        addLabelSharingButton.setEnabled(newStreamSize + 1 < maxSize);
     }
 
     private Component createEventButton(final int type, final EventData events,
