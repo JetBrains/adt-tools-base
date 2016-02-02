@@ -727,6 +727,27 @@ public class AvdManager {
     }
 
     /**
+     * Reloads a single AVD but does not update the list.
+     * @param avdInfo an existing AVD
+     * @param log the log object to receive action logs. Cannot be null.
+     * @return an updated AVD
+     * @throws AndroidLocationException if there was an error finding the location of the
+     * AVD folder.
+     */
+    public AvdInfo reloadAvd(AvdInfo avdInfo, ILogger log) throws AndroidLocationException {
+        AvdInfo newInfo = parseAvdInfo(avdInfo.getIniFile(), log);
+        synchronized (mAllAvdList) {
+            int index = mAllAvdList.indexOf(avdInfo);
+            if (index >= 0) {
+                // Update the existing list of AVDs
+                // Unless the original AVD is not found, in which case someone else may already have updated the list
+                replaceAvd(avdInfo, newInfo);
+            }
+        }
+        return newInfo;
+    }
+
+    /**
      * Creates a new AVD. It is expected that there is no existing AVD with this name already.
      *
      * @param avdFolder the data folder for the AVD. It will be created as needed.
