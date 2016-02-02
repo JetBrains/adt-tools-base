@@ -37,4 +37,16 @@ public class FolderTypeRelationShipTest extends TestCase {
                     !FolderTypeRelationship.getRelatedResourceTypes(type).isEmpty());
         }
     }
+
+    public void testIsIdGeneratingFolderType() {
+        // sample a few
+        assertTrue(FolderTypeRelationship.isIdGeneratingFolderType(ResourceFolderType.LAYOUT));
+        assertTrue(FolderTypeRelationship.isIdGeneratingFolderType(ResourceFolderType.MENU));
+        assertTrue(FolderTypeRelationship.isIdGeneratingFolderType(ResourceFolderType.DRAWABLE));
+
+        assertFalse(FolderTypeRelationship.isIdGeneratingFolderType(ResourceFolderType.COLOR));
+        assertFalse(FolderTypeRelationship.isIdGeneratingFolderType(ResourceFolderType.MIPMAP));
+        assertFalse(FolderTypeRelationship.isIdGeneratingFolderType(ResourceFolderType.RAW));
+        assertFalse(FolderTypeRelationship.isIdGeneratingFolderType(ResourceFolderType.VALUES));
+    }
 }

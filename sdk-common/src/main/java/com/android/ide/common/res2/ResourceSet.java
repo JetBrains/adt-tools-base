@@ -31,6 +31,7 @@ import com.android.resources.ResourceConstants;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
 import com.android.utils.ILogger;
+import com.android.utils.SdkUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -426,7 +427,8 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
                         file,
                         getResourceItemsForGeneratedFiles(file),
                         folderData.qualifiers);
-            } else if (mShouldParseResourceIds && isIdGeneratingType(folderData)) {
+            } else if (mShouldParseResourceIds && folderData.isIdGenerating &&
+                       SdkUtils.endsWithIgnoreCase(file.getPath(), SdkConstants.DOT_XML)) {
                 String resourceName = getNameForFile(file);
                 IdGeneratingResourceParser parser = new IdGeneratingResourceParser(file, resourceName, folderData.type);
                 List<ResourceItem> items = parser.getIdResourceItems();
@@ -510,6 +512,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
         String qualifiers = "";
         ResourceType type = null;
         ResourceFolderType folderType = null;
+        boolean isIdGenerating = false;
     }
 
     /**
@@ -552,24 +555,10 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
 
         if (fd.folderType != null && fd.folderType != ResourceFolderType.VALUES) {
             fd.type = FolderTypeRelationship.getRelatedResourceTypes(fd.folderType).get(0);
+            fd.isIdGenerating = FolderTypeRelationship.isIdGeneratingFolderType(fd.folderType);
         }
-
         return fd;
     }
-
-    private static boolean isIdGeneratingType(FolderData folderData) {
-        if (folderData.folderType == null) {
-            return false;
-        }
-        List<ResourceType> relatedTypes = FolderTypeRelationship.getRelatedResourceTypes(folderData.folderType);
-        if (relatedTypes.size() > 1) {
-            assert relatedTypes.size() == 2 && relatedTypes.get(1) == ResourceType.ID;
-            return true;
-        } else {
-            return false;
-        }
-    }
-
 
     @Override
     void appendToXml(@NonNull Node setNode,

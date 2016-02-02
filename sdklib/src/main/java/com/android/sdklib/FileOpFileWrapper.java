@@ -106,6 +106,9 @@ public class FileOpFileWrapper implements IAbstractFile, IAbstractFolder {
     }
 
     @Override
+    public String getPath() { return mFile.getPath(); }
+
+    @Override
     public boolean exists() {
         return mIsFolder ? mFileOp.isDirectory(mFile) : mFileOp.isFile(mFile);
     }

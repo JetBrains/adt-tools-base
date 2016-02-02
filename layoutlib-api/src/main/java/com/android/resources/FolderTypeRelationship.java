@@ -16,10 +16,11 @@
 
 package com.android.resources;
 
-
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 
@@ -48,6 +49,7 @@ public final class FolderTypeRelationship {
         add(ResourceType.DIMEN, ResourceFolderType.VALUES);
         add(ResourceType.DRAWABLE, ResourceFolderType.VALUES);
         add(ResourceType.DRAWABLE, ResourceFolderType.DRAWABLE);
+        add(ResourceType.ID, ResourceFolderType.DRAWABLE);
         add(ResourceType.FRACTION, ResourceFolderType.VALUES);
         add(ResourceType.ID, ResourceFolderType.VALUES);
         add(ResourceType.INTEGER, ResourceFolderType.VALUES);
@@ -64,10 +66,19 @@ public final class FolderTypeRelationship {
         add(ResourceType.STYLE, ResourceFolderType.VALUES);
         add(ResourceType.STYLEABLE, ResourceFolderType.VALUES);
         add(ResourceType.TRANSITION, ResourceFolderType.TRANSITION);
+        add(ResourceType.ID, ResourceFolderType.TRANSITION);
         add(ResourceType.XML, ResourceFolderType.XML);
+        add(ResourceType.ID, ResourceFolderType.XML);
 
         makeSafe();
     }
+
+    // The ID-providing relationship is also encoded in the above maps by having a folder
+    // map to two ResourceTypes, with the second ResourceType being ID.
+    private static final EnumSet<ResourceFolderType> ID_PROVIDING_RESOURCE_TYPES = EnumSet.of(
+      ResourceFolderType.LAYOUT, ResourceFolderType.MENU, ResourceFolderType.DRAWABLE,
+      ResourceFolderType.XML, ResourceFolderType.TRANSITION
+    );
 
     /**
      * Returns a list of {@link ResourceType}s that can be generated from files inside a folder
@@ -97,6 +108,19 @@ public final class FolderTypeRelationship {
         }
 
         return Collections.emptyList();
+    }
+
+    /**
+     * Check if a folder may contain ID generating types (via android:id="@+id/xyz").
+     * @param folderType The folder type.
+     * @return true if folder may contain ID generating types.
+     */
+    public static boolean isIdGeneratingFolderType(ResourceFolderType folderType) {
+        return ID_PROVIDING_RESOURCE_TYPES.contains(folderType);
+    }
+
+    public static Collection<ResourceFolderType> getIdGeneratingFolderTypes() {
+        return ID_PROVIDING_RESOURCE_TYPES;
     }
 
     /**
