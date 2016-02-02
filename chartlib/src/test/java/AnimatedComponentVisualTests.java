@@ -14,12 +14,7 @@
  * limitations under the License.
  */
 
-import com.android.tools.chartlib.AnimatedComponent;
-import com.android.tools.chartlib.EventData;
-import com.android.tools.chartlib.SunburstComponent;
-import com.android.tools.chartlib.TimelineComponent;
-import com.android.tools.chartlib.TimelineData;
-import com.android.tools.chartlib.ValuedTreeNode;
+import com.android.tools.chartlib.*;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -346,9 +341,8 @@ public class AnimatedComponentVisualTests extends JDialog {
     }
 
     private static Component createButton(String label, ActionListener action) {
-        JButton button = new JButton(label);
+        JButton button = createButton(label);
         button.addActionListener(action);
-        button.setMaximumSize(new Dimension(Integer.MAX_VALUE, button.getMaximumSize().height));
         return button;
     }
 
@@ -381,8 +375,11 @@ public class AnimatedComponentVisualTests extends JDialog {
     }
 
     private enum TimelineBehavior {
+        // Only positive values are generated.
         POSITIVE("Positive values only"),
+        // Both positive and negative values are displayed, and if stacking, positive and negative values are sum up together.
         NEGATIVE("Negative and positive values"),
+        // Half of all streams are mirrored, and all streams values should be positive.
         MIRRORED("Mirrored streams");
 
         public final String description;
@@ -427,22 +424,22 @@ public class AnimatedComponentVisualTests extends JDialog {
     }
 
     private JPanel createTimelinePanel(final TimelineBehavior timelineBehavior) {
-        final int numStreams = 2;
-
+        final AtomicInteger streamSize = new AtomicInteger(2);
         final EventData events = new EventData();
-        final TimelineData data = new TimelineData(numStreams, 2000);
+        final TimelineData data = new TimelineData(streamSize.get(), 2000);
         final AtomicInteger variance = new AtomicInteger(10);
         final AtomicInteger delay = new AtomicInteger(100);
         final AtomicInteger type = new AtomicInteger(0);
+        final int maxNumStreams = 10;
         new Thread() {
             @Override
             public void run() {
                 super.run();
                 try {
-                    float[] values = new float[numStreams];
+                    float[] values = new float[maxNumStreams];
                     while (true) {
                         int v = variance.get();
-
+                        int numStreams = streamSize.get();
                         for (int i = 0; i < numStreams; i++) {
                             float delta = (float) Math.random() * variance.get() - v * 0.5f;
                             values[i] = delta + values[i];
@@ -462,7 +459,15 @@ public class AnimatedComponentVisualTests extends JDialog {
                             }
                         }
                         synchronized (data) {
+                            int oldStreams = data.getStreamCount();
+                            for (int i = oldStreams; i < numStreams; i++) {
+                                data.addStream("Data " + i);
+                            }
+                            for (int i = numStreams; i < oldStreams; i++) {
+                                data.removeStream("Data " + i);
+                            }
                             data.add(System.currentTimeMillis(), type.get() + (v == 0 ? 1 : 0), valuesCopy);
+
                         }
                         Thread.sleep(delay.get());
                     }
@@ -480,6 +485,18 @@ public class AnimatedComponentVisualTests extends JDialog {
         timeline.configureEvent(2, 1, UIManager.getIcon("Tree.leafIcon"), new Color(255, 191, 176), new Color(76, 14, 29), true);
         timeline.configureType(1, TimelineComponent.Style.SOLID);
         timeline.configureType(2, TimelineComponent.Style.DASHED);
+
+        TimelineComponent.Listener listener = new TimelineComponent.Listener() {
+            private final Color[] COLORS =
+              {Color.decode("0xe6550d"), Color.decode("0xfd8d3c"), Color.decode("0x31a354"), Color.decode("0x74c476")};
+
+            @Override
+            public void onStreamAdded(int stream, String id) {
+                timeline.configureStream(stream, id, COLORS[stream % COLORS.length],
+                                         stream % 2 == 1 && timelineBehavior == TimelineBehavior.MIRRORED);
+            }
+        };
+        timeline.addListener(listener);
 
         final JPanel panel = new JPanel();
         final JPanel controls = createControlledPane(panel, timeline);
@@ -520,6 +537,23 @@ public class AnimatedComponentVisualTests extends JDialog {
         controls.add(createEventButton(1, events, variance));
         controls.add(createEventButton(1, events, null));
         controls.add(createEventButton(2, events, variance));
+        final JButton addStreamButton = createButton("Add a stream");
+        final JButton removeStreamButton = createButton("Remove a stream");
+        removeStreamButton.setEnabled(false);
+        addStreamButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                changeStreamSize(streamSize, streamSize.get() + 1, addStreamButton, removeStreamButton, maxNumStreams, 2);
+            }
+        });
+        removeStreamButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                changeStreamSize(streamSize, streamSize.get() - 1, addStreamButton, removeStreamButton, maxNumStreams, 2);
+            }
+        });
+        controls.add(addStreamButton);
+        controls.add(removeStreamButton);
         controls.add(createCheckbox("Stack streams", new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
@@ -530,6 +564,23 @@ public class AnimatedComponentVisualTests extends JDialog {
         controls.add(new Box.Filler(new Dimension(0, 0), new Dimension(300, Integer.MAX_VALUE), new Dimension(300, Integer.MAX_VALUE)));
         panel.add(timeline, BorderLayout.CENTER);
         return panel;
+    }
+
+    private static JButton createButton(String label) {
+        JButton button = new JButton(label);
+        button.setMaximumSize(new Dimension(Integer.MAX_VALUE, button.getMaximumSize().height));
+        return button;
+    }
+
+    private void changeStreamSize(AtomicInteger streamSize,
+                                  int newStreamSize,
+                                  JButton addStreamButton,
+                                  JButton removeStreamButton,
+                                  int maxSize,
+                                  int minSize) {
+        streamSize.set(newStreamSize);
+        addStreamButton.setEnabled(newStreamSize < maxSize);
+        removeStreamButton.setEnabled(newStreamSize > minSize);
     }
 
     private Component createEventButton(final int type, final EventData events,

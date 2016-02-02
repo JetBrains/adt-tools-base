@@ -17,6 +17,9 @@ package com.android.tools.chartlib;
 
 import junit.framework.TestCase;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 public class TimelineDataTest extends TestCase {
 
     private static final int TYPE_DATA = 0;
@@ -46,15 +49,26 @@ public class TimelineDataTest extends TestCase {
         assertTrue(now <= mData.getStartTime());
     }
 
-    public void testGetMaxTotal() throws Exception {
-        assertEquals(0.0f, mData.getMaxTotal());
-        long now = System.currentTimeMillis();
-        mData.add(now + 1, 0, 1.0f, 2.0f);
-        assertEquals(3.0f, mData.getMaxTotal());
-        mData.add(now + 2, 0, 1.0f, 1.0f);
-        assertEquals(3.0f, mData.getMaxTotal());
-        mData.add(now + 3, 0, 2.0f, 2.0f);
-        assertEquals(4.0f, mData.getMaxTotal());
+    public void testAddStreams() {
+        assertEquals(2, mData.getStreamCount());
+        mData.addStream("dynamicStream0");
+        assertEquals(3, mData.getStreamCount());
+        mData.addStreams(new ArrayList<String>(Arrays.asList("duplicateStream", "dynamicStream2")));
+        assertEquals(5, mData.getStreamCount());
+        try {
+            mData.addStreams(new ArrayList<String>(Arrays.asList("duplicateStream", "dynamicStream3")));
+            fail();
+        } catch (AssertionError expected) {}
+    }
+
+    public void testRemoveStreams() {
+        assertEquals(2, mData.getStreamCount());
+        mData.removeStream("Stream 1");
+        assertEquals(1, mData.getStreamCount());
+        mData.addStreams(new ArrayList<String>(Arrays.asList("dynamicStream1", "dynamicStream2")));
+        assertEquals(3, mData.getStreamCount());
+        mData.removeStreams(new ArrayList<String>(Arrays.asList("dynamicStream1", "dynamicStream2")));
+        assertEquals(1, mData.getStreamCount());
     }
 
     public void testAdd() throws Exception {
