@@ -100,14 +100,13 @@ import com.android.utils.ILogger;
 import com.android.utils.Pair;
 import com.android.utils.SdkUtils;
 import com.google.common.base.Charsets;
+import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
@@ -1367,7 +1366,6 @@ public class AndroidBuilder {
         Revision buildToolsVersion = mTargetInfo.getBuildTools().getRevision();
 
         if (shouldDexInProcess(builder, dexOptions, buildToolsVersion, instantRunMode, getLogger())) {
-            getLogger().info("Dexing in process");
             File dxJar = new File(
                     mTargetInfo.getBuildTools().getPath(BuildToolInfo.PathId.DX_JAR));
             DexWrapper dexWrapper = DexWrapper.obtain(dxJar);
@@ -1379,11 +1377,14 @@ public class AndroidBuilder {
                 dexWrapper.release();
             }
         } else {
-            getLogger().info("Dexing out of process");
+            long startTime = System.currentTimeMillis();
             JavaProcessInfo javaProcessInfo = builder.build(mTargetInfo.getBuildTools(), dexOptions);
             ProcessResult result = mJavaProcessExecutor.execute(javaProcessInfo,
                     processOutputHandler);
             result.rethrowFailure().assertNormalExitValue();
+            getLogger().warning(
+                    "Dexing " + Joiner.on(',').join(builder.getInputs()) + " took " +
+                            (System.currentTimeMillis() - startTime));
         }
     }
 
@@ -1407,43 +1408,46 @@ public class AndroidBuilder {
         if (!Boolean.TRUE.equals(dexOptions.getDexInProcess())) {
             return false;
         }
+        logger.warning("dexInProcess flag ignored, reverted to out of process.");
+        return false;
 
-        // Version that supports all flags that we know about, including numThreads.
-        Revision minimumBuildTools = DexProcessBuilder.FIXED_DX_MERGER;
-
-        if (buildToolsVersion.compareTo(minimumBuildTools) < 0) {
-            throw new RuntimeException("Running dex in-process requires build tools "
-                    + minimumBuildTools.toShortString());
-        }
-
-        if (!DexWrapper.noMainDexOnClasspath()) {
-            logger.warning("dx.jar is on Android Gradle plugin classpath, which will cause issues "
-                    + "with dexing in process, reverted to out of process.");
-            return false;
-        }
-
-        // Requested memory for dex
-        long requestedHeapSize = parseHeapSize(dexOptions.getJavaMaxHeapSize());
-        long maxMemory = Runtime.getRuntime().maxMemory();
-        //TODO: Is this the right heuristic?
-
-        if (requestedHeapSize > maxMemory) {
-            String dslRequest = dexOptions.getJavaMaxHeapSize();
-            logger.warning(String.format(
-                    "To run dex in process, the Gradle daemon needs a larger heap. "
-                            + "It currently has %1$d MB.\n"
-                            + "For faster builds, increase the maximum heap size for the "
-                            + "Gradle daemon to more than %2$s.\n"
-                            + "To do this, set org.gradle.jvmargs=-Xmx%2$s in the "
-                            + "project gradle.properties.\n"
-                            + "For more information see "
-                            + "https://docs.gradle.org/current/userguide/build_environment.html\n",
-                    maxMemory / (1024 * 1024),
-                    (dslRequest == null) ? "1G" :
-                            dslRequest + " " + "as specified in dexOptions.javaMaxHeapSize"));
-            return false;
-        }
-        return true;
+        //
+        //// Version that supports all flags that we know about, including numThreads.
+        //Revision minimumBuildTools = DexProcessBuilder.FIXED_DX_MERGER;
+        //
+        //if (buildToolsVersion.compareTo(minimumBuildTools) < 0) {
+        //    throw new RuntimeException("Running dex in-process requires build tools "
+        //            + minimumBuildTools.toShortString());
+        //}
+        //
+        //if (!DexWrapper.noMainDexOnClasspath()) {
+        //    logger.warning("dx.jar is on Android Gradle plugin classpath, which will cause issues "
+        //            + "with dexing in process, reverted to out of process.");
+        //    return false;
+        //}
+        //
+        //// Requested memory for dex
+        //long requestedHeapSize = parseHeapSize(dexOptions.getJavaMaxHeapSize());
+        //long maxMemory = Runtime.getRuntime().maxMemory();
+        ////TODO: Is this the right heuristic?
+        //
+        //if (requestedHeapSize > maxMemory) {
+        //    String dslRequest = dexOptions.getJavaMaxHeapSize();
+        //    logger.warning(String.format(
+        //            "To run dex in process, the Gradle daemon needs a larger heap. "
+        //                    + "It currently has %1$d MB.\n"
+        //                    + "For faster builds, increase the maximum heap size for the "
+        //                    + "Gradle daemon to more than %2$s.\n"
+        //                    + "To do this, set org.gradle.jvmargs=-Xmx%2$s in the "
+        //                    + "project gradle.properties.\n"
+        //                    + "For more information see "
+        //                    + "https://docs.gradle.org/current/userguide/build_environment.html\n",
+        //            maxMemory / (1024 * 1024),
+        //            (dslRequest == null) ? "1G" :
+        //                    dslRequest + " " + "as specified in dexOptions.javaMaxHeapSize"));
+        //    return false;
+        //}
+        //return true;
     }
 
     private static final long DEFAULT_DEX_HEAP_SIZE = 1024 * 1024 * 1024; // 1 GiB
