@@ -109,7 +109,6 @@ import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.ApplicationVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.build.gradle.internal.variant.LibraryVariantData;
 import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.AndroidJarTask;
@@ -156,13 +155,11 @@ import com.android.builder.testing.api.TestServer;
 import com.android.manifmerger.ManifestMerger2;
 import com.android.sdklib.AndroidVersion;
 import com.android.utils.StringHelper;
-import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
 import org.gradle.api.Action;
@@ -173,7 +170,6 @@ import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.execution.TaskExecutionGraph;
 import org.gradle.api.file.FileCollection;
-import org.gradle.api.file.FileTree;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
@@ -2059,10 +2055,8 @@ public abstract class TaskManager {
         variantScope.setInstantRunVerifierTask(verifierTask);
 
         JavaResourceVerifierTransform jniLibsVerifierTransform = new JavaResourceVerifierTransform(
-                "jniLibsVerifier",
                 variantScope,
-                getResMergingScopes(variantScope),
-                ExtendedContentType.NATIVE_LIBS);
+                getResMergingScopes(variantScope));
         AndroidTask<TransformTask> jniLibsVerifierTask =
                 variantScope.getTransformManager().addTransform(
                         tasks,

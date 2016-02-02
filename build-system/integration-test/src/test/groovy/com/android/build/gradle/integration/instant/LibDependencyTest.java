@@ -16,11 +16,16 @@
 
 package com.android.build.gradle.integration.instant;
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
+
 import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.truth.ApkSubject;
 import com.android.build.gradle.integration.common.truth.DexFileSubject;
 import com.android.build.gradle.integration.common.truth.FileSubject;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.InstantRun;
 import com.android.builder.model.Variant;
@@ -32,10 +37,10 @@ import com.google.common.truth.Expect;
 
 import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
@@ -47,19 +52,14 @@ import java.util.Map;
  */
 public class LibDependencyTest {
 
-    @ClassRule
-    public static GradleTestProject sProject =
+    @Rule
+    public GradleTestProject project =
             GradleTestProject.builder()
                 .fromTestProject("libDependency")
                 .create();
 
     @Rule
     public Expect expect = Expect.create();
-
-    @AfterClass
-    public static void cleanUp() {
-        sProject = null;
-    }
 
     @Before
     public void activityClass() throws IOException {
@@ -68,21 +68,44 @@ public class LibDependencyTest {
 
     @Test
     public void buildIncrementallyWithInstantRun() throws IOException, ProcessException {
-        System.out.printf("ABCDEFGH------------------------------------------------->\n");
-        sProject.execute("clean");
-        Map<String, AndroidProject> projects = sProject.getAllModels();
-        AndroidProject project = projects.get(":app");
-        InstantRun instantRunModel = getInstantRunModel(project);
+        project.execute("clean");
+        Map<String, AndroidProject> projects = project.getAllModels();
+        InstantRun instantRunModel = getInstantRunModel(projects.get(":app"));
 
         // Check that original class is included.
-        sProject.execute(getInstantRunArgs(), "clean", "assembleRelease", "assembleDebug");
+        project.execute(getInstantRunArgs(), "clean", "assembleRelease", "assembleDebug");
         expect.about(ApkSubject.FACTORY)
-                .that(sProject.getSubproject("app").getApk("debug")).hasDexFile("classes.dex")
+                .that(project.getSubproject("app").getApk("debug")).hasDexFile("classes.dex")
                 .that().hasClass("Lcom/android/tests/libstest/lib/MainActivity;")
                 .that().hasMethod("onCreate");
 
         checkHotSwapCompatibleChange(instantRunModel);
-        System.out.printf("<------------------------------------------------ABCDEFGH\n");
+    }
+
+    @Test
+    public void checkVerifierFailsIfJavaResourceInLibraryChanged() throws Exception {
+        File resource = project.getSubproject(":lib").file("src/main/resources/properties.txt");
+        Files.write("java resource", resource, Charsets.UTF_8);
+
+        project.execute("clean");
+        Map<String, AndroidProject> projects = project.getAllModels();
+        InstantRun instantRunModel = getInstantRunModel(projects.get(":app"));
+
+        // Check that original class is included.
+        project.execute(getInstantRunArgs(), "clean", "assembleDebug");
+        assertThatApk(project.getSubproject("app").getApk("debug")).hasDexFile("classes.dex")
+                .that().hasClass("Lcom/android/tests/libstest/lib/MainActivity;")
+                .that().hasMethod("onCreate");
+
+        Files.write("changed java resource", resource, Charsets.UTF_8);
+
+        project.execute(getInstantRunArgs(), instantRunModel.getIncrementalAssembleTaskName());
+        InstantRunBuildContext context = InstantRunTestUtils.loadContext(instantRunModel);
+        assertThat(context.getLastBuild()).isNotNull();
+        assertThat(context.getLastBuild().getVerifierStatus()).isPresent();
+        assertThat(context.getLastBuild().getVerifierStatus().get()).isEqualTo(
+                InstantRunVerifierStatus.JAVA_RESOURCES_CHANGED);
+        assertThat(context.getLastBuild().getArtifacts()).hasSize(0);
     }
 
     /**
@@ -92,7 +115,7 @@ public class LibDependencyTest {
             throws IOException, ProcessException {
         createLibraryClass("Hot swap change");
 
-        sProject.execute(getInstantRunArgs(), instantRunModel.getIncrementalAssembleTaskName());
+        project.execute(getInstantRunArgs(), instantRunModel.getIncrementalAssembleTaskName());
 
         expect.about(DexFileSubject.FACTORY)
                 .that(instantRunModel.getReloadDexFile())
@@ -103,7 +126,7 @@ public class LibDependencyTest {
     }
 
 
-    private static void createLibraryClass(String message)
+    private void createLibraryClass(String message)
             throws IOException {
         String javaCompile = "package com.android.tests.libstest.lib;\n"
             +"public class Lib {\n"
@@ -112,7 +135,7 @@ public class LibDependencyTest {
                 +"}\n"
             +"}\n";
         Files.write(javaCompile,
-                sProject.file("lib/src/main/java/com/android/tests/libstest/lib/Lib.java"),
+                project.file("lib/src/main/java/com/android/tests/libstest/lib/Lib.java"),
                 Charsets.UTF_8);
     }
 
