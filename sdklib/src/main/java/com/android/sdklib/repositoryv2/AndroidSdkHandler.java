@@ -369,9 +369,14 @@ public final class AndroidSdkHandler {
     public LocalSourceProvider getUserSourceProvider(@NonNull ProgressIndicator progress) {
         if (mUserSourceProvider == null) {
             mUserSourceProvider = RepoConfig.createUserSourceProvider(progress, mFop);
-            // Load the repo as well, so it can be set on the provider
-            mRepoManager = null;
-            getSdkManager(progress);
+            synchronized (MANAGER_LOCK) {
+                if (mRepoManager != null) {
+                    // If the repo already exists cause it to be reloaded, so the userSourceProvider
+                    // can be added to the config.
+                    mRepoManager = null;
+                    getSdkManager(progress);
+                }
+            }
         }
         return mUserSourceProvider;
     }
