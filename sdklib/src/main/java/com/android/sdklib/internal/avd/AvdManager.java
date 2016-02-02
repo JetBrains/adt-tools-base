@@ -25,8 +25,6 @@ import com.android.io.IAbstractFile;
 import com.android.io.StreamException;
 import com.android.prefs.AndroidLocation;
 import com.android.prefs.AndroidLocation.AndroidLocationException;
-import com.android.repository.api.LocalPackage;
-import com.android.repository.api.RepoPackage;
 import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
 import com.android.repository.testframework.MockFileOp;
@@ -404,8 +402,16 @@ public class AvdManager {
             if (ref != null && (manager = ref.get()) != null) {
                 return manager;
             }
-            manager = new AvdManager(sdkHandler, log, fop);
-
+            try {
+                manager = new AvdManager(sdkHandler, log, fop);
+            }
+            catch (AndroidLocationException e){
+                throw e;
+            }
+            catch (Exception e) {
+                log.error(e, "Exception during AvdManager initialization!");
+                return null;
+            }
             mManagers.put(sdkHandler.getLocation().getPath(), fop,
                     new WeakReference<AvdManager>(manager));
             return manager;
@@ -1527,26 +1533,8 @@ public class AvdManager {
         if (properties != null) {
             imageSysDir = properties.get(AVD_INI_IMAGES_1);
             if (imageSysDir != null) {
-                File f = new File(mSdkHandler.getLocation(), imageSysDir);
-                if (!mFop.isDirectory(f)) {
-                    validImageSysdir = false;
-                }
-                else {
-                    File imageDirFile = new File(imageSysDir);
-                    while (imageDirFile != null && sysImage == null) {
-                        String imagePath = imageDirFile.getPath()
-                          .replace(File.separatorChar, RepoPackage.PATH_SEPARATOR);
-                        if (imagePath.endsWith("" + RepoPackage.PATH_SEPARATOR)) {
-                            imagePath = imagePath.substring(0, imagePath.length() - 1);
-                        }
-                        LocalPackage p = mSdkHandler.getLocalPackage(imagePath, progress);
-                        if (p != null) {
-                            sysImage = mSdkHandler.getSystemImageManager(progress).getImageMap()
-                              .inverse().get(p);
-                        }
-                        imageDirFile = imageDirFile.getParentFile();
-                    }
-                }
+                sysImage = mSdkHandler.getSystemImageManager(progress)
+                        .getImageAt(new File(imageSysDir));
             }
         }
 
