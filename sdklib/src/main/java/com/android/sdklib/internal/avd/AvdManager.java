@@ -1555,7 +1555,7 @@ public class AvdManager {
             imageSysDir = properties.get(AVD_INI_IMAGES_1);
             if (imageSysDir != null) {
                 sysImage = mSdkHandler.getSystemImageManager(progress)
-                        .getImageAt(new File(imageSysDir));
+                  .getImageAt(new File(mSdkHandler.getLocation(), imageSysDir));
             }
         }
 
