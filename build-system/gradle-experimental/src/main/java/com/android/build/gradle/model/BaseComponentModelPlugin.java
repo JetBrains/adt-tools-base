@@ -547,6 +547,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                             variantManager.createVariantData(
                                     new BuildTypeAdaptor(binary.getBuildType()),
                                     adaptedFlavors));
+                    binary.getVariantData().getVariantConfiguration().setEnableInstantRunOverride(false);
                     variantManager.getVariantDataList().add(binary.getVariantData());
                 }
             });
