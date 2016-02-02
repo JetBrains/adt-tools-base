@@ -16,6 +16,9 @@
 
 package com.android.dx.command.dexer;
 
+import static java.lang.System.err;
+import static java.lang.System.out;
+
 import com.android.dex.Dex;
 import com.android.dex.DexException;
 import com.android.dex.DexFormat;
@@ -40,8 +43,10 @@ import com.android.dx.merge.DexMerger;
 import com.android.dx.rop.annotation.Annotation;
 import com.android.dx.rop.annotation.Annotations;
 import com.android.dx.rop.annotation.AnnotationsList;
+import com.android.dx.rop.code.RegisterSpec;
 import com.android.dx.rop.cst.CstNat;
 import com.android.dx.rop.cst.CstString;
+import com.android.dx.rop.type.Prototype;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -227,7 +232,7 @@ public class Main {
 
     private final DxContext context;
 
-    private Main(DxContext context) {
+    public Main(DxContext context) {
         this.context = context;
     }
 
@@ -245,6 +250,11 @@ public class Main {
         if (result != 0) {
             System.exit(result);
         }
+    }
+
+    public static void clearInternTables() {
+        Prototype.clearInternTable();
+        RegisterSpec.clearInternTable();
     }
 
     /**
@@ -292,7 +302,7 @@ public class Main {
         File incrementalOutFile = null;
         if (args.incremental) {
             if (args.outName == null) {
-                System.err.println(
+                err.println(
                         "error: no incremental output name specified");
                 return -1;
             }
@@ -608,7 +618,7 @@ public class Main {
         } catch (Exception e) {
             classTranslatorPool.shutdownNow();
             classDefItemConsumer.shutdownNow();
-            e.printStackTrace(System.out);
+            e.printStackTrace(out);
             throw new RuntimeException("Unexpected exception in translator thread.", e);
         }
 
@@ -975,7 +985,7 @@ public class Main {
     private static OutputStream openOutput(String name) throws IOException {
         if (name.equals("-") ||
                 name.startsWith("-.")) {
-            return System.out;
+            return out;
         }
 
         return new FileOutputStream(name);
@@ -996,7 +1006,7 @@ public class Main {
 
         stream.flush();
 
-        if (stream != System.out) {
+        if (stream != out) {
             stream.close();
         }
     }
@@ -1426,7 +1436,7 @@ public class Main {
                                 lastValue = current;
                                 return true;
                             } else {
-                                System.err.println("Missing value after parameter " + prefix);
+                                err.println("Missing value after parameter " + prefix);
                                 throw new UsageException();
                             }
                         }
@@ -1472,7 +1482,7 @@ public class Main {
                     statistics = true;
                 } else if (parser.isArg("--optimize-list=")) {
                     if (dontOptimizeListFile != null) {
-                        System.err.println("--optimize-list and "
+                        err.println("--optimize-list and "
                                 + "--no-optimize-list are incompatible.");
                         throw new UsageException();
                     }
@@ -1480,7 +1490,7 @@ public class Main {
                     optimizeListFile = parser.getLastValue();
                 } else if (parser.isArg("--no-optimize-list=")) {
                     if (dontOptimizeListFile != null) {
-                        System.err.println("--optimize-list and "
+                        err.println("--optimize-list and "
                                 + "--no-optimize-list are incompatible.");
                         throw new UsageException();
                     }
@@ -1500,7 +1510,7 @@ public class Main {
                         jarOutput = false;
                         outputIsDirectDex = true;
                     } else {
-                        System.err.println("unknown output extension: " +
+                        err.println("unknown output extension: " +
                                            outName);
                         throw new UsageException();
                     }
@@ -1520,7 +1530,7 @@ public class Main {
                     } else if (pstr == "lines") {
                         positionInfo = PositionList.LINES;
                     } else {
-                        System.err.println("unknown positions option: " +
+                        err.println("unknown positions option: " +
                                            pstr);
                         throw new UsageException();
                     }
@@ -1546,13 +1556,13 @@ public class Main {
                         inputList = new ArrayList<String>();
                         readPathsFromFile(inputListFile.getAbsolutePath(), inputList);
                     } catch(IOException e) {
-                        System.err.println(
+                        err.println(
                             "Unable to read input list file: " + inputListFile.getName());
                         // problem reading the file so we should halt execution
                         throw new UsageException();
                     }
                 } else {
-                    System.err.println("unknown option: " + parser.getCurrent());
+                    err.println("unknown option: " + parser.getCurrent());
                     throw new UsageException();
                 }
             }
@@ -1566,11 +1576,11 @@ public class Main {
 
             if (fileNames.length == 0) {
                 if (!emptyOk) {
-                    System.err.println("no input files specified");
+                    err.println("no input files specified");
                     throw new UsageException();
                 }
             } else if (emptyOk) {
-                System.out.println("ignoring input files");
+                out.println("ignoring input files");
             }
 
             if ((humanOutName == null) && (methodToDump != null)) {
@@ -1578,25 +1588,25 @@ public class Main {
             }
 
             if (mainDexListFile != null && !multiDex) {
-                System.err.println(MAIN_DEX_LIST_OPTION + " is only supported in combination with "
+                err.println(MAIN_DEX_LIST_OPTION + " is only supported in combination with "
                     + MULTI_DEX_OPTION);
                 throw new UsageException();
             }
 
             if (minimalMainDex && (mainDexListFile == null || !multiDex)) {
-                System.err.println(MINIMAL_MAIN_DEX_OPTION + " is only supported in combination with "
+                err.println(MINIMAL_MAIN_DEX_OPTION + " is only supported in combination with "
                     + MULTI_DEX_OPTION + " and " + MAIN_DEX_LIST_OPTION);
                 throw new UsageException();
             }
 
             if (multiDex && incremental) {
-                System.err.println(INCREMENTAL_OPTION + " is not supported with "
+                err.println(INCREMENTAL_OPTION + " is not supported with "
                     + MULTI_DEX_OPTION);
                 throw new UsageException();
             }
 
             if (multiDex && outputIsDirectDex) {
-                System.err.println("Unsupported output \"" + outName +"\". " + MULTI_DEX_OPTION +
+                err.println("Unsupported output \"" + outName +"\". " + MULTI_DEX_OPTION +
                         " supports only archive or directory output");
                 throw new UsageException();
             }

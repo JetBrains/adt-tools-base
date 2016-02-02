@@ -30,7 +30,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.annotations.VisibleForTesting;
+import com.android.annotations.concurrency.GuardedBy;
 import com.android.builder.compiling.DependencyFileProcessor;
 import com.android.builder.core.BuildToolsServiceLoader.BuildToolServiceLoader;
 import com.android.builder.dependency.ManifestDependency;
@@ -78,7 +78,6 @@ import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.jack.api.ConfigNotSupportedException;
 import com.android.jack.api.JackProvider;
 import com.android.jack.api.v01.Api01CompilationTask;
-import com.android.jack.api.v01.Api01Config;
 import com.android.jack.api.v01.CompilationException;
 import com.android.jack.api.v01.ConfigurationException;
 import com.android.jack.api.v01.MultiDexKind;
@@ -98,7 +97,6 @@ import com.android.sdklib.IAndroidTarget.OptionalLibrary;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
-import com.android.utils.SdkUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
@@ -130,7 +128,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -158,6 +155,8 @@ import java.util.zip.ZipFile;
  */
 public class AndroidBuilder {
 
+    private static final String DEX_IN_PROCESS_PROPERTY = "android.dexInProcess";
+
     private static final Revision MIN_BUILD_TOOLS_REV = new Revision(19, 1, 0);
 
     private static final DependencyFileProcessor sNoOpDependencyFileProcessor = new DependencyFileProcessor() {
@@ -166,6 +165,17 @@ public class AndroidBuilder {
             return null;
         }
     };
+
+    private static final Object LOCK_FOR_DEX = new Object();
+    private static final AtomicInteger DEX_PROCESS_COUNT = new AtomicInteger(2);
+
+    /**
+     * {@link ExecutorService} used to run all dexing code (either in-process or out-of-process).
+     * Size of the underlying thread pool limits the number of parallel dex "invocations", even
+     * though every invocation can spawn many threads, depending on dexing options.
+     */
+    @GuardedBy("LOCK_FOR_DEX")
+    private static ExecutorService sDexExecutorService = null;
 
     @NonNull
     private final String mProjectId;
@@ -1472,85 +1482,100 @@ public class AndroidBuilder {
         runDexer(builder, dexOptions, processOutputHandler, instantRunMode);
     }
 
-    private static final Object LOCK_FOR_DEX = new Object();
-    private static final AtomicInteger DEX_PROCESS_COUNT = new AtomicInteger(2);
-    private static ExecutorService sDexExecutorService = null;
-
     private void runDexer(
             @NonNull final DexProcessBuilder builder,
             @NonNull final DexOptions dexOptions,
             @NonNull final ProcessOutputHandler processOutputHandler,
             final boolean instantRunMode)
             throws ProcessException, IOException, InterruptedException {
+        initDexExecutorService(dexOptions);
 
-
-        Revision buildToolsVersion = mTargetInfo.getBuildTools().getRevision();
-
-        if (shouldDexInProcess(builder, dexOptions, buildToolsVersion, instantRunMode, getLogger())) {
-            File dxJar = new File(
-                    mTargetInfo.getBuildTools().getPath(BuildToolInfo.PathId.DX_JAR));
-            DexWrapper dexWrapper = DexWrapper.obtain(dxJar);
-            try {
-                ProcessResult result =
-                        dexWrapper.run(builder, dexOptions, processOutputHandler, mLogger);
-                result.assertNormalExitValue();
-            } finally {
-                dexWrapper.release();
-            }
+        if (shouldDexInProcess(instantRunMode)) {
+            dexInProcess(builder, dexOptions, processOutputHandler);
         } else {
+            dexOutOfProcess(builder, dexOptions, processOutputHandler);
+        }
+    }
 
-            // allocate the executorService if necessary
-            synchronized (LOCK_FOR_DEX) {
-                if (sDexExecutorService == null) {
-                    if (dexOptions.getMaxProcessCount() != null) {
-                        DEX_PROCESS_COUNT.set(dexOptions.getMaxProcessCount());
-                    }
-                    getLogger().info("Allocated dexExecutorService of size %d", DEX_PROCESS_COUNT
-                            .get());
-                    sDexExecutorService = Executors.newFixedThreadPool(DEX_PROCESS_COUNT.get());
-                } else {
-                    // check whether our executor service has the same number of max processes as
-                    // this module requests, and print a warning if necessary.
-                    if (dexOptions.getMaxProcessCount() != null
-                            && dexOptions.getMaxProcessCount() != DEX_PROCESS_COUNT.get()) {
-                        getLogger().warning("Module requested a maximum number of %d concurrent"
-                                        + " dx processes but it was initialized earlier with %d,"
-                                        + " setting is ignored",
-                                dexOptions.getMaxProcessCount(),
-                                DEX_PROCESS_COUNT.get());
-                    }
-                }
-            }
-
-            try {
-                final String submission = Joiner.on(',').join(builder.getInputs());
-                // this is a hack, we always spawn a new process for dependencies.jar so it does
-                // get built in parallel with the slices, this is only valid for InstantRun mode.
-                if (submission.contains("dependencies.jar")) {
+    private void dexInProcess(
+            @NonNull final DexProcessBuilder builder,
+            @NonNull final DexOptions dexOptions,
+            @NonNull final ProcessOutputHandler outputHandler)
+            throws IOException, ProcessException {
+        final String submission = Joiner.on(',').join(builder.getInputs());
+        getLogger().info("Dexing in-process.");
+        try {
+            sDexExecutorService.submit(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
                     Stopwatch stopwatch = Stopwatch.createStarted();
-                    JavaProcessInfo javaProcessInfo = builder.build(mTargetInfo.getBuildTools(), dexOptions);
-                    ProcessResult result = mJavaProcessExecutor.execute(javaProcessInfo,
-                            processOutputHandler);
-                    result.rethrowFailure().assertNormalExitValue();
-                    getLogger().info("Dexing " + submission + " took " + stopwatch.toString());
-                } else {
-                    sDexExecutorService.submit(new Callable<Void>() {
-                        @Override
-                        public Void call() throws Exception {
-                            Stopwatch stopwatch = Stopwatch.createStarted();
-                            JavaProcessInfo javaProcessInfo = builder
-                                    .build(mTargetInfo.getBuildTools(), dexOptions);
-                            ProcessResult result = mJavaProcessExecutor.execute(javaProcessInfo,
-                                    processOutputHandler);
-                            result.rethrowFailure().assertNormalExitValue();
-                            getLogger().info(
-                                    "Dexing " + submission + " took " + stopwatch.toString());
-                            return null;
-                        }
-                    }).get();
+                    ProcessResult result = DexWrapper.run(builder, dexOptions, outputHandler);
+                    result.assertNormalExitValue();
+                    getLogger().info("Dexing %s took %s.", submission, stopwatch.toString());
+                    return null;
                 }
-            } catch (ExecutionException e) {
-                throw new ProcessException(e);
+            }).get();
+        } catch (Exception e) {
+            throw new ProcessException(e);
+        }
+    }
+
+    private void dexOutOfProcess(
+            @NonNull final DexProcessBuilder builder,
+            @NonNull final DexOptions dexOptions,
+            @NonNull final ProcessOutputHandler processOutputHandler)
+            throws ProcessException, InterruptedException {
+        getLogger().info("Dexing out-of-process.");
+        try {
+            final String submission = Joiner.on(',').join(builder.getInputs());
+
+            Callable<Void> task = new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    JavaProcessInfo javaProcessInfo =
+                            builder.build(mTargetInfo.getBuildTools(), dexOptions);
+                    ProcessResult result =
+                            mJavaProcessExecutor.execute(javaProcessInfo, processOutputHandler);
+                    result.rethrowFailure().assertNormalExitValue();
+                    return null;
+                }
+            };
+
+            Stopwatch stopwatch = Stopwatch.createStarted();
+            // this is a hack, we always spawn a new process for dependencies.jar so it does
+            // get built in parallel with the slices, this is only valid for InstantRun mode.
+            if (submission.contains("dependencies.jar")) {
+                task.call();
+            } else {
+                sDexExecutorService.submit(task).get();
+            }
+            getLogger().info("Dexing %s took %s.", submission, stopwatch.toString());
+        } catch (Exception e) {
+            throw new ProcessException(e);
+        }
+    }
+
+    private void initDexExecutorService(@NonNull DexOptions dexOptions) {
+        synchronized (LOCK_FOR_DEX) {
+            if (sDexExecutorService == null) {
+                if (dexOptions.getMaxProcessCount() != null) {
+                    DEX_PROCESS_COUNT.set(dexOptions.getMaxProcessCount());
+                }
+                getLogger().info(
+                        "Allocated dexExecutorService of size %d.",
+                        DEX_PROCESS_COUNT.get());
+                sDexExecutorService = Executors.newFixedThreadPool(DEX_PROCESS_COUNT.get());
+            } else {
+                // check whether our executor service has the same number of max processes as
+                // this module requests, and print a warning if necessary.
+                if (dexOptions.getMaxProcessCount() != null
+                        && dexOptions.getMaxProcessCount() != DEX_PROCESS_COUNT.get()) {
+                    getLogger().warning("Module requested a maximum number of %d concurrent"
+                                    + " dx processes but it was initialized earlier with %d,"
+                                    + " setting is ignored",
+                            dexOptions.getMaxProcessCount(),
+                            DEX_PROCESS_COUNT.get());
+                }
             }
         }
     }
@@ -1558,86 +1583,10 @@ public class AndroidBuilder {
     /**
      * Determine whether to dex in process.
      *
-     * If dexOptions.dexInProcess is true then throw RuntimeExceptions if conditions are not met.
-     *
-     * Otherwise if instantRunMode is enabled, quietly try to check if only a small number of
-     * files will be dexed.
-     *
+     * @param instantRunMode Whether the build is for Instant Run.
      */
-    @VisibleForTesting
-    static boolean shouldDexInProcess(
-            @NonNull DexProcessBuilder builder,
-            @NonNull DexOptions dexOptions,
-            @NonNull Revision buildToolsVersion,
-            boolean instantRunMode,
-            @NonNull ILogger logger) {
-
-        return false;
-
-        //
-        //// Version that supports all flags that we know about, including numThreads.
-        //Revision minimumBuildTools = DexProcessBuilder.FIXED_DX_MERGER;
-        //
-        //if (buildToolsVersion.compareTo(minimumBuildTools) < 0) {
-        //    throw new RuntimeException("Running dex in-process requires build tools "
-        //            + minimumBuildTools.toShortString());
-        //}
-        //
-        //if (!DexWrapper.noMainDexOnClasspath()) {
-        //    logger.warning("dx.jar is on Android Gradle plugin classpath, which will cause issues "
-        //            + "with dexing in process, reverted to out of process.");
-        //    return false;
-        //}
-        //
-        //// Requested memory for dex
-        //long requestedHeapSize = parseHeapSize(dexOptions.getJavaMaxHeapSize());
-        //long maxMemory = Runtime.getRuntime().maxMemory();
-        ////TODO: Is this the right heuristic?
-        //
-        //if (requestedHeapSize > maxMemory) {
-        //    String dslRequest = dexOptions.getJavaMaxHeapSize();
-        //    logger.warning(String.format(
-        //            "To run dex in process, the Gradle daemon needs a larger heap. "
-        //                    + "It currently has %1$d MB.\n"
-        //                    + "For faster builds, increase the maximum heap size for the "
-        //                    + "Gradle daemon to more than %2$s.\n"
-        //                    + "To do this, set org.gradle.jvmargs=-Xmx%2$s in the "
-        //                    + "project gradle.properties.\n"
-        //                    + "For more information see "
-        //                    + "https://docs.gradle.org/current/userguide/build_environment.html\n",
-        //            maxMemory / (1024 * 1024),
-        //            (dslRequest == null) ? "1G" :
-        //                    dslRequest + " " + "as specified in dexOptions.javaMaxHeapSize"));
-        //    return false;
-        //}
-        //return true;
-    }
-
-    private static final long DEFAULT_DEX_HEAP_SIZE = 1024 * 1024 * 1024; // 1 GiB
-
-    @VisibleForTesting
-    static long parseHeapSize(@Nullable String sizeParameter) {
-        if (sizeParameter == null) {
-            return DEFAULT_DEX_HEAP_SIZE;
-        }
-        long multiplier = 1;
-        if (SdkUtils.endsWithIgnoreCase(sizeParameter ,"k")) {
-            multiplier = 1024;
-        } else if (SdkUtils.endsWithIgnoreCase(sizeParameter ,"m")) {
-            multiplier = 1024 * 1024;
-        } else if (SdkUtils.endsWithIgnoreCase(sizeParameter ,"g")) {
-            multiplier = 1024 * 1024 * 1024;
-        }
-
-        if (multiplier != 1) {
-            sizeParameter = sizeParameter.substring(0, sizeParameter.length() - 1);
-        }
-
-        try {
-            return multiplier * Long.parseLong(sizeParameter);
-        } catch (NumberFormatException e) {
-            return DEFAULT_DEX_HEAP_SIZE;
-        }
+    private static boolean shouldDexInProcess(boolean instantRunMode) {
+        return Boolean.getBoolean(DEX_IN_PROCESS_PROPERTY);
     }
 
     public Set<String> createMainDexList(
