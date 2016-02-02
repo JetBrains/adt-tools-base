@@ -29,14 +29,11 @@ import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
 import com.android.sdklib.repository.local.PackageParserUtils;
-import com.android.sdklib.repositoryv2.IdDisplay;
 import com.android.sdklib.repositoryv2.LegacyRepoUtils;
 import com.android.sdklib.repositoryv2.meta.DetailsTypes;
 import com.android.sdklib.repositoryv2.meta.Library;
-import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Table;
 
 import java.io.File;
 import java.util.List;
@@ -61,11 +58,6 @@ public class AddonTarget implements IAndroidTarget {
      * The target on which this addon is based.
      */
     private IAndroidTarget mBasePlatform;
-
-    /**
-     * Map from tag and abi to the {@link ISystemImage}s provided by this target.
-     */
-    private Table<IdDisplay, String, ISystemImage> mSystemImages;
 
     /**
      * All skins included in this target, including those in this addon, the base package, and
@@ -99,16 +91,8 @@ public class AddonTarget implements IAndroidTarget {
         assert details instanceof DetailsTypes.AddonDetailsType;
         mDetails = (DetailsTypes.AddonDetailsType) details;
 
-        mSystemImages = getAddonSystemImages(sysImgMgr);
-
         // Gather skins for this target. We'll only keep a single skin with each name.
         Map<String, File> skins = Maps.newHashMap();
-        // First collect skins from all system images associated with this target.
-        for (ISystemImage img : mSystemImages.values()) {
-            for (File skin : img.getSkins()) {
-                skins.put(skin.getName(), skin);
-            }
-        }
         // Collect skins from the base target. This have precedence over system image skins with the
         // same name.
         for (File skin : baseTarget.getSkins()) {
@@ -296,17 +280,6 @@ public class AddonTarget implements IAndroidTarget {
     }
 
     @Override
-    public ISystemImage[] getSystemImages() {
-        return mSystemImages.values().toArray(new ISystemImage[mSystemImages.size()]);
-    }
-
-    @Nullable
-    @Override
-    public ISystemImage getSystemImage(@NonNull IdDisplay tag, @NonNull String abiType) {
-        return mSystemImages.get(tag, abiType);
-    }
-
-    @Override
     public boolean canRunOn(IAndroidTarget target) {
         // basic test
         if (target == this) {
@@ -367,20 +340,5 @@ public class AddonTarget implements IAndroidTarget {
         }
 
         return versionDiff;
-    }
-
-    /**
-     * Get all the system images supported by an add-on target.
-     */
-    @NonNull
-    private Table<IdDisplay, String, ISystemImage> getAddonSystemImages(SystemImageManager imgMgr) {
-        Table<IdDisplay, String, ISystemImage> result = HashBasedTable.create();
-        for (ISystemImage img : imgMgr
-                .lookup(mDetails.getTag(), DetailsTypes.getAndroidVersion(mDetails),
-                        mDetails.getVendor())) {
-            result.put(img.getTag(), img.getAbiType(), img);
-        }
-
-        return result;
     }
 }

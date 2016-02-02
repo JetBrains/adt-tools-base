@@ -27,21 +27,17 @@ import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
-import com.android.sdklib.ISystemImage;
 import com.android.sdklib.SdkVersionInfo;
 import com.android.sdklib.internal.project.ProjectProperties;
 import com.android.sdklib.repository.local.PackageParserUtils;
 import com.android.sdklib.repositoryv2.AndroidSdkHandler;
-import com.android.sdklib.repositoryv2.IdDisplay;
 import com.android.sdklib.repositoryv2.meta.DetailsTypes;
 import com.google.common.base.Charsets;
-import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
-import com.google.common.collect.Table;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -49,7 +45,6 @@ import com.google.gson.reflect.TypeToken;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.lang.reflect.Type;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -108,11 +103,6 @@ public class PlatformTarget implements IAndroidTarget {
     private BuildToolInfo mBuildToolInfo;
 
     /**
-     * Map from tag and abi to the system images associated with this platform.
-     */
-    private Table<IdDisplay, String, ISystemImage> mSystemImages;
-
-    /**
      * Construct a new {@code PlatformTarget} based on the given package.
      */
     public PlatformTarget(@NonNull LocalPackage p, @NonNull AndroidSdkHandler sdkHandler,
@@ -147,25 +137,9 @@ public class PlatformTarget implements IAndroidTarget {
             mBuildProps = Maps.newHashMap();
         }
         mBuildToolInfo = sdkHandler.getLatestBuildTool(progress);
-        SystemImageManager sysImgMgr = sdkHandler.getSystemImageManager(progress);
-        mSystemImages = HashBasedTable.create();
-        Multimap<LocalPackage, SystemImage> systemImages = sysImgMgr.getImageMap();
+
         mSkins = Sets
-                .newTreeSet(PackageParserUtils.parseSkinFolder(getFile(IAndroidTarget.SKINS), fop));
-        for (LocalPackage pkg : systemImages.keySet()) {
-            for (SystemImage img : systemImages.get(pkg)) {
-                TypeDetails typeDetails = pkg.getTypeDetails();
-                if (pkg.equals(mPackage) || (typeDetails instanceof DetailsTypes.SysImgDetailsType &&
-                                             ((DetailsTypes.SysImgDetailsType) typeDetails).getVendor() == null &&
-                                             ((DetailsTypes.SysImgDetailsType) typeDetails).getApiLevel() == mDetails
-                                               .getApiLevel())) {
-                    mSystemImages.put(img.getTag(), img.getAbiType(), img);
-                    // We don't worry about duplicate skins here, so we can have them all available
-                    // when assigning one to a system image and can pick the most relevant one.
-                    mSkins.addAll(Arrays.asList(img.getSkins()));
-                }
-            }
-        }
+          .newTreeSet(PackageParserUtils.parseSkinFolder(getFile(IAndroidTarget.SKINS), fop));
     }
 
     /**
@@ -425,13 +399,6 @@ public class PlatformTarget implements IAndroidTarget {
 
     @NonNull
     @Override
-    public ISystemImage[] getSystemImages() {
-        Collection<ISystemImage> values = mSystemImages.values();
-        return values.toArray(new ISystemImage[values.size()]);
-    }
-
-    @NonNull
-    @Override
     public String getShortClasspathName() {
         return getName();
     }
@@ -440,12 +407,6 @@ public class PlatformTarget implements IAndroidTarget {
     @Override
     public String getClasspathName() {
         return getName();
-    }
-
-    @Nullable
-    @Override
-    public ISystemImage getSystemImage(@NonNull IdDisplay tag, @NonNull String abiType) {
-        return mSystemImages.get(tag, abiType);
     }
 
     @Override
