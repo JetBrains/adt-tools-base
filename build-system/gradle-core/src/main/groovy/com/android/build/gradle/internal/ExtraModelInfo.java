@@ -188,7 +188,7 @@ public class ExtraModelInfo extends ErrorReporter {
                 project.getLogger().debug(humanReadableMessage(message));
                 break;
             case SIMPLE:
-                project.getLogger().info(humanReadableMessage(message));
+                project.getLogger().debug(humanReadableMessage(message));
                 break;
         }
     }
