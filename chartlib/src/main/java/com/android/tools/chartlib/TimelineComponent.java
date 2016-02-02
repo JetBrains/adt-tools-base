@@ -76,8 +76,6 @@ public final class TimelineComponent extends AnimatedComponent
 
     private final float mInitialMarkerSeparation;
 
-    private final List<StreamInfo> mStreams = new ArrayList<StreamInfo>();
-
     private Map<Integer, Style> mStyles;
 
     private boolean mFirstFrame;
@@ -160,14 +158,14 @@ public final class TimelineComponent extends AnimatedComponent
     private int[] mTypes;
 
     /**
-     * The render values of the samples depending on the layout mode, as in mValues[stream][sample]
+     * Each list member represents a different stream.
      */
-    private final float[][] mValues;
+    private final List<StreamComponent> mStreamComponents = new ArrayList<StreamComponent>();
 
     /**
-     * The last values of the samples for each stream
+     * Listeners which are notified when streams are modified.
      */
-    private final float[] mCurrent;
+    private final List<Listener> myListeners = new ArrayList<Listener>();
 
     /**
      * The number of events to render.
@@ -234,18 +232,16 @@ public final class TimelineComponent extends AnimatedComponent
         mInitialMax = initialMax;
         mAbsoluteMax = absoluteMax;
         mInitialMarkerSeparation = initialMarkerSeparation;
-        int streams = mData.getStreamCount();
         addHierarchyListener(this);
-        mValues = new float[streams][];
-        mCurrent = new float[streams];
         mSize = 0;
-        for (int i = 0; i < streams; i++) {
-            mStreams.add(new StreamInfo("Stream " + i, Color.BLACK));
-        }
         mStyles = new HashMap<Integer, Style>();
         mUnits = "";
         mEventsInfo = new TIntObjectHashMap<EventInfo>();
         setOpaque(true);
+        // TODO: Improve the initial stream set up, as MonitorView needs configure stream name, color, etc before the first data update.
+        for (int i = 0; i < mData.getStreamCount(); i++) {
+            addStream(mData.getStream(i).getId());
+        }
         reset();
     }
 
@@ -258,12 +254,25 @@ public final class TimelineComponent extends AnimatedComponent
     }
 
     public void configureStream(int stream, String name, Color color, boolean isMirrored) {
-        assert stream < mStreams.size() : String
-            .format("Attempting to configure out of bounds stream: Stream: %1$d, Size %2$d", stream, mStreams.size());
-        StreamInfo data = mStreams.get(stream);
-        data.name = name;
-        data.color = color;
-        data.isMirrored = isMirrored;
+        assert stream < mStreamComponents.size() : String
+            .format("Attempting to configure out of bounds stream: Stream: %1$d, Size %2$d", stream, mStreamComponents.size());
+        StreamComponent streamComponent = mStreamComponents.get(stream);
+        streamComponent.name = name;
+        streamComponent.color = color;
+        streamComponent.isMirrored = isMirrored;
+    }
+
+    private void addStream(String id) {
+        int newStreamIndex = mStreamComponents.size();
+        int streamValuesSize = mTimes != null ? mTimes.length : 0;
+        mStreamComponents.add(new StreamComponent(streamValuesSize, id, Color.BLACK, false));
+        for (Listener listener : myListeners) {
+            listener.onStreamAdded(newStreamIndex, id);
+        }
+    }
+
+    public void addListener(@NonNull Listener listener) {
+        myListeners.add(listener);
     }
 
     public void configureEvent(int type, int stream, Icon icon, Color color,
@@ -318,9 +327,9 @@ public final class TimelineComponent extends AnimatedComponent
         g2d.setFont(DEFAULT_FONT.deriveFont(5.0f));
         for (int i = 0; i < mSize; ++i) {
             if (mTimes[i] > mBeginTime && mTimes[i] < mEndTime) {
-                for (int j = 0; j < mValues.length; ++j) {
+                for (int j = 0; j < mStreamComponents.size(); ++j) {
                     int x = (int) timeToX(mTimes[i]);
-                    int y = (int) valueToY(mValues[j][i]);
+                    int y = (int) valueToY(mStreamComponents.get(j).values[i]);
                     g2d.setColor(new Color((17 * mTypes[i]) % 255, (121 * mTypes[i]) % 255,
                                                 (71 * mTypes[i]) % 255));
                     g2d.drawLine(x, y - 2, x, y + 2);
@@ -350,15 +359,15 @@ public final class TimelineComponent extends AnimatedComponent
                 return;
             }
             int drawnSegments = 0;
-            for (int j = mValues.length - 1; j >= 0; j--) {
+            for (int j = mStreamComponents.size() - 1; j >= 0; j--) {
                 Path2D.Float path = new Path2D.Float();
                 path.moveTo(timeToX(mTimes[from]), valueToY(0.0f));
+                float[] values = mStreamComponents.get(j).values;
                 for (int i = from; i <= to; i++) {
-                    float val = mValues[j][i];
-                    path.lineTo(timeToX(mTimes[i]), valueToY(Math.min(val, mAbsoluteMax)));
+                    path.lineTo(timeToX(mTimes[i]), valueToY(Math.min(values[i], mAbsoluteMax)));
                 }
                 path.lineTo(timeToX(mTimes[to]), valueToY(0.0f));
-                g2d.setColor(mStreams.get(j).color);
+                g2d.setColor(mStreamComponents.get(j).color);
                 g2d.fill(path);
 
                 if (!mStyles.isEmpty()) {
@@ -366,13 +375,13 @@ public final class TimelineComponent extends AnimatedComponent
                     Stroke current = g2d.getStroke();
                     float step = 3.0f;
                     float x0 = timeToX(mTimes[from]);
-                    float y0 = valueToY(mValues[j][from]);
-                    g2d.setColor(mStreams.get(j).color.darker());
+                    float y0 = valueToY(values[from]);
+                    g2d.setColor(mStreamComponents.get(j).color.darker());
                     Stroke stroke = null;
                     float strokeScale = Float.NaN;
                     for (int i = from + 1; i <= to; i++) {
                         float x1 = timeToX(mTimes[i]);
-                        float y1 = valueToY(mValues[j][i]);
+                        float y1 = valueToY(values[i]);
                         Style style = mStyles.get(mTypes[i]);
                         if (style != null && style != Style.NONE) {
                             BasicStroke str = new BasicStroke(1.0f);
@@ -417,8 +426,9 @@ public final class TimelineComponent extends AnimatedComponent
     private float interpolate(int stream, int sample, float time) {
         int prev = sample > 0 ? sample - 1 : 0;
         int next = sample < mSize ? sample : mSize - 1;
-        float a = mValues[stream][prev];
-        float b = mValues[stream][next];
+        float[] values = mStreamComponents.get(stream).values;
+        float a = values[prev];
+        float b = values[next];
         float delta = mTimes[next] - mTimes[prev];
         float ratio = delta != 0 ? (time - mTimes[prev]) / delta : 1.0f;
         return (b - a) * ratio + a;
@@ -457,9 +467,9 @@ public final class TimelineComponent extends AnimatedComponent
                         p.lineTo(x, y);
                         float endTime = Float.isNaN(mEventEnd[e]) ? mEndTime : mEventEnd[e];
                         int i = s;
+                        float[] values = mStreamComponents.get(info.stream).values;
                         for (; i < mSize && mTimes[i] < endTime; i++) {
-                            float val = mValues[info.stream][i];
-                            p.lineTo(timeToX(mTimes[i]), valueToY(val));
+                            p.lineTo(timeToX(mTimes[i]), valueToY(values[i]));
                         }
                         p.lineTo(timeToX(endTime), valueToY(interpolate(info.stream, i, endTime)));
                         p.lineTo(timeToX(closed ? mEventEnd[e] : endTime), valueToY(0));
@@ -512,13 +522,13 @@ public final class TimelineComponent extends AnimatedComponent
     private void drawLabels(Graphics2D g2d) {
         g2d.setFont(DEFAULT_FONT);
         FontMetrics metrics = g2d.getFontMetrics();
-        for (int i = 0; i < mStreams.size() && mSize > 0; i++) {
-            StreamInfo stream = mStreams.get(i);
+        for (int i = 0; i < mStreamComponents.size() && mSize > 0; i++) {
+            StreamComponent stream = mStreamComponents.get(i);
             g2d.setColor(stream.color);
-            int y = TOP_MARGIN + 15 + (mStreams.size() - i - 1) * 20;
+            int y = TOP_MARGIN + 15 + (mStreamComponents.size() - i - 1) * 20;
             g2d.fillRect(mRight + 20, y, 15, 15);
             g2d.setColor(TEXT_COLOR);
-            g2d.drawString(String.format("%s [%.2f %s]", stream.name, mCurrent[i], mUnits), mRight + 40,
+            g2d.drawString(String.format("%s [%.2f %s]", stream.name, mStreamComponents.get(i).currentValue, mUnits), mRight + 40,
                            y + 7 + metrics.getAscent() * .5f);
         }
     }
@@ -614,8 +624,8 @@ public final class TimelineComponent extends AnimatedComponent
     }
 
     private boolean hasMirroredStream() {
-        for (int i = 0; i < mStreams.size(); i++) {
-            if (mStreams.get(i).isMirrored) {
+        for (int i = 0; i < mStreamComponents.size(); i++) {
+            if (mStreamComponents.get(i).isMirrored) {
                 return true;
             }
         }
@@ -646,44 +656,83 @@ public final class TimelineComponent extends AnimatedComponent
         }
     }
 
+    private void updateStreams() {
+        int streamCountFromData = mData.getStreamCount();
+        int streamIndex = 0;
+        Iterator<StreamComponent> iterator = mStreamComponents.iterator();
+        while (iterator.hasNext()) {
+            StreamComponent streamComponent = iterator.next();
+            if (streamIndex < streamCountFromData && streamComponent.id.equals(mData.getStream(streamIndex).getId())) {
+                streamIndex++;
+            }
+            else {
+                iterator.remove();
+            }
+        }
+        for (int i = streamIndex; i < streamCountFromData; i++) {
+            addStream(mData.getStream(i).getId());
+        }
+    }
+
     @Override
     protected void updateData() {
         long start;
         synchronized (mData) {
+            updateStreams();
+
             start = mData.getStartTime();
             mSize = mData.size();
-            assert mData.getStreamCount() == mValues.length;
             float lastUpdatedTime = mTimes != null ? mTimes[mTimes.length - 1] : 0;
             if (mTimes == null || mTimes.length < mSize) {
                 int alloc = Math.max(mSize, mTimes == null ? 64 : mTimes.length * 2);
                 mTimes = new float[alloc];
                 mTypes = new int[alloc];
                 for (int j = 0; j < mData.getStreamCount(); ++j) {
-                    mValues[j] = new float[alloc];
+                    mStreamComponents.get(j).values = new float[alloc];
                 }
             }
+
+            for (int i = 0; i < mSize; ++i) {
+                TimelineData.SampleInfo info = mData.getSampleInfo(i);
+                mTimes[i] = info.time;
+                mTypes[i] = info.type;
+            }
+
             float cappedMax = 0;
             float cappedMin = 0;
-            for (int i = 0; i < mSize; ++i) {
-                TimelineData.Sample sample = mData.get(i);
-                mTimes[i] = sample.time;
-                mTypes[i] = sample.type;
-                float value = 0.0f;
-                float mirroredValue = 0.0f;
-                for (int j = 0; j < mData.getStreamCount(); ++j) {
-                    if (mStackStreams) {
-                        mValues[j][i] = mStreams.get(j).isMirrored ? (mirroredValue -= sample.values[j]) : (value += sample.values[j]);
-                    } else {
-                        mValues[j][i] = mStreams.get(j).isMirrored ? -sample.values[j] : sample.values[j];
+            StreamComponent lastStreamForNonMirroredStack = null;
+            StreamComponent lastStreamForMirroredStack = null;
+            for (int streamIndex = 0; streamIndex < mStreamComponents.size(); streamIndex++) {
+                StreamComponent streamComponent = mStreamComponents.get(streamIndex);
+                TimelineData.Stream streamFromData = mData.getStream(streamIndex);
+                for (int i = 0; i < mSize; ++i) {
+                    float value = streamFromData.get(i);
+                    if (streamComponent.isMirrored) {
+                        value = -Math.abs(value);
                     }
+                    if (mStackStreams) {
+                        if (streamComponent.isMirrored && lastStreamForMirroredStack != null) {
+                            value += lastStreamForMirroredStack.values[i];
+                        }
+                        else if (!streamComponent.isMirrored && lastStreamForNonMirroredStack != null) {
+                            value += lastStreamForNonMirroredStack.values[i];
+                        }
+                    }
+                    streamComponent.values[i] = value;
                     if (mTimes[i] > lastUpdatedTime) {
-                        cappedMax = Math.max(cappedMax, mValues[j][i]);
-                        cappedMin = Math.min(cappedMin, mValues[j][i]);
+                        cappedMax = Math.max(cappedMax, value);
+                        cappedMin = Math.min(cappedMin, value);
                     }
                 }
-            }
-            for (int j = 0; j < mData.getStreamCount(); ++j) {
-                mCurrent[j] = mSize > 0 ? mData.get(mSize - 1).values[j] : 0.0f;
+                if (mSize > 0) {
+                    streamComponent.currentValue = streamFromData.get(mSize - 1);
+                }
+                if (streamComponent.isMirrored) {
+                    lastStreamForMirroredStack = streamComponent;
+                }
+                else {
+                    lastStreamForNonMirroredStack = streamComponent;
+                }
             }
 
             // Calculate begin and end times in seconds.
@@ -745,7 +794,28 @@ public final class TimelineComponent extends AnimatedComponent
         }
     }
 
-    private static class StreamInfo {
+    public interface Listener {
+
+        /**
+         * An event fired whenever a new Stream is added into a TimelineComponent. It's often a good idea to call
+         * {@link #configureStream(...)} at this point.
+         */
+        void onStreamAdded(int stream, @NonNull String id);
+    }
+
+    private static class StreamComponent {
+
+        /**
+         * The values array length should be the same as the length of mTimes.
+         */
+        public float[] values;
+
+        /**
+         * The stream's latest value.
+         */
+        public float currentValue;
+
+        public final String id;
 
         public String name;
 
@@ -753,12 +823,11 @@ public final class TimelineComponent extends AnimatedComponent
 
         public boolean isMirrored;
 
-        public StreamInfo(@NonNull String name, @NonNull Color color) {
-            this(name, color, false);
-        }
-
-        public StreamInfo(@NonNull String name, @NonNull Color color, boolean isMirrored) {
-            this.name = name;
+        public StreamComponent(int valueSize, @NonNull String id, @NonNull Color color, boolean isMirrored) {
+            this.values = new float[valueSize];
+            this.currentValue = 0;
+            this.id = id;
+            this.name = id;
             this.color = color;
             this.isMirrored = isMirrored;
         }
