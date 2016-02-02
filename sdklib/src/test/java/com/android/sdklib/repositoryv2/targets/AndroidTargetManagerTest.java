@@ -19,7 +19,6 @@ import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.repository.testframework.MockFileOp;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
-import com.android.sdklib.ISystemImage;
 import com.android.sdklib.repositoryv2.AndroidSdkHandler;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -114,35 +113,14 @@ public class AndroidTargetManagerTest extends TestCase {
         assertEquals("Android Open Source Project", target.getVendor());
         assertEquals("/sdk/platforms/android-13/", target.getLocation());
         assertNull(target.getParent());
-        ISystemImage[] images = target.getSystemImages();
-        assertEquals(2, images.length);
-        assertEquals(new File("/sdk/platforms/android-13/images"), images[0].getLocation());
-        assertEquals(new File("/sdk/system-images/android-13/default/x86"),
-                images[1].getLocation());
+
         assertEquals(ImmutableSet.of(new File("/sdk/platforms/android-13/skins/HVGA"),
-                new File("/sdk/platforms/android-13/skins/WVGA800"),
-                new File("/sdk/system-images/android-13/default/x86/skins/res1"),
-                new File("/sdk/system-images/android-13/default/x86/skins/res2")),
+                new File("/sdk/platforms/android-13/skins/WVGA800")),
                 ImmutableSet.copyOf(target.getSkins()));
         assertEquals(ImmutableList.of("/sdk/platforms/android-13/android.jar"),
                 target.getBootClasspath());
         assertEquals(new File("/sdk/build-tools/23.0.2"), target.getBuildToolInfo().getLocation());
         assertEquals(new File("/sdk/platforms/android-13/skins/WXGA"), target.getDefaultSkin());
-    }
-
-    private static void verifyMissing13(IAndroidTarget target) {
-        assertEquals(new AndroidVersion(13, null), target.getVersion());
-        assertNull(target.getVendor());
-        assertNull(target.getLocation());
-        assertNull(target.getParent());
-        ISystemImage[] images = target.getSystemImages();
-        assertEquals(1, images.length);
-        assertEquals(new File("/sdk/system-images/android-13/default/x86"),
-                images[0].getLocation());
-        assertEquals(0, target.getSkins().length);
-        assertTrue(target.getBootClasspath().isEmpty());
-        assertNull(target.getBuildToolInfo());
-        assertNull(target.getDefaultSkin());
     }
 
     private static void verifyPlatform23(IAndroidTarget target) {
@@ -157,8 +135,6 @@ public class AndroidTargetManagerTest extends TestCase {
                 target.getBootClasspath());
         assertEquals(new File("/sdk/build-tools/23.0.2"), target.getBuildToolInfo().getLocation());
         assertEquals(new File("/sdk/platforms/android-23/skins/WVGA800"), target.getDefaultSkin());
-        ISystemImage[] images = target.getSystemImages();
-        assertEquals(0, images.length);
     }
 
     private static void verifyAddon13(IAndroidTarget target, IAndroidTarget platform13) {
@@ -169,8 +145,6 @@ public class AndroidTargetManagerTest extends TestCase {
         assertEquals(ImmutableSet.of(
                 new File("/sdk/platforms/android-13/skins/HVGA"),
                 new File("/sdk/add-ons/addon-google_tv_addon-google-13/skins/1080p"),
-                new File("/sdk/system-images/android-13/default/x86/skins/res2"),
-                new File("/sdk/system-images/android-13/default/x86/skins/res1"),
                 new File("/sdk/add-ons/addon-google_tv_addon-google-13/skins/720p-overscan"),
                 new File("/sdk/platforms/android-13/skins/WVGA800")),
                 ImmutableSet.copyOf(target.getSkins()));
@@ -179,26 +153,6 @@ public class AndroidTargetManagerTest extends TestCase {
         assertEquals(new File("/sdk/build-tools/23.0.2"), target.getBuildToolInfo().getLocation());
         assertEquals(new File("/sdk/add-ons/addon-google_tv_addon-google-13/skins/720p"),
                 target.getDefaultSkin());
-        ISystemImage[] images = target.getSystemImages();
-        assertEquals(1, images.length);
-        assertEquals(new File("/sdk/add-ons/addon-google_tv_addon-google-13/images/x86"),
-                images[0].getLocation());
-    }
-
-    private static void verifyMissingAddon13(IAndroidTarget target) {
-        assertEquals(new AndroidVersion(13, null), target.getVersion());
-        assertEquals("Google Inc.", target.getVendor());
-        assertNull(target.getLocation());
-        assertNull(target.getParent());
-        assertEquals(0, target.getSkins().length);
-        assertTrue(target.getBootClasspath().isEmpty());
-        assertNull(target.getBuildToolInfo());
-        assertNull(target.getDefaultSkin());
-        // The new implementation picks up the system image within the addon itself.
-        ISystemImage[] images = target.getSystemImages();
-        assertEquals(1, images.length);
-        assertEquals(new File("/sdk/add-ons/addon-google_tv_addon-google-13/images/x86"),
-                images[0].getLocation());
     }
 
     private static void verifyAddon23(IAndroidTarget target, IAndroidTarget platform23) {
@@ -213,10 +167,6 @@ public class AndroidTargetManagerTest extends TestCase {
                 target.getBootClasspath());
         assertEquals(new File("/sdk/build-tools/23.0.2"), target.getBuildToolInfo().getLocation());
         assertEquals(new File("/sdk/platforms/android-23/skins/WVGA800"), target.getDefaultSkin());
-        ISystemImage[] images = target.getSystemImages();
-        assertEquals(1, images.length);
-        assertEquals(new File("/sdk/system-images/android-23/google_apis/x86_64"),
-                images[0].getLocation());
 
         Set<IAndroidTarget.OptionalLibrary> desired
                 = Sets.<IAndroidTarget.OptionalLibrary>newHashSet(
@@ -233,22 +183,6 @@ public class AndroidTargetManagerTest extends TestCase {
         Set<IAndroidTarget.OptionalLibrary> libraries = Sets
                 .newHashSet(target.getAdditionalLibraries());
         assertEquals(desired, libraries);
-    }
-
-    private static void verifyMissingAddon23(IAndroidTarget target) {
-        assertEquals(new AndroidVersion(23, null), target.getVersion());
-        assertEquals("Google Inc.", target.getVendor());
-        assertNull(target.getLocation());
-        assertNull(target.getParent());
-        assertEquals(0, target.getSkins().length);
-        assertTrue(target.getBootClasspath().isEmpty());
-        assertNull(target.getBuildToolInfo());
-        assertNull(target.getDefaultSkin());
-
-        ISystemImage[] images = target.getSystemImages();
-        assertEquals(1, images.length);
-        assertEquals(new File("/sdk/system-images/android-23/google_apis/x86_64"),
-                images[0].getLocation());
     }
 
     private static void recordBuildTool23(MockFileOp fop) {
