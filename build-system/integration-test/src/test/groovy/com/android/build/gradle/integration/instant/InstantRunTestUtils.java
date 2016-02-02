@@ -45,10 +45,10 @@ import java.io.File;
 import java.util.Collection;
 import java.util.List;
 
-final class InstantRunTestUtils {
+public final class InstantRunTestUtils {
 
     @NonNull
-    static InstantRunBuildContext loadContext(@NonNull InstantRun instantRunModel)
+    public static InstantRunBuildContext loadContext(@NonNull InstantRun instantRunModel)
             throws Exception {
         InstantRunBuildContext context = new InstantRunBuildContext();
         context.loadFromXmlFile(instantRunModel.getInfoFile());
@@ -56,7 +56,7 @@ final class InstantRunTestUtils {
     }
 
     @NonNull
-    static InstantRun getInstantRunModel(@NonNull AndroidProject project) {
+    public static InstantRun getInstantRunModel(@NonNull AndroidProject project) {
         Collection<Variant> variants = project.getVariants();
         for (Variant variant : variants) {
             if ("debug".equals(variant.getName())) {
@@ -67,19 +67,20 @@ final class InstantRunTestUtils {
     }
 
     @NonNull
-    static List<String> getInstantRunArgs(OptionalCompilationStep... flags) {
-        return getInstantRunArgs(null, null, flags);
+    public static List<String> getInstantRunArgs(OptionalCompilationStep... flags) {
+        return getInstantRunArgs(null, null, ColdswapMode.DEFAULT, flags);
     }
 
     @NonNull
-    static List<String> getInstantRunArgs(int apiLevel,
+    public static List<String> getInstantRunArgs(int apiLevel,
             @NonNull ColdswapMode coldswapMode,
             @NonNull OptionalCompilationStep... flags) {
         return getInstantRunArgs(new AndroidVersion(apiLevel, null),
                 null /* density */, coldswapMode, flags);
     }
 
-    static List<String> getInstantRunArgs(
+    @NonNull
+    public static List<String> getInstantRunArgs(
             @NonNull IDevice device,
             @NonNull ColdswapMode coldswapMode,
             @NonNull OptionalCompilationStep... flags) {

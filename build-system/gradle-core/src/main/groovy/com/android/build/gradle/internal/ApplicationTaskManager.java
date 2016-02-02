@@ -161,30 +161,6 @@ public class ApplicationTaskManager extends TaskManager {
                     }
                 });
 
-        // Add a compile task
-        ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_COMPILE_TASK,
-                new Recorder.Block<Void>() {
-                    @Override
-                    public Void call() {
-                        AndroidTask<? extends JavaCompile> javacTask =
-                                createJavacTask(tasks, variantScope);
-
-                        if (variantData.getVariantConfiguration().getUseJack()) {
-                            createJackTask(tasks, variantScope);
-                        } else {
-                            setJavaCompilerTask(javacTask, tasks, variantScope);
-                            createJarTasks(tasks, variantScope);
-                            createPostCompilationTasks(tasks, variantScope);
-                        }
-                        return null;
-                    }
-                });
-
-        // Add data binding tasks if enabled
-        if (extension.getDataBinding().isEnabled()) {
-            createDataBindingTasks(tasks, variantScope);
-        }
-
         // Add NDK tasks
         if (!isComponentModelPlugin) {
             ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_NDK_TASK,
@@ -213,6 +189,30 @@ public class ApplicationTaskManager extends TaskManager {
                         return null;
                     }
                 });
+
+        // Add a compile task
+        ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_COMPILE_TASK,
+                new Recorder.Block<Void>() {
+                    @Override
+                    public Void call() {
+                        AndroidTask<? extends JavaCompile> javacTask =
+                                createJavacTask(tasks, variantScope);
+
+                        if (variantData.getVariantConfiguration().getUseJack()) {
+                            createJackTask(tasks, variantScope);
+                        } else {
+                            setJavaCompilerTask(javacTask, tasks, variantScope);
+                            createJarTasks(tasks, variantScope);
+                            createPostCompilationTasks(tasks, variantScope);
+                        }
+                        return null;
+                    }
+                });
+
+        // Add data binding tasks if enabled
+        if (extension.getDataBinding().isEnabled()) {
+            createDataBindingTasks(tasks, variantScope);
+        }
 
         if (variantData.getSplitHandlingPolicy().equals(
                 BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY)) {
