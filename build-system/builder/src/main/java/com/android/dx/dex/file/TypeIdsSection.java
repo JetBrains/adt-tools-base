@@ -16,7 +16,6 @@
 
 package com.android.dx.dex.file;
 
-import com.android.dex.DexException;
 import com.android.dex.DexFormat;
 import com.android.dex.DexIndexOverflowException;
 import com.android.dx.command.dexer.Main;
