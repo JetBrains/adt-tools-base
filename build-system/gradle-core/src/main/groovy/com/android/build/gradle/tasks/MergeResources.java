@@ -143,48 +143,7 @@ public class MergeResources extends IncrementalTask {
      */
     @NonNull
     private ILogger getFilteringLogger() {
-        final ILogger delegate = getILogger();
-
-        return new ILogger() {
-            @Override
-            public void error(@Nullable Throwable t, @Nullable String msgFormat, Object... args) {
-                if (msgFormat != null && isIgnored(msgFormat, args)) {
-                    delegate.info(Strings.nullToEmpty(msgFormat), args);
-                } else {
-                    delegate.error(t, msgFormat, args);
-                }
-            }
-
-            @Override
-            public void warning(@NonNull String msgFormat, Object... args) {
-                if (isIgnored(msgFormat, args)) {
-                    delegate.info(msgFormat, args);
-                } else {
-                    delegate.warning(msgFormat, args);
-                }
-            }
-
-            @Override
-            public void info(@NonNull String msgFormat, Object... args) {
-                delegate.info(msgFormat, args);
-            }
-
-            @Override
-            public void verbose(@NonNull String msgFormat, Object... args) {
-                delegate.verbose(msgFormat, args);
-            }
-
-            private boolean isIgnored(String msgFormat, Object... args) {
-                String message = String.format(msgFormat, args);
-                for (Pattern pattern : IGNORED_WARNINGS) {
-                    if (pattern.matcher(message).find()) {
-                        return true;
-                    }
-                }
-
-                return false;
-            }
-        };
+        return new FilteringLogger(getILogger());
     }
 
     @Override
@@ -558,6 +517,54 @@ public class MergeResources extends IncrementalTask {
             mergeResourcesTask.setGeneratedPngsOutputDir(scope.getGeneratedPngsOutputDir());
 
             variantData.mergeResourcesTask = mergeResourcesTask;
+        }
+    }
+
+    private static class FilteringLogger implements ILogger {
+
+        private final ILogger mDelegate;
+
+        FilteringLogger(ILogger delegate) {
+            mDelegate = delegate;
+        }
+
+        @Override
+        public void error(@Nullable Throwable t, @Nullable String msgFormat, Object... args) {
+            if (msgFormat != null && isIgnored(msgFormat, args)) {
+                mDelegate.info(Strings.nullToEmpty(msgFormat), args);
+            } else {
+                mDelegate.error(t, msgFormat, args);
+            }
+        }
+
+        @Override
+        public void warning(@NonNull String msgFormat, Object... args) {
+            if (isIgnored(msgFormat, args)) {
+                mDelegate.info(msgFormat, args);
+            } else {
+                mDelegate.warning(msgFormat, args);
+            }
+        }
+
+        @Override
+        public void info(@NonNull String msgFormat, Object... args) {
+            mDelegate.info(msgFormat, args);
+        }
+
+        @Override
+        public void verbose(@NonNull String msgFormat, Object... args) {
+            mDelegate.verbose(msgFormat, args);
+        }
+
+        private boolean isIgnored(String msgFormat, Object... args) {
+            String message = String.format(msgFormat, args);
+            for (Pattern pattern : IGNORED_WARNINGS) {
+                if (pattern.matcher(message).find()) {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }
