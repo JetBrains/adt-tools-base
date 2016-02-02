@@ -20,7 +20,6 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
-import java.util.Properties;
 import java.util.regex.Pattern;
 
 /**
@@ -46,8 +45,11 @@ public final class AndroidVersion implements Comparable<AndroidVersion> {
     private final int mApiLevel;
     private final String mCodename;
 
-    /** The default AndroidVersion for minSdkVersion and targetSdkVersion if not specified */
+    /** The default AndroidVersion for minSdkVersion and targetSdkVersion if not specified. */
     public static final AndroidVersion DEFAULT = new AndroidVersion(1, null);
+
+    /** First version to use ART by default. */
+    public static final AndroidVersion ART_RUNTIME = new AndroidVersion(21, null);
 
     /**
      * Thrown when an {@link AndroidVersion} object could not be created.
