@@ -21,7 +21,6 @@ import static com.android.sdklib.repositoryv2.meta.DetailsTypes.AddonDetailsType
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.api.LocalPackage;
-import com.android.sdklib.repositoryv2.IdDisplay;
 
 import java.io.File;
 import java.util.List;
@@ -270,23 +269,6 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
      * no properties.
      */
     Map<String, String> getProperties();
-
-    /**
-     * Returns an array of system images for this target.
-     * The array can be empty but not null.
-     */
-    ISystemImage[] getSystemImages();
-
-    /**
-     * Returns the system image information for the given {@code tag} and {@code abiType}.
-     *
-     * @param tag A tag id-display.
-     * @param abiType An ABI type string.
-     * @return An existing {@link ISystemImage} for the requested {@code abiType}
-     *         or null if none exists for this type.
-     */
-    @Nullable
-    ISystemImage getSystemImage(@NonNull IdDisplay tag, @NonNull String abiType);
 
     /**
      * Returns whether the given target is compatible with the receiver.
