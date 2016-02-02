@@ -42,11 +42,16 @@ public abstract class DataFile<I extends DataItem> {
 
     private final FileType mType;
     protected File mFile;
-    protected final Map<String, I> mItems = Maps.newHashMap();
+    protected final Map<String, I> mItems;
 
     DataFile(@NonNull File file, FileType fileType) {
         mType = fileType;
         mFile = file;
+        if (fileType == FileType.SINGLE_FILE) {
+            mItems = Maps.newHashMapWithExpectedSize(1);
+        } else {
+            mItems = Maps.newHashMap();
+        }
     }
 
     /**
