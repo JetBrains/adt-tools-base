@@ -39,6 +39,8 @@ import java.util.Set;
  */
 public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildType, CoreProductFlavor, CoreProductFlavor> {
 
+    @Nullable
+    private Boolean enableInstantRunOverride = null;
     private final MergedNdkConfig mMergedNdkConfig = new MergedNdkConfig();
 
     /**
@@ -156,9 +158,16 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
     }
 
     public boolean isInstantRunSupported() {
+        if (enableInstantRunOverride != null) {
+            return enableInstantRunOverride;
+        }
         return getBuildType().isDebuggable()
                 && (!getBuildType().isMinifyEnabled() || !getBuildType().isUseProguard())
                 && !getType().isForTesting()
                 && !getUseJack();
+    }
+
+    public void setEnableInstantRunOverride(@Nullable Boolean enableInstantRunOverride) {
+        this.enableInstantRunOverride = enableInstantRunOverride;
     }
 }
