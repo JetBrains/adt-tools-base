@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.android.tools.fd.client;
 
-apply plugin: 'java'
-apply plugin: 'jacoco'
+import com.android.annotations.NonNull;
 
-dependencies {
-    compile project(':base:instant-run:instant-run-common')
-    compile project(':base:ddmlib')
-    testCompile 'junit:junit:4.12'
+import java.io.File;
+
+public class InstantRunArtifact {
+
+    @NonNull
+    public final InstantRunArtifactType type;
+
+    @NonNull
+    public final File file;
+
+    public InstantRunArtifact(@NonNull InstantRunArtifactType type, @NonNull File file) {
+        this.type = type;
+        this.file = file;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Artifact %s: %s", type, file.getPath());
+    }
 }
