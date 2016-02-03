@@ -30,7 +30,7 @@ public class CompileOptionsTest {
     public void sourceCompatibilityTest() {
         CompileOptions options = new CompileOptions();
 
-        assertEquals(options.getDefaultJavaVersion(), options.getSourceCompatibility());
+        assertEquals(options.defaultJavaVersion, options.getSourceCompatibility());
 
         options.setSourceCompatibility("1.6");
         assertEquals(JavaVersion.VERSION_1_6, options.getSourceCompatibility());
@@ -52,7 +52,7 @@ public class CompileOptionsTest {
     public void targetCompatibilityTest() {
         CompileOptions options = new CompileOptions();
 
-        assertEquals(options.getDefaultJavaVersion(), options.getTargetCompatibility());
+        assertEquals(options.defaultJavaVersion, options.getTargetCompatibility());
 
         options.setTargetCompatibility("1.6");
         assertEquals(JavaVersion.VERSION_1_6, options.getTargetCompatibility());
