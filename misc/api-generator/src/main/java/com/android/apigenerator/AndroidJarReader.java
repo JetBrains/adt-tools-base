@@ -91,7 +91,7 @@ public class AndroidJarReader {
                         }
 
                         ClassReader reader = new ClassReader(bytes);
-                        ClassNode classNode = new ClassNode();
+                        ClassNode classNode = new ClassNode(Opcodes.ASM5);
                         reader.accept(classNode, 0 /*flags*/);
 
                         ApiClass theClass = addClass(map, classNode.name, apiLevel,
