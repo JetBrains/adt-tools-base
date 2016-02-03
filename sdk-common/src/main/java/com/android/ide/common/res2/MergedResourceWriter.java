@@ -31,6 +31,7 @@ import com.android.ide.common.blame.MergingLog;
 import com.android.ide.common.blame.SourceFile;
 import com.android.ide.common.blame.SourceFilePosition;
 import com.android.ide.common.blame.SourcePosition;
+import com.android.ide.common.internal.NopPngCruncher;
 import com.android.ide.common.internal.PngCruncher;
 import com.android.ide.common.internal.PngException;
 import com.android.resources.ResourceFolderType;
@@ -113,6 +114,16 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
         mPublicFile = publicFile;
         mMergingLog = blameLogFolder != null ? new MergingLog(blameLogFolder) : null;
         mPreprocessor = preprocessor;
+    }
+
+    public static MergedResourceWriter createWriterWithoutPngCruncher(@NonNull File rootFolder,
+                                                                      @Nullable File publicFile,
+                                                                      @Nullable File blameLogFolder,
+                                                                      @NonNull ResourcePreprocessor preprocessor) {
+        return new MergedResourceWriter(rootFolder, new NopPngCruncher(),
+                                        false, /* crunchPng */
+                                        false, /* process9Patch */
+                                        publicFile, blameLogFolder, preprocessor);
     }
 
     @Override
