@@ -57,7 +57,7 @@ class FileUseMap {
      *
      * @param size the size of the file
      */
-    FileUseMap(int size) {
+    FileUseMap(long size) {
         Preconditions.checkArgument(size >= 0, "size < 0");
 
         mSize = size;
