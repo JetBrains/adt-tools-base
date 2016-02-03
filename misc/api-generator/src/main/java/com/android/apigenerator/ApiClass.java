@@ -16,8 +16,6 @@
 
 package com.android.apigenerator;
 
-import com.android.utils.Pair;
-
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,6 +33,59 @@ import java.util.TreeMap;
  */
 @SuppressWarnings({"UnnecessaryUnboxing", "UnnecessaryBoxing"})
 public class ApiClass {
+    public static class Pair<S,T> {
+        private final S mFirst;
+        private final T mSecond;
+
+        private Pair(S first, T second) {
+            this.mFirst = first;
+            this.mSecond = second;
+        }
+
+        public S getFirst() {
+            return mFirst;
+        }
+
+        public T getSecond() {
+            return mSecond;
+        }
+
+        public static <S,T> Pair<S,T> of(S first, T second) {
+            return new Pair<S,T>(first,second);
+        }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + ((mFirst == null) ? 0 : mFirst.hashCode());
+            result = prime * result + ((mSecond == null) ? 0 : mSecond.hashCode());
+            return result;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            Pair other = (Pair) obj;
+            if (mFirst == null) {
+                if (other.mFirst != null)
+                    return false;
+            } else if (!mFirst.equals(other.mFirst))
+                return false;
+            if (mSecond == null) {
+                if (other.mSecond != null)
+                    return false;
+            } else if (!mSecond.equals(other.mSecond))
+                return false;
+            return true;
+        }
+    }
 
     private final String mName;
     private final int mSince;

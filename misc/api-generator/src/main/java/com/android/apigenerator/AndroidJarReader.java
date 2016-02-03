@@ -16,8 +16,7 @@
 
 package com.android.apigenerator;
 
-import com.android.SdkConstants;
-import com.android.utils.Pair;
+import com.android.apigenerator.ApiClass.Pair;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
 import org.objectweb.asm.ClassReader;
@@ -82,7 +81,7 @@ public class AndroidJarReader {
                 while (entry != null) {
                     String name = entry.getName();
 
-                    if (name.endsWith(SdkConstants.DOT_CLASS)) {
+                    if (name.endsWith(".class")) {
                         byte[] bytes = ByteStreams.toByteArray(zis);
                         if (bytes == null) {
                             System.err.println("Warning: Couldn't read " + name);
