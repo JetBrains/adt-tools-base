@@ -59,6 +59,8 @@ public class AndroidGradleOptions {
 
     private static final String PROPERTY_USE_OLD_PACKAGING = "android.useOldPackaging";
 
+    private static final String PROPERTY_KEEP_TIMESTAMPS_IN_APK = "android.keepTimestampsInApk";
+
     private static final String ANDROID_ADDITIONAL_PLUGINS = "android.additional.plugins";
 
     @NonNull
@@ -100,6 +102,10 @@ public class AndroidGradleOptions {
 
     public static boolean useOldPackaging(@NonNull Project project) {
         return getBoolean(project, PROPERTY_USE_OLD_PACKAGING, true);
+    }
+
+    public static boolean keepTimestampsInApk(@NonNull Project project) {
+        return getBoolean(project, PROPERTY_KEEP_TIMESTAMPS_IN_APK);
     }
 
     @Nullable

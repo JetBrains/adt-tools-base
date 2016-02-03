@@ -54,8 +54,6 @@ import java.util.concurrent.Callable;
 @ParallelizableTask
 public class PackageApplication extends IncrementalTask implements FileSupplier {
 
-    private boolean useOldPackaging;
-
     public static final FilterableStreamCollection.StreamFilter sDexFilter =
             new TransformManager.StreamFilter() {
                 @Override
@@ -114,6 +112,10 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
     }
 
     // ----- PRIVATE TASK API -----
+
+    private boolean useOldPackaging;
+
+    private boolean keepTimestampsInApk;
 
     @InputFiles
     @Optional
@@ -441,6 +443,8 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
             packageApp.markerFile =
                     PrePackageApplication.ConfigAction.getMarkerFile(variantScope);
             packageApp.useOldPackaging = AndroidGradleOptions.useOldPackaging(
+                    variantScope.getGlobalScope().getProject());
+            packageApp.keepTimestampsInApk = AndroidGradleOptions.keepTimestampsInApk(
                     variantScope.getGlobalScope().getProject());
         }
 
