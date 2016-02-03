@@ -251,19 +251,21 @@ public class TextFormatTest extends TestCase {
 
     public void testConvertFromHtml2() throws Exception {
         assertEquals(""
-                        + "Using showAsAction=\"always\" in menu XML, or\n"
-                        + "MenuItem.SHOW_AS_ACTION_ALWAYS in Java code is usually a\n"
-                        + "deviation from the user interface style guide.Use ifRoom or\n"
-                        + "the corresponding MenuItem.SHOW_AS_ACTION_IF_ROOM instead.\n"
-                        + "If always is used sparingly there are usually no problems\n"
-                        + "and behavior is roughly equivalent to ifRoom but with\n"
-                        + "preference over other ifRoom items. Using it more than twice\n"
-                        + "in the same menu is a bad idea. This check looks for menu\n"
-                        + "XML files that contain more than two always actions, or some\n"
-                        + "always actions and no ifRoom actions. In Java code, it looks\n"
-                        + "for projects that contain references to\n"
-                        + "MenuItem.SHOW_AS_ACTION_ALWAYS and no references to\n"
-                        + "MenuItem.SHOW_AS_ACTION_IF_ROOM.\n",
+                + "Using showAsAction=\"always\" in menu XML, or\n"
+                + "MenuItem.SHOW_AS_ACTION_ALWAYS in Java code is usually a\n"
+                + "deviation from the user interface style guide.Use ifRoom or\n"
+                + "the corresponding MenuItem.SHOW_AS_ACTION_IF_ROOM instead.\n"
+                + "\n"
+                + "If always is used sparingly there are usually no problems\n"
+                + "and behavior is roughly equivalent to ifRoom but with\n"
+                + "preference over other ifRoom items. Using it more than twice\n"
+                + "in the same menu is a bad idea.\n"
+                + "\n"
+                + "This check looks for menu XML files that contain more than\n"
+                + "two always actions, or some always actions and no ifRoom\n"
+                + "actions. In Java code, it looks for projects that contain\n"
+                + "references to MenuItem.SHOW_AS_ACTION_ALWAYS and no\n"
+                + "references to MenuItem.SHOW_AS_ACTION_IF_ROOM.\n",
                 HTML.convertTo(
                         "Using <code>showAsAction=\"always\"</code> in       menu XML, or " +
                         "<code>MenuItem.SHOW_AS_ACTION_ALWAYS</code> in Java code is usually a deviation " +
@@ -281,6 +283,29 @@ public class TextFormatTest extends TestCase {
                         "<code>MenuItem.SHOW_AS_ACTION_ALWAYS</code> and no references to " +
                         "<code>MenuItem.SHOW_AS_ACTION_IF_ROOM</code>.",
                 TEXT));
+    }
+
+    public void testConvertFromHtml3() throws Exception {
+        assertEquals(""
+                + "Paragraph 1\n"
+                + "Paragraph 2 \n"
+                + "Span 1Span 2\n"
+                + "* List item 1\n"
+                + "* List Item 2\n"
+                + "End paragraph\n"
+                + "This is unformatted text.\n"
+                + "  This is\n"
+                + " formatted text.\n"
+                + "Back to unformatted text.\n",
+                HTML.convertTo("<html><p>Paragraph 1</p><p>Paragraph 2 </p><b>Span 1</b><span>"
+                        + "Span 2</span><br/><ul><li>List item 1<li>List Item 2</ul><p>"
+                        + "End paragraph</p>"
+                        + "  This is   unformatted text."
+                        + "<pre>"
+                        + "  This is\n"
+                        + " formatted text."
+                        + "</pre>Back to   unformatted text.</html>",
+                        TEXT));
     }
 
     public void testNbsp() throws Exception {
