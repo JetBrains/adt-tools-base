@@ -319,6 +319,15 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                                         buildDir,
                                         ndkHandler,
                                         serviceRegistry);
+                                nativeLib.getBinaries().all(new Action<BinarySpec>() {
+                                    @Override
+                                    public void execute(BinarySpec binarySpec) {
+                                        NdkConfiguration.configureNativeBinaryOutputFile(
+                                                (NativeLibraryBinarySpec)binarySpec,
+                                                buildDir,
+                                                ndkConfig.getModuleName());
+                                    }
+                                });
                             }
                         });
                 AndroidComponentSpecInternal androidSpecs =
@@ -392,7 +401,6 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 BinaryContainer binaries,
                 ComponentSpecContainer specs,
                 @Path("android.ndk") final NdkConfig ndkConfig,
-                @Path("buildDir") final File buildDir,
                 final NdkHandler ndkHandler) {
             final NativeLibrarySpec library = specs.withType(NativeLibrarySpec.class)
                     .get(ndkConfig.getModuleName());
@@ -427,7 +435,6 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                                             nativeBin.getTargetPlatform().getName())) {
                                         NdkConfiguration.configureBinary(
                                                 nativeBin,
-                                                buildDir,
                                                 binary.getMergedNdkConfig(),
                                                 ndkHandler);
                                         binary.getNativeBinaries().add(nativeBin);

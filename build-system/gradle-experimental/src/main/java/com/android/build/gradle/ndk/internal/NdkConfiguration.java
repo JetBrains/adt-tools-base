@@ -148,35 +148,50 @@ public class NdkConfiguration {
                 });
     }
 
+
     /**
-     * Configure native binary with variant specific options.
+     * Configure output file of a native library binary.
      */
-    public static void configureBinary(
+    public static void configureNativeBinaryOutputFile(
             NativeLibraryBinarySpec binary,
             final File buildDir,
-            final NdkConfig ndkConfig,
-            final NdkHandler ndkHandler) {
+            final String moduleName) {
         // Set output library filename.
         if (binary instanceof SharedLibraryBinarySpec) {
-            ((SharedLibraryBinarySpec)binary).setSharedLibraryFile(
+            ((SharedLibraryBinarySpec) binary).setSharedLibraryFile(
                     new File(
                             buildDir,
                             NdkNamingScheme.getDebugLibraryDirectoryName(binary)
                                     + "/"
                                     + NdkNamingScheme.getSharedLibraryFileName(
-                                    ndkConfig.getModuleName())));
+                                    moduleName)));
+            ((SharedLibraryBinarySpec) binary).setSharedLibraryLinkFile(
+                    new File(
+                            buildDir,
+                            NdkNamingScheme.getDebugLibraryDirectoryName(binary)
+                                    + "/"
+                                    + NdkNamingScheme.getSharedLibraryFileName(
+                                    moduleName)));
         } else if (binary instanceof StaticLibraryBinarySpec) {
-            ((StaticLibraryBinarySpec)binary).setStaticLibraryFile(
+            ((StaticLibraryBinarySpec) binary).setStaticLibraryFile(
                     new File(
                             buildDir,
                             NdkNamingScheme.getDebugLibraryDirectoryName(binary)
                                     + "/"
                                     + NdkNamingScheme.getStaticLibraryFileName(
-                                    ndkConfig.getModuleName())));
+                                    moduleName)));
         } else {
             throw new AssertionError("Should be unreachable");
         }
+    }
 
+    /**
+     * Configure native binary with variant specific options.
+     */
+    public static void configureBinary(
+            NativeLibraryBinarySpec binary,
+            final NdkConfig ndkConfig,
+            final NdkHandler ndkHandler) {
         String sysroot = ndkHandler.getSysroot(
                 Abi.getByName(binary.getTargetPlatform().getName()));
 
