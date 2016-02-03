@@ -16,11 +16,7 @@
 
 package com.android.tools.profiler;
 
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.*;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,23 +24,35 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 /**
- * Add a log message at the top of an onCreate method, if found.
+ * Instrument an app's custom Application class, adding profiler hooks in its onCreate method.
  *
- * This class is a proof of concept that we can instrument an Android app at compile time.
- * Eventually, this will go away and be replaced with logic that will instrument an app with classes
- * useful for profiling.
+ * This works by finding a custom Application in a user's project and, if found, injecting
+ * supportlib's {@code ProfilerApplication} into its inheritance hierarchy. In other words,
+ * converting this:
+ *
+ * {@code MyApplication extends Application}
+ *
+ * to
+ *
+ * {@code MyApplication extends ProfilerApplication extends Application}
+ *
+ * TODO: If a project has no Application in it already, put a ProfilerApplication in there.
  */
-public final class OnCreateInstrumentor {
+public final class ApplicationInstrumentor {
+
+    private static final String ANDROID_APPLICATION_CLASSNAME = "android/app/Application";
+    private static final String PROFILER_APPLICATION_CLASSNAME
+            = "com/android/tools/profiler/support/ProfilerApplication";
 
     public static void instrument(File activityClass, File outputFile) throws IOException {
 
         ClassWriter cw = new ClassWriter(0);
-        ActivityClassVisitor acv = new ActivityClassVisitor(cw);
+        ClassAdapter ca = new ClassAdapter(cw);
 
         FileInputStream fis = new FileInputStream(activityClass);
         try {
             ClassReader cr = new ClassReader(fis);
-            cr.accept(acv, 0);
+            cr.accept(ca, 0);
         } finally {
             fis.close();
         }
@@ -56,7 +64,7 @@ public final class OnCreateInstrumentor {
             fos.close();
         }
 
-        //// Uncomment to output ASM for the output file
+        // Uncomment to output ASM for the output file
         //{
         //    int flags = ClassReader.SKIP_DEBUG;
         //    System.out.println("TRACING " + outputFile);
@@ -66,20 +74,18 @@ public final class OnCreateInstrumentor {
         //}
     }
 
-    private static final class ActivityClassVisitor extends ClassVisitor implements Opcodes {
+    private static final class ClassAdapter extends ClassVisitor implements Opcodes {
 
-        private String mClassName;
-
-        public ActivityClassVisitor(ClassVisitor classVisitor) {
+        public ClassAdapter(ClassVisitor classVisitor) {
             super(ASM5, classVisitor);
         }
 
         @Override
         public void visit(int version, int access, String name, String signature, String superName,
                 String[] interfaces) {
-
-            String[] parts = name.split("/");
-            mClassName = parts[parts.length - 1];
+            if (superName.equals(ANDROID_APPLICATION_CLASSNAME)) {
+                superName = PROFILER_APPLICATION_CLASSNAME;
+            }
 
             super.visit(version, access, name, signature, superName, interfaces);
         }
@@ -87,34 +93,26 @@ public final class OnCreateInstrumentor {
         @Override
         public MethodVisitor visitMethod(int access, String name, String desc, String signature,
                 String[] exceptions) {
-            assert mClassName != null;
 
-            MethodVisitor mv = cv.visitMethod(access, name, desc, signature, exceptions);
-            if (name.equals("onCreate")) {
-                return mv != null ? new OnCreateVisitor(mClassName, mv) : null;
-            }
-            return mv;
+            MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
+            return (mv != null) ? new MethodAdapter(mv) : null;
         }
     }
 
-    private static final class OnCreateVisitor extends MethodVisitor implements Opcodes {
+    private static final class MethodAdapter extends MethodVisitor implements Opcodes {
 
-        private final String mClassName;
-
-        public OnCreateVisitor(String className, MethodVisitor methodVisitor) {
-            super(ASM5, methodVisitor);
-            mClassName = className;
+        public MethodAdapter(MethodVisitor mv) {
+            super(ASM5, mv);
         }
 
         @Override
-        public void visitCode() {
-            // Log.d(TAG, "onCreate called"); // where TAG is the current class name
-            mv.visitLdcInsn(mClassName);
-            mv.visitLdcInsn(mClassName + "#onCreate called");
-            mv.visitMethodInsn(INVOKESTATIC, "android/util/Log", "d",
-                               "(Ljava/lang/String;Ljava/lang/String;)I", false);
-            mv.visitInsn(POP);
-            super.visitCode();
+        public void visitMethodInsn(int opcode, String owner, String name, String desc,
+                boolean itf) {
+            if (owner.equals(ANDROID_APPLICATION_CLASSNAME)) {
+                owner = PROFILER_APPLICATION_CLASSNAME;
+            }
+
+            super.visitMethodInsn(opcode, owner, name, desc, itf);
         }
     }
 }
