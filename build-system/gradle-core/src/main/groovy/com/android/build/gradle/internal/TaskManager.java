@@ -1922,6 +1922,11 @@ public abstract class TaskManager {
                     task.dependsOn(tasks, deps);
                 }
 
+                // if the task is a no-op then we make assemble task depend on it.
+                if (transform.getScopes().isEmpty()) {
+                    variantScope.getAssembleTask().dependsOn(tasks, task);
+                }
+
             }
         }
 
