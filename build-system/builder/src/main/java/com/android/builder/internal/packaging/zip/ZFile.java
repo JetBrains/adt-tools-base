@@ -54,6 +54,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.regex.Pattern;
 
 /**
@@ -199,10 +201,27 @@ public class ZFile implements Closeable {
 
     /**
      * All entries in the zip file. It includes in-memory changes and may not reflect what is
-     * written on disk.
+     * written on disk. Only entries that have been compressed are in this list.
      */
     @NonNull
     private final Map<String, FileUseMapEntry<StoredEntry>> mEntries;
+
+    /**
+     * Entries added to the zip file, but that are not yet compressed. When compression is done,
+     * these entries are eventually moved to {@link #mEntries}. mUncompressedEntries is a list
+     * because entries need to be kept in the order by which they were added. It allows adding
+     * multiple files with the same name and getting the right notifications on which files replaced
+     * which.
+     *
+     * <p>Files are placed in this list in {@link #add(StoredEntry)} method. This method will
+     * keep files here temporarily and move then to {@link #mEntries} when the data is
+     * available.
+     *
+     * <p>Moving files out of this list to {@link #mEntries} is done by
+     * {@link #processAllReadyEntries()}.
+     */
+    @NonNull
+    private final List<StoredEntry> mUncompressedEntries;
 
     /**
      * Current state of the zip file.
@@ -321,6 +340,7 @@ public class ZFile implements Closeable {
         }
 
         mEntries = Maps.newHashMap();
+        mUncompressedEntries = Lists.newArrayList();
         mExtraDirectoryOffset = 0;
 
         try {
@@ -354,12 +374,23 @@ public class ZFile implements Closeable {
      */
     @NonNull
     public Set<StoredEntry> entries() {
-        Set<StoredEntry> entries = Sets.newHashSet();
+        Map<String, StoredEntry> entries = Maps.newHashMap();
+
         for (FileUseMapEntry<StoredEntry> mapEntry : mEntries.values()) {
-            entries.add(mapEntry.getStore());
+            StoredEntry entry = mapEntry.getStore();
+            assert entry != null;
+            entries.put(entry.getCentralDirectoryHeader().getName(), entry);
         }
 
-        return entries;
+        /*
+         * mUncompressed may override mEntriesReady as we may not have yet processed all
+         * entries.
+         */
+        for (StoredEntry uncompressed : mUncompressedEntries) {
+            entries.put(uncompressed.getCentralDirectoryHeader().getName(), uncompressed);
+        }
+
+        return Sets.newHashSet(entries.values());
     }
 
     /**
@@ -370,6 +401,16 @@ public class ZFile implements Closeable {
      */
     @Nullable
     public StoredEntry get(@NonNull String path) {
+        /*
+         * The latest entries are the last ones in uncompressed and they may eventually override
+         * files in mEntries.
+         */
+        for (StoredEntry stillUncompressed : Lists.reverse(mUncompressedEntries)) {
+            if (stillUncompressed.getCentralDirectoryHeader().getName().equals(path)) {
+                return stillUncompressed;
+            }
+        }
+
         FileUseMapEntry<StoredEntry> found = mEntries.get(path);
         if (found == null) {
             return null;
@@ -666,11 +707,18 @@ public class ZFile implements Closeable {
         }
     }
 
-    /**
+     /**
      * Updates the file writing new entries and removing deleted entries. This will force
      * reopening the file as read/write if the file wasn't open in read/write mode.
+     * @throws IOException failed to update the file; this exception may have been thrown by
+     * the compressor but only reported here
      */
     public void update() throws IOException {
+        /*
+         * Process all background stuff before calling in the extensions.
+         */
+        processAllReadyEntriesWithWait();
+
         notify(new IOExceptionFunction<ZFileExtension, IOExceptionRunnable>() {
             @Nullable
             @Override
@@ -680,6 +728,11 @@ public class ZFile implements Closeable {
                 return input.beforeUpdate();
             }
         });
+
+        /*
+         * Process all background stuff that may be leftover by the extensions.
+         */
+        processAllReadyEntriesWithWait();
 
         if (!mDirty) {
             return;
@@ -1125,6 +1178,11 @@ public class ZFile implements Closeable {
      */
     public void add(@NonNull String name, @NonNull InputStream stream, boolean mayCompress)
             throws IOException {
+        /*
+         * Clean pending background work, if needed.
+         */
+        processAllReadyEntries();
+
         CloseableByteSource source = mTracker.fromStream(stream);
         long crc32 = source.hash(Hashing.crc32()).padToLong();
 
@@ -1170,27 +1228,118 @@ public class ZFile implements Closeable {
             newSource = new ProcessedAndRawByteSources(source, source);
         }
 
-        add(newFileData, newSource);
+        /*
+         * Create the new entry and sets its data source. Offset should be set to -1 automatically
+         * because this is a new file. With offset set to -1, StoredEntry does not try to verify the
+         * local header. Since this is a new file, there is no local header and not checking it is
+         * what we want to happen.
+         */
+        Verify.verify(newFileData.getOffset() == -1);
+        StoredEntry newEntry = new StoredEntry(newFileData, this, newSource);
+
+        add(newEntry);
     }
 
     /**
-     * Adds a new file to the archive. This will not write anything to the zip file, the change is
-     * in-memory only.
+     * Adds a {@link StoredEntry} to the zip. The entry is not immediately added to
+     * {@link #mEntries} because data may not yet be available. Instead, it is placed under
+     * {@link #mUncompressedEntries} and later moved to {@link #processAllReadyEntries()} when
+     * done.
      *
-     * @param newFileData the data for the new file, including correct sizes and CRC32 data. The
-     * offset should be set to {@code -1} because the data should not exist anywhere.
-     * @param source the data source
+     * <p>This method invokes {@link #processAllReadyEntries()} to move the entry if it has already
+     * been computed so, if there is no delay in compression, and no more files are in waiting
+     * queue, then the entry is added to {@link #mEntries} immediately.
+     *
+     * @param newEntry the entry to add
+     * @throws IOException failed to process this entry (or a previous one whose future only
+     * completed now)
+     */
+    private void add(@NonNull final StoredEntry newEntry) throws IOException {
+        mUncompressedEntries.add(newEntry);
+        processAllReadyEntries();
+    }
+
+    /**
+     * Moves all ready entries from {@link #mUncompressedEntries} to {@link #mEntries}. It will
+     * stop as soon as entry whose future has not been completed is found.
+     *
+     * @throws IOException the exception reported in the future computation, if any, or failed
+     * to add a file to the archive
+     */
+    private void processAllReadyEntries() throws IOException {
+        /*
+         * Many things can happen during addToEntries(). Because addToEntries() fires
+         * notifications to extensions, other files can be added, removed, etc. Ee are *not*
+         * guaranteed that new stuff does not get into mUncompressedEntries: add() will still work
+         * and will add new entries in there.
+         *
+         * However -- important -- processReadyEntries() may be invoked during addToEntries()
+         * because of the extension mechanism. This means that stuff *can* be removed from
+         * mUncompressedEntries and moved to mEntries during addToEntries().
+         */
+        while (!mUncompressedEntries.isEmpty()) {
+            StoredEntry next = mUncompressedEntries.get(0);
+            CentralDirectoryHeader cdh = next.getCentralDirectoryHeader();
+            Future<CentralDirectoryHeaderCompressInfo> compressionInfo = cdh.getCompressionInfo();
+            if (!compressionInfo.isDone()) {
+                /*
+                 * First entry in queue is not yet complete. We can't do anything else.
+                 */
+                return;
+            }
+
+            mUncompressedEntries.remove(0);
+
+            try {
+                compressionInfo.get();
+            } catch (InterruptedException e) {
+                throw new IOException("Impossible I/O exception: get for already computed "
+                        + "future throws InterruptedException", e);
+            } catch (ExecutionException e) {
+                throw new IOException("Failed to obtain compression information for entry", e);
+            }
+
+            addToEntries(next);
+        }
+    }
+
+    /**
+     * Waits until {@link #mUncompressedEntries} is empty.
+     *
+     * @throws IOException the exception reported in the future computation, if any, or failed
+     * to add a file to the archive
+     */
+    private void processAllReadyEntriesWithWait() throws IOException {
+        processAllReadyEntries();
+        while (!mUncompressedEntries.isEmpty()) {
+            /*
+             * Wait for the first future to complete and then try again. Keep looping until we're
+             * done.
+             */
+            StoredEntry first = mUncompressedEntries.get(0);
+            CentralDirectoryHeader cdh = first.getCentralDirectoryHeader();
+            cdh.getCompressionInfoWithWait();
+
+            processAllReadyEntries();
+        }
+    }
+
+    /**
+     * Adds a new file to {@link #mEntries}. This is actually added to the zip and its space
+     * allocated in the {@link #mMap}.
+     * @param newEntry the new entry to add
      * @throws IOException failed to add the file
      */
-    private void add(@NonNull CentralDirectoryHeader newFileData,
-            @NonNull ProcessedAndRawByteSources source) throws IOException {
+    private void addToEntries(@NonNull final StoredEntry newEntry) throws IOException {
+
         /*
          * If there is a file with the same name in the archive, remove it. We remove it by
          * calling delete() on the entry (this is the public API to remove a file from the archive).
-         * StoredEntry.delete() will call ZFile.delete(StoredEntry) to perform data structure
-         * cleanup.
+         * StoredEntry.delete() will call {@link ZFile#delete(StoredEntry, boolean)}  to perform
+         * data structure cleanup.
          */
-        FileUseMapEntry<StoredEntry> toReplace = mEntries.get(newFileData.getName());
+        FileUseMapEntry<StoredEntry> toReplace = mEntries.get(
+                newEntry.getCentralDirectoryHeader().getName());
         final StoredEntry replaceStore;
         if (toReplace != null) {
             replaceStore = toReplace.getStore();
@@ -1199,15 +1348,6 @@ public class ZFile implements Closeable {
         } else {
             replaceStore = null;
         }
-
-        /*
-         * Create the new entry and sets its data source. Offset should be set to -1 automatically
-         * because this is a new file. With offset set to -1, StoredEntry does not try to verify the
-         * local header. Since this is a new file, there is no local header and not checking it is
-         * what we want to happen.
-         */
-        Verify.verify(newFileData.getOffset() == -1);
-        final StoredEntry newEntry = new StoredEntry(newFileData, this, source);
 
         /*
          * Find a location in the zip where this entry will be added to and create the map entry.
@@ -1227,7 +1367,7 @@ public class ZFile implements Closeable {
         }
 
         FileUseMapEntry<StoredEntry> fileUseMapEntry = mMap.add(newOffset, newEnd, newEntry);
-        mEntries.put(newFileData.getName(), fileUseMapEntry);
+        mEntries.put(newEntry.getCentralDirectoryHeader().getName(), fileUseMapEntry);
 
         mDirty = true;
 
@@ -1338,7 +1478,8 @@ public class ZFile implements Closeable {
                 /*
                  * Add will replace any current entry with the same name.
                  */
-                add(newFileData, newSource);
+                StoredEntry newEntry = new StoredEntry(newFileData, this, newSource);
+                add(newEntry);
             }
         }
     }
@@ -1349,6 +1490,19 @@ public class ZFile implements Closeable {
      */
     public void touch() {
         mDirty = true;
+    }
+
+    /**
+     * Wait for any background tasks to finish and report any errors. In general this method does
+     * not need to be invoked directly as errors from background tasks are reported during
+     * {@link #add(String, InputStream, boolean)}, {@link #update()} and {@link #close()}.
+     * However, if required for some purposes, <em>e.g.</em>, ensuring all notifications have been
+     * done to extensions, then this method may be called. It will wait for all background tasks
+     * to complete.
+     * @throws IOException some background work failed
+     */
+    public void finishAllBackgroundTasks() throws IOException {
+        processAllReadyEntriesWithWait();
     }
 
     /**
@@ -1471,7 +1625,8 @@ public class ZFile implements Closeable {
         /*
          * Add the new file. This will replace the existing one.
          */
-        add(cdh, newSource);
+        StoredEntry newEntry = new StoredEntry(cdh, this, newSource);
+        add(newEntry);
         return true;
     }
 

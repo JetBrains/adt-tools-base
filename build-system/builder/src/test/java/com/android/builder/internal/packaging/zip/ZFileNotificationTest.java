@@ -119,6 +119,7 @@ public class ZFileNotificationTest {
         kl.assertClear();
 
         zf.add("foo", new ByteArrayInputStream(new byte[] { 1, 2 }));
+        zf.finishAllBackgroundTasks();
         assertEquals(1, kl.added.size());
         StoredEntry addedSe = kl.added.get(0).getFirst();
         assertNull(kl.added.get(0).getSecond());
@@ -142,6 +143,7 @@ public class ZFileNotificationTest {
         kl.assertClear();
 
         zf.add("foo", new ByteArrayInputStream(new byte[] { 1, 2 }));
+        zf.finishAllBackgroundTasks();
         kl.reset();
 
         StoredEntry foo = zf.get("foo");
@@ -165,10 +167,12 @@ public class ZFileNotificationTest {
         kl.assertClear();
 
         zf.add("foo", new ByteArrayInputStream(new byte[] { 1, 2 }));
+        zf.finishAllBackgroundTasks();
         StoredEntry foo1 = zf.get("foo");
         kl.reset();
 
         zf.add("foo", new ByteArrayInputStream(new byte[] { 2, 3 }));
+        zf.finishAllBackgroundTasks();
         StoredEntry foo2 = zf.get("foo");
 
         assertEquals(1, kl.added.size());
@@ -190,6 +194,7 @@ public class ZFileNotificationTest {
         kl.assertClear();
 
         zf.add("foo", new ByteArrayInputStream(new byte[] { 1, 2 }));
+        zf.finishAllBackgroundTasks();
         kl.reset();
         zf.close();
 
@@ -213,6 +218,7 @@ public class ZFileNotificationTest {
         kl.assertClear();
 
         zf.add("foo", new ByteArrayInputStream(new byte[] { 1, 2 }));
+        zf.finishAllBackgroundTasks();
         kl.reset();
         zf.update();
 
@@ -240,6 +246,7 @@ public class ZFileNotificationTest {
         kl.reset();
 
         zf.add("bar", new ByteArrayInputStream(new byte[] { 2, 3 }));
+        zf.finishAllBackgroundTasks();
         kl.reset();
 
         zf.update();
@@ -261,6 +268,7 @@ public class ZFileNotificationTest {
         kl.assertClear();
 
         zf.add("foo", new ByteArrayInputStream(new byte[] { 1, 2 }));
+        zf.finishAllBackgroundTasks();
         assertEquals(1, kl.added.size());
         kl.added.clear();
         kl.assertClear();
@@ -268,6 +276,7 @@ public class ZFileNotificationTest {
         zf.removeZFileExtension(kl);
 
         zf.add("foo", new ByteArrayInputStream(new byte[] { 2, 3 }));
+        zf.finishAllBackgroundTasks();
         kl.assertClear();
 
         zf.close();
@@ -324,6 +333,7 @@ public class ZFileNotificationTest {
         kl2.assertClear();
 
         zf.add("xpto", new ByteArrayInputStream(new byte[] { 1, 2 }));
+        zf.finishAllBackgroundTasks();
 
         assertEquals(3, kl1.added.size());
         kl1.added.clear();
@@ -335,5 +345,46 @@ public class ZFileNotificationTest {
         assertNull(death[0]);
 
         zf.close();
+    }
+
+    @Test
+    public void canAddFilesDuringUpdateNotification() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
+        final ZFile zf = new ZFile(zipFile);
+
+        final IOException death[] = new IOException[1];
+
+        final KeepListener kl1 = new KeepListener();
+        zf.addZFileExtension(kl1);
+
+        zf.add("foo", new ByteArrayInputStream(new byte[] { 1, 2 }));
+        zf.finishAllBackgroundTasks();
+
+        kl1.returnRunnable = new IOExceptionRunnable() {
+            private boolean once = false;
+
+            @Override
+            public void run() {
+                if (once) {
+                    return;
+                }
+
+                once = true;
+
+                try {
+                    zf.add("bar", new ByteArrayInputStream(new byte[] { 1, 2 }));
+                } catch (IOException e ) {
+                    death[0] = e;
+                }
+            }
+        };
+
+        zf.close();
+        ZFile zf2 = new ZFile(zipFile);
+        StoredEntry fooFile = zf2.get("foo");
+        assertNotNull(fooFile);
+        StoredEntry barFile = zf2.get("bar");
+        assertNotNull(barFile);
+        zf2.close();
     }
 }
