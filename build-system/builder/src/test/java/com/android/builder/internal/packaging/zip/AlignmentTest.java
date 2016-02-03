@@ -180,6 +180,7 @@ public class AlignmentTest {
 
         ZFile zf = new ZFile(newZFile);
         zf.add("file0.txt", new ByteArrayInputStream(testBytes0), false);
+        zf.finishAllBackgroundTasks();
         zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*\\.txt"), 1024));
         zf.add("file1.txt", new ByteArrayInputStream(testBytes1), false);
         zf.close();
