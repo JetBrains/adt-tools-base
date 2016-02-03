@@ -365,16 +365,9 @@ public class LibraryTaskManager extends TaskManager {
 
                             AndroidTask<TransformTask> task = transformManager
                                     .addTransform(tasks, variantScope, transform);
-                            if (task != null) {
-                                List<Object> deps = customTransformsDependencies.get(i);
-                                if (!deps.isEmpty()) {
-                                    task.dependsOn(tasks, deps);
-                                }
-
-                                // if the task is a no-op then we make assemble task depend on it.
-                                if (transform.getScopes().isEmpty()) {
-                                    variantScope.getAssembleTask().dependsOn(tasks, task);
-                                }
+                            List<Object> deps = customTransformsDependencies.get(i);
+                            if (!deps.isEmpty()) {
+                                task.dependsOn(tasks, deps);
                             }
                         }
 
