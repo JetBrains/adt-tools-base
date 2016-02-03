@@ -16,42 +16,48 @@
 
 package com.android.build.gradle.internal;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
+import com.android.build.gradle.tasks.factory.JavaCompileConfigAction;
 import com.google.common.base.Charsets;
+
 import org.gradle.api.JavaVersion;
 
 import java.util.Locale;
 
 /**
- * Compilation options.
+ * Java compilation options.
  */
 public class CompileOptions {
+    private static final String VERSION_PREFIX = "VERSION_";
+
     @Nullable
     private JavaVersion sourceCompatibility;
 
     @Nullable
     private JavaVersion targetCompatibility;
 
+    @NonNull
     private String encoding = Charsets.UTF_8.name();
 
-    /**
-     * Default Java version that will be used if the source and target compatibility levels will
-     * not be set explicitly.
-     */
-    private JavaVersion defaultJavaVersion = JavaVersion.VERSION_1_6;
+    /** The default value is chosen in {@link JavaCompileConfigAction}. */
+    private Boolean incremental = null;
 
-    private boolean ndkCygwinMode = false;
+    /** @see #setDefaultJavaVersion(JavaVersion) */
+    @NonNull
+    @VisibleForTesting
+    JavaVersion defaultJavaVersion = JavaVersion.VERSION_1_6;
 
-    /**
-     * Language level of the source code.
-     */
+    /** @see #getSourceCompatibility() */
     public void setSourceCompatibility(@NonNull Object sourceCompatibility) {
         this.sourceCompatibility = convert(sourceCompatibility);
     }
 
     /**
-     * Language level of the source code.
+     * Language level of the java source code.
      *
      * <p>Similar to what <a href="http://www.gradle.org/docs/current/userguide/java_plugin.html">
      * Gradle Java plugin</a> uses. Formats supported are:
@@ -67,9 +73,7 @@ public class CompileOptions {
         return sourceCompatibility != null ? sourceCompatibility : defaultJavaVersion;
     }
 
-    /**
-     * Language level of the target code.
-     */
+    /** @see #getTargetCompatibility() */
     public void setTargetCompatibility(@NonNull Object targetCompatibility) {
         this.targetCompatibility = convert(targetCompatibility);
     }
@@ -91,32 +95,44 @@ public class CompileOptions {
         return targetCompatibility != null ? targetCompatibility : defaultJavaVersion;
     }
 
-    public void setEncoding(String encoding) {
-        this.encoding = encoding;
+    /** @see #getEncoding() */
+    public void setEncoding(@NonNull String encoding) {
+        this.encoding = checkNotNull(encoding);
     }
 
     /**
-     * Source files encoding.
+     * Java source files encoding.
      */
+    @NonNull
     public String getEncoding() {
         return encoding;
     }
 
-    public void setDefaultJavaVersion(JavaVersion defaultJavaVersion) {
-        this.defaultJavaVersion = defaultJavaVersion;
-    }
-
-    public JavaVersion getDefaultJavaVersion() {
-        return defaultJavaVersion;
-    }
-
-
-    private static final String VERSION_PREFIX = "VERSION_";
     /**
-     * Convert all possible supported way of specifying a Java version to {@link JavaVersion}
+     * Default java version, based on the target SDK. Set by the plugin, not meant to be used in
+     * build files by users.
+     */
+    public void setDefaultJavaVersion(@NonNull JavaVersion defaultJavaVersion) {
+        this.defaultJavaVersion = checkNotNull(defaultJavaVersion);
+    }
+
+    /**
+     * Whether java compilation should use Gradle's new incremental model.
+     *
+     * <p>This may cause issues in projects that rely on annotation processing etc.
+     */
+    public Boolean getIncremental() {
+        return incremental;
+    }
+
+    /** @see #getIncremental() */
+    public void setIncremental(boolean incremental) {
+        this.incremental = incremental;
+    }
+
+    /**
+     * Converts all possible supported way of specifying a Java version to a {@link JavaVersion}.
      * @param version the user provided java version.
-     * @return {@link JavaVersion}
-     * @throws RuntimeException if it cannot be converted.
      */
     @NonNull
     private static JavaVersion convert(@NonNull Object version) {
