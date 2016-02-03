@@ -34,8 +34,8 @@ import com.android.builder.tasks.JobContext;
 import com.android.builder.tasks.Task;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessException;
-import com.android.sdklib.BuildToolInfo;
 import com.android.repository.Revision;
+import com.android.sdklib.BuildToolInfo;
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
@@ -151,6 +151,7 @@ public class JackTask extends AbstractAndroidCompile
                     getProguardFiles(),
                     getMappingFile(),
                     getJarJarRuleFiles(),
+                    getSourceCompatibility(),
                     isMultiDexEnabled(),
                     getMinSdkVersion(),
                     isDebugLog,
