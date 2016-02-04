@@ -386,7 +386,7 @@ public class InstantRunClient {
                 }
             }
         } catch (IOException ioe) {
-            mLogger.warning("Couldn't write build id file", ioe);
+            mLogger.warning("Couldn't write build id file: %s", ioe);
         } catch (AdbCommandRejectedException e) {
             mLogger.warning("%s", e);
         } catch (TimeoutException e) {
@@ -582,7 +582,7 @@ public class InstantRunClient {
                 switch (file.mode) {
                     case TRANSFER_MODE_SLICE:
                         folder = Paths.getDexFileDirectory(mPackageName);
-                        name = file.name;
+                        name = Paths.DEX_SLICE_PREFIX + file.name;
                         break;
                     case TRANSFER_MODE_NEW_DEX:
                         // Compute a unique name
