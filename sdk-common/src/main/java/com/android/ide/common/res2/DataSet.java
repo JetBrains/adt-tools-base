@@ -62,6 +62,7 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
     static final String ATTR_CONFIG = "config";
     static final String ATTR_PATH = "path";
     static final String ATTR_NAME = "name";
+    static final String ATTR_TIMESTAMP = "timestamp";
 
     private final String mConfigName;
 
@@ -105,7 +106,7 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
 
     /**
      * Creates a DataFile and associated DataItems from an XML node from a file created with
-     * {@link DataSet#appendToXml(org.w3c.dom.Node, org.w3c.dom.Document, MergeConsumer)}
+     * {@link DataSet#appendToXml(Node, Document, MergeConsumer, boolean)}
      *
      * @param file the file represented by the DataFile
      * @param fileNode the XML node.
@@ -271,9 +272,10 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
      *
      * @param setNode the root node for this set.
      * @param document The root XML document
+     * @param includeTimestamps whether or not FILE nodes should be tagged with a timestamp.
      */
     void appendToXml(@NonNull Node setNode, @NonNull Document document,
-            @NonNull MergeConsumer<I> consumer) {
+                     @NonNull MergeConsumer<I> consumer, boolean includeTimestamps) {
         // add the config name attribute
         NodeUtils.addAttribute(document, setNode, null, ATTR_CONFIG, mConfigName);
 
@@ -306,7 +308,7 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
                                 continue;
                             }
                             if (fileNode == null) {
-                                fileNode = createFileElement(document, sourceNode, dataFile);
+                                fileNode = createFileElement(document, sourceNode, dataFile, includeTimestamps);
                             }
                             Node adoptedNode = item.getDetailsXml(document);
                             if (adoptedNode != null) {
@@ -321,7 +323,7 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
                         if (consumer.ignoreItemInMerge(dataItem)) {
                             continue;
                         }
-                        fileNode = createFileElement(document, sourceNode, dataFile);
+                        fileNode = createFileElement(document, sourceNode, dataFile, includeTimestamps);
                         NodeUtils.addAttribute(document, fileNode, null, ATTR_NAME, dataItem.getName());
                         dataItem.addExtraAttributes(document, fileNode, null);
                         break;
@@ -332,19 +334,25 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
         }
     }
 
-    private Node createFileElement(@NonNull Document document, Node sourceNode, F dataFile) {
+    private Node createFileElement(@NonNull Document document, Node sourceNode, F dataFile, boolean includeTimestamps) {
         // the node for the file and its path and qualifiers attribute
         Node fileNode = document.createElement(NODE_FILE);
         sourceNode.appendChild(fileNode);
         NodeUtils.addAttribute(document, fileNode, null, ATTR_PATH,
                                dataFile.getFile().getAbsolutePath());
+        if (includeTimestamps) {
+            long timestamp = dataFile.getFile().lastModified();
+            if (timestamp != 0) {
+                NodeUtils.addAttribute(document, fileNode, null, ATTR_TIMESTAMP, Long.toString(timestamp));
+            }
+        }
         dataFile.addExtraAttributes(document, fileNode, null);
         return fileNode;
     }
 
     /**
      * Creates and returns a new DataSet from an XML node that was created with
-     * {@link #appendToXml(org.w3c.dom.Node, org.w3c.dom.Document, MergeConsumer)}
+     * {@link #appendToXml(Node, Document, MergeConsumer, boolean)}
      *
      * The object this method is called on is not modified. This should be static but can't be
      * due to children classes.
@@ -394,8 +402,22 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
                 if (pathAttr == null) {
                     continue;
                 }
+                File actualFile = new File(pathAttr.getValue());
+                // Check the optional timestamp.
+                Attr timestampAttr = (Attr) fileNode.getAttributes().getNamedItem(ATTR_TIMESTAMP);
+                if (timestampAttr != null) {
+                    try {
+                        long blobDataFileTimestamp = Long.parseLong(timestampAttr.getValue());
+                        long actualFileTimestamp = actualFile.lastModified();
+                        if (actualFileTimestamp == 0 || blobDataFileTimestamp < actualFileTimestamp) {
+                            continue;
+                        }
+                    } catch (NumberFormatException e) {
+                        continue;
+                    }
+                }
                 
-                F dataFile = createFileAndItemsFromXml(new File(pathAttr.getValue()), fileNode);
+                F dataFile = createFileAndItemsFromXml(actualFile, fileNode);
 
                 if (dataFile != null) {
                     dataSet.processNewDataFile(sourceFolder, dataFile, false /*setTouched*/);

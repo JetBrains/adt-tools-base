@@ -24,7 +24,6 @@ import com.google.common.io.Files;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.regex.Pattern;
 
 public class AssetMergerTest extends BaseTestCase {
 
@@ -70,7 +69,7 @@ public class AssetMergerTest extends BaseTestCase {
         AssetMerger merger = getAssetMerger();
 
         File folder = Files.createTempDir();
-        merger.writeBlobTo(folder, new MergedAssetWriter(Files.createTempDir()));
+        merger.writeBlobTo(folder, new MergedAssetWriter(Files.createTempDir()), false);
 
         AssetMerger loadedMerger = new AssetMerger();
         loadedMerger.loadFromBlob(folder, true /*incrementalState*/);
@@ -231,7 +230,7 @@ public class AssetMergerTest extends BaseTestCase {
 
         // write merger1 on disk to test writing empty AssetSets.
         File folder = Files.createTempDir();
-        merger1.writeBlobTo(folder, new MergedAssetWriter(Files.createTempDir()));
+        merger1.writeBlobTo(folder, new MergedAssetWriter(Files.createTempDir()), false);
 
         // reload it
         AssetMerger loadedMerger = new AssetMerger();

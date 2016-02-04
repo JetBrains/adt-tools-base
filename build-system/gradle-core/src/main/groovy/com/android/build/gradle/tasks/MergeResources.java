@@ -178,7 +178,7 @@ public class MergeResources extends IncrementalTask {
             merger.mergeData(writer, false /*doCleanUp*/);
 
             // No exception? Write the known state.
-            merger.writeBlobTo(getIncrementalFolder(), writer);
+            merger.writeBlobTo(getIncrementalFolder(), writer, false);
         } catch (MergingException e) {
             System.out.println(e.getMessage());
             merger.cleanBlob(getIncrementalFolder());
@@ -246,7 +246,7 @@ public class MergeResources extends IncrementalTask {
                     preprocessor);
             merger.mergeData(writer, false /*doCleanUp*/);
             // No exception? Write the known state.
-            merger.writeBlobTo(getIncrementalFolder(), writer);
+            merger.writeBlobTo(getIncrementalFolder(), writer, false);
         } catch (MergingException e) {
             merger.cleanBlob(getIncrementalFolder());
             throw new ResourceException(e.getMessage(), e);
