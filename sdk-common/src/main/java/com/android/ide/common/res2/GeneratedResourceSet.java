@@ -48,12 +48,12 @@ public class GeneratedResourceSet extends ResourceSet {
     }
 
     @Override
-    void appendToXml(
-            @NonNull Node setNode,
-            @NonNull Document document,
-            @NonNull MergeConsumer<ResourceItem> consumer) {
+    void appendToXml(@NonNull Node setNode,
+                     @NonNull Document document,
+                     @NonNull MergeConsumer<ResourceItem> consumer,
+                     boolean includeTimestamps) {
         NodeUtils.addAttribute(document, setNode, null, "generated", "true");
-        super.appendToXml(setNode, document, consumer);
+        super.appendToXml(setNode, document, consumer, includeTimestamps);
     }
 
     @Override

@@ -572,8 +572,10 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
 
 
     @Override
-    void appendToXml(@NonNull Node setNode, @NonNull Document document,
-            @NonNull MergeConsumer<ResourceItem> consumer) {
+    void appendToXml(@NonNull Node setNode,
+                     @NonNull Document document,
+                     @NonNull MergeConsumer<ResourceItem> consumer,
+                     boolean includeTimestamps) {
         if (mGeneratedSet != null) {
             NodeUtils.addAttribute(
                     document,
@@ -582,6 +584,6 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
                     "generated-set",
                     mGeneratedSet.getConfigName());
         }
-        super.appendToXml(setNode, document, consumer);
+        super.appendToXml(setNode, document, consumer, includeTimestamps);
     }
 }
