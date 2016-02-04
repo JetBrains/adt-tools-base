@@ -5,16 +5,14 @@ import static com.android.builder.core.VariantType.UNIT_TEST;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.AndroidGradleOptions;
+import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.internal.CompileOptions;
-import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.builder.dependency.LibraryDependency;
-import com.android.builder.model.SyncIssue;
-import com.android.utils.ILogger;
 import com.google.common.base.Joiner;
 
 import org.gradle.api.Project;
@@ -28,7 +26,6 @@ import java.util.concurrent.Callable;
  * Configuration Action for a JavaCompile task.
  */
 public class JavaCompileConfigAction implements TaskConfigAction<AndroidJavaCompile> {
-    private static final ILogger LOG = LoggerWrapper.getLogger(JavaCompileConfigAction.class);
 
     private VariantScope scope;
 
@@ -117,34 +114,17 @@ public class JavaCompileConfigAction implements TaskConfigAction<AndroidJavaComp
 
         GlobalScope globalScope = scope.getGlobalScope();
         Project project = globalScope.getProject();
-
-        boolean incremental;
-
-        if (compileOptions.getIncremental() != null) {
-            incremental = compileOptions.getIncremental();
-        } else {
-            // For now, default to true, irrespective of Instant Run.
-            incremental = true;
+        if (AndroidGradleOptions.isJavaCompileIncremental(project) ||
+                (globalScope.isActive(OptionalCompilationStep.INSTANT_DEV) &&
+                        AndroidGradleOptions.isInstantRunJavaCompileIncremental(project))) {
+            // TODO(http://b.android.com/200043): Find out why the annotation processors seem to be
+            // incompatible with incremental java compilation.
+            if (globalScope.getExtension().getDataBinding().isEnabled()
+                    || project.getPlugins().hasPlugin("com.neenbedankt.android-apt")) {
+                javacTask.getOptions().setIncremental(false);
+            } else {
+                javacTask.getOptions().setIncremental(true);
+            }
         }
-
-        if (AndroidGradleOptions.isJavaCompileIncrementalPropertySet(project)) {
-            scope.getGlobalScope().getAndroidBuilder().getErrorReporter().handleSyncError(
-                    null,
-                    SyncIssue.TYPE_GENERIC,
-                    String.format(
-                            "The %s property has been replaced by a DSL property. Please add the "
-                                    + "following to your build.gradle instead:\n"
-                                    + "android {\n"
-                                    + "  compileOptions.incremental = false\n"
-                                    + "}",
-                            AndroidGradleOptions.PROPERTY_INCREMENTAL_JAVA_COMPILE));
-        }
-
-        if (incremental) {
-            LOG.info("Using incremental javac compilation.");
-        } else {
-            LOG.info("Not using incremental javac compilation.");
-        }
-        javacTask.getOptions().setIncremental(incremental);
     }
 }
