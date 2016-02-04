@@ -29,6 +29,7 @@ import com.android.tools.lint.detector.api.Position;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Splitter;
 
+import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.List;
 
@@ -486,6 +487,9 @@ public abstract class JavaParser {
         @Nullable
         public abstract ResolvedClass getContainingClass();
 
+        public abstract boolean isInterface();
+        public abstract boolean isEnum();
+
         public TypeDescriptor getType() {
             return new DefaultTypeDescriptor(getName());
         }
@@ -624,6 +628,10 @@ public abstract class JavaParser {
         /** Returns the super implementation of the given method, if any */
         @Nullable
         public ResolvedMethod getSuperMethod() {
+            if ((getModifiers() & Modifier.PRIVATE) != 0) {
+                // Private methods aren't overriding anything
+                return null;
+            }
             ResolvedClass cls = getContainingClass().getSuperClass();
             if (cls != null) {
                 String methodName = getName();
@@ -640,6 +648,22 @@ public abstract class JavaParser {
                         }
                     }
                     if (sameTypes) {
+                        if ((method.getModifiers() & Modifier.PRIVATE) != 0) {
+                            // Normally can't override private methods - unless they're
+                            // in the same compilation unit where the compiler will create
+                            // an accessor method to trampoline over to it.
+                            //
+                            // Compare compilation units:
+                            if (haveSameCompilationUnit(getContainingClass(),
+                                    method.getContainingClass())) {
+                                return method;
+                            } else {
+                                // We can stop the search; this is invalid (you can't have a
+                                // private method in the middle of a chain; the compiler would
+                                // complain about weaker access)
+                                return null;
+                            }
+                        }
                         return method;
                     }
                 }
@@ -661,6 +685,20 @@ public abstract class JavaParser {
                     packageName.charAt(pkg.length()) == '.' &&
                     packageName.startsWith(pkg);
         }
+    }
+
+    private static boolean haveSameCompilationUnit(@Nullable ResolvedClass cls1,
+            @Nullable ResolvedClass cls2) {
+        if (cls1 == null || cls2 == null) {
+            return false;
+        }
+        while (cls1.getContainingClass() != null) {
+            cls1 = cls1.getContainingClass();
+        }
+        while (cls2.getContainingClass() != null) {
+            cls2 = cls2.getContainingClass();
+        }
+        return cls1.equals(cls2);
     }
 
     /** A field declaration */
