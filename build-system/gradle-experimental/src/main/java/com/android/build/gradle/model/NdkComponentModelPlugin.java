@@ -23,12 +23,12 @@ import static com.android.build.gradle.model.ModelConstants.NATIVE_DEPENDENCIES;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.NativeDependencyLinkage;
-import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.ProductFlavorCombo;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.dependency.ArtifactContainer;
 import com.android.build.gradle.internal.dependency.NativeDependencyResolveResult;
 import com.android.build.gradle.internal.dependency.NativeLibraryArtifact;
+import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.ndk.Stl;
 import com.android.build.gradle.internal.ndk.StlNativeToolSpecification;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -48,7 +48,6 @@ import com.android.build.gradle.ndk.internal.NdkNamingScheme;
 import com.android.build.gradle.ndk.internal.ToolchainConfiguration;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.VariantConfiguration;
-import com.android.builder.model.AndroidProject;
 import com.android.utils.NativeSourceFileExtensions;
 import com.android.utils.StringHelper;
 import com.google.common.base.Joiner;
@@ -58,7 +57,6 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
@@ -271,13 +269,10 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
 
         @Validate
         public static void validateAbi(@Path("android.abis") ModelMap<NdkAbiOptions> abiConfigs) {
-            abiConfigs.afterEach(new Action<NdkAbiOptions>() {
-                @Override
-                public void execute(NdkAbiOptions abiOptions) {
-                    if (Abi.getByName(abiOptions.getName()) == null) {
-                        throw new InvalidUserDataException("Target ABI '" + abiOptions.getName()
-                                + "' is not supported.");
-                    }
+            abiConfigs.afterEach(abiOptions -> {
+                if (Abi.getByName(abiOptions.getName()) == null) {
+                    throw new InvalidUserDataException("Target ABI '" + abiOptions.getName()
+                            + "' is not supported.");
                 }
             });
         }
@@ -468,6 +463,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         public static void createNativeBuildModel(
                 NativeBuildConfig config,
                 ModelMap<AndroidBinaryInternal> binaries,
+                @Path("android.abis") ModelMap<NdkAbiOptions> abiConfigs,
                 final NdkHandler ndkHandler) {
 
             config.getcFileExtensions().addAll(NativeSourceFileExtensions.C_FILE_EXTENSIONS);
@@ -483,7 +479,9 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                             binary.getName() + '-' + abi,
                             new CreateNativeLibraryAction(
                                     binary,
-                                    (SharedLibraryBinarySpec) nativeBinary));
+                                    (SharedLibraryBinarySpec) nativeBinary,
+                                    abiConfigs,
+                                    ndkHandler));
                 }
             }
             for (final Abi abi : ndkHandler.getSupportedAbis()) {
@@ -504,17 +502,25 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
             private final AndroidBinaryInternal binary;
             @NonNull
             private final SharedLibraryBinarySpec nativeBinary;
+            @NonNull
+            private final ModelMap<NdkAbiOptions> abiConfigs;
+            @NonNull
+            private final NdkHandler ndkHandler;
 
             public CreateNativeLibraryAction(
                     @NonNull AndroidBinaryInternal binary,
-                    @NonNull SharedLibraryBinarySpec nativeBinary) {
+                    @NonNull SharedLibraryBinarySpec nativeBinary,
+                    @NonNull ModelMap<NdkAbiOptions> abiConfigs,
+                    @NonNull NdkHandler ndkHandler) {
                 this.binary = binary;
                 this.nativeBinary = nativeBinary;
+                this.abiConfigs = abiConfigs;
+                this.ndkHandler = ndkHandler;
             }
 
             @Override
             public void execute(NativeLibrary nativeLibrary) {
-                final String abi = nativeBinary.getTargetPlatform().getName();
+                final Abi abi = Abi.getByName(nativeBinary.getTargetPlatform().getName());
 
                 nativeLibrary.setOutput(nativeBinary.getSharedLibraryFile());
                 Set<File> srcFolders = Sets.newHashSet();
@@ -523,6 +529,14 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
 
                 final List<String> cFlags = nativeBinary.getcCompiler().getArgs();
                 final List<String> cppFlags = nativeBinary.getCppCompiler().getArgs();
+
+                NdkAbiOptions abiConfig = abiConfigs.get(abi.getName());
+
+                String sysroot = (abiConfig == null || abiConfig.getPlatformVersion() == null)
+                        ? ndkHandler.getSysroot(abi)
+                        : ndkHandler.getSysroot(abi, abiConfig.getPlatformVersion());
+                cFlags.add("--sysroot=" + sysroot);
+                cppFlags.add("--sysroot=" + sysroot);
 
                 for (LanguageSourceSet sourceSet : nativeBinary.getSources()) {
                     srcFolders.addAll(sourceSet.getSource().getSrcDirs());
@@ -565,7 +579,8 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                                 }
                             });
                 }
-                nativeLibrary.setToolchain("ndk-" + abi);
+
+                nativeLibrary.setToolchain("ndk-" + abi.getName());
             }
         }
 

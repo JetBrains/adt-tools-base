@@ -124,6 +124,11 @@ public class TruthHelper {
                 dependencies);
     }
 
+    @NonNull
+    public static Java8OptionalSubject assertThat(@NonNull java.util.Optional<?> optional) {
+        return assert_().about(Java8OptionalSubject.FACTORY).that(optional);
+    }
+
     public static LogCatMessagesSubject assertThat(Logcat logcat) {
         return assert_().about(LogCatMessagesSubject.FACTORY).that(logcat);
     }

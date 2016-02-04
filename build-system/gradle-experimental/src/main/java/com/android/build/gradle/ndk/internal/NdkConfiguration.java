@@ -130,12 +130,6 @@ public class NdkConfiguration {
 
                         applyNativeToolSpecification(new DefaultNativeToolSpecification(), binary);
 
-                        String sysroot = ndkHandler.getSysroot(
-                                Abi.getByName(binary.getTargetPlatform().getName()));
-
-                        binary.getcCompiler().args("--sysroot=" + sysroot);
-                        binary.getCppCompiler().args("--sysroot=" + sysroot);
-                        binary.getLinker().args("--sysroot=" + sysroot);
                         binary.getLinker().args("-Wl,--build-id");
 
                         for (NativeSourceSet jniSource : jniSources.values()) {
