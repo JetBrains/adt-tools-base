@@ -118,6 +118,7 @@ import org.eclipse.jdt.internal.compiler.problem.DefaultProblemFactory;
 import org.eclipse.jdt.internal.compiler.problem.ProblemReporter;
 
 import java.io.File;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -1047,7 +1048,16 @@ public class EcjParser extends JavaParser {
                         binding.parameters.length);
                 for (MethodBinding method : methods) {
                     if (method.areParameterErasuresEqual(binding)) {
-                        return method;
+                        if (method.isPrivate()) {
+                            if (method.declaringClass.outermostEnclosingType()
+                                    == binding.declaringClass.outermostEnclosingType()) {
+                                return method;
+                            } else {
+                                return null;
+                            }
+                        } else {
+                            return method;
+                        }
                     }
                 }
 
@@ -1392,6 +1402,9 @@ public class EcjParser extends JavaParser {
                 }
 
                 binding = findSuperMethodBinding(binding);
+                if (binding != null && binding.isPrivate()) {
+                    break;
+                }
             }
 
             all = ensureUnique(all);
@@ -1572,6 +1585,16 @@ public class EcjParser extends JavaParser {
             return classes;
         }
 
+        @Override
+        public boolean isInterface() {
+            return mBinding.isInterface();
+        }
+
+        @Override
+        public boolean isEnum() {
+            return mBinding.isEnum();
+        }
+
         @Nullable
         @Override
         public ResolvedClass getContainingClass() {
@@ -1677,6 +1700,12 @@ public class EcjParser extends JavaParser {
                                     result = Lists.newArrayListWithExpectedSize(count);
                                 }
                                 for (MethodBinding method : methods) {
+                                    if ((method.modifiers & Modifier.PRIVATE) != 0 &&
+                                            cls != mBinding) {
+                                        // Ignore parent methods that are private
+                                        continue;
+                                    }
+
                                     if (!method.isConstructor()) {
                                         // See if this method looks like it's masked
                                         boolean masked = false;
@@ -1690,7 +1719,6 @@ public class EcjParser extends JavaParser {
                                         if (masked) {
                                             continue;
                                         }
-
                                         result.add(new EcjResolvedMethod(method));
                                     }
                                 }
@@ -1775,6 +1803,12 @@ public class EcjParser extends JavaParser {
                                     result = Lists.newArrayListWithExpectedSize(count);
                                 }
                                 for (FieldBinding field : fields) {
+                                    if ((field.modifiers & Modifier.PRIVATE) != 0 &&
+                                            cls != mBinding) {
+                                        // Ignore parent fields that are private
+                                        continue;
+                                    }
+
                                     // See if this field looks like it's masked
                                     boolean masked = false;
                                     for (ResolvedField f : result) {
@@ -1822,6 +1856,12 @@ public class EcjParser extends JavaParser {
                     FieldBinding[] fields = cls.fields();
                     if (fields != null) {
                         for (FieldBinding field : fields) {
+                            if ((field.modifiers & Modifier.PRIVATE) != 0 &&
+                                    cls != mBinding) {
+                                // Ignore parent methods that are private
+                                continue;
+                            }
+
                             if (sameChars(name, field.name)) {
                                 return new EcjResolvedField(field);
                             }
