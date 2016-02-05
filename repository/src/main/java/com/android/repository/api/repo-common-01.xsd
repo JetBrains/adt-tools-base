@@ -191,7 +191,7 @@
         <xsd:all>
             <xsd:element name="min-revision" type="repo:revisionType" minOccurs="0"/>
         </xsd:all>
-        <xsd:attribute name="path" type="xsd:string"/>
+        <xsd:attribute name="path" type="xsd:string" use="required"/>
     </xsd:complexType>
 
     <xsd:simpleType name="segmentType">
