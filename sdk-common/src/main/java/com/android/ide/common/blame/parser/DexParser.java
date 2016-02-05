@@ -94,7 +94,8 @@ public class DexParser implements PatternAwareOutputParser {
 
     private static void consumeStacktrace(OutputLineReader reader, StringBuilder out) {
         String nextLine = reader.readLine();
-        while (nextLine != null && nextLine.startsWith("\t")) {
+        while (nextLine != null &&
+                (nextLine.startsWith("\t") || nextLine.startsWith("Caused by: "))) {
             out.append(nextLine).append('\n');
             nextLine = reader.readLine();
         }
