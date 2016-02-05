@@ -51,7 +51,11 @@ public class DexParserTest {
                 + "\tat com.android.dx.command.dexer.Main.runMonoDex(Main.java:334)\n"
                 + "\tat com.android.dx.command.dexer.Main.run(Main.java:277)\n"
                 + "\tat com.android.dx.command.dexer.Main.main(Main.java:245)\n"
-                + "\tat com.android.dx.command.Main.main(Main.java:106)\n\n\n";
+                + "\tat com.android.dx.command.Main.main(Main.java:106)\n"
+                + "Caused by: com.example.SomeOtherException: someOtherCause\n"
+                + "\tat com.example.SomeOtherException.throw(SomeOtherException.java:34)\n"
+                + "\tat com.android.dex.merge.DexMerger.merxeMethodIds(DexMerger.java:490)\n"
+                + "\t... 20 more\n\n";
 
         Message message = Iterables.getOnlyElement(PARSER.parseToolOutput(stderr));
 
