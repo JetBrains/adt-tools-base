@@ -114,7 +114,9 @@ public class JackTask extends AbstractAndroidCompile
             SimpleWorkQueue.push(job);
 
             // wait for the task completion.
-            job.await();
+            if (!job.awaitRethrowExceptions()) {
+                throw new RuntimeException("Jack compilation failed, see logs for details");
+            }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
