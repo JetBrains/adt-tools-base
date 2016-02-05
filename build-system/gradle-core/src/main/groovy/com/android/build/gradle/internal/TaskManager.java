@@ -2798,7 +2798,7 @@ public abstract class TaskManager {
 
             ShrinkResourcesTransform shrinkResTransform = new ShrinkResourcesTransform(
                     variantOutputData,
-                    variantOutputData.processResourcesTask.getPackageOutputFile(),
+                    variantOutputScope.getProcessResourcePackageOutputFile(),
                     variantOutputScope.getCompressedResourceFile(),
                     androidBuilder,
                     logger);
