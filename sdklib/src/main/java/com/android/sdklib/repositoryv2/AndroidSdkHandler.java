@@ -523,8 +523,7 @@ public final class AndroidSdkHandler {
             if (localLocation != null) {
                 // If we have a local sdk path set, set up the old-style loader so we can parse
                 // any legacy packages.
-                result.setFallbackLocalRepoLoader(
-                        new LegacyLocalRepoLoader(localLocation, fop, result));
+                result.setFallbackLocalRepoLoader(new LegacyLocalRepoLoader(localLocation, fop));
 
                 // If a location is set we'll always want at least the local packages loaded, so
                 // load them now.

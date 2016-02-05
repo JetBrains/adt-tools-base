@@ -28,7 +28,6 @@ import com.android.repository.api.SchemaModule;
 import com.android.repository.impl.meta.CommonFactory;
 import com.android.repository.impl.meta.LocalPackageImpl;
 import com.android.repository.impl.meta.SchemaModuleUtil;
-import com.android.repository.impl.meta.TypeDetails;
 import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
 import com.google.common.collect.Maps;
@@ -206,7 +205,7 @@ public final class LocalRepoLoader {
     private void writePackage(@NonNull LocalPackage p, @NonNull File packageXml,
             @NonNull ProgressIndicator progress) {
         // We need a LocalPackageImpl to be able to save it.
-        LocalPackageImpl impl = LocalPackageImpl.create(p, mRepoManager);
+        LocalPackageImpl impl = LocalPackageImpl.create(p);
         OutputStream fos = null;
         try {
             fos = mFop.newFileOutputStream(packageXml);
@@ -214,7 +213,6 @@ public final class LocalRepoLoader {
             repo.setLocalPackage(impl);
             repo.addLicense(impl.getLicense());
 
-            TypeDetails typeDetails = p.getTypeDetails();
             CommonFactory factory = ((CommonFactory) RepoManager.getCommonModule()
               .createLatestFactory());
             SchemaModuleUtil.marshal(factory.generateRepository(repo),

@@ -199,13 +199,27 @@ public abstract class Archive {
      */
     @NonNull
     public List<PatchType> getAllPatches() {
-        return getPatches().getPatch();
+        PatchesType patches = getPatches();
+        if (patches == null) {
+            return ImmutableList.of();
+        }
+        return patches.getPatch();
+    }
+
+    @Nullable
+    public PatchType getPatch(Revision fromRevision) {
+        for (PatchType p : getAllPatches()) {
+            if (p.getBasedOn().toRevision().equals(fromRevision)) {
+                return p;
+            }
+        }
+        return null;
     }
 
     /**
      * Gets the {@link PatchesType} for this Archive. Probably only needed internally.
      */
-    @NonNull
+    @Nullable
     protected PatchesType getPatches() {
         // Stub
         return null;
@@ -214,7 +228,7 @@ public abstract class Archive {
     /**
      * Sets the {@link PatchesType} for this Archive. Probably only needed internally.
      */
-    protected void setPatches(@NonNull PatchesType patches) {
+    protected void setPatches(@Nullable PatchesType patches) {
         // Stub
     }
 

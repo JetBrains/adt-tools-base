@@ -61,11 +61,6 @@ public class LegacyLocalRepoLoader implements FallbackLocalRepoLoader {
     private final LocalSdk mLocalSdk;
 
     /**
-     * The {@link RepoManager} we're parsing for.
-     */
-    private final RepoManager mManager;
-
-    /**
      * Cache of packages found by {@link #mLocalSdk}.
      */
     private Map<File, LocalPkgInfo> mPkgs = null;
@@ -80,12 +75,10 @@ public class LegacyLocalRepoLoader implements FallbackLocalRepoLoader {
      *                FileOpUtils#create()}.
      * @param manager The {@link RepoManager} we're parsing for.
      */
-    public LegacyLocalRepoLoader(@NonNull File root, @NonNull FileOp fop,
-            @NonNull RepoManager manager) {
+    public LegacyLocalRepoLoader(@NonNull File root, @NonNull FileOp fop) {
         mLocalSdk = new LocalSdk(fop);
         mLocalSdk.setLocation(root);
         mFop = fop;
-        mManager = manager;
     }
 
     /**
@@ -172,7 +165,7 @@ public class LegacyLocalRepoLoader implements FallbackLocalRepoLoader {
         @Nullable
         public License getLicense() {
             License res = mWrapped.getDesc().getLicense();
-            CommonFactory factory = (CommonFactory) mManager.getCommonModule()
+            CommonFactory factory = (CommonFactory) RepoManager.getCommonModule()
                     .createLatestFactory();
             if (res == null) {
                 res = factory.createLicenseType();
@@ -188,7 +181,7 @@ public class LegacyLocalRepoLoader implements FallbackLocalRepoLoader {
         public Collection<Dependency> getAllDependencies() {
             List<Dependency> result = Lists.newArrayList();
             Revision rev = mWrapped.getDesc().getMinPlatformToolsRev();
-            CommonFactory factory = (CommonFactory) mManager.getCommonModule()
+            CommonFactory factory = (CommonFactory) RepoManager.getCommonModule()
                     .createLatestFactory();
             if (rev != null) {
                 result.add(factory.createDependencyType(rev, SdkConstants.FD_PLATFORM_TOOLS));
@@ -221,7 +214,7 @@ public class LegacyLocalRepoLoader implements FallbackLocalRepoLoader {
         @Override
         @NonNull
         public CommonFactory createFactory() {
-            return (CommonFactory) mManager.getCommonModule().createLatestFactory();
+            return (CommonFactory) RepoManager.getCommonModule().createLatestFactory();
         }
 
         @Override
