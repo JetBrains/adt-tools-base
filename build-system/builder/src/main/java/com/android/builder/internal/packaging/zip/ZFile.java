@@ -29,6 +29,7 @@ import com.android.utils.FileUtils;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Predicate;
 import com.google.common.base.Verify;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -57,7 +58,6 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.regex.Pattern;
 
 /**
  * The {@code ZFile} provides the main interface for interacting with zip files. A {@code ZFile}
@@ -88,9 +88,9 @@ import java.util.regex.Pattern;
  * file, if it doesn't fit in any free area, the zip file will be extended.
  *
  * <p>{@code ZFile} provides a fast way to merge data from another zip file
- * (see {@link #mergeFrom(ZFile, Set)}) avoiding recompression and copying of equal files. When
- * merging, patterns of files may be provided that are ignored. This allows handling special files
- * in the merging process, such as files in {@code META-INF}.
+ * (see {@link #mergeFrom(ZFile, Predicate)}) avoiding recompression and copying of equal files.
+ * When merging, patterns of files may be provided that are ignored. This allows handling special
+ * files in the merging process, such as files in {@code META-INF}.
  *
  * <p>When adding files to the zip file, unless files are explicitly required to be stored, files
  * will be deflated. However, deflating will not occur if the deflated file is larger then the
@@ -1403,24 +1403,21 @@ public class ZFile implements Closeable {
      * Adds all files from another zip file, maintaining their compression. Files specified in
      * <em>src</em> that are already on this file will replace the ones in this file. However, if
      * their sizes and checksums are equal, they will be ignored.
-     * <p>
-     * This method will not perform any changes in itself, it will only update in-memory data
+     *
+     * <p> This method will not perform any changes in itself, it will only update in-memory data
      * structures. To actually write the zip file, invoke either {@link #update()} or
      * {@link #close()}.
      *
      * @param src the source archive
-     * @param ignorePatterns file name patterns in <em>src</em> that should be ignored by merging;
-     * merging will behave as if these files were not there; file name matching is done by using
-     * {@code matches()}
+     * @param ignoreFilter predicate that, if {@code true}, identifies files in <em>src</em> that
+     * should be ignored by merging; merging will behave as if these files were not there
      * @throws IOException failed to read from <em>src</em> or write on the output
      */
-    public void mergeFrom(@NonNull ZFile src, @NonNull Set<Pattern> ignorePatterns)
+    public void mergeFrom(@NonNull ZFile src, @NonNull Predicate<String> ignoreFilter)
             throws IOException {
-        nextEntry: for (StoredEntry fromEntry : src.entries()) {
-            for (Pattern p : ignorePatterns) {
-                if (p.matcher(fromEntry.getCentralDirectoryHeader().getName()).matches()) {
-                    continue nextEntry;
-                }
+        for (StoredEntry fromEntry : src.entries()) {
+            if (ignoreFilter.apply(fromEntry.getCentralDirectoryHeader().getName())) {
+                continue;
             }
 
             boolean replaceCurrent = true;

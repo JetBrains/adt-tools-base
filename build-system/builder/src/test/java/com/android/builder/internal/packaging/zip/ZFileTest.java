@@ -33,8 +33,9 @@ import com.android.testutils.TestUtils;
 import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import com.google.common.base.Strings;
-import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closer;
 import com.google.common.io.Files;
@@ -52,7 +53,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
@@ -259,7 +259,7 @@ public class ZFileTest {
 
         File merged = new File(mTemporaryFolder.getRoot(), "r.zip");
         ZFile mergedZf = new ZFile(merged);
-        mergedZf.mergeFrom(new ZFile(aZip), Sets.<Pattern>newHashSet());
+        mergedZf.mergeFrom(new ZFile(aZip), Predicates.<String>alwaysFalse());
         mergedZf.close();
 
         assertEquals(3, mergedZf.entries().size());
@@ -294,7 +294,7 @@ public class ZFileTest {
          */
         File bZip = cloneRsrc("simple-zip.zip", "b.zip");
 
-        mergedZf.mergeFrom(new ZFile(bZip), Sets.<Pattern>newHashSet());
+        mergedZf.mergeFrom(new ZFile(bZip), Predicates.<String>alwaysFalse());
         mergedZf.close();
 
         assertTrue(changeDetector.isValid());
@@ -520,13 +520,21 @@ public class ZFileTest {
             zos2.close();
         }
 
-        Set<Pattern> ignoreFiles = Sets.newHashSet();
-        ignoreFiles.add(Pattern.compile("not.*"));
-        ignoreFiles.add(Pattern.compile(".*gnored.*"));
+        Predicate<String> ignorePredicate = Predicates.or(new Predicate<String>() {
+            @Override
+            public boolean apply(String input) {
+                return input.matches("not.*");
+            }
+        }, new Predicate<String>() {
+            @Override
+            public boolean apply(String input) {
+                return input.matches(".*gnored.*");
+            }
+        });
 
         ZFile zf1 = new ZFile(zip1);
         ZFile zf2 = new ZFile(zip2);
-        zf1.mergeFrom(zf2, ignoreFiles);
+        zf1.mergeFrom(zf2, ignorePredicate);
 
         StoredEntry only_in_1 = zf1.get("only_in_1");
         assertNotNull(only_in_1);
