@@ -32,7 +32,7 @@ import com.android.repository.impl.meta.TrimStringAdapter;
  *       &lt;all&gt;
  *         &lt;element name="min-revision" type="{http://schemas.android.com/repository/android/common/01}revisionType" minOccurs="0"/&gt;
  *       &lt;/all&gt;
- *       &lt;attribute name="path" type="{http://www.w3.org/2001/XMLSchema}string" /&gt;
+ *       &lt;attribute name="path" use="required" type="{http://www.w3.org/2001/XMLSchema}string" /&gt;
  *     &lt;/restriction&gt;
  *   &lt;/complexContent&gt;
  * &lt;/complexType&gt;
@@ -54,7 +54,7 @@ public class DependencyType
 
     @XmlElement(name = "min-revision")
     protected com.android.repository.impl.generated.v1.RevisionType minRevision;
-    @XmlAttribute(name = "path")
+    @XmlAttribute(name = "path", required = true)
     @XmlJavaTypeAdapter(TrimStringAdapter.class)
     protected String path;
 
