@@ -17,6 +17,7 @@
             <tr><td>testInstrumentationRunner</td></tr>
             <tr><td>testInstrumentationRunnerArguments</td></tr>
             <tr><td>useJack</td></tr>
+            <tr><td>vectorDrawables</td></tr>
             <tr><td>versionCode</td></tr>
             <tr><td>versionName</td></tr>
         </table>
@@ -47,6 +48,7 @@
             <tr><td>testProguardFile</td></tr>
             <tr><td>testProguardFiles</td></tr>
             <tr><td>useJack</td></tr>
+            <tr><td>vectorDrawables</td></tr>
         </table>
     </section>
 </section>
