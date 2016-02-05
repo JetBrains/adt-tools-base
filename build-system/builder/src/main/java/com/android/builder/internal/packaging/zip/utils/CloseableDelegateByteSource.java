@@ -50,6 +50,7 @@ public class CloseableDelegateByteSource extends CloseableByteSource {
 
     /**
      * Creates a new byte source.
+     *
      * @param inner the inner byte source
      * @param size the size of the source
      */
@@ -61,6 +62,7 @@ public class CloseableDelegateByteSource extends CloseableByteSource {
     /**
      * Obtains the inner byte source. Will throw an exception if the inner by byte source has
      * been disposed of.
+     *
      * @return the inner byte source
      */
     @NonNull
@@ -87,6 +89,7 @@ public class CloseableDelegateByteSource extends CloseableByteSource {
     /**
      * Obtains the size of this byte source. Equivalent to {@link #size()} but not throwing
      * {@code IOException}.
+     *
      * @return the size of the byte source
      */
     public long sizeNoException() {

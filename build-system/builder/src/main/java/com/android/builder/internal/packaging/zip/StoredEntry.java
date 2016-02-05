@@ -19,6 +19,7 @@ package com.android.builder.internal.packaging.zip;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.internal.packaging.zip.utils.CloseableByteSource;
+import com.android.builder.internal.packaging.zip.utils.CloseableDelegateByteSource;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Verify;
 import com.google.common.io.ByteSource;
@@ -29,6 +30,7 @@ import com.google.common.primitives.Ints;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Comparator;
 
 /**
  * A stored entry represents a file in the zip. The entry may or may not be written to the zip
@@ -47,6 +49,31 @@ import java.io.InputStream;
  * be obtained using the {@link #getCentralDirectoryHeader()} method.
  */
 public class StoredEntry {
+
+    /**
+     * Comparator that compares instances of {@link StoredEntry} by their names.
+     */
+    static Comparator<StoredEntry> COMPARE_BY_NAME = new Comparator<StoredEntry>() {
+        @Override
+        public int compare(@Nullable StoredEntry o1, @Nullable StoredEntry o2) {
+            if (o1 == null && o2 == null) {
+                return 0;
+            }
+
+            if (o1 == null) {
+                return -1;
+            }
+
+            if (o2 == null) {
+                return -1;
+            }
+
+            String name1 = o1.getCentralDirectoryHeader().getName();
+            String name2 = o2.getCentralDirectoryHeader().getName();
+            return name1.compareTo(name2);
+        }
+    };
+
     /**
      * Signature of the data descriptor.
      */
@@ -193,7 +220,7 @@ public class StoredEntry {
              * the file from the zip when needed. The assignment is not really needed, but we
              * would get a warning because of the @NotNull otherwise.
              */
-            mSource = createSourceFromZip();
+            mSource = createSourceFromZip(mCdh.getOffset());
         } else {
             /*
              * There is no local extra data for new files.
@@ -440,18 +467,22 @@ public class StoredEntry {
 
     /**
      * Creates a new source that reads data from the zip.
+     *
+     * @param zipOffset the offset into the zip file where the data is, must be non-negative
      * @throws IOException failed to close the old source
      * @return the created source
      */
-    private ProcessedAndRawByteSources createSourceFromZip() throws IOException {
-        Preconditions.checkState(mCdh.getOffset() >= 0, "No data in zip. Cannot create source.");
+    @NonNull
+    private ProcessedAndRawByteSources createSourceFromZip(final long zipOffset)
+            throws IOException {
+        Preconditions.checkArgument(zipOffset >= 0, "zipOffset < 0");
 
         final CentralDirectoryHeaderCompressInfo compressInfo;
         try {
             compressInfo = mCdh.getCompressionInfoWithWait();
         } catch (IOException e) {
             throw new RuntimeException("IOException should never occur here because compression "
-                    + "information should be immediately avaialble if reading from zip.", e);
+                    + "information should be immediately available if reading from zip.", e);
         }
 
         /*
@@ -468,7 +499,7 @@ public class StoredEntry {
             public InputStream openStream() throws IOException {
                 Preconditions.checkState(!mDeleted, "mDeleted");
 
-                long dataStart = mCdh.getOffset() + getLocalHeaderSize();
+                long dataStart = zipOffset + getLocalHeaderSize();
                 long dataEnd = dataStart + compressInfo.getCompressedSize();
 
                 mFile.openReadOnly();
@@ -482,6 +513,29 @@ public class StoredEntry {
                  */
             }
         };
+
+        return createSourcesFromRawContents(rawContents);
+    }
+
+    /**
+     * Creates a {@link ProcessedAndRawByteSources} from the raw data source . The processed source
+     * will either inflate or do nothing depending on the compression information that, at this
+     * point, should already be available
+     *
+     * @param rawContents the raw data to create the source from
+     * @return the sources for this entry
+     */
+    @NonNull
+    private ProcessedAndRawByteSources createSourcesFromRawContents(
+            @NonNull CloseableByteSource rawContents) {
+        CentralDirectoryHeaderCompressInfo compressInfo;
+        try {
+            compressInfo = mCdh.getCompressionInfoWithWait();
+        } catch (IOException e) {
+            throw new RuntimeException("IOException should never occur here because compression "
+                    + "information should be immediately available if creating from raw "
+                    + "contents.", e);
+        }
 
         CloseableByteSource contents;
 
@@ -500,11 +554,31 @@ public class StoredEntry {
 
     /**
      * Replaces {@link #mSource} with one that reads file data from the zip file.
+     *
+     * @param zipFileOffset the offset in the zip file where data is written; must be non-negative
      * @throws IOException failed to replace the source
      */
-    void replaceSourceFromZip() throws IOException {
+    void replaceSourceFromZip(long zipFileOffset) throws IOException {
+        Preconditions.checkArgument(zipFileOffset >= 0, "zipFileOffset < 0");
+
         ProcessedAndRawByteSources oldSource = mSource;
-        mSource = createSourceFromZip();
+        mSource = createSourceFromZip(zipFileOffset);
+        mCdh.setOffset(zipFileOffset);
+        oldSource.close();
+    }
+
+    /**
+     * Loads all data in memory and replaces {@link #mSource} with one that contains all the data
+     * in memory.
+     *
+     * @throws IOException failed to replace the source
+     */
+    void loadSourceIntoMemory() throws IOException {
+        ProcessedAndRawByteSources oldSource = mSource;
+        byte[] rawContents = read();
+        mSource = createSourcesFromRawContents(new CloseableDelegateByteSource(
+                ByteSource.wrap(rawContents), rawContents.length));
+        mCdh.setOffset(-1);
         oldSource.close();
     }
 

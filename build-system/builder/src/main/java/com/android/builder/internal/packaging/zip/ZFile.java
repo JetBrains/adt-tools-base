@@ -53,6 +53,7 @@ import java.io.RandomAccessFile;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -62,73 +63,80 @@ import java.util.regex.Pattern;
  * The {@code ZFile} provides the main interface for interacting with zip files. A {@code ZFile}
  * can be created on a new file or in an existing file. Once created, files can be added or removed
  * from the zip file.
- * <p>
- * Changes in the zip file are always deferred. Any change requested is made in memory and written
- * to disk only when {@link #update()} or {@link #close()} is invoked.
- * <p>
- * Zip files are open initially in read-only mode and will switch to read-write when needed. This
+ *
+ * <p>Changes in the zip file are always deferred. Any change requested is made in memory and
+ * written to disk only when {@link #update()} or {@link #close()} is invoked.
+ *
+ * <p>Zip files are open initially in read-only mode and will switch to read-write when needed. This
  * is done automatically. Because modifications to the file are done in-memory, the zip file can
  * be manipulated when closed. When invoking {@link #update()} or {@link #close()} the zip file
  * will be reopen and changes will be written. However, the zip file cannot be modified outside
  * the control of {@code ZFile}. So, if a {@code ZFile} is closed, modified outside and then a file
  * is added or removed from the zip file, when reopening the zip file, {@link ZFile} will detect
  * the outside modification and will fail.
- * <p>
- * In memory manipulation means that files added to the zip file are kept in memory until written
+ *
+ * <p>In memory manipulation means that files added to the zip file are kept in memory until written
  * to disk. This provides much faster operation and allows better zip file allocation (see below).
  * It may, however, increase the memory footprint of the application. When adding large files, if
  * memory consumption is a concern, a call to {@link #update()} will actually write the file to
  * disk and discard the memory buffer. Information about allocation can be obtained from a
  * {@link ByteTracker} that can be given to the file on creation.
- * <p>
- * {@code ZFile} keeps track of allocation inside of the zip file. If a file is deleted, its space
- * is marked as freed and will be reused for an added file if it fits in the space. Allocation of
- * files to empty areas is done using a <em>best fit</em> algorithm. When adding a file, if it
- * doesn't fit in any free area, the zip file will be extended.
- * <p>
- * {@code ZFile} provides a fast way to merge data from another zip file
+ *
+ * <p>{@code ZFile} keeps track of allocation inside of the zip file. If a file is deleted, its
+ * space is marked as freed and will be reused for an added file if it fits in the space.
+ * Allocation of files to empty areas is done using a <em>best fit</em> algorithm. When adding a
+ * file, if it doesn't fit in any free area, the zip file will be extended.
+ *
+ * <p>{@code ZFile} provides a fast way to merge data from another zip file
  * (see {@link #mergeFrom(ZFile, Set)}) avoiding recompression and copying of equal files. When
  * merging, patterns of files may be provided that are ignored. This allows handling special files
  * in the merging process, such as files in {@code META-INF}.
- * <p>
- * When adding files to the zip file, unless files are explicitly required to be stored, files will
- * be deflated. However, deflating will not occur if the deflated file is larger then the stored
- * file, <em>e.g.</em> if compression would yield a bigger file. See {@link Compressor} for
+ *
+ * <p>When adding files to the zip file, unless files are explicitly required to be stored, files
+ * will be deflated. However, deflating will not occur if the deflated file is larger then the
+ * stored file, <em>e.g.</em> if compression would yield a bigger file. See {@link Compressor} for
  * details on how compression works.
- * <p>
- * Because {@code ZFile} was designed to be used in a build system and not as general-purpose
+ *
+ * <p>Because {@code ZFile} was designed to be used in a build system and not as general-purpose
  * zip utility, it is very strict (and unforgiving) about the zip format and unsupported features.
- * <p>
- * {@code ZFile} supports <em>alignment</em>. Alignment means that file data (not entries -- the
+ *
+ * <p>{@code ZFile} supports <em>alignment</em>. Alignment means that file data (not entries -- the
  * local header must be discounted) must start at offsets that are multiple of a number -- the
  * alginment. Alignment is defined by setting rules in an {@link AlignmentRules} object that can
  * be obtained using {@link #getAlignmentRules()}.
- * <p>
- * When a file is added to the zip, the alignment rules will be checked and alignment will be
+ *
+ * <p>When a file is added to the zip, the alignment rules will be checked and alignment will be
  * honored when positioning the file in the zip. This means that unused spaces in the zip may
  * be generated as a result. However, alignment of existing entries will not be changed.
- * <p>
- * Entries can be realigned individually (see {@link StoredEntry#realign()} or the full zip file
+ *
+ * <p>Entries can be realigned individually (see {@link StoredEntry#realign()} or the full zip file
  * may be realigned (see {@link #realign()}). When realigning the full zip entries that are already
  * realigned will not be affected.
- * <p>
- * Because realignment may cause files to move in the zip, realignment is done in-memory meaning
+ *
+ * <p>Because realignment may cause files to move in the zip, realignment is done in-memory meaning
  * that files that need to change location will moved to memory and will only be flushed when
  * either {@link #update()} or {@link #close()} are called.
- * <p>
- * To allow whole-apk signing, the {@code ZFile} allows the central directory location to be
+ *
+ * <p>{@code ZFile} support sorting zip files. Sorting (done through the {@link #sortZipContents()}
+ * method) is a process by which all files are re-read into memory, if not already in memory,
+ * removed from the zip and re-added in alphabetical order, respecting alignment rules. So, in
+ * general, file {@code b} will come after file {@code a} unless file {@code a} is subject to
+ * alignment that forces an empty space before that can be occupied by {@code b}. Sorting can be
+ * used to minimize the changes between two zips.
+ *
+ * <p>To allow whole-apk signing, the {@code ZFile} allows the central directory location to be
  * offset by a fixed amount. This amount can be set using the {@link #setExtraDirectoryOffset(long)}
  * method. Setting a non-zero value will add extra (unused) space in the zip file before the
  * central directory. This value can be changed at any time and it will force the central directory
  * rewritten when the file is updated or closed.
- * <p>
- * {@code ZFile} provides an extension mechanism to allow objects to register with the file
+ *
+ * <p>{@code ZFile} provides an extension mechanism to allow objects to register with the file
  * and be notified when changes to the file happen. This should be used
  * to add extra features to the zip file while providing strong decoupling. See
  * {@link ZFileExtension}, {@link ZFile#addZFileExtension(ZFileExtension)} and
  * {@link ZFile#removeZFileExtension(ZFileExtension)}.
- * <p>
- * This class is <strong>not</strong> thread-safe. Neither are any of the classes associated with
+ *
+ * <p>This class is <strong>not</strong> thread-safe. Neither are any of the classes associated with
  * it in this package, except when otherwise noticed.
  */
 public class ZFile implements Closeable {
@@ -897,8 +905,7 @@ public class ZFile implements Closeable {
         /*
          * Set the entry's offset and create the entry source.
          */
-        entry.getCentralDirectoryHeader().setOffset(offset);
-        entry.replaceSourceFromZip();
+        entry.replaceSourceFromZip(offset);
     }
 
     /**
@@ -949,7 +956,7 @@ public class ZFile implements Closeable {
         Preconditions.checkNotNull(mDirectoryEntry, "mDirectoryEntry != null");
 
         CentralDirectory newDirectory = mDirectoryEntry.getStore();
-        Verify.verifyNotNull(newDirectory, "newDirectory != null");
+        Preconditions.checkNotNull(newDirectory, "newDirectory != null");
 
         byte[] newDirectoryBytes = newDirectory.toBytes();
         long directoryOffset = mDirectoryEntry.getStart();
@@ -981,7 +988,7 @@ public class ZFile implements Closeable {
         Preconditions.checkNotNull(mDirectoryEntry, "mDirectoryEntry == null");
 
         CentralDirectory cd = mDirectoryEntry.getStore();
-        Verify.verifyNotNull(cd, "cd == null");
+        Preconditions.checkNotNull(cd, "cd == null");
         return cd.toBytes();
     }
 
@@ -1040,7 +1047,7 @@ public class ZFile implements Closeable {
         Preconditions.checkNotNull(mEocdEntry, "mEocdEntry == null");
 
         Eocd eocd = mEocdEntry.getStore();
-        Verify.verifyNotNull(eocd, "eocd == null");
+        Preconditions.checkNotNull(eocd, "eocd == null");
 
         byte[] eocdBytes = eocd.toBytes();
         long eocdOffset = mEocdEntry.getStart();
@@ -1060,7 +1067,7 @@ public class ZFile implements Closeable {
         Preconditions.checkNotNull(mEocdEntry, "mEocdEntry == null");
 
         Eocd eocd = mEocdEntry.getStore();
-        Verify.verifyNotNull(eocd, "eocd == null");
+        Preconditions.checkNotNull(eocd, "eocd == null");
         return eocd.toBytes();
     }
 
@@ -1349,24 +1356,7 @@ public class ZFile implements Closeable {
             replaceStore = null;
         }
 
-        /*
-         * Find a location in the zip where this entry will be added to and create the map entry.
-         * But before looking for the new location, delete the Central Directory and EOCD to make
-         * space for the new entry. We don't want to add the entry *after* the Central Directory
-         * because we would have to update the Central Directory when updating the file and this
-         * would create a hole in the zip. Me no like holes. Holes are evil.
-         */
-        deleteDirectoryAndEocd();
-        long size = newEntry.getInFileSize();
-        int localHeaderSize = newEntry.getLocalHeaderSize();
-        int alignment = mAlignmentRules.alignment(newEntry.getCentralDirectoryHeader().getName());
-        long newOffset = mMap.locateFree(size, localHeaderSize, alignment);
-        long newEnd = newOffset + newEntry.getInFileSize();
-        if (newEnd > mMap.size()) {
-            mMap.extend(newEnd);
-        }
-
-        FileUseMapEntry<StoredEntry> fileUseMapEntry = mMap.add(newOffset, newEnd, newEntry);
+        FileUseMapEntry<StoredEntry> fileUseMapEntry = positionInFile(newEntry);
         mEntries.put(newEntry.getCentralDirectoryHeader().getName(), fileUseMapEntry);
 
         mDirty = true;
@@ -1378,6 +1368,35 @@ public class ZFile implements Closeable {
                 return input.added(newEntry, replaceStore);
             }
         });
+    }
+
+    /**
+     * Finds a location in the zip where this entry will be added to and create the map entry.
+     * This method cannot be called if there is already a map entry for the given entry (if you
+     * do that, then you're doing something wrong somewhere).
+     *
+     * <p>This may delete the central directory and EOCD (if it deletes one, it deletes the other)
+     * if there is no space before the central directory. Otherwise, the file would be added
+     * after the central directory. This would force a new central directory to be written
+     * when updating the file and would create a hole in the zip. Me no like holes. Holes are evil.
+     *
+     * @param entry the entry to place in the zip
+     * @return the position in the file where the entry should be placed
+     */
+    @NonNull
+    private FileUseMapEntry<StoredEntry> positionInFile(@NonNull StoredEntry entry)
+            throws IOException {
+        deleteDirectoryAndEocd();
+        long size = entry.getInFileSize();
+        int localHeaderSize = entry.getLocalHeaderSize();
+        int alignment = mAlignmentRules.alignment(entry.getCentralDirectoryHeader().getName());
+        long newOffset = mMap.locateFree(size, localHeaderSize, alignment);
+        long newEnd = newOffset + entry.getInFileSize();
+        if (newEnd > mMap.size()) {
+            mMap.extend(newEnd);
+        }
+
+        return mMap.add(newOffset, newEnd, entry);
     }
 
     /**
@@ -1958,5 +1977,41 @@ public class ZFile implements Closeable {
      */
     public boolean areTimestampsIgnored() {
         return mNoTimestamps;
+    }
+
+    /**
+     * Sorts all files in the zip. This will force all files to be loaded and will wait for all
+     * background tasks to complete. Sorting files is never done implicitly and will operate in
+     * memory only (maybe reading files from the zip disk into memory, if needed). It will leave
+     * the zip in dirty state, requiring a call to {@link #update()} to force the entries to be
+     * written to disk.
+     *
+     * @throws IOException failed to load or move a file in the zip
+     */
+    public void sortZipContents() throws IOException {
+        reopenRw();
+
+        processAllReadyEntriesWithWait();
+
+        Verify.verify(mUncompressedEntries.isEmpty());
+
+        SortedSet<StoredEntry> sortedEntries = Sets.newTreeSet(StoredEntry.COMPARE_BY_NAME);
+        for (FileUseMapEntry<StoredEntry> fmEntry : mEntries.values()) {
+            StoredEntry entry = fmEntry.getStore();
+            Preconditions.checkNotNull(entry);
+            sortedEntries.add(entry);
+            entry.loadSourceIntoMemory();
+
+            mMap.remove(fmEntry);
+        }
+
+        mEntries.clear();
+        for (StoredEntry entry : sortedEntries) {
+            String name = entry.getCentralDirectoryHeader().getName();
+            FileUseMapEntry<StoredEntry> positioned = positionInFile(entry);
+            mEntries.put(name, positioned);
+        }
+
+        mDirty = true;
     }
 }
