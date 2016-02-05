@@ -336,7 +336,6 @@ public class MonkeyPatcher {
                         mtm.setAccessible(true);
                         mtm.invoke(activity);
 
-
                         Method mCreateTheme = AssetManager.class.getDeclaredMethod("createTheme");
                         mCreateTheme.setAccessible(true);
                         Object internalTheme = mCreateTheme.invoke(newAssetManager);
@@ -346,6 +345,28 @@ public class MonkeyPatcher {
                     } catch (Throwable e) {
                         Log.e(LOG_TAG, "Failed to update existing theme for activity " + activity,
                                 e);
+                    }
+
+                    // Drain TypedArray instances from the typed array pool since these can hold on
+                    // to stale asset data
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        try {
+                            Field typedArrayPoolField =
+                                    Resources.class.getDeclaredField("mTypedArrayPool");
+                            typedArrayPoolField.setAccessible(true);
+                            Object pool = typedArrayPoolField.get(resources);
+                            Class<?> poolClass = pool.getClass();
+                            Method acquireMethod = poolClass.getDeclaredMethod("acquire");
+                            acquireMethod.setAccessible(true);
+                            while (true) {
+                                Object typedArray = acquireMethod.invoke(pool);
+                                if (typedArray == null) {
+                                    break;
+                                }
+                            }
+                        } catch (Throwable e) {
+                            Log.e(LOG_TAG, "Failed to clear typed array pool for " + activity, e);
+                        }
                     }
                 }
             }
