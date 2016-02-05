@@ -123,8 +123,13 @@ public class JavaCompileConfigAction implements TaskConfigAction<AndroidJavaComp
         if (compileOptions.getIncremental() != null) {
             incremental = compileOptions.getIncremental();
         } else {
-            // For now, default to true, irrespective of Instant Run.
-            incremental = true;
+            if (globalScope.getExtension().getDataBinding().isEnabled()
+                || project.getPlugins().hasPlugin("com.neenbedankt.android-apt")) {
+              incremental = false;
+            } else {
+              // For now, default to true, irrespective of Instant Run.
+              incremental = true;
+            }
         }
 
         if (AndroidGradleOptions.isJavaCompileIncrementalPropertySet(project)) {
