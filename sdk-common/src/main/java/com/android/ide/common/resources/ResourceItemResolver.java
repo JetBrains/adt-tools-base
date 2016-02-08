@@ -21,11 +21,7 @@ import static com.android.ide.common.resources.ResourceResolver.MAX_RESOURCE_IND
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.ide.common.rendering.api.ArrayResourceValue;
-import com.android.ide.common.rendering.api.LayoutLog;
-import com.android.ide.common.rendering.api.RenderResources;
-import com.android.ide.common.rendering.api.ResourceValue;
-import com.android.ide.common.rendering.api.StyleResourceValue;
+import com.android.ide.common.rendering.api.*;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.resources.ResourceType;
@@ -268,13 +264,13 @@ public class ResourceItemResolver extends RenderResources {
 
     @SuppressWarnings("deprecation")
     @Override
-    public ResourceValue findItemInStyle(StyleResourceValue style, String attrName) {
+    public ItemResourceValue findItemInStyle(StyleResourceValue style, String attrName) {
         ResourceResolver resolver = getFullResolver();
         return resolver != null ? resolver.findItemInStyle(style, attrName) : null;
     }
 
     @Override
-    public ResourceValue findItemInStyle(StyleResourceValue style, String attrName,
+    public ItemResourceValue findItemInStyle(StyleResourceValue style, String attrName,
             boolean isFrameworkAttr) {
         ResourceResolver resolver = getFullResolver();
         return resolver != null ? resolver.findItemInStyle(style, attrName, isFrameworkAttr) : null;
