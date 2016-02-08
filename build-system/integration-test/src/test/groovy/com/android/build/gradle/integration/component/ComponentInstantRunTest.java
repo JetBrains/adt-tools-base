@@ -5,15 +5,14 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 
 import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.integration.instant.InstantRunTestUtils;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
-import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.InstantRun;
+import com.android.tools.fd.client.InstantRunBuildInfo;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 
@@ -50,7 +49,7 @@ public class ComponentInstantRunTest {
 
     @Test
     public void basicAssemble() {
-        project.execute(InstantRunTestUtils.getInstantRunArgs(), "assembleDebug");
+        project.execute(InstantRunTestUtils.getInstantRunArgs(21, ColdswapMode.DEFAULT), "assembleDebug");
         assertThat(project.getApk("debug")).exists();
     }
 
@@ -84,12 +83,10 @@ public class ComponentInstantRunTest {
         project.execute(
                 InstantRunTestUtils.getInstantRunArgs(21, ColdswapMode.DEFAULT),
                 instantRunModel.getIncrementalAssembleTaskName());
-        InstantRunBuildContext context = InstantRunTestUtils.loadContext(instantRunModel);
-        assertThat(context.getLastBuild()).isNotNull();
-        assertThat(context.getLastBuild().getVerifierStatus()).isPresent();
-        assertThat(context.getLastBuild().getVerifierStatus().get()).isEqualTo(
-                InstantRunVerifierStatus.JAVA_RESOURCES_CHANGED);
-        assertThat(context.getLastBuild().getArtifacts()).hasSize(0);
+        InstantRunBuildInfo context = InstantRunTestUtils.loadContext(instantRunModel);
+        assertThat(context.getVerifierStatus()).isEqualTo(
+                InstantRunVerifierStatus.JAVA_RESOURCES_CHANGED.toString());
+        assertThat(context.getArtifacts()).hasSize(0);
     }
 
 }

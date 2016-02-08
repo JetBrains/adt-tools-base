@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.instant;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
-import static org.junit.Assert.assertNotNull;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.OptionalCompilationStep;
@@ -28,11 +27,11 @@ import com.android.build.gradle.integration.common.truth.ApkSubject;
 import com.android.build.gradle.integration.common.truth.DexClassSubject;
 import com.android.build.gradle.integration.common.truth.DexFileSubject;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
-import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
-import com.android.build.gradle.internal.incremental.InstantRunBuildContext.Artifact;
-import com.android.build.gradle.internal.incremental.InstantRunBuildContext.FileType;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
 import com.android.builder.model.InstantRun;
+import com.android.tools.fd.client.InstantRunArtifact;
+import com.android.tools.fd.client.InstantRunArtifactType;
+import com.android.tools.fd.client.InstantRunBuildInfo;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Iterables;
 import com.google.common.io.Files;
@@ -77,8 +76,8 @@ public class ColdSwapTest {
                 .that().hasMethod("onCreate");
         dexFile.hasClass("Lcom/android/tools/fd/runtime/BootstrapApplication;");
 
-        InstantRunBuildContext initialContext = InstantRunTestUtils.loadContext(instantRunModel);
-        long startBuildId = initialContext.getBuildId();
+        InstantRunBuildInfo initialContext = InstantRunTestUtils.loadContext(instantRunModel);
+        String startBuildId = initialContext.getTimeStamp();
 
         // Cold swap
         makeColdSwapChange();
@@ -86,13 +85,12 @@ public class ColdSwapTest {
         project.execute(InstantRunTestUtils.getInstantRunArgs(apiLevel, ColdswapMode.AUTO),
                 instantRunModel.getIncrementalAssembleTaskName());
 
-        InstantRunBuildContext coldSwapContext = InstantRunTestUtils.loadContext(instantRunModel);
-        assertNotNull(coldSwapContext.getLastBuild());
-        expect.that(coldSwapContext.getLastBuild().getVerifierStatus()).named("verifier status")
-                .hasValue(InstantRunVerifierStatus.METHOD_ADDED);
-        expect.that(coldSwapContext.getBuildId()).named("build id").isNotEqualTo(startBuildId);
+        InstantRunBuildInfo coldSwapContext = InstantRunTestUtils.loadContext(instantRunModel);
+        expect.that(coldSwapContext.getVerifierStatus()).named("verifier status")
+                .isEqualTo(InstantRunVerifierStatus.METHOD_ADDED.toString());
+        expect.that(coldSwapContext.getTimeStamp()).named("build id").isNotEqualTo(startBuildId);
 
-        assertThat(coldSwapContext.getLastBuild().getArtifacts()).hasSize(0);
+        assertThat(coldSwapContext.getArtifacts()).isEmpty();
     }
 
     @Test
@@ -125,8 +123,8 @@ public class ColdSwapTest {
         expect.withFailureMessage("BootstrapApplication class should be in one dex file")
                 .that(foundBootstrapApplication).isTrue();
 
-        InstantRunBuildContext initialContext = InstantRunTestUtils.loadContext(instantRunModel);
-        long startBuildId = initialContext.getBuildId();
+        InstantRunBuildInfo initialContext = InstantRunTestUtils.loadContext(instantRunModel);
+        String startBuildId = initialContext.getTimeStamp();
 
         // Cold swap
         makeColdSwapChange();
@@ -134,19 +132,18 @@ public class ColdSwapTest {
         project.execute(InstantRunTestUtils.getInstantRunArgs(apiLevel, ColdswapMode.MULTIDEX),
                 instantRunModel.getIncrementalAssembleTaskName());
 
-        InstantRunBuildContext coldSwapContext = InstantRunTestUtils.loadContext(instantRunModel);
-        assertNotNull(coldSwapContext.getLastBuild());
+        InstantRunBuildInfo coldSwapContext = InstantRunTestUtils.loadContext(instantRunModel);
 
-        expect.that(coldSwapContext.getLastBuild().getVerifierStatus()).named("verifier status")
-                .hasValue(InstantRunVerifierStatus.METHOD_ADDED);
-        expect.that(coldSwapContext.getBuildId()).named("build id").isNotEqualTo(startBuildId);
+        expect.that(coldSwapContext.getVerifierStatus()).named("verifier status")
+                .isEqualTo(InstantRunVerifierStatus.METHOD_ADDED.toString());
+        expect.that(coldSwapContext.getTimeStamp()).named("build id").isNotEqualTo(startBuildId);
 
-        assertThat(coldSwapContext.getLastBuild().getArtifacts()).hasSize(1);
-        Artifact artifact = Iterables.getOnlyElement(coldSwapContext.getLastBuild().getArtifacts());
+        assertThat(coldSwapContext.getArtifacts()).hasSize(1);
+        InstantRunArtifact artifact = Iterables.getOnlyElement(coldSwapContext.getArtifacts());
 
-        expect.that(artifact.getType()).isEqualTo(FileType.DEX);
+        expect.that(artifact.type).isEqualTo(InstantRunArtifactType.DEX);
 
-        checkUpdatedClassPresence(artifact.getLocation());
+        checkUpdatedClassPresence(artifact.file);
     }
 
     @Ignore
@@ -159,8 +156,8 @@ public class ColdSwapTest {
         // Classes are sharded into split apks.
         assertThatApk(project.getApk("debug")).doesNotContain("classes.dex");
 
-        InstantRunBuildContext initialContext = InstantRunTestUtils.loadContext(instantRunModel);
-        long startBuildId = initialContext.getBuildId();
+        InstantRunBuildInfo initialContext = InstantRunTestUtils.loadContext(instantRunModel);
+        String startBuildId = initialContext.getTimeStamp();
 
         // Cold swap
         makeColdSwapChange();
@@ -168,16 +165,15 @@ public class ColdSwapTest {
         project.execute(InstantRunTestUtils.getInstantRunArgs(apiLevel, ColdswapMode.MULTIAPK),
                 instantRunModel.getIncrementalAssembleTaskName());
 
-        InstantRunBuildContext coldSwapContext = InstantRunTestUtils.loadContext(instantRunModel);
-        assertNotNull(coldSwapContext.getLastBuild());
-        expect.that(coldSwapContext.getLastBuild().getVerifierStatus()).named("verifier status")
-                .hasValue(InstantRunVerifierStatus.METHOD_ADDED);
-        expect.that(coldSwapContext.getBuildId()).named("build id").isNotEqualTo(startBuildId);
+        InstantRunBuildInfo coldSwapContext = InstantRunTestUtils.loadContext(instantRunModel);
+        expect.that(coldSwapContext.getVerifierStatus()).named("verifier status")
+                .isEqualTo(InstantRunVerifierStatus.METHOD_ADDED.toString());
+        expect.that(coldSwapContext.getTimeStamp()).named("build id").isNotEqualTo(startBuildId);
 
-        assertThat(coldSwapContext.getLastBuild().getArtifacts()).hasSize(2);
-        Artifact artifact = Iterables.getLast(coldSwapContext.getLastBuild().getArtifacts());
-        expect.that(artifact.getType()).named("artifact type").isEqualTo(FileType.SPLIT);
-        checkUpdatedClassPresence(artifact.getLocation());
+        assertThat(coldSwapContext.getArtifacts()).hasSize(2);
+        InstantRunArtifact artifact = Iterables.getLast(coldSwapContext.getArtifacts());
+        expect.that(artifact.type).named("artifact type").isEqualTo(InstantRunArtifactType.SPLIT);
+        checkUpdatedClassPresence(artifact.file);
     }
 
 

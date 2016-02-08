@@ -32,18 +32,19 @@ import com.android.build.gradle.integration.common.truth.DexFileSubject;
 import com.android.build.gradle.integration.common.utils.DeviceHelper;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
-import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.InstantRun;
 import com.android.ddmlib.IDevice;
 import com.android.ide.common.packaging.PackagingUtils;
 import com.android.sdklib.AndroidVersion;
 import com.android.tools.fd.client.AppState;
+import com.android.tools.fd.client.InstantRunArtifact;
+import com.android.tools.fd.client.InstantRunArtifactType;
+import com.android.tools.fd.client.InstantRunBuildInfo;
 import com.android.tools.fd.client.InstantRunClient;
 import com.android.tools.fd.client.InstantRunClient.FileTransfer;
 import com.android.tools.fd.client.UpdateMode;
 import com.android.tools.fd.client.UserFeedback;
-import com.android.tools.fd.runtime.ApplicationPatch;
 import com.android.utils.ILogger;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
@@ -68,6 +69,8 @@ import java.io.IOException;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class HotSwapTest {
+
+    private static final ColdswapMode COLDSWAP_MODE = ColdswapMode.MULTIDEX;
 
     @Rule
     public GradleTestProject project =
@@ -96,7 +99,7 @@ public class HotSwapTest {
 
         project.execute(
                 InstantRunTestUtils.getInstantRunArgs(19,
-                        ColdswapMode.MULTIAPK, OptionalCompilationStep.RESTART_ONLY),
+                        COLDSWAP_MODE, OptionalCompilationStep.RESTART_ONLY),
                 "assembleDebug");
 
         // As no injected API level, will default to no splits.
@@ -108,13 +111,13 @@ public class HotSwapTest {
 
         makeBasicHotswapChange();
 
-        project.execute(InstantRunTestUtils.getInstantRunArgs(21, ColdswapMode.MULTIAPK),
+        project.execute(InstantRunTestUtils.getInstantRunArgs(21, COLDSWAP_MODE),
                 instantRunModel.getIncrementalAssembleTaskName());
-        InstantRunBuildContext.Artifact artifact =
+        InstantRunArtifact artifact =
                 getCompiledHotSwapCompatibleChange(instantRunModel);
 
         expect.about(DexFileSubject.FACTORY)
-                .that(artifact.getLocation())
+                .that(artifact.file)
                 .hasClass("Lcom/example/helloworld/HelloWorld$override;")
                 .that().hasMethod("onCreate");
     }
@@ -149,14 +152,12 @@ public class HotSwapTest {
 
         project.execute(
                 InstantRunTestUtils.getInstantRunArgs(
-                        device, ColdswapMode.MULTIAPK, OptionalCompilationStep.RESTART_ONLY),
+                        device, COLDSWAP_MODE, OptionalCompilationStep.RESTART_ONLY),
                 "assembleDebug");
 
         // Deploy to device
-        InstantRunBuildContext context = new InstantRunBuildContext();
-        context.loadFromXmlFile(instantRunModel.getInfoFile());
-        assertNotNull("Last build should exist", context.getLastBuild());
-        InstantRunTestUtils.doInstall(device, context.getLastBuild().getArtifacts());
+        InstantRunBuildInfo info = InstantRunTestUtils.loadContext(instantRunModel);
+        InstantRunTestUtils.doInstall(device, info.getArtifacts());
 
         // Run app
         InstantRunTestUtils.unlockDevice(device);
@@ -177,16 +178,16 @@ public class HotSwapTest {
         makeBasicHotswapChange();
 
         // Now build the hot swap patch.
-        project.execute(InstantRunTestUtils.getInstantRunArgs(device, ColdswapMode.MULTIAPK),
+        project.execute(InstantRunTestUtils.getInstantRunArgs(device, COLDSWAP_MODE),
                 instantRunModel.getIncrementalAssembleTaskName());
 
-        InstantRunBuildContext.Artifact artifact =
+        InstantRunArtifact artifact =
                 getCompiledHotSwapCompatibleChange(instantRunModel);
 
-        FileTransfer fileTransfer = FileTransfer.createHotswapPatch(artifact.getLocation());
+        FileTransfer fileTransfer = FileTransfer.createHotswapPatch(artifact.file);
 
         client.pushPatches(device,
-                Long.toString(context.getBuildId()),
+                info.getTimeStamp(),
                 ImmutableList.of(fileTransfer.getPatch()),
                 UpdateMode.HOT_SWAP,
                 false /*restartActivity*/,
@@ -205,17 +206,15 @@ public class HotSwapTest {
     /**
      * Check a hot-swap compatible change works as expected.
      */
-    private static InstantRunBuildContext.Artifact getCompiledHotSwapCompatibleChange(
+    private static InstantRunArtifact getCompiledHotSwapCompatibleChange(
             @NonNull InstantRun instantRunModel) throws Exception {
-        InstantRunBuildContext context = InstantRunTestUtils.loadContext(instantRunModel);
+        InstantRunBuildInfo context = InstantRunTestUtils.loadContext(instantRunModel);
 
-        assertNotNull(context.getLastBuild());
-        assertThat(context.getLastBuild().getArtifacts()).hasSize(1);
+        assertThat(context.getArtifacts()).hasSize(1);
 
-        InstantRunBuildContext.Artifact artifact =
-                Iterables.getOnlyElement(context.getLastBuild().getArtifacts());
+        InstantRunArtifact artifact = Iterables.getOnlyElement(context.getArtifacts());
 
-        assertThat(artifact.getType()).isEqualTo(InstantRunBuildContext.FileType.RELOAD_DEX);
+        assertThat(artifact.type).isEqualTo(InstantRunArtifactType.RELOAD_DEX);
 
         return artifact;
     }
