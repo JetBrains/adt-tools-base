@@ -367,7 +367,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                         invokeStatic(RUNTIME_TYPE,
                                 Method.getMethod("Object getPrivateField(Object, Class, String)"));
                         // Stack : <field_value>
-                        unbox(Type.getType(desc));
+                        ByteCodeUtils.unbox(this, Type.getType(desc));
                         break;
                     case Opcodes.PUTFIELD:
                         if (DEBUG) {
@@ -455,7 +455,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                         invokeStatic(RUNTIME_TYPE,
                                 Method.getMethod("Object getStaticPrivateField(Class, String)"));
                         // Stack : <field_value>
-                        unbox(Type.getType(desc));
+                        ByteCodeUtils.unbox(this, Type.getType(desc));
                         return true;
                     case Opcodes.PUTSTATIC:
                         if (DEBUG) {
@@ -712,7 +712,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                         "Object newForClass(Object[], Class[], Class)"));
 
                 checkCast(expectedType);
-                unbox(expectedType);
+                ByteCodeUtils.unbox(this, expectedType);
                 return true;
             } else {
                 return false;
@@ -856,7 +856,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             if (ret.getSort() == Type.VOID) {
                 pop();
             } else {
-                unbox(ret);
+                ByteCodeUtils.unbox(this, ret);
             }
         }
 
@@ -968,7 +968,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                     mv.visitVarInsn(Opcodes.ALOAD, 2);
                     mv.push(argc);
                     mv.visitInsn(Opcodes.AALOAD);
-                    mv.unbox(t);
+                    ByteCodeUtils.unbox(mv, t);
                     argc++;
                 }
                 mv.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName + "$override",
