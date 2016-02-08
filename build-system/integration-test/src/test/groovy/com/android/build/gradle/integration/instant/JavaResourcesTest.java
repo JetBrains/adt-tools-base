@@ -26,6 +26,7 @@ import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.InstantRun;
+import com.android.tools.fd.client.InstantRunBuildInfo;
 import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
@@ -56,8 +57,6 @@ public class JavaResourcesTest {
 
     @Test
     public void testChangingJavaResources() throws Exception {
-        project.execute(InstantRunTestUtils.getInstantRunArgs(), "assembleDebug");
-        assertThat(project.getApk("debug")).exists();
         project.execute(
                 InstantRunTestUtils.getInstantRunArgs(
                         21,
@@ -73,18 +72,14 @@ public class JavaResourcesTest {
         project.execute(
                 InstantRunTestUtils.getInstantRunArgs(21, ColdswapMode.DEFAULT),
                 instantRunModel.getIncrementalAssembleTaskName());
-        InstantRunBuildContext context = InstantRunTestUtils.loadContext(instantRunModel);
-        assertThat(context.getLastBuild()).isNotNull();
-        assertThat(context.getLastBuild().getVerifierStatus()).isPresent();
-        assertThat(context.getLastBuild().getVerifierStatus().get()).isEqualTo(
-                InstantRunVerifierStatus.JAVA_RESOURCES_CHANGED);
-        assertThat(context.getLastBuild().getArtifacts()).hasSize(0);
+        InstantRunBuildInfo context = InstantRunTestUtils.loadContext(instantRunModel);
+        assertThat(context.getVerifierStatus()).isEqualTo(
+                InstantRunVerifierStatus.JAVA_RESOURCES_CHANGED.toString());
+        assertThat(context.getArtifacts()).hasSize(0);
     }
 
     @Test
     public void testChangingJavaSources() throws Exception {
-        project.execute(InstantRunTestUtils.getInstantRunArgs(), "assembleDebug");
-        assertThat(project.getApk("debug")).exists();
         project.execute(
                 InstantRunTestUtils.getInstantRunArgs(
                         21,
@@ -100,11 +95,9 @@ public class JavaResourcesTest {
         project.execute(
                 InstantRunTestUtils.getInstantRunArgs(21, ColdswapMode.DEFAULT),
                 instantRunModel.getIncrementalAssembleTaskName());
-        InstantRunBuildContext context = InstantRunTestUtils.loadContext(instantRunModel);
-        assertThat(context.getLastBuild()).isNotNull();
-        assertThat(context.getLastBuild().getVerifierStatus()).isPresent();
-        assertThat(context.getLastBuild().getVerifierStatus().get()).isEqualTo(
-                InstantRunVerifierStatus.JAVA_RESOURCES_CHANGED);
-        assertThat(context.getLastBuild().getArtifacts()).hasSize(0);
+        InstantRunBuildInfo context = InstantRunTestUtils.loadContext(instantRunModel);
+        assertThat(context.getVerifierStatus()).isEqualTo(
+                InstantRunVerifierStatus.JAVA_RESOURCES_CHANGED.toString());
+        assertThat(context.getArtifacts()).hasSize(0);
     }
 }

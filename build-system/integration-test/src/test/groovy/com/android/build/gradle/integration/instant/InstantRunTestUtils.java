@@ -19,14 +19,12 @@ package com.android.build.gradle.integration.instant;
 import static com.android.build.gradle.integration.common.utils.DeviceHelper.DEFAULT_ADB_TIMEOUT_MSEC;
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.junit.Assert.assertNotNull;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.AndroidGradleOptions;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.OptionalCompilationStep;
-import com.android.build.gradle.integration.common.utils.DeviceHelper;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
-import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.InstantRun;
 import com.android.builder.model.Variant;
@@ -37,9 +35,14 @@ import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.InstallException;
 import com.android.resources.Density;
 import com.android.sdklib.AndroidVersion;
+import com.android.tools.fd.client.InstantRunArtifact;
+import com.android.tools.fd.client.InstantRunArtifactType;
+import com.android.tools.fd.client.InstantRunBuildInfo;
+import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.io.Files;
 
 import java.io.File;
 import java.util.Collection;
@@ -48,10 +51,11 @@ import java.util.List;
 public final class InstantRunTestUtils {
 
     @NonNull
-    public static InstantRunBuildContext loadContext(@NonNull InstantRun instantRunModel)
+    public static InstantRunBuildInfo loadContext(@NonNull InstantRun instantRunModel)
             throws Exception {
-        InstantRunBuildContext context = new InstantRunBuildContext();
-        context.loadFromXmlFile(instantRunModel.getInfoFile());
+        InstantRunBuildInfo context = InstantRunBuildInfo.get(
+                Files.toString(instantRunModel.getInfoFile(), Charsets.UTF_8));
+        assertNotNull(context);
         return context;
     }
 
@@ -67,11 +71,6 @@ public final class InstantRunTestUtils {
     }
 
     @NonNull
-    public static List<String> getInstantRunArgs(OptionalCompilationStep... flags) {
-        return getInstantRunArgs(null, null, ColdswapMode.DEFAULT, flags);
-    }
-
-    @NonNull
     public static List<String> getInstantRunArgs(int apiLevel,
             @NonNull ColdswapMode coldswapMode,
             @NonNull OptionalCompilationStep... flags) {
@@ -79,8 +78,7 @@ public final class InstantRunTestUtils {
                 null /* density */, coldswapMode, flags);
     }
 
-    @NonNull
-    public static List<String> getInstantRunArgs(
+    static List<String> getInstantRunArgs(
             @NonNull IDevice device,
             @NonNull ColdswapMode coldswapMode,
             @NonNull OptionalCompilationStep... flags) {
@@ -118,15 +116,16 @@ public final class InstantRunTestUtils {
 
     static void doInstall(
             @NonNull IDevice device,
-            @NonNull List<InstantRunBuildContext.Artifact> artifacts) throws DeviceException,
+            @NonNull List<InstantRunArtifact> artifacts) throws DeviceException,
             InstallException {
         List<File> apkFiles = Lists.newArrayList();
-        for (InstantRunBuildContext.Artifact artifact : artifacts) {
-            if (artifact.getType() == InstantRunBuildContext.FileType.SPLIT) {
-                apkFiles.add(artifact.getLocation());
+        for (InstantRunArtifact artifact : artifacts) {
+            if (artifact.type == InstantRunArtifactType.SPLIT) {
+                apkFiles.add(artifact.file);
             }
-            if (artifact.getType() == InstantRunBuildContext.FileType.MAIN) {
-                apkFiles.add(0, artifact.getLocation());
+            if (artifact.type == InstantRunArtifactType.MAIN ||
+                    artifact.type == InstantRunArtifactType.SPLIT_MAIN ) {
+                apkFiles.add(0, artifact.file);
             }
         }
 
