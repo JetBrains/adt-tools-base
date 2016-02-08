@@ -117,7 +117,8 @@ public class InstantRunTransform extends Transform {
     public Set<Scope> getReferencedScopes() {
         return Sets.immutableEnumSet(Scope.EXTERNAL_LIBRARIES,
                 Scope.PROJECT_LOCAL_DEPS,
-                Scope.SUB_PROJECTS_LOCAL_DEPS);
+                Scope.SUB_PROJECTS_LOCAL_DEPS,
+                Scope.PROVIDED_ONLY);
     }
 
     @Override
