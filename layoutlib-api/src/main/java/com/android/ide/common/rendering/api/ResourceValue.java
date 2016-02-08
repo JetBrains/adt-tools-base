@@ -90,7 +90,7 @@ public class ResourceValue extends ResourceReference implements IResourceValue {
 
     @Override
     public String toString() {
-        return "ResourceValue [" + mType + "/" + getName() + " = " + mValue  //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+        return getClass().getSimpleName() + " [" + mType + "/" + getName() + " = " + mValue  //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
                 + " (framework:" + isFramework() + ")]"; //$NON-NLS-1$ //$NON-NLS-2$
     }
 
