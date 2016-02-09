@@ -23,6 +23,7 @@ import java.util.Arrays;
 public class TimelineDataTest extends TestCase {
 
     private static final int TYPE_DATA = 0;
+    private static final TimelineData.AreaTransform AREA_TRANSFORM = new TimelineData.AreaTransform();
 
     private TimelineData mData;
 
@@ -97,80 +98,108 @@ public class TimelineDataTest extends TestCase {
         assertEquals(0, mData.size());
     }
 
-    public void testAddFromAreaForFirstSample() {
+    public void testAddFromAreaWorksForSimpleCase() {
+        mData = new TimelineData(1, 10, AREA_TRANSFORM);
         assertEquals(0, mData.size());
-        long start = mData.getStartTime();
-        mData.addFromArea(start + 1000, TYPE_DATA, 500.0f, 100.0f);
+        mData.add(mData.getStartTime() + 1000, TYPE_DATA, 500.0f);
         assertEquals(1, mData.size());
         TimelineData.Sample sample = mData.get(0);
         assertEquals(1.0f, sample.time);
         assertEquals(1000.0f, sample.values[0]);
-        assertEquals(200.0f, sample.values[1]);
     }
 
-    public void testAddFromAreaExpectSpeedNotGoingDown() {
+    public void testAddFromAreaWorksWithMultipleStreams() {
+        mData = new TimelineData(3, 10, AREA_TRANSFORM);
         assertEquals(0, mData.size());
-        long start = mData.getStartTime();
-        mData.addFromArea(start + 1000, TYPE_DATA, 500.0f, 100.0f);
-        mData.addFromArea(start + 1500, TYPE_DATA, 500.0f, 100.0f);
-        assertEquals(2, mData.size());
-        TimelineData.Sample sample = mData.get(1);
-        assertEquals(1.5f, sample.time);
+        mData.add(mData.getStartTime() + 1000, TYPE_DATA, 500.0f, 300.0f, 100.0f);
+        assertEquals(1, mData.size());
+        TimelineData.Sample sample = mData.get(0);
+        assertEquals(1f, sample.time);
         assertEquals(1000.0f, sample.values[0]);
-        assertEquals(200.0f, sample.values[1]);
+        assertEquals(600.0f, sample.values[1]);
+        assertEquals(200.0f, sample.values[2]);
     }
 
-    public void testAddFromAreaExpectFirstStreamSpeedGoingToZeroFirst() {
-        mData = new TimelineData(2, 4);
+    public void testAreaIsZeroForConsistentSpeed() {
+        mData = new TimelineData(1, 10, AREA_TRANSFORM);
         assertEquals(0, mData.size());
         long start = mData.getStartTime();
-        mData.addFromArea(start + 1000, TYPE_DATA, 500.0f, 100.0f);
-        mData.addFromArea(start + 2000, TYPE_DATA, 250.0f, 75.0f);
-        assertEquals(4, mData.size());
-        TimelineData.Sample sample = mData.get(1);
-        assertEquals(1.5f, sample.time);
+
+        mData.add(start + 1000, TYPE_DATA, 500.0f);
+        assertEquals(1, mData.size());
+        TimelineData.Sample sample = mData.get(0);
+        assertEquals(1f, sample.time);
+        assertEquals(1000f, sample.values[0]);
+
+        mData.add(start + 2000, TYPE_DATA, 500.0f);
+        assertEquals(3, mData.size());
+
+        sample = mData.get(1);
+        assertEquals(1f, sample.time);
         assertEquals(0.0f, sample.values[0]);
-        assertEquals(66.66667f, sample.values[1]);
         sample = mData.get(2);
-        assertEquals(1.75f, sample.time);
-        assertEquals(0.0f, sample.values[0]);
-        assertEquals(0.0f, sample.values[1]);
-        sample = mData.get(3);
         assertEquals(2.0f, sample.time);
         assertEquals(0.0f, sample.values[0]);
-        assertEquals(0.0f, sample.values[1]);
     }
 
-    public void testAddFromAreaExpectSecondStreamSpeedGoingToZeroFirst() {
-        mData = new TimelineData(2, 4);
+    public void testAddFromAreaWorksCanHandleDecelerations() {
+        mData = new TimelineData(2, 10, AREA_TRANSFORM);
         assertEquals(0, mData.size());
         long start = mData.getStartTime();
-        mData.addFromArea(start + 1000, TYPE_DATA, 500.0f, 100.0f);
-        mData.addFromArea(start + 2000, TYPE_DATA, 400.0f, 50.0f);
-        assertEquals(4, mData.size());
-        TimelineData.Sample sample = mData.get(1);
-        assertEquals(1.5f, sample.time);
-        assertEquals(375.0f, sample.values[0]);
-        assertEquals(0.0f, sample.values[1]);
-        sample = mData.get(2);
-        assertEquals(1.8f, sample.time);
-        assertEquals(0.0f, sample.values[0]);
-        assertEquals(0.0f, sample.values[1]);
-        sample = mData.get(3);
-        assertEquals(2.0f, sample.time);
-        assertEquals(0.0f, sample.values[0]);
-        assertEquals(0.0f, sample.values[1]);
+
+        mData.add(start + 1000, TYPE_DATA, 100.0f, 50.0f);
+        assertEquals(1, mData.size());
+        TimelineData.Sample sample0 = mData.get(0);
+        assertEquals(1f, sample0.time);
+        assertEquals(200f, sample0.values[0]);
+        assertEquals(100f, sample0.values[1]);
+
+        mData.add(start + 2000, TYPE_DATA, 190.0f, 100.0f);
+        assertEquals(3, mData.size());
+        TimelineData.Sample sample1 = mData.get(1);
+        assertEquals(1.9f, sample1.time);
+        assertEquals(0.0f, sample1.values[0]);
+        assertEquals(10.0f, sample1.values[1]);
+
+        TimelineData.Sample sample2 = mData.get(2);
+        assertEquals(2.0f, sample2.time);
+        assertEquals(0.0f, sample2.values[0]);
+        assertEquals(0.0f, sample2.values[1]);
     }
 
-    public void testAddFromAreaWithZeroAreas() {
+    public void testAddFromAreaWorksForAddingStreamsDynamically() {
+        mData = new TimelineData(1, 10, AREA_TRANSFORM);
         assertEquals(0, mData.size());
         long start = mData.getStartTime();
-        mData.addFromArea(start + 1000, TYPE_DATA, 500.0f, 100.0f);
-        mData.addFromArea(start + 2000, TYPE_DATA, 0.0f, 0.0f);
-        assertEquals(2, mData.size());
-        TimelineData.Sample sample = mData.get(1);
-        assertEquals(2.0f, sample.time);
-        assertEquals(0.0f, sample.values[0]);
-        assertEquals(0.0f, sample.values[1]);
+
+        mData.add(start + 1000, TYPE_DATA, 100.0f);
+        TimelineData.Sample sample0 = mData.get(0);
+        assertEquals(1f, sample0.time);
+        assertEquals(200f, sample0.values[0]);
+
+        mData.addStream("Stream 1");
+        mData.add(start + 2000, TYPE_DATA, 200.0f, 200.0f);
+        TimelineData.Sample sample1 = mData.get(1);
+        assertEquals(2f, sample1.time);
+        assertEquals(0f, sample1.values[0]);
+        assertEquals(400f, sample1.values[1]);
+    }
+
+    public void testAddFromAreaWorksForRemovingStreamsDynamically() {
+        mData = new TimelineData(2, 10, AREA_TRANSFORM);
+        assertEquals(0, mData.size());
+        long start = mData.getStartTime();
+
+        mData.add(start + 1000, TYPE_DATA, 50.0f, 100.0f);
+        TimelineData.Sample sample0 = mData.get(0);
+        assertEquals(1f, sample0.time);
+        assertEquals(100f, sample0.values[0]);
+        assertEquals(200f, sample0.values[1]);
+
+        mData.removeStream("Stream 0");
+        mData.add(start + 2000, TYPE_DATA, 300.0f);
+        TimelineData.Sample sample1 = mData.get(1);
+        assertEquals(2f, sample1.time);
+        assertEquals(200f, sample1.values[0]);
     }
 }
