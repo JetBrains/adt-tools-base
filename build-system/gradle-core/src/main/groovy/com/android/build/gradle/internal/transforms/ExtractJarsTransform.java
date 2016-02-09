@@ -22,9 +22,6 @@ import static com.android.utils.FileUtils.mkdirs;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.build.api.transform.SecondaryInput;
-import com.android.build.api.transform.Context;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
 import com.android.build.api.transform.JarInput;
@@ -50,7 +47,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.jar.JarFile;
@@ -118,11 +114,13 @@ public class ExtractJarsTransform extends Transform {
             WaitableExecutor<Void> executor = new WaitableExecutor<Void>();
 
             for (TransformInput input : transformInvocation.getInputs()) {
-                if (!input.getDirectoryInputs().isEmpty()) {
-                    for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
-                        logger.warn("Extract Jars input contains folder. Ignoring: " +
-                                directoryInput.getFile());
-                    }
+                for (DirectoryInput dirInput : input.getDirectoryInputs()) {
+                    File dirOutput = outputProvider.getContentLocation(dirInput.getName()
+                            + "-" + dirInput.getFile().getAbsolutePath().hashCode(),
+                            dirInput.getContentTypes(),
+                            dirInput.getScopes(),
+                            Format.DIRECTORY);
+                    org.apache.commons.io.FileUtils.copyDirectory(dirInput.getFile(), dirOutput);
                 }
 
                 for (JarInput jarInput : input.getJarInputs()) {
