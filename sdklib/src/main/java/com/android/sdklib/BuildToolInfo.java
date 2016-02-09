@@ -26,6 +26,7 @@ import static com.android.SdkConstants.FN_DX_JAR;
 import static com.android.SdkConstants.FN_JACK;
 import static com.android.SdkConstants.FN_JILL;
 import static com.android.SdkConstants.FN_LD_ARM;
+import static com.android.SdkConstants.FN_LD_ARM64;
 import static com.android.SdkConstants.FN_LD_MIPS;
 import static com.android.SdkConstants.FN_LD_X86;
 import static com.android.SdkConstants.FN_RENDERSCRIPT;
@@ -44,6 +45,7 @@ import static com.android.sdklib.BuildToolInfo.PathId.DX_JAR;
 import static com.android.sdklib.BuildToolInfo.PathId.JACK;
 import static com.android.sdklib.BuildToolInfo.PathId.JILL;
 import static com.android.sdklib.BuildToolInfo.PathId.LD_ARM;
+import static com.android.sdklib.BuildToolInfo.PathId.LD_ARM64;
 import static com.android.sdklib.BuildToolInfo.PathId.LD_MIPS;
 import static com.android.sdklib.BuildToolInfo.PathId.LD_X86;
 import static com.android.sdklib.BuildToolInfo.PathId.LLVM_RS_CC;
@@ -126,7 +128,11 @@ public class BuildToolInfo {
         JACK("21.1.0"),
         JILL("21.1.0"),
 
-        SPLIT_SELECT("22.0.0");
+        SPLIT_SELECT("22.0.0"),
+
+        // --- NEW IN 23.0.3 ---
+        /** OS Path to the ARM64 linker. */
+        LD_ARM64("23.0.3");
 
         /**
          * min revision this element was introduced.
@@ -179,6 +185,7 @@ public class BuildToolInfo {
         add(DEXDUMP, FN_DEXDUMP);
         add(BCC_COMPAT, FN_BCC_COMPAT);
         add(LD_ARM, FN_LD_ARM);
+        add(LD_ARM64, FN_LD_ARM64);
         add(LD_X86, FN_LD_X86);
         add(LD_MIPS, FN_LD_MIPS);
         add(ZIP_ALIGN, FN_ZIPALIGN);
@@ -199,6 +206,7 @@ public class BuildToolInfo {
             @NonNull File androidRsClang,
             @Nullable File bccCompat,
             @Nullable File ldArm,
+            @Nullable File ldArm64,
             @Nullable File ldX86,
             @Nullable File ldMips,
             @NonNull File zipAlign) {
@@ -222,6 +230,11 @@ public class BuildToolInfo {
             add(LD_ARM, ldArm);
         } else if (LD_ARM.isPresentIn(revision)) {
             throw new IllegalArgumentException("LD_ARM required in " + revision.toString());
+        }
+        if (ldArm64 != null) {
+            add(LD_ARM64, ldArm);
+        } else if (LD_ARM64.isPresentIn(revision)) {
+            throw new IllegalArgumentException("LD_ARM64 required in " + revision.toString());
         }
 
         if (ldX86 != null) {

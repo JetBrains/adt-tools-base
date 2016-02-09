@@ -472,6 +472,9 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
                 BuildToolInfo.PathId.LD_ARM, SdkConstants.FN_LD_ARM);
         createFakeBuildToolsFile(
                 buildToolsDir, revision,
+                BuildToolInfo.PathId.LD_ARM64, SdkConstants.FN_LD_ARM64);
+        createFakeBuildToolsFile(
+                buildToolsDir, revision,
                 BuildToolInfo.PathId.LD_MIPS, SdkConstants.FN_LD_MIPS);
         createFakeBuildToolsFile(
                 buildToolsDir, revision,

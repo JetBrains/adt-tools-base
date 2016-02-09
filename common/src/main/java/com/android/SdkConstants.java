@@ -188,6 +188,10 @@ public final class SdkConstants {
     public static final String FN_LD_ARM =
             "arm-linux-androideabi-ld" + ext(".exe", ""); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 
+    /** renderscript support linker for ARM64 (with extension for the current OS) */
+    public static final String FN_LD_ARM64 =
+            "aarch64-linux-android-ld" + ext(".exe", ""); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+
     /** renderscript support linker for X86 (with extension for the current OS) */
     public static final String FN_LD_X86 =
             "i686-linux-android-ld" + ext(".exe", "");   //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
