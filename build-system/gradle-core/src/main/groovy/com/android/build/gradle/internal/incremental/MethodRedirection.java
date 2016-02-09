@@ -59,7 +59,7 @@ public class MethodRedirection extends Redirection {
         if (type == Type.VOID_TYPE) {
             mv.pop();
         } else {
-            mv.unbox(type);
+            ByteCodeUtils.unbox(mv, type);
         }
         mv.returnValue();
     }

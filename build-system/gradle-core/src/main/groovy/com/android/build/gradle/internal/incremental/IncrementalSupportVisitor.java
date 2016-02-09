@@ -400,7 +400,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
                     mv.visitVarInsn(Opcodes.ALOAD, 2);
                     mv.push(argc);
                     mv.visitInsn(Opcodes.AALOAD);
-                    mv.unbox(t);
+                    ByteCodeUtils.unbox(mv, t);
                     argc++;
                 }
 
@@ -512,7 +512,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
                     mv.visitVarInsn(Opcodes.ALOAD, 1);
                     mv.push(argc + 1);
                     mv.visitInsn(Opcodes.AALOAD);
-                    mv.unbox(t);
+                    ByteCodeUtils.unbox(mv, t);
                     argc++;
                 }
 

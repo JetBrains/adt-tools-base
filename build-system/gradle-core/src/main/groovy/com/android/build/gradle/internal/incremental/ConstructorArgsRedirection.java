@@ -152,7 +152,7 @@ public class ConstructorArgsRedirection extends Redirection {
                 // get it from the array
                 mv.arrayLoad(Type.getType(Object.class));
                 // unbox the argument
-                mv.unbox(arg);
+                ByteCodeUtils.unbox(mv, arg);
                 // restore the argument
                 mv.visitVarInsn(arg.getOpcode(Opcodes.ISTORE), stackIndex);
           }
