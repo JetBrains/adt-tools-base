@@ -59,5 +59,7 @@ public enum InstantRunVerifierStatus {
     R_CLASS_CHANGE,
 
     // reflection use
-    REFLECTION_USED
+    REFLECTION_USED,
+
+    JAVA_RESOURCES_CHANGED
 }
