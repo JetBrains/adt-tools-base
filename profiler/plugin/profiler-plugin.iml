@@ -22,7 +22,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/offline-m2/com/android/tools/build/gradle-api/2.0.0-alpha9/gradle-api-2.0.0-alpha9.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/gradle-api/gradle-api-2.0.0-beta1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
