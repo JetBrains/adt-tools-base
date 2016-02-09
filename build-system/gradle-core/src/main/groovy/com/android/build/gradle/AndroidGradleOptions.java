@@ -50,12 +50,8 @@ public class AndroidGradleOptions {
     private static final String PROPERTY_BENCHMARK_NAME = "com.android.benchmark.name";
     private static final String PROPERTY_BENCHMARK_MODE = "com.android.benchmark.mode";
 
-    // Enable incremental java compile in all cases, not just for Instant Run.
-    private static final String PROPERTY_INCREMENTAL_JAVA_COMPILE =
+    public static final String PROPERTY_INCREMENTAL_JAVA_COMPILE =
             "android.incrementalJavaCompile";
-    // Disable incremental java compile even for Instant Run.
-    private static final String PROPERTY_INSTANT_RUN_INCREMENTAL_JAVA_COMPILE =
-            "android.instantRunIncrementalJavaCompile";
 
     private static final String PROPERTY_USE_OLD_PACKAGING = "android.useOldPackaging";
 
@@ -140,10 +136,6 @@ public class AndroidGradleOptions {
     @Nullable
     public static String getColdswapMode(@NonNull Project project) {
         return getString(project, AndroidProject.PROPERTY_SIGNING_COLDSWAP_MODE);
-    }
-
-    public static boolean isIntegrationTest() {
-        return Boolean.parseBoolean(System.getenv("INTEGRATION_TEST"));
     }
 
     public static boolean useDeprecatedNdk(@NonNull Project project) {
@@ -250,19 +242,8 @@ public class AndroidGradleOptions {
         return defaultValue;
     }
 
-    public static boolean useDexerPool() {
-        // TODO: Implement.
-        return false;
-    }
-
-    //TODO: Decide before stable release whether should be enabled by default.
-    public static boolean isJavaCompileIncremental(@NonNull Project project) {
-        return getBoolean(project, PROPERTY_INCREMENTAL_JAVA_COMPILE, true /*defaultValue*/);
-    }
-
-    public static boolean isInstantRunJavaCompileIncremental(@NonNull Project project) {
-        return getBoolean(project, PROPERTY_INSTANT_RUN_INCREMENTAL_JAVA_COMPILE,
-                true /*defaultValue*/);
+    public static boolean isJavaCompileIncrementalPropertySet(@NonNull Project project) {
+        return project.hasProperty(PROPERTY_INCREMENTAL_JAVA_COMPILE);
     }
 
     public static class SigningOptions {
@@ -272,7 +253,7 @@ public class AndroidGradleOptions {
         @NonNull public final String keyPassword;
         @Nullable public final String storeType;
 
-        public SigningOptions(
+        SigningOptions(
                 @NonNull String storeFile,
                 @NonNull String storePassword,
                 @NonNull String keyAlias,
