@@ -131,7 +131,7 @@ public class InstantRunSlicer extends Transform {
     @NonNull
     @Override
     public Set<Scope> getScopes() {
-        return Sets.immutableEnumSet(Scope.PROJECT, Scope.SUB_PROJECTS);
+        return TransformManager.SCOPE_FULL_PROJECT;
     }
 
     @Override
