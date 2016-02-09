@@ -41,6 +41,7 @@ public enum GpuMode {
             case MESA:
             case SWIFT:
                 return "Software - GLES 2.0";
+            case OFF:
             default:
                 return "Software - GLES 1.1";
         }
