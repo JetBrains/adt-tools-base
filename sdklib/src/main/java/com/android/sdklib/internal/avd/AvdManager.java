@@ -228,6 +228,11 @@ public class AvdManager {
     public static final String AVD_INI_GPU_EMULATION = "hw.gpu.enabled"; //$NON-NLS-1$
 
     /**
+     * AVD/config.ini key name representing which software OpenGLES should be used
+     */
+    public static final String AVD_INI_GPU_MODE = "hw.gpu.mode";
+
+    /**
      * AVD/config.ini key name representing how to emulate the front facing camera
      */
     public static final String AVD_INI_CAMERA_FRONT = "hw.camera.front"; //$NON-NLS-1$
