@@ -183,7 +183,6 @@ model {
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(base)
             .forExperimentalPlugin(true)
-            .captureStdOut(true)
             .create()
 
     @AfterClass
@@ -291,7 +290,6 @@ model {
         long lib1ModifiedTime = lib1So.lastModified()
         long lib2ModifiedTime = lib2So.lastModified()
 
-        project.stdout.reset()
         project.execute(":app:assembleDebug")
 
         assertThat(lib2So).isNewerThan(lib2ModifiedTime)

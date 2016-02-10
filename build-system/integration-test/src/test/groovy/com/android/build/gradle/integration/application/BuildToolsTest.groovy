@@ -61,7 +61,6 @@ class BuildToolsTest {
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(HelloWorldApp.noBuildFile())
-            .captureStdOut(true)
             .create()
 
     @Before
@@ -79,10 +78,9 @@ android {
     @Test
     public void nullBuild() {
         project.execute("assemble")
-        project.stdout.reset()
         project.execute("assemble")
 
-        Set<String> skippedTasks = getTasksMatching(UP_TO_DATE_PATTERN, project.stdout)
+        Set<String> skippedTasks = getTasksMatching(UP_TO_DATE_PATTERN, project.getStdout())
         assert_().withFailureMessage("Expecting tasks to be UP-TO-DATE").that(skippedTasks)
                 .containsAllIn(GradleTestProject.USE_JACK ? JACK_TASKS : JAVAC_TASKS)
     }
@@ -107,9 +105,9 @@ android {
 }
 """
 
-        project.stdout.reset()
         project.execute("assemble")
-        Set<String> affectedTasks = getTasksMatching(INPUT_CHANGED_PATTERN, project.stdout)
+        Set<String> affectedTasks =
+                getTasksMatching(INPUT_CHANGED_PATTERN, project.getStdout())
         assert_().withFailureMessage("Expecting tasks to be invalidated").that(affectedTasks)
                 .containsAllIn(GradleTestProject.USE_JACK ? JACK_TASKS : JAVAC_TASKS)
     }
@@ -122,9 +120,9 @@ android {
                 .isEqualTo(GradleTestProject.DEFAULT_BUILD_TOOL_VERSION)
     }
 
-    private static Set<String> getTasksMatching(Pattern pattern, ByteArrayOutputStream output) {
+    private static Set<String> getTasksMatching(Pattern pattern, String output) {
         Set<String> result = Sets.newHashSet()
-        Matcher matcher = (output.toString("UTF-8") =~ pattern)
+        Matcher matcher = (output =~ pattern)
         while (matcher.find()) {
             result.add(matcher.group(1))
         }

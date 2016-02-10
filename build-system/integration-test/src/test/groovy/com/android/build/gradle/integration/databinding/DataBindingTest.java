@@ -70,7 +70,6 @@ public class DataBindingTest {
         }
         project = GradleTestProject.builder()
                 .fromTestProject("databinding", options.isEmpty() ? null : Joiner.on('-').join(options))
-                .captureStdOut(true)
                 .forExperimentalPlugin(forExperimentalPlugin)
                 .create();
     }
@@ -82,9 +81,8 @@ public class DataBindingTest {
 
     @Before
     public void setUp() {
-        project.getStdout().reset();
         project.execute("assembleDebug");
-        buildOutput = project.getStdout().toString();
+        buildOutput = project.getStdout();
     }
 
     @Test

@@ -77,7 +77,7 @@ public class DexLimitTest {
 
     @Rule
     public final GradleTestProject mProject = GradleTestProject.builder()
-            .fromTestApp(TEST_APP).captureStdErr(true).withHeap("2G").create();
+            .fromTestApp(TEST_APP).withHeap("2G").create();
 
     public DexLimitTest(boolean dexInProcess) {
         mDexInProcess = dexInProcess;
@@ -91,9 +91,8 @@ public class DexLimitTest {
 
     @Test
     public void checkDexErrorMessage() throws Exception {
-        mProject.getStderr().reset();
         mProject.executeExpectingFailure("assembleDebug");
-        assertThat(mProject.getStderr().toString()).contains(
+        assertThat(mProject.getStderr()).contains(
                 "https://developer.android.com/tools/building/multidex.html");
     }
 }

@@ -16,21 +16,14 @@
 
 package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.ZipHelper
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
-import static com.android.SdkConstants.DOT_ANDROID_PACKAGE
-import static com.android.SdkConstants.FD_RES
-import static com.android.SdkConstants.FD_RES_RAW
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
-import static com.android.builder.core.BuilderConstants.ANDROID_WEAR_MICRO_APK
 import static org.junit.Assert.assertFalse
-import static org.junit.Assert.assertNotNull
-import static org.junit.Assert.assertNull
+
 /**
  * Assemble tests for embedded wear app with a single app.
  */
@@ -39,7 +32,6 @@ class WearSimpleDebugOnlyTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("simpleMicroApp")
-            .captureStdOut(true)
             .create()
 
     @BeforeClass
@@ -54,10 +46,6 @@ class WearSimpleDebugOnlyTest {
 
     @Test
     void "check release not built"() {
-        ByteArrayOutputStream out = project.getStdout()
-
-        String log = out.toString()
-
-        assertFalse(log.contains(":wear:packageRelease"))
+        assertFalse(project.getStdout().contains(":wear:packageRelease"))
     }
 }

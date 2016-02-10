@@ -37,7 +37,7 @@ import static org.junit.Assert.fail
 class ExternalTestProjectTest {
 
     @Rule
-    public GradleTestProject project = GradleTestProject.builder().captureStdErr(true).create()
+    public GradleTestProject project = GradleTestProject.builder().create()
 
     private File app2BuildFile
 
@@ -126,10 +126,8 @@ dependencies {
         }
 
         // check there is a version of the error, after the task name:
-        ByteArrayOutputStream stderr = project.stderr
-        String log = stderr.toString()
 
-        assertTrue("stderr contains error", log.contains(
+        assertTrue("stderr contains error", project.getStderr().contains(
                 "Dependency project:app1:unspecified on project app2 resolves to an APK archive which is not supported as a compilation dependency. File:"))
 
     }

@@ -37,8 +37,6 @@ public class TestWithMismatchDep {
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("testDependency")
-            .captureStdOut(true)
-            .captureStdErr(true)
             .create();
 
     @Before
@@ -86,7 +84,7 @@ public class TestWithMismatchDep {
         }
 
         // check there is a version of the error, after the task name:
-        assertThat(project.getStderr().toString()).named("stderr").contains(ERROR_MSG);
+        assertThat(project.getStderr()).named("stderr").contains(ERROR_MSG);
 
     }
 
@@ -95,7 +93,7 @@ public class TestWithMismatchDep {
         project.execute("assembleDebug");
 
         // check there is a log output
-        assertThat(project.getStdout().toString()).named("stdout").contains(ERROR_MSG);
+        assertThat(project.getStdout()).named("stdout").contains(ERROR_MSG);
     }
 
     @Test
@@ -105,6 +103,6 @@ public class TestWithMismatchDep {
         project.execute("dependencies");
 
         // check there is a log output
-        assertThat(project.getStdout().toString()).named("stdout").contains(ERROR_MSG);
+        assertThat(project.getStdout()).named("stdout").contains(ERROR_MSG);
     }
 }

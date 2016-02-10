@@ -68,7 +68,6 @@ public class ProvidedSubclassTest {
     public GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestApp(TEST_APP)
-                    .captureStdErr(true).captureStdOut(true)
                     .create();
 
     @Rule
@@ -92,7 +91,7 @@ public class ProvidedSubclassTest {
                 "assembleDebug");
 
         // Check we can find the parent class.
-        assertThat(project.getStderrString()).doesNotContain("ByteSink");
+        assertThat(project.getStderr()).doesNotContain("ByteSink");
 
     }
 
