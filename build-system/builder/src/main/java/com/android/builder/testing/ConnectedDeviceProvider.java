@@ -21,6 +21,7 @@ import com.android.builder.testing.api.DeviceConnector;
 import com.android.builder.testing.api.DeviceException;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.ddmlib.AndroidDebugBridge;
+import com.android.ddmlib.DdmPreferences;
 import com.android.ddmlib.IDevice;
 import com.android.utils.ILogger;
 import com.google.common.base.Joiner;
@@ -30,9 +31,9 @@ import com.google.common.collect.Sets;
 
 import java.io.File;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * DeviceProvider for locally connected devices. Basically returns the list of devices that
@@ -43,7 +44,10 @@ public class ConnectedDeviceProvider extends DeviceProvider {
     @NonNull
     private final File adbLocation;
 
-    private final int timeOutInMs;
+    private final long timeOut;
+
+    @NonNull
+    private final TimeUnit timeOutUnit;
 
     @NonNull
     private final ILogger iLogger;
@@ -51,10 +55,14 @@ public class ConnectedDeviceProvider extends DeviceProvider {
     @NonNull
     private final List<ConnectedDevice> localDevices = Lists.newArrayList();
 
+    /**
+     * @param timeOutInMs The time out for each adb command, where 0 means wait forever.
+     */
     public ConnectedDeviceProvider(@NonNull File adbLocation, int timeOutInMs,
             @NonNull ILogger logger) {
         this.adbLocation = adbLocation;
-        this.timeOutInMs = timeOutInMs;
+        this.timeOut = timeOutInMs;
+        timeOutUnit = TimeUnit.MILLISECONDS;
         iLogger = logger;
     }
 
@@ -72,23 +80,33 @@ public class ConnectedDeviceProvider extends DeviceProvider {
 
     @Override
     public void init() throws DeviceException {
+        // TODO: make all timeouts explicit in IDevice
+        DdmPreferences.setTimeOut((int) timeOutUnit.toMillis(timeOut));
         AndroidDebugBridge.initIfNeeded(false /*clientSupport*/);
 
         AndroidDebugBridge bridge = AndroidDebugBridge.createBridge(
                 adbLocation.getAbsolutePath(), false /*forceNewBridge*/);
 
-        long timeOut = 30000; // 30 sec
-        int sleepTime = 1000;
-        while (!bridge.hasInitialDeviceList() && timeOut > 0) {
+        if (bridge == null) {
+            throw new DeviceException("Could not create ADB Bridge. "
+                    + "ADB location: " + adbLocation.getAbsolutePath());
+        }
+
+        long getDevicesCountdown = timeOutUnit.toMillis(timeOut);
+        final int sleepTime = 1000;
+        while (!bridge.hasInitialDeviceList() && getDevicesCountdown >= 0) {
             try {
                 Thread.sleep(sleepTime);
             } catch (InterruptedException e) {
                 throw new DeviceException(e);
             }
-            timeOut -= sleepTime;
+            // If timeOut is 0, wait forever.
+            if (timeOut != 0) {
+                getDevicesCountdown -= sleepTime;
+            }
         }
 
-        if (timeOut <= 0 && !bridge.hasInitialDeviceList()) {
+        if (!bridge.hasInitialDeviceList()) {
             throw new DeviceException("Timeout getting device list.");
         }
 
@@ -125,7 +143,7 @@ public class ConnectedDeviceProvider extends DeviceProvider {
 
         for (IDevice device : filteredDevices) {
             if (device.getState() == IDevice.DeviceState.ONLINE) {
-                localDevices.add(new ConnectedDevice(device));
+                localDevices.add(new ConnectedDevice(device, iLogger, timeOut, timeOutUnit));
             } else {
                 iLogger.info(
                         "Skipping device '%s' (%s): Device is %s%s.",
@@ -153,7 +171,7 @@ public class ConnectedDeviceProvider extends DeviceProvider {
 
     @Override
     public int getTimeoutInMs() {
-        return timeOutInMs;
+        return (int) timeOutUnit.toMillis(timeOut);
     }
 
     @Override
