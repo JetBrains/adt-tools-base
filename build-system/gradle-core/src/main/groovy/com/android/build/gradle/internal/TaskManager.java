@@ -97,6 +97,7 @@ import com.android.build.gradle.internal.transforms.InstantRunTransform;
 import com.android.build.gradle.internal.transforms.InstantRunVerifierTransform;
 import com.android.build.gradle.internal.transforms.JacocoTransform;
 import com.android.build.gradle.internal.transforms.JarMergingTransform;
+import com.android.build.gradle.internal.transforms.JavaResourceVerifierTransform;
 import com.android.build.gradle.internal.transforms.MergeJavaResourcesTransform;
 import com.android.build.gradle.internal.transforms.MultiDexTransform;
 import com.android.build.gradle.internal.transforms.NewShrinkerTransform;
@@ -1298,11 +1299,10 @@ public abstract class TaskManager {
         if (!isComponentModelPlugin) {
             createNdkTasks(variantScope);
         }
+        variantScope.setNdkBuildable(getNdkBuildable(variantData));
 
         // add tasks to merge jni libs.
         createMergeJniLibFoldersTasks(tasks, variantScope);
-
-        variantScope.setNdkBuildable(getNdkBuildable(variantData));
 
         // Add a task to compile the test application
         if (variantData.getVariantConfiguration().getUseJack()) {
@@ -2073,10 +2073,22 @@ public abstract class TaskManager {
         verifierTask.dependsOn(tasks, extractJarsTask);
         variantScope.setInstantRunVerifierTask(verifierTask);
 
+        JavaResourceVerifierTransform jniLibsVerifierTransform = new JavaResourceVerifierTransform(
+                "jniLibsVerifier",
+                variantScope,
+                getResMergingScopes(variantScope),
+                ExtendedContentType.NATIVE_LIBS);
+        AndroidTask<TransformTask> jniLibsVerifierTask =
+                variantScope.getTransformManager().addTransform(
+                        tasks,
+                        variantScope,
+                        jniLibsVerifierTransform);
+        jniLibsVerifierTask.dependsOn(tasks, verifierTask);
+
         InstantRunTransform instantRunTransform = new InstantRunTransform(variantScope);
         AndroidTask<TransformTask> instantRunTask = transformManager
                 .addTransform(tasks, variantScope, instantRunTransform);
-        instantRunTask.dependsOn(tasks, buildInfoLoaderTask, verifierTask);
+        instantRunTask.dependsOn(tasks, buildInfoLoaderTask, verifierTask, jniLibsVerifierTask);
 
         AndroidTask<FastDeployRuntimeExtractorTask> extractorTask = getAndroidTasks().create(
                 tasks, new FastDeployRuntimeExtractorTask.ConfigAction(variantScope));

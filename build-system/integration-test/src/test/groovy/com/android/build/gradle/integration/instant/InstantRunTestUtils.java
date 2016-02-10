@@ -44,10 +44,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-final class InstantRunTestUtils {
+public final class InstantRunTestUtils {
 
     @NonNull
-    static InstantRunBuildContext loadContext(@NonNull InstantRun instantRunModel)
+    public static InstantRunBuildContext loadContext(@NonNull InstantRun instantRunModel)
             throws Exception {
         InstantRunBuildContext context = new InstantRunBuildContext();
         context.loadFromXmlFile(instantRunModel.getInfoFile());
@@ -55,7 +55,7 @@ final class InstantRunTestUtils {
     }
 
     @NonNull
-    static InstantRun getInstantRunModel(@NonNull AndroidProject project) {
+    public static InstantRun getInstantRunModel(@NonNull AndroidProject project) {
         Collection<Variant> variants = project.getVariants();
         for (Variant variant : variants) {
             if ("debug".equals(variant.getName())) {
@@ -66,25 +66,27 @@ final class InstantRunTestUtils {
     }
 
     @NonNull
-    static List<String> getInstantRunArgs(OptionalCompilationStep... flags) {
+    public static List<String> getInstantRunArgs(OptionalCompilationStep... flags) {
         return ImmutableList.of(buildOptionalCompilationStepsProperty(flags));
     }
 
     @NonNull
-    static List<String> getInstantRunArgs(int apiLevel,
+    public static List<String> getInstantRunArgs(int apiLevel,
             @NonNull ColdswapMode coldswapMode,
             @NonNull OptionalCompilationStep... flags) {
         return getInstantRunArgs(new AndroidVersion(apiLevel, null), coldswapMode, flags);
     }
 
-    static List<String> getInstantRunArgs(@NonNull IDevice device,
+    @NonNull
+    public static List<String> getInstantRunArgs(
+            @NonNull IDevice device,
             @NonNull ColdswapMode coldswapMode,
             @NonNull OptionalCompilationStep... flags) {
         return getInstantRunArgs(device.getVersion(), coldswapMode, flags);
     }
 
     @NonNull
-    static List<String> getInstantRunArgs(@NonNull AndroidVersion androidVersion,
+    public static List<String> getInstantRunArgs(@NonNull AndroidVersion androidVersion,
             @NonNull ColdswapMode coldswapMode,
             @NonNull OptionalCompilationStep... flags) {
         String version =
