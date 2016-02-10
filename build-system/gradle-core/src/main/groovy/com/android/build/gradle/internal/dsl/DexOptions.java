@@ -38,6 +38,8 @@ public class DexOptions implements com.android.builder.core.DexOptions {
 
     private String javaMaxHeapSize;
 
+    private Integer maxProcessCount = null;
+
     public void setIncremental(boolean isIncremental) {
         // TODO: Print out a warning, that this is ignored.
         isIncrementalFlag = isIncremental;
@@ -125,4 +127,25 @@ public class DexOptions implements com.android.builder.core.DexOptions {
     public Integer getThreadCount() {
         return threadCount;
     }
+
+
+    /**
+     * Returns the maximum number of concurrent processes that can be used to dex.
+     * Be aware that the number of concurrent process times the memory requirement represent the
+     * minimum amount of memory that will be used by the dx processes :
+     *  Total Memory = getMaxProcessCount() * getJavaMaxHeapSize()
+     *
+     * To avoid trashing, keep these two settings appropriate for your configuration.
+     * @return the max number of concurrent dx processes.
+     */
+    @Nullable
+    @Override
+    public Integer getMaxProcessCount() {
+        return maxProcessCount;
+    }
+
+    public void setMaxProcessCount(int maxProcessCount) {
+        this.maxProcessCount = maxProcessCount;
+    }
+
 }
