@@ -68,7 +68,6 @@ import org.junit.runners.model.Statement;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1116,6 +1115,9 @@ public class GradleTestProject implements TestRule {
         args.add("-Pcom.android.build.gradle.integratonTest.useComponentModel=" +
                 Boolean.toString(experimentalMode));
         args.addAll(arguments);
+
+        System.out.println("[GradleTestProject] Executing tasks: gradle "
+                + Joiner.on(' ').join(args) + " " + Joiner.on(' ').join(tasks));
 
         BuildLauncher launcher = connection.newBuild()
                 .forTasks(tasks)

@@ -27,13 +27,17 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 import org.junit.experimental.categories.Category
+
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
+
 /**
  * Test Jack integration.
  */
 @CompileStatic
 class JackTest {
     private final static List<String> JACK_OPTIONS = ImmutableList.of(
-            "-PCUSTOM_JACK=1",
+            "-Pcom.android.build.gradle.integratonTest.useJack=true",
             "-PCUSTOM_BUILDTOOLS=" + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION)
 
     @ClassRule
@@ -57,9 +61,6 @@ class JackTest {
     @BeforeClass
     static void setUp() {
         GradleTestProject.assumeBuildToolsAtLeast(21, 1, 0)
-        basic.execute(JACK_OPTIONS, "clean", "assembleDebug")
-        minify.execute(JACK_OPTIONS, "clean", "assembleDebug")
-        multiDex.execute(JACK_OPTIONS, "clean", "assembleDebug")
     }
 
     @AfterClass
@@ -70,8 +71,22 @@ class JackTest {
     }
 
     @Test
-    void assembleDebug() {
-        // Empty test to ensure setup succeeds if DeviceTests are not run.
+    void assembleBasicDebug() {
+        basic.execute(JACK_OPTIONS, "clean", "assembleDebug")
+        assertThatApk(basic.getApk("debug")).contains("classes.dex");
+        assertThat(basic.getStdout()).contains("JavaWithJack");
+    }
+
+    @Test
+    void assembleMinifyDebug() {
+        minify.execute(JACK_OPTIONS, "clean", "assembleDebug")
+        assertThat(minify.getStdout()).contains("JavaWithJack");
+    }
+
+    @Test
+    void assembleMultiDexDebug() {
+        multiDex.execute(JACK_OPTIONS, "clean", "assembleDebug")
+        assertThat(multiDex.getStdout()).contains("JavaWithJack");
     }
 
     @Test
@@ -87,11 +102,6 @@ class JackTest {
     }
 
     @Test
-    void "check classes.dex is packaged"() {
-        TruthHelper.assertThatApk(basic.getApk("debug")).contains("classes.dex");
-    }
-
-    @Test
     void "minify unitTests with Javac"() {
         minify.execute("testMinified")
     }
@@ -101,11 +111,9 @@ class JackTest {
         minify.execute(JACK_OPTIONS, "clean", "testMinified")
 
         // Make sure javac was run.
-        File classesDir = new File(minify.testDir, "/build/intermediates/classes/minified")
-        assert classesDir.exists()
+        assertThat(minify.file("build/intermediates/classes/minified")).exists()
 
         // Make sure jack was not run.
-        File jillDir = new File(minify.testDir, "/build/intermediates/jill")
-        assert !jillDir.exists()
+        assertThat(minify.file("build/intermediates/jill")).doesNotExist()
     }
 }
