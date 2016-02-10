@@ -127,6 +127,11 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -1323,7 +1328,7 @@ public class AndroidBuilder {
             boolean incremental,
             boolean optimize,
             @NonNull ProcessOutputHandler processOutputHandler,
-            boolean instantRunMode)
+            final boolean instantRunMode)
             throws IOException, InterruptedException, ProcessException {
         checkNotNull(inputs, "inputs cannot be null.");
         checkNotNull(outDexFolder, "outDexFolder cannot be null.");
@@ -1355,12 +1360,16 @@ public class AndroidBuilder {
         runDexer(builder, dexOptions, processOutputHandler, instantRunMode);
     }
 
+    private static final Object LOCK_FOR_DEX = new Object();
+    private static final AtomicInteger DEX_PROCESS_COUNT = new AtomicInteger(1);
+    private static ExecutorService sDexExecutorService = null;
+
     private void runDexer(
-            @NonNull DexProcessBuilder builder,
-            @NonNull DexOptions dexOptions,
-            @NonNull ProcessOutputHandler processOutputHandler,
-            boolean instantRunMode)
-            throws ProcessException, IOException {
+            @NonNull final DexProcessBuilder builder,
+            @NonNull final DexOptions dexOptions,
+            @NonNull final ProcessOutputHandler processOutputHandler,
+            final boolean instantRunMode)
+            throws ProcessException, IOException, InterruptedException {
 
 
         Revision buildToolsVersion = mTargetInfo.getBuildTools().getRevision();
@@ -1377,14 +1386,62 @@ public class AndroidBuilder {
                 dexWrapper.release();
             }
         } else {
-            long startTime = System.currentTimeMillis();
-            JavaProcessInfo javaProcessInfo = builder.build(mTargetInfo.getBuildTools(), dexOptions);
-            ProcessResult result = mJavaProcessExecutor.execute(javaProcessInfo,
-                    processOutputHandler);
-            result.rethrowFailure().assertNormalExitValue();
-            getLogger().warning(
-                    "Dexing " + Joiner.on(',').join(builder.getInputs()) + " took " +
-                            (System.currentTimeMillis() - startTime));
+
+            // allocate the executorService if necessary
+            synchronized (LOCK_FOR_DEX) {
+                if (sDexExecutorService == null) {
+                    if (dexOptions.getMaxProcessCount() != null) {
+                        DEX_PROCESS_COUNT.set(dexOptions.getMaxProcessCount());
+                    }
+                    getLogger().warning("Allocated dexExecutorService of size %d", DEX_PROCESS_COUNT
+                            .get());
+                    sDexExecutorService = Executors.newFixedThreadPool(DEX_PROCESS_COUNT.get());
+                } else {
+                    // check whether our executor service has the same number of max processes as
+                    // this module requests, and print a warning if necessary.
+                    if (dexOptions.getMaxProcessCount() != null
+                            && dexOptions.getMaxProcessCount() != DEX_PROCESS_COUNT.get()) {
+                        getLogger().warning("Module requested a maximum number of %d concurrent"
+                                        + " dx processes but it was initialized earlier with %d,"
+                                        + " setting is ignored",
+                                dexOptions.getMaxProcessCount(),
+                                DEX_PROCESS_COUNT.get());
+                    }
+                }
+            }
+
+            try {
+                final String submission = Joiner.on(',').join(builder.getInputs());
+                // this is a hack, we always spawn a new process for dependencies.jar so it does
+                // get built in parallel with the slices, this is only valid for InstantRun mode.
+                if (submission.contains("dependencies.jar")) {
+                    long startTime = System.currentTimeMillis();
+                    JavaProcessInfo javaProcessInfo = builder.build(mTargetInfo.getBuildTools(), dexOptions);
+                    ProcessResult result = mJavaProcessExecutor.execute(javaProcessInfo,
+                            processOutputHandler);
+                    result.rethrowFailure().assertNormalExitValue();
+                    getLogger().warning(
+                            "Dexing " + Joiner.on(',').join(builder.getInputs()) + " took " +
+                                    (System.currentTimeMillis() - startTime));
+                } else {
+                    sDexExecutorService.submit(new Callable<Void>() {
+                        @Override
+                        public Void call() throws Exception {
+                            long startTime = System.currentTimeMillis();
+                            JavaProcessInfo javaProcessInfo = builder
+                                    .build(mTargetInfo.getBuildTools(), dexOptions);
+                            ProcessResult result = mJavaProcessExecutor.execute(javaProcessInfo,
+                                    processOutputHandler);
+                            result.rethrowFailure().assertNormalExitValue();
+                            getLogger().warning("Dexing " + submission + " took "
+                                    + (System.currentTimeMillis() - startTime));
+                            return null;
+                        }
+                    }).get();
+                }
+            } catch (ExecutionException e) {
+                throw new ProcessException(e);
+            }
         }
     }
 
@@ -1555,7 +1612,7 @@ public class AndroidBuilder {
             boolean multiDex,
             @NonNull DexOptions dexOptions,
             @NonNull ProcessOutputHandler processOutputHandler)
-            throws ProcessException, IOException {
+            throws ProcessException, IOException, InterruptedException {
         checkNotNull(inputFile, "inputFile cannot be null.");
         checkNotNull(outFile, "outFile cannot be null.");
         checkNotNull(dexOptions, "dexOptions cannot be null.");

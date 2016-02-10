@@ -237,6 +237,12 @@ public class PreDexCacheTest extends TestCase {
         public Integer getThreadCount() {
             return null;
         }
+
+        @Nullable
+        @Override
+        public Integer getMaxProcessCount() {
+            return null;
+        }
     }
 
     private static class FakeProcessExecutor implements ProcessExecutor {

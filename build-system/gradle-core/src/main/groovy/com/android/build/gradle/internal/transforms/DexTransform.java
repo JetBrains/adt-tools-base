@@ -422,6 +422,8 @@ public class DexTransform extends Transform {
             throw new TransformException(e);
         } catch (ProcessException e) {
             throw new TransformException(e);
+        } catch (Exception e) {
+            throw new TransformException(e);
         }
     }
 
