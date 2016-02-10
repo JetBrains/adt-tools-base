@@ -51,7 +51,7 @@ class BasicNdkComponentTest {
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
-            .fromTestApp(new HelloWorldJniApp(useCppSource: true))
+            .fromTestApp(HelloWorldJniApp.builder().useCppSource().build())
             .forExperimentalPlugin(true)
             .withHeap("2048m")
             .create();
