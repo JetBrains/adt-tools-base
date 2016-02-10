@@ -19,6 +19,7 @@ package com.android.sdklib;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.google.common.base.Objects;
 
 import java.util.regex.Pattern;
 
@@ -43,6 +44,7 @@ import java.util.regex.Pattern;
 public final class AndroidVersion implements Comparable<AndroidVersion> {
 
     private final int mApiLevel;
+    @Nullable
     private final String mCodename;
 
     /** The default AndroidVersion for minSdkVersion and targetSdkVersion if not specified. */
@@ -200,47 +202,15 @@ public final class AndroidVersion implements Comparable<AndroidVersion> {
         return mCodename == null && apiLevel == mApiLevel;
     }
 
-    /**
-     * Compares the receiver with either an {@link AndroidVersion} object or a {@link String}
-     * object.
-     * <p/>If <var>obj</var> is a {@link String}, then the method will first check if it's a string
-     * representation of a number, in which case it'll compare it to the api level. Otherwise, it'll
-     * compare it against the code name.
-     * <p/>For all other type of object give as parameter, this method will return
-     * <code>false</code>.
-     */
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof AndroidVersion) {
-            AndroidVersion version = (AndroidVersion)obj;
-
-            if (mCodename == null) {
-                return version.mCodename == null &&
-                        mApiLevel == version.mApiLevel;
-            } else {
-                return mCodename.equals(version.mCodename) &&
-                        mApiLevel == version.mApiLevel;
-            }
-
-        } else if (obj instanceof String) {
-            // if we have a code name, this must match.
-            if (mCodename != null) {
-                return mCodename.equals(obj);
-            }
-
-            // else we try to convert to a int and compare to the api level
-            try {
-                int value = Integer.parseInt((String)obj);
-                return value == mApiLevel;
-            } catch (NumberFormatException e) {
-                // not a number? we'll return false below.
-            }
+        if (!(obj instanceof AndroidVersion)) {
+            return false;
         }
-
-        return false;
+        AndroidVersion other = (AndroidVersion) obj;
+        return mApiLevel == other.mApiLevel && Objects.equal(mCodename, other.mCodename);
     }
 
-    @Override
     public int hashCode() {
         if (mCodename != null) {
             return mCodename.hashCode();
