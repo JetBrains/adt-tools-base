@@ -31,6 +31,8 @@ import com.android.ddmlib.TimeoutException;
 import com.android.utils.ILogger;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
@@ -40,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -49,15 +52,23 @@ import java.util.concurrent.TimeUnit;
 public class ConnectedDevice extends DeviceConnector {
 
     private final IDevice iDevice;
+    private final ILogger mLogger;
+    private final long mTimeout;
+    private final TimeUnit  mTimeUnit;
 
-    public ConnectedDevice(@NonNull IDevice iDevice) {
+
+    public ConnectedDevice(@NonNull IDevice iDevice, @NonNull ILogger logger,
+            long timeout, @NonNull TimeUnit timeUnit) {
         this.iDevice = iDevice;
+        mLogger = logger;
+        mTimeout = timeout;
+        mTimeUnit = timeUnit;
     }
 
     @NonNull
     @Override
     public String getName() {
-        String version = iDevice.getProperty(IDevice.PROP_BUILD_VERSION);
+        String version = getNullableProperty(IDevice.PROP_BUILD_VERSION);
         boolean emulator = iDevice.isEmulator();
 
         String name;
@@ -66,7 +77,7 @@ public class ConnectedDevice extends DeviceConnector {
                     iDevice.getAvdName() + "(AVD)" :
                     iDevice.getSerialNumber();
         } else {
-            String model = iDevice.getProperty(IDevice.PROP_DEVICE_MODEL);
+            String model = getNullableProperty(IDevice.PROP_DEVICE_MODEL);
             name = model != null ? model : iDevice.getSerialNumber();
         }
 
@@ -165,13 +176,11 @@ public class ConnectedDevice extends DeviceConnector {
 
     @Override
     public int getApiLevel() {
-        String sdkVersion = iDevice.getProperty(IDevice.PROP_BUILD_API_LEVEL);
+        String sdkVersion = getNullableProperty(IDevice.PROP_BUILD_API_LEVEL);
         if (sdkVersion != null) {
             try {
                 return Integer.valueOf(sdkVersion);
-            } catch (NumberFormatException e) {
-
-            }
+            } catch (NumberFormatException ignored) { }
         }
 
         // can't get it, return 0.
@@ -180,7 +189,7 @@ public class ConnectedDevice extends DeviceConnector {
 
     @Override
     public String getApiCodeName() {
-        String codeName = iDevice.getProperty(IDevice.PROP_BUILD_CODENAME);
+        String codeName = getNullableProperty(IDevice.PROP_BUILD_CODENAME);
         if (codeName != null) {
             // if this is a release platform return null.
             if ("REL".equals(codeName)) {
@@ -204,12 +213,43 @@ public class ConnectedDevice extends DeviceConnector {
     @NonNull
     @Override
     public List<String> getAbis() {
-        return iDevice.getAbis();
+         /* Try abiList (implemented in L onwards) otherwise fall back to abi and abi2. */
+        String abiList = getNullableProperty(IDevice.PROP_DEVICE_CPU_ABI_LIST);
+        if(abiList != null) {
+            return Lists.newArrayList(Splitter.on(',').split(abiList));
+        } else {
+            List<String> abis = Lists.newArrayListWithExpectedSize(2);
+            String abi = getNullableProperty(IDevice.PROP_DEVICE_CPU_ABI);
+            if (abi != null) {
+                abis.add(abi);
+            }
+
+            abi = getNullableProperty(IDevice.PROP_DEVICE_CPU_ABI2);
+            if (abi != null) {
+                abis.add(abi);
+            }
+
+            return abis;
+        }
     }
 
     @Override
     public int getDensity() {
-        return iDevice.getDensity();
+        String densityValue = getNullableProperty(IDevice.PROP_DEVICE_DENSITY);
+        if (densityValue == null) {
+            densityValue = getNullableProperty(IDevice.PROP_DEVICE_EMULATOR_DENSITY);
+        }
+        if (densityValue == null) {
+            mLogger.info("Unable to get density for device %1$s", getName());
+            return -1;
+        }
+        try {
+            return Integer.parseInt(densityValue);
+        } catch (NumberFormatException e) {
+            mLogger.info("Unable to get density for device %1$s. "
+                    + "Density value %2$s could not be parsed.", getName(), densityValue);
+            return -1;
+        }
     }
 
     @Override
@@ -224,18 +264,38 @@ public class ConnectedDevice extends DeviceConnector {
 
     @Override
     public String getLanguage() {
-        return iDevice.getLanguage();
+        return getNullableProperty(IDevice.PROP_DEVICE_LANGUAGE);
     }
 
     @Override
     public String getRegion() {
-        return iDevice.getRegion();
+        return getNullableProperty(IDevice.PROP_DEVICE_REGION);
     }
 
     @Override
     @NonNull
     public String getProperty(@NonNull String propertyName) {
-        return iDevice.getProperty(propertyName);
+        //TODO: Is this method needed in ConnectedDevice?
+        //      If it is, what should its failure semantic be?
+        return Preconditions.checkNotNull(getNullableProperty(propertyName));
+    }
+
+    @Nullable
+    private String getNullableProperty(@NonNull String propertyName) {
+        try {
+            Future<String> property = iDevice.getSystemProperty(propertyName);
+            if (mTimeout > 0) {
+                return property.get(mTimeout, mTimeUnit);
+            } else {
+                return property.get();
+            }
+        } catch (InterruptedException e) {
+            return null;
+        } catch (ExecutionException e) {
+            return null;
+        } catch (java.util.concurrent.TimeoutException e) {
+            return null;
+        }
     }
 
     @NonNull
@@ -254,7 +314,7 @@ public class ConnectedDevice extends DeviceConnector {
             }
         };
         try {
-            executeShellCommand("am get-config", receiver, 5, TimeUnit.SECONDS);
+            executeShellCommand("am get-config", receiver, mTimeout, mTimeUnit);
             return DeviceConfig.Builder.parse(output);
         } catch (Exception e) {
             throw new DeviceException(e);
