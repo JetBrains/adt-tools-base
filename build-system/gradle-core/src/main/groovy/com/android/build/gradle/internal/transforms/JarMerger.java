@@ -118,6 +118,10 @@ public class JarMerger {
     }
 
     public void addJar(@NonNull File file) throws IOException {
+        addJar(file, false);
+    }
+
+    public void addJar(@NonNull File file, boolean removeEntryTimestamp) throws IOException {
         logger.verbose("addJar(%1$s)", file);
         init();
 
@@ -147,6 +151,9 @@ public class JarMerger {
                 } else {
                     // Create a new entry so that the compressed len is recomputed.
                     newEntry = new JarEntry(name);
+                }
+                if (removeEntryTimestamp) {
+                    newEntry.setTime(0);
                 }
 
                 // add the entry to the jar archive
