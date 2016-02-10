@@ -60,7 +60,7 @@ import java.util.logging.Level;
  * because any class loaded before it cannot be incrementally deployed.
  */
 public class BootstrapApplication extends Application {
-    public static final String LOG_TAG = "fd";
+    public static final String LOG_TAG = "InstantRun";
 
     static {
         com.android.tools.fd.common.Log.logging =
