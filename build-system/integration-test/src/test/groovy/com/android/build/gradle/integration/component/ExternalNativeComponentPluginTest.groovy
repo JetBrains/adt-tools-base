@@ -20,10 +20,11 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
 import com.android.builder.model.NativeAndroidProject
 import com.android.builder.model.NativeArtifact
+import com.android.builder.model.NativeFile
+import com.android.builder.model.NativeFolder
 import com.android.builder.model.NativeSettings
 import com.android.builder.model.NativeToolchain
-import org.junit.Assert
-import org.junit.Ignore
+import groovy.transform.CompileStatic
 import org.junit.Rule
 import org.junit.Test
 
@@ -33,7 +34,7 @@ import static org.junit.Assert.fail
 /**
  * Test the ExternalNativeComponentModelPlugin.
  */
-@Ignore
+@CompileStatic
 class ExternalNativeComponentPluginTest {
 
     @Rule
@@ -66,15 +67,17 @@ model {
             "output" : "build/libfoo.so",
             "folders" : [
                 {
-                    src : "src/main/jni",
-                    cFlags : ["folderCFlag1", "folderCFlag2"],
-                    cppFlags : ["folderCppFlag1", "folderCppFlag2"]
+                    "src" : "src/main/jni",
+                    "cFlags" : ["folderCFlag1", "folderCFlag2"],
+                    "cppFlags" : ["folderCppFlag1", "folderCppFlag2"],
+                    "workingDirectory" : "workingDir"
                 }
             ],
             "files" : [
                 {
                     "src" : "src/main/jni/hello.c",
-                    "flags" : ["fileFlag1", "fileFlag2"]
+                    "flags" : ["fileFlag1", "fileFlag2"],
+                    "workingDirectory" : "workingDir"
                 }
             ]
         }
@@ -215,12 +218,14 @@ model {
                         src "src/main/jni"
                         CFlags.addAll(["folderCFlag1", "folderCFlag2"])
                         cppFlags.addAll(["folderCppFlag1", "folderCppFlag2"])
+                        workingDirectory "workingDir"
                     }
                 }
                 files {
                     create() {
                         src "src/main/jni/hello.c"
                         flags.addAll(["fileFlag1", "fileFlag2"])
+                        workingDirectory "workingDir"
                     }
                 }
 
@@ -251,16 +256,22 @@ model {
 
         NativeArtifact artifact = model.artifacts.first()
         assertThat(artifact.getToolChain()).isEqualTo("toolchain1")
+
+        // Source Folders
         assertThat(artifact.sourceFolders).hasSize(1)
-        assertThat(artifact.sourceFolders.first().folderPath.toString()).endsWith("src/main/jni")
-        NativeSettings setting = settingsMap.find { it.getName() == artifact.sourceFolders.first().perLanguageSettings.get("c") }
+        NativeFolder folder = artifact.sourceFolders.first()
+        assertThat(folder.folderPath).isEqualTo(project.file("src/main/jni"))
+        assertThat(folder.getWorkingDirectory()).isEqualTo(project.file("workingDir"))
+        NativeSettings setting = settingsMap.find { it.getName() == folder.perLanguageSettings.get("c") }
         assertThat(setting.getCompilerFlags()).containsAllOf("folderCFlag1", "folderCFlag2");
         setting = settingsMap.find { it.getName() == artifact.sourceFolders.first().perLanguageSettings.get("c++") }
         assertThat(setting.getCompilerFlags()).containsAllOf("folderCppFlag1", "folderCppFlag2");
 
         assertThat(artifact.sourceFiles).hasSize(1)
-        assertThat(artifact.sourceFiles.first().filePath.toString()).endsWith("src/main/jni/hello.c")
-        setting = settingsMap.find { it.getName() == artifact.sourceFiles.first().settingsName }
+        NativeFile file = artifact.sourceFiles.first()
+        assertThat(file.filePath).isEqualTo(project.file("src/main/jni/hello.c"))
+        assertThat(file.getWorkingDirectory()).isEqualTo(project.file("workingDir"))
+        setting = settingsMap.find { it.getName() == file.settingsName }
         assertThat(setting.getCompilerFlags()).containsAllOf("fileFlag1", "fileFlag2");
 
         assertThat(model.getToolChains()).hasSize(1)

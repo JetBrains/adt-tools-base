@@ -32,7 +32,6 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 /**
  * Tests for native dependencies
  */
-@Ignore
 class ExternalBuildDependencyTest {
     static MultiModuleTestProject base = new MultiModuleTestProject(
             app: new HelloWorldJniApp(),
