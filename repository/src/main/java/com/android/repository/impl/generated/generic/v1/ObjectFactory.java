@@ -56,12 +56,12 @@ public class ObjectFactory
      * 
      */
     @XmlElementDecl(namespace = "http://schemas.android.com/repository/android/generic/01", name = "repository")
-    public JAXBElement<RepositoryType> createRepository(RepositoryType value) {
+    public JAXBElement<RepositoryType> createRepositoryInternal(RepositoryType value) {
         return new JAXBElement<RepositoryType>(_Repository_QNAME, RepositoryType.class, null, value);
     }
 
-    public JAXBElement<Repository> generateElement(Repository value) {
-        return ((JAXBElement) createRepository(((RepositoryType) value)));
+    public JAXBElement<Repository> generateRepository(Repository value) {
+        return ((JAXBElement) createRepositoryInternal(((RepositoryType) value)));
     }
 
 }

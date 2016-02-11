@@ -17,15 +17,13 @@
 package com.android.sdklib.repositoryv2.meta;
 
 import com.android.annotations.NonNull;
-import com.android.repository.api.ElementFactory;
-import com.android.repository.api.Repository;
 import com.android.repository.impl.meta.TypeDetails;
 
 /**
  * Parent class for {@code ObjectFactories} created by xjc from sdk-addon-XX.xsd, for
  * creating addon-schema-specific {@link TypeDetails}.
  */
-public abstract class AddonFactory extends ElementFactory<Repository> {
+public abstract class AddonFactory {
     @NonNull
     public abstract DetailsTypes.ExtraDetailsType createExtraDetailsType();
 

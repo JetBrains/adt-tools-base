@@ -134,7 +134,7 @@ public class RemoteRepoLoader {
                     try {
                         repo = (Repository) SchemaModuleUtil
                                 .unmarshal(repoStream, source.getPermittedModules(),
-                                        mResourceResolver, unmarshalProgress);
+                                        mResourceResolver, true, unmarshalProgress);
                     } catch (JAXBException e) {
                         errors.add(e.toString());
                     }

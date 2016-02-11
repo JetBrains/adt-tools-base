@@ -52,11 +52,11 @@ public class ObjectFactory
     }
 
     /**
-     * Create an instance of {@link com.android.sdklib.repositoryv2.generated.repository.v1.LayoutlibType }
+     * Create an instance of {@link LayoutlibType }
      * 
      */
-    public com.android.sdklib.repositoryv2.meta.DetailsTypes.PlatformDetailsType.LayoutlibType createLayoutlibType() {
-        return new com.android.sdklib.repositoryv2.generated.repository.v1.LayoutlibType();
+    public LayoutlibType createLayoutlibType() {
+        return new LayoutlibType();
     }
 
     /**
@@ -72,12 +72,12 @@ public class ObjectFactory
      * 
      */
     @XmlElementDecl(namespace = "http://schemas.android.com/sdk/android/repo/repository2/01", name = "sdk-repository")
-    public JAXBElement<RepositoryType> createSdkRepository(RepositoryType value) {
+    public JAXBElement<RepositoryType> generateSdkRepositoryInternal(RepositoryType value) {
         return new JAXBElement<RepositoryType>(_SdkRepository_QNAME, RepositoryType.class, null, value);
     }
 
-    public JAXBElement<Repository> generateElement(Repository value) {
-        return ((JAXBElement) createSdkRepository(((RepositoryType) value)));
+    public JAXBElement<Repository> generateSdkRepository(Repository value) {
+        return ((JAXBElement) generateSdkRepositoryInternal(((RepositoryType) value)));
     }
 
 }

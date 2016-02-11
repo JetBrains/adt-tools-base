@@ -1,15 +1,12 @@
 
 package com.android.repository.impl.generated.v1;
 
+import javax.xml.bind.JAXBElement;
+import javax.xml.bind.annotation.XmlElementDecl;
 import javax.xml.bind.annotation.XmlRegistry;
-import com.android.repository.api.Channel;
-import com.android.repository.api.Dependency;
-import com.android.repository.api.License;
+import javax.xml.namespace.QName;
 import com.android.repository.api.Repository;
-import com.android.repository.impl.meta.Archive;
 import com.android.repository.impl.meta.CommonFactory;
-import com.android.repository.impl.meta.LocalPackageImpl;
-import com.android.repository.impl.meta.RemotePackageImpl;
 
 
 /**
@@ -36,6 +33,7 @@ public class ObjectFactory
     extends CommonFactory
 {
 
+    private final static QName _Repository_QNAME = new QName("http://schemas.android.com/repository/android/common/01", "repository");
 
     /**
      * Create a new ObjectFactory that can be used to create new instances of schema derived classes for package: com.android.repository.impl.generated.v1
@@ -48,7 +46,7 @@ public class ObjectFactory
      * Create an instance of {@link RepositoryType }
      * 
      */
-    public Repository createRepositoryType() {
+    public RepositoryType createRepositoryType() {
         return new RepositoryType();
     }
 
@@ -56,7 +54,7 @@ public class ObjectFactory
      * Create an instance of {@link RemotePackage }
      * 
      */
-    public RemotePackageImpl createRemotePackage() {
+    public RemotePackage createRemotePackage() {
         return new RemotePackage();
     }
 
@@ -64,7 +62,7 @@ public class ObjectFactory
      * Create an instance of {@link LocalPackage }
      * 
      */
-    public LocalPackageImpl createLocalPackage() {
+    public LocalPackage createLocalPackage() {
         return new LocalPackage();
     }
 
@@ -72,7 +70,7 @@ public class ObjectFactory
      * Create an instance of {@link DependenciesType }
      * 
      */
-    public com.android.repository.impl.meta.RepoPackageImpl.Dependencies createDependenciesType() {
+    public DependenciesType createDependenciesType() {
         return new DependenciesType();
     }
 
@@ -80,7 +78,7 @@ public class ObjectFactory
      * Create an instance of {@link ArchivesType }
      * 
      */
-    public com.android.repository.impl.meta.RepoPackageImpl.Archives createArchivesType() {
+    public ArchivesType createArchivesType() {
         return new ArchivesType();
     }
 
@@ -88,7 +86,7 @@ public class ObjectFactory
      * Create an instance of {@link LicenseRefType }
      * 
      */
-    public com.android.repository.impl.meta.RepoPackageImpl.UsesLicense createLicenseRefType() {
+    public LicenseRefType createLicenseRefType() {
         return new LicenseRefType();
     }
 
@@ -96,7 +94,7 @@ public class ObjectFactory
      * Create an instance of {@link DependencyType }
      * 
      */
-    public Dependency createDependencyType() {
+    public DependencyType createDependencyType() {
         return new DependencyType();
     }
 
@@ -104,7 +102,7 @@ public class ObjectFactory
      * Create an instance of {@link LicenseType }
      * 
      */
-    public License createLicenseType() {
+    public LicenseType createLicenseType() {
         return new LicenseType();
     }
 
@@ -112,39 +110,39 @@ public class ObjectFactory
      * Create an instance of {@link ArchiveType }
      * 
      */
-    public Archive createArchiveType() {
+    public ArchiveType createArchiveType() {
         return new ArchiveType();
     }
 
     /**
-     * Create an instance of {@link com.android.repository.impl.generated.v1.PatchesType }
+     * Create an instance of {@link PatchesType }
      * 
      */
-    public Archive.PatchesType createPatchesType() {
-        return new com.android.repository.impl.generated.v1.PatchesType();
+    public PatchesType createPatchesType() {
+        return new PatchesType();
     }
 
     /**
-     * Create an instance of {@link com.android.repository.impl.generated.v1.CompleteType }
+     * Create an instance of {@link CompleteType }
      * 
      */
-    public Archive.CompleteType createCompleteType() {
-        return new com.android.repository.impl.generated.v1.CompleteType();
+    public CompleteType createCompleteType() {
+        return new CompleteType();
     }
 
     /**
-     * Create an instance of {@link com.android.repository.impl.generated.v1.PatchType }
+     * Create an instance of {@link PatchType }
      * 
      */
-    public Archive.PatchType createPatchType() {
-        return new com.android.repository.impl.generated.v1.PatchType();
+    public PatchType createPatchType() {
+        return new PatchType();
     }
 
     /**
      * Create an instance of {@link ChannelType }
      * 
      */
-    public Channel createChannelType() {
+    public ChannelType createChannelType() {
         return new ChannelType();
     }
 
@@ -152,16 +150,29 @@ public class ObjectFactory
      * Create an instance of {@link ChannelRefType }
      * 
      */
-    public RemotePackageImpl.ChannelRef createChannelRefType() {
+    public ChannelRefType createChannelRefType() {
         return new ChannelRefType();
     }
 
     /**
-     * Create an instance of {@link com.android.repository.impl.generated.v1.RevisionType }
+     * Create an instance of {@link RevisionType }
      * 
      */
-    public com.android.repository.impl.meta.RevisionType createRevisionType() {
-        return new com.android.repository.impl.generated.v1.RevisionType();
+    public RevisionType createRevisionType() {
+        return new RevisionType();
+    }
+
+    /**
+     * Create an instance of {@link JAXBElement }{@code <}{@link RepositoryType }{@code >}}
+     * 
+     */
+    @XmlElementDecl(namespace = "http://schemas.android.com/repository/android/common/01", name = "repository")
+    public JAXBElement<RepositoryType> createRepositoryInternal(RepositoryType value) {
+        return new JAXBElement<RepositoryType>(_Repository_QNAME, RepositoryType.class, null, value);
+    }
+
+    public JAXBElement<Repository> generateRepository(Repository value) {
+        return ((JAXBElement) createRepositoryInternal(((RepositoryType) value)));
     }
 
 }
