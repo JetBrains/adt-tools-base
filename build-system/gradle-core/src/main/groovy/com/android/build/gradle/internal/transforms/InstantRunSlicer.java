@@ -383,6 +383,17 @@ public class InstantRunSlicer extends Transform {
                         File sliceOutputLocation = getOutputStreamForFile(
                                 outputProvider, directoryInput, fileToProcess, slicingInfo);
 
+                        // add the buildID timestamp to the slice out directory so we force the
+                        // dex task to rerun, even if no .class files appear to have changed. This
+                        // can happen when doing a lot of hot swapping with changes undoing
+                        // themselves resulting in a state that was equal to the last restart state.
+                        // In theory, it would not require to rebuild but it will confuse Android
+                        // Studio is there is nothing to push so just be safe and rebuild.
+                        Files.write(
+                                String.valueOf(
+                                        variantScope.getInstantRunBuildContext().getBuildId()),
+                                new File(sliceOutputLocation, "buildId.txt"), Charsets.UTF_8);
+
                         String relativePath = FileUtils.relativePossiblyNonExistingPath(
                                 fileToProcess, directoryInput.getFile());
 
@@ -406,7 +417,6 @@ public class InstantRunSlicer extends Transform {
                         }
                     }
                 });
-
     }
 
     private static File getOutputStreamForFile(
