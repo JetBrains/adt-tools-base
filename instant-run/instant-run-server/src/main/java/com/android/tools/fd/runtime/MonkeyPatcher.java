@@ -15,8 +15,16 @@
  */
 package com.android.tools.fd.runtime;
 
+import static android.os.Build.VERSION.SDK_INT;
+import static android.os.Build.VERSION_CODES.ICE_CREAM_SANDWICH;
+import static android.os.Build.VERSION_CODES.JELLY_BEAN;
+import static android.os.Build.VERSION_CODES.JELLY_BEAN_MR2;
+import static android.os.Build.VERSION_CODES.KITKAT;
+import static android.os.Build.VERSION_CODES.LOLLIPOP;
+import static android.os.Build.VERSION_CODES.M;
 import static com.android.tools.fd.runtime.BootstrapApplication.LOG_TAG;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 import android.app.Activity;
@@ -24,9 +32,10 @@ import android.app.Application;
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
-import android.os.Build;
 import android.util.ArrayMap;
 import android.util.Log;
+import android.util.LongSparseArray;
+import android.util.SparseArray;
 import android.view.ContextThemeWrapper;
 
 import java.lang.ref.WeakReference;
@@ -43,6 +52,10 @@ import java.util.Map;
  * This is based on the reflection parts of
  *     com.google.devtools.build.android.incrementaldeployment.StubApplication,
  * plus changes to compile on JDK 6.
+ * <p>
+ * It now also has a lot of extra reflection machinery to do live resource swapping
+ * in a running app (e.g. swiping through data structures, updating resource managers,
+ * flushing cached theme entries, etc.)
  * <p>
  * The original is
  * https://github.com/google/bazel/blob/master/src/tools/android/java/com/google/devtools/build/android/incrementaldeployment/StubApplication.java
@@ -347,33 +360,13 @@ public class MonkeyPatcher {
                                 e);
                     }
 
-                    // Drain TypedArray instances from the typed array pool since these can hold on
-                    // to stale asset data
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        try {
-                            Field typedArrayPoolField =
-                                    Resources.class.getDeclaredField("mTypedArrayPool");
-                            typedArrayPoolField.setAccessible(true);
-                            Object pool = typedArrayPoolField.get(resources);
-                            Class<?> poolClass = pool.getClass();
-                            Method acquireMethod = poolClass.getDeclaredMethod("acquire");
-                            acquireMethod.setAccessible(true);
-                            while (true) {
-                                Object typedArray = acquireMethod.invoke(pool);
-                                if (typedArray == null) {
-                                    break;
-                                }
-                            }
-                        } catch (Throwable e) {
-                            Log.e(LOG_TAG, "Failed to clear typed array pool for " + activity, e);
-                        }
-                    }
+                    pruneResourceCaches(resources);
                 }
             }
 
             // Iterate over all known Resources objects
             Collection<WeakReference<Resources>> references;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            if (SDK_INT >= KITKAT) {
                 // Find the singleton instance of ResourcesManager
                 Class<?> resourcesManagerClass = Class.forName("android.app.ResourcesManager");
                 Method mGetInstance = resourcesManagerClass.getDeclaredMethod("getInstance");
@@ -407,5 +400,131 @@ public class MonkeyPatcher {
         } catch (Throwable e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    private static void pruneResourceCaches(@NonNull Resources resources) {
+        // Drain TypedArray instances from the typed array pool since these can hold on
+        // to stale asset data
+        if (SDK_INT >= LOLLIPOP) {
+            try {
+                Field typedArrayPoolField =
+                        Resources.class.getDeclaredField("mTypedArrayPool");
+                typedArrayPoolField.setAccessible(true);
+                Object pool = typedArrayPoolField.get(resources);
+                Class<?> poolClass = pool.getClass();
+                Method acquireMethod = poolClass.getDeclaredMethod("acquire");
+                acquireMethod.setAccessible(true);
+                while (true) {
+                    Object typedArray = acquireMethod.invoke(pool);
+                    if (typedArray == null) {
+                        break;
+                    }
+                }
+            } catch (Throwable ignore) {
+            }
+        }
+
+        // Prune bitmap and color state lists etc caches
+        Object lock = null;
+        if (SDK_INT >= JELLY_BEAN_MR2) {
+            try {
+                Field field = Resources.class.getDeclaredField("mAccessLock");
+                field.setAccessible(true);
+                lock = field.get(resources);
+            } catch (Throwable ignore) {
+            }
+        } else {
+            try {
+                Field field = Resources.class.getDeclaredField("mTmpValue");
+                field.setAccessible(true);
+                lock = field.get(resources);
+            } catch (Throwable ignore) {
+            }
+        }
+
+        if (lock == null) {
+            lock = MonkeyPatcher.class;
+        }
+
+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
+        synchronized (lock) {
+            // Prune bitmap and color caches
+            pruneResourceCache(resources, "mDrawableCache");
+            pruneResourceCache(resources,"mColorDrawableCache");
+            pruneResourceCache(resources,"mColorStateListCache");
+            if (SDK_INT >= M) {
+                pruneResourceCache(resources, "mAnimatorCache");
+                pruneResourceCache(resources, "mStateListAnimatorCache");
+            }
+        }
+    }
+
+    private static boolean pruneResourceCache(@NonNull Resources resources,
+            @NonNull String fieldName) {
+        try {
+            Field cacheField = Resources.class.getDeclaredField(fieldName);
+            cacheField.setAccessible(true);
+            Object cache = cacheField.get(resources);
+
+            // Find the class which defines the onConfigurationChange method
+            Class<?> type = cacheField.getType();
+            if (SDK_INT < JELLY_BEAN) {
+                if (cache instanceof SparseArray) {
+                    ((SparseArray) cache).clear();
+                    return true;
+                } else if (SDK_INT >= ICE_CREAM_SANDWICH && cache instanceof LongSparseArray) {
+                    // LongSparseArray has API level 16 but was private (and available inside
+                    // the framework) in 15 and is used for this cache.
+                    //noinspection AndroidLintNewApi
+                    ((LongSparseArray) cache).clear();
+                    return true;
+                }
+            } else if (SDK_INT < M) {
+                // JellyBean, KitKat, Lollipop
+                if ("mColorStateListCache".equals(fieldName)) {
+                    // For some reason framework doesn't call clearDrawableCachesLocked on
+                    // this field
+                    if (cache instanceof LongSparseArray) {
+                        //noinspection AndroidLintNewApi
+                        ((LongSparseArray)cache).clear();
+                    }
+                } else if (type.isAssignableFrom(ArrayMap.class)) {
+                    Method clearArrayMap = Resources.class.getDeclaredMethod(
+                            "clearDrawableCachesLocked", ArrayMap.class, Integer.TYPE);
+                    clearArrayMap.setAccessible(true);
+                    clearArrayMap.invoke(resources, cache, -1);
+                    return true;
+                } else if (type.isAssignableFrom(LongSparseArray.class)) {
+                    Method clearSparseMap = Resources.class.getDeclaredMethod(
+                            "clearDrawableCachesLocked", LongSparseArray.class, Integer.TYPE);
+                    clearSparseMap.setAccessible(true);
+                    clearSparseMap.invoke(resources, cache, -1);
+                    return true;
+                }
+            } else {
+                // Marshmallow: DrawableCache class
+                while (type != null) {
+                    try {
+                        Method configChangeMethod = type.getDeclaredMethod(
+                                "onConfigurationChange", Integer.TYPE);
+                        configChangeMethod.setAccessible(true);
+                        configChangeMethod.invoke(cache, -1);
+                        return true;
+                    } catch (Throwable ignore) {
+                    }
+
+                    type = type.getSuperclass();
+                }
+            }
+        } catch (Throwable ignore) {
+            // Not logging these; while there is some checking of SDK_INT here to avoid
+            // doing a lot of unnecessary field lookups, it's not entirely accurate and
+            // errs on the side of caution (since different devices may have picked up
+            // different snapshots of the framework); therefore, it's normal for this
+            // to attempt to look up a field for a cache that isn't there; only if it's
+            // really there will it continue to flush that particular cache.
+        }
+
+        return false;
     }
 }
