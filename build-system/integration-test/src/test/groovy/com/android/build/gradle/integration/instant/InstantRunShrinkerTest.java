@@ -76,7 +76,6 @@ public class InstantRunShrinkerTest {
     public GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestApp(TEST_APP)
-                    .captureStdErr(true).captureStdOut(true)
                     .create();
 
     @Rule
