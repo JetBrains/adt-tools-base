@@ -99,7 +99,7 @@ public final class InstantRunTestUtils {
         }
         if (denisty != null) {
             builder.add(String.format(
-                    "-Pandroid.injected.build.density=%s", denisty.getDpiValue()));
+                    "-Pandroid.injected.build.density=%s", denisty.getResourceValue()));
         }
 
         builder.add(String.format("-Pandroid.injected.coldswap.mode=%s", coldswapMode.name()));

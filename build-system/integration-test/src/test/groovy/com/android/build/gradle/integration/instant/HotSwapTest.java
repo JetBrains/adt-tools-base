@@ -16,16 +16,16 @@
 
 package com.android.build.gradle.integration.instant;
 
-import static com.google.common.truth.Truth.assertThat;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.integration.common.category.DeviceTests;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.fixture.Logcat;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.truth.ApkSubject;
 import com.android.build.gradle.integration.common.truth.DexFileSubject;
@@ -72,10 +72,15 @@ public class HotSwapTest {
 
     private static final ColdswapMode COLDSWAP_MODE = ColdswapMode.MULTIDEX;
 
+    private static final String LOG_TAG = "hotswapTest";
+
     @Rule
     public GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestApp(HelloWorldApp.forPlugin("com.android.application")).create();
+
+    @Rule
+    public Logcat logcat = Logcat.create();
 
     @Rule
     public Expect expect = Expect.create();
@@ -88,7 +93,7 @@ public class HotSwapTest {
 
     @Before
     public void activityClass() throws IOException {
-        createActivityClass("", "");
+        createActivityClass("Original");
     }
 
     @Test
@@ -140,16 +145,17 @@ public class HotSwapTest {
     @Test
     @Category(DeviceTests.class)
     public void doHotSwapChangeTest() throws Exception {
-        project.execute("clean");
+        IDevice device = DeviceHelper.getIDevice();
+        // TODO: Generalize apk deployment to any compatible device.
+        Assume.assumeThat("Device api level", device.getVersion(), is(new AndroidVersion(23, null)));
+        logcat.start(device, LOG_TAG);
+
         // Open project in simulated IDE
         AndroidProject model = project.getSingleModel();
         long token = PackagingUtils.computeApplicationHash(model.getBuildFolder());
         InstantRun instantRunModel = InstantRunTestUtils.getInstantRunModel(model);
 
         // Run first time on device
-        IDevice device = DeviceHelper.getIDevice();
-        Assume.assumeThat("Device api level", device.getVersion(), is(new AndroidVersion(23, null)));
-
         project.execute(
                 InstantRunTestUtils.getInstantRunArgs(
                         device, COLDSWAP_MODE, OptionalCompilationStep.RESTART_ONLY),
@@ -159,8 +165,11 @@ public class HotSwapTest {
         InstantRunBuildInfo info = InstantRunTestUtils.loadContext(instantRunModel);
         InstantRunTestUtils.doInstall(device, info.getArtifacts());
 
+        logcat.clear();
+
         // Run app
         InstantRunTestUtils.unlockDevice(device);
+
         InstantRunTestUtils.runApp(device, "com.example.helloworld/.HelloWorld");
 
         //Connect to device
@@ -173,6 +182,8 @@ public class HotSwapTest {
         // Check the app is running
         assertThat(client.getAppState(device)).isEqualTo(AppState.FOREGROUND);
 
+        assertThat(logcat).containsMessageWithText("Original");
+        assertThat(logcat).doesNotContainMessageWithText("HOT SWAP!");
 
         // Make a hot-swap compatible change.
         makeBasicHotswapChange();
@@ -186,6 +197,8 @@ public class HotSwapTest {
 
         FileTransfer fileTransfer = FileTransfer.createHotswapPatch(artifact.file);
 
+        logcat.clear();
+
         client.pushPatches(device,
                 info.getTimeStamp(),
                 ImmutableList.of(fileTransfer.getPatch()),
@@ -198,6 +211,15 @@ public class HotSwapTest {
 
         assertThat(client.getAppState(device)).isEqualTo(AppState.FOREGROUND);
 
+        // Should not have restarted activity
+        assertThat(logcat).doesNotContainMessageWithText("Original");
+        assertThat(logcat).doesNotContainMessageWithText("HOT SWAP!");
+
+        client.restartActivity(device);
+        Thread.sleep(500); // TODO: blocking logcat assertions with timeouts.
+
+        assertThat(logcat).doesNotContainMessageWithText("Original");
+        assertThat(logcat).containsMessageWithText("HOT SWAP!");
 
         // Clean up
         device.uninstallPackage("com.example.helloworld");
@@ -220,16 +242,15 @@ public class HotSwapTest {
     }
 
     private void makeBasicHotswapChange() throws IOException {
-        createActivityClass("import java.util.logging.Logger;",
-                "Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).warning(\"Added some logging\");");
+        createActivityClass("HOT SWAP!");
     }
 
-    private void createActivityClass(String imports, String newMethodBody)
+    private void createActivityClass(String message)
             throws IOException {
-        String javaCompile = "package com.example.helloworld;\n" + imports +
-                "\n"
+        String javaCompile = "package com.example.helloworld;\n"
                 + "import android.app.Activity;\n"
                 + "import android.os.Bundle;\n"
+                + "import java.util.logging.Logger;\n"
                 + "\n"
                 + "public class HelloWorld extends Activity {\n"
                 + "    /** Called when the activity is first created. */\n"
@@ -237,10 +258,10 @@ public class HotSwapTest {
                 + "    public void onCreate(Bundle savedInstanceState) {\n"
                 + "        super.onCreate(savedInstanceState);\n"
                 + "        setContentView(R.layout.main);\n"
-                + "        " +
-                newMethodBody +
-                "    }\n"
-                + "}";
+                + "        Logger.getLogger(\"" + LOG_TAG + "\")\n"
+                + "                .warning(\"" + message + "\");"
+                + "    }\n"
+                + "}\n";
         Files.write(javaCompile,
                 project.file("src/main/java/com/example/helloworld/HelloWorld.java"),
                 Charsets.UTF_8);
