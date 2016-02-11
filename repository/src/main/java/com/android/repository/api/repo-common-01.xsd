@@ -48,6 +48,9 @@
         version="1"
         jaxb:version="2.0">
 
+    <!-- The root element -->
+    <xsd:element name="repository" type="repo:repositoryType"/>
+
     <xsd:annotation>
         <xsd:documentation>
             Customization specifying the superclass of ObjectFactory.

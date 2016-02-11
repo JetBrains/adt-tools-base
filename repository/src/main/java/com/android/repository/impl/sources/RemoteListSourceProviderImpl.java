@@ -173,7 +173,7 @@ public class RemoteListSourceProviderImpl extends RemoteListSourceProvider {
         SiteList sl = null;
         try {
             sl = (SiteList) SchemaModuleUtil
-                    .unmarshal(xml, schemas, resourceResolver, progress);
+                    .unmarshal(xml, schemas, resourceResolver, true, progress);
         } catch (JAXBException e) {
             progress.logWarning("Failed to parse source list at " + url);
         }

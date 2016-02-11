@@ -32,12 +32,10 @@ import com.android.repository.impl.installer.PackageInstaller;
 import com.android.repository.impl.manager.LocalRepoLoader;
 import com.android.repository.impl.meta.Archive;
 import com.android.repository.impl.meta.CommonFactory;
-import com.android.repository.impl.meta.GenericFactory;
 import com.android.repository.impl.meta.LocalPackageImpl;
 import com.android.repository.impl.meta.RepositoryPackages;
 import com.android.repository.impl.meta.RevisionType;
 import com.android.repository.impl.meta.SchemaModuleUtil;
-import com.android.repository.impl.meta.TypeDetails;
 import com.android.repository.io.FileOp;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
@@ -171,16 +169,8 @@ public class InstallerUtil {
         }
         File packageXml = new File(packageRoot, LocalRepoLoader.PACKAGE_XML_FN);
         OutputStream fos = fop.newFileOutputStream(packageXml);
-        TypeDetails typeDetails = impl.getTypeDetails();
-        JAXBElement<Repository> element;
-        if (typeDetails != null) {
-            // If we have a details type, create the associated repo type.
-            element = typeDetails.createFactory().generateElement(repo);
-        } else {
-            // Otherwise create a generic repo.
-            element = ((GenericFactory) manager.getGenericModule().createLatestFactory())
-                    .generateElement(repo);
-        }
+        JAXBElement<Repository> element = ((CommonFactory) manager.getCommonModule()
+                .createLatestFactory()).generateRepository(repo);
         try {
             SchemaModuleUtil
                     .marshal(element, p.getSource().getPermittedModules(), fos,
