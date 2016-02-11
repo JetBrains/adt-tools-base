@@ -183,6 +183,7 @@ public class InstantRunTransform extends Transform {
                                             inputDir,
                                             inputFile,
                                             classesTwoOutput,
+                                            Status.ADDED,
                                             RecordingPolicy.RECORD);
                                     break;
                                 case REMOVED:
@@ -204,7 +205,9 @@ public class InstantRunTransform extends Transform {
                                     transformToClasses2Format(
                                             inputDir,
                                             inputFile,
-                                            classesTwoOutput, RecordingPolicy.RECORD);
+                                            classesTwoOutput,
+                                            Status.CHANGED,
+                                            RecordingPolicy.RECORD);
                                     transformToClasses3Format(
                                             inputDir,
                                             inputFile,
@@ -232,6 +235,7 @@ public class InstantRunTransform extends Transform {
                                         inputDir,
                                         file,
                                         classesTwoOutput,
+                                        Status.ADDED,
                                         RecordingPolicy.DO_NOT_RECORD);
                             } catch (IOException e) {
                                 throw new RuntimeException("Exception while preparing "
@@ -285,6 +289,8 @@ public class InstantRunTransform extends Transform {
      * Merges a past iteration set of change records into this iteration following simple merging
      * rules :
      *    - if the file has been deleted during this iteration, do not merge past records.
+     *    - if the file had been deleted previously but re-added in this iteration, remove the
+     *      delete event.
      * @param changeRecords this iteration change records
      * @param pastIterationRecords past iteration change records.
      */
@@ -292,14 +298,24 @@ public class InstantRunTransform extends Transform {
     static void merge(@NonNull ChangeRecords changeRecords,
             @NonNull ChangeRecords pastIterationRecords) {
 
-        // do not keep previous iteration records for files that got deleted during this
-        // iteration.
         Set<String> deletedFiles = changeRecords.getFilesForStatus(Status.REMOVED);
         for (Map.Entry<String, Status> record : pastIterationRecords.records.entrySet()) {
-            if (!deletedFiles.contains(record.getKey())) {
-                changeRecords.add(record.getValue(), record.getKey());
+            // if a previous iteration removed a class, only keep that remove event if it
+            // was not re-added during this iteration.
+            if (record.getValue() == Status.REMOVED) {
+                if (changeRecords.getChangeFor(record.getKey()) == null) {
+                    changeRecords.add(record.getValue(), record.getKey());
+                }
+            } else {
+                // do not keep previous iteration ADD/CHANGED records for files that got deleted
+                // during this iteration.
+                if (!deletedFiles.contains(record.getKey())) {
+                    changeRecords.add(record.getValue(), record.getKey());
+                }
             }
         }
+
+        // remove all the previous iteration REMOVED records if the class is re-added.
     }
 
     /**
@@ -353,12 +369,15 @@ public class InstantRunTransform extends Transform {
      * @param inputDir the input directory containing the input file.
      * @param inputFile the input file within the input directory to transform.
      * @param outputDir the output directory where to place the transformed file.
+     * @param change the nature of the change that triggered the transformation.
+     * @param recordingPolicy whether or not, we should record the event.
      * @throws IOException if the transformation failed.
      */
     protected void transformToClasses2Format(
             @NonNull final File inputDir,
             @NonNull final File inputFile,
             @NonNull final File outputDir,
+            @NonNull final Status change,
             @NonNull final RecordingPolicy recordingPolicy)
             throws IOException {
         if (inputFile.getPath().endsWith(SdkConstants.DOT_CLASS)) {
@@ -366,7 +385,7 @@ public class InstantRunTransform extends Transform {
                     inputDir, inputFile, outputDir, IncrementalSupportVisitor.VISITOR_BUILDER);
 
             if (outputFile != null && recordingPolicy == RecordingPolicy.RECORD) {
-                generatedClasses2Files.add(Status.CHANGED, outputFile.getAbsolutePath());
+                generatedClasses2Files.add(change, outputFile.getAbsolutePath());
             }
         }
     }

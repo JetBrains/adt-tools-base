@@ -95,7 +95,9 @@ public class InstantRunTransformTest {
         InstantRunTransform transform = new InstantRunTransform(variantScope) {
             @Override
             protected void transformToClasses2Format(
-                    @NonNull File inputDir, @NonNull File inputFile, @NonNull File outputDir, @NonNull RecordingPolicy recordingPolicy)
+                    @NonNull File inputDir, @NonNull File inputFile, @NonNull File outputDir,
+                    @NonNull Status status,
+                    @NonNull RecordingPolicy recordingPolicy)
                     throws IOException {
                 filesElectedForClasses2Transformation.add(inputFile);
             }
@@ -211,7 +213,11 @@ public class InstantRunTransformTest {
         InstantRunTransform transform = new InstantRunTransform(variantScope) {
             @Override
             protected void transformToClasses2Format(
-                    @NonNull File inputDir, @NonNull File inputFile, @NonNull File outputDir, @NonNull RecordingPolicy recordingPolicy)
+                    @NonNull File inputDir,
+                    @NonNull File inputFile,
+                    @NonNull File outputDir,
+                    @NonNull Status status,
+                    @NonNull RecordingPolicy recordingPolicy)
                     throws IOException {
                 filesElectedForClasses2Transformation.add(inputFile);
             }
@@ -313,6 +319,25 @@ public class InstantRunTransformTest {
                 "file/that/will/remain", "new/file/changed");
         assertThat(newIteration.getFilesForStatus(Status.REMOVED)).containsExactly(
                 "file/to/be/deleted");
+    }
+
+    @Test
+    public void testChangeRecordsRemovedAndReAdded() {
+        ChangeRecords pastIteration = new ChangeRecords();
+        pastIteration.add(Status.REMOVED, "file/to/be/deleted/and/added");
+        pastIteration.add(Status.CHANGED, "file/that/will/remain");
+
+
+        ChangeRecords newIteration = new ChangeRecords();
+        newIteration.add(Status.ADDED, "file/to/be/deleted/and/added");
+        newIteration.add(Status.CHANGED, "new/file/changed");
+
+        InstantRunTransform.merge(newIteration, pastIteration);
+        assertThat(newIteration.records.size()).isEqualTo(3);
+        assertThat(newIteration.getFilesForStatus(Status.CHANGED)).containsExactly(
+                "file/that/will/remain", "new/file/changed");
+        assertThat(newIteration.getFilesForStatus(Status.ADDED)).containsExactly(
+                "file/to/be/deleted/and/added");
     }
 
     private static File createEmptyFile(File folder, String path)
