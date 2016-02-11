@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
@@ -234,7 +235,7 @@ public class ApplicationTaskManager extends TaskManager {
                 new Recorder.Block<Void>() {
                     @Override
                     public Void call() {
-                        @NonNull
+                        @Nullable
                         AndroidTask<InstantRunWrapperTask> fullBuildInfoGeneratorTask
                                 = createInstantRunPackagingTasks(tasks, variantScope);
                         createPackagingTask(tasks, variantScope, true /*publishApk*/,
@@ -257,47 +258,46 @@ public class ApplicationTaskManager extends TaskManager {
     /**
      * Create tasks related to creating pure split APKs containing sharded dex files.
      */
-    @NonNull
+    @Nullable
     protected AndroidTask<InstantRunWrapperTask> createInstantRunPackagingTasks(
             @NonNull TaskFactory tasks, @NonNull VariantScope variantScope) {
 
+        if (getIncrementalMode(variantScope.getVariantConfiguration()) == IncrementalMode.NONE) {
+            return null;
+        }
+
         // create a buildInfoGeneratorTask that will only be invoked if a assembleVARIANT is called.
-        AndroidTask<InstantRunWrapperTask> fullBuildInfoGeneratorTask
-                = getAndroidTasks().create(tasks,
-                new InstantRunWrapperTask.ConfigAction(
-                        variantScope, InstantRunWrapperTask.TaskType.FULL, getLogger()));
+        AndroidTask<InstantRunWrapperTask> fullBuildInfoGeneratorTask = getAndroidTasks()
+                .create(tasks, new InstantRunWrapperTask.ConfigAction(
+                    variantScope, InstantRunWrapperTask.TaskType.FULL, getLogger()));
 
-        if (getIncrementalMode(variantScope.getVariantConfiguration()) != IncrementalMode.NONE) {
+        InstantRunPatchingPolicy patchingPolicy =
+                variantScope.getInstantRunBuildContext().getPatchingPolicy();
 
-            InstantRunPatchingPolicy patchingPolicy =
-                    variantScope.getInstantRunBuildContext().getPatchingPolicy();
+        if (patchingPolicy == InstantRunPatchingPolicy.MULTI_APK) {
 
-            if (patchingPolicy == InstantRunPatchingPolicy.MULTI_APK) {
+            AndroidTask<InstantRunSplitApkBuilder> splitApk =
+                    getAndroidTasks().create(tasks,
+                            new InstantRunSplitApkBuilder.ConfigAction(
+                                    variantScope));
 
-                AndroidTask<InstantRunSplitApkBuilder> splitApk =
-                        getAndroidTasks().create(tasks,
-                                new InstantRunSplitApkBuilder.ConfigAction(
-                                        variantScope));
-
-                TransformManager transformManager =
-                        variantScope.getTransformManager();
-                for (TransformStream stream : transformManager.getStreams(
-                        PackageApplication.sDexFilter)) {
-                    // TODO Optimize to avoid creating too many actions
-                    splitApk.dependsOn(tasks, stream.getDependencies());
-                }
-                variantScope.getAssembleTask().dependsOn(tasks, splitApk.get(tasks));
-
-                // if the assembleVariant task run, make sure it also runs the task to generate
-                // the build-info.xml.
-                variantScope.getAssembleTask().dependsOn(
-                        tasks,
-                        fullBuildInfoGeneratorTask.get(tasks));
-
-                // make sure the split APK task is run before we generate the build-info.xml
-                variantScope.getInstantRunAnchorTask().dependsOn(tasks, splitApk);
-                variantScope.getInstantRunIncrementalTask().dependsOn(tasks, splitApk);
+            TransformManager transformManager = variantScope.getTransformManager();
+            for (TransformStream stream : transformManager.getStreams(
+                    PackageApplication.sDexFilter)) {
+                // TODO Optimize to avoid creating too many actions
+                splitApk.dependsOn(tasks, stream.getDependencies());
             }
+            variantScope.getAssembleTask().dependsOn(tasks, splitApk.get(tasks));
+
+            // if the assembleVariant task run, make sure it also runs the task to generate
+            // the build-info.xml.
+            variantScope.getAssembleTask().dependsOn(
+                    tasks,
+                    fullBuildInfoGeneratorTask.get(tasks));
+
+            // make sure the split APK task is run before we generate the build-info.xml
+            variantScope.getInstantRunAnchorTask().dependsOn(tasks, splitApk);
+            variantScope.getInstantRunIncrementalTask().dependsOn(tasks, splitApk);
         }
         return fullBuildInfoGeneratorTask;
     }
