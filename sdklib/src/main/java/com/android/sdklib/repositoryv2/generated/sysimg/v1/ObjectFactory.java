@@ -56,12 +56,12 @@ public class ObjectFactory
      * 
      */
     @XmlElementDecl(namespace = "http://schemas.android.com/sdk/android/repo/sys-img2/01", name = "sdk-sys-img")
-    public JAXBElement<RepositoryType> createSdkSysImg(RepositoryType value) {
+    public JAXBElement<RepositoryType> createSdkSysImgInternal(RepositoryType value) {
         return new JAXBElement<RepositoryType>(_SdkSysImg_QNAME, RepositoryType.class, null, value);
     }
 
-    public JAXBElement<Repository> generateElement(Repository value) {
-        return ((JAXBElement) createSdkSysImg(((RepositoryType) value)));
+    public JAXBElement<Repository> generateSdkSysImg(Repository value) {
+        return ((JAXBElement) createSdkSysImgInternal(((RepositoryType) value)));
     }
 
 }

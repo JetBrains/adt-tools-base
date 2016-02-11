@@ -18,7 +18,6 @@ package com.android.repository.impl.manager;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.repository.api.ElementFactory;
 import com.android.repository.api.FallbackLocalRepoLoader;
 import com.android.repository.api.LocalPackage;
 import com.android.repository.api.ProgressIndicator;
@@ -26,7 +25,7 @@ import com.android.repository.api.RepoManager;
 import com.android.repository.api.RepoPackage;
 import com.android.repository.api.Repository;
 import com.android.repository.api.SchemaModule;
-import com.android.repository.impl.meta.GenericFactory;
+import com.android.repository.impl.meta.CommonFactory;
 import com.android.repository.impl.meta.LocalPackageImpl;
 import com.android.repository.impl.meta.SchemaModuleUtil;
 import com.android.repository.impl.meta.TypeDetails;
@@ -208,9 +207,9 @@ public final class LocalRepoLoader {
             repo.addLicense(impl.getLicense());
 
             TypeDetails typeDetails = p.getTypeDetails();
-            ElementFactory<Repository> factory = typeDetails != null ? typeDetails.createFactory()
-                    : ((GenericFactory)RepoManager.getGenericModule().createLatestFactory());
-            SchemaModuleUtil.marshal(factory.generateElement(repo),
+            CommonFactory factory = ((CommonFactory) RepoManager.getCommonModule()
+              .createLatestFactory());
+            SchemaModuleUtil.marshal(factory.generateRepository(repo),
                                      mRepoManager.getSchemaModules(), fos,
                                      mRepoManager.getResourceResolver(progress), progress);
         } catch (FileNotFoundException e) {
@@ -238,7 +237,7 @@ public final class LocalRepoLoader {
             progress.logInfo("Parsing " + packageXml);
             repo = (Repository) SchemaModuleUtil.unmarshal(mFop.newFileInputStream(packageXml),
                     mRepoManager.getSchemaModules(), mRepoManager.getResourceResolver(progress),
-                    progress);
+                    false, progress);
         } catch (FileNotFoundException e) {
             // This shouldn't ever happen
             progress.logError(String.format("XML file %s doesn't exist", packageXml), e);
