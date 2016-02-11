@@ -2356,6 +2356,7 @@ public abstract class TaskManager {
 
         boolean multiOutput = variantData.getOutputs().size() > 1;
 
+        GradleVariantConfiguration variantConfiguration = variantScope.getVariantConfiguration();
         /**
          * PrePackaging step class that will look if the packaging of the main APK split is
          * necessary when running in InstantRun mode. In InstantRun mode targeting an api 23 or
@@ -2367,7 +2368,7 @@ public abstract class TaskManager {
          */
         AndroidTask<PrePackageApplication> prePackageApp = androidTasks.create(tasks,
                 new PrePackageApplication.ConfigAction("prePackageMarkerFor", variantScope));
-        if (getIncrementalMode(variantScope.getVariantConfiguration())
+        if (getIncrementalMode(variantConfiguration)
                 != IncrementalMode.NONE) {
             prePackageApp.dependsOn(tasks, variantScope.getInstantRunAnchorTask());
         }
@@ -2381,16 +2382,14 @@ public abstract class TaskManager {
             InstantRunPatchingPolicy instantRunPatchingPolicy =
                     variantScope.getInstantRunBuildContext().getPatchingPolicy();
 
-            // when building for instant run with targeting API 23 or above, do not put the
-            // dex files in the main APK, they will be packaged as pure splits
-            boolean addDexFilesToApk =
-                    instantRunPatchingPolicy == InstantRunPatchingPolicy.PRE_LOLLIPOP ||
-                    instantRunPatchingPolicy == InstantRunPatchingPolicy.MULTI_DEX ||
-                    getIncrementalMode(variantScope.getVariantConfiguration())
-                            == IncrementalMode.NONE;
+            // when building for instant run, never puts the user's code in the APK directly.
+            PackageApplication.DexPackagingPolicy dexPackagingPolicy =
+                    getIncrementalMode(variantConfiguration) == IncrementalMode.NONE
+                            ? PackageApplication.DexPackagingPolicy.STANDARD
+                            : PackageApplication.DexPackagingPolicy.INSTANT_RUN;
 
-            AndroidTask<PackageApplication> packageApp = androidTasks.create(
-                    tasks, new PackageApplication.ConfigAction(variantOutputScope, addDexFilesToApk));
+            AndroidTask<PackageApplication> packageApp = androidTasks.create(tasks,
+                    new PackageApplication.ConfigAction(variantOutputScope, dexPackagingPolicy));
 
             packageApp.dependsOn(tasks, prePackageApp, variantOutputScope.getProcessResourcesTask());
 
@@ -2406,12 +2405,10 @@ public abstract class TaskManager {
 
             TransformManager transformManager = variantScope.getTransformManager();
 
-            if (addDexFilesToApk) {
-                for (TransformStream stream : transformManager
-                        .getStreams(PackageApplication.sDexFilter)) {
-                    // TODO Optimize to avoid creating too many actions
-                    packageApp.dependsOn(tasks, stream.getDependencies());
-                }
+            for (TransformStream stream : transformManager
+                    .getStreams(PackageApplication.sDexFilter)) {
+                // TODO Optimize to avoid creating too many actions
+                packageApp.dependsOn(tasks, stream.getDependencies());
             }
 
             for (TransformStream stream : transformManager.getStreams(
@@ -2450,7 +2447,8 @@ public abstract class TaskManager {
             // when dealing with 23 and above, we should make sure the packaging task is running
             // as part of the incremental build in case resources have changed and need to be
             // repackaged in the main APK.
-            if (!addDexFilesToApk) {
+            if (dexPackagingPolicy == PackageApplication.DexPackagingPolicy.INSTANT_RUN
+                    && instantRunPatchingPolicy == InstantRunPatchingPolicy.MULTI_APK) {
                 variantScope.getInstantRunIncrementalTask().dependsOn(tasks, appTask);
             }
 
@@ -2594,7 +2592,7 @@ public abstract class TaskManager {
         }
 
         if (getExtension().getLintOptions().isCheckReleaseBuilds()
-                && getIncrementalMode(variantScope.getVariantConfiguration()) == IncrementalMode.NONE) {
+                && getIncrementalMode(variantConfiguration) == IncrementalMode.NONE) {
             createLintVitalTask(tasks, variantData);
         }
 

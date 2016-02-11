@@ -1,5 +1,6 @@
 package com.android.build.gradle.tasks;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.annotations.ApkFile;
@@ -31,6 +32,7 @@ import com.android.utils.StringHelper;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.io.Files;
 
 import org.gradle.api.Task;
 import org.gradle.api.logging.Logger;
@@ -43,16 +45,35 @@ import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.tooling.BuildException;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @ParallelizableTask
 public class PackageApplication extends IncrementalTask implements FileSupplier {
+
+    public enum DexPackagingPolicy {
+        /**
+         * Standard Dex packaging policy, all dex files will be packaged at the root of the APK.
+         */
+        STANDARD,
+
+        /**
+         * InstantRun specific Dex packaging policy, all dex files with a name containing
+         * {@link InstantRunSlicer#MAIN_SLICE_NAME} will be packaged at the root of the APK while
+         * all other dex files will be packaged in a instant-run.zip itself packaged at the root
+         * of the APK.
+         */
+        INSTANT_RUN
+    }
 
     public static final FilterableStreamCollection.StreamFilter sDexFilter =
             new TransformManager.StreamFilter() {
@@ -156,6 +177,8 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
 
     private InstantRunBuildContext instantRunContext;
 
+    private File instantRunSupportDir;
+
     @Input
     public boolean getJniDebugBuild() {
         return jniDebugBuild;
@@ -204,6 +227,13 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
 
     private File markerFile;
 
+    DexPackagingPolicy dexPackagingPolicy;
+
+    @Input
+    DexPackagingPolicy getDexPackagingPolicy() {
+        return dexPackagingPolicy;
+    }
+
     @Override
     protected void doFullTaskAction() {
 
@@ -219,11 +249,31 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
         }
 
         try {
+
+            ImmutableSet.Builder<File> dexFoldersForApk = ImmutableSet.builder();
+            ImmutableList.Builder<File> javaResourcesForApk = ImmutableList.builder();
+
             Collection<File> javaResourceFiles = getJavaResourceFiles();
+            if (javaResourceFiles != null) {
+                javaResourcesForApk.addAll(javaResourceFiles);
+            }
+            switch(dexPackagingPolicy) {
+                case INSTANT_RUN:
+                    File zippedDexes = zipDexesForInstantRun(getDexFolders(), dexFoldersForApk);
+                    javaResourcesForApk.add(zippedDexes);
+                    break;
+                case STANDARD:
+                    dexFoldersForApk.addAll(getDexFolders());
+                    break;
+                default:
+                    throw new RuntimeException(
+                            "Unhandled DexPackagingPolicy : " + getDexPackagingPolicy());
+            }
+
             getBuilder().packageApk(
                     getResourceFile().getAbsolutePath(),
-                    getDexFolders(),
-                    javaResourceFiles == null ? ImmutableList.<File>of() : javaResourceFiles,
+                    dexFoldersForApk.build(),
+                    javaResourcesForApk.build(),
                     getJniFolders(),
                     getAbiFilters(),
                     getJniDebugBuild(),
@@ -266,6 +316,58 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
         }
     }
 
+    private File zipDexesForInstantRun(Iterable<File> dexFolders,
+            ImmutableSet.Builder<File> dexFoldersForApk)
+            throws IOException {
+
+        File tmpZipFile = new File(instantRunSupportDir, "classes.zip");
+        Files.createParentDirs(tmpZipFile);
+        ZipOutputStream zipFile = new ZipOutputStream(
+                new BufferedOutputStream(new FileOutputStream(tmpZipFile)));
+
+        try {
+            for (File dexFolder : dexFolders) {
+                if (dexFolder.getName().contains(InstantRunSlicer.MAIN_SLICE_NAME)) {
+                    dexFoldersForApk.add(dexFolder);
+                } else {
+                    for (File file : Files.fileTreeTraverser().breadthFirstTraversal(dexFolder)) {
+                        // There are several pieces of code in the runtime library which depends on
+                        // this exact pattern, so it should not be changed without thorough testing
+                        // (it's basically part of the contract).
+                        if (file.isFile() && file.getName().endsWith(SdkConstants.DOT_DEX)) {
+                            zipFile.putNextEntry(new ZipEntry(
+                                    file.getParentFile().getName() + SdkConstants.DOT_DEX));
+                            try {
+                                Files.copy(file, zipFile);
+                            } finally {
+                                zipFile.closeEntry();
+                            }
+                        }
+                    }
+                }
+            }
+        } finally {
+            zipFile.close();
+        }
+
+        // now package that zip file as a zip since this is what the packager is expecting !
+        File finalResourceFile = new File(instantRunSupportDir, "resources.zip");
+        zipFile = new ZipOutputStream(new BufferedOutputStream(
+                new FileOutputStream(finalResourceFile)));
+        try {
+            zipFile.putNextEntry(new ZipEntry("instant-run.zip"));
+            try {
+                Files.copy(tmpZipFile, zipFile);
+            } finally {
+                zipFile.closeEntry();
+            }
+        } finally {
+            zipFile.close();
+        }
+
+        return finalResourceFile;
+    }
+
     // ----- FileSupplierTask -----
 
     @Override
@@ -284,11 +386,11 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
     public static class ConfigAction implements TaskConfigAction<PackageApplication> {
 
         private final VariantOutputScope scope;
-        private final boolean fullMode;
+        private final DexPackagingPolicy dexPackagingPolicy;
 
-        public ConfigAction(VariantOutputScope scope, boolean fullMode) {
+        public ConfigAction(VariantOutputScope scope, DexPackagingPolicy dexPackagingPolicy) {
             this.scope = scope;
-            this.fullMode = fullMode;
+            this.dexPackagingPolicy = dexPackagingPolicy;
         }
 
         @NonNull
@@ -317,6 +419,8 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                     variantScope.getVariantConfiguration().getFullName());
             packageApp.setMinSdkVersion(config.getMinSdkVersion());
             packageApp.instantRunContext = variantScope.getInstantRunBuildContext();
+            packageApp.dexPackagingPolicy = dexPackagingPolicy;
+            packageApp.instantRunSupportDir = variantScope.getInstantRunSupportDir();
 
             if (config.isMinifyEnabled()
                     && config.getBuildType().isShrinkResources()
@@ -342,20 +446,8 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                     if (config.getUseJack()) {
                         return ImmutableSet.of(variantScope.getJackDestinationDir());
                     }
-
-                    if (fullMode) {
-                        return variantScope.getTransformManager()
-                                .getPipelineOutput(sDexFilter).keySet();
-                    } else {
-                        // only add the main slice in the main APK.
-                        for (File file : variantScope.getTransformManager()
-                                .getPipelineOutput(sDexFilter).keySet()) {
-                            if (file.getName().contains(InstantRunSlicer.MAIN_SLICE_NAME)) {
-                                return ImmutableSet.of(file);
-                            }
-                        }
-                        return ImmutableSet.of();
-                    }
+                    return variantScope.getTransformManager()
+                            .getPipelineOutput(sDexFilter).keySet();
                 }
             });
 
@@ -446,14 +538,6 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                     variantScope.getGlobalScope().getProject());
             packageApp.keepTimestampsInApk = AndroidGradleOptions.keepTimestampsInApk(
                     variantScope.getGlobalScope().getProject());
-        }
-
-        private static File getOptionalDir(File dir) {
-            if (dir.isDirectory()) {
-                return dir;
-            }
-
-            return null;
         }
     }
 }
