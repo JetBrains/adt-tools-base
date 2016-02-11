@@ -564,12 +564,11 @@ public class InstantRunClient {
      *
      * @param files the files to push to the device, and the paths to push them as.
      * @param device   the device to push to
-     * @return true if installation succeeded
      */
-    public boolean pushFiles(
+    public void pushFiles(
             @NonNull List<FileTransfer> files,
             @NonNull IDevice device,
-            @NonNull final String buildId) {
+            @NonNull final String buildId) throws InstantRunPushFailedException {
         try {
             Set<String> createdDirs = Sets.newHashSet();
 
@@ -614,33 +613,37 @@ public class InstantRunClient {
                 // Make sure directory exists
                 if (!createdDirs.contains(folder)) {
                     createdDirs.add(folder);
-                    if (!runCommand(device, "run-as " + mPackageName + " mkdir -p " + folder)) {
-                        return false;
+                    String cmd = "run-as " + mPackageName + " mkdir -p " + folder;
+                    if (!runCommand(device, cmd)) {
+                        mLogger.warning("%s", "Error creating folder with: " + cmd);
+                        throw new InstantRunPushFailedException("Error creating folder with: " + cmd);
                     }
                 }
 
                 String cmd = "run-as " + mPackageName + " cp " + remote + " " + folder + "/" + name;
                 if (!runCommand(device, cmd)) {
-                    return false;
+                    mLogger.warning("%s", "Error copying file with: " + cmd);
+                    throw new InstantRunPushFailedException("Error copying file with: " + cmd);
                 }
             }
 
             transferLocalIdToDeviceId(device, buildId);
-
-            return true;
         } catch (IOException ioe) {
             mLogger.warning("Couldn't write build id file: %s", ioe);
+            throw new InstantRunPushFailedException("IOException while pushing files: " + ioe.toString());
         } catch (AdbCommandRejectedException e) {
             mLogger.warning("%s", e);
+            throw new InstantRunPushFailedException("Exception while pushing files: " + e.toString());
         } catch (TimeoutException e) {
             mLogger.warning("%s", e);
+            throw new InstantRunPushFailedException("Exception while pushing files: " + e.toString());
         } catch (ShellCommandUnresponsiveException e) {
             mLogger.warning("%s", e);
+            throw new InstantRunPushFailedException("Exception while pushing files: " + e.toString());
         } catch (SyncException e) {
             mLogger.warning("%s", e);
+            throw new InstantRunPushFailedException("Exception while pushing files: " + e.toString());
         }
-
-        return false;
     }
 
     private boolean runCommand(@NonNull IDevice device, @NonNull String cmd)
