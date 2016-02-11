@@ -238,8 +238,14 @@ public class InstantRunBuildInfo {
         return new InstantRunBuildInfo(doc.getDocumentElement());
     }
 
+    // Keep roughly in sync with InstantRunBuildContext#CURRENT_FORMAT.
+    //
+    // See longer comment on that field for why they're separate fields rather
+    // than this code just referencing that field.
     public boolean isCompatibleFormat() {
-        return getFormat() == 3;
+        // Right don't accept older versions; due to bugs we want to force everyone to use the latest or no instant run at all.
+        // In the future we'll probably accept a range of values here.
+        return getFormat() == 4;
     }
 
     public int getFormat() {

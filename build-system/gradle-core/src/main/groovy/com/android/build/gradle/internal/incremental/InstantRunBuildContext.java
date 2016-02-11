@@ -67,7 +67,16 @@ public class InstantRunBuildContext {
     static final String ATTR_FORMAT = "format";
     static final String ATTR_ABI = "abi";
 
-    static final String CURRENT_FORMAT = "3";
+    // Keep roughly in sync with InstantRunBuildInfo#isCompatibleFormat:
+    //
+    // (These aren't directly aliased in case in the future we want to for
+    // example have the client understand a range of versions. E.g. Gradle
+    // may bump this version to force older IDE's to not attempt instant run
+    // with this metadata, but a newer IDE could decide to work both with this
+    // new Gradle version and the older version. Whenever we bump this version
+    // we should cross check the logic and decide how to handle the isCompatible()
+    // method.)
+    static final String CURRENT_FORMAT = "4";
 
     public enum TaskType {
         JAVAC,
