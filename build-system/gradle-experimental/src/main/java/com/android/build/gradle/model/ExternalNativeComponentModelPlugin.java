@@ -32,6 +32,7 @@ import com.android.build.gradle.model.internal.DefaultExternalNativeBinarySpec;
 import com.android.build.gradle.model.internal.DefaultExternalNativeComponentSpec;
 import com.android.build.gradle.ndk.internal.NdkConfiguration;
 import com.android.utils.StringHelper;
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -45,6 +46,7 @@ import org.gradle.api.internal.file.FileResolver;
 import org.gradle.api.tasks.Exec;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.language.base.plugins.ComponentModelBasePlugin;
+import org.gradle.language.base.plugins.LifecycleBasePlugin;
 import org.gradle.model.Defaults;
 import org.gradle.model.Finalize;
 import org.gradle.model.Model;
@@ -91,6 +93,7 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
 
     @Override
     public void apply(Project project) {
+        project.getPlugins().apply(LifecycleBasePlugin.class);
         project.getPlugins().apply(ComponentModelBasePlugin.class);
 
         toolingRegistry.register(new NativeComponentModelBuilder(modelRegistry));
@@ -110,6 +113,12 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
 
         @Model(EXTERNAL_BUILD_CONFIG)
         public static void createNativeBuildModel(NativeBuildConfig config) {
+            config.getLibraries().afterEach(new Action<NativeLibrary>() {
+                @Override
+                public void execute(NativeLibrary nativeLibrary) {
+                    nativeLibrary.setAssembleTaskName(getAssembleTaskName(nativeLibrary.getName()));
+                }
+            });
         }
 
         @Model(ModelConstants.EXTERNAL_CONFIG_FILES)
@@ -151,10 +160,10 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
         static void finalizeNativeBuildConfig(NativeBuildConfig config) {
             // Configure default file extensions if not already set by user.
             if (config.getCFileExtensions().isEmpty()) {
-                config.getCFileExtensions().addAll(NdkConfiguration.C_FILE_EXTENSIONS);
+                config.getCFileExtensions().addAll(NdkComponentModelPlugin.C_FILE_EXTENSIONS);
             }
             if (config.getCppFileExtensions().isEmpty()) {
-                config.getCppFileExtensions().addAll(NdkConfiguration.CPP_FILE_EXTENSIONS);
+                config.getCppFileExtensions().addAll(NdkComponentModelPlugin.CPP_FILE_EXTENSIONS);
             }
         }
 
@@ -187,13 +196,20 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
         @BinaryTasks
         public static void createTasks(ModelMap<Task> tasks, final ExternalNativeBinarySpec binary) {
             tasks.create(
-                    "create" + StringHelper.capitalize(binary.getName()),
+                    getAssembleTaskName(binary.getName()),
                     Exec.class,
                     new Action<Exec>() {
                         @Override
                         public void execute(Exec exec) {
-                            exec.executable(binary.getConfig().getExecutable());
-                            exec.args(binary.getConfig().getArgs());
+                            if (!binary.getConfig().getBuildCommand().isEmpty()) {
+                                //noinspection unchecked - Unavoidable due how Exec is implemented.
+                                exec.setCommandLine(binary.getConfig().getBuildCommand());
+                            } else {
+                                //noinspection unchecked - Unavoidable due how Exec is implemented.
+                                exec.setCommandLine(
+                                        StringHelper.tokenizeCommand(
+                                                binary.getConfig().getBuildCommandString()));
+                            }
                         }
                     });
         }
@@ -222,8 +238,10 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
                             @Override
                             public void execute(Exec task) {
                                 if (!configFile.getCommand().isEmpty()) {
+                                    //noinspection unchecked - Unavoidable due how Exec is implemented.
                                     task.commandLine(configFile.getCommand());
                                 } else {
+                                    //noinspection unchecked - Unavoidable due how Exec is implemented.
                                     task.commandLine(StringHelper.tokenizeCommand(
                                             configFile.getCommandString()));
                                 }
@@ -239,8 +257,39 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
                         }
                     }
             );
+        }
 
-
+        @Mutate
+        static void createCleanTask(
+                final ModelMap<Task> task,
+                final NativeBuildConfig config) {
+            if (config.getCleanCommand().isEmpty()
+                    && Strings.isNullOrEmpty(config.getCleanCommandString())) {
+                return;
+            }
+            final String cleanNativeBuildTaskName = "cleanNativeBuild";
+            task.named("clean", new Action<Task>() {
+                @Override
+                public void execute(Task task) {
+                    task.dependsOn(cleanNativeBuildTaskName);
+                }
+            });
+            task.create(
+                    cleanNativeBuildTaskName,
+                    Exec.class,
+                    new Action<Exec>() {
+                        @Override
+                        public void execute(Exec task) {
+                            if (!config.getCleanCommand().isEmpty()) {
+                                //noinspection unchecked - Unavoidable due how Exec is implemented.
+                                task.commandLine(config.getCleanCommand());
+                            } else {
+                                //noinspection unchecked - Unavoidable due how Exec is implemented.
+                                task.commandLine(StringHelper.tokenizeCommand(
+                                        config.getCleanCommandString()));
+                            }
+                        }
+                    });
         }
 
         @Model(ARTIFACTS)
@@ -267,5 +316,8 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
                         });
             }
         }
+    }
+    private static String getAssembleTaskName(String libraryName) {
+        return "create" + StringHelper.capitalize(libraryName);
     }
 }

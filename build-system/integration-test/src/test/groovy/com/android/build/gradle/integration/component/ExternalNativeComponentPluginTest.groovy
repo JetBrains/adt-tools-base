@@ -58,13 +58,14 @@ model {
 """
         project.file("config.json") << """
 {
+    "cleanCommandString" : "rm output.txt",
     "buildFiles" : ["CMakeLists.txt"],
     "libraries" : {
         "foo" : {
-            "executable" : "touch",
-            "args" : ["output.txt"],
+            "buildCommand" : ["touch", "output.txt"],
             "toolchain" : "toolchain1",
             "output" : "build/libfoo.so",
+            "abi" : "x86",
             "folders" : [
                 {
                     "src" : "src/main/jni",
@@ -94,6 +95,8 @@ model {
 """
         NativeAndroidProject model = project.executeAndReturnModel(NativeAndroidProject.class, "assemble")
         checkModel(model);
+        project.execute("clean")
+        assertThat(project.file("output.txt")).doesNotExist()
     }
 
     @Test
@@ -118,8 +121,7 @@ model {
     "buildFiles" : ["CMakeLists.txt"],
     "libraries" : {
         "foo" : {
-            "executable" : "touch",
-            "args" : ["foo.txt"],
+            "buildCommand" : ["touch", "foo.txt"],
             "toolchain" : "toolchain1",
             "output" : "build/libfoo.so"
         }
@@ -139,8 +141,7 @@ model {
     "buildFiles" : ["CMakeLists.txt"],
     "libraries" : {
         "bar" : {
-            "executable" : "touch",
-            "args" : ["bar.txt"],
+            "buildCommandString" : "touch bar.txt",
             "toolchain" : "toolchain2",
             "output" : "build/libbar.so"
         }
@@ -169,12 +170,13 @@ model {
 
         assertThat(model.artifacts).hasSize(2)
         for (NativeArtifact artifact : model.artifacts) {
-            fail("Add validation for assembleTaskName when ExternalNativeComponentPlugin is restored.")
             if (artifact.getName().equals("foo")) {
+                assertThat(artifact.getAssembleTaskName()).isEqualTo("createFoo")
                 assertThat(artifact.getName()).isEqualTo("foo")
                 assertThat(artifact.getToolChain()).isEqualTo("toolchain1")
                 assertThat(artifact.getOutputFile()).hasName("libfoo.so")
             } else {
+                assertThat(artifact.getAssembleTaskName()).isEqualTo("createBar")
                 assertThat(artifact.getName()).isEqualTo("bar")
                 assertThat(artifact.getToolChain()).isEqualTo("toolchain2")
                 assertThat(artifact.getOutputFile()).hasName("libbar.so")
@@ -203,14 +205,15 @@ apply plugin: 'com.android.model.external'
 
 model {
     nativeBuildConfig {
+        cleanCommandString "rm output.txt"
         buildFiles.addAll([file("CMakeLists.txt")])
         CFileExtensions.add("c")
         cppFileExtensions.add("cpp")
 
         libraries {
             create("foo") {
-                executable "touch"
-                args.addAll(["output.txt"])
+                buildCommand.addAll(["touch", "output.txt"])
+                abi "x86"
                 toolchain "toolchain1"
                 output file("build/libfoo.so")
                 folders {
@@ -243,6 +246,8 @@ model {
 """
         NativeAndroidProject model = project.executeAndReturnModel(NativeAndroidProject.class, "assemble")
         checkModel(model);
+        project.execute("clean")
+        assertThat(project.file("output.txt")).doesNotExist()
     }
 
     private void checkModel(NativeAndroidProject model) {
