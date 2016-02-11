@@ -36,6 +36,7 @@ import com.android.ddmlib.TimeoutException;
 import com.android.tools.fd.runtime.ApplicationPatch;
 import com.android.tools.fd.runtime.Paths;
 import com.android.utils.ILogger;
+import com.android.utils.NullLogger;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Charsets;
@@ -359,42 +360,55 @@ public class InstantRunClient {
      * @param device the device to push to
      */
     public void transferLocalIdToDeviceId(@NonNull IDevice device, @NonNull String buildId) {
+        transferBuildIdToDevice(device, buildId, mPackageName, mLogger);
+    }
+
+    // Note: This method can be called even if IR is turned off, as even when IR is off, we want to
+    // trash any existing build ids saved on the device.
+    public static void transferBuildIdToDevice(@NonNull IDevice device,
+            @NonNull String buildId,
+            @NonNull String applicationId,
+            @Nullable ILogger logger) {
+        if (logger == null) {
+            logger = new NullLogger();
+        }
+
         try {
             if (USE_BUILD_ID_TEMP_FILE) {
-                String remoteIdFile = getDeviceIdFolder(mPackageName);
+                String remoteIdFile = getDeviceIdFolder(applicationId);
                 //noinspection SSBasedInspection This should work
                 File local = File.createTempFile("build-id", "txt");
                 local.deleteOnExit();
                 Files.write(buildId, local, Charsets.UTF_8);
                 device.pushFile(local.getPath(), remoteIdFile);
             } else {
-                String remote = copyToDeviceScratchFile(device, mPackageName, buildId);
-                String dataDir = Paths.getDataDirectory(mPackageName);
+                String remote = copyToDeviceScratchFile(device, applicationId, buildId);
+                String dataDir = Paths.getDataDirectory(applicationId);
 
                 // We used to do this here:
                 //String cmd = "run-as " + pkg + " mkdir -p " + dataDir + "; run-as " + pkg + " cp " + remote + " " + dataDir + "/" + BUILD_ID_TXT;
                 // but it turns out "cp" is missing on API 15! Let's use cat and sh instead which seems to be available everywhere.
                 // (Note: echo is not, it's missing on API 19.)
-                String cmd = "run-as " + mPackageName + " mkdir -p " + dataDir + "; cat " + remote
-                             + " | run-as " + mPackageName + " sh -c 'cat > " + dataDir + "/"
-                             + Paths.BUILD_ID_TXT + "'";
+                String cmd = "run-as " + applicationId + " mkdir -p " + dataDir + "; cat " + remote
+                        + " | run-as " + applicationId + " sh -c 'cat > " + dataDir + "/"
+                        + Paths.BUILD_ID_TXT + "'";
                 CollectingOutputReceiver receiver = new CollectingOutputReceiver();
                 device.executeShellCommand(cmd, receiver);
                 String output = receiver.getOutput();
                 if (!output.trim().isEmpty()) {
-                    mLogger.warning("Unexpected shell output: " + output);
+                    logger.warning("Unexpected shell output: " + output);
                 }
             }
         } catch (IOException ioe) {
-            mLogger.warning("Couldn't write build id file: %s", ioe);
+            logger.warning("Couldn't write build id file: %s", ioe);
         } catch (AdbCommandRejectedException e) {
-            mLogger.warning("%s", e);
+            logger.warning("%s", e);
         } catch (TimeoutException e) {
-            mLogger.warning("%s", e);
+            logger.warning("%s", e);
         } catch (ShellCommandUnresponsiveException e) {
-            mLogger.warning("%s", e);
+            logger.warning("%s", e);
         } catch (SyncException e) {
-            mLogger.warning("%s", e);
+            logger.warning("%s", e);
         }
     }
 
