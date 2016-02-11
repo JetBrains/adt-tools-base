@@ -37,9 +37,9 @@ public class NativeBuildConfigValue {
     @Nullable
     Collection<File> buildFiles;
     @Nullable
-    List<String> cleanCommand;
+    List<String> cleanCommands;
     @Nullable
-    String cleanCommandString;
+    List<String> cleanCommandStrings;
     @Nullable
     Map<String, NativeLibraryValue> libraries;
     @Nullable
@@ -58,9 +58,11 @@ public class NativeBuildConfigValue {
         if (buildFiles != null) {
             config.getBuildFiles().addAll(buildFiles);
         }
-        config.getCleanCommandStrings().add(cleanCommandString);
-        if (cleanCommand != null) {
-            config.getCleanCommands().addAll(cleanCommand);
+        if (cleanCommandStrings != null) {
+            config.getCleanCommandStrings().addAll(cleanCommandStrings);
+        }
+        if (cleanCommands != null) {
+            config.getCleanCommands().addAll(cleanCommands);
             config.getCleanCommands().add(null);
         }
         if (libraries != null) {
