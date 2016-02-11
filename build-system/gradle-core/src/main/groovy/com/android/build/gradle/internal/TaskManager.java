@@ -2712,6 +2712,9 @@ public abstract class TaskManager {
         }
 
         if (getIncrementalMode(scope.getVariantConfiguration()) != IncrementalMode.NONE) {
+            //TODO: This is currently overly broad, as finding the actual application class
+            //      requires manually parsing the manifest (See CreateManifestKeepList)
+            transform.keep("class ** extends android.app.Application {*;}");
             transform.keep("class com.android.tools.fd.** {*;}");
         }
 
