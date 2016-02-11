@@ -58,9 +58,10 @@ public class NativeBuildConfigValue {
         if (buildFiles != null) {
             config.getBuildFiles().addAll(buildFiles);
         }
-        config.setCleanCommandString(cleanCommandString);
+        config.getCleanCommandStrings().add(cleanCommandString);
         if (cleanCommand != null) {
-            config.getCleanCommand().addAll(cleanCommand);
+            config.getCleanCommands().addAll(cleanCommand);
+            config.getCleanCommands().add(null);
         }
         if (libraries != null) {
             for (final Map.Entry<String, NativeLibraryValue> entry : libraries.entrySet()) {

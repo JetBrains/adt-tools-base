@@ -30,9 +30,7 @@ import com.android.build.gradle.managed.NativeBuildConfig;
 import com.android.build.gradle.managed.NativeLibrary;
 import com.android.build.gradle.model.internal.DefaultExternalNativeBinarySpec;
 import com.android.build.gradle.model.internal.DefaultExternalNativeComponentSpec;
-import com.android.build.gradle.ndk.internal.NdkConfiguration;
 import com.android.utils.StringHelper;
-import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -66,6 +64,7 @@ import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -263,33 +262,53 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
         static void createCleanTask(
                 final ModelMap<Task> task,
                 final NativeBuildConfig config) {
-            if (config.getCleanCommand().isEmpty()
-                    && Strings.isNullOrEmpty(config.getCleanCommandString())) {
+            if (config.getCleanCommands().isEmpty()
+                    && config.getCleanCommandStrings().isEmpty()) {
                 return;
             }
             final String cleanNativeBuildTaskName = "cleanNativeBuild";
+            int index = 0;
+            if (!config.getCleanCommands().isEmpty()) {
+                List<String> currentCleanCommand = new ArrayList<String>();
+                for (final String token : config.getCleanCommands()) {
+                    if (token == null) {
+                        final List<String> cleanCommand = currentCleanCommand;
+                        task.create(cleanNativeBuildTaskName + index++,
+                                Exec.class,
+                                new Action<Exec>() {
+                                    @Override
+                                    public void execute(Exec task) {
+                                        //noinspection unchecked - Unavoidable due how Exec is implemented.
+                                        task.commandLine(cleanCommand);
+                                    }
+                                });
+                        currentCleanCommand = new ArrayList<String>();
+                    } else {
+                        currentCleanCommand.add(token);
+                    }
+                }
+            } else {
+                for (final String cleanCommandString : config.getCleanCommandStrings()) {
+                    task.create(cleanNativeBuildTaskName + index++,
+                            Exec.class,
+                            new Action<Exec>() {
+                                @Override
+                                public void execute(Exec task) {
+                                    //noinspection unchecked - Unavoidable due how Exec is implemented.
+                                    task.commandLine(StringHelper.tokenizeCommand(
+                                            cleanCommandString));
+                                }
+                            });
+                }
+            }
+            final int count = index;
             task.named("clean", new Action<Task>() {
                 @Override
                 public void execute(Task task) {
-                    task.dependsOn(cleanNativeBuildTaskName);
+                    for (int i = 0; i < count; ++i)
+                        task.dependsOn(cleanNativeBuildTaskName + i);
                 }
             });
-            task.create(
-                    cleanNativeBuildTaskName,
-                    Exec.class,
-                    new Action<Exec>() {
-                        @Override
-                        public void execute(Exec task) {
-                            if (!config.getCleanCommand().isEmpty()) {
-                                //noinspection unchecked - Unavoidable due how Exec is implemented.
-                                task.commandLine(config.getCleanCommand());
-                            } else {
-                                //noinspection unchecked - Unavoidable due how Exec is implemented.
-                                task.commandLine(StringHelper.tokenizeCommand(
-                                        config.getCleanCommandString()));
-                            }
-                        }
-                    });
         }
 
         @Model(ARTIFACTS)
