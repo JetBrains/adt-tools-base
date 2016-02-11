@@ -18,18 +18,20 @@ package com.android.build.gradle.integration.instant;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
+import static com.android.build.gradle.integration.instant.InstantRunTestUtils.getInstantRunModel;
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.truth.ApkSubject;
 import com.android.build.gradle.integration.common.truth.DexFileSubject;
 import com.android.build.gradle.integration.common.truth.FileSubject;
-import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.InstantRun;
 import com.android.builder.model.Variant;
 import com.android.ide.common.process.ProcessException;
+import com.android.tools.fd.client.InstantRunBuildInfo;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.io.Files;
@@ -100,18 +102,16 @@ public class LibDependencyTest {
         Files.write("changed java resource", resource, Charsets.UTF_8);
 
         project.execute(getInstantRunArgs(), instantRunModel.getIncrementalAssembleTaskName());
-        InstantRunBuildContext context = InstantRunTestUtils.loadContext(instantRunModel);
-        assertThat(context.getLastBuild()).isNotNull();
-        assertThat(context.getLastBuild().getVerifierStatus()).isPresent();
-        assertThat(context.getLastBuild().getVerifierStatus().get()).isEqualTo(
-                InstantRunVerifierStatus.JAVA_RESOURCES_CHANGED);
-        assertThat(context.getLastBuild().getArtifacts()).hasSize(0);
+        InstantRunBuildInfo context = InstantRunTestUtils.loadContext(instantRunModel);
+        assertThat(context.getVerifierStatus()).isEqualTo(
+                InstantRunVerifierStatus.JAVA_RESOURCES_CHANGED.toString());
+        assertThat(context.getArtifacts()).hasSize(0);
     }
 
     /**
      * Check a hot-swap compatible change works as expected.
      */
-    private void checkHotSwapCompatibleChange(InstantRun instantRunModel)
+    private void checkHotSwapCompatibleChange(@NonNull InstantRun instantRunModel)
             throws IOException, ProcessException {
         createLibraryClass("Hot swap change");
 
@@ -145,13 +145,4 @@ public class LibDependencyTest {
         return Collections.singletonList(property);
     }
 
-    private static InstantRun getInstantRunModel(AndroidProject project) {
-        Collection<Variant> variants = project.getVariants();
-        for (Variant variant : variants) {
-            if ("debug".equals(variant.getName())) {
-                return variant.getMainArtifact().getInstantRun();
-            }
-        }
-        throw new AssertionError("Could not find debug variant.");
-    }
 }
