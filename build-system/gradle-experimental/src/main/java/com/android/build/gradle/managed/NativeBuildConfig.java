@@ -38,6 +38,11 @@ public interface NativeBuildConfig {
      */
     Set<File> getBuildFiles();
 
+    String getCleanCommandString();
+    void setCleanCommandString(String command);
+
+    List<String> getCleanCommand();
+
     /**
      * Configurations for each native artifact.
      */

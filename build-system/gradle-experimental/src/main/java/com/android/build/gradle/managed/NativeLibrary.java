@@ -35,15 +35,10 @@ public interface NativeLibrary extends Named {
     /**
      * Executable for building the library.
      */
-    @Nullable
-    String getExecutable();
-    void setExecutable(String executable);
+    List<String> getBuildCommand();
 
-    /**
-     * Arguments to the executable for building the project.
-     */
-    @NonNull
-    List<String> getArgs();
+    String getBuildCommandString();
+    void setBuildCommandString(String command);
 
     @Nullable
     String getGroupName();

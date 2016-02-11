@@ -26,6 +26,7 @@ import org.gradle.api.Action;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -35,6 +36,10 @@ public class NativeBuildConfigValue {
 
     @Nullable
     Collection<File> buildFiles;
+    @Nullable
+    List<String> cleanCommand;
+    @Nullable
+    String cleanCommandString;
     @Nullable
     Map<String, NativeLibraryValue> libraries;
     @Nullable
@@ -52,6 +57,10 @@ public class NativeBuildConfigValue {
     public void copyTo(@NonNull NativeBuildConfig config) {
         if (buildFiles != null) {
             config.getBuildFiles().addAll(buildFiles);
+        }
+        config.setCleanCommandString(cleanCommandString);
+        if (cleanCommand != null) {
+            config.getCleanCommand().addAll(cleanCommand);
         }
         if (libraries != null) {
             for (final Map.Entry<String, NativeLibraryValue> entry : libraries.entrySet()) {
