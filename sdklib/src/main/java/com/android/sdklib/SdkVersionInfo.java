@@ -348,4 +348,16 @@ public class SdkVersionInfo {
         // Must be a future SDK platform
         return new AndroidVersion(HIGHEST_KNOWN_API, apiOrPreviewName);
     }
+
+    /**
+     * Returns the codename for a given {@link AndroidVersion}'s API level.
+     */
+    @Nullable
+    public static String getAndroidVersionCodeName(@NonNull AndroidVersion version) {
+        String codeName = version.getCodename();
+        if (codeName == null) {
+            codeName = getCodeName(version.getApiLevel());
+        }
+        return codeName;
+    }
 }
