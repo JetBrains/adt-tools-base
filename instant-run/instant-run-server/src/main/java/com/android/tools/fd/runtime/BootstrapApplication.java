@@ -161,7 +161,7 @@ public class BootstrapApplication extends Application {
             try {
                 long codeModified = 0L;
                 String lastClass = dexList.get(0);
-                if (lastClass.startsWith(Paths.DEX_SLICE_PREFIX)) {
+                if (new File(lastClass).getName().startsWith(Paths.DEX_SLICE_PREFIX)) {
                     // Dex slices are not sorted by modification time, so I need
                     // to look at all of them
                     for (String file : dexList) {

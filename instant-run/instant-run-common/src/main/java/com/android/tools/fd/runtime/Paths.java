@@ -45,7 +45,7 @@ public final class Paths {
 
     @NonNull
     public static String getDataDirectory(@NonNull String applicationId) {
-        return "/data/data/" + applicationId + "/files/studio-fd";
+        return "/data/data/" + applicationId + "/files/instant-run";
     }
 
     @NonNull
