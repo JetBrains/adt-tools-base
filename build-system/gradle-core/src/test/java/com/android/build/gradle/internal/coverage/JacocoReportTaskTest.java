@@ -32,6 +32,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -42,6 +43,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
 
+@Ignore("Temporarily disabled until new coverage.ec is generated.")
 public class JacocoReportTaskTest {
 
     @Rule
@@ -52,6 +54,7 @@ public class JacocoReportTaskTest {
 
     @Test
     public void sanityCheckReport() throws IOException, URISyntaxException {
+        // Coverage file generated from BasicTest project.
         File coverageFile = copyResourceToFolder(
                 "jacocoReport/com/android/tools/build/tests/myapplication/coverage.ec",
                 mTemporaryFolder.newFolder());

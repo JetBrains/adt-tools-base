@@ -140,6 +140,10 @@ public class AnnotationProcessorTest {
     public void setUp() throws IOException {
         String buildScript = new BuildScriptGenerator(
                 "\n"
+                        + "apply from: \"../../commonHeader.gradle\"\n"
+                        + "buildscript { apply from: \"../../commonBuildScript.gradle\" }\n"
+                        + "apply from: \"../../commonLocalRepo.gradle\"\n"
+                        + "\n"
                         + "apply plugin: '${application_plugin}'\n"
                         + "\n"
                         + "${model_start}"

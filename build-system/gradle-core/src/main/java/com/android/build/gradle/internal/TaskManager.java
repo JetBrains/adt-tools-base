@@ -35,12 +35,9 @@ import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.api.transform.Transform;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.AndroidGradleOptions;
-import com.android.build.gradle.internal.incremental.DexPackagingPolicy;
-import com.android.builder.model.OptionalCompilationStep;
 import com.android.build.gradle.ProguardFiles;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
-import com.android.build.gradle.internal.coverage.JacocoPlugin;
 import com.android.build.gradle.internal.coverage.JacocoReportTask;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
@@ -48,13 +45,14 @@ import com.android.build.gradle.internal.dsl.CoreJackOptions;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.incremental.BuildInfoLoaderTask;
+import com.android.build.gradle.internal.incremental.DexPackagingPolicy;
 import com.android.build.gradle.internal.incremental.InstantRunAnchorTask;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
 import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
-import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.model.CoreExternalNativeBuild;
+import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.OriginalStream;
 import com.android.build.gradle.internal.pipeline.TransformManager;
@@ -78,6 +76,7 @@ import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask;
 import com.android.build.gradle.internal.tasks.FileSupplier;
 import com.android.build.gradle.internal.tasks.GenerateApkDataTask;
 import com.android.build.gradle.internal.tasks.InstallVariantTask;
+import com.android.build.gradle.internal.tasks.JackJacocoReportTask;
 import com.android.build.gradle.internal.tasks.LintCompile;
 import com.android.build.gradle.internal.tasks.MockableAndroidJarTask;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
@@ -156,6 +155,7 @@ import com.android.builder.core.DexOptions;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
 import com.android.builder.model.DataBindingOptions;
+import com.android.builder.model.OptionalCompilationStep;
 import com.android.builder.model.SyncIssue;
 import com.android.builder.sdk.TargetInfo;
 import com.android.builder.testing.ConnectedDeviceProvider;
@@ -179,7 +179,6 @@ import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.execution.TaskExecutionGraph;
-import org.gradle.api.file.FileCollection;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
@@ -211,8 +210,6 @@ import groovy.lang.Closure;
  * Manages tasks creation.
  */
 public abstract class TaskManager {
-
-    public static final String FILE_JACOCO_AGENT = "jacocoagent.jar";
 
     public static final String DEFAULT_PROGUARD_CONFIG_FILE = "proguard-android.txt";
 
@@ -1622,69 +1619,18 @@ public abstract class TaskManager {
         tasks.named(CONNECTED_ANDROID_TEST,
                 connectedAndroidTest -> connectedAndroidTest.dependsOn(connectedTask.getName()));
 
-        if (baseVariantData.getVariantConfiguration().getBuildType().isTestCoverageEnabled()
-                && !baseVariantData.getVariantConfiguration().getJackOptions().isEnabled()) {
-            final AndroidTask<JacocoReportTask> reportTask = androidTasks.create(
-                    tasks,
-                    variantScope.getTaskName("create", "CoverageReport"),
-                    JacocoReportTask.class,
-                    new Action<JacocoReportTask>() {
-                        @Override
-                        public void execute(JacocoReportTask reportTask) {
-                            reportTask.setDescription("Creates JaCoCo test coverage report from "
-                                    + "data gathered on the device.");
-
-                            reportTask.setReportName(
-                                    baseVariantData.getVariantConfiguration().getFullName());
-
-                            ConventionMappingHelper.map(reportTask, "jacocoClasspath",
-                                    new Callable<FileCollection>() {
-                                        @Override
-                                        public FileCollection call() throws Exception {
-                                            return project.getConfigurations().getAt(
-                                                    JacocoPlugin.ANT_CONFIGURATION_NAME);
-                                        }
-                                    });
-                            ConventionMappingHelper
-                                    .map(reportTask, "coverageDirectory", new Callable<File>() {
-                                        @Override
-                                        public File call() {
-                                            return ((TestVariantData) testVariantData.getScope()
-                                                            .getVariantData()).connectedTestTask
-                                                            .getCoverageDir();
-                                        }
-                                    });
-                            ConventionMappingHelper
-                                    .map(reportTask, "classDir", new Callable<File>() {
-                                        @Override
-                                        public File call() {
-                                            return baseVariantData.javacTask.getDestinationDir();
-                                        }
-                                    });
-                            ConventionMappingHelper
-                                    .map(reportTask, "sourceDir", new Callable<List<File>>() {
-                                        @Override
-                                        public List<File> call() {
-                                            return baseVariantData
-                                                    .getJavaSourceFoldersForCoverage();
-                                        }
-                                    });
-
-                            ConventionMappingHelper
-                                    .map(reportTask, "reportDir", new Callable<File>() {
-                                        @Override
-                                        public File call() {
-                                            return new File(
-                                                    variantScope.getGlobalScope().getReportsDir(),
-                                                    "/coverage/" + baseVariantData
-                                                            .getVariantConfiguration()
-                                                            .getDirName());
-                                        }
-                                    });
-
-                            reportTask.dependsOn(connectedTask.getName());
-                        }
-                    });
+        if (baseVariantData.getVariantConfiguration().getBuildType().isTestCoverageEnabled()) {
+            final AndroidTask reportTask;
+            if (baseVariantData.getVariantConfiguration().getJackOptions().isEnabled()) {
+                reportTask = androidTasks.create(
+                        tasks,
+                        new JackJacocoReportTask.ConfigAction(variantScope));
+            } else {
+                reportTask = androidTasks.create(
+                        tasks,
+                        new JacocoReportTask.ConfigAction(variantScope));
+            }
+            reportTask.dependsOn(tasks, connectedTask.getName());
 
             variantScope.setCoverageReportTask(reportTask);
             baseVariantData.getScope().getCoverageReportTask().dependsOn(tasks, reportTask);
@@ -2126,8 +2072,7 @@ public abstract class TaskManager {
             variantScope.getTransformManager().addStream(OriginalStream.builder()
                     .addContentTypes(TransformManager.CONTENT_JARS)
                     .addScope(Scope.EXTERNAL_LIBRARIES)
-                    .setJar(new File(variantScope.getGlobalScope().getJacocoAgentOutputDirectory(),
-                            FILE_JACOCO_AGENT))
+                    .setJar(globalScope.getJacocoAgent())
                     .setDependency(agentTask.getName())
                     .build());
         }
@@ -2165,7 +2110,16 @@ public abstract class TaskManager {
                 globalScope.getExtension().getDexOptions().getJavaMaxHeapSize(),
                 scope.getVariantConfiguration().getJackOptions(),
                 true);
-        scope.getTransformManager().addTransform(tasks, scope, preDexPackagedTransform);
+        AndroidTask<TransformTask> packageTask =
+                scope.getTransformManager().addTransform(tasks, scope, preDexPackagedTransform);
+
+        AndroidTask jacocoTask = getJacocoAgentTask(tasks);
+        if (jacocoTask != null) {
+            packageTask.dependsOn(tasks,
+                    scope.getVariantData().getVariantDependency().getPackageConfiguration()
+                            .getBuildDependencies(),
+                    jacocoTask);
+        }
 
         JackPreDexTransform preDexRuntimeTransform = new JackPreDexTransform(
                 androidBuilder,
@@ -2173,7 +2127,6 @@ public abstract class TaskManager {
                 scope.getVariantConfiguration().getJackOptions(),
                 false);
         scope.getTransformManager().addTransform(tasks, scope, preDexRuntimeTransform);
-
 
         // ----- Create Jack Task -----
         JackTransform jackTransform = new JackTransform(scope, isDebugLog(), compileJavaSources);
