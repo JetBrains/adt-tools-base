@@ -426,7 +426,7 @@ public class InstantRunClient {
                 String id;
                 if (output.contains(":")) { // cat: command not found, cat: permission denied etc
                     if (output.startsWith(remoteIdFile)) {
-                        // /data/data/my.pkg.path/files/studio-fd/build-id.txt: No such file or directory
+                        // /data/data/my.pkg.path/files/instant-run/build-id.txt: No such file or directory
                         return null;
                     }
                     // on a user device, we cannot pull from a path where the segments aren't readable (I think this is a ddmlib limitation)
