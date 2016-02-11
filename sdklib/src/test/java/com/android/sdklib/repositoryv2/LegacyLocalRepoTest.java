@@ -96,7 +96,7 @@ public class LegacyLocalRepoTest extends TestCase {
         progress.assertNoErrorsOrWarnings();
 
         Collection<SchemaModule> extensions = ImmutableList
-                .of(RepoManager.getGenericModule());
+                .of(RepoManager.getCommonModule(), RepoManager.getGenericModule());
 
         // Now read the new package
         Repository repo = (Repository) SchemaModuleUtil.unmarshal(
@@ -128,7 +128,7 @@ public class LegacyLocalRepoTest extends TestCase {
         progress.assertNoErrorsOrWarnings();
 
         Collection<SchemaModule> extensions = ImmutableList
-                .of(RepoManager.getGenericModule(), AndroidSdkHandler.getAddonModule());
+                .of(RepoManager.getCommonModule(), AndroidSdkHandler.getAddonModule());
 
         // Now read the new package
         Repository repo = (Repository) SchemaModuleUtil.unmarshal(
