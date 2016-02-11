@@ -111,8 +111,8 @@ model {
     nativeBuildConfig {
         libraries {
             create("foo") {
-                executable "${compiler.getPath()}"
-                args.addAll([
+                buildCommand.addAll([
+                    "${compiler.getPath()}",
                     "APP_BUILD_SCRIPT=Android.mk",
                     "NDK_PROJECT_PATH=null",
                     "NDK_OUT=build/intermediate",

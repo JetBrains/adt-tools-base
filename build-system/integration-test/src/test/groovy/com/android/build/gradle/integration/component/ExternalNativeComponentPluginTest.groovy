@@ -58,7 +58,7 @@ model {
 """
         project.file("config.json") << """
 {
-    "cleanCommandString" : "rm output.txt",
+    "cleanCommandStrings" : ["rm output.txt"],
     "buildFiles" : ["CMakeLists.txt"],
     "libraries" : {
         "foo" : {
@@ -205,7 +205,7 @@ apply plugin: 'com.android.model.external'
 
 model {
     nativeBuildConfig {
-        cleanCommandString "rm output.txt"
+        cleanCommandStrings.add("rm output.txt")
         buildFiles.addAll([file("CMakeLists.txt")])
         CFileExtensions.add("c")
         cppFileExtensions.add("cpp")
