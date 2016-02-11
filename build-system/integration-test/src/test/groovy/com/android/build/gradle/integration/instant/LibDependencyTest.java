@@ -25,6 +25,7 @@ import static com.android.utils.FileUtils.mkdirs;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject;
 import com.android.build.gradle.integration.common.truth.ApkSubject;
 import com.android.build.gradle.integration.common.truth.DexFileSubject;
 import com.android.build.gradle.integration.common.truth.FileSubject;
@@ -86,8 +87,9 @@ public class LibDependencyTest {
         // Check that original class is included.
         project.execute(getInstantRunArgs(), "clean", "assembleRelease", "assembleDebug");
         expect.about(ApkSubject.FACTORY)
-                .that(project.getSubproject("app").getApk("debug")).hasDexFile("classes.dex")
-                .that().hasClass("Lcom/android/tests/libstest/lib/MainActivity;")
+                .that(project.getSubproject("app").getApk("debug"))
+                .getClass("Lcom/android/tests/libstest/lib/MainActivity;",
+                        AbstractAndroidSubject.ClassFileScope.INSTANT_RUN)
                 .that().hasMethod("onCreate");
 
         checkHotSwapCompatibleChange(instantRunModel);
@@ -133,8 +135,10 @@ public class LibDependencyTest {
 
         // Check that original class is included.
         project.execute(getInstantRunArgs(), "clean", "assembleDebug");
-        assertThatApk(project.getSubproject("app").getApk("debug")).hasDexFile("classes.dex")
-                .that().hasClass("Lcom/android/tests/libstest/lib/MainActivity;")
+        expect.about(ApkSubject.FACTORY)
+                .that(project.getSubproject("app").getApk("debug"))
+                .getClass("Lcom/android/tests/libstest/lib/MainActivity;",
+                        AbstractAndroidSubject.ClassFileScope.INSTANT_RUN)
                 .that().hasMethod("onCreate");
 
         Files.write("changed java resource", resource, Charsets.UTF_8);

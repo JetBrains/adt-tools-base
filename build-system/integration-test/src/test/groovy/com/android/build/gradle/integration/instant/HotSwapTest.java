@@ -27,6 +27,7 @@ import com.android.build.gradle.integration.common.category.DeviceTests;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.Logcat;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
+import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject;
 import com.android.build.gradle.integration.common.truth.ApkSubject;
 import com.android.build.gradle.integration.common.truth.DexFileSubject;
 import com.android.build.gradle.integration.common.utils.DeviceHelper;
@@ -108,11 +109,13 @@ public class HotSwapTest {
                 "assembleDebug");
 
         // As no injected API level, will default to no splits.
-        DexFileSubject dexFile = expect.about(ApkSubject.FACTORY)
-                .that(project.getApk("debug")).hasMainDexFile().that();
-        dexFile.hasClass("Lcom/example/helloworld/HelloWorld;")
+        ApkSubject apkFile = expect.about(ApkSubject.FACTORY)
+                .that(project.getApk("debug"));
+        apkFile.getClass("Lcom/example/helloworld/HelloWorld;",
+                AbstractAndroidSubject.ClassFileScope.INSTANT_RUN)
                 .that().hasMethod("onCreate");
-        dexFile.hasClass("Lcom/android/tools/fd/runtime/BootstrapApplication;");
+        apkFile.getClass("Lcom/android/tools/fd/runtime/BootstrapApplication;",
+                AbstractAndroidSubject.ClassFileScope.INSTANT_RUN);
 
         makeBasicHotswapChange();
 
