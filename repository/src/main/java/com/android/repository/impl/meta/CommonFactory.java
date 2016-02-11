@@ -25,6 +25,8 @@ import com.android.repository.api.Dependency;
 import com.android.repository.api.License;
 import com.android.repository.api.Repository;
 
+import javax.xml.bind.JAXBElement;
+
 /**
  * Factory for creating the objects used by the repository framework.
  * Instances of this class can be obtained from any of the objects creatable by this class,
@@ -55,6 +57,9 @@ public abstract class CommonFactory {
 
     @NonNull
     public abstract Channel createChannelType();
+
+    @NonNull
+    public abstract JAXBElement<Repository> generateRepository(Repository repo);
 
     /**
      * Convenience method to create a {@link Channel} with the given numeric id.

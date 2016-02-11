@@ -17,15 +17,13 @@
 package com.android.sdklib.repositoryv2.meta;
 
 import com.android.annotations.NonNull;
-import com.android.repository.api.ElementFactory;
-import com.android.repository.api.Repository;
 import com.android.repository.impl.meta.TypeDetails;
 
 /**
  * Parent class for {@code ObjectFactories} created by xjc from sdk-repository-XX.xsd, for
  * creating repository-schema-specific {@link TypeDetails} and associated classes.
  */
-public abstract class RepoFactory extends ElementFactory<Repository> {
+public abstract class RepoFactory {
 
     /**
      * Create an instance of {@link DetailsTypes.SourceDetailsType }

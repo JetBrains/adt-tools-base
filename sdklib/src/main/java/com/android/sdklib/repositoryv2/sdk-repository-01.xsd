@@ -26,6 +26,7 @@
          -catalog <tools/base path>/repository/src/main/java/com/android/repository/api/catalog.xml \
          -b <tools/base path>/repository/src/main/java/com/android/repository/api/common.xjb \
          -b com/android/sdklib/repositoryv2/sdk-common.xjb \
+         -b <tools/base path>/repository/src/main/java/com/android/repository/api/generic.xjb \
          -p com.android.sdklib.repositoryv2.generated.repository.v1 \
          com/android/sdklib/repositoryv2/sdk-repository-01.xsd \
          -extension -Xandroid-inheritance \

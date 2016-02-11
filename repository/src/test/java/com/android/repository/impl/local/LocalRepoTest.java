@@ -127,8 +127,8 @@ public class LocalRepoTest extends TestCase {
         repo.getLicense().add(license);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         SchemaModuleUtil.marshal(
-                ((GenericFactory) RepoManager.getGenericModule().createLatestFactory())
-                        .generateElement(repo),
+                ((CommonFactory) RepoManager.getCommonModule().createLatestFactory())
+                        .generateRepository(repo),
                 ImmutableSet.of(manager.getGenericModule()), output,
                 manager.getResourceResolver(progress), progress);
         progress.assertNoErrorsOrWarnings();
@@ -163,8 +163,9 @@ public class LocalRepoTest extends TestCase {
         // Can't just check the output against expected directly, since e.g. attribute node order
         // can change.
         String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
-                + "<ns2:repository "
-                + "xmlns:ns2=\"http://schemas.android.com/repository/android/generic/01\">"
+                + "<ns3:repository "
+                + "xmlns:ns2=\"http://schemas.android.com/repository/android/generic/01\" "
+                + "xmlns:ns3=\"http://schemas.android.com/repository/android/common/01\">"
                 + "<license type=\"text\" id=\"license1\">some license text</license>"
                 + "<localPackage path=\"dummy;path\">"
                 + "<type-details xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
@@ -176,7 +177,7 @@ public class LocalRepoTest extends TestCase {
                 + "<dependency path=\"depId1\">"
                 + "<min-revision><major>1</major><minor>2</minor><micro>3</micro></min-revision>"
                 + "</dependency>"
-                + "<dependency path=\"depId2\"/></dependencies></localPackage></ns2:repository>";
+                + "<dependency path=\"depId2\"/></dependencies></localPackage></ns3:repository>";
         Document doc = db.parse(new ByteArrayInputStream(output.toByteArray()));
         Document doc2 = db.parse(new ByteArrayInputStream(expected.getBytes()));
         assertTrue(doc.isEqualNode(doc2));
@@ -249,4 +250,6 @@ public class LocalRepoTest extends TestCase {
         assertEquals(new Revision(3), p.getVersion());
         assertTrue(!progress.getWarnings().isEmpty());
     }
+
+    // todo: test strictness
 }

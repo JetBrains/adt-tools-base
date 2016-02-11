@@ -55,7 +55,7 @@ public class ObjectFactory
      * Create an instance of {@link LibrariesType }
      * 
      */
-    public com.android.sdklib.repositoryv2.meta.DetailsTypes.AddonDetailsType.Libraries createLibrariesType() {
+    public LibrariesType createLibrariesType() {
         return new LibrariesType();
     }
 
@@ -80,12 +80,12 @@ public class ObjectFactory
      * 
      */
     @XmlElementDecl(namespace = "http://schemas.android.com/sdk/android/repo/addon2/01", name = "sdk-addon")
-    public JAXBElement<RepositoryType> createSdkAddon(RepositoryType value) {
+    public JAXBElement<RepositoryType> createSdkAddonInternal(RepositoryType value) {
         return new JAXBElement<RepositoryType>(_SdkAddon_QNAME, RepositoryType.class, null, value);
     }
 
-    public JAXBElement<Repository> generateElement(Repository value) {
-        return ((JAXBElement) createSdkAddon(((RepositoryType) value)));
+    public JAXBElement<Repository> generateSdkAddon(Repository value) {
+        return ((JAXBElement) createSdkAddonInternal(((RepositoryType) value)));
     }
 
 }

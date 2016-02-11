@@ -17,20 +17,12 @@
 package com.android.repository.impl.meta;
 
 import com.android.annotations.NonNull;
-import com.android.repository.api.ElementFactory;
-import com.android.repository.api.Repository;
-
-import javax.xml.bind.JAXBElement;
 
 /**
  * Factory for creating types used by the generic schema.
  */
-public abstract class GenericFactory extends ElementFactory<Repository> {
+public abstract class GenericFactory {
 
     @NonNull
     public abstract TypeDetails.GenericType createGenericDetailsType();
-
-    @NonNull
-    @Override
-    public abstract JAXBElement<Repository> generateElement(@NonNull Repository value);
 }
