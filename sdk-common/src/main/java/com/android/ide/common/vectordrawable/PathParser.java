@@ -26,8 +26,8 @@ public class PathParser {
     private static class ExtractFloatResult {
         // We need to return the position of the next separator and whether the
         // next float starts with a '-' or a '.'.
-        int mEndPosition;
-        boolean mEndWithNegOrDot;
+        private int mEndPosition;
+        private boolean mEndWithNegOrDot;
     }
 
     /**
@@ -126,7 +126,7 @@ public class PathParser {
             float[] results = new float[s.length()];
             int count = 0;
             int startPosition = 1;
-            int endPosition = 0;
+            int endPosition;
 
             ExtractFloatResult result = new ExtractFloatResult();
             int totalLength = s.length();
