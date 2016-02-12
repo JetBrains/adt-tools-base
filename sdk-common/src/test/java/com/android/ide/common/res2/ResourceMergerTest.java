@@ -1656,7 +1656,7 @@ public class ResourceMergerTest extends BaseTestCase {
             throws IOException, MergingException {
         Map<String, String> result = Maps.newHashMap();
 
-        Document document = ValueResourceParser2.parseDocument(file);
+        Document document = ValueResourceParser2.parseDocument(file, true);
 
         // get the root node
         Node rootNode = document.getDocumentElement();

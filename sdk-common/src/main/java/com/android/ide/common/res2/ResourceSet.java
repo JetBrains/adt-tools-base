@@ -56,6 +56,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
     private boolean isFromDependency;
     private boolean mShouldParseResourceIds;
     private boolean mDontNormalizeQualifiers;
+    private boolean mTrackSourcePositions = true;
 
     public ResourceSet(String name) {
         this(name, true /*validateEnabled*/);
@@ -80,6 +81,10 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
 
     public void setDontNormalizeQualifiers(boolean dontNormalizeQualifiers) {
         mDontNormalizeQualifiers = dontNormalizeQualifiers;
+    }
+
+    public void setTrackSourcePositions(boolean shouldTrack) {
+        mTrackSourcePositions = shouldTrack;
     }
 
     @Override
@@ -313,6 +318,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
             case XML_VALUES:
                 // multi res. Need to parse the file and compare the items one by one.
                 ValueResourceParser2 parser = new ValueResourceParser2(changedFile);
+                parser.setTrackSourcePositions(mTrackSourcePositions);
 
                 List<ResourceItem> parsedItems = parser.parseFile();
                 handleChangedItems(resourceFile, parsedItems);
@@ -442,6 +448,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
         } else {
             try {
                 ValueResourceParser2 parser = new ValueResourceParser2(file);
+                parser.setTrackSourcePositions(mTrackSourcePositions);
                 List<ResourceItem> items = parser.parseFile();
 
                 return new ResourceFile(file, items, folderData.qualifiers);
