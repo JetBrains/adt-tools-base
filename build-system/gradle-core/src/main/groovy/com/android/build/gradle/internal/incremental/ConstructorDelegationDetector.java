@@ -17,12 +17,12 @@ package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.NonNull;
 
-import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.LineNumberNode;
 import org.objectweb.asm.tree.LocalVariableNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
@@ -85,6 +85,12 @@ public class ConstructorDelegationDetector {
         public final VarInsnNode loadThis;
 
         /**
+         * Line number of LOAD_0. Used to set the line number in the generated constructor call
+         * so that a break point may be set at this(...) or super(...)
+         */
+        public final int lineForLoad;
+
+        /**
          * The "args" part of the constructor. Described above.
          */
         public final MethodNode args;
@@ -99,8 +105,9 @@ public class ConstructorDelegationDetector {
          */
         public final MethodNode body;
 
-        Constructor(VarInsnNode loadThis, MethodNode args, MethodInsnNode delegation, MethodNode body) {
+        Constructor(VarInsnNode loadThis, int lineForLoad, MethodNode args, MethodInsnNode delegation, MethodNode body) {
             this.loadThis = loadThis;
+            this.lineForLoad = lineForLoad;
             this.args = args;
             this.delegation = delegation;
             this.body = body;
@@ -175,6 +182,12 @@ public class ConstructorDelegationDetector {
             VarInsnNode lastThis = null;
             int stackAtThis = -1;
             boolean poppedThis = false;
+            // Records the most recent line number encountered. For javac, there should always be
+            // a line number node before the call of interest to this(...) or super(...). For robustness,
+            // -1 is recorded as a sentinel to indicate this assumption didn't hold. Upstream consumers
+            // should check for -1 and recover in a reasonable way (for example, don't set the line
+            // number in generated code).
+            int recentLine = -1;
             for (int i = 0; i < instructions.length; i++) {
                 AbstractInsnNode insn = instructions[i];
                 Frame frame = frames[i];
@@ -190,7 +203,7 @@ public class ConstructorDelegationDetector {
                         if (poppedThis) {
                             throw new IllegalStateException("Unexpected constructor structure.");
                         }
-                        return split(owner, method, lastThis, methodhInsn);
+                        return split(owner, method, lastThis, methodhInsn, recentLine);
                     }
                 } else if (insn instanceof VarInsnNode) {
                     VarInsnNode var = (VarInsnNode) insn;
@@ -199,6 +212,12 @@ public class ConstructorDelegationDetector {
                         stackAtThis = frame.getStackSize();
                         poppedThis = false;
                     }
+                } else if (insn instanceof LineNumberNode) {
+                    // Record the most recent line number encountered so that call to this(...)
+                    // or super(...) has line number information. Ultimately used to emit a line
+                    // number in the generated code.
+                    LineNumberNode lineNumberNode = (LineNumberNode) insn;
+                    recentLine = lineNumberNode.line;
                 }
             }
             throw new IllegalStateException("Unexpected constructor structure.");
@@ -211,7 +230,7 @@ public class ConstructorDelegationDetector {
      * Splits the constructor in two methods, the "set up" and the "body" parts (see above).
      */
     @NonNull
-    private static Constructor split(@NonNull String owner, @NonNull MethodNode method, @NonNull VarInsnNode loadThis, @NonNull MethodInsnNode delegation ) {
+    private static Constructor split(@NonNull String owner, @NonNull MethodNode method, @NonNull VarInsnNode loadThis, @NonNull MethodInsnNode delegation, int loadThisLine ) {
         String[] exceptions = ((List<String>)method.exceptions).toArray(new String[method.exceptions.size()]);
         String newDesc = method.desc.replaceAll("\\((.*)\\)V", "([Ljava/lang/Object;$1)Ljava/lang/Object;");
 
@@ -319,6 +338,6 @@ public class ConstructorDelegationDetector {
             }
         }
 
-        return new Constructor(loadThis, initArgs, delegation, body);
+        return new Constructor(loadThis, loadThisLine, initArgs, delegation, body);
     }
 }
