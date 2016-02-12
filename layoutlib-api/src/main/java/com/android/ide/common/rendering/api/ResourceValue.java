@@ -16,6 +16,7 @@
 
 package com.android.ide.common.rendering.api;
 
+import com.android.annotations.Nullable;
 import com.android.layoutlib.api.IResourceValue;
 import com.android.resources.ResourceType;
 
@@ -53,9 +54,11 @@ public class ResourceValue extends ResourceReference implements IResourceValue {
     }
 
     /**
-     * Returns the value of the resource, as defined in the XML. This can be <code>null</code>
+     * Returns the value of the resource, as defined in the XML. This can be <code>null</code>,
+     * for example for instances of {@link StyleResourceValue}.
      */
     @Override
+    @Nullable
     public String getValue() {
         return mValue;
     }
