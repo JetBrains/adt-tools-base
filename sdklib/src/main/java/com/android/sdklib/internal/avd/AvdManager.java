@@ -1628,15 +1628,16 @@ public class AvdManager {
         }
 
         if (!properties.containsKey(AVD_INI_ANDROID_API) &&
-                !properties.containsKey(AVD_INI_ANDROID_CODENAME)) {
+            !properties.containsKey(AVD_INI_ANDROID_CODENAME)) {
             String targetHash = map.get(AVD_INFO_TARGET);
             AndroidVersion version = AndroidTargetHash.getVersionFromHash(targetHash);
             if (version != null) {
                 properties.put(AVD_INI_ANDROID_API, Integer.toString(version.getApiLevel()));
-                properties.put(AVD_INI_ANDROID_CODENAME, version.getCodename());
+                if (version.getCodename() != null) {
+                    properties.put(AVD_INI_ANDROID_CODENAME, version.getCodename());
+                }
             }
         }
-
 
         AvdInfo info = new AvdInfo(
                 name,
@@ -1679,11 +1680,16 @@ public class AvdManager {
             }
 
             ArrayList<String> keys = new ArrayList<String>(values.keySet());
+            // Do not save these values (always recompute)
+            keys.remove(AVD_INI_ANDROID_API);
+            keys.remove(AVD_INI_ANDROID_CODENAME);
             Collections.sort(keys);
 
             for (String key : keys) {
                 String value = values.get(key);
-                writer.write(String.format("%1$s=%2$s\n", key, value));
+                if (value != null) {
+                    writer.write(String.format("%1$s=%2$s\n", key, value));
+                }
             }
         } finally {
             writer.close();
