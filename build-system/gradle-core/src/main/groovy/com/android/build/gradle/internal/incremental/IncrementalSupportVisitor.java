@@ -30,6 +30,7 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.LineNumberNode;
 import org.objectweb.asm.tree.MethodNode;
 
 import java.io.IOException;
@@ -160,8 +161,14 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
                 LabelNode start = new LabelNode();
                 LabelNode after = new LabelNode();
                 method.instructions.insert(constructor.loadThis, start);
+                if (constructor.lineForLoad != -1) {
+                    // Record the line number from the start of LOAD_0 for uninitialized 'this'.
+                    // This allows a breakpoint to be set at the line with this(...) or super(...)
+                    // call in the constructor.
+                    method.instructions.insert(constructor.loadThis,
+                        new LineNumberNode(constructor.lineForLoad, start));
+                }
                 method.instructions.insert(constructor.delegation, after);
-
                 mv.addRedirection(
                         new ConstructorArgsRedirection(
                             start,
