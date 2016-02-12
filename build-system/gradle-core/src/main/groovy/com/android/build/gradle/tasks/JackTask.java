@@ -124,7 +124,8 @@ public class JackTask extends AbstractAndroidCompile
 
     }
 
-    private void doMinification() throws ProcessException, IOException {
+    private void doMinification()
+            throws ProcessException, IOException {
 
         if (System.getenv("USE_JACK_API") != null) {
             androidBuilder.convertByteCodeUsingJackApis(
@@ -138,6 +139,7 @@ public class JackTask extends AbstractAndroidCompile
                     getJarJarRuleFiles(),
                     getIncrementalDir(),
                     getJavaResourcesFolder(),
+                    getSourceCompatibility(),
                     isMultiDexEnabled(),
                     getMinSdkVersion());
         } else {
@@ -370,17 +372,19 @@ public class JackTask extends AbstractAndroidCompile
         }
 
         @Override
+        @NonNull
         public String getName() {
             return scope.getTaskName("compile", "JavaWithJack");
         }
 
         @Override
+        @NonNull
         public Class<JackTask> getType() {
             return JackTask.class;
         }
 
         @Override
-        public void execute(JackTask jackTask) {
+        public void execute(@NonNull JackTask jackTask) {
             jackTask.setIsVerbose(isVerbose);
             jackTask.setIsDebugLog(isDebugLog);
 

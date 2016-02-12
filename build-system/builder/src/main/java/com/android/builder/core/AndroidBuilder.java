@@ -1717,6 +1717,7 @@ public class AndroidBuilder {
             @NonNull Collection<File> jarJarRulesFiles,
             @Nullable File incrementalDir,
             @Nullable File javaResourcesFolder,
+            @Nullable String sourceCompatibility,
             boolean multiDex,
             int minSdkVersion) {
 
@@ -1766,6 +1767,10 @@ public class AndroidBuilder {
 
                     config.setReporter(ReporterKind.DEFAULT, outputStream);
 
+                    if (sourceCompatibility != null) {
+                        config.setProperty("jack.java.source.version", sourceCompatibility);
+                    }
+
                     // set the incremental dir if set and either already exists or can be created.
                     if (incrementalDir != null) {
                         if (!incrementalDir.exists() && !incrementalDir.mkdirs()) {
@@ -1800,11 +1805,14 @@ public class AndroidBuilder {
                 return true;
             } catch (CompilationException e) {
                 mLogger.error(e, outputStream.toString());
+                throw new RuntimeException(e);
             } catch (UnrecoverableException e) {
                 mLogger.error(e,
                         "Something out of Jack control has happened: " + e.getMessage());
+                throw new RuntimeException(e);
             } catch (ConfigurationException e) {
                 mLogger.error(e, outputStream.toString());
+                throw new RuntimeException(e);
             }
         } catch (ClassNotFoundException e) {
             getLogger().warning("Cannot load Jack APIs v01 " + e.getMessage());
