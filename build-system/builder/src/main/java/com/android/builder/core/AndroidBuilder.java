@@ -1824,6 +1824,7 @@ public class AndroidBuilder {
             @Nullable Collection<File> proguardFiles,
             @Nullable File mappingFile,
             @NonNull Collection<File> jarJarRuleFiles,
+            @Nullable String sourceCompatibility,
             boolean multiDex,
             int minSdkVersion,
             boolean debugLog,
@@ -1838,7 +1839,8 @@ public class AndroidBuilder {
                 .setDexOutputFolder(dexOutputFolder)
                 .setJackOutputFile(jackOutputFile)
                 .addImportFiles(packagedLibraries)
-                .setEcjOptionFile(ecjOptionFile);
+                .setEcjOptionFile(ecjOptionFile)
+                .setSourceCompatibility(sourceCompatibility);
 
         if (proguardFiles != null) {
             builder.addProguardFiles(proguardFiles).setMappingFile(mappingFile);

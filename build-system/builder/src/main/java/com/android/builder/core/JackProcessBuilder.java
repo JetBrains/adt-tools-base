@@ -16,13 +16,14 @@
 
 package com.android.builder.core;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.ide.common.process.JavaProcessInfo;
 import com.android.ide.common.process.ProcessEnvBuilder;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessInfoBuilder;
-import com.android.sdklib.BuildToolInfo;
 import com.android.repository.Revision;
+import com.android.sdklib.BuildToolInfo;
 import com.google.common.collect.Lists;
 
 import java.io.File;
@@ -49,6 +50,7 @@ public class JackProcessBuilder extends ProcessEnvBuilder<JackProcessBuilder> {
     private int mMinSdkVersion = 21;
     private File mEcjOptionFile = null;
     private Collection<File> mJarJarRuleFiles = null;
+    private String mSourceCompatibility = null;
     private File mIncrementalDir = null;
 
     public JackProcessBuilder() {
@@ -141,6 +143,12 @@ public class JackProcessBuilder extends ProcessEnvBuilder<JackProcessBuilder> {
     }
 
     @NonNull
+    public JackProcessBuilder setSourceCompatibility(String sourceCompatibility) {
+        mSourceCompatibility = sourceCompatibility;
+        return this;
+    }
+
+    @NonNull
     public JavaProcessInfo build(@NonNull BuildToolInfo buildToolInfo) throws ProcessException {
 
         Revision revision = buildToolInfo.getRevision();
@@ -153,9 +161,12 @@ public class JackProcessBuilder extends ProcessEnvBuilder<JackProcessBuilder> {
         ProcessInfoBuilder builder = new ProcessInfoBuilder();
         builder.addEnvironments(mEnvironment);
 
-        String jackJar = buildToolInfo.getPath(BuildToolInfo.PathId.JACK);
+        String jackLocation = System.getenv("USE_JACK_LOCATION");
+        String jackJar = jackLocation != null
+                ? jackLocation + File.separator + SdkConstants.FN_JACK
+                : buildToolInfo.getPath(BuildToolInfo.PathId.JACK);
         if (jackJar == null || !new File(jackJar).isFile()) {
-            throw new IllegalStateException("jack.jar is missing");
+            throw new IllegalStateException("Unable to find jack.jar at " + jackJar);
         }
 
         builder.setClasspath(jackJar);
@@ -213,6 +224,10 @@ public class JackProcessBuilder extends ProcessEnvBuilder<JackProcessBuilder> {
             for (File jarjarRuleFile : mJarJarRuleFiles) {
                 builder.addArgs("--config-jarjar", jarjarRuleFile.getAbsolutePath());
             }
+        }
+
+        if (mSourceCompatibility != null) {
+            builder.addArgs("-D", "jack.java.source.version=" + mSourceCompatibility);
         }
 
         builder.addArgs("@" + mEcjOptionFile.getAbsolutePath());
