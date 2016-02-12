@@ -574,10 +574,14 @@ public abstract class TaskManager {
             transformManager.addStream(OriginalStream.builder()
                     .addContentTypes(DefaultContentType.CLASSES)
                     .addScope(Scope.TESTED_CODE)
-                    .setJars(Suppliers.ofInstance(
-                            (Collection<File>) variantScope.getGlobalScope().getAndroidBuilder()
-                                    .getAllPackagedJars(
-                                            testedVariantData.getVariantConfiguration())))
+                    .setJars(new Supplier<Collection<File>>() {
+                                 @Override
+                                 public Collection<File> get() {
+                                     return variantScope.getGlobalScope().getAndroidBuilder()
+                                             .getAllPackagedJars(
+                                                     testedVariantData.getVariantConfiguration());
+                                 }
+                             })
                     .setDependency(ImmutableList.of(
                             testedVariantData.prepareDependenciesTask,
                             testedVariantData.getVariantDependency().getPackageConfiguration()
