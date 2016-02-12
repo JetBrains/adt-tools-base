@@ -14,77 +14,77 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.application
+package com.android.build.gradle.integration.application;
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.ClassRule
-import org.junit.Test
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import org.junit.AfterClass;
+import org.junit.ClassRule;
+import org.junit.Test;
 
-import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
-import static org.junit.Assert.assertEquals
-import static org.junit.Assert.assertTrue
+import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.io.File;
+import java.io.FileFilter;
 
 /**
  * Integration tests for manifest merging.
  */
-@CompileStatic
-class ManifestMergingTest {
+public class ManifestMergingTest {
 
     @ClassRule
     static public GradleTestProject simpleManifestMergingTask = GradleTestProject.builder()
             .withName("simpleManifestMergingTask")
             .fromTestProject("simpleManifestMergingTask")
-            .create()
+            .create();
 
     @ClassRule
     static public GradleTestProject libsTest = GradleTestProject.builder()
             .withName("libsTest")
             .fromTestProject("libsTest")
-            .create()
+            .create();
 
     @ClassRule
     static public GradleTestProject flavors = GradleTestProject.builder()
             .withName("flavors")
             .fromTestProject("flavors")
-            .create()
+            .create();
 
 
     @AfterClass
-    static void cleanUp() {
-        libsTest = null
-        flavors = null
-        simpleManifestMergingTask = null
+    public static void cleanUp() {
+        libsTest = null;
+        flavors = null;
+        simpleManifestMergingTask = null;
     }
 
     @Test
-    void "simple manifest merger"() {
-        simpleManifestMergingTask.execute("clean", "manifestMerger")
+    public void simpleManifestMerger() {
+        simpleManifestMergingTask.execute("clean", "manifestMerger");
     }
 
     @Test
-    void "check manifest merging for libraries"() {
-        libsTest.execute("clean", "build")
+    public void checkManifestMergingForLibraries() {
+        libsTest.execute("clean", "build");
         File fileOutput = libsTest.
-                file("libapp/build/" + FD_INTERMEDIATES + "/bundles/release/AndroidManifest.xml")
+                file("libapp/build/" + FD_INTERMEDIATES + "/bundles/release/AndroidManifest.xml");
 
-        assertTrue(fileOutput.exists())
+        assertTrue(fileOutput.exists());
     }
 
     @Test
-    void "check manifest merger report"() {
-        flavors.execute("clean", "assemble")
+    public void checkManifestMergerReport() {
+        flavors.execute("clean", "assemble");
 
         File logs = new File(flavors.getOutputFile("apk").getParentFile(), "logs");
         File[] reports = logs.listFiles(new FileFilter() {
-
             @Override
             public boolean accept(File file) {
-                return file.getName().startsWith("manifest-merger")
+                return file.getName().startsWith("manifest-merger");
             }
-        })
-        assertEquals(8, reports.length)
+        });
+        assertEquals(8, reports.length);
     }
 
 }
