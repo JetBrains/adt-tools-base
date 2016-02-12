@@ -1776,10 +1776,8 @@ public class AndroidBuilder {
                             config.setIncrementalDir(incrementalDir);
                         }
                     }
-                    if (javaResourcesFolder != null) {
-                        ArrayList<File> folders = Lists.newArrayListWithExpectedSize(3);
-                        folders.add(javaResourcesFolder);
-                        config.setResourceDirs(folders);
+                    if (javaResourcesFolder != null && javaResourcesFolder.exists()) {
+                        config.setResourceDirs(ImmutableList.of(javaResourcesFolder));
                     }
 
                     compilationTask = config.getTask();
