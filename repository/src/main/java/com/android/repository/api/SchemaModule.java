@@ -124,6 +124,22 @@ public class SchemaModule {
     }
 
     /**
+     * Gets the namespace prefix (the namespace with the final number (if any) removed) for our
+     * latest schema version.
+     */
+    @NonNull
+    public String getNamespacePrefix() {
+        return mLatestVersion.getNamespacePrefix();
+    }
+
+    /**
+     * Gets the namespace of the our latest schema version.
+     */
+    public String getLatestNamespace() {
+        return mLatestVersion.getNamespace();
+    }
+
+    /**
      * Represents a single version of a schema, including a single XSD and a single
      * {@code ObjectFactory}.
      */
@@ -186,6 +202,14 @@ public class SchemaModule {
         @Override
         public int hashCode() {
             return mXsdLocation.hashCode() * 37 + mNamespace.hashCode();
+        }
+
+        /**
+         * Gets our namespace prefix (the namespace with the final number (if any) removed).
+         */
+        @NonNull
+        public String getNamespacePrefix() {
+            return mNamespace.replaceAll("/[0-9]*$", "/");
         }
     }
 }
