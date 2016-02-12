@@ -29,9 +29,15 @@ import org.w3c.dom.bootstrap.DOMImplementationRegistry;
 import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
+import org.xml.sax.Attributes;
 import org.xml.sax.ErrorHandler;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
+import org.xml.sax.XMLFilter;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.AttributesImpl;
+import org.xml.sax.helpers.XMLFilterImpl;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,6 +54,10 @@ import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.ValidationEventHandler;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
@@ -202,12 +212,68 @@ public class SchemaModuleUtil {
       @Nullable LSResourceResolver resourceResolver, boolean strict,
       @NonNull ProgressIndicator progress)
       throws JAXBException {
+        Unmarshaller u = setupUnmarshaller(possibleModules, resourceResolver, strict, progress);
+        SAXSource source = setupSource(xml, possibleModules, strict, progress);
+        return ((JAXBElement) u.unmarshal(source)).getValue();
+    }
+
+    /**
+     * Creates an {@link Unmarshaller} for the given {@link SchemaModule}s.
+     *
+     * @param possibleModules  The schemas we should use to unmarshal.
+     * @param resourceResolver Resolver for schema import references.
+     * @param strict           Whether we should do strict validation.
+     * @param progress         For logging.
+     */
+    @NonNull
+    private static Unmarshaller setupUnmarshaller(@NonNull Collection<SchemaModule> possibleModules,
+            @Nullable LSResourceResolver resourceResolver, boolean strict,
+            @NonNull ProgressIndicator progress) throws JAXBException {
         JAXBContext context = getContext(possibleModules);
         Schema schema = getSchema(possibleModules, resourceResolver, progress);
         Unmarshaller u = context.createUnmarshaller();
         u.setSchema(schema);
         u.setEventHandler(createValidationEventHandler(progress, strict));
-        return ((JAXBElement) u.unmarshal(new StreamSource(xml))).getValue();
+        return u;
+    }
+
+    /**
+     * Creates a {@link SAXSource} for the given input.
+     *
+     * @param xml             The xml input stream.
+     * @param possibleModules Possible {@link SchemaModule}s that can describe the xml
+     * @param strict          Whether we should do strict validation. Specifically in this case if
+     *                        we should allow falling back to older schema versions if the xml uses
+     *                        a newer one than we have access to.
+     * @param progress        For logging.
+     */
+    @NonNull
+    private static SAXSource setupSource(@NonNull InputStream xml,
+            @NonNull Collection<SchemaModule> possibleModules, boolean strict,
+            @NonNull ProgressIndicator progress) throws JAXBException {
+        SAXSource source = new SAXSource(new InputSource(xml));
+        // Create the XMLFilter
+        XMLFilter filter = new NamespaceFallbackFilter(possibleModules, strict, progress);
+
+        // Set the parent XMLReader on the XMLFilter
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        spf.setNamespaceAware(true);
+        XMLReader xr;
+        try {
+            SAXParser sp = spf.newSAXParser();
+            xr = sp.getXMLReader();
+        } catch (ParserConfigurationException e) {
+            // Shouldn't happen
+            progress.logError("Error setting up parser", e);
+            throw new JAXBException(e);
+        } catch (SAXException e) {
+            // Shouldn't happen
+            progress.logError("Error setting up parser", e);
+            throw new JAXBException(e);
+        }
+        filter.setParent(xr);
+        source.setXMLReader(filter);
+        return source;
     }
 
     /**
@@ -252,5 +318,66 @@ public class SchemaModuleUtil {
                 return !strict;
             }
         };
+    }
+
+    /**
+     * {@link XMLFilter} that optionally maps namespaces newer than our latest known ones to
+     * the latest one we understand.
+     * For example, if we have SchemaModuleVersions with namespaces "foo/bar/01" and "foo/bar/02"
+     * and we encounter a document with an element in namespace "foo/bar/03", this filter will
+     * transform the namespace of that element to "foo/bar/02".
+     */
+    private static class NamespaceFallbackFilter extends XMLFilterImpl {
+
+        private Map<String, SchemaModule> mPrefixMap = Maps.newHashMap();
+        private ProgressIndicator mProgress;
+        private boolean mStrict;
+        private Map<String, String> mNewToOldMap = Maps.newHashMap();
+
+        public NamespaceFallbackFilter(
+                @NonNull Collection<SchemaModule> possibleModules, boolean strict,
+                @NonNull ProgressIndicator progress) {
+            for (SchemaModule module : possibleModules) {
+                mPrefixMap.put(module.getNamespacePrefix(), module);
+            }
+            mProgress = progress;
+            mStrict = strict;
+        }
+
+        @Override
+        public void startPrefixMapping(@Nullable String prefix, @Nullable String uri)
+                throws SAXException {
+            if (uri != null) {
+                int lastSlash = uri.lastIndexOf('/') + 1;
+                if (lastSlash > 0) {
+                    String namespacePrefix = uri.substring(0, lastSlash);
+                    try {
+                        int version = Integer.parseInt(uri.substring(lastSlash));
+                        SchemaModule module = mPrefixMap.get(namespacePrefix);
+                        if (module != null && module.getNamespaceVersionMap().size() < version) {
+                            String oldUri = module.getLatestNamespace().intern();
+                            mProgress.logWarning("Mapping new ns " + uri + " to old ns " + oldUri);
+                            mNewToOldMap.put(uri, oldUri);
+                            uri = oldUri;
+                        }
+                    } catch (NumberFormatException e) {
+                        // nothing, just don't do any substitution.
+                    }
+                }
+            }
+            super.startPrefixMapping(prefix, uri);
+        }
+
+        @Override
+        public void startElement(@Nullable String uri, @Nullable String localName,
+                @Nullable String qName, @Nullable Attributes atts)
+                throws SAXException {
+            AttributesImpl newAtts = new AttributesImpl(atts);
+            if (!mStrict && uri != null && mNewToOldMap.containsKey(uri)) {
+                uri = mNewToOldMap.get(uri);
+            }
+            super.startElement(uri, localName, qName, newAtts);
+        }
+
     }
 }
