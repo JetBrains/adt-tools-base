@@ -102,7 +102,7 @@ public class InstantRunShrinkerTest {
         // Check the custom application class was included.
         assertThatApk(project.getApk("debug"))
                 .containsClass("Lcom/example/helloworld/MyApplication;",
-                        AbstractAndroidSubject.ClassFileScope.SECONDARY);
+                        AbstractAndroidSubject.ClassFileScope.ALL);
     }
 
 
