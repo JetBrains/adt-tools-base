@@ -17,9 +17,13 @@
 package com.android.ide.common.vectordrawable;
 
 import com.google.common.collect.ImmutableMap;
+
 import org.w3c.dom.NamedNodeMap;
 
-import java.awt.*;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
@@ -34,7 +38,7 @@ import java.util.logging.Logger;
  * Used to represent one VectorDrawble's path element.
  */
 class VdPath extends VdElement{
-    private static Logger logger = Logger.getLogger(VdPath.class.getSimpleName());
+    private static final Logger LOGGER = Logger.getLogger(VdPath.class.getSimpleName());
 
     private static final String PATH_ID = "android:name";
     private static final String PATH_DESCRIPTION = "android:pathData";
@@ -72,10 +76,10 @@ class VdPath extends VdElement{
     private float mTrimPathEnd = 1;
     private float mTrimPathOffset = 0;
 
-    public void toPath(Path2D path) {
+    private void toPath(Path2D path) {
         path.reset();
         if (mNodeList != null) {
-            VdNodeRender.creatPath(mNodeList, path);
+            VdNodeRender.createPath(mNodeList, path);
         }
     }
 
@@ -90,7 +94,7 @@ class VdPath extends VdElement{
             return mType;
         }
 
-        public float[] getmParams() {
+        public float[] getParams() {
             return mParams;
         }
 
@@ -394,24 +398,22 @@ class VdPath extends VdElement{
             }
             currentPoint.setLocation(currentX, currentY);
             currentSegmentStartPoint.setLocation(currentSegmentStartX, currentSegmentStartY);
-            return;
         }
 
-        private boolean isTranslationOnly(AffineTransform totalTransform) {
+        private static boolean isTranslationOnly(AffineTransform totalTransform) {
             int type = totalTransform.getType();
-            if (type == AffineTransform.TYPE_IDENTITY || type == AffineTransform.TYPE_TRANSLATION) {
-                return true;
-            }
-            return false;
+            return type == AffineTransform.TYPE_IDENTITY
+                    || type == AffineTransform.TYPE_TRANSLATION;
         }
 
         /**
          * Convert the <code>tempParams</code> into a double array, then apply the
          * delta transform and convert it back to float array.
-         * @params: offset in number of floats, not points.
-         * @params: paramsLen in number of floats, not points.
+         * @param offset in number of floats, not points.
+         * @param paramsLen in number of floats, not points.
          */
-        private void deltaTransform(AffineTransform totalTransform, float[] tempParams, int offset,  int paramsLen) {
+        private static void deltaTransform(AffineTransform totalTransform, float[] tempParams,
+                int offset, int paramsLen) {
             double[] doubleArray = new double[paramsLen];
             for (int i = 0; i < paramsLen; i++)
             {
@@ -430,7 +432,7 @@ class VdPath extends VdElement{
     /**
      * @return color value in #AARRGGBB format.
      */
-    private int calculateColor(String value) {
+    private static int calculateColor(String value) {
         int len = value.length();
         int ret;
         int k = 0;
@@ -504,7 +506,7 @@ class VdPath extends VdElement{
         } else if (PATH_STROKE_MITERLIMIT.equals(name)) {
             mStrokeMiterlimit = Float.parseFloat(value);
         } else {
-            logger.log(Level.WARNING, ">>>>>> DID NOT UNDERSTAND ! \"" + name + "\" <<<<");
+            LOGGER.log(Level.WARNING, ">>>>>> DID NOT UNDERSTAND ! \"" + name + "\" <<<<");
         }
 
     }
@@ -551,7 +553,6 @@ class VdPath extends VdElement{
             g.setColor(strokeColor);
             g.draw(path2d);
         }
-        return;
     }
 
     @Override
@@ -571,18 +572,14 @@ class VdPath extends VdElement{
 
     @Override
     public String toString() {
-        StringBuilder pathInfo = new StringBuilder();
-        pathInfo.append("Path:");
-        pathInfo.append(" Name: " + mName);
-        pathInfo.append(" Node: " + mNodeList.toString());
-        pathInfo.append(" mFillColor: " + Integer.toHexString(mFillColor));
-        pathInfo.append(" mFillAlpha:" + mFillAlpha);
-        pathInfo.append(" mStrokeColor:" + Integer.toHexString(mStrokeColor));
-        pathInfo.append(" mStrokeWidth:" + mStrokeWidth);
-        pathInfo.append(" mStrokeAlpha:" + mStrokeAlpha);
-
-        return pathInfo.toString();
-
+        //noinspection ImplicitArrayToString
+        return "Path:" +
+                " Name: " + mName +
+                " Node: " + mNodeList.toString() +
+                " mFillColor: " + Integer.toHexString(mFillColor) +
+                " mFillAlpha:" + mFillAlpha +
+                " mStrokeColor:" + Integer.toHexString(mStrokeColor) +
+                " mStrokeWidth:" + mStrokeWidth +
+                " mStrokeAlpha:" + mStrokeAlpha;
     }
-
-};
+}
