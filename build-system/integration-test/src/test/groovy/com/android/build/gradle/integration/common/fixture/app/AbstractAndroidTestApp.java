@@ -64,7 +64,7 @@ public abstract class AbstractAndroidTestApp implements AndroidTestApp {
         return Iterables.find(files, new Predicate<TestSourceFile>() {
             @Override
             public boolean apply(TestSourceFile testSourceFile) {
-                return path.equals(testSourceFile.getPath());
+                return path.equals(testSourceFile.getParent());
             }
         });
     }

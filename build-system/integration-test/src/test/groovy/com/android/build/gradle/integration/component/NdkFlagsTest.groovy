@@ -40,7 +40,7 @@ class NdkFlagsTest {
     static {
         TestSourceFile orig = cApp.getFile("hello-jni.c")
         cApp.removeFile(orig)
-        cApp.addFile(new TestSourceFile(orig.path, orig.name,
+        cApp.addFile(new TestSourceFile(orig.parent, orig.name,
                 """
 #include <string.h>
 #include <jni.h>
@@ -68,7 +68,7 @@ Java_com_example_hellojni_HelloJni_stringFromJNI(JNIEnv* env, jobject thiz)
     static {
         TestSourceFile orig = cppApp.getFile("hello-jni.cpp")
         cppApp.removeFile(orig)
-        cppApp.addFile(new TestSourceFile(orig.path, orig.name,
+        cppApp.addFile(new TestSourceFile(orig.parent, orig.name,
                 """
 #include <string.h>
 #include <jni.h>
