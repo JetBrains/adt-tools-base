@@ -17,6 +17,7 @@ package com.android.sdklib.repositoryv2;
 
 import com.android.repository.Revision;
 import com.android.repository.api.License;
+import com.android.repository.api.LocalPackage;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
 import com.android.repository.api.Repository;
@@ -32,6 +33,7 @@ import com.google.common.collect.Maps;
 
 import junit.framework.TestCase;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.util.List;
@@ -104,5 +106,84 @@ public class UnmarshalTest extends TestCase {
         assertTrue(repo.getPackage().get(0).getTypeDetails() instanceof DetailsTypes.AddonDetailsType);*/
     }
 
+    private static final String INVALID_XML =
+            "<repo:repository\n"
+                    + "        xmlns:repo=\"http://schemas.android.com/repository/android/generic/01\"\n"
+                    + "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
+                    + "    <localPackage path=\"dummy;foo\" obsolete=\"true\">\n"
+                    + "        <type-details xsi:type=\"repo:genericDetailsType\"/>\n"
+                    + "        <revision>\n"
+                    + "            <major>1</major>\n"
+                    + "            <minor>2</minor>\n"
+                    + "            <micro>3</micro>\n"
+                    + "        </revision>\n"
+                    + "        <foo bar=\"baz\"/>"
+                    + "        <display-name>Test package</display-name>\n"
+                    + "    </localPackage>\n"
+                    + "</repo:repository>";
+
+    public void testLeniency() throws Exception {
+        AndroidSdkHandler handler = new AndroidSdkHandler(new File("/sdk"), new MockFileOp());
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+        RepoManager mgr = handler.getSdkManager(progress);
+        Repository repo = (Repository) SchemaModuleUtil
+                .unmarshal(new ByteArrayInputStream(INVALID_XML.getBytes()),
+                        ImmutableList.of(RepoManager.getGenericModule()),
+                        mgr.getResourceResolver(progress), false, progress);
+        assertFalse(progress.getWarnings().isEmpty());
+        LocalPackage local = repo.getLocalPackage();
+        assertEquals("dummy;foo", local.getPath());
+        assertEquals(new Revision(1, 2, 3), local.getVersion());
+
+        try {
+            SchemaModuleUtil.unmarshal(new ByteArrayInputStream(INVALID_XML.getBytes()),
+                    ImmutableList.of(RepoManager.getGenericModule()),
+                    mgr.getResourceResolver(progress), true, progress);
+            fail();
+        }
+        catch (Exception e) {
+            // expected
+        }
+    }
+
+    private static final String FUTURE_XML =
+            "<repo:repository\n"
+                    + "        xmlns:repo=\"http://schemas.android.com/repository/android/generic/99\"\n"
+                    + "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
+                    + "    <localPackage path=\"dummy;foo\" obsolete=\"true\">\n"
+                    + "        <type-details xsi:type=\"repo:genericDetailsType\"/>\n"
+                    + "        <revision>\n"
+                    + "            <major>1</major>\n"
+                    + "            <minor>2</minor>\n"
+                    + "            <micro>3</micro>\n"
+                    + "        </revision>\n"
+                    + "        <display-name>Test package</display-name>\n"
+                    + "    </localPackage>\n"
+                    + "</repo:repository>";
+
+    public void testNamespaceFallback() throws Exception {
+        AndroidSdkHandler handler = new AndroidSdkHandler(new File("/sdk"), new MockFileOp());
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+        RepoManager mgr = handler.getSdkManager(progress);
+        Repository repo = (Repository) SchemaModuleUtil
+                .unmarshal(new ByteArrayInputStream(FUTURE_XML.getBytes()),
+                        ImmutableList
+                                .of(RepoManager.getGenericModule(), RepoManager.getCommonModule()),
+                        mgr.getResourceResolver(progress), false, progress);
+        assertFalse(progress.getWarnings().isEmpty());
+        LocalPackage local = repo.getLocalPackage();
+        assertEquals("dummy;foo", local.getPath());
+        assertEquals(new Revision(1, 2, 3), local.getVersion());
+
+        try {
+            SchemaModuleUtil.unmarshal(new ByteArrayInputStream(FUTURE_XML.getBytes()),
+                    ImmutableList.of(RepoManager.getCommonModule(), RepoManager.getGenericModule()),
+                    mgr.getResourceResolver(progress), true, progress);
+            fail();
+        }
+        catch (Exception e) {
+            // expected
+        }
+    }
 
 }
