@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.model;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.Immutable;
 import com.android.builder.model.Library;
@@ -38,18 +39,33 @@ class LibraryImpl implements Library, Serializable {
 
     @Nullable
     private final MavenCoordinates requestedCoordinates;
-
-    @Nullable
+    @NonNull
     private final MavenCoordinates resolvedCoordinates;
+
+    private final boolean isSkipped;
+    private final boolean isProvided;
 
     LibraryImpl(
             @Nullable String project,
             @Nullable MavenCoordinates requestedCoordinates,
-            @Nullable MavenCoordinates resolvedCoordinates) {
+            @NonNull MavenCoordinates resolvedCoordinates,
+            boolean isSkipped,
+            boolean isProvided) {
+        this.name = resolvedCoordinates.toString();
         this.project = project;
-        this.name = resolvedCoordinates != null ? resolvedCoordinates.toString() : null;
         this.requestedCoordinates = requestedCoordinates;
         this.resolvedCoordinates = resolvedCoordinates;
+        this.isSkipped = isSkipped;
+        this.isProvided = isProvided;
+    }
+
+    protected LibraryImpl(@NonNull Library clonedLibrary) {
+        name = clonedLibrary.getName();
+        project = clonedLibrary.getProject();
+        requestedCoordinates = clonedLibrary.getRequestedCoordinates();
+        resolvedCoordinates = clonedLibrary.getResolvedCoordinates();
+        isSkipped = clonedLibrary.isSkipped();
+        isProvided = clonedLibrary.isProvided();
     }
 
     @Override
@@ -70,10 +86,44 @@ class LibraryImpl implements Library, Serializable {
         return requestedCoordinates;
     }
 
-    @Nullable
+    @NonNull
     @Override
     public MavenCoordinates getResolvedCoordinates() {
         return resolvedCoordinates;
+    }
+
+    @Override
+    public boolean isSkipped() {
+        return isSkipped;
+    }
+
+    @Override
+    public boolean isProvided() {
+        return isProvided;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        LibraryImpl library = (LibraryImpl) o;
+        return isSkipped == library.isSkipped &&
+                isProvided == library.isProvided &&
+                Objects.equal(project, library.project) &&
+                Objects.equal(name, library.name) &&
+                Objects.equal(requestedCoordinates, library.requestedCoordinates)
+                &&
+                Objects.equal(resolvedCoordinates, library.resolvedCoordinates);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(project, name, requestedCoordinates, resolvedCoordinates, isSkipped,
+                isProvided);
     }
 
     @Override
@@ -82,6 +132,8 @@ class LibraryImpl implements Library, Serializable {
                 .add("name", name)
                 .add("requestedCoordinates", requestedCoordinates)
                 .add("resolvedCoordinates", resolvedCoordinates)
+                .add("isSkipped", isSkipped)
+                .add("isProvided", isProvided)
                 .toString();
     }
 }

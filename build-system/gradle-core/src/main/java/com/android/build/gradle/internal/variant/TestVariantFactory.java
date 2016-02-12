@@ -64,9 +64,14 @@ public class TestVariantFactory extends ApplicationVariantFactory {
                     "targetVariant cannot be null in test project " + project.getName());
         }
 
-        // add the code of the tested app to the provided scope.
+        // While we want this to be provided only, we're still going to set this as compile
+        // (and therefore show up on the apk scope). This is because this can bring in
+        // aar dependencies and this would trigger errors as aars are not supported as
+        // provided dependencies.
+        // Instead we'll automatically detect that these dependencies are coming from the tested
+        // app module and we'll skip them automatically (in the apk scope)
         DependencyHandler handler = project.getDependencies();
-        handler.add("provided", handler.project(ImmutableMap.of(
+        handler.add("compile", handler.project(ImmutableMap.of(
                 "path", path,
                 "configuration", testExtension.getTargetVariant() + "-classes"
         )));

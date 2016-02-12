@@ -64,13 +64,36 @@ public interface BaseArtifact {
     File getJavaResourcesFolder();
 
     /**
-     * Returns the resolved dependencies for this artifact. This is a composite of all the
-     * dependencies for that artifact: default config + build type + flavor(s).s
+     * @deprecated Use {@link #getCompileDependencies()} instead.
+     */
+    @NonNull
+    @Deprecated
+    Dependencies getDependencies();
+
+    /**
+     * Returns the resolved 'compile' dependencies for this artifact.
+     *
+     * This is a composite of all the
+     * dependencies for that artifact: default config + build type + flavor(s).
      *
      * @return The dependencies.
      */
     @NonNull
-    Dependencies getDependencies();
+    Dependencies getCompileDependencies();
+
+    /**
+     * Returns the resolved 'package' dependencies for this artifact.
+     *
+     * This is a composite of all the
+     * dependencies for that artifact: default config + build type + flavor(s).
+     *
+     * In case of Library modules, this is really the publish dependencies.
+     * For tests, this is really the runtime dependencies.
+     *
+     * @return The dependencies.
+     */
+    @NonNull
+    Dependencies getPackageDependencies();
 
     /**
      * A SourceProvider specific to the variant. This can be null if there is no flavors as

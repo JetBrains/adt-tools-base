@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.dependencies;
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static com.android.build.gradle.integration.common.utils.TestFileUtils.appendToFile;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
 
@@ -24,8 +25,12 @@ import com.android.build.gradle.integration.common.truth.TruthHelper;
 import com.android.build.gradle.integration.common.utils.ModelHelper;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
+import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.Variant;
 import com.android.ide.common.process.ProcessException;
+import com.google.common.base.Charsets;
+import com.google.common.collect.Iterables;
+import com.google.common.io.Files;
 import com.google.common.truth.Truth;
 
 import org.junit.AfterClass;
@@ -49,6 +54,8 @@ public class AppWithPackageDirectJarTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
+        Files.write("include 'app', 'jar'", project.getSettingsFile(), Charsets.UTF_8);
+
         appendToFile(project.getSubproject("app").getBuildFile(),
                 "\n" +
                 "dependencies {\n" +
@@ -73,17 +80,15 @@ public class AppWithPackageDirectJarTest {
     public void checkPackagedJarIsNotInTheModel() {
         Variant variant = ModelHelper.getVariant(models.get(":app").getVariants(), "debug");
 
-        Dependencies deps = variant.getMainArtifact().getDependencies();
-        TruthHelper.assertThat(deps.getProjects()).named("Project deps").isEmpty();
-    }
+        Dependencies compileDeps = variant.getMainArtifact().getCompileDependencies();
+        assertThat(compileDeps.getProjects()).named("Project compileDeps").isEmpty();
+        assertThat(compileDeps.getJavaLibraries()).named("javalibs compileDeps count").isEmpty();
 
-    @Test
-    public void checkPackageJarIsInTheAndroidTestDeps() {
-        // TODO
-    }
+        Dependencies packageDeps = variant.getMainArtifact().getPackageDependencies();
+        assertThat(packageDeps.getProjects()).named("Project packageDeps").isEmpty();
 
-    @Test
-    public void checkPackageJarIsIntheUnitTestDeps() {
-        // TODO
+        assertThat(packageDeps.getJavaLibraries()).named("javalibs packageDeps count").hasSize(1);
+        JavaLibrary javaLibrary = Iterables.getOnlyElement(packageDeps.getJavaLibraries());
+        assertThat(javaLibrary.getProject()).isEqualTo(":jar");
     }
 }

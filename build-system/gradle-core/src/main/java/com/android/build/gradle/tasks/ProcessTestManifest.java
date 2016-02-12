@@ -219,7 +219,7 @@ public class ProcessTestManifest extends ManifestProcessorTask {
         }
 
         @Override
-        public void execute(final ProcessTestManifest processTestManifestTask) {
+        public void execute(@NonNull final ProcessTestManifest processTestManifestTask) {
 
             final VariantConfiguration<CoreBuildType, CoreProductFlavor, CoreProductFlavor> config =
                     scope.getVariantConfiguration();
@@ -297,7 +297,7 @@ public class ProcessTestManifest extends ManifestProcessorTask {
                     new Callable<List<AndroidLibrary>>() {
                         @Override
                         public List<AndroidLibrary> call() throws Exception {
-                            return config.getDirectLibraries();
+                            return config.getCompileAndroidLibraries();
                         }
                     });
 

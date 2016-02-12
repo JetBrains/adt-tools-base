@@ -22,9 +22,12 @@ import static org.gradle.logging.StyledTextOutput.Style.Info;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.variant.BaseVariantData;
+import com.android.builder.dependency.DependencyContainer;
 import com.android.builder.dependency.JarDependency;
 import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.JavaLibrary;
 import com.google.common.collect.Lists;
 
 import org.gradle.api.Action;
@@ -87,14 +90,19 @@ public class AndroidAsciiReportRenderer extends TextReportRenderer {
     public void completeConfiguration(BaseVariantData variantData) {}
 
     public void render(BaseVariantData variantData) throws IOException {
-        List<AndroidLibrary> libraries =
-                variantData.getVariantConfiguration().getDirectLibraries();
 
-        List<JarDependency> localDeps = variantData
-                .getVariantDependency().getLocalDependencies();
+        VariantDependencies variantDependency = variantData.getVariantDependency();
+
+        // TODO: handle compile vs package.
+        DependencyContainer compileDependencies = variantDependency.getCompileDependencies();
+        DependencyContainer packageDependencies = variantDependency.getPackageDependencies();
+
+        List<AndroidLibrary> libraries = compileDependencies.getAndroidDependencies();
+        List<JavaLibrary> localDeps = compileDependencies.getLocalDependencies();
+
         List<File> localJars = Lists.newArrayListWithCapacity(localDeps.size());
-        for (JarDependency jarDependency : localDeps) {
-            localJars.add(jarDependency.getJarFile());
+        for (JavaLibrary javaLibrary : localDeps) {
+            localJars.add(javaLibrary.getJarFile());
         }
         renderNow(libraries, localJars);
     }

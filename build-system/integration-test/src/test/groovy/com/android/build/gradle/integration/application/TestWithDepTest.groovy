@@ -66,7 +66,7 @@ class TestWithDepTest {
                 ARTIFACT_ANDROID_TEST)
         assertNotNull(testArtifact)
 
-        Dependencies testDependencies = testArtifact.getDependencies()
+        Dependencies testDependencies = testArtifact.getCompileDependencies()
         assertEquals(1, testDependencies.getJavaLibraries().size())
     }
 }

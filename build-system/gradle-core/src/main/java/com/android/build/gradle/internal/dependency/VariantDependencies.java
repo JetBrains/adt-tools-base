@@ -18,19 +18,15 @@ package com.android.build.gradle.internal.dependency;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.ConfigurationProvider;
+import com.android.builder.core.ErrorReporter;
 import com.android.builder.core.VariantType;
 import com.android.builder.dependency.DependencyContainer;
-import com.android.builder.dependency.JarDependency;
-import com.android.builder.dependency.LibraryBundle;
 import com.android.builder.model.AndroidLibrary;
 import com.google.common.base.Objects;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -42,9 +38,10 @@ import java.util.Set;
  *
  * <p>It optionally contains the dependencies for a test config for the given config.</p>
  */
-public class VariantDependencies implements DependencyContainer {
+public class VariantDependencies {
 
-    private String name;
+    @NonNull
+    private final String variantName;
 
     @NonNull
     private Configuration compileConfiguration;
@@ -60,12 +57,8 @@ public class VariantDependencies implements DependencyContainer {
     @Nullable
     private Configuration metadataConfiguration;
 
-    @NonNull
-    private List<LibraryDependencyImpl> libraries = Lists.newArrayList();
-    @NonNull
-    private List<JarDependency> jars = Lists.newArrayList();
-    @NonNull
-    private List<JarDependency> localJars = Lists.newArrayList();
+    private DependencyContainer compileDependencies;
+    private DependencyContainer packageDependencies;
 
     /**
      *  Whether we have a direct dependency on com.android.support:support-annotations; this
@@ -78,9 +71,11 @@ public class VariantDependencies implements DependencyContainer {
 
     public static VariantDependencies compute(
             @NonNull Project project,
-            @NonNull String name,
+            @NonNull ErrorReporter errorReporter,
+            @NonNull String variantName,
             boolean publishVariant,
             @NonNull VariantType variantType,
+            @Nullable VariantType testedVariantType,
             @Nullable VariantDependencies parentVariant,
             @NonNull ConfigurationProvider... providers) {
         Set<Configuration> compileConfigs = Sets.newHashSetWithExpectedSize(providers.length * 2);
@@ -103,15 +98,15 @@ public class VariantDependencies implements DependencyContainer {
             apkConfigs.add(parentVariant.getPackageConfiguration());
         }
 
-        Configuration compile = project.getConfigurations().maybeCreate("_" + name + "Compile");
+        Configuration compile = project.getConfigurations().maybeCreate("_" + variantName + "Compile");
         compile.setVisible(false);
         compile.setDescription("## Internal use, do not manually configure ##");
         compile.setExtendsFrom(compileConfigs);
 
         Configuration apk = project.getConfigurations().maybeCreate(
                 variantType == VariantType.LIBRARY
-                    ? "_" + name + "Publish"
-                    : "_" + name + "Apk");
+                    ? "_" + variantName + "Publish"
+                    : "_" + variantName + "Apk");
 
         apk.setVisible(false);
         apk.setDescription("## Internal use, do not manually configure ##");
@@ -119,8 +114,8 @@ public class VariantDependencies implements DependencyContainer {
 
         Configuration publish = null, mapping = null, classes = null, metadata = null;
         if (publishVariant) {
-            publish = project.getConfigurations().maybeCreate(name);
-            publish.setDescription("Published Configuration for Variant " + name);
+            publish = project.getConfigurations().maybeCreate(variantName);
+            publish.setDescription("Published Configuration for Variant " + variantName);
             // if the variant is not a library, then the publishing configuration should
             // not extend from the apkConfigs. It's mostly there to access the artifact from
             // another project but it shouldn't bring any dependencies with it.
@@ -129,50 +124,58 @@ public class VariantDependencies implements DependencyContainer {
             }
 
             // create configuration for -metadata.
-            metadata = project.getConfigurations().create(name + "-metadata");
-            metadata.setDescription("Published APKs metadata for Variant " + name);
+            metadata = project.getConfigurations().create(variantName + "-metadata");
+            metadata.setDescription("Published APKs metadata for Variant " + variantName);
 
             // create configuration for -mapping and -classes.
-            mapping = project.getConfigurations().maybeCreate(name + "-mapping");
-            mapping.setDescription("Published mapping configuration for Variant " + name);
+            mapping = project.getConfigurations().maybeCreate(variantName + "-mapping");
+            mapping.setDescription("Published mapping configuration for Variant " + variantName);
 
-            classes = project.getConfigurations().maybeCreate(name + "-classes");
-            classes.setDescription("Published classes configuration for Variant " + name);
+            classes = project.getConfigurations().maybeCreate(variantName + "-classes");
+            classes.setDescription("Published classes configuration for Variant " + variantName);
             // because we need the transitive dependencies for the classes, extend the compile config.
             classes.setExtendsFrom(compileConfigs);
         }
 
+        DependencyChecker checker = new DependencyChecker(
+                project.getName(),
+                variantName,
+                errorReporter,
+                variantType,
+                testedVariantType);
+
         return new VariantDependencies(
-                name,
+                variantName,
+                checker,
                 compile,
                 apk,
                 publish,
                 mapping,
                 classes,
-                metadata,
-                variantType != VariantType.UNIT_TEST);
+                metadata);
     }
 
-    private VariantDependencies(@NonNull  String name,
+    private VariantDependencies(
+            @NonNull String variantName,
+            @NonNull DependencyChecker dependencyChecker,
             @NonNull  Configuration compileConfiguration,
             @NonNull  Configuration packageConfiguration,
             @Nullable Configuration publishConfiguration,
             @Nullable Configuration mappingConfiguration,
             @Nullable Configuration classesConfiguration,
-            @Nullable Configuration metadataConfiguration,
-            boolean skipClassesInAndroid) {
-        this.name = name;
+            @Nullable Configuration metadataConfiguration) {
+        this.variantName = variantName;
         this.compileConfiguration = compileConfiguration;
         this.packageConfiguration = packageConfiguration;
         this.publishConfiguration = publishConfiguration;
         this.mappingConfiguration = mappingConfiguration;
         this.classesConfiguration = classesConfiguration;
         this.metadataConfiguration = metadataConfiguration;
-        this.checker = new DependencyChecker(this, skipClassesInAndroid);
+        this.checker = dependencyChecker;
     }
 
     public String getName() {
-        return name;
+        return variantName;
     }
 
     @NonNull
@@ -205,39 +208,17 @@ public class VariantDependencies implements DependencyContainer {
         return metadataConfiguration;
     }
 
-    public void addLibraries(@NonNull List<LibraryDependencyImpl> list) {
-        libraries.addAll(list);
+    public void setDependencies(@NonNull DependencyContainer compileDependencies, @NonNull DependencyContainer packageDependencies) {
+        this.compileDependencies = compileDependencies;
+        this.packageDependencies = packageDependencies;
     }
 
-    public void addJars(@NonNull Collection<JarDependency> list) {
-        jars.addAll(list);
+    public DependencyContainer getCompileDependencies() {
+        return compileDependencies;
     }
 
-    public void addLocalJars(@NonNull Collection<JarDependency> list) {
-        localJars.addAll(list);
-    }
-
-    @NonNull
-    public List<LibraryDependencyImpl> getLibraries() {
-        return libraries;
-    }
-
-    @NonNull
-    @Override
-    public List<? extends LibraryBundle> getAndroidDependencies() {
-        return libraries;
-    }
-
-    @NonNull
-    @Override
-    public List<JarDependency> getJarDependencies() {
-        return jars;
-    }
-
-    @NonNull
-    @Override
-    public List<JarDependency> getLocalDependencies() {
-        return localJars;
+    public DependencyContainer getPackageDependencies() {
+        return packageDependencies;
     }
 
     @NonNull
@@ -254,19 +235,15 @@ public class VariantDependencies implements DependencyContainer {
     }
 
     public boolean hasNonOptionalLibraries() {
-        for (AndroidLibrary libraryDependency : libraries) {
-            if (!libraryDependency.isOptional()) {
-                return true;
-            }
-        }
-
-        return false;
+        // non optional libraries mean that there is some libraries in the package
+        // dependencies
+        return !packageDependencies.getAndroidDependencies().isEmpty();
     }
 
     @Override
     public String toString() {
         return Objects.toStringHelper(this)
-                .add("name", name)
+                .add("name", variantName)
                 .toString();
     }
 }

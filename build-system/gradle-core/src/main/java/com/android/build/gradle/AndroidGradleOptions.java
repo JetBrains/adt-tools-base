@@ -121,6 +121,20 @@ public class AndroidGradleOptions {
         return getBoolean(project, PROPERTY_KEEP_TIMESTAMPS_IN_APK);
     }
 
+    /**
+     * Returns the level of model-only mode.
+     *
+     * The model-only mode is triggered when the IDE does a sync, and therefore we do
+     * things a bit differently (don't throw exceptions for instance). Things evolved a bit
+     * over versions and the behavior changes. This reflects the mode to use.
+     *
+     * @param project the project
+     * @return an integer or null if we are not in model-only mode.
+     *
+     * @see AndroidProject#MODEL_LEVEL_0_ORIGNAL
+     * @see AndroidProject#MODEL_LEVEL_1_SYNC_ISSUE
+     * @see AndroidProject#MODEL_LEVEL_2_DEP_GRAPH
+     */
     @Nullable
     public static Integer buildModelOnlyVersion(@NonNull Project project) {
         String revision = getString(project, AndroidProject.PROPERTY_BUILD_MODEL_ONLY_VERSIONED);
@@ -129,11 +143,11 @@ public class AndroidGradleOptions {
         }
 
         if (getBoolean(project, AndroidProject.PROPERTY_BUILD_MODEL_ONLY_ADVANCED)) {
-            return 1;
+            return AndroidProject.MODEL_LEVEL_1_SYNC_ISSUE;
         }
 
         if (getBoolean(project, AndroidProject.PROPERTY_BUILD_MODEL_ONLY)) {
-            return 0;
+            return AndroidProject.MODEL_LEVEL_0_ORIGNAL;
         }
 
         return null;

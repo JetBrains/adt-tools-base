@@ -39,7 +39,6 @@ import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.coverage.JacocoPlugin;
 import com.android.build.gradle.internal.coverage.JacocoReportTask;
-import com.android.build.gradle.internal.dependency.LibraryDependencyImpl;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.dsl.CoreJackOptions;
@@ -2744,10 +2743,7 @@ public abstract class TaskManager {
 
         prepareDependenciesTask.dependsOn(tasks, scope.getPreBuildTask());
 
-        for (LibraryDependencyImpl lib : configurationDependencies.getLibraries()) {
-            dependencyManager.addDependencyToPrepareTask(
-                    tasks, variantData, prepareDependenciesTask, lib);
-        }
+        dependencyManager.addDependenciesToPrepareTask(tasks, variantData, prepareDependenciesTask);
     }
 
     private void createCompileAnchorTask(@NonNull TaskFactory tasks, @NonNull final VariantScope scope) {

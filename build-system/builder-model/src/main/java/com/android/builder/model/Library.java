@@ -17,6 +17,7 @@
 package com.android.builder.model;
 
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 public interface Library {
@@ -46,6 +47,27 @@ public interface Library {
      * Returns this library's Maven coordinates after all the project's dependencies have been
      * resolved. This coordinate may be different than {@link #getRequestedCoordinates()}.
      */
-    @Nullable
+    @NonNull
     MavenCoordinates getResolvedCoordinates();
+
+    /**
+     * Returns whether the dependency is skipped.
+     *
+     * This can happen in testing artifacts when the same dependency is present in
+     * both the tested artifact and the test artifact.
+     * @return true if skipped.
+     */
+    boolean isSkipped();
+
+    /**
+     * Returns whether the dependency is provided.
+     *
+     * This is only valid for dependencies present in the 'compile' graph.
+     *
+     * In the 'package' graph the value is always <code>false</code> since the provided dependencies
+     * are not present
+     *
+     * @return true id provided.
+     */
+    boolean isProvided();
 }

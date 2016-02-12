@@ -43,7 +43,7 @@ import java.util.List;
  * structure.
  */
 @Immutable
-public abstract class LibraryBundle implements AndroidLibrary {
+public abstract class AbstractLibraryDependency implements AndroidLibrary {
 
     public static final String FN_PROGUARD_TXT = "proguard.txt";
 
@@ -51,6 +51,7 @@ public abstract class LibraryBundle implements AndroidLibrary {
     private final File mBundleFolder;
     private final String mName;
     private final String mProjectPath;
+    private final boolean mIsProvided;
 
     /**
      * Creates the bundle dependency with an optional name
@@ -60,15 +61,17 @@ public abstract class LibraryBundle implements AndroidLibrary {
      * @param name an optional name
      * @param projectPath an optional project path.
      */
-    protected LibraryBundle(
+    protected AbstractLibraryDependency(
             @NonNull File bundle,
             @NonNull File bundleFolder,
             @Nullable String name,
-            @Nullable String projectPath) {
+            @Nullable String projectPath,
+            boolean isProvided) {
         mBundle = bundle;
         mBundleFolder = bundleFolder;
         mName = name;
         mProjectPath = projectPath;
+        mIsProvided = isProvided;
     }
 
     @Override
@@ -117,6 +120,17 @@ public abstract class LibraryBundle implements AndroidLibrary {
     @NonNull
     public File getJarFile() {
         return new File(getJarsRootFolder(), FN_CLASSES_JAR);
+    }
+
+    @Override
+    public boolean isProvided() {
+        return mIsProvided;
+    }
+
+    @Override
+    @Deprecated
+    public boolean isOptional() {
+        return isProvided();
     }
 
     @NonNull
@@ -207,14 +221,17 @@ public abstract class LibraryBundle implements AndroidLibrary {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        LibraryBundle that = (LibraryBundle) o;
-        return Objects.equal(mName, that.mName) &&
+        AbstractLibraryDependency that = (AbstractLibraryDependency) o;
+        return mIsProvided == that.mIsProvided &&
+                Objects.equal(mBundle, that.mBundle) &&
+                Objects.equal(mBundleFolder, that.mBundleFolder) &&
+                Objects.equal(mName, that.mName) &&
                 Objects.equal(mProjectPath, that.mProjectPath);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(mName, mProjectPath);
+        return Objects.hashCode(mBundle, mBundleFolder, mName, mProjectPath, mIsProvided);
     }
 
     @Override
@@ -222,6 +239,7 @@ public abstract class LibraryBundle implements AndroidLibrary {
         return Objects.toStringHelper(this)
                 .add("mBundle", mBundle)
                 .add("mBundleFolder", mBundleFolder)
+                .add("mIsProvided", mIsProvided)
                 .add("mName", mName)
                 .add("mProjectPath", mProjectPath)
                 .toString();

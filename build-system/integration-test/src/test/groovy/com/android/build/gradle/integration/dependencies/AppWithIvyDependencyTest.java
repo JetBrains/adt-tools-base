@@ -26,7 +26,6 @@ import groovy.transform.CompileStatic;
 /**
  * test for Ivy dependencies.
  */
-@CompileStatic
 public class AppWithIvyDependencyTest {
 
     @ClassRule

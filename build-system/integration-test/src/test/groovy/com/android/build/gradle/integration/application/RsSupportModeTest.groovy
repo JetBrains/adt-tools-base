@@ -62,7 +62,7 @@ class RsSupportModeTest {
         Variant debugVariant = ModelHelper.getVariant(model.getVariants(), "x86Debug")
 
         AndroidArtifact mainArtifact = debugVariant.getMainArtifact()
-        Dependencies dependencies = mainArtifact.getDependencies()
+        Dependencies dependencies = mainArtifact.getCompileDependencies()
 
         assertFalse(dependencies.getJavaLibraries().isEmpty())
 

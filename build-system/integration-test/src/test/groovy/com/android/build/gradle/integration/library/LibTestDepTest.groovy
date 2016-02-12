@@ -72,7 +72,7 @@ class LibTestDepTest {
                 ARTIFACT_ANDROID_TEST)
         assertNotNull(testArtifact)
 
-        Dependencies testDependencies = testArtifact.getDependencies()
+        Dependencies testDependencies = testArtifact.getCompileDependencies()
         Collection<JavaLibrary> javaLibraries = testDependencies.getJavaLibraries()
         assertEquals(2, javaLibraries.size())
         for (JavaLibrary lib : javaLibraries) {

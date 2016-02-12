@@ -18,57 +18,70 @@ package com.android.builder.dependency;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.concurrency.Immutable;
 import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.MavenCoordinates;
+import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
 import java.io.File;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Represents a Jar dependency. This could be the output of a Java project.
  *
  */
-public class JarDependency implements JavaLibrary {
+public class JarDependency implements JavaLibrary, SkippableLibrary {
 
+    public static final String LOCAL_JAR_GROUPID = "__local_jars__";
     @NonNull
     private final File mJarFile;
 
-    private final boolean mCompiled;
-    private final boolean mPackaged;
-    private final boolean mProguarded;
+    private final boolean mIsProvided;
 
     /** if the dependency is a sub-project, then the project path */
     @Nullable
     private final String mProjectPath;
 
-    @Nullable
+    private final List<JarDependency> mDependencies;
+
+    @NonNull
     private final MavenCoordinates mResolvedCoordinates;
+
+    private final AtomicBoolean skipped = new AtomicBoolean(false);
 
     public JarDependency(
             @NonNull File jarFile,
-            boolean compiled,
-            boolean packaged,
-            boolean proguarded,
-            @Nullable MavenCoordinates resolvedCoordinates,
-            @Nullable String projectPath) {
+            @NonNull List<JarDependency> dependencies,
+            @NonNull MavenCoordinates resolvedCoordinates,
+            @Nullable String projectPath,
+            boolean isProvided) {
         Preconditions.checkNotNull(jarFile);
         mJarFile = jarFile;
-        mCompiled = compiled;
-        mPackaged = packaged;
-        mProguarded = proguarded;
+        mIsProvided = isProvided;
+        mDependencies = ImmutableList.copyOf(dependencies);
         mResolvedCoordinates = resolvedCoordinates;
         mProjectPath = projectPath;
     }
 
-    public JarDependency(
-            @NonNull File jarFile,
-            boolean compiled,
-            boolean packaged,
-            @Nullable MavenCoordinates resolvedCoordinates,
-            @Nullable String projectPath) {
-        this(jarFile, compiled, packaged, true, resolvedCoordinates, projectPath);
+    /**
+     * Local Jar creator
+     * @param jarFile the jar file location
+     */
+    public JarDependency(@NonNull File jarFile) {
+        this(
+                jarFile,
+                ImmutableList.<JarDependency>of(),
+                getCoordForLocalJar(jarFile),
+                null /*projectPath*/,
+                false /*isProvided*/);
+    }
+
+    @NonNull
+    public static MavenCoordinatesImpl getCoordForLocalJar(@NonNull File jarFile) {
+        return new MavenCoordinatesImpl(LOCAL_JAR_GROUPID, jarFile.getPath(), "unspecified");
     }
 
     @Nullable
@@ -80,11 +93,7 @@ public class JarDependency implements JavaLibrary {
     @Nullable
     @Override
     public String getName() {
-        if (mResolvedCoordinates != null) {
-            return mResolvedCoordinates.toString();
-        }
-
-        return mJarFile.getName();
+        return mResolvedCoordinates.toString();
     }
 
     @Override
@@ -93,27 +102,25 @@ public class JarDependency implements JavaLibrary {
         return mJarFile;
     }
 
-    public boolean isCompiled() {
-        return mCompiled;
+    @Override
+    public boolean isSkipped() {
+        return skipped.get();
     }
 
-    public boolean isPackaged() {
-        return mPackaged;
-    }
-
-    public boolean isProguarded() {
-        return mProguarded;
+    @Override
+    public void skip() {
+        skipped.set(true);
     }
 
     @Override
     public boolean isProvided() {
-        return mCompiled && !mPackaged;
+        return mIsProvided;
     }
 
     @NonNull
     @Override
     public List<? extends JavaLibrary> getDependencies() {
-        return ImmutableList.of();
+        return mDependencies;
     }
 
     @Nullable
@@ -123,24 +130,44 @@ public class JarDependency implements JavaLibrary {
     }
 
     @Override
-    @Nullable
+    @NonNull
     public MavenCoordinates getResolvedCoordinates() {
         return mResolvedCoordinates;
     }
 
-    @Nullable
-    public String getProjectPath() {
-        return mProjectPath;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        JarDependency that = (JarDependency) o;
+        return mIsProvided == that.mIsProvided &&
+                Objects.equal(mJarFile, that.mJarFile) &&
+                Objects.equal(mProjectPath, that.mProjectPath) &&
+                Objects.equal(mDependencies, that.mDependencies) &&
+                Objects.equal(mResolvedCoordinates, that.mResolvedCoordinates) &&
+                Objects.equal(isSkipped(), that.isSkipped()); // AtomicBoolean does not implements Equals!
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects
+                .hashCode(mJarFile, mIsProvided, mProjectPath, mDependencies, mResolvedCoordinates,
+                        skipped);
     }
 
     @Override
     public String toString() {
-        return "JarDependency{" +
-                "mJarFile=" + mJarFile +
-                ", mCompiled=" + mCompiled +
-                ", mPackaged=" + mPackaged +
-                ", mProguarded=" + mProguarded +
-                ", mResolvedCoordinates=" + mResolvedCoordinates +
-                '}';
+        return Objects.toStringHelper(this)
+                .add("mJarFile", mJarFile)
+                .add("mIsProvided", mIsProvided)
+                .add("mProjectPath", mProjectPath)
+                .add("mDependencies", mDependencies)
+                .add("mResolvedCoordinates", mResolvedCoordinates)
+                .add("skipped", skipped)
+                .toString();
     }
 }

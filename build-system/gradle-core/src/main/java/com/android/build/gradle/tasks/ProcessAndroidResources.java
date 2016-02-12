@@ -282,7 +282,7 @@ public class ProcessAndroidResources extends IncrementalTask {
                         new Callable<List<AndroidLibrary>>() {
                             @Override
                             public List<AndroidLibrary> call() throws Exception {
-                                return config.getAllLibraries();
+                                return config.getFlatPackageAndroidLibraries();
                             }
                         });
                 ConventionMappingHelper.map(processResources, "packageForR",

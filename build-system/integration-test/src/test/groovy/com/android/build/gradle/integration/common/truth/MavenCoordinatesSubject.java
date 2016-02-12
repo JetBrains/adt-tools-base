@@ -91,4 +91,14 @@ public class MavenCoordinatesSubject extends Subject<MavenCoordinatesSubject, Ma
                     getDisplaySubject(), classifier, coordinates.getClassifier());
         }
     }
+
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    public void hasVersion(@NonNull String version) {
+        MavenCoordinates coordinates = getSubject();
+
+        if (!version.equals(coordinates.getVersion())) {
+            failWithRawMessage("Not true that version of %s is equal to %s. It is %s",
+                    getDisplaySubject(), version, coordinates.getVersion());
+        }
+    }
 }

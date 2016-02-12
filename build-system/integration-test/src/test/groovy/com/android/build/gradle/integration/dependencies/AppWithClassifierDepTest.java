@@ -22,16 +22,21 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.truth.TruthHelper;
 import com.android.build.gradle.integration.common.utils.ModelHelper;
 import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.Variant;
+import com.google.common.collect.Iterables;
 import com.google.common.truth.Truth;
 
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -43,19 +48,19 @@ import java.util.Collection;
  */
 public class AppWithClassifierDepTest {
 
-    @Rule
-    public GradleTestProject project = GradleTestProject.builder()
+    @ClassRule
+    public static GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("projectWithClassifierDep")
             .create();
-    AndroidProject model;
+    public static AndroidProject model;
 
-    @Before
-    public void setUp() {
+    @BeforeClass
+    public static void setUp() {
         model = project.getSingleModel();
     }
 
-    @After
-    public void cleanUp() {
+    @AfterClass
+    public static void cleanUp() {
         project = null;
         model = null;
     }
@@ -63,13 +68,12 @@ public class AppWithClassifierDepTest {
     @Test
     public void checkDebugDepInModel() {
         Variant variant = ModelHelper.getVariant(model.getVariants(), "debug");
-        Dependencies dependencies = variant.getMainArtifact().getDependencies();
+        Dependencies dependencies = variant.getMainArtifact().getCompileDependencies();
 
         Collection<JavaLibrary> javaLibs = dependencies.getJavaLibraries();
-        assertNotNull(javaLibs);
-        assertEquals(1, javaLibs.size());
 
-        JavaLibrary javaLib = javaLibs.iterator().next();
+        assertThat(javaLibs).named("javalibs count").hasSize(1);
+        JavaLibrary javaLib = Iterables.getOnlyElement(javaLibs);
 
         assertThat(javaLib.getJarFile())
                 .named("jar location")
@@ -87,13 +91,13 @@ public class AppWithClassifierDepTest {
                 debugVariant.getExtraAndroidArtifacts(), ARTIFACT_ANDROID_TEST);
         Truth.assertThat(androidTestArtifact).isNotNull();
 
-        Dependencies dependencies = androidTestArtifact.getDependencies();
+        Dependencies dependencies = androidTestArtifact.getCompileDependencies();
 
         Collection<JavaLibrary> javaLibs = dependencies.getJavaLibraries();
-        assertNotNull(javaLibs);
-        assertEquals(1, javaLibs.size());
 
-        JavaLibrary javaLib = javaLibs.iterator().next();
+        assertThat(javaLibs).named("javalibs count").hasSize(1);
+        JavaLibrary javaLib = Iterables.getOnlyElement(javaLibs);
+
         assertEquals(
                 new File(project.getTestDir(), "repo/com/foo/sample/1.0/sample-1.0-testlib.jar"),
                 javaLib.getJarFile());

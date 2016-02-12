@@ -73,21 +73,17 @@ public class AndroidLibraryImpl extends LibraryImpl implements AndroidLibrary, S
     private final Collection<JavaLibrary> javaLibraries;
     @NonNull
     private final Collection<File> localJars;
-    private final boolean isOptional;
 
     AndroidLibraryImpl(
             @NonNull AndroidLibrary clonedLibrary,
             @NonNull List<AndroidLibrary> androidLibraries,
             @NonNull Collection<JavaLibrary> javaLibraries,
-            @NonNull Collection<File> localJavaLibraries,
-            @Nullable String project,
-            @Nullable String variant,
-            @Nullable MavenCoordinates requestedCoordinates,
-            @Nullable MavenCoordinates resolvedCoordinates) {
-        super(project, requestedCoordinates, resolvedCoordinates);
+            @NonNull Collection<File> localJavaLibraries) {
+        super(clonedLibrary);
         this.androidLibraries = ImmutableList.copyOf(androidLibraries);
         this.javaLibraries = ImmutableList.copyOf(javaLibraries);
         this.localJars = ImmutableList.copyOf(localJavaLibraries);
+        variant = clonedLibrary.getProjectVariant();
         bundle = clonedLibrary.getBundle();
         folder = clonedLibrary.getFolder();
         manifest = clonedLibrary.getManifest();
@@ -101,10 +97,7 @@ public class AndroidLibraryImpl extends LibraryImpl implements AndroidLibrary, S
         lintJar = clonedLibrary.getLintJar();
         annotations = clonedLibrary.getExternalAnnotations();
         publicResources = clonedLibrary.getPublicResources();
-        isOptional = clonedLibrary.isOptional();
         symbolFile = clonedLibrary.getSymbolFile();
-
-        this.variant = variant;
     }
 
     @Nullable
@@ -210,14 +203,57 @@ public class AndroidLibraryImpl extends LibraryImpl implements AndroidLibrary, S
     }
 
     @Override
+    @Deprecated
     public boolean isOptional() {
-        return isOptional;
+        return isProvided();
     }
 
     @NonNull
     @Override
     public File getSymbolFile() {
         return symbolFile;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        AndroidLibraryImpl that = (AndroidLibraryImpl) o;
+        return Objects.equal(variant, that.variant) &&
+                Objects.equal(bundle, that.bundle) &&
+                Objects.equal(folder, that.folder) &&
+                Objects.equal(manifest, that.manifest) &&
+                Objects.equal(jarFile, that.jarFile) &&
+                Objects.equal(resFolder, that.resFolder) &&
+                Objects.equal(assetsFolder, that.assetsFolder) &&
+                Objects.equal(jniFolder, that.jniFolder) &&
+                Objects.equal(aidlFolder, that.aidlFolder) &&
+                Objects.equal(renderscriptFolder, that.renderscriptFolder) &&
+                Objects.equal(proguardRules, that.proguardRules) &&
+                Objects.equal(lintJar, that.lintJar) &&
+                Objects.equal(annotations, that.annotations) &&
+                Objects.equal(publicResources, that.publicResources) &&
+                Objects.equal(symbolFile, that.symbolFile) &&
+                Objects.equal(androidLibraries, that.androidLibraries) &&
+                Objects.equal(javaLibraries, that.javaLibraries) &&
+                Objects.equal(localJars, that.localJars);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects
+                .hashCode(super.hashCode(), variant, bundle, folder, manifest, jarFile, resFolder,
+                        assetsFolder, jniFolder, aidlFolder, renderscriptFolder, proguardRules,
+                        lintJar,
+                        annotations, publicResources, symbolFile, androidLibraries, javaLibraries,
+                        localJars);
     }
 
     @Override
@@ -245,7 +281,7 @@ public class AndroidLibraryImpl extends LibraryImpl implements AndroidLibrary, S
                 .add("androidLibraries", androidLibraries)
                 .add("javaLibraries", javaLibraries)
                 .add("localJars", localJars)
-                .add("isOptional", isOptional)
+                .add("super", super.toString())
                 .toString();
     }
 }

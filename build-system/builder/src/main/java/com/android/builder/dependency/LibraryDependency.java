@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,27 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.build.gradle.internal.dependency;
+package com.android.builder.dependency;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.annotations.concurrency.Immutable;
-import com.android.builder.dependency.LibraryBundle;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.MavenCoordinates;
 import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableList;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-@Immutable
-public class LibraryDependencyImpl extends LibraryBundle {
+public class LibraryDependency extends AbstractLibraryDependency implements SkippableLibrary {
 
     @NonNull
-    private final List<AndroidLibrary> dependencies;
+    private final List<LibraryDependency> androidDependencies;
+    @NonNull
+    private final Collection<JarDependency> jarDependencies;
 
     @Nullable
     private final String variantName;
@@ -41,40 +41,40 @@ public class LibraryDependencyImpl extends LibraryBundle {
     @Nullable
     private final MavenCoordinates requestedCoordinates;
 
-    @Nullable
+    @NonNull
     private final MavenCoordinates resolvedCoordinates;
 
-    private final boolean isOptional;
+    private final AtomicBoolean skipped = new AtomicBoolean(false);
 
-    public LibraryDependencyImpl(
+    public LibraryDependency(
             @NonNull File bundle,
             @NonNull File explodedBundle,
-            @NonNull List<AndroidLibrary> dependencies,
+            @NonNull List<LibraryDependency> androidDependencies,
+            @NonNull Collection<JarDependency> jarDependencies,
             @Nullable String name,
             @Nullable String variantName,
             @Nullable String projectPath,
             @Nullable MavenCoordinates requestedCoordinates,
-            @Nullable MavenCoordinates resolvedCoordinates,
-            boolean isOptional) {
-        super(bundle, explodedBundle, name, projectPath);
-        this.dependencies = dependencies;
+            @NonNull MavenCoordinates resolvedCoordinates,
+            boolean isProvided) {
+        super(bundle, explodedBundle, name, projectPath, isProvided);
+        this.androidDependencies = ImmutableList.copyOf(androidDependencies);
+        this.jarDependencies = ImmutableList.copyOf(jarDependencies);
         this.variantName = variantName;
         this.requestedCoordinates = requestedCoordinates;
         this.resolvedCoordinates = resolvedCoordinates;
-        this.isOptional = isOptional;
     }
 
     @NonNull
     @Override
     public List<? extends AndroidLibrary> getLibraryDependencies() {
-        return dependencies;
+        return androidDependencies;
     }
 
     @NonNull
     @Override
     public Collection<? extends JavaLibrary> getJavaDependencies() {
-        // TODO
-        return null;
+        return jarDependencies;
     }
 
     @Nullable
@@ -89,32 +89,20 @@ public class LibraryDependencyImpl extends LibraryBundle {
         return requestedCoordinates;
     }
 
-    @Nullable
+    @NonNull
     @Override
     public MavenCoordinates getResolvedCoordinates() {
         return resolvedCoordinates;
     }
 
     @Override
-    public boolean isOptional() {
-        return isOptional;
+    public boolean isSkipped() {
+        return skipped.get();
     }
 
-    /**
-     * Returns a version of the library dependency with the dependencies removed.
-     */
-    @NonNull
-    public LibraryDependencyImpl getNonTransitiveRepresentation() {
-        return new LibraryDependencyImpl(
-                getBundle(),
-                getBundleFolder(),
-                Collections.<AndroidLibrary>emptyList(),
-                getName(),
-                variantName,
-                getProject(),
-                requestedCoordinates,
-                resolvedCoordinates,
-                isOptional);
+    @Override
+    public void skip() {
+        skipped.set(true);
     }
 
     @Override
@@ -128,31 +116,33 @@ public class LibraryDependencyImpl extends LibraryBundle {
         if (!super.equals(o)) {
             return false;
         }
-        LibraryDependencyImpl that = (LibraryDependencyImpl) o;
-        return Objects.equal(dependencies, that.dependencies) &&
+        LibraryDependency that = (LibraryDependency) o;
+        return Objects.equal(androidDependencies, that.androidDependencies) &&
+                Objects.equal(jarDependencies, that.jarDependencies) &&
                 Objects.equal(variantName, that.variantName) &&
-                Objects.equal(resolvedCoordinates, that.resolvedCoordinates) &&
-                Objects.equal(isOptional, that.isOptional());
+                Objects.equal(requestedCoordinates, that.requestedCoordinates) &&
+                Objects.equal(resolvedCoordinates, that.resolvedCoordinates);
     }
 
     @Override
     public int hashCode() {
         return Objects.hashCode(
                 super.hashCode(),
-                dependencies,
+                androidDependencies,
+                jarDependencies,
                 variantName,
-                resolvedCoordinates,
-                isOptional);
+                requestedCoordinates,
+                resolvedCoordinates);
     }
 
     @Override
     public String toString() {
         return Objects.toStringHelper(this)
-                .add("dependencies", dependencies)
+                .add("androidDependencies", androidDependencies)
+                .add("jarDependencies", jarDependencies)
                 .add("variantName", variantName)
                 .add("requestedCoordinates", requestedCoordinates)
                 .add("resolvedCoordinates", resolvedCoordinates)
-                .add("isOptional", isOptional)
                 .add("super", super.toString())
                 .toString();
     }

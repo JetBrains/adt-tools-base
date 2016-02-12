@@ -279,7 +279,8 @@ public class MergeManifests extends ManifestProcessorTask {
                     new Callable<List<AndroidLibrary>>() {
                         @Override
                         public List<AndroidLibrary> call() throws Exception {
-                            List<AndroidLibrary> manifests = Lists.newArrayList(config.getDirectLibraries());
+                            List<AndroidLibrary> manifests = Lists.newArrayList(
+                                    config.getCompileAndroidLibraries());
 
                             if (variantData.generateApkDataTask != null &&
                                     variantData.getVariantConfiguration().getBuildType().
@@ -388,6 +389,15 @@ public class MergeManifests extends ManifestProcessorTask {
                 return false;
             }
 
+            @Override
+            public boolean isProvided() {
+                return false;
+            }
+
+            @Override
+            public boolean isSkipped() {
+                return false;
+            }
 
             // --------
 
@@ -499,7 +509,7 @@ public class MergeManifests extends ManifestProcessorTask {
                 throw new UnsupportedOperationException("ManifestOnlyLibrary can only be queried for the Manifest file.");
             }
 
-            @Nullable
+            @NonNull
             @Override
             public MavenCoordinates getResolvedCoordinates() {
                 throw new UnsupportedOperationException("ManifestOnlyLibrary can only be queried for the Manifest file.");

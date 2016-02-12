@@ -18,9 +18,11 @@ package com.android.build.gradle.internal;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.model.JavaLibraryImpl;
+import com.android.builder.dependency.MavenCoordinatesImpl;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.JavaLibrary;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 
 import org.gradle.api.artifacts.Configuration;
@@ -33,6 +35,8 @@ import java.util.Set;
 /**
  * Implementation of {@link com.android.builder.model.Dependencies} over a Gradle
  * Configuration object. This is used to lazily query the list of files from the config object.
+ *
+ * This is only used when registering extra Java Artifacts.
  */
 public class ConfigurationDependencies implements Dependencies {
 
@@ -58,8 +62,17 @@ public class ConfigurationDependencies implements Dependencies {
             return Collections.emptySet();
         }
         Set<JavaLibrary> javaLibraries = Sets.newHashSet();
+        int index = 1;
         for (File file : files) {
-            javaLibraries.add(new JavaLibraryImpl(file, null, false, null, null));
+            javaLibraries.add(new JavaLibraryImpl(
+                    file,
+                    null /*projectPath*/,
+                    ImmutableList.<JavaLibrary>of(),
+                    null /*requestedCoordinate*/,
+                    new MavenCoordinatesImpl(
+                            "unknown-" + configuration.getName(), "unknown" + (index++), "unspecified"),
+                    false /*isSkipped*/,
+                    false /*isProvided*/));
         }
         return javaLibraries;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,26 +14,22 @@
  * limitations under the License.
  */
 
-package com.android.builder.model;
+package com.android.builder.dependency;
 
-import com.android.annotations.NonNull;
-
-import java.io.File;
-import java.util.List;
+import com.android.builder.model.Library;
 
 /**
- * A Java library.
+ * A library that can be skipped.
+ *
+ * This can happen in testing artifacts when the same dependency is present in
+ * both the tested artifact and the test artifact.
+ *
+ * @see Library#isSkipped()
  */
-public interface JavaLibrary extends Library {
-    /**
-     * Returns the library's jar file.
-     */
-    @NonNull
-    File getJarFile();
+public interface SkippableLibrary extends Library {
 
     /**
-     * Returns the direct dependencies of this library.
+     * Skips the library.
      */
-    @NonNull
-    List<? extends JavaLibrary> getDependencies();
+    void skip();
 }

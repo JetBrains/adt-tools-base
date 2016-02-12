@@ -171,5 +171,12 @@ public interface AndroidLibrary extends Library {
      *   in the consumer R.txt
      * - if the consumer is a separate test project, all the resources gets skipped from merging.
      */
+    @Override
+    boolean isProvided();
+
+    /**
+     * @deprecated Use {@link #isProvided()} instead
+     */
+    @Deprecated
     boolean isOptional();
 }

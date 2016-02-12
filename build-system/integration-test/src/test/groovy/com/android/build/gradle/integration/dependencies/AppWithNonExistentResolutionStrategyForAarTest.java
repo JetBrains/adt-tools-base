@@ -22,6 +22,8 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.SyncIssue;
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -45,6 +47,8 @@ public class AppWithNonExistentResolutionStrategyForAarTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
+        Files.write("include 'app', 'library'", project.getSettingsFile(), Charsets.UTF_8);
+
         TestFileUtils.appendToFile(project.getBuildFile(),
                 "\n" +
                 "subprojects {\n" +
@@ -58,9 +62,21 @@ public class AppWithNonExistentResolutionStrategyForAarTest {
                 "    releaseCompile project(\":library\")\n" +
                 "}\n" +
                 "\n" +
-                "configurations { _debugCompile }\n" +
+                "configurations {\n" +
+                "  _debugCompile\n" +
+                "  _debugApk\n" +
+                "}\n" +
                 "\n" +
                 "configurations._debugCompile {\n" +
+                "  resolutionStrategy {\n" +
+                "    eachDependency { DependencyResolveDetails details ->\n" +
+                "      if (details.requested.name == \"jdeferred-android-aar\") {\n" +
+                "        details.useVersion \"-1.-1.-1\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}\n" +
+                "configurations._debugApk {\n" +
                 "  resolutionStrategy {\n" +
                 "    eachDependency { DependencyResolveDetails details ->\n" +
                 "      if (details.requested.name == \"jdeferred-android-aar\") {\n" +

@@ -54,6 +54,7 @@ class MediumAndroidComponentModelTest {
     @Test
     @Ignore
     void "model query for 120 projects"() {
-        Map<String, AndroidProject> models = project.getAllModelsWithBenchmark("MediumAndroid", SYNC)
+        Map<String, AndroidProject> models = project.getAllModelsWithBenchmark(
+                AndroidProject.MODEL_LEVEL_LATEST, "MediumAndroid", SYNC)
     }
 }

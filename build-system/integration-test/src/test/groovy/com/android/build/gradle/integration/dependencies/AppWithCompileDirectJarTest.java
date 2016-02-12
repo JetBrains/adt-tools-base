@@ -24,8 +24,11 @@ import com.android.build.gradle.integration.common.utils.ModelHelper;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
+import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.Variant;
 import com.android.ide.common.process.ProcessException;
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
 import com.google.common.truth.Truth;
 
 import org.junit.AfterClass;
@@ -50,6 +53,8 @@ public class AppWithCompileDirectJarTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
+        Files.write("include 'app', 'jar'", project.getSettingsFile(), Charsets.UTF_8);
+
         TestFileUtils.appendToFile(project.getSubproject("app").getBuildFile(),
                 "\n" +
                 "dependencies {\n" +
@@ -74,19 +79,8 @@ public class AppWithCompileDirectJarTest {
     public void checkCompiledJarIsInTheModel() {
         Variant variant = ModelHelper.getVariant(models.get(":app").getVariants(), "debug");
 
-        Dependencies deps = variant.getMainArtifact().getDependencies();
-        Collection<String> projectDeps = deps.getProjects();
-
-        assertThat(projectDeps).named("project deps").hasSize(1);
-    }
-
-    @Test
-    public void checkPackageJarIsInTheAndroidTestDeps() {
-        // TODO
-    }
-
-    @Test
-    public void checkPackageJarIsIntheUnitTestDeps() {
-        // TODO
+        Dependencies deps = variant.getMainArtifact().getCompileDependencies();
+        Collection<JavaLibrary> javaLbis = deps.getJavaLibraries();
+        assertThat(javaLbis).named("java dependency count").hasSize(1);
     }
 }

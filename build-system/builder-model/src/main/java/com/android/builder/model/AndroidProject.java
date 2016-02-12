@@ -32,8 +32,8 @@ public interface AndroidProject {
     String PROPERTY_BUILD_MODEL_ONLY =  "android.injected.build.model.only";
     // Sent by Studio 1.1+
     String PROPERTY_BUILD_MODEL_ONLY_ADVANCED =  "android.injected.build.model.only.advanced";
-    // Sent by Studio 2.1+. The value of the prop is a monotonically increasing integer.
-    // 0 is Studio 1.0, 1 is studio 1.x/2.0, 2 is studio 2.1+ (until we need to rev it up).
+    // Sent by Studio 2.2+. The value of the prop is a monotonically increasing integer.
+    // see MODEL_LEVEL_* constants
     String PROPERTY_BUILD_MODEL_ONLY_VERSIONED =  "android.injected.build.model.only.versioned";
 
     // Sent by Studio 1.5+
@@ -67,6 +67,11 @@ public interface AndroidProject {
 
     int GENERATION_ORIGINAL = 1;
     int GENERATION_COMPONENT = 2;
+
+    int MODEL_LEVEL_0_ORIGNAL = 0 ; // studio 1.0, no support for SyncIssue
+    int MODEL_LEVEL_1_SYNC_ISSUE = 1; // studio 1.1+, with SyncIssue
+    int MODEL_LEVEL_2_DEP_GRAPH = 2; // studio 2.2+, with full dep graph
+    int MODEL_LEVEL_LATEST = MODEL_LEVEL_2_DEP_GRAPH;
 
     /**
      * Returns the model version. This is a string in the format X.Y.Z

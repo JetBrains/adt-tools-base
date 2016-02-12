@@ -21,6 +21,8 @@ import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.Immutable;
 import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.MavenCoordinates;
+import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableList;
 
 import java.io.File;
 import java.io.Serializable;
@@ -33,17 +35,19 @@ import java.util.List;
 @Immutable
 public class JavaLibraryImpl extends LibraryImpl implements JavaLibrary, Serializable {
     private final File jarFile;
-    private final boolean provided;
+    private final List<JavaLibrary> dependencies;
 
     public JavaLibraryImpl(
             @NonNull File jarFile,
             @Nullable String project,
-            @NonNull boolean provided,
+            @NonNull List<JavaLibrary> dependencies,
             @Nullable MavenCoordinates requestedCoordinates,
-            @Nullable MavenCoordinates resolvedCoordinates) {
-        super(project, requestedCoordinates, resolvedCoordinates);
+            @NonNull MavenCoordinates resolvedCoordinates,
+            boolean isSkipped,
+            boolean isProvided) {
+        super(project, requestedCoordinates, resolvedCoordinates, isSkipped, isProvided);
         this.jarFile = jarFile;
-        this.provided = provided;
+        this.dependencies = ImmutableList.copyOf(dependencies);
     }
 
     @NonNull
@@ -52,22 +56,39 @@ public class JavaLibraryImpl extends LibraryImpl implements JavaLibrary, Seriali
         return jarFile;
     }
 
-    @Override
-    public boolean isProvided() {
-        return provided;
-    }
-
     @NonNull
     @Override
     public List<? extends JavaLibrary> getDependencies() {
-        return Collections.emptyList();
+        return dependencies;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        JavaLibraryImpl that = (JavaLibraryImpl) o;
+        return Objects.equal(jarFile, that.jarFile) &&
+                Objects.equal(dependencies, that.dependencies);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(super.hashCode(), jarFile, dependencies);
     }
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("JavaLibraryImpl{");
-        sb.append("jarFile=").append(jarFile);
-        sb.append('}');
-        return sb.toString();
+        return Objects.toStringHelper(this)
+                .add("jarFile", jarFile)
+                .add("dependencies", dependencies)
+                .add("super", super.toString())
+                .toString();
     }
 }

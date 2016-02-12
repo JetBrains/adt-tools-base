@@ -22,6 +22,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.OutputFile;
 import com.android.build.gradle.AndroidConfig;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.api.ApkOutputFile;
 import com.android.build.gradle.internal.BuildTypeData;
 import com.android.build.gradle.internal.ExtraModelInfo;
@@ -31,6 +32,7 @@ import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.VariantManager;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.incremental.InstantRunAnchorTask;
 import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
@@ -102,6 +104,7 @@ public class ModelBuilder implements ToolingModelBuilder {
     private NativeLibraryFactory nativeLibFactory;
     private final boolean isLibrary;
     private final int generation;
+    private int modelLevel = AndroidProject.MODEL_LEVEL_0_ORIGNAL;
 
     public ModelBuilder(
             @NonNull AndroidBuilder androidBuilder,
@@ -136,6 +139,11 @@ public class ModelBuilder implements ToolingModelBuilder {
 
     @Override
     public Object buildAll(String modelName, Project project) {
+        Integer modelLevelInt = AndroidGradleOptions.buildModelOnlyVersion(project);
+        if (modelLevelInt != null) {
+            DependenciesImpl.setModelLevel(modelLevelInt);
+        }
+
         Collection<? extends SigningConfig> signingConfigs = config.getSigningConfigs();
 
         // Get the boot classpath. This will ensure the target is configured.
@@ -308,8 +316,15 @@ public class ModelBuilder implements ToolingModelBuilder {
             @NonNull VariantType variantType,
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
         SourceProviders sourceProviders = determineSourceProviders(variantData);
-        DependenciesImpl dependencies = DependenciesImpl.cloneDependencies(variantData,
-                androidBuilder);
+
+        VariantDependencies variantDependency = variantData.getVariantDependency();
+        GradleVariantConfiguration variantConfiguration = variantData.getVariantConfiguration();
+
+        DependenciesImpl compileDependencies = DependenciesImpl.cloneDependencies(
+                variantDependency.getCompileDependencies(), variantConfiguration, androidBuilder);
+
+        DependenciesImpl packageDependencies = DependenciesImpl.cloneDependencies(
+                variantDependency.getPackageDependencies(), variantConfiguration, androidBuilder);
 
         List<File> extraGeneratedSourceFolders = variantData.getExtraGeneratedSourceFolders();
         return new JavaArtifactImpl(
@@ -324,7 +339,8 @@ public class ModelBuilder implements ToolingModelBuilder {
                         variantData.getScope().getJavaOutputDir(),
                 variantData.getJavaResourcesForUnitTesting(),
                 taskManager.getGlobalScope().getMockableAndroidJarFile(),
-                dependencies,
+                compileDependencies,
+                packageDependencies,
                 sourceProviders.variantSourceProvider,
                 sourceProviders.multiFlavorSourceProvider);
     }
@@ -427,6 +443,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                 InstantRunWrapperTask.ConfigAction.getBuildInfoFile(scope),
                 variantConfiguration.isInstantRunSupported());
 
+        VariantDependencies variantDependency = variantData.getVariantDependency();
         return new AndroidArtifactImpl(
                 name,
                 outputs,
@@ -444,7 +461,10 @@ public class ModelBuilder implements ToolingModelBuilder {
                         variantData.javacTask.getDestinationDir() :
                         scope.getJavaOutputDir(),
                 scope.getVariantData().getJavaResourcesForUnitTesting(),
-                DependenciesImpl.cloneDependencies(variantData, androidBuilder),
+                DependenciesImpl.cloneDependencies(variantDependency.getCompileDependencies(),
+                        variantConfiguration, androidBuilder),
+                DependenciesImpl.cloneDependencies(variantDependency.getPackageDependencies(),
+                        variantConfiguration, androidBuilder),
                 sourceProviders.variantSourceProvider,
                 sourceProviders.multiFlavorSourceProvider,
                 variantConfiguration.getSupportedAbis(),
