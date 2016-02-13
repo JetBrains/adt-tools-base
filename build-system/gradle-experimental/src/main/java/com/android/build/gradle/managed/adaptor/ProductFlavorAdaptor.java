@@ -18,6 +18,7 @@ package com.android.build.gradle.managed.adaptor;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.dsl.CoreJackOptions;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
 import com.android.build.gradle.managed.ProductFlavor;
@@ -170,8 +171,9 @@ public class ProductFlavorAdaptor extends BaseConfigAdaptor implements CoreProdu
         return new NdkOptionsAdaptor(productFlavor.getNdk());
     }
 
+    @NonNull
     @Override
-    public Boolean getUseJack() {
-        return productFlavor.getUseJack();
+    public CoreJackOptions getJackOptions() {
+        return new JackOptionsAdaptor(productFlavor.getJackOptions());
     }
 }

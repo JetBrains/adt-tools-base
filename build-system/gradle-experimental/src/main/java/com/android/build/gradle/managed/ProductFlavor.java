@@ -18,6 +18,7 @@ package com.android.build.gradle.managed;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.dsl.*;
 import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.DimensionAware;
@@ -184,8 +185,10 @@ public interface ProductFlavor extends DimensionAware, BaseConfig {
     SigningConfig getSigningConfig();
     void setSigningConfig(SigningConfig signingConfig);
 
-    Boolean getUseJack();
-    void setUseJack(Boolean useJack);
+    /**
+     * Returns the Jack options for this product flavor.
+     */
+    JackOptions getJackOptions();
 
     NdkOptions getNdk();
 

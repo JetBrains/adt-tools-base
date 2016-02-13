@@ -101,8 +101,10 @@ public interface BuildType extends BaseConfig {
     SigningConfig getSigningConfig();
     void setSigningConfig(SigningConfig signingConfig);
 
-    Boolean getUseJack();
-    void setUseJack(Boolean useJack);
+    /**
+     * Returns the Jack options for this build type.
+     */
+    JackOptions getJackOptions();
 
     boolean getShrinkResources();
     void setShrinkResources(boolean shrinkResources);

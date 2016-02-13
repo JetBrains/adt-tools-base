@@ -27,6 +27,8 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
@@ -35,9 +37,25 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
  * Test Jack integration.
  */
 @CompileStatic
+@RunWith(Parameterized.class)
 class JackTest {
-    private final static List<String> JACK_OPTIONS = ImmutableList.of(
+    @Parameterized.Parameters(name = "jackInProcess={0}")
+    public static Collection<Object[]> data() {
+        return [
+                [true] as Object[],
+                [false] as Object[],
+        ]
+    }
+
+    public boolean jackInProcess;
+
+    public JackTest(boolean jackInProcess) {
+        this.jackInProcess = jackInProcess
+    }
+
+    private final List<String> JACK_OPTIONS = ImmutableList.of(
             "-Pcom.android.build.gradle.integratonTest.useJack=true",
+            "-Pcom.android.build.gradle.integratonTest.jackInProcess=" + jackInProcess,
             "-PCUSTOM_BUILDTOOLS=" + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION)
 
     @ClassRule

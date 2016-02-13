@@ -19,6 +19,7 @@ package com.android.build.gradle.managed.adaptor;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
+import com.android.build.gradle.internal.dsl.CoreJackOptions;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.managed.BuildType;
 import com.android.builder.model.SigningConfig;
@@ -99,8 +100,9 @@ public class BuildTypeAdaptor extends BaseConfigAdaptor implements CoreBuildType
     }
 
     @Override
-    public Boolean getUseJack() {
-        return buildType.getUseJack();
+    @NonNull
+    public CoreJackOptions getJackOptions() {
+        return new JackOptionsAdaptor(buildType.getJackOptions());
     }
 
     @Override

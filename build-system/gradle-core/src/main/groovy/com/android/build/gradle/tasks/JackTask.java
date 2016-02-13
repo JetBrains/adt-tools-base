@@ -34,6 +34,10 @@ import com.android.builder.tasks.JobContext;
 import com.android.builder.tasks.Task;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessException;
+import com.android.jack.api.ConfigNotSupportedException;
+import com.android.jack.api.v01.CompilationException;
+import com.android.jack.api.v01.ConfigurationException;
+import com.android.jack.api.v01.UnrecoverableException;
 import com.android.repository.Revision;
 import com.android.sdklib.BuildToolInfo;
 import com.google.common.base.Charsets;
@@ -94,6 +98,7 @@ public class JackTask extends AbstractAndroidCompile
     private String javaMaxHeapSize;
 
     private File incrementalDir;
+    private boolean jackInProcess;
 
     @Override
     @TaskAction
@@ -105,6 +110,16 @@ public class JackTask extends AbstractAndroidCompile
                 try {
                     JackTask.this.doMinification();
                 } catch (ProcessException e) {
+                    throw new IOException(e);
+                } catch (ConfigurationException e) {
+                    throw new IOException(e);
+                } catch (UnrecoverableException e) {
+                    throw new IOException(e);
+                } catch (CompilationException e) {
+                    throw new IOException(e);
+                } catch (ConfigNotSupportedException e) {
+                    throw new IOException(e);
+                } catch (ClassNotFoundException e) {
                     throw new IOException(e);
                 }
             }
@@ -125,9 +140,10 @@ public class JackTask extends AbstractAndroidCompile
     }
 
     private void doMinification()
-            throws ProcessException, IOException {
-
-        if (System.getenv("USE_JACK_API") != null) {
+            throws ProcessException, IOException, ConfigNotSupportedException,
+            ClassNotFoundException, CompilationException, ConfigurationException,
+            UnrecoverableException {
+        if (isJackInProcess()) {
             androidBuilder.convertByteCodeUsingJackApis(
                     getDestinationDir(),
                     getJackFile(),
@@ -329,6 +345,14 @@ public class JackTask extends AbstractAndroidCompile
         this.incrementalDir = incrementalDir;
     }
 
+    public boolean isJackInProcess() {
+        return jackInProcess;
+    }
+
+    public void setJackInProcess(boolean jackInProcess) {
+        this.jackInProcess = jackInProcess;
+    }
+
     @Input
     @Optional
     public File getJavaResourcesFolder() {
@@ -400,6 +424,7 @@ public class JackTask extends AbstractAndroidCompile
             jackTask.setMultiDexEnabled(config.isMultiDexEnabled());
             jackTask.setMinSdkVersion(config.getMinSdkVersion().getApiLevel());
             jackTask.incrementalDir  = scope.getIncrementalDir(getName());
+            jackTask.setJackInProcess(config.isJackInProcess());
 
             // if the tested variant is an app, add its classpath. For the libraries,
             // it's done automatically since the classpath includes the library output as a normal
