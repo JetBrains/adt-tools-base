@@ -198,7 +198,17 @@ public class BootstrapApplication extends Application {
                 Log.i(LOG_TAG, "Bootstrapping class loader with dex list " + dexList);
             }
 
-            String nativeLibraryPath = FileManager.getNativeLibraryFolder().getPath();
+            File nativeLibraryFolder = FileManager.getNativeLibraryFolder();
+            if (!nativeLibraryFolder.exists()) {
+                boolean mkdirs = nativeLibraryFolder.mkdirs();
+                if (!mkdirs) {
+                    if (Log.isLoggable(LOG_TAG, Log.WARN)) {
+                        Log.w(LOG_TAG, "Couldn't create native library folder "
+                                + nativeLibraryFolder);
+                    }
+                }
+            }
+            String nativeLibraryPath = nativeLibraryFolder.getPath();
             ClassLoader classLoader = BootstrapApplication.class.getClassLoader();
             IncrementalClassLoader.inject(
                     classLoader,

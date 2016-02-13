@@ -572,6 +572,32 @@ public class InstantRunClient {
     }
 
     /**
+     * Stops the given app (via adb).
+     *
+     * @param device              the device
+     * @param sendChangeBroadcast whether to also send a package change broadcast
+     * @throws InstantRunPushFailedException if there's a problem
+     */
+    public void stopApp(@NonNull IDevice device, boolean sendChangeBroadcast) throws InstantRunPushFailedException {
+        try {
+            runCommand(device, "am force-stop " + mPackageName);
+        } catch (Throwable t) {
+            throw new InstantRunPushFailedException("Exception while stopping app: " + t.toString());
+        }
+        if (sendChangeBroadcast) {
+            try {
+                // We think this might necessary to force the system not hold on to any data from the previous
+                // version of the process, such as the scenario described in
+                // https://code.google.com/p/android/issues/detail?id=200895#c9
+                runCommand(device, "am broadcast -a android.intent.action.PACKAGE_CHANGED -p " + mPackageName);
+            }
+            catch (Throwable ignore) {
+                // We can live with this one not succeeding; may require root etc
+            }
+        }
+    }
+
+    /**
      * Install dex and resource files on the given device (using adb to push files
      * to the device when the app isn't running so we can't send it patches via
      * the socket connection.)
