@@ -59,6 +59,18 @@ import dalvik.system.DexClassLoader;
  * when provided
  */
 public class Server {
+
+    /**
+     * If true, app restarts itself after receiving coldswap patches. If false,
+     * it will just wait for the client to kill it remotely and restart via activity manager.
+     * If we restart locally, there could be problems around: a) getting all the right intent
+     * data to the restarted activity, and b) sometimes, the activity state is saved by the
+     * system, and it could lead to conflicts with the new version of the app.
+     * So this is currently turned off. See
+     * https://code.google.com/p/android/issues/detail?id=200895#c9
+     */
+    private static final boolean RESTART_LOCALLY = false;
+
     /**
      * Temporary debugging: have the server emit a message to the log every 30 seconds to
      * indicate whether it's still alive
@@ -567,10 +579,16 @@ public class Server {
             return;
         }
 
-        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-            Log.i(LOG_TAG, "Performing full app restart");
-        }
+        if (RESTART_LOCALLY) {
+            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                Log.i(LOG_TAG, "Performing full app restart");
+            }
 
-        Restarter.restartApp(mApplication, activities, toast);
+            Restarter.restartApp(mApplication, activities, toast);
+        } else {
+            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                Log.i(LOG_TAG, "Waiting for app to be killed and restarted by the IDE...");
+            }
+        }
     }
 }
