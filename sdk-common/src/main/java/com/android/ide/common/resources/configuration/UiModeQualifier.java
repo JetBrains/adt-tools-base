@@ -16,6 +16,8 @@
 
 package com.android.ide.common.resources.configuration;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.resources.ResourceEnum;
 import com.android.resources.UiMode;
 
@@ -87,18 +89,19 @@ public final class UiModeQualifier extends EnumBasedResourceQualifier {
     }
 
     @Override
-    public boolean isBetterMatchThan(ResourceQualifier compareTo, ResourceQualifier reference) {
+    public boolean isBetterMatchThan(@Nullable ResourceQualifier compareTo,
+            @NonNull ResourceQualifier reference) {
         if (compareTo == null) {
             return true;
         }
 
-        UiModeQualifier compareQualifier = (UiModeQualifier)compareTo;
-        UiModeQualifier referenceQualifier = (UiModeQualifier)reference;
+        UiModeQualifier compareQualifier = (UiModeQualifier) compareTo;
+        UiModeQualifier referenceQualifier = (UiModeQualifier) reference;
 
         if (compareQualifier.getValue() == referenceQualifier.getValue()) {
             // what we have is already the best possible match (exact match)
             return false;
-        } else  if (mValue == referenceQualifier.mValue) {
+        } else if (mValue == referenceQualifier.mValue) {
             // got new exact value, this is the best!
             return true;
         } else if (mValue == UiMode.NORMAL) {

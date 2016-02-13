@@ -16,6 +16,9 @@
 
 package com.android.ide.common.resources.configuration;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,7 +27,7 @@ import java.util.regex.Pattern;
  */
 public final class ScreenHeightQualifier extends ResourceQualifier {
     /** Default screen size value. This means the property is not set */
-    static final int DEFAULT_SIZE = -1;
+    private static final int DEFAULT_SIZE = -1;
 
     private static final Pattern sParsePattern = Pattern.compile("^h(\\d+)dp$");//$NON-NLS-1$
     private static final String sPrintPattern = "h%1$ddp";
@@ -94,7 +97,7 @@ public final class ScreenHeightQualifier extends ResourceQualifier {
             qualifier.mValue = dp;
             return qualifier;
 
-        } catch (NumberFormatException e) {
+        } catch (NumberFormatException ignored) {
         }
 
         return null;
@@ -103,21 +106,20 @@ public final class ScreenHeightQualifier extends ResourceQualifier {
     @Override
     public boolean isMatchFor(ResourceQualifier qualifier) {
         // this is the match only of the current dp value is lower or equal to the
-        if (qualifier instanceof ScreenHeightQualifier) {
-            return mValue <= ((ScreenHeightQualifier) qualifier).mValue;
-        }
+        return qualifier instanceof ScreenHeightQualifier
+                && mValue <= ((ScreenHeightQualifier) qualifier).mValue;
 
-        return false;
     }
 
     @Override
-    public boolean isBetterMatchThan(ResourceQualifier compareTo, ResourceQualifier reference) {
+    public boolean isBetterMatchThan(@Nullable ResourceQualifier compareTo,
+            @NonNull ResourceQualifier reference) {
         if (compareTo == null) {
             return true;
         }
 
-        ScreenHeightQualifier compareQ = (ScreenHeightQualifier)compareTo;
-        ScreenHeightQualifier referenceQ = (ScreenHeightQualifier)reference;
+        ScreenHeightQualifier compareQ = (ScreenHeightQualifier) compareTo;
+        ScreenHeightQualifier referenceQ = (ScreenHeightQualifier) reference;
 
         if (compareQ.mValue == referenceQ.mValue) {
             // what we have is already the best possible match (exact match)
@@ -173,9 +175,6 @@ public final class ScreenHeightQualifier extends ResourceQualifier {
             return false;
         }
         ScreenHeightQualifier other = (ScreenHeightQualifier) obj;
-        if (mValue != other.mValue) {
-            return false;
-        }
-        return true;
+        return mValue == other.mValue;
     }
 }
