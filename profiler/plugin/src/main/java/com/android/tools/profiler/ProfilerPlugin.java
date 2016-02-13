@@ -17,17 +17,30 @@
 package com.android.tools.profiler;
 
 import com.android.annotations.NonNull;
-import com.android.build.api.transform.*;
+import com.android.build.api.transform.DirectoryInput;
+import com.android.build.api.transform.Format;
+import com.android.build.api.transform.QualifiedContent;
+import com.android.build.api.transform.Status;
+import com.android.build.api.transform.Transform;
+import com.android.build.api.transform.TransformInput;
+import com.android.build.api.transform.TransformInvocation;
 import com.android.utils.FileUtils;
-
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
+
+import org.gradle.api.DefaultTask;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.file.ConfigurableFileCollection;
+import org.gradle.api.tasks.OutputFile;
+import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -40,28 +53,67 @@ import java.util.Set;
 public class ProfilerPlugin implements Plugin<Project> {
 
   private static final String PROPERTY_ENABLED = "android.profiler.enabled";
-  private static final String PROPERTY_SUPPORT_PATH = "android.profiler.lib";
 
   @NonNull
   private static File toOutputFile(File outputDir, File inputDir, File inputFile) {
     return new File(outputDir, FileUtils.relativePath(inputFile, inputDir));
   }
 
+  static class ExtractSupportLibJarTask extends DefaultTask {
+
+    private File outputFile;
+
+
+    // This empty constructor is needed because Gradle will look at the declared constructors
+    // to create objects dynamically. Yeap.
+    public ExtractSupportLibJarTask() {
+    }
+
+    @OutputFile
+    public File getOutputFile() {
+      return outputFile;
+    }
+
+    public void setOutputFile(File file) {
+      this.outputFile = file;
+    }
+
+    @TaskAction
+    public void extract() throws IOException {
+      InputStream jar = ProfilerPlugin.class.getResourceAsStream("/profilers-support-lib.jar");
+      if (jar == null) {
+        throw new RuntimeException("Couldn't find profiler support library");
+      }
+      FileOutputStream fileOutputStream = new FileOutputStream(getOutputFile());
+      try {
+        ByteStreams.copy(jar, fileOutputStream);
+      } finally {
+        try {
+          jar.close();
+        } finally {
+          fileOutputStream.close();
+        }
+      }
+    }
+  }
+
   @Override
   public void apply(final Project project) {
+
+
     Map<String, ?> properties = project.getProperties();
-    Boolean isEnabled = Boolean.parseBoolean((String)properties.get(PROPERTY_ENABLED));
-    String supportJarPath = (String)properties.get(PROPERTY_SUPPORT_PATH);
+    final boolean isEnabled = Boolean.parseBoolean((String) properties.get(PROPERTY_ENABLED));
 
-    File supportJar = (supportJarPath != null) ? new File(supportJarPath) : null;
-    if (supportJar != null && supportJar.exists()) {
-      project.getDependencies().add("compile", project.files(supportJar));
-    }
-    else {
-      isEnabled = false;
-    }
+    if (isEnabled) {
+      String path = "build/profilers-gen/profilers-support-lib.jar";
 
-    final Boolean shouldInstrument = isEnabled;
+      ConfigurableFileCollection files = project.files(path);
+      ExtractSupportLibJarTask task = project.getTasks()
+        .create("unpackProfilersLib", ExtractSupportLibJarTask.class);
+      task.setOutputFile(project.file(path));
+      files.builtBy(task);
+      project.getDependencies().add("compile", files);
+    }
 
     // TODO: The following line won't work for the experimental plugin. For that we may need to
     // register a rule that will get executed at the right time. Investigate this before
@@ -142,7 +194,7 @@ public class ProfilerPlugin implements Plugin<Project> {
           // instrumenting an Android app works. Later, we'll replace this with logic that
           // inserts a profiler support library as a dependency into the user's app as
           // well as instrument it.
-          if (shouldInstrument) {
+          if (isEnabled) {
             ApplicationInstrumentor.instrument(inputFile, outputFile);
           }
           else {
