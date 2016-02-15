@@ -40,7 +40,7 @@ public class ShrinkerLogger {
         mWarningsEmitted = Sets.newHashSet();
     }
 
-    public synchronized void invalidClassReference(String from, String to) {
+    synchronized void invalidClassReference(String from, String to) {
         if (from.contains(".")) {
             from = AsmUtils.getClassName(from);
         }
@@ -59,7 +59,7 @@ public class ShrinkerLogger {
         mLogger.warn("{} references unknown class: {}", from, to);
     }
 
-    public synchronized void invalidMemberReference(String from, String to) {
+    synchronized void invalidMemberReference(String from, String to) {
         if (mWarningsEmitted.contains(Pair.of(from, to))) {
             return;
         }

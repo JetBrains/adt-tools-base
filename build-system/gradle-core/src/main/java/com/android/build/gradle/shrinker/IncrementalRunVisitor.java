@@ -211,7 +211,8 @@ class IncrementalRunVisitor<T> extends DependencyFinderVisitor<T> {
 
     @Override
     protected void handleDependency(T source, T target, DependencyType type) {
-        if (type == DependencyType.REQUIRED_CODE_REFERENCE) {
+        if (type == DependencyType.REQUIRED_CODE_REFERENCE
+                || type == DependencyType.REQUIRED_CODE_REFERENCE_REFLECTION) {
             mGraph.addDependency(source, target, type);
         }
     }
