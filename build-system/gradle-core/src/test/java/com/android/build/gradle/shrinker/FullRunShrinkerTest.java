@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.gradle.shrinker.TestClasses.InnerClasses;
 import com.android.build.gradle.shrinker.TestClasses.Interfaces;
+import com.android.build.gradle.shrinker.TestClasses.Reflection;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
@@ -48,7 +49,7 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
     }
 
     @NonNull
-    protected ShrinkerGraph<String> buildGraph() throws IOException {
+    private ShrinkerGraph<String> buildGraph() throws IOException {
         return JavaSerializationShrinkerGraph.empty(mIncrementalDir);
     }
 
@@ -1217,7 +1218,7 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
     @Test
     public void reflection_instanceOf() throws Exception {
         // Given:
-        Files.write(TestClasses.Reflection.main_instanceOf(), new File(mTestPackageDir, "Main.class"));
+        Files.write(Reflection.main_instanceOf(), new File(mTestPackageDir, "Main.class"));
         Files.write(TestClasses.emptyClass("Foo"), new File(mTestPackageDir, "Foo.class"));
 
         // When:
@@ -1229,10 +1230,101 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
     }
 
     @Test
+    public void reflection_classForName() throws Exception {
+        // Given:
+        Files.write(
+                Reflection.main_classForName(),
+                new File(mTestPackageDir, "Main.class"));
+        Files.write(
+                Reflection.classWithFields(),
+                new File(mTestPackageDir, "ClassWithFields.class"));
+
+        // When:
+        run("Main", "main:()V");
+
+        // Then:
+        assertMembersLeft("Main", "main:()V");
+        assertMembersLeft("ClassWithFields");
+    }
+
+    @Test
+    public void reflection_classForName_dynamic() throws Exception {
+        // Given:
+        Files.write(
+                Reflection.main_classForName_dynamic(),
+                new File(mTestPackageDir, "Main.class"));
+        Files.write(
+                Reflection.classWithFields(),
+                new File(mTestPackageDir, "ClassWithFields.class"));
+
+        // When:
+        run("Main", "main:()V");
+
+        // Then:
+        assertMembersLeft("Main", "main:()V");
+        assertClassSkipped("ClassWithFields");
+    }
+
+    @Test
+    public void reflection_atomicIntegerFieldUpdater() throws Exception {
+        // Given:
+        Files.write(
+                Reflection.main_atomicIntegerFieldUpdater(),
+                new File(mTestPackageDir, "Main.class"));
+        Files.write(
+                Reflection.classWithFields(),
+                new File(mTestPackageDir, "ClassWithFields.class"));
+
+        // When:
+        run("Main", "main:()V");
+
+        // Then:
+        assertMembersLeft("Main", "main:()V");
+        assertMembersLeft("ClassWithFields", "intField:I");
+    }
+
+    @Test
+    public void reflection_atomicLongFieldUpdater() throws Exception {
+        // Given:
+        Files.write(
+                Reflection.main_atomicLongFieldUpdater(),
+                new File(mTestPackageDir, "Main.class"));
+        Files.write(
+                Reflection.classWithFields(),
+                new File(mTestPackageDir, "ClassWithFields.class"));
+
+        // When:
+        run("Main", "main:()V");
+
+        // Then:
+        assertMembersLeft("Main", "main:()V");
+        assertMembersLeft("ClassWithFields", "longField:J");
+    }
+
+    @Test
+    public void reflection_atomicReferenceFieldUpdater() throws Exception {
+        // Given:
+        Files.write(
+                Reflection.main_atomicReferenceFieldUpdater(),
+                new File(mTestPackageDir, "Main.class"));
+        Files.write(
+                Reflection.classWithFields(),
+                new File(mTestPackageDir, "ClassWithFields.class"));
+
+        // When:
+        run("Main", "main:()V");
+
+        // Then:
+        assertMembersLeft("Main", "main:()V");
+        assertMembersLeft("ClassWithFields", "stringField:Ljava/lang/String;");
+    }
+
+
+    @Test
     public void reflection_classLiteral() throws Exception {
         // Given:
         Files.write(
-                TestClasses.Reflection.main_classLiteral(), new File(mTestPackageDir, "Main.class"));
+                Reflection.main_classLiteral(), new File(mTestPackageDir, "Main.class"));
         Files.write(TestClasses.emptyClass("Foo"), new File(mTestPackageDir, "Foo.class"));
 
         // When:

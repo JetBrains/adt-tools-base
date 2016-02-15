@@ -36,6 +36,12 @@ public enum DependencyType {
     /** Target is referenced from an opcode. */
     REQUIRED_CODE_REFERENCE,
 
+    /**
+     *  Target is referenced by name in reflection code. Same as above, but doesn't trigger
+     *  warnings.
+     */
+    REQUIRED_CODE_REFERENCE_REFLECTION,
+
     /** Target type is referenced in class declaration. */
     REQUIRED_CLASS_STRUCTURE,
 
