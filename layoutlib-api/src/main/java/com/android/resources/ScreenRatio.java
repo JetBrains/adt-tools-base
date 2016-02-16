@@ -64,17 +64,8 @@ public enum ScreenRatio implements ResourceEnum {
         return mLongDisplayValue;
     }
 
-    public static int getIndex(ScreenRatio orientation) {
-        int i = 0;
-        for (ScreenRatio orient : values()) {
-            if (orient == orientation) {
-                return i;
-            }
-
-            i++;
-        }
-
-        return -1;
+    public static int getIndex(ScreenRatio value) {
+        return value == null ? -1 : value.ordinal();
     }
 
     public static ScreenRatio getByIndex(int index) {
