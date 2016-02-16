@@ -66,16 +66,7 @@ public enum TouchScreen implements ResourceEnum {
     }
 
     public static int getIndex(TouchScreen touch) {
-        int i = 0;
-        for (TouchScreen t : values()) {
-            if (t == touch) {
-                return i;
-            }
-
-            i++;
-        }
-
-        return -1;
+        return touch == null ? -1 : touch.ordinal();
     }
 
     public static TouchScreen getByIndex(int index) {

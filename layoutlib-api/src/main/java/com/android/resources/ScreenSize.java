@@ -68,17 +68,8 @@ public enum ScreenSize implements ResourceEnum {
         return mLongDisplayValue;
     }
 
-    public static int getIndex(@Nullable ScreenSize orientation) {
-        int i = 0;
-        for (ScreenSize orient : values()) {
-            if (orient == orientation) {
-                return i;
-            }
-
-            i++;
-        }
-
-        return -1;
+    public static int getIndex(@Nullable ScreenSize value) {
+        return value == null ? -1 : value.ordinal();
     }
 
     public static ScreenSize getByIndex(int index) {
