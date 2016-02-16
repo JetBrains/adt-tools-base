@@ -21,6 +21,7 @@ import com.android.builder.internal.packaging.zip.utils.CachedSupplier;
 import com.android.builder.internal.packaging.zip.utils.MsDosDateTimeUtils;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.ByteSource;
 import com.google.common.util.concurrent.Futures;
@@ -28,6 +29,8 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -391,7 +394,10 @@ class CentralDirectory {
     private byte[] computeByteRepresentation() throws IOException {
         ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
 
-        for (StoredEntry entry : mEntries.values()) {
+        List<StoredEntry> sorted = Lists.newArrayList(mEntries.values());
+        Collections.sort(sorted, StoredEntry.COMPARE_BY_NAME);
+
+        for (StoredEntry entry : sorted) {
             CentralDirectoryHeader cdh = entry.getCentralDirectoryHeader();
 
             CentralDirectoryHeaderCompressInfo compressInfo = cdh.getCompressionInfoWithWait();
