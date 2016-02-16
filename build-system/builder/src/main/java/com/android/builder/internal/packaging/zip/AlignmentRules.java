@@ -60,10 +60,11 @@ public class AlignmentRules {
      * Finds the alignment of a file with a certain path.
      *
      * @param path the path
+     * @param compressed is the file compressed?
      * @return the alignment or {@code 1} if there are no rules for this file, never returns less
      * than {@code 1}
      */
-    public int alignment(@NonNull String path) {
+    public int alignment(@NonNull String path, boolean compressed) {
         /*
          * Remove the trailing separator, if there is one.
          */
@@ -88,6 +89,10 @@ public class AlignmentRules {
         Verify.verify(path.indexOf(ZFile.SEPARATOR) == -1);
         for (AlignmentRule rule : mRules) {
             if (rule.getPattern().matcher(path).matches()) {
+                if (compressed && !rule.getApplyToCompressed()) {
+                    continue;
+                }
+
                 int alignment = rule.getAlignment();
                 Verify.verify(alignment >= 1);
                 return alignment;

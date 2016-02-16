@@ -32,13 +32,14 @@ public class ZFiles {
     /**
      * PNGs are aligned at 4-byte boundaries and identified as files ending with {@code .png}.
      */
-    private static final AlignmentRule PNG_RULE = new AlignmentRule(Pattern.compile(".*\\.png"), 4);
+    private static final AlignmentRule PNG_RULE =
+            new AlignmentRule(Pattern.compile(".*\\.png"), 4, false);
 
     /**
      * SOs are aligned at 4096-byte boundaries and identified as files ending with {@code .so}.
      */
     private static final AlignmentRule SO_RULE = new AlignmentRule(Pattern.compile(".*\\.so"),
-            4096);
+            4096, false);
 
     /**
      * Creates a new zip file configured as an apk, based on a given file.

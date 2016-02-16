@@ -136,7 +136,7 @@ public abstract class ZipToolsTestCase {
         ZFile zf = new ZFile(zfile);
 
         if (align) {
-            zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*"), 500));
+            zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*"), 500, false));
         }
 
         zf.add("root", new FileInputStream(rsrcFile("root")));

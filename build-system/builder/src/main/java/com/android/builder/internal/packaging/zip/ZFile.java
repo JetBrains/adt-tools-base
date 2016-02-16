@@ -1389,7 +1389,12 @@ public class ZFile implements Closeable {
         deleteDirectoryAndEocd();
         long size = entry.getInFileSize();
         int localHeaderSize = entry.getLocalHeaderSize();
-        int alignment = mAlignmentRules.alignment(entry.getCentralDirectoryHeader().getName());
+        boolean isCompressed =
+                entry.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod() !=
+                CompressionMethod.STORE;
+        int alignment = mAlignmentRules.alignment(entry.getCentralDirectoryHeader().getName(),
+                isCompressed);
+
         long newOffset = mMap.locateFree(size, localHeaderSize, alignment);
         long newEnd = newOffset + entry.getInFileSize();
         if (newEnd > mMap.size()) {
@@ -1563,8 +1568,11 @@ public class ZFile implements Closeable {
      * file
      */
     boolean realign(@NonNull StoredEntry entry) throws IOException {
-        int expectedAlignment = mAlignmentRules.alignment(
-                entry.getCentralDirectoryHeader().getName());
+        CentralDirectoryHeader cdh = entry.getCentralDirectoryHeader();
+        CompressionMethod compMethod = cdh.getCompressionInfoWithWait().getMethod();
+
+        int expectedAlignment = mAlignmentRules.alignment(cdh.getName(),
+                compMethod != CompressionMethod.STORE);
 
         FileUseMapEntry<StoredEntry> mapEntry = mEntries.get(
                 entry.getCentralDirectoryHeader().getName());
@@ -1609,9 +1617,9 @@ public class ZFile implements Closeable {
 
         ProcessedAndRawByteSources source = entry.getSource();
 
-        CentralDirectoryHeader cdh;
+        CentralDirectoryHeader clonedCdh;
         try {
-            cdh = entry.getCentralDirectoryHeader().clone();
+            clonedCdh = entry.getCentralDirectoryHeader().clone();
         } catch (CloneNotSupportedException e) {
             Verify.verify(false);
             return false;
@@ -1623,8 +1631,8 @@ public class ZFile implements Closeable {
          * deferred CRC bit as we don't need the extra stuff after the file. It takes
          * space and is totally useless and we may need the extra space to realign the entry...
          */
-        cdh.setOffset(-1);
-        cdh.resetDeferredCrc();
+        clonedCdh.setOffset(-1);
+        clonedCdh.resetDeferredCrc();
 
         CloseableByteSource rawContents = mTracker.fromSource(source.getRawByteSource());
         CloseableByteSource processedContents;
@@ -1641,7 +1649,7 @@ public class ZFile implements Closeable {
         /*
          * Add the new file. This will replace the existing one.
          */
-        StoredEntry newEntry = new StoredEntry(cdh, this, newSource);
+        StoredEntry newEntry = new StoredEntry(clonedCdh, this, newSource);
         add(newEntry);
         return true;
     }
