@@ -30,6 +30,9 @@ public enum InstantRunVerifierStatus {
     // InstantRun disabled on element like a method, class or package.
     INSTANT_RUN_DISABLED,
 
+    // Any inability to run the verifier on a file will be tagged as such
+    INSTANT_RUN_FAILURE,
+
     // A new class was added.
     CLASS_ADDED,
 

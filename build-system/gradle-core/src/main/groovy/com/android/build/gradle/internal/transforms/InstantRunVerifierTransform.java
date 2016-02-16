@@ -20,8 +20,6 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
-import com.android.build.api.transform.SecondaryInput;
-import com.android.build.api.transform.Context;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.JarInput;
 import com.android.build.api.transform.QualifiedContent;
@@ -30,7 +28,6 @@ import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformInvocation;
-import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
@@ -110,7 +107,7 @@ public class InstantRunVerifierTransform extends Transform {
     }
 
     @Override
-    public void transform(TransformInvocation invocation)
+    public void transform(@NonNull TransformInvocation invocation)
             throws IOException, TransformException, InterruptedException {
 
         if (invocation.getReferencedInputs().isEmpty()) {
@@ -165,12 +162,7 @@ public class InstantRunVerifierTransform extends Transform {
                     if (file.isDirectory()) {
                         continue;
                     }
-                    try {
-                        copyFile(file, getOutputFile(inputDir, file, outputDir));
-                    } catch (IOException e) {
-                        throw new RuntimeException("Exception while copying "
-                                + file.getAbsolutePath());
-                    }
+                    copyFile(file, getOutputFile(inputDir, file, outputDir));
                 }
                 continue;
             }
@@ -197,13 +189,19 @@ public class InstantRunVerifierTransform extends Transform {
                         // a new version of the class has been compiled, we should compare
                         // it with the one saved during the last iteration on the file, but only
                         // if we have not failed any verification so far.
-                        if (verificationResult == InstantRunVerifierStatus.COMPATIBLE
-                                && lastIterationFile.exists()) {
-                            verificationResult = runVerifier(inputFile.getName(),
-                                    new InstantRunVerifier.ClassBytesFileProvider(lastIterationFile),
-                                    new InstantRunVerifier.ClassBytesFileProvider(inputFile));
-                            LOGGER.verbose("%1$s : verifier result : %2$s",
-                                    inputFile.getName(), verificationResult);
+                        if (verificationResult == InstantRunVerifierStatus.COMPATIBLE) {
+                            if (lastIterationFile.exists()) {
+                                verificationResult = runVerifier(inputFile.getName(),
+                                        new InstantRunVerifier.ClassBytesFileProvider(
+                                                lastIterationFile),
+                                        new InstantRunVerifier.ClassBytesFileProvider(inputFile));
+                                LOGGER.verbose("%1$s : verifier result : %2$s",
+                                        inputFile.getName(), verificationResult);
+                            } else {
+                                verificationResult = InstantRunVerifierStatus.INSTANT_RUN_FAILURE;
+                                LOGGER.verbose("Changed file %1$s not found in verifier backup",
+                                        inputFile.getAbsolutePath());
+                            }
                         }
 
                         // always copy the new file over to our private backup directory for the
@@ -326,9 +324,15 @@ public class InstantRunVerifierTransform extends Transform {
     }
 
     @VisibleForTesting
-    protected void copyFile(File inputFile, File outputFile) throws IOException {
-        Files.createParentDirs(outputFile);
-        Files.copy(inputFile, outputFile);
+    protected void copyFile(File inputFile, File outputFile) {
+        try {
+            Files.createParentDirs(outputFile);
+            Files.copy(inputFile, outputFile);
+        } catch(IOException e) {
+            LOGGER.error(e, "Cannot copy $1$s to back up folder, build will continue but "
+                    + "next time this file is modified will result in a cold swap.",
+                    inputFile.getAbsolutePath());
+        }
     }
 
     @NonNull
@@ -381,10 +385,8 @@ public class InstantRunVerifierTransform extends Transform {
      * @param inputFile the input file within the input directory
      * @param outputDir the output directory
      * @return the output file within the output directory with the right relative path.
-     * @throws IOException
      */
-    protected static File getOutputFile(File inputDir, File inputFile, File outputDir)
-            throws IOException {
+    protected static File getOutputFile(File inputDir, File inputFile, File outputDir) {
         String relativePath = FileUtils.relativePossiblyNonExistingPath(inputFile, inputDir);
         return new File(outputDir, relativePath);
     }
