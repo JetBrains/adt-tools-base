@@ -5,6 +5,7 @@ import static com.android.builder.core.VariantType.UNIT_TEST;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.AndroidGradleOptions;
+import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.internal.CompileOptions;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
@@ -131,6 +132,12 @@ public class JavaCompileConfigAction implements TaskConfigAction<AndroidJavaComp
               // For now, default to true, irrespective of Instant Run.
               incremental = true;
             }
+        }
+
+        // if we are in instant run mode because of aapt ids not being stable and the gradle
+        // incremental support not flagging it correctly, disable incremental java compilation.
+        if (globalScope.isActive(OptionalCompilationStep.INSTANT_DEV)) {
+            incremental = false;
         }
 
         if (AndroidGradleOptions.isJavaCompileIncrementalPropertySet(project)) {
