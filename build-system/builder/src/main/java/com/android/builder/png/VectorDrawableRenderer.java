@@ -82,14 +82,14 @@ public class VectorDrawableRenderer implements ResourcePreprocessor {
         Collection<File> filesToBeGenerated = Lists.newArrayList();
         FolderConfiguration originalConfiguration = getFolderConfiguration(inputXmlFile);
 
-        if (originalConfiguration.getDensityQualifier() != null
-                && originalConfiguration.getDensityQualifier().getValue() == Density.NODPI) {
+        DensityQualifier densityQualifier = originalConfiguration.getDensityQualifier();
+        boolean validDensityQualifier = densityQualifier != null && densityQualifier.isValid();
+        if (validDensityQualifier && densityQualifier.getValue() == Density.NODPI) {
             // If the files uses nodpi, just leave it alone.
             filesToBeGenerated.add(new File(
                     getDirectory(originalConfiguration),
                     inputXmlFile.getName()));
-        } else if (originalConfiguration.getDensityQualifier() != null
-                && originalConfiguration.getDensityQualifier().getValue() != Density.ANYDPI) {
+        } else if (validDensityQualifier && densityQualifier.getValue() != Density.ANYDPI) {
             // If the density is specified, generate one png and one xml.
             filesToBeGenerated.add(new File(
                     getDirectory(originalConfiguration),
