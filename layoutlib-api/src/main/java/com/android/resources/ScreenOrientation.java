@@ -66,16 +66,7 @@ public enum ScreenOrientation implements ResourceEnum {
     }
 
     public static int getIndex(ScreenOrientation orientation) {
-        int i = 0;
-        for (ScreenOrientation orient : values()) {
-            if (orient == orientation) {
-                return i;
-            }
-
-            i++;
-        }
-
-        return -1;
+        return orientation == null ? -1 : orientation.ordinal();
     }
 
     public static ScreenOrientation getByIndex(int index) {

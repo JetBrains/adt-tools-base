@@ -64,16 +64,7 @@ public enum LayoutDirection implements ResourceEnum {
     }
 
     public static int getIndex(LayoutDirection orientation) {
-        int i = 0;
-        for (LayoutDirection orient : values()) {
-            if (orient == orientation) {
-                return i;
-            }
-
-            i++;
-        }
-
-        return -1;
+        return orientation == null ? -1 : orientation.ordinal();
     }
 
     public static LayoutDirection getByIndex(int index) {

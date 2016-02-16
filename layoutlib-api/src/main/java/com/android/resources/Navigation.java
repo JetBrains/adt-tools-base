@@ -67,16 +67,7 @@ public enum Navigation implements ResourceEnum {
     }
 
     public static int getIndex(Navigation value) {
-        int i = 0;
-        for (Navigation nav : values()) {
-            if (nav == value) {
-                return i;
-            }
-
-            i++;
-        }
-
-        return -1;
+        return value == null ? -1 : value.ordinal();
     }
 
     public static Navigation getByIndex(int index) {
