@@ -117,16 +117,7 @@ public enum Density implements ResourceEnum {
     }
 
     public static int getIndex(Density value) {
-        int i = 0;
-        for (Density input : values()) {
-            if (value == input) {
-                return i;
-            }
-
-            i++;
-        }
-
-        return -1;
+        return value == null ? -1 : value.ordinal();
     }
 
     public static Density getByIndex(int index) {
