@@ -42,8 +42,6 @@ public class Encoder {
     mObjects = new TObjectIntHashMap<BinaryObject>();
     mOutputStream = out;
     mBuffer = new byte[9];
-    mEntities.put(null, 0);
-    mObjects.put(null, 0);
   }
 
   public void write(byte[] b, int len) throws IOException {
@@ -167,10 +165,12 @@ public class Encoder {
   }
 
   public void entity(Entity entity) throws IOException {
-    if (mEntities.containsKey(entity)) {
+    if (entity == null) {
+      writeSid(0, false);
+    } else if (mEntities.containsKey(entity)) {
       writeSid(mEntities.get(entity), false);
     } else {
-      int sid = mEntities.size();
+      int sid = mEntities.size() + 1;
       mEntities.put(entity, sid);
       writeSid(sid, true);
       entity.encode(this);
@@ -192,10 +192,12 @@ public class Encoder {
   }
 
   public void object(@Nullable BinaryObject obj) throws IOException {
-    if (mObjects.containsKey(obj)) {
+    if (obj == null) {
+      writeSid(0, false);
+    } else if (mObjects.containsKey(obj)) {
       writeSid(mObjects.get(obj), false);
     } else {
-      int sid = mObjects.size();
+      int sid = mObjects.size() + 1;
       mObjects.put(obj, sid);
       writeSid(sid, true);
       variant(obj);
