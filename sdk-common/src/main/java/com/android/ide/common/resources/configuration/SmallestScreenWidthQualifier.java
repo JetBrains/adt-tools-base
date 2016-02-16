@@ -16,6 +16,9 @@
 
 package com.android.ide.common.resources.configuration;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -111,13 +114,14 @@ public final class SmallestScreenWidthQualifier extends ResourceQualifier {
     }
 
     @Override
-    public boolean isBetterMatchThan(ResourceQualifier compareTo, ResourceQualifier reference) {
+    public boolean isBetterMatchThan(@Nullable ResourceQualifier compareTo,
+            @NonNull ResourceQualifier reference) {
         if (compareTo == null) {
             return true;
         }
 
-        SmallestScreenWidthQualifier compareQ = (SmallestScreenWidthQualifier)compareTo;
-        SmallestScreenWidthQualifier referenceQ = (SmallestScreenWidthQualifier)reference;
+        SmallestScreenWidthQualifier compareQ = (SmallestScreenWidthQualifier) compareTo;
+        SmallestScreenWidthQualifier referenceQ = (SmallestScreenWidthQualifier) reference;
 
         if (compareQ.mValue == referenceQ.mValue) {
             // what we have is already the best possible match (exact match)

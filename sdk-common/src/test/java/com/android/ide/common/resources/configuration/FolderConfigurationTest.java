@@ -210,6 +210,7 @@ public class FolderConfigurationTest extends TestCase {
     public void testConfigMatch() {
         FolderConfiguration ref = new FolderConfiguration();
         ref.createDefault();
+        ref.setDensityQualifier(new DensityQualifier(Density.XHIGH));
         ref.addQualifier(new ScreenOrientationQualifier(ScreenOrientation.PORTRAIT));
         List<Configurable> configurables = getConfigurable(
                 "",                // No qualifier
@@ -248,6 +249,66 @@ public class FolderConfigurationTest extends TestCase {
                 "en",
                 "en-round-hdpi",
                 "port-12key");
+    }
+
+    public void testDensityQualifier() {
+
+        // test find correct density
+        runConfigMatchTest("hdpi", 2,
+                "ldpi",
+                "mdpi",
+                "hdpi",
+                "xhdpi");
+
+        // test mdpi matches no-density
+        runConfigMatchTest("mdpi", 0,
+                "",
+                "ldpi",
+                "hdpi");
+
+        // test, if there is no no-density, that we match the higher dpi
+        runConfigMatchTest("mdpi", 1,
+                "ldpi",
+                "hdpi");
+
+        // mdpi is better than no-density
+        runConfigMatchTest("mdpi", 1,
+                "",
+                "mdpi",
+                "hdpi");
+        runConfigMatchTest("xhdpi", 2,
+                "ldpi",
+                "",
+                "mdpi");
+
+        // scale down better than scale up
+        runConfigMatchTest("xhdpi", 4,
+                "",
+                "ldpi",
+                "mdpi",
+                "hdpi",
+                "xxxhdpi");
+        runConfigMatchTest("hdpi", 3,
+                "",
+                "ldpi",
+                "mdpi",
+                "xhdpi",
+                "xxhdpi");
+        runConfigMatchTest("mdpi", 0,
+                "ldpi",
+                "400dpi",
+                "xxhdpi",
+                "xxxhdpi");
+    }
+
+    public void testNullQualifierValidity() {
+        FolderConfiguration folderConfiguration = new FolderConfiguration();
+        for (int i = 0; i < FolderConfiguration.getQualifierCount(); i++) {
+            ResourceQualifier qualifier = folderConfiguration.getQualifier(i);
+            if (qualifier != null) {
+                assertFalse(qualifier.isValid());
+            }
+        }
     }
 
     // --- helper methods
@@ -485,7 +546,8 @@ public class FolderConfigurationTest extends TestCase {
 
         copy.setDensityQualifier(new DensityQualifier(Density.HIGH));
         assertEquals(Density.HIGH, copy.getDensityQualifier().getValue());
-        assertNull(deBcp47Folder.getDensityQualifier());
+        assertEquals(new FolderConfiguration().getDensityQualifier(),
+                deBcp47Folder.getDensityQualifier());
 
         FolderConfiguration blankFolder = FolderConfiguration.getConfigForFolder("values");
         copy = FolderConfiguration.copyOf(blankFolder);
