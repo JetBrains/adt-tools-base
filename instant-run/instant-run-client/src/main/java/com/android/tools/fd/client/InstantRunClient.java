@@ -593,6 +593,7 @@ public class InstantRunClient {
             }
             catch (Throwable ignore) {
                 // We can live with this one not succeeding; may require root etc
+                // See https://code.google.com/p/android/issues/detail?id=201249
             }
         }
     }
