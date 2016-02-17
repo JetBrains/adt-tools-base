@@ -21,6 +21,7 @@ import static com.android.manifmerger.ManifestMergerTestUtil.loadTestData;
 import static com.android.manifmerger.ManifestMergerTestUtil.transformParameters;
 import static com.android.manifmerger.MergingReport.Record;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 import com.android.annotations.Nullable;
@@ -156,16 +157,16 @@ public class ManifestMerger2Test {
         // this is obviously quite hacky, refine once merge output is better defined.
         boolean notExpectingError = !isExpectingError(testFiles.getExpectedErrors());
         mergeReport.log(stdLogger);
-        if (mergeReport.getMergedDocument().isPresent()) {
-
-            XmlDocument actualResult = mergeReport.getMergedDocument().get();
-            String prettyResult = actualResult.prettyPrint();
-            stdLogger.info(prettyResult);
+        if (mergeReport.getResult().isSuccess()) {
+            String xmlDocument = mergeReport.getMergedDocument(
+                    MergingReport.MergedManifestKind.MERGED);
+            assertNotNull(xmlDocument);
+            stdLogger.info(xmlDocument);
 
             if (testFiles.getActualResult() != null) {
                 FileWriter writer = new FileWriter(testFiles.getActualResult());
                 try {
-                    writer.append(prettyResult);
+                    writer.append(xmlDocument);
                 } finally {
                     writer.close();
                 }
@@ -178,6 +179,11 @@ public class ManifestMerger2Test {
             XmlDocument expectedResult = TestUtils.xmlDocumentFromString(
                     TestUtils.sourceFile(getClass(), testFiles.getMain().getName()),
                     testFiles.getExpectedResult());
+
+            XmlDocument actualResult = TestUtils.xmlDocumentFromString(
+                    TestUtils.sourceFile(getClass(), testFiles.getMain().getName()),
+                    xmlDocument);
+
             Optional<String> comparingMessage =
                     expectedResult.compareTo(actualResult);
 

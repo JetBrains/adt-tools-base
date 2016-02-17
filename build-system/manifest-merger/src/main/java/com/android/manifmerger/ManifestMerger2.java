@@ -29,7 +29,6 @@ import com.android.ide.common.blame.SourcePosition;
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
 import com.android.utils.SdkUtils;
-import com.android.utils.StdLogger;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
@@ -285,15 +284,9 @@ public class ManifestMerger2 {
                     "Post merge validation failed");
         }
         // finally optional features handling.
-        finalMergedDocument = processOptionalFeatures(finalMergedDocument);
-        if (finalMergedDocument != null) {
-            mergingReportBuilder.setMergedDocument(finalMergedDocument);
-        }
+        processOptionalFeatures(finalMergedDocument, mergingReportBuilder);
 
         MergingReport mergingReport = mergingReportBuilder.build();
-        StdLogger stdLogger = new StdLogger(StdLogger.Level.INFO);
-        mergingReport.log(stdLogger);
-        stdLogger.verbose(mergingReport.getMergedDocument().get().prettyPrint());
 
         if (mReportFile.isPresent()) {
             writeReport(mergingReport);
@@ -302,10 +295,11 @@ public class ManifestMerger2 {
         return mergingReport;
     }
 
-    @Nullable
-    private XmlDocument processOptionalFeatures(@Nullable XmlDocument document) {
+    private void processOptionalFeatures(
+            @Nullable XmlDocument document,
+            @NonNull MergingReport.Builder mergingReport) {
         if (document == null) {
-            return null;
+            return;
         }
         // only remove tools annotations if we are packaging an application.
         if (mOptionalFeatures.contains(Invoker.Feature.REMOVE_TOOLS_DECLARATIONS)) {
@@ -316,11 +310,30 @@ public class ManifestMerger2 {
             if (mOptionalFeatures.contains(Invoker.Feature.EXTRACT_FQCNS)) {
                 extractFcqns(document);
             }
+            mergingReport.setMergedDocument(
+                    MergingReport.MergedManifestKind.MERGED, document.prettyPrint());
+
+            try {
+                mergingReport.setMergedDocument(MergingReport.MergedManifestKind.BLAME,
+                        mergingReport.blame(document));
+            } catch (Exception e) {
+                mLogger.error(e, "Error while saving blame file, build will continue");
+            }
+
+            if (mOptionalFeatures.contains(Invoker.Feature.MAKE_AAPT_SAFE)) {
+                PlaceholderEncoder.visit(document);
+                mergingReport.setMergedDocument(
+                        MergingReport.MergedManifestKind.AAPT_SAFE,
+                        document.prettyPrint());
+            }
+
+            // Always save the pre InstantRun state in case some APT plugins require it.
             if (mOptionalFeatures.contains(Invoker.Feature.INSTANT_RUN_REPLACEMENT)) {
-                document = instantRunReplacement(document);
+                mergingReport.setMergedDocument(
+                        MergingReport.MergedManifestKind.INSTANT_RUN,
+                        instantRunReplacement(document).prettyPrint());
             }
         }
-        return document;
     }
 
     @NonNull
@@ -978,6 +991,11 @@ public class ManifestMerger2 {
              * Do no perform placeholders replacement.
              */
             NO_PLACEHOLDER_REPLACEMENT,
+
+            /**
+             * Encode unresolved placeholders to be AAPT friendly.
+             */
+            MAKE_AAPT_SAFE,
 
             /**
              * Perform InstantRun related swapping in the merged manifest file.
