@@ -136,9 +136,9 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     private ProductFlavor mMergedFlavor;
 
     /**
-     * External/Jar dependencies.
+     * Jar dependencies.
      */
-    private final Set<JarDependency> mExternalJars = Sets.newHashSet();
+    private final Set<JarDependency> mJarDependencies = Sets.newHashSet();
 
     /**
      * Local Jar dependencies.
@@ -602,7 +602,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         }
 
         mDirectLibraries.addAll(container.getAndroidDependencies());
-        mExternalJars.addAll(container.getJarDependencies());
+        mJarDependencies.addAll(container.getJarDependencies());
         mLocalJars.addAll(container.getLocalDependencies());
 
         resolveIndirectLibraryDependencies(mDirectLibraries, mFlatLibraries);
@@ -615,8 +615,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      * @return a non null collection of Jar dependencies.
      */
     @NonNull
-    public Collection<JarDependency> getExternalJarDependencies() {
-        return mExternalJars;
+    public Collection<JarDependency> getJarDependencies() {
+        return mJarDependencies;
     }
 
     /**
@@ -1478,7 +1478,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     @NonNull
     public Set<File> getCompileClasspath() {
         Set<File> classpath = Sets.newHashSetWithExpectedSize(
-                mExternalJars.size() + mLocalJars.size() + mFlatLibraries.size());
+                mJarDependencies.size() + mLocalJars.size() + mFlatLibraries.size());
 
         for (LibraryDependency lib : mFlatLibraries) {
             classpath.add(lib.getJarFile());
@@ -1487,7 +1487,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             }
         }
 
-        for (JarDependency jar : mExternalJars) {
+        for (JarDependency jar : mJarDependencies) {
             if (jar.isCompiled()) {
                 classpath.add(jar.getJarFile());
             }
@@ -1511,9 +1511,9 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     @NonNull
     public Set<File> getAllPackagedJars() {
         Set<File> jars = Sets.newHashSetWithExpectedSize(
-                mExternalJars.size() + mLocalJars.size() + mFlatLibraries.size());
+                mJarDependencies.size() + mLocalJars.size() + mFlatLibraries.size());
 
-        for (JarDependency jar : mExternalJars) {
+        for (JarDependency jar : mJarDependencies) {
             File jarFile = jar.getJarFile();
             if (jar.isPackaged() && jarFile.exists()) {
                 jars.add(jarFile);
@@ -1540,8 +1540,9 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     }
 
     /**
-     * Returns the list of packaged jars for this config. If the config tests a library, this
-     * will include the jars of the tested config
+     * Returns the list of packaged jars for this config that is not coming from subprojects..
+     *
+     * If the config tests a library, this will include the jars of the tested config
      *
      * @return a non null, but possibly empty list.
      */
@@ -1549,10 +1550,12 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     public ImmutableSet<File> getExternalPackagedJars() {
         ImmutableSet.Builder<File> jars = ImmutableSet.builder();
 
-        for (JarDependency jar : mExternalJars) {
-            File jarFile = jar.getJarFile();
-            if (jar.isPackaged() && jarFile.exists()) {
-                jars.add(jarFile);
+        for (JarDependency jar : mJarDependencies) {
+            if (jar.getProjectPath() == null) {
+                File jarFile = jar.getJarFile();
+                if (jar.isPackaged() && jarFile.exists()) {
+                    jars.add(jarFile);
+                }
             }
         }
 
@@ -1577,19 +1580,20 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     }
 
     /**
-     * Returns the list of packaged jars for this config. If the config tests a library, this
-     * will include the jars of the tested config
+     * Returns the list of external packaged jars for this config.
      *
      * @return a non null, but possibly empty list.
      */
     @NonNull
-    public ImmutableSet<File> getExternalPackagedJarsWithoutAars() {
+    public ImmutableSet<File> getExternalPackagedJniJars() {
         ImmutableSet.Builder<File> jars = ImmutableSet.builder();
 
-        for (JarDependency jar : mExternalJars) {
-            File jarFile = jar.getJarFile();
-            if (jar.isPackaged() && jarFile.exists()) {
-                jars.add(jarFile);
+        for (JarDependency jar : mJarDependencies) {
+            if (jar.getProjectPath() == null) {
+                File jarFile = jar.getJarFile();
+                if (jar.isPackaged() && jarFile.exists()) {
+                    jars.add(jarFile);
+                }
             }
         }
 
@@ -1626,7 +1630,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     }
 
     /**
-     * Returns the packaged sub-project Jars
+     * Returns the packaged sub-project Jars, coming from Android or Java modules.
      *
      * @return a non null, but possibly empty immutable set.
      */
@@ -1640,6 +1644,15 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
                 File libJar = libraryDependency.getJarFile();
                 if (libJar.exists()) {
                     jars.add(libJar);
+                }
+            }
+        }
+
+        for (JarDependency jarDependency : mJarDependencies) {
+            if (jarDependency.getProjectPath() != null) {
+                File jarFile = jarDependency.getJarFile();
+                if (jarDependency.isPackaged() && jarFile.exists()) {
+                    jars.add(jarFile);
                 }
             }
         }
@@ -1676,7 +1689,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      * @return a non null, but possibly empty immutable set.
      */
     @NonNull
-    public ImmutableSet<File> getSubProjectJniLibraries() {
+    public ImmutableSet<File> getSubProjectJniLibFolders() {
         ImmutableSet.Builder<File> jniDirectories = ImmutableSet.builder();
 
         for (LibraryDependency libraryDependency : mFlatLibraries) {
@@ -1693,12 +1706,33 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     }
 
     /**
-     * Returns the sub-project jni libs
+     * Returns the list of sub-project packaged jars for this config.
+     *
+     * @return a non null, but possibly empty list.
+     */
+    @NonNull
+    public ImmutableSet<File> getSubProjectPackagedJniJars() {
+        ImmutableSet.Builder<File> jars = ImmutableSet.builder();
+
+        for (JarDependency jar : mJarDependencies) {
+            if (jar.getProjectPath() != null) {
+                File jarFile = jar.getJarFile();
+                if (jar.isPackaged() && jarFile.exists()) {
+                    jars.add(jarFile);
+                }
+            }
+        }
+
+        return jars.build();
+    }
+
+    /**
+     * Returns the external jni lib folders
      *
      * @return a non null, but possibly empty immutable set.
      */
     @NonNull
-    public ImmutableSet<File> getExternalAarJniLibraries() {
+    public ImmutableSet<File> getExternalAarJniLibFolders() {
         ImmutableSet.Builder<File> jniDirectories = ImmutableSet.builder();
 
         for (LibraryDependency libraryDependency : mFlatLibraries) {
@@ -1722,9 +1756,9 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     @NonNull
     public List<File> getProvidedOnlyJars() {
         Set<File> jars = Sets.newHashSetWithExpectedSize(
-                mExternalJars.size() + mLocalJars.size() + mFlatLibraries.size());
+                mJarDependencies.size() + mLocalJars.size() + mFlatLibraries.size());
 
-        for (JarDependency jar : mExternalJars) {
+        for (JarDependency jar : mJarDependencies) {
             File jarFile = jar.getJarFile();
             if (jar.isCompiled() && !jar.isPackaged() && jarFile.exists()) {
                 jars.add(jarFile);
@@ -1758,7 +1792,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     @Nullable
     public String resolveLibraryName(@NonNull File jarFile) {
 
-        for (JarDependency jar : mExternalJars) {
+        for (JarDependency jar : mJarDependencies) {
             if (jarFile.equals(jar.getJarFile())) {
                 if (jar.getResolvedCoordinates() != null) {
                     return jar.getResolvedCoordinates().toString();
