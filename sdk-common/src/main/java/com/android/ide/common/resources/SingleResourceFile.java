@@ -62,7 +62,7 @@ public class SingleResourceFile extends ResourceFile {
         // test if there's a density qualifier associated with the resource
         DensityQualifier qualifier = folder.getConfiguration().getDensityQualifier();
 
-        if (qualifier == null) {
+        if (qualifier == null || !qualifier.isValid()) {
             mValue = new ResourceValue(mType, getResourceName(mType),
                     file.getOsLocation(), isFramework());
         } else {
