@@ -60,7 +60,7 @@ class InvokeManifestMerger extends DefaultAndroidTask implements Supplier<File> 
         FileWriter fileWriter = null;
         try {
             fileWriter = new FileWriter(getOutputFile())
-            fileWriter.append(mergingReport.getMergedDocument().get().prettyPrint())
+            fileWriter.append(mergingReport.getMergedDocument(MergingReport.MergedManifestKind.MERGED))
         } finally {
             if (fileWriter != null) {
                 fileWriter.close()

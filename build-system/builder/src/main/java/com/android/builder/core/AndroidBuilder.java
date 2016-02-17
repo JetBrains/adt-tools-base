@@ -88,9 +88,7 @@ import com.android.jill.api.v01.Api01TranslationTask;
 import com.android.jill.api.v01.TranslationException;
 import com.android.manifmerger.ManifestMerger2;
 import com.android.manifmerger.MergingReport;
-import com.android.manifmerger.PlaceholderEncoder;
 import com.android.manifmerger.PlaceholderHandler;
-import com.android.manifmerger.XmlDocument;
 import com.android.repository.Revision;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
@@ -605,12 +603,14 @@ public class AndroidBuilder {
             @Nullable Integer maxSdkVersion,
             @NonNull String outManifestLocation,
             @Nullable String outAaptSafeManifestLocation,
+            @Nullable String outInstantRunManifestLocation,
             ManifestMerger2.MergeType mergeType,
             Map<String, Object> placeHolders,
             List<Invoker.Feature> optionalFeatures,
             @Nullable File reportFile) {
 
         try {
+
             Invoker manifestMergerInvoker =
                     ManifestMerger2.newMerger(mainManifest, mLogger, mergeType)
                     .setPlaceHolderValues(placeHolders)
@@ -625,6 +625,11 @@ public class AndroidBuilder {
                 manifestMergerInvoker.withFeatures(Invoker.Feature.REMOVE_TOOLS_DECLARATIONS);
             }
 
+            //noinspection VariableNotUsedInsideIf
+            if (outAaptSafeManifestLocation != null) {
+                manifestMergerInvoker.withFeatures(Invoker.Feature.MAKE_AAPT_SAFE);
+            }
+
             setInjectableValues(manifestMergerInvoker,
                     packageOverride, versionCode, versionName,
                     minSdkVersion, targetSdkVersion, maxSdkVersion);
@@ -636,19 +641,28 @@ public class AndroidBuilder {
                     mergingReport.log(mLogger);
                     // fall through since these are just warnings.
                 case SUCCESS:
-                    XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
-                    try {
-                        String annotatedDocument = mergingReport.getActions().blame(xmlDocument);
+                    String xmlDocument = mergingReport.getMergedDocument(
+                            MergingReport.MergedManifestKind.MERGED);
+                    String annotatedDocument = mergingReport.getMergedDocument(
+                            MergingReport.MergedManifestKind.BLAME);
+                    if (annotatedDocument != null) {
                         mLogger.verbose(annotatedDocument);
-                    } catch (Exception e) {
-                        mLogger.error(e, "cannot print resulting xml");
                     }
                     save(xmlDocument, new File(outManifestLocation));
-                    if (outAaptSafeManifestLocation != null) {
-                        PlaceholderEncoder.visit(xmlDocument);
-                        save(xmlDocument, new File(outAaptSafeManifestLocation));
-                    }
                     mLogger.info("Merged manifest saved to " + outManifestLocation);
+
+                    if (outAaptSafeManifestLocation != null) {
+                        save(mergingReport.getMergedDocument(MergingReport.MergedManifestKind.AAPT_SAFE),
+                                new File(outAaptSafeManifestLocation));
+                    }
+
+                    if (outInstantRunManifestLocation != null) {
+                        String instantRunMergedManifest = mergingReport.getMergedDocument(
+                                MergingReport.MergedManifestKind.INSTANT_RUN);
+                        if (instantRunMergedManifest != null) {
+                            save(instantRunMergedManifest, new File(outInstantRunManifestLocation));
+                        }
+                    }
                     break;
                 case ERROR:
                     mergingReport.log(mLogger);
@@ -702,9 +716,10 @@ public class AndroidBuilder {
      * @param xmlDocument xml document to save.
      * @param out file to save to.
      */
-    private static void save(XmlDocument xmlDocument, File out) {
+    private static void save(String xmlDocument, File out) {
         try {
-            Files.write(xmlDocument.prettyPrint(), out, Charsets.UTF_8);
+            Files.createParentDirs(out);
+            Files.write(xmlDocument, out, Charsets.UTF_8);
         } catch(IOException e) {
             throw new RuntimeException(e);
         }
@@ -865,14 +880,28 @@ public class AndroidBuilder {
                 mergingReport.log(mLogger);
                 // fall through since these are just warnings.
             case SUCCESS:
-                XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
                 try {
-                    String annotatedDocument = mergingReport.getActions().blame(xmlDocument);
-                    mLogger.verbose(annotatedDocument);
+                    String annotatedDocument = mergingReport.getMergedDocument(
+                            MergingReport.MergedManifestKind.BLAME);
+                    if (annotatedDocument != null) {
+                        mLogger.verbose(annotatedDocument);
+                    } else {
+                        mLogger.verbose("No blaming records from manifest merger");
+                    }
                 } catch (Exception e) {
                     mLogger.error(e, "cannot print resulting xml");
                 }
-                save(xmlDocument, outFile);
+                String finalMergedDocument = mergingReport
+                        .getMergedDocument(MergingReport.MergedManifestKind.MERGED);
+                if (finalMergedDocument == null) {
+                    throw new RuntimeException("No result from manifest merger");
+                }
+                try {
+                    Files.write(finalMergedDocument, outFile, Charsets.UTF_8);
+                } catch (IOException e) {
+                    mLogger.error(e, "Cannot write resulting xml");
+                    throw new RuntimeException(e);
+                }
                 mLogger.info("Merged manifest saved to " + outFile);
                 break;
             case ERROR:
