@@ -192,7 +192,7 @@ public final class IdGeneratingResourceFile extends ResourceFile
         DensityQualifier qualifier = folder.getConfiguration().getDensityQualifier();
 
         ResourceValue value;
-        if (qualifier == null) {
+        if (qualifier == null || !qualifier.isValid()) {
             value = new ResourceValue(mFileType, mFileName,
                     file.getOsLocation(), isFramework());
         } else {
