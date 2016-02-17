@@ -1,5 +1,5 @@
 apply plugin: 'com.android.application'
-apply plugin: 'com.android.tools.profiler'
+//apply plugin: 'com.android.tools.profiler'
 
 android {
     compileSdkVersion 23
@@ -11,6 +11,11 @@ android {
         targetSdkVersion 23
         versionCode 1
         versionName '1.0'
+
+        ndk {
+            moduleName "memorymodule"
+            stl "stlport_shared"
+        }
     }
     buildTypes {
         release {
