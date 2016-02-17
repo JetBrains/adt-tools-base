@@ -36,6 +36,7 @@ import com.google.common.io.Files;
 import com.google.common.truth.Expect;
 
 import org.junit.AfterClass;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -75,6 +76,7 @@ public class ProvidedSubclassTest {
 
     @Before
     public void addProvidedLibrary() throws IOException {
+        Assume.assumeFalse("Disabled until instant run supports Jack", GradleTestProject.USE_JACK);
         TestFileUtils.appendToFile(project.getBuildFile(), "\n"
                 + "dependencies {\n"
                 + "    provided 'com.google.guava:guava:17.0'\n"
