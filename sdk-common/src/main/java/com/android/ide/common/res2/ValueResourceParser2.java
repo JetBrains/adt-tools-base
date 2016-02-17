@@ -60,12 +60,21 @@ class ValueResourceParser2 {
     @NonNull
     private final File mFile;
 
+    private boolean mTrackSourcePositions = true;
+
     /**
      * Creates the parser for a given file.
      * @param file the file to parse.
      */
     ValueResourceParser2(@NonNull File file) {
         mFile = file;
+    }
+
+    /**
+     * Set whether or not to use a source position-tracking XML parser.
+     */
+    void setTrackSourcePositions(boolean value) {
+        mTrackSourcePositions = value;
     }
 
     /**
@@ -76,7 +85,7 @@ class ValueResourceParser2 {
      */
     @NonNull
     List<ResourceItem> parseFile() throws MergingException {
-        Document document = parseDocument(mFile);
+        Document document = parseDocument(mFile, mTrackSourcePositions);
 
         // get the root node
         Node rootNode = document.getDocumentElement();
@@ -189,13 +198,19 @@ class ValueResourceParser2 {
     /**
      * Loads the DOM for a given file and returns a {@link Document} object.
      * @param file the file to parse
+     * @param trackPositions should track XML node positions
      * @return a Document object.
      * @throws MergingException if a merging exception happens
      */
     @NonNull
-    static Document parseDocument(@NonNull File file) throws MergingException {
+    static Document parseDocument(@NonNull File file, boolean trackPositions) throws MergingException {
         try {
-            return PositionXmlParser.parse(new BufferedInputStream(new FileInputStream(file)));
+            if (trackPositions) {
+                return PositionXmlParser.parse(new BufferedInputStream(new FileInputStream(file)));
+            }
+            else {
+                return XmlUtils.parseUtfXmlFile(file, true);
+            }
         } catch (SAXException e) {
             throw MergingException.wrapException(e).withFile(file).build();
         } catch (ParserConfigurationException e) {

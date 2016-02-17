@@ -169,7 +169,7 @@ public class ValueResourceParser2Test extends BaseTestCase {
         writer.write(xml);
         writer.close();
 
-        Document document = ValueResourceParser2.parseDocument(file);
+        Document document = ValueResourceParser2.parseDocument(file, false);
         assertNotNull(document);
         assertNotNull(document.getDocumentElement());
         assertEquals("LinearLayout", document.getDocumentElement().getTagName());
