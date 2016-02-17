@@ -18,10 +18,14 @@ package com.android.ide.common.res2;
 
 import static java.io.File.separator;
 
+import com.android.ide.common.blame.SourceFilePosition;
+import com.android.ide.common.blame.SourcePosition;
 import com.android.testutils.TestUtils;
+import com.android.utils.XmlUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 public class ResourceSetTest extends BaseTestCase {
 
@@ -225,6 +229,37 @@ public class ResourceSetTest extends BaseTestCase {
 
         assertTrue("ResourceSet processing should have failed, but didn't", gotException);
         assertFalse(logger.getErrorMsgs().isEmpty());
+    }
+
+    public void testTrackSourcePositions() throws IOException, MergingException {
+        File root = TestUtils.getRoot("resources", "baseSet");
+
+        // By default, track positions.
+        ResourceSet resourceSet = new ResourceSet("main");
+        resourceSet.addSource(root);
+        RecordingLogger logger = new RecordingLogger();
+        resourceSet.loadFromFiles(logger);
+
+        checkLogger(logger);
+        String stringKey = "string/basic_string";
+        List<ResourceItem> resources = resourceSet.getDataMap().get(stringKey);
+        assertNotNull(resources);
+        assertFalse(resources.isEmpty());
+        assertEquals(new SourcePosition(13, 4, 529, 13, 53, 578),
+                     XmlUtils.getSourceFilePosition(resources.get(0).getValue()).getPosition());
+
+        // Try without positions.
+        resourceSet = new ResourceSet("main");
+        resourceSet.addSource(root);
+        resourceSet.setTrackSourcePositions(false);
+        logger = new RecordingLogger();
+        resourceSet.loadFromFiles(logger);
+
+        resources = resourceSet.getDataMap().get(stringKey);
+        assertNotNull(resources);
+        assertFalse(resources.isEmpty());
+        assertEquals(SourceFilePosition.UNKNOWN,
+                     XmlUtils.getSourceFilePosition(resources.get(0).getValue()));
     }
 
     static ResourceSet getBaseResourceSet() throws MergingException, IOException {
