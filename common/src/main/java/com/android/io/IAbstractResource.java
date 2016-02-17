@@ -29,9 +29,14 @@ public interface IAbstractResource {
     String getName();
 
     /**
-     * Returns the OS path of the folder location.
+     * Returns the OS path of the folder location (may be absolute).
      */
     String getOsLocation();
+
+    /**
+     * Returns the path of the resource.
+     */
+    String getPath();
 
     /**
      * Returns whether the resource actually exists.
