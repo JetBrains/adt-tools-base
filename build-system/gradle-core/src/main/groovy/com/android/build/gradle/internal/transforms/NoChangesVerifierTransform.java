@@ -20,7 +20,6 @@ import com.android.annotations.NonNull;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.JarInput;
 import com.android.build.api.transform.QualifiedContent.ContentType;
-import com.android.build.api.transform.QualifiedContent.DefaultContentType;
 import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.api.transform.Status;
 import com.android.build.api.transform.Transform;
@@ -28,7 +27,6 @@ import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformInvocation;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
-import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.google.common.collect.ImmutableSet;
 
@@ -39,18 +37,26 @@ import java.util.Set;
 /**
  * No-op transform that verifies if any Java resources changed.
  */
-public class JavaResourceVerifierTransform extends Transform {
+public class NoChangesVerifierTransform extends Transform {
 
     @NonNull
     private final VariantScope variantScope;
     @NonNull
+    private final Set<ContentType> inputTypes;
+    @NonNull
     private final Set<Scope> mergeScopes;
+    @NonNull
+    private final InstantRunVerifierStatus failureStatus;
 
-    public JavaResourceVerifierTransform(
+    public NoChangesVerifierTransform(
             @NonNull VariantScope variantScope,
-            @NonNull Set<Scope> mergeScopes) {
+            @NonNull Set<ContentType> inputTypes,
+            @NonNull Set<Scope> mergeScopes,
+            @NonNull InstantRunVerifierStatus failureStatus) {
         this.variantScope = variantScope;
+        this.inputTypes = inputTypes;
         this.mergeScopes = mergeScopes;
+        this.failureStatus = failureStatus;
     }
 
     @NonNull
@@ -62,9 +68,7 @@ public class JavaResourceVerifierTransform extends Transform {
     @NonNull
     @Override
     public Set<ContentType> getInputTypes() {
-        return ImmutableSet.<ContentType>of(
-                DefaultContentType.RESOURCES,
-                ExtendedContentType.NATIVE_LIBS);
+        return inputTypes;
     }
 
     @NonNull
@@ -90,13 +94,12 @@ public class JavaResourceVerifierTransform extends Transform {
         // This task will not be invoked on the initial assemble build.  For subsequent instant run
         // build, we want to fail the verifier if any Java resource changed.  (Native libraries are
         // treated as Java resources in the plugin)
-        if (hasChangedResources(transformInvocation.getReferencedInputs())) {
-            variantScope.getInstantRunBuildContext().setVerifierResult(
-                    InstantRunVerifierStatus.JAVA_RESOURCES_CHANGED);
+        if (hasChangedInputs(transformInvocation.getReferencedInputs())) {
+            variantScope.getInstantRunBuildContext().setVerifierResult(failureStatus);
         }
     }
 
-    private static boolean hasChangedResources(Collection<TransformInput> inputs) {
+    private static boolean hasChangedInputs(Collection<TransformInput> inputs) {
         for (TransformInput input : inputs) {
             for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
                 if (!directoryInput.getChangedFiles().isEmpty()) {
