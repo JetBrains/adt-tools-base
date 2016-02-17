@@ -461,6 +461,35 @@ public class ResourceMergerTest extends BaseTestCase {
         checkLogger(logger);
     }
 
+    public void testScanForIdDrawableXmlMixedWithBinary() throws Exception {
+        // Test that in a drawable directory with both XML and PNG, we can pick up IDs
+        // without being confused about the PNG.
+        File srcDrawables = FileUtils.join(TestUtils.getRoot("resources", "idGenerating"), "drawable-v21");
+        File copiedRoot = Files.createTempDir();
+        copiedRoot.deleteOnExit();
+        File copiedDrawables = FileUtils.join(copiedRoot, "drawable-v21");
+        copyFolder(srcDrawables, copiedDrawables);
+
+        File srcPng = FileUtils.join(TestUtils.getRoot("resources", "baseSet"), "drawable", "icon.png");
+        FileUtils.copy(srcPng, copiedDrawables);
+        assertTrue(FileUtils.join(copiedDrawables, "drawable_for_id_scan.xml").exists());
+
+        ResourceSet resourceSet = new ResourceSet("idResources");
+        resourceSet.addSource(copiedRoot);
+        resourceSet.setShouldParseResourceIds(true);
+
+        RecordingLogger logger = new RecordingLogger();
+        resourceSet.loadFromFiles(logger);
+        List<ResourceItem> iconRes = resourceSet.getDataMap().get("drawable-v21/icon");
+        assertEquals(1, iconRes.size());
+        List<ResourceItem> drawableRes = resourceSet.getDataMap().get("drawable-v21/drawable_for_id_scan");
+        assertEquals(1, drawableRes.size());
+        List<ResourceItem> focusedId= resourceSet.getDataMap().get("id-v21/focused");
+        assertEquals(1, focusedId.size());
+
+        checkLogger(logger);
+    }
+
     public void testDontNormalizeQualifiers() throws Exception {
         File root = TestUtils.getRoot("resources", "idGenerating");
         File copiedRoot = getFolderCopy(root);
