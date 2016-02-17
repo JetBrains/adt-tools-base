@@ -20,6 +20,7 @@ import static com.google.common.truth.Truth.assert_;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.integration.common.fixture.Logcat;
 import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
@@ -115,6 +116,10 @@ public class TruthHelper {
     public static DependenciesSubject assertThat(@Nullable Dependencies dependencies) {
         return assert_().about(DependenciesSubject.Factory.get()).that(
                 dependencies);
+    }
+
+    public static LogCatMessagesSubject assertThat(Logcat logcat) {
+        return assert_().about(LogCatMessagesSubject.FACTORY).that(logcat);
     }
 
     // ---- helper method from com.google.common.truth.Truth
