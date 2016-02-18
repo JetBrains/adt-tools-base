@@ -8,15 +8,6 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/m2/repository/org/gradle/gradle-tooling-api/2.1/gradle-tooling-api-2.1.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
     <orderEntry type="library" name="asm-tools" level="project" />
     <orderEntry type="module" module-name="common" />
     <orderEntry type="module-library">
@@ -26,6 +17,17 @@
         </CLASSES>
         <JAVADOC />
         <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/gradle-api-full/gradle-api-full-2.10.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/gradle-api-full/gradle-api-full-2.10.jar!/" />
+        </SOURCES>
       </library>
     </orderEntry>
   </component>

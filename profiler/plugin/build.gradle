@@ -4,14 +4,38 @@ group = 'com.android.tools'
 archivesBaseName = 'studio-profiler-plugin'
 version = '1.0'// TODO: Pass in as an argument
 
+configurations {
+    support
+    gradle_api
+}
+
 dependencies {
     compile gradleApi()
     compile 'org.ow2.asm:asm:5.0.3'
     compile 'com.google.guava:guava:17.0'
-    compile 'com.android.tools.build:gradle-api:2.0.0-beta2'
+    compile('com.android.tools.build:gradle-api:2.0.0-beta2') { transitive = false }
     compile project(':base:common')
+
+    support project(':base:profiler-supportlib')
+
+    gradle_api gradleApi();
 }
 
 project.ext.pomName = 'Android Studio profiler gradle plugin'
 project.ext.pomDesc = 'Plugin which allows instrumenting apps for profiler statistics'
 
+jar {
+    from configurations.support
+}
+
+task gradleApiFullJar(type: Jar) {
+    from configurations.gradle_api.collect { it.isDirectory() ? it : zipTree(it) }
+    archiveName "gradle-api-full-${gradle.gradleVersion}.jar"
+}
+
+// This task generates in prebuilts a fat jar with what is needed to build
+// a gradle plugin from outside gradle.
+task prebuildGradleApiFullJar(type: Copy, dependsOn: gradleApiFullJar) {
+    from gradleApiFullJar.archivePath
+    into "$projectDir/../../../../prebuilts/tools/common/gradle-api-full"
+}
