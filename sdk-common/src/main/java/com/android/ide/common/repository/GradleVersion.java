@@ -37,6 +37,7 @@ import java.util.regex.Pattern;
  * 1.0.0-alpha1-SNAPSHOT).
  */
 public class GradleVersion implements Comparable<GradleVersion>, Serializable {
+    private static final String PLUS = "+";
 
     private static final Pattern PREVIEW_PATTERN = Pattern.compile("([a-zA-z]+)[\\-]?([\\d]+)?");
 
@@ -99,28 +100,26 @@ public class GradleVersion implements Comparable<GradleVersion>, Serializable {
             }
             version = value.substring(0, dashIndex);
         }
-        List<String> versionSegments = Splitter.on('.').splitToList(version);
-        VersionSegment majorSegment;
-        VersionSegment minorSegment = null;
-        VersionSegment microSegment = null;
-
-        int segmentCount = versionSegments.size();
-        List<VersionSegment> additionalSegments = Lists.newArrayList();
 
         try {
+            List<VersionSegment> parsedVersionSegments = splitSegments(version);
+            int segmentCount = parsedVersionSegments.size();
+
+            VersionSegment majorSegment;
+            VersionSegment minorSegment = null;
+            VersionSegment microSegment = null;
+
+            List<VersionSegment> additionalSegments = Lists.newArrayList();
             if (segmentCount > 0) {
-                majorSegment = new VersionSegment(versionSegments.get(0));
+                majorSegment = parsedVersionSegments.get(0);
                 if (segmentCount > 1) {
-                    minorSegment = new VersionSegment(versionSegments.get(1));
+                    minorSegment = parsedVersionSegments.get(1);
                 }
                 if (segmentCount >= 3) {
-                    microSegment = new VersionSegment(versionSegments.get(2));
+                    microSegment = parsedVersionSegments.get(2);
                 }
                 if (segmentCount > 3) {
-                    for (int i = 3; i < segmentCount; i++) {
-                        String segment = versionSegments.get(i);
-                        additionalSegments.add(new VersionSegment(segment));
-                    }
+                    additionalSegments.addAll(parsedVersionSegments.subList(3, segmentCount));
                 }
 
                 int preview = 0;
@@ -163,6 +162,33 @@ public class GradleVersion implements Comparable<GradleVersion>, Serializable {
             throw parsingFailure(value, e);
         }
         throw parsingFailure(value);
+    }
+
+    @NonNull
+    private static List<VersionSegment> splitSegments(@NonNull String version) {
+        Iterable<String> segments = Splitter.on('.').split(version);
+        List<VersionSegment> parsedSegments = Lists.newArrayListWithCapacity(3);
+
+        for (String segment : segments) {
+            parsedSegments.addAll(parseSegment(segment));
+        }
+
+        return parsedSegments;
+    }
+
+    @NonNull
+    private static List<VersionSegment> parseSegment(@NonNull String text) {
+        int length = text.length();
+        if (length > 1 && text.endsWith(PLUS)) {
+            // Segment has a number and a '+' (e.g. second segment in '2.1+')
+            List<VersionSegment> segments = Lists.newArrayListWithCapacity(2);
+
+            // We need to split '1+' into 2 segments: '1' and '+'
+            segments.add(new VersionSegment(text.substring(0, length - 1)));
+            segments.add(new VersionSegment(PLUS));
+            return segments;
+        }
+        return Collections.singletonList(new VersionSegment(text));
     }
 
     @NonNull
@@ -331,9 +357,6 @@ public class GradleVersion implements Comparable<GradleVersion>, Serializable {
     }
 
     public static class VersionSegment implements Serializable {
-
-        private static final String PLUS = "+";
-
         @NonNull
         private final String mText;
 
