@@ -394,7 +394,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
      */
     public void substract(@NonNull FolderConfiguration config) {
         for (int i = 0 ; i < INDEX_COUNT ; i++) {
-            if (config.mQualifiers[i] != NULL_QUALIFIERS[i] && config.mQualifiers[i].isValid()) {
+            if (ResourceQualifier.isValid(config.mQualifiers[i])) {
                 mQualifiers[i] = NULL_QUALIFIERS[i];
             }
         }
