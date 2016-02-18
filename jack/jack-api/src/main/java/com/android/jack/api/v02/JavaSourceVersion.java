@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,22 @@
  * limitations under the License.
  */
 
-package com.android.jack.api.v01;
+package com.android.jack.api.v02;
 
 /**
- * Available reporters.
+ * Supported Java source version.
  */
-public enum ReporterKind {
-  /**
-   * The default human-readable reporter.
-   */
-  DEFAULT,
-  /**
-   * A reporter formatting in a JSON-like structure.
-   */
-  SDK
+public enum JavaSourceVersion {
+  @SuppressWarnings("javadoc")
+  JAVA_3,
+  @SuppressWarnings("javadoc")
+  JAVA_4,
+  @SuppressWarnings("javadoc")
+  JAVA_5,
+  @SuppressWarnings("javadoc")
+  JAVA_6,
+  @SuppressWarnings("javadoc")
+  JAVA_7,
+  @SuppressWarnings("javadoc")
+  JAVA_8
 }

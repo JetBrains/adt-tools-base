@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-package com.android.jack.api.v01;
+package com.android.jack.api.v02;
+
 
 /**
- * Available reporters.
+ * Jack verbosity level
  */
-public enum ReporterKind {
-  /**
-   * The default human-readable reporter.
-   */
-  DEFAULT,
-  /**
-   * A reporter formatting in a JSON-like structure.
-   */
-  SDK
+public enum VerbosityLevel {
+  @SuppressWarnings("javadoc")
+  ERROR,
+  @SuppressWarnings("javadoc")
+  WARNING,
+  @SuppressWarnings("javadoc")
+  INFO
 }

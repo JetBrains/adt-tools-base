@@ -16,16 +16,19 @@
 
 package com.android.jack.api.v01;
 
+
 /**
- * Available reporters.
+ * A task allowing to run the Jack compiler once.
  */
-public enum ReporterKind {
+public interface Cli01CompilationTask {
+
   /**
-   * The default human-readable reporter.
+   * Runs the Jack compiler. May be called only once.
+   * @return command line status
+   * @throws UnrecoverableException If an error out of Jack's control occurred
+   * @throws ConfigurationException If there is an error in the configuration
+   * @throws IllegalStateException If Jack is run more than once
    */
-  DEFAULT,
-  /**
-   * A reporter formatting in a JSON-like structure.
-   */
-  SDK
+  int run() throws UnrecoverableException, ConfigurationException,
+      IllegalStateException;
 }
