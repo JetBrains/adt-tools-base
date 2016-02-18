@@ -306,14 +306,57 @@ public class FileManager {
         // We don't need "double buffering" for dex files - we never rewrite files, so we
         // can accumulate in the same dir
         File dexFolder = getDexFileFolder(dataFolder, false);
-        if (dexFolder == null) {
-            return list;
+
+        // Extract slices.
+        //
+        // Imagine this scenario -- you run your app (so the device dex folder is filled).
+        // Then you do a clean build etc -- so Gradle doesn't know there is existing state
+        // on the device. If we *only* extract slices when there are no slices there already,
+        // then we'd end up here just running the old slices already on the device.
+        // On the other hand, we can't just always extract slices, since then each time
+        // you run we'll overwrite coldswap and freezeswap slices.
+        //
+        // So what this code does is pass the APK timestamp to the extractor, and in the
+        // extractor, if the timestamp is positive, we check before writing each slice that
+        // it doesn't already exist and is newer than the APK.
+        boolean extractedSlices = false;
+        if (dexFolder == null || !dexFolder.isDirectory()) {
+            // It's the first run of a freshly installed app, and we need to extract the
+            // slices from within the APK into the dex folder
+            if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                Log.v(LOG_TAG, "No local dex slice folder: First run since installation.");
+            }
+            dexFolder = getDexFileFolder(dataFolder, true);
+            if (dexFolder == null) {
+                // Failed to create dex folder.
+                Log.wtf(LOG_TAG, "Couldn't create dex code folder");
+                return list; // unreachable
+            }
+            extractedSlices = extractSlices(dexFolder, -1); // -1: unconditionally extract all
         }
+
         File[] dexFiles = dexFolder.listFiles();
         if (dexFiles == null) {
-            Log.v(LOG_TAG, "Cannot find newer dex classes, not patching them in");
-            // TODO: Sort?
+            Log.v(LOG_TAG, "Cannot find dex classes, not patching them in");
             return list;
+        }
+
+        // See if any of the slices are older than the APK. This will only be the case
+        // if it's not the first run, and the APK has been reinstalled while there are some
+        // potentially stale dex files.
+        if (!extractedSlices && dexFiles.length > 0) {
+            long oldest = apkModified;
+            for (File dex : dexFiles) {
+                oldest = Math.min(dex.lastModified(), oldest);
+            }
+            if (oldest < apkModified) {
+                // At least one slice is older than the APK: re-extract those that
+                // need it
+                if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                    Log.v(LOG_TAG, "One or more slices were older than APK: extracting newer slices");
+                }
+                extractSlices(dexFolder, apkModified);
+            }
         }
 
         for (File dex : dexFiles) {
@@ -327,6 +370,102 @@ public class FileManager {
         Collections.sort(list, Collections.reverseOrder());
 
         return list;
+    }
+
+    /**
+     * Extracts the slices found in the APK root directory (instant-run.zip) into the dex folder,
+     * and skipping any files that already exist and are newer than apkModified (unless apkModified
+     * <= 0)
+     */
+    private static boolean extractSlices(@NonNull File dexFolder, long apkModified) {
+        if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+            Log.v(LOG_TAG, "Extracting slices into " + dexFolder);
+        }
+        InputStream stream = BootstrapApplication.class.getResourceAsStream("/instant-run.zip");
+        if (stream == null) {
+            Log.v(LOG_TAG, "Could not find slices in APK; aborting.");
+            return false;
+        }
+        try {
+            ZipInputStream zipInputStream = new ZipInputStream(stream);
+            try {
+                byte[] buffer = new byte[2000];
+
+                for (ZipEntry entry = zipInputStream.getNextEntry();
+                        entry != null;
+                        entry = zipInputStream.getNextEntry()) {
+                    String name = entry.getName();
+                    // Don't extract META-INF data
+                    if (name.startsWith("META-INF")) {
+                        continue;
+                    }
+                    if (!entry.isDirectory()
+                            && name.indexOf('/') == -1 // only files in root directory
+                            && name.endsWith(CLASSES_DEX_SUFFIX)) {
+                        // Using / as separators in both .zip files and on Android, no need to convert
+                        // to File.separator
+
+                        // Map slice name to the scheme already used by the code to push slices
+                        // via the embedded server as well as the code to push via adb:
+                        //   slice-<slicedir>-classes.dex
+                        // In the instant-run.zip they're currently just <slicedir>.dex, so
+                        // convert.
+                        // This is a temporary hack until we unify naming.
+                        File dest = new File(dexFolder, Paths.DEX_SLICE_PREFIX
+                                + name.substring(0, name.length() - CLASSES_DEX_SUFFIX.length())
+                                + "-classes.dex");
+
+                        if (apkModified > 0) {
+                            long sliceModified = dest.lastModified();
+                            if (sliceModified > apkModified) {
+                                // Ignore this slice: disk copy more recent than APK copy
+                                if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                                    Log.v(LOG_TAG, "Ignoring slice " + name
+                                            + ": newer on disk than in APK");
+                                }
+                                continue;
+                            }
+                        }
+                        if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                            Log.v(LOG_TAG, "Extracting slice " + name + " into " + dest);
+                        }
+                        File parent = dest.getParentFile();
+                        if (parent != null && !parent.exists()) {
+                            boolean created = parent.mkdirs();
+                            if (!created) {
+                                Log.wtf(LOG_TAG, "Failed to create directory " + dest);
+                                return false;
+                            }
+                        }
+
+                        OutputStream src = new BufferedOutputStream(new FileOutputStream(dest));
+                        try {
+                            int bytesRead;
+                            while ((bytesRead = zipInputStream.read(buffer)) != -1) {
+                                src.write(buffer, 0, bytesRead);
+                            }
+                        } finally {
+                            src.close();
+                        }
+                    }
+                }
+
+                return true;
+            } catch (IOException ioe) {
+                Log.wtf(LOG_TAG, "Failed to extract slices into directory " + dexFolder, ioe);
+                return false;
+            } finally {
+                try {
+                    zipInputStream.close();
+                } catch (IOException ignore) {
+                }
+            }
+        } finally {
+            try {
+                stream.close();
+            } catch (IOException ignore) {
+            }
+        }
     }
 
     /** Produces the next available dex file path */
@@ -434,22 +573,23 @@ public class FileManager {
         return extractZip(destination, inputStream);
     }
 
-    public static boolean extractZip(@NonNull File resourceDir, @NonNull InputStream inputStream) {
+    public static boolean extractZip(@NonNull File destDir, @NonNull InputStream inputStream) {
         ZipInputStream zipInputStream = new ZipInputStream(inputStream);
         try {
-            ZipEntry entry = zipInputStream.getNextEntry();
             byte[] buffer = new byte[2000];
 
-            while (entry != null) {
+            for (ZipEntry entry = zipInputStream.getNextEntry();
+                    entry != null;
+                    entry = zipInputStream.getNextEntry()) {
                 String name = entry.getName();
                 // Don't extract META-INF data
                 if (name.startsWith("META-INF")) {
                     continue;
                 }
-                // Using / as separators in both .zip files and on Android, no need to convert
-                // to File.separator
-                File dest = new File(resourceDir, name);
                 if (!entry.isDirectory()) {
+                    // Using / as separators in both .zip files and on Android, no need to convert
+                    // to File.separator
+                    File dest = new File(destDir, name);
                     File parent = dest.getParentFile();
                     if (parent != null && !parent.exists()) {
                         boolean created = parent.mkdirs();
@@ -469,12 +609,11 @@ public class FileManager {
                         src.close();
                     }
                 }
-                entry = zipInputStream.getNextEntry();
             }
 
             return true;
         } catch (IOException ioe) {
-            Log.e(LOG_TAG, "Failed to extract zip contents into directory " + resourceDir, ioe);
+            Log.e(LOG_TAG, "Failed to extract zip contents into directory " + destDir, ioe);
             return false;
         } finally {
             try {
