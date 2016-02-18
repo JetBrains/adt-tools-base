@@ -87,6 +87,10 @@ public class GradleCoordinateTest extends BaseTestCase {
         assertEquals(expected, actual);
         assertNotNull(actual);
         assertTrue(actual.isPreview());
+
+        expected = new GradleCoordinate("a.b.c", "package", 5, 0, GradleCoordinate.PLUS_REV_VALUE);
+        actual = GradleCoordinate.parseCoordinateString("a.b.c:package:5.0+");
+        assertEquals(expected, actual);
     }
 
     public void testToString() throws Exception {
