@@ -25,6 +25,7 @@ import com.android.repository.impl.meta.TypeDetails;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.repositoryv2.IdDisplay;
+import com.google.common.primitives.Ints;
 
 import java.util.List;
 
@@ -310,7 +311,9 @@ public final class DetailsTypes {
      * Gets the default path/unique id for the given build tools
      */
     public static String getBuildToolsPath(Revision revision) {
-        return SdkConstants.FD_BUILD_TOOLS + RepoPackage.PATH_SEPARATOR + revision.toString();
+        String revisionStr = Ints.join(".", revision.toIntArray(false)) +
+                (revision.isPreview() ? "-preview" : "");
+        return SdkConstants.FD_BUILD_TOOLS + RepoPackage.PATH_SEPARATOR + revisionStr;
     }
 
 }
