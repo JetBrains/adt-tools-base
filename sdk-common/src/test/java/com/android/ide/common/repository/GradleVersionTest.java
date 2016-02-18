@@ -400,4 +400,27 @@ public class GradleVersionTest {
         assertFalse(version.isSnapshot());
         assertEquals("1.2.3", version.toString());
     }
+
+    // See https://code.google.com/p/android/issues/detail?id=201325
+    @Test
+    public void testFixFor201325() {
+        // 2.0+ is equivalent to 2.0.+
+        GradleVersion version = GradleVersion.parse("2.0+");
+        assertNotNull(version.getMinorSegment());
+        assertNotNull(version.getMicroSegment());
+        assertEquals(2, version.getMajor());
+        assertEquals("2", version.getMajorSegment().getText());
+        assertEquals(0, version.getMinor());
+        assertEquals("0", version.getMinorSegment().getText());
+        assertTrue(version.getMicroSegment().acceptsGreaterValue());
+        assertEquals(0, version.getPreview());
+        assertNull(version.getPreviewType());
+        assertFalse(version.isSnapshot());
+        assertEquals("2.0+", version.toString());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testParseWithPlusAtBeginningOfSegment() {
+        GradleVersion.parse("2.+1");
+    }
 }
