@@ -422,7 +422,7 @@ public class InstantRunVerifierTransformTest {
             }
 
             @Override
-            protected void copyFile(File inputFile, File outputFile) throws IOException {
+            protected void copyFile(File inputFile, File outputFile) {
                 recordedCopies.put(inputFile, outputFile);
             }
         };
