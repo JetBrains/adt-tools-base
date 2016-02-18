@@ -37,6 +37,7 @@ import com.android.repository.impl.meta.SchemaModuleUtil;
 import com.android.repository.io.FileOp;
 import com.android.repository.io.impl.FileOpImpl;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -235,7 +236,7 @@ public class RepoManagerImpl extends RepoManager {
     @Override
     @Nullable
     public LSResourceResolver getResourceResolver(@NonNull  ProgressIndicator progress) {
-        List<SchemaModule> allModules = ImmutableList.<SchemaModule>builder().addAll(
+        Set<SchemaModule> allModules = ImmutableSet.<SchemaModule>builder().addAll(
                 getSchemaModules()).add(
                 getCommonModule()).add(
                 getGenericModule()).build();
