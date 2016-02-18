@@ -151,9 +151,9 @@ public class InstantRunVerifierTransform extends Transform {
             boolean isIncremental,
             @NonNull TransformInput transformInput) throws IOException {
 
-        for (DirectoryInput DirectoryInput : transformInput.getDirectoryInputs()) {
+        for (DirectoryInput directoryInput : transformInput.getDirectoryInputs()) {
 
-            File inputDir = DirectoryInput.getFile();
+            File inputDir = directoryInput.getFile();
 
             if (!isIncremental) {
                 // non incremental mode, we need to traverse the folder
@@ -167,7 +167,7 @@ public class InstantRunVerifierTransform extends Transform {
                 continue;
             }
             for (Map.Entry<File, Status> changedFile :
-                    DirectoryInput.getChangedFiles().entrySet()) {
+                    directoryInput.getChangedFiles().entrySet()) {
 
                 File inputFile = changedFile.getKey();
                 File lastIterationFile = getOutputFile(inputDir, inputFile, outputDir);
