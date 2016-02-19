@@ -22,6 +22,7 @@ import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.SchemaModule;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -45,6 +46,7 @@ import java.io.OutputStream;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.xml.XMLConstants;
 import javax.xml.bind.JAXBContext;
@@ -70,8 +72,8 @@ public class SchemaModuleUtil {
 
     private static final Map<String, JAXBContext> CONTEXT_CACHE = Maps.newHashMap();
 
-    private static final Map<List<SchemaModule.SchemaModuleVersion>, Schema> SCHEMA_CACHE = Maps
-            .newHashMap();
+    private static final Map<List<SchemaModule.SchemaModuleVersion>, Map<LSResourceResolver, Schema>>
+            SCHEMA_CACHE = Maps.newHashMap();
 
     /**
      * Create an {@link LSResourceResolver} that will use the supplied {@link SchemaModule}s to
@@ -81,34 +83,8 @@ public class SchemaModuleUtil {
      */
     @Nullable
     public static LSResourceResolver createResourceResolver(
-            @NonNull final Collection<SchemaModule> modules, @NonNull ProgressIndicator progress) {
-
-        DOMImplementationRegistry registry;
-        try {
-            registry = DOMImplementationRegistry.newInstance();
-        } catch (Exception e) {
-            progress.logError("Error during resolver creation: ", e);
-            return null;
-        }
-        final DOMImplementationLS ls = (DOMImplementationLS)registry.getDOMImplementation("LS");
-
-        return new LSResourceResolver() {
-            @Override
-            public LSInput resolveResource(String type, String namespaceURI, String publicId,
-                    String systemId, String baseURI) {
-                SchemaModule.SchemaModuleVersion version;
-                for (SchemaModule ext : modules) {
-                    version = ext.getNamespaceVersionMap().get(namespaceURI);
-                    if (version != null) {
-                        LSInput input = ls.createLSInput();
-                        input.setSystemId(version.getNamespace());
-                        input.setByteStream(version.getXsd());
-                        return input;
-                    }
-                }
-                return null;
-            }
-        };
+            @NonNull final Set<SchemaModule> modules, @NonNull ProgressIndicator progress) {
+        return new SchemaModuleResourceResolver(modules, progress);
     }
 
     /**
@@ -181,11 +157,16 @@ public class SchemaModuleUtil {
             }
         }
 
-        Schema schema = SCHEMA_CACHE.get(key);
+        Map<LSResourceResolver, Schema> resolverSchemaCache = SCHEMA_CACHE.get(key);
+        if (resolverSchemaCache == null) {
+            resolverSchemaCache = Maps.newHashMap();
+            SCHEMA_CACHE.put(key, resolverSchemaCache);
+        }
+        Schema schema = resolverSchemaCache.get(resourceResolver);
         if (schema == null) {
             try {
                 schema = sf.newSchema(sources.toArray(new StreamSource[sources.size()]));
-                SCHEMA_CACHE.put(key, schema);
+                resolverSchemaCache.put(resourceResolver, schema);
             }
             catch (SAXException e) {
                 assert false : "Invalid schema found!";
@@ -318,6 +299,59 @@ public class SchemaModuleUtil {
                 return !strict;
             }
         };
+    }
+
+    private static class SchemaModuleResourceResolver implements LSResourceResolver {
+        private final Set<SchemaModule> mModules;
+        private static DOMImplementationLS sLs;
+
+        public SchemaModuleResourceResolver(Set<SchemaModule> modules,
+                ProgressIndicator progress) {
+            mModules = modules;
+            initLs(progress);
+        }
+
+        private static void initLs(ProgressIndicator progress) {
+            if (sLs == null) {
+                DOMImplementationRegistry registry;
+                try {
+                    registry = DOMImplementationRegistry.newInstance();
+                    sLs = (DOMImplementationLS) registry.getDOMImplementation("LS");
+                } catch (Exception e) {
+                    progress.logError("Error during resolver creation: ", e);
+                }
+            }
+        }
+
+        @Override
+        public LSInput resolveResource(String type, String namespaceURI, String publicId,
+                String systemId, String baseURI) {
+            SchemaModule.SchemaModuleVersion version;
+            for (SchemaModule ext : mModules) {
+                version = ext.getNamespaceVersionMap().get(namespaceURI);
+                if (version != null) {
+                    LSInput input = sLs.createLSInput();
+                    input.setSystemId(version.getNamespace());
+                    input.setByteStream(version.getXsd());
+                    return input;
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof SchemaModuleResourceResolver)) {
+                return false;
+            }
+            SchemaModuleResourceResolver other = (SchemaModuleResourceResolver)obj;
+            return other.mModules.equals(mModules);
+        }
+
+        @Override
+        public int hashCode() {
+            return mModules.hashCode();
+        }
     }
 
     /**
