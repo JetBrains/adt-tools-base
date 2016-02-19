@@ -93,10 +93,6 @@ public class LibDependencyTest {
         checkHotSwapCompatibleChange(instantRunModel);
     }
 
-    /**
-     * TODO: Once jars produced by java submodules are treated as local dependencies,
-     * this test will need to be updated to use a local jar to trigger the dependencies verifier.
-     */
     @Test
     public void hotSwapChangeInJavaLibrary() throws Exception {
         appendToFile(project.file("settings.gradle"), "\n"
@@ -120,10 +116,10 @@ public class LibDependencyTest {
                 instantRunModel.getIncrementalAssembleTaskName());
         InstantRunBuildInfo context = InstantRunTestUtils.loadContext(instantRunModel);
         assertThat(context.getVerifierStatus()).isEqualTo(
-                InstantRunVerifierStatus.DEPENDENCY_CHANGED.toString());
+                InstantRunVerifierStatus.COMPATIBLE.toString());
         assertThat(context.getArtifacts()).hasSize(1);
         InstantRunArtifact artifact = Iterables.getOnlyElement(context.getArtifacts());
-        assertThat(artifact.type).isEqualTo(InstantRunArtifactType.DEX);
+        assertThat(artifact.type).isEqualTo(InstantRunArtifactType.RELOAD_DEX);
     }
 
     @Test
