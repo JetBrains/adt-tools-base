@@ -41,6 +41,7 @@ import com.android.ide.common.blame.MessageJsonSerializer;
 import com.android.ide.common.blame.SourceFilePosition;
 import com.android.utils.SdkUtils;
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.ListMultimap;
@@ -162,58 +163,69 @@ public class ExtraModelInfo extends ErrorReporter {
 
     @Override
     public void receiveMessage(@NonNull Message message) {
-        StringBuilder errorStringBuilder = new StringBuilder();
-        if (errorFormatMode == ErrorFormatMode.HUMAN_READABLE) {
-            List<SourceFilePosition> positions = message.getSourceFilePositions();
-            if (positions.size() != 1 ||
-                    !SourceFilePosition.UNKNOWN.equals(Iterables.getOnlyElement(positions))) {
-                errorStringBuilder.append(Joiner.on(' ').join(positions));
-            }
-            if (errorStringBuilder.length() > 0) {
-                errorStringBuilder.append(": ");
-            }
-            if (message.getToolName().isPresent()) {
-                errorStringBuilder.append(message.getToolName().get()).append(": ");
-            }
-            errorStringBuilder.append(message.getText());
-
-            String rawMessage = message.getRawMessage();
-            if (!message.getText().equals(message.getRawMessage())) {
-                String separator = SdkUtils.getLineSeparator();
-                errorStringBuilder.append("\n    ")
-                        .append(rawMessage.replace(separator, separator + "    "));
-            }
-        } else {
-            //noinspection ConstantConditions mGson != null when errorFormatMode == MACHINE_PARSABLE
-            errorStringBuilder.append(STDOUT_ERROR_TAG)
-                    .append(mGson.toJson(message));
-        }
-
-        String messageString = errorStringBuilder.toString();
-
         switch (message.getKind()) {
             case ERROR:
-                project.getLogger().error(messageString);
+                if (errorFormatMode == ErrorFormatMode.MACHINE_PARSABLE) {
+                    project.getLogger().error(machineReadableMessage(message));
+                } else {
+                    project.getLogger().error(humanReadableMessage(message));
+                }
                 break;
             case WARNING:
-                project.getLogger().warn(messageString);
+                if (errorFormatMode == ErrorFormatMode.MACHINE_PARSABLE) {
+                    project.getLogger().warn(machineReadableMessage(message));
+                } else {
+                    project.getLogger().warn(humanReadableMessage(message));
+                }
                 break;
             case INFO:
-                project.getLogger().info(messageString);
+                project.getLogger().info(humanReadableMessage(message));
                 break;
             case STATISTICS:
-                project.getLogger().trace(messageString);
+                project.getLogger().trace(humanReadableMessage(message));
                 break;
             case UNKNOWN:
-                project.getLogger().debug(messageString);
+                project.getLogger().debug(humanReadableMessage(message));
                 break;
             case SIMPLE:
-                project.getLogger().info(messageString);
+                project.getLogger().info(humanReadableMessage(message));
                 break;
         }
     }
 
-        public Collection<ArtifactMetaData> getExtraArtifacts() {
+    private static String humanReadableMessage(@NonNull Message message) {
+        StringBuilder errorStringBuilder = new StringBuilder();
+        List<SourceFilePosition> positions = message.getSourceFilePositions();
+        if (positions.size() != 1 ||
+                !SourceFilePosition.UNKNOWN.equals(Iterables.getOnlyElement(positions))) {
+            errorStringBuilder.append(Joiner.on(' ').join(positions));
+        }
+        if (errorStringBuilder.length() > 0) {
+            errorStringBuilder.append(": ");
+        }
+        if (message.getToolName().isPresent()) {
+            errorStringBuilder.append(message.getToolName().get()).append(": ");
+        }
+        errorStringBuilder.append(message.getText());
+
+        String rawMessage = message.getRawMessage();
+        if (!message.getText().equals(message.getRawMessage())) {
+            String separator = SdkUtils.getLineSeparator();
+            errorStringBuilder.append("\n    ")
+                    .append(rawMessage.replace(separator, separator + "    "));
+        }
+        return errorStringBuilder.toString();
+    }
+
+    /**
+     * Only call if errorFormatMode == {@link ErrorFormatMode#MACHINE_PARSABLE}
+     */
+    private String machineReadableMessage(@NonNull Message message) {
+        Preconditions.checkNotNull(mGson);
+        return STDOUT_ERROR_TAG + mGson.toJson(message);
+    }
+
+    public Collection<ArtifactMetaData> getExtraArtifacts() {
         return extraArtifactMap.values();
     }
 
