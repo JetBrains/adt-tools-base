@@ -64,6 +64,8 @@ public class JillTask extends BaseTask {
 
     private DexOptions dexOptions;
 
+    private boolean isJackInProcessFlag;
+
     @TaskAction
     public void taskAction(IncrementalTaskInputs taskInputs)
             throws LoggedErrorException, InterruptedException, IOException {
@@ -144,6 +146,14 @@ public class JillTask extends BaseTask {
         this.dexOptions = dexOptions;
     }
 
+    public boolean isJackInProcess() {
+        return isJackInProcessFlag;
+    }
+
+    public void setJackInProcess(boolean jackInProcess) {
+        isJackInProcessFlag = jackInProcess;
+    }
+
     private final class JillCallable implements Callable<Void> {
 
         @NonNull
@@ -186,7 +196,8 @@ public class JillTask extends BaseTask {
             File jackFile = getJackFileName(outFolder, fileToProcess);
             //noinspection GroovyAssignabilityCheck
             builder.convertLibraryToJack(fileToProcess, jackFile, options,
-                    new LoggedProcessOutputHandler(builder.getLogger()));
+                    new LoggedProcessOutputHandler(builder.getLogger()),
+                    isJackInProcess());
 
             return null;
         }
@@ -259,6 +270,7 @@ public class JillTask extends BaseTask {
             jillTask.setAndroidBuilder(androidBuilder);
             jillTask.setVariantName(variantScope.getVariantConfiguration().getFullName());
             jillTask.setDexOptions(globalScope.getExtension().getDexOptions());
+            jillTask.setJackInProcess(variantScope.getVariantConfiguration().isJackInProcess());
 
             ConventionMappingHelper.map(jillTask, "inputLibs", new Callable<List<File>>() {
                 @Override
@@ -297,6 +309,7 @@ public class JillTask extends BaseTask {
             jillTask.setAndroidBuilder(androidBuilder);
             jillTask.setVariantName(variantScope.getVariantConfiguration().getFullName());
             jillTask.setDexOptions(globalScope.getExtension().getDexOptions());
+            jillTask.setJackInProcess(variantScope.getVariantConfiguration().isJackInProcess());
 
             ConventionMappingHelper.map(jillTask, "inputLibs", new Callable<Set<File>>() {
                 @Override

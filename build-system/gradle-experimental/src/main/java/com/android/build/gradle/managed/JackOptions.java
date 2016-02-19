@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,26 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.dsl;
+package com.android.build.gradle.managed;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.builder.model.BuildType;
+import com.android.build.gradle.internal.dsl.CoreJackOptions;
+
+import org.gradle.model.Managed;
 
 /**
- * A build type with addition properties for building with Gradle plugin.
+ * Managed type for Jack options.
  */
-public interface CoreBuildType extends BuildType {
+@Managed
+public interface JackOptions {
+    /**
+     * Returns whether to use Jack for compilation.
+     */
+    Boolean getEnabled();
+    void setEnabled(Boolean enabled);
 
-    @Nullable
-    CoreNdkOptions getNdkConfig();
-
-    @NonNull
-    CoreJackOptions getJackOptions();
-
-    boolean isShrinkResources();
-
-    boolean isUseProguard();
+    /**
+     * Returns whether to run Jack the same JVM as Gradle.
+     */
+    Boolean getJackInProcess();
+    void setJackInProcess(Boolean jackInProcess);
 }

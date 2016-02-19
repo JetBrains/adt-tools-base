@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.dsl;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.build.gradle.internal.LoggingUtil;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.DefaultBuildType;
@@ -48,8 +49,8 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
     @Nullable
     private final NdkOptions ndkConfig;
 
-    @Nullable
-    private Boolean useJack;
+    @NonNull
+    private final JackOptions jackOptions;
 
     /** Opt-in for now until we've validated it in the field. */
     private boolean shrinkResources = false;
@@ -64,6 +65,7 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
         super(name);
         this.project = project;
         this.logger = logger;
+        jackOptions = instantiator.newInstance(JackOptions.class);
         ndkConfig = instantiator.newInstance(NdkOptions.class);
     }
 
@@ -74,6 +76,7 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
         super(name);
         this.project = project;
         this.logger = logger;
+        jackOptions = new JackOptions();
         ndkConfig = null;
     }
 
@@ -81,6 +84,12 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
     @Nullable
     public CoreNdkOptions getNdkConfig() {
         return ndkConfig;
+    }
+
+    @Override
+    @NonNull
+    public JackOptions getJackOptions() {
+        return jackOptions;
     }
 
     /**
@@ -109,13 +118,13 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
     protected void _initWith(@NonNull BaseConfig that) {
         super._initWith(that);
         BuildType thatBuildType = (BuildType) that;
+        jackOptions._initWith(thatBuildType.getJackOptions());
         shrinkResources = thatBuildType.isShrinkResources();
-        useJack = thatBuildType.getUseJack();
     }
 
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (useJack != null ? useJack.hashCode() : 0);
+        result = 31 * result + getJackOptions().hashCode();
         result = 31 * result + (shrinkResources ? 1 : 0);
         return result;
     }
@@ -126,7 +135,7 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
         if (!(o instanceof BuildType)) return false;
         if (!super.equals(o)) return false;
         BuildType other = (BuildType) o;
-        if (useJack != other.getUseJack()) return false;
+        if (!jackOptions.equals(other.jackOptions)) return false;
         if (shrinkResources != other.isShrinkResources()) return false;
 
         return true;
@@ -325,26 +334,47 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
     }
 
     /**
-     * Whether the experimental Jack toolchain should be used.
+     * Configure Jack options for this build type.
      */
-    @Override
+    public void jackOptions(@NonNull Action<JackOptions> action) {
+        action.execute(jackOptions);
+    }
+
+    /**
+     * Whether the experimental Jack toolchain should be used.
+     *
+     * @deprecated use getJackOptions().isEnabled() instead.
+     */
+    @Deprecated
     @Nullable
     public Boolean getUseJack() {
-        return useJack;
+        LoggingUtil.displayDeprecationWarning(
+                logger, project, "useJack is deprecated.  Use jackOptions.enabled instead.");
+        return jackOptions.isEnabled();
     }
 
     /**
      * Whether the experimental Jack toolchain should be used.
+     *
+     * @deprecated use jack.setEnabled instead.
      */
+    @Deprecated
     public void setUseJack(@Nullable Boolean useJack) {
-        this.useJack = useJack;
+        LoggingUtil.displayDeprecationWarning(
+                logger, project, "useJack is deprecated.  Use jackOptions.enabled instead.");
+        jackOptions.setEnabled(useJack);
     }
 
     /**
      * Whether the experimental Jack toolchain should be used.
-     */
+     *
+    * @deprecated use jack.setEnabled instead.
+    */
+    @Deprecated
     public void useJack(@Nullable Boolean useJack) {
-        setUseJack(useJack);
+        LoggingUtil.displayDeprecationWarning(
+                logger, project, "useJack is deprecated.  Use jackOptions.enabled instead.");
+        jackOptions.setEnabled(useJack);
     }
 
     /**

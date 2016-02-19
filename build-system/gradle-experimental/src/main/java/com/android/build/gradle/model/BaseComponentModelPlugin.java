@@ -395,7 +395,6 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             buildType.setUseProguard(true);
             buildType.setZipAlignEnabled(true);
             buildType.setEmbedMicroApp(true);
-            buildType.setUseJack(false);
             buildType.setShrinkResources(false);
         }
 

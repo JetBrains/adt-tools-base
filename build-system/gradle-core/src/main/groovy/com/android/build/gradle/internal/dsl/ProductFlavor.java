@@ -20,6 +20,7 @@ import static com.android.build.gradle.AndroidGradleOptions.USE_DEPRECATED_NDK;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.LoggingUtil;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.DefaultApiVersion;
@@ -57,8 +58,8 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
     @NonNull
     private final ErrorReporter errorReporter;
 
-    @Nullable
-    private Boolean useJack;
+    @NonNull
+    private final JackOptions jackOptions;
 
     public ProductFlavor(
             @NonNull String name,
@@ -71,6 +72,7 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
         this.logger = logger;
         this.errorReporter = errorReporter;
         ndkConfig = instantiator.newInstance(NdkOptions.class);
+        jackOptions = instantiator.newInstance(JackOptions.class);
     }
 
     @Override
@@ -446,32 +448,64 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
     }
 
     /**
-     * Whether the experimental Jack toolchain should be used.
+     * Options for configuring jack.
      *
      * <p>See <a href="http://tools.android.com/tech-docs/jackandjill">Jack and Jill</a>
      */
     @Override
+    @NonNull
+    public CoreJackOptions getJackOptions() {
+        return jackOptions;
+    }
+
+    /**
+     * Configure Jack options for this build type.
+     */
+    public void jackOptions(@NonNull Action<JackOptions> action) {
+        action.execute(jackOptions);
+    }
+
+    /**
+     * Whether the experimental Jack toolchain should be used.
+     *
+     * <p>See <a href="http://tools.android.com/tech-docs/jackandjill">Jack and Jill</a>
+     *
+     * @deprecated use getJack.isEnabled() instead.
+     */
+    @Deprecated
     @Nullable
     public Boolean getUseJack() {
-        return useJack;
+        LoggingUtil.displayDeprecationWarning(
+                logger, project, "useJack is deprecated.  Use jackOptions.enabled instead.");
+        return jackOptions.isEnabled();
     }
 
     /**
      * Whether the experimental Jack toolchain should be used.
      *
      * <p>See <a href="http://tools.android.com/tech-docs/jackandjill">Jack and Jill</a>
+     *
+     * @deprecated use getJack.setEnabled instead.
      */
+    @Deprecated
     public void setUseJack(Boolean useJack) {
-        this.useJack = useJack;
+        LoggingUtil.displayDeprecationWarning(
+                logger, project, "useJack is deprecated.  Use jackOptions.enabled instead.");
+        jackOptions.setEnabled(useJack);
     }
 
     /**
      * Whether the experimental Jack toolchain should be used.
      *
      * <p>See <a href="http://tools.android.com/tech-docs/jackandjill">Jack and Jill</a>
+     *
+     * @deprecated use getJack.setEnabled instead.
      */
+    @Deprecated
     public void useJack(Boolean useJack) {
-        setUseJack(useJack);
+        LoggingUtil.displayDeprecationWarning(
+                logger, project, "useJack is deprecated.  Use jackOptions.enabled instead.");
+        jackOptions.setEnabled(useJack);
     }
 
     @Deprecated

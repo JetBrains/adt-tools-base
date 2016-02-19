@@ -116,20 +116,42 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
     }
 
     public boolean getUseJack() {
-        Boolean value = getBuildType().getUseJack();
+        Boolean value = getBuildType().getJackOptions().isEnabled();
         if (value != null) {
             return value;
         }
 
         // cant use merge flavor as useJack is not a prop on the base class.
         for (CoreProductFlavor productFlavor : getProductFlavors()) {
-            value = productFlavor.getUseJack();
+            value = productFlavor.getJackOptions().isEnabled();
             if (value != null) {
                 return value;
             }
         }
 
-        value = getDefaultConfig().getUseJack();
+        value = getDefaultConfig().getJackOptions().isEnabled();
+        if (value != null) {
+            return value;
+        }
+
+        return false;
+    }
+
+    public boolean isJackInProcess() {
+        Boolean value = getBuildType().getJackOptions().isJackInProcess();
+        if (value != null) {
+            return value;
+        }
+
+        // cant use merge flavor as isJackInProcess is not a prop on the base class.
+        for (CoreProductFlavor productFlavor : getProductFlavors()) {
+            value = productFlavor.getJackOptions().isJackInProcess();
+            if (value != null) {
+                return value;
+            }
+        }
+
+        value = getDefaultConfig().getJackOptions().isJackInProcess();
         if (value != null) {
             return value;
         }
