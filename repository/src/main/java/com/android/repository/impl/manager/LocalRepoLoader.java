@@ -149,11 +149,19 @@ public final class LocalRepoLoader {
                 writePackage(p, packageXml, progress);
             }
             else if (mFop.exists(packageXml)) {
+                progress.logWarning(String.format(
+                  "Invalid package.xml found at %1$s and failed to parse using fallback.", packageXml));
+                /*
+                TODO: decide what the behavior should be when an xml is consistently unparsable.
+                      Leaving it as-is (the above code) will cause there to be a warning each time
+                      we try to parse the package. But renaming it means we never get a chance
+                      (e.g. with a future version of the code) to try to recover.
                 File bad = new File(packageXml.getPath() + ".bad");
                 progress.logWarning(String.format(
                         "Invalid package.xml found and failed to parse using fallback. Renaming %1$s to %2$s",
                         packageXml, bad));
                 mFop.renameTo(packageXml, bad);
+                */
             }
         }
         if (p != null) {
