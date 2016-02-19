@@ -226,9 +226,9 @@ public class SchemaModuleUtil {
             marshaller.marshal(element, out);
             out.close();
         } catch (JAXBException e) {
-            progress.logWarning(e.getMessage(), e);
+            progress.logWarning("Error during marshal", e);
         } catch (IOException e) {
-            progress.logWarning(e.getMessage(), e);
+            progress.logWarning("Error during marshal", e);
         }
     }
 
