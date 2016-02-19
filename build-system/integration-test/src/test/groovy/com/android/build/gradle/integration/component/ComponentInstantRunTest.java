@@ -1,40 +1,26 @@
 package com.android.build.gradle.integration.component;
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
-
 import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp;
-import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp;
+import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
+import com.android.build.gradle.integration.common.truth.TruthHelper;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
-import com.android.build.gradle.integration.instant.InstantRunTestUtils;
-import com.android.build.gradle.internal.incremental.ColdswapMode;
-import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
-import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
 import com.android.builder.model.AndroidProject;
-import com.android.builder.model.InstantRun;
-import com.google.common.base.Charsets;
-import com.google.common.io.Files;
+import com.google.common.base.Joiner;
 
+import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Simple test to ensure component model plugin do not crash when instant run is enabled.
  */
 public class ComponentInstantRunTest {
-
-    @Rule
-    public GradleTestProject project = GradleTestProject.builder()
-            .fromTestApp(HelloWorldJniApp.builder().build())
-            .forExperimentalPlugin(true)
-            .create();
 
     @Before
     public void setUp() throws IOException {
@@ -50,46 +36,18 @@ public class ComponentInstantRunTest {
 
     @Test
     public void basicAssemble() {
-        project.execute(InstantRunTestUtils.getInstantRunArgs(), "assembleDebug");
-        assertThat(project.getApk("debug")).exists();
+        project.execute(getInstantRunArgs(), "assembleDebug");
+        TruthHelper.assertThat(project.getApk("debug")).exists();
     }
 
-    @Ignore("Temporarily disabled until instant run works for component model plugin")
-    @Test
-    public void withNativeCode() throws Exception {
-        Files.append(
-                "model {\n"
-                        + "    android.ndk {\n"
-                        + "        moduleName \"hello-jni\"\n"
-                        + "    }\n"
-                        + "}\n",
-                project.getBuildFile(),
-                Charsets.UTF_8);
-
-        project.execute(
-                InstantRunTestUtils.getInstantRunArgs(
-                        21,
-                        ColdswapMode.DEFAULT,
-                        OptionalCompilationStep.RESTART_ONLY),
-                "assembleDebug");
-        AndroidProject model = project.getSingleModel();
-        File apk = project.getApk("debug");
-        assertThat(apk).exists();
-        assertThatApk(apk).contains("lib/x86/libhello-jni.so");
-
-        File src = project.file("src/main/jni/hello-jni.c");
-        Files.append("\nvoid foo() {}\n", src, Charsets.UTF_8);
-
-        InstantRun instantRunModel = InstantRunTestUtils.getInstantRunModel(model);
-        project.execute(
-                InstantRunTestUtils.getInstantRunArgs(21, ColdswapMode.DEFAULT),
-                instantRunModel.getIncrementalAssembleTaskName());
-        InstantRunBuildContext context = InstantRunTestUtils.loadContext(instantRunModel);
-        assertThat(context.getLastBuild()).isNotNull();
-        assertThat(context.getLastBuild().getVerifierStatus()).isPresent();
-        assertThat(context.getLastBuild().getVerifierStatus().get()).isEqualTo(
-                InstantRunVerifierStatus.JAVA_RESOURCES_CHANGED);
-        assertThat(context.getLastBuild().getArtifacts()).hasSize(0);
+    private static List<String> getInstantRunArgs(OptionalCompilationStep... flags) {
+        String property = "-P" + AndroidProject.OPTIONAL_COMPILATION_STEPS + "="
+                + OptionalCompilationStep.INSTANT_DEV + "," + Joiner.on(",").join(flags);
+        return Collections.singletonList(property);
     }
 
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
+            .fromTestApp(HelloWorldApp.noBuildFile()).forExperimentalPlugin(true).withoutNdk()
+            .create();
 }
