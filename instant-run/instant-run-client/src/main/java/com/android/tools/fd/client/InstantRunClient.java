@@ -41,6 +41,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Charsets;
 import com.google.common.base.Splitter;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
@@ -55,6 +56,8 @@ import java.util.List;
 import java.util.Set;
 
 public class InstantRunClient {
+    public static final String BROKEN_RUN_AS = "run-as command broken on this device";
+
     private static final String LOCAL_HOST = "127.0.0.1";
 
     /** Local port on the desktop machine via which we tunnel to the Android device */
@@ -201,28 +204,28 @@ public class InstantRunClient {
             try {
                 return talkToAppWithinPortForward(communicator, errorValue, mLocalPort);
             } catch (UnknownHostException e) {
-                mLogger.warning("%s", e);
+                mLogger.warning("%s", Throwables.getStackTraceAsString(e));
             } catch (SocketException e) {
                 if (e.getMessage().equals("Broken pipe")) {
                     mUserFeedback.error("No connection to app; cannot sync changes");
                     return errorValue;
                 }
-                mLogger.warning("%s", e);
+                mLogger.warning("%s", Throwables.getStackTraceAsString(e));
             } catch (IOException e) {
-                mLogger.warning("%s", e);
+                mLogger.warning("%s", Throwables.getStackTraceAsString(e));
             } catch (Throwable e) {
-                mLogger.warning("%s", e);
+                mLogger.warning("%s", Throwables.getStackTraceAsString(e));
                 return errorValue;
             } finally {
                 device.removeForward(mLocalPort, mPackageName,
                                      IDevice.DeviceUnixSocketNamespace.ABSTRACT);
             }
         } catch (TimeoutException e) {
-            mLogger.warning("%s", e);
+            mLogger.warning("%s", Throwables.getStackTraceAsString(e));
         } catch (AdbCommandRejectedException e) {
-            mLogger.warning("%s", e);
+            mLogger.warning("%s", Throwables.getStackTraceAsString(e));
         } catch (Throwable e) {
-            mLogger.warning("%s", e);
+            mLogger.warning("%s", Throwables.getStackTraceAsString(e));
         }
 
         return errorValue;
@@ -274,7 +277,7 @@ public class InstantRunClient {
                 }
             }, true);
         } catch (Throwable e) {
-            mLogger.warning("%s", e);
+            mLogger.warning("%s", Throwables.getStackTraceAsString(e));
         }
     }
 
@@ -402,13 +405,13 @@ public class InstantRunClient {
         } catch (IOException ioe) {
             logger.warning("Couldn't write build id file: %s", ioe);
         } catch (AdbCommandRejectedException e) {
-            logger.warning("%s", e);
+            logger.warning("%s", Throwables.getStackTraceAsString(e));
         } catch (TimeoutException e) {
-            logger.warning("%s", e);
+            logger.warning("%s", Throwables.getStackTraceAsString(e));
         } catch (ShellCommandUnresponsiveException e) {
-            logger.warning("%s", e);
+            logger.warning("%s", Throwables.getStackTraceAsString(e));
         } catch (SyncException e) {
-            logger.warning("%s", e);
+            logger.warning("%s", Throwables.getStackTraceAsString(e));
         }
     }
 
@@ -464,13 +467,13 @@ public class InstantRunClient {
             }
         } catch (IOException ignore) {
         } catch (AdbCommandRejectedException e) {
-            mLogger.warning("%s", e);
+            mLogger.warning("%s", Throwables.getStackTraceAsString(e));
         } catch (SyncException e) {
-            mLogger.warning("%s", e);
+            mLogger.warning("%s", Throwables.getStackTraceAsString(e));
         } catch (TimeoutException e) {
-            mLogger.warning("%s", e);
+            mLogger.warning("%s", Throwables.getStackTraceAsString(e));
         } catch (ShellCommandUnresponsiveException e) {
-            mLogger.warning("%s", e);
+            mLogger.warning("%s", Throwables.getStackTraceAsString(e));
         }
 
         return null;
@@ -655,15 +658,15 @@ public class InstantRunClient {
                 if (!createdDirs.contains(folder)) {
                     createdDirs.add(folder);
                     String cmd = "run-as " + mPackageName + " mkdir -p " + folder;
-                    if (!runCommand(device, cmd)) {
-                        mLogger.warning("%s", "Error creating folder with: " + cmd);
+                    if (!runAsCommand(device, cmd)) {
+                        mLogger.warning("pushFiles: %s", "Error creating folder with: " + cmd);
                         throw new InstantRunPushFailedException("Error creating folder with: " + cmd);
                     }
                 }
 
                 String cmd = "run-as " + mPackageName + " cp " + remote + " " + folder + "/" + name;
-                if (!runCommand(device, cmd)) {
-                    mLogger.warning("%s", "Error copying file with: " + cmd);
+                if (!runAsCommand(device, cmd)) {
+                    mLogger.warning("pushFiles: %s", "Error copying file with: " + cmd);
                     throw new InstantRunPushFailedException("Error copying file with: " + cmd);
                 }
             }
@@ -673,31 +676,49 @@ public class InstantRunClient {
             mLogger.warning("Couldn't write build id file: %s", ioe);
             throw new InstantRunPushFailedException("IOException while pushing files: " + ioe.toString());
         } catch (AdbCommandRejectedException e) {
-            mLogger.warning("%s", e);
+            mLogger.warning("%s", Throwables.getStackTraceAsString(e));
             throw new InstantRunPushFailedException("Exception while pushing files: " + e.toString());
         } catch (TimeoutException e) {
-            mLogger.warning("%s", e);
+            mLogger.warning("%s", Throwables.getStackTraceAsString(e));
             throw new InstantRunPushFailedException("Exception while pushing files: " + e.toString());
         } catch (ShellCommandUnresponsiveException e) {
-            mLogger.warning("%s", e);
+            mLogger.warning("%s", Throwables.getStackTraceAsString(e));
             throw new InstantRunPushFailedException("Exception while pushing files: " + e.toString());
         } catch (SyncException e) {
-            mLogger.warning("%s", e);
+            mLogger.warning("%s", Throwables.getStackTraceAsString(e));
             throw new InstantRunPushFailedException("Exception while pushing files: " + e.toString());
         }
     }
 
+    private boolean runAsCommand(@NonNull IDevice device, @NonNull String cmd)
+      throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException, InstantRunPushFailedException {
+        String output = getCommandOutput(device, cmd);
+        if (!output.trim().isEmpty()) {
+            mLogger.warning("Unexpected shell output for " + cmd + ": " + output);
+
+            if (output.startsWith("run-as: Package '") && output.endsWith("' is unknown")) {
+                throw new InstantRunPushFailedException(BROKEN_RUN_AS);
+            }
+            return false;
+        }
+        return true;
+    }
+
     private boolean runCommand(@NonNull IDevice device, @NonNull String cmd)
       throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
-        CollectingOutputReceiver receiver;
-        String output;
-        receiver = new CollectingOutputReceiver();
-        device.executeShellCommand(cmd, receiver);
-        output = receiver.getOutput();
+        String output = getCommandOutput(device, cmd);
         if (!output.trim().isEmpty()) {
             mLogger.warning("Unexpected shell output for " + cmd + ": " + output);
             return false;
         }
         return true;
+    }
+
+    private static String getCommandOutput(@NonNull IDevice device, @NonNull String cmd)
+      throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
+        CollectingOutputReceiver receiver;
+        receiver = new CollectingOutputReceiver();
+        device.executeShellCommand(cmd, receiver);
+        return receiver.getOutput();
     }
 }
