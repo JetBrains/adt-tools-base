@@ -133,7 +133,9 @@ public class ChangeRecords {
         }
 
         for (Map.Entry<String, Status> changeRecord : changeRecords.entrySet()) {
-            handler.handle(changeRecord.getKey(), changeRecord.getValue());
+            if (new File(changeRecord.getKey()).isFile()) {
+                handler.handle(changeRecord.getKey(), changeRecord.getValue());
+            }
         }
     }
 
