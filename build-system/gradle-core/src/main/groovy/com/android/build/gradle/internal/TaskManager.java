@@ -1897,8 +1897,9 @@ public abstract class TaskManager {
         TransformManager transformManager = variantScope.getTransformManager();
 
         // ---- Code Coverage first -----
-        boolean isTestCoverageEnabled = config.getBuildType().isTestCoverageEnabled() && !config
-                .getType().isForTesting();
+        boolean isTestCoverageEnabled = config.getBuildType().isTestCoverageEnabled() &&
+                !config.getType().isForTesting() &&
+                getIncrementalMode(variantScope.getVariantConfiguration()) == IncrementalMode.NONE;
         if (isTestCoverageEnabled) {
             createJacocoTransform(tasks, variantScope);
         }
@@ -2243,6 +2244,7 @@ public abstract class TaskManager {
         // For library project, since we cannot use the local jars of the library,
         // we add it as well.
         boolean isTestCoverageEnabled = config.getBuildType().isTestCoverageEnabled() &&
+                getIncrementalMode(variantScope.getVariantConfiguration()) == IncrementalMode.NONE &&
                 (!config.getType().isForTesting() ||
                         (config.getTestedConfig() != null &&
                                 config.getTestedConfig().getType() == VariantType.LIBRARY));
