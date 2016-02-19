@@ -1,13 +1,12 @@
 
 package com.android.sdklib.repositoryv2.generated.common.v1;
 
-import com.android.sdklib.repositoryv2.meta.Library;
-
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
+import com.android.sdklib.repositoryv2.meta.Library;
 
 
 /**

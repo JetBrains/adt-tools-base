@@ -2,8 +2,6 @@
 package com.android.sdklib.repositoryv2.generated.common.v1;
 
 import javax.xml.bind.annotation.XmlRegistry;
-import com.android.sdklib.repositoryv2.IdDisplay;
-import com.android.sdklib.repositoryv2.meta.Library;
 import com.android.sdklib.repositoryv2.meta.SdkCommonFactory;
 
 
@@ -43,7 +41,7 @@ public class ObjectFactory
      * Create an instance of {@link IdDisplayType }
      * 
      */
-    public IdDisplay createIdDisplayType() {
+    public IdDisplayType createIdDisplayType() {
         return new IdDisplayType();
     }
 
@@ -51,7 +49,7 @@ public class ObjectFactory
      * Create an instance of {@link LibraryType }
      * 
      */
-    public Library createLibraryType() {
+    public LibraryType createLibraryType() {
         return new LibraryType();
     }
 

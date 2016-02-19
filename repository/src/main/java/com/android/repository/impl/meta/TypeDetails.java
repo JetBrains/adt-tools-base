@@ -16,10 +16,7 @@
 
 package com.android.repository.impl.meta;
 
-import com.android.annotations.NonNull;
-import com.android.repository.api.ElementFactory;
 import com.android.repository.api.RepoPackage;
-import com.android.repository.api.Repository;
 
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.annotation.XmlTransient;
@@ -37,13 +34,6 @@ import javax.xml.bind.annotation.XmlTransient;
  */
 @XmlTransient
 public abstract class TypeDetails {
-
-    /**
-     * Creates an {@link ElementFactory} which will itself use the {@code ObjectFactory} of
-     * our concrete type to create a {@link JAXBElement} for marshalling.
-     */
-    @NonNull
-    public abstract ElementFactory<Repository> createFactory();
 
     @XmlTransient
     public interface GenericType {}

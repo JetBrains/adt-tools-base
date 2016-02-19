@@ -198,14 +198,15 @@ public class SchemaModuleUtil {
      */
     @Nullable
     public static Object unmarshal(@NonNull InputStream xml,
-            @NonNull Collection<SchemaModule> possibleModules,
-            @Nullable LSResourceResolver resourceResolver, @NonNull ProgressIndicator progress)
-            throws JAXBException {
+      @NonNull Collection<SchemaModule> possibleModules,
+      @Nullable LSResourceResolver resourceResolver, boolean strict,
+      @NonNull ProgressIndicator progress)
+      throws JAXBException {
         JAXBContext context = getContext(possibleModules);
         Schema schema = getSchema(possibleModules, resourceResolver, progress);
         Unmarshaller u = context.createUnmarshaller();
         u.setSchema(schema);
-        u.setEventHandler(createValidationEventHandler(progress));
+        u.setEventHandler(createValidationEventHandler(progress, strict));
         return ((JAXBElement) u.unmarshal(new StreamSource(xml))).getValue();
     }
 
@@ -220,7 +221,7 @@ public class SchemaModuleUtil {
         JAXBContext context = getContext(possibleModules);
         try {
             Marshaller marshaller = context.createMarshaller();
-            marshaller.setEventHandler(createValidationEventHandler(progress));
+            marshaller.setEventHandler(createValidationEventHandler(progress, true));
             Schema schema = getSchema(possibleModules, resourceResolver, progress);
             marshaller.setSchema(schema);
             marshaller.marshal(element, out);
@@ -238,7 +239,7 @@ public class SchemaModuleUtil {
      */
     @NonNull
     private static ValidationEventHandler createValidationEventHandler(
-            @NonNull final ProgressIndicator progress) {
+            @NonNull final ProgressIndicator progress, final boolean strict) {
         return new ValidationEventHandler() {
             @Override
             public boolean handleEvent(ValidationEvent event) {
@@ -248,7 +249,7 @@ public class SchemaModuleUtil {
                 } else {
                     progress.logWarning(event.getMessage());
                 }
-                return false;
+                return !strict;
             }
         };
     }

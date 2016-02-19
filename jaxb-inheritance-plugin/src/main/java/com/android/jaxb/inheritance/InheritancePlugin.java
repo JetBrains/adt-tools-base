@@ -35,6 +35,7 @@ import com.sun.codemodel.JMod;
 import com.sun.codemodel.JOp;
 import com.sun.codemodel.JPackage;
 import com.sun.codemodel.JType;
+import com.sun.codemodel.JVar;
 import com.sun.tools.xjc.Options;
 import com.sun.tools.xjc.Plugin;
 import com.sun.tools.xjc.model.CElementPropertyInfo;
@@ -161,9 +162,12 @@ public class InheritancePlugin extends Plugin {
             addValidityChecks(classOutline, outline.getCodeModel());
         }
 
-        createGenerateElementMethod(outline, objFactory, supers);
-
         JCodeModel model = outline.getCodeModel();
+        List<JMethod> orig = ImmutableList.copyOf(objFactory.methods());
+        for (JMethod method : orig) {
+            convertMethod(supers, model, objFactory, method);
+        }
+
         for (ClassOutline classOutline : outline.getClasses()) {
             JAnnotationArrayMember suppress =
                     classOutline.implClass.annotate(SuppressWarnings.class).paramArray("value");
@@ -175,9 +179,9 @@ public class InheritancePlugin extends Plugin {
             // Suppress those warnings as well.
             suppress.param("unchecked");
 
-            List<JMethod> orig = ImmutableList.copyOf(classOutline.implClass.methods());
+            orig = ImmutableList.copyOf(classOutline.implClass.methods());
             for (JMethod method : orig) {
-                convertMethod(supers, model, classOutline, method);
+                convertMethod(supers, model, classOutline.implClass, method);
             }
 
             // Add a method to each class to create the corresponding ObjectFactory (only if it's a
@@ -228,79 +232,51 @@ public class InheritancePlugin extends Plugin {
      * </code></pre>
      */
     private static void convertMethod(Map<String, Class> supers, JCodeModel model,
-            ClassOutline classOutline, JMethod method) {
+            JDefinedClass definedClass, JMethod method) {
+        JType convertedParamType = null;
+        JType convertedReturnType = null;
+        JType currentParamType = null;
         if (method.listParamTypes().length > 0) {
             // Right now there's no way to get a method with more than one param, so that's all we
             // support.
-            JType paramType = method.listParamTypes()[0];
+            currentParamType = method.listParamTypes()[0];
             // TODO: better way to do android check
-            if (isAndroid(paramType) && (supers.containsKey(paramType.fullName()) || (
-                    paramType instanceof JClass && ((JClass) paramType)._extends() != null &&
-                            !((JClass) paramType)._extends().name().equals("Object")))) {
-                String name = method.name();
-                method.name(name + "Internal");
-                JMethod newMethod = classOutline.implClass.method(JMod.PUBLIC, model.VOID, name);
-                newMethod.param(convertType(paramType, supers, model),
-                        method.listParams()[0].name());
-                JBlock body = newMethod.body();
-                JInvocation call = body.invoke(method);
-                call.arg(JExpr.cast(paramType, method.listParams()[0]));
+            if (isAndroid(currentParamType) && (supers.containsKey(currentParamType.fullName()) || (
+                    currentParamType instanceof JClass && ((JClass) currentParamType)._extends() != null &&
+                            !((JClass) currentParamType)._extends().name().equals("Object")))) {
+                convertedParamType = convertType(currentParamType, supers, model);
             }
         }
+        JType currentReturnType = method.type();
+        if (isAndroid(currentReturnType) && currentReturnType.erasure() != currentReturnType
+                && currentReturnType instanceof JClass) {
+            convertedReturnType = convertType(currentReturnType, supers, model);
+        }
 
-        JType type = method.type();
-        if (isAndroid(type) && type.erasure() != type && type instanceof JClass) {
+        if (convertedParamType != null || convertedReturnType != null) {
             String name = method.name();
-            method.name(name + "Internal");
-            JType converted = convertType(type, supers, model);
-            JMethod newMethod = classOutline.implClass.method(JMod.PUBLIC, converted, name);
-            newMethod.body()._return(JExpr.cast(type.erasure(), JExpr.invoke(method)));
-        }
-    }
-
-    /**
-     * By default xjc creates a method to return a JAXBElement for top-level elements declared in
-     * the schema. This creates a method called generateElement that calls the default element
-     * creation method, casts the type parameter to its superclass, and returns that. This standard
-     * method name can then be specified in a superclass of ObjectFactory itself, making it
-     * accessible without having to know the specific type of the ObjectFactory.
-     *
-     * For example, suppose your schema contains a top-level element of type {@code MyElementType}
-     * which is declared to be a subclass of {@code MyElementSuper}. By default ObjectFactory would
-     * contain
-     * {@code public JAXBElement<MyElementType> createMyElementType(MyElementType value)}
-     * This method generates a method
-     * {@code public JAXBElement<MyElementSuper> generateElement(MyElementSuper value)} that
-     * calls the default method with the appropriate casts.
-     *
-     * Note that jaxb gets confused if this method is called "createElement", due to the "create"
-     * prefix.
-     */
-    private static void createGenerateElementMethod(Outline outline, JDefinedClass objFactory,
-            Map<String, Class> supers) throws SAXException {
-        List<JMethod> origMethods = Lists.newArrayList(objFactory.methods());
-        for (JMethod m : origMethods) {
-            Class superType = supers.get(m.type().fullName());
-            if (superType != null) {
-                try {
-                    m.type(outline.getCodeModel().parseType(superType.getName()));
-                } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
-                    throw new SAXException(e);
-                }
+            // If there are annotations we don't have a good way to copy them over. Make sure the
+            // new method doesn't get picked up by JAXB (which will be confused by the missing
+            // annotations).
+            if (!method.annotations().isEmpty()) {
+                name = name.replace("create", "generate");
             }
-            if (isAndroid(m.type()) && m.type().erasure() != m.type()) {
-                JType converted = convertType(m.type(), supers, outline.getCodeModel());
-                if (converted == m.type()) {
-                    continue;
-                }
-                JType paramType = m.listParamTypes()[0];
-                JType convertedParam = convertType(paramType, supers, outline.getCodeModel());
-                JMethod newMethod = objFactory.method(JMod.PUBLIC, converted, "generateElement");
-                newMethod.param(convertedParam, m.listParams()[0].name());
-                JInvocation call = JExpr.invoke(m);
-                call.arg(JExpr.cast(paramType, m.listParams()[0]));
-                newMethod.body()._return(JExpr.cast(m.type().erasure(), call));
+            method.name(method.name() + "Internal");
+            JMethod newMethod = definedClass.method(JMod.PUBLIC,
+                    convertedReturnType == null ? model.VOID : convertedReturnType, name);
+            JBlock body = newMethod.body();
+            JInvocation call = JExpr.invoke(method);
+            if (convertedParamType != null) {
+                JVar paramName = method.listParams()[0];
+                newMethod.param(convertedParamType,
+                        paramName.name());
+                call.arg(JExpr.cast(currentParamType, paramName));
+            }
+            if (convertedReturnType != null) {
+                body._return(JExpr.cast(currentReturnType.erasure(), call));
+            }
+            else {
+                body.add(call);
             }
         }
     }

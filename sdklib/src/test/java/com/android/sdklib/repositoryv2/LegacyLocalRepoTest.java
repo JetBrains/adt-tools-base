@@ -101,8 +101,7 @@ public class LegacyLocalRepoTest extends TestCase {
         // Now read the new package
         Repository repo = (Repository) SchemaModuleUtil.unmarshal(
                 mockFop.newFileInputStream(new File("/sdk/tools/package.xml")),
-                extensions,
-                mgr.getResourceResolver(progress), progress);
+                extensions, mgr.getResourceResolver(progress), true, progress);
         progress.assertNoErrorsOrWarnings();
         LocalPackage local = repo.getLocalPackage();
         local.setInstalledPath(mgr.getLocalPath());
@@ -135,8 +134,7 @@ public class LegacyLocalRepoTest extends TestCase {
         Repository repo = (Repository) SchemaModuleUtil.unmarshal(
                 mockFop.newFileInputStream(
                         new File("/sdk/add-ons/addon-google_apis-google-23/package.xml")),
-                extensions,
-                mgr.getResourceResolver(progress), progress);
+                extensions, mgr.getResourceResolver(progress), true, progress);
         progress.assertNoErrorsOrWarnings();
         LocalPackage local = repo.getLocalPackage();
         local.setInstalledPath(mgr.getLocalPath());
