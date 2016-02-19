@@ -482,7 +482,7 @@ public abstract class TaskManager {
                 .setJars(new Supplier<Collection<File>>() {
                     @Override
                     public Collection<File> get() {
-                        Set<File> files = config.getExternalPackagedJarsWithoutAars();
+                        Set<File> files = config.getExternalPackagedJniJars();
                         Set<File> additions = variantScope.getGlobalScope().getAndroidBuilder()
                                 .getAdditionalPackagedJars(config);
 
@@ -497,7 +497,7 @@ public abstract class TaskManager {
                 .setFolders(new Supplier<Collection<File>>() {
                     @Override
                     public Collection<File> get() {
-                        return config.getExternalAarJniLibraries();
+                        return config.getExternalAarJniLibFolders();
                     }
                 })
                 .setDependencies(dependencies)
@@ -538,9 +538,14 @@ public abstract class TaskManager {
                 .setFolders(new Supplier<Collection<File>>() {
                     @Override
                     public Collection<File> get() {
-                        return config.getSubProjectJniLibraries();
+                        return config.getSubProjectJniLibFolders();
                     }
-
+                })
+                .setJars(new Supplier<Collection<File>>() {
+                    @Override
+                    public Collection<File> get() {
+                        return config.getSubProjectPackagedJniJars();
+                    }
                 })
                 .setDependencies(dependencies)
                 .build());
