@@ -27,6 +27,10 @@ ext {
             Boolean.valueOf((String) project.properties[
                     "com.android.build.gradle.integratonTest.useJack"])
 
+    jackInProcess = System.env.USE_JACK_API ||
+            Boolean.valueOf((String) project.properties[
+                    "com.android.build.gradle.integratonTest.jackInProcess"])
+
     minifyEnabled = System.env.CUSTOM_MINIFY ||
             Boolean.valueOf((String) project.properties[
                     "com.android.build.gradle.integratonTest.minifyEnabled"])
@@ -52,9 +56,11 @@ ext {
 }
 
 plugins.withId("com.android.application") { plugin ->
-    plugin.extension.defaultConfig.useJack = ext.useJack
+    plugin.extension.defaultConfig.jackOptions.enabled = ext.useJack
+    plugin.extension.defaultConfig.jackOptions.jackInProcess = ext.jackInProcess
 }
 
 plugins.withId("com.android.library") { plugin ->
-    plugin.extension.defaultConfig.useJack = ext.useJack
+    plugin.extension.defaultConfig.jackOptions.enabled = ext.useJack
+    plugin.extension.defaultConfig.jackOptions.jackInProcess = ext.jackInProcess
 }

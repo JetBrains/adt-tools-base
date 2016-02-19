@@ -22,6 +22,9 @@ import com.android.builder.core.DexOptions;
 import com.android.ide.common.process.JavaProcessExecutor;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutputHandler;
+import com.android.jill.api.ConfigNotSupportedException;
+import com.android.jill.api.v01.ConfigurationException;
+import com.android.jill.api.v01.TranslationException;
 import com.android.sdklib.BuildToolInfo;
 import com.android.repository.Revision;
 import com.android.utils.ILogger;
@@ -44,7 +47,7 @@ import java.util.List;
  * Because different project could use different build-tools, both the library to be converted
  * and the version of the build tools are used as keys in the cache.
  *
- * The API is fairly simple, just call {@link #convertLibrary(File, File, DexOptions, BuildToolInfo, boolean, JavaProcessExecutor, ProcessOutputHandler)}
+ * The API is fairly simple, just call {@link #convertLibrary(File, File, DexOptions, BuildToolInfo, boolean, boolean, JavaProcessExecutor, ProcessOutputHandler, ILogger)}
  *
  * The call will be blocking until the conversion happened, either through actually running Jill or
  * through copying the output of a previous Jill run.
@@ -89,11 +92,13 @@ public class JackConversionCache extends PreProcessCache<PreProcessCache.Key> {
             @NonNull File outFile,
             @NonNull DexOptions dexOptions,
             @NonNull BuildToolInfo buildToolInfo,
+            boolean isJackInProcess,
             boolean verbose,
             @NonNull JavaProcessExecutor processExecutor,
             @NonNull ProcessOutputHandler processOutputHandler,
             @NonNull ILogger logger)
-            throws ProcessException, InterruptedException, IOException {
+            throws ProcessException, InterruptedException, IOException, ClassNotFoundException,
+            ConfigNotSupportedException, TranslationException, ConfigurationException {
 
         Key itemKey = Key.of(inputFile, buildToolInfo.getRevision());
 
@@ -104,20 +109,31 @@ public class JackConversionCache extends PreProcessCache<PreProcessCache.Key> {
         if (pair.getSecond()) {
             try {
                 // haven't process this file yet so do it and record it.
-                List<File> files = AndroidBuilder.convertLibaryToJackUsingApis(
-                        inputFile,
-                        outFile,
-                        dexOptions,
-                        buildToolInfo,
-                        verbose,
-                        processExecutor,
-                        processOutputHandler,
-                        logger);
+                List<File> files;
+                if (isJackInProcess) {
+                    files = AndroidBuilder.convertLibaryWithJillUsingApis(
+                            inputFile,
+                            outFile,
+                            buildToolInfo,
+                            verbose,
+                            logger);
+                } else {
+                    files = AndroidBuilder.convertLibraryWithJillUsingCli(
+                            inputFile,
+                            outFile,
+                            dexOptions,
+                            buildToolInfo,
+                            verbose,
+                            processExecutor,
+                            processOutputHandler,
+                            logger);
+                }
                 item.getOutputFiles().addAll(files);
 
                 incrementMisses();
             } catch (ProcessException exception) {
                 // in case of error, delete (now obsolete) output file
+                //noinspection ResultOfMethodCallIgnored - we are throwing an error anyway.
                 outFile.delete();
                 // and rethrow the error
                 throw exception;
