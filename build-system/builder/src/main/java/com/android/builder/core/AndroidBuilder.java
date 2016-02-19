@@ -83,6 +83,7 @@ import com.android.jack.api.v01.ConfigurationException;
 import com.android.jack.api.v01.MultiDexKind;
 import com.android.jack.api.v01.ReporterKind;
 import com.android.jack.api.v01.UnrecoverableException;
+import com.android.jack.api.v02.Api02Config;
 import com.android.jill.api.JillProvider;
 import com.android.jill.api.v01.Api01TranslationTask;
 import com.android.jill.api.v01.TranslationException;
@@ -1733,16 +1734,17 @@ public class AndroidBuilder {
             Optional<JackProvider> jackProvider = buildToolServiceLoader
                     .getSingleService(getLogger(), BuildToolsServiceLoader.JACK);
             if (jackProvider.isPresent()) {
-                Api01Config config;
+                Api02Config config;
 
                 // Get configuration object
                 try {
-                    config = jackProvider.get().createConfig(Api01Config.class);
+                    config = jackProvider.get().createConfig(Api02Config.class);
 
                     config.setClasspath(new ArrayList<File>(classpath));
                     config.setOutputDexDir(dexOutputFolder);
                     config.setOutputJackFile(jackOutputFile);
                     config.setImportedJackLibraryFiles(new ArrayList<File>(packagedLibraries));
+                    config.setAndroidMinApiLevel(minSdkVersion);
 
                     if (proguardFiles != null) {
                         config.setProguardConfigFiles(new ArrayList<File>(proguardFiles));
@@ -1848,14 +1850,15 @@ public class AndroidBuilder {
                 .setJackOutputFile(jackOutputFile)
                 .addImportFiles(packagedLibraries)
                 .setEcjOptionFile(ecjOptionFile)
-                .setSourceCompatibility(sourceCompatibility);
+                .setSourceCompatibility(sourceCompatibility)
+                .setMinSdkVersion(minSdkVersion);
 
         if (proguardFiles != null) {
             builder.addProguardFiles(proguardFiles).setMappingFile(mappingFile);
         }
 
         if (multiDex) {
-            builder.setMultiDex(true).setMinSdkVersion(minSdkVersion);
+            builder.setMultiDex(true);
         }
 
         builder.setJarJarRuleFiles(jarJarRuleFiles);
