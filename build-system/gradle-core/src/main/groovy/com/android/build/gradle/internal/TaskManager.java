@@ -2078,8 +2078,10 @@ public abstract class TaskManager {
         variantScope.setInstantRunVerifierTask(verifierTask);
 
         JavaResourceVerifierTransform jniLibsVerifierTransform = new JavaResourceVerifierTransform(
+                "jniLibsVerifier",
                 variantScope,
-                getResMergingScopes(variantScope));
+                getResMergingScopes(variantScope),
+                ExtendedContentType.NATIVE_LIBS);
         AndroidTask<TransformTask> jniLibsVerifierTask =
                 variantScope.getTransformManager().addTransform(
                         tasks,
