@@ -18,6 +18,7 @@ dependencies {
     testCompile project(':base:testutils')
     testCompile 'org.easymock:easymock:3.3'
     testCompile 'org.mockito:mockito-all:1.9.5'
+    testCompile 'com.google.truth:truth:0.28'
 }
 
 project.ext.pomName = 'Android Tools sdk-common library'

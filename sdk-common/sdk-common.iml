@@ -23,5 +23,6 @@
     <orderEntry type="module" module-name="builder-test-api" />
     <orderEntry type="library" scope="TEST" name="easymock-tools" level="project" />
     <orderEntry type="library" name="bouncy-castle" level="project" />
+    <orderEntry type="library" scope="TEST" name="truth" level="project" />
   </component>
 </module>
