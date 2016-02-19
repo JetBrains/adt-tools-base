@@ -162,7 +162,6 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
             return enableInstantRunOverride;
         }
         return getBuildType().isDebuggable()
-                && (!getBuildType().isMinifyEnabled() || !getBuildType().isUseProguard())
                 && !getType().isForTesting()
                 && !getUseJack();
     }
