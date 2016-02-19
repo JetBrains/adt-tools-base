@@ -194,9 +194,9 @@ public class JavaCompileConfigAction implements TaskConfigAction<AndroidJavaComp
 
         if (incremental) {
             LOG.info("Using incremental javac compilation.");
+            javacTask.getOptions().setIncremental(true);
         } else {
             LOG.info("Not using incremental javac compilation.");
         }
-        javacTask.getOptions().setIncremental(incremental);
     }
 }
