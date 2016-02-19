@@ -24,6 +24,7 @@ import com.android.builder.internal.packaging.zip.ZFileExtension;
 import com.android.builder.internal.utils.IOExceptionRunnable;
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
+import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Sets;
@@ -128,6 +129,23 @@ public class SignatureExtension {
      * Value of the "created by" attribute.
      */
     private static final String SIGNATURE_CREATED_BY_VALUE = "1.0 (Android)";
+
+    /**
+     * Name of the {@code X-Android-APK-Signer} attribute.
+     */
+    private static final String SIGNATURE_ANDROID_APK_SIGNED_NAME = "X-Android-APK-Signed";
+
+    /**
+     * Value of the {@code X-Android-APK-Signer} attribute when the APK is not signed with the v2
+     * scheme.
+     */
+    public static final String SIGNATURE_ANDROID_APK_SIGNER_VALUE_WHEN_NOT_V2_SIGNED = null;
+
+    /**
+     * Value of the {@code X-Android-APK-Signer} attribute when the APK is signed with the v2
+     * scheme.
+     */
+    public static final String SIGNATURE_ANDROID_APK_SIGNER_VALUE_WHEN_V2_SIGNED = "2";
 
     /**
      * Files to ignore when signing. See
@@ -236,6 +254,13 @@ public class SignatureExtension {
     private final DigestAlgorithm mDigestAlgorithm;
 
     /**
+     * Value to output for the {@code X-Android-APK-Signed} header or {@code null} if the header
+     * should not be output.
+     */
+    @Nullable
+    private final String mApkSignedHeaderValue;
+
+    /**
      * The extension registered with the {@link ZFile}. {@code null} if not registered.
      */
     @Nullable
@@ -248,16 +273,21 @@ public class SignatureExtension {
      * @param minSdkVersion minSdkVersion of the package
      * @param certificate sign certificate
      * @param privateKey the private key to sign the jar
+     * @param apkSignedHeaderValue value of the {@code X-Android-APK-Signed} header to output into
+     * the {@code .SF} file or {@code null} if the header should not be output.
+     *
      * @throws NoSuchAlgorithmException failed to obtain the digest algorithm.
      */
     public SignatureExtension(@NonNull ManifestGenerationExtension manifestExtension,
-            int minSdkVersion, @NonNull X509Certificate certificate, @NonNull PrivateKey privateKey)
+            int minSdkVersion, @NonNull X509Certificate certificate, @NonNull PrivateKey privateKey,
+            @Nullable String apkSignedHeaderValue)
             throws NoSuchAlgorithmException {
         mManifestExtension = manifestExtension;
         mSignatureFile = new Manifest();
         mDirty = false;
         mCertificate = certificate;
         mPrivateKey = privateKey;
+        mApkSignedHeaderValue = apkSignedHeaderValue;
 
         mSignatureAlgorithm =
                 SignatureAlgorithm.fromKeyAlgorithm(privateKey.getAlgorithm(), minSdkVersion);
@@ -370,6 +400,10 @@ public class SignatureExtension {
             } else if (mSignatureFile.getMainAttributes().get(
                     mDigestAlgorithm.manifestAttributeName) != null) {
                 needsNewSignature = true;
+            } else if (!Objects.equal(mApkSignedHeaderValue,
+                    mSignatureFile.getMainAttributes().getValue(
+                            SIGNATURE_ANDROID_APK_SIGNED_NAME))) {
+                needsNewSignature = true;
             }
         } else {
             needsNewSignature = true;
@@ -380,6 +414,13 @@ public class SignatureExtension {
                     SIGNATURE_CREATED_BY_VALUE);
             mSignatureFile.getMainAttributes().putValue(SIGNATURE_VERSION_NAME,
                     SIGNATURE_VERSION_VALUE);
+            if (mApkSignedHeaderValue != null) {
+                mSignatureFile.getMainAttributes().putValue(
+                        SIGNATURE_ANDROID_APK_SIGNED_NAME,
+                        mApkSignedHeaderValue);
+            } else {
+                mSignatureFile.getMainAttributes().remove(SIGNATURE_ANDROID_APK_SIGNED_NAME);
+            }
             mDirty = true;
         }
 

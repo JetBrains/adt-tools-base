@@ -28,6 +28,7 @@ import com.android.builder.internal.packaging.zip.ZFileOptions;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -114,14 +115,19 @@ public class ZFiles {
 
         if (key != null && certificate != null) {
             try {
-                SignatureExtension signatureExt = new SignatureExtension(manifestExt,
-                        minSdkVersion, certificate, key);
-                signatureExt.register();
-                FullApkSignExtension fullExtension = new FullApkSignExtension(zfile,
-                        certificate, key);
-                fullExtension.register();
-            } catch (NoSuchAlgorithmException e) {
-                throw new IOException("Failed to create signature extension", e);
+                SignatureExtension jarSignatureSchemeExt = new SignatureExtension(manifestExt,
+                        minSdkVersion, certificate, key,
+                        SignatureExtension.SIGNATURE_ANDROID_APK_SIGNER_VALUE_WHEN_V2_SIGNED);
+                jarSignatureSchemeExt.register();
+                FullApkSignExtension apkSignatureSchemeV2Ext =
+                        new FullApkSignExtension(
+                                zfile,
+                                minSdkVersion,
+                                certificate,
+                                key);
+                apkSignatureSchemeV2Ext.register();
+            } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+                throw new IOException("Failed to create signature extensions", e);
             }
         }
 

@@ -51,7 +51,7 @@ public class JarSigningTest {
         Pair<PrivateKey, X509Certificate> p = SignatureTestUtils.generateSignaturePre18();
 
         SignatureExtension signatureExtension = new SignatureExtension(manifestExtension, 12,
-                p.getSecond(), p.getFirst());
+                p.getSecond(), p.getFirst(), null);
         signatureExtension.register();
 
         zf.close();
@@ -80,7 +80,7 @@ public class JarSigningTest {
         ZFile zf2 = new ZFile(zipFile);
         ManifestGenerationExtension me = new ManifestGenerationExtension("Merry", "Christmas");
         me.register(zf2);
-        new SignatureExtension(me, 10, p.getSecond(), p.getFirst()).register();
+        new SignatureExtension(me, 10, p.getSecond(), p.getFirst(), null).register();
         zf2.close();
 
         ZFile zf3 = new ZFile(zipFile);
@@ -134,7 +134,7 @@ public class JarSigningTest {
         ZFile zf2 = new ZFile(zipFile);
         ManifestGenerationExtension me = new ManifestGenerationExtension("Merry", "Christmas");
         me.register(zf2);
-        new SignatureExtension(me, 21, p.getSecond(), p.getFirst()).register();
+        new SignatureExtension(me, 21, p.getSecond(), p.getFirst(), null).register();
         zf2.close();
 
         ZFile zf3 = new ZFile(zipFile);
@@ -177,5 +177,29 @@ public class JarSigningTest {
 
         StoredEntry ecdsaEntry = zf3.get("META-INF/CERT.EC");
         assertNotNull(ecdsaEntry);
+    }
+
+    @Test
+    public void v2SignAddsApkSigningBlock() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
+        ZFile zf = new ZFile(zipFile);
+        ManifestGenerationExtension manifestExtension = new ManifestGenerationExtension("Me", "Me");
+        manifestExtension.register(zf);
+
+        Pair<PrivateKey, X509Certificate> p = SignatureTestUtils.generateSignaturePre18();
+
+        FullApkSignExtension signatureExtension =
+                new FullApkSignExtension(zf, 12, p.getSecond(), p.getFirst());
+        signatureExtension.register();
+        zf.close();
+
+
+        try (ZFile verifyZFile = new ZFile(zipFile)) {
+            long centralDirOffset = verifyZFile.getCentralDirectoryOffset();
+            byte[] apkSigningBlockMagic = new byte[16];
+            verifyZFile.directFullyRead(
+                    centralDirOffset - apkSigningBlockMagic.length, apkSigningBlockMagic);
+            assertEquals("APK Sig Block 42", new String(apkSigningBlockMagic, "US-ASCII"));
+        }
     }
 }
