@@ -124,14 +124,20 @@ public class JavaCompileConfigAction implements TaskConfigAction<AndroidJavaComp
         if (compileOptions.getIncremental() != null) {
             incremental = compileOptions.getIncremental();
         } else {
-            //if (globalScope.getExtension().getDataBinding().isEnabled()
-            //        || project.getPlugins().hasPlugin("com.neenbedankt.android-apt")
-            //        || project.getPlugins().hasPlugin("me.tatarka.retrolambda")) {
-            //    incremental = false;
-            //} else {
-            // For now, default to false, irrespective of Instant Run.
+            if (globalScope.getExtension().getDataBinding().isEnabled()
+                    || project.getPlugins().hasPlugin("com.neenbedankt.android-apt")
+                    || project.getPlugins().hasPlugin("me.tatarka.retrolambda")) {
+                incremental = false;
+            } else {
+                // For now, default to true, irrespective of Instant Run.
+                incremental = true;
+            }
+        }
+
+        // if we are in instant run mode because of aapt ids not being stable and the gradle
+        // incremental support not flagging it correctly, disable incremental java compilation.
+        if (globalScope.isActive(OptionalCompilationStep.INSTANT_DEV)) {
             incremental = false;
-            //}
         }
 
         if (AndroidGradleOptions.isJavaCompileIncrementalPropertySet(project)) {
