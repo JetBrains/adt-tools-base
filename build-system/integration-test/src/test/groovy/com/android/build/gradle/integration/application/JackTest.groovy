@@ -78,7 +78,7 @@ class JackTest {
 
     @BeforeClass
     static void setUp() {
-        GradleTestProject.assumeBuildToolsAtLeast(21, 1, 0)
+        GradleTestProject.assumeBuildToolsAtLeast(24, 0, 0)
     }
 
     @AfterClass

@@ -29,7 +29,9 @@ public interface JackProvider {
   /**
    * Creates a {@link JackConfig} instance for an interface representing a {@link JackConfig} API
    * version.
-   * @param cls the {@link JackConfig} API interface
+   *
+   * @param <T> the {@link JackConfig} API interface
+   * @param cls the {@link JackConfig} API {@link Class} instance
    * @return the {@link JackConfig} instance
    * @throws ConfigNotSupportedException If no implementation is found for the given interface.
    */
@@ -39,8 +41,9 @@ public interface JackProvider {
   /**
    * Returns whether an interface representing a {@link JackConfig} API version is supported.
    *
-   * @param cls the {@link JackConfig} API interface
-   * @return <code>true</true> if the config is supported
+   * @param <T> the {@link JackConfig} API interface
+   * @param cls the {@link JackConfig} API {@link Class} instance
+   * @return {@code true} if the configuration is supported, otherwise {@code false}
    */
   @Nonnull
   <T extends JackConfig> boolean isConfigSupported(@Nonnull Class<T> cls);

@@ -99,6 +99,7 @@ public class CheckAll {
     // TODO: Investigate and clear these lists.
     private static final ImmutableSet<String> BROKEN_ASSEMBLE = ImmutableSet.of(
             "ndkRsHelloCompute", // TODO: Fails in C++ code, not sure what the issue is.
+            "jarjarWithJack", // Temporarily disabled until we have buildtools 24.0.0
 
             // These are all right:
             "filteredOutBuildType", // assembleDebug does not exist as debug build type is removed.
