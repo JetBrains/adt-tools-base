@@ -51,10 +51,10 @@ import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.incremental.BuildInfoLoaderTask;
-import com.android.build.gradle.internal.incremental.InstantRunAnchorTask;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
-import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
+import com.android.build.gradle.internal.incremental.InstantRunAnchorTask;
+import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.OriginalStream;
 import com.android.build.gradle.internal.pipeline.TransformManager;
@@ -140,6 +140,7 @@ import com.android.build.gradle.tasks.factory.UnitTestConfigAction;
 import com.android.build.gradle.tasks.fd.FastDeployRuntimeExtractorTask;
 import com.android.build.gradle.tasks.fd.GenerateInstantRunAppInfoTask;
 import com.android.builder.core.AndroidBuilder;
+import com.android.builder.core.DexProcessBuilder;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
 import com.android.builder.dependency.LibraryDependency;
@@ -151,7 +152,7 @@ import com.android.builder.testing.ConnectedDeviceProvider;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
 import com.android.manifmerger.ManifestMerger2;
-import com.android.sdklib.AndroidVersion;
+import com.android.repository.Revision;
 import com.android.utils.StringHelper;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
@@ -1347,7 +1348,6 @@ public abstract class TaskManager {
      */
     protected IncrementalMode getIncrementalMode(@NonNull GradleVariantConfiguration config) {
         if (config.isInstantRunSupported()
-                && targetDeviceSupportsInstantRun(config, project)
                 && globalScope.isActive(OptionalCompilationStep.INSTANT_DEV)) {
             if (isComponentModelPlugin) {
                 return IncrementalMode.FULL;
@@ -1366,18 +1366,6 @@ public abstract class TaskManager {
         }
 
         return IncrementalMode.NONE;
-    }
-
-    private static boolean targetDeviceSupportsInstantRun(
-            @NonNull GradleVariantConfiguration config,
-            @NonNull Project project) {
-        if (config.isLegacyMultiDexMode()) {
-            // We don't support legacy multi-dex on Dalvik.
-            return AndroidGradleOptions.getTargetApiLevel(project)
-                    .compareTo(AndroidVersion.ART_RUNTIME) >= 0;
-        }
-
-        return true;
     }
 
     // TODO - should compile src/lint/java from src/lint/java and jar it into build/lint/lint.jar
@@ -2164,7 +2152,7 @@ public abstract class TaskManager {
         incrementalAnchorTask.dependsOn(tasks, incrementalWrapperTask);
 
         scope.getInstantRunBuildContext().setApiLevel(
-                AndroidGradleOptions.getTargetApiLevel(project),
+                InstantRunPatchingPolicy.getApiLevel(getLogger(), project),
                 AndroidGradleOptions.getColdswapMode(project),
                 AndroidGradleOptions.getBuildTargetAbi(project));
         scope.getInstantRunBuildContext().setDensity(
