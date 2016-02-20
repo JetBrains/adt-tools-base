@@ -72,7 +72,7 @@ import java.util.concurrent.Callable;
 public class JackTask extends AbstractAndroidCompile
         implements FileSupplier, BinaryFileProviderTask {
 
-    public static final Revision JACK_MIN_REV = new Revision(21, 1, 0);
+    public static final Revision JACK_MIN_REV = new Revision(24, 0, 0);
 
     private AndroidBuilder androidBuilder;
 

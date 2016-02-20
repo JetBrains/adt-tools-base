@@ -50,16 +50,29 @@ public abstract class ChainedException extends Exception
   @CheckForNull
   private ChainedException next = null;
 
+  /**
+   * Construct the exception with a {@link String} message.
+   * @param message the message
+   */
   public ChainedException(@Nonnull String message) {
     super("");
     this.message = message;
   }
 
+  /**
+   * Construct the exception with a {@link String} message and a {@link Throwable} cause.
+   * @param message the message
+   * @param cause the cause
+   */
   public ChainedException(@Nonnull String message, @Nonnull Throwable cause) {
     super("", cause);
     this.message = message;
   }
 
+  /**
+   * Construct the exception with a {@link Throwable} cause.
+   * @param cause the cause
+   */
   public ChainedException(@Nonnull Throwable cause) {
     super(cause);
     this.message = cause.getMessage();
@@ -77,6 +90,10 @@ public abstract class ChainedException extends Exception
     return message;
   }
 
+  /**
+   * Set the {@link String} message.
+   * @param message the message
+   */
   public void setMessage(@Nonnull String message) {
     this.message = message;
   }
@@ -99,11 +116,18 @@ public abstract class ChainedException extends Exception
     }
   }
 
+  /**
+   * Get the next exception chained to this exception.
+   * @return the next exception
+   */
   @CheckForNull
   public ChainedException getNextException() {
     return next;
   }
 
+  /**
+   * @return the number of chained exception
+   */
   @Nonnegative
   public int getNextExceptionCount() {
     return count;
@@ -125,11 +149,16 @@ public abstract class ChainedException extends Exception
 
   /**
    * Builder to construct a chain of exceptions.
+   * @param <T> the type of a {@link ChainedException}
    */
   public static class ChainedExceptionBuilder<T extends ChainedException> {
     @CheckForNull
     private T head = null;
 
+    /**
+     * Append a chain of exceptions to the current chain of exceptions.
+     * @param exceptions the chain of exceptions to append
+     */
     @SuppressWarnings("unchecked")
     public void appendException(@Nonnull T exceptions) {
       for (ChainedException exception : exceptions) {
@@ -137,12 +166,19 @@ public abstract class ChainedException extends Exception
       }
     }
 
+    /**
+     * Throw the head of the chain of exceptions is at least one has been appended.
+     * @throws T the exception
+     */
     public void throwIfNecessary() throws T {
       if (head != null) {
         throw head;
       }
     }
 
+    /**
+     * @return the head of the chain of exceptions
+     */
     @Nonnull
     public T getException() {
       assert head != null;

@@ -21,8 +21,15 @@ package com.android.jack.api.v01;
  * Jack verbosity level
  */
 public enum VerbosityLevel {
+  @SuppressWarnings("javadoc")
   ERROR,
+  @SuppressWarnings("javadoc")
   WARNING,
+  @SuppressWarnings("javadoc")
   INFO,
+  /**
+   * This level is deprecated, it sets the level to {@link VerbosityLevel#INFO}.
+   */
+  @Deprecated
   DEBUG
 }

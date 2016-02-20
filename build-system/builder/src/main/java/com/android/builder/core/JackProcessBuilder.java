@@ -35,7 +35,7 @@ import java.util.List;
  */
 public class JackProcessBuilder extends ProcessEnvBuilder<JackProcessBuilder> {
 
-    static final Revision JACK_MIN_REV = new Revision(21, 1, 0);
+    static final Revision JACK_MIN_REV = new Revision(24, 0, 0);
 
     private boolean mDebugLog = false;
     private boolean mVerbose = false;
@@ -229,6 +229,8 @@ public class JackProcessBuilder extends ProcessEnvBuilder<JackProcessBuilder> {
         if (mSourceCompatibility != null) {
             builder.addArgs("-D", "jack.java.source.version=" + mSourceCompatibility);
         }
+
+        builder.addArgs("-D", "jack.android.min-api-level=" + mMinSdkVersion);
 
         builder.addArgs("@" + mEcjOptionFile.getAbsolutePath());
 

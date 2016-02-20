@@ -1290,7 +1290,7 @@ public class GradleTestProject implements TestRule {
 
     public static void assumeBuildToolsAtLeast(int major, int minor, int micro) {
         Revision currentVersion = Revision.parseRevision(DEFAULT_BUILD_TOOL_VERSION);
-        Assume.assumeTrue("Test is only applicable to build tools > " + major,
-                new Revision(major, minor, micro).compareTo(currentVersion) < 0);
+        Assume.assumeTrue("Test is only applicable to build tools >= " + major,
+                currentVersion.compareTo(new Revision(major, minor, micro)) >= 0);
     }
 }
