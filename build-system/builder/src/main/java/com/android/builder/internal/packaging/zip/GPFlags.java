@@ -17,12 +17,19 @@
 package com.android.builder.internal.packaging.zip;
 
 import com.android.annotations.NonNull;
-import com.google.common.primitives.Ints;
 
 import java.io.IOException;
 
 /**
  * General purpose bit flags. Contains the encoding of the zip's general purpose bits.
+ *
+ * <p>We don't really care about the method bit(s). These are bits 1 and 2. Here are the values:
+ * <ul>
+ *  <li>0 (00): Normal (-en) compression option was used.
+ *  <li>1 (01): Maximum (-exx/-ex) compression option was used.
+ *  <li>2 (10): Fast (-ef) compression option was used.
+ *  <li>3 (11): Super Fast (-es) compression option was used.
+ * </ul>
  */
 class GPFlags {
 
@@ -30,11 +37,6 @@ class GPFlags {
      * Is the entry encrypted?
      */
     private static final int BIT_ENCRYPTION = 1;
-
-    /**
-     * What is the compression method?
-     */
-    private static final int BIT_METHOD = (1 << 1) | (1 << 2);
 
     /**
      * Has CRC computation been deferred and, therefore, does a data description block exist?
@@ -176,11 +178,6 @@ class GPFlags {
         if ((bits & BIT_UNUSED) != 0) {
             throw new IOException("Unused bits set in directory entry. Weird. I don't know what's "
                     + "going on.");
-        }
-
-        int methodBit = Ints.checkedCast(bits & BIT_METHOD);
-        if (methodBit != 0) {
-            throw new IOException("Unsupported method bit: " + methodBit + ".");
         }
 
         if ((bits & 0xffffffff00000000L) != 0) {
