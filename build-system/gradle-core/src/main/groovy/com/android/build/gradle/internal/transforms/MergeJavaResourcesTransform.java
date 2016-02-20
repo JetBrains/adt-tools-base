@@ -237,7 +237,8 @@ public class MergeJavaResourcesTransform extends Transform {
 
         // folder to copy the files that were originally in folders.
         File outFolder = null;
-        // jar to copy the files that came from jars.
+        // jar to copy the files that came from jars.  We want copy files from jar into a jar to
+        // avoid case sensitivity issue on a case insensitive file system.
         File outJar = null;
 
         if (!invocation.isIncremental()) {
@@ -457,7 +458,7 @@ public class MergeJavaResourcesTransform extends Transform {
             filter.resetList(jarSources.get(jarFile));
 
             // copy the jar file
-            jarMerger.addJar(jarFile);
+            jarMerger.addJar(jarFile, true);
         }
 
         return jarMerger;
