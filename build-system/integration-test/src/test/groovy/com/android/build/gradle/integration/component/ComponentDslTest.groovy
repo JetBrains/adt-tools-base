@@ -56,6 +56,11 @@ model {
         ndk {
             moduleName "hello-jni"
         }
+        externalNativeBuild {
+            ndkBuild {
+                path file("Android.mk")
+            }
+        }
         productFlavors {
             create("f1") {
                 proguardFiles.add(file("proguard.txt"))

@@ -17,6 +17,7 @@
 package com.android.build.gradle;
 
 import com.android.annotations.NonNull;
+import com.android.build.api.transform.Transform;
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.api.VariantFilter;
 import com.android.build.gradle.internal.CompileOptions;
@@ -30,7 +31,7 @@ import com.android.build.gradle.internal.dsl.LintOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.dsl.Splits;
 import com.android.build.gradle.internal.dsl.TestOptions;
-import com.android.build.api.transform.Transform;
+import com.android.build.gradle.internal.model.CoreExternalNativeBuild;
 import com.android.builder.core.LibraryRequest;
 import com.android.builder.model.DataBindingOptions;
 import com.android.builder.model.SigningConfig;
@@ -99,6 +100,9 @@ public interface AndroidConfig {
 
     /** Lint options. */
     LintOptions getLintOptions();
+
+    /** External native build options. */
+    CoreExternalNativeBuild getExternalNativeBuild();
 
     /** Packaging options. */
     PackagingOptions getPackagingOptions();
