@@ -33,6 +33,7 @@ import com.android.build.gradle.internal.dsl.AndroidSourceSetFactory;
 import com.android.build.gradle.internal.dsl.BuildType;
 import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.dsl.DataBindingOptions;
+import com.android.build.gradle.internal.dsl.ExternalNativeBuild;
 import com.android.build.gradle.internal.dsl.LintOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.dsl.ProductFlavor;
@@ -96,6 +97,9 @@ public abstract class BaseExtension implements AndroidConfig {
 
     /** Lint options. */
     final LintOptions lintOptions;
+
+    /** External native build. */
+    final ExternalNativeBuild externalNativeBuild;
 
     /** Dex options. */
     final DexOptions dexOptions;
@@ -194,6 +198,7 @@ public abstract class BaseExtension implements AndroidConfig {
         aaptOptions = instantiator.newInstance(AaptOptions.class);
         dexOptions = instantiator.newInstance(DexOptions.class);
         lintOptions = instantiator.newInstance(LintOptions.class);
+        externalNativeBuild = instantiator.newInstance(ExternalNativeBuild.class, instantiator);
         testOptions = instantiator.newInstance(TestOptions.class);
         compileOptions = instantiator.newInstance(CompileOptions.class);
         packagingOptions = instantiator.newInstance(PackagingOptions.class);
@@ -438,6 +443,14 @@ public abstract class BaseExtension implements AndroidConfig {
     public void lintOptions(Action<LintOptions> action) {
         checkWritability();
         action.execute(lintOptions);
+    }
+
+    /**
+     * Configures external native build options.
+     */
+    public void externalNativeBuild(Action<ExternalNativeBuild> action) {
+        checkWritability();
+        action.execute(externalNativeBuild);
     }
 
     /** Configures test options. */
@@ -820,6 +833,12 @@ public abstract class BaseExtension implements AndroidConfig {
     @Override
     public LintOptions getLintOptions() {
         return lintOptions;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public ExternalNativeBuild getExternalNativeBuild() {
+        return externalNativeBuild;
     }
 
     /** {@inheritDoc} */

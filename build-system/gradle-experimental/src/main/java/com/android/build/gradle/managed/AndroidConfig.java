@@ -26,6 +26,7 @@ import com.android.build.gradle.internal.dsl.LintOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.dsl.Splits;
 import com.android.build.gradle.internal.dsl.TestOptions;
+import com.android.build.gradle.internal.model.CoreExternalNativeBuild;
 import com.android.builder.core.LibraryRequest;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
@@ -139,6 +140,9 @@ public interface AndroidConfig {
     @Unmanaged
     LintOptions getLintOptions();
     void setLintOptions(LintOptions lintOptions);
+
+    /** ExternalNativeBuild options. */
+    CoreExternalNativeBuild getExternalNativeBuild();
 
     /** Packaging options. */
     @Unmanaged

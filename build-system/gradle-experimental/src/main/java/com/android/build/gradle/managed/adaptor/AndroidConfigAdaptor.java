@@ -34,6 +34,7 @@ import com.android.build.gradle.internal.dsl.LintOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.dsl.Splits;
 import com.android.build.gradle.internal.dsl.TestOptions;
+import com.android.build.gradle.internal.model.CoreExternalNativeBuild;
 import com.android.build.gradle.managed.AndroidConfig;
 import com.android.build.gradle.managed.BuildType;
 import com.android.build.gradle.managed.ProductFlavor;
@@ -242,7 +243,6 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
         return model.getPackagingOptions();
     }
 
-
     @Override
     public TestOptions getTestOptions() {
         return model.getTestOptions();
@@ -251,6 +251,11 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
     @Override
     public Splits getSplits() {
         return model.getSplits();
+    }
+
+    @Override
+    public CoreExternalNativeBuild getExternalNativeBuild() {
+        return model.getExternalNativeBuild();
     }
 
     @Override

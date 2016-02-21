@@ -78,6 +78,20 @@ android {
         assertEquals("foo-suffix", versionName)
     }
 
+    @Test
+    public void externalNativeBuildNdkBuild() {
+        project.getBuildFile() << """
+android {
+    externalNativeBuild {
+        ndkBuild {
+            path file('.')
+        }
+    }
+}
+"""
+        project.execute("tasks")
+    }
+
 
 
     @Test
