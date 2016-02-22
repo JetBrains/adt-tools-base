@@ -2011,4 +2011,15 @@ public class ZFile implements Closeable {
 
         mDirty = true;
     }
+
+    /**
+     * Obtains the filesystem path to the zip file.
+     *
+     * @return the file that may or may not exist (depending on whether something existed there
+     * before the zip was created and on whether the zip has been updated or not)
+     */
+    @NonNull
+    public File getFile() {
+        return mFile;
+    }
 }
