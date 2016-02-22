@@ -19,13 +19,12 @@ package com.android.build.gradle.integration.instant;
 import static com.android.build.gradle.integration.common.utils.DeviceHelper.DEFAULT_ADB_TIMEOUT_MSEC;
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.junit.Assert.assertNotNull;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.AndroidGradleOptions;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.OptionalCompilationStep;
-import com.android.build.gradle.integration.common.utils.DeviceHelper;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
-import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.InstantRun;
 import com.android.builder.model.Variant;
@@ -34,23 +33,29 @@ import com.android.ddmlib.CollectingOutputReceiver;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.InstallException;
+import com.android.resources.Density;
 import com.android.sdklib.AndroidVersion;
+import com.android.tools.fd.client.InstantRunArtifact;
+import com.android.tools.fd.client.InstantRunArtifactType;
+import com.android.tools.fd.client.InstantRunBuildInfo;
+import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.io.Files;
 
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public final class InstantRunTestUtils {
 
     @NonNull
-    public static InstantRunBuildContext loadContext(@NonNull InstantRun instantRunModel)
+    public static InstantRunBuildInfo loadContext(@NonNull InstantRun instantRunModel)
             throws Exception {
-        InstantRunBuildContext context = new InstantRunBuildContext();
-        context.loadFromXmlFile(instantRunModel.getInfoFile());
+        InstantRunBuildInfo context = InstantRunBuildInfo.get(
+                Files.toString(instantRunModel.getInfoFile(), Charsets.UTF_8));
+        assertNotNull(context);
         return context;
     }
 
@@ -66,58 +71,61 @@ public final class InstantRunTestUtils {
     }
 
     @NonNull
-    public static List<String> getInstantRunArgs(OptionalCompilationStep... flags) {
-        return ImmutableList.of(buildOptionalCompilationStepsProperty(flags));
-    }
-
-    @NonNull
     public static List<String> getInstantRunArgs(int apiLevel,
             @NonNull ColdswapMode coldswapMode,
             @NonNull OptionalCompilationStep... flags) {
-        return getInstantRunArgs(new AndroidVersion(apiLevel, null), coldswapMode, flags);
+        return getInstantRunArgs(new AndroidVersion(apiLevel, null),
+                null /* density */, coldswapMode, flags);
     }
 
-    @NonNull
-    public static List<String> getInstantRunArgs(
+    static List<String> getInstantRunArgs(
             @NonNull IDevice device,
             @NonNull ColdswapMode coldswapMode,
             @NonNull OptionalCompilationStep... flags) {
-        return getInstantRunArgs(device.getVersion(), coldswapMode, flags);
+        return getInstantRunArgs(device.getVersion(),
+                Density.getEnum(device.getDensity()), coldswapMode, flags);
     }
 
     @NonNull
-    public static List<String> getInstantRunArgs(@NonNull AndroidVersion androidVersion,
+    private static List<String> getInstantRunArgs(
+            @Nullable AndroidVersion androidVersion,
+            @Nullable Density denisty,
             @NonNull ColdswapMode coldswapMode,
-            @NonNull OptionalCompilationStep... flags) {
-        String version =
-                String.format("-Pandroid.injected.build.api=%s", androidVersion.getApiString());
-        String mode = String.format("-Pandroid.injected.coldswap.mode=%s", coldswapMode.name());
-        return ImmutableList.of(buildOptionalCompilationStepsProperty(flags), version, mode);
-    }
-
-    @NonNull
-    private static String buildOptionalCompilationStepsProperty(
-            @NonNull OptionalCompilationStep[] optionalCompilationSteps) {
-        StringBuilder builder = new StringBuilder();
-        builder.append("-P").append(AndroidProject.OPTIONAL_COMPILATION_STEPS).append('=')
-                .append(OptionalCompilationStep.INSTANT_DEV);
-        for (OptionalCompilationStep step : optionalCompilationSteps) {
-            builder.append(',').append(step);
+            @NonNull OptionalCompilationStep[] flags) {
+        ImmutableList.Builder<String> builder = ImmutableList.builder();
+        if (androidVersion != null) {
+            builder.add(String.format(
+                    "-Pandroid.injected.build.api=%s", androidVersion.getApiString()));
         }
-        return builder.toString();
+        if (denisty != null) {
+            builder.add(String.format(
+                    "-Pandroid.injected.build.density=%s", denisty.getResourceValue()));
+        }
+
+        builder.add(String.format("-Pandroid.injected.coldswap.mode=%s", coldswapMode.name()));
+
+        StringBuilder optionalSteps = new StringBuilder()
+                .append("-P").append("android.optional.compilation").append('=')
+                .append("INSTANT_DEV");
+        for (OptionalCompilationStep step : flags) {
+            optionalSteps.append(',').append(step);
+        }
+        builder.add(optionalSteps.toString());
+        return builder.build();
     }
 
     static void doInstall(
             @NonNull IDevice device,
-            @NonNull List<InstantRunBuildContext.Artifact> artifacts) throws DeviceException,
+            @NonNull List<InstantRunArtifact> artifacts) throws DeviceException,
             InstallException {
         List<File> apkFiles = Lists.newArrayList();
-        for (InstantRunBuildContext.Artifact artifact : artifacts) {
-            if (artifact.getType() == InstantRunBuildContext.FileType.SPLIT) {
-                apkFiles.add(artifact.getLocation());
+        for (InstantRunArtifact artifact : artifacts) {
+            if (artifact.type == InstantRunArtifactType.SPLIT) {
+                apkFiles.add(artifact.file);
             }
-            if (artifact.getType() == InstantRunBuildContext.FileType.MAIN) {
-                apkFiles.add(0, artifact.getLocation());
+            if (artifact.type == InstantRunArtifactType.MAIN ||
+                    artifact.type == InstantRunArtifactType.SPLIT_MAIN ) {
+                apkFiles.add(0, artifact.file);
             }
         }
 

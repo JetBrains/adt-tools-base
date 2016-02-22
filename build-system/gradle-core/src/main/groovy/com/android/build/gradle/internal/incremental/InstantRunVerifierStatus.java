@@ -64,5 +64,7 @@ public enum InstantRunVerifierStatus {
     // reflection use
     REFLECTION_USED,
 
-    JAVA_RESOURCES_CHANGED
+    JAVA_RESOURCES_CHANGED,
+
+    DEPENDENCY_CHANGED,
 }
