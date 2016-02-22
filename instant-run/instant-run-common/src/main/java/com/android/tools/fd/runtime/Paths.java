@@ -44,6 +44,11 @@ public final class Paths {
     public static final String DEX_SLICE_PREFIX = "slice-";
 
     @NonNull
+    public static String getMainApkDataDirectory(@NonNull String applicationId) {
+        return "/data/data/" + applicationId;
+    }
+
+    @NonNull
     public static String getDataDirectory(@NonNull String applicationId) {
         return "/data/data/" + applicationId + "/files/instant-run";
     }
