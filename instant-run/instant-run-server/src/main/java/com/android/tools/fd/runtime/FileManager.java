@@ -146,7 +146,7 @@ public class FileManager {
     }
 
     public static File getNativeLibraryFolder() {
-        return new File(getDataFolder(), "lib");
+        return new File(Paths.getMainApkDataDirectory(applicationId), "lib");
     }
 
     /**
