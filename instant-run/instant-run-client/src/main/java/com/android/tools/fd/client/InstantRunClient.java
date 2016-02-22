@@ -691,8 +691,8 @@ public class InstantRunClient {
 
     private boolean runAsCommand(@NonNull IDevice device, @NonNull String cmd)
       throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException, InstantRunPushFailedException {
-        String output = getCommandOutput(device, cmd);
-        if (!output.trim().isEmpty()) {
+        String output = getCommandOutput(device, cmd).trim();
+        if (!output.isEmpty()) {
             mLogger.warning("Unexpected shell output for " + cmd + ": " + output);
 
             if (output.startsWith("run-as: Package '") && output.endsWith("' is unknown")) {
@@ -705,14 +705,15 @@ public class InstantRunClient {
 
     private boolean runCommand(@NonNull IDevice device, @NonNull String cmd)
       throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
-        String output = getCommandOutput(device, cmd);
-        if (!output.trim().isEmpty()) {
+        String output = getCommandOutput(device, cmd).trim();
+        if (!output.isEmpty()) {
             mLogger.warning("Unexpected shell output for " + cmd + ": " + output);
             return false;
         }
         return true;
     }
 
+    @NonNull
     private static String getCommandOutput(@NonNull IDevice device, @NonNull String cmd)
       throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
         CollectingOutputReceiver receiver;
