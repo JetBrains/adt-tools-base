@@ -1334,10 +1334,13 @@ public class ZFile implements Closeable {
     /**
      * Adds a new file to {@link #mEntries}. This is actually added to the zip and its space
      * allocated in the {@link #mMap}.
+     *
      * @param newEntry the new entry to add
      * @throws IOException failed to add the file
      */
     private void addToEntries(@NonNull final StoredEntry newEntry) throws IOException {
+        Preconditions.checkArgument(newEntry.getDataDescriptorType() ==
+                DataDescriptorType.NO_DATA_DESCRIPTOR, "newEntry has data descriptor");
 
         /*
          * If there is a file with the same name in the archive, remove it. We remove it by
