@@ -576,7 +576,7 @@ public class StoredEntry {
      */
     void loadSourceIntoMemory() throws IOException {
         ProcessedAndRawByteSources oldSource = mSource;
-        byte[] rawContents = read();
+        byte[] rawContents = oldSource.getRawByteSource().read();
         mSource = createSourcesFromRawContents(new CloseableDelegateByteSource(
                 ByteSource.wrap(rawContents), rawContents.length));
         mCdh.setOffset(-1);

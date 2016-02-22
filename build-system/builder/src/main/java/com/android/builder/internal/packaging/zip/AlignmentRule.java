@@ -24,9 +24,9 @@ import java.util.regex.Pattern;
 /**
  * An alignment rule defines how should some files be aligned in a zip file. A rule is defined
  * by two properties: a pattern and an alignment value.
- * <p>
- * The pattern is applied to the file name and defines which files this rule applies to. Note that
- * the pattern is <em>not</em> applied to the <em>path</em>, only to the file name.
+ *
+ * <p>The pattern is applied to the file name and defines which files this rule applies to. Note
+ * that the pattern is <em>not</em> applied to the <em>path</em>, only to the file name.
  * The value defines the alignment of data. So,
  * for example, an alignment of {@code 1024} means that the data needs to start in a byte {@code b}
  * such that {@code b % 1024 == 0}.
