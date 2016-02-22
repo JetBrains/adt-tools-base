@@ -102,6 +102,7 @@ public class LegacyRepoUtils {
             details.setAbi(desc.getPath());
             assert androidVersion != null;
             details.setApiLevel(androidVersion.getApiLevel());
+            details.setCodename(androidVersion.getCodename());
             IdDisplay tagIdDisplay = desc.getTag();
             if (tagIdDisplay != null) {
                 IdDisplay tag = sdkFactory.createIdDisplayType();
@@ -137,6 +138,7 @@ public class LegacyRepoUtils {
             }
             assert androidVersion != null;
             details.setApiLevel(androidVersion.getApiLevel());
+            details.setCodename(androidVersion.getCodename());
             if (!addonLibraries.isEmpty()) {
                 DetailsTypes.AddonDetailsType.Libraries librariesType = addonFactory.createLibrariesType();
                 List<Library> libraries = librariesType.getLibrary();
@@ -167,6 +169,7 @@ public class LegacyRepoUtils {
             DetailsTypes.SourceDetailsType details = repoFactory.createSourceDetailsType();
             assert androidVersion != null;
             details.setApiLevel(androidVersion.getApiLevel());
+            details.setCodename(androidVersion.getCodename());
             return (TypeDetails) details;
         } else if (desc.getType() == PkgType.PKG_EXTRA) {
             DetailsTypes.ExtraDetailsType details = addonFactory.createExtraDetailsType();
