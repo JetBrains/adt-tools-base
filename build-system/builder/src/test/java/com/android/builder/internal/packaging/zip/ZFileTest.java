@@ -76,6 +76,15 @@ public class ZFileTest {
     }
 
     @Test
+    public void getZipPath() throws Exception {
+        File temporaryDir = Files.createTempDir();
+        File zpath = new File(temporaryDir, "a");
+        ZFile zf = new ZFile(zpath);
+        assertEquals(zpath, zf.getFile());
+        zf.close();
+    }
+
+    @Test
     public void readNonExistingFile() throws Exception {
         File temporaryDir = Files.createTempDir();
         File zf = new File(temporaryDir, "a");
