@@ -1248,8 +1248,9 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      * @return a list ResourceSet.
      */
     @NonNull
-    public List<AssetSet> getAssetSets(@NonNull List<File> generatedResFolders,
-                                       boolean includeDependencies) {
+    public List<AssetSet> getAssetSets(
+            @NonNull List<File> generatedAssetFolders,
+            boolean includeDependencies) {
         List<AssetSet> assetSets = Lists.newArrayList();
 
         if (includeDependencies) {
@@ -1270,8 +1271,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         // the main + generated asset folders are in the same AssetSet
         AssetSet assetSet = new AssetSet(BuilderConstants.MAIN);
         assetSet.addSources(mainResDirs);
-        if (!generatedResFolders.isEmpty()) {
-            for (File generatedResFolder : generatedResFolders) {
+        if (!generatedAssetFolders.isEmpty()) {
+            for (File generatedResFolder : generatedAssetFolders) {
                 assetSet.addSource(generatedResFolder);
             }
         }
@@ -1374,6 +1375,66 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         }
 
         return jniSets;
+    }
+
+    /**
+     * Returns the dynamic list of {@link AssetSet} based on the configuration, its dependencies,
+     * as well as tested config if applicable (test of a library).
+     *
+     * The list is ordered in ascending order of importance, meaning the first set is meant to be
+     * overridden by the 2nd one and so on. This is meant to facilitate usage of the list in a
+     * {@link com.android.ide.common.res2.AssetMerger}.
+     *
+     * @return a list ResourceSet.
+     */
+    @NonNull
+    public List<AssetSet> getShaderSets() {
+        List<AssetSet> shaderSets = Lists.newArrayList();
+
+        Collection<File> mainShaderDirs = mDefaultSourceProvider.getShadersDirectories();
+
+        // the main + generated asset folders are in the same AssetSet
+        AssetSet shaderSet = new AssetSet(BuilderConstants.MAIN);
+        shaderSet.addSources(mainShaderDirs);
+        shaderSets.add(shaderSet);
+
+        // the list of flavor must be reversed to use the right overlay order.
+        for (int n = mFlavorSourceProviders.size() - 1; n >= 0 ; n--) {
+            SourceProvider sourceProvider = mFlavorSourceProviders.get(n);
+
+            Collection<File> flavorJniDirs = sourceProvider.getShadersDirectories();
+            // we need the same of the flavor config, but it's in a different list.
+            // This is fine as both list are parallel collections with the same number of items.
+            shaderSet = new AssetSet(mFlavors.get(n).getName());
+            shaderSet.addSources(flavorJniDirs);
+            shaderSets.add(shaderSet);
+        }
+
+        // multiflavor specific overrides flavor
+        if (mMultiFlavorSourceProvider != null) {
+            Collection<File> variantJniDirs = mMultiFlavorSourceProvider.getShadersDirectories();
+            shaderSet = new AssetSet(getFlavorName());
+            shaderSet.addSources(variantJniDirs);
+            shaderSets.add(shaderSet);
+        }
+
+        // build type overrides flavors
+        if (mBuildTypeSourceProvider != null) {
+            Collection<File> typeJniDirs = mBuildTypeSourceProvider.getShadersDirectories();
+            shaderSet = new AssetSet(mBuildType.getName());
+            shaderSet.addSources(typeJniDirs);
+            shaderSets.add(shaderSet);
+        }
+
+        // variant specific overrides all
+        if (mVariantSourceProvider != null) {
+            Collection<File> variantJniDirs = mVariantSourceProvider.getShadersDirectories();
+            shaderSet = new AssetSet(getFullName());
+            shaderSet.addSources(variantJniDirs);
+            shaderSets.add(shaderSet);
+        }
+
+        return shaderSets;
     }
 
     public int getRenderscriptTarget() {

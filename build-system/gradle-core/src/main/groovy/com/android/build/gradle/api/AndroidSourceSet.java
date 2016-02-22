@@ -243,6 +243,26 @@ public interface AndroidSourceSet {
     AndroidSourceSet jniLibs(Closure configureClosure);
 
     /**
+     * The Android shaders directory for this source set.
+     *
+     * @return the shaders. Never returns null.
+     */
+    @NonNull
+    AndroidSourceDirectorySet getShaders();
+
+    /**
+     * Configures the location of the Android shaders for this set.
+     *
+     * <p>The given closure is used to configure the {@link AndroidSourceDirectorySet}
+     * which contains the shaders.
+     *
+     * @param configureClosure The closure to use to configure the shaders.
+     * @return this
+     */
+    @NonNull
+    AndroidSourceSet shaders(Closure configureClosure);
+
+    /**
      * Sets the root of the source sets to a given path.
      *
      * All entries of the source set are located under this root directory.

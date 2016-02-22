@@ -35,6 +35,11 @@ public class LeafFolderGatherer implements SourceSearcher.SourceFileProcessor {
         mFolders.add(sourceFile.getParentFile());
     }
 
+    @Override
+    public void initOnFirstFile() {
+        // do nothing
+    }
+
     @NonNull
     public Set<File> getFolders() {
         return mFolders;

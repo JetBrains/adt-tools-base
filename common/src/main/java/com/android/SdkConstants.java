@@ -240,6 +240,10 @@ public final class SdkConstants {
     /** split-select */
     public static final String FN_SPLIT_SELECT = "split-select" + ext(".exe", "");
 
+    /** glslc */
+    public static final String FD_GLSLC = "glslc";
+    public static final String FN_GLSLC = "glslc" + ext(".exe", "");
+
 
     /** properties file for SDK Updater packages */
     public static final String FN_SOURCE_PROP = "source.properties";                  //$NON-NLS-1$

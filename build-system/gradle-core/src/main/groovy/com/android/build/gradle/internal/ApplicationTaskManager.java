@@ -53,14 +53,22 @@ import java.util.Set;
 public class ApplicationTaskManager extends TaskManager {
 
     public ApplicationTaskManager(
-            Project project,
-            AndroidBuilder androidBuilder,
-            DataBindingBuilder dataBindingBuilder,
-            AndroidConfig extension,
-            SdkHandler sdkHandler,
-            DependencyManager dependencyManager,
-            ToolingModelBuilderRegistry toolingRegistry) {
-        super(project, androidBuilder, dataBindingBuilder, extension, sdkHandler,dependencyManager,
+            @NonNull Project project,
+            @NonNull AndroidBuilder androidBuilder,
+            @NonNull DataBindingBuilder dataBindingBuilder,
+            @NonNull AndroidConfig extension,
+            @NonNull SdkHandler sdkHandler,
+            @NonNull NdkHandler ndkHandler,
+            @NonNull DependencyManager dependencyManager,
+            @NonNull ToolingModelBuilderRegistry toolingRegistry) {
+        super(
+                project,
+                androidBuilder,
+                dataBindingBuilder,
+                extension,
+                sdkHandler,
+                ndkHandler,
+                dependencyManager,
                 toolingRegistry);
     }
 
@@ -158,6 +166,15 @@ public class ApplicationTaskManager extends TaskManager {
                     @Override
                     public Void call() {
                         createAidlTask(tasks, variantScope);
+                        return null;
+                    }
+                });
+
+        ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_SHADER_TASK,
+                new Recorder.Block<Void>() {
+                    @Override
+                    public Void call() {
+                        createShaderTask(tasks, variantScope);
                         return null;
                     }
                 });

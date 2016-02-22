@@ -38,6 +38,7 @@ import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
+import com.android.build.gradle.tasks.ShaderCompile;
 
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Task;
@@ -176,6 +177,9 @@ public interface VariantScope extends BaseScope {
     File getMergeNativeLibsOutputDir();
 
     @NonNull
+    File getMergeShadersOutputDir();
+
+    @NonNull
     File getBuildConfigSourceOutputDir();
 
     @NonNull
@@ -201,6 +205,9 @@ public interface VariantScope extends BaseScope {
 
     @NonNull
     File getAidlSourceOutputDir();
+
+    @NonNull
+    File getShadersOutputDir();
 
     @NonNull
     File getPackagedAidlDir();
@@ -304,6 +311,10 @@ public interface VariantScope extends BaseScope {
     AndroidTask<AidlCompile> getAidlCompileTask();
 
     void setAidlCompileTask(AndroidTask<AidlCompile> aidlCompileTask);
+
+    AndroidTask<ShaderCompile> getShaderCompileTask();
+
+    void setShaderCompileTask(AndroidTask<ShaderCompile> shaderCompileTask);
 
     @Nullable
     AndroidTask<MergeResources> getMergeResourcesTask();

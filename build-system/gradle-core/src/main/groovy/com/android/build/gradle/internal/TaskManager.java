@@ -133,6 +133,7 @@ import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.ProcessManifest;
 import com.android.build.gradle.tasks.ProcessTestManifest;
 import com.android.build.gradle.tasks.RenderscriptCompile;
+import com.android.build.gradle.tasks.ShaderCompile;
 import com.android.build.gradle.tasks.SplitZipAlign;
 import com.android.build.gradle.tasks.ZipAlign;
 import com.android.build.gradle.tasks.factory.JacocoAgentConfigAction;
@@ -265,13 +266,14 @@ public abstract class TaskManager {
     public AndroidTask<MockableAndroidJarTask> createMockableJar;
 
     public TaskManager(
-            Project project,
-            AndroidBuilder androidBuilder,
-            DataBindingBuilder dataBindingBuilder,
-            AndroidConfig extension,
-            SdkHandler sdkHandler,
-            DependencyManager dependencyManager,
-            ToolingModelBuilderRegistry toolingRegistry) {
+            @NonNull Project project,
+            @NonNull AndroidBuilder androidBuilder,
+            @NonNull DataBindingBuilder dataBindingBuilder,
+            @NonNull AndroidConfig extension,
+            @NonNull SdkHandler sdkHandler,
+            @NonNull NdkHandler ndkHandler,
+            @NonNull DependencyManager dependencyManager,
+            @NonNull ToolingModelBuilderRegistry toolingRegistry) {
         this.project = project;
         this.androidBuilder = androidBuilder;
         this.dataBindingBuilder = dataBindingBuilder;
@@ -286,6 +288,7 @@ public abstract class TaskManager {
                 androidBuilder,
                 extension,
                 sdkHandler,
+                ndkHandler,
                 toolingRegistry);
     }
 
@@ -1058,6 +1061,22 @@ public abstract class TaskManager {
         scope.getAidlCompileTask().dependsOn(tasks, scope.getVariantData().prepareDependenciesTask);
     }
 
+    public void createShaderTask(@NonNull TaskFactory tasks, @NonNull VariantScope scope) {
+        // merge the shader folders together using the proper priority.
+        AndroidTask<MergeSourceSetFolders> mergeShadersTask = androidTasks.create(tasks,
+                new MergeSourceSetFolders.MergeShaderSourceFoldersConfigAction(scope));
+        // TODO do we support non compiled shaders in aars?
+        //mergeShadersTask.dependsOn(tasks, scope.getVariantData().prepareDependenciesTask);
+
+        // compile the shaders
+        AndroidTask<ShaderCompile> shaderCompileTask = androidTasks.create(
+                tasks, new ShaderCompile.ConfigAction(scope));
+        scope.setShaderCompileTask(shaderCompileTask);
+        shaderCompileTask.dependsOn(tasks, mergeShadersTask);
+
+        scope.getAssetGenTask().dependsOn(tasks, shaderCompileTask);
+    }
+
     /**
      * Creates the task for creating *.class files using javac. These tasks are created regardless
      * of whether Jack is used or not, but assemble will not depend on them if it is. They are
@@ -1315,6 +1334,8 @@ public abstract class TaskManager {
         createProcessJavaResTasks(tasks, variantScope);
 
         createAidlTask(tasks, variantScope);
+
+        createShaderTask(tasks, variantScope);
 
         // Add NDK tasks
         if (!isComponentModelPlugin) {

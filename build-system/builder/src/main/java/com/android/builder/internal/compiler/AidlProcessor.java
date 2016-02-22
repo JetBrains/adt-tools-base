@@ -130,4 +130,9 @@ public class AidlProcessor implements SourceSearcher.SourceFileProcessor {
 
         FileUtils.delete(depFile);
     }
+
+    @Override
+    public void initOnFirstFile() {
+        // do nothing
+    }
 }
