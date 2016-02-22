@@ -26,10 +26,8 @@ import static org.junit.Assert.assertTrue;
 
 import com.android.annotations.NonNull;
 import com.android.builder.internal.packaging.zip.compress.DeflateExecutionCompressor;
-import com.android.builder.internal.packaging.zip.utils.CachedFileContents;
 import com.android.builder.internal.packaging.zip.utils.CloseableByteSource;
 import com.android.builder.internal.packaging.zip.utils.RandomAccessFileUtils;
-import com.android.testutils.TestUtils;
 import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
@@ -66,18 +64,9 @@ public class ZFileTest {
     @Rule
     public TemporaryFolder mTemporaryFolder = new TemporaryFolder();
 
-    private File cloneRsrc(String rsrcName, String fname) throws Exception {
-        File packagingRoot = TestUtils.getRoot("packaging");
-        String rsrcPath = packagingRoot.getAbsolutePath() + "/" + rsrcName;
-        File rsrcFile = new File(rsrcPath);
-        File result = mTemporaryFolder.newFile(fname);
-        Files.copy(rsrcFile, result);
-        return result;
-    }
-
     @Test
     public void getZipPath() throws Exception {
-        File temporaryDir = Files.createTempDir();
+        File temporaryDir = mTemporaryFolder.getRoot();
         File zpath = new File(temporaryDir, "a");
         ZFile zf = new ZFile(zpath);
         assertEquals(zpath, zf.getFile());
@@ -86,7 +75,7 @@ public class ZFileTest {
 
     @Test
     public void readNonExistingFile() throws Exception {
-        File temporaryDir = Files.createTempDir();
+        File temporaryDir = mTemporaryFolder.getRoot();
         File zf = new File(temporaryDir, "a");
         ZFile azf = new ZFile(zf);
         azf.touch();
@@ -96,7 +85,7 @@ public class ZFileTest {
 
     @Test(expected = IOException.class)
     public void readExistingEmptyFile() throws Exception {
-        File temporaryDir = Files.createTempDir();
+        File temporaryDir = mTemporaryFolder.getRoot();
         File zf = new File(temporaryDir, "a");
         Files.write(new byte[0], zf);
         @SuppressWarnings("unused")
@@ -105,7 +94,7 @@ public class ZFileTest {
 
     @Test
     public void readAlmostEmptyZip() throws Exception {
-        File zf = cloneRsrc("empty-zip.zip", "a");
+        File zf = ZipTestUtils.cloneRsrc("empty-zip.zip", mTemporaryFolder);
 
         ZFile azf = new ZFile(zf);
         assertEquals(1, azf.entries().size());
@@ -117,7 +106,7 @@ public class ZFileTest {
 
     @Test
     public void readZipWithTwoFilesOneDirectory() throws Exception {
-        File zf = cloneRsrc("simple-zip.zip", "a");
+        File zf = ZipTestUtils.cloneRsrc("simple-zip.zip", mTemporaryFolder);
         ZFile azf = new ZFile(zf);
         assertEquals(3, azf.entries().size());
 
@@ -146,7 +135,7 @@ public class ZFileTest {
 
     @Test
     public void readOnlyZipSupport() throws Exception {
-        File testZip = cloneRsrc("empty-zip.zip", "tz");
+        File testZip = ZipTestUtils.cloneRsrc("empty-zip.zip", mTemporaryFolder);
 
         assertTrue(testZip.setWritable(false));
 
@@ -260,53 +249,6 @@ public class ZFileTest {
         } finally {
             jzf.close();
         }
-    }
-
-    @Test
-    public void mergeZip() throws Exception {
-        File aZip = cloneRsrc("simple-zip.zip", "a.zip");
-
-        File merged = new File(mTemporaryFolder.getRoot(), "r.zip");
-        ZFile mergedZf = new ZFile(merged);
-        mergedZf.mergeFrom(new ZFile(aZip), Predicates.<String>alwaysFalse());
-        mergedZf.close();
-
-        assertEquals(3, mergedZf.entries().size());
-
-        StoredEntry e0 = mergedZf.get("dir/");
-        assertNotNull(e0);
-        assertSame(StoredEntryType.DIRECTORY, e0.getType());
-
-        StoredEntry e1 = mergedZf.get("dir/inside");
-        assertNotNull(e1);
-        assertSame(StoredEntryType.FILE, e1.getType());
-        ByteArrayOutputStream e1BytesOut = new ByteArrayOutputStream();
-        ByteStreams.copy(e1.open(), e1BytesOut);
-        byte e1Bytes[] = e1BytesOut.toByteArray();
-        String e1Txt = new String(e1Bytes, Charsets.US_ASCII);
-        assertEquals("inside", e1Txt);
-
-        StoredEntry e2 = mergedZf.get("file.txt");
-        assertNotNull(e2);
-        assertSame(StoredEntryType.FILE, e2.getType());
-        ByteArrayOutputStream e2BytesOut = new ByteArrayOutputStream();
-        ByteStreams.copy(e2.open(), e2BytesOut);
-        byte e2Bytes[] = e2BytesOut.toByteArray();
-        String e2Txt = new String(e2Bytes, Charsets.US_ASCII);
-        assertEquals("file with more text to allow deflating to be useful", e2Txt);
-
-        CachedFileContents<Object> changeDetector = new CachedFileContents<Object>(merged);
-        changeDetector.closed(null);
-
-        /*
-         * Clone aZip into bZip and merge. Should have no effect on the final zip file.
-         */
-        File bZip = cloneRsrc("simple-zip.zip", "b.zip");
-
-        mergedZf.mergeFrom(new ZFile(bZip), Predicates.<String>alwaysFalse());
-        mergedZf.close();
-
-        assertTrue(changeDetector.isValid());
     }
 
     @Test
@@ -936,7 +878,7 @@ public class ZFileTest {
 
     @Test
     public void java7JarSupported() throws Exception {
-        File jar = cloneRsrc("j7.jar", "j7.jar");
+        File jar = ZipTestUtils.cloneRsrc("j7.jar", mTemporaryFolder);
 
         ZFile j = new ZFile(jar);
         assertEquals(8, j.entries().size());
@@ -945,7 +887,7 @@ public class ZFileTest {
 
     @Test
     public void java8JarSupported() throws Exception {
-        File jar = cloneRsrc("j8.jar", "j8.jar");
+        File jar = ZipTestUtils.cloneRsrc("j8.jar", mTemporaryFolder);
 
         ZFile j = new ZFile(jar);
         assertEquals(8, j.entries().size());
@@ -954,7 +896,7 @@ public class ZFileTest {
 
     @Test
     public void utf8NamesSupportedOnReading() throws Exception {
-        File zip = cloneRsrc("zip-with-utf8-filename.zip", "a");
+        File zip = ZipTestUtils.cloneRsrc("zip-with-utf8-filename.zip", mTemporaryFolder);
 
         ZFile f = new ZFile(zip);
         assertEquals(1, f.entries().size());
