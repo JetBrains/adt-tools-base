@@ -155,9 +155,9 @@ public class ZFileTest {
         File testZip = new File(mTemporaryFolder.getRoot(), "t.zip");
         ZFile zf = new ZFile(testZip);
 
-        File wiki = cloneRsrc("text-files/wikipedia.html", "wiki");
-        File rfc = cloneRsrc("text-files/rfc2460.txt", "rfc");
-        File lena = cloneRsrc("images/lena.png", "lena");
+        File wiki = ZipTestUtils.cloneRsrc("text-files/wikipedia.html", mTemporaryFolder, "wiki");
+        File rfc = ZipTestUtils.cloneRsrc("text-files/rfc2460.txt", mTemporaryFolder, "rfc");
+        File lena = ZipTestUtils.cloneRsrc("images/lena.png", mTemporaryFolder, "lena");
         byte[] wikiData = Files.toByteArray(wiki);
         byte[] rfcData = Files.toByteArray(rfc);
         byte[] lenaData = Files.toByteArray(lena);

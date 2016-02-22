@@ -171,4 +171,41 @@ public class ZipMergeTest {
                 lmStored.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
         assertArrayEquals(lBytes, lmStored.read());
     }
+
+    @Test
+    public void mergeZipWithSorting() throws Exception {
+        File foo = mTemporaryFolder.newFile("foo");
+
+        byte[] wBytes = Files.toByteArray(ZipTestUtils.rsrcFile("text-files/wikipedia.html"));
+        byte[] lBytes = Files.toByteArray(ZipTestUtils.rsrcFile("images/lena.png"));
+
+        ZipOutputStream fooOut = new ZipOutputStream(new FileOutputStream(foo));
+        try {
+            fooOut.putNextEntry(new ZipEntry("w"));
+            fooOut.write(wBytes);
+            ZipEntry le = new ZipEntry("l");
+            le.setMethod(ZipEntry.STORED);
+            le.setSize(lBytes.length);
+            le.setCrc(Hashing.crc32().hashBytes(lBytes).padToLong());
+            fooOut.putNextEntry(le);
+            fooOut.write(lBytes);
+        } finally {
+            fooOut.close();
+        }
+
+        ZFile fooZf = new ZFile(foo);
+
+        ZFile merged = new ZFile(new File(mTemporaryFolder.getRoot(), "bar"));
+        merged.mergeFrom(fooZf, Predicates.<String>alwaysFalse());
+        merged.sortZipContents();
+        merged.update();
+
+        StoredEntry wmStored = merged.get("w");
+        assertNotNull(wmStored);
+        assertArrayEquals(wBytes, wmStored.read());
+
+        StoredEntry lmStored = merged.get("l");
+        assertNotNull(lmStored);
+        assertArrayEquals(lBytes, lmStored.read());
+    }
 }
