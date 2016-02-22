@@ -56,7 +56,8 @@ public class BestAndDefaultDeflateExecutorCompressor extends ExecutorCompressor 
      * @param tracker the byte tracker to keep track of allocated bytes
      * @param minRatio the minimum best compression size / default compression size needed to pick
      * the default compression size; if {@code 0.0} then the default compression is always picked,
-     * if {@code 1.0} then the best compression is always picked.
+     * if {@code 1.0} then the best compression is always picked unless it produces the exact same
+     * size as the default compression.
      */
     public BestAndDefaultDeflateExecutorCompressor(@NonNull Executor executor,
             @NonNull ByteTracker tracker, double minRatio) {

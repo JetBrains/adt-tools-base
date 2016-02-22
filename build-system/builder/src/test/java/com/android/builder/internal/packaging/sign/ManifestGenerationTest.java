@@ -22,7 +22,9 @@ import static org.junit.Assert.assertTrue;
 
 import com.android.builder.internal.packaging.zip.StoredEntry;
 import com.android.builder.internal.packaging.zip.ZFile;
+import com.android.testutils.TestUtils;
 import com.google.common.base.Charsets;
+import com.google.common.io.Closer;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -31,6 +33,7 @@ import org.mockito.internal.util.collections.Sets;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.util.Set;
 
 public class ManifestGenerationTest {
@@ -51,6 +54,75 @@ public class ManifestGenerationTest {
         extension.register(zf);
 
         zf.update();
+
+        StoredEntry se = zf.get("META-INF/MANIFEST.MF");
+        assertNotNull(se);
+
+        String text = new String(se.read(), Charsets.US_ASCII);
+        text = text.trim();
+        String lines[] = text.split(System.getProperty("line.separator"));
+        assertEquals(3, lines.length);
+
+        assertEquals("Manifest-Version: 1.0", lines[0].trim());
+
+        Set<String> linesSet = Sets.newSet();
+        for (String l : lines) {
+            linesSet.add(l.trim());
+        }
+
+        assertTrue(linesSet.contains("Built-By: Me, of course"));
+        assertTrue(linesSet.contains("Created-By: Myself"));
+    }
+
+    @Test
+    public void manifestGenerationOnHalfWrittenFile() throws Exception {
+        File zip = new File(mTemporaryFolder.getRoot(), "f.zip");
+        ZFile zf = new ZFile(zip);
+
+        Closer closer = Closer.create();
+        zf.add("wiki", closer.register(new FileInputStream(new File(TestUtils.getRoot("packaging",
+                "text-files"), "wikipedia.html"))));
+
+        ManifestGenerationExtension extension = new ManifestGenerationExtension("Me, of course",
+                "Myself");
+        extension.register(zf);
+
+        zf.close();
+
+        StoredEntry se = zf.get("META-INF/MANIFEST.MF");
+        assertNotNull(se);
+
+        String text = new String(se.read(), Charsets.US_ASCII);
+        text = text.trim();
+        String lines[] = text.split(System.getProperty("line.separator"));
+        assertEquals(3, lines.length);
+
+        assertEquals("Manifest-Version: 1.0", lines[0].trim());
+
+        Set<String> linesSet = Sets.newSet();
+        for (String l : lines) {
+            linesSet.add(l.trim());
+        }
+
+        assertTrue(linesSet.contains("Built-By: Me, of course"));
+        assertTrue(linesSet.contains("Created-By: Myself"));
+    }
+
+    @Test
+    public void manifestGenerationOnExistingFile() throws Exception {
+        File zip = new File(mTemporaryFolder.getRoot(), "f.zip");
+        ZFile zf = new ZFile(zip);
+
+        Closer closer = Closer.create();
+        zf.add("wiki", closer.register(new FileInputStream(new File(TestUtils.getRoot("packaging",
+                "text-files"), "wikipedia.html"))));
+        zf.close();
+
+        ManifestGenerationExtension extension = new ManifestGenerationExtension("Me, of course",
+                "Myself");
+        extension.register(zf);
+
+        zf.close();
 
         StoredEntry se = zf.get("META-INF/MANIFEST.MF");
         assertNotNull(se);

@@ -101,6 +101,8 @@ public class ZFileTest {
         Files.write(new byte[0], zf);
         @SuppressWarnings("unused")
         ZFile azf = new ZFile(zf);
+
+        azf.close();
     }
 
     @Test
@@ -113,6 +115,8 @@ public class ZFileTest {
         StoredEntry z = azf.get("z/");
         assertNotNull(z);
         assertSame(StoredEntryType.DIRECTORY, z.getType());
+
+        azf.close();
     }
 
     @Test
@@ -142,6 +146,8 @@ public class ZFileTest {
         byte e2Bytes[] = e2BytesOut.toByteArray();
         String e2Txt = new String(e2Bytes, Charsets.US_ASCII);
         assertEquals("file with more text to allow deflating to be useful", e2Txt);
+
+        azf.close();
     }
 
     @Test
@@ -152,6 +158,53 @@ public class ZFileTest {
 
         ZFile zf = new ZFile(testZip);
         assertEquals(1, zf.entries().size());
+        zf.close();
+    }
+
+    @Test
+    public void compressedFilesReadableByJavaZip() throws Exception {
+        File testZip = new File(mTemporaryFolder.getRoot(), "t.zip");
+        ZFile zf = new ZFile(testZip);
+
+        File wiki = cloneRsrc("text-files/wikipedia.html", "wiki");
+        File rfc = cloneRsrc("text-files/rfc2460.txt", "rfc");
+        File lena = cloneRsrc("images/lena.png", "lena");
+        byte[] wikiData = Files.toByteArray(wiki);
+        byte[] rfcData = Files.toByteArray(rfc);
+        byte[] lenaData = Files.toByteArray(lena);
+        zf.add("wiki", new ByteArrayInputStream(wikiData));
+        zf.add("rfc", new ByteArrayInputStream(rfcData));
+        zf.add("lena", new ByteArrayInputStream(lenaData));
+        zf.close();
+
+        ZipFile jz = new ZipFile(testZip);
+        try {
+            ZipEntry ze = jz.getEntry("wiki");
+            assertNotNull(ze);
+            assertEquals(ZipEntry.DEFLATED, ze.getMethod());
+            assertTrue(ze.getCompressedSize() < wikiData.length);
+            InputStream zeis = jz.getInputStream(ze);
+            assertArrayEquals(wikiData, ByteStreams.toByteArray(zeis));
+            zeis.close();
+
+            ze = jz.getEntry("rfc");
+            assertNotNull(ze);
+            assertEquals(ZipEntry.DEFLATED, ze.getMethod());
+            assertTrue(ze.getCompressedSize() < rfcData.length);
+            zeis = jz.getInputStream(ze);
+            assertArrayEquals(rfcData, ByteStreams.toByteArray(zeis));
+            zeis.close();
+
+            ze = jz.getEntry("lena");
+            assertNotNull(ze);
+            assertEquals(ZipEntry.STORED, ze.getMethod());
+            assertTrue(ze.getCompressedSize() == lenaData.length);
+            zeis = jz.getInputStream(ze);
+            assertArrayEquals(lenaData, ByteStreams.toByteArray(zeis));
+            zeis.close();
+        } finally {
+            jz.close();
+        }
     }
 
     @Test
