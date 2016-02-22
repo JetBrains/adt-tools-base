@@ -399,11 +399,12 @@ public class StoredEntry {
             F_LAST_MOD_DATE.verify(byteSource, mCdh.getLastModDate());
         }
 
-        if (mCdh.getGpBit().isDeferredCrc()) {
-            F_CRC32.verify(byteSource, 0);
-            F_COMPRESSED_SIZE.verify(byteSource, 0);
-            F_UNCOMPRESSED_SIZE.verify(byteSource, 0);
-        } else {
+        /*
+         * If CRC-32, compressed size and uncompressed size are deferred, their values in Local
+         * File Header must be ignored and their actual values must be read from the Data
+         * Descriptor following the contents of this entry. See readDataDescriptorRecord().
+         */
+        if (!mCdh.getGpBit().isDeferredCrc()) {
             F_CRC32.verify(byteSource, mCdh.getCrc32());
             F_COMPRESSED_SIZE.verify(byteSource, compressInfo.getCompressedSize());
             F_UNCOMPRESSED_SIZE.verify(byteSource, mCdh.getUncompressedSize());
