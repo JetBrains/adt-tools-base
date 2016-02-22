@@ -519,7 +519,7 @@ public class VariantManager implements VariantModel {
             @NonNull List<? extends ProductFlavor> productFlavorList) {
         BuildTypeData buildTypeData = buildTypes.get(buildType.getName());
 
-        GradleVariantConfiguration variantConfig = new GradleVariantConfiguration(
+        GradleVariantConfiguration variantConfig = GradleVariantConfiguration.create(
                 defaultConfigData.getProductFlavor(),
                 defaultConfigData.getSourceSet(),
                 buildTypeData.getBuildType(),
@@ -527,7 +527,7 @@ public class VariantManager implements VariantModel {
                 variantFactory.getVariantConfigurationType(),
                 signingOverride);
 
-        if (variantConfig.getType() == LIBRARY && variantConfig.getUseJack()) {
+        if (variantConfig.getType() == LIBRARY && variantConfig.getJackOptions().isEnabled()) {
             project.getLogger().warn(
                     "{}, {}: Jack compiler is not supported in library projects, falling back to javac.",
                     project.getPath(),
@@ -693,7 +693,7 @@ public class VariantManager implements VariantModel {
         // but it's never the case on defaultConfigData
         // The constructor does a runtime check on the instances so we should be safe.
         @SuppressWarnings("ConstantConditions")
-        GradleVariantConfiguration testVariantConfig = new GradleVariantConfiguration(
+        GradleVariantConfiguration testVariantConfig = GradleVariantConfiguration.createTestConfig(
                 testedVariantData.getVariantConfiguration(),
                 defaultConfig,
                 defaultConfigData.getTestSourceSet(type),
@@ -789,7 +789,7 @@ public class VariantManager implements VariantModel {
                                 variantData.getName()),
                         new Recorder.Property(
                                 "use_jack",
-                                Boolean.toString(variantConfig.getUseJack())),
+                                Boolean.toString(variantConfig.getJackOptions().isEnabled())),
                         new Recorder.Property(
                                 "use_minify",
                                 Boolean.toString(variantConfig.isMinifyEnabled())),
@@ -808,7 +808,7 @@ public class VariantManager implements VariantModel {
                     variantDataList.add(unitTestVariantData);
 
                     if (buildTypeData == testBuildTypeData) {
-                        if (variantConfig.isMinifyEnabled() && variantConfig.getUseJack()) {
+                        if (variantConfig.isMinifyEnabled() && variantConfig.getJackOptions().isEnabled()) {
                             throw new RuntimeException(
                                     "Cannot test obfuscated variants when compiling with jack.");
                         }

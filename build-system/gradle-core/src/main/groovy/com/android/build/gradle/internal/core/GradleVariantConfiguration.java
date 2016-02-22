@@ -21,6 +21,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
+import com.android.build.gradle.internal.dsl.CoreJackOptions;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
 import com.android.builder.core.VariantConfiguration;
@@ -47,26 +48,9 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
     @Nullable
     private Boolean enableInstantRunOverride = null;
     private final MergedNdkConfig mMergedNdkConfig = new MergedNdkConfig();
+    private final MergedJackOptions mMergedJackOptions = new MergedJackOptions();
 
-    /**
-     * Creates a {@link GradleVariantConfiguration} for a normal (non-test) variant.
-     */
-    public GradleVariantConfiguration(
-            @NonNull CoreProductFlavor defaultConfig,
-            @NonNull SourceProvider defaultSourceProvider,
-            @NonNull CoreBuildType buildType,
-            @Nullable SourceProvider buildTypeSourceProvider,
-            @NonNull VariantType type,
-            @Nullable SigningConfig signingConfigOverride) {
-        super(defaultConfig, defaultSourceProvider, buildType, buildTypeSourceProvider, type,
-                signingConfigOverride);
-        computeNdkConfig();
-    }
-
-    /**
-     * Creates a {@link GradleVariantConfiguration} for a testing variant.
-     */
-    public GradleVariantConfiguration(
+    private GradleVariantConfiguration(
             @Nullable VariantConfiguration testedConfig,
             @NonNull CoreProductFlavor defaultConfig,
             @NonNull SourceProvider defaultSourceProvider,
@@ -76,7 +60,49 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
             @Nullable SigningConfig signingConfigOverride) {
         super(defaultConfig, defaultSourceProvider, buildType, buildTypeSourceProvider, type,
                 testedConfig, signingConfigOverride);
+        computeJackOptions();
         computeNdkConfig();
+    }
+
+    /**
+     * Creates a {@link GradleVariantConfiguration} for a normal (non-test) variant.
+     */
+    public static GradleVariantConfiguration create(
+            @NonNull CoreProductFlavor defaultConfig,
+            @NonNull SourceProvider defaultSourceProvider,
+            @NonNull CoreBuildType buildType,
+            @Nullable SourceProvider buildTypeSourceProvider,
+            @NonNull VariantType type,
+            @Nullable SigningConfig signingConfigOverride) {
+        return new GradleVariantConfiguration(
+                null /*testedConfig*/,
+                defaultConfig,
+                defaultSourceProvider,
+                buildType,
+                buildTypeSourceProvider,
+                type,
+                signingConfigOverride);
+    }
+
+    /**
+     * Creates a {@link GradleVariantConfiguration} for a testing variant.
+     */
+    public static GradleVariantConfiguration createTestConfig(
+            @Nullable VariantConfiguration testedConfig,
+            @NonNull CoreProductFlavor defaultConfig,
+            @NonNull SourceProvider defaultSourceProvider,
+            @NonNull CoreBuildType buildType,
+            @Nullable SourceProvider buildTypeSourceProvider,
+            @NonNull VariantType type,
+            @Nullable SigningConfig signingConfigOverride) {
+        return new GradleVariantConfiguration(
+                testedConfig,
+                defaultConfig,
+                defaultSourceProvider,
+                buildType,
+                buildTypeSourceProvider,
+                type,
+                signingConfigOverride);
     }
 
     @NonNull
@@ -120,48 +146,16 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
                 (!type.isForTesting() || (getTestedConfig().getType() != VariantType.LIBRARY));
     }
 
-    public boolean getUseJack() {
-        Boolean value = getBuildType().getJackOptions().isEnabled();
-        if (value != null) {
-            return value;
-        }
-
-        // cant use merge flavor as useJack is not a prop on the base class.
-        for (CoreProductFlavor productFlavor : getProductFlavors()) {
-            value = productFlavor.getJackOptions().isEnabled();
-            if (value != null) {
-                return value;
-            }
-        }
-
-        value = getDefaultConfig().getJackOptions().isEnabled();
-        if (value != null) {
-            return value;
-        }
-
-        return false;
+    public CoreJackOptions getJackOptions() {
+        return mMergedJackOptions;
     }
 
-    public boolean isJackInProcess() {
-        Boolean value = getBuildType().getJackOptions().isJackInProcess();
-        if (value != null) {
-            return value;
-        }
-
-        // cant use merge flavor as isJackInProcess is not a prop on the base class.
+    private void computeJackOptions() {
+        mMergedJackOptions.merge(getBuildType().getJackOptions());
         for (CoreProductFlavor productFlavor : getProductFlavors()) {
-            value = productFlavor.getJackOptions().isJackInProcess();
-            if (value != null) {
-                return value;
-            }
+            mMergedJackOptions.merge(productFlavor.getJackOptions());
         }
-
-        value = getDefaultConfig().getJackOptions().isJackInProcess();
-        if (value != null) {
-            return value;
-        }
-
-        return true;
+        mMergedJackOptions.merge(getDefaultConfig().getJackOptions());
     }
 
     private void computeNdkConfig() {
@@ -190,7 +184,7 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
         }
         return getBuildType().isDebuggable()
                 && !getType().isForTesting()
-                && !getUseJack();
+                && !getJackOptions().isEnabled();
     }
 
     public void setEnableInstantRunOverride(@Nullable Boolean enableInstantRunOverride) {

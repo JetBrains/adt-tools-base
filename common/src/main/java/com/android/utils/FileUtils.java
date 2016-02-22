@@ -63,6 +63,13 @@ public final class FileUtils {
         }
     };
 
+    public static final Function<File, String> GET_ABSOLUTE_PATH = new Function<File, String>() {
+        @Override
+        public String apply(File file) {
+            return file.getAbsolutePath();
+        }
+    };
+
     @NonNull
     public static Predicate<File> withExtension(@NonNull final String extension) {
         checkArgument(extension.charAt(0) != '.', "Extension should not start with a dot.");

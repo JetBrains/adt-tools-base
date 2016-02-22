@@ -68,8 +68,9 @@ public class JavaCompileConfigAction implements TaskConfigAction<AndroidJavaComp
         // javac 1.8 may generate code that uses class not available in android.jar.  This is fine
         // if jack is used to compile code for the app and this compile task is created only for
         // unit test.  In which case, we want to keep the default bootstrap classpath.
-        final boolean keepDefaultBootstrap = scope.getVariantConfiguration().getUseJack()
-                && JavaVersion.current().isJava8Compatible();
+        final boolean keepDefaultBootstrap =
+                scope.getVariantConfiguration().getJackOptions().isEnabled()
+                        && JavaVersion.current().isJava8Compatible();
 
         if (!keepDefaultBootstrap) {
             // Set boot classpath if we don't need to keep the default.  Otherwise, this is added as
@@ -131,7 +132,7 @@ public class JavaCompileConfigAction implements TaskConfigAction<AndroidJavaComp
                 javacTask,
                 compileOptions,
                 scope.getGlobalScope().getExtension().getCompileSdkVersion(),
-                scope.getVariantConfiguration().getUseJack());
+                scope.getVariantConfiguration().getJackOptions().isEnabled());
 
         javacTask.getOptions().setEncoding(compileOptions.getEncoding());
 

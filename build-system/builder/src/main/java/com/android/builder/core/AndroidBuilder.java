@@ -1824,7 +1824,9 @@ public class AndroidBuilder {
                         }
                     }
 
-                    config.setSourceEntries(new ArrayList<File>(sourceFiles));
+                    if (!sourceFiles.isEmpty()) {
+                        config.setSourceEntries(new ArrayList<File>(sourceFiles));
+                    }
                     if (mappingFile != null) {
                         config.setProperty("jack.obfuscation.mapping.dump", "true");
                         config.setObfuscationMappingOutputFile(mappingFile);
@@ -1892,7 +1894,7 @@ public class AndroidBuilder {
             @NonNull File jackOutputFile,
             @NonNull String classpath,
             @NonNull Collection<File> packagedLibraries,
-            @NonNull File ecjOptionFile,
+            @Nullable File ecjOptionFile,
             @Nullable Collection<File> proguardFiles,
             @Nullable File mappingFile,
             @NonNull Collection<File> jarJarRuleFiles,
@@ -1911,9 +1913,12 @@ public class AndroidBuilder {
                 .setDexOutputFolder(dexOutputFolder)
                 .setJackOutputFile(jackOutputFile)
                 .addImportFiles(packagedLibraries)
-                .setEcjOptionFile(ecjOptionFile)
                 .setSourceCompatibility(sourceCompatibility)
                 .setMinSdkVersion(minSdkVersion);
+
+        if (ecjOptionFile != null) {
+            builder.setEcjOptionFile(ecjOptionFile);
+        }
 
         if (proguardFiles != null) {
             builder.addProguardFiles(proguardFiles).setMappingFile(mappingFile);
@@ -1983,7 +1988,6 @@ public class AndroidBuilder {
             com.android.jill.api.v01.Api01Config config =
                     jillProviderOptional.get().createConfig(
                             com.android.jill.api.v01.Api01Config.class);
-
             config.setInputJavaBinaryFile(inputFile);
             config.setOutputJackFile(outFile);
             config.setVerbose(verbose);

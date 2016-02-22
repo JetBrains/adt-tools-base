@@ -41,7 +41,16 @@ public enum ExtendedContentType implements ContentType {
     /**
      * Classes that have been instrumented to be patch already loaded classes.
      */
-    CLASSES_ENHANCED(0x4000);
+    CLASSES_ENHANCED(0x4000),
+
+    /**
+     * The content is Jack library.
+     *
+     * This is zip file containing classes in jayce format.
+     * If the library has been pre-dexed it will also contain the corresponding dex.
+     */
+    JACK(0x8000);
+
 
     private final int value;
 
