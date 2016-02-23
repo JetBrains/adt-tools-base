@@ -36,6 +36,8 @@ public abstract class ManifestProcessorTask extends IncrementalTask {
 
     private File aaptFriendlyManifestOutputFile;
 
+    private File instantRunManifestOutputFile;
+
     /**
      * The processed Manifest.
      */
@@ -46,6 +48,16 @@ public abstract class ManifestProcessorTask extends IncrementalTask {
 
     public void setManifestOutputFile(File manifestOutputFile) {
         this.manifestOutputFile = manifestOutputFile;
+    }
+
+    @OutputFile
+    @Optional
+    public File getInstantRunManifestOutputFile() {
+        return instantRunManifestOutputFile;
+    }
+
+    public void setInstantRunManifestOutputFile(File instantRunManifestOutputFile) {
+        this.instantRunManifestOutputFile = instantRunManifestOutputFile;
     }
 
     /**
