@@ -170,6 +170,9 @@ public class InstantRunVerifierTransform extends Transform {
                     directoryInput.getChangedFiles().entrySet()) {
 
                 File inputFile = changedFile.getKey();
+                if (inputFile.isDirectory()) {
+                    continue;
+                }
                 File lastIterationFile = getOutputFile(inputDir, inputFile, outputDir);
                 switch(changedFile.getValue()) {
                     case REMOVED:
