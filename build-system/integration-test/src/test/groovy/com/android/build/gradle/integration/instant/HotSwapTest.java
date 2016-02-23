@@ -137,7 +137,7 @@ public class HotSwapTest {
 
         assertTrue(instantRunModel.isSupportedByArtifact());
 
-        TestFileUtils.appendToFile(project.getBuildFile(), "\nandroid.buildTypes.debug.minifyEnabled = true");
+        TestFileUtils.appendToFile(project.getBuildFile(), "\nandroid.buildTypes.debug.useJack = true");
 
         instantRunModel = InstantRunTestUtils.getInstantRunModel(
                 project.getSingleModel());

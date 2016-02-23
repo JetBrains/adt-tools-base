@@ -2721,6 +2721,12 @@ public abstract class TaskManager {
             @Nullable Configuration mappingConfiguration,
             boolean createJarFile) {
         if (variantScope.getVariantData().getVariantConfiguration().getBuildType().isUseProguard()) {
+            if (getIncrementalMode(variantScope.getVariantConfiguration()) != IncrementalMode.NONE) {
+                logger.warn("Instant Run: Proguard is not compatible with instant run. "
+                        + "It has been disabled for {}",
+                        variantScope.getVariantConfiguration().getFullName());
+                return;
+            }
             createProguardTransform(taskFactory, variantScope, mappingConfiguration, createJarFile);
             createShrinkResourcesTransform(taskFactory, variantScope);
         } else {
@@ -2826,6 +2832,13 @@ public abstract class TaskManager {
             @NonNull TaskFactory taskFactory,
             @NonNull VariantScope scope) {
         if (!scope.getVariantConfiguration().getBuildType().isShrinkResources()) {
+            return;
+        }
+
+        if (getIncrementalMode(scope.getVariantConfiguration()) != IncrementalMode.NONE) {
+            logger.warn("Instant Run: Resource shrinker automatically disabled for {}",
+                    scope.getVariantConfiguration().getFullName());
+            // Disabled for instant run, as shrinking is automatically disabled.
             return;
         }
 
