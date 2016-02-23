@@ -23,6 +23,7 @@ import com.android.annotations.NonNull;
 import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
+import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject;
 import com.android.build.gradle.integration.common.truth.ApkSubject;
 import com.android.build.gradle.integration.common.truth.DexClassSubject;
 import com.android.build.gradle.integration.common.truth.DexFileSubject;
@@ -70,11 +71,14 @@ public class ColdSwapTest {
         // Initial build
         InstantRun instantRunModel = doInitialBuild(apiLevel, ColdswapMode.AUTO);
 
-        DexFileSubject dexFile = expect.about(ApkSubject.FACTORY)
-                .that(project.getApk("debug")).hasMainDexFile().that();
-        dexFile.hasClass("Lcom/example/helloworld/HelloWorld;")
+        ApkSubject apkSubject = expect.about(ApkSubject.FACTORY)
+                .that(project.getApk("debug"));
+
+        apkSubject.getClass("Lcom/example/helloworld/HelloWorld;",
+                        AbstractAndroidSubject.ClassFileScope.INSTANT_RUN)
                 .that().hasMethod("onCreate");
-        dexFile.hasClass("Lcom/android/tools/fd/runtime/BootstrapApplication;");
+        apkSubject.getClass("Lcom/android/tools/fd/runtime/BootstrapApplication;",
+                AbstractAndroidSubject.ClassFileScope.INSTANT_RUN);
 
         InstantRunBuildInfo initialContext = InstantRunTestUtils.loadContext(instantRunModel);
         String startBuildId = initialContext.getTimeStamp();
@@ -99,29 +103,14 @@ public class ColdSwapTest {
         // Initial build
         InstantRun instantRunModel = doInitialBuild(apiLevel, ColdswapMode.MULTIDEX);
 
-        boolean foundHelloWorld = false;
-        boolean foundBootstrapApplication = false;
-
-        ApkSubject debugApk = expect.about(ApkSubject.FACTORY)
+        ApkSubject apkSubject = expect.about(ApkSubject.FACTORY)
                 .that(project.getApk("debug"));
-        List<String> entries = debugApk.entries();
-        for (String entry : entries) {
-            if (entry.endsWith(".dex")) {
-                DexFileSubject dexFile = debugApk.hasDexFile(entry).that();
-                if (dexFile.containsClass("Lcom/example/helloworld/HelloWorld;")) {
-                    dexFile.hasClass("Lcom/example/helloworld/HelloWorld;")
-                            .that().hasMethod("onCreate");
-                    foundHelloWorld = true;
-                }
-                if (dexFile.containsClass("Lcom/android/tools/fd/runtime/BootstrapApplication;")) {
-                    foundBootstrapApplication = true;
-                }
-            }
-        }
-        expect.withFailureMessage("HelloWorld class should be in one dex file")
-                .that(foundHelloWorld).isTrue();
-        expect.withFailureMessage("BootstrapApplication class should be in one dex file")
-                .that(foundBootstrapApplication).isTrue();
+
+        apkSubject.getClass("Lcom/example/helloworld/HelloWorld;",
+                AbstractAndroidSubject.ClassFileScope.INSTANT_RUN)
+                .that().hasMethod("onCreate");
+        apkSubject.getClass("Lcom/android/tools/fd/runtime/BootstrapApplication;",
+                AbstractAndroidSubject.ClassFileScope.MAIN);
 
         InstantRunBuildInfo initialContext = InstantRunTestUtils.loadContext(instantRunModel);
         String startBuildId = initialContext.getTimeStamp();

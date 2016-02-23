@@ -52,7 +52,14 @@ public abstract class AbstractAndroidSubject<T extends AbstractZipSubject<T>> ex
         /**
          * Main and secondary class files.
          */
-        ALL
+        ALL,
+
+        /**
+         * InstantRun type of packaging, where some classes can be in the main or secondary class
+         * files as well as in any dex file contained in an instant-run.zip file located in the
+         * APK root.
+         */
+        INSTANT_RUN
     }
 
     /**
@@ -154,6 +161,17 @@ public abstract class AbstractAndroidSubject<T extends AbstractZipSubject<T>> ex
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     public abstract void containsJavaResourceWithContent(
             @NonNull String path, @NonNull byte[] content) throws IOException, ProcessException;
+
+
+    protected IndirectSubject<DexFileSubject> getDexFile(final File extractedDexFile) {
+        return new IndirectSubject<DexFileSubject>() {
+            @Override
+            @NonNull
+            public DexFileSubject that() {
+                return DexFileSubject.FACTORY.getSubject(failureStrategy, extractedDexFile);
+            }
+        };
+    }
 
     @Override
     protected String getDisplaySubject() {

@@ -42,6 +42,7 @@ import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
+import com.google.common.base.Strings;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
@@ -243,10 +244,16 @@ public class InstantRunSlicer extends Transform {
         for (TransformInput input : inputs) {
             for (JarInput jarInput : input.getJarInputs()) {
                 File jarFile = jarInput.getFile();
+                // handle separately instant-run runtime and the generated AppInfo so it is
+                // directly packaged in the APK and can be loaded successfully by Android runtime.
+                // This is obviously not very clean but until the Transform API can provide a way
+                // to attach some metadata to streams.
                 if (jarFile.getName().equals("instant-run.jar")) {
                     // this gets packaged in the main slice.
-                    File mainSliceOutput = getMainSliceOutputFolder(outputProvider);
-                    Files.createParentDirs(mainSliceOutput);
+                    File mainSliceOutput = getMainSliceOutputFolder(outputProvider, null);
+                    Files.copy(jarFile, mainSliceOutput);
+                } else if (jarFile.getAbsolutePath().contains("incremental-classes")) {
+                    File mainSliceOutput = getMainSliceOutputFolder(outputProvider, "b");
                     Files.copy(jarFile, mainSliceOutput);
                 } else {
                     // otherwise, all other dependencies will be combined right below.
@@ -441,10 +448,16 @@ public class InstantRunSlicer extends Transform {
     }
 
     @NonNull
-    private static File getMainSliceOutputFolder(@NonNull TransformOutputProvider outputProvider) {
-        return outputProvider
-                .getContentLocation(MAIN_SLICE_NAME, TransformManager.CONTENT_CLASS,
+    private static File getMainSliceOutputFolder(
+            @NonNull TransformOutputProvider outputProvider,
+            @Nullable String suffix) throws IOException {
+        File outputFolder = outputProvider
+                .getContentLocation(
+                        MAIN_SLICE_NAME + Strings.nullToEmpty(suffix),
+                        TransformManager.CONTENT_CLASS,
                         Sets.immutableEnumSet(Scope.PROJECT, Scope.SUB_PROJECTS), Format.JAR);
+        Files.createParentDirs(outputFolder);
+        return outputFolder;
     }
 
     @NonNull
