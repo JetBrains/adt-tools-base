@@ -68,6 +68,8 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     private File manifestFile;
 
+    private File instantRunManifestFile;
+
     private File resDir;
 
     private File assetsDir;
@@ -117,8 +119,15 @@ public class ProcessAndroidResources extends IncrementalTask {
         @Nullable
         File resOutBaseNameFile = getPackageOutputFile();
 
+        // If are in instant run mode and we have an instant run enabled manifest
+        File instantRunManifest = getInstantRunManifestFile();
+        File manifestFileToPackage = instantRunBuildContext.getPatchingPolicy() != null &&
+                instantRunManifest != null && instantRunManifest.exists()
+                    ? instantRunManifest
+                    : getManifestFile();
+
         AaptPackageProcessBuilder aaptPackageCommandBuilder =
-                new AaptPackageProcessBuilder(getManifestFile(), getAaptOptions())
+                new AaptPackageProcessBuilder(manifestFileToPackage, getAaptOptions())
                         .setAssetsFolder(getAssetsDir())
                         .setResFolder(getResDir())
                         .setLibraries(getLibraries())
@@ -275,6 +284,14 @@ public class ProcessAndroidResources extends IncrementalTask {
                 }
             });
 
+            ConventionMappingHelper.map(processResources, "instantRunManifestFile",
+                    new Callable<File>() {
+                @Override
+                public File call() throws Exception {
+                    return variantOutputData.manifestProcessorTask.getInstantRunManifestOutputFile();
+                }
+            });
+
             ConventionMappingHelper.map(processResources, "resDir", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
@@ -365,6 +382,15 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     public void setManifestFile(File manifestFile) {
         this.manifestFile = manifestFile;
+    }
+
+    // not an input, it's optional and should never changes independently of the main manifest file.
+    public File getInstantRunManifestFile() {
+        return instantRunManifestFile;
+    }
+
+    public void setInstantRunManifestFile(File manifestFile) {
+        this.instantRunManifestFile = manifestFile;
     }
 
     @NonNull

@@ -75,6 +75,7 @@ public class MergeManifests extends ManifestProcessorTask {
                 getManifestOutputFile().getAbsolutePath(),
                 // no aapt friendly merged manifest file necessary for applications.
                 null /* aaptFriendlyManifestOutputFile */,
+                getInstantRunManifestOutputFile().getAbsolutePath(),
                 ManifestMerger2.MergeType.APPLICATION,
                 variantConfiguration.getManifestPlaceholders(),
                 getOptionalFeatures(),
@@ -334,6 +335,8 @@ public class MergeManifests extends ManifestProcessorTask {
                     });
 
             processManifestTask.setManifestOutputFile(scope.getManifestOutputFile());
+            processManifestTask.setInstantRunManifestOutputFile(
+                    scope.getVariantScope().getInstantRunManifestOutputFile());
 
             processManifestTask.setReportFile(scope.getVariantScope().getManifestReportFile());
             processManifestTask.optionalFeatures = optionalFeatures;

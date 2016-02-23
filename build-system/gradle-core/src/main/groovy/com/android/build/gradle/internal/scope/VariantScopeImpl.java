@@ -727,8 +727,15 @@ public class VariantScopeImpl implements VariantScope {
     @NonNull
     @Override
     public File getAaptFriendlyManifestOutputFile() {
-            return FileUtils.join(globalScope.getIntermediatesDir(), DIR_BUNDLES,
-                    getVariantConfiguration().getDirName(), "aapt", "AndroidManifest.xml");
+        return FileUtils.join(globalScope.getIntermediatesDir(), DIR_BUNDLES,
+                getVariantConfiguration().getDirName(), "aapt", "AndroidManifest.xml");
+    }
+
+    @NonNull
+    @Override
+    public File getInstantRunManifestOutputFile() {
+        return FileUtils.join(globalScope.getIntermediatesDir(), DIR_BUNDLES,
+                getVariantConfiguration().getDirName(), "instant-run", "AndroidManifest.xml");
     }
 
     @NonNull
