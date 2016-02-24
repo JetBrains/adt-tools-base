@@ -82,20 +82,6 @@ public class DexOptions implements com.android.builder.core.DexOptions {
         return isJumboModeFlag;
     }
 
-    public void setDexInProcess(boolean dexInProcess) {
-        isDexInProcess = dexInProcess;
-    }
-
-    /**
-     * Whether to run the dx compiler in the same JVM as Gradle.
-     *
-     * <p>Default to {@code true} when build tools version is at least 23.0.2.
-     */
-    @Override
-    public Boolean getDexInProcess() {
-        return isDexInProcess;
-    }
-
     public void setJavaMaxHeapSize(String theJavaMaxHeapSize) {
         if (theJavaMaxHeapSize.matches("\\d+[kKmMgGtT]?")) {
             javaMaxHeapSize = theJavaMaxHeapSize;

@@ -109,7 +109,6 @@ public class AndroidBuilderTest {
 
     @Test
     public void testShouldDexInProcess() {
-        when(dexOptions.getDexInProcess()).thenReturn(true);
         // a ridiculously small number to ensure dex in process not be disabled due to memory needs.
         when(dexOptions.getJavaMaxHeapSize()).thenReturn("1024");
         assertFalse(shouldDexInProcess(
@@ -118,10 +117,8 @@ public class AndroidBuilderTest {
 
     @Test
     public void testDisabledDexInProcess() {
-        when(dexOptions.getDexInProcess()).thenReturn(null);
         assertFalse(shouldDexInProcess(
                 processBuilder, dexOptions, new Revision(23, 0, 2), false, logger));
-        when(dexOptions.getDexInProcess()).thenReturn(false);
         assertFalse(shouldDexInProcess(
                 processBuilder, dexOptions, new Revision(23, 0, 2), false, logger));
     }
@@ -131,7 +128,6 @@ public class AndroidBuilderTest {
     @Test
     @Ignore
     public void testExplicitInvalidDexInProcess() {
-        when(dexOptions.getDexInProcess()).thenReturn(true);
         expectedException.expectMessage(containsString("23.0.2"));
         shouldDexInProcess(
                 processBuilder, dexOptions, new Revision(23, 0, 1), false, logger);
@@ -140,14 +136,12 @@ public class AndroidBuilderTest {
     @Test
     @Ignore
     public void notEnoughMemoryForDexInProcess() {
-        when(dexOptions.getDexInProcess()).thenReturn(true);
         when(dexOptions.getJavaMaxHeapSize()).thenReturn("10000G");
         shouldDexInProcess(processBuilder, dexOptions, new Revision(23, 0, 2), false, logger);
     }
 
     @Test
     public void instantRunWithOldBuildTools() {
-        when(dexOptions.getDexInProcess()).thenReturn(null);
         assertFalse(shouldDexInProcess(
                 processBuilder, dexOptions, new Revision(23, 0, 1), true, logger));
     }
@@ -155,7 +149,6 @@ public class AndroidBuilderTest {
 
     @Test
     public void lowMemoryWithInstantRunAndManyClasses() {
-        when(dexOptions.getDexInProcess()).thenReturn(null);
         when(dexOptions.getJavaMaxHeapSize()).thenReturn("10000G");
         when(processBuilder.getInputs()).thenReturn(Collections.singleton(largeJar));
         assertFalse(shouldDexInProcess(
@@ -164,7 +157,6 @@ public class AndroidBuilderTest {
 
     @Test
     public void lowMemoryWithInstantRunWithMultipleInputs() {
-        when(dexOptions.getDexInProcess()).thenReturn(null);
         when(dexOptions.getJavaMaxHeapSize()).thenReturn("10000G");
         when(processBuilder.getInputs()).thenReturn(ImmutableSet.of(smallJar, smallJar2));
         assertFalse(shouldDexInProcess(

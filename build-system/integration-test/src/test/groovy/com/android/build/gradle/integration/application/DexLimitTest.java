@@ -39,13 +39,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 
-@RunWith(Parameterized.class)
 public class DexLimitTest {
-
-    @Parameterized.Parameters(name="dexInProcess={0}")
-    public static Collection<Object[]> getParameters() {
-        return Arrays.asList(new Object[][] {{false}, {true}});
-    }
 
     private static final String CLASS_NAME = "com/example/B";
     private static final String CLASS_FULL_TYPE = "L" + CLASS_NAME + ";";
@@ -73,21 +67,9 @@ public class DexLimitTest {
         TEST_APP.addFile(new TestSourceFile("src/main/java/com/example", "B.java", classFileB));
     }
 
-    private final boolean mDexInProcess;
-
     @Rule
     public final GradleTestProject mProject = GradleTestProject.builder()
             .fromTestApp(TEST_APP).captureStdErr(true).withHeap("2G").create();
-
-    public DexLimitTest(boolean dexInProcess) {
-        mDexInProcess = dexInProcess;
-    }
-
-    @Before
-    public void setDexInProcess() throws IOException {
-        TestFileUtils.appendToFile(mProject.getBuildFile(),
-                "\nandroid.dexOptions.dexInProcess = " + Boolean.toString(mDexInProcess));
-    }
 
     @Test
     public void checkDexErrorMessage() throws Exception {
