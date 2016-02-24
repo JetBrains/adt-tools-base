@@ -30,15 +30,7 @@ import java.awt.event.ItemListener;
 import java.util.LinkedList;
 import java.util.List;
 
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JSlider;
-import javax.swing.JTabbedPane;
+import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -54,6 +46,7 @@ public class VisualTests extends JDialog {
         JTabbedPane tabs = new JTabbedPane();
 
         final Choreographer choreographer = new Choreographer(40);
+        mTests.add(new AxisLineChartVisualTest(choreographer));
         mTests.add(new LineChartVisualTest(choreographer));
         mTests.add(new SunburstVisualTest(choreographer));
         mTests.add(new TimelineVisualTest(choreographer));
@@ -194,11 +187,16 @@ public class VisualTests extends JDialog {
         return button;
     }
 
-    public static void main(String[] args) {
-        VisualTests dialog = new VisualTests();
+    public static void main(String[] args) throws Exception {
+        SwingUtilities.invokeAndWait(new Runnable() {
+            @Override
+            public void run() {
+                VisualTests dialog = new VisualTests();
 
-        dialog.pack();
-        dialog.setVisible(true);
+                dialog.pack();
+                dialog.setVisible(true);
+            }
+        });
         System.exit(0);
     }
 }

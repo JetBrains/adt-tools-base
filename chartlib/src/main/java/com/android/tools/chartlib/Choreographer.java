@@ -27,6 +27,7 @@ import javax.swing.Timer;
 
 public class Choreographer implements ActionListener {
 
+    private static final float NANOSECONDS_IN_SECOND = 1000000000.0f;
     private static final float DEFAULT_FRAME_LENGTH = 1.0f / 60.0f;
 
     private final List<Animatable> mComponents;
@@ -48,7 +49,7 @@ public class Choreographer implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent actionEvent) {
         long now = System.nanoTime();
-        float frame = (now - mFrameTime) / 1000000000.0f;
+        float frame = (now - mFrameTime) / NANOSECONDS_IN_SECOND;
         mFrameTime = now;
 
         if (!mUpdate) {

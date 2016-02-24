@@ -66,12 +66,14 @@ public class LineChart extends AnimatedComponent {
             long maxY = series.getMaxY();
             Long m = max.get(ranged.getYRange());
             max.put(ranged.getYRange(), m == null ? maxY : Math.max(maxY, m));
-
         }
 
+        int count = 0;
         for (Map.Entry<Range, Long> entry : max.entrySet()) {
             Range range = entry.getKey();
-            range.setMax(lerp(range.getMax(), entry.getValue(), .95f));
+            double currentMax = lerp(range.getMax(), entry.getValue(), .95f);
+            addDebugInfo("Range%d Max: %.2f", count++, currentMax);
+            range.setMax(currentMax);
         }
 
         int p = 0;

@@ -58,7 +58,7 @@ public class LineChartVisualTest extends VisualTest {
             mData.add(ranged);
         }
         mLineChart = new LineChart(mData);
-        mAnimatedRange = new AnimatedTimeRange(xRange);
+        mAnimatedRange = new AnimatedTimeRange(xRange, 0);
 
         // Set up the scene
         choreographer.register(mAnimatedRange);
