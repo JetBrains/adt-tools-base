@@ -22,7 +22,8 @@ import com.android.annotations.Nullable;
  * Describes the GPU mode settings supported by the emulator.
  */
 public enum GpuMode {
-    DEFAULT("host"),
+    AUTO("auto"),
+    HOST("host"),
     MESA("mesa"),
     SWIFT("guest"),
     OFF("off");
@@ -36,7 +37,9 @@ public enum GpuMode {
     @Override
     public String toString() {
         switch (this) {
-            case DEFAULT:
+            case AUTO:
+                return "Auto";
+            case HOST:
                 return "Hardware - GLES 2.0";
             case MESA:
             case SWIFT:
