@@ -84,7 +84,7 @@ public class HotSwapTest {
     public Logcat logcat = Logcat.create();
 
     @Rule
-    public Expect expect = Expect.create();
+    public Expect expect = Expect.createAndEnableStackTrace();
 
     @Mock
     UserFeedback userFeedback;

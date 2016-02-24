@@ -79,7 +79,7 @@ public class InstantRunShrinkerTest {
                     .create();
 
     @Rule
-    public Expect expect = Expect.create();
+    public Expect expect = Expect.createAndEnableStackTrace();
 
     @Before
     public void addProvidedLibrary() throws IOException {
