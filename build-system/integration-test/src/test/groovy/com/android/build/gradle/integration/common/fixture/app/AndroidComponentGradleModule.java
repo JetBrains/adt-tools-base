@@ -16,9 +16,9 @@
 
 package com.android.build.gradle.integration.common.fixture.app;
 
-import static com.android.build.gradle.integration.common.fixture.GradleTestProject.CUSTOM_JACK;
 import static com.android.build.gradle.integration.common.fixture.GradleTestProject.DEFAULT_BUILD_TOOL_VERSION;
 import static com.android.build.gradle.integration.common.fixture.GradleTestProject.DEFAULT_COMPILE_SDK_VERSION;
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.USE_JACK;
 
 import com.android.annotations.NonNull;
 import com.google.common.base.Charsets;
@@ -50,7 +50,7 @@ public class AndroidComponentGradleModule extends GradleModule {
                 "        compileSdkVersion = " + DEFAULT_COMPILE_SDK_VERSION + "\n" +
                 "        buildToolsVersion = '" + DEFAULT_BUILD_TOOL_VERSION + "'\n" +
                 "        defaultConfig.with {\n" +
-                "//            useJack " + CUSTOM_JACK + "\n" +
+                "//            useJack " + USE_JACK + "\n" +
                 "        }\n" +
                 "    }\n" +
                 "}\n";

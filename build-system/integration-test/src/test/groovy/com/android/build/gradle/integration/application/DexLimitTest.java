@@ -17,17 +17,12 @@
 package com.android.build.gradle.integration.application;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification;
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
-import com.google.common.base.Charsets;
-import com.google.common.collect.ImmutableList;
-import com.google.common.io.Files;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -92,7 +87,12 @@ public class DexLimitTest {
     @Test
     public void checkDexErrorMessage() throws Exception {
         mProject.executeExpectingFailure("assembleDebug");
-        assertThat(mProject.getStderr()).contains(
-                "https://developer.android.com/tools/building/multidex.html");
+        if (GradleTestProject.USE_JACK) {
+            assertThat(mProject.getStderr()).contains(
+                    "Dex writing phase: classes.dex has too many IDs.");
+        } else {
+            assertThat(mProject.getStderr()).contains(
+                    "https://developer.android.com/tools/building/multidex.html");
+        }
     }
 }

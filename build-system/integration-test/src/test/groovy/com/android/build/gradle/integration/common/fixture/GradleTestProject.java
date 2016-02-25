@@ -115,7 +115,6 @@ public class GradleTestProject implements TestRule {
 
     public static final String ANDROID_GRADLE_PLUGIN_VERSION;
 
-    public static final String CUSTOM_JACK;
     public static final boolean USE_JACK;
 
 
@@ -134,8 +133,7 @@ public class GradleTestProject implements TestRule {
         ANDROID_GRADLE_PLUGIN_VERSION = !Strings.isNullOrEmpty(envVersion) ? envVersion
                 : Version.ANDROID_GRADLE_PLUGIN_VERSION;
         String envJack = System.getenv().get("CUSTOM_JACK");
-        CUSTOM_JACK = !Strings.isNullOrEmpty(envJack) ? envJack : "false";
-        USE_JACK = Boolean.parseBoolean(CUSTOM_JACK);
+        USE_JACK = !Strings.isNullOrEmpty(envJack);
     }
 
     private static final String COMMON_HEADER = "commonHeader.gradle";

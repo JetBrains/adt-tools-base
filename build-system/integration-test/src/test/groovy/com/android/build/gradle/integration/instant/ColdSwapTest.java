@@ -38,6 +38,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.io.Files;
 import com.google.common.truth.Expect;
 
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -61,6 +62,7 @@ public class ColdSwapTest {
 
     @Before
     public void activityClass() throws IOException {
+        Assume.assumeFalse("Disabled until instant run supports Jack", GradleTestProject.USE_JACK);
         createActivityClass("", "");
     }
 
