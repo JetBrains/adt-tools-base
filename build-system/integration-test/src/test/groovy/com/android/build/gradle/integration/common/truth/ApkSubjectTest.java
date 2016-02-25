@@ -33,14 +33,14 @@ public class ApkSubjectTest {
                 "");
 
         FakeFailureStrategy failure = new FakeFailureStrategy();
-        File file = new File("foo");
+        File file = new File("/tmp/foo");
         ApkSubject subject = new ApkSubject(failure, file);
         // apk file doesn't exist so the failure gets filled with error. Ignore and reset.
         failure.reset();
 
         subject.checkMaxSdkVersion(strings, 1);
 
-        assertThat(failure.message).isEqualTo("maxSdkVersion not found in badging output for <foo>");
+        assertThat(failure.message).isEqualTo("maxSdkVersion not found in badging output for </tmp/foo>");
     }
 
     @Test
@@ -69,13 +69,13 @@ public class ApkSubjectTest {
                 "bar");
 
         FakeFailureStrategy failure = new FakeFailureStrategy();
-        File file = new File("foo");
+        File file = new File("/tmp/foo");
         ApkSubject subject = new ApkSubject(failure, file);
         // apk file doesn't exist so the failure gets filled with error. Ignore and reset.
         failure.reset();
 
         subject.checkMaxSdkVersion(strings, 14);
 
-        assertThat(failure.message).isEqualTo("Not true that <foo> has maxSdkVersion <14>. It is <20>");
+        assertThat(failure.message).isEqualTo("Not true that </tmp/foo> has maxSdkVersion <14>. It is <20>");
     }
 }
