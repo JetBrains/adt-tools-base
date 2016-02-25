@@ -175,6 +175,11 @@ public class DetectMissingPrefix extends LayoutDetector {
                 if (TAG_LAYOUT.equals(root.getTagName())) {
                     return;
                 }
+
+                // Quickfix for http://b.android.com/201790
+                if (attribute.getOwnerElement().getTagName().equals(SdkConstants.IMAGE_VIEW) && attribute.getLocalName().equals("srcCompat")) {
+                    return;
+                }
             }
 
             context.report(MISSING_NAMESPACE, attribute,
