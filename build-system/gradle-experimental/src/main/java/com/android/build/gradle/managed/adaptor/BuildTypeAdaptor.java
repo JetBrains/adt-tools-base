@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
 import com.android.build.gradle.internal.dsl.CoreJackOptions;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
+import com.android.build.gradle.internal.dsl.CoreShaderOptions;
 import com.android.build.gradle.managed.BuildType;
 import com.android.builder.model.SigningConfig;
 import com.google.common.base.Objects;
@@ -103,6 +104,12 @@ public class BuildTypeAdaptor extends BaseConfigAdaptor implements CoreBuildType
     @NonNull
     public CoreJackOptions getJackOptions() {
         return new JackOptionsAdaptor(buildType.getJackOptions());
+    }
+
+    @NonNull
+    @Override
+    public CoreShaderOptions getShaders() {
+        return new ShaderOptionsAdaptor(buildType.getShaders());
     }
 
     @Override

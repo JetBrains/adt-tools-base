@@ -27,8 +27,13 @@ import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.model.SourceProvider;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -190,5 +195,113 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
 
     public void setEnableInstantRunOverride(@Nullable Boolean enableInstantRunOverride) {
         this.enableInstantRunOverride = enableInstantRunOverride;
+    }
+
+    @NonNull
+    public List<String> getDefautGlslcArgs() {
+        Map<String, String> optionMap = Maps.newHashMap();
+
+        // add the lower priority one, to override them with the higher priority ones.
+        for (String option : getDefaultConfig().getShaders().getGlslcArgs()) {
+            optionMap.put(getKey(option), option);
+        }
+
+        // cant use merge flavor as it's not a prop on the base class.
+        // reverse loop for proper order
+        List<CoreProductFlavor> flavors = getProductFlavors();
+        for (int i = flavors.size() - 1; i >= 0; i--) {
+            for (String option : flavors.get(i).getShaders().getGlslcArgs()) {
+                optionMap.put(getKey(option), option);
+            }
+        }
+
+        // then the build type
+        for (String option : getBuildType().getShaders().getGlslcArgs()) {
+            optionMap.put(getKey(option), option);
+        }
+
+        return Lists.newArrayList(optionMap.values());
+    }
+
+    @NonNull
+    public Map<String, List<String>> getScopedGlslcArgs() {
+        Map<String, List<String>> scopedArgs = Maps.newHashMap();
+
+        // first collect all possible keys.
+        Set<String> keys = getScopedGlslcKeys();
+
+        for (String key : keys) {
+            // first add to a temp map to resolve overridden values
+            Map<String, String> optionMap = Maps.newHashMap();
+
+            // we're going to go from lower priority, to higher priority elements, and for each
+            // start with the non scoped version, and then add the scoped version.
+
+            // 1. default config, global.
+            for (String option : getDefaultConfig().getShaders().getGlslcArgs()) {
+                optionMap.put(getKey(option), option);
+            }
+
+            // 1b. default config, scoped.
+            for (String option : getDefaultConfig().getShaders().getScopedGlslcArgs().get(key)) {
+                optionMap.put(getKey(option), option);
+            }
+
+            // 2. the flavors.
+            // cant use merge flavor as it's not a prop on the base class.
+            // reverse loop for proper order
+            List<CoreProductFlavor> flavors = getProductFlavors();
+            for (int i = flavors.size() - 1; i >= 0; i--) {
+                // global
+                for (String option : flavors.get(i).getShaders().getGlslcArgs()) {
+                    optionMap.put(getKey(option), option);
+                }
+
+                // scoped.
+                for (String option : flavors.get(i).getShaders().getScopedGlslcArgs().get(key)) {
+                    optionMap.put(getKey(option), option);
+                }
+            }
+
+            // 3. the build type, global
+            for (String option : getBuildType().getShaders().getGlslcArgs()) {
+                optionMap.put(getKey(option), option);
+            }
+
+            // 3b. the build type, scoped.
+            for (String option : getBuildType().getShaders().getScopedGlslcArgs().get(key)) {
+                optionMap.put(getKey(option), option);
+            }
+
+            // now add the full value list.
+            scopedArgs.put(key, ImmutableList.copyOf(optionMap.values()));
+        }
+
+        return scopedArgs;
+    }
+
+    @NonNull
+    private Set<String> getScopedGlslcKeys() {
+        Set<String> keys = Sets.newHashSet();
+
+        keys.addAll(getDefaultConfig().getShaders().getScopedGlslcArgs().keySet());
+
+        for (CoreProductFlavor flavor : getProductFlavors()) {
+            keys.addAll(flavor.getShaders().getScopedGlslcArgs().keySet());
+        }
+
+        keys.addAll(getBuildType().getShaders().getScopedGlslcArgs().keySet());
+
+        return keys;
+    }
+
+    @NonNull
+    private static String getKey(@NonNull String fullOption) {
+        int pos = fullOption.lastIndexOf('=');
+        if (pos == -1) {
+            return fullOption;
+        }
+
+        return fullOption.substring(0, pos);
     }
 }

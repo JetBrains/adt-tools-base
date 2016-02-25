@@ -17,14 +17,15 @@
 package com.android.build.gradle.tasks;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.builder.core.VariantConfiguration;
 import com.android.builder.internal.compiler.ShaderProcessor;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 
 import org.gradle.api.file.FileTree;
 import org.gradle.api.tasks.Input;
@@ -37,6 +38,7 @@ import org.gradle.api.tasks.util.PatternSet;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Task to compile Shaders
@@ -65,7 +67,8 @@ public class ShaderCompile extends BaseTask {
     private File sourceDir;
 
     @NonNull
-    private List<String> options = ImmutableList.of();
+    private List<String> defaultArgs = ImmutableList.of();
+    private Map<String, List<String>> scopedArgs = ImmutableMap.of();
 
     private File ndkLocation;
 
@@ -89,6 +92,8 @@ public class ShaderCompile extends BaseTask {
             getBuilder().compileAllShaderFiles(
                     getSourceDir(),
                     getOutputDir(),
+                    defaultArgs,
+                    scopedArgs,
                     ndkLocation,
                     new LoggedProcessOutputHandler(getILogger()));
         } catch (Exception e) {
@@ -115,12 +120,22 @@ public class ShaderCompile extends BaseTask {
 
     @NonNull
     @Input
-    public List<String> getOptions() {
-        return options;
+    public List<String> getDefaultArgs() {
+        return defaultArgs;
     }
 
-    public void setOptions(@NonNull List<String> options) {
-        this.options = ImmutableList.copyOf(options);
+    public void setDefaultArgs(@NonNull List<String> defaultArgs) {
+        this.defaultArgs = ImmutableList.copyOf(defaultArgs);
+    }
+
+    @NonNull
+    @Input
+    public Map<String, List<String>> getScopedArgs() {
+        return scopedArgs;
+    }
+
+    public void setScopedArgs(@NonNull Map<String, List<String>> scopedArgs) {
+        this.scopedArgs = ImmutableMap.copyOf(scopedArgs);
     }
 
     public static class ConfigAction implements TaskConfigAction<ShaderCompile> {
@@ -146,7 +161,7 @@ public class ShaderCompile extends BaseTask {
 
         @Override
         public void execute(@NonNull ShaderCompile compileTask) {
-            final VariantConfiguration<?,?,?> variantConfiguration = scope.getVariantConfiguration();
+            final GradleVariantConfiguration variantConfiguration = scope.getVariantConfiguration();
 
             scope.getVariantData().shaderCompileTask = compileTask;
 
@@ -157,6 +172,8 @@ public class ShaderCompile extends BaseTask {
 
             compileTask.setSourceDir(scope.getMergeShadersOutputDir());
             compileTask.setOutputDir(scope.getShadersOutputDir());
+            compileTask.setDefaultArgs(variantConfiguration.getDefautGlslcArgs());
+            compileTask.setScopedArgs(variantConfiguration.getScopedGlslcArgs());
         }
     }
 }

@@ -52,6 +52,9 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
     @NonNull
     private final JackOptions jackOptions;
 
+    @NonNull
+    private final ShaderOptions shaderOptions;
+
     /** Opt-in for now until we've validated it in the field. */
     private boolean shrinkResources = false;
 
@@ -66,6 +69,7 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
         this.project = project;
         this.logger = logger;
         jackOptions = instantiator.newInstance(JackOptions.class);
+        shaderOptions = instantiator.newInstance(ShaderOptions.class);
         ndkConfig = instantiator.newInstance(NdkOptions.class);
     }
 
@@ -77,6 +81,7 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
         this.project = project;
         this.logger = logger;
         jackOptions = new JackOptions();
+        shaderOptions = new ShaderOptions();
         ndkConfig = null;
     }
 
@@ -92,6 +97,12 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
         return jackOptions;
     }
 
+    @NonNull
+    @Override
+    public CoreShaderOptions getShaders() {
+        return shaderOptions;
+    }
+
     /**
      * Initialize the DSL object. Not meant to be used from the build scripts.
      */
@@ -102,6 +113,7 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
 
             assert debugSigningConfig != null;
             setSigningConfig(debugSigningConfig);
+
         } else if (BuilderConstants.RELEASE.equals(getName())) {
             // no config needed for now.
         }
@@ -120,6 +132,7 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
         BuildType thatBuildType = (BuildType) that;
         jackOptions._initWith(thatBuildType.getJackOptions());
         shrinkResources = thatBuildType.isShrinkResources();
+        shaderOptions._initWith(thatBuildType.getShaders());
     }
 
     public int hashCode() {
@@ -375,6 +388,13 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
         LoggingUtil.displayDeprecationWarning(
                 logger, project, "useJack is deprecated.  Use jackOptions.enabled instead.");
         jackOptions.setEnabled(useJack);
+    }
+
+    /**
+     * Configure shader compiler options for this build type.
+     */
+    public void shaders(@NonNull Action<ShaderOptions> action) {
+        action.execute(shaderOptions);
     }
 
     /**

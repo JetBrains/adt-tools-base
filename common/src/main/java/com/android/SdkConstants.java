@@ -241,7 +241,7 @@ public final class SdkConstants {
     public static final String FN_SPLIT_SELECT = "split-select" + ext(".exe", "");
 
     /** glslc */
-    public static final String FD_GLSLC = "glslc";
+    public static final String FD_SHADER_TOOLS = "shader-tools";
     public static final String FN_GLSLC = "glslc" + ext(".exe", "");
 
 

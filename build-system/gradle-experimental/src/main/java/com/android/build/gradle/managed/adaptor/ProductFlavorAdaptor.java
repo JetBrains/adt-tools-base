@@ -21,7 +21,9 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.dsl.CoreJackOptions;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
+import com.android.build.gradle.internal.dsl.CoreShaderOptions;
 import com.android.build.gradle.managed.ProductFlavor;
+import com.android.build.gradle.managed.ShaderOptions;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.SigningConfig;
@@ -175,5 +177,11 @@ public class ProductFlavorAdaptor extends BaseConfigAdaptor implements CoreProdu
     @Override
     public CoreJackOptions getJackOptions() {
         return new JackOptionsAdaptor(productFlavor.getJackOptions());
+    }
+
+    @NonNull
+    @Override
+    public CoreShaderOptions getShaders() {
+        return new ShaderOptionsAdaptor(productFlavor.getShaders());
     }
 }

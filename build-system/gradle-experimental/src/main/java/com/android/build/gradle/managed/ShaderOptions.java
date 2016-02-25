@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,27 +14,22 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.dsl;
+package com.android.build.gradle.managed;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.builder.model.BuildType;
+import org.gradle.model.Managed;
+import org.gradle.model.ModelMap;
+
+import java.util.List;
 
 /**
- * A build type with addition properties for building with Gradle plugin.
+ * Managed type shader options.
  */
-public interface CoreBuildType extends BuildType {
+@Managed
+public interface ShaderOptions {
+    /**
+     * Returns the list of glslc args
+     */
+    List<String> getGlslcArgs();
 
-    @Nullable
-    CoreNdkOptions getNdkConfig();
-
-    @NonNull
-    CoreJackOptions getJackOptions();
-
-    @NonNull
-    CoreShaderOptions getShaders();
-
-    boolean isShrinkResources();
-
-    boolean isUseProguard();
+    ModelMap<ScopedShaderOptions> getScopedArgs();
 }

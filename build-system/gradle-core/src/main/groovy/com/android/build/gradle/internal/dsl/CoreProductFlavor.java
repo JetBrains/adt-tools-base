@@ -32,4 +32,7 @@ public interface CoreProductFlavor extends ProductFlavor, Named {
 
     @NonNull
     CoreJackOptions getJackOptions();
+
+    @NonNull
+    CoreShaderOptions getShaders();
 }

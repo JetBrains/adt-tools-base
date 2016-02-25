@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,25 +16,22 @@
 
 package com.android.build.gradle.internal.dsl;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.builder.model.BuildType;
+import com.google.common.collect.ListMultimap;
+
+import java.util.List;
 
 /**
- * A build type with addition properties for building with Gradle plugin.
+ * Options for configuring scoped shader options.
  */
-public interface CoreBuildType extends BuildType {
+public interface CoreShaderOptions {
 
-    @Nullable
-    CoreNdkOptions getNdkConfig();
+    /**
+     * Returns the list of glslc args.
+     */
+    List<String> getGlslcArgs();
 
-    @NonNull
-    CoreJackOptions getJackOptions();
-
-    @NonNull
-    CoreShaderOptions getShaders();
-
-    boolean isShrinkResources();
-
-    boolean isUseProguard();
+    /**
+     * Returns the list of scoped glsl args.
+     */
+    ListMultimap<String, String> getScopedGlslcArgs();
 }

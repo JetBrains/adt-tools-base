@@ -1236,6 +1236,8 @@ public class AndroidBuilder {
     public void compileAllShaderFiles(
             @NonNull File sourceFolder,
             @NonNull File outputDir,
+            @NonNull List<String> defaultArgs,
+            @NonNull Map<String, List<String>> scopedArgs,
             @Nullable File nkdLocation,
             @NonNull ProcessOutputHandler processOutputHandler)
             throws IOException, InterruptedException, LoggedErrorException, ProcessException {
@@ -1248,7 +1250,8 @@ public class AndroidBuilder {
                 nkdLocation,
                 sourceFolder,
                 outputDir,
-                ImmutableList.<String>of(),
+                defaultArgs,
+                scopedArgs,
                 mProcessExecutor,
                 processOutputHandler);
 
@@ -1278,6 +1281,8 @@ public class AndroidBuilder {
             @NonNull File sourceFolder,
             @NonNull File shaderFile,
             @NonNull File outputDir,
+            @NonNull List<String> defaultArgs,
+            @NonNull Map<String, List<String>> scopedArgs,
             @Nullable File nkdLocation,
             @NonNull ProcessOutputHandler processOutputHandler)
             throws IOException, InterruptedException, LoggedErrorException, ProcessException {
@@ -1291,7 +1296,8 @@ public class AndroidBuilder {
                 nkdLocation,
                 sourceFolder,
                 outputDir,
-                ImmutableList.<String>of(),
+                defaultArgs,
+                scopedArgs,
                 mProcessExecutor,
                 processOutputHandler);
         processor.processFile(sourceFolder, shaderFile);
