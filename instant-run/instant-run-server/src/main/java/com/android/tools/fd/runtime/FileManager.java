@@ -407,13 +407,8 @@ public class FileManager {
 
                         // Map slice name to the scheme already used by the code to push slices
                         // via the embedded server as well as the code to push via adb:
-                        //   slice-<slicedir>-classes.dex
-                        // In the instant-run.zip they're currently just <slicedir>.dex, so
-                        // convert.
-                        // This is a temporary hack until we unify naming.
-                        File dest = new File(dexFolder, Paths.DEX_SLICE_PREFIX
-                                + name.substring(0, name.length() - CLASSES_DEX_SUFFIX.length())
-                                + "-classes.dex");
+                        //   slice-<slicedir>
+                        File dest = new File(dexFolder, Paths.DEX_SLICE_PREFIX + name);
 
                         if (apkModified > 0) {
                             long sliceModified = dest.lastModified();
