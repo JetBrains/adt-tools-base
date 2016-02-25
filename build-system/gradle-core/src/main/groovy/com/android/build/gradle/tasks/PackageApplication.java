@@ -52,6 +52,7 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -325,23 +326,28 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
         ZipOutputStream zipFile = new ZipOutputStream(
                 new BufferedOutputStream(new FileOutputStream(tmpZipFile)));
 
+        // it appears dexFolders can include the same folders multiple times, guard against
+        // adding the same entry to the zip file several times.
+        Set<String> entriesAdded = new HashSet<String>();
         try {
             for (File dexFolder : dexFolders) {
                 if (dexFolder.getName().contains(InstantRunSlicer.MAIN_SLICE_NAME)) {
                     dexFoldersForApk.add(dexFolder);
                 } else {
                     for (File file : Files.fileTreeTraverser().breadthFirstTraversal(dexFolder)) {
+                        String entryName = file.getParentFile().getName() + SdkConstants.DOT_DEX;
                         // There are several pieces of code in the runtime library which depends on
                         // this exact pattern, so it should not be changed without thorough testing
                         // (it's basically part of the contract).
-                        if (file.isFile() && file.getName().endsWith(SdkConstants.DOT_DEX)) {
-                            zipFile.putNextEntry(new ZipEntry(
-                                    file.getParentFile().getName() + SdkConstants.DOT_DEX));
+                        if (!entriesAdded.contains(entryName) &&
+                                file.isFile() && file.getName().endsWith(SdkConstants.DOT_DEX)) {
+                            zipFile.putNextEntry(new ZipEntry(entryName));
                             try {
                                 Files.copy(file, zipFile);
                             } finally {
                                 zipFile.closeEntry();
                             }
+                            entriesAdded.add(entryName);
                         }
                     }
                 }
