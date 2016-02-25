@@ -331,18 +331,19 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                     dexFoldersForApk.add(dexFolder);
                 } else {
                     for (File file : Files.fileTreeTraverser().breadthFirstTraversal(dexFolder)) {
-                        // There are several pieces of code in the runtime library which depends on
-                        // this exact pattern, so it should not be changed without thorough testing
-                        // (it's basically part of the contract).
                         if (file.isFile() && file.getName().endsWith(SdkConstants.DOT_DEX)) {
-                            zipFile.putNextEntry(new ZipEntry(
-                                    file.getParentFile().getName() + SdkConstants.DOT_DEX));
+                            // There are several pieces of code in the runtime library which depends on
+                            // this exact pattern, so it should not be changed without thorough testing
+                            // (it's basically part of the contract).
+                            String entryName = file.getParentFile().getName() + "-" + file.getName();
+                            zipFile.putNextEntry(new ZipEntry(entryName));
                             try {
                                 Files.copy(file, zipFile);
                             } finally {
                                 zipFile.closeEntry();
                             }
                         }
+
                     }
                 }
             }
