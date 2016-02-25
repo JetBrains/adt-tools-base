@@ -89,7 +89,7 @@ public class LibDependencyTest {
         expect.about(ApkSubject.FACTORY)
                 .that(project.getSubproject("app").getApk("debug"))
                 .getClass("Lcom/android/tests/libstest/lib/MainActivity;",
-                        AbstractAndroidSubject.ClassFileScope.INSTANT_RUN)
+                        AbstractAndroidSubject.ClassFileScope.MAIN)
                 .that().hasMethod("onCreate");
 
         checkHotSwapCompatibleChange(instantRunModel);
@@ -138,7 +138,7 @@ public class LibDependencyTest {
         expect.about(ApkSubject.FACTORY)
                 .that(project.getSubproject("app").getApk("debug"))
                 .getClass("Lcom/android/tests/libstest/lib/MainActivity;",
-                        AbstractAndroidSubject.ClassFileScope.INSTANT_RUN)
+                        AbstractAndroidSubject.ClassFileScope.MAIN)
                 .that().hasMethod("onCreate");
 
         Files.write("changed java resource", resource, Charsets.UTF_8);
@@ -199,5 +199,4 @@ public class LibDependencyTest {
                 OptionalCompilationStep.INSTANT_DEV + "," + Joiner.on(',').join(flags);
         return Collections.singletonList(property);
     }
-
 }
