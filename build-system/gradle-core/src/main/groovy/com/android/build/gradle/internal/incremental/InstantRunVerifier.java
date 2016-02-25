@@ -16,7 +16,20 @@
 
 package com.android.build.gradle.internal.incremental;
 
-import static com.android.build.gradle.internal.incremental.InstantRunVerifierStatus.*;
+import static com.android.build.gradle.internal.incremental.InstantRunVerifierStatus.CLASS_ANNOTATION_CHANGE;
+import static com.android.build.gradle.internal.incremental.InstantRunVerifierStatus.COMPATIBLE;
+import static com.android.build.gradle.internal.incremental.InstantRunVerifierStatus.FIELD_ADDED;
+import static com.android.build.gradle.internal.incremental.InstantRunVerifierStatus.FIELD_REMOVED;
+import static com.android.build.gradle.internal.incremental.InstantRunVerifierStatus.FIELD_TYPE_CHANGE;
+import static com.android.build.gradle.internal.incremental.InstantRunVerifierStatus.IMPLEMENTED_INTERFACES_CHANGE;
+import static com.android.build.gradle.internal.incremental.InstantRunVerifierStatus.INSTANT_RUN_DISABLED;
+import static com.android.build.gradle.internal.incremental.InstantRunVerifierStatus.METHOD_ADDED;
+import static com.android.build.gradle.internal.incremental.InstantRunVerifierStatus.METHOD_ANNOTATION_CHANGE;
+import static com.android.build.gradle.internal.incremental.InstantRunVerifierStatus.METHOD_DELETED;
+import static com.android.build.gradle.internal.incremental.InstantRunVerifierStatus.PARENT_CLASS_CHANGED;
+import static com.android.build.gradle.internal.incremental.InstantRunVerifierStatus.REFLECTION_USED;
+import static com.android.build.gradle.internal.incremental.InstantRunVerifierStatus.R_CLASS_CHANGE;
+import static com.android.build.gradle.internal.incremental.InstantRunVerifierStatus.STATIC_INITIALIZER_CHANGE;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -56,7 +69,9 @@ import java.util.jar.JarFile;
 public class InstantRunVerifier {
 
     private static final Comparator<MethodNode> METHOD_COMPARATOR = new MethodNodeComparator();
-    private static final Comparator<AnnotationNode> ANNOTATION_COMPARATOR =
+
+    @VisibleForTesting
+    static final Comparator<AnnotationNode> ANNOTATION_COMPARATOR =
             new AnnotationNodeComparator();
     private static final Comparator<Object> OBJECT_COMPARATOR = new Comparator<Object>() {
         @Override
@@ -113,7 +128,8 @@ public class InstantRunVerifier {
     /**
      * describe the difference between two collections of the same elements.
      */
-    private enum Diff {
+    @VisibleForTesting
+    enum Diff {
         /**
          * no change, the collections are equals
          */
@@ -406,11 +422,12 @@ public class InstantRunVerifier {
         }
     }
 
+    @VisibleForTesting
     @NonNull
-    public static <T> Diff diffList(
+    static <T> Diff diffList(
             @Nullable List<T> one,
             @Nullable List<T> two,
-            @NonNull  Comparator<T> comparator) {
+            @NonNull Comparator<T> comparator) {
 
         if (one == null && two == null) {
             return Diff.NONE;
@@ -422,26 +439,28 @@ public class InstantRunVerifier {
             return Diff.REMOVAL;
         }
         List<T> copyOfOne = new ArrayList<T>(one);
+        List<T> copyOfTwo = new ArrayList<T>(two);
+
         for (T elementOfTwo : two) {
-            T elementOfCopyOfOne = getElementOf(copyOfOne, elementOfTwo, comparator);
-            if (elementOfCopyOfOne != null) {
-                copyOfOne.remove(elementOfCopyOfOne);
+            T commonElement = getElementOf(copyOfOne, elementOfTwo, comparator);
+            if (commonElement != null) {
+                copyOfOne.remove(commonElement);
             }
         }
 
         for (T elementOfOne : one) {
-            T elementOfTwo = getElementOf(two, elementOfOne, comparator);
-            if (elementOfTwo != null) {
-                two.remove(elementOfTwo);
+            T commonElement = getElementOf(copyOfTwo, elementOfOne, comparator);
+            if (commonElement != null) {
+                copyOfTwo.remove(commonElement);
             }
         }
-        if ((!copyOfOne.isEmpty()) && (copyOfOne.size() == two.size())) {
+        if ((!copyOfOne.isEmpty()) && (copyOfOne.size() == copyOfTwo.size())) {
             return Diff.CHANGE;
         }
         if (!copyOfOne.isEmpty()) {
             return Diff.REMOVAL;
         }
-        return two.isEmpty() ? Diff.NONE : Diff.ADDITION;
+        return copyOfTwo.isEmpty() ? Diff.NONE : Diff.ADDITION;
     }
 
     @Nullable
