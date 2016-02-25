@@ -98,10 +98,10 @@ import com.android.build.gradle.internal.transforms.InstantRunTransform;
 import com.android.build.gradle.internal.transforms.InstantRunVerifierTransform;
 import com.android.build.gradle.internal.transforms.JacocoTransform;
 import com.android.build.gradle.internal.transforms.JarMergingTransform;
-import com.android.build.gradle.internal.transforms.NoChangesVerifierTransform;
 import com.android.build.gradle.internal.transforms.MergeJavaResourcesTransform;
 import com.android.build.gradle.internal.transforms.MultiDexTransform;
 import com.android.build.gradle.internal.transforms.NewShrinkerTransform;
+import com.android.build.gradle.internal.transforms.NoChangesVerifierTransform;
 import com.android.build.gradle.internal.transforms.ProGuardTransform;
 import com.android.build.gradle.internal.transforms.ProguardConfigurable;
 import com.android.build.gradle.internal.transforms.ShrinkResourcesTransform;
@@ -1060,7 +1060,7 @@ public abstract class TaskManager {
                 new JavaCompileConfigAction(scope));
         scope.setJavacTask(javacTask);
 
-        setupCompileTaskDependencies(tasks, scope, variantData, javacTask);
+        setupCompileTaskDependencies(tasks, scope, javacTask);
 
         // create the output stream from this task
         scope.getTransformManager().addStream(OriginalStream.builder()
@@ -1094,8 +1094,8 @@ public abstract class TaskManager {
 
     private void setupCompileTaskDependencies(@NonNull TaskFactory tasks,
             @NonNull VariantScope scope,
-            BaseVariantData<? extends BaseVariantOutputData> variantData,
             AndroidTask<?> compileTask) {
+        BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
         IncrementalMode incrementalMode = getIncrementalMode(scope.getVariantConfiguration());
 
         if (incrementalMode == IncrementalMode.LOCAL_RES_ONLY) {
@@ -1110,15 +1110,6 @@ public abstract class TaskManager {
             compileTask.dependsOn(tasks,
                     scope.getVariantData().getVariantDependency().getCompileConfiguration()
                             .getBuildDependencies());
-        }
-
-        if (variantData.getType().isForTesting()) {
-            BaseVariantData testedVariantData =
-                    (BaseVariantData) ((TestVariantData) variantData).getTestedVariantData();
-            final JavaCompile testedJavacTask = testedVariantData.javacTask;
-            compileTask.dependsOn(tasks,
-                    testedJavacTask != null ? testedJavacTask :
-                            testedVariantData.getScope().getJavacTask());
         }
     }
 
@@ -1243,6 +1234,8 @@ public abstract class TaskManager {
 
         AndroidTask<? extends JavaCompile> javacTask = createJavacTask(tasks, variantScope);
         setJavaCompilerTask(javacTask, tasks, variantScope);
+        javacTask.dependsOn(tasks, testedVariantData.getScope().getJavacTask());
+
         createRunUnitTestTask(tasks, variantScope);
 
         variantScope.getAssembleTask().dependsOn(tasks, createMockableJar);
@@ -1265,10 +1258,10 @@ public abstract class TaskManager {
         // get single output for now (though this may always be the case for tests).
         final BaseVariantOutputData variantOutputData = variantData.getOutputs().get(0);
 
-        final BaseVariantData<BaseVariantOutputData> baseTestedVariantData =
+        final BaseVariantData<BaseVariantOutputData> testedVariantData =
                 (BaseVariantData<BaseVariantOutputData>) variantData.getTestedVariantData();
         final BaseVariantOutputData testedVariantOutputData =
-                baseTestedVariantData.getOutputs().get(0);
+                testedVariantData.getOutputs().get(0);
 
         createAnchorTasks(tasks, variantScope);
 
@@ -1329,6 +1322,10 @@ public abstract class TaskManager {
             setJavaCompilerTask(javacTask, tasks, variantScope);
             createPostCompilationTasks(tasks, variantScope);
         }
+        checkNotNull(variantScope.getJavaCompilerTask());
+        variantScope.getJavaCompilerTask().dependsOn(
+                tasks,
+                testedVariantData.getScope().getJavaCompilerTask());
 
         // Add data binding tasks if enabled
         if (extension.getDataBinding().isEnabled()) {
@@ -2294,6 +2291,7 @@ public abstract class TaskManager {
 
         // Jack is compiling and also providing the binary and mapping files.
         setJavaCompilerTask(jackTask, tasks, scope);
+        setupCompileTaskDependencies(tasks, scope, jackTask);
         jackTask.optionalDependsOn(tasks, scope.getMergeJavaResourcesTask());
         jackTask.dependsOn(tasks,
                 scope.getVariantData().sourceGenTask,
@@ -2334,7 +2332,7 @@ public abstract class TaskManager {
             javaCompilerTask.dependsOn(tasks, exportBuildInfo);
         }
 
-        setupCompileTaskDependencies(tasks, scope, scope.getVariantData(), exportBuildInfo);
+        setupCompileTaskDependencies(tasks, scope, exportBuildInfo);
     }
 
     /**

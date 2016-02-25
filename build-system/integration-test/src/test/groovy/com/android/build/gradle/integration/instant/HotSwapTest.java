@@ -94,6 +94,7 @@ public class HotSwapTest {
 
     @Before
     public void activityClass() throws IOException {
+        Assume.assumeFalse("Disabled until instant run supports Jack", GradleTestProject.USE_JACK);
         createActivityClass("Original");
     }
 

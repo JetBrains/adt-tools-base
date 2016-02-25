@@ -71,23 +71,23 @@ class MultiDexTest {
         // manually inspect the apk to ensure that the classes.dex that was created is the same
         // one in the apk. This tests that the packaging didn't rename the multiple dex files
         // around when we packaged them.
+        File classesDex = GradleTestProject.USE_JACK ?
+                project.file("build/" + FD_INTERMEDIATES + "/dex/ics/debug/classes.dex") :
+                project.file("build/" + FD_INTERMEDIATES + "/transforms/dex/ics/debug/" +
+                        "folders/1000/1f/main/classes.dex")
+
         assertThatZip(project.getApk("ics", "debug")).containsFileWithContent(
                 "classes.dex",
-                Files.toByteArray(project.file(
-                        "build/" + FD_INTERMEDIATES +
-                                "/transforms/dex/" +
-                                "ics/debug/" +
-                                "folders/1000/1f/main/" +
-                                "classes.dex")))
+                Files.toByteArray(classesDex))
+
+        File classes2Dex = GradleTestProject.USE_JACK ?
+                project.file("build/" + FD_INTERMEDIATES + "/dex/ics/debug/classes2.dex") :
+                project.file("build/" + FD_INTERMEDIATES + "/transforms/dex/ics/debug/" +
+                        "folders/1000/1f/main/classes2.dex")
 
         assertThatZip(project.getApk("ics", "debug")).containsFileWithContent(
                 "classes2.dex",
-                Files.toByteArray(project.file(
-                        "build/" + FD_INTERMEDIATES +
-                        "/transforms/dex/" +
-                        "ics/debug/" +
-                        "folders/1000/1f/main/" +
-                        "classes2.dex")))
+                Files.toByteArray(classes2Dex))
 
         commonApkChecks("debug")
 
@@ -137,6 +137,10 @@ class MultiDexTest {
     }
 
     private assertMainDexListContainsExactly(String buildType, String... expected) {
+        // Jack do not produce maindexlist.txt
+        if (GradleTestProject.USE_JACK) {
+            return
+        }
         File listFile = project.file("build/intermediates/multi-dex/ics/${buildType}/maindexlist.txt")
         Iterable<String> actual = listFile
                 .readLines()
