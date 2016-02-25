@@ -81,6 +81,8 @@ public class ColdSwapTest {
                 .that().hasMethod("onCreate");
         apkSubject.getClass("Lcom/android/tools/fd/runtime/BootstrapApplication;",
                 AbstractAndroidSubject.ClassFileScope.MAIN);
+        apkSubject.getClass("Lcom/android/tools/fd/runtime/AppInfo;",
+                AbstractAndroidSubject.ClassFileScope.MAIN);
 
         InstantRunBuildInfo initialContext = InstantRunTestUtils.loadContext(instantRunModel);
         String startBuildId = initialContext.getTimeStamp();
@@ -112,7 +114,9 @@ public class ColdSwapTest {
                 AbstractAndroidSubject.ClassFileScope.INSTANT_RUN)
                 .that().hasMethod("onCreate");
         apkSubject.getClass("Lcom/android/tools/fd/runtime/BootstrapApplication;",
-                AbstractAndroidSubject.ClassFileScope.MAIN);
+                AbstractAndroidSubject.ClassFileScope.ALL);
+        apkSubject.getClass("Lcom/android/tools/fd/runtime/AppInfo;",
+                AbstractAndroidSubject.ClassFileScope.ALL);
 
         InstantRunBuildInfo initialContext = InstantRunTestUtils.loadContext(instantRunModel);
         String startBuildId = initialContext.getTimeStamp();
