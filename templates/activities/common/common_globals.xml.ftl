@@ -2,7 +2,7 @@
     <#assign theme=getApplicationTheme()!{ "name": "AppTheme", "isAppCompat": true }>
     <#assign themeName=theme.name!'AppTheme'>
     <#assign themeNameNoActionBar=theme.nameNoActionBar!'AppTheme.NoActionBar'>
-    <#assign appCompat=theme.isAppCompat!false>
+    <#assign appCompat=backwardsCompatibility!(theme.isAppCompat)!false>
     <#assign appCompatActivity=appCompat && (buildApi gte 22)>
 
     <global id="themeName" type="string" value="${themeName}" />
@@ -14,7 +14,7 @@
     <global id="themeNamePopupOverlay" type="string" value="${theme.namePopupOverlay!'AppTheme.PopupOverlay'}" />
     <global id="themeExistsPopupOverlay" type="boolean" value="${(theme.existsPopupOverlay!false)?string}" />
 
-    <global id="appCompat" type="boolean" value="${((isNewProject!false) || (theme.isAppCompat!false))?string}" />
+    <global id="appCompat" type="boolean" value="${appCompat?string}" />
     <global id="appCompatActivity" type="boolean" value="${appCompatActivity?string}" />
     <global id="hasAppBar" type="boolean" value="${appCompatActivity?string}" />
     <global id="hasNoActionBar" type="boolean" value="${appCompatActivity?string}" />
