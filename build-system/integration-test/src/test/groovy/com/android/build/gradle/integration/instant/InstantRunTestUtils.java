@@ -31,22 +31,27 @@ import com.android.builder.model.AndroidProject;
 import com.android.builder.model.InstantRun;
 import com.android.builder.model.Variant;
 import com.android.builder.testing.api.DeviceException;
+import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.CollectingOutputReceiver;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.InstallException;
+import com.android.ddmlib.ShellCommandUnresponsiveException;
+import com.android.ddmlib.TimeoutException;
 import com.android.resources.Density;
 import com.android.sdklib.AndroidVersion;
 import com.android.tools.fd.client.InstantRunArtifact;
 import com.android.tools.fd.client.InstantRunArtifactType;
 import com.android.tools.fd.client.InstantRunBuildInfo;
 import com.google.common.base.Charsets;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
@@ -152,6 +157,16 @@ public final class InstantRunTestUtils {
                 command, receiver, DEFAULT_ADB_TIMEOUT_MSEC, MILLISECONDS);
     }
 
+    static void stopApp(@NonNull IDevice device, @NonNull String target) throws Exception {
+        IShellOutputReceiver receiver = new CollectingOutputReceiver();
+        String command = "am start" +
+                " -n " + target +
+                " -a android.intent.action.MAIN" +
+                " -c android.intent.category.LAUNCHER";
+        device.executeShellCommand(
+                command, receiver, DEFAULT_ADB_TIMEOUT_MSEC, MILLISECONDS);
+    }
+
     static void unlockDevice(@NonNull IDevice device) throws Exception {
         IShellOutputReceiver receiver = new CollectingOutputReceiver();
         device.executeShellCommand(
@@ -190,5 +205,20 @@ public final class InstantRunTestUtils {
 
         TruthHelper.assertThat(artifact.type).isEqualTo(InstantRunArtifactType.RELOAD_DEX);
         return artifact;
+    }
+
+    public static void printBuildInfoFile(@Nullable InstantRun instantRunModel) {
+        if (instantRunModel == null) {
+            System.err.println("Cannot print build info file as model is null");
+            return;
+        }
+        try {
+            System.out.println("------------ build info file ------------\n"
+                    + Files.toString(instantRunModel.getInfoFile(), Charsets.UTF_8)
+                    + "---------- end build info file ----------\n");
+        } catch (IOException e) {
+            System.err.println("Unable to print build info xml file: \n" +
+                    Throwables.getStackTraceAsString(e));
+        }
     }
 }

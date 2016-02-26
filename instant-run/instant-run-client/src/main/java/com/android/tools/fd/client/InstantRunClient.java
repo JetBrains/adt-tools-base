@@ -16,6 +16,9 @@
 
 package com.android.tools.fd.client;
 
+import static com.android.tools.fd.client.InstantRunArtifactType.DEX;
+import static com.android.tools.fd.client.InstantRunArtifactType.RESTART_DEX;
+import static com.android.tools.fd.client.InstantRunArtifactType.SPLIT;
 import static com.android.tools.fd.common.ProtocolConstants.MESSAGE_EOF;
 import static com.android.tools.fd.common.ProtocolConstants.MESSAGE_PATCHES;
 import static com.android.tools.fd.common.ProtocolConstants.MESSAGE_PING;
@@ -42,6 +45,7 @@ import com.google.common.base.CharMatcher;
 import com.google.common.base.Charsets;
 import com.google.common.base.Splitter;
 import com.google.common.base.Throwables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
@@ -52,6 +56,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -297,6 +302,98 @@ public class InstantRunClient {
                 }
             }, true);
         }
+    }
+
+    public UpdateMode pushPatches(@NonNull IDevice device,
+            @NonNull final InstantRunBuildInfo buildInfo,
+            @NonNull UpdateMode updateMode,
+            final boolean isRestartActivity,
+            final boolean isShowToastEnabled) throws InstantRunPushFailedException {
+        if (!buildInfo.canHotswap()) {
+            updateMode = updateMode.combine(UpdateMode.COLD_SWAP);
+        }
+
+        List<FileTransfer> files = Lists.newArrayList();
+
+        AppState appState = getAppState(device);
+        boolean appInForeground = appState == AppState.FOREGROUND;
+        boolean appRunning = appState == AppState.FOREGROUND || appState == AppState.BACKGROUND;
+
+        List<InstantRunArtifact> artifacts = buildInfo.getArtifacts();
+        for (InstantRunArtifact artifact : artifacts) {
+            InstantRunArtifactType type = artifact.type;
+            File file = artifact.file;
+            switch (type) {
+                case MAIN:
+                case SPLIT_MAIN:
+                    // Should only be used here when we're doing a *compatible*
+                    // resource swap and also got an APK for split. Ignore here.
+                    continue;
+                case SPLIT:
+                    // Should never be used with this method: APK splits should
+                    // be pushed by SplitApkDeployTask
+                    assert false : artifact;
+                    break;
+                case RESOURCES:
+                    updateMode = updateMode.combine(UpdateMode.WARM_SWAP);
+                    files.add(FileTransfer.createResourceFile(file));
+                    break;
+                case DEX:
+                    String name = file.getParentFile().getName() + "-" + file.getName();
+                    files.add(FileTransfer.createSliceDex(file, name));
+                    break;
+                case RESTART_DEX:
+                    files.add(FileTransfer.createRestartDex(file));
+                    break;
+                case RELOAD_DEX:
+                    if (appInForeground) {
+                        files.add(FileTransfer.createHotswapPatch(file));
+                    } else {
+                        // Gradle created a reload dex, but the app is no longer running.
+                        // If it created a cold swap artifact, we can use it; otherwise we're out of luck.
+                        if (!buildInfo.hasOneOf(DEX, RESTART_DEX, SPLIT)) {
+                            throw new InstantRunPushFailedException("Can't apply hot swap patch: app is no longer running");
+                        }
+                    }
+                    break;
+                default:
+                    assert false : artifact;
+            }
+        }
+
+        boolean needRestart;
+
+        if (appRunning) {
+            List<ApplicationPatch> changes = new ArrayList<ApplicationPatch>(files.size());
+            for (FileTransfer file : files) {
+                try {
+                    changes.add(file.getPatch());
+                }
+                catch (IOException e) {
+                    throw new InstantRunPushFailedException("Could not read file " + file);
+                }
+            }
+            pushPatches(device, buildInfo.getTimeStamp(), changes, updateMode, isRestartActivity, isShowToastEnabled);
+
+            needRestart = false;
+            if (!appInForeground || !buildInfo.canHotswap()) {
+                stopApp(device, false /* sendChangeBroadcast */);
+                needRestart = true;
+            }
+        }
+        else {
+            // Push to data directory
+            pushFiles(files, device, buildInfo.getTimeStamp());
+            needRestart = true;
+        }
+
+        logFilesPushed(files, needRestart);
+
+        if (needRestart) {
+            // TODO: this should not need to be explicit, but leaving in to ensure no behaviour change.
+            return UpdateMode.COLD_SWAP;
+        }
+        return updateMode;
     }
 
     public void pushPatches(@Nullable IDevice device,
@@ -720,5 +817,26 @@ public class InstantRunClient {
         receiver = new CollectingOutputReceiver();
         device.executeShellCommand(cmd, receiver);
         return receiver.getOutput();
+    }
+
+    private void logFilesPushed(@NonNull List<FileTransfer> files, boolean needRestart) {
+        StringBuilder sb = new StringBuilder("Pushing files: ");
+        if (needRestart) {
+            sb.append("(needs restart) ");
+        }
+
+        sb.append('[');
+        String separator = "";
+        for (FileTransfer file : files) {
+            sb.append(separator);
+            sb.append(file.source.getName());
+            sb.append(" as ");
+            sb.append(file.name);
+
+            separator = ", ";
+        }
+        sb.append(']');
+
+        mLogger.info(sb.toString());
     }
 }
