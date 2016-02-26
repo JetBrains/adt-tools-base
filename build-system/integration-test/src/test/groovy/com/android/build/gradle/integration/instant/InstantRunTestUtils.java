@@ -177,35 +177,11 @@ public final class InstantRunTestUtils {
         return instantRunModel;
     }
 
-    @NonNull
-    static InstantRunArtifact doHotSwapBuild(
-            @NonNull GradleTestProject project,
-            int apiLevel,
-            @NonNull InstantRun instantRunModel,
-            @NonNull ColdswapMode coldswapMode) throws Exception {
-        project.execute(getInstantRunArgs(apiLevel, coldswapMode),
-                instantRunModel.getIncrementalAssembleTaskName());
-
-        return getCompiledHotSwapCompatibleChange(instantRunModel);
-    }
-
-    @NonNull
-    static InstantRunArtifact doHotSwapBuild(
-            @NonNull GradleTestProject project,
-            @NonNull IDevice device,
-            @NonNull InstantRun instantRunModel,
-            @NonNull ColdswapMode coldswapMode) throws Exception {
-        project.execute(getInstantRunArgs(device, coldswapMode),
-                instantRunModel.getIncrementalAssembleTaskName());
-
-        return getCompiledHotSwapCompatibleChange(instantRunModel);
-    }
-
     /**
      * Gets the {@link InstantRunArtifact} produced by last build.
      */
     @NonNull
-    private static InstantRunArtifact getCompiledHotSwapCompatibleChange(
+    static InstantRunArtifact getCompiledHotSwapCompatibleChange(
             @NonNull InstantRun instantRunModel) throws Exception {
         InstantRunBuildInfo context = loadContext(instantRunModel);
 

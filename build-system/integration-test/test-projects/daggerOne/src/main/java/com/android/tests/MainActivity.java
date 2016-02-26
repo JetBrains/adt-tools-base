@@ -28,6 +28,6 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         dagger.ObjectGraph.create(AppModule.class).inject(this);
 
-        android.util.Log.d("DaggerOne", mSomeService.message);
+        android.util.Log.d("daggerOne", mSomeService.message);
     }
 }
