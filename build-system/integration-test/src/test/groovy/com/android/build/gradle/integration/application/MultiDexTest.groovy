@@ -35,29 +35,12 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
  * Assemble tests for multiDex.
  */
 @CompileStatic
-@RunWith(FilterableParameterized)
 class MultiDexTest {
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("multiDex")
             .withHeap("2048M")
             .create()
-
-    @Parameterized.Parameters(name = "dexInProcess = {0}")
-    public static Collection<Object[]> data() {
-        return [
-                [true] as Object[],
-                [false] as Object[],
-        ]
-    }
-
-    @Parameterized.Parameter(0)
-    public boolean dexInProcess
-
-    @Before
-    public void setDexInProcess() {
-        project.buildFile << "android.dexOptions.dexInProcess = " + dexInProcess
-    }
 
     @Test
     void "check normal build"() {
