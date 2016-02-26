@@ -83,10 +83,10 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
             "MissingRegistered", //$NON-NLS-1$
             "Missing registered class",
 
-            "If a class is referenced in the manifest, it must also exist in the project (or in one " +
-            "of the libraries included by the project. This check helps uncover typos in " +
-            "registration names, or attempts to rename or move classes without updating the " +
-            "manifest file properly.",
+            "If a class is referenced in the manifest or in a layout file, it must also exist " +
+            "in the project (or in one of the libraries included by the project. This check " +
+            "helps uncover typos in registration names, or attempts to rename or move classes " +
+            "without updating the manifest file properly.",
 
             Category.CORRECTNESS,
             8,
@@ -120,9 +120,12 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
             "InnerclassSeparator", //$NON-NLS-1$
             "Inner classes should use `$` rather than `.`",
 
-            "When you reference an inner class in a manifest file, you must use '$' instead of '.' as the separator character, i.e. Outer$Inner instead of Outer.Inner.\n" +
+            "When you reference an inner class in a manifest file, you must use '$' instead of " +
+            "'.' as the separator character, i.e. Outer$Inner instead of Outer.Inner.\n" +
             "\n" +
-            "(If you get this warning for a class which is not actually an inner class, it's because you are using uppercase characters in your package name, which is not conventional.)",
+            "(If you get this warning for a class which is not actually an inner class, it's " +
+            "because you are using uppercase characters in your package name, which is not " +
+            "conventional.)",
 
             Category.CORRECTNESS,
             3,
@@ -328,6 +331,7 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
     @Override
     public void afterCheckProject(@NonNull Context context) {
         if (context.getProject() == context.getMainProject() && mHaveClasses
+                && !context.getMainProject().isLibrary()
                 && mReferencedClasses != null && !mReferencedClasses.isEmpty()
                 && context.getDriver().getScope().contains(Scope.CLASS_FILE)) {
             List<String> classes = new ArrayList<String>(mReferencedClasses.keySet());
