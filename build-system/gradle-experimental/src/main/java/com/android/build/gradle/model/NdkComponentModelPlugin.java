@@ -48,6 +48,7 @@ import com.android.build.gradle.ndk.internal.StlNativeToolSpecification;
 import com.android.build.gradle.ndk.internal.ToolchainConfiguration;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.VariantConfiguration;
+import com.android.utils.NativeSourceFileExtensions;
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
@@ -118,9 +119,6 @@ import javax.inject.Inject;
  * Plugin for Android NDK applications.
  */
 public class NdkComponentModelPlugin implements Plugin<Project> {
-    public static final Collection<String> C_FILE_EXTENSIONS = ImmutableList.of("c");
-    public static final Collection<String> CPP_FILE_EXTENSIONS = ImmutableList.of(
-            "C", "CPP", "c++", "cc", "cp", "cpp", "cxx");
 
     @NonNull
     private final ToolingModelBuilderRegistry toolingRegistry;
@@ -199,8 +197,8 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                         @Override
                         public void execute(NativeSourceSet nativeSourceSet) {
                             nativeSourceSet.getSource().srcDir("src/" + nativeSourceSet.getParentName() + "/" + "jni");
-                            addInclude(nativeSourceSet.getcFilter(), C_FILE_EXTENSIONS);
-                            addInclude(nativeSourceSet.getCppFilter(), CPP_FILE_EXTENSIONS);
+                            addInclude(nativeSourceSet.getcFilter(), NativeSourceFileExtensions.C_FILE_EXTENSIONS);
+                            addInclude(nativeSourceSet.getCppFilter(), NativeSourceFileExtensions.CPP_FILE_EXTENSIONS);
                         }
                     });
                 }
@@ -472,8 +470,8 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 ModelMap<AndroidBinaryInternal> binaries,
                 final NdkHandler ndkHandler) {
 
-            config.getCFileExtensions().addAll(C_FILE_EXTENSIONS);
-            config.getCppFileExtensions().addAll(CPP_FILE_EXTENSIONS);
+            config.getCFileExtensions().addAll(NativeSourceFileExtensions.C_FILE_EXTENSIONS);
+            config.getCppFileExtensions().addAll(NativeSourceFileExtensions.CPP_FILE_EXTENSIONS);
 
             for (final AndroidBinaryInternal binary : binaries.values()) {
                 for (final NativeLibraryBinarySpec nativeBinary : binary.getNativeBinaries()) {
