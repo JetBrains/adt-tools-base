@@ -20,6 +20,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatDex;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.runner.FilterableParameterized;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
@@ -29,30 +30,48 @@ import com.android.tools.fd.client.InstantRunArtifactType;
 import com.android.tools.fd.client.InstantRunBuildInfo;
 import com.google.common.collect.Iterables;
 
+import org.apache.commons.lang.SystemUtils;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
 
 /**
- * Tests support for Dagger 1 and Instant Run.
+ * Tests support for Dagger and Instant Run.
  */
-public class DaggerOneTest {
+@RunWith(FilterableParameterized.class)
+public class DaggerTest {
     private static final ColdswapMode COLDSWAP_MODE = ColdswapMode.MULTIDEX;
 
+    @Parameterized.Parameters(name = "{0}")
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][] {{"daggerOne"}, {"daggerTwo"}});
+    }
+
     @Rule
-    public GradleTestProject project = GradleTestProject.builder()
-            .fromTestProject("daggerOne")
-            .create();
+    public GradleTestProject project;
 
     private File mAppModule;
+
+    public DaggerTest(String testProject) {
+        project = GradleTestProject.builder()
+                .fromTestProject(testProject)
+                .create();
+    }
 
     @Before
     public void setUp() throws IOException {
         Assume.assumeFalse("Disabled until instant run supports Jack", GradleTestProject.USE_JACK);
+        if (project.getTestDir().getAbsolutePath().contains("daggerTwo")) {
+            Assume.assumeFalse("Dagger 2 only works on java 7+", SystemUtils.IS_JAVA_1_6);
+        }
         mAppModule = project.file("src/main/java/com/android/tests/AppModule.java");
     }
 

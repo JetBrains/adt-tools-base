@@ -101,6 +101,7 @@ public class CheckAll {
             "ndkRsHelloCompute", // TODO: Fails in C++ code, not sure what the issue is.
 
             // These are all right:
+            "daggerTwo", // requires Java 7
             "projectWithLocalDeps", // Doesn't have a build.gradle, not much to check anyway.
             "duplicateNameImport", // Fails on purpose.
             "instant-unit-tests", // Specific to testing instant run, not a "real" project.
