@@ -2377,8 +2377,8 @@ public abstract class TaskManager {
          */
         AndroidTask<PrePackageApplication> prePackageApp = androidTasks.create(tasks,
                 new PrePackageApplication.ConfigAction("prePackageMarkerFor", variantScope));
-        if (getIncrementalMode(variantConfiguration)
-                != IncrementalMode.NONE) {
+        IncrementalMode incrementalMode = getIncrementalMode(variantConfiguration);
+        if (incrementalMode != IncrementalMode.NONE) {
             prePackageApp.dependsOn(tasks, variantScope.getInstantRunAnchorTask());
         }
 
@@ -2393,7 +2393,9 @@ public abstract class TaskManager {
 
             // when building for instant run, never puts the user's code in the APK directly.
             PackageApplication.DexPackagingPolicy dexPackagingPolicy =
-                    getIncrementalMode(variantConfiguration) == IncrementalMode.NONE
+                     incrementalMode == IncrementalMode.NONE
+                            || variantScope.getInstantRunBuildContext().getPatchingPolicy()
+                                    == InstantRunPatchingPolicy.PRE_LOLLIPOP
                             ? PackageApplication.DexPackagingPolicy.STANDARD
                             : PackageApplication.DexPackagingPolicy.INSTANT_RUN;
 
@@ -2601,8 +2603,8 @@ public abstract class TaskManager {
         }
 
         if (getExtension().getLintOptions().isCheckReleaseBuilds()
-                && getIncrementalMode(variantConfiguration) == IncrementalMode.NONE) {
-            createLintVitalTask(tasks, variantData);
+                && incrementalMode == IncrementalMode.NONE) {
+            createLintVitalTask(variantData);
         }
 
         // add an uninstall task
