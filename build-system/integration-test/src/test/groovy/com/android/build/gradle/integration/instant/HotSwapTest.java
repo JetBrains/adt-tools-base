@@ -17,11 +17,10 @@
 package com.android.build.gradle.integration.instant;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
-import static com.android.build.gradle.integration.instant.InstantRunTestUtils.doHotSwapBuild;
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.integration.common.category.DeviceTests;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
@@ -30,24 +29,13 @@ import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject;
 import com.android.build.gradle.integration.common.truth.ApkSubject;
 import com.android.build.gradle.integration.common.truth.DexFileSubject;
-import com.android.build.gradle.integration.common.utils.DeviceHelper;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
-import com.android.builder.model.AndroidProject;
 import com.android.builder.model.InstantRun;
 import com.android.ddmlib.IDevice;
-import com.android.ide.common.packaging.PackagingUtils;
-import com.android.sdklib.AndroidVersion;
-import com.android.tools.fd.client.AppState;
 import com.android.tools.fd.client.InstantRunArtifact;
-import com.android.tools.fd.client.InstantRunBuildInfo;
 import com.android.tools.fd.client.InstantRunClient;
-import com.android.tools.fd.client.InstantRunClient.FileTransfer;
-import com.android.tools.fd.client.UpdateMode;
-import com.android.tools.fd.client.UserFeedback;
-import com.android.utils.ILogger;
 import com.google.common.base.Charsets;
-import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
 import com.google.common.truth.Expect;
 
@@ -57,8 +45,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.IOException;
@@ -83,12 +69,6 @@ public class HotSwapTest {
 
     @Rule
     public Expect expect = Expect.create();
-
-    @Mock
-    UserFeedback userFeedback;
-
-    @Mock
-    ILogger iLogger;
 
     @Before
     public void activityClass() throws IOException {
@@ -118,8 +98,11 @@ public class HotSwapTest {
 
         makeBasicHotswapChange();
 
+        project.execute(InstantRunTestUtils.getInstantRunArgs(21, COLDSWAP_MODE),
+                instantRunModel.getIncrementalAssembleTaskName());
+
         InstantRunArtifact artifact =
-                doHotSwapBuild(project, 21, instantRunModel, COLDSWAP_MODE);
+                InstantRunTestUtils.getCompiledHotSwapCompatibleChange(instantRunModel);
 
         expect.about(DexFileSubject.FACTORY)
                 .that(artifact.file)
@@ -145,81 +128,43 @@ public class HotSwapTest {
     @Test
     @Category(DeviceTests.class)
     public void doHotSwapChangeTest() throws Exception {
-        IDevice device = DeviceHelper.getIDevice();
-        // TODO: Generalize apk deployment to any compatible device.
-        Assume.assumeThat("Device api level", device.getVersion(), is(new AndroidVersion(23, null)));
-        logcat.start(device, LOG_TAG);
+        HotSwapTester.run(
+                project,
+                "com.example.helloworld",
+                "HelloWorld",
+                LOG_TAG,
+                logcat,
+                new HotSwapTester.Callbacks() {
+                    @Override
+                    public void verifyOriginalCode(@NonNull InstantRunClient client,
+                            @NonNull Logcat logcat,
+                            @NonNull IDevice device) throws Exception {
+                        assertThat(logcat).containsMessageWithText("Original");
+                        assertThat(logcat).doesNotContainMessageWithText("HOT SWAP!");
+                    }
 
-        // Open project in simulated IDE
-        AndroidProject model = project.getSingleModel();
-        long token = PackagingUtils.computeApplicationHash(model.getBuildFolder());
-        InstantRun instantRunModel = InstantRunTestUtils.getInstantRunModel(model);
+                    @Override
+                    public void makeChange() throws Exception {
+                        makeBasicHotswapChange();
+                    }
 
-        // Run first time on device
-        project.execute(
-                InstantRunTestUtils.getInstantRunArgs(
-                        device, COLDSWAP_MODE, OptionalCompilationStep.RESTART_ONLY),
-                "assembleDebug");
+                    @Override
+                    public void verifyNewCode(@NonNull InstantRunClient client,
+                            @NonNull Logcat logcat,
+                            @NonNull IDevice device) throws Exception {
+                        // Should not have restarted activity
+                        assertThat(logcat).doesNotContainMessageWithText("Original");
+                        assertThat(logcat).doesNotContainMessageWithText("HOT SWAP!");
 
-        // Deploy to device
-        InstantRunBuildInfo info = InstantRunTestUtils.loadContext(instantRunModel);
-        InstantRunTestUtils.doInstall(device, info.getArtifacts());
+                        client.restartActivity(device);
+                        Thread.sleep(500); // TODO: blocking logcat assertions with timeouts.
 
-        logcat.clear();
+                        assertThat(logcat).doesNotContainMessageWithText("Original");
+                        assertThat(logcat).containsMessageWithText("HOT SWAP!");
+                    }
+                }
+        );
 
-        // Run app
-        InstantRunTestUtils.unlockDevice(device);
-
-        InstantRunTestUtils.runApp(device, "com.example.helloworld/.HelloWorld");
-
-        //Connect to device
-        InstantRunClient client =
-                new InstantRunClient("com.example.helloworld", userFeedback, iLogger, token, 8125);
-
-        // Give the app a chance to start
-        Thread.sleep(1000); // TODO: Is there a way to determine that the app is ready?
-
-        // Check the app is running
-        assertThat(client.getAppState(device)).isEqualTo(AppState.FOREGROUND);
-
-        assertThat(logcat).containsMessageWithText("Original");
-        assertThat(logcat).doesNotContainMessageWithText("HOT SWAP!");
-
-        // Make a hot-swap compatible change.
-        makeBasicHotswapChange();
-
-        // Now build the hot swap patch.
-        InstantRunArtifact artifact =
-                doHotSwapBuild(project, device, instantRunModel, COLDSWAP_MODE);
-
-        FileTransfer fileTransfer = FileTransfer.createHotswapPatch(artifact.file);
-
-        logcat.clear();
-
-        client.pushPatches(device,
-                info.getTimeStamp(),
-                ImmutableList.of(fileTransfer.getPatch()),
-                UpdateMode.HOT_SWAP,
-                false /*restartActivity*/,
-                true /*showToast*/);
-
-        Mockito.verify(userFeedback).notifyEnd(UpdateMode.HOT_SWAP);
-        Mockito.verifyNoMoreInteractions(userFeedback);
-
-        assertThat(client.getAppState(device)).isEqualTo(AppState.FOREGROUND);
-
-        // Should not have restarted activity
-        assertThat(logcat).doesNotContainMessageWithText("Original");
-        assertThat(logcat).doesNotContainMessageWithText("HOT SWAP!");
-
-        client.restartActivity(device);
-        Thread.sleep(500); // TODO: blocking logcat assertions with timeouts.
-
-        assertThat(logcat).doesNotContainMessageWithText("Original");
-        assertThat(logcat).containsMessageWithText("HOT SWAP!");
-
-        // Clean up
-        device.uninstallPackage("com.example.helloworld");
     }
 
     private void makeBasicHotswapChange() throws IOException {
