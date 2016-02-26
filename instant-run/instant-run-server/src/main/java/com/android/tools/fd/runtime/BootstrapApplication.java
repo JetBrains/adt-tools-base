@@ -198,18 +198,18 @@ public class BootstrapApplication extends Application {
                 Log.i(LOG_TAG, "Bootstrapping class loader with dex list " + dexList);
             }
 
-            File nativeLibraryFolder = FileManager.getNativeLibraryFolder();
-            if (!nativeLibraryFolder.exists()) {
-                boolean mkdirs = nativeLibraryFolder.mkdirs();
-                if (!mkdirs) {
-                    if (Log.isLoggable(LOG_TAG, Log.WARN)) {
-                        Log.w(LOG_TAG, "Couldn't create native library folder "
-                                + nativeLibraryFolder);
-                    }
-                }
-            }
-            String nativeLibraryPath = nativeLibraryFolder.getPath();
             ClassLoader classLoader = BootstrapApplication.class.getClassLoader();
+            String nativeLibraryPath;
+            try {
+                nativeLibraryPath = (String) classLoader.getClass().getMethod("getLdLibraryPath")
+                                .invoke(classLoader);
+                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                    Log.i(LOG_TAG, "Native library path: " + nativeLibraryPath);
+                }
+            } catch (Throwable t) {
+                Log.e(LOG_TAG, "Failed to determine native library path " + t.getMessage());
+                nativeLibraryPath = FileManager.getNativeLibraryFolder().getPath();
+            }
             IncrementalClassLoader.inject(
                     classLoader,
                     nativeLibraryPath,
