@@ -1491,10 +1491,6 @@ public class AndroidBuilder {
             boolean instantRunMode,
             @NonNull ILogger logger) {
 
-        if (!Boolean.TRUE.equals(dexOptions.getDexInProcess())) {
-            return false;
-        }
-        logger.warning("dexInProcess flag ignored, reverted to out of process.");
         return false;
 
         //
