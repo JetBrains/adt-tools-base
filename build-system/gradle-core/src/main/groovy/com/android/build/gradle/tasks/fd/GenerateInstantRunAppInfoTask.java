@@ -256,7 +256,8 @@ public class GenerateInstantRunAppInfoTask extends BaseTask {
             BaseVariantOutputData variantOutput = variantScope.getVariantData()
                     .getOutputs().get(0);
 
-            task.mergedManifest = variantOutput.getScope().getManifestOutputFile();
+            task.mergedManifest =
+                    variantOutput.getScope().getVariantScope().getInstantRunManifestOutputFile();
             ConventionMappingHelper.map(task, "usingMultiApks",
                     new Callable<Boolean>() {
                         @Override
