@@ -109,13 +109,9 @@ public class FileSubject extends Subject<FileSubject, File> {
         wasModifiedAt(other.lastModified());
     }
 
-    public void contentWithUnixLineSeparatorsIsExactly(String expected) {
-        try {
-            if (!FileUtils.loadFileWithUnixLineSeparators(getSubject()).equals(expected)) {
-                fail("content is not equal");
-            }
-        } catch (IOException e) {
-            fail(e.getMessage(), e);
+    public void contentWithUnixLineSeparatorsIsExactly(String expected) throws IOException {
+        if (!FileUtils.loadFileWithUnixLineSeparators(getSubject()).equals(expected)) {
+            fail("content is exactly", expected);
         }
     }
 }

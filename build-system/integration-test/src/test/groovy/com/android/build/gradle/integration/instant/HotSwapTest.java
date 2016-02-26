@@ -112,10 +112,10 @@ public class HotSwapTest {
         // As no injected API level, will default to no splits.
         ApkSubject apkFile = expect.about(ApkSubject.FACTORY)
                 .that(project.getApk("debug"));
-        apkFile.getClass("Lcom/example/helloworld/HelloWorld;",
+        apkFile.hasClass("Lcom/example/helloworld/HelloWorld;",
                 AbstractAndroidSubject.ClassFileScope.MAIN)
                 .that().hasMethod("onCreate");
-        apkFile.getClass("Lcom/android/tools/fd/runtime/BootstrapApplication;",
+        apkFile.hasClass("Lcom/android/tools/fd/runtime/BootstrapApplication;",
                 AbstractAndroidSubject.ClassFileScope.MAIN);
 
         makeBasicHotswapChange();

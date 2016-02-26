@@ -69,7 +69,7 @@ public class DexFileSubject extends Subject<DexFileSubject, File> {
             throws ProcessException, IOException {
         final Node classNode = getClassDexDump(className);
         if (assertSubjectIsNonNull() && classNode == null) {
-            fail("contains class", getSubject(), className);
+            fail("contains class", className);
         }
         return new IndirectSubject<DexClassSubject>() {
             @NonNull

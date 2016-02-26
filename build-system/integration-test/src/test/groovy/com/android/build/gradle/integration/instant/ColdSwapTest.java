@@ -46,7 +46,6 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 
 /**
  * Smoke test for cold swap builds.
@@ -76,12 +75,12 @@ public class ColdSwapTest {
         ApkSubject apkSubject = expect.about(ApkSubject.FACTORY)
                 .that(project.getApk("debug"));
 
-        apkSubject.getClass("Lcom/example/helloworld/HelloWorld;",
+        apkSubject.hasClass("Lcom/example/helloworld/HelloWorld;",
                         AbstractAndroidSubject.ClassFileScope.MAIN)
                 .that().hasMethod("onCreate");
-        apkSubject.getClass("Lcom/android/tools/fd/runtime/BootstrapApplication;",
+        apkSubject.hasClass("Lcom/android/tools/fd/runtime/BootstrapApplication;",
                 AbstractAndroidSubject.ClassFileScope.MAIN);
-        apkSubject.getClass("Lcom/android/tools/fd/runtime/AppInfo;",
+        apkSubject.hasClass("Lcom/android/tools/fd/runtime/AppInfo;",
                 AbstractAndroidSubject.ClassFileScope.MAIN);
 
         InstantRunBuildInfo initialContext = InstantRunTestUtils.loadContext(instantRunModel);
@@ -110,12 +109,12 @@ public class ColdSwapTest {
         ApkSubject apkSubject = expect.about(ApkSubject.FACTORY)
                 .that(project.getApk("debug"));
 
-        apkSubject.getClass("Lcom/example/helloworld/HelloWorld;",
+        apkSubject.hasClass("Lcom/example/helloworld/HelloWorld;",
                 AbstractAndroidSubject.ClassFileScope.INSTANT_RUN)
                 .that().hasMethod("onCreate");
-        apkSubject.getClass("Lcom/android/tools/fd/runtime/BootstrapApplication;",
+        apkSubject.hasClass("Lcom/android/tools/fd/runtime/BootstrapApplication;",
                 AbstractAndroidSubject.ClassFileScope.ALL);
-        apkSubject.getClass("Lcom/android/tools/fd/runtime/AppInfo;",
+        apkSubject.hasClass("Lcom/android/tools/fd/runtime/AppInfo;",
                 AbstractAndroidSubject.ClassFileScope.ALL);
 
         InstantRunBuildInfo initialContext = InstantRunTestUtils.loadContext(instantRunModel);
