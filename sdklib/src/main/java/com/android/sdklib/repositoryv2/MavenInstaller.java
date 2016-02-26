@@ -26,9 +26,9 @@ import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
 import com.android.repository.api.RepoPackage;
 import com.android.repository.api.SettingsController;
+import com.android.repository.impl.installer.BasicInstaller;
 import com.android.repository.impl.installer.PackageInstaller;
 import com.android.repository.io.FileOp;
-import com.android.repository.io.FileOpUtils;
 import com.android.repository.util.InstallerUtil;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
@@ -39,7 +39,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URL;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
@@ -58,7 +57,7 @@ import javax.xml.namespace.QName;
 /**
  * A {@link PackageInstaller} that knows how to install Maven packages.
  */
-public class MavenInstaller implements PackageInstaller {
+public class MavenInstaller extends BasicInstaller {
 
     public static final String MAVEN_DIR_NAME = "m2repository";
 
@@ -77,6 +76,45 @@ public class MavenInstaller implements PackageInstaller {
         return removeVersion(p, fop, progress);
     }
 
+    @Override
+    protected boolean doPrepareInstall(@NonNull RemotePackage p,
+            @NonNull File installTempPath,
+            @NonNull Downloader downloader,
+            @Nullable SettingsController settings,
+            @NonNull ProgressIndicator progress,
+            @NonNull RepoManager manager,
+            @NonNull FileOp fop) {
+        if (!p.getPath().startsWith(MAVEN_DIR_NAME)) {
+            progress.logError("Maven package paths must start with " + MAVEN_DIR_NAME);
+            return false;
+        }
+        return super
+                .doPrepareInstall(p, installTempPath, downloader, settings, progress, manager, fop);
+    }
+
+    @Override
+    protected boolean doCompleteInstall(@NonNull RemotePackage p,
+            @NonNull File installTempPath,
+            @NonNull File destination,
+            @NonNull ProgressIndicator progress,
+            @NonNull RepoManager manager,
+            @NonNull FileOp fop) {
+        if (!super.doCompleteInstall(p, installTempPath, destination, progress, manager, fop)) {
+            return false;
+        }
+        File dest;
+        try {
+            dest = InstallerUtil.getInstallPath(p, manager, progress);
+        } catch (IOException e) {
+            progress.logWarning("Failed to find install path", e);
+            return false;
+        }
+        PackageInfo info = parsePackageInfo(dest, p);
+        addVersion(new File(dest.getParentFile(), MAVEN_METADATA_FILE_NAME), info, progress,
+                fop);
+        return true;
+    }
+
     /**
      * Remove the specified package from the corresponding metadata file.
      */
@@ -92,60 +130,6 @@ public class MavenInstaller implements PackageInstaller {
         metadata.versioning.versions.version.remove(info.version);
         return writeMetadata(new File(p.getLocation().getParentFile(), MAVEN_METADATA_FILE_NAME),
                 progress, fop, metadata);
-    }
-
-    @Override
-    public boolean install(@NonNull RemotePackage p, @NonNull Downloader downloader,
-            @Nullable SettingsController settings, @NonNull ProgressIndicator progress,
-            @NonNull RepoManager manager, @NonNull FileOp fop) {
-        if (!p.getPath().startsWith(MAVEN_DIR_NAME)) {
-            progress.logError("Maven package paths must start with " + MAVEN_DIR_NAME);
-            return false;
-        }
-        URL url = InstallerUtil.resolveCompleteArchiveUrl(p, progress);
-        if (url == null) {
-            return false;
-        }
-        try {
-            String path = p.getPath();
-            path = path.replace(RepoPackage.PATH_SEPARATOR, File.separatorChar);
-            File dest = new File(manager.getLocalPath(), path);
-            if (!InstallerUtil.checkValidPath(dest, manager, progress)) {
-                return false;
-            }
-
-            File in = downloader.downloadFully(url, settings, progress);
-
-            File out = FileOpUtils.getNewTempDir("BasicInstaller", fop);
-            if (out == null || !fop.mkdirs(out)) {
-                throw new IOException("Failed to create temp dir");
-            }
-            fop.deleteOnExit(out);
-            InstallerUtil.unzip(in, out, fop, p.getArchive().getComplete().getSize(), progress);
-            fop.delete(in);
-
-            // Archives must contain a single top-level directory.
-            File[] topDirContents = fop.listFiles(out);
-            if (topDirContents.length != 1) {
-                throw new IOException("Archive didn't have single top level directory");
-            }
-            File packageRoot = topDirContents[0];
-
-            InstallerUtil.writePackageXml(p, packageRoot, manager, fop, progress);
-
-            // Move the final unzipped archive into place.
-            FileOpUtils.safeRecursiveOverwrite(packageRoot, dest, fop, progress);
-
-            PackageInfo info = parsePackageInfo(dest, p);
-            addVersion(new File(dest.getParentFile(), MAVEN_METADATA_FILE_NAME), info, progress,
-                    fop);
-            manager.markInvalid();
-            return true;
-        } catch (IOException e) {
-            progress.logWarning("An error occurred during installation.", e);
-        }
-
-        return false;
     }
 
     /**

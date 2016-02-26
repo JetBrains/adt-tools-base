@@ -46,11 +46,10 @@ public interface PackageInstaller {
             @NonNull RepoManager manager, @NonNull FileOp fop);
 
     /**
-     * Installs the package.
+     * Completes the installation. This should include anything that actually affects the installed
+     * SDK or requires user interaction.
      *
      * @param p          The {@link RemotePackage} to install.
-     * @param downloader The {@link Downloader} used to download the archive.
-     * @param settings   The {@link SettingsController} to provide any settings needed.
      * @param progress   A {@link ProgressIndicator}, to show install progress and facilitate
      *                   logging.
      * @param manager    A {@link RepoManager} that knows about this package.
@@ -58,7 +57,25 @@ public interface PackageInstaller {
      *                   a unit test.
      * @return {@code true} if the install was successful, {@code false} otherwise.
      */
-    boolean install(@NonNull RemotePackage p, @NonNull Downloader downloader,
+    boolean completeInstall(@NonNull RemotePackage p, @NonNull ProgressIndicator progress,
+            @NonNull RepoManager manager, @NonNull FileOp fop);
+
+
+    /**
+     * Prepares the package for installation. This includes downloading, unzipping, and anything
+     * else that can be done without affecting the installed SDK or other state.
+     * @param p          The {@link RemotePackage} to install.
+     * @param downloader The {@link Downloader} used to download the archive.
+     * @param settings   The {@link SettingsController} to provide any settings needed.
+     * @param progress   A {@link ProgressIndicator}, to show install progress and facilitate
+     *                   logging.
+     * @param manager    A {@link RepoManager} that knows about this package.
+     * @param fop        The {@link FileOp} to use. Should be {@link FileOpUtils#create()} if not in
+     *
+     * @return
+     */
+    boolean prepareInstall(@NonNull RemotePackage p, @NonNull Downloader downloader,
             @Nullable SettingsController settings, @NonNull ProgressIndicator progress,
             @NonNull RepoManager manager, @NonNull FileOp fop);
 }
+

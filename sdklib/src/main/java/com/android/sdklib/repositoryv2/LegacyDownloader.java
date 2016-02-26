@@ -21,6 +21,7 @@ import com.android.repository.api.Downloader;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.SettingsController;
 import com.android.repository.io.FileOp;
+import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.internal.repository.CanceledByUserException;
 import com.android.sdklib.internal.repository.DownloadCache;
 import com.android.utils.Pair;
@@ -65,21 +66,26 @@ public class LegacyDownloader implements Downloader {
     public File downloadFully(@NonNull URL url, @Nullable SettingsController settings,
             @NonNull ProgressIndicator indicator)
             throws IOException {
-        File result = File
-                .createTempFile("LegacyDownloader", Long.toString(System.currentTimeMillis()));
-        OutputStream out = mFileOp.newFileOutputStream(result);
+        File target = File.createTempFile("LegacyDownloader", null);
+        downloadFully(url, settings, target, indicator);
+        return target;
+    }
+
+    @Override
+    public void downloadFully(@NonNull URL url, @Nullable SettingsController settings,
+            @NonNull File target, @NonNull ProgressIndicator indicator)
+            throws IOException {
+        OutputStream out = mFileOp.newFileOutputStream(target);
         try {
             Pair<InputStream, Integer> downloadedResult = mDownloadCache
                     .openDirectUrl(url.toString(), new LegacyTaskMonitor(indicator));
             if (downloadedResult.getSecond() == 200) {
                 ByteStreams.copy(downloadedResult.getFirst(), out);
                 out.close();
-                return result;
             }
         } catch (CanceledByUserException e) {
             indicator.logInfo("The download was cancelled.");
         }
-        return null;
     }
 
 

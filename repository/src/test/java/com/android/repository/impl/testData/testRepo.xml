@@ -91,7 +91,7 @@
             <archive>
                 <complete>
                     <size>2345</size>
-                    <checksum>abcdef1234567890abcdef1234567890abcdef12</checksum>
+                    <checksum>e1b7e62ecc3925054900b70e6eb9038bba8f702a</checksum>
                     <url>http://example.com/2/arch1</url>
                 </complete>
             </archive>

@@ -71,10 +71,13 @@ public final class FileOpUtils {
      * @throws IOException If the destination already exists, or if there is a problem copying the
      *                     files or creating directories.
      */
-    public static void recursiveCopy(@NonNull File src, @NonNull File dest, @NonNull FileOp fop)
-            throws IOException {
+    public static void recursiveCopy(@NonNull File src, @NonNull File dest, @NonNull FileOp fop,
+            @NonNull ProgressIndicator progress) throws IOException {
         if (fop.exists(dest)) {
             throw new IOException(dest + " already exists!");
+        }
+        if (progress.isCanceled()) {
+            throw new IOException("Operation cancelled");
         }
         if (fop.isDirectory(src)) {
             fop.mkdirs(dest);
@@ -82,7 +85,7 @@ public final class FileOpUtils {
             File[] children = fop.listFiles(src);
             for (File child : children) {
                 File newDest = new File(dest, child.getName());
-                recursiveCopy(child, newDest, fop);
+                recursiveCopy(child, newDest, fop, progress);
             }
         } else if (fop.isFile(src)) {
             fop.copyFile(src, dest);
@@ -99,7 +102,7 @@ public final class FileOpUtils {
      *
      * @param src      File to move
      * @param dest     Destination. Follows the same rules as {@link #recursiveCopy(File, File,
-     *                 FileOp)}}.
+     *                 FileOp, ProgressIndicator)}}.
      * @param fop      The FileOp to use for file operations.
      * @param progress Currently only used for error logging.
      * @throws IOException If some problem occurs during copies or directory creation.
@@ -108,33 +111,31 @@ public final class FileOpUtils {
     //       Is a more general logger needed?
     public static void safeRecursiveOverwrite(@NonNull File src, @NonNull File dest,
             @NonNull FileOp fop, @NonNull ProgressIndicator progress) throws IOException {
-
         if (fop.exists(dest)) {
-
             File toDelete = getNewTempDir("FileOpUtilsToDelete", fop);
             if (toDelete == null) {
                 // weird, try to delete in place
                 fop.deleteFileOrFolder(dest);
             } else {
-                FileOpUtils.recursiveCopy(dest, toDelete, fop);
+                FileOpUtils.recursiveCopy(dest, toDelete, fop, progress);
             }
             try {
                 fop.deleteFileOrFolder(dest);
-                FileOpUtils.recursiveCopy(src, dest, fop);
+                FileOpUtils.recursiveCopy(src, dest, fop, progress);
                 fop.deleteFileOrFolder(src);
             } catch (IOException e) {
                 // this is bad
-                progress.logError("Old dir was moved away, but new one failed to be moved into "
+                progress.logWarning("Old dir was moved away, but new one failed to be moved into "
                         + "place. Trying to move old one back.");
                 if (fop.exists(dest)) {
                     fop.deleteFileOrFolder(dest);
                 }
                 if (toDelete == null) {
                     // this is the worst case
-                    progress.logError(
+                    progress.logWarning(
                             "Failed to move old dir back into place! Component was lost.");
                 } else {
-                    FileOpUtils.recursiveCopy(toDelete, dest, fop);
+                    FileOpUtils.recursiveCopy(toDelete, dest, fop, progress);
                 }
                 throw new IOException("failed to move new dir into place", e);
             }
@@ -142,7 +143,7 @@ public final class FileOpUtils {
                 fop.deleteFileOrFolder(toDelete);
             }
         } else {
-            FileOpUtils.recursiveCopy(src, dest, fop);
+            FileOpUtils.recursiveCopy(src, dest, fop, progress);
             fop.deleteFileOrFolder(src);
         }
     }
@@ -170,12 +171,12 @@ public final class FileOpUtils {
     /**
      * Appends the given {@code segments} to the {@code base} file.
      *
-     * @param base A base file, non-null.
+     * @param base     A base file, non-null.
      * @param segments Individual folder or filename segments to append to the base file.
      * @return A new file representing the concatenation of the base path with all the segments.
      */
     @NonNull
-    public static File append(@NonNull File base, @NonNull String...segments) {
+    public static File append(@NonNull File base, @NonNull String... segments) {
         for (String segment : segments) {
             base = new File(base, segment);
         }
@@ -185,30 +186,28 @@ public final class FileOpUtils {
     /**
      * Appends the given {@code segments} to the {@code base} file.
      *
-     * @param base A base file path, non-empty and non-null.
+     * @param base     A base file path, non-empty and non-null.
      * @param segments Individual folder or filename segments to append to the base path.
      * @return A new file representing the concatenation of the base path with all the segments.
      */
     @NonNull
-    public static File append(@NonNull String base, @NonNull String...segments) {
+    public static File append(@NonNull String base, @NonNull String... segments) {
         return append(new File(base), segments);
     }
+
     /**
      * Computes a relative path from "toBeRelative" relative to "baseDir".
      *
-     * Rule:
-     * - let relative2 = makeRelative(path1, path2)
-     * - then pathJoin(path1 + relative2) == path2 after canonicalization.
+     * Rule: - let relative2 = makeRelative(path1, path2) - then pathJoin(path1 + relative2) ==
+     * path2 after canonicalization.
      *
-     * Principle:
-     * - let base         = /c1/c2.../cN/a1/a2../aN
-     * - let toBeRelative = /c1/c2.../cN/b1/b2../bN
-     * - result is removes the common paths, goes back from aN to cN then to bN:
-     * - result           =              ../..../../1/b2../bN
+     * Principle: - let base         = /c1/c2.../cN/a1/a2../aN - let toBeRelative =
+     * /c1/c2.../cN/b1/b2../bN - result is removes the common paths, goes back from aN to cN then to
+     * bN: - result           =              ../..../../1/b2../bN
      *
-     * @param baseDir The base directory to be relative to.
+     * @param baseDir      The base directory to be relative to.
      * @param toBeRelative The file or directory to make relative to the base.
-     * @param fop FileOp, in this case just to determine the platform.
+     * @param fop          FileOp, in this case just to determine the platform.
      * @return A path that makes toBeRelative relative to baseDir.
      * @throws IOException If drive letters don't match on Windows or path canonicalization fails.
      */
@@ -224,8 +223,7 @@ public final class FileOpUtils {
     }
 
     /**
-     * Implementation detail of makeRelative to make it testable
-     * Independently of the platform.
+     * Implementation detail of makeRelative to make it testable Independently of the platform.
      */
     @VisibleForTesting
     @NonNull
@@ -257,7 +255,7 @@ public final class FileOpUtils {
             // On Windows should compare in case-insensitive.
             // Mac & Linux file systems can be both type, although their default
             // is generally to have a case-sensitive file system.
-            if (( isWindows && !segments1[start].equalsIgnoreCase(segments2[start])) ||
+            if ((isWindows && !segments1[start].equalsIgnoreCase(segments2[start])) ||
                     (!isWindows && !segments1[start].equals(segments2[start]))) {
                 break;
             }

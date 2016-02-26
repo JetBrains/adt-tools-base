@@ -16,11 +16,16 @@
 
 package com.android.repository.impl.installer;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.repository.Revision;
 import com.android.repository.api.ConstantSourceProvider;
+import com.android.repository.api.Downloader;
 import com.android.repository.api.LocalPackage;
+import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
+import com.android.repository.api.SettingsController;
 import com.android.repository.impl.manager.RepoManagerImpl;
 import com.android.repository.impl.meta.RepositoryPackages;
 import com.android.repository.testframework.FakeDownloader;
@@ -37,6 +42,8 @@ import junit.framework.TestCase;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.Map;
 import java.util.zip.ZipEntry;
@@ -129,9 +136,11 @@ public class BasicInstallerTest extends TestCase {
         assertEquals(2, pkgs.getRemotePackages().size());
 
         // Install one of the packages.
-        new BasicInstaller().install(pkgs.getRemotePackages().get("dummy;bar"),
-                downloader, new FakeSettingsController(false), runner.getProgressIndicator(), mgr,
-                fop);
+        RemotePackage p = pkgs.getRemotePackages().get("dummy;bar");
+        BasicInstaller basicInstaller = new BasicInstaller();
+        basicInstaller.prepareInstall(p, downloader, new FakeSettingsController(false),
+                runner.getProgressIndicator(), mgr, fop);
+        basicInstaller.completeInstall(p, runner.getProgressIndicator(), mgr, fop);
         runner.getProgressIndicator().assertNoErrorsOrWarnings();
 
         // Reload the packages.
@@ -208,8 +217,11 @@ public class BasicInstallerTest extends TestCase {
         assertEquals(new Revision(4, 5, 6), update.getVersion());
 
         // Install the update
-        new BasicInstaller().install(update, downloader, new FakeSettingsController(false),
-                new FakeProgressIndicator(), mgr, fop);
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+        BasicInstaller basicInstaller = new BasicInstaller();
+        basicInstaller.prepareInstall(update, downloader, new FakeSettingsController(false),
+                                            progress, mgr, fop);
+        basicInstaller.completeInstall(update, progress, mgr, fop);
 
         // Reload the repo
         mgr.load(0, ImmutableList.<RepoManager.RepoLoadedCallback>of(),
@@ -261,8 +273,8 @@ public class BasicInstallerTest extends TestCase {
         FakeDownloader downloader = new FakeDownloader(fop);
 
         assertFalse(new BasicInstaller()
-                .install(remote, downloader, new FakeSettingsController(false), progress, mgr,
-                        fop));
+                .prepareInstall(remote, downloader, new FakeSettingsController(false), progress,
+                        mgr, fop));
         boolean found = false;
         for (String warning : progress.getWarnings()) {
             if (warning.contains("child")) {
@@ -296,8 +308,8 @@ public class BasicInstallerTest extends TestCase {
         FakeDownloader downloader = new FakeDownloader(fop);
 
         assertFalse(new BasicInstaller()
-                .install(remote, downloader, new FakeSettingsController(false), progress, mgr,
-                        fop));
+                .prepareInstall(remote, downloader, new FakeSettingsController(false), progress,
+                        mgr, fop));
         boolean found = false;
         for (String warning : progress.getWarnings()) {
             if (warning.contains("parent")) {
@@ -305,5 +317,138 @@ public class BasicInstallerTest extends TestCase {
             }
         }
         assertTrue(found);
+    }
+
+    public void testExistingDownload() throws Exception {
+        MockFileOp fop = new MockFileOp();
+        RepoManager mgr = new RepoManagerImpl(fop);
+        File root = new File("/repo");
+        mgr.setLocalPath(root);
+        FakeDownloader downloader = new FakeDownloader(fop) {
+            @Override
+            public void downloadFully(@NonNull URL url, @Nullable SettingsController settings,
+              @NonNull File target, @NonNull ProgressIndicator indicator) throws IOException {
+                super.downloadFully(url, settings, target, indicator);
+                indicator.cancel();
+            }
+        };
+        URL repoUrl = new URL("http://example.com/dummy.xml");
+
+        // Create the archive and register the URL
+        URL archiveUrl = new URL("http://example.com/2/arch1");
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(1000);
+        ZipOutputStream zos = new ZipOutputStream(baos);
+        ZipEntry e = new ZipEntry("top-level/a");
+        e.setTime(123);
+        zos.putNextEntry(e);
+        zos.write("contents1".getBytes());
+        zos.closeEntry();
+        zos.close();
+        byte[] zipBytes = baos.toByteArray();
+        ByteArrayInputStream is = new ByteArrayInputStream(zipBytes);
+        downloader.registerUrl(archiveUrl, is);
+
+        String repo = "<repo:repository\n" +
+                      "        xmlns:repo=\"http://schemas.android.com/repository/android/generic/01\"\n" +
+                      "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
+                      "    <remotePackage path=\"dummy;bar\">\n" +
+                      "        <type-details xsi:type=\"repo:genericDetailsType\"/>\n" +
+                      "        <revision>\n" +
+                      "            <major>4</major>\n" +
+                      "            <minor>5</minor>\n" +
+                      "            <micro>6</micro>\n" +
+                      "        </revision>\n" +
+                      "        <display-name>Test package 2</display-name>\n" +
+                      "        <archives>\n" +
+                      "            <archive>\n" +
+                      "                <complete>\n" +
+                      "                    <size>2345</size>\n" +
+                      "                    <checksum>" +
+                      BasicInstaller.hashFile(new ByteArrayInputStream(zipBytes), zipBytes.length, new FakeProgressIndicator()) +
+                      "</checksum>\n" +
+                      "                    <url>http://example.com/2/arch1</url>\n" +
+                      "                </complete>\n" +
+                      "            </archive>\n" +
+                      "        </archives>\n" +
+                      "    </remotePackage>\n" +
+                      "</repo:repository>";
+
+        // The repo we're going to download
+        downloader.registerUrl(repoUrl, repo.getBytes());
+
+        // Register a source provider to get the repo
+        mgr.registerSourceProvider(new ConstantSourceProvider(repoUrl.toString(), "dummy",
+          ImmutableList.of(RepoManager.getGenericModule())));
+        FakeProgressRunner runner = new FakeProgressRunner();
+
+        // Load
+        mgr.load(RepoManager.DEFAULT_EXPIRATION_PERIOD_MS,
+          ImmutableList.<RepoManager.RepoLoadedCallback>of(),
+          ImmutableList.<RepoManager.RepoLoadedCallback>of(), ImmutableList.<Runnable>of(),
+          runner, downloader, new FakeSettingsController(false), true);
+
+        // Install one of the packages.
+        RemotePackage p = mgr.getPackages().getRemotePackages().get("dummy;bar");
+        BasicInstaller basicInstaller = new BasicInstaller();
+        FakeProgressIndicator firstInstallProgress = new FakeProgressIndicator();
+        boolean result = basicInstaller.prepareInstall(p, downloader,
+          new FakeSettingsController(false), firstInstallProgress, mgr, fop);
+
+        // be sure it was actually cancelled
+        assertFalse(result);
+        assertTrue(firstInstallProgress.isCanceled());
+
+        Downloader failingDownloader = new Downloader() {
+            @Nullable
+            @Override
+            public InputStream downloadAndStream(@NonNull URL url,
+              @Nullable SettingsController settings,
+              @NonNull ProgressIndicator indicator) throws IOException {
+                fail();
+                return null;
+            }
+
+            @Nullable
+            @Override
+            public File downloadFully(@NonNull URL url, @Nullable SettingsController settings,
+              @NonNull ProgressIndicator indicator) throws IOException {
+                fail();
+                return null;
+            }
+
+            @Override
+            public void downloadFully(@NonNull URL url, @Nullable SettingsController settings,
+              @NonNull File target, @NonNull ProgressIndicator indicator) throws IOException {
+                fail();
+            }
+        };
+
+        // Try again with the failing downloader; it should not be called.
+        FakeProgressIndicator secondInstallProgress = new FakeProgressIndicator();
+        result = basicInstaller.prepareInstall(p, failingDownloader,
+          new FakeSettingsController(false), secondInstallProgress, mgr, fop);
+        assertTrue(result);
+        result = basicInstaller.completeInstall(p, secondInstallProgress, mgr, fop);
+
+        assertTrue(result);
+        secondInstallProgress.assertNoErrorsOrWarnings();
+
+        // Reload the packages.
+        mgr.load(0, ImmutableList.<RepoManager.RepoLoadedCallback>of(),
+          ImmutableList.<RepoManager.RepoLoadedCallback>of(), ImmutableList.<Runnable>of(),
+          runner, downloader, new FakeSettingsController(false), true);
+        runner.getProgressIndicator().assertNoErrorsOrWarnings();
+        File[] contents = fop.listFiles(new File(root, "dummy"));
+
+        // Ensure it was installed on the filesystem
+        assertEquals(new File(root, "dummy/bar"), contents[0]);
+
+        // Ensure it was recognized as a package.
+        Map<String, ? extends LocalPackage> locals = mgr.getPackages().getLocalPackages();
+        assertEquals(1, locals.size());
+        assertTrue(locals.containsKey("dummy;bar"));
+        LocalPackage newPkg = locals.get("dummy;bar");
+        assertEquals("Test package 2", newPkg.getDisplayName());
+        assertEquals(new Revision(4, 5, 6), newPkg.getVersion());
     }
 }
