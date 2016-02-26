@@ -111,13 +111,12 @@ model {
     nativeBuildConfig {
         libraries {
             create("foo") {
-                buildCommand.addAll([
-                    "${compiler.getPath()}",
-                    "APP_BUILD_SCRIPT=Android.mk",
-                    "NDK_PROJECT_PATH=null",
-                    "NDK_OUT=build/intermediate",
-                    "NDK_LIBS_OUT=build/output",
-                    "APP_ABI=x86"])
+                buildCommand "\\"${compiler.getPath()}\\" " +
+                    "APP_BUILD_SCRIPT=Android.mk " +
+                    "NDK_PROJECT_PATH=null " +
+                    "NDK_OUT=build/intermediate " +
+                    "NDK_LIBS_OUT=build/output " +
+                    "APP_ABI=x86"
                 toolchain "gcc"
                 abi "x86"
                 output file("build/output/x86/libhello-jni.so")

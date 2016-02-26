@@ -49,12 +49,8 @@ public class NativeBuildConfigGsonUtil {
         if (value.buildFiles != null) {
             config.getBuildFiles().addAll(value.buildFiles);
         }
-        if (value.cleanCommandStrings != null) {
-            config.getCleanCommandStrings().addAll(value.cleanCommandStrings);
-        }
         if (value.cleanCommands != null) {
             config.getCleanCommands().addAll(value.cleanCommands);
-            config.getCleanCommands().add(null);
         }
         if (value.libraries != null) {
             for (final Map.Entry<String, NativeLibraryValue> entry : value.libraries.entrySet()) {
@@ -95,12 +91,10 @@ public class NativeBuildConfigGsonUtil {
             @NonNull NativeSourceFolder folder) {
         folder.setSrc(value.src);
         if (value.cFlags != null) {
-            folder.getCFlags().clear();
-            folder.getCFlags().addAll(value.cFlags);
+            folder.setCFlags(value.cFlags);
         }
         if (value.cppFlags != null) {
-            folder.getCppFlags().clear();
-            folder.getCppFlags().addAll(value.cppFlags);
+            folder.setCppFlags(value.cppFlags);
         }
         folder.setWorkingDirectory(value.workingDirectory);
     }
@@ -110,8 +104,7 @@ public class NativeBuildConfigGsonUtil {
             @NonNull NativeSourceFile file) {
         file.setSrc(value.src);
         if (value.flags != null) {
-            file.getFlags().clear();
-            file.getFlags().addAll(value.flags);
+            file.setFlags(value.flags);
         }
         file.setWorkingDirectory(value.workingDirectory);
     }
@@ -119,10 +112,8 @@ public class NativeBuildConfigGsonUtil {
     private static void copyToNativeLibrary(
             @NonNull NativeLibraryValue value,
             @NonNull NativeLibrary library) {
-        library.setBuildCommandString(value.buildCommandString);
         if (value.buildCommand != null) {
-            library.getBuildCommand().clear();
-            library.getBuildCommand().addAll(value.buildCommand);
+            library.setBuildCommand(value.buildCommand);
         }
         library.setToolchain(value.toolchain);
         if (value.folders != null) {

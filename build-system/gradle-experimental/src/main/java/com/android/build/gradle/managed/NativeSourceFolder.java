@@ -37,16 +37,18 @@ public interface NativeSourceFolder {
     void setSrc(File src);
 
     /**
-     * List of compiler flags for all C files.
+     * Compiler flags for all C files.
      */
     @NonNull
-    List<String> getCFlags();
+    String getCFlags();
+    void setCFlags(String flags);
 
     /**
-     * List of compiler flags for all C++ files.
+     * Compiler flags for all C++ files.
      */
     @NonNull
-    List<String> getCppFlags();
+    String getCppFlags();
+    void setCppFlags(String flags);
 
     /**
      * The working directory for the compiler.

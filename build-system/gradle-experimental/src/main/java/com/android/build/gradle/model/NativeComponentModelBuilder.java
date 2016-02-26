@@ -35,6 +35,7 @@ import com.android.builder.model.NativeArtifact;
 import com.android.builder.model.NativeFolder;
 import com.android.builder.model.NativeSettings;
 import com.android.builder.model.NativeToolchain;
+import com.android.utils.StringHelper;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
@@ -113,15 +114,17 @@ public class NativeComponentModelBuilder implements ToolingModelBuilder {
                         new NativeFolderImpl(
                                 src.getSrc(),
                                 ImmutableMap.of(
-                                        "c", getSettingsName(src.getCFlags()),
-                                        "c++", getSettingsName(src.getCppFlags())),
+                                        "c", getSettingsName(StringHelper.tokenizeString(
+                                                src.getCFlags())),
+                                        "c++", getSettingsName(StringHelper.tokenizeString(
+                                                src.getCppFlags()))),
                                 src.getWorkingDirectory()));
             }
             List<com.android.builder.model.NativeFile> files = Lists.newArrayList();
             for (NativeSourceFile src : lib.getFiles()) {
                 files.add(new NativeFileImpl(
                         src.getSrc(),
-                        getSettingsName(src.getFlags()),
+                        getSettingsName(StringHelper.tokenizeString(src.getFlags())),
                         src.getWorkingDirectory()));
             }
             Preconditions.checkNotNull(lib.getToolchain());

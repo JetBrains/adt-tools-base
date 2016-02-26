@@ -37,10 +37,11 @@ public interface NativeSourceFile {
     void setSrc(File src);
 
     /**
-     * List of compiler flags for this file.
+     * Compiler flags for this file.
      */
     @NonNull
-    List<String> getFlags();
+    String getFlags();
+    void setFlags(String flags);
 
     /**
      * The working directory for the compiler.

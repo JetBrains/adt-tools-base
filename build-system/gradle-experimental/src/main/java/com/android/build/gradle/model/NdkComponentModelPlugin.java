@@ -49,6 +49,7 @@ import com.android.build.gradle.ndk.internal.ToolchainConfiguration;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.VariantConfiguration;
 import com.android.utils.NativeSourceFileExtensions;
+import com.android.utils.StringHelper;
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
@@ -556,8 +557,12 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                                 @Override
                                 public void execute(NativeSourceFolder nativeSourceFolder) {
                                     nativeSourceFolder.setSrc(srcFolder);
-                                    nativeSourceFolder.getCFlags().addAll(cFlags);
-                                    nativeSourceFolder.getCppFlags().addAll(cppFlags);
+                                    nativeSourceFolder.setCFlags(
+                                            nativeSourceFolder.getCFlags() + ' ' +
+                                                    StringHelper.quoteAndJoinTokens(cFlags));
+                                    nativeSourceFolder.setCppFlags(
+                                            nativeSourceFolder.getCppFlags() + ' ' +
+                                                    StringHelper.quoteAndJoinTokens(cppFlags));
                                 }
                             });
                 }

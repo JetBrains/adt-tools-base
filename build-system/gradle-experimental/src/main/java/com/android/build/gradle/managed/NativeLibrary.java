@@ -33,12 +33,10 @@ import java.util.List;
 public interface NativeLibrary extends Named {
 
     /**
-     * Executable for building the library.
+     * Command for building the library.
      */
-    List<String> getBuildCommand();
-
-    String getBuildCommandString();
-    void setBuildCommandString(String command);
+    String getBuildCommand();
+    void setBuildCommand(String command);
 
     @Nullable
     String getGroupName();
