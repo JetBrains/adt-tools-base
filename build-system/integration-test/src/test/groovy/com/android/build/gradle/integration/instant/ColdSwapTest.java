@@ -77,10 +77,10 @@ public class ColdSwapTest {
                 .that(project.getApk("debug"));
 
         apkSubject.getClass("Lcom/example/helloworld/HelloWorld;",
-                        AbstractAndroidSubject.ClassFileScope.INSTANT_RUN)
+                        AbstractAndroidSubject.ClassFileScope.MAIN)
                 .that().hasMethod("onCreate");
         apkSubject.getClass("Lcom/android/tools/fd/runtime/BootstrapApplication;",
-                AbstractAndroidSubject.ClassFileScope.INSTANT_RUN);
+                AbstractAndroidSubject.ClassFileScope.MAIN);
 
         InstantRunBuildInfo initialContext = InstantRunTestUtils.loadContext(instantRunModel);
         String startBuildId = initialContext.getTimeStamp();
