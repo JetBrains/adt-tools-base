@@ -83,6 +83,11 @@ public class TruthHelper {
     }
 
     @NonNull
+    public static DexFileSubject assertThatDex(@Nullable File dex) {
+        return assert_().about(DexFileSubject.FACTORY).that(dex);
+    }
+
+    @NonNull
     public static AarSubject assertThatAar(@Nullable File aar) {
         return assert_().about(AarSubject.Factory.get()).that(aar);
     }
