@@ -154,6 +154,7 @@ import com.android.builder.testing.ConnectedDeviceProvider;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
 import com.android.manifmerger.ManifestMerger2;
+import com.android.repository.Revision;
 import com.android.sdklib.AndroidVersion;
 import com.android.utils.StringHelper;
 import com.google.common.base.Objects;
@@ -254,6 +255,9 @@ public abstract class TaskManager {
     private static final String LINT = "lint";
 
     protected static final String LINT_COMPILE = "compileLint";
+
+    private static final Revision MIN_REVISION_RS_COMPAT_64 = Revision.parseRevision("23.0.3");
+
 
     // Tasks
     private AndroidTask<Copy> jacocoAgentTask;
@@ -670,10 +674,17 @@ public abstract class TaskManager {
         GradleVariantConfiguration config = variantData.getVariantConfiguration();
 
         if (config.getRenderscriptSupportModeEnabled() && config.getRenderscriptTarget() >= 21) {
-            androidBuilder.getErrorReporter().handleSyncError(
-                    "",
-                    SyncIssue.TYPE_GENERIC,
-                    "Renderscript support mode is not currently supported with renderscript target 21+");
+            Revision rev =  androidBuilder.getTargetInfo().getBuildTools().getRevision();
+            if (rev.compareTo(MIN_REVISION_RS_COMPAT_64) < 0)
+                androidBuilder.getErrorReporter().handleSyncError(
+                        rev.toString(),
+                        SyncIssue.TYPE_BUILD_TOOLS_TOO_LOW,
+                        "Renderscript support mode is not supported with renderscript target 21+ in BuildTools "
+                                + rev.toString()
+                                + '\n'
+                                + "Please update to BuildTools "
+                                + MIN_REVISION_RS_COMPAT_64.toString()
+                                + " or above.");
         }
 
         // get single output for now.

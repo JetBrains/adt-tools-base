@@ -70,7 +70,10 @@ public interface SyncIssue {
     // data is the min version of Gradle
     int TYPE_GRADLE_TOO_OLD           = 12;
 
-    int TYPE_MAX                      = 12; // increment when adding new types.
+    // data is the required min build tools version, parsable by Revision
+    int TYPE_BUILD_TOOLS_TOO_LOW      = 13;
+
+    int TYPE_MAX                      = 13; // increment when adding new types.
 
     /**
      * Returns the severity of the issue.

@@ -530,6 +530,7 @@ public class PreDexCacheTest extends TestCase {
                 new File(toolDir, "clang-include"),
                 new File(toolDir, FN_BCC_COMPAT),
                 new File(toolDir, "arm-linux-androideabi-ld"),
+                new File(toolDir, "aarch64-linux-android-ld"),
                 new File(toolDir, "i686-linux-android-ld"),
                 new File(toolDir, "mipsel-linux-android-ld"),
                 new File(toolDir, FN_ZIPALIGN));
