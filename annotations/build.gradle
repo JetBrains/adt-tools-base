@@ -1,6 +1,9 @@
 apply plugin: 'java'
 apply plugin: 'sdk-java-lib'
 
+sourceCompatibility = JavaVersion.VERSION_1_6
+targetCompatibility = JavaVersion.VERSION_1_6
+
 group = 'com.android.tools'
 archivesBaseName = 'annotations'
 version = rootProject.ext.baseVersion

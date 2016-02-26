@@ -17,6 +17,9 @@
 apply plugin: 'java'
 apply plugin: 'jacoco'
 
+sourceCompatibility = JavaVersion.VERSION_1_6
+targetCompatibility = JavaVersion.VERSION_1_6
+
 dependencies {
     compile project(':base:instant-run:instant-run-annotations')
 }
