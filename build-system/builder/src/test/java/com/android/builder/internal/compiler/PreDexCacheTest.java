@@ -222,11 +222,6 @@ public class PreDexCacheTest extends TestCase {
         }
 
         @Override
-        public Boolean getDexInProcess() {
-            return false;
-        }
-
-        @Override
         @Nullable
         public String getJavaMaxHeapSize() {
             return null;
