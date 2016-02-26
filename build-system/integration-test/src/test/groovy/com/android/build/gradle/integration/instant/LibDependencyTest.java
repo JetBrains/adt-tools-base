@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.instant;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
 import static com.android.build.gradle.integration.common.utils.TestFileUtils.appendToFile;
 import static com.android.build.gradle.integration.instant.InstantRunTestUtils.getInstantRunModel;
 import static com.android.utils.FileUtils.mkdirs;
@@ -29,33 +28,27 @@ import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject;
 import com.android.build.gradle.integration.common.truth.ApkSubject;
 import com.android.build.gradle.integration.common.truth.DexFileSubject;
 import com.android.build.gradle.integration.common.truth.FileSubject;
-import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.InstantRun;
-import com.android.builder.model.Variant;
 import com.android.ide.common.process.ProcessException;
 import com.android.tools.fd.client.InstantRunArtifact;
 import com.android.tools.fd.client.InstantRunArtifactType;
 import com.android.tools.fd.client.InstantRunBuildInfo;
-import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
 import com.google.common.io.Files;
 import com.google.common.truth.Expect;
 
-import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -90,7 +83,7 @@ public class LibDependencyTest {
         project.execute(getInstantRunArgs(), "clean", "assembleRelease", "assembleDebug");
         expect.about(ApkSubject.FACTORY)
                 .that(project.getSubproject("app").getApk("debug"))
-                .getClass("Lcom/android/tests/libstest/lib/MainActivity;",
+                .hasClass("Lcom/android/tests/libstest/lib/MainActivity;",
                         AbstractAndroidSubject.ClassFileScope.MAIN)
                 .that().hasMethod("onCreate");
 
@@ -139,7 +132,7 @@ public class LibDependencyTest {
         project.execute(getInstantRunArgs(), "clean", "assembleDebug");
         expect.about(ApkSubject.FACTORY)
                 .that(project.getSubproject("app").getApk("debug"))
-                .getClass("Lcom/android/tests/libstest/lib/MainActivity;",
+                .hasClass("Lcom/android/tests/libstest/lib/MainActivity;",
                         AbstractAndroidSubject.ClassFileScope.MAIN)
                 .that().hasMethod("onCreate");
 

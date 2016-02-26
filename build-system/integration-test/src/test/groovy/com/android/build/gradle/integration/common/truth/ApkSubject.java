@@ -162,14 +162,8 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
         checkMaxSdkVersion(output, maxSdkVersion);
     }
 
-    @Override
-    protected String getDisplaySubject() {
-        String name = (internalCustomName() == null) ? "" : "\"" + internalCustomName() + "\" ";
-        return name + "<" + getSubject().getName() + ">";
-    }
-
     @NonNull
-    public IndirectSubject<DexClassSubject> getClass(
+    public IndirectSubject<DexClassSubject> hasClass(
             @NonNull final String expectedClassName,
             @NonNull final ClassFileScope scope) throws ProcessException, IOException {
         if (!expectedClassName.startsWith("L") || !expectedClassName.endsWith(";")) {
@@ -224,8 +218,7 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
                 }
                 break;
         }
-        fail(String.format("Class %1$s not found in APK %2$s",
-                expectedClassName, getSubject().getAbsolutePath()));
+        fail("contains class", expectedClassName);
         return new IndirectSubject<DexClassSubject>() {
             @NonNull
             @Override
