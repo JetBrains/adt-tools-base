@@ -2603,8 +2603,8 @@ public abstract class TaskManager {
         }
 
         if (getExtension().getLintOptions().isCheckReleaseBuilds()
-                && incrementalMode == IncrementalMode.NONE) {
-            createLintVitalTask(variantData);
+                && (incrementalMode == IncrementalMode.NONE)) {
+            createLintVitalTask(tasks, variantData);
         }
 
         // add an uninstall task
