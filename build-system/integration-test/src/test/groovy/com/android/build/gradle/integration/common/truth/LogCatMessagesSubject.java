@@ -20,7 +20,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.integration.common.fixture.Logcat;
 import com.android.ddmlib.logcat.LogCatMessage;
-import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.truth.FailureStrategy;
@@ -63,12 +62,12 @@ public class LogCatMessagesSubject extends Subject<LogCatMessagesSubject, Logcat
             return super.getDisplaySubject();
         }
         return Objects.toStringHelper(getSubject())
-                .addValue(getSubject().getLogCatMessages())
+                .addValue(getSubject().getFilteredLogCatMessages())
                 .toString();
     }
 
     private boolean containsMessageThatMatches(@NonNull Predicate<LogCatMessage> predicate) {
-        for (LogCatMessage message : getSubject().getLogCatMessages()) {
+        for (LogCatMessage message : getSubject().getFilteredLogCatMessages()) {
             if (predicate.apply(message)) {
                 return true;
             }
