@@ -113,10 +113,10 @@ public class HotSwapTest {
         ApkSubject apkFile = expect.about(ApkSubject.FACTORY)
                 .that(project.getApk("debug"));
         apkFile.getClass("Lcom/example/helloworld/HelloWorld;",
-                AbstractAndroidSubject.ClassFileScope.INSTANT_RUN)
+                AbstractAndroidSubject.ClassFileScope.MAIN)
                 .that().hasMethod("onCreate");
         apkFile.getClass("Lcom/android/tools/fd/runtime/BootstrapApplication;",
-                AbstractAndroidSubject.ClassFileScope.INSTANT_RUN);
+                AbstractAndroidSubject.ClassFileScope.MAIN);
 
         makeBasicHotswapChange();
 
