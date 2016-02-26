@@ -102,10 +102,11 @@ public class CheckAll {
             "jarjarWithJack", // Temporarily disabled until we have buildtools 24.0.0
 
             // These are all right:
-            "filteredOutBuildType", // assembleDebug does not exist as debug build type is removed.
-            "projectWithLocalDeps", // Doesn't have a build.gradle, not much to check anyway.
+            "daggerTwo", // requires Java 7
             "duplicateNameImport", // Fails on purpose.
+            "filteredOutBuildType", // assembleDebug does not exist as debug build type is removed.
             "instant-unit-tests", // Specific to testing instant run, not a "real" project.
+            "projectWithLocalDeps", // Doesn't have a build.gradle, not much to check anyway.
             "simpleManifestMergingTask" // Not an Android project.
     );
 
