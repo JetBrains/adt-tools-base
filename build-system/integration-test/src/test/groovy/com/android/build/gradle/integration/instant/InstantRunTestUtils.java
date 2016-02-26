@@ -24,6 +24,8 @@ import static org.junit.Assert.assertNotNull;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.OptionalCompilationStep;
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.truth.TruthHelper;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.InstantRun;
@@ -158,5 +160,59 @@ public final class InstantRunTestUtils {
         device.executeShellCommand(
                 "wm dismiss-keyguard", receiver,
                 DEFAULT_ADB_TIMEOUT_MSEC, MILLISECONDS);
+    }
+
+    @NonNull
+    static InstantRun doInitialBuild(
+            @NonNull GradleTestProject project,
+            int apiLevel,
+            @NonNull ColdswapMode coldswapMode) {
+        project.execute("clean");
+        InstantRun instantRunModel = getInstantRunModel(project.getSingleModel());
+
+        project.execute(
+                getInstantRunArgs(apiLevel, coldswapMode, OptionalCompilationStep.RESTART_ONLY),
+                "assembleDebug");
+
+        return instantRunModel;
+    }
+
+    @NonNull
+    static InstantRunArtifact doHotSwapBuild(
+            @NonNull GradleTestProject project,
+            int apiLevel,
+            @NonNull InstantRun instantRunModel,
+            @NonNull ColdswapMode coldswapMode) throws Exception {
+        project.execute(getInstantRunArgs(apiLevel, coldswapMode),
+                instantRunModel.getIncrementalAssembleTaskName());
+
+        return getCompiledHotSwapCompatibleChange(instantRunModel);
+    }
+
+    @NonNull
+    static InstantRunArtifact doHotSwapBuild(
+            @NonNull GradleTestProject project,
+            @NonNull IDevice device,
+            @NonNull InstantRun instantRunModel,
+            @NonNull ColdswapMode coldswapMode) throws Exception {
+        project.execute(getInstantRunArgs(device, coldswapMode),
+                instantRunModel.getIncrementalAssembleTaskName());
+
+        return getCompiledHotSwapCompatibleChange(instantRunModel);
+    }
+
+    /**
+     * Gets the {@link InstantRunArtifact} produced by last build.
+     */
+    @NonNull
+    private static InstantRunArtifact getCompiledHotSwapCompatibleChange(
+            @NonNull InstantRun instantRunModel) throws Exception {
+        InstantRunBuildInfo context = loadContext(instantRunModel);
+
+        TruthHelper.assertThat(context.getArtifacts()).hasSize(1);
+        InstantRunArtifact artifact = Iterables.getOnlyElement(context.getArtifacts());
+
+        TruthHelper.assertThat(artifact.type).isEqualTo(InstantRunArtifactType.RELOAD_DEX);
+        return artifact;
     }
 }
