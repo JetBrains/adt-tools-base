@@ -28,6 +28,50 @@ import java.util.List;
  */
 public class StringHelperPOSIXTest {
 
+    // Command line splitting tests.
+
+    private static void checkCommandLineSplitting(
+            String originalCommand, List<String> splitCommands) throws Exception {
+        assertThat(StringHelperPOSIX.splitCommandLine(originalCommand)).isEqualTo(splitCommands);
+    }
+
+    @Test
+    public void checkOneCommand() throws Exception {
+        checkCommandLineSplitting("foo bar", Arrays.asList("foo bar"));
+    }
+
+    @Test
+    public void checkTwoCommandsWithSemicolon() throws Exception {
+        checkCommandLineSplitting("foo bar; baz qux", Arrays.asList("foo bar", " baz qux"));
+    }
+
+    @Test
+    public void checkTwoCommandsWithDoubleAmpersands() throws Exception {
+        checkCommandLineSplitting("foo bar&& baz qux", Arrays.asList("foo bar", " baz qux"));
+    }
+
+    @Test
+    public void checkOneCommandWithQuotedSemicolon() throws Exception {
+        checkCommandLineSplitting("foo bar\";\" baz qux", Arrays.asList("foo bar\";\" baz qux"));
+    }
+
+    @Test
+    public void checkOneCommandWithQuotedDoubleAmpersands() throws Exception {
+        checkCommandLineSplitting("foo bar\"&&\" baz qux", Arrays.asList("foo bar\"&&\" baz qux"));
+    }
+
+    @Test
+    public void checkOneCommandWithEscapedSemicolon() throws Exception {
+        checkCommandLineSplitting("foo bar\\; baz qux", Arrays.asList("foo bar\\; baz qux"));
+    }
+
+    @Test
+    public void checkOneCommandWithEscapedDoubleAmpersands() throws Exception {
+        checkCommandLineSplitting("foo bar\\&\\& baz qux", Arrays.asList("foo bar\\&\\& baz qux"));
+    }
+
+    // Tokenization and stringization tests.
+
     private static void checkTokenizationAndQuotingAndJoining(
             String originalString, List<String> tokenizedString, String quotedAndJoinedTokens) throws Exception {
         assertThat(StringHelperPOSIX.tokenizeString(originalString)).isEqualTo(tokenizedString);
