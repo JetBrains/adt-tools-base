@@ -17,7 +17,10 @@
 package com.android.build.gradle.tasks.factory;
 
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.sdklib.AndroidTargetHash;
+import com.android.sdklib.AndroidVersion;
 
+import org.gradle.api.JavaVersion;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs;
 
@@ -25,6 +28,8 @@ import org.gradle.api.tasks.incremental.IncrementalTaskInputs;
  * Specialization of the JavaCompile task to record execution time.
  */
 public class AndroidJavaCompile extends JavaCompile {
+
+    String compileSdkVersion;
 
     InstantRunBuildContext mBuildContext;
 
@@ -34,9 +39,19 @@ public class AndroidJavaCompile extends JavaCompile {
                 "Compiling with source level {} and target level {}.",
                 getSourceCompatibility(),
                 getTargetCompatibility());
-
+        if (isPostN()) {
+            if (!JavaVersion.current().isJava8Compatible()) {
+                throw new RuntimeException("compileSdkVersion '" + compileSdkVersion + "' requires "
+                        + "JDK 1.8 or later to compile.");
+            }
+        }
         mBuildContext.startRecording(InstantRunBuildContext.TaskType.JAVAC);
         super.compile(inputs);
         mBuildContext.stopRecording(InstantRunBuildContext.TaskType.JAVAC);
+    }
+
+    private boolean isPostN() {
+        final AndroidVersion hash = AndroidTargetHash.getVersionFromHash(compileSdkVersion);
+        return hash != null && hash.getApiLevel() >= 24;
     }
 }

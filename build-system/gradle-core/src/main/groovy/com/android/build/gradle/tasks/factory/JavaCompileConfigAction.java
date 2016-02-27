@@ -53,6 +53,7 @@ public class JavaCompileConfigAction implements TaskConfigAction<AndroidJavaComp
     public void execute(@NonNull final AndroidJavaCompile javacTask) {
         final BaseVariantData testedVariantData = scope.getTestedVariantData();
         scope.getVariantData().javacTask = javacTask;
+        javacTask.compileSdkVersion = scope.getGlobalScope().getExtension().getCompileSdkVersion();
         javacTask.mBuildContext = scope.getInstantRunBuildContext();
 
         // We can't just pass the collection directly, as the instanceof check in the incremental
@@ -107,8 +108,8 @@ public class JavaCompileConfigAction implements TaskConfigAction<AndroidJavaComp
         AbstractCompilesUtil.configureLanguageLevel(
                 javacTask,
                 compileOptions,
-                scope.getGlobalScope().getExtension().getCompileSdkVersion()
-        );
+                scope.getGlobalScope().getExtension().getCompileSdkVersion(),
+                scope.getVariantConfiguration().getUseJack());
 
         javacTask.getOptions().setEncoding(compileOptions.getEncoding());
 
