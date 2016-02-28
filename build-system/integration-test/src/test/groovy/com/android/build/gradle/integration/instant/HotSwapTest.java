@@ -17,11 +17,11 @@
 package com.android.build.gradle.integration.instant;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
-import static org.hamcrest.CoreMatchers.*;
+import static com.android.build.gradle.integration.instant.InstantRunTestUtils.doHotSwapBuild;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import com.android.annotations.NonNull;
 import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.integration.common.category.DeviceTests;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
@@ -40,7 +40,6 @@ import com.android.ide.common.packaging.PackagingUtils;
 import com.android.sdklib.AndroidVersion;
 import com.android.tools.fd.client.AppState;
 import com.android.tools.fd.client.InstantRunArtifact;
-import com.android.tools.fd.client.InstantRunArtifactType;
 import com.android.tools.fd.client.InstantRunBuildInfo;
 import com.android.tools.fd.client.InstantRunClient;
 import com.android.tools.fd.client.InstantRunClient.FileTransfer;
@@ -49,7 +48,6 @@ import com.android.tools.fd.client.UserFeedback;
 import com.android.utils.ILogger;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.common.io.Files;
 import com.google.common.truth.Expect;
 
@@ -120,10 +118,8 @@ public class HotSwapTest {
 
         makeBasicHotswapChange();
 
-        project.execute(InstantRunTestUtils.getInstantRunArgs(21, COLDSWAP_MODE),
-                instantRunModel.getIncrementalAssembleTaskName());
         InstantRunArtifact artifact =
-                getCompiledHotSwapCompatibleChange(instantRunModel);
+                doHotSwapBuild(project, 21, instantRunModel, COLDSWAP_MODE);
 
         expect.about(DexFileSubject.FACTORY)
                 .that(artifact.file)
@@ -193,11 +189,8 @@ public class HotSwapTest {
         makeBasicHotswapChange();
 
         // Now build the hot swap patch.
-        project.execute(InstantRunTestUtils.getInstantRunArgs(device, COLDSWAP_MODE),
-                instantRunModel.getIncrementalAssembleTaskName());
-
         InstantRunArtifact artifact =
-                getCompiledHotSwapCompatibleChange(instantRunModel);
+                doHotSwapBuild(project, device, instantRunModel, COLDSWAP_MODE);
 
         FileTransfer fileTransfer = FileTransfer.createHotswapPatch(artifact.file);
 
@@ -227,22 +220,6 @@ public class HotSwapTest {
 
         // Clean up
         device.uninstallPackage("com.example.helloworld");
-    }
-
-    /**
-     * Check a hot-swap compatible change works as expected.
-     */
-    private static InstantRunArtifact getCompiledHotSwapCompatibleChange(
-            @NonNull InstantRun instantRunModel) throws Exception {
-        InstantRunBuildInfo context = InstantRunTestUtils.loadContext(instantRunModel);
-
-        assertThat(context.getArtifacts()).hasSize(1);
-
-        InstantRunArtifact artifact = Iterables.getOnlyElement(context.getArtifacts());
-
-        assertThat(artifact.type).isEqualTo(InstantRunArtifactType.RELOAD_DEX);
-
-        return artifact;
     }
 
     private void makeBasicHotswapChange() throws IOException {
