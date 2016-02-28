@@ -20,7 +20,6 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject;
@@ -70,7 +69,8 @@ public class ColdSwapTest {
         final int apiLevel = 15;
 
         // Initial build
-        InstantRun instantRunModel = doInitialBuild(apiLevel, ColdswapMode.AUTO);
+        InstantRun instantRunModel =
+                InstantRunTestUtils.doInitialBuild(project, apiLevel, ColdswapMode.AUTO);
 
         ApkSubject apkSubject = expect.about(ApkSubject.FACTORY)
                 .that(project.getApk("debug"));
@@ -104,7 +104,8 @@ public class ColdSwapTest {
     public void withLollipop() throws Exception {
         final int apiLevel = 21;
         // Initial build
-        InstantRun instantRunModel = doInitialBuild(apiLevel, ColdswapMode.MULTIDEX);
+        InstantRun instantRunModel =
+                InstantRunTestUtils.doInitialBuild(project, apiLevel, ColdswapMode.MULTIDEX);
 
         ApkSubject apkSubject = expect.about(ApkSubject.FACTORY)
                 .that(project.getApk("debug"));
@@ -145,7 +146,8 @@ public class ColdSwapTest {
     public void withMarshmallow() throws Exception {
         final int apiLevel = 23;
         // Initial build
-        InstantRun instantRunModel = doInitialBuild(apiLevel, ColdswapMode.MULTIAPK);
+        InstantRun instantRunModel =
+                InstantRunTestUtils.doInitialBuild(project, apiLevel, ColdswapMode.MULTIAPK);
 
         // Classes are sharded into split apks.
         assertThatApk(project.getApk("debug")).doesNotContain("classes.dex");
@@ -168,18 +170,6 @@ public class ColdSwapTest {
         InstantRunArtifact artifact = Iterables.getLast(coldSwapContext.getArtifacts());
         expect.that(artifact.type).named("artifact type").isEqualTo(InstantRunArtifactType.SPLIT);
         checkUpdatedClassPresence(artifact.file);
-    }
-
-
-    private InstantRun doInitialBuild(int apiLevel, ColdswapMode coldswapMode) {
-        project.execute("clean");
-        InstantRun instantRunModel = InstantRunTestUtils
-                .getInstantRunModel(project.getSingleModel());
-
-        project.execute(InstantRunTestUtils
-                .getInstantRunArgs(apiLevel, coldswapMode, OptionalCompilationStep.RESTART_ONLY),
-                "assembleDebug");
-        return instantRunModel;
     }
 
     private void makeColdSwapChange() throws IOException {
