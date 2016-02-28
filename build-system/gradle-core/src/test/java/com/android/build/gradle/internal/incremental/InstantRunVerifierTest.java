@@ -20,6 +20,7 @@ import static com.android.build.gradle.internal.incremental.InstantRunVerifierSt
 import static org.junit.Assert.assertEquals;
 
 import com.android.build.gradle.internal.incremental.fixture.VerifierHarness;
+import com.google.common.collect.Lists;
 import com.verifier.tests.AddClassAnnotation;
 import com.verifier.tests.AddInstanceField;
 import com.verifier.tests.AddInterfaceImplementation;
@@ -50,6 +51,8 @@ import com.verifier.tests.UnchangedClass;
 import com.verifier.tests.UnchangedClassInitializer1;
 
 import org.junit.Test;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.AnnotationNode;
 
 import java.io.IOException;
 
@@ -267,5 +270,21 @@ public class InstantRunVerifierTest {
         assertEquals(COMPATIBLE, harness.verify(R.class, null));
         assertEquals(InstantRunVerifierStatus.R_CLASS_CHANGE,
                 harness.verify(R.id.class, "verifier"));
+    }
+
+    @Test
+    public void testDiffListOnAnnotationNodes() throws Exception {
+        AnnotationNode original = new AnnotationNode("Ltest/SomeAnnotation;");
+        original.values = Lists.newArrayList("modules", Type.getObjectType("test/DaggerModule"));
+
+        AnnotationNode updated = new AnnotationNode("Ltest/SomeAnnotation;");
+        updated.values = Lists.newArrayList("modules", Type.getObjectType("test/DaggerModule"));
+
+        assertEquals(
+                InstantRunVerifier.Diff.NONE,
+                InstantRunVerifier.diffList(
+                        Lists.newArrayList(original),
+                        Lists.newArrayList(updated),
+                        InstantRunVerifier.ANNOTATION_COMPARATOR));
     }
 }
