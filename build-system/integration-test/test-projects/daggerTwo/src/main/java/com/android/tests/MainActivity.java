@@ -30,6 +30,6 @@ public class MainActivity extends Activity {
         AppComponent component = DaggerAppComponent.create();
         component.injectMainActivity(this);
 
-        android.util.Log.d("DaggerOne", mSomeService.message);
+        android.util.Log.d("daggerTwo", mSomeService.message);
     }
 }
