@@ -21,11 +21,6 @@ apply plugin: 'com.android.application'
 
 apply from: "../commonLocalRepo.gradle"
 
-repositories {
-    // TODO: add Dagger to prebuilts
-    jcenter()
-}
-
 android {
     compileSdkVersion rootProject.latestCompileSdk
     buildToolsVersion = rootProject.buildToolsVersion
