@@ -54,7 +54,7 @@ class HotSwapTester {
             @NonNull String activityName,
             @NonNull String logTag,
             @NonNull Logcat logcat,
-            @NonNull Callbacks callbacks)  throws Exception {
+            @NonNull Steps steps)  throws Exception {
         IDevice device = DeviceHelper.getIDevice();
         // TODO: Generalize apk deployment to any compatible device.
         Assume.assumeTrue(device.getVersion().equals(new AndroidVersion(23, null)));
@@ -98,9 +98,9 @@ class HotSwapTester {
             // Check the app is running
             assertThat(client.getAppState(device)).isEqualTo(AppState.FOREGROUND);
 
-            callbacks.verifyOriginalCode(client, logcat, device);
+            steps.verifyOriginalCode(client, logcat, device);
 
-            callbacks.makeChange();
+            steps.makeChange();
 
             // Now build the hot swap patch.
             project.execute(InstantRunTestUtils.getInstantRunArgs(device, ColdswapMode.MULTIDEX),
@@ -126,7 +126,7 @@ class HotSwapTester {
 
             assertThat(client.getAppState(device)).isEqualTo(AppState.FOREGROUND);
 
-            callbacks.verifyNewCode(client, logcat, device);
+            steps.verifyNewCode(client, logcat, device);
         } finally {
             try {
                 // Clean up
@@ -137,7 +137,7 @@ class HotSwapTester {
         }
     }
 
-    interface Callbacks {
+    interface Steps {
         void verifyOriginalCode(
                 @NonNull InstantRunClient client,
                 @NonNull Logcat logcat,
