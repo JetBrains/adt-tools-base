@@ -862,5 +862,28 @@ public class ClientData {
     String getPendingMethodProfiling() {
         return mPendingMethodProfiling;
     }
+
+    /**
+     * Returns the application's package name.
+     */
+    @NonNull
+    public String getPackageName() {
+      // Check for multi-process app name that might have a following format - "$applicationId:$processName"
+      int colonPos = mClientDescription.indexOf(":");
+      return (colonPos == -1) ? mClientDescription : mClientDescription.substring(0, colonPos);
+    }
+
+    /**
+     * Returns the application's data directory.
+     */
+    @NonNull
+    public String getDataDir() {
+        String packageName = getPackageName();
+
+        if (isValidUserId() && getUserId() > 0) {
+            return String.format("/data/user/%d/%s", getUserId(), packageName);
+        }
+        return "/data/data/" + packageName;
+    }
 }
 
