@@ -1,7 +1,9 @@
 <?xml version="1.0"?>
 <recipe>
 
+<#if backwardsCompatibility!true>
     <dependency mavenUrl="com.android.support:appcompat-v7:${buildApi}.+"/>
+</#if>
 
 <#if !createActivity>
     <mkdir at="${escapeXmlAttribute(srcOut)}" />
