@@ -453,23 +453,23 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
      */
     @Override
     @NonNull
-    public CoreJackOptions getJackOptions() {
+    public JackOptions getJackOptions() {
         return jackOptions;
     }
 
     /**
-     * Configure Jack options for this build type.
+     * Configures Jack options for this build type.
+     *
+     * <p>See <a href="http://tools.android.com/tech-docs/jackandjill">Jack and Jill</a>
      */
     public void jackOptions(@NonNull Action<JackOptions> action) {
         action.execute(jackOptions);
     }
 
     /**
-     * Whether the experimental Jack toolchain should be used.
+     * Replaced by the {@code jackOptions.enabled} property.
      *
-     * <p>See <a href="http://tools.android.com/tech-docs/jackandjill">Jack and Jill</a>
-     *
-     * @deprecated use getJack.isEnabled() instead.
+     * @deprecated use {@code getJackOptions().isEnabled()} instead.
      */
     @Deprecated
     @Nullable

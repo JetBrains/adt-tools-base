@@ -16,8 +16,6 @@
 
 package com.android.build.gradle.managed;
 
-import com.android.build.gradle.internal.dsl.CoreJackOptions;
-
 import org.gradle.model.Managed;
 
 /**
@@ -27,6 +25,8 @@ import org.gradle.model.Managed;
 public interface JackOptions {
     /**
      * Returns whether to use Jack for compilation.
+     *
+     * <p>See <a href="http://tools.android.com/tech-docs/jackandjill">Jack and Jill</a>
      */
     Boolean getEnabled();
     void setEnabled(Boolean enabled);
