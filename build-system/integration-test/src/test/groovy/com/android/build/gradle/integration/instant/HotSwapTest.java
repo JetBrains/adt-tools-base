@@ -134,7 +134,7 @@ public class HotSwapTest {
                 "HelloWorld",
                 LOG_TAG,
                 logcat,
-                new HotSwapTester.Callbacks() {
+                new HotSwapTester.Steps() {
                     @Override
                     public void verifyOriginalCode(@NonNull InstantRunClient client,
                             @NonNull Logcat logcat,

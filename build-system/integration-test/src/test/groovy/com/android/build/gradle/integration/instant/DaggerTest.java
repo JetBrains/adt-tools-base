@@ -35,7 +35,6 @@ import com.android.tools.fd.client.InstantRunBuildInfo;
 import com.android.tools.fd.client.InstantRunClient;
 import com.google.common.collect.Iterables;
 
-import org.apache.commons.lang.SystemUtils;
 import org.gradle.api.JavaVersion;
 import org.junit.Assume;
 import org.junit.Before;
@@ -44,7 +43,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.mockito.MockitoAnnotations;
 
 import java.io.File;
 import java.io.IOException;
@@ -151,7 +149,7 @@ public class DaggerTest {
                 "MainActivity",
                 this.testProject,
                 logcat,
-                new HotSwapTester.Callbacks() {
+                new HotSwapTester.Steps() {
                     @Override
                     public void verifyOriginalCode(
                             @NonNull InstantRunClient client,
