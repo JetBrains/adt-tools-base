@@ -21,6 +21,8 @@ import com.google.common.base.Objects;
 
 /**
  * DSL object for configuring Jack options.
+ *
+ * <p>See <a href="http://tools.android.com/tech-docs/jackandjill">Jack and Jill</a>
  */
 public class JackOptions implements CoreJackOptions {
     @Nullable
@@ -28,11 +30,12 @@ public class JackOptions implements CoreJackOptions {
     @Nullable
     private Boolean isJackInProcessFlag;
 
-    public void _initWith(CoreJackOptions that) {
+    void _initWith(CoreJackOptions that) {
         isEnabledFlag = that.isEnabled();
         isJackInProcessFlag = that.isJackInProcess();
     }
 
+    /** {@inheritDoc} */
     @Override
     @Nullable
     public Boolean isEnabled() {
@@ -43,14 +46,23 @@ public class JackOptions implements CoreJackOptions {
         isEnabledFlag = enabled;
     }
 
+    public void enabled(@Nullable Boolean enabled) {
+        setEnabled(enabled);
+    }
+
+    /** {@inheritDoc} */
     @Override
     @Nullable
     public Boolean isJackInProcess() {
         return isJackInProcessFlag;
     }
 
-    public void setJackInProcess(Boolean jackInProcess) {
+    public void setJackInProcess(@Nullable Boolean jackInProcess) {
         isJackInProcessFlag = jackInProcess;
+    }
+
+    public void jackInProcess(@Nullable Boolean jackInProcess) {
+        setJackInProcess(jackInProcess);
     }
 
     @Override
@@ -62,8 +74,8 @@ public class JackOptions implements CoreJackOptions {
             return false;
         }
         JackOptions that = (JackOptions) o;
-        return Objects.equal(isEnabledFlag, that.isEnabledFlag) &&
-                Objects.equal(isJackInProcessFlag, that.isJackInProcessFlag);
+        return Objects.equal(isEnabledFlag, that.isEnabledFlag)
+                && Objects.equal(isJackInProcessFlag, that.isJackInProcessFlag);
     }
 
     @Override

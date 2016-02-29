@@ -22,12 +22,12 @@ package com.android.build.gradle.internal.dsl;
 public interface CoreJackOptions {
 
     /**
-     * Returns whether to use Jack for compilation.
+     * Whether to use Jack for compilation.
      */
     Boolean isEnabled();
 
     /**
-     * Returns whether to run Jack the same JVM as Gradle.
+     * Whether to run Jack the same JVM as Gradle.
      */
     Boolean isJackInProcess();
 }

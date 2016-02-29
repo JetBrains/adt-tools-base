@@ -115,7 +115,8 @@ class VectorDrawableTest_Library {
     public void "App uses support library, lib does not"() throws Exception {
         project.getSubproject(":app").buildFile << """
                 android.defaultConfig.vectorDrawables {
-                    useSupportLibrary = true
+                    // Try the DSL method without "=".
+                    useSupportLibrary true
                 }
         """
 

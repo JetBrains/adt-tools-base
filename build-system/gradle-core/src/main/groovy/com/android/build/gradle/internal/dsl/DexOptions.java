@@ -117,11 +117,12 @@ public class DexOptions implements com.android.builder.core.DexOptions {
 
     /**
      * Returns the maximum number of concurrent processes that can be used to dex.
-     * Be aware that the number of concurrent process times the memory requirement represent the
-     * minimum amount of memory that will be used by the dx processes :
-     *  Total Memory = getMaxProcessCount() * getJavaMaxHeapSize()
      *
-     * To avoid trashing, keep these two settings appropriate for your configuration.
+     * <p>Be aware that the number of concurrent process times the memory requirement represent the
+     * minimum amount of memory that will be used by the dx processes:
+     * {@code Total Memory = getMaxProcessCount() * getJavaMaxHeapSize()}
+     *
+     * <p>To avoid trashing, keep these two settings appropriate for your configuration.
      * @return the max number of concurrent dx processes.
      */
     @Nullable
@@ -133,5 +134,4 @@ public class DexOptions implements com.android.builder.core.DexOptions {
     public void setMaxProcessCount(int maxProcessCount) {
         this.maxProcessCount = maxProcessCount;
     }
-
 }
