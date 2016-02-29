@@ -14,26 +14,22 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.managed;
+package com.android.build.gradle.internal.dsl;
 
-import org.gradle.model.Managed;
+import com.android.builder.core.DefaultVectorDrawablesOptions;
+
+import java.util.Arrays;
 
 /**
- * Managed type for Jack options.
+ * DSL object used to configure {@code vector} drawable options.
  */
-@Managed
-public interface JackOptions {
-    /**
-     * Returns whether to use Jack for compilation.
-     *
-     * <p>See <a href="http://tools.android.com/tech-docs/jackandjill">Jack and Jill</a>
-     */
-    Boolean getEnabled();
-    void setEnabled(Boolean enabled);
+public class VectorDrawablesOptions extends DefaultVectorDrawablesOptions {
 
-    /**
-     * Returns whether to run Jack the same JVM as Gradle.
-     */
-    Boolean getJackInProcess();
-    void setJackInProcess(Boolean jackInProcess);
+    public void useSupportLibrary(boolean useSupportLibrary) {
+        setUseSupportLibrary(useSupportLibrary);
+    }
+
+    public void generatedDensities(String... densities) {
+        setGeneratedDensities(Arrays.asList(densities));
+    }
 }

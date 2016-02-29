@@ -45,6 +45,7 @@ import java.util.Set;
 public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavor {
     private static final long serialVersionUID = 1L;
 
+    @NonNull
     private final String mName;
     @Nullable
     private String mDimension;
@@ -81,7 +82,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     @Nullable
     private Set<String> mResourceConfiguration;
     @NonNull
-    private DefaultVectorDrawablesOptions mVectorDrawablesOptions = new DefaultVectorDrawablesOptions();
+    private DefaultVectorDrawablesOptions mVectorDrawablesOptions;
 
     /**
      * Creates a ProductFlavor with a given name.
@@ -93,6 +94,14 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
      */
     public DefaultProductFlavor(@NonNull String name) {
         mName = name;
+        mVectorDrawablesOptions = new DefaultVectorDrawablesOptions();
+    }
+
+    public DefaultProductFlavor(
+            @NonNull String name,
+            @NonNull DefaultVectorDrawablesOptions vectorDrawablesOptions) {
+        mName = name;
+        mVectorDrawablesOptions = vectorDrawablesOptions;
     }
 
     @Override
@@ -381,6 +390,9 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return this;
     }
 
+    /**
+     * Options to configure the build-time support for {@code vector} drawables.
+     */
     @NonNull
     @Override
     public DefaultVectorDrawablesOptions getVectorDrawables() {

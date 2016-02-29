@@ -28,7 +28,6 @@ import com.android.builder.core.DefaultProductFlavor;
 import com.android.builder.core.ErrorReporter;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.ClassField;
-import com.android.builder.model.VectorDrawablesOptions;
 import com.android.builder.model.SyncIssue;
 import com.google.common.base.Strings;
 
@@ -67,7 +66,7 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
             @NonNull Instantiator instantiator,
             @NonNull Logger logger,
             @NonNull ErrorReporter errorReporter) {
-        super(name);
+        super(name, new VectorDrawablesOptions());
         this.project = project;
         this.logger = logger;
         this.errorReporter = errorReporter;
@@ -454,23 +453,23 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
      */
     @Override
     @NonNull
-    public CoreJackOptions getJackOptions() {
+    public JackOptions getJackOptions() {
         return jackOptions;
     }
 
     /**
-     * Configure Jack options for this build type.
+     * Configures Jack options for this build type.
+     *
+     * <p>See <a href="http://tools.android.com/tech-docs/jackandjill">Jack and Jill</a>
      */
     public void jackOptions(@NonNull Action<JackOptions> action) {
         action.execute(jackOptions);
     }
 
     /**
-     * Whether the experimental Jack toolchain should be used.
+     * Replaced by the {@code jackOptions.enabled} property.
      *
-     * <p>See <a href="http://tools.android.com/tech-docs/jackandjill">Jack and Jill</a>
-     *
-     * @deprecated use getJack.isEnabled() instead.
+     * @deprecated use {@code getJackOptions().isEnabled()} instead.
      */
     @Deprecated
     @Nullable
@@ -518,7 +517,7 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
 
     /**
      * Name of the dimension this product flavor belongs to. Has been replaced by
-     * <code>dimension</code>
+     * <code>dimension</code>.
      */
     @Deprecated
     public String getFlavorDimension() {
@@ -560,5 +559,14 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
      */
     public void vectorDrawables(Action<VectorDrawablesOptions> action) {
         action.execute(getVectorDrawables());
+    }
+
+    /**
+     * Options to configure the build-time support for {@code vector} drawables.
+     */
+    @NonNull
+    @Override
+    public VectorDrawablesOptions getVectorDrawables() {
+        return (VectorDrawablesOptions) super.getVectorDrawables();
     }
 }

@@ -30,7 +30,6 @@ import com.android.build.gradle.internal.test.BaseTest
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
-import org.junit.Ignore
 
 import static com.android.build.gradle.DslTestUtil.DEFAULT_VARIANTS
 import static com.android.build.gradle.DslTestUtil.countVariants
@@ -641,7 +640,7 @@ public class AppPluginDslTest extends BaseTest {
 
                 f2  {
                     vectorDrawables {
-                        generatedDensities = ["ldpi"]
+                        generatedDensities "ldpi"
                         generatedDensities += ["mdpi"]
                     }
                 }
