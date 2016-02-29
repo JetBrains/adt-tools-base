@@ -30,6 +30,11 @@ import java.util.regex.Pattern;
  * The value defines the alignment of data. So,
  * for example, an alignment of {@code 1024} means that the data needs to start in a byte {@code b}
  * such that {@code b % 1024 == 0}.
+ *
+ * <p>Alignment rules can be only applied to uncompressed files by setting
+ * {@code getApplyToCompressed == false} in the constructor. If aligning files in the zip for the
+ * purpose of reading them with mmap(), then compressed files do not need to be aligned. This
+ * setting is defined on a rule-by-rule basis.
  */
 public class AlignmentRule {
 
@@ -45,17 +50,24 @@ public class AlignmentRule {
     private int mAlignment;
 
     /**
+     * Should the rule be applied to compressed files?
+     */
+    private boolean mApplyToCompressed;
+
+    /**
      * Creates a new alignment rule.
      *
      * @param pattern the pattern to apply to file names to decide whether the rules applies or not
      * to a file; this will be checked using {@code matches()}, not {@code find()}
      * @param alignment the alignment value, must be non-negative
+     * @param applyToCompressed should the rule be applied to compressed files?
      */
-    public AlignmentRule(@NonNull Pattern pattern, int alignment) {
+    public AlignmentRule(@NonNull Pattern pattern, int alignment, boolean applyToCompressed) {
         Preconditions.checkArgument(alignment > 0, "alignment (%s) <= 0", alignment);
 
         mPattern = pattern;
         mAlignment = alignment;
+        mApplyToCompressed = applyToCompressed;
     }
 
     /**
@@ -75,5 +87,14 @@ public class AlignmentRule {
      */
     public int getAlignment() {
         return mAlignment;
+    }
+
+    /**
+     * Should this rule be applied to compressed files?
+     *
+     * @return should the rule be applied to compressed files?
+     */
+    public boolean getApplyToCompressed() {
+        return mApplyToCompressed;
     }
 }

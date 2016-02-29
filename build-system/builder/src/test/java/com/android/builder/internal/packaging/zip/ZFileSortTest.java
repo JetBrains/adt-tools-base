@@ -145,7 +145,7 @@ public class ZFileSortTest {
 
     @Test
     public void sortFilesWithAlignment() throws Exception {
-        mZFile.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*\\.so$"), 1024));
+        mZFile.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*\\.so$"), 1024, false));
         mZFile.sortZipContents();
         mZFile.update();
 
