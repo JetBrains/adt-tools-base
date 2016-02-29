@@ -14,18 +14,20 @@
  * limitations under the License.
  */
 
-package com.android.profilerapp;
+package com.android.profilerapp.cpu;
 
-import org.junit.Test;
+import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 
-import static org.junit.Assert.*;
+import com.android.profilerapp.R;
 
-/**
- * To work on unit tests, switch the Test Artifact in the Build Variants view.
- */
-public class ExampleUnitTest {
-    @Test
-    public void addition_isCorrect() throws Exception {
-        assertEquals(4, 2 + 2);
+public class CpuFragment extends Fragment {
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_cpu, container, false);
     }
 }
