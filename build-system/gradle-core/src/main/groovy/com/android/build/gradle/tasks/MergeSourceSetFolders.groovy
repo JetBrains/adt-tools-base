@@ -204,10 +204,11 @@ public class MergeSourceSetFolders extends IncrementalTask {
 
             boolean includeDependencies = variantConfig.type != VariantType.LIBRARY
             ConventionMappingHelper.map(mergeAssetsTask, "inputDirectorySets") {
-                def generatedAssets = []
+                def generatedAssets = [scope.getShadersOutputDir()]
                 if (variantData.copyApkTask != null) {
                     generatedAssets.add(variantData.copyApkTask.destinationDir)
                 }
+
                 variantConfig.getAssetSets(generatedAssets, includeDependencies)
             }
             ConventionMappingHelper.map(mergeAssetsTask, "outputDir") {
@@ -243,4 +244,31 @@ public class MergeSourceSetFolders extends IncrementalTask {
             }
         }
     }
+
+    public static class MergeShaderSourceFoldersConfigAction extends ConfigAction {
+
+        MergeShaderSourceFoldersConfigAction(@NonNull VariantScope scope) {
+            super(scope);
+        }
+
+        @NonNull
+        @Override
+        String getName() {
+            return scope.getTaskName("merge", "Shaders");
+        }
+
+        @Override
+        void execute(@NonNull MergeSourceSetFolders mergeAssetsTask) {
+            super.execute(mergeAssetsTask);
+            BaseVariantData<? extends BaseVariantOutputData> variantData = scope.variantData
+            VariantConfiguration variantConfig = variantData.variantConfiguration
+
+            ConventionMappingHelper.map(mergeAssetsTask, "inputDirectorySets") {
+                variantConfig.getShaderSets()
+            }
+
+            mergeAssetsTask.setOutputDir(scope.getMergeShadersOutputDir())
+        }
+    }
+
 }

@@ -22,6 +22,7 @@ import static com.android.build.gradle.model.ModelConstants.TASK_MANAGER;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.internal.DependencyManager;
 import com.android.build.gradle.internal.ExtraModelInfo;
+import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.SdkHandler;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.variant.ApplicationVariantFactory;
@@ -64,6 +65,7 @@ public class AppComponentModelPlugin implements Plugin<Project> {
                 AndroidBuilder androidBuilder,
                 DataBindingBuilder dataBindingBuilder,
                 SdkHandler sdkHandler,
+                NdkHandler ndkHandler,
                 ExtraModelInfo extraModelInfo,
                 ToolingModelBuilderRegistry toolingRegistry) {
             DependencyManager dependencyManager = new DependencyManager(project, extraModelInfo);
@@ -74,6 +76,7 @@ public class AppComponentModelPlugin implements Plugin<Project> {
                     dataBindingBuilder,
                     androidExtension,
                     sdkHandler,
+                    ndkHandler,
                     dependencyManager,
                     toolingRegistry);
         }

@@ -50,6 +50,7 @@ import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
+import com.android.build.gradle.tasks.ShaderCompile;
 import com.android.builder.core.VariantType;
 import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
@@ -114,6 +115,7 @@ public class VariantScopeImpl implements VariantScope {
     private AndroidTask<MergeSourceSetFolders> mergeAssetsTask;
     private AndroidTask<GenerateBuildConfig> generateBuildConfigTask;
     private AndroidTask<GenerateResValues> generateResValuesTask;
+    private AndroidTask<ShaderCompile> shaderCompileTask;
 
     private AndroidTask<Sync> processJavaResourcesTask;
     private AndroidTask<TransformTask> mergeJavaResourcesTask;
@@ -512,6 +514,13 @@ public class VariantScopeImpl implements VariantScope {
                 "/jniLibs/" + getVariantConfiguration().getDirName());
     }
 
+    @NonNull
+    @Override
+    public File getMergeShadersOutputDir() {
+        return FileUtils.join(globalScope.getIntermediatesDir(),
+                "/shaders/" + getVariantConfiguration().getDirName());
+    }
+
     @Override
     @NonNull
     public File getBuildConfigSourceOutputDir() {
@@ -525,6 +534,16 @@ public class VariantScopeImpl implements VariantScope {
                 globalScope.getGeneratedDir(),
                 StringHelper.toStrings(
                         "res",
+                        name,
+                        getDirectorySegments()));
+    }
+
+    @NonNull
+    private File getGeneratedAssetsDir(String name) {
+        return FileUtils.join(
+                globalScope.getGeneratedDir(),
+                StringHelper.toStrings(
+                        "assets",
                         name,
                         getDirectorySegments()));
     }
@@ -545,6 +564,12 @@ public class VariantScopeImpl implements VariantScope {
     @NonNull
     public File getRenderscriptResOutputDir() {
         return getGeneratedResourcesDir("rs");
+    }
+
+    @NonNull
+    @Override
+    public File getShadersOutputDir() {
+        return getGeneratedAssetsDir("shaders");
     }
 
     @Override
@@ -854,9 +879,18 @@ public class VariantScopeImpl implements VariantScope {
     }
 
     @Override
-    public void setAidlCompileTask(
-            AndroidTask<AidlCompile> aidlCompileTask) {
+    public void setAidlCompileTask(AndroidTask<AidlCompile> aidlCompileTask) {
         this.aidlCompileTask = aidlCompileTask;
+    }
+
+    @Override
+    public AndroidTask<ShaderCompile> getShaderCompileTask() {
+        return shaderCompileTask;
+    }
+
+    @Override
+    public void setShaderCompileTask(AndroidTask<ShaderCompile> shaderCompileTask) {
+        this.shaderCompileTask = shaderCompileTask;
     }
 
     @Override

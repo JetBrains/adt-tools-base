@@ -18,12 +18,12 @@ package com.android.build.gradle.internal;
 
 import com.android.annotations.NonNull;
 import com.android.builder.model.SourceProvider;
+import com.google.common.collect.ImmutableList;
 
 import org.gradle.api.tasks.SourceSet;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.Collections;
 
 /**
  * An implementation of SourceProvider that's wrapper around a Java SourceSet.
@@ -67,42 +67,48 @@ public class SourceSetSourceProviderWrapper implements SourceProvider {
     @NonNull
     @Override
     public Collection<File> getAidlDirectories() {
-        return Collections.emptyList();
+        return ImmutableList.of();
     }
 
     @NonNull
     @Override
     public Collection<File> getRenderscriptDirectories() {
-        return Collections.emptyList();
+        return ImmutableList.of();
     }
 
     @NonNull
     @Override
     public Collection<File> getCDirectories() {
-        return Collections.emptyList();
+        return ImmutableList.of();
     }
 
     @NonNull
     @Override
     public Collection<File> getCppDirectories() {
-        return Collections.emptyList();
+        return ImmutableList.of();
     }
 
     @NonNull
     @Override
     public Collection<File> getResDirectories() {
-        return Collections.emptyList();
+        return ImmutableList.of();
     }
 
     @NonNull
     @Override
     public Collection<File> getAssetsDirectories() {
-        return Collections.emptyList();
+        return ImmutableList.of();
     }
 
     @NonNull
     @Override
     public Collection<File> getJniLibsDirectories() {
-        return Collections.emptyList();
+        return ImmutableList.of();
+    }
+
+    @NonNull
+    @Override
+    public Collection<File> getShadersDirectories() {
+        return ImmutableList.of();
     }
 }
