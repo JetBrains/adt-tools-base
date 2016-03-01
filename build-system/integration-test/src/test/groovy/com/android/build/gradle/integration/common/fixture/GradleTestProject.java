@@ -1275,20 +1275,4 @@ public class GradleTestProject implements TestRule {
     }
 
 
-    public static void assumeLocalDevice() {
-        Assume.assumeTrue(
-                "Install task not run against device provider",
-                GradleTestProject.REMOTE_TEST_PROVIDER == null);
-    }
-
-    public static void assumeBuildToolsAtLeast(int major) {
-        assumeBuildToolsAtLeast(
-                major, Revision.IMPLICIT_MINOR_REV, Revision.IMPLICIT_MICRO_REV);
-    }
-
-    public static void assumeBuildToolsAtLeast(int major, int minor, int micro) {
-        Revision currentVersion = Revision.parseRevision(DEFAULT_BUILD_TOOL_VERSION);
-        Assume.assumeTrue("Test is only applicable to build tools >= " + major,
-                currentVersion.compareTo(new Revision(major, minor, micro)) >= 0);
-    }
 }

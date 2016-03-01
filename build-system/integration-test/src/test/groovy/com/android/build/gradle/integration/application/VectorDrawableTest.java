@@ -22,6 +22,7 @@ import static com.android.build.gradle.integration.common.utils.TestFileUtils.se
 import static com.google.common.base.Charsets.UTF_8;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.utils.AssumeUtil;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.utils.FileUtils;
 import com.google.common.io.Files;
@@ -46,7 +47,7 @@ public class VectorDrawableTest {
 
     @BeforeClass
     public static void checkBuildTools() {
-        GradleTestProject.assumeBuildToolsAtLeast(21);
+        AssumeUtil.assumeBuildToolsAtLeast(21);
     }
 
     @Test

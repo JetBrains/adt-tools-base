@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.application;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
+import com.android.build.gradle.integration.common.utils.AssumeUtil;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
@@ -47,7 +48,7 @@ public class JackJava8Test {
 
     @Before
     public void setUp() throws IOException {
-        GradleTestProject.assumeBuildToolsAtLeast(24, 0, 0);
+        AssumeUtil.assumeBuildToolsAtLeast(24, 0, 0, 1);
         Assume.assumeTrue("Jack tool requires Java 7", JavaVersion.current().isJava7Compatible());
         TestFileUtils.appendToFile(
                 project.getBuildFile(),

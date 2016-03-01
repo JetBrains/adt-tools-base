@@ -17,13 +17,13 @@
 package com.android.build.gradle.integration.application
 import com.android.build.OutputFile
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.utils.AssumeUtil
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidArtifactOutput
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Variant
 import com.google.common.collect.Sets
-import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -47,7 +47,7 @@ class AutoPureSplits {
 
     @BeforeClass
     static void setup() {
-        GradleTestProject.assumeBuildToolsAtLeast(21)
+        AssumeUtil.assumeBuildToolsAtLeast(21)
         project.getBuildFile() << """android {
               defaultConfig {
                 versionCode 12

@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.library
 
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.utils.AssumeUtil
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
@@ -55,7 +56,7 @@ class MultiprojectTest {
     void connectedCheckAndReport() {
         project.executeConnectedCheck()
         // android-reporting plugin currently executes connected tasks.
-        GradleTestProject.assumeLocalDevice();
+        AssumeUtil.assumeLocalDevice();
         project.execute("mergeAndroidReports")
     }
 }

@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.application
 import com.android.build.OutputFile
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.utils.AssumeUtil
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidArtifactOutput
@@ -46,7 +47,7 @@ class CombinedDensityAndLanguageTest {
 
     @BeforeClass
     static void setup() {
-        GradleTestProject.assumeBuildToolsAtLeast(21)
+        AssumeUtil.assumeBuildToolsAtLeast(21)
         model = project.executeAndReturnModel("clean", "assembleDebug")
     }
 

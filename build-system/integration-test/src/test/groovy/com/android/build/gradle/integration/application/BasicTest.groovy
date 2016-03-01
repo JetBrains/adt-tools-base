@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.category.SmokeTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.utils.AssumeUtil
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
@@ -126,7 +127,7 @@ class BasicTest {
     @Test
     @Category(DeviceTests.class)
     void install() {
-        GradleTestProject.assumeLocalDevice();
+        AssumeUtil.assumeLocalDevice();
         project.execute("installDebug", "uninstallAll")
     }
 
