@@ -1989,6 +1989,8 @@ public abstract class TaskManager {
                     variantScope.getInstantRunBuildContext().getPatchingPolicy()) {
                 isMultiDexEnabled = true;
             }
+
+            extension.getDexOptions().setJumboMode(true);
         }
         // ----- Multi-Dex support
 
@@ -2029,7 +2031,6 @@ public abstract class TaskManager {
                     tasks, variantScope, multiDexTransform);
             multiDexClassListTask.dependsOn(tasks, manifestKeepListTask);
         }
-
         // create dex transform
         DexTransform dexTransform = new DexTransform(
                 extension.getDexOptions(),
