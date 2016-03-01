@@ -22,7 +22,6 @@ android {
         versionName "2.0"
         minSdkVersion 16
         targetSdkVersion 16
-        useJack rootProject.useJack
     }
 
     buildTypes {
