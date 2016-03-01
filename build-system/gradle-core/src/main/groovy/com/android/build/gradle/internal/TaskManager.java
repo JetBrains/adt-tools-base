@@ -1988,6 +1988,9 @@ public abstract class TaskManager {
             if (InstantRunPatchingPolicy.PRE_LOLLIPOP !=
                     variantScope.getInstantRunBuildContext().getPatchingPolicy()) {
                 isMultiDexEnabled = true;
+                // force pre-dexing to be true as we rely on individual slices to be packaged
+                // separately.
+                extension.getDexOptions().setPreDexLibraries(true);
             }
 
             extension.getDexOptions().setJumboMode(true);
