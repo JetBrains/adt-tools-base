@@ -516,8 +516,8 @@ public class JackTask extends AbstractAndroidCompile
             AbstractCompilesUtil.configureLanguageLevel(
                     jackTask,
                     scope.getGlobalScope().getExtension().getCompileOptions(),
-                    scope.getGlobalScope().getExtension().getCompileSdkVersion()
-            );
+                    scope.getGlobalScope().getExtension().getCompileSdkVersion(),
+                    true /*jackEnabled*/);
 
             scope.getVariantData().jackTask = jackTask;
             scope.getVariantData().javaCompilerTask = jackTask;

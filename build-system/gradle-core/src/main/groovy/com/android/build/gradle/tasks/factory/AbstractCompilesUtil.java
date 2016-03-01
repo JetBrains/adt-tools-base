@@ -17,14 +17,11 @@
 package com.android.build.gradle.tasks.factory;
 
 import com.android.build.gradle.internal.CompileOptions;
-import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
 
 import org.gradle.api.JavaVersion;
 import org.gradle.api.tasks.compile.AbstractCompile;
-
-import java.util.concurrent.Callable;
 
 /**
  * Common code for configuring {@link AbstractCompile} instances.
@@ -38,15 +35,26 @@ public class AbstractCompilesUtil {
     public static void configureLanguageLevel(
             AbstractCompile compileTask,
             final CompileOptions compileOptions,
-            String compileSdkVersion) {
+            String compileSdkVersion,
+            boolean jackEnabled) {
         final AndroidVersion hash = AndroidTargetHash.getVersionFromHash(compileSdkVersion);
         Integer compileSdkLevel = (hash == null ? null : hash.getApiLevel());
 
         JavaVersion javaVersionToUse;
-        if (compileSdkLevel == null || (0 <= compileSdkLevel && compileSdkLevel <= 20)) {
+        if (compileSdkLevel == null) {
             javaVersionToUse = JavaVersion.VERSION_1_6;
         } else {
-            javaVersionToUse = JavaVersion.VERSION_1_7;
+            if (0 < compileSdkLevel && compileSdkLevel <= 20) {
+                javaVersionToUse = JavaVersion.VERSION_1_6;
+            } else if (21 <= compileSdkLevel && compileSdkLevel <= 24) {
+                javaVersionToUse = JavaVersion.VERSION_1_7;
+            } else {
+                if (jackEnabled) {
+                    javaVersionToUse = JavaVersion.VERSION_1_8;
+                } else {
+                    javaVersionToUse = JavaVersion.VERSION_1_7;
+                }
+            }
         }
 
         JavaVersion jdkVersion =
