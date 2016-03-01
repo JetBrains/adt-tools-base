@@ -62,10 +62,6 @@ public class JackJava8Test {
                         + "}\n");
 
         javaSrc = project.file(app.getFile("HelloWorld.java").getPath());
-    }
-
-    @Test
-    public void java8FeaturesSanityTest() throws IOException {
         Files.write(
                 "package com.example.helloworld;\n"
                         + "\n"
@@ -108,7 +104,16 @@ public class JackJava8Test {
                         + "}\n",
                 javaSrc,
                 Charsets.UTF_8);
+    }
+
+    @Test
+    public void java8FeaturesSanityTest() throws IOException {
         project.execute("assembleDebug");
     }
 
+    @Test
+    public void unitTest() {
+        Assume.assumeTrue("Only applicable with JDK 1.8", JavaVersion.current().isJava8Compatible());
+        project.execute("testDebug");
+    }
 }

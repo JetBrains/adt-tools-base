@@ -4,8 +4,8 @@ import static com.android.builder.core.VariantType.LIBRARY;
 import static com.android.builder.core.VariantType.UNIT_TEST;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidGradleOptions;
-import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.internal.CompileOptions;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
@@ -15,9 +15,11 @@ import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.model.SyncIssue;
+import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.base.Joiner;
 
+import org.gradle.api.JavaVersion;
 import org.gradle.api.Project;
 import org.gradle.api.file.ConfigurableFileTree;
 import org.gradle.api.file.FileCollection;
@@ -62,11 +64,31 @@ public class JavaCompileConfigAction implements TaskConfigAction<AndroidJavaComp
             javacTask.source(fileTree);
         }
 
+        // javac 1.8 may generate code that uses class not available in android.jar.  This is fine
+        // if jack is used to compile code for the app and this compile task is created only for
+        // unit test.  In which case, we want to keep the default bootstrap classpath.
+        final boolean keepDefaultBootstrap = scope.getVariantConfiguration().getUseJack()
+                && JavaVersion.current().isJava8Compatible();
+
+        if (!keepDefaultBootstrap) {
+            // Set boot classpath if we don't need to keep the default.  Otherwise, this is added as
+            // normal classpath.
+            javacTask.getOptions().setBootClasspath(
+                    Joiner.on(File.pathSeparator).join(
+                            scope.getGlobalScope().getAndroidBuilder()
+                                    .getBootClasspathAsStrings(false)));
+        }
+
         ConventionMappingHelper.map(javacTask, "classpath", new Callable<FileCollection>() {
             @Override
             public FileCollection call() {
                 FileCollection classpath = scope.getJavaClasspath();
                 Project project = scope.getGlobalScope().getProject();
+
+                if (keepDefaultBootstrap) {
+                    classpath = classpath.plus(project.files(
+                            scope.getGlobalScope().getAndroidBuilder().getBootClasspath(false)));
+                }
 
                 if (testedVariantData != null) {
                     // For libraries, the classpath from androidBuilder includes the library
@@ -111,10 +133,6 @@ public class JavaCompileConfigAction implements TaskConfigAction<AndroidJavaComp
         );
 
         javacTask.getOptions().setEncoding(compileOptions.getEncoding());
-
-        javacTask.getOptions().setBootClasspath(
-                Joiner.on(File.pathSeparator).join(
-                        scope.getGlobalScope().getAndroidBuilder().getBootClasspathAsStrings(false)));
 
         GlobalScope globalScope = scope.getGlobalScope();
         Project project = globalScope.getProject();
