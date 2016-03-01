@@ -231,8 +231,8 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
     DexPackagingPolicy dexPackagingPolicy;
 
     @Input
-    DexPackagingPolicy getDexPackagingPolicy() {
-        return dexPackagingPolicy;
+    String getDexPackagingPolicy() {
+        return dexPackagingPolicy.toString();
     }
 
     @Override
