@@ -39,7 +39,6 @@ import com.google.common.io.Files;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Opcodes;
 
 import java.io.File;
 import java.io.IOException;
@@ -189,7 +188,7 @@ public abstract class AbstractShrinker<T> {
                     T source = unresolvedReference.method;
                     T startClass = mGraph.getClassForMember(target);
 
-                    if (unresolvedReference.opcode == Opcodes.INVOKESPECIAL) {
+                    if (unresolvedReference.invokespecial) {
                         // With invokespecial we disregard the class in target and start walking up
                         // the type hierarchy, starting from the superclass of the caller.
                         T sourceClass = mGraph.getClassForMember(source);
@@ -223,11 +222,11 @@ public abstract class AbstractShrinker<T> {
                                 mGraph.addDependency(
                                         source,
                                         currentClass,
-                                        DependencyType.REQUIRED_CODE_REFERENCE);
+                                        unresolvedReference.dependencyType);
                                 mGraph.addDependency(
                                         source,
                                         matchingMethod,
-                                        DependencyType.REQUIRED_CODE_REFERENCE);
+                                        unresolvedReference.dependencyType);
                             }
                             return null;
                         }
