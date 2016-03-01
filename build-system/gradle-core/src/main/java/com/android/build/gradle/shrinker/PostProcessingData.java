@@ -61,12 +61,25 @@ class PostProcessingData<T> {
     static class UnresolvedReference<T> {
         @NonNull final T method;
         @NonNull final T target;
-        final int opcode;
+        final boolean invokespecial;
+        @NonNull final DependencyType dependencyType;
 
-        UnresolvedReference(@NonNull T method, @NonNull T target, int opcode) {
+        UnresolvedReference(@NonNull T method, @NonNull T target, boolean invokespecial) {
             this.method = method;
             this.target = target;
-            this.opcode = opcode;
+            this.invokespecial = invokespecial;
+            this.dependencyType = DependencyType.REQUIRED_CODE_REFERENCE;
+        }
+
+        public UnresolvedReference(
+                @NonNull T method,
+                @NonNull T target,
+                boolean invokespecial,
+                @NonNull DependencyType dependencyType) {
+            this.method = method;
+            this.target = target;
+            this.dependencyType = dependencyType;
+            this.invokespecial = invokespecial;
         }
 
         @Override
@@ -74,7 +87,7 @@ class PostProcessingData<T> {
             return Objects.toStringHelper(this)
                     .add("method", method)
                     .add("target", target)
-                    .add("opcode", opcode)
+                    .add("invokespecial", invokespecial)
                     .toString();
         }
     }

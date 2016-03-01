@@ -2670,6 +2670,293 @@ public class TestClasses implements Opcodes {
 
             return cw.toByteArray();
         }
+
+        public static byte[] main_classForName() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/Main", null,
+                    "java/lang/Object", null);
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mv.visitCode();
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "main", "()V", null,
+                        new String[]{"java/lang/Exception"});
+                mv.visitCode();
+                mv.visitLdcInsn("test.ClassWithFields");
+                mv.visitMethodInsn(INVOKESTATIC, "java/lang/Class", "forName",
+                        "(Ljava/lang/String;)Ljava/lang/Class;", false);
+                mv.visitInsn(POP);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+
+        public static byte[] main_classForName_dynamic() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/Main", null,
+                    "java/lang/Object", null);
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mv.visitCode();
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "main", "()V", null,
+                        new String[]{"java/lang/Exception"});
+                mv.visitCode();
+                mv.visitLdcInsn("test.");
+                mv.visitVarInsn(ASTORE, 1);
+                mv.visitTypeInsn(NEW, "java/lang/StringBuilder");
+                mv.visitInsn(DUP);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "()V", false);
+                mv.visitVarInsn(ALOAD, 1);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "append",
+                        "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
+                mv.visitLdcInsn("ClassWithFields");
+                mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "append",
+                        "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "toString",
+                        "()Ljava/lang/String;", false);
+                mv.visitVarInsn(ASTORE, 1);
+                mv.visitVarInsn(ALOAD, 1);
+                mv.visitMethodInsn(INVOKESTATIC, "java/lang/Class", "forName",
+                        "(Ljava/lang/String;)Ljava/lang/Class;", false);
+                mv.visitInsn(POP);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(2, 2);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+
+        public static byte[] main_atomicIntegerFieldUpdater() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/Main", null,
+                    "java/lang/Object", null);
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mv.visitCode();
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "main", "()V", null,
+                        new String[]{"java/lang/Exception"});
+                mv.visitCode();
+                mv.visitLdcInsn(
+                        Type.getType("Ltest/ClassWithFields;"));
+                mv.visitLdcInsn("intField");
+                mv.visitMethodInsn(INVOKESTATIC,
+                        "java/util/concurrent/atomic/AtomicIntegerFieldUpdater", "newUpdater",
+                        "(Ljava/lang/Class;Ljava/lang/String;)"
+                                + "Ljava/util/concurrent/atomic/AtomicIntegerFieldUpdater;",
+                        false);
+                mv.visitInsn(POP);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(2, 1);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+
+        public static byte[] main_atomicLongFieldUpdater() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/Main", null,
+                    "java/lang/Object", null);
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mv.visitCode();
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "main", "()V", null,
+                        new String[]{"java/lang/Exception"});
+                mv.visitCode();
+                mv.visitLdcInsn(
+                        Type.getType("Ltest/ClassWithFields;"));
+                mv.visitLdcInsn("longField");
+                mv.visitMethodInsn(
+                        INVOKESTATIC,
+                        "java/util/concurrent/atomic/AtomicLongFieldUpdater",
+                        "newUpdater",
+                        "(Ljava/lang/Class;Ljava/lang/String;)"
+                                + "Ljava/util/concurrent/atomic/AtomicLongFieldUpdater;",
+                        false);
+                mv.visitInsn(POP);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(2, 1);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+
+        public static byte[] main_atomicReferenceFieldUpdater() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/Main", null,
+                    "java/lang/Object", null);
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mv.visitCode();
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "main", "()V", null,
+                        new String[]{"java/lang/Exception"});
+                mv.visitCode();
+                mv.visitLdcInsn(
+                        Type.getType("Ltest/ClassWithFields;"));
+                mv.visitLdcInsn(Type.getType("Ljava/lang/String;"));
+                mv.visitLdcInsn("stringField");
+                mv.visitMethodInsn(INVOKESTATIC,
+                        "java/util/concurrent/atomic/AtomicReferenceFieldUpdater", "newUpdater",
+                        "(Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/String;)Ljava/util/concurrent/atomic/AtomicReferenceFieldUpdater;",
+                        false);
+                mv.visitInsn(POP);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(3, 1);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+
+        public static byte[] main_getField() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/Main", null,
+                    "java/lang/Object", null);
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mv.visitCode();
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "main", "()V", null,
+                        new String[]{"java/lang/Exception"});
+                mv.visitCode();
+                mv.visitLdcInsn(
+                        Type.getType("Ltest/ClassWithFields;"));
+                mv.visitLdcInsn("intField");
+                mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Class", "getField",
+                        "(Ljava/lang/String;)Ljava/lang/reflect/Field;", false);
+                mv.visitInsn(POP);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(2, 1);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+
+        public static byte[] classWithFields() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER,
+                    "test/ClassWithFields", null, "java/lang/Object",
+                    null);
+
+            {
+                fv = cw.visitField(ACC_PUBLIC + ACC_VOLATILE, "intField", "I", null, null);
+                fv.visitEnd();
+            }
+            {
+                fv = cw.visitField(ACC_PUBLIC + ACC_VOLATILE, "longField", "J", null, null);
+                fv.visitEnd();
+            }
+            {
+                fv = cw.visitField(ACC_PUBLIC + ACC_VOLATILE, "stringField", "Ljava/lang/String;",
+                        null, null);
+                fv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mv.visitCode();
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
     }
 
     public static class TryCatch {
