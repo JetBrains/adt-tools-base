@@ -106,6 +106,11 @@ public interface BuildType extends BaseConfig {
      */
     JackOptions getJackOptions();
 
+    /**
+     * Returns the shader compiler options for this build type.
+     */
+    ShaderOptions getShaders();
+
     boolean getShrinkResources();
     void setShrinkResources(boolean shrinkResources);
 

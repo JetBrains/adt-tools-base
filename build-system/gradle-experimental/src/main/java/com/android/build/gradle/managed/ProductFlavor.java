@@ -18,7 +18,6 @@ package com.android.build.gradle.managed;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.dsl.*;
 import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.DimensionAware;
@@ -189,6 +188,11 @@ public interface ProductFlavor extends DimensionAware, BaseConfig {
      * Returns the Jack options for this product flavor.
      */
     JackOptions getJackOptions();
+
+    /**
+     * Returns the shader compiler options for this product flavor.
+     */
+    ShaderOptions getShaders();
 
     NdkOptions getNdk();
 

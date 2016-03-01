@@ -60,6 +60,9 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
     @NonNull
     private final JackOptions jackOptions;
 
+    @NonNull
+    private final ShaderOptions shaderOptions;
+
     public ProductFlavor(
             @NonNull String name,
             @NonNull Project project,
@@ -72,6 +75,7 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
         this.errorReporter = errorReporter;
         ndkConfig = instantiator.newInstance(NdkOptions.class);
         jackOptions = instantiator.newInstance(JackOptions.class);
+        shaderOptions = instantiator.newInstance(ShaderOptions.class);
     }
 
     @Override
@@ -458,7 +462,7 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
     }
 
     /**
-     * Configures Jack options for this build type.
+     * Configure Jack options for this product flavor.
      *
      * <p>See <a href="http://tools.android.com/tech-docs/jackandjill">Jack and Jill</a>
      */
@@ -505,6 +509,22 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
         LoggingUtil.displayDeprecationWarning(
                 logger, project, "useJack is deprecated.  Use jackOptions.enabled instead.");
         jackOptions.setEnabled(useJack);
+    }
+
+    /**
+     * Options for configuring the shader compiler.
+     */
+    @NonNull
+    @Override
+    public CoreShaderOptions getShaders() {
+        return shaderOptions;
+    }
+
+    /**
+     * Configure the shader compiler options for this product flavor.
+     */
+    public void shaders(@NonNull Action<ShaderOptions> action) {
+        action.execute(shaderOptions);
     }
 
     @Deprecated

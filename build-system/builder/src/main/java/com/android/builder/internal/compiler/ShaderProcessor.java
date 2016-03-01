@@ -30,11 +30,11 @@ import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.ide.common.process.ProcessResult;
 import com.android.utils.FileUtils;
-import com.google.common.collect.ImmutableList;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A Source File processor for AIDL files. This compiles each aidl file found by the SourceSearcher.
@@ -54,8 +54,13 @@ public class ShaderProcessor implements SourceSearcher.SourceFileProcessor {
     private File mSourceFolder;
     @NonNull
     private final File mOutputDir;
+
     @NonNull
-    private final List<String> mOptions;
+    private List<String> mDefaultArgs;
+
+    @NonNull
+    private Map<String, List<String>> mScopedArgs;
+
     @NonNull
     private final ProcessExecutor mProcessExecutor;
     @NonNull
@@ -63,18 +68,19 @@ public class ShaderProcessor implements SourceSearcher.SourceFileProcessor {
 
     private File mGlslcLocation;
 
-
     public ShaderProcessor(
             @Nullable File ndkLocation,
             @NonNull File sourceFolder,
             @NonNull File outputDir,
-            @NonNull List<String> options,
+            @NonNull List<String> defaultArgs,
+            @NonNull Map<String, List<String>> scopedArgs,
             @NonNull ProcessExecutor processExecutor,
             @NonNull ProcessOutputHandler processOutputHandler) {
         mNdkLocation = ndkLocation;
         mSourceFolder = sourceFolder;
         mOutputDir = outputDir;
-        mOptions = ImmutableList.copyOf(options);
+        mDefaultArgs = defaultArgs;
+        mScopedArgs = scopedArgs;
         mProcessExecutor = processExecutor;
         mProcessOutputHandler = processOutputHandler;
     }
@@ -90,7 +96,7 @@ public class ShaderProcessor implements SourceSearcher.SourceFileProcessor {
         }
 
         // find the location of the compiler.
-        File glslcRootFolder = new File(mNdkLocation, SdkConstants.FD_GLSLC);
+        File glslcRootFolder = new File(mNdkLocation, SdkConstants.FD_SHADER_TOOLS);
 
         switch (currentPlatform()) {
             case PLATFORM_DARWIN:
@@ -129,14 +135,17 @@ public class ShaderProcessor implements SourceSearcher.SourceFileProcessor {
         // working dir for the includes
         builder.addArgs("-I", mSourceFolder.getPath());
 
-        // add the options
-        builder.addArgs(mOptions);
+        // compute the output file path
+        String relativePath = FileUtils.relativePath(sourceFile, sourceFolder);
+        File destFile = new File(mOutputDir, relativePath + ".spv");
+
+        // add the args
+        builder.addArgs(getArgs(relativePath));
 
         // the source file
         builder.addArgs(sourceFile.getPath());
 
-        // output file path
-        File destFile = computeOutputFile(sourceFolder, sourceFile, mOutputDir);
+        // add the output file
         builder.addArgs("-o", destFile.getPath());
 
         // make sure the output file's parent folder is created.
@@ -147,11 +156,20 @@ public class ShaderProcessor implements SourceSearcher.SourceFileProcessor {
         result.rethrowFailure().assertNormalExitValue();
     }
 
-    public static File computeOutputFile(
-            @NonNull File sourceFolder,
-            @NonNull File sourceFile,
-            @NonNull File outputDir) {
-        String relativePath = FileUtils.relativePath(sourceFile, sourceFolder);
-        return new File(outputDir, relativePath + ".spv");
+    @NonNull
+    private List<String> getArgs(@NonNull String relativePath) {
+        int pos = relativePath.indexOf(File.separatorChar);
+        if (pos == -1) {
+            return mDefaultArgs;
+        }
+
+        String key = relativePath.substring(0, pos);
+
+        List<String> args = mScopedArgs.get(key);
+        if (args != null) {
+            return args;
+        }
+
+        return mDefaultArgs;
     }
 }
