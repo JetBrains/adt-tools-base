@@ -55,7 +55,7 @@ public class DexOptions implements com.android.builder.core.DexOptions {
         return isIncrementalFlag;
     }
 
-    void setPreDexLibraries(boolean flag) {
+    public void setPreDexLibraries(boolean flag) {
         isPreDexLibrariesFlag = flag;
     }
 
