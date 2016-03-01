@@ -60,7 +60,7 @@ public class NdkHandler {
     private final String toolchainVersion;
     private final File ndkDirectory;
 
-    private Map<Pair<Toolchain, Abi>, Revision> defaultToolchainVersions = Maps.newHashMap();
+    private Map<Pair<Toolchain, Abi>, String> defaultToolchainVersions = Maps.newHashMap();
 
 
     public NdkHandler(
@@ -230,12 +230,13 @@ public class NdkHandler {
             String toolchainVersion,
             Abi abi) {
         String version = toolchainVersion.isEmpty()
-                ? getDefaultToolchainVersion(toolchain, abi).toString()
+                ? getDefaultToolchainVersion(toolchain, abi)
                 : toolchainVersion;
+        version = version.isEmpty() ? "" : "-" + version;  // prepend '-' if non-empty.
 
         File prebuiltFolder = new File(
                 ndkDirectory,
-                "toolchains/" + getToolchainPrefix(toolchain, abi) + "-" + version + "/prebuilt");
+                "toolchains/" + getToolchainPrefix(toolchain, abi) + version + "/prebuilt");
 
         String osName = System.getProperty("os.name").toLowerCase(Locale.ENGLISH);
         String hostOs;
@@ -315,8 +316,8 @@ public class NdkHandler {
      * The default version is the highest version found in the NDK for the specified toolchain and
      * ABI.  The result is cached for performance.
      */
-    private Revision getDefaultToolchainVersion(Toolchain toolchain, final Abi abi) {
-        Revision defaultVersion = defaultToolchainVersions.get(Pair.of(toolchain, abi));
+    private String getDefaultToolchainVersion(Toolchain toolchain, final Abi abi) {
+        String defaultVersion = defaultToolchainVersions.get(Pair.of(toolchain, abi));
         if (defaultVersion != null) {
             return defaultVersion;
         }
@@ -337,22 +338,30 @@ public class NdkHandler {
 
         // Once we have a list of toolchains, we look the highest version
         Revision bestRevision = null;
+        String bestVersionString = "";
         for (File toolchainFolder : toolchainsForAbi) {
             String folderName = toolchainFolder.getName();
-            String version = folderName.substring(toolchainPrefix.length() + 1);
-            try {
-                Revision revision = Revision.parseRevision(version);
-                if (bestRevision == null || revision.compareTo(bestRevision) > 0) {
-                    bestRevision = revision;
+
+            Revision revision = new Revision(0);
+            String versionString = "";
+            if (folderName.length() > toolchainPrefix.length() + 1) {
+                // Find version if folderName is in the form {prefix}-{version}
+                try {
+                    versionString = folderName.substring(toolchainPrefix.length() + 1);
+                    revision = Revision.parseRevision(versionString);
+                } catch (NumberFormatException ignore) {
                 }
-            } catch (NumberFormatException ignore) {
+            }
+            if (bestRevision == null || revision.compareTo(bestRevision) > 0) {
+                bestRevision = revision;
+                bestVersionString = versionString;
             }
         }
-        defaultToolchainVersions.put(Pair.of(toolchain, abi), bestRevision);
+        defaultToolchainVersions.put(Pair.of(toolchain, abi), bestVersionString);
         if (bestRevision == null) {
             throw new RuntimeException("Unable to find a valid toolchain in " + toolchains);
         }
-        return bestRevision;
+        return bestVersionString;
     }
 
     /**
@@ -366,7 +375,7 @@ public class NdkHandler {
     public String getGccToolchainVersion(Abi abi) {
         return (toolchain == Toolchain.GCC && !toolchainVersion.isEmpty())
                 ? toolchainVersion
-                : getDefaultToolchainVersion(Toolchain.GCC, abi).toString();
+                : getDefaultToolchainVersion(Toolchain.GCC, abi);
     }
 
     /**
