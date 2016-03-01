@@ -70,7 +70,7 @@ public class JillTask extends BaseTask {
     public void taskAction(IncrementalTaskInputs taskInputs)
             throws LoggedErrorException, InterruptedException, IOException {
         Revision revision = getBuilder().getTargetInfo().getBuildTools().getRevision();
-        if (revision.compareTo(JackTask.JACK_MIN_REV) < 0) {
+        if (revision.compareTo(JackTask.JACK_MIN_REV, Revision.PreviewComparison.IGNORE) < 0) {
             throw new RuntimeException(
                     "Jack requires Build Tools " + JackTask.JACK_MIN_REV.toString()
                             + " or later");

@@ -152,7 +152,7 @@ public class JackProcessBuilder extends ProcessEnvBuilder<JackProcessBuilder> {
     public JavaProcessInfo build(@NonNull BuildToolInfo buildToolInfo) throws ProcessException {
 
         Revision revision = buildToolInfo.getRevision();
-        if (revision.compareTo(JACK_MIN_REV) < 0) {
+        if (revision.compareTo(JACK_MIN_REV, Revision.PreviewComparison.IGNORE) < 0) {
             throw new ProcessException(
                     "Jack requires Build Tools " + JACK_MIN_REV.toString() +
                     " or later");
