@@ -17,7 +17,9 @@
 package com.android.build.gradle
 
 import android.databinding.tool.DataBindingBuilder
+import com.android.annotations.NonNull
 import com.android.build.gradle.internal.DependencyManager
+import com.android.build.gradle.internal.NdkHandler
 import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.TestApplicationTaskManager
@@ -47,19 +49,21 @@ class TestPlugin extends BasePlugin implements Plugin<Project> {
 
     @Override
     protected TaskManager createTaskManager(
-            Project project,
-            AndroidBuilder androidBuilder,
-            DataBindingBuilder dataBindingBuilder,
-            AndroidConfig extension,
-            SdkHandler sdkHandler,
-            DependencyManager dependencyManager,
-            ToolingModelBuilderRegistry toolingRegistry) {
+            @NonNull Project project,
+            @NonNull AndroidBuilder androidBuilder,
+            @NonNull DataBindingBuilder dataBindingBuilder,
+            @NonNull AndroidConfig extension,
+            @NonNull SdkHandler sdkHandler,
+            @NonNull NdkHandler ndkHandler,
+            @NonNull DependencyManager dependencyManager,
+            @NonNull ToolingModelBuilderRegistry toolingRegistry) {
         return new TestApplicationTaskManager (
                 project,
                 androidBuilder,
                 dataBindingBuilder,
                 extension,
                 sdkHandler,
+                ndkHandler,
                 dependencyManager,
                 toolingRegistry)
     }

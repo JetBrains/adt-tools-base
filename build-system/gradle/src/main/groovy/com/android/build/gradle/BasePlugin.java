@@ -20,6 +20,7 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 import static com.google.common.base.Preconditions.checkState;
 import static java.io.File.separator;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.build.gradle.internal.ApiObjectFactory;
@@ -255,13 +256,14 @@ public abstract class BasePlugin {
     protected abstract Class<? extends BaseExtension> getExtensionClass();
     protected abstract VariantFactory createVariantFactory();
     protected abstract TaskManager createTaskManager(
-            Project project,
-            AndroidBuilder androidBuilder,
-            DataBindingBuilder dataBindingBuilder,
-            AndroidConfig extension,
-            SdkHandler sdkHandler,
-            DependencyManager dependencyManager,
-            ToolingModelBuilderRegistry toolingRegistry);
+            @NonNull Project project,
+            @NonNull AndroidBuilder androidBuilder,
+            @NonNull DataBindingBuilder dataBindingBuilder,
+            @NonNull AndroidConfig extension,
+            @NonNull SdkHandler sdkHandler,
+            @NonNull NdkHandler ndkHandler,
+            @NonNull DependencyManager dependencyManager,
+            @NonNull ToolingModelBuilderRegistry toolingRegistry);
 
     /**
      * Return whether this plugin creates Android library.  Should be overridden if true.
@@ -462,12 +464,20 @@ public abstract class BasePlugin {
                 .setDescription("Metadata for the produced APKs.");
 
         DependencyManager dependencyManager = new DependencyManager(project, extraModelInfo);
+
+        ndkHandler = new NdkHandler(
+                project.getRootDir(),
+                null, /* compileSkdVersion, this will be set in afterEvaluate */
+                "gcc",
+                "" /*toolchainVersion*/);
+
         taskManager = createTaskManager(
                 project,
                 androidBuilder,
                 dataBindingBuilder,
                 extension,
                 sdkHandler,
+                ndkHandler,
                 dependencyManager,
                 registry);
 
@@ -479,12 +489,6 @@ public abstract class BasePlugin {
                 variantFactory,
                 taskManager,
                 instantiator);
-
-        ndkHandler = new NdkHandler(
-                project.getRootDir(),
-                null, /* compileSkdVersion, this will be set in afterEvaluate */
-                "gcc",
-                "" /*toolchainVersion*/);
 
         // Register a builder for the custom tooling model
         ModelBuilder modelBuilder = new ModelBuilder(

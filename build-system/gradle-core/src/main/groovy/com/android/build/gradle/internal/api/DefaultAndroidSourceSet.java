@@ -51,6 +51,7 @@ public class DefaultAndroidSourceSet implements AndroidSourceSet, SourceProvider
     private final AndroidSourceDirectorySet renderscript;
     private final AndroidSourceDirectorySet jni;
     private final AndroidSourceDirectorySet jniLibs;
+    private final AndroidSourceDirectorySet shaders;
     private final String displayName;
 
     public DefaultAndroidSourceSet(@NonNull String name,
@@ -88,6 +89,9 @@ public class DefaultAndroidSourceSet implements AndroidSourceSet, SourceProvider
 
         String libsDisplayName = String.format("%s jniLibs", displayName);
         jniLibs = new DefaultAndroidSourceDirectorySet(libsDisplayName, project);
+
+        String shaderDisplayName = String.format("%s shaders", displayName);
+        shaders = new DefaultAndroidSourceDirectorySet(shaderDisplayName, project);
     }
 
     @Override
@@ -245,6 +249,19 @@ public class DefaultAndroidSourceSet implements AndroidSourceSet, SourceProvider
         return this;
     }
 
+    @NonNull
+    @Override
+    public AndroidSourceSet shaders(Closure configureClosure) {
+        ConfigureUtil.configure(configureClosure, getShaders());
+        return this;
+    }
+
+    @NonNull
+    @Override
+    public AndroidSourceDirectorySet getShaders() {
+        return shaders;
+    }
+
     @Override
     @NonNull
     public AndroidSourceDirectorySet getJava() {
@@ -284,6 +301,7 @@ public class DefaultAndroidSourceSet implements AndroidSourceSet, SourceProvider
         renderscript.setSrcDirs(Collections.singletonList(path + "/rs"));
         jni.setSrcDirs(Collections.singletonList(path + "/jni"));
         jniLibs.setSrcDirs(Collections.singletonList(path + "/jniLibs"));
+        shaders.setSrcDirs(Collections.singletonList(path + "/shaders"));
         return this;
     }
 
@@ -349,5 +367,11 @@ public class DefaultAndroidSourceSet implements AndroidSourceSet, SourceProvider
     @Override
     public Collection<File> getJniLibsDirectories() {
         return getJniLibs().getSrcDirs();
+    }
+
+    @NonNull
+    @Override
+    public Collection<File> getShadersDirectories() {
+        return getShaders().getSrcDirs();
     }
 }

@@ -43,6 +43,7 @@ import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
+import com.android.build.gradle.tasks.ShaderCompile;
 import com.android.builder.core.ErrorReporter;
 import com.android.builder.core.VariantType;
 import com.android.builder.model.SourceProvider;
@@ -131,6 +132,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     public GenerateResValues generateResValuesTask;
     public Copy copyApkTask;
     public GenerateApkDataTask generateApkDataTask;
+    public ShaderCompile shaderCompileTask;
 
     public Sync processJavaResourcesTask;
     public NdkCompile ndkCompileTask;

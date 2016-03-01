@@ -27,6 +27,7 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.OptionalCompilationStep;
+import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.SdkHandler;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.model.AndroidProject;
@@ -59,6 +60,9 @@ public class GlobalScope {
     private SdkHandler sdkHandler;
 
     @NonNull
+    private NdkHandler ndkHanlder;
+
+    @NonNull
     private ToolingModelBuilderRegistry toolingRegistry;
 
     @NonNull
@@ -84,11 +88,13 @@ public class GlobalScope {
             @NonNull AndroidBuilder androidBuilder,
             @NonNull AndroidConfig extension,
             @NonNull SdkHandler sdkHandler,
+            @NonNull NdkHandler ndkHanlder,
             @NonNull ToolingModelBuilderRegistry toolingRegistry) {
         this.project = project;
         this.androidBuilder = androidBuilder;
         this.extension = extension;
         this.sdkHandler = sdkHandler;
+        this.ndkHanlder = ndkHanlder;
         this.toolingRegistry = toolingRegistry;
         intermediatesDir = new File(getBuildDir(), FD_INTERMEDIATES);
         generatedDir = new File(getBuildDir(), FD_GENERATED);
@@ -120,6 +126,11 @@ public class GlobalScope {
     @NonNull
     public SdkHandler getSdkHandler() {
         return sdkHandler;
+    }
+
+    @NonNull
+    public NdkHandler getNdkHandler() {
+        return ndkHanlder;
     }
 
     @NonNull

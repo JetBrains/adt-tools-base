@@ -45,14 +45,23 @@ import android.databinding.tool.DataBindingBuilder;
 public class TestApplicationTaskManager extends ApplicationTaskManager {
 
 
-    public TestApplicationTaskManager(Project project,
-            AndroidBuilder androidBuilder,
-            DataBindingBuilder dataBindingBuilder,
-            AndroidConfig extension,
-            SdkHandler sdkHandler,
-            DependencyManager dependencyManager,
-            ToolingModelBuilderRegistry toolingRegistry) {
-        super(project, androidBuilder, dataBindingBuilder, extension, sdkHandler, dependencyManager,
+    public TestApplicationTaskManager(
+            @NonNull Project project,
+            @NonNull AndroidBuilder androidBuilder,
+            @NonNull DataBindingBuilder dataBindingBuilder,
+            @NonNull AndroidConfig extension,
+            @NonNull SdkHandler sdkHandler,
+            @NonNull NdkHandler ndkHandler,
+            @NonNull DependencyManager dependencyManager,
+            @NonNull ToolingModelBuilderRegistry toolingRegistry) {
+        super(
+                project,
+                androidBuilder,
+                dataBindingBuilder,
+                extension,
+                sdkHandler,
+                ndkHandler,
+                dependencyManager,
                 toolingRegistry);
     }
 

@@ -92,14 +92,23 @@ public class LibraryTaskManager extends TaskManager {
     private Task assembleDefault;
 
     public LibraryTaskManager (
-            Project project,
-            AndroidBuilder androidBuilder,
-            DataBindingBuilder dataBindingBuilder,
-            AndroidConfig extension,
-            SdkHandler sdkHandler,
-            DependencyManager dependencyManager,
-            ToolingModelBuilderRegistry toolingRegistry) {
-        super(project, androidBuilder, dataBindingBuilder, extension, sdkHandler,dependencyManager, toolingRegistry);
+            @NonNull Project project,
+            @NonNull AndroidBuilder androidBuilder,
+            @NonNull DataBindingBuilder dataBindingBuilder,
+            @NonNull AndroidConfig extension,
+            @NonNull SdkHandler sdkHandler,
+            @NonNull NdkHandler ndkHandler,
+            @NonNull DependencyManager dependencyManager,
+            @NonNull ToolingModelBuilderRegistry toolingRegistry) {
+        super(
+                project,
+                androidBuilder,
+                dataBindingBuilder,
+                extension,
+                sdkHandler,
+                ndkHandler,
+                dependencyManager,
+                toolingRegistry);
     }
 
     @Override
@@ -235,6 +244,15 @@ public class LibraryTaskManager extends TaskManager {
                     @Override
                     public Void call() throws Exception {
                         createAidlTask(tasks, variantScope);
+                        return null;
+                    }
+                });
+
+        ThreadRecorder.get().record(ExecutionType.LIB_TASK_MANAGER_CREATE_SHADER_TASK,
+                new Recorder.Block<Void>() {
+                    @Override
+                    public Void call() {
+                        createShaderTask(tasks, variantScope);
                         return null;
                     }
                 });

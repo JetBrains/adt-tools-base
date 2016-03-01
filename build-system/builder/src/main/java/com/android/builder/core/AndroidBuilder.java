@@ -45,6 +45,7 @@ import com.android.builder.internal.compiler.JackConversionCache;
 import com.android.builder.internal.compiler.LeafFolderGatherer;
 import com.android.builder.internal.compiler.PreDexCache;
 import com.android.builder.internal.compiler.RenderScriptProcessor;
+import com.android.builder.internal.compiler.ShaderProcessor;
 import com.android.builder.internal.compiler.SourceSearcher;
 import com.android.builder.internal.incremental.DependencyData;
 import com.android.builder.internal.packaging.Packager;
@@ -1221,6 +1222,79 @@ public class AndroidBuilder {
                 processOutputHandler);
 
         processor.processFile(sourceFolder, aidlFile);
+    }
+
+    /**
+     * Compiles all the shader files found in the given source folders.
+     *
+     * @param sourceFolder the source folder with the merged shaders
+     * @param outputDir the output dir in which to generate the output
+     * @throws IOException
+     * @throws InterruptedException
+     * @throws LoggedErrorException
+     */
+    public void compileAllShaderFiles(
+            @NonNull File sourceFolder,
+            @NonNull File outputDir,
+            @Nullable File nkdLocation,
+            @NonNull ProcessOutputHandler processOutputHandler)
+            throws IOException, InterruptedException, LoggedErrorException, ProcessException {
+        checkNotNull(sourceFolder, "sourceFolder cannot be null.");
+        checkNotNull(outputDir, "outputDir cannot be null.");
+        checkState(mTargetInfo != null,
+                "Cannot call compileAllShaderFiles() before setTargetInfo() is called.");
+
+        ShaderProcessor processor = new ShaderProcessor(
+                nkdLocation,
+                sourceFolder,
+                outputDir,
+                ImmutableList.<String>of(),
+                mProcessExecutor,
+                processOutputHandler);
+
+        SourceSearcher searcher = new SourceSearcher(
+                sourceFolder,
+                ShaderProcessor.EXT_VERT,
+                ShaderProcessor.EXT_TESC,
+                ShaderProcessor.EXT_TESE,
+                ShaderProcessor.EXT_GEOM,
+                ShaderProcessor.EXT_FRAG,
+                ShaderProcessor.EXT_COMP);
+        searcher.setUseExecutor(true);
+        searcher.search(processor);
+    }
+
+    /**
+     * Compiles the given aidl file.
+     *
+     * @param sourceFolder the source folder containing the file
+     * @param shaderFile the shader file to compile
+     * @param outputDir the output dir
+     * @throws IOException
+     * @throws InterruptedException
+     * @throws LoggedErrorException
+     */
+    public void compileShaderFile(
+            @NonNull File sourceFolder,
+            @NonNull File shaderFile,
+            @NonNull File outputDir,
+            @Nullable File nkdLocation,
+            @NonNull ProcessOutputHandler processOutputHandler)
+            throws IOException, InterruptedException, LoggedErrorException, ProcessException {
+        checkNotNull(sourceFolder, "sourceFolder cannot be null.");
+        checkNotNull(shaderFile, "aidlFile cannot be null.");
+        checkNotNull(outputDir, "outputDir cannot be null.");
+        checkState(mTargetInfo != null,
+                "Cannot call compileAidlFile() before setTargetInfo() is called.");
+
+        ShaderProcessor processor = new ShaderProcessor(
+                nkdLocation,
+                sourceFolder,
+                outputDir,
+                ImmutableList.<String>of(),
+                mProcessExecutor,
+                processOutputHandler);
+        processor.processFile(sourceFolder, shaderFile);
     }
 
     /**

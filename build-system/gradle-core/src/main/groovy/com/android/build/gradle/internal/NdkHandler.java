@@ -62,7 +62,6 @@ public class NdkHandler {
 
     private Map<Pair<Toolchain, Abi>, String> defaultToolchainVersions = Maps.newHashMap();
 
-
     public NdkHandler(
             @NonNull File projectDir,
             @Nullable String platformVersion,
