@@ -329,7 +329,7 @@ public class BasicInstallerTest extends TestCase {
             public void downloadFully(@NonNull URL url, @Nullable SettingsController settings,
               @NonNull File target, @NonNull ProgressIndicator indicator) throws IOException {
                 super.downloadFully(url, settings, target, indicator);
-                indicator.cancel();
+                throw new IOException("expected");
             }
         };
         URL repoUrl = new URL("http://example.com/dummy.xml");
@@ -396,8 +396,7 @@ public class BasicInstallerTest extends TestCase {
 
         // be sure it was actually cancelled
         assertFalse(result);
-        assertTrue(firstInstallProgress.isCanceled());
-
+        assertTrue(!firstInstallProgress.getWarnings().isEmpty());
         Downloader failingDownloader = new Downloader() {
             @Nullable
             @Override

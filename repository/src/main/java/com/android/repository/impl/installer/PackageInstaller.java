@@ -32,6 +32,22 @@ import com.android.repository.io.FileOpUtils;
  */
 public interface PackageInstaller {
 
+    enum InstallStatus {
+        /** This installer hasn't started yet */
+        NOT_STARTED,
+        /**
+         * This installer is in the process of preparing the component for install. No changes are
+         * made to the SDK during this phase.
+         */
+        PREPARING,
+        /** The steps that can be taken without affecting the installed SDK have completed. */
+        PREPARED,
+        /** The SDK is being modified. */
+        INSTALLING,
+        /** The installation has completed. */
+        COMPLETE
+    }
+
     /**
      * Uninstall the package.
      *
@@ -77,5 +93,26 @@ public interface PackageInstaller {
     boolean prepareInstall(@NonNull RemotePackage p, @NonNull Downloader downloader,
             @Nullable SettingsController settings, @NonNull ProgressIndicator progress,
             @NonNull RepoManager manager, @NonNull FileOp fop);
+
+    /**
+     * Gets the current {@link InstallStatus} of this installer.
+     */
+    @NonNull
+    InstallStatus getInstallStatus();
+
+    /**
+     * Registers a listener that will be called when the {@link InstallStatus} of this installer
+     * changes.
+     */
+    void registerStateChangeListener(@NonNull StatusChangeListener listener);
+
+
+    /**
+     * A listener that will be called when the {@link #getInstallStatus() status} of this installer
+     * changes.
+     */
+    interface StatusChangeListener {
+        void statusChanged(@NonNull PackageInstaller installer);
+    }
 }
 

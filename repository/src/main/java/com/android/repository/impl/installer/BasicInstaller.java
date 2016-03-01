@@ -30,6 +30,7 @@ import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
 import com.android.repository.util.InstallerUtil;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 
@@ -39,6 +40,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -56,6 +58,10 @@ public class BasicInstaller implements PackageInstaller {
     private static final String INSTALL_DATA_FN = ".installData";
 
     private static final String UNZIP_DIR_FN = "unzip";
+
+    private InstallStatus mInstallStatus = InstallStatus.NOT_STARTED;
+
+    private List<StatusChangeListener> mListeners = Lists.newArrayList();
 
     /**
      * Just deletes the package.
@@ -81,8 +87,9 @@ public class BasicInstaller implements PackageInstaller {
     }
 
     /**
-     * Writes information used to restore the install process, then calls
-     * {@link #doPrepareInstall(RemotePackage, File, Downloader, SettingsController, ProgressIndicator, RepoManager, FileOp)} )}
+     * Writes information used to restore the install process, then calls {@link
+     * #doPrepareInstall(RemotePackage, File, Downloader, SettingsController, ProgressIndicator,
+     * RepoManager, FileOp)} )}
      *
      * {@inheritDoc}
      */
@@ -93,19 +100,24 @@ public class BasicInstaller implements PackageInstaller {
             @NonNull ProgressIndicator progress,
             @NonNull RepoManager manager,
             @NonNull FileOp fop) {
+        updateStatus(InstallStatus.PREPARING);
+        manager.installBeginning(p, this);
         boolean result = false;
         try {
             File installPath = InstallerUtil.getInstallPath(p, manager, progress);
-            File installTempPath = writeInstallerMetadata(p, installPath, manager, progress, fop);
+            File installTempPath = writeInstallerMetadata(p, installPath, manager, progress,
+                    fop);
             if (installTempPath == null) {
                 return false;
             }
             File prepareCompleteMarker = new File(installTempPath, PREPARE_COMPLETE_FN);
             if (!fop.exists(prepareCompleteMarker)) {
-                result = doPrepareInstall(p, installTempPath, downloader, settings, progress,
-                        manager,
-                        fop);
-                fop.createNewFile(prepareCompleteMarker);
+                if (doPrepareInstall(p, installTempPath, downloader, settings, progress, manager,
+                        fop)) {
+                    fop.createNewFile(prepareCompleteMarker);
+                    updateStatus(InstallStatus.PREPARED);
+                    result = true;
+                }
             } else {
                 progress.logInfo("Found existing prepared package.");
                 result = true;
@@ -115,11 +127,16 @@ public class BasicInstaller implements PackageInstaller {
             result = false;
         }
         finally {
-            if (!result && progress.isCanceled()) {
-                try {
-                    cleanup(InstallerUtil.getInstallPath(p, manager, progress), fop);
-                } catch (IOException e) {
-                    // ignore
+            if (!result) {
+                manager.installEnded(p);
+                updateStatus(InstallStatus.COMPLETE);
+                // If there was a failure don't clean up the files, so we can continue if requested
+                if (progress.isCanceled()) {
+                    try {
+                        cleanup(InstallerUtil.getInstallPath(p, manager, progress), fop);
+                    } catch (IOException e) {
+                        // ignore
+                    }
                 }
             }
         }
@@ -191,12 +208,32 @@ public class BasicInstaller implements PackageInstaller {
         return false;
     }
 
+    @Override
+    public void registerStateChangeListener(@NonNull StatusChangeListener listener) {
+        mListeners.add(listener);
+    }
+
+    @Override
+    @NonNull
+    public InstallStatus getInstallStatus() {
+        return mInstallStatus;
+    }
+
+    private void updateStatus(@NonNull PackageInstaller.InstallStatus status) {
+        mInstallStatus = status;
+        for (StatusChangeListener listener : mListeners) {
+            listener.statusChanged(this);
+        }
+    }
+
+
     private static boolean isFileDownloaded(@NonNull RemotePackage p,
             @NonNull File downloadLocation,
             @NonNull ProgressIndicator progress, @NonNull FileOp fop) throws IOException {
         if (!fop.exists(downloadLocation)) {
             return false;
         }
+        progress.logInfo("Checking existing downloaded package...");
         boolean alreadyDownloaded;
         String checksum = p.getArchive().getComplete().getChecksum();
         InputStream in = new BufferedInputStream(fop.newFileInputStream(downloadLocation));
@@ -260,8 +297,8 @@ public class BasicInstaller implements PackageInstaller {
     }
 
     /**
-     * Finds the prepared files using the installer metadata, calls
-     * {@link #doCompleteInstall(RemotePackage, File, File, ProgressIndicator, RepoManager, FileOp)}
+     * Finds the prepared files using the installer metadata, calls {@link
+     * #doCompleteInstall(RemotePackage, File, File, ProgressIndicator, RepoManager, FileOp)}
      * finally writes the package xml.
      *
      * {@inheritDoc}
@@ -271,23 +308,23 @@ public class BasicInstaller implements PackageInstaller {
             @NonNull ProgressIndicator progress,
             @NonNull RepoManager manager,
             @NonNull FileOp fop) {
+        updateStatus(InstallStatus.INSTALLING);
         boolean result = false;
         try {
             File dest = InstallerUtil.getInstallPath(p, manager, progress);
             Properties installProperties = readOrCreateInstallProperties(fop, dest);
-            File installTempPath = new File(installProperties.getProperty(PATH_KEY));
+            String installTempPath = installProperties.getProperty(PATH_KEY);
             if (installTempPath == null) {
                 return false;
             }
-            result = doCompleteInstall(p, installTempPath, dest, progress, manager, fop);
+            File installTemp = new File(installTempPath);
+            result = doCompleteInstall(p, installTemp, dest, progress, manager, fop);
             InstallerUtil.writePackageXml(p, dest, manager, fop, progress);
-            fop.delete(installTempPath);
+            fop.delete(installTemp);
             manager.markInvalid();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             result = false;
-        }
-        finally {
+        } finally {
             if (!result && progress.isCanceled()) {
                 try {
                     cleanup(InstallerUtil.getInstallPath(p, manager, progress), fop);
@@ -295,6 +332,8 @@ public class BasicInstaller implements PackageInstaller {
                     // ignore
                 }
             }
+            updateStatus(InstallStatus.COMPLETE);
+            manager.installEnded(p);
         }
         return result;
     }
@@ -327,7 +366,8 @@ public class BasicInstaller implements PackageInstaller {
             }
 
             progress
-              .logInfo(String.format("Installing %1$s in %2$s", p.getDisplayName(), destination));
+                    .logInfo(String.format("Installing %1$s in %2$s", p.getDisplayName(),
+                            destination));
 
             // Move the final unzipped archive into place.
             FileOpUtils.safeRecursiveOverwrite(packageRoot, destination, fop, progress);
@@ -337,6 +377,8 @@ public class BasicInstaller implements PackageInstaller {
             String message = e.getMessage();
             progress.logWarning("An error occurred during installation" +
                     (message.isEmpty() ? "." : ": " + message + "."), e);
+        } finally {
+            progress.setFraction(1);
         }
 
         return false;
