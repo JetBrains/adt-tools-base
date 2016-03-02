@@ -19,6 +19,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.EmptyAndroidTestApp
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import com.android.build.gradle.integration.common.utils.AssumeUtil
 import com.google.common.io.Files
 import groovy.transform.CompileStatic
 import org.junit.Before
@@ -62,7 +63,7 @@ class VectorDrawableTest_Library {
 
     @Before
     public void checkBuildTools() {
-        GradleTestProject.assumeBuildToolsAtLeast(21)
+        AssumeUtil.assumeBuildToolsAtLeast(21)
     }
 
     @Before

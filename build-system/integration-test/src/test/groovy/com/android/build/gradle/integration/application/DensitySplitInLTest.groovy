@@ -21,6 +21,7 @@ import com.android.annotations.Nullable
 import com.android.build.OutputFile
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
+import com.android.build.gradle.integration.common.utils.AssumeUtil
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidArtifactOutput
@@ -55,7 +56,7 @@ class DensitySplitInLTest {
 
     @BeforeClass
     static void setUp() {
-        GradleTestProject.assumeBuildToolsAtLeast(21)
+        AssumeUtil.assumeBuildToolsAtLeast(21)
         model = project.executeAndReturnModel("clean", "assembleDebug")
     }
 
