@@ -74,7 +74,7 @@ public class CheckAll {
     @Rule
     public GradleTestProject project;
 
-    public String projectName;
+    private String projectName;
 
     public CheckAll(String projectName) {
         this.projectName = projectName;
@@ -85,15 +85,9 @@ public class CheckAll {
     }
 
     @Test
-    public void lint() throws Exception {
+    public void assembleAndLint() throws Exception {
         Assume.assumeFalse(BROKEN_ASSEMBLE.contains(projectName));
-        project.execute("lint");
-    }
-
-    @Test
-    public void assemble() throws Exception {
-        Assume.assumeFalse(BROKEN_ASSEMBLE.contains(projectName));
-        project.execute("assembleDebug", "assembleAndroidTest");
+        project.execute("assembleDebug", "assembleAndroidTest", "lint");
     }
 
     // TODO: Investigate and clear these lists.
