@@ -24,6 +24,7 @@ import com.android.builder.model.AndroidProject
 import com.android.builder.model.JavaCompileOptions
 import com.android.builder.model.Variant
 import groovy.transform.CompileStatic
+import org.gradle.api.JavaVersion
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -83,12 +84,21 @@ class BasicTest {
                 "aaptOptions getFailOnMissingConfigEntry",
                 model.getAaptOptions().getFailOnMissingConfigEntry())
 
+        // Since source and target compatibility are not explicitly set in the build.gradle,
+        // the default value depends on the JDK used.
+        JavaVersion expected;
+        if (JavaVersion.current().isJava7Compatible()) {
+            expected = JavaVersion.VERSION_1_7;
+        } else {
+            expected = JavaVersion.VERSION_1_6;
+        }
+
         JavaCompileOptions javaCompileOptions = model.getJavaCompileOptions()
-        // since source and target compatibility are not explicitly set in the build.gradle,
-        // the default value should be the JDK version used to build against.
-        assertEquals(System.getProperty("java.specification.version"),
+        assertEquals(
+                expected.toString(),
                 javaCompileOptions.getSourceCompatibility())
-        assertEquals(System.getProperty("java.specification.version"),
+        assertEquals(
+                expected.toString(),
                 javaCompileOptions.getTargetCompatibility())
         assertEquals("UTF-8", javaCompileOptions.getEncoding())
     }
