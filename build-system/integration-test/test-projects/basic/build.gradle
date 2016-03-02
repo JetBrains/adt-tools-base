@@ -56,8 +56,6 @@ android {
             buildConfigField "String", "FOO", "\"bar\""
 
             resValue "string", "foo", "foo2"
-
-            useJack project.ext.useJack
         }
     }
 
