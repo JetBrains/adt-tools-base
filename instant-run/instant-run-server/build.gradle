@@ -45,4 +45,5 @@ jar {
     from {
         configurations.compile.collect { it.isFile() ? zipTree(it) : it }
     }
+    exclude('com/android/annotations/**', 'NOTICE')
 }

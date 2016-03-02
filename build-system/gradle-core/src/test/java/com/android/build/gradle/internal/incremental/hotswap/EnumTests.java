@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,37 +14,31 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.incremental;
+package com.android.build.gradle.internal.incremental.hotswap;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import com.android.build.gradle.internal.incremental.fixture.ClassEnhancement;
-import com.example.basic.CovariantChild;
-import com.example.basic.CovariantParent;
+import com.example.basic.Enums;
 
 import org.junit.ClassRule;
 import org.junit.Test;
 
-/**
- * Test for covariant return types.
- */
-public class CovariantTest {
+public class EnumTests {
 
     @ClassRule
     public static ClassEnhancement harness = new ClassEnhancement();
 
     @Test
-    public void invokeCovariantMethod() throws Exception {
+    public void testEnums() throws Exception {
         harness.reset();
 
-        CovariantChild child = new CovariantChild();
-        assertEquals("hellohello", child.getValue());
-        CovariantParent parent = child;
-        assertTrue(parent.getValue() instanceof String);
+        assertEquals("zero", Enums.VALUE_0.getValue());
+        assertEquals("overriden:one:other", Enums.VALUE_1.getValue());
 
-        harness.applyPatch("changeSubClass");
-        assertEquals("Modified child Modified parent", child.getValue());
-        assertTrue(parent.getValue() instanceof String);
+        harness.applyPatch("changeBaseClass");
+
+        assertEquals("zero:patched", Enums.VALUE_0.getValue());
+        assertEquals("patched+overriden:one:patched:other+patched", Enums.VALUE_1.getValue());
     }
 }

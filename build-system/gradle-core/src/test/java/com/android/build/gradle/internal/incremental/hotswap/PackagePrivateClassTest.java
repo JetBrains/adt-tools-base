@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.incremental;
+package com.android.build.gradle.internal.incremental.hotswap;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static org.junit.Assert.assertTrue;
 
 import com.android.build.gradle.internal.incremental.fixture.ClassEnhancement;
 import com.example.basic.PackagePrivateInvoker;
 
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -45,8 +45,7 @@ public class PackagePrivateClassTest {
         Class packagePrivateClass = PackagePrivateInvoker.class.getClassLoader()
                 .loadClass("com.example.basic.PackagePrivateClass");
         assertThat(packagePrivateClass).isNotNull();
-        assertThat(packagePrivateClass.getModifiers() & Opcodes.ACC_PUBLIC)
-                .isEqualTo(Opcodes.ACC_PUBLIC);
+        assertTrue(Modifier.isPublic(packagePrivateClass.getModifiers()));
         for (Method method : packagePrivateClass.getDeclaredMethods()) {
             assertWithMessage(method.getName() + " is package private")
                     .that(Modifier.isPublic(method.getModifiers())

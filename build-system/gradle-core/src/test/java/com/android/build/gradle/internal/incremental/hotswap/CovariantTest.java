@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,33 +14,37 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.incremental;
+package com.android.build.gradle.internal.incremental.hotswap;
 
-import static com.google.common.truth.Truth.assertWithMessage;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import com.android.build.gradle.internal.incremental.fixture.ClassEnhancement;
-import com.example.basic.NoPackageAccess;
+import com.example.basic.CovariantChild;
+import com.example.basic.CovariantParent;
 
 import org.junit.ClassRule;
 import org.junit.Test;
 
-public class NoPackageTest {
+/**
+ * Test for covariant return types.
+ */
+public class CovariantTest {
 
     @ClassRule
     public static ClassEnhancement harness = new ClassEnhancement();
 
     @Test
-    public void noPackageObjects() throws Exception {
+    public void invokeCovariantMethod() throws Exception {
         harness.reset();
 
-        NoPackageAccess noPackage = new NoPackageAccess();
+        CovariantChild child = new CovariantChild();
+        assertEquals("hellohello", child.getValue());
+        CovariantParent parent = child;
+        assertTrue(parent.getValue() instanceof String);
 
-        assertWithMessage("base: NoPackageAccess")
-                .that(noPackage.accessNativeArrayMethods()).isEqualTo("[1, 2, 3]: 3");
-
-        harness.applyPatch("changeBaseClass");
-
-        assertWithMessage("changeBaseClass: NoPackageAccess")
-                .that(noPackage.accessNativeArrayMethods()).isEqualTo("[4, 5, 6][:] 3");
+        harness.applyPatch("changeSubClass");
+        assertEquals("Modified child Modified parent", child.getValue());
+        assertTrue(parent.getValue() instanceof String);
     }
 }
