@@ -15,17 +15,15 @@
  */
 
 package com.android.build.gradle.integration.application
+
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.google.common.io.Files
 import groovy.transform.CompileStatic
-import org.junit.Before
+import org.gradle.api.JavaVersion
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
@@ -46,10 +44,23 @@ class MultiDexTest {
     void "check normal build"() {
         project.execute("assembleDebug", "assembleAndroidTest")
 
-        assertMainDexListContainsExactly("debug",
+        def expected = [
                 "com/android/tests/basic/Used",
                 "com/android/tests/basic/DeadCode",
-                "com/android/tests/basic/Main")
+                "com/android/tests/basic/Main"
+        ]
+
+        if (JavaVersion.current().isJava8Compatible()) {
+            // javac 1.8 puts the InnerClasses attribute from R to R$id inside classes that use
+            // R$id, like Main. The main dex list builder picks it up from the constant pool.
+            expected += [
+                    'com/android/tests/basic/R',
+                    'com/android/tests/basic/R$id',
+                    'com/android/tests/basic/R$layout',
+            ]
+        }
+
+        assertMainDexListContains("debug", expected)
 
         // manually inspect the apk to ensure that the classes.dex that was created is the same
         // one in the apk. This tests that the packaging didn't rename the multiple dex files
@@ -93,9 +104,9 @@ class MultiDexTest {
     void "check minified build"() {
         project.execute("assembleMinified")
 
-        assertMainDexListContainsExactly("minified",
-                "com/android/tests/basic/Used",
-                "com/android/tests/basic/Main")
+        assertMainDexListContains(
+                "minified",
+                [ "com/android/tests/basic/Used", "com/android/tests/basic/Main"])
 
         commonApkChecks("minified")
 
@@ -119,7 +130,7 @@ class MultiDexTest {
                 .containsClass("Lcom/android/tests/basic/Kept;")
     }
 
-    private assertMainDexListContainsExactly(String buildType, String... expected) {
+    private assertMainDexListContains(String buildType, List<String> expected) {
         // Jack do not produce maindexlist.txt
         if (GradleTestProject.USE_JACK) {
             return
