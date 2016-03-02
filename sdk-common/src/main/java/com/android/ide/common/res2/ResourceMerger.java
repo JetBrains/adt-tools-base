@@ -25,6 +25,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
+import com.android.ide.common.resources.configuration.ResourceQualifier;
 import com.android.resources.ResourceType;
 import com.android.utils.Pair;
 import com.google.common.collect.HashBasedTable;
@@ -476,8 +477,7 @@ public class ResourceMerger extends DataMerger<ResourceItem, ResourceFile, Resou
                 FolderConfiguration qualifierWithoutSdk;
 
                 int resourceMinSdk;
-                if (config.getVersionQualifier() == null
-                        || !config.getVersionQualifier().isValid()) {
+                if (!ResourceQualifier.isValid(config.getVersionQualifier())) {
                     resourceMinSdk = 0;
                     qualifierWithoutSdk = config;
                 } else {

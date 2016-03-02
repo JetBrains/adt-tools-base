@@ -23,6 +23,7 @@ import com.android.annotations.NonNull;
 import com.android.ide.common.res2.ResourcePreprocessor;
 import com.android.ide.common.resources.configuration.DensityQualifier;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
+import com.android.ide.common.resources.configuration.ResourceQualifier;
 import com.android.ide.common.resources.configuration.VersionQualifier;
 import com.android.ide.common.vectordrawable.VdPreview;
 import com.android.resources.Density;
@@ -83,7 +84,7 @@ public class VectorDrawableRenderer implements ResourcePreprocessor {
         FolderConfiguration originalConfiguration = getFolderConfiguration(inputXmlFile);
 
         DensityQualifier densityQualifier = originalConfiguration.getDensityQualifier();
-        boolean validDensityQualifier = densityQualifier != null && densityQualifier.isValid();
+        boolean validDensityQualifier = ResourceQualifier.isValid(densityQualifier);
         if (validDensityQualifier && densityQualifier.getValue() == Density.NODPI) {
             // If the files uses nodpi, just leave it alone.
             filesToBeGenerated.add(new File(
