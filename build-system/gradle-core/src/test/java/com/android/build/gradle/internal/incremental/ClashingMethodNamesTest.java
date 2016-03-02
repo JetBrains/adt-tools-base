@@ -30,7 +30,7 @@ import org.junit.rules.ErrorCollector;
 public class ClashingMethodNamesTest {
 
     @Rule
-    public Expect expect = Expect.create();
+    public Expect expect = Expect.createAndEnableStackTrace();
 
     @ClassRule
     public static ClassEnhancement harness = new ClassEnhancement(false);
