@@ -29,6 +29,7 @@ import com.android.build.gradle.managed.NativeSourceFolder;
 import com.android.build.gradle.managed.NativeToolchain;
 
 import org.gradle.api.Action;
+import org.gradle.model.internal.core.DuplicateModelException;
 
 import java.util.Map;
 
@@ -67,12 +68,18 @@ public class NativeBuildConfigGsonUtil {
         }
         if (value.toolchains != null) {
             for (final Map.Entry<String, NativeToolchainValue> entry : value.toolchains.entrySet()) {
-                config.getToolchains().create(entry.getKey(), new Action<NativeToolchain>() {
-                    @Override
-                    public void execute(NativeToolchain nativeToolchain) {
-                        copyToNativeToolchain(entry.getValue(), nativeToolchain);
-                    }
-                });
+                try {
+                    config.getToolchains().create(entry.getKey(), new Action<NativeToolchain>() {
+                        @Override
+                        public void execute(NativeToolchain nativeToolchain) {
+                            copyToNativeToolchain(entry.getValue(), nativeToolchain);
+                        }
+                    });
+                } catch (DuplicateModelException e) {
+                    // The same toolchain could be defined multiple times in different config files.
+                    // We should really verify that their contents are also the same,
+                    // but unfortunately NativeBuildConfig is write only.
+                }
             }
         }
         if (value.cFileExtensions != null) {
