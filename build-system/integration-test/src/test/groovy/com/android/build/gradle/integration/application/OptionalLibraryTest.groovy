@@ -89,7 +89,6 @@ class OptionalLibraryTest {
         AndroidTargetManager targetMgr = AndroidSdkHandler.getInstance(sdkLocation).
                 getAndroidTargetManager(progress)
         IAndroidTarget target = targetMgr.getTargetFromHashString('android-23', progress)
-        progress.assertNoErrorsOrWarnings()
 
         File targetLocation = new File(target.getLocation())
 
@@ -124,7 +123,6 @@ class OptionalLibraryTest {
         AndroidTargetManager targetMgr = AndroidSdkHandler.getInstance(sdkLocation).
                 getAndroidTargetManager(progress)
         IAndroidTarget target = targetMgr.getTargetFromHashString('android-23', progress)
-        progress.assertNoErrorsOrWarnings()
 
         File targetLocation = new File(target.getLocation())
 
