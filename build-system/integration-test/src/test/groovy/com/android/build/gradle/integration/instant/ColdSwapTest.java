@@ -56,7 +56,7 @@ public class ColdSwapTest {
             .fromTestApp(HelloWorldApp.forPlugin("com.android.application")).create();
 
     @Rule
-    public Expect expect = Expect.create();
+    public Expect expect = Expect.createAndEnableStackTrace();
 
     @Before
     public void activityClass() throws IOException {
