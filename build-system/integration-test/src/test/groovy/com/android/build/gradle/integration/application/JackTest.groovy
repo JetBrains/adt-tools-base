@@ -79,7 +79,7 @@ class JackTest {
 
     @BeforeClass
     static void setUp() {
-        AssumeUtil.assumeBuildToolsAtLeast(24, 0, 0)
+        AssumeUtil.assumeBuildToolsAtLeast(24, 0, 0, 1)
     }
 
     @AfterClass

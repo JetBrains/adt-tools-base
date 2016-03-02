@@ -35,10 +35,11 @@ import com.android.build.gradle.internal.dsl.BuildType;
 import com.android.build.gradle.internal.dsl.ProductFlavor;
 import com.android.build.gradle.internal.dsl.SigningConfig;
 import com.android.builder.core.AndroidBuilder;
+import com.android.builder.core.ErrorReporter;
 import com.android.builder.core.VariantType;
+import com.android.builder.model.SyncIssue;
 import com.google.common.collect.Lists;
 
-import org.gradle.api.GradleException;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.internal.reflect.Instantiator;
@@ -119,44 +120,93 @@ public class LibraryVariantFactory implements VariantFactory {
      */
     @Override
     public void validateModel(@NonNull VariantModel model) {
+        ErrorReporter errorReporter = androidBuilder.getErrorReporter();
+
         if (model.getDefaultConfig().getProductFlavor().getApplicationId() != null) {
-            throw new GradleException("Library projects cannot set applicationId. " +
-                    "applicationId is set to '" +
-                    model.getDefaultConfig().getProductFlavor().getApplicationId() +
-                    "' in default config.");
+            String applicationId = model.getDefaultConfig().getProductFlavor().getApplicationId();
+            errorReporter.handleSyncError(
+                    applicationId,
+                    SyncIssue.TYPE_GENERIC,
+                    "Library projects cannot set applicationId. " +
+                    "applicationId is set to '" + applicationId + "' in default config.");
         }
 
         if (model.getDefaultConfig().getProductFlavor().getApplicationIdSuffix() != null) {
-            throw new GradleException("Library projects cannot set applicationIdSuffix. " +
-                    "applicationIdSuffix is set to '" +
-                    model.getDefaultConfig().getProductFlavor().getApplicationIdSuffix() +
-                    "' in default config.");
+            String applicationIdSuffix =
+                    model.getDefaultConfig().getProductFlavor().getApplicationIdSuffix();
+            errorReporter.handleSyncError(
+                    applicationIdSuffix,
+                    SyncIssue.TYPE_GENERIC,
+                    "Library projects cannot set applicationIdSuffix. " +
+                    "applicationIdSuffix is set to '" + applicationIdSuffix + "' in default config.");
         }
 
         for (BuildTypeData buildType : model.getBuildTypes().values()) {
             if (buildType.getBuildType().getApplicationIdSuffix() != null) {
-                throw new GradleException("Library projects cannot set applicationIdSuffix. " +
-                        "applicationIdSuffix is set to '" +
-                        buildType.getBuildType().getApplicationIdSuffix() +
+                String applicationIdSuffix = buildType.getBuildType().getApplicationIdSuffix();
+                errorReporter.handleSyncError(
+                        applicationIdSuffix,
+                        SyncIssue.TYPE_GENERIC,
+                        "Library projects cannot set applicationIdSuffix. " +
+                        "applicationIdSuffix is set to '" + applicationIdSuffix +
                         "' in build type '" + buildType.getBuildType().getName() + "'.");
             }
         }
         for (ProductFlavorData productFlavor : model.getProductFlavors().values()) {
             if (productFlavor.getProductFlavor().getApplicationId() != null) {
-                throw new GradleException("Library projects cannot set applicationId. " +
-                        "applicationId is set to '" +
-                        productFlavor.getProductFlavor().getApplicationId() + "' in flavor '" +
+                String applicationId = productFlavor.getProductFlavor().getApplicationId();
+                errorReporter.handleSyncError(
+                        applicationId,
+                        SyncIssue.TYPE_GENERIC,
+                        "Library projects cannot set applicationId. " +
+                        "applicationId is set to '" + applicationId + "' in flavor '" +
                         productFlavor.getProductFlavor().getName() + "'.");
             }
 
             if (productFlavor.getProductFlavor().getApplicationIdSuffix() != null) {
-                throw new GradleException("Library projects cannot set applicationIdSuffix. " +
-                        "applicationIdSuffix is set to '" +
-                        productFlavor.getProductFlavor().getApplicationIdSuffix() +
+                String applicationIdSuffix =
+                        productFlavor.getProductFlavor().getApplicationIdSuffix();
+                errorReporter.handleSyncError(
+                        applicationIdSuffix,
+                        SyncIssue.TYPE_GENERIC,
+                        "Library projects cannot set applicationIdSuffix. " +
+                        "applicationIdSuffix is set to '" + applicationIdSuffix +
                         "' in flavor '" + productFlavor.getProductFlavor().getName() + "'.");
             }
         }
 
+        // Jack is not supported in library project.
+        for (BuildTypeData buildType: model.getBuildTypes().values()) {
+            if (Boolean.TRUE.equals(buildType.getBuildType().getJackOptions().isEnabled())) {
+                errorReporter.handleSyncError(
+                        buildType.getBuildType().getName(),
+                        SyncIssue.TYPE_GENERIC,
+                        "Library projects cannot enable Jack. " +
+                        "Jack is enabled in buildType '" + buildType.getBuildType().getName() +
+                        "'.");
+            }
+        }
+
+        for (ProductFlavorData productFlavor : model.getProductFlavors().values()) {
+            if (Boolean.TRUE.equals(
+                    productFlavor.getProductFlavor().getJackOptions().isEnabled())) {
+                errorReporter.handleSyncError(
+                        productFlavor.getProductFlavor().getName(),
+                        SyncIssue.TYPE_GENERIC,
+                        "Library projects cannot enable Jack. " +
+                        "Jack is enabled in productFlavor '" +
+                        productFlavor.getProductFlavor().getName() + "'.");
+            }
+        }
+
+        if (Boolean.TRUE.equals(
+                model.getDefaultConfig().getProductFlavor().getJackOptions().isEnabled())) {
+            errorReporter.handleSyncError(
+                    model.getDefaultConfig().getProductFlavor().getName(),
+                    SyncIssue.TYPE_GENERIC,
+                    "Library projects cannot enable Jack. " +
+                    "Jack is enabled in default config.");
+        }
     }
 
     @Override
