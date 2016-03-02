@@ -21,6 +21,7 @@ import static com.android.SdkConstants.DOT_XML;
 import com.android.ide.common.rendering.api.DensityBasedResourceValue;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.resources.configuration.DensityQualifier;
+import com.android.ide.common.resources.configuration.ResourceQualifier;
 import com.android.io.IAbstractFile;
 import com.android.resources.FolderTypeRelationship;
 import com.android.resources.ResourceType;
@@ -62,7 +63,7 @@ public class SingleResourceFile extends ResourceFile {
         // test if there's a density qualifier associated with the resource
         DensityQualifier qualifier = folder.getConfiguration().getDensityQualifier();
 
-        if (qualifier == null || !qualifier.isValid()) {
+        if (!ResourceQualifier.isValid(qualifier)) {
             mValue = new ResourceValue(mType, getResourceName(mType),
                     file.getOsLocation(), isFramework());
         } else {

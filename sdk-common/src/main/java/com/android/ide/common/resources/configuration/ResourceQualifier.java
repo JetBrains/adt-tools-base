@@ -157,4 +157,8 @@ public abstract class ResourceQualifier implements Comparable<ResourceQualifier>
     public final int compareTo(@NonNull ResourceQualifier o) {
         return toString().compareTo(o.toString());
     }
+
+    public static boolean isValid(@Nullable ResourceQualifier qualifier) {
+        return qualifier != null && qualifier.isValid();
+    }
 }

@@ -374,7 +374,7 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
                     boolean localeOnly = true;
                     for (int i = 0, n = FolderConfiguration.getQualifierCount(); i < n; i++) {
                         ResourceQualifier qualifier = config.getQualifier(i);
-                        if (qualifier != null && qualifier.isValid()
+                        if (ResourceQualifier.isValid(qualifier)
                                 && !(qualifier instanceof LocaleQualifier)) {
                             localeOnly = false;
                             break;
