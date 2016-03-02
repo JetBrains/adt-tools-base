@@ -887,8 +887,6 @@ public class GradleTestProject implements TestRule {
 
         } finally {
             connection.close();
-            System.out.print(getStdout());
-            System.err.print(getStderr());
         }
     }
 
@@ -1077,8 +1075,6 @@ public class GradleTestProject implements TestRule {
             }
         } finally {
             connection.close();
-            System.out.print(getStdout());
-            System.err.print(getStderr());
         }
 
         return null;
@@ -1125,8 +1121,8 @@ public class GradleTestProject implements TestRule {
 
         stdout.reset();
         stderr.reset();
-        launcher.setStandardOutput(stdout);
-        launcher.setStandardError(stderr);
+        launcher.setStandardOutput(new TeeOutputStream(stdout, System.out));
+        launcher.setStandardError(new TeeOutputStream(stderr, System.err));
         launcher.run(resultHandler);
     }
 
