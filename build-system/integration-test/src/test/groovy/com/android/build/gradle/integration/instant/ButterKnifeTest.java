@@ -45,8 +45,8 @@ import java.io.IOException;
 
 public class ButterKnifeTest {
     private static final ColdswapMode COLDSWAP_MODE = ColdswapMode.MULTIDEX;
-    private static final String ORIGINAL_MESSAGE = "foo";
-    private static final String HOTSWAP_MESSAGE = "clicked";
+    private static final String ORIGINAL_MESSAGE = "original";
+    private static final String HOTSWAP_MESSAGE = "hotswap";
 
     @Rule
     public GradleTestProject project =
@@ -121,7 +121,7 @@ public class ButterKnifeTest {
 
     private void makeHotSwapChange() throws Exception {
         TestFileUtils.searchAndReplace(mActiv, "text\\.getText\\(\\)\\.toString\\(\\)",
-                "\"clicked!\"");
+                "\""+ HOTSWAP_MESSAGE +"\"");
     }
 
     @Test
