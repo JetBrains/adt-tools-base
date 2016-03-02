@@ -99,7 +99,11 @@ public class LibDependencyTest {
                 + "    compile project(':javalib')\n"
                 + "}\n");
         mkdirs(project.file("javalib"));
-        Files.write("apply plugin: 'java'\n", project.file("javalib/build.gradle"), Charsets.UTF_8);
+        Files.write(
+                "apply plugin: 'java'\n"
+                + "targetCompatibility = '1.6'\n"
+                + "sourceCompatibility = '1.6'\n",
+                project.file("javalib/build.gradle"), Charsets.UTF_8);
         createJavaLibraryClass("original");
 
         Map<String, AndroidProject> projects = project.getAllModels();
