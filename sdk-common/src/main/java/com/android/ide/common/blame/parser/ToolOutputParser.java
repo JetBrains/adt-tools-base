@@ -35,18 +35,31 @@ public class ToolOutputParser {
     @NonNull
     private final ILogger mLogger;
 
+    @NonNull
+    private final Message.Kind mUnparsedMessageKind;
+
     public ToolOutputParser(@NonNull Iterable<PatternAwareOutputParser> parsers, @NonNull ILogger logger) {
-        mParsers = ImmutableList.copyOf(parsers);
-        mLogger = logger;
+        this(ImmutableList.copyOf(parsers), Message.Kind.SIMPLE, logger);
     }
 
     public ToolOutputParser(@NonNull PatternAwareOutputParser [] parsers, @NonNull ILogger logger) {
-        mParsers = ImmutableList.copyOf(parsers);
-        mLogger = logger;
+        this(ImmutableList.copyOf(parsers), Message.Kind.SIMPLE, logger);
     }
 
     public ToolOutputParser(@NonNull PatternAwareOutputParser parser, @NonNull ILogger logger) {
-        mParsers = ImmutableList.of(parser);
+        this(ImmutableList.of(parser), Message.Kind.SIMPLE, logger);
+    }
+
+    public ToolOutputParser(@NonNull PatternAwareOutputParser parser,
+            @NonNull Message.Kind unparsedMessageKind, @NonNull ILogger logger) {
+        this(ImmutableList.of(parser), unparsedMessageKind, logger);
+    }
+
+    private ToolOutputParser(@NonNull ImmutableList<PatternAwareOutputParser> parsers,
+            @NonNull Message.Kind unparsedMessageKind,
+            @NonNull ILogger logger) {
+        mParsers = parsers;
+        mUnparsedMessageKind = unparsedMessageKind;
         mLogger = logger;
     }
 
@@ -90,7 +103,7 @@ public class ToolOutputParser {
                 // that users don't miss potentially vital output such as gradle plugin exceptions.
                 // If there is predictable useless input we don't want to appear here, add a custom
                 // parser to digest it.
-                messages.add(new Message(Message.Kind.SIMPLE, line, SourceFilePosition.UNKNOWN));
+                messages.add(new Message(mUnparsedMessageKind, line, SourceFilePosition.UNKNOWN));
             }
         }
         return messages;
