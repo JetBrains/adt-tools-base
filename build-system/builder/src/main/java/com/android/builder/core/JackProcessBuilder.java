@@ -198,8 +198,6 @@ public class JackProcessBuilder extends ProcessEnvBuilder<JackProcessBuilder> {
 
         builder.addArgs("-D", "jack.import.resource.policy=keep-first");
 
-        builder.addArgs("-D", "jack.reporter=sdk");
-
         if (mProguardFiles != null && !mProguardFiles.isEmpty()) {
             for (File file : mProguardFiles) {
                 builder.addArgs("--config-proguard", file.getAbsolutePath());

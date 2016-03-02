@@ -20,6 +20,7 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.utils.AssumeUtil
 import com.google.common.collect.ImmutableList
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
@@ -78,7 +79,7 @@ class JackTest {
 
     @BeforeClass
     static void setUp() {
-        GradleTestProject.assumeBuildToolsAtLeast(24, 0, 0)
+        AssumeUtil.assumeBuildToolsAtLeast(24, 0, 0)
     }
 
     @AfterClass

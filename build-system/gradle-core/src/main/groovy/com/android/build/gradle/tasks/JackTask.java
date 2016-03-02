@@ -188,7 +188,7 @@ public class JackTask extends AbstractAndroidCompile
         StringBuilder sb = new StringBuilder();
 
         for (File sourceFile : getSource().getFiles()) {
-            sb.append(sourceFile.getAbsolutePath()).append("\n");
+            sb.append('\"').append(sourceFile.getAbsolutePath()).append('\"').append("\n");
         }
 
         //noinspection ResultOfMethodCallIgnored
