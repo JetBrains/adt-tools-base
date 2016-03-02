@@ -31,11 +31,12 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
-import android.text.format.Time;
 import android.view.SurfaceHolder;
 import android.view.WindowInsets;
+<#if isInteractive>import android.widget.Toast;</#if>
 
 import java.lang.ref.WeakReference;
+import java.util.Calendar;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
@@ -69,8 +70,8 @@ public class ${serviceClass} extends CanvasWatchFaceService {
         final BroadcastReceiver mTimeZoneReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                mTime.clear(intent.getStringExtra("time-zone"));
-                mTime.setToNow();
+                mCalendar.setTimeZone(TimeZone.getDefault());
+                invalidate();
             }
         };
         boolean mRegisteredTimeZoneReceiver = false;
@@ -79,10 +80,7 @@ public class ${serviceClass} extends CanvasWatchFaceService {
         Paint mTextPaint;
 
         boolean mAmbient;
-        Time mTime;
-<#if isInteractive>
-        int mTapCount;
-</#if>
+        Calendar mCalendar;
 
         float mXOffset;
         float mYOffset;
@@ -114,7 +112,7 @@ public class ${serviceClass} extends CanvasWatchFaceService {
             mTextPaint = new Paint();
             mTextPaint = createTextPaint(resources.getColor(R.color.digital_text));
 
-            mTime = new Time();
+            mCalendar = Calendar.getInstance();
         }
 
         @Override
@@ -139,8 +137,8 @@ public class ${serviceClass} extends CanvasWatchFaceService {
                 registerReceiver();
 
                 // Update time zone in case it changed while we weren't visible.
-                mTime.clear(TimeZone.getDefault().getID());
-                mTime.setToNow();
+                mCalendar.setTimeZone(TimeZone.getDefault());
+                invalidate();
             } else {
                 unregisterReceiver();
             }
@@ -217,7 +215,6 @@ public class ${serviceClass} extends CanvasWatchFaceService {
          */
         @Override
         public void onTapCommand(int tapType, int x, int y, long eventTime) {
-            Resources resources = ${serviceClass}.this.getResources();
             switch (tapType) {
                 case TAP_TYPE_TOUCH:
                     // The user has started touching the screen.
@@ -227,9 +224,9 @@ public class ${serviceClass} extends CanvasWatchFaceService {
                     break;
                 case TAP_TYPE_TAP:
                     // The user has completed the tap gesture.
-                    mTapCount++;
-                    mBackgroundPaint.setColor(resources.getColor(mTapCount % 2 == 0 ?
-                            R.color.background : R.color.background2));
+                    // TODO: Add code to handle the tap gesture.
+                    Toast.makeText(getApplicationContext(), R.string.message, Toast.LENGTH_SHORT)
+                            .show();
                     break;
             }
             invalidate();
@@ -246,10 +243,14 @@ public class ${serviceClass} extends CanvasWatchFaceService {
             }
 
             // Draw H:MM in ambient mode or H:MM:SS in interactive mode.
-            mTime.setToNow();
+            long now = System.currentTimeMillis();
+            mCalendar.setTimeInMillis(now);
+
             String text = mAmbient
-                    ? String.format("%d:%02d", mTime.hour, mTime.minute)
-                    : String.format("%d:%02d:%02d", mTime.hour, mTime.minute, mTime.second);
+                    ? String.format("%d:%02d", mCalendar.get(Calendar.HOUR),
+                            mCalendar.get(Calendar.MINUTE))
+                    : String.format("%d:%02d:%02d", mCalendar.get(Calendar.HOUR),
+                            mCalendar.get(Calendar.MINUTE), mCalendar.get(Calendar.SECOND));
             canvas.drawText(text, mXOffset, mYOffset, mTextPaint);
         }
 
