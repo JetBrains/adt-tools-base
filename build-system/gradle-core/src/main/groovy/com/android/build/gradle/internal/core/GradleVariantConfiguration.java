@@ -161,7 +161,7 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
             return value;
         }
 
-        return false;
+        return true;
     }
 
     private void computeNdkConfig() {
