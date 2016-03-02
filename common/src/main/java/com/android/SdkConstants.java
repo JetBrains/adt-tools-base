@@ -625,6 +625,8 @@ public final class SdkConstants {
     public static final String CLASS_DETAILS_FRAGMENT = "android.support.v17.leanback.app.DetailsFragment";  //$NON-NLS-1$
     public static final String CLASS_PLAYBACK_OVERLAY_FRAGMENT = "android.support.v17.leanback.app.PlaybackOverlayFragment";  //$NON-NLS-1$
     public static final String CLASS_SEARCH_FRAGMENT = "android.support.v17.leanback.app.SearchFragment";  //$NON-NLS-1$
+    public static final String CLASS_PERCENT_RELATIVE_LAYOUT = "android.support.percent.PercentRelativeLayout"; //$NON-NLS-1$
+    public static final String CLASS_PERCENT_FRAME_LAYOUT = "android.support.percent.PercentFrameLayout"; //$NON-NLS-1$
 
 
     /** Returns the appropriate name for the 'android' command, which is 'android.exe' for
@@ -1430,7 +1432,7 @@ public final class SdkConstants {
     /** The fully qualified class name of a RelativeLayout view */
     public static final String FQCN_RELATIVE_LAYOUT = "android.widget.RelativeLayout"; //$NON-NLS-1$
 
-    /** The fully qualified class name of a RelativeLayout view */
+    /** The fully qualified class name of a GridLayout view */
     public static final String FQCN_GRID_LAYOUT = "android.widget.GridLayout"; //$NON-NLS-1$
     public static final String FQCN_GRID_LAYOUT_V7 = "android.support.v7.widget.GridLayout"; //$NON-NLS-1$
 
