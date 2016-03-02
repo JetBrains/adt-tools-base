@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,32 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.external.gson;
+package com.android.build.gradle.internal.gson;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.managed.NativeSourceFile;
 
 import java.io.File;
 import java.util.List;
 
 /**
- * Value type to be used with Gson.
+ * Value type for {@link NativeSourceFile} to be used with Gson.
  */
 public class NativeSourceFileValue {
     @Nullable
-    public File src;
+    File src;
     @Nullable
-    public List<String> flags;
+    List<String> flags;
     @Nullable
-    public File workingDirectory;
+    File workingDirectory;
+
+    void copyTo(@NonNull NativeSourceFile file) {
+        file.setSrc(src);
+        if (flags != null) {
+            file.getFlags().clear();
+            file.getFlags().addAll(flags);
+        }
+        file.setWorkingDirectory(workingDirectory);
+    }
 }
