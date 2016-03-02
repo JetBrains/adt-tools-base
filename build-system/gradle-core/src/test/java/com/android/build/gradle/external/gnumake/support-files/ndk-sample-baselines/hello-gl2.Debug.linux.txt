@@ -1,0 +1,136 @@
+rm -f {ndkPath}/samples/hello-gl2/libs/arm64-v8a/lib*.so {ndkPath}/samples/hello-gl2/libs/armeabi/lib*.so {ndkPath}/samples/hello-gl2/libs/armeabi-v7a/lib*.so {ndkPath}/samples/hello-gl2/libs/armeabi-v7a-hard/lib*.so {ndkPath}/samples/hello-gl2/libs/mips/lib*.so {ndkPath}/samples/hello-gl2/libs/mips64/lib*.so {ndkPath}/samples/hello-gl2/libs/x86/lib*.so {ndkPath}/samples/hello-gl2/libs/x86_64/lib*.so
+rm -f {ndkPath}/samples/hello-gl2/libs/arm64-v8a/gdbserver {ndkPath}/samples/hello-gl2/libs/armeabi/gdbserver {ndkPath}/samples/hello-gl2/libs/armeabi-v7a/gdbserver {ndkPath}/samples/hello-gl2/libs/armeabi-v7a-hard/gdbserver {ndkPath}/samples/hello-gl2/libs/mips/gdbserver {ndkPath}/samples/hello-gl2/libs/mips64/gdbserver {ndkPath}/samples/hello-gl2/libs/x86/gdbserver {ndkPath}/samples/hello-gl2/libs/x86_64/gdbserver
+rm -f {ndkPath}/samples/hello-gl2/libs/arm64-v8a/gdb.setup {ndkPath}/samples/hello-gl2/libs/armeabi/gdb.setup {ndkPath}/samples/hello-gl2/libs/armeabi-v7a/gdb.setup {ndkPath}/samples/hello-gl2/libs/armeabi-v7a-hard/gdb.setup {ndkPath}/samples/hello-gl2/libs/mips/gdb.setup {ndkPath}/samples/hello-gl2/libs/mips64/gdb.setup {ndkPath}/samples/hello-gl2/libs/x86/gdb.setup {ndkPath}/samples/hello-gl2/libs/x86_64/gdb.setup
+mkdir -p {ndkPath}/samples/hello-gl2/libs/arm64-v8a
+echo [arm64-v8a] "Gdbserver      ": "[aarch64-{platform}-android-4.9] libs/arm64-v8a/gdbserver"
+install -p {ndkPath}/prebuilt/android-arm64/gdbserver/gdbserver {ndkPath}/samples/hello-gl2/libs/arm64-v8a/gdbserver
+echo [arm64-v8a] "Gdbsetup       ": "libs/arm64-v8a/gdb.setup"
+echo "set solib-search-path {ndkPath}/samples/hello-gl2/obj/local/arm64-v8a" > {ndkPath}/samples/hello-gl2/libs/arm64-v8a/gdb.setup
+echo "source {ndkPath}/prebuilt/common/gdb/common.setup" >> {ndkPath}/samples/hello-gl2/libs/arm64-v8a/gdb.setup
+echo "directory {ndkPath}/platforms/android-21/arch-arm64/usr/include {ndkPath}/sources/cxx-stl/system/include {ndkPath}/samples/hello-gl2/jni" >> {ndkPath}/samples/hello-gl2/libs/arm64-v8a/gdb.setup
+mkdir -p {ndkPath}/samples/hello-gl2/libs/x86_64
+echo [x86_64] "Gdbserver      ": "[x86_64-4.9] libs/x86_64/gdbserver"
+install -p {ndkPath}/prebuilt/android-x86_64/gdbserver/gdbserver {ndkPath}/samples/hello-gl2/libs/x86_64/gdbserver
+echo [x86_64] "Gdbsetup       ": "libs/x86_64/gdb.setup"
+echo "set solib-search-path {ndkPath}/samples/hello-gl2/obj/local/x86_64" > {ndkPath}/samples/hello-gl2/libs/x86_64/gdb.setup
+echo "source {ndkPath}/prebuilt/common/gdb/common.setup" >> {ndkPath}/samples/hello-gl2/libs/x86_64/gdb.setup
+echo "directory {ndkPath}/platforms/android-21/arch-x86_64/usr/include {ndkPath}/sources/cxx-stl/system/include {ndkPath}/samples/hello-gl2/jni" >> {ndkPath}/samples/hello-gl2/libs/x86_64/gdb.setup
+mkdir -p {ndkPath}/samples/hello-gl2/libs/mips64
+echo [mips64] "Gdbserver      ": "[mips64el-{platform}-android-4.9] libs/mips64/gdbserver"
+install -p {ndkPath}/prebuilt/android-mips64/gdbserver/gdbserver {ndkPath}/samples/hello-gl2/libs/mips64/gdbserver
+echo [mips64] "Gdbsetup       ": "libs/mips64/gdb.setup"
+echo "set solib-search-path {ndkPath}/samples/hello-gl2/obj/local/mips64" > {ndkPath}/samples/hello-gl2/libs/mips64/gdb.setup
+echo "source {ndkPath}/prebuilt/common/gdb/common.setup" >> {ndkPath}/samples/hello-gl2/libs/mips64/gdb.setup
+echo "directory {ndkPath}/platforms/android-21/arch-mips64/usr/include {ndkPath}/sources/cxx-stl/system/include {ndkPath}/samples/hello-gl2/jni" >> {ndkPath}/samples/hello-gl2/libs/mips64/gdb.setup
+mkdir -p {ndkPath}/samples/hello-gl2/libs/armeabi-v7a
+echo [armeabi-v7a] "Gdbserver      ": "[arm-{platform}-androideabi-4.8] libs/armeabi-v7a/gdbserver"
+install -p {ndkPath}/prebuilt/android-arm/gdbserver/gdbserver {ndkPath}/samples/hello-gl2/libs/armeabi-v7a/gdbserver
+echo [armeabi-v7a] "Gdbsetup       ": "libs/armeabi-v7a/gdb.setup"
+echo "set solib-search-path {ndkPath}/samples/hello-gl2/obj/local/armeabi-v7a" > {ndkPath}/samples/hello-gl2/libs/armeabi-v7a/gdb.setup
+echo "source {ndkPath}/prebuilt/common/gdb/common.setup" >> {ndkPath}/samples/hello-gl2/libs/armeabi-v7a/gdb.setup
+echo "directory {ndkPath}/platforms/android-5/arch-arm/usr/include {ndkPath}/sources/cxx-stl/system/include {ndkPath}/samples/hello-gl2/jni" >> {ndkPath}/samples/hello-gl2/libs/armeabi-v7a/gdb.setup
+mkdir -p {ndkPath}/samples/hello-gl2/libs/armeabi
+echo [armeabi] "Gdbserver      ": "[arm-{platform}-androideabi-4.8] libs/armeabi/gdbserver"
+install -p {ndkPath}/prebuilt/android-arm/gdbserver/gdbserver {ndkPath}/samples/hello-gl2/libs/armeabi/gdbserver
+echo [armeabi] "Gdbsetup       ": "libs/armeabi/gdb.setup"
+echo "set solib-search-path {ndkPath}/samples/hello-gl2/obj/local/armeabi" > {ndkPath}/samples/hello-gl2/libs/armeabi/gdb.setup
+echo "source {ndkPath}/prebuilt/common/gdb/common.setup" >> {ndkPath}/samples/hello-gl2/libs/armeabi/gdb.setup
+echo "directory {ndkPath}/platforms/android-5/arch-arm/usr/include {ndkPath}/sources/cxx-stl/system/include {ndkPath}/samples/hello-gl2/jni" >> {ndkPath}/samples/hello-gl2/libs/armeabi/gdb.setup
+mkdir -p {ndkPath}/samples/hello-gl2/libs/x86
+echo [x86] "Gdbserver      ": "[x86-4.8] libs/x86/gdbserver"
+install -p {ndkPath}/prebuilt/android-x86/gdbserver/gdbserver {ndkPath}/samples/hello-gl2/libs/x86/gdbserver
+echo [x86] "Gdbsetup       ": "libs/x86/gdb.setup"
+echo "set solib-search-path {ndkPath}/samples/hello-gl2/obj/local/x86" > {ndkPath}/samples/hello-gl2/libs/x86/gdb.setup
+echo "source {ndkPath}/prebuilt/common/gdb/common.setup" >> {ndkPath}/samples/hello-gl2/libs/x86/gdb.setup
+echo "directory {ndkPath}/platforms/android-9/arch-x86/usr/include {ndkPath}/sources/cxx-stl/system/include {ndkPath}/samples/hello-gl2/jni" >> {ndkPath}/samples/hello-gl2/libs/x86/gdb.setup
+mkdir -p {ndkPath}/samples/hello-gl2/libs/mips
+echo [mips] "Gdbserver      ": "[mipsel-{platform}-android-4.8] libs/mips/gdbserver"
+install -p {ndkPath}/prebuilt/android-mips/gdbserver/gdbserver {ndkPath}/samples/hello-gl2/libs/mips/gdbserver
+echo [mips] "Gdbsetup       ": "libs/mips/gdb.setup"
+echo "set solib-search-path {ndkPath}/samples/hello-gl2/obj/local/mips" > {ndkPath}/samples/hello-gl2/libs/mips/gdb.setup
+echo "source {ndkPath}/prebuilt/common/gdb/common.setup" >> {ndkPath}/samples/hello-gl2/libs/mips/gdb.setup
+echo "directory {ndkPath}/platforms/android-9/arch-mips/usr/include {ndkPath}/sources/cxx-stl/system/include {ndkPath}/samples/hello-gl2/jni" >> {ndkPath}/samples/hello-gl2/libs/mips/gdb.setup
+mkdir -p {ndkPath}/samples/hello-gl2/obj/local/arm64-v8a/objs-debug/gl2jni
+echo [arm64-v8a] "Compile++      ": "gl2jni <= gl_code.cpp"
+{ndkPath}/toolchains/aarch64-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/aarch64-{platform}-android-g++ -MMD -MP -MF {ndkPath}/samples/hello-gl2/obj/local/arm64-v8a/objs-debug/gl2jni/gl_code.o.d -fpic -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -fno-exceptions -fno-rtti -O2 -g -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -funswitch-loops -finline-limit=300 -O0 -UNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing -I{ndkPath}/sources/cxx-stl/system/include -I{ndkPath}/samples/hello-gl2/jni -DANDROID -Werror -Wa,--noexecstack -Wformat -Werror=format-security      -I{ndkPath}/platforms/android-21/arch-arm64/usr/include -c  {ndkPath}/samples/hello-gl2/jni/gl_code.cpp -o {ndkPath}/samples/hello-gl2/obj/local/arm64-v8a/objs-debug/gl2jni/gl_code.o 
+mkdir -p {ndkPath}/samples/hello-gl2/obj/local/arm64-v8a
+echo [arm64-v8a] "StaticLibrary  ": "libstdc++.a"
+rm -f {ndkPath}/samples/hello-gl2/obj/local/arm64-v8a/libstdc++.a
+{ndkPath}/toolchains/aarch64-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/aarch64-{platform}-android-gcc-ar crsD {ndkPath}/samples/hello-gl2/obj/local/arm64-v8a/libstdc++.a 
+echo [arm64-v8a] "SharedLibrary  ": "libgl2jni.so"
+{ndkPath}/toolchains/aarch64-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/aarch64-{platform}-android-g++ -Wl,-soname,libgl2jni.so -shared --sysroot={ndkPath}/platforms/android-21/arch-arm64 {ndkPath}/samples/hello-gl2/obj/local/arm64-v8a/objs-debug/gl2jni/gl_code.o {ndkPath}/samples/hello-gl2/obj/local/arm64-v8a/libstdc++.a -lgcc -no-canonical-prefixes  -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now  -L{ndkPath}/platforms/android-21/arch-arm64/usr/lib -llog -lGLESv2 -lstdc++ -lc -lm -o {ndkPath}/samples/hello-gl2/obj/local/arm64-v8a/libgl2jni.so
+echo [arm64-v8a] "Install        ": "libgl2jni.so => libs/arm64-v8a/libgl2jni.so"
+install -p {ndkPath}/samples/hello-gl2/obj/local/arm64-v8a/libgl2jni.so {ndkPath}/samples/hello-gl2/libs/arm64-v8a/libgl2jni.so
+{ndkPath}/toolchains/aarch64-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/aarch64-{platform}-android-strip --strip-unneeded  {ndkPath}/samples/hello-gl2/libs/arm64-v8a/libgl2jni.so
+mkdir -p {ndkPath}/samples/hello-gl2/obj/local/x86_64/objs-debug/gl2jni
+echo [x86_64] "Compile++      ": "gl2jni <= gl_code.cpp"
+{ndkPath}/toolchains/x86_64-4.9/prebuilt/{platform}-x86_64/bin/x86_64-{platform}-android-g++ -MMD -MP -MF {ndkPath}/samples/hello-gl2/obj/local/x86_64/objs-debug/gl2jni/gl_code.o.d -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -fno-exceptions -fno-rtti -O2 -g -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -funswitch-loops -finline-limit=300 -O0 -UNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing -I{ndkPath}/sources/cxx-stl/system/include -I{ndkPath}/samples/hello-gl2/jni -DANDROID -Werror -Wa,--noexecstack -Wformat -Werror=format-security      -I{ndkPath}/platforms/android-21/arch-x86_64/usr/include -c  {ndkPath}/samples/hello-gl2/jni/gl_code.cpp -o {ndkPath}/samples/hello-gl2/obj/local/x86_64/objs-debug/gl2jni/gl_code.o 
+mkdir -p {ndkPath}/samples/hello-gl2/obj/local/x86_64
+echo [x86_64] "StaticLibrary  ": "libstdc++.a"
+rm -f {ndkPath}/samples/hello-gl2/obj/local/x86_64/libstdc++.a
+{ndkPath}/toolchains/x86_64-4.9/prebuilt/{platform}-x86_64/bin/x86_64-{platform}-android-gcc-ar crsD {ndkPath}/samples/hello-gl2/obj/local/x86_64/libstdc++.a 
+echo [x86_64] "SharedLibrary  ": "libgl2jni.so"
+{ndkPath}/toolchains/x86_64-4.9/prebuilt/{platform}-x86_64/bin/x86_64-{platform}-android-g++ -Wl,-soname,libgl2jni.so -shared --sysroot={ndkPath}/platforms/android-21/arch-x86_64 {ndkPath}/samples/hello-gl2/obj/local/x86_64/objs-debug/gl2jni/gl_code.o {ndkPath}/samples/hello-gl2/obj/local/x86_64/libstdc++.a -lgcc -no-canonical-prefixes  -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now  -L{ndkPath}/platforms/android-21/arch-x86_64/usr/lib64 -L{ndkPath}/platforms/android-21/arch-x86_64/usr/lib -llog -lGLESv2 -lstdc++ -lc -lm -o {ndkPath}/samples/hello-gl2/obj/local/x86_64/libgl2jni.so
+echo [x86_64] "Install        ": "libgl2jni.so => libs/x86_64/libgl2jni.so"
+install -p {ndkPath}/samples/hello-gl2/obj/local/x86_64/libgl2jni.so {ndkPath}/samples/hello-gl2/libs/x86_64/libgl2jni.so
+{ndkPath}/toolchains/x86_64-4.9/prebuilt/{platform}-x86_64/bin/x86_64-{platform}-android-strip --strip-unneeded  {ndkPath}/samples/hello-gl2/libs/x86_64/libgl2jni.so
+mkdir -p {ndkPath}/samples/hello-gl2/obj/local/mips64/objs-debug/gl2jni
+echo [mips64] "Compile++      ": "gl2jni <= gl_code.cpp"
+{ndkPath}/toolchains/mips64el-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/mips64el-{platform}-android-g++ -MMD -MP -MF {ndkPath}/samples/hello-gl2/obj/local/mips64/objs-debug/gl2jni/gl_code.o.d -fpic -fno-strict-aliasing -finline-functions -ffunction-sections -funwind-tables -fmessage-length=0 -fno-inline-functions-called-once -fgcse-after-reload -frerun-cse-after-loop -frename-registers -no-canonical-prefixes -fno-exceptions -fno-rtti -O0 -g -fno-omit-frame-pointer -I{ndkPath}/sources/cxx-stl/system/include -I{ndkPath}/samples/hello-gl2/jni -DANDROID -Werror -Wa,--noexecstack -Wformat -Werror=format-security      -I{ndkPath}/platforms/android-21/arch-mips64/usr/include -c  {ndkPath}/samples/hello-gl2/jni/gl_code.cpp -o {ndkPath}/samples/hello-gl2/obj/local/mips64/objs-debug/gl2jni/gl_code.o 
+mkdir -p {ndkPath}/samples/hello-gl2/obj/local/mips64
+echo [mips64] "StaticLibrary  ": "libstdc++.a"
+rm -f {ndkPath}/samples/hello-gl2/obj/local/mips64/libstdc++.a
+{ndkPath}/toolchains/mips64el-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/mips64el-{platform}-android-gcc-ar crsD {ndkPath}/samples/hello-gl2/obj/local/mips64/libstdc++.a 
+echo [mips64] "SharedLibrary  ": "libgl2jni.so"
+{ndkPath}/toolchains/mips64el-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/mips64el-{platform}-android-g++ -Wl,-soname,libgl2jni.so -shared --sysroot={ndkPath}/platforms/android-21/arch-mips64 {ndkPath}/samples/hello-gl2/obj/local/mips64/objs-debug/gl2jni/gl_code.o {ndkPath}/samples/hello-gl2/obj/local/mips64/libstdc++.a -lgcc -no-canonical-prefixes  -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now  -L{ndkPath}/platforms/android-21/arch-mips64/usr/lib64 -L{ndkPath}/platforms/android-21/arch-mips64/usr/lib -llog -lGLESv2 -lstdc++ -lc -lm -o {ndkPath}/samples/hello-gl2/obj/local/mips64/libgl2jni.so
+echo [mips64] "Install        ": "libgl2jni.so => libs/mips64/libgl2jni.so"
+install -p {ndkPath}/samples/hello-gl2/obj/local/mips64/libgl2jni.so {ndkPath}/samples/hello-gl2/libs/mips64/libgl2jni.so
+{ndkPath}/toolchains/mips64el-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/mips64el-{platform}-android-strip --strip-unneeded  {ndkPath}/samples/hello-gl2/libs/mips64/libgl2jni.so
+mkdir -p {ndkPath}/samples/hello-gl2/obj/local/armeabi-v7a/objs-debug/gl2jni
+echo [armeabi-v7a] "Compile++ thumb": "gl2jni <= gl_code.cpp"
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-g++ -MMD -MP -MF {ndkPath}/samples/hello-gl2/obj/local/armeabi-v7a/objs-debug/gl2jni/gl_code.o.d -fpic -ffunction-sections -funwind-tables -fstack-protector -no-canonical-prefixes -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp -fno-exceptions -fno-rtti -mthumb -Os -g -DNDEBUG -fomit-frame-pointer -fno-strict-aliasing -finline-limit=64 -O0 -UNDEBUG -marm -fno-omit-frame-pointer -I{ndkPath}/sources/cxx-stl/system/include -I{ndkPath}/samples/hello-gl2/jni -DANDROID -Werror -Wa,--noexecstack -Wformat -Werror=format-security      -I{ndkPath}/platforms/android-5/arch-arm/usr/include -c  {ndkPath}/samples/hello-gl2/jni/gl_code.cpp -o {ndkPath}/samples/hello-gl2/obj/local/armeabi-v7a/objs-debug/gl2jni/gl_code.o 
+mkdir -p {ndkPath}/samples/hello-gl2/obj/local/armeabi-v7a
+echo [armeabi-v7a] "StaticLibrary  ": "libstdc++.a"
+rm -f {ndkPath}/samples/hello-gl2/obj/local/armeabi-v7a/libstdc++.a
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-gcc-ar crsD {ndkPath}/samples/hello-gl2/obj/local/armeabi-v7a/libstdc++.a 
+echo [armeabi-v7a] "SharedLibrary  ": "libgl2jni.so"
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-g++ -Wl,-soname,libgl2jni.so -shared --sysroot={ndkPath}/platforms/android-5/arch-arm {ndkPath}/samples/hello-gl2/obj/local/armeabi-v7a/objs-debug/gl2jni/gl_code.o {ndkPath}/samples/hello-gl2/obj/local/armeabi-v7a/libstdc++.a -lgcc -no-canonical-prefixes -march=armv7-a -Wl,--fix-cortex-a8  -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now  -L{ndkPath}/platforms/android-5/arch-arm/usr/lib -llog -lGLESv2 -lstdc++ -lc -lm -o {ndkPath}/samples/hello-gl2/obj/local/armeabi-v7a/libgl2jni.so
+echo [armeabi-v7a] "Install        ": "libgl2jni.so => libs/armeabi-v7a/libgl2jni.so"
+install -p {ndkPath}/samples/hello-gl2/obj/local/armeabi-v7a/libgl2jni.so {ndkPath}/samples/hello-gl2/libs/armeabi-v7a/libgl2jni.so
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-strip --strip-unneeded  {ndkPath}/samples/hello-gl2/libs/armeabi-v7a/libgl2jni.so
+mkdir -p {ndkPath}/samples/hello-gl2/obj/local/armeabi/objs-debug/gl2jni
+echo [armeabi] "Compile++ thumb": "gl2jni <= gl_code.cpp"
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-g++ -MMD -MP -MF {ndkPath}/samples/hello-gl2/obj/local/armeabi/objs-debug/gl2jni/gl_code.o.d -fpic -ffunction-sections -funwind-tables -fstack-protector -no-canonical-prefixes -march=armv5te -mtune=xscale -msoft-float -fno-exceptions -fno-rtti -mthumb -Os -g -DNDEBUG -fomit-frame-pointer -fno-strict-aliasing -finline-limit=64 -O0 -UNDEBUG -marm -fno-omit-frame-pointer -I{ndkPath}/sources/cxx-stl/system/include -I{ndkPath}/samples/hello-gl2/jni -DANDROID -Werror -Wa,--noexecstack -Wformat -Werror=format-security      -I{ndkPath}/platforms/android-5/arch-arm/usr/include -c  {ndkPath}/samples/hello-gl2/jni/gl_code.cpp -o {ndkPath}/samples/hello-gl2/obj/local/armeabi/objs-debug/gl2jni/gl_code.o 
+mkdir -p {ndkPath}/samples/hello-gl2/obj/local/armeabi
+echo [armeabi] "StaticLibrary  ": "libstdc++.a"
+rm -f {ndkPath}/samples/hello-gl2/obj/local/armeabi/libstdc++.a
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-gcc-ar crsD {ndkPath}/samples/hello-gl2/obj/local/armeabi/libstdc++.a 
+echo [armeabi] "SharedLibrary  ": "libgl2jni.so"
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-g++ -Wl,-soname,libgl2jni.so -shared --sysroot={ndkPath}/platforms/android-5/arch-arm {ndkPath}/samples/hello-gl2/obj/local/armeabi/objs-debug/gl2jni/gl_code.o {ndkPath}/samples/hello-gl2/obj/local/armeabi/libstdc++.a -lgcc -no-canonical-prefixes  -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now  -L{ndkPath}/platforms/android-5/arch-arm/usr/lib -llog -lGLESv2 -lstdc++ -lc -lm -o {ndkPath}/samples/hello-gl2/obj/local/armeabi/libgl2jni.so
+echo [armeabi] "Install        ": "libgl2jni.so => libs/armeabi/libgl2jni.so"
+install -p {ndkPath}/samples/hello-gl2/obj/local/armeabi/libgl2jni.so {ndkPath}/samples/hello-gl2/libs/armeabi/libgl2jni.so
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-strip --strip-unneeded  {ndkPath}/samples/hello-gl2/libs/armeabi/libgl2jni.so
+mkdir -p {ndkPath}/samples/hello-gl2/obj/local/x86/objs-debug/gl2jni
+echo [x86] "Compile++      ": "gl2jni <= gl_code.cpp"
+{ndkPath}/toolchains/x86-4.8/prebuilt/{platform}-x86_64/bin/i686-{platform}-android-g++ -MMD -MP -MF {ndkPath}/samples/hello-gl2/obj/local/x86/objs-debug/gl2jni/gl_code.o.d -ffunction-sections -funwind-tables -no-canonical-prefixes -fstack-protector -fno-exceptions -fno-rtti -O2 -g -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -funswitch-loops -finline-limit=300 -O0 -UNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing -I{ndkPath}/sources/cxx-stl/system/include -I{ndkPath}/samples/hello-gl2/jni -DANDROID -Werror -Wa,--noexecstack -Wformat -Werror=format-security      -I{ndkPath}/platforms/android-9/arch-x86/usr/include -c  {ndkPath}/samples/hello-gl2/jni/gl_code.cpp -o {ndkPath}/samples/hello-gl2/obj/local/x86/objs-debug/gl2jni/gl_code.o 
+mkdir -p {ndkPath}/samples/hello-gl2/obj/local/x86
+echo [x86] "StaticLibrary  ": "libstdc++.a"
+rm -f {ndkPath}/samples/hello-gl2/obj/local/x86/libstdc++.a
+{ndkPath}/toolchains/x86-4.8/prebuilt/{platform}-x86_64/bin/i686-{platform}-android-gcc-ar crsD {ndkPath}/samples/hello-gl2/obj/local/x86/libstdc++.a 
+echo [x86] "SharedLibrary  ": "libgl2jni.so"
+{ndkPath}/toolchains/x86-4.8/prebuilt/{platform}-x86_64/bin/i686-{platform}-android-g++ -Wl,-soname,libgl2jni.so -shared --sysroot={ndkPath}/platforms/android-9/arch-x86 {ndkPath}/samples/hello-gl2/obj/local/x86/objs-debug/gl2jni/gl_code.o {ndkPath}/samples/hello-gl2/obj/local/x86/libstdc++.a -lgcc -no-canonical-prefixes  -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now  -L{ndkPath}/platforms/android-9/arch-x86/usr/lib -llog -lGLESv2 -lstdc++ -lc -lm -o {ndkPath}/samples/hello-gl2/obj/local/x86/libgl2jni.so
+echo [x86] "Install        ": "libgl2jni.so => libs/x86/libgl2jni.so"
+install -p {ndkPath}/samples/hello-gl2/obj/local/x86/libgl2jni.so {ndkPath}/samples/hello-gl2/libs/x86/libgl2jni.so
+{ndkPath}/toolchains/x86-4.8/prebuilt/{platform}-x86_64/bin/i686-{platform}-android-strip --strip-unneeded  {ndkPath}/samples/hello-gl2/libs/x86/libgl2jni.so
+mkdir -p {ndkPath}/samples/hello-gl2/obj/local/mips/objs-debug/gl2jni
+echo [mips] "Compile++      ": "gl2jni <= gl_code.cpp"
+{ndkPath}/toolchains/mipsel-{platform}-android-4.8/prebuilt/{platform}-x86_64/bin/mipsel-{platform}-android-g++ -MMD -MP -MF {ndkPath}/samples/hello-gl2/obj/local/mips/objs-debug/gl2jni/gl_code.o.d -fpic -fno-strict-aliasing -finline-functions -ffunction-sections -funwind-tables -fmessage-length=0 -fno-inline-functions-called-once -fgcse-after-reload -frerun-cse-after-loop -frename-registers -no-canonical-prefixes -fno-exceptions -fno-rtti -O0 -g -fno-omit-frame-pointer -I{ndkPath}/sources/cxx-stl/system/include -I{ndkPath}/samples/hello-gl2/jni -DANDROID -Werror -Wa,--noexecstack -Wformat -Werror=format-security      -I{ndkPath}/platforms/android-9/arch-mips/usr/include -c  {ndkPath}/samples/hello-gl2/jni/gl_code.cpp -o {ndkPath}/samples/hello-gl2/obj/local/mips/objs-debug/gl2jni/gl_code.o 
+mkdir -p {ndkPath}/samples/hello-gl2/obj/local/mips
+echo [mips] "StaticLibrary  ": "libstdc++.a"
+rm -f {ndkPath}/samples/hello-gl2/obj/local/mips/libstdc++.a
+{ndkPath}/toolchains/mipsel-{platform}-android-4.8/prebuilt/{platform}-x86_64/bin/mipsel-{platform}-android-gcc-ar crsD {ndkPath}/samples/hello-gl2/obj/local/mips/libstdc++.a 
+echo [mips] "SharedLibrary  ": "libgl2jni.so"
+{ndkPath}/toolchains/mipsel-{platform}-android-4.8/prebuilt/{platform}-x86_64/bin/mipsel-{platform}-android-g++ -Wl,-soname,libgl2jni.so -shared --sysroot={ndkPath}/platforms/android-9/arch-mips {ndkPath}/samples/hello-gl2/obj/local/mips/objs-debug/gl2jni/gl_code.o {ndkPath}/samples/hello-gl2/obj/local/mips/libstdc++.a -lgcc -no-canonical-prefixes  -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now  -L{ndkPath}/platforms/android-9/arch-mips/usr/lib -llog -lGLESv2 -lstdc++ -lc -lm -o {ndkPath}/samples/hello-gl2/obj/local/mips/libgl2jni.so
+echo [mips] "Install        ": "libgl2jni.so => libs/mips/libgl2jni.so"
+install -p {ndkPath}/samples/hello-gl2/obj/local/mips/libgl2jni.so {ndkPath}/samples/hello-gl2/libs/mips/libgl2jni.so
+{ndkPath}/toolchains/mipsel-{platform}-android-4.8/prebuilt/{platform}-x86_64/bin/mipsel-{platform}-android-strip --strip-unneeded  {ndkPath}/samples/hello-gl2/libs/mips/libgl2jni.so
