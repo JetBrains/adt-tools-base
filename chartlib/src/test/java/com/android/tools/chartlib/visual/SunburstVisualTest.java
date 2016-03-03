@@ -17,6 +17,7 @@
 package com.android.tools.chartlib.visual;
 
 import com.android.tools.chartlib.AnimatedComponent;
+import com.android.tools.chartlib.Choreographer;
 import com.android.tools.chartlib.SunburstComponent;
 import com.android.tools.chartlib.ValuedTreeNode;
 
@@ -38,11 +39,12 @@ public class SunburstVisualTest extends VisualTest {
 
     private final SunburstComponent mSunburst;
 
-    public SunburstVisualTest() {
+    public SunburstVisualTest(Choreographer choreographer) {
 
         final DataNode data = new DataNode();
         data.addDataNode(new DataNode(1, 10));
         mSunburst = new SunburstComponent(data);
+        choreographer.register(mSunburst);
     }
 
     @Override

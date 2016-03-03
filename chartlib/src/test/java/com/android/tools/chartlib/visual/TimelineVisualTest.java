@@ -17,6 +17,7 @@
 package com.android.tools.chartlib.visual;
 
 import com.android.tools.chartlib.AnimatedComponent;
+import com.android.tools.chartlib.Choreographer;
 import com.android.tools.chartlib.EventData;
 import com.android.tools.chartlib.TimelineComponent;
 import com.android.tools.chartlib.TimelineData;
@@ -46,10 +47,11 @@ public class TimelineVisualTest extends VisualTest {
 
     private final TimelineData mData;
 
-    public TimelineVisualTest() {
+    public TimelineVisualTest(Choreographer choreographer) {
         mEvents = new EventData();
         mData = new TimelineData(2, 2000);
         mTimeline = new TimelineComponent(mData, mEvents, 1.0f, 10.0f, 1000.0f, 10.0f);
+        choreographer.register(mTimeline);
     }
 
     @Override

@@ -122,7 +122,6 @@ public final class SunburstComponent extends AnimatedComponent {
     private Map<Color, Path2D.Float> mPaths;
 
     public SunburstComponent(@NonNull ValuedTreeNode data) {
-        super(30);
         mData = data;
         mSlice = new Slice(0.0f);
         mSliceWidth = 50;
