@@ -369,7 +369,16 @@ public class GradleVersion implements Comparable<GradleVersion>, Serializable {
 
         VersionSegment(@NonNull String text) {
             mText = text;
-            mValue = PLUS.equals(text) ? Integer.MAX_VALUE : Integer.parseInt(text);
+            if (PLUS.equals(text)) {
+                mValue = Integer.MAX_VALUE;
+            } else {
+                // +1 is a valid number which will be parsed correctly but it is not a correct
+                // version segment.
+                if (text.startsWith(PLUS)) {
+                    throw new NumberFormatException("Version segment cannot start with +");
+                }
+                mValue = PLUS.equals(text) ? Integer.MAX_VALUE : Integer.parseInt(text);
+            }
         }
 
         @NonNull
