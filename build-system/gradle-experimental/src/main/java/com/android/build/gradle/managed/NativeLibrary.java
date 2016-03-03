@@ -40,6 +40,9 @@ public interface NativeLibrary extends Named {
     String getBuildCommandString();
     void setBuildCommandString(String command);
 
+    String getBuildType();
+    void setBuildType(String buildType);
+
     @Nullable
     String getGroupName();
     void setGroupName(String groupName);
