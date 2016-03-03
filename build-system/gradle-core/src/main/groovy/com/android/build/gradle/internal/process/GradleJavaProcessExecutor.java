@@ -30,6 +30,7 @@ import org.gradle.process.ExecResult;
 import org.gradle.process.JavaExecSpec;
 
 import java.io.File;
+import java.io.IOException;
 
 /**
  * Implementation of JavaProcessExecutor that uses Gradle's mechanism to execute external java
@@ -51,7 +52,16 @@ public class GradleJavaProcessExecutor implements JavaProcessExecutor {
             @NonNull ProcessOutputHandler processOutputHandler) {
         ProcessOutput output = processOutputHandler.createOutput();
 
-        ExecResult result = project.javaexec(new ExecAction(javaProcessInfo, output));
+        ExecResult result;
+        try {
+            result = project.javaexec(new ExecAction(javaProcessInfo, output));
+        } finally {
+            try {
+                output.close();
+            } catch (IOException e) {
+                project.getLogger().warn("Exception while closing sub process streams", e);
+            }
+        }
 
         try {
             processOutputHandler.handleOutput(output);

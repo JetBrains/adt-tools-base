@@ -18,6 +18,7 @@ package com.android.ide.common.process;
 
 import com.android.annotations.NonNull;
 
+import java.io.Closeable;
 import java.io.OutputStream;
 
 /**
@@ -26,7 +27,7 @@ import java.io.OutputStream;
  * This is used to configure the {@link com.android.ide.common.process.ProcessExecutor} for how
  * to handle the stdout and stderr of the process.
  */
-public interface ProcessOutput  {
+public interface ProcessOutput extends Closeable {
 
     /**
      * Returns the OutputStream to use for the standard output

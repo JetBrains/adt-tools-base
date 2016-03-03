@@ -47,9 +47,15 @@ public class DexWrapper {
             @NonNull DexOptions dexOptions,
             @NonNull ProcessOutputHandler outputHandler) throws IOException, ProcessException {
         ProcessOutput output = outputHandler.createOutput();
-        DxContext dxContext = new DxContext(output.getStandardOutput(), output.getErrorOutput());
-        Main.Arguments args = buildArguments(processBuilder, dexOptions);
-        int res = new Main(dxContext).run(args);
+        int res;
+        try {
+            DxContext dxContext = new DxContext(output.getStandardOutput(), output.getErrorOutput());
+            Main.Arguments args = buildArguments(processBuilder, dexOptions);
+            res = new Main(dxContext).run(args);
+        } finally {
+            output.close();
+        }
+
         outputHandler.handleOutput(output);
         return new DexProcessResult(res);
     }

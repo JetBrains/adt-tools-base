@@ -22,11 +22,9 @@ import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessExecutor;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.ide.common.process.ProcessOutput;
-import com.google.common.io.LineReader;
+import com.android.utils.LineCollector;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -92,36 +90,19 @@ public class SplitSelectTool {
 
         @Override
         public void handleOutput(@NonNull ProcessOutput processOutput) throws ProcessException {
-            try {
-                if (processOutput instanceof BaseProcessOutput) {
-                    BaseProcessOutput impl = (BaseProcessOutput) processOutput;
-                    String stdout = impl.getStandardOutputAsString();
-                    if (!stdout.isEmpty()) {
-                        resultApks.addAll(readLines(stdout));
-                    }
-                    String stderr = impl.getErrorOutputAsString();
-                    if (!stderr.isEmpty()) {
-                        throw new RuntimeException("split-select:" + stderr);
-                    }
-                } else {
-                    throw new IllegalArgumentException(
-                            "processOutput was not created by this handler.");
+            if (processOutput instanceof BaseProcessOutput) {
+                BaseProcessOutput impl = (BaseProcessOutput) processOutput;
+                LineCollector lineCollector = new LineCollector();
+                impl.processStandardOutputLines(lineCollector);
+                resultApks.addAll(lineCollector.getResult());
+                String stderr = impl.getErrorOutputAsString();
+                if (!stderr.isEmpty()) {
+                    throw new RuntimeException("split-select:" + stderr);
                 }
-            } catch(IOException e) {
-                throw new RuntimeException("Exception while reading split-select output", e);
+            } else {
+                throw new IllegalArgumentException(
+                        "processOutput was not created by this handler.");
             }
-        }
-
-        @NonNull
-        private static List<String> readLines(String input) throws IOException {
-            List<String> result = new ArrayList<String>();
-            LineReader lineReader = new LineReader((new StringReader(input)));
-            String line = lineReader.readLine();
-            while(line != null) {
-                result.add(line);
-                line = lineReader.readLine();
-            }
-            return result;
         }
     }
 }

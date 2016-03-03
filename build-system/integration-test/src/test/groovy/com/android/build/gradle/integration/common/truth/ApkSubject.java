@@ -30,6 +30,7 @@ import com.android.ide.common.process.ProcessExecutor;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.utils.StdLogger;
 import com.google.common.collect.ImmutableList;
+import com.google.common.io.LineProcessor;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.IterableSubject;
 import com.google.common.truth.SubjectFactory;
@@ -405,7 +406,7 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
      * @throws ProcessException
      */
     private static boolean checkFileForClassWithDexDump(
-            @NonNull String expectedClassName,
+            final @NonNull String expectedClassName,
             @NonNull File file,
             @NonNull File dexDumpExe) throws ProcessException {
         ProcessExecutor executor = new DefaultProcessExecutor(
@@ -415,18 +416,29 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
         builder.setExecutable(dexDumpExe);
         builder.addArgs(file.getAbsolutePath());
 
-        List<String> output = ApkHelper.runAndGetOutput(builder.createProcess(), executor);
+        LineProcessor<Boolean> classDescriptor = new LineProcessor<Boolean>() {
+            Boolean result = false;
 
-        for (String line : output) {
-            Matcher m = PATTERN_CLASS_DESC.matcher(line.trim());
-            if (m.matches()) {
-                String className = m.group(1);
-                if (expectedClassName.equals(className)) {
-                    return true;
+            @Override
+            public boolean processLine(String line) throws IOException {
+                Matcher m = PATTERN_CLASS_DESC.matcher(line.trim());
+                if (m.matches()) {
+                    String className = m.group(1);
+                    if (expectedClassName.equals(className)) {
+                        result = true;
+                        return false; // stop processing
+                    }
                 }
+                return true; // continue processing
             }
-        }
-        return false;
+
+            @Override
+            public Boolean getResult() {
+                return result;
+            }
+        };
+
+        return ApkHelper.runAndProcessOutput(builder.createProcess(), executor, classDescriptor);
     }
 
     @NonNull
