@@ -18,9 +18,9 @@ package com.android.build.gradle.integration.application;
 
 import com.android.build.gradle.integration.common.category.DeviceTests;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp;
 
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -32,6 +32,7 @@ public class InstantUnitTest {
             .create();
 
     @Test
+    @Ignore("http://b.android.com/202368")
     public void checkInstantUnitTestsBuild() {
         sProject.execute("clean", "assembleDebugAndroidTest");
     }
