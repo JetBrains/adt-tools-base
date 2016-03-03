@@ -31,6 +31,7 @@ import com.google.common.collect.Maps;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -43,6 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.DataFormatException;
 
+@Ignore("http://b.android.com/202381")
 @RunWith(Parameterized.class)
 public class NinePatchAaptProcessorTest {
 
