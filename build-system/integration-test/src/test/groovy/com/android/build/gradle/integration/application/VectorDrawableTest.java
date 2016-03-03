@@ -15,6 +15,7 @@
  */
 
 package com.android.build.gradle.integration.application;
+
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertWithMessage;
@@ -23,7 +24,10 @@ import static com.google.common.base.Charsets.UTF_8;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.utils.AssumeUtil;
+import com.android.build.gradle.integration.common.utils.ModelHelper;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.VectorDrawablesOptions;
 import com.android.utils.FileUtils;
 import com.google.common.io.Files;
 
@@ -483,6 +487,49 @@ public class VectorDrawableTest {
         assertThatApk(apk).doesNotContainResource("drawable-v21/heart.xml");
         assertThatApk(apk).doesNotContainResource("drawable-xhdpi-v21/heart.xml");
         assertThatApk(apk).doesNotContainResource("drawable/heart.xml");
+    }
+
+    @Test
+    @SuppressWarnings("ConstantConditions") // If getVariant returns null, the test just fails.
+    public void model() throws Exception {
+        TestFileUtils.appendToFile(
+                project.getBuildFile(),
+                "android.productFlavors { "
+                        + "pngs;\n"
+                        + "vectors { vectorDrawables.useSupportLibrary = true }\n"
+                        + "hdpiOnly { vectorDrawables.generatedDensities = ['hdpi'] }\n"
+                        + "}");
+
+        AndroidProject model = project.getSingleModel();
+
+        VectorDrawablesOptions defaultConfigOptions =
+                model.getDefaultConfig().getProductFlavor().getVectorDrawables();
+
+        assertThat(defaultConfigOptions.getUseSupportLibrary()).isFalse();
+        assertThat(defaultConfigOptions.getGeneratedDensities()).containsExactly("hdpi", "xhdpi");
+
+        VectorDrawablesOptions pngsDebug =
+                ModelHelper.getVariant(model.getVariants(), "pngsDebug")
+                        .getMergedFlavor()
+                        .getVectorDrawables();
+
+        assertThat(pngsDebug.getUseSupportLibrary()).isFalse();
+        assertThat(pngsDebug.getGeneratedDensities()).containsExactly("hdpi", "xhdpi");
+
+        VectorDrawablesOptions vectorsDebug =
+                ModelHelper.getVariant(model.getVariants(), "vectorsDebug")
+                        .getMergedFlavor()
+                        .getVectorDrawables();
+
+        assertThat(vectorsDebug.getUseSupportLibrary()).isTrue();
+
+        VectorDrawablesOptions hdpiOnlyDebug =
+                ModelHelper.getVariant(model.getVariants(), "hdpiOnlyDebug")
+                        .getMergedFlavor()
+                        .getVectorDrawables();
+
+        assertThat(hdpiOnlyDebug.getUseSupportLibrary()).isFalse();
+        assertThat(hdpiOnlyDebug.getGeneratedDensities()).containsExactly("hdpi");
     }
 
     private static void assertPngGenerationDisabled(File apk) throws Exception {
