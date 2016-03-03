@@ -135,6 +135,8 @@ Task instrumentIncrementalTestBaseClasses = tasks.create(
     args baseClasses, baseInstrumentedClasses, androidJar
 }
 
+instrumentIncrementalTestBaseClasses.dependsOn compileIncrementalTestBaseClasses
+
 // Compile other changesets. They have the default changset on their classpath.
 Task instrumentIncrementalTestPatches = tasks.create("instrumentIncrementalTestPatches")
 
