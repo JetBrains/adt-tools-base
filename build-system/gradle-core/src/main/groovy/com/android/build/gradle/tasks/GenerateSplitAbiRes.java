@@ -97,13 +97,21 @@ public class GenerateSplitAbiRes extends BaseTask {
 
             OutputStreamWriter fileWriter = new OutputStreamWriter(new FileOutputStream(tmpFile), "UTF-8");
             try {
-                String splitBaseName = CharMatcher.is('-').replaceFrom(getOutputBaseName(), '_');
+                // Split name can only contains 0-9, a-z, A-Z, '.' and '_'.  Replace all other
+                // characters with underscore.
+                String splitName = CharMatcher.inRange('0', '9')
+                        .or(CharMatcher.inRange('A', 'Z'))
+                        .or(CharMatcher.inRange('a', 'z'))
+                        .or(CharMatcher.is('_'))
+                        .or(CharMatcher.is('.'))
+                        .negate()
+                        .replaceFrom(split + "_" + getOutputBaseName(), '_');
                 fileWriter.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                         + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "      package=\"" + getApplicationId() + "\"\n"
                         + "      android:versionCode=\"" + getVersionCode() + "\"\n"
                         + "      android:versionName=\"" + versionNameToUse + "\"\n"
-                        + "      split=\"lib_" + split + "_" + splitBaseName + "\">\n"
+                        + "      split=\"lib_" + splitName + "\">\n"
                         + "       <uses-sdk android:minSdkVersion=\"21\"/>\n" + "</manifest> ");
                 fileWriter.flush();
             } finally {
