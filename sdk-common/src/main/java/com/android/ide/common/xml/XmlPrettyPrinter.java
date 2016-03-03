@@ -788,7 +788,7 @@ public class XmlPrettyPrinter {
     private boolean endsWithLineSeparator() {
         int separatorLength = mLineSeparator.length();
         if (mOut.length() >= separatorLength) {
-            for (int i = 0, j = mOut.length() - separatorLength; i < separatorLength; i++) {
+            for (int i = 0, j = mOut.length() - separatorLength; i < separatorLength; i++, j++) {
                 if (mOut.charAt(j) != mLineSeparator.charAt(i)) {
                     return false;
                 }
