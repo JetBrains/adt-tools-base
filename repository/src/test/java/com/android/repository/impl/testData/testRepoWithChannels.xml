@@ -38,7 +38,6 @@
                     <checksum>4321432143214321432143214321432143214321</checksum>
                     <url>http://example.com/arch1</url>
                 </complete>
-                <host-os>linux</host-os>
             </archive>
         </archives>
     </remotePackage>
@@ -58,7 +57,6 @@
                     <checksum>4321432143214321432143214321432143214321</checksum>
                     <url>http://example.com/arch1</url>
                 </complete>
-                <host-os>linux</host-os>
             </archive>
         </archives>
     </remotePackage>
@@ -78,7 +76,6 @@
                     <checksum>4321432143214321432143214321432143214321</checksum>
                     <url>http://example.com/arch1</url>
                 </complete>
-                <host-os>linux</host-os>
             </archive>
         </archives>
     </remotePackage>
