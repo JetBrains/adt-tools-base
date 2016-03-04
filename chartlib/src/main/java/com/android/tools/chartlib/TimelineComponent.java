@@ -19,15 +19,23 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 
-import java.awt.*;
-import java.awt.event.ActionListener;
-import java.awt.event.HierarchyListener;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FontMetrics;
+import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.RenderingHints;
+import java.awt.Stroke;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Arc2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.Icon;
 
@@ -38,8 +46,7 @@ import gnu.trove.TIntObjectHashMap;
  * modifications to it while it's begin rendered, but objects of this class should not be accessed
  * from different threads.
  */
-public final class TimelineComponent extends AnimatedComponent
-        implements ActionListener, HierarchyListener {
+public final class TimelineComponent extends AnimatedComponent {
 
     private static final Color TEXT_COLOR = new Color(128, 128, 128);
 
@@ -50,8 +57,6 @@ public final class TimelineComponent extends AnimatedComponent
     private static final int TOP_MARGIN = 10;
 
     private static final int BOTTOM_MARGIN = 30;
-
-    private static final int FPS = 40;
 
     /**
      * The number of pixels a second in the timeline takes on the screen.
@@ -223,14 +228,12 @@ public final class TimelineComponent extends AnimatedComponent
             float initialMax,
             float absoluteMax,
             float initialMarkerSeparation) {
-        super(FPS);
         mData = data;
         mEvents = events;
         mBufferTime = bufferTime;
         mInitialMax = initialMax;
         mAbsoluteMax = absoluteMax;
         mInitialMarkerSeparation = initialMarkerSeparation;
-        addHierarchyListener(this);
         mSize = 0;
         mStyles = new HashMap<Integer, Style>();
         mUnits = "";
