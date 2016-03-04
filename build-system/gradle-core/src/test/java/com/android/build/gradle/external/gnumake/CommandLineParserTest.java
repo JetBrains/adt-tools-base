@@ -86,6 +86,13 @@ public class CommandLineParserTest {
     }
 
     @Test
+    public void conjunction3() throws FileNotFoundException {
+        assertThatAllShellResultsEquals("ls&&ls",
+                new CommandLine("ls", EMPTY_ARGS),
+                new CommandLine("ls", EMPTY_ARGS));
+    }
+
+    @Test
     public void simpleCommandWithParameter() throws FileNotFoundException {
         assertThatAllShellResultsEquals("ls -rf",
                 new CommandLine("ls", Lists.newArrayList("-rf")));
