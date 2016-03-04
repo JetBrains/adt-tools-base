@@ -26,6 +26,7 @@ import com.google.common.collect.Maps;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -42,6 +43,7 @@ import java.util.zip.DataFormatException;
 /**
  * Asynchronous version of the aapt cruncher test.
  */
+@Ignore("http://b.android.com/202381")
 @RunWith(Parameterized.class)
 public class NinePatchAsyncAaptProcessTest {
 
