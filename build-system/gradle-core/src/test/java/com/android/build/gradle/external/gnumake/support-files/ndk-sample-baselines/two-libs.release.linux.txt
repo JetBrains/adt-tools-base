@@ -1,0 +1,115 @@
+rm -f {ndkPath}/samples/two-libs/libs/arm64-v8a/lib*.so {ndkPath}/samples/two-libs/libs/armeabi/lib*.so {ndkPath}/samples/two-libs/libs/armeabi-v7a/lib*.so {ndkPath}/samples/two-libs/libs/armeabi-v7a-hard/lib*.so {ndkPath}/samples/two-libs/libs/mips/lib*.so {ndkPath}/samples/two-libs/libs/mips64/lib*.so {ndkPath}/samples/two-libs/libs/x86/lib*.so {ndkPath}/samples/two-libs/libs/x86_64/lib*.so
+rm -f {ndkPath}/samples/two-libs/libs/arm64-v8a/gdbserver {ndkPath}/samples/two-libs/libs/armeabi/gdbserver {ndkPath}/samples/two-libs/libs/armeabi-v7a/gdbserver {ndkPath}/samples/two-libs/libs/armeabi-v7a-hard/gdbserver {ndkPath}/samples/two-libs/libs/mips/gdbserver {ndkPath}/samples/two-libs/libs/mips64/gdbserver {ndkPath}/samples/two-libs/libs/x86/gdbserver {ndkPath}/samples/two-libs/libs/x86_64/gdbserver
+rm -f {ndkPath}/samples/two-libs/libs/arm64-v8a/gdb.setup {ndkPath}/samples/two-libs/libs/armeabi/gdb.setup {ndkPath}/samples/two-libs/libs/armeabi-v7a/gdb.setup {ndkPath}/samples/two-libs/libs/armeabi-v7a-hard/gdb.setup {ndkPath}/samples/two-libs/libs/mips/gdb.setup {ndkPath}/samples/two-libs/libs/mips64/gdb.setup {ndkPath}/samples/two-libs/libs/x86/gdb.setup {ndkPath}/samples/two-libs/libs/x86_64/gdb.setup
+mkdir -p {ndkPath}/samples/two-libs/obj/local/arm64-v8a/objs/twolib-second
+echo [arm64-v8a] "Compile        ": "twolib-second <= second.c"
+{ndkPath}/toolchains/aarch64-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/aarch64-{platform}-android-gcc -MMD -MP -MF {ndkPath}/samples/two-libs/obj/local/arm64-v8a/objs/twolib-second/second.o.d -fpic -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -O2 -g -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -funswitch-loops -finline-limit=300 -I{ndkPath}/samples/two-libs/jni -DANDROID  -Wa,--noexecstack -Wformat -Werror=format-security    -I{ndkPath}/platforms/android-21/arch-arm64/usr/include -c  {ndkPath}/samples/two-libs/jni/second.c -o {ndkPath}/samples/two-libs/obj/local/arm64-v8a/objs/twolib-second/second.o 
+mkdir -p {ndkPath}/samples/two-libs/obj/local/arm64-v8a
+mkdir -p {ndkPath}/samples/two-libs/obj/local/arm64-v8a/objs/twolib-first
+echo [arm64-v8a] "Compile        ": "twolib-first <= first.c"
+{ndkPath}/toolchains/aarch64-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/aarch64-{platform}-android-gcc -MMD -MP -MF {ndkPath}/samples/two-libs/obj/local/arm64-v8a/objs/twolib-first/first.o.d -fpic -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -O2 -g -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -funswitch-loops -finline-limit=300 -I{ndkPath}/samples/two-libs/jni -DANDROID  -Wa,--noexecstack -Wformat -Werror=format-security    -I{ndkPath}/platforms/android-21/arch-arm64/usr/include -c  {ndkPath}/samples/two-libs/jni/first.c -o {ndkPath}/samples/two-libs/obj/local/arm64-v8a/objs/twolib-first/first.o 
+echo [arm64-v8a] "StaticLibrary  ": "libtwolib-first.a"
+rm -f {ndkPath}/samples/two-libs/obj/local/arm64-v8a/libtwolib-first.a
+{ndkPath}/toolchains/aarch64-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/aarch64-{platform}-android-gcc-ar crsD {ndkPath}/samples/two-libs/obj/local/arm64-v8a/libtwolib-first.a {ndkPath}/samples/two-libs/obj/local/arm64-v8a/objs/twolib-first/first.o
+echo [arm64-v8a] "SharedLibrary  ": "libtwolib-second.so"
+{ndkPath}/toolchains/aarch64-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/aarch64-{platform}-android-g++ -Wl,-soname,libtwolib-second.so -shared --sysroot={ndkPath}/platforms/android-21/arch-arm64 {ndkPath}/samples/two-libs/obj/local/arm64-v8a/objs/twolib-second/second.o {ndkPath}/samples/two-libs/obj/local/arm64-v8a/libtwolib-first.a -lgcc -no-canonical-prefixes  -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now   -lc -lm -o {ndkPath}/samples/two-libs/obj/local/arm64-v8a/libtwolib-second.so
+mkdir -p {ndkPath}/samples/two-libs/libs/arm64-v8a
+echo [arm64-v8a] "Install        ": "libtwolib-second.so => libs/arm64-v8a/libtwolib-second.so"
+install -p {ndkPath}/samples/two-libs/obj/local/arm64-v8a/libtwolib-second.so {ndkPath}/samples/two-libs/libs/arm64-v8a/libtwolib-second.so
+{ndkPath}/toolchains/aarch64-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/aarch64-{platform}-android-strip --strip-unneeded  {ndkPath}/samples/two-libs/libs/arm64-v8a/libtwolib-second.so
+mkdir -p {ndkPath}/samples/two-libs/obj/local/x86_64/objs/twolib-second
+echo [x86_64] "Compile        ": "twolib-second <= second.c"
+{ndkPath}/toolchains/x86_64-4.9/prebuilt/{platform}-x86_64/bin/x86_64-{platform}-android-gcc -MMD -MP -MF {ndkPath}/samples/two-libs/obj/local/x86_64/objs/twolib-second/second.o.d -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -O2 -g -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -funswitch-loops -finline-limit=300 -I{ndkPath}/samples/two-libs/jni -DANDROID  -Wa,--noexecstack -Wformat -Werror=format-security    -I{ndkPath}/platforms/android-21/arch-x86_64/usr/include -c  {ndkPath}/samples/two-libs/jni/second.c -o {ndkPath}/samples/two-libs/obj/local/x86_64/objs/twolib-second/second.o 
+mkdir -p {ndkPath}/samples/two-libs/obj/local/x86_64
+mkdir -p {ndkPath}/samples/two-libs/obj/local/x86_64/objs/twolib-first
+echo [x86_64] "Compile        ": "twolib-first <= first.c"
+{ndkPath}/toolchains/x86_64-4.9/prebuilt/{platform}-x86_64/bin/x86_64-{platform}-android-gcc -MMD -MP -MF {ndkPath}/samples/two-libs/obj/local/x86_64/objs/twolib-first/first.o.d -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -O2 -g -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -funswitch-loops -finline-limit=300 -I{ndkPath}/samples/two-libs/jni -DANDROID  -Wa,--noexecstack -Wformat -Werror=format-security    -I{ndkPath}/platforms/android-21/arch-x86_64/usr/include -c  {ndkPath}/samples/two-libs/jni/first.c -o {ndkPath}/samples/two-libs/obj/local/x86_64/objs/twolib-first/first.o 
+echo [x86_64] "StaticLibrary  ": "libtwolib-first.a"
+rm -f {ndkPath}/samples/two-libs/obj/local/x86_64/libtwolib-first.a
+{ndkPath}/toolchains/x86_64-4.9/prebuilt/{platform}-x86_64/bin/x86_64-{platform}-android-gcc-ar crsD {ndkPath}/samples/two-libs/obj/local/x86_64/libtwolib-first.a {ndkPath}/samples/two-libs/obj/local/x86_64/objs/twolib-first/first.o
+echo [x86_64] "SharedLibrary  ": "libtwolib-second.so"
+{ndkPath}/toolchains/x86_64-4.9/prebuilt/{platform}-x86_64/bin/x86_64-{platform}-android-g++ -Wl,-soname,libtwolib-second.so -shared --sysroot={ndkPath}/platforms/android-21/arch-x86_64 {ndkPath}/samples/two-libs/obj/local/x86_64/objs/twolib-second/second.o {ndkPath}/samples/two-libs/obj/local/x86_64/libtwolib-first.a -lgcc -no-canonical-prefixes  -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now   -lc -lm -o {ndkPath}/samples/two-libs/obj/local/x86_64/libtwolib-second.so
+mkdir -p {ndkPath}/samples/two-libs/libs/x86_64
+echo [x86_64] "Install        ": "libtwolib-second.so => libs/x86_64/libtwolib-second.so"
+install -p {ndkPath}/samples/two-libs/obj/local/x86_64/libtwolib-second.so {ndkPath}/samples/two-libs/libs/x86_64/libtwolib-second.so
+{ndkPath}/toolchains/x86_64-4.9/prebuilt/{platform}-x86_64/bin/x86_64-{platform}-android-strip --strip-unneeded  {ndkPath}/samples/two-libs/libs/x86_64/libtwolib-second.so
+mkdir -p {ndkPath}/samples/two-libs/obj/local/mips64/objs/twolib-second
+echo [mips64] "Compile        ": "twolib-second <= second.c"
+{ndkPath}/toolchains/mips64el-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/mips64el-{platform}-android-gcc -MMD -MP -MF {ndkPath}/samples/two-libs/obj/local/mips64/objs/twolib-second/second.o.d -fpic -fno-strict-aliasing -finline-functions -ffunction-sections -funwind-tables -fmessage-length=0 -fno-inline-functions-called-once -fgcse-after-reload -frerun-cse-after-loop -frename-registers -no-canonical-prefixes -O2 -g -DNDEBUG -fomit-frame-pointer -funswitch-loops -finline-limit=300 -I{ndkPath}/samples/two-libs/jni -DANDROID  -Wa,--noexecstack -Wformat -Werror=format-security    -I{ndkPath}/platforms/android-21/arch-mips64/usr/include -c  {ndkPath}/samples/two-libs/jni/second.c -o {ndkPath}/samples/two-libs/obj/local/mips64/objs/twolib-second/second.o 
+mkdir -p {ndkPath}/samples/two-libs/obj/local/mips64
+mkdir -p {ndkPath}/samples/two-libs/obj/local/mips64/objs/twolib-first
+echo [mips64] "Compile        ": "twolib-first <= first.c"
+{ndkPath}/toolchains/mips64el-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/mips64el-{platform}-android-gcc -MMD -MP -MF {ndkPath}/samples/two-libs/obj/local/mips64/objs/twolib-first/first.o.d -fpic -fno-strict-aliasing -finline-functions -ffunction-sections -funwind-tables -fmessage-length=0 -fno-inline-functions-called-once -fgcse-after-reload -frerun-cse-after-loop -frename-registers -no-canonical-prefixes -O2 -g -DNDEBUG -fomit-frame-pointer -funswitch-loops -finline-limit=300 -I{ndkPath}/samples/two-libs/jni -DANDROID  -Wa,--noexecstack -Wformat -Werror=format-security    -I{ndkPath}/platforms/android-21/arch-mips64/usr/include -c  {ndkPath}/samples/two-libs/jni/first.c -o {ndkPath}/samples/two-libs/obj/local/mips64/objs/twolib-first/first.o 
+echo [mips64] "StaticLibrary  ": "libtwolib-first.a"
+rm -f {ndkPath}/samples/two-libs/obj/local/mips64/libtwolib-first.a
+{ndkPath}/toolchains/mips64el-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/mips64el-{platform}-android-gcc-ar crsD {ndkPath}/samples/two-libs/obj/local/mips64/libtwolib-first.a {ndkPath}/samples/two-libs/obj/local/mips64/objs/twolib-first/first.o
+echo [mips64] "SharedLibrary  ": "libtwolib-second.so"
+{ndkPath}/toolchains/mips64el-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/mips64el-{platform}-android-g++ -Wl,-soname,libtwolib-second.so -shared --sysroot={ndkPath}/platforms/android-21/arch-mips64 {ndkPath}/samples/two-libs/obj/local/mips64/objs/twolib-second/second.o {ndkPath}/samples/two-libs/obj/local/mips64/libtwolib-first.a -lgcc -no-canonical-prefixes  -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now   -lc -lm -o {ndkPath}/samples/two-libs/obj/local/mips64/libtwolib-second.so
+mkdir -p {ndkPath}/samples/two-libs/libs/mips64
+echo [mips64] "Install        ": "libtwolib-second.so => libs/mips64/libtwolib-second.so"
+install -p {ndkPath}/samples/two-libs/obj/local/mips64/libtwolib-second.so {ndkPath}/samples/two-libs/libs/mips64/libtwolib-second.so
+{ndkPath}/toolchains/mips64el-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/mips64el-{platform}-android-strip --strip-unneeded  {ndkPath}/samples/two-libs/libs/mips64/libtwolib-second.so
+mkdir -p {ndkPath}/samples/two-libs/obj/local/armeabi-v7a/objs/twolib-second
+echo [armeabi-v7a] "Compile thumb  ": "twolib-second <= second.c"
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-gcc -MMD -MP -MF {ndkPath}/samples/two-libs/obj/local/armeabi-v7a/objs/twolib-second/second.o.d -fpic -ffunction-sections -funwind-tables -fstack-protector -no-canonical-prefixes -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp -mthumb -Os -g -DNDEBUG -fomit-frame-pointer -fno-strict-aliasing -finline-limit=64 -I{ndkPath}/samples/two-libs/jni -DANDROID  -Wa,--noexecstack -Wformat -Werror=format-security    -I{ndkPath}/platforms/android-3/arch-arm/usr/include -c  {ndkPath}/samples/two-libs/jni/second.c -o {ndkPath}/samples/two-libs/obj/local/armeabi-v7a/objs/twolib-second/second.o 
+mkdir -p {ndkPath}/samples/two-libs/obj/local/armeabi-v7a
+mkdir -p {ndkPath}/samples/two-libs/obj/local/armeabi-v7a/objs/twolib-first
+echo [armeabi-v7a] "Compile thumb  ": "twolib-first <= first.c"
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-gcc -MMD -MP -MF {ndkPath}/samples/two-libs/obj/local/armeabi-v7a/objs/twolib-first/first.o.d -fpic -ffunction-sections -funwind-tables -fstack-protector -no-canonical-prefixes -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp -mthumb -Os -g -DNDEBUG -fomit-frame-pointer -fno-strict-aliasing -finline-limit=64 -I{ndkPath}/samples/two-libs/jni -DANDROID  -Wa,--noexecstack -Wformat -Werror=format-security    -I{ndkPath}/platforms/android-3/arch-arm/usr/include -c  {ndkPath}/samples/two-libs/jni/first.c -o {ndkPath}/samples/two-libs/obj/local/armeabi-v7a/objs/twolib-first/first.o 
+echo [armeabi-v7a] "StaticLibrary  ": "libtwolib-first.a"
+rm -f {ndkPath}/samples/two-libs/obj/local/armeabi-v7a/libtwolib-first.a
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-gcc-ar crsD {ndkPath}/samples/two-libs/obj/local/armeabi-v7a/libtwolib-first.a {ndkPath}/samples/two-libs/obj/local/armeabi-v7a/objs/twolib-first/first.o
+echo [armeabi-v7a] "SharedLibrary  ": "libtwolib-second.so"
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-g++ -Wl,-soname,libtwolib-second.so -shared --sysroot={ndkPath}/platforms/android-3/arch-arm {ndkPath}/samples/two-libs/obj/local/armeabi-v7a/objs/twolib-second/second.o {ndkPath}/samples/two-libs/obj/local/armeabi-v7a/libtwolib-first.a -lgcc -no-canonical-prefixes -march=armv7-a -Wl,--fix-cortex-a8  -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now -mthumb   -lc -lm -o {ndkPath}/samples/two-libs/obj/local/armeabi-v7a/libtwolib-second.so
+mkdir -p {ndkPath}/samples/two-libs/libs/armeabi-v7a
+echo [armeabi-v7a] "Install        ": "libtwolib-second.so => libs/armeabi-v7a/libtwolib-second.so"
+install -p {ndkPath}/samples/two-libs/obj/local/armeabi-v7a/libtwolib-second.so {ndkPath}/samples/two-libs/libs/armeabi-v7a/libtwolib-second.so
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-strip --strip-unneeded  {ndkPath}/samples/two-libs/libs/armeabi-v7a/libtwolib-second.so
+mkdir -p {ndkPath}/samples/two-libs/obj/local/armeabi/objs/twolib-second
+echo [armeabi] "Compile thumb  ": "twolib-second <= second.c"
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-gcc -MMD -MP -MF {ndkPath}/samples/two-libs/obj/local/armeabi/objs/twolib-second/second.o.d -fpic -ffunction-sections -funwind-tables -fstack-protector -no-canonical-prefixes -march=armv5te -mtune=xscale -msoft-float -mthumb -Os -g -DNDEBUG -fomit-frame-pointer -fno-strict-aliasing -finline-limit=64 -I{ndkPath}/samples/two-libs/jni -DANDROID  -Wa,--noexecstack -Wformat -Werror=format-security    -I{ndkPath}/platforms/android-3/arch-arm/usr/include -c  {ndkPath}/samples/two-libs/jni/second.c -o {ndkPath}/samples/two-libs/obj/local/armeabi/objs/twolib-second/second.o 
+mkdir -p {ndkPath}/samples/two-libs/obj/local/armeabi
+mkdir -p {ndkPath}/samples/two-libs/obj/local/armeabi/objs/twolib-first
+echo [armeabi] "Compile thumb  ": "twolib-first <= first.c"
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-gcc -MMD -MP -MF {ndkPath}/samples/two-libs/obj/local/armeabi/objs/twolib-first/first.o.d -fpic -ffunction-sections -funwind-tables -fstack-protector -no-canonical-prefixes -march=armv5te -mtune=xscale -msoft-float -mthumb -Os -g -DNDEBUG -fomit-frame-pointer -fno-strict-aliasing -finline-limit=64 -I{ndkPath}/samples/two-libs/jni -DANDROID  -Wa,--noexecstack -Wformat -Werror=format-security    -I{ndkPath}/platforms/android-3/arch-arm/usr/include -c  {ndkPath}/samples/two-libs/jni/first.c -o {ndkPath}/samples/two-libs/obj/local/armeabi/objs/twolib-first/first.o 
+echo [armeabi] "StaticLibrary  ": "libtwolib-first.a"
+rm -f {ndkPath}/samples/two-libs/obj/local/armeabi/libtwolib-first.a
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-gcc-ar crsD {ndkPath}/samples/two-libs/obj/local/armeabi/libtwolib-first.a {ndkPath}/samples/two-libs/obj/local/armeabi/objs/twolib-first/first.o
+echo [armeabi] "SharedLibrary  ": "libtwolib-second.so"
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-g++ -Wl,-soname,libtwolib-second.so -shared --sysroot={ndkPath}/platforms/android-3/arch-arm {ndkPath}/samples/two-libs/obj/local/armeabi/objs/twolib-second/second.o {ndkPath}/samples/two-libs/obj/local/armeabi/libtwolib-first.a -lgcc -no-canonical-prefixes  -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now -mthumb   -lc -lm -o {ndkPath}/samples/two-libs/obj/local/armeabi/libtwolib-second.so
+mkdir -p {ndkPath}/samples/two-libs/libs/armeabi
+echo [armeabi] "Install        ": "libtwolib-second.so => libs/armeabi/libtwolib-second.so"
+install -p {ndkPath}/samples/two-libs/obj/local/armeabi/libtwolib-second.so {ndkPath}/samples/two-libs/libs/armeabi/libtwolib-second.so
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-strip --strip-unneeded  {ndkPath}/samples/two-libs/libs/armeabi/libtwolib-second.so
+mkdir -p {ndkPath}/samples/two-libs/obj/local/x86/objs/twolib-second
+echo [x86] "Compile        ": "twolib-second <= second.c"
+{ndkPath}/toolchains/x86-4.8/prebuilt/{platform}-x86_64/bin/i686-{platform}-android-gcc -MMD -MP -MF {ndkPath}/samples/two-libs/obj/local/x86/objs/twolib-second/second.o.d -ffunction-sections -funwind-tables -no-canonical-prefixes -fstack-protector -O2 -g -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -funswitch-loops -finline-limit=300 -I{ndkPath}/samples/two-libs/jni -DANDROID  -Wa,--noexecstack -Wformat -Werror=format-security    -I{ndkPath}/platforms/android-9/arch-x86/usr/include -c  {ndkPath}/samples/two-libs/jni/second.c -o {ndkPath}/samples/two-libs/obj/local/x86/objs/twolib-second/second.o 
+mkdir -p {ndkPath}/samples/two-libs/obj/local/x86
+mkdir -p {ndkPath}/samples/two-libs/obj/local/x86/objs/twolib-first
+echo [x86] "Compile        ": "twolib-first <= first.c"
+{ndkPath}/toolchains/x86-4.8/prebuilt/{platform}-x86_64/bin/i686-{platform}-android-gcc -MMD -MP -MF {ndkPath}/samples/two-libs/obj/local/x86/objs/twolib-first/first.o.d -ffunction-sections -funwind-tables -no-canonical-prefixes -fstack-protector -O2 -g -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -funswitch-loops -finline-limit=300 -I{ndkPath}/samples/two-libs/jni -DANDROID  -Wa,--noexecstack -Wformat -Werror=format-security    -I{ndkPath}/platforms/android-9/arch-x86/usr/include -c  {ndkPath}/samples/two-libs/jni/first.c -o {ndkPath}/samples/two-libs/obj/local/x86/objs/twolib-first/first.o 
+echo [x86] "StaticLibrary  ": "libtwolib-first.a"
+rm -f {ndkPath}/samples/two-libs/obj/local/x86/libtwolib-first.a
+{ndkPath}/toolchains/x86-4.8/prebuilt/{platform}-x86_64/bin/i686-{platform}-android-gcc-ar crsD {ndkPath}/samples/two-libs/obj/local/x86/libtwolib-first.a {ndkPath}/samples/two-libs/obj/local/x86/objs/twolib-first/first.o
+echo [x86] "SharedLibrary  ": "libtwolib-second.so"
+{ndkPath}/toolchains/x86-4.8/prebuilt/{platform}-x86_64/bin/i686-{platform}-android-g++ -Wl,-soname,libtwolib-second.so -shared --sysroot={ndkPath}/platforms/android-9/arch-x86 {ndkPath}/samples/two-libs/obj/local/x86/objs/twolib-second/second.o {ndkPath}/samples/two-libs/obj/local/x86/libtwolib-first.a -lgcc -no-canonical-prefixes  -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now   -lc -lm -o {ndkPath}/samples/two-libs/obj/local/x86/libtwolib-second.so
+mkdir -p {ndkPath}/samples/two-libs/libs/x86
+echo [x86] "Install        ": "libtwolib-second.so => libs/x86/libtwolib-second.so"
+install -p {ndkPath}/samples/two-libs/obj/local/x86/libtwolib-second.so {ndkPath}/samples/two-libs/libs/x86/libtwolib-second.so
+{ndkPath}/toolchains/x86-4.8/prebuilt/{platform}-x86_64/bin/i686-{platform}-android-strip --strip-unneeded  {ndkPath}/samples/two-libs/libs/x86/libtwolib-second.so
+mkdir -p {ndkPath}/samples/two-libs/obj/local/mips/objs/twolib-second
+echo [mips] "Compile        ": "twolib-second <= second.c"
+{ndkPath}/toolchains/mipsel-{platform}-android-4.8/prebuilt/{platform}-x86_64/bin/mipsel-{platform}-android-gcc -MMD -MP -MF {ndkPath}/samples/two-libs/obj/local/mips/objs/twolib-second/second.o.d -fpic -fno-strict-aliasing -finline-functions -ffunction-sections -funwind-tables -fmessage-length=0 -fno-inline-functions-called-once -fgcse-after-reload -frerun-cse-after-loop -frename-registers -no-canonical-prefixes -O2 -g -DNDEBUG -fomit-frame-pointer -funswitch-loops -finline-limit=300 -I{ndkPath}/samples/two-libs/jni -DANDROID  -Wa,--noexecstack -Wformat -Werror=format-security    -I{ndkPath}/platforms/android-9/arch-mips/usr/include -c  {ndkPath}/samples/two-libs/jni/second.c -o {ndkPath}/samples/two-libs/obj/local/mips/objs/twolib-second/second.o 
+mkdir -p {ndkPath}/samples/two-libs/obj/local/mips
+mkdir -p {ndkPath}/samples/two-libs/obj/local/mips/objs/twolib-first
+echo [mips] "Compile        ": "twolib-first <= first.c"
+{ndkPath}/toolchains/mipsel-{platform}-android-4.8/prebuilt/{platform}-x86_64/bin/mipsel-{platform}-android-gcc -MMD -MP -MF {ndkPath}/samples/two-libs/obj/local/mips/objs/twolib-first/first.o.d -fpic -fno-strict-aliasing -finline-functions -ffunction-sections -funwind-tables -fmessage-length=0 -fno-inline-functions-called-once -fgcse-after-reload -frerun-cse-after-loop -frename-registers -no-canonical-prefixes -O2 -g -DNDEBUG -fomit-frame-pointer -funswitch-loops -finline-limit=300 -I{ndkPath}/samples/two-libs/jni -DANDROID  -Wa,--noexecstack -Wformat -Werror=format-security    -I{ndkPath}/platforms/android-9/arch-mips/usr/include -c  {ndkPath}/samples/two-libs/jni/first.c -o {ndkPath}/samples/two-libs/obj/local/mips/objs/twolib-first/first.o 
+echo [mips] "StaticLibrary  ": "libtwolib-first.a"
+rm -f {ndkPath}/samples/two-libs/obj/local/mips/libtwolib-first.a
+{ndkPath}/toolchains/mipsel-{platform}-android-4.8/prebuilt/{platform}-x86_64/bin/mipsel-{platform}-android-gcc-ar crsD {ndkPath}/samples/two-libs/obj/local/mips/libtwolib-first.a {ndkPath}/samples/two-libs/obj/local/mips/objs/twolib-first/first.o
+echo [mips] "SharedLibrary  ": "libtwolib-second.so"
+{ndkPath}/toolchains/mipsel-{platform}-android-4.8/prebuilt/{platform}-x86_64/bin/mipsel-{platform}-android-g++ -Wl,-soname,libtwolib-second.so -shared --sysroot={ndkPath}/platforms/android-9/arch-mips {ndkPath}/samples/two-libs/obj/local/mips/objs/twolib-second/second.o {ndkPath}/samples/two-libs/obj/local/mips/libtwolib-first.a -lgcc -no-canonical-prefixes  -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now   -lc -lm -o {ndkPath}/samples/two-libs/obj/local/mips/libtwolib-second.so
+mkdir -p {ndkPath}/samples/two-libs/libs/mips
+echo [mips] "Install        ": "libtwolib-second.so => libs/mips/libtwolib-second.so"
+install -p {ndkPath}/samples/two-libs/obj/local/mips/libtwolib-second.so {ndkPath}/samples/two-libs/libs/mips/libtwolib-second.so
+{ndkPath}/toolchains/mipsel-{platform}-android-4.8/prebuilt/{platform}-x86_64/bin/mipsel-{platform}-android-strip --strip-unneeded  {ndkPath}/samples/two-libs/libs/mips/libtwolib-second.so

@@ -1,0 +1,136 @@
+rm -f {ndkPath}/samples/test-libstdc++/libs/arm64-v8a/lib*.so {ndkPath}/samples/test-libstdc++/libs/armeabi/lib*.so {ndkPath}/samples/test-libstdc++/libs/armeabi-v7a/lib*.so {ndkPath}/samples/test-libstdc++/libs/armeabi-v7a-hard/lib*.so {ndkPath}/samples/test-libstdc++/libs/mips/lib*.so {ndkPath}/samples/test-libstdc++/libs/mips64/lib*.so {ndkPath}/samples/test-libstdc++/libs/x86/lib*.so {ndkPath}/samples/test-libstdc++/libs/x86_64/lib*.so
+rm -f {ndkPath}/samples/test-libstdc++/libs/arm64-v8a/gdbserver {ndkPath}/samples/test-libstdc++/libs/armeabi/gdbserver {ndkPath}/samples/test-libstdc++/libs/armeabi-v7a/gdbserver {ndkPath}/samples/test-libstdc++/libs/armeabi-v7a-hard/gdbserver {ndkPath}/samples/test-libstdc++/libs/mips/gdbserver {ndkPath}/samples/test-libstdc++/libs/mips64/gdbserver {ndkPath}/samples/test-libstdc++/libs/x86/gdbserver {ndkPath}/samples/test-libstdc++/libs/x86_64/gdbserver
+rm -f {ndkPath}/samples/test-libstdc++/libs/arm64-v8a/gdb.setup {ndkPath}/samples/test-libstdc++/libs/armeabi/gdb.setup {ndkPath}/samples/test-libstdc++/libs/armeabi-v7a/gdb.setup {ndkPath}/samples/test-libstdc++/libs/armeabi-v7a-hard/gdb.setup {ndkPath}/samples/test-libstdc++/libs/mips/gdb.setup {ndkPath}/samples/test-libstdc++/libs/mips64/gdb.setup {ndkPath}/samples/test-libstdc++/libs/x86/gdb.setup {ndkPath}/samples/test-libstdc++/libs/x86_64/gdb.setup
+mkdir -p {ndkPath}/samples/test-libstdc++/libs/arm64-v8a
+echo [arm64-v8a] "Gdbserver      ": "[aarch64-{platform}-android-4.9] libs/arm64-v8a/gdbserver"
+install -p {ndkPath}/prebuilt/android-arm64/gdbserver/gdbserver {ndkPath}/samples/test-libstdc++/libs/arm64-v8a/gdbserver
+echo [arm64-v8a] "Gdbsetup       ": "libs/arm64-v8a/gdb.setup"
+echo "set solib-search-path {ndkPath}/samples/test-libstdc++/obj/local/arm64-v8a" > {ndkPath}/samples/test-libstdc++/libs/arm64-v8a/gdb.setup
+echo "source {ndkPath}/prebuilt/common/gdb/common.setup" >> {ndkPath}/samples/test-libstdc++/libs/arm64-v8a/gdb.setup
+echo "directory {ndkPath}/platforms/android-21/arch-arm64/usr/include {ndkPath}/sources/cxx-stl/system {ndkPath}/sources/cxx-stl/system/include {ndkPath}/samples/test-libstdc++/jni" >> {ndkPath}/samples/test-libstdc++/libs/arm64-v8a/gdb.setup
+mkdir -p {ndkPath}/samples/test-libstdc++/libs/x86_64
+echo [x86_64] "Gdbserver      ": "[x86_64-4.9] libs/x86_64/gdbserver"
+install -p {ndkPath}/prebuilt/android-x86_64/gdbserver/gdbserver {ndkPath}/samples/test-libstdc++/libs/x86_64/gdbserver
+echo [x86_64] "Gdbsetup       ": "libs/x86_64/gdb.setup"
+echo "set solib-search-path {ndkPath}/samples/test-libstdc++/obj/local/x86_64" > {ndkPath}/samples/test-libstdc++/libs/x86_64/gdb.setup
+echo "source {ndkPath}/prebuilt/common/gdb/common.setup" >> {ndkPath}/samples/test-libstdc++/libs/x86_64/gdb.setup
+echo "directory {ndkPath}/platforms/android-21/arch-x86_64/usr/include {ndkPath}/sources/cxx-stl/system {ndkPath}/sources/cxx-stl/system/include {ndkPath}/samples/test-libstdc++/jni" >> {ndkPath}/samples/test-libstdc++/libs/x86_64/gdb.setup
+mkdir -p {ndkPath}/samples/test-libstdc++/libs/mips64
+echo [mips64] "Gdbserver      ": "[mips64el-{platform}-android-4.9] libs/mips64/gdbserver"
+install -p {ndkPath}/prebuilt/android-mips64/gdbserver/gdbserver {ndkPath}/samples/test-libstdc++/libs/mips64/gdbserver
+echo [mips64] "Gdbsetup       ": "libs/mips64/gdb.setup"
+echo "set solib-search-path {ndkPath}/samples/test-libstdc++/obj/local/mips64" > {ndkPath}/samples/test-libstdc++/libs/mips64/gdb.setup
+echo "source {ndkPath}/prebuilt/common/gdb/common.setup" >> {ndkPath}/samples/test-libstdc++/libs/mips64/gdb.setup
+echo "directory {ndkPath}/platforms/android-21/arch-mips64/usr/include {ndkPath}/sources/cxx-stl/system {ndkPath}/sources/cxx-stl/system/include {ndkPath}/samples/test-libstdc++/jni" >> {ndkPath}/samples/test-libstdc++/libs/mips64/gdb.setup
+mkdir -p {ndkPath}/samples/test-libstdc++/libs/armeabi-v7a
+echo [armeabi-v7a] "Gdbserver      ": "[arm-{platform}-androideabi-4.8] libs/armeabi-v7a/gdbserver"
+install -p {ndkPath}/prebuilt/android-arm/gdbserver/gdbserver {ndkPath}/samples/test-libstdc++/libs/armeabi-v7a/gdbserver
+echo [armeabi-v7a] "Gdbsetup       ": "libs/armeabi-v7a/gdb.setup"
+echo "set solib-search-path {ndkPath}/samples/test-libstdc++/obj/local/armeabi-v7a" > {ndkPath}/samples/test-libstdc++/libs/armeabi-v7a/gdb.setup
+echo "source {ndkPath}/prebuilt/common/gdb/common.setup" >> {ndkPath}/samples/test-libstdc++/libs/armeabi-v7a/gdb.setup
+echo "directory {ndkPath}/platforms/android-3/arch-arm/usr/include {ndkPath}/sources/cxx-stl/system {ndkPath}/sources/cxx-stl/system/include {ndkPath}/samples/test-libstdc++/jni" >> {ndkPath}/samples/test-libstdc++/libs/armeabi-v7a/gdb.setup
+mkdir -p {ndkPath}/samples/test-libstdc++/libs/armeabi
+echo [armeabi] "Gdbserver      ": "[arm-{platform}-androideabi-4.8] libs/armeabi/gdbserver"
+install -p {ndkPath}/prebuilt/android-arm/gdbserver/gdbserver {ndkPath}/samples/test-libstdc++/libs/armeabi/gdbserver
+echo [armeabi] "Gdbsetup       ": "libs/armeabi/gdb.setup"
+echo "set solib-search-path {ndkPath}/samples/test-libstdc++/obj/local/armeabi" > {ndkPath}/samples/test-libstdc++/libs/armeabi/gdb.setup
+echo "source {ndkPath}/prebuilt/common/gdb/common.setup" >> {ndkPath}/samples/test-libstdc++/libs/armeabi/gdb.setup
+echo "directory {ndkPath}/platforms/android-3/arch-arm/usr/include {ndkPath}/sources/cxx-stl/system {ndkPath}/sources/cxx-stl/system/include {ndkPath}/samples/test-libstdc++/jni" >> {ndkPath}/samples/test-libstdc++/libs/armeabi/gdb.setup
+mkdir -p {ndkPath}/samples/test-libstdc++/libs/x86
+echo [x86] "Gdbserver      ": "[x86-4.8] libs/x86/gdbserver"
+install -p {ndkPath}/prebuilt/android-x86/gdbserver/gdbserver {ndkPath}/samples/test-libstdc++/libs/x86/gdbserver
+echo [x86] "Gdbsetup       ": "libs/x86/gdb.setup"
+echo "set solib-search-path {ndkPath}/samples/test-libstdc++/obj/local/x86" > {ndkPath}/samples/test-libstdc++/libs/x86/gdb.setup
+echo "source {ndkPath}/prebuilt/common/gdb/common.setup" >> {ndkPath}/samples/test-libstdc++/libs/x86/gdb.setup
+echo "directory {ndkPath}/platforms/android-9/arch-x86/usr/include {ndkPath}/sources/cxx-stl/system {ndkPath}/sources/cxx-stl/system/include {ndkPath}/samples/test-libstdc++/jni" >> {ndkPath}/samples/test-libstdc++/libs/x86/gdb.setup
+mkdir -p {ndkPath}/samples/test-libstdc++/libs/mips
+echo [mips] "Gdbserver      ": "[mipsel-{platform}-android-4.8] libs/mips/gdbserver"
+install -p {ndkPath}/prebuilt/android-mips/gdbserver/gdbserver {ndkPath}/samples/test-libstdc++/libs/mips/gdbserver
+echo [mips] "Gdbsetup       ": "libs/mips/gdb.setup"
+echo "set solib-search-path {ndkPath}/samples/test-libstdc++/obj/local/mips" > {ndkPath}/samples/test-libstdc++/libs/mips/gdb.setup
+echo "source {ndkPath}/prebuilt/common/gdb/common.setup" >> {ndkPath}/samples/test-libstdc++/libs/mips/gdb.setup
+echo "directory {ndkPath}/platforms/android-9/arch-mips/usr/include {ndkPath}/sources/cxx-stl/system {ndkPath}/sources/cxx-stl/system/include {ndkPath}/samples/test-libstdc++/jni" >> {ndkPath}/samples/test-libstdc++/libs/mips/gdb.setup
+mkdir -p {ndkPath}/samples/test-libstdc++/obj/local/arm64-v8a/objs-debug/test-libstl
+echo [arm64-v8a] "Compile++      ": "test-libstl <= test-libstl.cpp"
+{ndkPath}/toolchains/aarch64-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/aarch64-{platform}-android-g++ -MMD -MP -MF {ndkPath}/samples/test-libstdc++/obj/local/arm64-v8a/objs-debug/test-libstl/test-libstl.o.d -fpic -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -fno-exceptions -fno-rtti -O2 -g -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -funswitch-loops -finline-limit=300 -O0 -UNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing -I{ndkPath}/sources/cxx-stl/system/include -I{ndkPath}/samples/test-libstdc++/jni -DANDROID  -Wa,--noexecstack -Wformat -Werror=format-security -fPIE      -I{ndkPath}/platforms/android-21/arch-arm64/usr/include -c  {ndkPath}/samples/test-libstdc++/jni/test-libstl.cpp -o {ndkPath}/samples/test-libstdc++/obj/local/arm64-v8a/objs-debug/test-libstl/test-libstl.o 
+mkdir -p {ndkPath}/samples/test-libstdc++/obj/local/arm64-v8a
+echo [arm64-v8a] "StaticLibrary  ": "libstdc++.a"
+rm -f {ndkPath}/samples/test-libstdc++/obj/local/arm64-v8a/libstdc++.a
+{ndkPath}/toolchains/aarch64-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/aarch64-{platform}-android-gcc-ar crsD {ndkPath}/samples/test-libstdc++/obj/local/arm64-v8a/libstdc++.a 
+echo [arm64-v8a] "Executable     ": "test-libstl"
+{ndkPath}/toolchains/aarch64-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/aarch64-{platform}-android-g++ -Wl,--gc-sections -Wl,-z,nocopyreloc --sysroot={ndkPath}/platforms/android-21/arch-arm64 -Wl,-rpath-link={ndkPath}/platforms/android-21/arch-arm64/usr/lib -Wl,-rpath-link={ndkPath}/samples/test-libstdc++/obj/local/arm64-v8a {ndkPath}/samples/test-libstdc++/obj/local/arm64-v8a/objs-debug/test-libstl/test-libstl.o {ndkPath}/samples/test-libstdc++/obj/local/arm64-v8a/libstdc++.a -lgcc -no-canonical-prefixes  -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now -fPIE -pie  -L{ndkPath}/platforms/android-21/arch-arm64/usr/lib -lstdc++ -lc -lm -o {ndkPath}/samples/test-libstdc++/obj/local/arm64-v8a/test-libstl
+echo [arm64-v8a] "Install        ": "test-libstl => libs/arm64-v8a/test-libstl"
+install -p {ndkPath}/samples/test-libstdc++/obj/local/arm64-v8a/test-libstl {ndkPath}/samples/test-libstdc++/libs/arm64-v8a/test-libstl
+{ndkPath}/toolchains/aarch64-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/aarch64-{platform}-android-strip --strip-unneeded  {ndkPath}/samples/test-libstdc++/libs/arm64-v8a/test-libstl
+mkdir -p {ndkPath}/samples/test-libstdc++/obj/local/x86_64/objs-debug/test-libstl
+echo [x86_64] "Compile++      ": "test-libstl <= test-libstl.cpp"
+{ndkPath}/toolchains/x86_64-4.9/prebuilt/{platform}-x86_64/bin/x86_64-{platform}-android-g++ -MMD -MP -MF {ndkPath}/samples/test-libstdc++/obj/local/x86_64/objs-debug/test-libstl/test-libstl.o.d -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -fno-exceptions -fno-rtti -O2 -g -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -funswitch-loops -finline-limit=300 -O0 -UNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing -I{ndkPath}/sources/cxx-stl/system/include -I{ndkPath}/samples/test-libstdc++/jni -DANDROID  -Wa,--noexecstack -Wformat -Werror=format-security -fPIE      -I{ndkPath}/platforms/android-21/arch-x86_64/usr/include -c  {ndkPath}/samples/test-libstdc++/jni/test-libstl.cpp -o {ndkPath}/samples/test-libstdc++/obj/local/x86_64/objs-debug/test-libstl/test-libstl.o 
+mkdir -p {ndkPath}/samples/test-libstdc++/obj/local/x86_64
+echo [x86_64] "StaticLibrary  ": "libstdc++.a"
+rm -f {ndkPath}/samples/test-libstdc++/obj/local/x86_64/libstdc++.a
+{ndkPath}/toolchains/x86_64-4.9/prebuilt/{platform}-x86_64/bin/x86_64-{platform}-android-gcc-ar crsD {ndkPath}/samples/test-libstdc++/obj/local/x86_64/libstdc++.a 
+echo [x86_64] "Executable     ": "test-libstl"
+{ndkPath}/toolchains/x86_64-4.9/prebuilt/{platform}-x86_64/bin/x86_64-{platform}-android-g++ -Wl,--gc-sections -Wl,-z,nocopyreloc --sysroot={ndkPath}/platforms/android-21/arch-x86_64 -Wl,-rpath-link={ndkPath}/platforms/android-21/arch-x86_64/usr/lib -Wl,-rpath-link={ndkPath}/samples/test-libstdc++/obj/local/x86_64 {ndkPath}/samples/test-libstdc++/obj/local/x86_64/objs-debug/test-libstl/test-libstl.o {ndkPath}/samples/test-libstdc++/obj/local/x86_64/libstdc++.a -lgcc -no-canonical-prefixes  -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now -fPIE -pie  -L{ndkPath}/platforms/android-21/arch-x86_64/usr/lib64 -L{ndkPath}/platforms/android-21/arch-x86_64/usr/lib -lstdc++ -lc -lm -o {ndkPath}/samples/test-libstdc++/obj/local/x86_64/test-libstl
+echo [x86_64] "Install        ": "test-libstl => libs/x86_64/test-libstl"
+install -p {ndkPath}/samples/test-libstdc++/obj/local/x86_64/test-libstl {ndkPath}/samples/test-libstdc++/libs/x86_64/test-libstl
+{ndkPath}/toolchains/x86_64-4.9/prebuilt/{platform}-x86_64/bin/x86_64-{platform}-android-strip --strip-unneeded  {ndkPath}/samples/test-libstdc++/libs/x86_64/test-libstl
+mkdir -p {ndkPath}/samples/test-libstdc++/obj/local/mips64/objs-debug/test-libstl
+echo [mips64] "Compile++      ": "test-libstl <= test-libstl.cpp"
+{ndkPath}/toolchains/mips64el-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/mips64el-{platform}-android-g++ -MMD -MP -MF {ndkPath}/samples/test-libstdc++/obj/local/mips64/objs-debug/test-libstl/test-libstl.o.d -fpic -fno-strict-aliasing -finline-functions -ffunction-sections -funwind-tables -fmessage-length=0 -fno-inline-functions-called-once -fgcse-after-reload -frerun-cse-after-loop -frename-registers -no-canonical-prefixes -fno-exceptions -fno-rtti -O0 -g -fno-omit-frame-pointer -I{ndkPath}/sources/cxx-stl/system/include -I{ndkPath}/samples/test-libstdc++/jni -DANDROID  -Wa,--noexecstack -Wformat -Werror=format-security -fPIE      -I{ndkPath}/platforms/android-21/arch-mips64/usr/include -c  {ndkPath}/samples/test-libstdc++/jni/test-libstl.cpp -o {ndkPath}/samples/test-libstdc++/obj/local/mips64/objs-debug/test-libstl/test-libstl.o 
+mkdir -p {ndkPath}/samples/test-libstdc++/obj/local/mips64
+echo [mips64] "StaticLibrary  ": "libstdc++.a"
+rm -f {ndkPath}/samples/test-libstdc++/obj/local/mips64/libstdc++.a
+{ndkPath}/toolchains/mips64el-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/mips64el-{platform}-android-gcc-ar crsD {ndkPath}/samples/test-libstdc++/obj/local/mips64/libstdc++.a 
+echo [mips64] "Executable     ": "test-libstl"
+{ndkPath}/toolchains/mips64el-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/mips64el-{platform}-android-g++ -Wl,--gc-sections -Wl,-z,nocopyreloc --sysroot={ndkPath}/platforms/android-21/arch-mips64 -Wl,-rpath-link={ndkPath}/platforms/android-21/arch-mips64/usr/lib -Wl,-rpath-link={ndkPath}/samples/test-libstdc++/obj/local/mips64 {ndkPath}/samples/test-libstdc++/obj/local/mips64/objs-debug/test-libstl/test-libstl.o {ndkPath}/samples/test-libstdc++/obj/local/mips64/libstdc++.a -lgcc -no-canonical-prefixes  -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now -fPIE -pie  -L{ndkPath}/platforms/android-21/arch-mips64/usr/lib64 -L{ndkPath}/platforms/android-21/arch-mips64/usr/lib -lstdc++ -lc -lm -o {ndkPath}/samples/test-libstdc++/obj/local/mips64/test-libstl
+echo [mips64] "Install        ": "test-libstl => libs/mips64/test-libstl"
+install -p {ndkPath}/samples/test-libstdc++/obj/local/mips64/test-libstl {ndkPath}/samples/test-libstdc++/libs/mips64/test-libstl
+{ndkPath}/toolchains/mips64el-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/mips64el-{platform}-android-strip --strip-unneeded  {ndkPath}/samples/test-libstdc++/libs/mips64/test-libstl
+mkdir -p {ndkPath}/samples/test-libstdc++/obj/local/armeabi-v7a/objs-debug/test-libstl
+echo [armeabi-v7a] "Compile++ thumb": "test-libstl <= test-libstl.cpp"
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-g++ -MMD -MP -MF {ndkPath}/samples/test-libstdc++/obj/local/armeabi-v7a/objs-debug/test-libstl/test-libstl.o.d -fpic -ffunction-sections -funwind-tables -fstack-protector -no-canonical-prefixes -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp -fno-exceptions -fno-rtti -mthumb -Os -g -DNDEBUG -fomit-frame-pointer -fno-strict-aliasing -finline-limit=64 -O0 -UNDEBUG -marm -fno-omit-frame-pointer -I{ndkPath}/sources/cxx-stl/system/include -I{ndkPath}/samples/test-libstdc++/jni -DANDROID  -Wa,--noexecstack -Wformat -Werror=format-security      -I{ndkPath}/platforms/android-3/arch-arm/usr/include -c  {ndkPath}/samples/test-libstdc++/jni/test-libstl.cpp -o {ndkPath}/samples/test-libstdc++/obj/local/armeabi-v7a/objs-debug/test-libstl/test-libstl.o 
+mkdir -p {ndkPath}/samples/test-libstdc++/obj/local/armeabi-v7a
+echo [armeabi-v7a] "StaticLibrary  ": "libstdc++.a"
+rm -f {ndkPath}/samples/test-libstdc++/obj/local/armeabi-v7a/libstdc++.a
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-gcc-ar crsD {ndkPath}/samples/test-libstdc++/obj/local/armeabi-v7a/libstdc++.a 
+echo [armeabi-v7a] "Executable     ": "test-libstl"
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-g++ -Wl,--gc-sections -Wl,-z,nocopyreloc --sysroot={ndkPath}/platforms/android-3/arch-arm -Wl,-rpath-link={ndkPath}/platforms/android-3/arch-arm/usr/lib -Wl,-rpath-link={ndkPath}/samples/test-libstdc++/obj/local/armeabi-v7a {ndkPath}/samples/test-libstdc++/obj/local/armeabi-v7a/objs-debug/test-libstl/test-libstl.o {ndkPath}/samples/test-libstdc++/obj/local/armeabi-v7a/libstdc++.a -lgcc -no-canonical-prefixes -march=armv7-a -Wl,--fix-cortex-a8  -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now  -L{ndkPath}/platforms/android-3/arch-arm/usr/lib -lstdc++ -lc -lm -o {ndkPath}/samples/test-libstdc++/obj/local/armeabi-v7a/test-libstl
+echo [armeabi-v7a] "Install        ": "test-libstl => libs/armeabi-v7a/test-libstl"
+install -p {ndkPath}/samples/test-libstdc++/obj/local/armeabi-v7a/test-libstl {ndkPath}/samples/test-libstdc++/libs/armeabi-v7a/test-libstl
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-strip --strip-unneeded  {ndkPath}/samples/test-libstdc++/libs/armeabi-v7a/test-libstl
+mkdir -p {ndkPath}/samples/test-libstdc++/obj/local/armeabi/objs-debug/test-libstl
+echo [armeabi] "Compile++ thumb": "test-libstl <= test-libstl.cpp"
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-g++ -MMD -MP -MF {ndkPath}/samples/test-libstdc++/obj/local/armeabi/objs-debug/test-libstl/test-libstl.o.d -fpic -ffunction-sections -funwind-tables -fstack-protector -no-canonical-prefixes -march=armv5te -mtune=xscale -msoft-float -fno-exceptions -fno-rtti -mthumb -Os -g -DNDEBUG -fomit-frame-pointer -fno-strict-aliasing -finline-limit=64 -O0 -UNDEBUG -marm -fno-omit-frame-pointer -I{ndkPath}/sources/cxx-stl/system/include -I{ndkPath}/samples/test-libstdc++/jni -DANDROID  -Wa,--noexecstack -Wformat -Werror=format-security      -I{ndkPath}/platforms/android-3/arch-arm/usr/include -c  {ndkPath}/samples/test-libstdc++/jni/test-libstl.cpp -o {ndkPath}/samples/test-libstdc++/obj/local/armeabi/objs-debug/test-libstl/test-libstl.o 
+mkdir -p {ndkPath}/samples/test-libstdc++/obj/local/armeabi
+echo [armeabi] "StaticLibrary  ": "libstdc++.a"
+rm -f {ndkPath}/samples/test-libstdc++/obj/local/armeabi/libstdc++.a
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-gcc-ar crsD {ndkPath}/samples/test-libstdc++/obj/local/armeabi/libstdc++.a 
+echo [armeabi] "Executable     ": "test-libstl"
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-g++ -Wl,--gc-sections -Wl,-z,nocopyreloc --sysroot={ndkPath}/platforms/android-3/arch-arm -Wl,-rpath-link={ndkPath}/platforms/android-3/arch-arm/usr/lib -Wl,-rpath-link={ndkPath}/samples/test-libstdc++/obj/local/armeabi {ndkPath}/samples/test-libstdc++/obj/local/armeabi/objs-debug/test-libstl/test-libstl.o {ndkPath}/samples/test-libstdc++/obj/local/armeabi/libstdc++.a -lgcc -no-canonical-prefixes  -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now  -L{ndkPath}/platforms/android-3/arch-arm/usr/lib -lstdc++ -lc -lm -o {ndkPath}/samples/test-libstdc++/obj/local/armeabi/test-libstl
+echo [armeabi] "Install        ": "test-libstl => libs/armeabi/test-libstl"
+install -p {ndkPath}/samples/test-libstdc++/obj/local/armeabi/test-libstl {ndkPath}/samples/test-libstdc++/libs/armeabi/test-libstl
+{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-strip --strip-unneeded  {ndkPath}/samples/test-libstdc++/libs/armeabi/test-libstl
+mkdir -p {ndkPath}/samples/test-libstdc++/obj/local/x86/objs-debug/test-libstl
+echo [x86] "Compile++      ": "test-libstl <= test-libstl.cpp"
+{ndkPath}/toolchains/x86-4.8/prebuilt/{platform}-x86_64/bin/i686-{platform}-android-g++ -MMD -MP -MF {ndkPath}/samples/test-libstdc++/obj/local/x86/objs-debug/test-libstl/test-libstl.o.d -ffunction-sections -funwind-tables -no-canonical-prefixes -fstack-protector -fno-exceptions -fno-rtti -O2 -g -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -funswitch-loops -finline-limit=300 -O0 -UNDEBUG -fno-omit-frame-pointer -fno-strict-aliasing -I{ndkPath}/sources/cxx-stl/system/include -I{ndkPath}/samples/test-libstdc++/jni -DANDROID  -Wa,--noexecstack -Wformat -Werror=format-security      -I{ndkPath}/platforms/android-9/arch-x86/usr/include -c  {ndkPath}/samples/test-libstdc++/jni/test-libstl.cpp -o {ndkPath}/samples/test-libstdc++/obj/local/x86/objs-debug/test-libstl/test-libstl.o 
+mkdir -p {ndkPath}/samples/test-libstdc++/obj/local/x86
+echo [x86] "StaticLibrary  ": "libstdc++.a"
+rm -f {ndkPath}/samples/test-libstdc++/obj/local/x86/libstdc++.a
+{ndkPath}/toolchains/x86-4.8/prebuilt/{platform}-x86_64/bin/i686-{platform}-android-gcc-ar crsD {ndkPath}/samples/test-libstdc++/obj/local/x86/libstdc++.a 
+echo [x86] "Executable     ": "test-libstl"
+{ndkPath}/toolchains/x86-4.8/prebuilt/{platform}-x86_64/bin/i686-{platform}-android-g++ -Wl,--gc-sections -Wl,-z,nocopyreloc --sysroot={ndkPath}/platforms/android-9/arch-x86 -Wl,-rpath-link={ndkPath}/platforms/android-9/arch-x86/usr/lib -Wl,-rpath-link={ndkPath}/samples/test-libstdc++/obj/local/x86 {ndkPath}/samples/test-libstdc++/obj/local/x86/objs-debug/test-libstl/test-libstl.o {ndkPath}/samples/test-libstdc++/obj/local/x86/libstdc++.a -lgcc -no-canonical-prefixes  -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now  -L{ndkPath}/platforms/android-9/arch-x86/usr/lib -lstdc++ -lc -lm -o {ndkPath}/samples/test-libstdc++/obj/local/x86/test-libstl
+echo [x86] "Install        ": "test-libstl => libs/x86/test-libstl"
+install -p {ndkPath}/samples/test-libstdc++/obj/local/x86/test-libstl {ndkPath}/samples/test-libstdc++/libs/x86/test-libstl
+{ndkPath}/toolchains/x86-4.8/prebuilt/{platform}-x86_64/bin/i686-{platform}-android-strip --strip-unneeded  {ndkPath}/samples/test-libstdc++/libs/x86/test-libstl
+mkdir -p {ndkPath}/samples/test-libstdc++/obj/local/mips/objs-debug/test-libstl
+echo [mips] "Compile++      ": "test-libstl <= test-libstl.cpp"
+{ndkPath}/toolchains/mipsel-{platform}-android-4.8/prebuilt/{platform}-x86_64/bin/mipsel-{platform}-android-g++ -MMD -MP -MF {ndkPath}/samples/test-libstdc++/obj/local/mips/objs-debug/test-libstl/test-libstl.o.d -fpic -fno-strict-aliasing -finline-functions -ffunction-sections -funwind-tables -fmessage-length=0 -fno-inline-functions-called-once -fgcse-after-reload -frerun-cse-after-loop -frename-registers -no-canonical-prefixes -fno-exceptions -fno-rtti -O0 -g -fno-omit-frame-pointer -I{ndkPath}/sources/cxx-stl/system/include -I{ndkPath}/samples/test-libstdc++/jni -DANDROID  -Wa,--noexecstack -Wformat -Werror=format-security      -I{ndkPath}/platforms/android-9/arch-mips/usr/include -c  {ndkPath}/samples/test-libstdc++/jni/test-libstl.cpp -o {ndkPath}/samples/test-libstdc++/obj/local/mips/objs-debug/test-libstl/test-libstl.o 
+mkdir -p {ndkPath}/samples/test-libstdc++/obj/local/mips
+echo [mips] "StaticLibrary  ": "libstdc++.a"
+rm -f {ndkPath}/samples/test-libstdc++/obj/local/mips/libstdc++.a
+{ndkPath}/toolchains/mipsel-{platform}-android-4.8/prebuilt/{platform}-x86_64/bin/mipsel-{platform}-android-gcc-ar crsD {ndkPath}/samples/test-libstdc++/obj/local/mips/libstdc++.a 
+echo [mips] "Executable     ": "test-libstl"
+{ndkPath}/toolchains/mipsel-{platform}-android-4.8/prebuilt/{platform}-x86_64/bin/mipsel-{platform}-android-g++ -Wl,--gc-sections -Wl,-z,nocopyreloc --sysroot={ndkPath}/platforms/android-9/arch-mips -Wl,-rpath-link={ndkPath}/platforms/android-9/arch-mips/usr/lib -Wl,-rpath-link={ndkPath}/samples/test-libstdc++/obj/local/mips {ndkPath}/samples/test-libstdc++/obj/local/mips/objs-debug/test-libstl/test-libstl.o {ndkPath}/samples/test-libstdc++/obj/local/mips/libstdc++.a -lgcc -no-canonical-prefixes  -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now  -L{ndkPath}/platforms/android-9/arch-mips/usr/lib -lstdc++ -lc -lm -o {ndkPath}/samples/test-libstdc++/obj/local/mips/test-libstl
+echo [mips] "Install        ": "test-libstl => libs/mips/test-libstl"
+install -p {ndkPath}/samples/test-libstdc++/obj/local/mips/test-libstl {ndkPath}/samples/test-libstdc++/libs/mips/test-libstl
+{ndkPath}/toolchains/mipsel-{platform}-android-4.8/prebuilt/{platform}-x86_64/bin/mipsel-{platform}-android-strip --strip-unneeded  {ndkPath}/samples/test-libstdc++/libs/mips/test-libstl

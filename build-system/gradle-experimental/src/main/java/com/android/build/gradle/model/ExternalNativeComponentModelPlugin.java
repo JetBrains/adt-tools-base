@@ -20,17 +20,19 @@ import static com.android.build.gradle.model.ModelConstants.ARTIFACTS;
 import static com.android.build.gradle.model.ModelConstants.EXTERNAL_BUILD_CONFIG;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.NativeBuildConfigGsonUtil;
 import com.android.build.gradle.internal.NativeDependencyLinkage;
 import com.android.build.gradle.internal.dependency.ArtifactContainer;
 import com.android.build.gradle.internal.dependency.NativeLibraryArtifact;
 import com.android.build.gradle.internal.gson.FileGsonTypeAdaptor;
-import com.android.build.gradle.internal.gson.NativeBuildConfigValue;
+import com.android.build.gradle.external.gson.NativeBuildConfigValue;
 import com.android.build.gradle.managed.JsonConfigFile;
 import com.android.build.gradle.managed.NativeBuildConfig;
 import com.android.build.gradle.managed.NativeLibrary;
 import com.android.build.gradle.model.internal.DefaultExternalNativeBinarySpec;
 import com.android.build.gradle.model.internal.DefaultExternalNativeComponentSpec;
 import com.android.utils.StringHelper;
+import com.android.utils.NativeSourceFileExtensions;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -151,7 +153,7 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
                 NativeBuildConfigValue jsonConfig = gson.fromJson(
                         new FileReader(configFile.getConfig()),
                         NativeBuildConfigValue.class);
-                jsonConfig.copyTo(config);
+                NativeBuildConfigGsonUtil.copyToNativeBuildConfig(jsonConfig, config);
             }
         }
 
@@ -159,10 +161,10 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
         static void finalizeNativeBuildConfig(NativeBuildConfig config) {
             // Configure default file extensions if not already set by user.
             if (config.getCFileExtensions().isEmpty()) {
-                config.getCFileExtensions().addAll(NdkComponentModelPlugin.C_FILE_EXTENSIONS);
+                config.getCFileExtensions().addAll(NativeSourceFileExtensions.C_FILE_EXTENSIONS);
             }
             if (config.getCppFileExtensions().isEmpty()) {
-                config.getCppFileExtensions().addAll(NdkComponentModelPlugin.CPP_FILE_EXTENSIONS);
+                config.getCppFileExtensions().addAll(NativeSourceFileExtensions.CPP_FILE_EXTENSIONS);
             }
         }
 
