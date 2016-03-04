@@ -64,6 +64,7 @@ import com.android.builder.profile.ProcessRecorderFactory;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
 import com.android.builder.sdk.TargetInfo;
+import com.android.dx.command.dexer.Main;
 import com.android.ide.common.internal.ExecutorSingleton;
 import com.android.utils.ILogger;
 import com.google.common.base.CharMatcher;
@@ -101,7 +102,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -406,6 +406,7 @@ public abstract class BasePlugin {
                                                 FD_INTERMEDIATES + "/jack-cache/cache.xml"),
                                         getLogger());
                                 libraryCache.unload();
+                                Main.clearInternTables();
                                 return null;
                             }
                         }, new Recorder.Property("project", project.getName()));

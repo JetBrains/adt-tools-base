@@ -38,7 +38,7 @@ public class DexOptions implements com.android.builder.core.DexOptions {
 
     private String javaMaxHeapSize;
 
-    private Integer maxProcessCount = null;
+    private volatile Integer maxProcessCount = null;
 
     public void setIncremental(boolean isIncremental) {
         // TODO: Print out a warning, that this is ignored.

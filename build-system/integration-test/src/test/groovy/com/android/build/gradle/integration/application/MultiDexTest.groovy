@@ -40,6 +40,22 @@ class MultiDexTest {
             .withHeap("2048M")
             .create()
 
+    @Parameterized.Parameters(name = "dexInProcess = {0}")
+    public static Collection<Object[]> data() {
+        return [
+                [true] as Object[],
+                [false] as Object[],
+        ]
+    }
+
+    @Parameterized.Parameter(0)
+    public boolean dexInProcess
+
+    @Before
+    public void setDexInProcess() {
+        project.buildFile << "System.setProperty('android.dexInProcess', '$dexInProcess')"
+    }
+
     @Test
     void "check normal build"() {
         project.execute("assembleDebug", "assembleAndroidTest")
