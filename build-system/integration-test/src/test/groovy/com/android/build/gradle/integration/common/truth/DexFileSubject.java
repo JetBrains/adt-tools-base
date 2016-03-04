@@ -25,6 +25,7 @@ import com.android.ide.common.process.DefaultProcessExecutor;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessExecutor;
 import com.android.ide.common.process.ProcessInfoBuilder;
+import com.android.manifmerger.XmlDocument;
 import com.android.utils.StdLogger;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Preconditions;
@@ -37,6 +38,7 @@ import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Reader;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -134,13 +136,15 @@ public class DexFileSubject extends Subject<DexFileSubject, File> {
         builder.setExecutable(dexDumpExe);
         builder.addArgs("-l", "xml", "-d", file.getAbsolutePath());
 
-        String output = ApkHelper.runAndGetRawOutput(builder.createProcess(), executor);
+        Reader reader = ApkHelper.runAndGetRawOutput(builder.createProcess(), executor);
         try {
-            return XmlUtils.parseDocument(output, false).getChildNodes().item(0);
+            return XmlUtils.parseDocument(reader, false).getChildNodes().item(0);
         } catch (ParserConfigurationException e) {
             throw new IOException(e);
         } catch (SAXException e) {
             throw new IOException(e);
+        } finally {
+            reader.close();
         }
     }
 

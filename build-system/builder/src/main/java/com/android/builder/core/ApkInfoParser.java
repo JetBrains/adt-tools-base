@@ -24,9 +24,8 @@ import com.android.ide.common.process.CachedProcessOutputHandler;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessExecutor;
 import com.android.ide.common.process.ProcessInfoBuilder;
-import com.android.utils.SdkUtils;
+import com.android.utils.LineCollector;
 import com.google.common.base.Objects;
-import com.google.common.base.Splitter;
 
 import java.io.File;
 import java.util.List;
@@ -175,6 +174,8 @@ public class ApkInfoParser {
 
         BaseProcessOutputHandler.BaseProcessOutput output = processOutputHandler.getProcessOutput();
 
-        return Splitter.on(SdkUtils.getLineSeparator()).splitToList(output.getStandardOutputAsString());
+        LineCollector lineCollector = new LineCollector();
+        output.processStandardOutputLines(lineCollector);
+        return lineCollector.getResult();
     }
 }
