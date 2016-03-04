@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,33 +14,39 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.incremental;
+package com.android.build.gradle.internal.incremental.hotswap;
 
 import static com.google.common.truth.Truth.assertWithMessage;
 
 import com.android.build.gradle.internal.incremental.fixture.ClassEnhancement;
-import com.example.basic.AllAccessFieldsSubclass;
+import com.example.basic.InnerClassInvoker;
 
 import org.junit.ClassRule;
 import org.junit.Test;
 
-public class AllAccessFieldsTest {
+/**
+ * Invoker class of inner classes methods.
+ */
+public class InnerClassInvokerTest {
+
 
     @ClassRule
     public static ClassEnhancement harness = new ClassEnhancement();
 
+
     @Test
-    public void accessParentProtected() throws Exception {
+    public void innerClassInstantiateOuterClass()
+            throws ClassNotFoundException, NoSuchFieldException, InstantiationException,
+            IllegalAccessException {
+
         harness.reset();
 
-        AllAccessFieldsSubclass sub = new AllAccessFieldsSubclass();
-
-        assertWithMessage("AllAccessFieldsTest.accessParentProtected()")
-                .that(sub.getProtectedInt()).isEqualTo(7);
+        InnerClassInvoker invoker = new InnerClassInvoker();
+        assertWithMessage("base: invoker.invokeInnerClass()")
+                .that(invoker.invokeInnerClass()).isEqualTo("from builder");
 
         harness.applyPatch("changeSubClass");
-
-        assertWithMessage("AllAccessFieldsTest.accessParentProtected()")
-                .that(sub.getProtectedInt()).isEqualTo(49);
+        assertWithMessage("changeSubClass: invoker.invokeInnerClass()")
+                .that(invoker.invokeInnerClass()).isEqualTo("from builder revisited");
     }
 }

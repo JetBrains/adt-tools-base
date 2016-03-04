@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,31 +14,29 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.incremental;
+package com.android.build.gradle.internal.incremental.hotswap;
 
 import static org.junit.Assert.assertEquals;
 
 import com.android.build.gradle.internal.incremental.fixture.ClassEnhancement;
-import com.example.basic.Enums;
+import com.example.basic.SuperCall;
 
 import org.junit.ClassRule;
 import org.junit.Test;
 
-public class EnumTests {
-
+public class SuperCallTest {
     @ClassRule
     public static ClassEnhancement harness = new ClassEnhancement();
 
     @Test
-    public void testEnums() throws Exception {
+    public void mixedSuperAndNew() throws Exception {
         harness.reset();
 
-        assertEquals("zero", Enums.VALUE_0.getValue());
-        assertEquals("overriden:one:other", Enums.VALUE_1.getValue());
+        SuperCall.Sub sub = new SuperCall.Sub();
+        assertEquals("super:basesuper:base", sub.mixedCalls());
 
         harness.applyPatch("changeBaseClass");
 
-        assertEquals("zero:patched", Enums.VALUE_0.getValue());
-        assertEquals("patched+overriden:one:patched:other+patched", Enums.VALUE_1.getValue());
+        assertEquals("super:base:patchedsuper:base:patched", sub.mixedCalls());
     }
 }

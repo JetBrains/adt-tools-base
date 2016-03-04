@@ -61,8 +61,7 @@ android {
         androidTest {
             java {
                 setSrcDirs(["${PROJECT_ROOT}/tools/base/build-system/gradle-core/src/test/java"])
-                filter.setIncludes(["com/android/build/gradle/internal/incremental/*.java"])
-                filter.setExcludes(["com/android/build/gradle/internal/incremental/InstantRunVerifierTest.java"])
+                filter.setIncludes(["com/android/build/gradle/internal/incremental/hotswap/*.java"])
             }
             assets {
                 srcDir(file("build/generatedAssets/"))
@@ -71,11 +70,16 @@ android {
     }
 }
 
+File instantRunServer = new File(
+        PROJECT_ROOT,
+        "out/build/base/instant-run/instant-run-server/build/libs/instant-run-server.jar")
+if (!instantRunServer.exists()) {
+    throw new RuntimeException("Instant run server library not found: " + instantRunServer)
+}
+
 dependencies {
     compile 'com.android.tools:common:' + env.project.ext.baseVersion
-    compile files(new File(
-            PROJECT_ROOT,
-            "out/build/base/fdr/build/libs/fdr.jar"))
+    compile files(instantRunServer)
     compile files("build/incremental-test-classes-jar/instrumentedBaseClasses.jar")
 
     compile 'com.android.support:support-v4:23.0.1'
@@ -119,7 +123,8 @@ class DexTask extends DefaultTask {
                 false /* incremental */,
                 true /* optimize */,
                 new com.android.ide.common.process.LoggedProcessOutputHandler(
-                        new com.android.build.gradle.internal.LoggerWrapper(getLogger())))
+                        new com.android.build.gradle.internal.LoggerWrapper(getLogger())),
+                false /*instantRunMode*/)
         Iterable<File> files =
                 Files.fileTreeTraverser().preOrderTraversal(classesFolder).filter(Files.isFile());
 

@@ -32,6 +32,11 @@ public class InstantUnitTest {
             .create();
 
     @Test
+    public void checkInstantUnitTestsBuild() {
+        sProject.execute("clean", "assembleDebugAndroidTest");
+    }
+
+    @Test
     @Category(DeviceTests.class)
     public void runTestsOnDevice() {
         sProject.execute("clean");

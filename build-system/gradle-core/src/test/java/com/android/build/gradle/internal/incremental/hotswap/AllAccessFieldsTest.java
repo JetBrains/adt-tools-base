@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,29 +14,33 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.incremental;
+package com.android.build.gradle.internal.incremental.hotswap;
 
-import static org.junit.Assert.assertEquals;
+import static com.google.common.truth.Truth.assertWithMessage;
 
 import com.android.build.gradle.internal.incremental.fixture.ClassEnhancement;
-import com.example.basic.SuperCall;
+import com.example.basic.AllAccessFieldsSubclass;
 
 import org.junit.ClassRule;
 import org.junit.Test;
 
-public class SuperCallTest {
+public class AllAccessFieldsTest {
+
     @ClassRule
     public static ClassEnhancement harness = new ClassEnhancement();
 
     @Test
-    public void mixedSuperAndNew() throws Exception {
+    public void accessParentProtected() throws Exception {
         harness.reset();
 
-        SuperCall.Sub sub = new SuperCall.Sub();
-        assertEquals("super:basesuper:base", sub.mixedCalls());
+        AllAccessFieldsSubclass sub = new AllAccessFieldsSubclass();
 
-        harness.applyPatch("changeBaseClass");
+        assertWithMessage("AllAccessFieldsTest.accessParentProtected()")
+                .that(sub.getProtectedInt()).isEqualTo(7);
 
-        assertEquals("super:base:patchedsuper:base:patched", sub.mixedCalls());
+        harness.applyPatch("changeSubClass");
+
+        assertWithMessage("AllAccessFieldsTest.accessParentProtected()")
+                .that(sub.getProtectedInt()).isEqualTo(49);
     }
 }
