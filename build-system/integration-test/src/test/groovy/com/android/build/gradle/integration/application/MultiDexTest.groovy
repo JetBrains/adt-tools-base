@@ -21,9 +21,11 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.google.common.io.Files
 import groovy.transform.CompileStatic
 import org.gradle.api.JavaVersion
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import org.junit.runners.Parameterized
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
