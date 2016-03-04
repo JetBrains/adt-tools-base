@@ -17,19 +17,14 @@
 package com.android.tools.profiler;
 
 import com.android.annotations.NonNull;
-import com.android.build.api.transform.DirectoryInput;
-import com.android.build.api.transform.Format;
-import com.android.build.api.transform.QualifiedContent;
-import com.android.build.api.transform.Status;
-import com.android.build.api.transform.Transform;
-import com.android.build.api.transform.TransformInput;
-import com.android.build.api.transform.TransformInvocation;
+import com.android.build.api.transform.*;
 import com.android.utils.FileUtils;
+import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.ByteStreams;
+import com.google.common.io.Closeables;
 import com.google.common.io.Files;
-
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -37,21 +32,17 @@ import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * A gradle plugin which, when applied, instruments the target Android app with support code for
  * helping profile it.
  */
 public class ProfilerPlugin implements Plugin<Project> {
-
+  private static final String PROPERTY_PROPERTIES_FILE = "android.profiler.properties";
   private static final String PROPERTY_ENABLED = "android.profiler.enabled";
 
   @NonNull
@@ -99,10 +90,8 @@ public class ProfilerPlugin implements Plugin<Project> {
 
   @Override
   public void apply(final Project project) {
-
-
-    Map<String, ?> properties = project.getProperties();
-    final boolean isEnabled = Boolean.parseBoolean((String) properties.get(PROPERTY_ENABLED));
+    Properties properties = getProperties(project);
+    final boolean isEnabled = Boolean.parseBoolean(properties.getProperty(PROPERTY_ENABLED, "false"));
 
     if (isEnabled) {
       String path = "build/profilers-gen/profilers-support-lib.jar";
@@ -212,5 +201,37 @@ public class ProfilerPlugin implements Plugin<Project> {
     catch (InvocationTargetException e) {
       e.printStackTrace();
     }
+  }
+
+  private Properties getProperties(Project project) {
+    Map<String, ?> projectProperties = project.getProperties();
+    Properties defaults = new Properties();
+    for (Map.Entry<String, ?> e : projectProperties.entrySet()) {
+      // Properties extends HashTable, which does not support null values.
+      if (e.getValue() != null) {
+        defaults.put(e.getKey(), e.getValue());
+      }
+    }
+    Properties result = new Properties(defaults);
+
+    Object propertiesFile = projectProperties.get(PROPERTY_PROPERTIES_FILE);
+    if (propertiesFile != null) {
+      Reader reader = null;
+      try {
+        reader = new InputStreamReader(new FileInputStream(String.valueOf(propertiesFile)), Charsets.UTF_8);
+        result.load(reader);
+      }
+      catch (IOException e) {
+        // Ignored.
+        e.printStackTrace();
+      }
+      finally {
+        if (reader != null) {
+          Closeables.closeQuietly(reader);
+        }
+      }
+    }
+
+    return result;
   }
 }
