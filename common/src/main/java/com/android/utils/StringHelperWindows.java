@@ -42,6 +42,66 @@ import java.util.List;
 public class StringHelperWindows extends StringHelper {
 
     /**
+     * Split a single command line into individual commands with Windows rules.
+     *
+     * @param commandLine the command line to be split
+     * @return the list of individual commands
+     */
+    @NonNull
+    public static List<String> splitCommandLine(@NonNull String commandLine) {
+
+        final String separators[] = { "&&", "&" };
+
+        List<String> commands = Lists.newArrayList();
+        boolean quoting = false;
+        boolean escapingQuotes = false;
+        boolean escapingOthers = false;
+
+        int commandStart = 0;
+
+        for (int i = 0; i < commandLine.length(); ++i) {
+            final char c = commandLine.charAt(i);
+
+            if (c == '"' && !escapingQuotes) {
+                quoting = !quoting;
+                continue;
+            }
+
+            if (escapingQuotes) {
+                escapingQuotes = false;
+            } else if (c == '\\') {
+                escapingQuotes = true;
+                continue;
+            }
+
+            if (escapingOthers) {
+                escapingOthers = false;
+                continue;
+            } else if (c == '^') {
+                escapingOthers = true;
+                continue;
+            }
+
+            if (!quoting) {
+                for (final String separator : separators) {
+                    if (commandLine.substring(i).startsWith(separator)) {
+                        commands.add(commandLine.substring(commandStart, i));
+                        i += separator.length();
+                        commandStart = i;
+                        break;
+                    }
+                }
+            }
+
+        }
+
+        if (commandStart < commandLine.length())
+            commands.add(commandLine.substring(commandStart));
+
+        return commands;
+    }
+
+    /**
      * Quote and join a list of tokens with Windows rules.
      *
      * @param tokens the token to be quoted and joined

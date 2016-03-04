@@ -36,6 +36,61 @@ import java.util.List;
 public class StringHelperPOSIX extends StringHelper {
 
     /**
+     * Split a single command line into individual commands with POSIX rules.
+     *
+     * @param commandLine the command line to be split
+     * @return the list of individual commands
+     */
+    @NonNull
+    public static List<String> splitCommandLine(@NonNull String commandLine) {
+
+        final String separators[] = { "&&", ";" };
+
+        List<String> commands = Lists.newArrayList();
+        boolean quoting = false;
+        char quote = '\0';
+        boolean escaping = false;
+
+        int commandStart = 0;
+
+        for (int i = 0; i < commandLine.length(); ++i) {
+            final char c = commandLine.charAt(i);
+
+            if (escaping) {
+                escaping = false;
+                continue;
+            } else if (c == '\\' && (!quoting || quote == '\"')) {
+                escaping = true;
+                continue;
+            } else if (!quoting && (c == '"' || c == '\'')) {
+                quoting = true;
+                quote = c;
+                continue;
+            } else if (quoting && c == quote) {
+                quoting = false;
+                quote = '\0';
+                continue;
+            }
+
+            if (!quoting) {
+                for (final String separator : separators) {
+                    if (commandLine.substring(i).startsWith(separator)) {
+                        commands.add(commandLine.substring(commandStart, i));
+                        i += separator.length();
+                        commandStart = i;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (commandStart < commandLine.length())
+            commands.add(commandLine.substring(commandStart));
+
+        return commands;
+    }
+
+    /**
      * Quote and join a list of tokens with POSIX rules.
      *
      * @param tokens the token to be quoted and joined
