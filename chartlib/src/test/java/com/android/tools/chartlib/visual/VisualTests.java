@@ -17,6 +17,7 @@
 package com.android.tools.chartlib.visual;
 
 import com.android.tools.chartlib.AnimatedComponent;
+import com.android.tools.chartlib.Choreographer;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -52,8 +53,10 @@ public class VisualTests extends JDialog {
         JButton close = new JButton("Close");
         JTabbedPane tabs = new JTabbedPane();
 
-        mTests.add(new SunburstVisualTest());
-        mTests.add(new TimelineVisualTest());
+        final Choreographer choreographer = new Choreographer(40);
+        mTests.add(new LineChartVisualTest(choreographer));
+        mTests.add(new SunburstVisualTest(choreographer));
+        mTests.add(new TimelineVisualTest(choreographer));
 
         for (VisualTest test : mTests) {
             test.registerComponents(mComponents);
@@ -85,18 +88,14 @@ public class VisualTests extends JDialog {
         step.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                for (AnimatedComponent component : mComponents) {
-                    component.step();
-                }
+                choreographer.step();
             }
         });
         final JCheckBox update = new JCheckBox("Update");
         update.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                for (AnimatedComponent component : mComponents) {
-                    component.setUpdateData(update.isSelected());
-                }
+                choreographer.setUpdate(update.isSelected());
                 step.setEnabled(!update.isSelected());
             }
         });

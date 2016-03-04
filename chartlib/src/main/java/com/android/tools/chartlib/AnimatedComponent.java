@@ -19,16 +19,11 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.HierarchyEvent;
-import java.awt.event.HierarchyListener;
 import java.awt.geom.Path2D;
 import java.util.LinkedList;
 import java.util.List;
 
 import javax.swing.JComponent;
-import javax.swing.Timer;
 
 /**
  * Base class for components that should change their look over time.
@@ -37,15 +32,12 @@ import javax.swing.Timer;
  * as well as pay attention to the field {@link #mFrameLength} as it controls the behavior of timed
  * animations.
  */
-public abstract class AnimatedComponent extends JComponent
-        implements ActionListener, HierarchyListener {
+public abstract class AnimatedComponent extends JComponent implements Animatable {
 
     protected static final Font DEFAULT_FONT = new Font("Sans", Font.PLAIN, 10);
 
-    protected final Timer mTimer;
-
     /**
-     * The length of the last frame in seconds.
+     * The cached length of the last frame in seconds.
      */
     protected float mFrameLength;
 
@@ -53,17 +45,10 @@ public abstract class AnimatedComponent extends JComponent
 
     protected boolean mDrawDebugInfo;
 
-    protected boolean mUpdateData;
-
-    protected boolean mStep;
-
     private List<String> mDebugInfo;
 
-    public AnimatedComponent(int fps) {
-        mUpdateData = true;
-        mTimer = new Timer(1000 / fps, this);
+    public AnimatedComponent() {
         mDebugInfo = new LinkedList<String>();
-        addHierarchyListener(this);
     }
 
     /**
@@ -81,6 +66,11 @@ public abstract class AnimatedComponent extends JComponent
         return from * q + to * (1.0f - q);
     }
 
+    protected final double lerp(double from, double to, float fraction) {
+        double q = Math.pow(1.0f - fraction, mFrameLength);
+        return from * q + to * (1.0 - q);
+    }
+
     public final boolean isDrawDebugInfo() {
         return mDrawDebugInfo;
     }
@@ -93,19 +83,7 @@ public abstract class AnimatedComponent extends JComponent
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g.create();
-
-        // Update frame length.
-        long now = System.nanoTime();
-        mFrameLength = (now - mLastRenderTime) / 1000000000.0f;
-        mLastRenderTime = now;
-
-        if (mUpdateData || mStep) {
-            mStep = false;
-            updateData();
-        }
-
         draw(g2d);
-
         if (mDrawDebugInfo) {
             doDebugDraw(g2d);
         }
@@ -149,36 +127,6 @@ public abstract class AnimatedComponent extends JComponent
     protected void debugDraw(Graphics2D g) {
     }
 
-
-    @Override
-    public final void actionPerformed(ActionEvent actionEvent) {
-        repaint();
-    }
-
-    @Override
-    public final void hierarchyChanged(HierarchyEvent hierarchyEvent) {
-        if (mTimer.isRunning() && !isShowing()) {
-            mTimer.stop();
-        } else if (!mTimer.isRunning() && isShowing()) {
-            mTimer.start();
-        }
-    }
-
-    /**
-     * If true, this component will animate normally.
-     */
-    public final void setUpdateData(boolean updateData) {
-        mUpdateData = updateData;
-    }
-
-    /**
-     * Animate this component for a single frame and then pause. Note that this call will have no
-     * effect unless {@link #setUpdateData(boolean)} is set to {@code false} first.
-     */
-    public final void step() {
-        mStep = true;
-    }
-
     protected static void drawArrow(Graphics2D g, float x, float y, float dx, float dy, float len,
             Color color) {
         Path2D.Float path = new Path2D.Float();
@@ -198,5 +146,12 @@ public abstract class AnimatedComponent extends JComponent
         path.lineTo(x, y + 10);
         g.setColor(color);
         g.draw(path);
+    }
+
+    @Override
+    public void animate(float frameLength) {
+        mFrameLength = frameLength;
+        this.updateData();
+        this.repaint();
     }
 }
