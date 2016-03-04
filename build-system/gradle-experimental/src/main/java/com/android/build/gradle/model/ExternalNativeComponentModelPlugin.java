@@ -326,9 +326,11 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
                                 artifacts.getLibraries().add(lib.getOutput());
                                 artifacts.setAbi(lib.getAbi());
                                 artifacts.setVariantName(lib.getName());
-                                artifacts.setLinkage(lib.getOutput().getName().endsWith(".so")
-                                        ? NativeDependencyLinkage.SHARED
-                                        : NativeDependencyLinkage.STATIC);
+                                if (lib.getOutput() != null) {
+                                    artifacts.setLinkage(lib.getOutput().getName().endsWith(".so")
+                                            ? NativeDependencyLinkage.SHARED
+                                            : NativeDependencyLinkage.STATIC);
+                                }
                                 artifacts.setBuiltBy(
                                         Lists.<Object>newArrayList(
                                                 tasks.get("create"
