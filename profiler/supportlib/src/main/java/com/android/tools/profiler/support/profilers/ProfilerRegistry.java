@@ -13,21 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.android.tools.profiler.support.profilers;
 
-package com.android.profilerapp;
-
-import android.app.Application;
-import android.util.Log;
-
-import com.android.tools.profiler.support.ProfilerApplication;
-import com.android.tools.profiler.support.profilerserver.ProfilerServer;
-
-import java.io.IOException;
-
-// This class exists as a placeholder that will get instrumented by the Profiler Plugin
-public final class MyApplication extends ProfilerApplication {
-    @Override
-    public void onCreate() {
-        super.onCreate();
-    }
+public interface ProfilerRegistry {
+    byte SERVER = 0;
+    byte CPU = 1;
+    byte MEMORY = 2;
+    byte NETWORKING = 3;
+    byte BATTERY = 4;
+    byte GPU = 5;
+    byte TOTAL = 6;
 }

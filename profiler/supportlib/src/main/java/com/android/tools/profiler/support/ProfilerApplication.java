@@ -16,13 +16,35 @@
 
 package com.android.tools.profiler.support;
 
+import com.android.tools.profiler.support.profilerserver.ProfilerServer;
+
 import android.app.Application;
 import android.util.Log;
+
+import java.io.IOException;
 
 public class ProfilerApplication extends Application {
     @Override
     public void onCreate() {
-        Log.i("StudioProfiler", "Advanced profiling is enabled and ready");
+        Log.i(ProfilerServer.SERVER_NAME, "Advanced profiling is enabled and ready.");
         super.onCreate();
+
+        try {
+            ProfilerServer.start();
+            Log.i(ProfilerServer.SERVER_NAME, "Advanced profiling has started.");
+        } catch (IOException e) {
+            Log.e(ProfilerServer.SERVER_NAME, "Advanced profiling could not be started.", e);
+        }
+    }
+
+    @Override
+    public void onTerminate() {
+        Log.i(ProfilerServer.SERVER_NAME, "Advanced profiling is terminating.");
+        try {
+            ProfilerServer.stop();
+        } catch (IOException e) {
+            Log.e(ProfilerServer.SERVER_NAME, "Advanced profiling encountered an error while terminating.", e);
+        }
+        super.onTerminate();
     }
 }
