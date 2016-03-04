@@ -206,7 +206,7 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
                             } else {
                                 //noinspection unchecked - Unavoidable due how Exec is implemented.
                                 exec.setCommandLine(
-                                        StringHelper.tokenizeCommand(
+                                        StringHelper.tokenizeString(
                                                 binary.getConfig().getBuildCommandString()));
                             }
                         }
@@ -241,7 +241,7 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
                                     task.commandLine(configFile.getCommand());
                                 } else {
                                     //noinspection unchecked - Unavoidable due how Exec is implemented.
-                                    task.commandLine(StringHelper.tokenizeCommand(
+                                    task.commandLine(StringHelper.tokenizeString(
                                             configFile.getCommandString()));
                                 }
                             }
@@ -295,7 +295,7 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
                                 @Override
                                 public void execute(Exec task) {
                                     //noinspection unchecked - Unavoidable due how Exec is implemented.
-                                    task.commandLine(StringHelper.tokenizeCommand(
+                                    task.commandLine(StringHelper.tokenizeString(
                                             cleanCommandString));
                                 }
                             });
