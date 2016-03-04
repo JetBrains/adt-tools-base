@@ -32,7 +32,6 @@ public class InstantUnitTest {
             .create();
 
     @Test
-    @Ignore("http://b.android.com/202368")
     public void checkInstantUnitTestsBuild() {
         sProject.execute("clean", "assembleDebugAndroidTest");
     }

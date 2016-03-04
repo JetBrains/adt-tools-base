@@ -137,6 +137,8 @@ Task instrumentIncrementalTestBaseClasses = tasks.create(
     outputs.files baseInstrumentedClasses
 }
 
+instrumentIncrementalTestBaseClasses.dependsOn compileIncrementalTestBaseClasses
+
 // Compile other changesets. They have the default changset on their classpath.
 Task instrumentIncrementalTestPatches = tasks.create("instrumentIncrementalTestPatches")
 
