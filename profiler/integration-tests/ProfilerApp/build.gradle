@@ -2,7 +2,6 @@
 
 buildscript {
     repositories {
-        maven { url System.getenv("MAVEN_URL") }
         jcenter()
     }
     dependencies {
