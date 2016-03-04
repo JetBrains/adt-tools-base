@@ -147,12 +147,16 @@ task performanceTest(type: Test) {
     }
 }
 
+task buildTestDependencies {
+    dependsOn ':publishLocal',
+              ':base:gradle-core:instrumentIncrementalTestPatches',
+              ':base:gradle-core:instrumentIncrementalTestBaseClasses'
+              ':base:fdr:jar'
+}
+
 automaticTest.dependsOn ':publishLocal'
-test.dependsOn ':publishLocal'
-connectedIntegrationTest.dependsOn ':publishLocal',
-        ':base:gradle-core:instrumentIncrementalTestPatches',
-        ':base:gradle-core:instrumentIncrementalTestBaseClasses'
-        ':base:fdr:jar'
+test.dependsOn buildTestDependencies
+connectedIntegrationTest.dependsOn buildTestDependencies
 performanceTest.dependsOn ':publishLocal'
 
 jacocoTestReport {
