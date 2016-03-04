@@ -21,6 +21,7 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -36,8 +37,13 @@ public class StringHelperPOSIXTest {
     }
 
     @Test
+    public void checkZeroCommands() throws Exception {
+        checkCommandLineSplitting("", Collections.<String>emptyList());
+    }
+
+    @Test
     public void checkOneCommand() throws Exception {
-        checkCommandLineSplitting("foo bar", Arrays.asList("foo bar"));
+        checkCommandLineSplitting("foo bar", Collections.singletonList("foo bar"));
     }
 
     @Test
@@ -52,22 +58,22 @@ public class StringHelperPOSIXTest {
 
     @Test
     public void checkOneCommandWithQuotedSemicolon() throws Exception {
-        checkCommandLineSplitting("foo bar\";\" baz qux", Arrays.asList("foo bar\";\" baz qux"));
+        checkCommandLineSplitting("foo bar\";\" baz qux", Collections.singletonList("foo bar\";\" baz qux"));
     }
 
     @Test
     public void checkOneCommandWithQuotedDoubleAmpersands() throws Exception {
-        checkCommandLineSplitting("foo bar\"&&\" baz qux", Arrays.asList("foo bar\"&&\" baz qux"));
+        checkCommandLineSplitting("foo bar\"&&\" baz qux", Collections.singletonList("foo bar\"&&\" baz qux"));
     }
 
     @Test
     public void checkOneCommandWithEscapedSemicolon() throws Exception {
-        checkCommandLineSplitting("foo bar\\; baz qux", Arrays.asList("foo bar\\; baz qux"));
+        checkCommandLineSplitting("foo bar\\; baz qux", Collections.singletonList("foo bar\\; baz qux"));
     }
 
     @Test
     public void checkOneCommandWithEscapedDoubleAmpersands() throws Exception {
-        checkCommandLineSplitting("foo bar\\&\\& baz qux", Arrays.asList("foo bar\\&\\& baz qux"));
+        checkCommandLineSplitting("foo bar\\&\\& baz qux", Collections.singletonList("foo bar\\&\\& baz qux"));
     }
 
     // Tokenization and stringization tests.
@@ -80,8 +86,13 @@ public class StringHelperPOSIXTest {
     }
 
     @Test
+    public void checkZeroTokens() throws Exception {
+        checkTokenizationAndQuotingAndJoining("", Collections.<String>emptyList(), "");
+    }
+
+    @Test
     public void checkSingleToken() throws Exception {
-        checkTokenizationAndQuotingAndJoining("a", Arrays.asList("a"), "\"a\"");
+        checkTokenizationAndQuotingAndJoining("a", Collections.singletonList("a"), "\"a\"");
     }
 
     @Test
@@ -156,31 +167,31 @@ public class StringHelperPOSIXTest {
 
     @Test
     public void checkDoubleQuotedNewline() throws Exception {
-        checkTokenizationAndQuotingAndJoining("\"a\nb\"", Arrays.asList("a\nb"), "\"a\nb\"");
+        checkTokenizationAndQuotingAndJoining("\"a\nb\"", Collections.singletonList("a\nb"), "\"a\nb\"");
     }
 
     // Slash escaping tests.
 
     @Test
     public void checkSlashEscapedSlash() throws Exception {
-        checkTokenizationAndQuotingAndJoining("a\\\\b", Arrays.asList("a\\b"), "\"a\\\\b\"");
+        checkTokenizationAndQuotingAndJoining("a\\\\b", Collections.singletonList("a\\b"), "\"a\\\\b\"");
     }
 
     @Test
     public void checkSlashEscapedNewline() throws Exception {
-        checkTokenizationAndQuotingAndJoining("a\\\nb", Arrays.asList("ab"), "\"ab\"");
+        checkTokenizationAndQuotingAndJoining("a\\\nb", Collections.singletonList("ab"), "\"ab\"");
     }
 
     @Test
     public void checkDoubleQuotedSlashEscapedNewline() throws Exception {
-        checkTokenizationAndQuotingAndJoining("\"a\\\nb\"", Arrays.asList("ab"), "\"ab\"");
+        checkTokenizationAndQuotingAndJoining("\"a\\\nb\"", Collections.singletonList("ab"), "\"ab\"");
     }
 
     // Caret escaping tests.
 
     @Test
     public void checkCaretEscapedCaret() throws Exception {
-        checkTokenizationAndQuotingAndJoining("a^^b", Arrays.asList("a^^b"), "\"a^^b\"");
+        checkTokenizationAndQuotingAndJoining("a^^b", Collections.singletonList("a^^b"), "\"a^^b\"");
     }
 
     @Test
@@ -190,6 +201,6 @@ public class StringHelperPOSIXTest {
 
     @Test
     public void checkDoubleQuotedCaretEscapedNewline() throws Exception {
-        checkTokenizationAndQuotingAndJoining("\"a^\nb\"", Arrays.asList("a^\nb"), "\"a^\nb\"");
+        checkTokenizationAndQuotingAndJoining("\"a^\nb\"", Collections.singletonList("a^\nb"), "\"a^\nb\"");
     }
 }
