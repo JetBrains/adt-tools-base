@@ -96,12 +96,12 @@ import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.IAndroidTarget.OptionalLibrary;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
+import com.android.utils.LineCollector;
 import com.android.utils.Pair;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Splitter;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
@@ -1613,9 +1613,9 @@ public class AndroidBuilder {
                 .rethrowFailure()
                 .assertNormalExitValue();
 
-        String content = processOutputHandler.getProcessOutput().getStandardOutputAsString();
-
-        return Sets.newHashSet(Splitter.on('\n').split(content));
+        LineCollector lineCollector = new LineCollector();
+        processOutputHandler.getProcessOutput().processStandardOutputLines(lineCollector);
+        return ImmutableSet.copyOf(lineCollector.getResult());
     }
 
     /**

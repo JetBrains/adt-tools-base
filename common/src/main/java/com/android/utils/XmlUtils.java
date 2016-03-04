@@ -429,8 +429,22 @@ public class XmlUtils {
     public static Document parseDocument(@NonNull String xml, boolean namespaceAware)
             throws ParserConfigurationException, IOException, SAXException {
         xml = stripBom(xml);
+        return parseDocument(new StringReader(xml), namespaceAware);
+    }
+
+    /**
+     * Parses the given {@link Reader} as a DOM document, using the JDK parser. The parser does not
+     * validate, and is optionally namespace aware.
+     *
+     * @param xml            a reader for the XML content to be parsed (must be well formed)
+     * @param namespaceAware whether the parser is namespace aware
+     * @return the DOM document
+     */
+    @NonNull
+    public static Document parseDocument(@NonNull Reader xml, boolean namespaceAware)
+            throws ParserConfigurationException, IOException, SAXException {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        InputSource is = new InputSource(new StringReader(xml));
+        InputSource is = new InputSource(xml);
         factory.setNamespaceAware(namespaceAware);
         factory.setValidating(false);
         DocumentBuilder builder = factory.newDocumentBuilder();

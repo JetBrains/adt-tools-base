@@ -61,7 +61,9 @@ public class ParsingProcessOutputHandlerTest {
 
         String original = "error example\ntwo line error\nnext line\nsomething else";
 
-        sParsingProcessOutputHandler.handleOutput(processOutputFromErrorString(original));
+        ProcessOutput processOutput = processOutputFromErrorString(original);
+        processOutput.close();
+        sParsingProcessOutputHandler.handleOutput(processOutput);
 
         Mockito.verify(sMessageReceiver).receiveMessage(new Message(
                 Message.Kind.ERROR,
@@ -110,7 +112,9 @@ public class ParsingProcessOutputHandlerTest {
     public void parseException() throws IOException, ProcessException {
         String original = "two line error";
 
-        sParsingProcessOutputHandler.handleOutput(processOutputFromErrorString(original));
+        ProcessOutput processOutput = processOutputFromErrorString(original);
+        processOutput.close();
+        sParsingProcessOutputHandler.handleOutput(processOutput);
 
         Mockito.verifyNoMoreInteractions(sMessageReceiver);
     }

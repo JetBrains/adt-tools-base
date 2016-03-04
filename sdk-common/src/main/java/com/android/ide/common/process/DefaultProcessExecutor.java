@@ -70,7 +70,13 @@ public class DefaultProcessExecutor implements ProcessExecutor {
             Process process = processBuilder.start();
             // and grab the output, and the exit code
             ProcessOutput output = processOutputHandler.createOutput();
-            int exitCode = grabProcessOutput(process, output);
+            int exitCode;
+            try {
+                exitCode = grabProcessOutput(process, output);
+            } finally {
+                output.close();
+            }
+
 
             processOutputHandler.handleOutput(output);
 
