@@ -65,8 +65,8 @@ public class MemoryFragment extends Fragment implements View.OnClickListener {
     private Handler mProfilerHandler = new Handler();
     private int mPrevFreedCount = -1;
 
-    private List<Bitmap> mBitmaps = new ArrayList<>();
-    private List<int[]> mInts = new ArrayList<>();
+    private List<Bitmap> mBitmaps = new ArrayList<Bitmap>();
+    private List<int[]> mInts = new ArrayList<int[]>();
 
     private boolean mChurnSmallIntAllocation = false;
     private boolean mChurnSmallBitmapAllocation = false;
@@ -365,7 +365,7 @@ public class MemoryFragment extends Fragment implements View.OnClickListener {
     private class SmapsParserTask extends AsyncTask<Void, Void, Set<Map.Entry<String, long[]>>> {
         @Override
         protected Set<Map.Entry<String, long[]>> doInBackground(Void... params) {
-            HashMap<String, long[]> pathSizeAllocation = new HashMap<>();
+            HashMap<String, long[]> pathSizeAllocation = new HashMap<String, long[]>();
             try {
                 RandomAccessFile smapsFile = new RandomAccessFile("/proc/" + android.os.Process.myPid() + "/smaps", "r");
 

@@ -23,10 +23,10 @@ import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.view.View;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import gnu.trove.list.array.TLongArrayList;
 
 /*
  * Custom View to draw a bar per smap entry visualizing its shared/private memory usage
@@ -43,11 +43,11 @@ public class MemorySmapsView extends View {
     private int mDataCount;
     private long mMax = Long.MIN_VALUE;
 
-    private List<Long> mData = new ArrayList<>();
+    private TLongArrayList mData = new TLongArrayList();
     private Paint[] mPaint = null;
 
     public MemorySmapsView(Context c, AttributeSet attrs) {
-        super (c, attrs);
+        super(c, attrs);
 
         Paint privatePaint = new Paint();
         privatePaint.setColor(Color.RED);
@@ -61,7 +61,7 @@ public class MemorySmapsView extends View {
         sharedPaint.setStyle(Paint.Style.STROKE);
         sharedPaint.setStrokeWidth(COLUMN_WIDTH);
 
-        mPaint = new Paint[]{ sharedPaint, privatePaint };
+        mPaint = new Paint[]{sharedPaint, privatePaint};
     }
 
     public void clearData() {
@@ -108,7 +108,6 @@ public class MemorySmapsView extends View {
         super.onDraw(canvas);
 
         for (int i = 0; i < mDataCount; i++) {
-
             // TODO auto adjust column width based on data size
             if (i >= mWidth / COLUMN_WIDTH) {
                 break;
@@ -119,7 +118,6 @@ public class MemorySmapsView extends View {
 
             canvas.drawLine(i * COLUMN_WIDTH, mHeight, i * COLUMN_WIDTH, mHeight - scaledSharedHeight, mPaint[i % 2]);
             canvas.drawLine(i * COLUMN_WIDTH, mHeight - scaledSharedHeight, i * COLUMN_WIDTH, mHeight - scaledSharedHeight - scaledPrivateHeight, mPaint[i % 2]);
-
         }
     }
 }
