@@ -28,6 +28,50 @@ import java.util.List;
  */
 public class StringHelperWindowsTest {
 
+    // Command line splitting tests.
+
+    private static void checkCommandLineSplitting(
+            String originalCommand, List<String> splitCommands) throws Exception {
+        assertThat(StringHelperWindows.splitCommandLine(originalCommand)).isEqualTo(splitCommands);
+    }
+
+    @Test
+    public void checkOneCommand() throws Exception {
+        checkCommandLineSplitting("foo bar", Arrays.asList("foo bar"));
+    }
+
+    @Test
+    public void checkTwoCommandsWithSingleAmpersand() throws Exception {
+        checkCommandLineSplitting("foo bar& baz qux", Arrays.asList("foo bar", " baz qux"));
+    }
+
+    @Test
+    public void checkTwoCommandsWithDoubleAmpersands() throws Exception {
+        checkCommandLineSplitting("foo bar&& baz qux", Arrays.asList("foo bar", " baz qux"));
+    }
+
+    @Test
+    public void checkOneCommandWithQuotedSingleAmpersand() throws Exception {
+        checkCommandLineSplitting("foo bar\"&\" baz qux", Arrays.asList("foo bar\"&\" baz qux"));
+    }
+
+    @Test
+    public void checkOneCommandWithQuotedDoubleAmpersands() throws Exception {
+        checkCommandLineSplitting("foo bar\"&&\" baz qux", Arrays.asList("foo bar\"&&\" baz qux"));
+    }
+
+    @Test
+    public void checkOneCommandWithEscapedSingleAmpersand() throws Exception {
+        checkCommandLineSplitting("foo bar^& baz qux", Arrays.asList("foo bar^& baz qux"));
+    }
+
+    @Test
+    public void checkOneCommandWithEscapedDoubleAmpersands() throws Exception {
+        checkCommandLineSplitting("foo bar^&^& baz qux", Arrays.asList("foo bar^&^& baz qux"));
+    }
+
+    // Tokenization and stringization tests.
+
     private static void checkTokenizationAndQuotingAndJoining(
             String originalString, List<String> tokenizedString, String quotedAndJoinedTokens) throws Exception {
         assertThat(StringHelperWindows.tokenizeString(originalString)).isEqualTo(tokenizedString);

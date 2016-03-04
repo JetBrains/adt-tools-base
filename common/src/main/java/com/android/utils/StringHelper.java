@@ -96,6 +96,21 @@ public class StringHelper {
     }
 
     /**
+     * Split a single command line into individual commands with platform specific rules.
+     *
+     * @param commandLine the command line to be split
+     * @return the list of individual commands
+     */
+    @NonNull
+    public static List<String> splitCommandLine(@NonNull String commandLine) {
+
+        if (System.getProperty("os.name").startsWith("Windows"))
+            return StringHelperWindows.splitCommandLine(commandLine);
+        else
+            return StringHelperPOSIX.splitCommandLine(commandLine);
+    }
+
+    /**
      * Quote and join a list of tokens with platform specific rules.
      *
      * @param tokens the token to be quoted and joined
