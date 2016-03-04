@@ -87,6 +87,7 @@ public class JillTransform extends Transform {
     @NonNull
     @Override
     public Map<String, Object> getParameterInputs() {
+        checkNotNull(androidBuilder.getTargetInfo());
         return ImmutableMap.<String, Object>of(
                 "buildToolsVersion",
                 androidBuilder.getTargetInfo().getBuildTools().getRevision().toString());

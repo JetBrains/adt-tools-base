@@ -70,6 +70,7 @@ import com.android.ide.common.internal.PngCruncher;
 import com.android.ide.common.process.CachedProcessOutputHandler;
 import com.android.ide.common.process.JavaProcessExecutor;
 import com.android.ide.common.process.JavaProcessInfo;
+import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessExecutor;
 import com.android.ide.common.process.ProcessInfo;
@@ -1767,23 +1768,47 @@ public class AndroidBuilder {
     }
 
     /**
+     * Converts Java source code into android byte codes using Jack.
+     *
+     * @param options Options for configuring Jack.
+     * @param isInProcess Whether to run Jack in memory or spawn another Java process.
+     */
+    public void convertByteCodeUsingJack(@NonNull JackProcessOptions options, boolean isInProcess)
+            throws ConfigNotSupportedException, ClassNotFoundException, CompilationException,
+            ConfigurationException, UnrecoverableException, ProcessException {
+
+        // Create all the necessary directories if needed.
+        if (options.getDexOutputDirectory() != null) {
+            FileUtils.mkdirs(options.getDexOutputDirectory());
+        }
+
+        if (options.getOutputFile() != null) {
+            FileUtils.mkdirs(options.getOutputFile().getParentFile());
+        }
+
+        if (options.getIncrementalDir() != null) {
+            try {
+                FileUtils.mkdirs(options.getIncrementalDir());
+            } catch (RuntimeException ignored) {
+                getLogger().warning("Cannot create %1$s directory, "
+                        + "jack incremental support disabled", options.getIncrementalDir());
+                // unset the incremental dir if it neither already exists nor can be created.
+                options.setIncrementalDir(null);
+            }
+        }
+
+        if (isInProcess) {
+            convertByteCodeUsingJackApis(options);
+        } else {
+            convertByteCodeUsingJackCli(options, new LoggedProcessOutputHandler(getLogger()));
+        }
+    }
+
+    /**
      * Converts java source code into android byte codes using the jack integration APIs.
      * Jack will run in memory.
      */
-    public void convertByteCodeUsingJackApis(
-            @NonNull File dexOutputFolder,
-            @NonNull File jackOutputFile,
-            @NonNull Collection<File> classpath,
-            @NonNull Collection<File> packagedLibraries,
-            @NonNull Collection<File> sourceFiles,
-            @Nullable Collection<File> proguardFiles,
-            @Nullable File mappingFile,
-            @NonNull Collection<File> jarJarRulesFiles,
-            @Nullable File incrementalDir,
-            @Nullable File javaResourcesFolder,
-            @Nullable String sourceCompatibility,
-            boolean multiDex,
-            int minSdkVersion)
+    public void convertByteCodeUsingJackApis(@NonNull JackProcessOptions options)
             throws ConfigNotSupportedException, ConfigurationException, CompilationException,
             UnrecoverableException, ClassNotFoundException {
 
@@ -1802,67 +1827,68 @@ public class AndroidBuilder {
                 try {
                     config = jackProvider.get().createConfig(Api02Config.class);
 
-                    config.setClasspath(new ArrayList<File>(classpath));
-                    config.setOutputDexDir(dexOutputFolder);
-                    config.setOutputJackFile(jackOutputFile);
-                    config.setImportedJackLibraryFiles(new ArrayList<File>(packagedLibraries));
-                    config.setAndroidMinApiLevel(minSdkVersion);
-
-                    if (proguardFiles != null) {
-                        config.setProguardConfigFiles(new ArrayList<File>(proguardFiles));
+                    config.setClasspath(options.getClasspaths());
+                    if (options.getDexOutputDirectory() != null) {
+                        config.setOutputDexDir(options.getDexOutputDirectory());
+                    }
+                    if (options.getOutputFile() != null) {
+                        config.setOutputJackFile(options.getOutputFile());
+                    }
+                    config.setImportedJackLibraryFiles(options.getImportFiles());
+                    if (options.getMinSdkVersion() > 0) {
+                        config.setAndroidMinApiLevel(options.getMinSdkVersion());
                     }
 
-                    if (!jarJarRulesFiles.isEmpty()) {
-                        config.setJarJarConfigFiles(ImmutableList.copyOf(jarJarRulesFiles));
-                    }
+                    config.setProguardConfigFiles(options.getProguardFiles());
+                    config.setJarJarConfigFiles(options.getJarJarRuleFiles());
 
-                    if (multiDex) {
-                        if (minSdkVersion < BuildToolInfo.SDK_LEVEL_FOR_MULTIDEX_NATIVE_SUPPORT) {
+                    if (options.isMultiDex()) {
+                        if (options.getMinSdkVersion() <
+                                BuildToolInfo.SDK_LEVEL_FOR_MULTIDEX_NATIVE_SUPPORT) {
                             config.setMultiDexKind(MultiDexKind.LEGACY);
                         } else {
                             config.setMultiDexKind(MultiDexKind.NATIVE);
                         }
                     }
 
-                    if (!sourceFiles.isEmpty()) {
-                        config.setSourceEntries(new ArrayList<File>(sourceFiles));
-                    }
-                    if (mappingFile != null) {
+                    config.setSourceEntries(options.getInputFiles());
+                    if (options.getMappingFile() != null) {
                         config.setProperty("jack.obfuscation.mapping.dump", "true");
-                        config.setObfuscationMappingOutputFile(mappingFile);
+                        config.setObfuscationMappingOutputFile(options.getMappingFile());
                     }
 
                     config.setProperty("jack.import.resource.policy", "keep-first");
 
                     config.setReporter(ReporterKind.DEFAULT, outputStream);
 
-                    if (sourceCompatibility != null) {
-                        config.setProperty("jack.java.source.version", sourceCompatibility);
+                    if (options.getSourceCompatibility() != null) {
+                        config.setProperty(
+                                "jack.java.source.version",
+                                options.getSourceCompatibility());
                     }
 
-                    // set the incremental dir if set and either already exists or can be created.
-                    if (incrementalDir != null) {
-                        if (!incrementalDir.exists() && !incrementalDir.mkdirs()) {
-                            mLogger.warning("Cannot create %1$s directory, "
-                                    + "jack incremental support disabled", incrementalDir);
-                        }
-                        if (incrementalDir.exists()) {
-                            config.setIncrementalDir(incrementalDir);
+                    if (options.getIncrementalDir() != null
+                            && options.getIncrementalDir().exists()) {
+                        config.setIncrementalDir(options.getIncrementalDir());
+                    }
+
+                    ImmutableList.Builder<File> resourcesDir = ImmutableList.builder();
+                    for (File file : options.getResourceDirectories()) {
+                        if (file.exists()) {
+                            resourcesDir.add(file);
                         }
                     }
-                    if (javaResourcesFolder != null && javaResourcesFolder.exists()) {
-                        config.setResourceDirs(ImmutableList.of(javaResourcesFolder));
-                    }
+                    config.setResourceDirs(resourcesDir.build());
 
                     compilationTask = config.getTask();
                 } catch (ConfigNotSupportedException e) {
                     mLogger.error(e,
                             "jack.jar from build tools "
                                     + mTargetInfo.getBuildTools().getRevision()
-                                    + " does not support Jack API v01.");
+                                    + " does not support Jack API v02.");
                     throw e;
                 } catch (ConfigurationException e) {
-                    mLogger.error(e, "Jack APIs v01 configuration failed");
+                    mLogger.error(e, "Jack APIs v02 configuration failed");
                     throw e;
                 }
             }
@@ -1884,52 +1910,15 @@ public class AndroidBuilder {
                 throw e;
             }
         } catch (ClassNotFoundException e) {
-            getLogger().error(e, "Cannot load Jack APIs v01 " + e.getMessage());
+            getLogger().error(e, "Cannot load Jack APIs v02 " + e.getMessage());
             throw e;
         }
     }
 
-    public void convertByteCodeWithJack(
-            @NonNull File dexOutputFolder,
-            @NonNull File jackOutputFile,
-            @NonNull String classpath,
-            @NonNull Collection<File> packagedLibraries,
-            @Nullable File ecjOptionFile,
-            @Nullable Collection<File> proguardFiles,
-            @Nullable File mappingFile,
-            @NonNull Collection<File> jarJarRuleFiles,
-            @Nullable String sourceCompatibility,
-            boolean multiDex,
-            int minSdkVersion,
-            boolean debugLog,
-            String javaMaxHeapSize,
+    public void convertByteCodeUsingJackCli(
+            @NonNull JackProcessOptions options,
             @NonNull ProcessOutputHandler processOutputHandler) throws ProcessException {
-        JackProcessBuilder builder = new JackProcessBuilder();
-
-        builder.setDebugLog(debugLog)
-                .setVerbose(mVerboseExec)
-                .setJavaMaxHeapSize(javaMaxHeapSize)
-                .setClasspath(classpath)
-                .setDexOutputFolder(dexOutputFolder)
-                .setJackOutputFile(jackOutputFile)
-                .addImportFiles(packagedLibraries)
-                .setSourceCompatibility(sourceCompatibility)
-                .setMinSdkVersion(minSdkVersion);
-
-        if (ecjOptionFile != null) {
-            builder.setEcjOptionFile(ecjOptionFile);
-        }
-
-        if (proguardFiles != null) {
-            builder.addProguardFiles(proguardFiles).setMappingFile(mappingFile);
-        }
-
-        if (multiDex) {
-            builder.setMultiDex(true);
-        }
-
-        builder.setJarJarRuleFiles(jarJarRuleFiles);
-
+        JackProcessBuilder builder = new JackProcessBuilder(options);
         mJavaProcessExecutor.execute(
                 builder.build(mTargetInfo.getBuildTools()), processOutputHandler)
                 .rethrowFailure().assertNormalExitValue();
