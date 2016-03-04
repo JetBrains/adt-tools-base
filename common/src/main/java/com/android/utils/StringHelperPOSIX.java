@@ -104,7 +104,8 @@ public class StringHelperPOSIX extends StringHelper {
             token = token.replace("\"", "\\\"");
             sb.append("\"").append(token).append("\" ");
         }
-        sb.setLength(sb.length() - 1);
+        if (sb.length() > 0)
+            sb.setLength(sb.length() - 1);
         return sb.toString();
     }
 
