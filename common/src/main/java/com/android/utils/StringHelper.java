@@ -96,63 +96,30 @@ public class StringHelper {
     }
 
     /**
-     * Tokenize a command line string.
+     * Quote and join a list of tokens with platform specific rules.
+     *
+     * @param tokens the token to be quoted and joined
+     * @return the string
      */
     @NonNull
-    public static List<String> tokenizeCommand(@NonNull String commandLine) {
-        Iterable<String> split =
-                Splitter.on(' ').trimResults().split(commandLine);
-        List<String> command = Lists.newArrayList();
-        char quote = '\0';
-        StringBuilder quotedText = new StringBuilder();
-        for (String arg : split) {
-            if (quote == '\0') {
-                quote = findFirstQuoteChar(arg, "'\"");
-            }
-
-            if (quote != '\0') {
-                if (quotedText.length() > 0) {
-                    quotedText.append(" ");
-                }
-                quotedText.append(arg);
-                if (!arg.isEmpty() && arg.charAt(arg.length() - 1) == quote) {
-                    if (arg.length() == 1 || arg.charAt(arg.length() - 2) != '\\') {
-                        quote = '\0';
-                        command.add(quotedText.toString());
-                        quotedText = new StringBuilder();
-                    }
-                }
-            } else {
-                if (!arg.isEmpty()) {
-                    command.add(arg);
-                }
-            }
-        }
-        if (quote != '\0') {
-            throw new RuntimeException(
-                    "Unable to parse command string: " + commandLine + "\n"
-                    + "Missing " + quote + ".");
-        }
-        return command;
+    public static String quoteAndJoinTokens(@NonNull List<String> tokens) {
+        if (System.getProperty("os.name").startsWith("Windows"))
+            return StringHelperWindows.quoteAndJoinTokens(tokens);
+        else
+            return StringHelperPOSIX.quoteAndJoinTokens(tokens);
     }
 
     /**
-     * Find the first quote character that appear in 'str'.
+     * Tokenize a string with platform specific rules.
      *
-     * Return '\0' if 'str' does not contain any character in 'quote'.
+     * @param string the string to be tokenized
+     * @return the list of tokens
      */
-    private static char findFirstQuoteChar(@NonNull String str, @NonNull CharSequence quote) {
-        int firstIndex = -1;
-        char firstQuote = '\0';
-        for (int i = 0; i < quote.length(); i++) {
-            int index = str.indexOf(quote.charAt(i));
-            if (index != -1) {
-                if (firstIndex == -1 || index < firstIndex) {
-                    firstIndex = index;
-                    firstQuote = quote.charAt(i);
-                }
-            }
-        }
-        return firstQuote;
+    @NonNull
+    public static List<String> tokenizeString(@NonNull String string) {
+        if (System.getProperty("os.name").startsWith("Windows"))
+            return StringHelperWindows.tokenizeString(string);
+        else
+            return StringHelperPOSIX.tokenizeString(string);
     }
 }
