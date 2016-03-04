@@ -37,6 +37,7 @@ dependencies {
     compile 'org.ow2.asm:asm-commons:5.0.4'
     compile "net.sf.proguard:proguard-gradle:${project.ext.proguardVersion}"
     compile "org.jacoco:org.jacoco.core:0.7.4.201502262128"
+    compile "net.sf.jopt-simple:jopt-simple:4.9"
     testCompile project(':base:instant-run:instant-run-annotations')
     testCompile project(':base:instant-run:instant-run-runtime')
 
