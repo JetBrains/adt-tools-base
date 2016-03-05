@@ -18,12 +18,11 @@ package com.android.build.gradle.internal.transforms;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.LoggerWrapper;
-import com.android.builder.signing.SignedJarBuilder;
+import com.android.builder.packaging.ZipEntryFilter;
+import com.android.builder.packaging.ZipAbortException;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.io.Closer;
-
-import org.gradle.api.logging.Logging;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -49,7 +48,7 @@ public class JarMerger {
     private Closer closer;
     private JarOutputStream jarOutputStream;
 
-    private SignedJarBuilder.IZipEntryFilter filter;
+    private ZipEntryFilter filter;
 
     public JarMerger(@NonNull File jarFile) throws IOException {
         this.jarFile = jarFile;
@@ -69,7 +68,7 @@ public class JarMerger {
     /**
      * Sets a list of regex to exclude from the jar.
      */
-    public void setFilter(@NonNull SignedJarBuilder.IZipEntryFilter filter) {
+    public void setFilter(@NonNull ZipEntryFilter filter) {
         this.filter = filter;
     }
 
@@ -77,13 +76,13 @@ public class JarMerger {
         init();
         try {
             addFolder(folder, "");
-        } catch (SignedJarBuilder.IZipEntryFilter.ZipAbortException e) {
+        } catch (ZipAbortException e) {
             throw new IOException(e);
         }
     }
 
     private void addFolder(@NonNull File folder, @NonNull String path)
-            throws IOException, SignedJarBuilder.IZipEntryFilter.ZipAbortException {
+            throws IOException, ZipAbortException {
         logger.verbose("addFolder(%1$s, %2$s)", folder, path);
         File[] files = folder.listFiles();
         if (files != null) {
@@ -170,7 +169,7 @@ public class JarMerger {
                 jarOutputStream.closeEntry();
                 zis.closeEntry();
             }
-        } catch (SignedJarBuilder.IZipEntryFilter.ZipAbortException e) {
+        } catch (ZipAbortException e) {
             throw new IOException(e);
         } finally {
             localCloser.close();

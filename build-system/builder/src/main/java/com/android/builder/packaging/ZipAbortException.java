@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,20 +17,24 @@
 package com.android.builder.packaging;
 
 /**
- * An exception thrown when trying to add files to a sealed APK.
+ * An exception thrown during packaging of a zip file into APK file.
+ * This is typically thrown by implementations of
+ * {@link ZipEntryFilter#checkEntry(String)}.
  */
-public final class SealedPackageException extends PackagerException {
-    private static final long serialVersionUID = 1L;
+public class ZipAbortException extends PackagerException {
+    public ZipAbortException() {
+        super("Zip abort requested");
+    }
 
-    public SealedPackageException(String format, Object... args) {
+    public ZipAbortException(String format, Object... args) {
         super(format, args);
     }
 
-    public SealedPackageException(Throwable cause, String format, Object... args) {
+    public ZipAbortException(Throwable cause, String format, Object... args) {
         super(cause, format, args);
     }
 
-    public SealedPackageException(Throwable cause) {
+    public ZipAbortException(Throwable cause) {
         super(cause);
     }
 }

@@ -21,7 +21,10 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.signing.SignedJarBuilder.IZipEntryFilter.ZipAbortException;
+import com.android.builder.packaging.ApkCreator;
+import com.android.builder.packaging.ZipEntryFilter;
+import com.android.builder.packaging.ZipAbortException;
+import com.google.common.io.Closer;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DEROutputStream;
@@ -42,6 +45,7 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -67,7 +71,7 @@ import java.util.zip.ZipInputStream;
 /**
  * A Jar file builder with signature support.
  */
-public class SignedJarBuilder {
+public class SignedJarBuilder implements ApkCreator {
 
     private final int mMinSdkVersion;
 
@@ -110,64 +114,12 @@ public class SignedJarBuilder {
 
     private byte[] mBuffer = new byte[4096];
 
-    /**
-     * Classes which implement this interface provides a method to check whether a file should
-     * be added to a Jar file.
-     */
-    public interface IZipEntryFilter {
-
-        /**
-         * An exception thrown during packaging of a zip file into APK file.
-         * This is typically thrown by implementations of
-         * {@link IZipEntryFilter#checkEntry(String)}.
-         */
-        class ZipAbortException extends Exception {
-            private static final long serialVersionUID = 1L;
-
-            public ZipAbortException() {
-                super();
-            }
-
-            public ZipAbortException(String format, Object... args) {
-                super(String.format(format, args));
-            }
-
-            public ZipAbortException(Throwable cause, String format, Object... args) {
-                super(String.format(format, args), cause);
-            }
-
-            public ZipAbortException(Throwable cause) {
-                super(cause);
-            }
-        }
-
-
-        /**
-         * Checks a file for inclusion in a Jar archive.
-         * @param archivePath the archive file path of the entry
-         * @return <code>true</code> if the file should be included.
-         * @throws ZipAbortException if writing the file should be aborted.
-         */
-        boolean checkEntry(String archivePath) throws ZipAbortException;
-    }
-
-
-    /**
-     * Classes which implement this interface provides a method to check whether a file should
-     * be merged and extracted from the zip.
-     */
-    public interface ZipEntryExtractor {
-
-        boolean checkEntry(String archivePath);
-
-        void extract(String archivePath, InputStream zis) throws IOException;
-    }
 
     /**
      * Creates a {@link SignedJarBuilder} with a given output stream, and signing information.
      * <p/>If either <code>key</code> or <code>certificate</code> is <code>null</code> then
      * the archive will not be signed.
-     * @param out the {@link OutputStream} where to write the Jar archive.
+     * @param out where to write the Jar archive.
      * @param key the {@link PrivateKey} used to sign the archive, or <code>null</code>.
      * @param certificate the {@link X509Certificate} used to sign the archive, or
      * <code>null</code>.
@@ -175,7 +127,7 @@ public class SignedJarBuilder {
      * @throws IOException
      * @throws NoSuchAlgorithmException
      */
-    public SignedJarBuilder(@NonNull OutputStream out,
+    public SignedJarBuilder(@NonNull File out,
                             @Nullable PrivateKey key,
                             @Nullable X509Certificate certificate,
                             @Nullable String builtBy,
@@ -183,7 +135,7 @@ public class SignedJarBuilder {
                             int minSdkVersion)
             throws IOException, NoSuchAlgorithmException {
         mMinSdkVersion = minSdkVersion;
-        mOutputJar = new JarOutputStream(new BufferedOutputStream(out));
+        mOutputJar = new JarOutputStream(new BufferedOutputStream(new FileOutputStream(out)));
         mOutputJar.setLevel(9);
         mKey = key;
         mCertificate = certificate;
@@ -218,13 +170,8 @@ public class SignedJarBuilder {
         }
     }
 
-    /**
-     * Writes a new {@link File} into the archive.
-     * @param inputFile the {@link File} to write.
-     * @param jarPath the filepath inside the archive.
-     * @throws IOException
-     */
-    public void writeFile(File inputFile, String jarPath) throws IOException {
+    @Override
+    public void writeFile(@NonNull File inputFile, @NonNull String jarPath) throws IOException {
         // Get an input stream on the file.
         FileInputStream fis = new FileInputStream(inputFile);
         try {
@@ -242,28 +189,20 @@ public class SignedJarBuilder {
 
     /**
      * Copies the content of a Jar/Zip archive into the receiver archive.
-     * @param input the {@link InputStream} for the Jar/Zip to copy.
+     * @param zip the {@link InputStream} for the Jar/Zip to copy.
      * @throws IOException
-     * @throws ZipAbortException if the {@link IZipEntryFilter} filter indicated that the write
+     * @throws ZipAbortException if the {@link ZipEntryFilter} filter indicated that the write
      *                           must be aborted.
      */
-    public void writeZip(InputStream input) throws IOException, ZipAbortException {
-        writeZip(input, null, null);
+    public void writeZip(@NonNull File zip) throws IOException, ZipAbortException {
+        writeZip(zip, null);
     }
 
-    /**
-     * Copies the content of a Jar/Zip archive into the receiver archive.
-     * <p/>An optional {@link IZipEntryFilter} allows to selectively choose which files
-     * to copy over.
-     * @param input the {@link InputStream} for the Jar/Zip to copy.
-     * @param filter the filter or <code>null</code>
-     * @throws IOException
-     * @throws ZipAbortException if the {@link IZipEntryFilter} filter indicated that the write
-     *                           must be aborted.
-     */
-    public void writeZip(InputStream input, IZipEntryFilter filter, ZipEntryExtractor extractor)
+    @Override
+    public void writeZip(@NonNull File zip, @Nullable ZipEntryFilter filter)
             throws IOException, ZipAbortException {
-        ZipInputStream zis = new ZipInputStream(input);
+        Closer closer = Closer.create();
+        ZipInputStream zis = closer.register(new ZipInputStream(new FileInputStream(zip)));
 
         try {
             // loop on the entries of the intermediary package and put them in the final package.
@@ -284,26 +223,21 @@ public class SignedJarBuilder {
                         continue;
                     }
 
-                    // special case for Maven meta-data because we really don't care about them in apks.
+                    // special case for Maven meta-data because we really don't care about them in
+                    // apks.
                     if (name.startsWith("META-INF/maven/")) {
                         continue;
                     }
-
 
                     // check for subfolder
                     int index = subName.indexOf('/');
                     if (index == -1) {
                         // no sub folder, ignores signature files.
-                        if (subName.endsWith(".SF") || name.endsWith(".RSA") || name.endsWith(".DSA")) {
+                        if (subName.endsWith(".SF") || name.endsWith(".RSA")
+                                || name.endsWith(".DSA")) {
                             continue;
                         }
                     }
-                }
-
-                // if we have a filter, we check the entry to see if it's a file that should be extracted.
-                if (extractor != null && extractor.checkEntry(name)) {
-                    extractor.extract(name, zis);
-                    continue;
                 }
 
                 // if we have a filter, we check the entry against it
@@ -325,17 +259,19 @@ public class SignedJarBuilder {
 
                 zis.closeEntry();
             }
+        } catch (Throwable e) {
+            throw closer.rethrow(e, ZipAbortException.class);
         } finally {
-            zis.close();
+            closer.close();
         }
     }
 
-    /**
-     * Closes the Jar archive by creating the manifest, and signing the archive.
-     * @throws IOException
-     * @throws SigningException
-     */
-    public void close() throws IOException, SigningException {
+    @Override
+    public void close() throws IOException {
+        if (mOutputJar == null) {
+            return;
+        }
+
         if (mManifest != null) {
             // write the manifest to the jar file
             mOutputJar.putNextEntry(new JarEntry(JarFile.MANIFEST_NAME));
@@ -354,26 +290,12 @@ public class SignedJarBuilder {
                 mOutputJar.putNextEntry(new JarEntry("META-INF/CERT." + mKey.getAlgorithm()));
                 writeSignatureBlock(new CMSProcessableByteArray(signedData), mCertificate, mKey);
             } catch (Exception e) {
-                throw new SigningException(e);
+                throw new IOException(e);
             }
         }
 
         mOutputJar.close();
         mOutputJar = null;
-    }
-
-    /**
-     * Clean up of the builder for interrupted workflow.
-     * This does nothing if {@link #close()} was called successfully.
-     */
-    public void cleanUp() {
-        if (mOutputJar != null) {
-            try {
-                mOutputJar.close();
-            } catch (IOException e) {
-                // pass
-            }
-        }
     }
 
     /**
