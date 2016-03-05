@@ -661,7 +661,7 @@ public class MockFileOp implements FileOp {
         public void close() throws IOException {
             super.close();
             mData = new String(toByteArray(), "UTF-8");
-            recordExistingFile(mFile.getAbsolutePath(), mData);
+            recordExistingFile(getAgnosticAbsPath(mFile), mData);
         }
 
         /** Returns a string representation suitable for unit tests validation. */
