@@ -32,7 +32,6 @@ import com.android.repository.util.InstallerUtil;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 
 /**
@@ -86,6 +85,10 @@ public class BasicInstaller implements PackageInstaller {
             }
 
             File in = downloader.downloadFully(url, settings, progress);
+            if (in == null) {
+                progress.logWarning("Download failed!");
+                return false;
+            }
 
             File out = FileOpUtils.getNewTempDir("BasicInstaller", fop);
             if (out == null || !fop.mkdirs(out)) {
@@ -93,7 +96,12 @@ public class BasicInstaller implements PackageInstaller {
             }
             fop.deleteOnExit(out);
             progress.logInfo(String.format("Installing %1$s in %2$s", p.getDisplayName(), dest));
-            InstallerUtil.unzip(in, out, fop, p.getArchive().getComplete().getSize(), progress);
+            Archive archive = p.getArchive();
+            if (archive == null) {
+                progress.logWarning("No compatible archives found!");
+                return false;
+            }
+            InstallerUtil.unzip(in, out, fop, archive.getComplete().getSize(), progress);
             fop.delete(in);
 
             // Archives must contain a single top-level directory.
