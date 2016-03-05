@@ -17,7 +17,6 @@
 package com.android.builder.packaging;
 
 import com.android.annotations.NonNull;
-import com.android.builder.signing.SignedJarBuilder.IZipEntryFilter.ZipAbortException;
 import com.google.common.collect.ImmutableList;
 
 import java.io.File;

@@ -32,7 +32,8 @@ import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
-import com.android.builder.signing.SignedJarBuilder;
+import com.android.builder.packaging.ZipEntryFilter;
+import com.android.builder.packaging.ZipAbortException;
 import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableSet;
 
@@ -80,7 +81,8 @@ public class JarMergingTransform extends Transform {
     }
 
     @Override
-    public void transform(@NonNull TransformInvocation invocation) throws TransformException, IOException {
+    public void transform(@NonNull TransformInvocation invocation) throws TransformException,
+            IOException {
         TransformOutputProvider outputProvider = invocation.getOutputProvider();
         checkNotNull(outputProvider, "Missing output object for transform " + getName());
 
@@ -94,10 +96,9 @@ public class JarMergingTransform extends Transform {
         JarMerger jarMerger = new JarMerger(jarFile);
 
         try {
-            jarMerger.setFilter(new SignedJarBuilder.IZipEntryFilter() {
+            jarMerger.setFilter(new ZipEntryFilter() {
                 @Override
-                public boolean checkEntry(String archivePath)
-                        throws ZipAbortException {
+                public boolean checkEntry(String archivePath) {
                     return archivePath.endsWith(SdkConstants.DOT_CLASS);
                 }
             });

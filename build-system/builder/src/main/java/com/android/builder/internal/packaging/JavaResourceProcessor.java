@@ -40,8 +40,7 @@ public class JavaResourceProcessor {
          * @throws com.android.builder.packaging.DuplicateFileException if a file conflicts with another already added to the APK
          *                                   at the same location inside the APK archive.
          */
-        void addFile(File file, String archivePath) throws PackagerException,
-                SealedPackageException, DuplicateFileException;
+        void addFile(File file, String archivePath) throws PackagerException, IOException;
     }
 
 

@@ -19,11 +19,9 @@ package com.android.build.gradle.internal.tasks;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.api.transform.SecondaryInput;
 import com.android.build.api.transform.TransformInvocation;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.transforms.JarMerger;
-import com.android.build.api.transform.Context;
 import com.android.build.api.transform.JarInput;
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.QualifiedContent.ContentType;
@@ -31,8 +29,8 @@ import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
-import com.android.build.api.transform.TransformOutputProvider;
-import com.android.builder.signing.SignedJarBuilder.IZipEntryFilter;
+import com.android.builder.packaging.ZipEntryFilter;
+import com.android.builder.packaging.ZipAbortException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -205,10 +203,9 @@ public class LibraryJarTransform extends Transform {
             @NonNull final List<Pattern> excludes)
             throws IOException {
         JarMerger jarMerger = new JarMerger(mainClassLocation);
-        jarMerger.setFilter(new IZipEntryFilter() {
+        jarMerger.setFilter(new ZipEntryFilter() {
             @Override
-            public boolean checkEntry(String archivePath)
-                    throws ZipAbortException {
+            public boolean checkEntry(String archivePath) {
                 return LibraryJarTransform.checkEntry(excludes, archivePath);
             }
         });
@@ -234,10 +231,9 @@ public class LibraryJarTransform extends Transform {
         // somewhere else.
         // TODO: maybe do the folders separately to handle incremental?
 
-        IZipEntryFilter classOnlyFilter = new IZipEntryFilter() {
+        ZipEntryFilter classOnlyFilter = new ZipEntryFilter() {
             @Override
-            public boolean checkEntry(String archivePath)
-                    throws ZipAbortException {
+            public boolean checkEntry(String archivePath) {
                 return archivePath.endsWith(SdkConstants.DOT_CLASS);
             }
         };
@@ -271,10 +267,9 @@ public class LibraryJarTransform extends Transform {
     private void jarFolderToRootLocation(@NonNull File file, @NonNull final List<Pattern> excludes)
             throws IOException {
         JarMerger jarMerger = new JarMerger(mainClassLocation);
-        jarMerger.setFilter(new IZipEntryFilter() {
+        jarMerger.setFilter(new ZipEntryFilter() {
             @Override
-            public boolean checkEntry(String archivePath)
-                    throws ZipAbortException {
+            public boolean checkEntry(String archivePath) {
                 return LibraryJarTransform.checkEntry(excludes, archivePath);
             }
         });
@@ -286,10 +281,9 @@ public class LibraryJarTransform extends Transform {
             @NonNull File from,
             @NonNull File to,
             @NonNull final List<Pattern> excludes) throws IOException {
-        copyJarWithContentFilter(from, to, new IZipEntryFilter() {
+        copyJarWithContentFilter(from, to, new ZipEntryFilter() {
             @Override
-            public boolean checkEntry(String archivePath)
-                    throws ZipAbortException {
+            public boolean checkEntry(String archivePath) {
                 return LibraryJarTransform.checkEntry(excludes, archivePath);
             }
         });
@@ -298,7 +292,7 @@ public class LibraryJarTransform extends Transform {
     public static void copyJarWithContentFilter(
             @NonNull File from,
             @NonNull File to,
-            @Nullable IZipEntryFilter filter) throws IOException {
+            @Nullable ZipEntryFilter filter) throws IOException {
         Closer closer = Closer.create();
         byte[] buffer = new byte[4096];
 
@@ -342,7 +336,7 @@ public class LibraryJarTransform extends Transform {
                 zos.closeEntry();
                 zis.closeEntry();
             }
-        } catch (IZipEntryFilter.ZipAbortException e) {
+        } catch (ZipAbortException e) {
             throw new IOException(e);
         } finally {
             closer.close();

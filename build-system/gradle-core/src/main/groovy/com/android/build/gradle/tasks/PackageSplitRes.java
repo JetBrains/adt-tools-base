@@ -29,7 +29,7 @@ import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.packaging.SigningException;
-import com.android.builder.signing.SignedJarBuilder;
+import com.android.builder.packaging.ZipAbortException;
 import com.android.ide.common.signing.KeytoolException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -153,7 +153,7 @@ public class PackageSplitRes extends SplitRelatedTask {
                             throw new RuntimeException(e);
                         } catch (NoSuchAlgorithmException e) {
                             throw new RuntimeException(e);
-                        } catch (SignedJarBuilder.IZipEntryFilter.ZipAbortException e) {
+                        } catch (ZipAbortException e) {
                             throw new RuntimeException(e);
                         } catch (com.android.builder.signing.SigningException e) {
                             throw new RuntimeException(e);

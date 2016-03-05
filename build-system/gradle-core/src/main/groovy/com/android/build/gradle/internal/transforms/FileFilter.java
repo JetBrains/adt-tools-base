@@ -23,7 +23,8 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
-import com.android.builder.signing.SignedJarBuilder;
+import com.android.builder.packaging.ZipEntryFilter;
+import com.android.builder.packaging.ZipAbortException;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
@@ -40,7 +41,7 @@ import java.util.List;
  * action.
  */
 @VisibleForTesting
-public class FileFilter implements SignedJarBuilder.IZipEntryFilter {
+public class FileFilter implements ZipEntryFilter {
 
     public static class SubStream {
         private final File folder;
@@ -73,7 +74,7 @@ public class FileFilter implements SignedJarBuilder.IZipEntryFilter {
     }
 
     /**
-     * Implementation of the {@link SignedJarBuilder.IZipEntryFilter} contract which only
+     * Implementation of the {@link ZipEntryFilter} contract which only
      * cares about copying or ignoring files since merging is handled differently.
      * @param archivePath the archive file path of the entry
      * @return true if the archive entry satisfies the filter, false otherwise.

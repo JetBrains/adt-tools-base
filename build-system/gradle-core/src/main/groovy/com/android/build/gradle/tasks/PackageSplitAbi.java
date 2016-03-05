@@ -31,7 +31,6 @@ import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.SigningConfig;
-import com.android.builder.packaging.DuplicateFileException;
 import com.android.builder.packaging.PackagerException;
 import com.android.builder.packaging.SigningException;
 import com.android.ide.common.signing.KeytoolException;
@@ -51,6 +50,7 @@ import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -129,7 +129,7 @@ public class PackageSplitAbi extends SplitRelatedTask {
 
     @TaskAction
     protected void doFullTaskAction() throws FileNotFoundException, SigningException,
-            KeytoolException, DuplicateFileException, PackagerException {
+            KeytoolException, PackagerException, IOException {
 
         // resources- and .ap_ should be shared in a setting somewhere. see BasePlugin:1206
         final Pattern pattern = Pattern.compile("resources-" + getOutputBaseName() + "-(.*).ap_");

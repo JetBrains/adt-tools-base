@@ -19,7 +19,7 @@ package com.android.builder.packaging;
 /**
  * An exception thrown during packaging of an APK file.
  */
-public final class PackagerException extends Exception {
+public class PackagerException extends Exception {
     private static final long serialVersionUID = 1L;
 
     public PackagerException(String format, Object... args) {
