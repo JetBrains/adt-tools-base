@@ -66,7 +66,6 @@ import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -202,15 +201,9 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
                     new Action<Exec>() {
                         @Override
                         public void execute(Exec exec) {
-                            if (!binary.getConfig().getBuildCommand().isEmpty()) {
-                                //noinspection unchecked - Unavoidable due how Exec is implemented.
-                                exec.setCommandLine(binary.getConfig().getBuildCommand());
-                            } else {
-                                //noinspection unchecked - Unavoidable due how Exec is implemented.
-                                exec.setCommandLine(
-                                        StringHelper.tokenizeString(
-                                                binary.getConfig().getBuildCommandString()));
-                            }
+                            //noinspection unchecked - Unavoidable due how Exec is implemented.
+                            exec.setCommandLine(StringHelper.tokenizeString(
+                                    binary.getConfig().getBuildCommand()));
                         }
                     });
         }
@@ -221,13 +214,8 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
                 ModelSet<JsonConfigFile> configFiles) {
             final List<String> generatorTasks = Lists.newLinkedList();
             for (final JsonConfigFile configFile : configFiles) {
-                if (configFile.getCommand().isEmpty() && configFile.getCommandString() == null) {
+                if (configFile.getCommand() == null) {
                     continue;
-                }
-                if (!configFile.getCommand().isEmpty() && configFile.getCommandString() != null) {
-                    throw new InvalidUserDataException(
-                            "Cannot set both command and commandString for JSON config file: "
-                                    + configFile.getConfig());
                 }
                 String taskName = "generate" + StringHelper.capitalize(
                         configFile.getConfig().getName());
@@ -238,14 +226,9 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
                         new Action<Exec>() {
                             @Override
                             public void execute(Exec task) {
-                                if (!configFile.getCommand().isEmpty()) {
-                                    //noinspection unchecked - Unavoidable due how Exec is implemented.
-                                    task.commandLine(configFile.getCommand());
-                                } else {
-                                    //noinspection unchecked - Unavoidable due how Exec is implemented.
-                                    task.commandLine(StringHelper.tokenizeString(
-                                            configFile.getCommandString()));
-                                }
+                                //noinspection unchecked - Unavoidable due how Exec is implemented.
+                                task.commandLine(StringHelper.tokenizeString(
+                                        configFile.getCommand()));
                             }
                         });
             }
@@ -264,51 +247,29 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
         static void createCleanTask(
                 final ModelMap<Task> task,
                 final NativeBuildConfig config) {
-            if (config.getCleanCommands().isEmpty()
-                    && config.getCleanCommandStrings().isEmpty()) {
+            if (config.getCleanCommands().isEmpty()) {
                 return;
             }
-            final String cleanNativeBuildTaskName = "cleanNativeBuild";
-            int index = 0;
-            if (!config.getCleanCommands().isEmpty()) {
-                List<String> currentCleanCommand = new ArrayList<String>();
-                for (final String token : config.getCleanCommands()) {
-                    if (token == null) {
-                        final List<String> cleanCommand = currentCleanCommand;
-                        task.create(cleanNativeBuildTaskName + index++,
-                                Exec.class,
-                                new Action<Exec>() {
-                                    @Override
-                                    public void execute(Exec task) {
-                                        //noinspection unchecked - Unavoidable due how Exec is implemented.
-                                        task.commandLine(cleanCommand);
-                                    }
-                                });
-                        currentCleanCommand = new ArrayList<String>();
-                    } else {
-                        currentCleanCommand.add(token);
-                    }
-                }
-            } else {
-                for (final String cleanCommandString : config.getCleanCommandStrings()) {
-                    task.create(cleanNativeBuildTaskName + index++,
-                            Exec.class,
-                            new Action<Exec>() {
-                                @Override
-                                public void execute(Exec task) {
-                                    //noinspection unchecked - Unavoidable due how Exec is implemented.
-                                    task.commandLine(StringHelper.tokenizeString(
-                                            cleanCommandString));
-                                }
-                            });
-                }
+            final List<String> generatorTasks = Lists.newLinkedList();
+            int cleanTaskIndex = 0;
+            for (final String cleanCommand : config.getCleanCommands()) {
+                final String taskName = "cleanNativeBuild" + cleanTaskIndex++;
+                generatorTasks.add(taskName);
+                task.create(
+                        taskName,
+                        Exec.class,
+                        new Action<Exec>() {
+                            @Override
+                            public void execute(Exec task) {
+                                //noinspection unchecked - Unavoidable due how Exec is implemented.
+                                task.commandLine(StringHelper.tokenizeString(cleanCommand));
+                            }
+                        });
             }
-            final int count = index;
             task.named("clean", new Action<Task>() {
                 @Override
                 public void execute(Task task) {
-                    for (int i = 0; i < count; ++i)
-                        task.dependsOn(cleanNativeBuildTaskName + i);
+                    task.dependsOn(generatorTasks);
                 }
             });
         }

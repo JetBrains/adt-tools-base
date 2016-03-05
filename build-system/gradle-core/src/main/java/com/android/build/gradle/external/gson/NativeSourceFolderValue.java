@@ -28,9 +28,9 @@ public class NativeSourceFolderValue {
     @Nullable
     public File src;
     @Nullable
-    public List<String> cFlags;
+    public String cFlags;
     @Nullable
-    public List<String> cppFlags;
+    public String cppFlags;
     @Nullable
     public File workingDirectory;
 }

@@ -27,9 +27,7 @@ import java.util.List;
  */
 public class NativeLibraryValue {
     @Nullable
-    public List<String> buildCommand;
-    @Nullable
-    public String buildCommandString;
+    public String buildCommand;
     @Nullable
     public String buildType;
     @Nullable

@@ -21,6 +21,7 @@ import com.android.build.gradle.external.gson.NativeLibraryValue;
 import com.android.build.gradle.external.gson.NativeSourceFileValue;
 import com.android.build.gradle.external.gson.NativeToolchainValue;
 import com.android.utils.NativeSourceFileExtensions;
+import com.android.utils.StringHelper;
 import com.google.common.base.Strings;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
@@ -270,15 +271,16 @@ public class NativeBuildConfigValueBuilder {
 
         for (Output output : outputs) {
             NativeLibraryValue value = new NativeLibraryValue();
-            value.buildCommand = new ArrayList<String>();
+            List<String> buildCommand = new ArrayList<String>();
             librariesMap.put(output.libraryName, value);
             // TODO: remove ndkPath once ${NDK} is always available upstream.
             if (ndkPath != null) {
-                value.buildCommand.add(new File(ndkPath, "ndk-build").getAbsolutePath());
+                buildCommand.add(new File(ndkPath, "ndk-build").getAbsolutePath());
             } else {
-                value.buildCommand.add("${NDK}/ndk-build");
+                buildCommand.add("${NDK}/ndk-build");
             }
-            value.buildCommand.add(output.outputName);
+            buildCommand.add(output.outputName);
+            value.buildCommand = StringHelper.quoteAndJoinTokens(buildCommand);
             value.toolchain = output.toolchain;
             value.output = new File(output.outputName);
             value.files = new ArrayList<NativeSourceFileValue>();
@@ -287,7 +289,7 @@ public class NativeBuildConfigValueBuilder {
                 NativeSourceFileValue file = new NativeSourceFileValue();
                 value.files.add(file);
                 file.src = new File(input.getOnlyInput());
-                file.flags = new ArrayList<String>();
+                List<String> flags = new ArrayList<String>();
                 for (int i = 0; i < input.getCommand().args.size(); ++i) {
                     String arg = input.getCommand().args.get(i);
                     if (STRIP_FLAGS.contains(arg)) {
@@ -297,8 +299,9 @@ public class NativeBuildConfigValueBuilder {
                     if (startsWithStripFlag(arg)) {
                         continue;
                     }
-                    file.flags.add(arg);
+                    flags.add(arg);
                 }
+                file.flags = StringHelper.quoteAndJoinTokens(flags);
             }
         }
 

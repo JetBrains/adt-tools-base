@@ -28,7 +28,7 @@ public class NativeSourceFileValue {
     @Nullable
     public File src;
     @Nullable
-    public List<String> flags;
+    public String flags;
     @Nullable
     public File workingDirectory;
 }
