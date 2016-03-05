@@ -124,6 +124,9 @@ public class NativeBuildConfigGsonUtil {
             library.getBuildCommand().clear();
             library.getBuildCommand().addAll(value.buildCommand);
         }
+        if (value.buildType != null) {
+            library.setBuildType(value.buildType);
+        }
         library.setToolchain(value.toolchain);
         if (value.folders != null) {
             for (final NativeSourceFolderValue folder : value.folders) {

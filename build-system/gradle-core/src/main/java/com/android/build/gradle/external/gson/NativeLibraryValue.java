@@ -31,6 +31,8 @@ public class NativeLibraryValue {
     @Nullable
     public String buildCommandString;
     @Nullable
+    public String buildType;
+    @Nullable
     public String toolchain;
     @Nullable
     public String groupName;
