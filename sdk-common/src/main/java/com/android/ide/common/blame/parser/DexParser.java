@@ -26,6 +26,8 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class DexParser implements PatternAwareOutputParser {
 
@@ -36,8 +38,19 @@ public class DexParser implements PatternAwareOutputParser {
                     + "Learn how to resolve this issue at "
                     + "https://developer.android.com/tools/building/multidex.html";
 
-    private static final String COULD_NOT_CONVERT_BYTECODE_TO_DEX =
+    static final String COULD_NOT_CONVERT_BYTECODE_TO_DEX =
             "Error converting bytecode to dex:\nCause: %s";
+
+    static final String INVALID_BYTE_CODE_VERSION = "Dex cannot parse version %1$d byte code.\n"
+            + "This is caused by library dependencies that have been compiled using Java 8 "
+            + "or above.\n"
+            + "If you are using the 'java' gradle plugin in a library submodule add \n"
+            + "targetCompatibility = '1.7'\n"
+            + "sourceCompatibility = '1.7'\n"
+            + "to that submodule's build.gradle file.";
+
+    private static final Pattern INVALID_BYTE_CODE_VERSION_EXCEPTION_PATTERN = Pattern.compile(
+            "com.android.dx.cf.iface.ParseException: bad class file magic \\(cafebabe\\) or version \\((\\d+)\\.\\d+\\).*");
 
     @Override
     public boolean parse(@NonNull String line, @NonNull OutputLineReader reader,
@@ -86,24 +99,31 @@ public class DexParser implements PatternAwareOutputParser {
             reader.pushBack();
             return false;
         }
+        original.append(exception).append('\n');
+        consumeStacktrace(reader, original);
+        String exceptionWithStacktrace = original.toString();
+
         if (exception.startsWith(
                 "com.android.dex.DexIndexOverflowException: method ID not in [0, 0xffff]: ")) {
-            original.append(exception).append('\n');
-            consumeStacktrace(reader, original);
             messages.add(new Message(
                     Message.Kind.ERROR,
                     DEX_LIMIT_EXCEEDED_ERROR,
-                    original.toString(),
+                    exceptionWithStacktrace,
                     Optional.of(DEX_TOOL_NAME),
                     ImmutableList.of(SourceFilePosition.UNKNOWN)));
             return true;
-        } else { // Other generic exception
-            original.append(exception).append('\n');
-            consumeStacktrace(reader, original);
+        } else {
+            String cause = exception;
+            Matcher invalidByteCodeVersion = INVALID_BYTE_CODE_VERSION_EXCEPTION_PATTERN.matcher(
+                    exceptionWithStacktrace);
+            if (invalidByteCodeVersion.find()) {
+                int bytecodeVersion = Integer.valueOf(invalidByteCodeVersion.group(1), 16);
+                cause = String.format(INVALID_BYTE_CODE_VERSION, bytecodeVersion);
+            }
             messages.add(new Message(
                     Message.Kind.ERROR,
-                    String.format(COULD_NOT_CONVERT_BYTECODE_TO_DEX, exception),
-                    original.toString(),
+                    String.format(COULD_NOT_CONVERT_BYTECODE_TO_DEX, cause),
+                    exceptionWithStacktrace,
                     Optional.of(DEX_TOOL_NAME),
                     ImmutableList.of(SourceFilePosition.UNKNOWN)));
             return true;
