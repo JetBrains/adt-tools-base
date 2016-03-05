@@ -1171,7 +1171,7 @@ public class AvdManager {
         String imageFullPath = folder.getAbsolutePath();
 
         // make this path relative to the SDK location
-        String sdkLocation = mSdkHandler.getLocation().getPath();
+        String sdkLocation = mSdkHandler.getLocation().getAbsolutePath();
         if (!imageFullPath.startsWith(sdkLocation)) {
             // this really really should not happen.
             assert false;
