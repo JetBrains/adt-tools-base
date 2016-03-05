@@ -8,255 +8,63 @@
     }
   ],
   "libraries": {
-    "mips-librs.mono-debug": {
-      "buildCommand": [
-        "${NDK}/ndk-build",
-        "{ndkPath}/samples/HelloComputeNDK/libs/mips/librs.mono.so"
-      ],
+    "mips-libhellocomputendk-debug": {
+      "buildCommand": "\"${NDK}/ndk-build\" \"{ndkPath}/samples/HelloComputeNDK/obj/local/mips/libhellocomputendk.so\"",
       "toolchain": "toolchain-mips",
-      "files": [],
-      "output": {
-        "path": "{ndkPath}/samples/HelloComputeNDK/libs/mips/librs.mono.so"
-      }
-    },
-    "armeabi-v7a-librs.mono-release": {
-      "buildCommand": [
-        "${NDK}/ndk-build",
-        "{ndkPath}/samples/HelloComputeNDK/libs/armeabi-v7a/librs.mono.so"
-      ],
-      "toolchain": "toolchain-armeabi-v7a",
-      "files": [],
-      "output": {
-        "path": "{ndkPath}/samples/HelloComputeNDK/libs/armeabi-v7a/librs.mono.so"
-      }
-    },
-    "x86-libhellocomputendk-debug": {
-      "buildCommand": [
-        "${NDK}/ndk-build",
-        "{ndkPath}/samples/HelloComputeNDK/obj/local/x86/libhellocomputendk.so"
-      ],
-      "toolchain": "toolchain-x86",
       "files": [
         {
           "src": {
             "path": "{ndkPath}/samples/HelloComputeNDK/jni/helloComputeNDK.cpp"
           },
-          "flags": [
-            "-MMD",
-            "-MP",
-            "-ffunction-sections",
-            "-funwind-tables",
-            "-no-canonical-prefixes",
-            "-fstack-protector",
-            "-fno-exceptions",
-            "-fno-rtti",
-            "-O2",
-            "-g",
-            "-DNDEBUG",
-            "-fomit-frame-pointer",
-            "-fstrict-aliasing",
-            "-funswitch-loops",
-            "-finline-limit\u003d300",
-            "-O0",
-            "-UNDEBUG",
-            "-fno-omit-frame-pointer",
-            "-fno-strict-aliasing",
-            "-DANDROID",
-            "-Wa,--noexecstack",
-            "-Wformat",
-            "-Werror\u003dformat-security",
-            "-frtti"
-          ]
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-frtti\""
         },
         {
           "src": {
-            "path": "{ndkPath}/samples/HelloComputeNDK/obj/local/x86/objs-debug/hellocomputendk/./ScriptC_mono.cpp"
+            "path": "{ndkPath}/samples/HelloComputeNDK/obj/local/mips/objs-debug/hellocomputendk/./ScriptC_mono.cpp"
           },
-          "flags": [
-            "-MMD",
-            "-MP",
-            "-ffunction-sections",
-            "-funwind-tables",
-            "-no-canonical-prefixes",
-            "-fstack-protector",
-            "-fno-exceptions",
-            "-fno-rtti",
-            "-O2",
-            "-g",
-            "-DNDEBUG",
-            "-fomit-frame-pointer",
-            "-fstrict-aliasing",
-            "-funswitch-loops",
-            "-finline-limit\u003d300",
-            "-O0",
-            "-UNDEBUG",
-            "-fno-omit-frame-pointer",
-            "-fno-strict-aliasing",
-            "-DANDROID",
-            "-Wa,--noexecstack",
-            "-Wformat",
-            "-Werror\u003dformat-security",
-            "-frtti",
-            "-fno-rtti"
-          ]
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-frtti\" \"-fno-rtti\""
         }
       ],
       "output": {
-        "path": "{ndkPath}/samples/HelloComputeNDK/obj/local/x86/libhellocomputendk.so"
+        "path": "{ndkPath}/samples/HelloComputeNDK/obj/local/mips/libhellocomputendk.so"
       }
     },
-    "armeabi-v7a-libhellocomputendk-release": {
-      "buildCommand": [
-        "${NDK}/ndk-build",
-        "{ndkPath}/samples/HelloComputeNDK/obj/local/armeabi-v7a/libhellocomputendk.so"
-      ],
+    "armeabi-v7a-libhellocomputendk-debug": {
+      "buildCommand": "\"${NDK}/ndk-build\" \"{ndkPath}/samples/HelloComputeNDK/obj/local/armeabi-v7a/libhellocomputendk.so\"",
       "toolchain": "toolchain-armeabi-v7a",
       "files": [
         {
           "src": {
             "path": "{ndkPath}/samples/HelloComputeNDK/jni/helloComputeNDK.cpp"
           },
-          "flags": [
-            "-MMD",
-            "-MP",
-            "-fpic",
-            "-ffunction-sections",
-            "-funwind-tables",
-            "-fstack-protector",
-            "-no-canonical-prefixes",
-            "-march\u003darmv7-a",
-            "-mfpu\u003dvfpv3-d16",
-            "-mfloat-abi\u003dsoftfp",
-            "-fno-exceptions",
-            "-fno-rtti",
-            "-mthumb",
-            "-Os",
-            "-g",
-            "-DNDEBUG",
-            "-fomit-frame-pointer",
-            "-fno-strict-aliasing",
-            "-finline-limit\u003d64",
-            "-DANDROID",
-            "-Wa,--noexecstack",
-            "-Wformat",
-            "-Werror\u003dformat-security",
-            "-frtti"
-          ]
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-frtti\""
         },
         {
           "src": {
-            "path": "{ndkPath}/samples/HelloComputeNDK/obj/local/armeabi-v7a/objs/hellocomputendk/./ScriptC_mono.cpp"
+            "path": "{ndkPath}/samples/HelloComputeNDK/obj/local/armeabi-v7a/objs-debug/hellocomputendk/./ScriptC_mono.cpp"
           },
-          "flags": [
-            "-MMD",
-            "-MP",
-            "-fpic",
-            "-ffunction-sections",
-            "-funwind-tables",
-            "-fstack-protector",
-            "-no-canonical-prefixes",
-            "-march\u003darmv7-a",
-            "-mfpu\u003dvfpv3-d16",
-            "-mfloat-abi\u003dsoftfp",
-            "-fno-exceptions",
-            "-fno-rtti",
-            "-mthumb",
-            "-Os",
-            "-g",
-            "-DNDEBUG",
-            "-fomit-frame-pointer",
-            "-fno-strict-aliasing",
-            "-finline-limit\u003d64",
-            "-DANDROID",
-            "-Wa,--noexecstack",
-            "-Wformat",
-            "-Werror\u003dformat-security",
-            "-frtti",
-            "-fno-rtti"
-          ]
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-frtti\" \"-fno-rtti\""
         }
       ],
       "output": {
         "path": "{ndkPath}/samples/HelloComputeNDK/obj/local/armeabi-v7a/libhellocomputendk.so"
       }
     },
-    "armeabi-v7a-libhellocomputendk-debug": {
-      "buildCommand": [
-        "${NDK}/ndk-build",
-        "{ndkPath}/samples/HelloComputeNDK/obj/local/armeabi-v7a/libhellocomputendk.so"
-      ],
+    "armeabi-v7a-libhellocomputendk-release": {
+      "buildCommand": "\"${NDK}/ndk-build\" \"{ndkPath}/samples/HelloComputeNDK/obj/local/armeabi-v7a/libhellocomputendk.so\"",
       "toolchain": "toolchain-armeabi-v7a",
       "files": [
         {
           "src": {
             "path": "{ndkPath}/samples/HelloComputeNDK/jni/helloComputeNDK.cpp"
           },
-          "flags": [
-            "-MMD",
-            "-MP",
-            "-fpic",
-            "-ffunction-sections",
-            "-funwind-tables",
-            "-fstack-protector",
-            "-no-canonical-prefixes",
-            "-march\u003darmv7-a",
-            "-mfpu\u003dvfpv3-d16",
-            "-mfloat-abi\u003dsoftfp",
-            "-fno-exceptions",
-            "-fno-rtti",
-            "-mthumb",
-            "-Os",
-            "-g",
-            "-DNDEBUG",
-            "-fomit-frame-pointer",
-            "-fno-strict-aliasing",
-            "-finline-limit\u003d64",
-            "-O0",
-            "-UNDEBUG",
-            "-marm",
-            "-fno-omit-frame-pointer",
-            "-DANDROID",
-            "-Wa,--noexecstack",
-            "-Wformat",
-            "-Werror\u003dformat-security",
-            "-frtti"
-          ]
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-frtti\""
         },
         {
           "src": {
-            "path": "{ndkPath}/samples/HelloComputeNDK/obj/local/armeabi-v7a/objs-debug/hellocomputendk/./ScriptC_mono.cpp"
+            "path": "{ndkPath}/samples/HelloComputeNDK/obj/local/armeabi-v7a/objs/hellocomputendk/./ScriptC_mono.cpp"
           },
-          "flags": [
-            "-MMD",
-            "-MP",
-            "-fpic",
-            "-ffunction-sections",
-            "-funwind-tables",
-            "-fstack-protector",
-            "-no-canonical-prefixes",
-            "-march\u003darmv7-a",
-            "-mfpu\u003dvfpv3-d16",
-            "-mfloat-abi\u003dsoftfp",
-            "-fno-exceptions",
-            "-fno-rtti",
-            "-mthumb",
-            "-Os",
-            "-g",
-            "-DNDEBUG",
-            "-fomit-frame-pointer",
-            "-fno-strict-aliasing",
-            "-finline-limit\u003d64",
-            "-O0",
-            "-UNDEBUG",
-            "-marm",
-            "-fno-omit-frame-pointer",
-            "-DANDROID",
-            "-Wa,--noexecstack",
-            "-Wformat",
-            "-Werror\u003dformat-security",
-            "-frtti",
-            "-fno-rtti"
-          ]
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-fno-exceptions\" \"-fno-rtti\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-frtti\" \"-fno-rtti\""
         }
       ],
       "output": {
@@ -264,10 +72,65 @@
       }
     },
     "mips-librs.mono-release": {
-      "buildCommand": [
-        "${NDK}/ndk-build",
-        "{ndkPath}/samples/HelloComputeNDK/libs/mips/librs.mono.so"
+      "buildCommand": "\"${NDK}/ndk-build\" \"{ndkPath}/samples/HelloComputeNDK/libs/mips/librs.mono.so\"",
+      "toolchain": "toolchain-mips",
+      "files": [],
+      "output": {
+        "path": "{ndkPath}/samples/HelloComputeNDK/libs/mips/librs.mono.so"
+      }
+    },
+    "armeabi-v7a-librs.mono-release": {
+      "buildCommand": "\"${NDK}/ndk-build\" \"{ndkPath}/samples/HelloComputeNDK/libs/armeabi-v7a/librs.mono.so\"",
+      "toolchain": "toolchain-armeabi-v7a",
+      "files": [],
+      "output": {
+        "path": "{ndkPath}/samples/HelloComputeNDK/libs/armeabi-v7a/librs.mono.so"
+      }
+    },
+    "x86-libhellocomputendk-debug": {
+      "buildCommand": "\"${NDK}/ndk-build\" \"{ndkPath}/samples/HelloComputeNDK/obj/local/x86/libhellocomputendk.so\"",
+      "toolchain": "toolchain-x86",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/HelloComputeNDK/jni/helloComputeNDK.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-frtti\""
+        },
+        {
+          "src": {
+            "path": "{ndkPath}/samples/HelloComputeNDK/obj/local/x86/objs-debug/hellocomputendk/./ScriptC_mono.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-frtti\" \"-fno-rtti\""
+        }
       ],
+      "output": {
+        "path": "{ndkPath}/samples/HelloComputeNDK/obj/local/x86/libhellocomputendk.so"
+      }
+    },
+    "mips-libhellocomputendk-release": {
+      "buildCommand": "\"${NDK}/ndk-build\" \"{ndkPath}/samples/HelloComputeNDK/obj/local/mips/libhellocomputendk.so\"",
+      "toolchain": "toolchain-mips",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/HelloComputeNDK/jni/helloComputeNDK.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-frtti\""
+        },
+        {
+          "src": {
+            "path": "{ndkPath}/samples/HelloComputeNDK/obj/local/mips/objs/hellocomputendk/./ScriptC_mono.cpp"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-frtti\" \"-fno-rtti\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/HelloComputeNDK/obj/local/mips/libhellocomputendk.so"
+      }
+    },
+    "mips-librs.mono-debug": {
+      "buildCommand": "\"${NDK}/ndk-build\" \"{ndkPath}/samples/HelloComputeNDK/libs/mips/librs.mono.so\"",
       "toolchain": "toolchain-mips",
       "files": [],
       "output": {
@@ -275,10 +138,7 @@
       }
     },
     "armeabi-v7a-librs.mono-debug": {
-      "buildCommand": [
-        "${NDK}/ndk-build",
-        "{ndkPath}/samples/HelloComputeNDK/libs/armeabi-v7a/librs.mono.so"
-      ],
+      "buildCommand": "\"${NDK}/ndk-build\" \"{ndkPath}/samples/HelloComputeNDK/libs/armeabi-v7a/librs.mono.so\"",
       "toolchain": "toolchain-armeabi-v7a",
       "files": [],
       "output": {
@@ -286,244 +146,40 @@
       }
     },
     "x86-librs.mono-release": {
-      "buildCommand": [
-        "${NDK}/ndk-build",
-        "{ndkPath}/samples/HelloComputeNDK/libs/x86/librs.mono.so"
-      ],
+      "buildCommand": "\"${NDK}/ndk-build\" \"{ndkPath}/samples/HelloComputeNDK/libs/x86/librs.mono.so\"",
       "toolchain": "toolchain-x86",
       "files": [],
       "output": {
         "path": "{ndkPath}/samples/HelloComputeNDK/libs/x86/librs.mono.so"
-      }
-    },
-    "mips-libhellocomputendk-release": {
-      "buildCommand": [
-        "${NDK}/ndk-build",
-        "{ndkPath}/samples/HelloComputeNDK/obj/local/mips/libhellocomputendk.so"
-      ],
-      "toolchain": "toolchain-mips",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/HelloComputeNDK/jni/helloComputeNDK.cpp"
-          },
-          "flags": [
-            "-MMD",
-            "-MP",
-            "-fpic",
-            "-fno-strict-aliasing",
-            "-finline-functions",
-            "-ffunction-sections",
-            "-funwind-tables",
-            "-fmessage-length\u003d0",
-            "-fno-inline-functions-called-once",
-            "-fgcse-after-reload",
-            "-frerun-cse-after-loop",
-            "-frename-registers",
-            "-no-canonical-prefixes",
-            "-fno-exceptions",
-            "-fno-rtti",
-            "-O2",
-            "-g",
-            "-DNDEBUG",
-            "-fomit-frame-pointer",
-            "-funswitch-loops",
-            "-finline-limit\u003d300",
-            "-DANDROID",
-            "-Wa,--noexecstack",
-            "-Wformat",
-            "-Werror\u003dformat-security",
-            "-frtti"
-          ]
-        },
-        {
-          "src": {
-            "path": "{ndkPath}/samples/HelloComputeNDK/obj/local/mips/objs/hellocomputendk/./ScriptC_mono.cpp"
-          },
-          "flags": [
-            "-MMD",
-            "-MP",
-            "-fpic",
-            "-fno-strict-aliasing",
-            "-finline-functions",
-            "-ffunction-sections",
-            "-funwind-tables",
-            "-fmessage-length\u003d0",
-            "-fno-inline-functions-called-once",
-            "-fgcse-after-reload",
-            "-frerun-cse-after-loop",
-            "-frename-registers",
-            "-no-canonical-prefixes",
-            "-fno-exceptions",
-            "-fno-rtti",
-            "-O2",
-            "-g",
-            "-DNDEBUG",
-            "-fomit-frame-pointer",
-            "-funswitch-loops",
-            "-finline-limit\u003d300",
-            "-DANDROID",
-            "-Wa,--noexecstack",
-            "-Wformat",
-            "-Werror\u003dformat-security",
-            "-frtti",
-            "-fno-rtti"
-          ]
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/HelloComputeNDK/obj/local/mips/libhellocomputendk.so"
-      }
-    },
-    "x86-librs.mono-debug": {
-      "buildCommand": [
-        "${NDK}/ndk-build",
-        "{ndkPath}/samples/HelloComputeNDK/libs/x86/librs.mono.so"
-      ],
-      "toolchain": "toolchain-x86",
-      "files": [],
-      "output": {
-        "path": "{ndkPath}/samples/HelloComputeNDK/libs/x86/librs.mono.so"
-      }
-    },
-    "mips-libhellocomputendk-debug": {
-      "buildCommand": [
-        "${NDK}/ndk-build",
-        "{ndkPath}/samples/HelloComputeNDK/obj/local/mips/libhellocomputendk.so"
-      ],
-      "toolchain": "toolchain-mips",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/HelloComputeNDK/jni/helloComputeNDK.cpp"
-          },
-          "flags": [
-            "-MMD",
-            "-MP",
-            "-fpic",
-            "-fno-strict-aliasing",
-            "-finline-functions",
-            "-ffunction-sections",
-            "-funwind-tables",
-            "-fmessage-length\u003d0",
-            "-fno-inline-functions-called-once",
-            "-fgcse-after-reload",
-            "-frerun-cse-after-loop",
-            "-frename-registers",
-            "-no-canonical-prefixes",
-            "-fno-exceptions",
-            "-fno-rtti",
-            "-O0",
-            "-g",
-            "-fno-omit-frame-pointer",
-            "-DANDROID",
-            "-Wa,--noexecstack",
-            "-Wformat",
-            "-Werror\u003dformat-security",
-            "-frtti"
-          ]
-        },
-        {
-          "src": {
-            "path": "{ndkPath}/samples/HelloComputeNDK/obj/local/mips/objs-debug/hellocomputendk/./ScriptC_mono.cpp"
-          },
-          "flags": [
-            "-MMD",
-            "-MP",
-            "-fpic",
-            "-fno-strict-aliasing",
-            "-finline-functions",
-            "-ffunction-sections",
-            "-funwind-tables",
-            "-fmessage-length\u003d0",
-            "-fno-inline-functions-called-once",
-            "-fgcse-after-reload",
-            "-frerun-cse-after-loop",
-            "-frename-registers",
-            "-no-canonical-prefixes",
-            "-fno-exceptions",
-            "-fno-rtti",
-            "-O0",
-            "-g",
-            "-fno-omit-frame-pointer",
-            "-DANDROID",
-            "-Wa,--noexecstack",
-            "-Wformat",
-            "-Werror\u003dformat-security",
-            "-frtti",
-            "-fno-rtti"
-          ]
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/HelloComputeNDK/obj/local/mips/libhellocomputendk.so"
       }
     },
     "x86-libhellocomputendk-release": {
-      "buildCommand": [
-        "${NDK}/ndk-build",
-        "{ndkPath}/samples/HelloComputeNDK/obj/local/x86/libhellocomputendk.so"
-      ],
+      "buildCommand": "\"${NDK}/ndk-build\" \"{ndkPath}/samples/HelloComputeNDK/obj/local/x86/libhellocomputendk.so\"",
       "toolchain": "toolchain-x86",
       "files": [
         {
           "src": {
             "path": "{ndkPath}/samples/HelloComputeNDK/jni/helloComputeNDK.cpp"
           },
-          "flags": [
-            "-MMD",
-            "-MP",
-            "-ffunction-sections",
-            "-funwind-tables",
-            "-no-canonical-prefixes",
-            "-fstack-protector",
-            "-fno-exceptions",
-            "-fno-rtti",
-            "-O2",
-            "-g",
-            "-DNDEBUG",
-            "-fomit-frame-pointer",
-            "-fstrict-aliasing",
-            "-funswitch-loops",
-            "-finline-limit\u003d300",
-            "-DANDROID",
-            "-Wa,--noexecstack",
-            "-Wformat",
-            "-Werror\u003dformat-security",
-            "-frtti"
-          ]
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-frtti\""
         },
         {
           "src": {
             "path": "{ndkPath}/samples/HelloComputeNDK/obj/local/x86/objs/hellocomputendk/./ScriptC_mono.cpp"
           },
-          "flags": [
-            "-MMD",
-            "-MP",
-            "-ffunction-sections",
-            "-funwind-tables",
-            "-no-canonical-prefixes",
-            "-fstack-protector",
-            "-fno-exceptions",
-            "-fno-rtti",
-            "-O2",
-            "-g",
-            "-DNDEBUG",
-            "-fomit-frame-pointer",
-            "-fstrict-aliasing",
-            "-funswitch-loops",
-            "-finline-limit\u003d300",
-            "-DANDROID",
-            "-Wa,--noexecstack",
-            "-Wformat",
-            "-Werror\u003dformat-security",
-            "-frtti",
-            "-fno-rtti"
-          ]
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-fno-exceptions\" \"-fno-rtti\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"-frtti\" \"-fno-rtti\""
         }
       ],
       "output": {
         "path": "{ndkPath}/samples/HelloComputeNDK/obj/local/x86/libhellocomputendk.so"
+      }
+    },
+    "x86-librs.mono-debug": {
+      "buildCommand": "\"${NDK}/ndk-build\" \"{ndkPath}/samples/HelloComputeNDK/libs/x86/librs.mono.so\"",
+      "toolchain": "toolchain-x86",
+      "files": [],
+      "output": {
+        "path": "{ndkPath}/samples/HelloComputeNDK/libs/x86/librs.mono.so"
       }
     }
   },
@@ -533,14 +189,14 @@
         "path": "{ndkPath}/toolchains/mipsel-{platform}-android-4.8/prebuilt/{platform}-x86_64/bin/mipsel-{platform}-android-g++"
       }
     },
-    "toolchain-armeabi-v7a": {
-      "cppCompilerExecutable": {
-        "path": "{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-g++"
-      }
-    },
     "toolchain-x86": {
       "cppCompilerExecutable": {
         "path": "{ndkPath}/toolchains/x86-4.8/prebuilt/{platform}-x86_64/bin/i686-{platform}-android-g++"
+      }
+    },
+    "toolchain-armeabi-v7a": {
+      "cppCompilerExecutable": {
+        "path": "{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-g++"
       }
     }
   },

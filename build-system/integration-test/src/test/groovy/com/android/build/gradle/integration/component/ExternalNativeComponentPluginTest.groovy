@@ -58,26 +58,26 @@ model {
 """
         project.file("config.json") << """
 {
-    "cleanCommandStrings" : ["rm output.txt"],
+    "cleanCommands" : ["rm output.txt"],
     "buildFiles" : ["CMakeLists.txt"],
     "libraries" : {
         "foo" : {
-            "buildCommand" : ["touch", "output.txt"],
+            "buildCommand" : "touch output.txt",
             "toolchain" : "toolchain1",
             "output" : "build/libfoo.so",
             "abi" : "x86",
             "folders" : [
                 {
                     "src" : "src/main/jni",
-                    "cFlags" : ["folderCFlag1", "folderCFlag2"],
-                    "cppFlags" : ["folderCppFlag1", "folderCppFlag2"],
+                    "cFlags" : "folderCFlag1 folderCFlag2",
+                    "cppFlags" : "folderCppFlag1 folderCppFlag2",
                     "workingDirectory" : "workingDir"
                 }
             ],
             "files" : [
                 {
                     "src" : "src/main/jni/hello.c",
-                    "flags" : ["fileFlag1", "fileFlag2"],
+                    "flags" : "fileFlag1 fileFlag2",
                     "workingDirectory" : "workingDir"
                 }
             ]
@@ -108,7 +108,7 @@ model {
     nativeBuild {
         create {
             config "config1.json"
-            commandString "./generate_config1.sh"
+            command "./generate_config1.sh"
         }
         create {
             config "config2.json"
@@ -121,7 +121,7 @@ model {
     "buildFiles" : ["CMakeLists.txt"],
     "libraries" : {
         "foo" : {
-            "buildCommand" : ["touch", "foo.txt"],
+            "buildCommand" : "touch foo.txt",
             "toolchain" : "toolchain1",
             "output" : "build/libfoo.so"
         }
@@ -141,7 +141,7 @@ model {
     "buildFiles" : ["CMakeLists.txt"],
     "libraries" : {
         "bar" : {
-            "buildCommandString" : "touch bar.txt",
+            "buildCommand" : "touch bar.txt",
             "toolchain" : "toolchain2",
             "output" : "build/libbar.so"
         }
@@ -205,29 +205,29 @@ apply plugin: 'com.android.model.external'
 
 model {
     nativeBuildConfig {
-        cleanCommandStrings.add("rm output.txt")
+        cleanCommands.add("rm output.txt")
         buildFiles.addAll([file("CMakeLists.txt")])
         CFileExtensions.add("c")
         cppFileExtensions.add("cpp")
 
         libraries {
             create("foo") {
-                buildCommand.addAll(["touch", "output.txt"])
+                buildCommand "touch output.txt"
                 abi "x86"
                 toolchain "toolchain1"
                 output file("build/libfoo.so")
                 folders {
                     create() {
                         src "src/main/jni"
-                        CFlags.addAll(["folderCFlag1", "folderCFlag2"])
-                        cppFlags.addAll(["folderCppFlag1", "folderCppFlag2"])
+                        cFlags "folderCFlag1 folderCFlag2"
+                        cppFlags "folderCppFlag1 folderCppFlag2"
                         workingDirectory "workingDir"
                     }
                 }
                 files {
                     create() {
                         src "src/main/jni/hello.c"
-                        flags.addAll(["fileFlag1", "fileFlag2"])
+                        flags "fileFlag1 fileFlag2"
                         workingDirectory "workingDir"
                     }
                 }

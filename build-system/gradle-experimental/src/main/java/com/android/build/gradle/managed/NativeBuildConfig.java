@@ -38,8 +38,9 @@ public interface NativeBuildConfig {
      */
     Set<File> getBuildFiles();
 
-    List<String> getCleanCommandStrings();
-
+    /**
+     * List of commands to clean the build.
+     */
     List<String> getCleanCommands();
 
     /**
