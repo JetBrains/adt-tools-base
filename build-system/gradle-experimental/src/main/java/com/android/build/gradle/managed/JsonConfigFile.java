@@ -28,10 +28,9 @@ import java.util.List;
 public interface JsonConfigFile {
 
     /**
-     * A JSON data file for configuring the ExternalNativeComponentPlugin.
+     * JSON data files for configuring the ExternalNativeComponentPlugin.
      */
-    File getConfig();
-    void setConfig(File file);
+    List<File> getConfigs();
 
     /**
      * Command for generating a JSON data file.

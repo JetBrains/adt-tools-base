@@ -134,25 +134,32 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
                 ModelSet<JsonConfigFile> configFiles,
                 ServiceRegistry registry) throws IOException {
             for (JsonConfigFile configFile : configFiles) {
-                if (configFile.getConfig() == null) {
-                    throw new InvalidUserDataException("Config file cannot be null");
+                if (configFile.getConfigs().isEmpty()) {
+                    throw new InvalidUserDataException("Config file set cannot be empty");
                 }
 
                 // If JSON file does not exists, the plugin will not be configured.  But it's not
                 // an error to allow the plugin to create tasks for generating the file.
-                if (!configFile.getConfig().exists()) {
-                    continue;
+                boolean missingConfig = false;
+                for (final File file : configFile.getConfigs()) {
+                    if (!file.exists()) {
+                        missingConfig = true;
+                    }
                 }
+                if (missingConfig)
+                    continue;
 
                 FileResolver fileResolver = registry.get(FileResolver.class);
                 Gson gson = new GsonBuilder()
                         .registerTypeAdapter(File.class, new FileGsonTypeAdaptor(fileResolver))
                         .create();
 
-                NativeBuildConfigValue jsonConfig = gson.fromJson(
-                        new FileReader(configFile.getConfig()),
-                        NativeBuildConfigValue.class);
-                NativeBuildConfigGsonUtil.copyToNativeBuildConfig(jsonConfig, config);
+                for (final File file : configFile.getConfigs()) {
+                    NativeBuildConfigValue jsonConfig = gson.fromJson(
+                            new FileReader(file),
+                            NativeBuildConfigValue.class);
+                    NativeBuildConfigGsonUtil.copyToNativeBuildConfig(jsonConfig, config);
+                }
             }
         }
 
@@ -213,12 +220,12 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
                 ModelMap<Task> tasks,
                 ModelSet<JsonConfigFile> configFiles) {
             final List<String> generatorTasks = Lists.newLinkedList();
+            int generateTaskIndex = 0;
             for (final JsonConfigFile configFile : configFiles) {
                 if (configFile.getCommand() == null) {
                     continue;
                 }
-                String taskName = "generate" + StringHelper.capitalize(
-                        configFile.getConfig().getName());
+                String taskName = "generateConfigFiles" + generateTaskIndex++;
                 generatorTasks.add(taskName);
                 tasks.create(
                         taskName,
@@ -232,7 +239,7 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
                             }
                         });
             }
-            tasks.create("generateConfigFile",
+            tasks.create("generateConfigFiles",
                     new Action<Task>() {
                         @Override
                         public void execute(Task task) {

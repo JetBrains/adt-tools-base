@@ -51,7 +51,7 @@ apply plugin: 'com.android.model.external'
 model {
     nativeBuild {
         create {
-            config "config.json"
+            configs.add(file("config.json"))
         }
     }
 }
@@ -107,23 +107,32 @@ apply plugin: 'com.android.model.external'
 model {
     nativeBuild {
         create {
-            config "config1.json"
-            command "./generate_config1.sh"
+            configs.addAll([
+                file("config1.json"),
+                file("config2.json")
+            ])
+            command "./generate_configs.sh"
         }
         create {
-            config "config2.json"
+            configs.addAll([
+                file("config3.json"),
+                file("config4.json")
+            ])
         }
     }
 }
 """
-        project.file("generate_config1.sh") << """echo '
+        project.file("generate_configs.sh") << """
+echo '
 {
     "buildFiles" : ["CMakeLists.txt"],
     "libraries" : {
-        "foo" : {
+        "foo-DEBUG" : {
             "buildCommand" : "touch foo.txt",
+            "buildType" : "debug",
+            "artifactName" : "foo",
             "toolchain" : "toolchain1",
-            "output" : "build/libfoo.so"
+            "output" : "build/debug/libfoo.so"
         }
     },
     "toolchains" : {
@@ -133,17 +142,58 @@ model {
         }
     }
 }' > config1.json
-"""
-        project.file("generate_config1.sh").setExecutable(true)
-
-        project.file("config2.json") << """
+echo '
 {
     "buildFiles" : ["CMakeLists.txt"],
     "libraries" : {
-        "bar" : {
+        "foo-RELEASE" : {
+            "buildCommand" : "touch foo.txt",
+            "buildType" : "release",
+            "artifactName" : "foo",
+            "toolchain" : "toolchain1",
+            "output" : "build/release/libfoo.so"
+        }
+    },
+    "toolchains" : {
+        "toolchain1" : {
+            "cCompilerExecutable" : "clang",
+            "cppCompilerExecutable" : "clang++"
+        }
+    }
+}' > config2.json
+"""
+        project.file("generate_configs.sh").setExecutable(true)
+
+        project.file("config3.json") << """
+{
+    "buildFiles" : ["CMakeLists.txt"],
+    "libraries" : {
+        "bar-DEBUG" : {
             "buildCommand" : "touch bar.txt",
+            "buildType" : "debug",
+            "artifactName" : "bar",
             "toolchain" : "toolchain2",
-            "output" : "build/libbar.so"
+            "output" : "build/debug/libbar.so"
+        }
+    },
+    "toolchains" : {
+        "toolchain2" : {
+            "cCompilerExecutable" : "gcc",
+            "cppCompilerExecutable" : "g++"
+        }
+    }
+}
+"""
+        project.file("config4.json") << """
+{
+    "buildFiles" : ["CMakeLists.txt"],
+    "libraries" : {
+        "bar-RELEASE" : {
+            "buildCommand" : "touch bar.txt",
+            "buildType" : "release",
+            "artifactName" : "bar",
+            "toolchain" : "toolchain2",
+            "output" : "build/release/libbar.so"
         }
     },
     "toolchains" : {
@@ -155,8 +205,10 @@ model {
 }
 """
         assertThat(project.file("config1.json")).doesNotExist()
-        project.execute("generateConfigfile")
+        assertThat(project.file("config2.json")).doesNotExist()
+        project.execute("generateConfigFiles")
         assertThat(project.file("config1.json")).exists()
+        assertThat(project.file("config2.json")).exists()
 
         NativeAndroidProject model = project.executeAndReturnModel(NativeAndroidProject.class, "assemble")
         assertThat(model.getFileExtensions()).containsEntry("c", "c")
@@ -168,16 +220,26 @@ model {
         assertThat(model.getFileExtensions()).containsEntry("cpp", "c++")
         assertThat(model.getFileExtensions()).containsEntry("cxx", "c++")
 
-        assertThat(model.artifacts).hasSize(2)
+        assertThat(model.artifacts).hasSize(4)
         for (NativeArtifact artifact : model.artifacts) {
-            if (artifact.getName().equals("foo")) {
-                assertThat(artifact.getAssembleTaskName()).isEqualTo("createFoo")
-                assertThat(artifact.getName()).isEqualTo("foo")
+            if (artifact.getName().startsWith("foo")) {
+                if (artifact.getName().endsWith("DEBUG")) {
+                    assertThat(artifact.getName()).isEqualTo("foo-DEBUG")
+                    assertThat(artifact.getAssembleTaskName()).isEqualTo("createFoo-DEBUG")
+                } else {
+                    assertThat(artifact.getName()).isEqualTo("foo-RELEASE")
+                    assertThat(artifact.getAssembleTaskName()).isEqualTo("createFoo-RELEASE")
+                }
                 assertThat(artifact.getToolChain()).isEqualTo("toolchain1")
                 assertThat(artifact.getOutputFile()).hasName("libfoo.so")
             } else {
-                assertThat(artifact.getAssembleTaskName()).isEqualTo("createBar")
-                assertThat(artifact.getName()).isEqualTo("bar")
+                if (artifact.getName().endsWith("DEBUG")) {
+                    assertThat(artifact.getName()).isEqualTo("bar-DEBUG")
+                    assertThat(artifact.getAssembleTaskName()).isEqualTo("createBar-DEBUG")
+                } else {
+                    assertThat(artifact.getName()).isEqualTo("bar-RELEASE")
+                    assertThat(artifact.getAssembleTaskName()).isEqualTo("createBar-RELEASE")
+                }
                 assertThat(artifact.getToolChain()).isEqualTo("toolchain2")
                 assertThat(artifact.getOutputFile()).hasName("libbar.so")
             }
