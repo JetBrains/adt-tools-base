@@ -103,8 +103,8 @@ public class LocalRepoTest extends TestCase {
     public void testMarshalGeneric() throws Exception {
         RepoManager manager = new RepoManagerImpl(new MockFileOp());
 
-        CommonFactory factory = (CommonFactory)manager.getCommonModule().createLatestFactory();
-        GenericFactory genericFactory = (GenericFactory) manager.getGenericModule()
+        CommonFactory factory = (CommonFactory)RepoManager.getCommonModule().createLatestFactory();
+        GenericFactory genericFactory = (GenericFactory) RepoManager.getGenericModule()
                 .createLatestFactory();
         Repository repo = factory.createRepositoryType();
         LocalPackageImpl p = factory.createLocalPackage();
@@ -136,8 +136,8 @@ public class LocalRepoTest extends TestCase {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 
         dbf.setNamespaceAware(true);
-        dbf.setSchema(SchemaModuleUtil.getSchema(ImmutableSet.of(manager.getGenericModule()),
-                SchemaModuleUtil.createResourceResolver(ImmutableSet.of(manager.getCommonModule()),
+        dbf.setSchema(SchemaModuleUtil.getSchema(ImmutableSet.of(RepoManager.getGenericModule()),
+                SchemaModuleUtil.createResourceResolver(ImmutableSet.of(RepoManager.getCommonModule()),
                         progress),
                 progress));
         progress.assertNoErrorsOrWarnings();

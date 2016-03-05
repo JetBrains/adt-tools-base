@@ -67,7 +67,7 @@ public class LegacyLocalRepoTest extends TestCase {
         progress.assertNoErrorsOrWarnings();
 
         LocalRepoLoader sdk = new LocalRepoLoader(root, mgr,
-                new LegacyLocalRepoLoader(root, mockFop, mgr), mockFop);
+                new LegacyLocalRepoLoader(root, mockFop), mockFop);
         Map<String, LocalPackage> packages = sdk.getPackages(progress);
         progress.assertNoErrorsOrWarnings();
         assertEquals(1, packages.size());

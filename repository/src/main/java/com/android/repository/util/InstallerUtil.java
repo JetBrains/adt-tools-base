@@ -158,10 +158,10 @@ public class InstallerUtil {
         if (!fop.exists(packageRoot) || !fop.isDirectory(packageRoot)) {
             throw new IllegalArgumentException("packageRoot must exist and be a directory.");
         }
-        CommonFactory factory = (CommonFactory) manager.getCommonModule().createLatestFactory();
+        CommonFactory factory = (CommonFactory) RepoManager.getCommonModule().createLatestFactory();
         // Create the package.xml
         Repository repo = factory.createRepositoryType();
-        LocalPackageImpl impl = LocalPackageImpl.create(p, manager);
+        LocalPackageImpl impl = LocalPackageImpl.create(p);
         repo.setLocalPackage(impl);
         License l = p.getLicense();
         if (l != null) {
@@ -169,7 +169,7 @@ public class InstallerUtil {
         }
         File packageXml = new File(packageRoot, LocalRepoLoader.PACKAGE_XML_FN);
         OutputStream fos = fop.newFileOutputStream(packageXml);
-        JAXBElement<Repository> element = ((CommonFactory) manager.getCommonModule()
+        JAXBElement<Repository> element = ((CommonFactory) RepoManager.getCommonModule()
                 .createLatestFactory()).generateRepository(repo);
         try {
             SchemaModuleUtil
@@ -192,7 +192,16 @@ public class InstallerUtil {
     public static URL resolveCompleteArchiveUrl(@NonNull RemotePackage p,
             @NonNull ProgressIndicator progress) {
         Archive arch = p.getArchive();
+        if (arch == null) {
+            return null;
+        }
         String urlStr = arch.getComplete().getUrl();
+        return resolveUrl(urlStr, p, progress);
+    }
+
+    @Nullable
+    public static URL resolveUrl(@NonNull String urlStr, @NonNull RemotePackage p,
+            @NonNull ProgressIndicator progress) {
         URL url;
         try {
             url = new URL(urlStr);
@@ -212,7 +221,6 @@ public class InstallerUtil {
             }
         }
         return url;
-
     }
 
     /**
