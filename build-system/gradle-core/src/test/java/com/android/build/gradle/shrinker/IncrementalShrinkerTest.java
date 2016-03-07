@@ -57,7 +57,7 @@ public class IncrementalShrinkerTest extends AbstractShrinkerTest {
     @Before
     public void createShrinker() throws Exception {
         mFullRunShrinker = new FullRunShrinker<String>(
-                new WaitableExecutor<Void>(),
+                WaitableExecutor.<Void>useGlobalSharedThreadPool(),
                 JavaSerializationShrinkerGraph.empty(mIncrementalDir),
                 getPlatformJars(),
                 mShrinkerLogger);
@@ -416,7 +416,7 @@ public class IncrementalShrinkerTest extends AbstractShrinkerTest {
 
     private void incrementalRun(Map<String, Status> changes) throws Exception {
         IncrementalShrinker<String> incrementalShrinker = new IncrementalShrinker<String>(
-                new WaitableExecutor<Void>(),
+                WaitableExecutor.<Void>useGlobalSharedThreadPool(),
                 JavaSerializationShrinkerGraph.readFromDir(mIncrementalDir),
                 mShrinkerLogger);
 
