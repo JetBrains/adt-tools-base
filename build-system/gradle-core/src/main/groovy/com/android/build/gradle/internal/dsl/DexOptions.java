@@ -106,7 +106,7 @@ public class DexOptions implements com.android.builder.core.DexOptions {
     }
 
     /**
-     * Number of threads to use when running dx.
+     * Number of threads to use when running dx. Defaults to 4.
      */
     @Override
     @Nullable
@@ -116,10 +116,11 @@ public class DexOptions implements com.android.builder.core.DexOptions {
 
 
     /**
-     * Returns the maximum number of concurrent processes that can be used to dex.
-     * Be aware that the number of concurrent process times the memory requirement represent the
-     * minimum amount of memory that will be used by the dx processes :
-     *  Total Memory = getMaxProcessCount() * getJavaMaxHeapSize()
+     * Returns the maximum number of concurrent processes that can be used to dex. Defaults to 2.
+     *
+     * <p>Be aware that the number of concurrent process times the memory requirement represent the
+     * minimum amount of memory that will be used by the dx processes:
+     * {@code Total Memory = getMaxProcessCount() * getJavaMaxHeapSize()}
      *
      * To avoid trashing, keep these two settings appropriate for your configuration.
      * @return the max number of concurrent dx processes.
