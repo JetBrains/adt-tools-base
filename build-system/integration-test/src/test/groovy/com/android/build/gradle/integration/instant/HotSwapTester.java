@@ -76,7 +76,7 @@ class HotSwapTester {
             InstantRunBuildInfo info = InstantRunTestUtils.loadContext(instantRunModel);
             InstantRunTestUtils.doInstall(device, info.getArtifacts());
 
-            logcat.clear();
+            logcat.clearFiltered();
 
             // Run app
             InstantRunTestUtils.unlockDevice(device);
@@ -111,7 +111,7 @@ class HotSwapTester {
 
             FileTransfer fileTransfer = FileTransfer.createHotswapPatch(artifact.file);
 
-            logcat.clear();
+            logcat.clearFiltered();
 
             client.pushPatches(
                     device,
