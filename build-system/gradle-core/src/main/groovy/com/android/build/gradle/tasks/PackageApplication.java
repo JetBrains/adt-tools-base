@@ -278,7 +278,7 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                     getAbiFilters(),
                     getJniDebugBuild(),
                     getSigningConfig(),
-                    getOutputFile().getAbsolutePath(),
+                    getOutputFile(),
                     getMinSdkVersion());
         } catch (DuplicateFileException e) {
             Logger logger = getLogger();
