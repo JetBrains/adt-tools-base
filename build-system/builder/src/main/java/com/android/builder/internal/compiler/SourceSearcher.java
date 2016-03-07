@@ -58,7 +58,7 @@ public class SourceSearcher {
 
     public void setUseExecutor(boolean useExecutor) {
         if (useExecutor) {
-            mExecutor = new WaitableExecutor<Void>();
+            mExecutor = WaitableExecutor.useGlobalSharedThreadPool();
         } else {
             mExecutor = null;
         }
