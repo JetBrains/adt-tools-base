@@ -111,7 +111,7 @@ public class ExtractJarsTransform extends Transform {
         }
 
         try {
-            WaitableExecutor<Void> executor = new WaitableExecutor<Void>();
+            WaitableExecutor<Void> executor = WaitableExecutor.useGlobalSharedThreadPool();
 
             for (TransformInput input : transformInvocation.getInputs()) {
                 for (DirectoryInput dirInput : input.getDirectoryInputs()) {
