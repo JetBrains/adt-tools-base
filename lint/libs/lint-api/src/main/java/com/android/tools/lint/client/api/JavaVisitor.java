@@ -305,6 +305,8 @@ public class JavaVisitor {
             sb.append(context.file.getName());
             sb.append(" (this is a bug in lint or one of the libraries it depends on)\n");
 
+            sb.append(e.getClass().getSimpleName());
+            sb.append(':');
             StackTraceElement[] stackTrace = e.getStackTrace();
             int count = 0;
             for (StackTraceElement frame : stackTrace) {

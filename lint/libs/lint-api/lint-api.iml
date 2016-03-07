@@ -16,7 +16,8 @@
     <orderEntry type="library" exported="" name="guava-tools" level="project" />
     <orderEntry type="module" module-name="common" />
     <orderEntry type="module" module-name="sdklib" />
-    <orderEntry type="module" module-name="sdk-common" />
-    <orderEntry type="module" module-name="layoutlib-api" />
+    <orderEntry type="module" module-name="sdk-common" exported="" />
+    <orderEntry type="module" module-name="layoutlib-api" exported="" />
+    <orderEntry type="module" module-name="java-psi-api" exported="" />
   </component>
 </module>

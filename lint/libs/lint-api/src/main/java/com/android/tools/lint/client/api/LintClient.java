@@ -623,7 +623,7 @@ public abstract class LintClient {
      * projects are unique for a directory (in case we process a library project
      * before its including project for example)
      */
-    private Map<File, Project> mDirToProject;
+    protected Map<File, Project> mDirToProject;
 
     /**
      * Returns a project for the given directory. This should return the same
@@ -700,7 +700,7 @@ public abstract class LintClient {
         mDirToProject.put(canonicalDir, project);
     }
 
-    private Set<File> mProjectDirs = Sets.newHashSet();
+    protected Set<File> mProjectDirs = Sets.newHashSet();
 
     /**
      * Create a project for the given directory
