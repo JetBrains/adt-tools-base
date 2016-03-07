@@ -112,6 +112,7 @@ if (project.has("release")) {
 }
 
 // Incremental update test support
+String androidJar = System.env.ANDROID_HOME + '/platforms/android-15/android.jar'
 
 Task compileIncrementalTestBaseClasses = tasks.create(
         name: "compileIncrementalTestBaseClasses",
@@ -119,11 +120,13 @@ Task compileIncrementalTestBaseClasses = tasks.create(
     source = new File(project.getProjectDir(), "src/test/incremental-test-classes/base")
     classpath = sourceSets.test.compileClasspath
     destinationDir = baseClasses
+    sourceCompatibility '1.6'
+    targetCompatibility '1.6'
+    options.bootClasspath = androidJar
 }
 
 compileTestJava.dependsOn compileIncrementalTestBaseClasses
 
-String androidJar = System.env.ANDROID_HOME + '/platforms/android-15/android.jar'
 
 Task instrumentIncrementalTestBaseClasses = tasks.create(
         name: "instrumentIncrementalTestBaseClasses",
@@ -157,6 +160,9 @@ for (File f: new File(project.projectDir, "src/test/incremental-test-classes/pat
         source = project.files(f)
         classpath = sourceSets.test.compileClasspath
         destinationDir = incrementalPatchClassFileDir
+        sourceCompatibility '1.6'
+        targetCompatibility '1.6'
+        options.bootClasspath = androidJar
     }
 
     compilePatch.dependsOn compileIncrementalTestBaseClasses
