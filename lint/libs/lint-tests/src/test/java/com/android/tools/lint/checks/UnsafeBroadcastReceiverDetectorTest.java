@@ -307,9 +307,6 @@ public class UnsafeBroadcastReceiverDetectorTest extends AbstractCheckTest {
     @Nullable
     private static List<String> getProtectedBroadcasts() throws IOException {
         String top = System.getenv("ANDROID_BUILD_TOP");   //$NON-NLS-1$
-        if (top == null) {
-            top = "/Users/tnorbye/dev/mnc-dev";
-        }
 
         // TODO: We should ship this file with the SDK!
         File file = new File(top, "frameworks/base/core/res/AndroidManifest.xml");

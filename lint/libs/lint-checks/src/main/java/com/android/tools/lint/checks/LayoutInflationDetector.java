@@ -31,7 +31,7 @@ import com.android.resources.ResourceType;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
-import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
@@ -41,11 +41,16 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.android.utils.Pair;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.intellij.psi.JavaElementVisitor;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiMethodCallExpression;
+import com.intellij.psi.PsiReferenceExpression;
 
 import org.kxml2.io.KXmlParser;
 import org.w3c.dom.Attr;
@@ -60,21 +65,13 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-
-import lombok.ast.AstVisitor;
-import lombok.ast.Expression;
-import lombok.ast.MethodInvocation;
-import lombok.ast.NullLiteral;
-import lombok.ast.Select;
-import lombok.ast.StrictListAccessor;
 
 /**
  * Looks for layout inflation calls passing null as the view root
  */
-public class LayoutInflationDetector extends LayoutDetector implements Detector.JavaScanner {
+public class LayoutInflationDetector extends LayoutDetector implements JavaPsiScanner {
 
     @SuppressWarnings("unchecked")
     private static final Implementation IMPLEMENTATION = new Implementation(
@@ -102,12 +99,6 @@ public class LayoutInflationDetector extends LayoutDetector implements Detector.
 
     /** Constructs a new {@link LayoutInflationDetector} check */
     public LayoutInflationDetector() {
-    }
-
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.NORMAL;
     }
 
     @Override
@@ -159,33 +150,37 @@ public class LayoutInflationDetector extends LayoutDetector implements Detector.
     }
 
     @Override
-    public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor,
-            @NonNull MethodInvocation node) {
-        assert node.astName().astValue().equals(INFLATE);
-        if (node.astOperand() == null) {
+    public void visitMethod(@NonNull JavaContext context, @Nullable JavaElementVisitor visitor,
+            @NonNull PsiMethodCallExpression call, @NonNull PsiMethod method) {
+        assert method.getName().equals(INFLATE);
+        if (call.getMethodExpression().getQualifier() == null) {
             return;
         }
-        StrictListAccessor<Expression, MethodInvocation> arguments = node.astArguments();
-        if (arguments.size() < 2) {
+        PsiExpression[] arguments = call.getArgumentList().getExpressions();
+        if (arguments.length < 2) {
             return;
         }
-        Iterator<Expression> iterator = arguments.iterator();
-        Expression first = iterator.next();
-        Expression second = iterator.next();
-        if (!(second instanceof NullLiteral) || !(first instanceof Select)) {
+
+        PsiExpression first = arguments[0];
+        if (!(first instanceof PsiReferenceExpression)) {
             return;
         }
-        Select select = (Select) first;
-        Expression operand = select.astOperand();
-        if (operand instanceof Select) {
-            Select rLayout = (Select) operand;
-            if (rLayout.astIdentifier().astValue().equals(ResourceType.LAYOUT.getName()) &&
-                    rLayout.astOperand().toString().endsWith(SdkConstants.R_CLASS)) {
-                String layoutName = select.astIdentifier().astValue();
+        PsiExpression second = arguments[1];
+        if (!LintUtils.isNullLiteral(second)) {
+            return;
+        }
+        PsiReferenceExpression select = (PsiReferenceExpression) first;
+        PsiElement operand = select.getQualifier();
+        if (operand instanceof PsiReferenceExpression) {
+            PsiReferenceExpression rLayout = (PsiReferenceExpression) operand;
+            if (ResourceType.LAYOUT.getName().equals(rLayout.getReferenceName()) &&
+                    rLayout.getQualifier() != null &&
+                    rLayout.getQualifier().getText().endsWith(SdkConstants.R_CLASS)) {
+                String layoutName = select.getReferenceName();
                 if (context.getScope().contains(Scope.RESOURCE_FILE)) {
                     // We're doing a full analysis run: we can gather this information
                     // incrementally
-                    if (!context.getDriver().isSuppressed(context, ISSUE, node)) {
+                    if (!context.getDriver().isSuppressed(context, ISSUE, call)) {
                         if (mPendingErrors == null) {
                             mPendingErrors = Lists.newArrayList();
                         }
@@ -193,12 +188,10 @@ public class LayoutInflationDetector extends LayoutDetector implements Detector.
                         mPendingErrors.add(Pair.of(layoutName, location));
                     }
                 } else if (hasLayoutParams(context, layoutName)) {
-                    context.report(ISSUE, node, context.getLocation(second), ERROR_MESSAGE);
+                    context.report(ISSUE, call, context.getLocation(second), ERROR_MESSAGE);
                 }
             }
         }
-
-        super.visitMethod(context, visitor, node);
     }
 
     private static boolean hasLayoutParams(@NonNull JavaContext context, String name) {

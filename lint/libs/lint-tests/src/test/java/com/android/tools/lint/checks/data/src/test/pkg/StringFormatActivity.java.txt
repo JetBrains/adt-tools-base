@@ -33,11 +33,22 @@ public class StringFormatActivity extends Activity {
         String output1 = String.format(hello, target);
     }
 
+    public void testPrimitiveWrappers() {
+        Boolean won = true;
+        Integer value = 1;
+        String score = getResources().getString(R.string.score);
+        String score2 = getResources().getString(R.string.score2);
+        String output1  = String.format(score, won);   // wrong
+        String output2  = String.format(score, value);   // ok
+        String output3  = String.format(score2, won);   // ok
+    }
+
     private static class R {
         private static class string {
             public static final int hello = 1;
             public static final int hello2 = 2;
             public static final int score = 3;
+            public static final int score2 = 5;
         }
         private static class layout {
             public static final int main = 4;

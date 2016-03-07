@@ -80,12 +80,12 @@ public class ResourceUsageModel {
     private static final int TYPICAL_RESOURCE_COUNT = 200;
 
     /** List of all known resources (parsed from R.java) */
-    private List<Resource> mResources = Lists.newArrayListWithExpectedSize(TYPICAL_RESOURCE_COUNT);
+    private final List<Resource> mResources = Lists.newArrayListWithExpectedSize(TYPICAL_RESOURCE_COUNT);
     /** Map from resource type to map from resource name to resource object */
-    private Map<ResourceType, Map<String, Resource>> mTypeToName =
+    private final Map<ResourceType, Map<String, Resource>> mTypeToName =
             Maps.newEnumMap(ResourceType.class);
     /** Map from R field value to corresponding resource */
-    private Map<Integer, Resource> mValueToResource =
+    private final Map<Integer, Resource> mValueToResource =
             Maps.newHashMapWithExpectedSize(TYPICAL_RESOURCE_COUNT);
 
     public static String getFieldName(Element element) {
@@ -884,8 +884,8 @@ public class ResourceUsageModel {
                     NodeList children = node.getChildNodes();
                     for (int i = 0, n = children.getLength(); i < n; i++) {
                         Node child = children.item(i);
-                        if (child.getNodeType() == Element.TEXT_NODE
-                                || child.getNodeType() == Element.CDATA_SECTION_NODE) {
+                        if (child.getNodeType() == Node.TEXT_NODE
+                                || child.getNodeType() == Node.CDATA_SECTION_NODE) {
                             sb.append(child.getNodeValue());
                         }
                     }
@@ -1587,7 +1587,7 @@ public class ResourceUsageModel {
                             if (index > begin) {
                                 String name = s.substring(begin, index);
                                 Resource resource = addResource(type, name, null);
-                                ResourceUsageModel.markReachable(resource);
+                                markReachable(resource);
                             }
                         }
                         index--;

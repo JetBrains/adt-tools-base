@@ -29,11 +29,56 @@ public class LayoutInflationDetectorTest extends AbstractCheckTest {
         return new LayoutInflationDetector();
     }
 
+    @SuppressWarnings("all")
+    private TestFile mLayoutInflationTest = java("src/test/pkg/LayoutInflationTest.java", ""
+            + "package test.pkg;\n"
+            + "\n"
+            + "import android.content.Context;\n"
+            + "import android.view.LayoutInflater;\n"
+            + "import android.view.View;\n"
+            + "import android.view.ViewGroup;\n"
+            + "import android.widget.BaseAdapter;\n"
+            + "import android.annotation.SuppressLint;\n"
+            + "import java.util.ArrayList;\n"
+            + "\n"
+            + "public abstract class LayoutInflationTest extends BaseAdapter {\n"
+            + "    public View getView(int position, View convertView, ViewGroup parent) {\n"
+            + "        convertView = mInflater.inflate(R.layout.your_layout, null);\n"
+            + "        convertView = mInflater.inflate(R.layout.your_layout, null, true);\n"
+            + "        //convertView = mInflater.inflate(R.layout.your_layout);\n"
+            + "        convertView = mInflater.inflate(R.layout.your_layout, parent);\n"
+            + "        convertView = WeirdInflater.inflate(convertView, null);\n"
+            + "\n"
+            + "        return convertView;\n"
+            + "    }\n"
+            + "\n"
+            // Suppressed checks
+            + "    @SuppressLint(\"InflateParams\")\n"
+            + "    public View getView2(int position, View convertView, ViewGroup parent) {\n"
+            + "        convertView = mInflater.inflate(R.layout.your_layout, null);\n"
+            + "        convertView = mInflater.inflate(R.layout.your_layout, null, true);\n"
+            + "        convertView = mInflater.inflate(R.layout.your_layout, parent);\n"
+            + "        convertView = WeirdInflater.inflate(convertView, null);\n"
+            + "\n"
+            + "        return convertView;\n"
+            + "    }\n"
+            // Test/Stub Setup
+            + "    private LayoutInflater mInflater;\n"
+            + "    private static class R {\n"
+            + "        private static class layout {\n"
+            + "            public static final int your_layout = 1;\n"
+            + "        }\n"
+            + "    }\n"
+            + "    private static class WeirdInflater {\n"
+            + "        public static View inflate(View view, Object params) { return null; }\n"
+            + "    }\n"
+            + "}\n");
+
     @Override
     protected boolean allowCompilationErrors() {
         // Some of these unit tests are still relying on source code that references
         // unresolved symbols etc.
-        return true;
+        return false;
     }
 
     public void test() throws Exception {
@@ -47,17 +92,17 @@ public class LayoutInflationDetectorTest extends AbstractCheckTest {
                 + "0 errors, 2 warnings\n",
 
             lintProject(
-                    "src/test/pkg/LayoutInflationTest.java.txt=>src/test/pkg/LayoutInflationTest.java",
-                    "res/layout/textsize.xml=>res/layout/your_layout.xml",
-                    "res/layout/listseparator.xml=>res/layout-port/your_layout.xml"));
+                    mLayoutInflationTest,
+                    copy("res/layout/textsize.xml", "res/layout/your_layout.xml"),
+                    copy("res/layout/listseparator.xml", "res/layout-port/your_layout.xml")));
     }
 
     public void testNoLayoutParams() throws Exception {
         assertEquals("No warnings.",
 
                 lintProject(
-                        "src/test/pkg/LayoutInflationTest.java.txt=>src/test/pkg/LayoutInflationTest.java",
-                        "res/layout/listseparator.xml=>res/layout/your_layout.xml"));
+                        mLayoutInflationTest,
+                        copy("res/layout/listseparator.xml", "res/layout/your_layout.xml")));
     }
 
     public void testHasLayoutParams() throws IOException, XmlPullParserException {
@@ -89,15 +134,6 @@ public class LayoutInflationDetectorTest extends AbstractCheckTest {
                 + "        layout=\"@layout/layoutcycle1\" />\n"
                 + "\n"
                 + "</LinearLayout>")));
-    }
-
-    public void testSuppressed() throws Exception {
-        assertEquals("No warnings.",
-
-                lintProject(
-                        "src/test/pkg/LayoutInflationTest_ignored.java.txt=>src/test/pkg/LayoutInflationTest.java",
-                        "res/layout/textsize.xml=>res/layout/your_layout.xml",
-                        "res/layout/listseparator.xml=>res/layout-port/your_layout.xml"));
     }
 }
 

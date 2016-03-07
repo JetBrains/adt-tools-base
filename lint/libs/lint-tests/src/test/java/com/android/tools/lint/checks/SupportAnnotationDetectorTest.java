@@ -357,6 +357,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                         mColorResAnnotation
                 ));
     }
+
     public void testResourceType() throws Exception {
         assertEquals((SDK_ANNOTATIONS_AVAILABLE ? ""
                 + "src/p1/p2/Flow.java:13: Error: Expected resource of type drawable [ResourceType]\n"
@@ -380,7 +381,10 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "src/p1/p2/Flow.java:68: Error: Expected resource of type drawable [ResourceType]\n"
                 + "        myMethod(z, null); // ERROR\n"
                 + "                 ~\n"
-                + (SDK_ANNOTATIONS_AVAILABLE ? "7 errors, 0 warnings\n" : "4 errors, 0 warnings\n"),
+                + "src/p1/p2/Flow.java:71: Error: Expected resource of type drawable [ResourceType]\n"
+                + "        myMethod(w, null); // ERROR\n"
+                + "                 ~\n"
+                + (SDK_ANNOTATIONS_AVAILABLE ? "8 errors, 0 warnings\n" : "5 errors, 0 warnings\n"),
 
                 lintProject(
                         copy("src/p1/p2/Flow.java.txt", "src/p1/p2/Flow.java"),
@@ -449,7 +453,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]\n"
                 + "        new ConstructorTest(1, 3);\n"
                 + "                               ~\n"
-                + "src/test/pkg/ConstructorTest.java:19: Error: Method test.pkg.ConstructorTest must be called from the UI thread, currently inferred thread is worker thread [WrongThread]\n"
+                + "src/test/pkg/ConstructorTest.java:19: Error: Constructor ConstructorTest must be called from the UI thread, currently inferred thread is worker thread [WrongThread]\n"
                 + "        new ConstructorTest(res, range);\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "3 errors, 0 warnings\n",
@@ -535,24 +539,6 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "@SuppressWarnings(\"UnusedDeclaration\")\n"
                 + "public abstract class LocationManager {\n"
                 + "    @RequiresPermission(anyOf = {ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION})\n"
-                + "    public abstract Location myMethod(String provider);\n"
-                + "    public static class Location {\n"
-                + "    }\n"
-                + "}\n");
-
-        private final TestFile mComplexLocationManagerStub = java("src/android/location/LocationManager.java", ""
-                + "package android.location;\n"
-                + "\n"
-                + "import android.support.annotation.RequiresPermission;\n"
-                + "\n"
-                + "import static android.Manifest.permission.ACCESS_COARSE_LOCATION;\n"
-                + "import static android.Manifest.permission.ACCESS_FINE_LOCATION;\n"
-                + "import static android.Manifest.permission.BLUETOOTH;\n"
-                + "import static android.Manifest.permission.READ_SMS;\n"
-                + "\n"
-                + "@SuppressWarnings(\"UnusedDeclaration\")\n"
-                + "public abstract class LocationManager {\n"
-                + "    @RequiresPermission(\"(\" + ACCESS_FINE_LOCATION + \"|| \" + ACCESS_COARSE_LOCATION + \") && (\" + BLUETOOTH + \" ^ \" + READ_SMS + \")\")\n"
                 + "    public abstract Location myMethod(String provider);\n"
                 + "    public static class Location {\n"
                 + "    }\n"
@@ -913,47 +899,6 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 ));
     }
 
-    public void testComplexPermission1() throws Exception {
-        assertEquals(""
-                + "src/test/pkg/PermissionTest.java:7: Error: Missing permissions required by LocationManager.myMethod: android.permission.BLUETOOTH xor android.permission.READ_SMS [MissingPermission]\n"
-                + "        LocationManager.Location location = locationManager.myMethod(provider);\n"
-                + "                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "1 errors, 0 warnings\n",
-                lintProject(
-                        getManifestWithPermissions(14,
-                                "android.permission.ACCESS_FINE_LOCATION"),
-                        mPermissionTest,
-                        mComplexLocationManagerStub,
-                        mRequirePermissionAnnotation));
-    }
-
-    public void testComplexPermission2() throws Exception {
-        assertEquals("No warnings.",
-                lintProject(
-                        getManifestWithPermissions(14,
-                                "android.permission.ACCESS_FINE_LOCATION",
-                                "android.permission.BLUETOOTH"),
-                        mPermissionTest,
-                        mComplexLocationManagerStub,
-                        mRequirePermissionAnnotation));
-    }
-
-    public void testComplexPermission3() throws Exception {
-        assertEquals(""
-                + "src/test/pkg/PermissionTest.java:7: Error: Missing permissions required by LocationManager.myMethod: android.permission.BLUETOOTH xor android.permission.READ_SMS [MissingPermission]\n"
-                + "        LocationManager.Location location = locationManager.myMethod(provider);\n"
-                + "                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "1 errors, 0 warnings\n",
-                lintProject(
-                        getManifestWithPermissions(14,
-                                "android.permission.ACCESS_FINE_LOCATION",
-                                "android.permission.BLUETOOTH",
-                                "android.permission.READ_SMS"),
-                        mPermissionTest,
-                        mComplexLocationManagerStub,
-                        mRequirePermissionAnnotation));
-    }
-
     public void testUsesPermissionSdk23() throws Exception {
         TestFile manifest = getManifestWithPermissions(14,
                 "android.permission.ACCESS_FINE_LOCATION",
@@ -966,7 +911,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 lintProject(
                         manifest,
                         mPermissionTest,
-                        mComplexLocationManagerStub,
+                        mLocationManagerStub,
                         mRequirePermissionAnnotation));
     }
 
@@ -982,7 +927,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 lintProject(
                         manifest,
                         mPermissionTest,
-                        mComplexLocationManagerStub,
+                        mLocationManagerStub,
                         mRequirePermissionAnnotation));
     }
 

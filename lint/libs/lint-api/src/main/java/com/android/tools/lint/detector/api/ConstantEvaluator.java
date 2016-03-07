@@ -32,6 +32,32 @@ import com.android.annotations.Nullable;
 import com.android.tools.lint.client.api.JavaParser.ResolvedField;
 import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.google.common.collect.Lists;
+import com.intellij.psi.JavaTokenType;
+import com.intellij.psi.PsiArrayInitializerExpression;
+import com.intellij.psi.PsiArrayType;
+import com.intellij.psi.PsiAssignmentExpression;
+import com.intellij.psi.PsiBinaryExpression;
+import com.intellij.psi.PsiClassType;
+import com.intellij.psi.PsiConditionalExpression;
+import com.intellij.psi.PsiDeclarationStatement;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiExpressionStatement;
+import com.intellij.psi.PsiField;
+import com.intellij.psi.PsiLiteral;
+import com.intellij.psi.PsiLocalVariable;
+import com.intellij.psi.PsiNewExpression;
+import com.intellij.psi.PsiParenthesizedExpression;
+import com.intellij.psi.PsiPrefixExpression;
+import com.intellij.psi.PsiPrimitiveType;
+import com.intellij.psi.PsiReference;
+import com.intellij.psi.PsiReferenceExpression;
+import com.intellij.psi.PsiStatement;
+import com.intellij.psi.PsiType;
+import com.intellij.psi.PsiTypeCastExpression;
+import com.intellij.psi.PsiTypeElement;
+import com.intellij.psi.tree.IElementType;
+import com.intellij.psi.util.PsiTreeUtil;
 
 import java.lang.reflect.Array;
 import java.util.List;
@@ -93,7 +119,9 @@ public class ConstantEvaluator {
      *
      * @param node the node to compute the constant value for
      * @return the corresponding constant value - a String, an Integer, a Float, and so on
+     * @deprecated Use {@link #evaluate(PsiElement)} instead
      */
+    @Deprecated
     @Nullable
     public Object evaluate(@NonNull Node node) {
         if (node instanceof NullLiteral) {
@@ -538,6 +566,540 @@ public class ConstantEvaluator {
     }
 
     /**
+     * Evaluates the given node and returns the constant value it resolves to, if any
+     *
+     * @param node the node to compute the constant value for
+     * @return the corresponding constant value - a String, an Integer, a Float, and so on
+     */
+    @Nullable
+    public Object evaluate(@Nullable PsiElement node) {
+        if (node == null) {
+            return null;
+        }
+        if (node instanceof PsiLiteral) {
+            return ((PsiLiteral)node).getValue();
+        } else if (node instanceof PsiPrefixExpression) {
+            IElementType operator = ((PsiPrefixExpression) node).getOperationTokenType();
+            Object operand = evaluate(((PsiPrefixExpression) node).getOperand());
+            if (operand == null) {
+                return null;
+            }
+            if (operator == JavaTokenType.EXCL) {
+                if (operand instanceof Boolean) {
+                    return !(Boolean) operand;
+                }
+            } else if (operator == JavaTokenType.PLUS) {
+                return operand;
+            } else if (operator == JavaTokenType.TILDE) {
+                if (operand instanceof Integer) {
+                    return ~(Integer) operand;
+                } else if (operand instanceof Long) {
+                    return ~(Long) operand;
+                } else if (operand instanceof Short) {
+                    return ~(Short) operand;
+                } else if (operand instanceof Character) {
+                    return ~(Character) operand;
+                } else if (operand instanceof Byte) {
+                    return ~(Byte) operand;
+                }
+            } else if (operator == JavaTokenType.MINUS) {
+                if (operand instanceof Integer) {
+                    return -(Integer) operand;
+                } else if (operand instanceof Long) {
+                    return -(Long) operand;
+                } else if (operand instanceof Double) {
+                    return -(Double) operand;
+                } else if (operand instanceof Float) {
+                    return -(Float) operand;
+                } else if (operand instanceof Short) {
+                    return -(Short) operand;
+                } else if (operand instanceof Character) {
+                    return -(Character) operand;
+                } else if (operand instanceof Byte) {
+                    return -(Byte) operand;
+                }
+            }
+        } else if (node instanceof PsiConditionalExpression) {
+            PsiConditionalExpression expression = (PsiConditionalExpression) node;
+            Object known = evaluate(expression.getCondition());
+            if (known == Boolean.TRUE && expression.getThenExpression() != null) {
+                return evaluate(expression.getThenExpression());
+            } else if (known == Boolean.FALSE && expression.getElseExpression() != null) {
+                return evaluate(expression.getElseExpression());
+            }
+        } else if (node instanceof PsiParenthesizedExpression) {
+            PsiParenthesizedExpression parenthesizedExpression = (PsiParenthesizedExpression) node;
+            PsiExpression expression = parenthesizedExpression.getExpression();
+            if (expression != null) {
+                return evaluate(expression);
+            }
+        } else if (node instanceof PsiBinaryExpression) {
+            IElementType operator = ((PsiBinaryExpression) node).getOperationTokenType();
+            Object operandLeft = evaluate(((PsiBinaryExpression) node).getLOperand());
+            Object operandRight = evaluate(((PsiBinaryExpression) node).getROperand());
+            if (operandLeft == null || operandRight == null) {
+                if (mAllowUnknown) {
+                    if (operandLeft == null) {
+                        return operandRight;
+                    } else {
+                        return operandLeft;
+                    }
+                }
+                return null;
+            }
+            if (operandLeft instanceof String && operandRight instanceof String) {
+                if (operator == JavaTokenType.PLUS) {
+                    return operandLeft.toString() + operandRight.toString();
+                }
+                return null;
+            } else if (operandLeft instanceof Boolean && operandRight instanceof Boolean) {
+                boolean left = (Boolean) operandLeft;
+                boolean right = (Boolean) operandRight;
+                if (operator == JavaTokenType.OROR) {
+                    return left || right;
+                } else if (operator == JavaTokenType.ANDAND) {
+                    return left && right;
+                } else if (operator == JavaTokenType.OR) {
+                    return left | right;
+                } else if (operator == JavaTokenType.XOR) {
+                    return left ^ right;
+                } else if (operator == JavaTokenType.AND) {
+                    return left & right;
+                } else if (operator == JavaTokenType.EQEQ) {
+                    return left == right;
+                } else if (operator == JavaTokenType.NE) {
+                    return left != right;
+                }
+            } else if (operandLeft instanceof Number && operandRight instanceof Number) {
+                Number left = (Number) operandLeft;
+                Number right = (Number) operandRight;
+                boolean isInteger =
+                        !(left instanceof Float || left instanceof Double
+                                || right instanceof Float || right instanceof Double);
+                boolean isWide =
+                        isInteger ? (left instanceof Long || right instanceof Long)
+                                : (left instanceof Double || right instanceof Double);
+
+                if (operator == JavaTokenType.OR) {
+                    if (isWide) {
+                        return left.longValue() | right.longValue();
+                    } else {
+                        return left.intValue() | right.intValue();
+                    }
+                } else if (operator == JavaTokenType.XOR) {
+                    if (isWide) {
+                        return left.longValue() ^ right.longValue();
+                    } else {
+                        return left.intValue() ^ right.intValue();
+                    }
+                } else if (operator == JavaTokenType.AND) {
+                    if (isWide) {
+                        return left.longValue() & right.longValue();
+                    } else {
+                        return left.intValue() & right.intValue();
+                    }
+                } else if (operator == JavaTokenType.EQEQ) {
+                    if (isInteger) {
+                        return left.longValue() == right.longValue();
+                    } else {
+                        return left.doubleValue() == right.doubleValue();
+                    }
+                } else if (operator == JavaTokenType.NE) {
+                    if (isInteger) {
+                        return left.longValue() != right.longValue();
+                    } else {
+                        return left.doubleValue() != right.doubleValue();
+                    }
+                } else if (operator == JavaTokenType.GT) {
+                    if (isInteger) {
+                        return left.longValue() > right.longValue();
+                    } else {
+                        return left.doubleValue() > right.doubleValue();
+                    }
+                } else if (operator == JavaTokenType.GE) {
+                    if (isInteger) {
+                        return left.longValue() >= right.longValue();
+                    } else {
+                        return left.doubleValue() >= right.doubleValue();
+                    }
+                } else if (operator == JavaTokenType.LT) {
+                    if (isInteger) {
+                        return left.longValue() < right.longValue();
+                    } else {
+                        return left.doubleValue() < right.doubleValue();
+                    }
+                } else if (operator == JavaTokenType.LE) {
+                    if (isInteger) {
+                        return left.longValue() <= right.longValue();
+                    } else {
+                        return left.doubleValue() <= right.doubleValue();
+                    }
+                } else if (operator == JavaTokenType.LTLT) {
+                    if (isWide) {
+                        return left.longValue() << right.intValue();
+                    } else {
+                        return left.intValue() << right.intValue();
+                    }
+                } else if (operator == JavaTokenType.GTGT) {
+                    if (isWide) {
+                        return left.longValue() >> right.intValue();
+                    } else {
+                        return left.intValue() >> right.intValue();
+                    }
+                } else if (operator == JavaTokenType.GTGTGT) {
+                    if (isWide) {
+                        return left.longValue() >>> right.intValue();
+                    } else {
+                        return left.intValue() >>> right.intValue();
+                    }
+                } else if (operator == JavaTokenType.PLUS) {
+                    if (isInteger) {
+                        if (isWide) {
+                            return left.longValue() + right.longValue();
+                        } else {
+                            return left.intValue() + right.intValue();
+                        }
+                    } else {
+                        if (isWide) {
+                            return left.doubleValue() + right.doubleValue();
+                        } else {
+                            return left.floatValue() + right.floatValue();
+                        }
+                    }
+                } else if (operator == JavaTokenType.MINUS) {
+                    if (isInteger) {
+                        if (isWide) {
+                            return left.longValue() - right.longValue();
+                        } else {
+                            return left.intValue() - right.intValue();
+                        }
+                    } else {
+                        if (isWide) {
+                            return left.doubleValue() - right.doubleValue();
+                        } else {
+                            return left.floatValue() - right.floatValue();
+                        }
+                    }
+                } else if (operator == JavaTokenType.ASTERISK) {
+                    if (isInteger) {
+                        if (isWide) {
+                            return left.longValue() * right.longValue();
+                        } else {
+                            return left.intValue() * right.intValue();
+                        }
+                    } else {
+                        if (isWide) {
+                            return left.doubleValue() * right.doubleValue();
+                        } else {
+                            return left.floatValue() * right.floatValue();
+                        }
+                    }
+                } else if (operator == JavaTokenType.DIV) {
+                    if (isInteger) {
+                        if (isWide) {
+                            return left.longValue() / right.longValue();
+                        } else {
+                            return left.intValue() / right.intValue();
+                        }
+                    } else {
+                        if (isWide) {
+                            return left.doubleValue() / right.doubleValue();
+                        } else {
+                            return left.floatValue() / right.floatValue();
+                        }
+                    }
+                } else if (operator == JavaTokenType.PERC) {
+                    if (isInteger) {
+                        if (isWide) {
+                            return left.longValue() % right.longValue();
+                        } else {
+                            return left.intValue() % right.intValue();
+                        }
+                    } else {
+                        if (isWide) {
+                            return left.doubleValue() % right.doubleValue();
+                        } else {
+                            return left.floatValue() % right.floatValue();
+                        }
+                    }
+                } else {
+                    return null;
+                }
+            }
+        } else if (node instanceof PsiTypeCastExpression) {
+            PsiTypeCastExpression cast = (PsiTypeCastExpression) node;
+            Object operandValue = evaluate(cast.getOperand());
+            if (operandValue instanceof Number) {
+                Number number = (Number) operandValue;
+                PsiTypeElement typeElement = cast.getCastType();
+                if (typeElement != null) {
+                    PsiType type = typeElement.getType();
+                    if (PsiType.FLOAT.equals(type)) {
+                        return number.floatValue();
+                    } else if (PsiType.DOUBLE.equals(type)) {
+                        return number.doubleValue();
+                    } else if (PsiType.INT.equals(type)) {
+                        return number.intValue();
+                    } else if (PsiType.LONG.equals(type)) {
+                        return number.longValue();
+                    } else if (PsiType.SHORT.equals(type)) {
+                        return number.shortValue();
+                    } else if (PsiType.BYTE.equals(type)) {
+                        return number.byteValue();
+                    }
+                }
+            }
+            return operandValue;
+        } else if (node instanceof PsiReference) {
+            PsiElement resolved = ((PsiReference) node).resolve();
+            if (resolved instanceof PsiField) {
+                PsiField field = (PsiField) resolved;
+                Object value = field.computeConstantValue();
+                if (value != null) {
+                    return value;
+                }
+                if (field.getInitializer() != null) {
+                    return evaluate(field.getInitializer());
+                }
+                return null;
+            } else if (resolved instanceof PsiLocalVariable) {
+                PsiLocalVariable variable = (PsiLocalVariable) resolved;
+                PsiStatement statement = PsiTreeUtil.getParentOfType(node, PsiStatement.class,
+                        false);
+                if (statement != null) {
+                    PsiStatement prev = PsiTreeUtil.getPrevSiblingOfType(statement,
+                            PsiStatement.class);
+                    String targetName = variable.getName();
+                    if (targetName == null) {
+                        return null;
+                    }
+                    while (prev != null) {
+                        if (prev instanceof PsiDeclarationStatement) {
+                            for (PsiElement element : ((PsiDeclarationStatement) prev)
+                                    .getDeclaredElements()) {
+                                if (variable.equals(element)) {
+                                    return evaluate(variable.getInitializer());
+                                }
+                            }
+                        } else if (prev instanceof PsiExpressionStatement) {
+                            PsiExpression expression = ((PsiExpressionStatement) prev)
+                                    .getExpression();
+                            if (expression instanceof PsiAssignmentExpression) {
+                                PsiAssignmentExpression assign
+                                        = (PsiAssignmentExpression) expression;
+                                PsiExpression lhs = assign.getLExpression();
+                                if (lhs instanceof PsiReferenceExpression) {
+                                    PsiReferenceExpression reference = (PsiReferenceExpression) lhs;
+                                    if (targetName.equals(reference.getReferenceName()) &&
+                                            reference.getQualifier() == null) {
+                                        return evaluate(assign.getRExpression());
+                                    }
+                                }
+                            }
+                        }
+                        prev = PsiTreeUtil.getPrevSiblingOfType(prev,
+                                PsiStatement.class);
+                    }
+                }
+            }
+        } else if (node instanceof PsiNewExpression) {
+            PsiNewExpression creation = (PsiNewExpression) node;
+            PsiArrayInitializerExpression initializer = creation.getArrayInitializer();
+            PsiType type = creation.getType();
+            if (type instanceof PsiArrayType) {
+                if (initializer != null) {
+                    PsiExpression[] initializers = initializer.getInitializers();
+                    Class<?> commonType = null;
+                    List<Object> values = Lists.newArrayListWithExpectedSize(initializers.length);
+                    int count = 0;
+                    for (PsiExpression expression : initializers) {
+                        Object value = evaluate(expression);
+                        if (value != null) {
+                            values.add(value);
+                            if (commonType == null) {
+                                commonType = value.getClass();
+                            } else {
+                                while (!commonType.isAssignableFrom(value.getClass())) {
+                                    commonType = commonType.getSuperclass();
+                                }
+                            }
+                        } else if (!mAllowUnknown) {
+                            // Inconclusive
+                            return null;
+                        }
+                        count++;
+                        if (count == 20) { // avoid large initializers
+                            break;
+                        }
+                    }
+                    type = type.getDeepComponentType();
+                    if (type == PsiType.INT) {
+                        if (!values.isEmpty()) {
+                            int[] array = new int[values.size()];
+                            for (int i = 0; i < values.size(); i++) {
+                                Object o = values.get(i);
+                                if (o instanceof Integer) {
+                                    array[i] = (Integer) o;
+                                }
+                            }
+                            return array;
+                        }
+                        return new int[0];
+                    } else if (type == PsiType.BOOLEAN) {
+                        if (!values.isEmpty()) {
+                            boolean[] array = new boolean[values.size()];
+                            for (int i = 0; i < values.size(); i++) {
+                                Object o = values.get(i);
+                                if (o instanceof Boolean) {
+                                    array[i] = (Boolean) o;
+                                }
+                            }
+                            return array;
+                        }
+                        return new boolean[0];
+                    } else if (type == PsiType.DOUBLE) {
+                        if (!values.isEmpty()) {
+                            double[] array = new double[values.size()];
+                            for (int i = 0; i < values.size(); i++) {
+                                Object o = values.get(i);
+                                if (o instanceof Double) {
+                                    array[i] = (Double) o;
+                                }
+                            }
+                            return array;
+                        }
+                        return new double[0];
+                    } else if (type == PsiType.LONG) {
+                        if (!values.isEmpty()) {
+                            long[] array = new long[values.size()];
+                            for (int i = 0; i < values.size(); i++) {
+                                Object o = values.get(i);
+                                if (o instanceof Long) {
+                                    array[i] = (Long) o;
+                                }
+                            }
+                            return array;
+                        }
+                        return new long[0];
+                    } else if (type == PsiType.FLOAT) {
+                        if (!values.isEmpty()) {
+                            float[] array = new float[values.size()];
+                            for (int i = 0; i < values.size(); i++) {
+                                Object o = values.get(i);
+                                if (o instanceof Float) {
+                                    array[i] = (Float) o;
+                                }
+                            }
+                            return array;
+                        }
+                        return new float[0];
+                    } else if (type == PsiType.CHAR) {
+                        if (!values.isEmpty()) {
+                            char[] array = new char[values.size()];
+                            for (int i = 0; i < values.size(); i++) {
+                                Object o = values.get(i);
+                                if (o instanceof Character) {
+                                    array[i] = (Character) o;
+                                }
+                            }
+                            return array;
+                        }
+                        return new char[0];
+                    } else if (type == PsiType.BYTE) {
+                        if (!values.isEmpty()) {
+                            byte[] array = new byte[values.size()];
+                            for (int i = 0; i < values.size(); i++) {
+                                Object o = values.get(i);
+                                if (o instanceof Byte) {
+                                    array[i] = (Byte) o;
+                                }
+                            }
+                            return array;
+                        }
+                        return new byte[0];
+                    } else if (type == PsiType.SHORT) {
+                        if (!values.isEmpty()) {
+                            short[] array = new short[values.size()];
+                            for (int i = 0; i < values.size(); i++) {
+                                Object o = values.get(i);
+                                if (o instanceof Short) {
+                                    array[i] = (Short) o;
+                                }
+                            }
+                            return array;
+                        }
+                        return new short[0];
+                    } else {
+                        if (!values.isEmpty()) {
+                            Object o = Array.newInstance(commonType, values.size());
+                            return values.toArray((Object[]) o);
+                        }
+                        return null;
+                    }
+                } else {
+                    // something like "new byte[3]" but with no initializer.
+                    // Look up the size and only if small, use it. E.g. if it was byte[3]
+                    // we return a byte[3] array, but if it's say byte[1024*1024] we don't
+                    // want to do that.
+                    PsiExpression[] arrayDimensions = creation.getArrayDimensions();
+                    int size = 0;
+                    if (arrayDimensions.length == 1) {
+                        Object fixedSize = evaluate(arrayDimensions[0]);
+                        if (fixedSize instanceof Number) {
+                            size = ((Number)fixedSize).intValue();
+                            if (size > 30) {
+                                size = 30;
+                            }
+                        }
+                    }
+                    type = type.getDeepComponentType();
+                    if (type instanceof PsiPrimitiveType) {
+                        if (PsiType.BYTE.equals(type)) {
+                            return new byte[size];
+                        }
+                        if (PsiType.BOOLEAN.equals(type)) {
+                            return new boolean[size];
+                        }
+                        if (PsiType.INT.equals(type)) {
+                            return new int[size];
+                        }
+                        if (PsiType.LONG.equals(type)) {
+                            return new long[size];
+                        }
+                        if (PsiType.CHAR.equals(type)) {
+                            return new char[size];
+                        }
+                        if (PsiType.FLOAT.equals(type)) {
+                            return new float[size];
+                        }
+                        if (PsiType.DOUBLE.equals(type)) {
+                            return new double[size];
+                        }
+                        if (PsiType.SHORT.equals(type)) {
+                            return new short[size];
+                        }
+                    } else if (type instanceof PsiClassType) {
+                        String className = type.getCanonicalText();
+                        if (TYPE_STRING.equals(className)) {
+                            //noinspection SSBasedInspection
+                            return new String[size];
+                        }
+                        if (TYPE_OBJECT.equals(className)) {
+                            //noinspection SSBasedInspection
+                            return new Object[size];
+                        }
+                    }
+                }
+            }
+        }
+
+        // TODO: Check for MethodInvocation and perform some common operations -
+        // Math.* methods, String utility methods like notNullize, etc
+
+        return null;
+    }
+
+    /**
      * Evaluates the given node and returns the constant value it resolves to, if any. Convenience
      * wrapper which creates a new {@linkplain ConstantEvaluator}, evaluates the node and returns
      * the result.
@@ -545,7 +1107,9 @@ public class ConstantEvaluator {
      * @param context the context to use to resolve field references, if any
      * @param node    the node to compute the constant value for
      * @return the corresponding constant value - a String, an Integer, a Float, and so on
+     * @deprecated Use {@link #evaluate(JavaContext, PsiElement)} instead
      */
+    @Deprecated
     @Nullable
     public static Object evaluate(@NonNull JavaContext context, @NonNull Node node) {
         return new ConstantEvaluator(context).evaluate(node);
@@ -561,9 +1125,47 @@ public class ConstantEvaluator {
      * @param allowUnknown whether we should construct the string even if some parts of it are
      *                     unknown
      * @return the corresponding string, if any
+     * @deprecated Use {@link #evaluateString(JavaContext, PsiElement, boolean)} instead
      */
+    @Deprecated
     @Nullable
     public static String evaluateString(@NonNull JavaContext context, @NonNull Node node,
+            boolean allowUnknown) {
+        ConstantEvaluator evaluator = new ConstantEvaluator(context);
+        if (allowUnknown) {
+            evaluator.allowUnknowns();
+        }
+        Object value = evaluator.evaluate(node);
+        return value instanceof String ? (String) value : null;
+    }
+
+    /**
+     * Evaluates the given node and returns the constant value it resolves to, if any. Convenience
+     * wrapper which creates a new {@linkplain ConstantEvaluator}, evaluates the node and returns
+     * the result.
+     *
+     * @param context the context to use to resolve field references, if any
+     * @param node    the node to compute the constant value for
+     * @return the corresponding constant value - a String, an Integer, a Float, and so on
+     */
+    @Nullable
+    public static Object evaluate(@Nullable JavaContext context, @NonNull PsiElement node) {
+        return new ConstantEvaluator(context).evaluate(node);
+    }
+
+    /**
+     * Evaluates the given node and returns the constant string it resolves to, if any. Convenience
+     * wrapper which creates a new {@linkplain ConstantEvaluator}, evaluates the node and returns
+     * the result if the result is a string.
+     *
+     * @param context      the context to use to resolve field references, if any
+     * @param node         the node to compute the constant value for
+     * @param allowUnknown whether we should construct the string even if some parts of it are
+     *                     unknown
+     * @return the corresponding string, if any
+     */
+    @Nullable
+    public static String evaluateString(@Nullable JavaContext context, @NonNull PsiElement node,
             boolean allowUnknown) {
         ConstantEvaluator evaluator = new ConstantEvaluator(context);
         if (allowUnknown) {

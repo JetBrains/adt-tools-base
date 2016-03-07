@@ -20,37 +20,40 @@ import static com.android.tools.lint.client.api.JavaParser.TYPE_STRING;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
-import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
+import com.android.tools.lint.client.api.JavaEvaluator;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ConstantEvaluator;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
+import com.intellij.psi.JavaElementVisitor;
+import com.intellij.psi.PsiBinaryExpression;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiExpressionList;
+import com.intellij.psi.PsiField;
+import com.intellij.psi.PsiIfStatement;
+import com.intellij.psi.PsiLiteral;
+import com.intellij.psi.PsiLocalVariable;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiMethodCallExpression;
+import com.intellij.psi.PsiParameter;
+import com.intellij.psi.PsiParameterList;
+import com.intellij.psi.PsiReferenceExpression;
 
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
-
-import lombok.ast.AstVisitor;
-import lombok.ast.BinaryExpression;
-import lombok.ast.ClassDeclaration;
-import lombok.ast.Expression;
-import lombok.ast.If;
-import lombok.ast.MethodInvocation;
-import lombok.ast.Node;
-import lombok.ast.Select;
-import lombok.ast.StringLiteral;
-import lombok.ast.VariableReference;
 
 /**
  * Detector for finding inefficiencies and errors in logging calls.
  */
-public class LogDetector extends Detector implements Detector.JavaScanner {
+public class LogDetector extends Detector implements JavaPsiScanner {
     private static final Implementation IMPLEMENTATION = new Implementation(
           LogDetector.class, Scope.JAVA_FILE_SCOPE);
 
@@ -121,18 +124,14 @@ public class LogDetector extends Detector implements Detector.JavaScanner {
     }
 
     @Override
-    public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor, @NonNull MethodInvocation node) {
-        ResolvedNode resolved = context.resolve(node);
-        if (!(resolved instanceof ResolvedMethod)) {
+    public void visitMethod(@NonNull JavaContext context, @Nullable JavaElementVisitor visitor,
+            @NonNull PsiMethodCallExpression node, @NonNull PsiMethod method) {
+        JavaEvaluator evaluator = context.getEvaluator();
+        if (!evaluator.isMemberInClass(method, LOG_CLS)) {
             return;
         }
 
-        ResolvedMethod method = (ResolvedMethod) resolved;
-        if (!method.getContainingClass().matches(LOG_CLS)) {
-            return;
-        }
-
-        String name = node.astName().astValue();
+        String name = method.getName();
         boolean withinConditional = IS_LOGGABLE.equals(name) ||
                 checkWithinConditional(context, node.getParent(), node);
 
@@ -145,26 +144,23 @@ public class LogDetector extends Detector implements Detector.JavaScanner {
             String message = String.format("The log call Log.%1$s(...) should be " +
                             "conditional: surround with `if (Log.isLoggable(...))` or " +
                             "`if (BuildConfig.DEBUG) { ... }`",
-                    node.astName().toString());
+                    node.getMethodExpression().getReferenceName());
             context.report(CONDITIONAL, node, context.getLocation(node), message);
         }
 
         // Check tag length
         if (context.isEnabled(LONG_TAG)) {
             int tagArgumentIndex = PRINTLN.equals(name) ? 1 : 0;
-            if (method.getArgumentCount() > tagArgumentIndex
-                    && method.getArgumentType(tagArgumentIndex).matchesSignature(TYPE_STRING)
-                    && node.astArguments().size() == method.getArgumentCount()) {
-                Iterator<Expression> iterator = node.astArguments().iterator();
-                if (tagArgumentIndex == 1) {
-                    iterator.next();
-                }
-                Node argument = iterator.next();
+            PsiParameterList parameterList = method.getParameterList();
+            PsiExpressionList argumentList = node.getArgumentList();
+            if (evaluator.parameterHasType(method, tagArgumentIndex, TYPE_STRING)
+                    && parameterList.getParametersCount() == argumentList.getExpressions().length) {
+                PsiExpression argument = argumentList.getExpressions()[tagArgumentIndex];
                 String tag = ConstantEvaluator.evaluateString(context, argument, true);
                 if (tag != null && tag.length() > 23) {
                     String message = String.format(
-                        "The logging tag can be at most 23 characters, was %1$d (%2$s)",
-                        tag.length(), tag);
+                            "The logging tag can be at most 23 characters, was %1$d (%2$s)",
+                            tag.length(), tag);
                     context.report(LONG_TAG, node, context.getLocation(node), message);
                 }
             }
@@ -174,30 +170,41 @@ public class LogDetector extends Detector implements Detector.JavaScanner {
     /** Returns true if the given logging call performs "work" to compute the message */
     private static boolean performsWork(
             @NonNull JavaContext context,
-            @NonNull MethodInvocation node) {
-        int messageArgumentIndex = PRINTLN.equals(node.astName().astValue()) ? 2 : 1;
-        if (node.astArguments().size() >= messageArgumentIndex) {
-            Iterator<Expression> iterator = node.astArguments().iterator();
-            Node argument = null;
-            for (int i = 0; i <= messageArgumentIndex; i++) {
-                argument = iterator.next();
-            }
+            @NonNull PsiMethodCallExpression node) {
+        String referenceName = node.getMethodExpression().getReferenceName();
+        if (referenceName == null) {
+            return false;
+        }
+        int messageArgumentIndex = PRINTLN.equals(referenceName) ? 2 : 1;
+        PsiExpression[] arguments = node.getArgumentList().getExpressions();
+        if (arguments.length > messageArgumentIndex) {
+            PsiExpression argument = arguments[messageArgumentIndex];
             if (argument == null) {
                 return false;
             }
-            if (argument instanceof StringLiteral || argument instanceof VariableReference) {
+            if (argument instanceof PsiLiteral) {
                 return false;
             }
-            if (argument instanceof BinaryExpression) {
+            if (argument instanceof PsiBinaryExpression) {
                 String string = ConstantEvaluator.evaluateString(context, argument, false);
                 //noinspection VariableNotUsedInsideIf
                 if (string != null) { // does it resolve to a constant?
                     return false;
                 }
-            } else if (argument instanceof Select) {
+            } else if (argument instanceof PsiReferenceExpression) {
+                if (((PsiReferenceExpression) argument).getQualifier() == null) {
+                    // Just a simple local variable/field reference
+                    return false;
+                }
                 String string = ConstantEvaluator.evaluateString(context, argument, false);
                 //noinspection VariableNotUsedInsideIf
                 if (string != null) {
+                    return false;
+                }
+                PsiElement resolved = context.getEvaluator().resolve(argument);
+                if (resolved instanceof PsiField || resolved instanceof PsiLocalVariable ||
+                        resolved instanceof PsiParameter) {
+                    // Just a reference to a field, parameter or variable
                     return false;
                 }
             }
@@ -211,21 +218,22 @@ public class LogDetector extends Detector implements Detector.JavaScanner {
 
     private static boolean checkWithinConditional(
             @NonNull JavaContext context,
-            @Nullable Node curr,
-            @NonNull MethodInvocation logCall) {
+            @Nullable PsiElement curr,
+            @NonNull PsiMethodCallExpression logCall) {
         while (curr != null) {
-            if (curr instanceof If) {
-                If ifNode = (If) curr;
-                if (ifNode.astCondition() instanceof MethodInvocation) {
-                    MethodInvocation call = (MethodInvocation) ifNode.astCondition();
-                    if (IS_LOGGABLE.equals(call.astName().astValue())) {
+            if (curr instanceof PsiIfStatement) {
+                PsiIfStatement ifNode = (PsiIfStatement) curr;
+                if (ifNode.getCondition() instanceof PsiMethodCallExpression) {
+                    PsiMethodCallExpression call = (PsiMethodCallExpression) ifNode.getCondition();
+                    if (IS_LOGGABLE.equals(call.getMethodExpression().getReferenceName())) {
                         checkTagConsistent(context, logCall, call);
                     }
                 }
 
                 return true;
-            } else if (curr instanceof MethodInvocation
-                    || curr instanceof ClassDeclaration) { // static block
+            } else if (curr instanceof PsiMethodCallExpression
+                    || curr instanceof PsiMethod
+                    || curr instanceof PsiClass) { // static block
                 break;
             }
             curr = curr.getParent();
@@ -234,48 +242,48 @@ public class LogDetector extends Detector implements Detector.JavaScanner {
     }
 
     /** Checks that the tag passed to Log.s and Log.isLoggable match */
-    private static void checkTagConsistent(JavaContext context, MethodInvocation logCall,
-            MethodInvocation call) {
-        Iterator<Expression> isLogIterator = call.astArguments().iterator();
-        Iterator<Expression> logIterator = logCall.astArguments().iterator();
-        if (!isLogIterator.hasNext() || !logIterator.hasNext()) {
+    private static void checkTagConsistent(JavaContext context, PsiMethodCallExpression logCall,
+            PsiMethodCallExpression isLoggableCall) {
+        PsiExpression[] isLoggableArguments = isLoggableCall.getArgumentList().getExpressions();
+        PsiExpression[] logArguments = logCall.getArgumentList().getExpressions();
+        if (isLoggableArguments.length == 0 || logArguments.length == 0) {
             return;
         }
-        Expression isLoggableTag = isLogIterator.next();
-        Expression logTag = logIterator.next();
+        PsiExpression isLoggableTag = isLoggableArguments[0];
+        PsiExpression logTag = logArguments[0];
 
-        //String callName = logCall.astName().astValue();
-        String logCallName = logCall.astName().astValue();
+        String logCallName = logCall.getMethodExpression().getReferenceName();
+        if (logCallName == null) {
+            return;
+        }
         boolean isPrintln = PRINTLN.equals(logCallName);
-        if (isPrintln) {
-            if (!logIterator.hasNext()) {
-                return;
-            }
-            logTag = logIterator.next();
+        if (isPrintln && logArguments.length > 1) {
+            logTag = logArguments[1];
         }
 
         if (logTag != null) {
-            if (!isLoggableTag.toString().equals(logTag.toString())) {
-                ResolvedNode resolved1 = context.resolve(isLoggableTag);
-                ResolvedNode resolved2 = context.resolve(logTag);
+            if (!isLoggableTag.getText().equals(logTag.getText())) {
+                PsiElement resolved1 = context.getEvaluator().resolve(isLoggableTag);
+                PsiElement resolved2 = context.getEvaluator().resolve(logTag);
                 if ((resolved1 == null || resolved2 == null || !resolved1.equals(resolved2))
                         && context.isEnabled(WRONG_TAG)) {
                     Location location = context.getLocation(logTag);
                     Location alternate = context.getLocation(isLoggableTag);
                     alternate.setMessage("Conflicting tag");
                     location.setSecondary(alternate);
-                    String isLoggableDescription = resolved1 != null ? resolved1
-                            .getName()
-                            : isLoggableTag.toString();
-                    String logCallDescription = resolved2 != null ? resolved2.getName()
-                            : logTag.toString();
+                    String isLoggableDescription = resolved1 instanceof PsiMethod
+                            ? ((PsiMethod)resolved1).getName()
+                            : isLoggableTag.getText();
+                    String logCallDescription = resolved2 instanceof PsiMethod
+                            ? ((PsiMethod)resolved2).getName()
+                            : logTag.getText();
                     String message = String.format(
                             "Mismatched tags: the `%1$s()` and `isLoggable()` calls typically " +
                                     "should pass the same tag: `%2$s` versus `%3$s`",
                             logCallName,
                             isLoggableDescription,
                             logCallDescription);
-                    context.report(WRONG_TAG, call, location, message);
+                    context.report(WRONG_TAG, isLoggableCall, location, message);
                 }
             }
         }
@@ -283,18 +291,18 @@ public class LogDetector extends Detector implements Detector.JavaScanner {
         // Check log level versus the actual log call type (e.g. flag
         //    if (Log.isLoggable(TAG, Log.DEBUG) Log.info(TAG, "something")
 
-        if (logCallName.length() != 1 || !isLogIterator.hasNext()) { // e.g. println
+        if (logCallName.length() != 1 || isLoggableArguments.length < 2) { // e.g. println
             return;
         }
-        Expression isLoggableLevel = isLogIterator.next();
+        PsiExpression isLoggableLevel = isLoggableArguments[1];
         if (isLoggableLevel == null) {
             return;
         }
-        String levelString = isLoggableLevel.toString();
-        if (isLoggableLevel instanceof Select) {
-            levelString = ((Select)isLoggableLevel).astIdentifier().astValue();
+        String levelString = isLoggableLevel.getText();
+        if (isLoggableLevel instanceof PsiReferenceExpression) {
+            levelString = ((PsiReferenceExpression)isLoggableLevel).getReferenceName();
         }
-        if (levelString.isEmpty()) {
+        if (levelString == null || levelString.isEmpty()) {
             return;
         }
         char levelChar = Character.toLowerCase(levelString.charAt(0));
@@ -318,10 +326,10 @@ public class LogDetector extends Detector implements Detector.JavaScanner {
                 "Mismatched logging levels: when checking `isLoggable` level `%1$s`, the " +
                 "corresponding log call should be `Log.%2$s`, not `Log.%3$s`",
                 levelString, expectedCall, logCallName);
-        Location location = context.getLocation(logCall.astName());
+        Location location = context.getNameLocation(logCall);
         Location alternate = context.getLocation(isLoggableLevel);
         alternate.setMessage("Conflicting tag");
         location.setSecondary(alternate);
-        context.report(WRONG_TAG, call, location, message);
+        context.report(WRONG_TAG, isLoggableCall, location, message);
     }
 }

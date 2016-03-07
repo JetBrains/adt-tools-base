@@ -18,31 +18,31 @@ package com.android.tools.lint.checks;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
-import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
+import com.android.tools.lint.client.api.JavaEvaluator;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Detector;
-import com.android.tools.lint.detector.api.Detector.JavaScanner;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
+import com.intellij.psi.JavaElementVisitor;
+import com.intellij.psi.JavaTokenType;
+import com.intellij.psi.PsiBinaryExpression;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiLiteral;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiMethodCallExpression;
 
 import java.util.Collections;
 import java.util.List;
 
-import lombok.ast.AstVisitor;
-import lombok.ast.BinaryExpression;
-import lombok.ast.BinaryOperator;
-import lombok.ast.MethodInvocation;
-import lombok.ast.Node;
-import lombok.ast.StringLiteral;
-
 /**
  * Checks for errors related to TextView#setText and internationalization
  */
-public class SetTextDetector extends Detector implements JavaScanner {
+public class SetTextDetector extends Detector implements JavaPsiScanner {
 
     private static final Implementation IMPLEMENTATION = new Implementation(
             SetTextDetector.class,
@@ -93,43 +93,49 @@ public class SetTextDetector extends Detector implements JavaScanner {
     }
 
     @Override
-    public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor,
-            @NonNull MethodInvocation call) {
-        ResolvedMethod method = (ResolvedMethod) context.resolve(call);
-        if (method != null && method.getContainingClass().matches(TEXT_VIEW_CLS)
-                && method.matches(METHOD_NAME)
-                && method.getArgumentCount() > 0
-                && method.getArgumentType(0).matchesSignature(CHAR_SEQUENCE_CLS)) {
-            checkNode(context, call.astArguments().first());
+    public void visitMethod(@NonNull JavaContext context, @Nullable JavaElementVisitor visitor,
+            @NonNull PsiMethodCallExpression call, @NonNull PsiMethod method) {
+        JavaEvaluator evaluator = context.getEvaluator();
+        if (!evaluator.isMemberInSubClassOf(method, TEXT_VIEW_CLS, false)) {
+            return;
+        }
+        if (method.getParameterList().getParametersCount() > 0 &&
+                evaluator.parameterHasType(method, 0, CHAR_SEQUENCE_CLS)) {
+            checkNode(context, call.getArgumentList().getExpressions()[0]);
         }
     }
 
-    private static void checkNode(JavaContext context, Node node) {
-        if (node instanceof StringLiteral) {
-            if (((StringLiteral) node).astValue().matches(WORD_PATTERN)) {
+    private static void checkNode(@NonNull JavaContext context, @Nullable PsiElement node) {
+        if (node instanceof PsiLiteral) {
+            Object value = ((PsiLiteral)node).getValue();
+            if (value instanceof String && value.toString().matches(WORD_PATTERN)) {
                 context.report(SET_TEXT_I18N, node, context.getLocation(node),
                         "String literal in `setText` can not be translated. Use Android "
                                 + "resources instead.");
             }
-        } else if (node instanceof MethodInvocation) {
-            ResolvedMethod rm = (ResolvedMethod) context.resolve(node);
-            if (rm != null && rm.getName().matches(TO_STRING_NAME)) {
-                ResolvedClass superClass = rm.getContainingClass().getSuperClass();
-                if (superClass != null && superClass.matches(NUMBER_CLS)) {
+        } else if (node instanceof PsiMethodCallExpression) {
+            PsiMethod calledMethod = ((PsiMethodCallExpression) node).resolveMethod();
+            if (calledMethod != null && TO_STRING_NAME.equals(calledMethod.getName())) {
+                PsiClass containingClass = calledMethod.getContainingClass();
+                if (containingClass == null) {
+                    return;
+                }
+                PsiClass superClass = containingClass.getSuperClass();
+                if (superClass != null && NUMBER_CLS.equals(superClass.getQualifiedName())) {
                     context.report(SET_TEXT_I18N, node, context.getLocation(node),
                             "Number formatting does not take into account locale settings. " +
                                     "Consider using `String.format` instead.");
                 }
             }
-        } else if (node instanceof BinaryExpression) {
-            BinaryExpression expression = (BinaryExpression) node;
-            if (expression.astOperator() == BinaryOperator.PLUS) {
+        } else if (node instanceof PsiBinaryExpression) {
+            PsiBinaryExpression expression = (PsiBinaryExpression) node;
+            if (expression.getOperationTokenType() == JavaTokenType.PLUS) {
                 context.report(SET_TEXT_I18N, node, context.getLocation(node),
                     "Do not concatenate text displayed with `setText`. "
                             + "Use resource string with placeholders.");
             }
-            checkNode(context, expression.astLeft());
-            checkNode(context, expression.astRight());
+            checkNode(context, expression.getLOperand());
+            checkNode(context, expression.getROperand());
         }
     }
 }

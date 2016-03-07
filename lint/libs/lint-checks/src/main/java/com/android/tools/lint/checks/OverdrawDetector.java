@@ -23,10 +23,10 @@ import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_PARENT;
 import static com.android.SdkConstants.ATTR_THEME;
 import static com.android.SdkConstants.ATTR_TILE_MODE;
-import static com.android.SdkConstants.DOT_JAVA;
 import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.DRAWABLE_PREFIX;
 import static com.android.SdkConstants.NULL_RESOURCE;
+import static com.android.SdkConstants.R_CLASS;
 import static com.android.SdkConstants.STYLE_RESOURCE_PREFIX;
 import static com.android.SdkConstants.TAG_ACTIVITY;
 import static com.android.SdkConstants.TAG_APPLICATION;
@@ -39,10 +39,12 @@ import static com.android.tools.lint.detector.api.LintUtils.endsWith;
 import static com.android.utils.SdkUtils.getResourceFieldName;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.resources.ResourceFolderType;
+import com.android.resources.ResourceType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
-import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
@@ -52,9 +54,15 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.android.utils.Pair;
+import com.intellij.psi.JavaRecursiveElementVisitor;
+import com.intellij.psi.PsiAnonymousClass;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiMethodCallExpression;
+import com.intellij.psi.PsiReferenceExpression;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
@@ -68,28 +76,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
-import lombok.ast.AstVisitor;
-import lombok.ast.ClassDeclaration;
-import lombok.ast.CompilationUnit;
-import lombok.ast.Expression;
-import lombok.ast.ForwardingAstVisitor;
-import lombok.ast.MethodInvocation;
-import lombok.ast.PackageDeclaration;
-import lombok.ast.Select;
-import lombok.ast.StrictListAccessor;
-import lombok.ast.VariableReference;
 
 /**
  * Check which looks for overdraw problems where view areas are painted and then
  * painted over, meaning that the bottom paint operation is a waste of time.
  */
-public class OverdrawDetector extends LayoutDetector implements Detector.JavaScanner {
-    private static final String R_STYLE_PREFIX = "R.style.";    //$NON-NLS-1$
+public class OverdrawDetector extends LayoutDetector implements JavaPsiScanner {
     private static final String SET_THEME = "setTheme";         //$NON-NLS-1$
 
     /** The main issue discovered by this detector */
@@ -136,10 +130,6 @@ public class OverdrawDetector extends LayoutDetector implements Detector.JavaSca
     /** List of theme names registered in the project which have blank backgrounds */
     private List<String> mBlankThemes;
 
-    /** Set of activities registered in the manifest. We will limit the Java analysis to
-     * these. */
-    private Set<String> mActivities;
-
     /** List of drawable resources that are not flagged for overdraw (XML drawables
      * except for {@code <bitmap>} drawables without tiling) */
     private List<String> mValidDrawables;
@@ -163,17 +153,6 @@ public class OverdrawDetector extends LayoutDetector implements Detector.JavaSca
                 || folderType == ResourceFolderType.VALUES
                 // and in drawable files for bitmap tiling modes
                 || folderType == ResourceFolderType.DRAWABLE;
-    }
-
-    @Override
-    public boolean appliesTo(@NonNull Context context, @NonNull File file) {
-        return LintUtils.isXmlFile(file) || LintUtils.endsWith(file.getName(), DOT_JAVA);
-    }
-
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.FAST;
     }
 
     /** Is the given theme a "blank" theme (one not painting its background) */
@@ -409,11 +388,6 @@ public class OverdrawDetector extends LayoutDetector implements Detector.JavaSca
             }
         }
 
-        if (mActivities == null) {
-            mActivities = new HashSet<String>();
-        }
-        mActivities.add(name);
-
         String theme = element.getAttributeNS(ANDROID_URI, ATTR_THEME);
         if (theme != null && !theme.isEmpty()) {
             if (mActivityToTheme == null) {
@@ -495,92 +469,105 @@ public class OverdrawDetector extends LayoutDetector implements Detector.JavaSca
 
     // ---- Implements JavaScanner ----
 
+
+    @Nullable
     @Override
-    public List<Class<? extends lombok.ast.Node>> getApplicableNodeTypes() {
-        // This detector does not specify specific node types; this means
-        // that the infrastructure will run the full visitor on the compilation
-        // unit rather than on individual nodes. This is important since this
-        // detector relies on pruning (if it gets to a class declaration that is
-        // not an activity, it skips everything inside).
-        return null;
+    public List<String> applicableSuperClasses() {
+        return Collections.singletonList("android.app.Activity");
     }
 
     @Override
-    public AstVisitor createJavaVisitor(@NonNull JavaContext context) {
+    public List<Class<? extends PsiElement>> getApplicablePsiTypes() {
+        return Collections.<Class<? extends PsiElement>>singletonList(PsiClass.class);
+    }
+
+    @Override
+    public void checkClass(@NonNull JavaContext context, @NonNull PsiClass declaration) {
         if (!context.getProject().getReportIssues()) {
-            return null;
+            return;
         }
-        return new OverdrawVisitor();
+        String name = declaration.getQualifiedName();
+        if (name != null) {
+            declaration.accept(new OverdrawVisitor(name, declaration));
+        }
     }
 
-    private class OverdrawVisitor extends ForwardingAstVisitor {
-        private static final String ACTIVITY = "Activity"; //$NON-NLS-1$
-        private String mClassFqn;
+    private class OverdrawVisitor extends JavaRecursiveElementVisitor {
+        private final String mName;
+        private final PsiClass mCls;
 
-        @Override
-        public boolean visitClassDeclaration(ClassDeclaration node) {
-            String name = node.astName().astValue();
-            if (mActivities != null && mActivities.contains(mClassFqn) || name.endsWith(ACTIVITY)
-                    || node.astExtending() != null &&
-                        node.astExtending().getTypeName().endsWith(ACTIVITY)) {
-                String packageName = "";
-                if (node.getParent() instanceof CompilationUnit) {
-                    CompilationUnit compilationUnit = (CompilationUnit) node.getParent();
-                    PackageDeclaration packageDeclaration = compilationUnit.astPackageDeclaration();
-                    if (packageDeclaration == null) {
-                        // No package declaration: ignore this one
-                        return true;
-                    }
-                    packageName = packageDeclaration.getPackageName();
-                }
-                mClassFqn = (!packageName.isEmpty() ? (packageName + '.') : "") + name;
-
-                return false;
-            }
-
-            return true; // Done: No need to look inside this class
+        public OverdrawVisitor(String name, PsiClass cls) {
+            mName = name;
+            mCls = cls;
         }
 
-        // Store R.layout references in activity classes in a map mapping back layouts
-        // to activities
         @Override
-        public boolean visitSelect(Select node) {
-            if (node.astIdentifier().astValue().equals("layout") //$NON-NLS-1$
-                    && node.astOperand() instanceof VariableReference
-                    && ((VariableReference) node.astOperand()).astIdentifier().astValue()
-                        .equals("R")                             //$NON-NLS-1$
-                    && node.getParent() instanceof Select) {
-                String layout = ((Select) node.getParent()).astIdentifier().astValue();
-                registerLayoutActivity(layout, mClassFqn);
+        public void visitAnonymousClass(PsiAnonymousClass aClass) {
+            // Don't go into inner classes
+            if (mCls == aClass) {
+                super.visitAnonymousClass(aClass);
             }
-
-            return false;
         }
 
-
-        // Look for setTheme(R.style.whatever) and register as a theme registration
-        // for the current activity
         @Override
-        public boolean visitMethodInvocation(MethodInvocation node) {
-            if (node.astName().astValue().equals(SET_THEME)) {
-                // Look at argument
-                StrictListAccessor<Expression, MethodInvocation> args = node.astArguments();
-                if (args.size() == 1) {
-                    Expression arg = args.first();
-                    if (arg instanceof Select) {
-                        String resource = arg.toString();
-                        if (resource.startsWith(R_STYLE_PREFIX)) {
-                            if (mActivityToTheme == null) {
-                                mActivityToTheme = new HashMap<String, String>();
+        public void visitClass(PsiClass aClass) {
+            // Don't go into inner classes
+            if (mCls == aClass) {
+                super.visitClass(aClass);
+            }
+        }
+
+        @Override
+        public void visitReferenceExpression(PsiReferenceExpression expression) {
+            if (expression.getQualifier() instanceof PsiReferenceExpression) {
+                PsiReferenceExpression type = (PsiReferenceExpression) expression.getQualifier();
+                if (ResourceType.LAYOUT.getName().equals(type.getReferenceName())) {
+                    if (type.getQualifier() instanceof PsiReferenceExpression) {
+                        PsiReferenceExpression rClass = (PsiReferenceExpression) type.getQualifier();
+                        if (rClass.getQualifier() == null && R_CLASS.equals(rClass.getReferenceName())) {
+                            String layout = expression.getReferenceName();
+                            if (layout != null) {
+                                registerLayoutActivity(layout, mName);
                             }
-                            String name = ((Select) arg).astIdentifier().astValue();
-                            mActivityToTheme.put(mClassFqn, STYLE_RESOURCE_PREFIX + name);
+                        }
+                    }
+                }
+            }
+            super.visitReferenceExpression(expression);
+        }
+
+        @Override
+        public void visitMethodCallExpression(PsiMethodCallExpression expression) {
+            if (SET_THEME.equals(expression.getMethodExpression().getReferenceName())) {
+                // Look at argument
+                PsiExpression[] args = expression.getArgumentList().getExpressions();
+                if (args.length == 1) {
+                    PsiExpression arg = args[0];
+                    if (arg instanceof PsiReferenceExpression) {
+                        PsiReferenceExpression resource = (PsiReferenceExpression) arg;
+                        if (resource.getQualifier() instanceof PsiReferenceExpression) {
+                            PsiReferenceExpression type = (PsiReferenceExpression) resource.getQualifier();
+                            if (ResourceType.STYLE.getName().equals(type.getReferenceName())) {
+                                if (type.getQualifier() instanceof PsiReferenceExpression) {
+                                    PsiReferenceExpression rClass = (PsiReferenceExpression) type.getQualifier();
+                                    if (rClass.getQualifier() == null && R_CLASS.equals(rClass.getReferenceName())) {
+                                        String style = resource.getReferenceName();
+                                        if (style != null) {
+                                            if (mActivityToTheme == null) {
+                                                mActivityToTheme = new HashMap<String, String>();
+                                            }
+                                            mActivityToTheme.put(mName, STYLE_RESOURCE_PREFIX +
+                                                    style);
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
 
-            return false;
+            super.visitMethodCallExpression(expression);
         }
     }
 }

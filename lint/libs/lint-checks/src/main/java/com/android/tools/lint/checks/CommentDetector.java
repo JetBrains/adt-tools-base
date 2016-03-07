@@ -19,29 +19,26 @@ package com.android.tools.lint.checks;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Category;
-import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
+import com.intellij.psi.JavaElementVisitor;
+import com.intellij.psi.PsiComment;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiLiteralExpression;
 
-import java.io.File;
 import java.util.Collections;
 import java.util.List;
-
-import lombok.ast.AstVisitor;
-import lombok.ast.Comment;
-import lombok.ast.ForwardingAstVisitor;
-import lombok.ast.Node;
 
 /**
  * Looks for issues in Java comments
  */
-public class CommentDetector extends Detector implements Detector.JavaScanner {
+public class CommentDetector extends Detector implements JavaPsiScanner {
     private static final String STOPSHIP_COMMENT = "STOPSHIP"; //$NON-NLS-1$
 
     private static final Implementation IMPLEMENTATION = new Implementation(
@@ -77,7 +74,7 @@ public class CommentDetector extends Detector implements Detector.JavaScanner {
 
     private static final String ESCAPE_STRING = "\\u002a\\u002f"; //$NON-NLS-1$
 
-    /** Lombok's AST only passes comment nodes for Javadoc so I need to do manual token scanning
+    /** The current AST only passes comment nodes for Javadoc so I need to do manual token scanning
          instead */
     private static final boolean USE_AST = false;
 
@@ -87,27 +84,17 @@ public class CommentDetector extends Detector implements Detector.JavaScanner {
     }
 
     @Override
-    public boolean appliesTo(@NonNull Context context, @NonNull File file) {
-        return true;
-    }
-
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.NORMAL;
-    }
-
-    @Override
-    public List<Class<? extends Node>> getApplicableNodeTypes() {
+    public List<Class<? extends PsiElement>> getApplicablePsiTypes() {
         if (USE_AST) {
-            return Collections.<Class<? extends Node>>singletonList(Comment.class);
+            return Collections.<Class<? extends PsiElement>>singletonList(
+                    PsiLiteralExpression.class);
         } else {
             return null;
         }
     }
 
     @Override
-    public AstVisitor createJavaVisitor(@NonNull JavaContext context) {
+    public JavaElementVisitor createPsiVisitor(@NonNull JavaContext context) {
         // Lombok does not generate comment nodes for block and line comments, only for
         // javadoc comments!
         if (USE_AST) {
@@ -148,7 +135,7 @@ public class CommentDetector extends Detector implements Detector.JavaScanner {
         }
     }
 
-    private static class CommentChecker extends ForwardingAstVisitor {
+    private static class CommentChecker extends JavaElementVisitor {
         private final JavaContext mContext;
 
         public CommentChecker(JavaContext context) {
@@ -156,16 +143,16 @@ public class CommentDetector extends Detector implements Detector.JavaScanner {
         }
 
         @Override
-        public boolean visitComment(Comment node) {
-            String contents = node.astContent();
-            checkComment(mContext, node, contents, node.getPosition().getStart(), 0, contents.length());
-            return super.visitComment(node);
+        public void visitComment(PsiComment comment) {
+            String contents = comment.getText();
+            checkComment(mContext, comment, contents, comment.getTextRange().getStartOffset(), 0,
+                    contents.length());
         }
     }
 
     private static void checkComment(
             @NonNull JavaContext context,
-            @Nullable Comment node,
+            @Nullable PsiComment node,
             @NonNull String source,
             int offset,
             int start,

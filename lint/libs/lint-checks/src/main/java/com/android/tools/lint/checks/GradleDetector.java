@@ -1071,7 +1071,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         GradleCoordinate latestPlugin = GradleCoordinate.parseCoordinateString(
                 SdkConstants.GRADLE_PLUGIN_NAME +
                         GRADLE_PLUGIN_MINIMUM_VERSION);
-        if (GradleCoordinate.COMPARE_PLUS_HIGHER.compare(dependency, latestPlugin) < 0) {
+        if (COMPARE_PLUS_HIGHER.compare(dependency, latestPlugin) < 0) {
             String message = "You must use a newer version of the Android Gradle plugin. The "
                     + "minimum supported version is " + GRADLE_PLUGIN_MINIMUM_VERSION +
                     " and the recommended version is " + GRADLE_PLUGIN_RECOMMENDED_VERSION;
@@ -1293,7 +1293,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
       return cookie;
     }
 
-    @SuppressWarnings("MethodMayBeStatic")
+    @SuppressWarnings({"MethodMayBeStatic", "UnusedParameters"})
     protected int getStartOffset(@NonNull Context context, @NonNull Object cookie) {
         return -1;
     }

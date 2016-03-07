@@ -18,18 +18,12 @@ package com.android.tools.lint.checks;
 
 import com.android.tools.lint.detector.api.Detector;
 
+@SuppressWarnings("ClassNameDiffersFromFileName")
 public class GetSignaturesDetectorTest extends AbstractCheckTest {
 
     @Override
     protected Detector getDetector() {
         return new GetSignaturesDetector();
-    }
-
-    @Override
-    protected boolean allowCompilationErrors() {
-        // Some of these unit tests are still relying on source code that references
-        // unresolved symbols etc.
-        return true;
     }
 
     public void testLintWarningOnSingleGetSignaturesFlag() throws Exception {
@@ -39,8 +33,18 @@ public class GetSignaturesDetectorTest extends AbstractCheckTest {
                         + "                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                         + "0 errors, 1 warnings\n",
                 lintProject(
-                        "src/test/pkg/GetSignaturesSingleFlagTest.java.txt" +
-                                "=>src/test/pkg/GetSignaturesSingleFlagTest.java"
+                        java("src/test/pkg/GetSignaturesSingleFlagTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.app.Activity;\n"
+                                + "import android.content.pm.PackageManager;\n"
+                                + "\n"
+                                + "public class GetSignaturesSingleFlagTest extends Activity {\n"
+                                + "    public void failLintCheck() throws Exception {\n"
+                                + "        getPackageManager()\n"
+                                + "            .getPackageInfo(\"some.pkg\", PackageManager.GET_SIGNATURES);\n"
+                                + "    }\n"
+                                + "}")
                 ));
     }
 
@@ -51,8 +55,20 @@ public class GetSignaturesDetectorTest extends AbstractCheckTest {
                     + "                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                     + "0 errors, 1 warnings\n",
             lintProject(
-                "src/test/pkg/GetSignaturesBitwiseOrTest.java.txt" +
-                        "=>src/test/pkg/GetSignaturesBitwiseOrTest.java"
+                java("src/test/pkg/GetSignaturesBitwiseOrTest.java", ""
+                        + "package test.pkg;\n"
+                        + "\n"
+                        + "import static android.content.pm.PackageManager.*;\n"
+                        + "\n"
+                        + "import android.app.Activity;\n"
+                        + "import android.content.pm.PackageManager;\n"
+                        + "\n"
+                        + "public class GetSignaturesBitwiseOrTest extends Activity {\n"
+                        + "    public void failLintCheck() throws Exception {\n"
+                        + "        getPackageManager()\n"
+                        + "            .getPackageInfo(\"some.pkg\", GET_GIDS | GET_SIGNATURES | GET_PROVIDERS);\n"
+                        + "    }\n"
+                        + "}")
             ));
     }
 
@@ -63,8 +79,17 @@ public class GetSignaturesDetectorTest extends AbstractCheckTest {
                         + "                                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                         + "0 errors, 1 warnings\n",
                 lintProject(
-                        "src/test/pkg/GetSignaturesBitwiseXorTest.java.txt" +
-                                "=>src/test/pkg/GetSignaturesBitwiseXorTest.java"
+                        java("src/test/pkg/GetSignaturesBitwiseXorTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.app.Activity;\n"
+                                + "import android.content.pm.PackageManager;\n"
+                                + "\n"
+                                + "public class GetSignaturesBitwiseXorTest extends Activity {\n"
+                                + "    public void failLintCheck() throws Exception {\n"
+                                + "        getPackageManager().getPackageInfo(\"some.pkg\", PackageManager.GET_SIGNATURES ^ 0x0);\n"
+                                + "    }\n"
+                                + "}")
                 ));
     }
 
@@ -75,8 +100,18 @@ public class GetSignaturesDetectorTest extends AbstractCheckTest {
                         + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                         + "0 errors, 1 warnings\n",
                 lintProject(
-                        "src/test/pkg/GetSignaturesBitwiseAndTest.java.txt" +
-                                "=>src/test/pkg/GetSignaturesBitwiseAndTest.java"
+                        java("src/test/pkg/GetSignaturesBitwiseAndTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.app.Activity;\n"
+                                + "import android.content.pm.PackageManager;\n"
+                                + "\n"
+                                + "public class GetSignaturesBitwiseAndTest extends Activity {\n"
+                                + "    public void failLintCheck() throws Exception {\n"
+                                + "        getPackageManager().getPackageInfo(\"some.pkg\",\n"
+                                + "            Integer.MAX_VALUE & PackageManager.GET_SIGNATURES);\n"
+                                + "    }\n"
+                                + "}")
                 ));
     }
 
@@ -87,17 +122,40 @@ public class GetSignaturesDetectorTest extends AbstractCheckTest {
                         + "                                                       ~~~~~\n"
                         + "0 errors, 1 warnings\n",
                 lintProject(
-                        "src/test/pkg/GetSignaturesStaticFieldTest.java.txt" +
-                                "=>src/test/pkg/GetSignaturesStaticFieldTest.java"
+                        java("src/test/pkg/GetSignaturesStaticFieldTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.app.Activity;\n"
+                                + "import android.content.pm.PackageManager;\n"
+                                + "\n"
+                                + "public class GetSignaturesStaticFieldTest extends Activity {\n"
+                                + "    private static final int FLAGS = PackageManager.GET_SIGNATURES;\n"
+                                + "    public void failLintCheck() throws Exception {\n"
+                                + "        getPackageManager().getPackageInfo(\"some.pkg\", FLAGS);\n"
+                                + "    }\n"
+                                + "}")
                 ));
     }
 
     public void testNoLintWarningOnFlagsInLocalVariable() throws Exception {
-        assertEquals(
-                "No warnings.",
+        assertEquals(""
+                        + "src/test/pkg/GetSignaturesLocalVariableTest.java:9: Information: Reading app signatures from getPackageInfo: The app signatures could be exploited if not validated properly; see issue explanation for details. [PackageManagerGetSignatures]\n"
+                        + "        getPackageManager().getPackageInfo(\"some.pkg\", flags);\n"
+                        + "                                                       ~~~~~\n"
+                        + "0 errors, 1 warnings\n",
                 lintProject(
-                        "src/test/pkg/GetSignaturesLocalVariableTest.java.txt" +
-                                "=>src/test/pkg/GetSignaturesLocalVariableTest.java"
+                        java("src/test/pkg/GetSignaturesLocalVariableTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.app.Activity;\n"
+                                + "import android.content.pm.PackageManager;\n"
+                                + "\n"
+                                + "public class GetSignaturesLocalVariableTest extends Activity {\n"
+                                + "    public void passLintCheck() throws Exception {\n"
+                                + "        int flags = PackageManager.GET_SIGNATURES;\n"
+                                + "        getPackageManager().getPackageInfo(\"some.pkg\", flags);\n"
+                                + "    }\n"
+                                + "}")
                 ));
     }
 
@@ -105,8 +163,28 @@ public class GetSignaturesDetectorTest extends AbstractCheckTest {
         assertEquals(
                 "No warnings.",
                 lintProject(
-                        "src/test/pkg/GetSignaturesNoFlagTest.java.txt" +
-                                "=>src/test/pkg/GetSignaturesNoFlagTest.java"
+                        java("src/test/pkg/GetSignaturesNoFlagTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import static android.content.pm.PackageManager.*;\n"
+                                + "\n"
+                                + "import android.app.Activity;\n"
+                                + "\n"
+                                + "public class GetSignaturesNoFlagTest extends Activity {\n"
+                                + "    public void passLintCheck() throws Exception {\n"
+                                + "        getPackageManager()\n"
+                                + "            .getPackageInfo(\"some.pkg\",\n"
+                                + "                GET_ACTIVITIES |\n"
+                                + "                GET_GIDS |\n"
+                                + "                GET_CONFIGURATIONS |\n"
+                                + "                GET_INSTRUMENTATION |\n"
+                                + "                GET_PERMISSIONS |\n"
+                                + "                GET_PROVIDERS |\n"
+                                + "                GET_RECEIVERS |\n"
+                                + "                GET_SERVICES |\n"
+                                + "                GET_UNINSTALLED_PACKAGES);\n"
+                                + "    }\n"
+                                + "}")
                 ));
     }
 
@@ -114,8 +192,21 @@ public class GetSignaturesDetectorTest extends AbstractCheckTest {
         assertEquals(
                 "No warnings.",
                 lintProject(
-                        "src/test/pkg/GetSignaturesNotPackageManagerTest.java.txt" +
-                                "=>src/test/pkg/GetSignaturesNotPackageManagerTest.java"
+                        java("src/test/pkg/GetSignaturesNotPackageManagerTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.app.Activity;\n"
+                                + "import android.content.pm.PackageManager;\n"
+                                + "import android.content.pm.PackageInfo;\n"
+                                + "\n"
+                                + "public class GetSignaturesNotPackageManagerTest extends Activity {\n"
+                                + "    public void passLintCheck(Mock mock) throws Exception {\n"
+                                + "        mock.getPackageInfo(\"some.pkg\", PackageManager.GET_SIGNATURES);\n"
+                                + "    }\n"
+                                + "    public interface Mock {\n"
+                                + "        PackageInfo getPackageInfo(String pkg, int flags);\n"
+                                + "    }\n"
+                                + "}")
                 ));
     }
 }

@@ -37,7 +37,6 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.ResourceContext;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
@@ -152,12 +151,6 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
      * Constructs a new {@link LocaleFolderDetector}
      */
     public LocaleFolderDetector() {
-    }
-
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.FAST;
     }
 
     // ---- Implements ResourceFolderScanner ----

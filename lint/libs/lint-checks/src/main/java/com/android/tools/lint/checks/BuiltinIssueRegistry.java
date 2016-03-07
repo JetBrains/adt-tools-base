@@ -75,6 +75,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(CipherGetInstanceDetector.ISSUE);
         issues.add(CleanupDetector.COMMIT_FRAGMENT);
         issues.add(CleanupDetector.RECYCLE_RESOURCE);
+        issues.add(CleanupDetector.SHARED_PREF);
         issues.add(ClickableViewAccessibilityDetector.ISSUE);
         issues.add(CommentDetector.EASTER_EGG);
         issues.add(CommentDetector.STOP_SHIP);
@@ -228,7 +229,6 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(SecurityDetector.WORLD_WRITEABLE);
         issues.add(ServiceCastDetector.ISSUE);
         issues.add(SetJavaScriptEnabledDetector.ISSUE);
-        issues.add(SharedPrefsDetector.ISSUE);
         issues.add(SignatureOrSystemDetector.ISSUE);
         issues.add(SQLiteDetector.ISSUE);
         issues.add(SslCertificateSocketFactoryDetector.CREATE_SOCKET);
@@ -319,7 +319,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
             }
 
             if (scope.contains(Scope.JAVA_FILE)) {
-                initialSize += 72;
+                initialSize += 74;
             } else if (scope.contains(Scope.CLASS_FILE)) {
                 initialSize += 15;
             } else if (scope.contains(Scope.MANIFEST)) {

@@ -26,12 +26,11 @@ public class WrongImportDetectorTest extends AbstractCheckTest {
     }
 
     public void test() throws Exception {
-        assertEquals(
-            "src/test/pkg/BadImport.java:5: Warning: Don't include android.R here; use a fully qualified name for each usage instead [SuspiciousImport]\n" +
-            "import android.R;\n" +
-            "~~~~~~~~~~~~~~~~~\n" +
-            "0 errors, 1 warnings\n" +
-            "",
+        assertEquals(""
+                + "src/test/pkg/BadImport.java:5: Warning: Don't include android.R here; use a fully qualified name for each usage instead [SuspiciousImport]\n"
+                + "import android.R;\n"
+                + "~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
 
             lintProject(
                 // Java files must be renamed in source tree

@@ -20,36 +20,29 @@ import static com.android.tools.lint.client.api.JavaParser.TYPE_STRING;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
-import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
-import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
+import com.android.tools.lint.client.api.JavaEvaluator;
 import com.android.tools.lint.detector.api.Category;
-import com.android.tools.lint.detector.api.ConstantEvaluator;
 import com.android.tools.lint.detector.api.Detector;
-import com.android.tools.lint.detector.api.Detector.ClassScanner;
-import com.android.tools.lint.detector.api.Detector.JavaScanner;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
+import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
+import com.intellij.psi.JavaRecursiveElementVisitor;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiMethodCallExpression;
+import com.intellij.psi.PsiReturnStatement;
+import com.intellij.psi.PsiThrowStatement;
 
 import java.util.Collections;
 import java.util.List;
 
-import lombok.ast.BooleanLiteral;
-import lombok.ast.ClassDeclaration;
-import lombok.ast.Expression;
-import lombok.ast.ForwardingAstVisitor;
-import lombok.ast.MethodDeclaration;
-import lombok.ast.MethodInvocation;
-import lombok.ast.Node;
-import lombok.ast.NormalTypeBody;
-import lombok.ast.Return;
-import lombok.ast.Throw;
-
-public class BadHostnameVerifierDetector extends Detector implements JavaScanner {
+public class BadHostnameVerifierDetector extends Detector implements JavaPsiScanner {
 
     @SuppressWarnings("unchecked")
     private static final Implementation IMPLEMENTATION =
@@ -76,50 +69,29 @@ public class BadHostnameVerifierDetector extends Detector implements JavaScanner
     }
 
     @Override
-    public void checkClass(@NonNull JavaContext context, @Nullable ClassDeclaration node,
-            @NonNull Node declarationOrAnonymous, @NonNull ResolvedClass cls) {
-        NormalTypeBody body;
-        if (declarationOrAnonymous instanceof NormalTypeBody) {
-            body = (NormalTypeBody) declarationOrAnonymous;
-        } else if (node != null) {
-            body = node.astBody();
-        } else {
-            return;
-        }
-
-        for (Node member : body.astMembers()) {
-            if (member instanceof MethodDeclaration) {
-                MethodDeclaration declaration = (MethodDeclaration)member;
-                if ("verify".equals(declaration.astMethodName().astValue())
-                        && declaration.astParameters().size() == 2) {
-                    ResolvedNode resolved = context.resolve(declaration);
-                    if (resolved instanceof ResolvedMethod) {
-                        ResolvedMethod method = (ResolvedMethod) resolved;
-                        if (method.getArgumentCount() == 2
-                                && method.getArgumentType(0).matchesName(TYPE_STRING)
-                                && method.getArgumentType(1).matchesName("javax.net.ssl.SSLSession")) {
-
-                            ComplexVisitor visitor = new ComplexVisitor(context);
-                            declaration.accept(visitor);
-                            if (visitor.isComplex()) {
-                                return;
-                            }
-
-                            Location location = context.getNameLocation(declaration);
-                            String message = String.format("`%1$s` always returns `true`, which " +
-                                    "could cause insecure network traffic due to trusting "
-                                    + "TLS/SSL server certificates for wrong hostnames",
-                                    method.getName());
-                            context.report(ISSUE, location, message);
-                            break;
-                        }
-                    }
+    public void checkClass(@NonNull JavaContext context, @NonNull PsiClass declaration) {
+        JavaEvaluator evaluator = context.getEvaluator();
+        for (PsiMethod method : declaration.findMethodsByName("verify", false)) {
+            if (evaluator.methodMatches(method, null, false,
+                    TYPE_STRING, "javax.net.ssl.SSLSession")) {
+                ComplexVisitor visitor = new ComplexVisitor(context);
+                declaration.accept(visitor);
+                if (visitor.isComplex()) {
+                    return;
                 }
+
+                Location location = context.getNameLocation(method);
+                String message = String.format("`%1$s` always returns `true`, which " +
+                                "could cause insecure network traffic due to trusting "
+                                + "TLS/SSL server certificates for wrong hostnames",
+                        method.getName());
+                context.report(ISSUE, location, message);
+                break;
             }
         }
     }
 
-    private static class ComplexVisitor extends ForwardingAstVisitor {
+    private static class ComplexVisitor extends JavaRecursiveElementVisitor {
         @SuppressWarnings("unused")
         private final JavaContext mContext;
         private boolean mComplex;
@@ -129,34 +101,33 @@ public class BadHostnameVerifierDetector extends Detector implements JavaScanner
         }
 
         @Override
-        public boolean visitThrow(Throw node) {
+        public void visitThrowStatement(PsiThrowStatement statement) {
+            super.visitThrowStatement(statement);
             mComplex = true;
-            return super.visitThrow(node);
         }
 
         @Override
-        public boolean visitMethodInvocation(MethodInvocation node) {
+        public void visitMethodCallExpression(PsiMethodCallExpression expression) {
+            super.visitMethodCallExpression(expression);
             // TODO: Ignore certain known safe methods, e.g. Logging etc
             mComplex = true;
-            return super.visitMethodInvocation(node);
         }
 
         @Override
-        public boolean visitReturn(Return node) {
-            Expression argument = node.astValue();
+        public void visitReturnStatement(PsiReturnStatement node) {
+            PsiExpression argument = node.getReturnValue();
             if (argument != null) {
                 // TODO: Only do this if certain that there isn't some intermediate
                 // assignment, as exposed by the unit test
                 //Object value = ConstantEvaluator.evaluate(mContext, argument);
                 //if (Boolean.TRUE.equals(value)) {
-                if (argument instanceof BooleanLiteral &&
-                        Boolean.TRUE.equals(((BooleanLiteral)argument).astValue())) {
+                if (LintUtils.isTrueLiteral(argument)) {
                     mComplex = false;
                 } else {
                     mComplex = true; // "return false" or some complicated logic
                 }
             }
-            return super.visitReturn(node);
+            super.visitReturnStatement(node);
         }
 
         public boolean isComplex() {

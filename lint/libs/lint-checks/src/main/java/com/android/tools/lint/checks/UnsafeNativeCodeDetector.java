@@ -21,12 +21,11 @@ import static com.android.SdkConstants.DOT_NATIVE_LIBS;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
-import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
-import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
+import com.android.tools.lint.client.api.JavaEvaluator;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
@@ -36,6 +35,9 @@ import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
+import com.intellij.psi.JavaElementVisitor;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiMethodCallExpression;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -44,11 +46,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import lombok.ast.AstVisitor;
-import lombok.ast.MethodInvocation;
-
-public class UnsafeNativeCodeDetector extends Detector
-        implements Detector.JavaScanner {
+public class UnsafeNativeCodeDetector extends Detector implements JavaPsiScanner {
 
     private static final Implementation IMPLEMENTATION = new Implementation(
             UnsafeNativeCodeDetector.class,
@@ -106,20 +104,16 @@ public class UnsafeNativeCodeDetector extends Detector
     }
 
     @Override
-    public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor,
-            @NonNull MethodInvocation node) {
-        ResolvedNode resolved = context.resolve(node);
-        if (resolved instanceof ResolvedMethod) {
-            String methodName = node.astName().astValue();
-            ResolvedClass resolvedClass = ((ResolvedMethod) resolved).getContainingClass();
-            if ((resolvedClass.isSubclassOf(RUNTIME_CLASS, false)) ||
-                    (resolvedClass.matches(SYSTEM_CLASS))) {
-                // Report calls to Runtime.load() and System.load()
-                if ("load".equals(methodName)) {
-                    context.report(LOAD, node, context.getLocation(node),
-                            "Dynamically loading code using `load` is risky, please use " +
-                                    "`loadLibrary` instead when possible");
-                }
+    public void visitMethod(@NonNull JavaContext context, @Nullable JavaElementVisitor visitor,
+            @NonNull PsiMethodCallExpression call, @NonNull PsiMethod method) {
+        // Report calls to Runtime.load() and System.load()
+        if ("load".equals(method.getName())) {
+            JavaEvaluator evaluator = context.getEvaluator();
+            if (evaluator.isMemberInSubClassOf(method, RUNTIME_CLASS, false) ||
+                    evaluator.isMemberInSubClassOf(method, SYSTEM_CLASS, false)) {
+                context.report(LOAD, call, context.getLocation(call),
+                        "Dynamically loading code using `load` is risky, please use " +
+                                "`loadLibrary` instead when possible");
             }
         }
     }

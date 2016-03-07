@@ -17,46 +17,41 @@
 package com.android.tools.lint.checks;
 
 
-import static com.android.tools.lint.detector.api.JavaContext.findSurroundingClass;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
-import com.android.tools.lint.client.api.JavaParser.ResolvedField;
-import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
-import com.android.tools.lint.client.api.JavaParser.ResolvedVariable;
+import com.android.tools.lint.client.api.JavaEvaluator;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.google.common.collect.Lists;
+import com.intellij.psi.JavaRecursiveElementVisitor;
+import com.intellij.psi.PsiAssignmentExpression;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiField;
+import com.intellij.psi.PsiLocalVariable;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiNewExpression;
+import com.intellij.psi.PsiParameter;
+import com.intellij.psi.PsiReference;
+import com.intellij.psi.PsiReferenceExpression;
+import com.intellij.psi.PsiVariable;
+import com.intellij.psi.util.PsiTreeUtil;
 
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
-
-import lombok.ast.BinaryExpression;
-import lombok.ast.BinaryOperator;
-import lombok.ast.ClassDeclaration;
-import lombok.ast.ClassLiteral;
-import lombok.ast.ConstructorInvocation;
-import lombok.ast.Expression;
-import lombok.ast.ForwardingAstVisitor;
-import lombok.ast.MethodDeclaration;
-import lombok.ast.Node;
-import lombok.ast.NormalTypeBody;
-import lombok.ast.VariableDefinition;
-import lombok.ast.VariableDefinitionEntry;
-import lombok.ast.VariableReference;
 
 /**
  * Checks related to RecyclerView usage.
  * // https://code.google.com/p/android/issues/detail?id=172335
  */
-public class RecyclerViewDetector extends Detector implements Detector.JavaScanner {
+public class RecyclerViewDetector extends Detector implements JavaPsiScanner {
     public static final Issue ISSUE = Issue.create(
             "RecyclerView", //$NON-NLS-1$
             "RecyclerView Problems",
@@ -90,63 +85,33 @@ public class RecyclerViewDetector extends Detector implements Detector.JavaScann
     }
 
     @Override
-    public void checkClass(@NonNull JavaContext context, @Nullable ClassDeclaration declaration,
-            @NonNull Node node, @NonNull ResolvedClass resolvedClass) {
-        NormalTypeBody body;
-        if (declaration != null) {
-            body = declaration.astBody();
-        } else if (node instanceof NormalTypeBody) {
-            // anonymous inner class
-            body = (NormalTypeBody) node;
-        } else {
-            return;
-        }
-
-        for (Node child : body.astMembers()) {
-            if (child instanceof MethodDeclaration) {
-                MethodDeclaration method = (MethodDeclaration) child;
-                if (method.astMethodName().astValue().equals(ON_BIND_VIEW_HOLDER)) {
-                    int size = method.astParameters().size();
-                    if (size == 2 || size == 3) {
-                        checkMethod(context, method);
-                    }
-                }
+    public void checkClass(@NonNull JavaContext context, @NonNull PsiClass declaration) {
+        JavaEvaluator evaluator = context.getEvaluator();
+        for (PsiMethod method : declaration.findMethodsByName(ON_BIND_VIEW_HOLDER, false)) {
+            int size = evaluator.getParameterCount(method);
+            if (size == 2 || size == 3) {
+                checkMethod(context, method, declaration);
             }
         }
     }
 
     private static void checkMethod(@NonNull JavaContext context,
-            @NonNull MethodDeclaration declaration) {
-        Iterator<VariableDefinition> iterator = declaration.astParameters().iterator();
-        if (!iterator.hasNext()) {
-            return;
-        }
-        VariableDefinition viewHolder = iterator.next();
-        if (!iterator.hasNext()) {
-            return;
-        }
-        VariableDefinition parameter = iterator.next();
-        ResolvedNode reference = context.resolve(parameter);
+            @NonNull PsiMethod declaration, @NonNull PsiClass cls) {
+        PsiParameter[] parameters = declaration.getParameterList().getParameters();
+        PsiParameter viewHolder = parameters[0];
+        PsiParameter parameter = parameters[1];
 
-        if (reference instanceof ResolvedVariable) {
-            ParameterEscapesVisitor visitor = new ParameterEscapesVisitor(context, declaration,
-                    (ResolvedVariable) reference);
-            declaration.accept(visitor);
-            if (visitor.variableEscapes()) {
-                reportError(context, viewHolder, parameter);
-            }
-        } else if (parameter.astModifiers().isFinal()) {
+        ParameterEscapesVisitor visitor = new ParameterEscapesVisitor(context, cls, parameter);
+        declaration.accept(visitor);
+        if (visitor.variableEscapes()) {
             reportError(context, viewHolder, parameter);
         }
     }
 
-    private static void reportError(@NonNull JavaContext context, VariableDefinition viewHolder,
-            VariableDefinition parameter) {
-        String variablePrefix;
-        VariableDefinitionEntry first = viewHolder.astVariables().first();
-        if (first != null) {
-            variablePrefix = first.astName().astValue();
-        } else {
+    private static void reportError(@NonNull JavaContext context, PsiParameter viewHolder,
+            PsiParameter parameter) {
+        String variablePrefix = viewHolder.getName();
+        if (variablePrefix == null) {
             variablePrefix = "ViewHolder";
         }
         String message = String.format("Do not treat position as fixed; only use immediately "
@@ -160,19 +125,19 @@ public class RecyclerViewDetector extends Detector implements Detector.JavaScann
      * Determines whether a given variable "escapes" either to a field or to a nested
      * runnable. (We deliberately ignore variables that escape via method calls.)
      */
-    private static class ParameterEscapesVisitor extends ForwardingAstVisitor {
+    private static class ParameterEscapesVisitor extends JavaRecursiveElementVisitor {
         protected final JavaContext mContext;
-        protected final List<ResolvedVariable> mVariables;
-        private final ClassDeclaration mBindClass;
+        protected final List<PsiVariable> mVariables;
+        private final PsiClass mBindClass;
         private boolean mEscapes;
         private boolean mFoundInnerClass;
 
         public ParameterEscapesVisitor(JavaContext context,
-                @NonNull MethodDeclaration onBindMethod,
-                @NonNull ResolvedVariable variable) {
+                @NonNull PsiClass bindClass,
+                @NonNull PsiParameter variable) {
             mContext = context;
-            mVariables = Lists.newArrayList(variable);
-            mBindClass = findSurroundingClass(onBindMethod);
+            mVariables = Lists.<PsiVariable>newArrayList(variable);
+            mBindClass = bindClass;
         }
 
         public boolean variableEscapes() {
@@ -180,100 +145,80 @@ public class RecyclerViewDetector extends Detector implements Detector.JavaScann
         }
 
         @Override
-        public boolean visitNode(Node node) {
-            return mEscapes || super.visitNode(node);
-        }
-
-        @Override
-        public boolean visitVariableDefinitionEntry(VariableDefinitionEntry node) {
-            Expression initializer = node.astInitializer();
-            if (initializer instanceof VariableReference) {
-                ResolvedNode resolved = mContext.resolve(initializer);
+        public void visitLocalVariable(PsiLocalVariable variable) {
+            PsiExpression initializer = variable.getInitializer();
+            if (initializer instanceof PsiReference) {
+                PsiElement resolved = ((PsiReference) initializer).resolve();
                 //noinspection SuspiciousMethodCalls
                 if (resolved != null && mVariables.contains(resolved)) {
-                    ResolvedNode resolvedVariable = mContext.resolve(node);
-                    if (resolvedVariable instanceof ResolvedVariable) {
-                        ResolvedVariable variable = (ResolvedVariable) resolvedVariable;
+                    if (resolved instanceof PsiLocalVariable) {
                         mVariables.add(variable);
-                    } else if (resolvedVariable instanceof ResolvedField) {
+                    } else if (resolved instanceof PsiField) {
                         mEscapes = true;
                     }
                 }
             }
-            return super.visitVariableDefinitionEntry(node);
+
+            super.visitLocalVariable(variable);
         }
 
         @Override
-        public boolean visitBinaryExpression(BinaryExpression node) {
-            if (node.astOperator() == BinaryOperator.ASSIGN) {
-                Expression rhs = node.astRight();
-                boolean clearLhs = true;
-                if (rhs instanceof VariableReference) {
-                    ResolvedNode resolved = mContext.resolve(rhs);
-                    //noinspection SuspiciousMethodCalls
-                    if (resolved != null && mVariables.contains(resolved)) {
-                        clearLhs = false;
-                        ResolvedNode resolvedLhs = mContext.resolve(node.astLeft());
-                        if (resolvedLhs instanceof ResolvedVariable) {
-                            ResolvedVariable variable = (ResolvedVariable) resolvedLhs;
-                            mVariables.add(variable);
-                        } else if (resolvedLhs instanceof ResolvedField) {
-                            mEscapes = true;
-                        }
-                    }
-                }
-                if (clearLhs) {
-                    // If we reassign one of the variables, clear it out
-                    ResolvedNode resolved = mContext.resolve(node.astLeft());
-                    //noinspection SuspiciousMethodCalls
-                    if (resolved != null && mVariables.contains(resolved)) {
-                        //noinspection SuspiciousMethodCalls
-                        mVariables.remove(resolved);
+        public void visitAssignmentExpression(PsiAssignmentExpression node) {
+            PsiExpression rhs = node.getRExpression();
+            boolean clearLhs = true;
+            if (rhs instanceof PsiReferenceExpression) {
+                PsiElement resolved = ((PsiReferenceExpression)rhs).resolve();
+                //noinspection SuspiciousMethodCalls
+                if (resolved != null && mVariables.contains(resolved)) {
+                    clearLhs = false;
+                    PsiElement resolvedLhs = mContext.getEvaluator().resolve(node.getLExpression());
+                    if (resolvedLhs instanceof PsiLocalVariable) {
+                        PsiLocalVariable variable = (PsiLocalVariable) resolvedLhs;
+                        mVariables.add(variable);
+                    } else if (resolvedLhs instanceof PsiField) {
+                        mEscapes = true;
                     }
                 }
             }
-            return super.visitBinaryExpression(node);
+            if (clearLhs) {
+                // If we reassign one of the variables, clear it out
+                PsiElement resolved = mContext.getEvaluator().resolve(node.getLExpression());
+                //noinspection SuspiciousMethodCalls
+                if (resolved != null && mVariables.contains(resolved)) {
+                    //noinspection SuspiciousMethodCalls
+                    mVariables.remove(resolved);
+                }
+            }
+
+            super.visitAssignmentExpression(node);
         }
 
         @Override
-        public boolean visitVariableReference(VariableReference node) {
+        public void visitReferenceExpression(PsiReferenceExpression node) {
             if (mFoundInnerClass) {
                 // Check to see if this reference is inside the same class as the original
                 // onBind (e.g. is this a reference from an inner class, or a reference
                 // to a variable assigned from there)
-                ResolvedNode resolved = mContext.resolve(node);
+                PsiElement resolved = mContext.getEvaluator().resolve(node);
                 //noinspection SuspiciousMethodCalls
                 if (resolved != null && mVariables.contains(resolved)) {
-                    Node scope = node.getParent();
-                    while (scope != null) {
-                        if (scope instanceof NormalTypeBody) {
-                            if (scope != mBindClass.astBody()) {
-                                mEscapes = true;
-                            }
-                            break;
-                        }
-                        scope = scope.getParent();
+                    PsiClass outer = PsiTreeUtil.getParentOfType(node, PsiClass.class, true);
+                    if (!mBindClass.equals(outer)) {
+                        mEscapes = true;
                     }
                 }
             }
-            return super.visitVariableReference(node);
+
+            super.visitReferenceExpression(node);
         }
 
         @Override
-        public boolean visitClassLiteral(ClassLiteral node) {
-            mFoundInnerClass = true;
-
-            return super.visitClassLiteral(node);
-        }
-
-        @Override
-        public boolean visitConstructorInvocation(ConstructorInvocation node) {
-            NormalTypeBody anonymous = node.astAnonymousClassBody();
-            if (anonymous != null) {
+        public void visitNewExpression(PsiNewExpression expression) {
+            if (expression.getAnonymousClass() != null) {
                 mFoundInnerClass = true;
             }
 
-            return super.visitConstructorInvocation(node);
+            super.visitNewExpression(expression);
         }
     }
 }

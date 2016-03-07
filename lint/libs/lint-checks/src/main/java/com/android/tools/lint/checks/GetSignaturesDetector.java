@@ -18,41 +18,35 @@ package com.android.tools.lint.checks;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.tools.lint.client.api.JavaEvaluator;
 import com.android.tools.lint.client.api.JavaParser;
-import com.android.tools.lint.client.api.JavaParser.ResolvedField;
-import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
-import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
-import com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.ConstantEvaluator;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
+import com.intellij.psi.JavaElementVisitor;
+import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiMethodCallExpression;
 
 import java.util.Collections;
 import java.util.List;
 
-import lombok.ast.AstVisitor;
-import lombok.ast.BinaryExpression;
-import lombok.ast.BinaryOperator;
-import lombok.ast.Expression;
-import lombok.ast.IntegralLiteral;
-import lombok.ast.MethodInvocation;
-import lombok.ast.StrictListAccessor;
-import lombok.ast.StringLiteral;
-
-public class GetSignaturesDetector extends Detector implements Detector.JavaScanner  {
+public class GetSignaturesDetector extends Detector implements JavaPsiScanner  {
     public static final Issue ISSUE = Issue.create(
             "PackageManagerGetSignatures", //$NON-NLS-1$
             "Potential Multiple Certificate Exploit",
             "Improper validation of app signatures could lead to issues where a malicious app " +
-                "submits itself to the Play Store with both its real certificate and a fake " +
-                "certificate and gains access to functionality or information it shouldn't " +
-                "have due to another application only checking for the fake certificate and " +
-                "ignoring the rest. Please make sure to validate all signatures returned " +
-                "by this method.",
+            "submits itself to the Play Store with both its real certificate and a fake " +
+            "certificate and gains access to functionality or information it shouldn't " +
+            "have due to another application only checking for the fake certificate and " +
+            "ignoring the rest. Please make sure to validate all signatures returned " +
+            "by this method.",
             Category.SECURITY,
             8,
             Severity.INFORMATIONAL,
@@ -74,83 +68,34 @@ public class GetSignaturesDetector extends Detector implements Detector.JavaScan
     }
 
     @Override
-    public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor,
-            @NonNull MethodInvocation node) {
-        ResolvedNode resolved = context.resolve(node);
-
-        if (!(resolved instanceof ResolvedMethod) ||
-                !((ResolvedMethod) resolved).getContainingClass()
-                        .isSubclassOf(PACKAGE_MANAGER_CLASS, false)) {
+    public void visitMethod(@NonNull JavaContext context, @Nullable JavaElementVisitor visitor,
+            @NonNull PsiMethodCallExpression node, @NonNull PsiMethod method) {
+        JavaEvaluator evaluator = context.getEvaluator();
+        if (!evaluator.methodMatches(method, PACKAGE_MANAGER_CLASS, true,
+                JavaParser.TYPE_STRING,
+                JavaParser.TYPE_INT)) {
             return;
         }
-        StrictListAccessor<Expression, MethodInvocation> argumentList = node.astArguments();
 
-        // Ignore if the method doesn't fit our description.
-        if (argumentList != null && argumentList.size() == 2) {
-            TypeDescriptor firstParameterType = context.getType(argumentList.first());
-            if (firstParameterType != null
-                && firstParameterType.matchesSignature(JavaParser.TYPE_STRING)) {
-                maybeReportIssue(calculateValue(context, argumentList.last()), context, node);
+        PsiExpression[] arguments = node.getArgumentList().getExpressions();
+        if (arguments.length == 2) {
+            PsiExpression second = arguments[1];
+            Object number = ConstantEvaluator.evaluate(context, second);
+            if (number instanceof Number) {
+                int flagValue = ((Number)number).intValue();
+                maybeReportIssue(flagValue, context, node, second);
             }
         }
     }
 
     private static void maybeReportIssue(
-            int flagValue, JavaContext context, MethodInvocation node) {
+            int flagValue, JavaContext context, PsiMethodCallExpression node,
+            PsiExpression last) {
         if ((flagValue & GET_SIGNATURES_FLAG) != 0) {
-            context.report(ISSUE, node, context.getLocation(node.astArguments().last()),
+            context.report(ISSUE, node, context.getLocation(last),
                 "Reading app signatures from getPackageInfo: The app signatures "
                     + "could be exploited if not validated properly; "
                     + "see issue explanation for details.");
         }
-    }
-
-    private static int calculateValue(JavaContext context, Expression expression) {
-        // This function assumes that the only inputs to the expression are static integer
-        // flags that combined via bitwise operands.
-        if (expression instanceof IntegralLiteral) {
-            return ((IntegralLiteral) expression).astIntValue();
-        }
-
-        ResolvedNode resolvedNode = context.resolve(expression);
-        if (resolvedNode instanceof ResolvedField) {
-            Object value = ((ResolvedField) resolvedNode).getValue();
-            if (value instanceof Integer) {
-                return (Integer) value;
-            }
-        }
-        if (expression instanceof BinaryExpression) {
-            BinaryExpression binaryExpression = (BinaryExpression) expression;
-            BinaryOperator operator = binaryExpression.astOperator();
-            int leftValue = calculateValue(context, binaryExpression.astLeft());
-            int rightValue = calculateValue(context, binaryExpression.astRight());
-
-            if (operator == BinaryOperator.BITWISE_OR) {
-                return leftValue | rightValue;
-            }
-            if (operator == BinaryOperator.BITWISE_AND) {
-                return leftValue & rightValue;
-            }
-            if (operator == BinaryOperator.BITWISE_XOR) {
-                return leftValue ^ rightValue;
-            }
-        }
-
-        return 0;
-    }
-
-    private static boolean isStringParameter(
-            @NonNull Expression expression, @NonNull JavaContext context) {
-        if (expression instanceof StringLiteral) {
-            return true;
-        } else {
-            ResolvedNode resolvedNode = context.resolve(expression);
-            if (resolvedNode instanceof ResolvedField) {
-                if (((ResolvedField) resolvedNode).getValue() instanceof String) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 }

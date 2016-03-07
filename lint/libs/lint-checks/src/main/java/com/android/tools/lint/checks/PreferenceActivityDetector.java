@@ -24,18 +24,20 @@ import static com.android.tools.lint.client.api.JavaParser.TYPE_STRING;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
-import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
+import com.android.tools.lint.client.api.JavaEvaluator;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
+import com.android.tools.lint.detector.api.Detector.XmlScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiMethod;
 
 import org.w3c.dom.Element;
 
@@ -46,14 +48,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import lombok.ast.ClassDeclaration;
-import lombok.ast.Node;
-
 /**
  * Ensures that PreferenceActivity and its subclasses are never exported.
  */
 public class PreferenceActivityDetector extends Detector
-        implements Detector.XmlScanner, Detector.JavaScanner {
+        implements XmlScanner, JavaPsiScanner {
     public static final Issue ISSUE = Issue.create(
             "ExportedPreferenceActivity", //$NON-NLS-1$
             "PreferenceActivity should not be exported",
@@ -73,13 +72,8 @@ public class PreferenceActivityDetector extends Detector
     private final Map<String, Location.Handle> mExportedActivities =
             new HashMap<String, Location.Handle>();
 
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.FAST;
-    }
-
     // ---- Implements XmlScanner ----
+
     @Override
     public Collection<String> getApplicableElements() {
         return Collections.singletonList(TAG_ACTIVITY);
@@ -131,20 +125,19 @@ public class PreferenceActivityDetector extends Detector
     }
 
     @Override
-    public void checkClass(@NonNull JavaContext context, @Nullable ClassDeclaration node,
-            @NonNull Node declarationOrAnonymous, @NonNull ResolvedClass resolvedClass) {
+    public void checkClass(@NonNull JavaContext context, @NonNull PsiClass declaration) {
         if (!context.getProject().getReportIssues()) {
             return;
         }
-        String className = resolvedClass.getName();
-        if (resolvedClass.isSubclassOf(PREFERENCE_ACTIVITY, false)
+        JavaEvaluator evaluator = context.getEvaluator();
+        String className = declaration.getQualifiedName();
+        if (evaluator.extendsClass(declaration, PREFERENCE_ACTIVITY, false)
                 && mExportedActivities.containsKey(className)) {
-
             // Ignore the issue if we target an API greater than 19 and the class in
             // question specifically overrides isValidFragment() and thus knowingly white-lists
             // valid fragments.
             if (context.getMainProject().getTargetSdk() >= 19
-                    && overridesIsValidFragment(resolvedClass)) {
+                    && overridesIsValidFragment(evaluator, declaration)) {
                 return;
             }
 
@@ -152,16 +145,15 @@ public class PreferenceActivityDetector extends Detector
                     "`PreferenceActivity` subclass `%1$s` should not be exported",
                     className);
             Location location = mExportedActivities.get(className).resolve();
-            context.report(ISSUE, declarationOrAnonymous, location, message);
+            context.report(ISSUE, declaration, location, message);
         }
     }
 
-    private static boolean overridesIsValidFragment(ResolvedClass resolvedClass) {
-        Iterable<ResolvedMethod> resolvedMethods = resolvedClass.getMethods(IS_VALID_FRAGMENT,
-                false);
-        for (ResolvedMethod resolvedMethod : resolvedMethods) {
-            if (resolvedMethod.getArgumentCount() == 1
-                    && resolvedMethod.getArgumentType(0).getName().equals(TYPE_STRING)) {
+    private static boolean overridesIsValidFragment(
+            @NonNull JavaEvaluator evaluator,
+            @NonNull PsiClass resolvedClass) {
+        for (PsiMethod method : resolvedClass.findMethodsByName(IS_VALID_FRAGMENT, false)) {
+            if (evaluator.parametersMatch(method, TYPE_STRING)) {
                 return true;
             }
         }

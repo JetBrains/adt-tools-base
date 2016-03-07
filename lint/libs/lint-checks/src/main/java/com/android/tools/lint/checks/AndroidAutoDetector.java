@@ -21,18 +21,18 @@ import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.TAG_INTENT_FILTER;
 import static com.android.SdkConstants.TAG_SERVICE;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_STRING;
 import static com.android.xml.AndroidManifest.NODE_ACTION;
 import static com.android.xml.AndroidManifest.NODE_APPLICATION;
 import static com.android.xml.AndroidManifest.NODE_METADATA;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.resources.ResourceFolderType;
-import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
-import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
+import com.android.tools.lint.detector.api.Detector.XmlScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
@@ -41,23 +41,18 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
+import com.intellij.psi.JavaRecursiveElementVisitor;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiMethod;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 
-import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
-
-import lombok.ast.ClassDeclaration;
-import lombok.ast.ForwardingAstVisitor;
-import lombok.ast.MethodDeclaration;
-import lombok.ast.Node;
 
 /**
  * Detector for Android Auto issues.
@@ -65,8 +60,9 @@ import lombok.ast.Node;
  * as a trigger for validating Automotive specific issues.
  */
 public class AndroidAutoDetector extends ResourceXmlDetector
-        implements Detector.XmlScanner, Detector.JavaScanner {
+        implements XmlScanner, JavaPsiScanner {
 
+    @SuppressWarnings("unchecked")
     public static final Implementation IMPL = new Implementation(
             AndroidAutoDetector.class,
             EnumSet.of(Scope.RESOURCE_FILE, Scope.MANIFEST, Scope.JAVA_FILE),
@@ -152,7 +148,6 @@ public class AndroidAutoDetector extends ResourceXmlDetector
             "android.support.v4.media.session.MediaSessionCompat.Callback"; //$NON-NLS-1$
     private static final String METHOD_MEDIA_SESSION_PLAY_FROM_SEARCH =
             "onPlayFromSearch"; //$NON-NLS-1$
-    private static final String STRING_ARG = "java.lang.String"; //$NON-NLS-1$
     private static final String BUNDLE_ARG = "android.os.Bundle"; //$NON-NLS-1$
 
     /**
@@ -203,12 +198,6 @@ public class AndroidAutoDetector extends ResourceXmlDetector
         mAutomotiveResourceFileName = null;
         mMediaIntentFilterFound = false;
         mMediaSearchIntentFilterFound = false;
-    }
-
-    @Override
-    @NonNull
-    public Speed getSpeed() {
-        return Speed.FAST;
     }
 
     @Override
@@ -353,17 +342,16 @@ public class AndroidAutoDetector extends ResourceXmlDetector
     }
 
     @Override
-    public void checkClass(@NonNull JavaContext context, @Nullable ClassDeclaration declaration,
-            @NonNull Node node, @NonNull JavaParser.ResolvedClass resolvedClass) {
+    public void checkClass(@NonNull JavaContext context, @NonNull PsiClass declaration) {
         // Only check classes that are not declared abstract.
-        if (declaration != null && (resolvedClass.getModifiers() & Modifier.ABSTRACT) == 0) {
+        if (!context.getEvaluator().isAbstract(declaration)) {
             MediaSessionCallbackVisitor visitor = new MediaSessionCallbackVisitor(context);
             declaration.accept(visitor);
             if (!visitor.isPlayFromSearchMethodFound()
                     && context.isEnabled(MISSING_ON_PLAY_FROM_SEARCH)) {
 
-                context.report(MISSING_ON_PLAY_FROM_SEARCH, declaration.astName(),
-                        context.getLocation(declaration.astName()),
+                context.report(MISSING_ON_PLAY_FROM_SEARCH, declaration,
+                        context.getNameLocation(declaration),
                         "This class does not override `" +
                         METHOD_MEDIA_SESSION_PLAY_FROM_SEARCH + "` from `MediaSession.Callback`" +
                         " The method should be overridden and implemented to support " +
@@ -372,17 +360,11 @@ public class AndroidAutoDetector extends ResourceXmlDetector
         }
     }
 
-    @Override
-    @Nullable
-    public List<String> getApplicableMethodNames() {
-        return Collections.singletonList(METHOD_MEDIA_SESSION_PLAY_FROM_SEARCH);
-    }
-
     /**
      * A Visitor class to search for {@code MediaSession.Callback#onPlayFromSearch(..)}
      * method declaration.
      */
-    private static class MediaSessionCallbackVisitor extends ForwardingAstVisitor {
+    private static class MediaSessionCallbackVisitor extends JavaRecursiveElementVisitor {
 
         private final JavaContext mContext;
 
@@ -397,28 +379,18 @@ public class AndroidAutoDetector extends ResourceXmlDetector
         }
 
         @Override
-        public boolean visitMethodDeclaration(MethodDeclaration node) {
-            JavaParser.ResolvedNode result = mContext.resolve(node);
-            if (result != null
-                    && METHOD_MEDIA_SESSION_PLAY_FROM_SEARCH.equals(result.getName())
-                    && result instanceof JavaParser.ResolvedMethod) {
-                JavaParser.ResolvedMethod method = (JavaParser.ResolvedMethod) result;
-                if (method.getArgumentCount() == 2) {
-                    JavaParser.TypeDescriptor firstArg = method.getArgumentType(0);
-                    JavaParser.TypeDescriptor secondArg = method.getArgumentType(1);
-                    if (firstArg.getTypeClass() != null
-                            && firstArg.getTypeClass().matches(STRING_ARG)
-                            && secondArg.getTypeClass() != null
-                            && secondArg.getTypeClass().matches(BUNDLE_ARG)) {
-                        mOnPlayFromSearchFound = true;
-                    }
-                }
+        public void visitMethod(PsiMethod method) {
+            super.visitMethod(method);
+            if (METHOD_MEDIA_SESSION_PLAY_FROM_SEARCH.equals(method.getName())
+                    && mContext.getEvaluator().parametersMatch(method, TYPE_STRING,
+                    BUNDLE_ARG)) {
+                mOnPlayFromSearchFound = true;
             }
-            return super.visitMethodDeclaration(node);
         }
     }
 
-    // Used by AS to show errors.
+    // Used by the IDE to show errors.
+    @SuppressWarnings("unused")
     @NonNull
     public static String[] getAllowedAutomotiveAppTypes() {
         return new String[]{VAL_NAME_MEDIA, VAL_NAME_NOTIFICATION};

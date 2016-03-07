@@ -21,17 +21,16 @@ import static com.android.SdkConstants.ATTR_BACKGROUND;
 import static com.android.SdkConstants.ATTR_FOREGROUND;
 import static com.android.SdkConstants.ATTR_LAYOUT;
 import static com.android.SdkConstants.ATTR_LAYOUT_GRAVITY;
-import static com.android.SdkConstants.DOT_JAVA;
 import static com.android.SdkConstants.FRAME_LAYOUT;
 import static com.android.SdkConstants.LAYOUT_RESOURCE_PREFIX;
-import static com.android.SdkConstants.R_LAYOUT_RESOURCE_PREFIX;
 import static com.android.SdkConstants.VIEW_INCLUDE;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.resources.ResourceType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
-import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
@@ -41,14 +40,17 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Location.Handle;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.android.utils.Pair;
+import com.intellij.psi.JavaElementVisitor;
+import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiMethodCallExpression;
+import com.intellij.psi.PsiReferenceExpression;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -58,16 +60,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import lombok.ast.AstVisitor;
-import lombok.ast.Expression;
-import lombok.ast.MethodInvocation;
-import lombok.ast.Select;
-import lombok.ast.StrictListAccessor;
-
 /**
  * Checks whether a root FrameLayout can be replaced with a {@code <merge>} tag.
  */
-public class MergeRootFrameLayoutDetector extends LayoutDetector implements Detector.JavaScanner {
+public class MergeRootFrameLayoutDetector extends LayoutDetector implements JavaPsiScanner {
     /**
      * Set of layouts that we want to enable the warning for. We only warn for
      * {@code <FrameLayout>}'s that are the root of a layout included from
@@ -104,17 +100,6 @@ public class MergeRootFrameLayoutDetector extends LayoutDetector implements Dete
 
     /** Constructs a new {@link MergeRootFrameLayoutDetector} */
     public MergeRootFrameLayoutDetector() {
-    }
-
-    @Override
-    @NonNull
-    public Speed getSpeed() {
-        return Speed.FAST;
-    }
-
-    @Override
-    public boolean appliesTo(@NonNull Context context, @NonNull File file) {
-        return LintUtils.isXmlFile(file) || LintUtils.endsWith(file.getName(), DOT_JAVA);
     }
 
     @Override
@@ -199,17 +184,18 @@ public class MergeRootFrameLayoutDetector extends LayoutDetector implements Dete
     }
 
     @Override
-    public void visitMethod(
-            @NonNull JavaContext context,
-            @Nullable AstVisitor visitor,
-            @NonNull MethodInvocation node) {
-        StrictListAccessor<Expression, MethodInvocation> argumentList = node.astArguments();
-        if (argumentList != null && argumentList.size() == 1) {
-            Expression argument = argumentList.first();
-            if (argument instanceof Select) {
-                String expression = argument.toString();
-                if (expression.startsWith(R_LAYOUT_RESOURCE_PREFIX)) {
-                    whiteListLayout(expression.substring(R_LAYOUT_RESOURCE_PREFIX.length()));
+    public void visitMethod(@NonNull JavaContext context, @Nullable JavaElementVisitor visitor,
+            @NonNull PsiMethodCallExpression call, @NonNull PsiMethod method) {
+        PsiExpression[] expressions = call.getArgumentList().getExpressions();
+        if (expressions.length == 1 && expressions[0] instanceof PsiReferenceExpression) {
+            PsiReferenceExpression expression = (PsiReferenceExpression)expressions[0];
+            if (expression.getQualifier() instanceof PsiReferenceExpression) {
+                PsiReferenceExpression inner = (PsiReferenceExpression)expression.getQualifier();
+                if (ResourceType.LAYOUT.getName().equals(inner.getReferenceName())) {
+                    String layoutName = expression.getReferenceName();
+                    if (layoutName != null) {
+                        whiteListLayout(layoutName);
+                    }
                 }
             }
         }

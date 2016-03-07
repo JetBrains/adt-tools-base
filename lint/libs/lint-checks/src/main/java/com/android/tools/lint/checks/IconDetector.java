@@ -34,9 +34,6 @@ import static com.android.SdkConstants.DRAWABLE_PREFIX;
 import static com.android.SdkConstants.DRAWABLE_XHDPI;
 import static com.android.SdkConstants.DRAWABLE_XXHDPI;
 import static com.android.SdkConstants.DRAWABLE_XXXHDPI;
-import static com.android.SdkConstants.MENU_TYPE;
-import static com.android.SdkConstants.R_CLASS;
-import static com.android.SdkConstants.R_DRAWABLE_PREFIX;
 import static com.android.SdkConstants.TAG_ACTIVITY;
 import static com.android.SdkConstants.TAG_APPLICATION;
 import static com.android.SdkConstants.TAG_ITEM;
@@ -49,27 +46,42 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.ProductFlavorContainer;
+import com.android.ide.common.resources.ResourceUrl;
 import com.android.resources.Density;
 import com.android.resources.ResourceFolderType;
+import com.android.resources.ResourceType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
-import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
+import com.android.tools.lint.detector.api.ResourceEvaluator;
 import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import com.intellij.psi.JavaElementVisitor;
+import com.intellij.psi.JavaRecursiveElementVisitor;
+import com.intellij.psi.PsiAnonymousClass;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiExpressionList;
+import com.intellij.psi.PsiJavaCodeReferenceElement;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiMethodCallExpression;
+import com.intellij.psi.PsiNewExpression;
+import com.intellij.psi.PsiReferenceExpression;
+import com.intellij.psi.util.PsiTreeUtil;
 
 import org.w3c.dom.Element;
 
@@ -99,24 +111,11 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 
-import lombok.ast.AstVisitor;
-import lombok.ast.ConstructorInvocation;
-import lombok.ast.Expression;
-import lombok.ast.ForwardingAstVisitor;
-import lombok.ast.MethodDeclaration;
-import lombok.ast.MethodInvocation;
-import lombok.ast.Node;
-import lombok.ast.Select;
-import lombok.ast.StrictListAccessor;
-import lombok.ast.TypeReference;
-import lombok.ast.TypeReferencePart;
-import lombok.ast.VariableReference;
-
 /**
  * Checks for common icon problems, such as wrong icon sizes, placing icons in the
  * density independent drawable folder, etc.
  */
-public class IconDetector extends ResourceXmlDetector implements Detector.JavaScanner {
+public class IconDetector extends ResourceXmlDetector implements JavaPsiScanner {
 
     private static final boolean INCLUDE_LDPI;
     static {
@@ -380,12 +379,6 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
 
     /** Constructs a new {@link IconDetector} check */
     public IconDetector() {
-    }
-
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.SLOW;
     }
 
     @Override
@@ -1967,92 +1960,85 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
 
     // ---- Implements JavaScanner ----
 
-    private static final String NOTIFICATION_CLASS = "Notification";              //$NON-NLS-1$
-    private static final String NOTIFICATION_COMPAT_CLASS = "NotificationCompat"; //$NON-NLS-1$
-    private static final String BUILDER_CLASS = "Builder";                        //$NON-NLS-1$
-    private static final String SET_SMALL_ICON = "setSmallIcon";                  //$NON-NLS-1$
-    private static final String ON_CREATE_OPTIONS_MENU = "onCreateOptionsMenu";   //$NON-NLS-1$
+    private static final String NOTIFICATION_CLASS = "Notification";
+    private static final String NOTIFICATION_BUILDER_CLASS = "Notification.Builder";
+    private static final String NOTIFICATION_COMPAT_BUILDER_CLASS = "NotificationCompat.Builder";
+    private static final String SET_SMALL_ICON = "setSmallIcon";
+    private static final String ON_CREATE_OPTIONS_MENU = "onCreateOptionsMenu";
 
     @Override
-    @Nullable
-    public AstVisitor createJavaVisitor(@NonNull JavaContext context) {
-        return new NotificationFinder();
-    }
-
-    @Override
-    @Nullable
-    public List<Class<? extends Node>> getApplicableNodeTypes() {
-        List<Class<? extends Node>> types = new ArrayList<Class<? extends Node>>(3);
-        types.add(MethodDeclaration.class);
-        types.add(ConstructorInvocation.class);
+    public List<Class<? extends PsiElement>> getApplicablePsiTypes() {
+        List<Class<? extends PsiElement>> types = new ArrayList<Class<? extends PsiElement>>(2);
+        types.add(PsiNewExpression.class);
+        types.add(PsiMethod.class);
         return types;
     }
 
-    private final class NotificationFinder extends ForwardingAstVisitor {
-        @Override
-        public boolean visitMethodDeclaration(MethodDeclaration node) {
-            if (ON_CREATE_OPTIONS_MENU.equals(node.astMethodName().astValue())) {
-                // Gather any R.menu references found in this method
-                node.accept(new MenuFinder());
-            }
+    @Nullable
+    @Override
+    public JavaElementVisitor createPsiVisitor(@NonNull JavaContext context) {
+        return new NotificationFinder();
+    }
 
-            return super.visitMethodDeclaration(node);
+    private final class NotificationFinder extends JavaElementVisitor {
+
+        @Override
+        public void visitMethod(PsiMethod method) {
+            if (ON_CREATE_OPTIONS_MENU.equals(method.getName())) {
+                // Gather any R.menu references found in this method
+                method.accept(new MenuFinder());
+            }
         }
 
         @Override
-        public boolean visitConstructorInvocation(ConstructorInvocation node) {
-            TypeReference reference = node.astTypeReference();
-            StrictListAccessor<TypeReferencePart, TypeReference> parts = reference.astParts();
-            String typeName = parts.last().astIdentifier().astValue();
+        public void visitNewExpression(PsiNewExpression node) {
+            PsiJavaCodeReferenceElement classReference = node.getClassReference();
+            if (classReference == null) {
+                return;
+            }
+            PsiElement resolved = classReference.resolve();
+            if (!(resolved instanceof PsiClass)) {
+                return;
+            }
+            String typeName = ((PsiClass)resolved).getName();
             if (NOTIFICATION_CLASS.equals(typeName)) {
-                StrictListAccessor<Expression, ConstructorInvocation> args = node.astArguments();
-                if (args.size() == 3) {
-                    if (args.first() instanceof Select && handleSelect((Select) args.first())) {
-                        return super.visitConstructorInvocation(node);
+                PsiExpressionList argumentList = node.getArgumentList();
+                PsiExpression[] args = argumentList != null
+                        ? argumentList.getExpressions() : PsiExpression.EMPTY_ARRAY;
+                if (args.length == 3) {
+                    if (args[0] instanceof PsiReferenceExpression && handleSelect(args[0])) {
+                        return;
                     }
 
-                    Node method = StringFormatDetector.getParentMethod(node);
-                    if (method != null) {
-                        // Must track local types
-                        String name = StringFormatDetector.getResourceForFirstArg(method, node);
-                        if (name != null) {
-                            if (mNotificationIcons == null) {
-                                mNotificationIcons = Sets.newHashSet();
-                            }
-                            mNotificationIcons.add(name);
+                    ResourceUrl url = ResourceEvaluator.getResource(null, args[0]);
+                    if (url != null
+                            && (url.type == ResourceType.DRAWABLE
+                            || url.type == ResourceType.COLOR
+                            || url.type == ResourceType.MIPMAP)) {
+                        if (mNotificationIcons == null) {
+                            mNotificationIcons = Sets.newHashSet();
                         }
+                        mNotificationIcons.add(url.name);
                     }
                 }
-            } else if (BUILDER_CLASS.equals(typeName)) {
-                boolean isBuilder = false;
-                if (parts.size() == 1) {
-                    isBuilder = true;
-                } else if (parts.size() == 2) {
-                    String clz = parts.first().astIdentifier().astValue();
-                    if (NOTIFICATION_CLASS.equals(clz) || NOTIFICATION_COMPAT_CLASS.equals(clz)) {
-                        isBuilder = true;
-                    }
-                }
-                if (isBuilder) {
-                    Node method = StringFormatDetector.getParentMethod(node);
-                    if (method != null) {
-                        SetIconFinder finder = new SetIconFinder();
-                        method.accept(finder);
-                    }
+            } else if (NOTIFICATION_BUILDER_CLASS.equals(typeName)
+                    || NOTIFICATION_COMPAT_BUILDER_CLASS.equals(typeName)) {
+                PsiMethod method = PsiTreeUtil.getParentOfType(node, PsiMethod.class, true);
+                if (method != null) {
+                    SetIconFinder finder = new SetIconFinder();
+                    method.accept(finder);
                 }
             }
-
-            return super.visitConstructorInvocation(node);
         }
     }
 
-    private boolean handleSelect(Select select) {
-        if (select.toString().startsWith(R_DRAWABLE_PREFIX)) {
-            String name = select.astIdentifier().astValue();
+    private boolean handleSelect(PsiElement select) {
+        ResourceUrl url = ResourceEvaluator.getResourceConstant(select);
+        if (url != null && url.type == ResourceType.DRAWABLE && !url.framework) {
             if (mNotificationIcons == null) {
                 mNotificationIcons = Sets.newHashSet();
             }
-            mNotificationIcons.add(name);
+            mNotificationIcons.add(url.name);
 
             return true;
         }
@@ -2060,48 +2046,45 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
         return false;
     }
 
-    private final class SetIconFinder extends ForwardingAstVisitor {
+    private final class SetIconFinder extends JavaRecursiveElementVisitor {
         @Override
-        public boolean visitMethodInvocation(MethodInvocation node) {
-            if (SET_SMALL_ICON.equals(node.astName().astValue())) {
-                StrictListAccessor<Expression,MethodInvocation> arguments = node.astArguments();
-                if (arguments.size() == 1 && arguments.first() instanceof Select) {
-                    handleSelect((Select) arguments.first());
+        public void visitMethodCallExpression(PsiMethodCallExpression expression) {
+            super.visitMethodCallExpression(expression);
+            if (SET_SMALL_ICON.equals(expression.getMethodExpression().getReferenceName())) {
+                PsiExpression[] arguments = expression.getArgumentList().getExpressions();
+                if (arguments.length == 1 && arguments[0] instanceof PsiReferenceExpression) {
+                    handleSelect(arguments[0]);
                 }
             }
-            return super.visitMethodInvocation(node);
+        }
+
+        @Override
+        public void visitAnonymousClass(PsiAnonymousClass aClass) {
         }
     }
 
-    private final class MenuFinder extends ForwardingAstVisitor {
+    private final class MenuFinder extends JavaRecursiveElementVisitor {
         @Override
-        public boolean visitSelect(Select node) {
-            // R.type.name
-            if (node.astOperand() instanceof Select) {
-                Select select = (Select) node.astOperand();
-                if (select.astOperand() instanceof VariableReference) {
-                    VariableReference reference = (VariableReference) select.astOperand();
-                    if (reference.astIdentifier().astValue().equals(R_CLASS)) {
-                        String type = select.astIdentifier().astValue();
+        public void visitReferenceExpression(PsiReferenceExpression node) {
+            super.visitReferenceExpression(node);
 
-                        if (type.equals(MENU_TYPE)) {
-                            String name = node.astIdentifier().astValue();
-                            // Reclassify icons in the given menu as action bar icons
-                            if (mMenuToIcons != null) {
-                                Collection<String> icons = mMenuToIcons.get(name);
-                                if (icons != null) {
-                                    if (mActionBarIcons == null) {
-                                        mActionBarIcons = Sets.newHashSet();
-                                    }
-                                    mActionBarIcons.addAll(icons);
-                                }
-                            }
+            ResourceUrl url = ResourceEvaluator.getResourceConstant(node);
+            if (url != null && url.type == ResourceType.MENU && !url.framework) {
+                // Reclassify icons in the given menu as action bar icons
+                if (mMenuToIcons != null) {
+                    Collection<String> icons = mMenuToIcons.get(url.name);
+                    if (icons != null) {
+                        if (mActionBarIcons == null) {
+                            mActionBarIcons = Sets.newHashSet();
                         }
+                        mActionBarIcons.addAll(icons);
                     }
                 }
             }
+        }
 
-            return super.visitSelect(node);
+        @Override
+        public void visitAnonymousClass(PsiAnonymousClass aClass) {
         }
     }
 }

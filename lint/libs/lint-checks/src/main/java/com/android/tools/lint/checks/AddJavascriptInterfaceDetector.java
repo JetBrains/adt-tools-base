@@ -17,13 +17,12 @@
 package com.android.tools.lint.checks;
 
 
-import static com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
-import static com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_OBJECT;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_STRING;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.tools.lint.client.api.JavaEvaluator;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;
@@ -31,18 +30,17 @@ import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
+import com.intellij.psi.JavaElementVisitor;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiMethodCallExpression;
 
 import java.util.Collections;
 import java.util.List;
 
-import lombok.ast.AstVisitor;
-import lombok.ast.MethodInvocation;
-
 /**
  * Ensures that addJavascriptInterface is not called for API levels below 17.
  */
-public class AddJavascriptInterfaceDetector extends Detector implements Detector.JavaScanner {
+public class AddJavascriptInterfaceDetector extends Detector implements Detector.JavaPsiScanner {
     public static final Issue ISSUE = Issue.create(
             "AddJavascriptInterface", //$NON-NLS-1$
             "addJavascriptInterface Called",
@@ -62,12 +60,6 @@ public class AddJavascriptInterfaceDetector extends Detector implements Detector
     private static final String WEB_VIEW = "android.webkit.WebView"; //$NON-NLS-1$
     private static final String ADD_JAVASCRIPT_INTERFACE = "addJavascriptInterface"; //$NON-NLS-1$
 
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.FAST;
-    }
-
     // ---- Implements JavaScanner ----
 
     @Nullable
@@ -77,30 +69,20 @@ public class AddJavascriptInterfaceDetector extends Detector implements Detector
     }
 
     @Override
-    public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor,
-            @NonNull MethodInvocation node) {
+    public void visitMethod(@NonNull JavaContext context, @Nullable JavaElementVisitor visitor,
+            @NonNull PsiMethodCallExpression node, @NonNull PsiMethod method) {
         // Ignore the issue if we never build for any API less than 17.
         if (context.getMainProject().getMinSdk() >= 17) {
             return;
         }
 
-        // Ignore if the method doesn't fit our description.
-        ResolvedNode resolved = context.resolve(node);
-        if (!(resolved instanceof ResolvedMethod)) {
-            return;
-        }
-        ResolvedMethod method = (ResolvedMethod) resolved;
-        if (!method.getContainingClass().isSubclassOf(WEB_VIEW, false)) {
-            return;
-        }
-        if (method.getArgumentCount() != 2
-                || !method.getArgumentType(0).matchesName(TYPE_OBJECT)
-                || !method.getArgumentType(1).matchesName(TYPE_STRING)) {
+        JavaEvaluator evaluator = context.getEvaluator();
+        if (!evaluator.methodMatches(method, WEB_VIEW, true, TYPE_OBJECT, TYPE_STRING)) {
             return;
         }
 
         String message = "`WebView.addJavascriptInterface` should not be called with minSdkVersion < 17 for security reasons: " +
-                         "JavaScript can use reflection to manipulate application";
-        context.report(ISSUE, node, context.getLocation(node.astName()), message);
+                "JavaScript can use reflection to manipulate application";
+        context.report(ISSUE, node, context.getNameLocation(node), message);
     }
 }

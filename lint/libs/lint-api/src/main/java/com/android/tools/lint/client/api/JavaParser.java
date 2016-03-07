@@ -58,19 +58,29 @@ import lombok.ast.While;
  * <b>NOTE: This is not public or final API; if you rely on this be prepared
  * to adjust your code for the next tools release.</b>
  */
+// Currently ships with deprecated API support
+@SuppressWarnings({"deprecation", "UnusedParameters"})
 @Beta
 public abstract class JavaParser {
-    public static final String TYPE_OBJECT = "java.lang.Object";        //$NON-NLS-1$
-    public static final String TYPE_STRING = "java.lang.String";        //$NON-NLS-1$
-    public static final String TYPE_INT = "int";                        //$NON-NLS-1$
-    public static final String TYPE_LONG = "long";                      //$NON-NLS-1$
-    public static final String TYPE_CHAR = "char";                      //$NON-NLS-1$
-    public static final String TYPE_FLOAT = "float";                    //$NON-NLS-1$
-    public static final String TYPE_DOUBLE = "double";                  //$NON-NLS-1$
-    public static final String TYPE_BOOLEAN = "boolean";                //$NON-NLS-1$
-    public static final String TYPE_SHORT = "short";                    //$NON-NLS-1$
-    public static final String TYPE_BYTE = "byte";                      //$NON-NLS-1$
-    public static final String TYPE_NULL = "null";                      //$NON-NLS-1$
+    public static final String TYPE_OBJECT = "java.lang.Object";
+    public static final String TYPE_STRING = "java.lang.String";
+    public static final String TYPE_INT = "int";
+    public static final String TYPE_LONG = "long";
+    public static final String TYPE_CHAR = "char";
+    public static final String TYPE_FLOAT = "float";
+    public static final String TYPE_DOUBLE = "double";
+    public static final String TYPE_BOOLEAN = "boolean";
+    public static final String TYPE_SHORT = "short";
+    public static final String TYPE_BYTE = "byte";
+    public static final String TYPE_NULL = "null";
+    public static final String TYPE_INTEGER_WRAPPER = "java.lang.Integer";
+    public static final String TYPE_BOOLEAN_WRAPPER = "java.lang.Boolean";
+    public static final String TYPE_BYTE_WRAPPER = "java.lang.Byte";
+    public static final String TYPE_SHORT_WRAPPER = "java.lang.Short";
+    public static final String TYPE_LONG_WRAPPER = "java.lang.Long";
+    public static final String TYPE_DOUBLE_WRAPPER = "java.lang.Double";
+    public static final String TYPE_FLOAT_WRAPPER = "java.lang.Float";
+    public static final String TYPE_CHARACTER_WRAPPER = "java.lang.Character";
 
     /**
      * Prepare to parse the given contexts. This method will be called before
@@ -254,29 +264,6 @@ public abstract class JavaParser {
         PsiElement nameNode = JavaContext.findNameElement(element);
         if (nameNode != null) {
             element = nameNode;
-        } else {
-            /* TODO:
-            if (element instanceof PsiSwitchStatement
-                    || element instanceof PsiForStatement
-                    || element instanceof PsiIfStatement
-                    || element instanceof PsiWhileStatement
-                    || element instanceof PsiThrowStatement
-                    || element instanceof PsiReturnStatement) {
-                Location location = getLocation(context, element);
-                Position start = location.getStart();
-                if (start != null) {
-                    // Lint doesn't want to highlight the entire statement/block associated
-                    // with this node, it wants to just highlight the keyword.
-                    // TODO: Figure out how to find the keyword length; for Lombok
-                    // we could guess based on the node type, but we can't do
-                    // that here.
-                    int length = ?;
-                    return Location.create(location.getFile(), start,
-                            new DefaultPosition(start.getLine(), start.getColumn() + length,
-                                    start.getOffset() + length));
-                }
-            }
-            */
         }
 
         return getLocation(context, element);
@@ -393,6 +380,7 @@ public abstract class JavaParser {
      * A description of a type, such as a primitive int or the android.app.Activity class
      * @deprecated Use {@link PsiType} instead
      */
+    @SuppressWarnings("unused")
     @Deprecated
     public abstract static class TypeDescriptor {
         /**
@@ -553,6 +541,7 @@ public abstract class JavaParser {
      * A resolved declaration from an AST Node reference
      * @deprecated Use {@link JavaPsiScanner} APIs instead
      */
+    @SuppressWarnings("unused")
     @Deprecated
     public abstract static class ResolvedNode {
         @NonNull
@@ -620,6 +609,7 @@ public abstract class JavaParser {
      * A resolved class declaration (class, interface, enumeration or annotation)
      * @deprecated Use {@link JavaPsiScanner} APIs instead
      */
+    @SuppressWarnings("unused")
     @Deprecated
     public abstract static class ResolvedClass extends ResolvedNode {
         /** Returns the fully qualified name of this class */
@@ -744,6 +734,7 @@ public abstract class JavaParser {
      * A method or constructor declaration
      * @deprecated Use {@link JavaPsiScanner} APIs instead
      */
+    @SuppressWarnings("unused")
     @Deprecated
     public abstract static class ResolvedMethod extends ResolvedNode {
         @Override
@@ -867,9 +858,11 @@ public abstract class JavaParser {
         if (cls1 == null || cls2 == null) {
             return false;
         }
+        //noinspection ConstantConditions
         while (cls1.getContainingClass() != null) {
             cls1 = cls1.getContainingClass();
         }
+        //noinspection ConstantConditions
         while (cls2.getContainingClass() != null) {
             cls2 = cls2.getContainingClass();
         }
@@ -985,6 +978,7 @@ public abstract class JavaParser {
      * A package declaration
      * @deprecated Use {@link JavaPsiScanner} APIs instead
      */
+    @SuppressWarnings("unused")
     @Deprecated
     public abstract static class ResolvedPackage extends ResolvedNode {
         /** Returns the parent package of this package, if any. */

@@ -18,18 +18,23 @@ package com.android.tools.lint.checks;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
+import com.android.tools.lint.client.api.JavaEvaluator;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Detector.ClassScanner;
-import com.android.tools.lint.detector.api.Detector.JavaScanner;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiCodeBlock;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiReturnStatement;
+import com.intellij.psi.PsiStatement;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AbstractInsnNode;
@@ -41,14 +46,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 
-import lombok.ast.ClassDeclaration;
-import lombok.ast.MethodDeclaration;
-import lombok.ast.Node;
-import lombok.ast.NormalTypeBody;
-import lombok.ast.Return;
-import lombok.ast.Statement;
-
-public class TrustAllX509TrustManagerDetector extends Detector implements JavaScanner,
+public class TrustAllX509TrustManagerDetector extends Detector implements JavaPsiScanner,
         ClassScanner {
 
     @SuppressWarnings("unchecked")
@@ -80,47 +78,45 @@ public class TrustAllX509TrustManagerDetector extends Detector implements JavaSc
     }
 
     @Override
-    public void checkClass(@NonNull JavaContext context, @Nullable ClassDeclaration node,
-            @NonNull Node declarationOrAnonymous, @NonNull ResolvedClass cls) {
-        NormalTypeBody body;
-        if (declarationOrAnonymous instanceof NormalTypeBody) {
-            body = (NormalTypeBody) declarationOrAnonymous;
-        } else if (node != null) {
-            body = node.astBody();
-        } else {
-            return;
-        }
+    public void checkClass(@NonNull JavaContext context, @NonNull PsiClass cls) {
+        checkMethod(context, cls, "checkServerTrusted");
+        checkMethod(context, cls, "checkClientTrusted");
+    }
 
-        for (Node member : body.astMembers()) {
-            if (member instanceof MethodDeclaration) {
-                MethodDeclaration declaration = (MethodDeclaration)member;
-                String methodName = declaration.astMethodName().astValue();
-                if ("checkServerTrusted".equals(methodName)
-                        || "checkClientTrusted".equals(methodName)) {
+    private static void checkMethod(@NonNull JavaContext context,
+            @NonNull PsiClass cls,
+            @NonNull String methodName) {
+        JavaEvaluator evaluator = context.getEvaluator();
+        for (PsiMethod method : cls.findMethodsByName(methodName, true)) {
+            if (evaluator.isAbstract(method)) {
+                continue;
+            }
 
-                    // For now very simple; only checks if nothing is done.
-                    // Future work: Improve this check to be less sensitive to irrelevant
-                    // instructions/statements/invocations (e.g. System.out.println) by
-                    // looking for calls that could lead to a CertificateException being
-                    // thrown, e.g. throw statement within the method itself or invocation
-                    // of another method that may throw a CertificateException, and only
-                    // reporting an issue if none of these calls are found. ControlFlowGraph
-                    // may be useful here.
+            // For now very simple; only checks if nothing is done.
+            // Future work: Improve this check to be less sensitive to irrelevant
+            // instructions/statements/invocations (e.g. System.out.println) by
+            // looking for calls that could lead to a CertificateException being
+            // thrown, e.g. throw statement within the method itself or invocation
+            // of another method that may throw a CertificateException, and only
+            // reporting an issue if none of these calls are found. ControlFlowGraph
+            // may be useful here.
 
-                    boolean complex = false;
-                    for (Statement statement : declaration.astBody().astContents()) {
-                        if (!(statement instanceof Return)) {
-                            complex = true;
-                            break;
-                        }
-                    }
-
-                    if (!complex) {
-                        Location location = context.getNameLocation(declaration);
-                        String message = getErrorMessage(methodName);
-                        context.report(ISSUE, declaration, location, message);
-                    }
+            boolean complex = false;
+            PsiCodeBlock body = method.getBody();
+            if (body == null) {
+                return;
+            }
+            for (PsiStatement statement : body.getStatements()) {
+                if (!(statement instanceof PsiReturnStatement)) {
+                    complex = true;
+                    break;
                 }
+            }
+
+            if (!complex) {
+                Location location = context.getNameLocation(method);
+                String message = getErrorMessage(methodName);
+                context.report(ISSUE, method, location, message);
             }
         }
     }

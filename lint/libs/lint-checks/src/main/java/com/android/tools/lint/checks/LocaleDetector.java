@@ -21,34 +21,31 @@ import static com.android.tools.lint.client.api.JavaParser.TYPE_STRING;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser;
-import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
-import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ConstantEvaluator;
 import com.android.tools.lint.detector.api.Detector;
-import com.android.tools.lint.detector.api.Detector.JavaScanner;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
+import com.intellij.psi.JavaElementVisitor;
+import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiMethodCallExpression;
+import com.intellij.psi.util.PsiTreeUtil;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import lombok.ast.AstVisitor;
-import lombok.ast.Expression;
-import lombok.ast.MethodInvocation;
-import lombok.ast.Node;
-
 /**
  * Checks for errors related to locale handling
  */
-public class LocaleDetector extends Detector implements JavaScanner {
+public class LocaleDetector extends Detector implements JavaPsiScanner {
     private static final Implementation IMPLEMENTATION = new Implementation(
             LocaleDetector.class,
             Scope.JAVA_FILE_SCOPE);
@@ -100,22 +97,18 @@ public class LocaleDetector extends Detector implements JavaScanner {
     }
 
     @Override
-    public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor,
-            @NonNull MethodInvocation call) {
-        ResolvedNode resolved = context.resolve(call);
-        if (resolved instanceof ResolvedMethod) {
-            ResolvedMethod method = (ResolvedMethod) resolved;
-            if (method.getContainingClass().matches(TYPE_STRING)) {
-                String name = method.getName();
-                if (name.equals(FORMAT_METHOD)) {
-                    checkFormat(context, method, call);
-                } else if (method.getArgumentCount() == 0) {
-                    Location location = context.getNameLocation(call);
-                    String message = String.format(
-                            "Implicitly using the default locale is a common source of bugs: " +
-                                    "Use `%1$s(Locale)` instead", name);
-                    context.report(STRING_LOCALE, call, location, message);
-                }
+    public void visitMethod(@NonNull JavaContext context, @Nullable JavaElementVisitor visitor,
+            @NonNull PsiMethodCallExpression call, @NonNull PsiMethod method) {
+        if (context.getEvaluator().isMemberInClass(method, TYPE_STRING)) {
+            String name = method.getName();
+            if (name.equals(FORMAT_METHOD)) {
+                checkFormat(context, method, call);
+            } else if (method.getParameterList().getParametersCount() == 0) {
+                Location location = context.getNameLocation(call);
+                String message = String.format(
+                        "Implicitly using the default locale is a common source of bugs: " +
+                                "Use `%1$s(Locale)` instead", name);
+                context.report(STRING_LOCALE, call, location, message);
             }
         }
     }
@@ -123,19 +116,14 @@ public class LocaleDetector extends Detector implements JavaScanner {
     /** Returns true if the given node is a parameter to a Logging call */
     private static boolean isLoggingParameter(
             @NonNull JavaContext context,
-            @NonNull MethodInvocation node) {
-        Node parent = node.getParent();
-        if (parent instanceof MethodInvocation) {
-            MethodInvocation call = (MethodInvocation)parent;
-            String name = call.astName().astValue();
-            if (name.length() == 1) { // "d", "i", "e" etc in Log
-                ResolvedNode resolved = context.resolve(call);
-                if (resolved instanceof ResolvedMethod) {
-                    ResolvedMethod method = (ResolvedMethod) resolved;
-                    if (method.getContainingClass().matches(LogDetector.LOG_CLS)) {
-                        return true;
-                    }
-                }
+            @NonNull PsiMethodCallExpression node) {
+        PsiMethodCallExpression parentCall =
+                PsiTreeUtil.getParentOfType(node, PsiMethodCallExpression.class, true);
+        if (parentCall != null) {
+            String name = parentCall.getMethodExpression().getReferenceName();
+            if (name != null && name.length() == 1) { // "d", "i", "e" etc in Log
+                PsiMethod method = parentCall.resolveMethod();
+                return context.getEvaluator().isMemberInClass(method, LogDetector.LOG_CLS);
             }
         }
 
@@ -144,17 +132,21 @@ public class LocaleDetector extends Detector implements JavaScanner {
 
     private static void checkFormat(
             @NonNull JavaContext context,
-            @NonNull ResolvedMethod method,
-            @NonNull MethodInvocation call) {
+            @NonNull PsiMethod method,
+            @NonNull PsiMethodCallExpression call) {
         // Only check the non-locale version of String.format
-        if (method.getArgumentCount() == 0
-                || !method.getArgumentType(0).matchesName(TYPE_STRING)
-                || call.astArguments().isEmpty()) {
+        if (method.getParameterList().getParametersCount() == 0
+                || !context.getEvaluator().parameterHasType(method, 0, TYPE_STRING)) {
+            return;
+        }
+
+        PsiExpression[] expressions = call.getArgumentList().getExpressions();
+        if (expressions.length == 0) {
             return;
         }
 
         // Find the formatting string
-        Expression first = call.astArguments().first();
+        PsiExpression first = expressions[0];
         Object value = ConstantEvaluator.evaluate(context, first);
         if (!(value instanceof String)) {
             return;
