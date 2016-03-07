@@ -71,7 +71,7 @@ public class SimpleTestRunner implements TestRunner {
             @NonNull File coverageDir,
             @NonNull ILogger logger) throws TestException, NoAuthorizedDeviceFoundException, InterruptedException {
 
-        WaitableExecutor<Boolean> executor = new WaitableExecutor<Boolean>(maxThreads);
+        WaitableExecutor<Boolean> executor = WaitableExecutor.useNewFixedSizeThreadPool(maxThreads);
 
         int totalDevices = deviceList.size();
         int unauthorizedDevices = 0;

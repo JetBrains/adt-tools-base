@@ -51,7 +51,7 @@ public class WaitableExecutor<T> {
      * Creates an executor that will use at most <var>nThreads</var> threads.
      * @param nThreads the number of threads, or zero for default count (which is number of core)
      */
-    public WaitableExecutor(int nThreads) {
+    private WaitableExecutor(int nThreads) {
         if (nThreads < 1) {
             nThreads = Runtime.getRuntime().availableProcessors();
         }
@@ -63,9 +63,37 @@ public class WaitableExecutor<T> {
     /**
      * Creates an executor that will use at most 1 thread per core.
      */
-    public WaitableExecutor() {
+    private WaitableExecutor() {
         mExecutorService = null;
         mCompletionService = new ExecutorCompletionService<T>(ExecutorSingleton.getExecutor());
+    }
+
+    /**
+     * Creates a new {@link WaitableExecutor} which uses a globally shared thread pool.
+     *
+     * <p>Calling {@link #waitForAllTasks()} on this instance will only block on tasks submitted to
+     * this instance, but the tasks themselves will compete for threads with tasks submitted to
+     * other {@link WaitableExecutor} instances created with this factory method.
+     *
+     * <p>This is the recommended way of getting a {@link WaitableExecutor}, since it makes sure
+     * the total number of threads running doesn't exceed the value configured by the user.
+     *
+     * @see ExecutorSingleton
+     */
+    public static <T> WaitableExecutor<T> useGlobalSharedThreadPool() {
+        return new WaitableExecutor<T>();
+    }
+
+    /**
+     * Creates a new {@link WaitableExecutor} which uses a newly allocated thread pool of the given
+     * size.
+     *
+     * <p>If you can, use the {@link #useGlobalSharedThreadPool()} factory method instead.
+     *
+     * @see #useGlobalSharedThreadPool()
+     */
+    public static <T> WaitableExecutor<T> useNewFixedSizeThreadPool(int nThreads) {
+        return new WaitableExecutor<T>(nThreads);
     }
 
     /**
