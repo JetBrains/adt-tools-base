@@ -16,7 +16,9 @@
 
 package com.android.build.gradle.integration.instant;
 
+import static com.android.build.gradle.integration.common.truth.AbstractAndroidSubject.ClassFileScope.INSTANT_RUN;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatDex;
 
 import com.android.annotations.NonNull;
@@ -29,8 +31,6 @@ import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
 import com.android.builder.model.InstantRun;
 import com.android.ddmlib.IDevice;
 import com.android.tools.fd.client.InstantRunArtifact;
-import com.android.tools.fd.client.InstantRunArtifactType;
-import com.android.tools.fd.client.InstantRunBuildInfo;
 import com.android.tools.fd.client.InstantRunClient;
 import com.google.common.collect.Iterables;
 
@@ -42,11 +42,13 @@ import org.junit.experimental.categories.Category;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 public class ButterKnifeTest {
     private static final ColdswapMode COLDSWAP_MODE = ColdswapMode.MULTIDEX;
     private static final String ORIGINAL_MESSAGE = "original";
     private static final String HOTSWAP_MESSAGE = "hotswap";
+    private static final String ACTIVITY_DESC = "Lcom/example/bk/Activ;";
 
     @Rule
     public GradleTestProject project =
@@ -70,30 +72,34 @@ public class ButterKnifeTest {
 
     @Test
     public void coldSwapBuild() throws Exception {
-        InstantRun instantRunModel = InstantRunTestUtils.doInitialBuild(project, 23, COLDSWAP_MODE);
+        ColdSwapTester.testMultiDex(project, new ColdSwapTester.Steps() {
+            @Override
+            public void checkApk(File apk) throws Exception {
+                assertThatApk(apk).hasClass(ACTIVITY_DESC, INSTANT_RUN);
+            }
 
-        InstantRunBuildInfo initialContext = InstantRunTestUtils.loadContext(instantRunModel);
-        String startBuildId = initialContext.getTimeStamp();
+            @Override
+            public void makeChange() throws Exception {
+                TestFileUtils.searchAndReplace(mActiv.getAbsoluteFile(),
+                        "text\\.getText\\(\\)\\.toString\\(\\)", "getMessage()");
+                TestFileUtils.addMethod(
+                        mActiv,
+                        "public String getMessage() { return text.getText().toString(); }");
+            }
 
-        makeColdSwapChange();
+            @Override
+            public void checkVerifierStatus(InstantRunVerifierStatus status) throws Exception {
+                assertThat(status).isEqualTo(InstantRunVerifierStatus.METHOD_ADDED);
+            }
 
-        project.execute(
-                InstantRunTestUtils.getInstantRunArgs(23, COLDSWAP_MODE),
-                instantRunModel.getIncrementalAssembleTaskName());
-
-        InstantRunBuildInfo coldSwapContext = InstantRunTestUtils.loadContext(instantRunModel);
-
-        assertThat(coldSwapContext.getVerifierStatus()).named("verifier status")
-                .isEqualTo(InstantRunVerifierStatus.METHOD_ADDED.toString());
-        assertThat(coldSwapContext.getTimeStamp()).named("build id").isNotEqualTo(startBuildId);
-
-        assertThat(coldSwapContext.getArtifacts()).hasSize(1);
-        InstantRunArtifact artifact = Iterables.getOnlyElement(coldSwapContext.getArtifacts());
-
-        assertThat(artifact.type).isEqualTo(InstantRunArtifactType.DEX);
-        assertThatDex(artifact.file)
-                .hasClass("Lcom/example/bk/Activ;")
-                .that().hasMethod("getMessage");
+            @Override
+            public void checkArtifacts(List<InstantRunArtifact> artifacts) throws Exception {
+                InstantRunArtifact artifact = Iterables.getOnlyElement(artifacts);
+                assertThatDex(artifact.file)
+                        .hasClass(ACTIVITY_DESC)
+                        .that().hasMethod("getMessage");
+            }
+        });
     }
 
     @Test
@@ -109,14 +115,6 @@ public class ButterKnifeTest {
                 InstantRunTestUtils.getCompiledHotSwapCompatibleChange(instantRunModel);
 
         assertThatDex(artifact.file).hasClass("Lcom/example/bk/Activ$override;");
-    }
-
-    private void makeColdSwapChange() throws Exception {
-        TestFileUtils.searchAndReplace(mActiv.getAbsoluteFile(),
-                "text\\.getText\\(\\)\\.toString\\(\\)", "getMessage()");
-        TestFileUtils.addMethod(
-                mActiv,
-                "public String getMessage() { return text.getText().toString(); }");
     }
 
     private void makeHotSwapChange() throws Exception {

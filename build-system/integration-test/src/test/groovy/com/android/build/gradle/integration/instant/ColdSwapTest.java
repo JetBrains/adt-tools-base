@@ -26,12 +26,9 @@ import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject;
 import com.android.build.gradle.integration.common.truth.ApkSubject;
 import com.android.build.gradle.integration.common.truth.DexClassSubject;
 import com.android.build.gradle.integration.common.truth.DexFileSubject;
-import com.android.build.gradle.internal.incremental.ColdswapMode;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
-import com.android.builder.model.InstantRun;
 import com.android.tools.fd.client.InstantRunArtifact;
 import com.android.tools.fd.client.InstantRunArtifactType;
-import com.android.tools.fd.client.InstantRunBuildInfo;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Iterables;
 import com.google.common.io.Files;
@@ -45,6 +42,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Smoke test for cold swap builds.
@@ -65,111 +63,105 @@ public class ColdSwapTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation") // Here we want to test the dalvik behavior.
     public void withDalvik() throws Exception {
-        final int apiLevel = 15;
+        ColdSwapTester.testDalvik(project, new ColdSwapTester.Steps() {
+            @Override
+            public void checkApk(File apk) throws Exception {
+                ApkSubject apkSubject = expect.about(ApkSubject.FACTORY).that(apk);
 
-        // Initial build
-        InstantRun instantRunModel =
-                InstantRunTestUtils.doInitialBuild(project, apiLevel, ColdswapMode.AUTO);
-
-        ApkSubject apkSubject = expect.about(ApkSubject.FACTORY)
-                .that(project.getApk("debug"));
-
-        apkSubject.hasClass("Lcom/example/helloworld/HelloWorld;",
+                apkSubject.hasClass("Lcom/example/helloworld/HelloWorld;",
                         AbstractAndroidSubject.ClassFileScope.MAIN)
-                .that().hasMethod("onCreate");
-        apkSubject.hasClass("Lcom/android/tools/fd/runtime/BootstrapApplication;",
-                AbstractAndroidSubject.ClassFileScope.MAIN);
-        apkSubject.hasClass("Lcom/android/tools/fd/runtime/AppInfo;",
-                AbstractAndroidSubject.ClassFileScope.MAIN);
+                        .that().hasMethod("onCreate");
+                apkSubject.hasClass("Lcom/android/tools/fd/runtime/BootstrapApplication;",
+                        AbstractAndroidSubject.ClassFileScope.MAIN);
+                apkSubject.hasClass("Lcom/android/tools/fd/runtime/AppInfo;",
+                        AbstractAndroidSubject.ClassFileScope.MAIN);
+            }
 
-        InstantRunBuildInfo initialContext = InstantRunTestUtils.loadContext(instantRunModel);
-        String startBuildId = initialContext.getTimeStamp();
+            @Override
+            public void makeChange() throws Exception {
+                makeColdSwapChange();
+            }
 
-        // Cold swap
-        makeColdSwapChange();
+            @Override
+            public void checkVerifierStatus(InstantRunVerifierStatus status) throws Exception {
+                assertThat(status).isEqualTo(InstantRunVerifierStatus.METHOD_ADDED);
+            }
 
-        project.execute(InstantRunTestUtils.getInstantRunArgs(apiLevel, ColdswapMode.AUTO),
-                instantRunModel.getIncrementalAssembleTaskName());
-
-        InstantRunBuildInfo coldSwapContext = InstantRunTestUtils.loadContext(instantRunModel);
-        expect.that(coldSwapContext.getVerifierStatus()).named("verifier status")
-                .isEqualTo(InstantRunVerifierStatus.METHOD_ADDED.toString());
-        expect.that(coldSwapContext.getTimeStamp()).named("build id").isNotEqualTo(startBuildId);
-
-        assertThat(coldSwapContext.getArtifacts()).isEmpty();
+            @Override
+            public void checkArtifacts(List<InstantRunArtifact> artifacts) {
+                assertThat(artifacts).isEmpty();
+            }
+        });
     }
 
     @Test
     public void withLollipop() throws Exception {
-        final int apiLevel = 21;
-        // Initial build
-        InstantRun instantRunModel =
-                InstantRunTestUtils.doInitialBuild(project, apiLevel, ColdswapMode.MULTIDEX);
+        ColdSwapTester.testMultiDex(project, new ColdSwapTester.Steps() {
+            @Override
+            public void checkApk(File apk) throws Exception {
+                ApkSubject apkSubject = expect.about(ApkSubject.FACTORY).that(apk);
 
-        ApkSubject apkSubject = expect.about(ApkSubject.FACTORY)
-                .that(project.getApk("debug"));
+                apkSubject.hasClass("Lcom/example/helloworld/HelloWorld;",
+                        AbstractAndroidSubject.ClassFileScope.INSTANT_RUN)
+                        .that().hasMethod("onCreate");
+                apkSubject.hasClass("Lcom/android/tools/fd/runtime/BootstrapApplication;",
+                        AbstractAndroidSubject.ClassFileScope.ALL);
+                apkSubject.hasClass("Lcom/android/tools/fd/runtime/AppInfo;",
+                        AbstractAndroidSubject.ClassFileScope.ALL);
+            }
 
-        apkSubject.hasClass("Lcom/example/helloworld/HelloWorld;",
-                AbstractAndroidSubject.ClassFileScope.INSTANT_RUN)
-                .that().hasMethod("onCreate");
-        apkSubject.hasClass("Lcom/android/tools/fd/runtime/BootstrapApplication;",
-                AbstractAndroidSubject.ClassFileScope.ALL);
-        apkSubject.hasClass("Lcom/android/tools/fd/runtime/AppInfo;",
-                AbstractAndroidSubject.ClassFileScope.ALL);
+            @Override
+            public void makeChange() throws Exception {
+                makeColdSwapChange();
+            }
 
-        InstantRunBuildInfo initialContext = InstantRunTestUtils.loadContext(instantRunModel);
-        String startBuildId = initialContext.getTimeStamp();
+            @Override
+            public void checkVerifierStatus(InstantRunVerifierStatus status) throws Exception {
+                assertThat(status).isEqualTo(InstantRunVerifierStatus.METHOD_ADDED);
+            }
 
-        // Cold swap
-        makeColdSwapChange();
+            @Override
+            public void checkArtifacts(List<InstantRunArtifact> artifacts) throws Exception {
+                assertThat(artifacts).hasSize(1);
+                InstantRunArtifact artifact = Iterables.getOnlyElement(artifacts);
 
-        project.execute(InstantRunTestUtils.getInstantRunArgs(apiLevel, ColdswapMode.MULTIDEX),
-                instantRunModel.getIncrementalAssembleTaskName());
+                expect.that(artifact.type).isEqualTo(InstantRunArtifactType.DEX);
 
-        InstantRunBuildInfo coldSwapContext = InstantRunTestUtils.loadContext(instantRunModel);
-
-        expect.that(coldSwapContext.getVerifierStatus()).named("verifier status")
-                .isEqualTo(InstantRunVerifierStatus.METHOD_ADDED.toString());
-        expect.that(coldSwapContext.getTimeStamp()).named("build id").isNotEqualTo(startBuildId);
-
-        assertThat(coldSwapContext.getArtifacts()).hasSize(1);
-        InstantRunArtifact artifact = Iterables.getOnlyElement(coldSwapContext.getArtifacts());
-
-        expect.that(artifact.type).isEqualTo(InstantRunArtifactType.DEX);
-
-        checkUpdatedClassPresence(artifact.file);
+                checkUpdatedClassPresence(artifact.file);
+            }
+        });
     }
 
     @Ignore
     @Test
     public void withMarshmallow() throws Exception {
-        final int apiLevel = 23;
-        // Initial build
-        InstantRun instantRunModel =
-                InstantRunTestUtils.doInitialBuild(project, apiLevel, ColdswapMode.MULTIAPK);
+        ColdSwapTester.testMultiApk(project, new ColdSwapTester.Steps() {
+            @Override
+            public void checkApk(File apk) throws Exception {
+                assertThatApk(apk).doesNotContain("classes.dex");
+            }
 
-        // Classes are sharded into split apks.
-        assertThatApk(project.getApk("debug")).doesNotContain("classes.dex");
+            @Override
+            public void makeChange() throws Exception {
+                makeColdSwapChange();
+            }
 
-        InstantRunBuildInfo initialContext = InstantRunTestUtils.loadContext(instantRunModel);
-        String startBuildId = initialContext.getTimeStamp();
+            @Override
+            public void checkVerifierStatus(InstantRunVerifierStatus status) throws Exception {
+                assertThat(status).isEqualTo(InstantRunVerifierStatus.METHOD_ADDED);
+            }
 
-        // Cold swap
-        makeColdSwapChange();
-
-        project.execute(InstantRunTestUtils.getInstantRunArgs(apiLevel, ColdswapMode.MULTIAPK),
-                instantRunModel.getIncrementalAssembleTaskName());
-
-        InstantRunBuildInfo coldSwapContext = InstantRunTestUtils.loadContext(instantRunModel);
-        expect.that(coldSwapContext.getVerifierStatus()).named("verifier status")
-                .isEqualTo(InstantRunVerifierStatus.METHOD_ADDED.toString());
-        expect.that(coldSwapContext.getTimeStamp()).named("build id").isNotEqualTo(startBuildId);
-
-        assertThat(coldSwapContext.getArtifacts()).hasSize(2);
-        InstantRunArtifact artifact = Iterables.getLast(coldSwapContext.getArtifacts());
-        expect.that(artifact.type).named("artifact type").isEqualTo(InstantRunArtifactType.SPLIT);
-        checkUpdatedClassPresence(artifact.file);
+            @Override
+            public void checkArtifacts(List<InstantRunArtifact> artifacts) throws Exception {
+                assertThat(artifacts).hasSize(2);
+                InstantRunArtifact artifact = Iterables.getLast(artifacts);
+                expect.that(artifact.type).named("artifact type")
+                        .isEqualTo(InstantRunArtifactType.SPLIT);
+                checkUpdatedClassPresence(artifact.file);
+            }
+        });
     }
 
     private void makeColdSwapChange() throws IOException {

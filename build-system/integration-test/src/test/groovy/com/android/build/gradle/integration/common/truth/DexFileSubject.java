@@ -25,7 +25,6 @@ import com.android.ide.common.process.DefaultProcessExecutor;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessExecutor;
 import com.android.ide.common.process.ProcessInfoBuilder;
-import com.android.manifmerger.XmlDocument;
 import com.android.utils.StdLogger;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Preconditions;
@@ -61,6 +60,7 @@ public class DexFileSubject extends Subject<DexFileSubject, File> {
 
     /**
      * @deprecated TODO: Separate out utils for dealing with dex files from truth subjects.
+     * @see #hasClass(String)
      */
     @Deprecated
     public boolean containsClass(String className) throws IOException, ProcessException {
