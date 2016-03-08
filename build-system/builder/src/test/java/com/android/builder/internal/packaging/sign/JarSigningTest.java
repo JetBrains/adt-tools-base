@@ -18,7 +18,6 @@ package com.android.builder.internal.packaging.sign;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 
 import com.android.builder.internal.packaging.zip.StoredEntry;
 import com.android.builder.internal.packaging.zip.ZFile;
@@ -27,96 +26,20 @@ import com.google.common.base.Charsets;
 import com.google.common.hash.Hashing;
 
 import org.apache.commons.codec.binary.Base64;
-import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cert.X509v1CertificateBuilder;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.crypto.params.RSAKeyParameters;
-import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.operator.ContentSigner;
-import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.math.BigInteger;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.ECPublicKey;
-import java.security.interfaces.RSAPublicKey;
-import java.util.Date;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
-
-import javax.security.auth.x500.X500Principal;
 
 public class JarSigningTest {
     @Rule
     public TemporaryFolder mTemporaryFolder = new TemporaryFolder();
-
-    private static Pair<PrivateKey, X509Certificate> generateSignaturePre18() throws Exception {
-        return generateSignature("RSA", "SHA1withRSA");
-    }
-
-    private static Pair<PrivateKey, X509Certificate> generateSignaturePos18() throws Exception {
-        return generateSignature("EC", "SHA256withECDSA");
-    }
-
-    private static Pair<PrivateKey, X509Certificate> generateSignature(String sign, String full)
-            throws Exception {
-        // http://stackoverflow.com/questions/28538785/
-        // easy-way-to-generate-a-self-signed-certificate-for-java-security-keystore-using
-
-
-        KeyPairGenerator generator = null;
-        try {
-            generator = KeyPairGenerator.getInstance(sign);
-        } catch (NoSuchAlgorithmException e) {
-            Assume.assumeNoException("Algorithm " + sign + " not supported.", e);
-        }
-
-        assertNotNull(generator);
-        KeyPair keyPair = generator.generateKeyPair();
-
-        Date notBefore = new Date(System.currentTimeMillis() - 24 * 60 * 60 * 1000);
-        Date notAfter = new Date(System.currentTimeMillis() + 365L * 24 * 60 * 60 * 1000);
-
-        X500Name issuer = new X500Name(new X500Principal("cn=Myself").getName());
-
-        SubjectPublicKeyInfo publicKeyInfo;
-
-        if (keyPair.getPublic() instanceof RSAPublicKey) {
-            RSAPublicKey rsaPublicKey = (RSAPublicKey) keyPair.getPublic();
-            publicKeyInfo = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(
-                    new RSAKeyParameters(false, rsaPublicKey.getModulus(),
-                            rsaPublicKey.getPublicExponent()));
-        } else if (keyPair.getPublic() instanceof ECPublicKey) {
-            publicKeyInfo = SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded());
-        } else {
-            fail();
-            publicKeyInfo = null;
-        }
-
-        X509v1CertificateBuilder builder = new X509v1CertificateBuilder(issuer, BigInteger.ONE,
-                notBefore, notAfter, issuer, publicKeyInfo);
-
-        ContentSigner signer = new JcaContentSignerBuilder(full).setProvider(
-                new BouncyCastleProvider()).build(keyPair.getPrivate());
-        X509CertificateHolder holder = builder.build(signer);
-
-        JcaX509CertificateConverter converter = new JcaX509CertificateConverter()
-                .setProvider(new BouncyCastleProvider());
-
-        return Pair.of(keyPair.getPrivate(), converter.getCertificate(holder));
-    }
 
     @Test
     public void signEmptyJar() throws Exception {
@@ -125,7 +48,7 @@ public class JarSigningTest {
         ManifestGenerationExtension manifestExtension = new ManifestGenerationExtension("Me", "Me");
         manifestExtension.register(zf);
 
-        Pair<PrivateKey, X509Certificate> p = generateSignaturePre18();
+        Pair<PrivateKey, X509Certificate> p = SignatureTestUtils.generateSignaturePre18();
 
         SignatureExtension signatureExtension = new SignatureExtension(manifestExtension, 12,
                 p.getSecond(), p.getFirst());
@@ -152,7 +75,7 @@ public class JarSigningTest {
                 Charsets.US_ASCII)));
         zf1.close();
 
-        Pair<PrivateKey, X509Certificate> p = generateSignaturePre18();
+        Pair<PrivateKey, X509Certificate> p = SignatureTestUtils.generateSignaturePre18();
 
         ZFile zf2 = new ZFile(zipFile);
         ManifestGenerationExtension me = new ManifestGenerationExtension("Merry", "Christmas");
@@ -206,7 +129,7 @@ public class JarSigningTest {
                 Charsets.US_ASCII)));
         zf1.close();
 
-        Pair<PrivateKey, X509Certificate> p = generateSignaturePos18();
+        Pair<PrivateKey, X509Certificate> p = SignatureTestUtils.generateSignaturePos18();
 
         ZFile zf2 = new ZFile(zipFile);
         ManifestGenerationExtension me = new ManifestGenerationExtension("Merry", "Christmas");
@@ -240,7 +163,8 @@ public class JarSigningTest {
 
         byte[] manifestTextBytes = manifestEntry.read();
         byte[] manifestSha256Bytes = Hashing.sha256().hashBytes(manifestTextBytes).asBytes();
-        String manifestSha256 = new String(Base64.encodeBase64(manifestSha256Bytes), Charsets.US_ASCII);
+        String manifestSha256 = new String(Base64.encodeBase64(manifestSha256Bytes),
+                Charsets.US_ASCII);
 
         assertEquals(manifestSha256, signature.getMainAttributes().getValue(
                 "SHA-256-Digest-Manifest"));

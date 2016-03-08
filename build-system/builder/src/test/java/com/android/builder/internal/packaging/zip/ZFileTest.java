@@ -723,9 +723,11 @@ public class ZFileTest {
         File zipNoOffsetFile = new File(mTemporaryFolder.getRoot(), "a.zip");
         File zipWithOffsetFile = new File(mTemporaryFolder.getRoot(), "b.zip");
 
+        int offset = 31;
+
         ZFile zipNoOffset = new ZFile(zipNoOffsetFile);
         ZFile zipWithOffset = new ZFile(zipWithOffsetFile);
-        zipWithOffset.setExtraDirectoryOffset(31);
+        zipWithOffset.setExtraDirectoryOffset(offset);
 
         zipNoOffset.close();
         zipWithOffset.close();
@@ -733,7 +735,7 @@ public class ZFileTest {
         long zipNoOffsetSize = zipNoOffsetFile.length();
         long zipWithOffsetSize = zipWithOffsetFile.length();
 
-        assertEquals(zipNoOffsetSize + 31, zipWithOffsetSize);
+        assertEquals(zipNoOffsetSize + offset, zipWithOffsetSize);
 
         /*
          * EOCD with no comment has 22 bytes.
@@ -741,11 +743,11 @@ public class ZFileTest {
         assertEquals(0, zipNoOffset.getCentralDirectoryOffset());
         assertEquals(0, zipNoOffset.getCentralDirectorySize());
         assertEquals(0, zipNoOffset.getEocdOffset());
-        assertEquals(22, zipNoOffset.getEocdSize());
-        assertEquals(31, zipWithOffset.getCentralDirectoryOffset());
+        assertEquals(ZFileTestConstants.EOCD_SIZE, zipNoOffset.getEocdSize());
+        assertEquals(offset, zipWithOffset.getCentralDirectoryOffset());
         assertEquals(0, zipWithOffset.getCentralDirectorySize());
-        assertEquals(31, zipWithOffset.getEocdOffset());
-        assertEquals(22, zipWithOffset.getEocdSize());
+        assertEquals(offset, zipWithOffset.getEocdOffset());
+        assertEquals(ZFileTestConstants.EOCD_SIZE, zipWithOffset.getEocdSize());
 
         /*
          * The EOCDs should not differ up until the end of the Central Directory size and should
@@ -758,8 +760,8 @@ public class ZFileTest {
 
         byte[] noOffsetData1 = FileUtils.readSegment(zipNoOffsetFile, p1Start, p1Size);
         byte[] noOffsetData2 = FileUtils.readSegment(zipNoOffsetFile, p2Start, p2Size);
-        byte[] withOffsetData1 = FileUtils.readSegment(zipWithOffsetFile, 31, p1Size);
-        byte[] withOffsetData2 = FileUtils.readSegment(zipWithOffsetFile, 31 + p2Start, p2Size);
+        byte[] withOffsetData1 = FileUtils.readSegment(zipWithOffsetFile, offset, p1Size);
+        byte[] withOffsetData2 = FileUtils.readSegment(zipWithOffsetFile, offset + p2Start, p2Size);
 
         assertArrayEquals(noOffsetData1, withOffsetData1);
         assertArrayEquals(noOffsetData2, withOffsetData2);
@@ -793,26 +795,30 @@ public class ZFileTest {
          * Central directory entry has 46 bytes + name
          * EOCD with no comment has 22 bytes.
          */
-        assertEquals(30 + 1 + 2, zipNoOffset.getCentralDirectoryOffset());
+        assertEquals(ZFileTestConstants.LOCAL_HEADER_SIZE + 1 + 2,
+                zipNoOffset.getCentralDirectoryOffset());
         int cdSize = (int) zipNoOffset.getCentralDirectorySize();
-        assertEquals(46 + 1, cdSize);
-        assertEquals(30 + 1 + 2 + cdSize, zipNoOffset.getEocdOffset());
-        assertEquals(22, zipNoOffset.getEocdSize());
-        assertEquals(30 + 1 + 2 + 37, zipWithOffset.getCentralDirectoryOffset());
+        assertEquals(ZFileTestConstants.CENTRAL_DIRECTORY_ENTRY_SIZE + 1, cdSize);
+        assertEquals(ZFileTestConstants.LOCAL_HEADER_SIZE + 1 + 2 + cdSize,
+                zipNoOffset.getEocdOffset());
+        assertEquals(ZFileTestConstants.EOCD_SIZE, zipNoOffset.getEocdSize());
+        assertEquals(ZFileTestConstants.LOCAL_HEADER_SIZE + 1 + 2 + 37,
+                zipWithOffset.getCentralDirectoryOffset());
         assertEquals(cdSize, zipWithOffset.getCentralDirectorySize());
-        assertEquals(30 + 1 + 2 + 37 + cdSize, zipWithOffset.getEocdOffset());
-        assertEquals(22, zipWithOffset.getEocdSize());
+        assertEquals(ZFileTestConstants.LOCAL_HEADER_SIZE + 1 + 2 + 37 + cdSize,
+                zipWithOffset.getEocdOffset());
+        assertEquals(ZFileTestConstants.EOCD_SIZE, zipWithOffset.getEocdSize());
 
         /*
          * The files should be equal: until the end of the first entry, from the beginning of the
          * central directory until the offset field in the EOCD and after the offset field.
          */
         int p1Start = 0;
-        int p1Size = 30 + 1 + 2;
-        int p2Start = 30 + 1 + 2;
+        int p1Size = ZFileTestConstants.LOCAL_HEADER_SIZE + 1 + 2;
+        int p2Start = ZFileTestConstants.LOCAL_HEADER_SIZE + 1 + 2;
         int p2Size = cdSize + Eocd.F_CD_SIZE.endOffset();
         int p3Start = p2Start + cdSize + Eocd.F_CD_OFFSET.endOffset();
-        int p3Size = 22 - Eocd.F_CD_OFFSET.endOffset();
+        int p3Size = ZFileTestConstants.EOCD_SIZE - Eocd.F_CD_OFFSET.endOffset();
 
         byte[] noOffsetData1 = FileUtils.readSegment(zipNoOffsetFile, p1Start, p1Size);
         byte[] noOffsetData2 = FileUtils.readSegment(zipNoOffsetFile, p2Start, p2Size);
