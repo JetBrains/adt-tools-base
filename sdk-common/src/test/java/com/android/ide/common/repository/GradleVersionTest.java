@@ -88,6 +88,30 @@ public class GradleVersionTest {
     }
 
     @Test
+    public void testParseOneSegmentWithSnapshot_lowerCase() {
+        GradleVersion version = GradleVersion.parse("2-snapshot");
+        assertEquals(2, version.getMajor());
+        assertEquals(0, version.getMinor());
+        assertEquals(0, version.getMicro());
+        assertEquals(0, version.getPreview());
+        assertNull(version.getPreviewType());
+        assertTrue(version.isSnapshot());
+        assertEquals("2-snapshot", version.toString());
+    }
+
+    @Test
+    public void testParseOneSegmentWithDev() {
+        GradleVersion version = GradleVersion.parse("2-dev");
+        assertEquals(2, version.getMajor());
+        assertEquals(0, version.getMinor());
+        assertEquals(0, version.getMicro());
+        assertEquals(0, version.getPreview());
+        assertNull(version.getPreviewType());
+        assertTrue(version.isSnapshot());
+        assertEquals("2-dev", version.toString());
+    }
+
+    @Test
     public void testParseTwoSegments() {
         GradleVersion version = GradleVersion.parse("1.2");
         assertEquals(1, version.getMajor());
@@ -319,6 +343,11 @@ public class GradleVersionTest {
     @Test(expected = IllegalArgumentException.class)
     public void testInvalidVersion6() {
         GradleVersion.parse("1.2.3-1");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalidVersion7() {
+        GradleVersion.parse("1.2.3-develop");
     }
 
     @Test
