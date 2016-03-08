@@ -20,6 +20,9 @@ import static com.android.build.gradle.shrinker.AbstractShrinker.logTime;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.build.api.transform.SecondaryInput;
+import com.android.build.api.transform.Context;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.JarInput;
 import com.android.build.api.transform.QualifiedContent;
@@ -167,7 +170,7 @@ public class NewShrinkerTransform extends ProguardConfigurable {
 
         FullRunShrinker<String> shrinker =
                 new FullRunShrinker<String>(
-                        WaitableExecutor.useGlobalSharedThreadPool(),
+                        new WaitableExecutor<Void>(),
                         JavaSerializationShrinkerGraph.empty(incrementalDir),
                         platformJars,
                         shrinkerLogger);
@@ -243,7 +246,7 @@ public class NewShrinkerTransform extends ProguardConfigurable {
                 new ShrinkerLogger(config.getFlags().getDontWarnSpecs(), logger);
 
         IncrementalShrinker<String> shrinker =
-                new IncrementalShrinker<String>(WaitableExecutor.useGlobalSharedThreadPool(), graph, shrinkerLogger);
+                new IncrementalShrinker<String>(new WaitableExecutor<Void>(), graph, shrinkerLogger);
 
         try {
             shrinker.incrementalRun(inputs, output);

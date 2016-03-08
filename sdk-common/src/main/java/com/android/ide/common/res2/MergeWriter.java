@@ -35,7 +35,7 @@ public abstract class MergeWriter<I extends DataItem> implements MergeConsumer<I
 
     public MergeWriter(@NonNull File rootFolder) {
         mRootFolder = rootFolder;
-        mExecutor = WaitableExecutor.useGlobalSharedThreadPool();
+        mExecutor = new WaitableExecutor<Void>();
     }
 
     @Override

@@ -341,7 +341,7 @@ public class DexTransform extends Transform {
                     }
                 }
 
-                WaitableExecutor<Void> executor = WaitableExecutor.useGlobalSharedThreadPool();
+                WaitableExecutor<Void> executor = new WaitableExecutor<Void>();
 
                 for (Map.Entry<File, File> entry : inputFiles.entrySet()) {
                     Callable<Void> action = new PreDexTask(
