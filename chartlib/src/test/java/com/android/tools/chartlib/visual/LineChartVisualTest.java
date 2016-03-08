@@ -18,6 +18,7 @@ package com.android.tools.chartlib.visual;
 
 import com.android.annotations.NonNull;
 import com.android.tools.chartlib.AnimatedComponent;
+import com.android.tools.chartlib.AnimatedTimeRange;
 import com.android.tools.chartlib.Choreographer;
 import com.android.tools.chartlib.LineChart;
 import com.android.tools.chartlib.model.LineChartData;
@@ -26,6 +27,8 @@ import com.android.tools.chartlib.model.RangedSeries;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -41,6 +44,8 @@ public class LineChartVisualTest extends VisualTest {
     @NonNull
     private final LineChartData mData;
 
+    private final AnimatedTimeRange mAnimatedRange;
+
     public LineChartVisualTest(Choreographer choreographer) {
         mData = new LineChartData();
 
@@ -53,6 +58,10 @@ public class LineChartVisualTest extends VisualTest {
             mData.add(ranged);
         }
         mLineChart = new LineChart(mData);
+        mAnimatedRange = new AnimatedTimeRange(xRange);
+
+        // Set up the scene
+        choreographer.register(mAnimatedRange);
         choreographer.register(mLineChart);
     }
 
@@ -117,6 +126,13 @@ public class LineChartVisualTest extends VisualTest {
                 return variance.get();
             }
         }));
+        controls.add(VisualTests.createCheckbox("Shift xRange Min", new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent itemEvent) {
+                mAnimatedRange.setShift(itemEvent.getStateChange() == ItemEvent.SELECTED);
+            }
+        }));
+
         controls.add(
                 new Box.Filler(new Dimension(0, 0), new Dimension(300, Integer.MAX_VALUE),
                         new Dimension(300, Integer.MAX_VALUE)));
