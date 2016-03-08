@@ -18,6 +18,7 @@ package com.android.repository.impl.sources;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.repository.api.Downloader;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemoteListSourceProvider;
 import com.android.repository.api.RepoManager;
@@ -89,7 +90,7 @@ public class RemoteListSourceProviderTest extends TestCase {
         provider.getSources(downloader, null, progress, false);
         progress.assertNoErrorsOrWarnings();
 
-        downloader = new FakeDownloader(fop) {
+        Downloader failingDownloader = new Downloader() {
             @NonNull
             @Override
             public InputStream downloadAndStream(@NonNull URL url,
@@ -107,9 +108,16 @@ public class RemoteListSourceProviderTest extends TestCase {
                 fail("shouldn't be downloading again");
                 return null;
             }
+
+            @Override
+            public void downloadFully(@NonNull URL url,
+                    @Nullable SettingsController controller, @Nullable File target,
+                    @NonNull ProgressIndicator indicator) throws IOException {
+                fail("shouldn't be downloading again");
+            }
         };
 
-        List<RepositorySource> sources = provider.getSources(downloader, null, progress, false);
+        List<RepositorySource> sources = provider.getSources(failingDownloader, null, progress, false);
         progress.assertNoErrorsOrWarnings();
         RepositorySource source1 = sources.get(0);
         assertEquals("My Example Add-ons.", source1.getDisplayName());

@@ -19,9 +19,13 @@ package com.android.repository.impl.meta;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.api.Channel;
+import com.android.repository.api.Dependency;
 import com.android.repository.api.RemotePackage;
+import com.android.repository.api.RepoManager;
+import com.android.repository.api.RepoPackage;
 import com.android.repository.api.Repository;
 import com.android.repository.api.RepositorySource;
+import com.android.repository.impl.generated.v1.ArchivesType;
 import com.google.common.annotations.VisibleForTesting;
 
 import java.util.List;
@@ -65,6 +69,8 @@ public abstract class RemotePackageImpl extends RepoPackageImpl implements Remot
     @NonNull
     protected abstract Archives getArchives();
 
+    protected abstract void setArchives(@Nullable Archives archives);
+
     @Override
     @XmlTransient
     @NonNull
@@ -80,6 +86,57 @@ public abstract class RemotePackageImpl extends RepoPackageImpl implements Remot
     public Channel getChannel() {
         return getChannelRef() == null ? Channel.DEFAULT : getChannelRef().getRef();
     }
+
+    /**
+     * Convenience method to add a reference to the given channel to this package.
+     */
+    public void setChannel(@Nullable Channel c) {
+        RemotePackageImpl.ChannelRef cr = null;
+        if (c != null) {
+            cr = createFactory().createChannelRefType();
+            cr.setRef(c);
+        }
+        setChannelRef(cr);
+    }
+
+    public abstract void setChannelRef(ChannelRef cr);
+
+    /**
+     * Creates a {@link RemotePackageImpl} from an arbitrary {@link RemotePackage}. Useful if you
+     * have a {@link RepoPackage} of unknown concrete type and want to marshal it using JAXB.
+     * Note that only the compatible archive (if any) will be included.
+     */
+    @NonNull
+    public static RemotePackageImpl create(@NonNull RemotePackage p) {
+        CommonFactory f = (CommonFactory)RepoManager.getCommonModule().createLatestFactory();
+        RemotePackageImpl result = f.createRemotePackage();
+        result.setVersion(p.getVersion());
+        result.setLicense(p.getLicense());
+        result.setPath(p.getPath());
+        for (Dependency d : p.getAllDependencies()) {
+            result.addDependency(d);
+        }
+        result.setObsolete(p.obsolete());
+        result.setTypeDetails(p.getTypeDetails());
+        result.setDisplayName(p.getDisplayName());
+        result.setSource(p.getSource());
+        result.setChannel(p.getChannel());
+        Archive archive = p.getArchive();
+        if (archive != null) {
+            result.addArchive(archive);
+        }
+        return result;
+    }
+
+    public void addArchive(Archive archive) {
+        Archives archives = getArchives();
+        if (archives == null) {
+            archives = createFactory().createArchivesType();
+            setArchives(archives);
+        }
+        archives.getArchive().add(archive);
+    }
+
 
     @XmlTransient
     public abstract static class ChannelRef {

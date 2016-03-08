@@ -32,6 +32,22 @@ import com.android.repository.io.FileOpUtils;
  */
 public interface PackageInstaller {
 
+    enum InstallStatus {
+        /** This installer hasn't started yet */
+        NOT_STARTED,
+        /**
+         * This installer is in the process of preparing the component for install. No changes are
+         * made to the SDK during this phase.
+         */
+        PREPARING,
+        /** The steps that can be taken without affecting the installed SDK have completed. */
+        PREPARED,
+        /** The SDK is being modified. */
+        INSTALLING,
+        /** The installation has completed. */
+        COMPLETE
+    }
+
     /**
      * Uninstall the package.
      *
@@ -46,11 +62,10 @@ public interface PackageInstaller {
             @NonNull RepoManager manager, @NonNull FileOp fop);
 
     /**
-     * Installs the package.
+     * Completes the installation. This should include anything that actually affects the installed
+     * SDK or requires user interaction.
      *
      * @param p          The {@link RemotePackage} to install.
-     * @param downloader The {@link Downloader} used to download the archive.
-     * @param settings   The {@link SettingsController} to provide any settings needed.
      * @param progress   A {@link ProgressIndicator}, to show install progress and facilitate
      *                   logging.
      * @param manager    A {@link RepoManager} that knows about this package.
@@ -58,7 +73,46 @@ public interface PackageInstaller {
      *                   a unit test.
      * @return {@code true} if the install was successful, {@code false} otherwise.
      */
-    boolean install(@NonNull RemotePackage p, @NonNull Downloader downloader,
+    boolean completeInstall(@NonNull RemotePackage p, @NonNull ProgressIndicator progress,
+            @NonNull RepoManager manager, @NonNull FileOp fop);
+
+
+    /**
+     * Prepares the package for installation. This includes downloading, unzipping, and anything
+     * else that can be done without affecting the installed SDK or other state.
+     * @param p          The {@link RemotePackage} to install.
+     * @param downloader The {@link Downloader} used to download the archive.
+     * @param settings   The {@link SettingsController} to provide any settings needed.
+     * @param progress   A {@link ProgressIndicator}, to show install progress and facilitate
+     *                   logging.
+     * @param manager    A {@link RepoManager} that knows about this package.
+     * @param fop        The {@link FileOp} to use. Should be {@link FileOpUtils#create()} if not in
+     *
+     * @return
+     */
+    boolean prepareInstall(@NonNull RemotePackage p, @NonNull Downloader downloader,
             @Nullable SettingsController settings, @NonNull ProgressIndicator progress,
             @NonNull RepoManager manager, @NonNull FileOp fop);
+
+    /**
+     * Gets the current {@link InstallStatus} of this installer.
+     */
+    @NonNull
+    InstallStatus getInstallStatus();
+
+    /**
+     * Registers a listener that will be called when the {@link InstallStatus} of this installer
+     * changes.
+     */
+    void registerStateChangeListener(@NonNull StatusChangeListener listener);
+
+
+    /**
+     * A listener that will be called when the {@link #getInstallStatus() status} of this installer
+     * changes.
+     */
+    interface StatusChangeListener {
+        void statusChanged(@NonNull PackageInstaller installer);
+    }
 }
+

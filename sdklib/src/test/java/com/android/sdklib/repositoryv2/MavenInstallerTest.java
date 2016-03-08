@@ -19,8 +19,10 @@ package com.android.sdklib.repositoryv2;
 import com.android.repository.Revision;
 import com.android.repository.api.ConstantSourceProvider;
 import com.android.repository.api.LocalPackage;
+import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
 import com.android.repository.api.RepoManager.RepoLoadedCallback;
+import com.android.repository.impl.installer.PackageInstaller;
 import com.android.repository.impl.manager.RepoManagerImpl;
 import com.android.repository.impl.meta.RepositoryPackages;
 import com.android.repository.testframework.FakeDownloader;
@@ -85,16 +87,18 @@ public class MavenInstallerTest extends TestCase {
         RepositoryPackages pkgs = mgr.getPackages();
 
         // Install
-        new MavenInstaller().install(
-                pkgs.getRemotePackages().get("m2repository;com;android;group1;artifact1;1.2.3"),
-                downloader, new FakeSettingsController(false), runner.getProgressIndicator(), mgr,
-                fop);
+        PackageInstaller mavenInstaller = new MavenInstaller();
+        RemotePackage p = pkgs.getRemotePackages()
+                .get("m2repository;com;android;group1;artifact1;1.2.3");
+        mavenInstaller.prepareInstall(p, downloader, new FakeSettingsController(false),
+                runner.getProgressIndicator(), mgr, fop);
+        mavenInstaller.completeInstall(p, runner.getProgressIndicator(), mgr, fop);
         runner.getProgressIndicator().assertNoErrorsOrWarnings();
 
         File artifactRoot = new File(root, "m2repository/com/android/group1/artifact1");
         File mavenMetadata = new File(artifactRoot, "maven-metadata.xml");
-        MavenInstaller.MavenMetadata metadata = MavenInstaller
-                .unmarshalMetadata(mavenMetadata, runner.getProgressIndicator(), fop);
+        MavenInstaller.MavenMetadata metadata = MavenInstaller.unmarshalMetadata(
+                mavenMetadata, runner.getProgressIndicator(), fop);
 
         assertEquals("artifact1", metadata.artifactId);
         assertEquals("com.android.group1", metadata.groupId);
@@ -181,10 +185,12 @@ public class MavenInstallerTest extends TestCase {
         RepositoryPackages pkgs = mgr.getPackages();
 
         // Install
-        new MavenInstaller().install(
-                pkgs.getRemotePackages().get("m2repository;com;android;group1;artifact1;1.2.3"),
-                downloader, new FakeSettingsController(false), runner.getProgressIndicator(), mgr,
-                fop);
+        PackageInstaller mavenInstaller = new MavenInstaller();
+        RemotePackage remotePackage = pkgs.getRemotePackages()
+                .get("m2repository;com;android;group1;artifact1;1.2.3");
+        mavenInstaller.prepareInstall(remotePackage, downloader, new FakeSettingsController(false),
+                runner.getProgressIndicator(), mgr, fop);
+        mavenInstaller.completeInstall(remotePackage, runner.getProgressIndicator(), mgr, fop);
         runner.getProgressIndicator().assertNoErrorsOrWarnings();
 
         File artifactRoot = new File(root, "m2repository/com/android/group1/artifact1");
