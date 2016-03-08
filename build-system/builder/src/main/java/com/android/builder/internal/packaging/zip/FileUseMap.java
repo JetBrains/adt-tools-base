@@ -41,7 +41,8 @@ import java.util.TreeSet;
  */
 class FileUseMap {
     /**
-     * Size of the file according to the map.
+     * Size of the file according to the map. This should always match the last entry in
+     * {@code #mMap}.
      */
     private long mSize;
 
@@ -320,11 +321,11 @@ class FileUseMap {
         FileUseMapEntry<?> last = mMap.last();
         Verify.verifyNotNull(last, "last == null");
         if (last.isFree()) {
-            internalRemove(last);
             return last.getStart();
+        } else {
+            Verify.verify(last.getEnd() == mSize);
+            return mSize;
         }
-
-        return mSize;
     }
 
     /**
