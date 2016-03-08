@@ -53,12 +53,11 @@ public class JackJava8Test {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 "android {\n"
+                        + "    compileSdkVersion \"android-N\"\n"
                         + "    defaultConfig {\n"
-                        + "        useJack = true\n"
-                        + "    }\n"
-                        + "    compileOptions {\n"
-                        + "        sourceCompatibility \"1.8\"\n"
-                        + "        targetCompatibility \"1.8\"\n"
+                        + "        jackOptions {\n"
+                        + "            enabled true\n"
+                        + "        }\n"
                         + "    }\n"
                         + "}\n");
 
@@ -109,6 +108,20 @@ public class JackJava8Test {
 
     @Test
     public void java8FeaturesSanityTest() throws IOException {
+        project.execute("assembleDebug");
+    }
+
+    @Test
+    public void java8FeaturesSanityTest_explicitVersion() throws IOException {
+        TestFileUtils.appendToFile(
+                project.getBuildFile(),
+                "android {\n"
+                        + "    compileOptions {\n"
+                        + "        sourceCompatibility '1.8'\n"
+                        + "        targetCompatibility '1.8'\n"
+                        + "    }\n"
+                        + "}\n");
+
         project.execute("assembleDebug");
     }
 
