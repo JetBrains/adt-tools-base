@@ -226,7 +226,7 @@ public class AidlCompile extends IncrementalTask {
                 new LoggedProcessOutputHandler(getILogger());
 
         // use an executor to parallelize the compilation of multiple files.
-        WaitableExecutor<Void> executor = WaitableExecutor.useGlobalSharedThreadPool();
+        WaitableExecutor<Void> executor = new WaitableExecutor<Void>();
 
         Map<String,DependencyData> mainFileMap = store.getMainFileMap();
 
