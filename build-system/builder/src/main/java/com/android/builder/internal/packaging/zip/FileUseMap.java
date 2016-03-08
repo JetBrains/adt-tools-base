@@ -24,6 +24,7 @@ import com.google.common.collect.Sets;
 
 import java.util.List;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeSet;
 
 /**
@@ -53,6 +54,13 @@ class FileUseMap {
     private TreeSet<FileUseMapEntry<?>> mMap;
 
     /**
+     * Tree with all free blocks ordered by size. This is essentially a view over {@link #mMap}
+     * containing only the free blocks, but in a different order.
+     */
+    @NonNull
+    private TreeSet<FileUseMapEntry<?>> mFree;
+
+    /**
      * Creates a new, empty file map.
      *
      * @param size the size of the file
@@ -62,14 +70,42 @@ class FileUseMap {
 
         mSize = size;
         mMap = new TreeSet<FileUseMapEntry<?>>(FileUseMapEntry.COMPARE_BY_START);
+        mFree = new TreeSet<FileUseMapEntry<?>>(FileUseMapEntry.COMPARE_BY_SIZE);
 
         if (size > 0) {
-            mMap.add(FileUseMapEntry.makeFree(0, size));
+            internalAdd(FileUseMapEntry.makeFree(0, size));
         }
     }
 
     /**
-     * Adds a new file to the map. The interval specified by <em>entry</em> must fit inside an
+     * Adds an entry to the internal structures.
+     *
+     * @param entry the entry to add
+     */
+    private void internalAdd(@NonNull FileUseMapEntry<?> entry) {
+        mMap.add(entry);
+
+        if (entry.isFree()) {
+            mFree.add(entry);
+        }
+    }
+
+    /**
+     * Removes an entry from the internal structures.
+     *
+     * @param entry the entry to remove
+     */
+    private void internalRemove(@NonNull FileUseMapEntry<?> entry) {
+        boolean wasRemoved = mMap.remove(entry);
+        Preconditions.checkState(wasRemoved, "entry not in mMap");
+
+        if (entry.isFree()) {
+            mFree.remove(entry);
+        }
+    }
+
+    /**
+     * Adds a new file to the map. The interval specified by {@code entry} must fit inside an
      * empty entry in the map. That entry will be replaced by entry and additional free entries
      * will be added before and after if needed to make sure no spaces exist on the map.
      *
@@ -80,12 +116,14 @@ class FileUseMap {
         Preconditions.checkArgument(entry.getEnd() <= mSize, "entry.getEnd() > mSize");
         Preconditions.checkArgument(!entry.isFree(), "entry.isFree()");
 
-        FileUseMapEntry container = findContainer(entry);
+        FileUseMapEntry<?> container = findContainer(entry);
         Verify.verify(container.isFree(), "!container.isFree()");
 
         Set<FileUseMapEntry<?>> replacements = split(container, entry);
-        mMap.remove(container);
-        mMap.addAll(replacements);
+        internalRemove(container);
+        for (FileUseMapEntry<?> r : replacements) {
+            internalAdd(r);
+        }
     }
 
     /**
@@ -96,22 +134,22 @@ class FileUseMap {
      */
     void remove(@NonNull FileUseMapEntry<?> entry) {
         Preconditions.checkState(mMap.contains(entry), "!mMap.contains(entry)");
+        Preconditions.checkArgument(!entry.isFree(), "entry.isFree()");
 
-        mMap.remove(entry);
-        entry = FileUseMapEntry.makeFree(entry.getStart(), entry.getEnd());
-        mMap.add(entry);
-        coalesce(entry);
+        internalRemove(entry);
+
+        FileUseMapEntry<?> replacement = FileUseMapEntry.makeFree(entry.getStart(), entry.getEnd());
+        internalAdd(replacement);
+        coalesce(replacement);
     }
 
     /**
-     * Adds a new file to the map. The interval specified by (<em>start</em>,<em>end</em>) must fit
+     * Adds a new file to the map. The interval specified by ({@code start}, {@code end}) must fit
      * inside an empty entry in the map. That entry will be replaced by entry and additional free
      * entries will be added before and after if needed to make sure no spaces exist on the map.
-     * <p>
-     * The entry cannot extend beyong the end of the map. If necessary, extend the map using
+     *
+     * <p>The entry cannot extend beyong the end of the map. If necessary, extend the map using
      * {@link #extend(long)}.
-     * <p>
-     * It is assumed that (<em>start</em>,<em>end</em>) will fall in an empty block in the map.
      *
      * @param start the start of this entry
      * @param end the end of the entry
@@ -122,7 +160,6 @@ class FileUseMap {
     <T> FileUseMapEntry<T> add(long start, long end, @NonNull T store) {
         Preconditions.checkArgument(start >= 0, "start < 0");
         Preconditions.checkArgument(end > start, "end < start");
-        Preconditions.checkArgument(store != null, "store != null");
 
         FileUseMapEntry<T> entry = FileUseMapEntry.makeUsed(start, end, store);
         add(entry);
@@ -150,10 +187,10 @@ class FileUseMap {
      * entry if needed.
      *
      * @param container the container entry, a free entry that is in {@link #mMap} that that
-     * encloses <em>entry</em>
-     * @param entry the entry that will be used to split <em>container</em>
-     * @return a set of non-overlapping entries that completely covers <em>container</em> and that
-     * includes <em>entry</em>
+     * encloses {@code entry}
+     * @param entry the entry that will be used to split {@code container}
+     * @return a set of non-overlapping entries that completely covers {@code container} and that
+     * includes {@code entry}
      */
     @NonNull
     private static Set<FileUseMapEntry<?>> split(@NonNull FileUseMapEntry<?> container,
@@ -185,11 +222,13 @@ class FileUseMap {
 
     /**
      * Coalesces a free entry replacing it and neighboring free entries with a single, larger
-     * entry. This method does nothing if <em>entry</em> does not have free neighbors.
+     * entry. This method does nothing if {@code entry} does not have free neighbors.
      *
      * @param entry the free entry to coalesce with neighbors
      */
     private void coalesce(@NonNull FileUseMapEntry<?> entry) {
+        Preconditions.checkArgument(entry.isFree(), "!entry.isFree()");
+
         FileUseMapEntry<?> prevToMerge = null;
         long start = entry.getStart();
         if (start > 0) {
@@ -223,17 +262,17 @@ class FileUseMap {
         long newStart = start;
         if (prevToMerge != null) {
             newStart = prevToMerge.getStart();
-            mMap.remove(prevToMerge);
+            internalRemove(prevToMerge);
         }
 
         long newEnd = end;
         if (nextToMerge != null) {
             newEnd = nextToMerge.getEnd();
-            mMap.remove(nextToMerge);
+            internalRemove(nextToMerge);
         }
 
-        mMap.remove(entry);
-        mMap.add(FileUseMapEntry.makeFree(newStart, newEnd));
+        internalRemove(entry);
+        internalAdd(FileUseMapEntry.makeFree(newStart, newEnd));
     }
 
     /**
@@ -250,7 +289,7 @@ class FileUseMap {
         FileUseMapEntry<?> last = mMap.last();
         Verify.verifyNotNull(last, "last == null");
         if (last.isFree()) {
-            mMap.remove(last);
+            internalRemove(last);
             mSize = last.getStart();
         }
     }
@@ -281,7 +320,7 @@ class FileUseMap {
         FileUseMapEntry<?> last = mMap.last();
         Verify.verifyNotNull(last, "last == null");
         if (last.isFree()) {
-            mMap.remove(last);
+            internalRemove(last);
             return last.getStart();
         }
 
@@ -289,8 +328,8 @@ class FileUseMap {
     }
 
     /**
-     * Extends the map to guarantee it has at least <em>size</em> bytes. If the current size is
-     * as large as <em>size</em>, this method does nothing.
+     * Extends the map to guarantee it has at least {@code size} bytes. If the current size is
+     * as large as {@code size}, this method does nothing.
      *
      * @param size the new size of the map that cannot be smaller that the current size
      */
@@ -302,7 +341,7 @@ class FileUseMap {
         }
 
         FileUseMapEntry<?> newBlock = FileUseMapEntry.makeFree(mSize, size);
-        mMap.add(newBlock);
+        internalAdd(newBlock);
 
         mSize = size;
 
@@ -310,7 +349,7 @@ class FileUseMap {
     }
 
     /**
-     * Locates a free area in the map with at least <em>size</em> bytes such that
+     * Locates a free area in the map with at least {@code size} bytes such that
      * {@code ((start + alignOffset) % align == 0}. This method will try a
      * best-fit algorithm. If no free contiguous block exists in the map that can hold the provided
      * size then the first free index at the end of the map is provided. This means that the map
@@ -324,9 +363,12 @@ class FileUseMap {
     long locateFree(long size, long alignOffset, long align) {
         Preconditions.checkArgument(size > 0, "size <= 0");
 
+        FileUseMapEntry<?> minimumSizedEntry = FileUseMapEntry.makeFree(0, size);
+        SortedSet<FileUseMapEntry<?>> matches = mFree.tailSet(minimumSizedEntry);
+
         FileUseMapEntry<?> best = null;
         long bestExtraSize = 0;
-        for (FileUseMapEntry<?> curr : mMap) {
+        for (FileUseMapEntry<?> curr : matches) {
             /*
              * We don't care about blocks that aren't free.
              */
@@ -338,7 +380,12 @@ class FileUseMap {
              * Compute any extra size we need in this block to make sure we verify the alignment.
              * There must be a better to do this...
              */
-            long extraSize = (align - ((curr.getStart() + alignOffset) % align)) % align;
+            long extraSize;
+            if (align == 0) {
+                extraSize = 0;
+            } else {
+                extraSize = (align - ((curr.getStart() + alignOffset) % align)) % align;
+            }
 
             /*
              * We don't care about blocks where we don't fit in.

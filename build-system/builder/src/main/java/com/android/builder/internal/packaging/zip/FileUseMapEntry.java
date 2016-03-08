@@ -48,6 +48,17 @@ class FileUseMapEntry<T> {
     };
 
     /**
+     * Comparator that compares entries by their size.
+     */
+    public static final Comparator<FileUseMapEntry<?>> COMPARE_BY_SIZE =
+            new Comparator<FileUseMapEntry<?>>() {
+                @Override
+                public int compare(@NonNull FileUseMapEntry<?> o1, @NonNull FileUseMapEntry<?> o2) {
+                    return Ints.checkedCast(o1.getSize() - o2.getSize());
+                }
+            };
+
+    /**
      * The first byte in the entry.
      */
     private final long mStart;
