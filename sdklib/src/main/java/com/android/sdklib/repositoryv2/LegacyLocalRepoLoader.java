@@ -111,9 +111,8 @@ public class LegacyLocalRepoLoader implements FallbackLocalRepoLoader {
         }
 
         info = mPkgs.get(dir);
-        if (info == null || info.getDesc().getType().equals(PkgType.PKG_SAMPLE)) {
-            // If we had a source.properties in a nonstandard place, or we have a sample package,
-            // don't include it.
+        if (info == null) {
+            // If we had a source.properties in a nonstandard place, don't include it.
             return null;
         }
 
@@ -215,7 +214,8 @@ public class LegacyLocalRepoLoader implements FallbackLocalRepoLoader {
 
         @Override
         public boolean obsolete() {
-            return mWrapped.getDesc().isObsolete();
+            return mWrapped.getDesc().isObsolete() ||
+                   mWrapped.getDesc().getType() == PkgType.PKG_SAMPLE;
         }
 
         @Override
