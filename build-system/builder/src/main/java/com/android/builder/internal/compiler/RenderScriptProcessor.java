@@ -314,7 +314,7 @@ public class RenderScriptProcessor {
         FileGatherer fileGatherer = new FileGatherer();
         searcher.search(fileGatherer);
 
-        WaitableExecutor<Void> mExecutor  = WaitableExecutor.useGlobalSharedThreadPool();
+        WaitableExecutor<Void> mExecutor  = new WaitableExecutor<Void>();
 
         for (final File bcFile : fileGatherer.getFiles()) {
             String name = bcFile.getName();
