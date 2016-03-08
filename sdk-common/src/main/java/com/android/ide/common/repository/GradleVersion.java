@@ -127,9 +127,7 @@ public class GradleVersion implements Comparable<GradleVersion>, Serializable {
                 boolean snapshot = false;
 
                 if (qualifiers != null) {
-                    Pattern snapshotPattern =
-                            Pattern.compile("(snapshot|dev)", Pattern.CASE_INSENSITIVE);
-                    if (snapshotPattern.matcher(qualifiers).matches()) {
+                    if (isSnapshotQualifier(qualifiers)) {
                         snapshot = true;
                         qualifiers = null;
                     }
@@ -138,7 +136,7 @@ public class GradleVersion implements Comparable<GradleVersion>, Serializable {
                         int lastDashIndex = qualifiers.lastIndexOf(dash);
                         if (lastDashIndex != -1) {
                             String mayBeSnapshot = qualifiers.substring(lastDashIndex + 1);
-                            if (snapshotPattern.matcher(mayBeSnapshot).matches()) {
+                            if (isSnapshotQualifier(mayBeSnapshot)) {
                                 snapshot = true;
                                 qualifiers = qualifiers.substring(0, lastDashIndex);
                             }
@@ -190,6 +188,10 @@ public class GradleVersion implements Comparable<GradleVersion>, Serializable {
             return segments;
         }
         return Collections.singletonList(new VersionSegment(text));
+    }
+
+    private static boolean isSnapshotQualifier(@NonNull String value) {
+        return "SNAPSHOT".equalsIgnoreCase(value) || "dev".equalsIgnoreCase(value);
     }
 
     @NonNull
