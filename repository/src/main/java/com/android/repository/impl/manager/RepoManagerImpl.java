@@ -32,6 +32,7 @@ import com.android.repository.api.RepositorySource;
 import com.android.repository.api.RepositorySourceProvider;
 import com.android.repository.api.SchemaModule;
 import com.android.repository.api.SettingsController;
+import com.android.repository.impl.installer.PackageInstaller;
 import com.android.repository.impl.meta.RepositoryPackages;
 import com.android.repository.impl.meta.SchemaModuleUtil;
 import com.android.repository.io.FileOp;
@@ -39,11 +40,13 @@ import com.android.repository.io.impl.FileOpImpl;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import org.w3c.dom.ls.LSResourceResolver;
 
 import java.io.File;
+import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -375,6 +378,24 @@ public class RepoManagerImpl extends RepoManager {
     @Override
     public void registerRemoteChangeListener(@NonNull RepoLoadedCallback listener) {
         mRemoteListeners.add(listener);
+    }
+
+    private final Map<RemotePackage, PackageInstaller> mInProgressInstalls = Maps.newHashMap();
+
+    @Override
+    public void installBeginning(@NonNull RemotePackage remotePackage, @NonNull PackageInstaller installer) {
+        mInProgressInstalls.put(remotePackage, installer);
+    }
+
+    @Override
+    public void installEnded(@NonNull RemotePackage remotePackage) {
+        mInProgressInstalls.remove(remotePackage);
+    }
+
+    @Nullable
+    @Override
+    public PackageInstaller getInProgressInstaller(@NonNull RemotePackage remotePackage) {
+        return mInProgressInstalls.get(remotePackage);
     }
 
     /**

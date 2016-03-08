@@ -467,7 +467,8 @@ public class MockFileOp implements FileOp {
 
     @Override
     public long length(@NonNull File file) {
-        throw new UnsupportedOperationException("MockFileUtils.length is not supported.");
+        byte[] content = mExistingFiles.get(file.getPath()).getContent();
+        return content == null ? 0 : content.length;
     }
 
     @Override
@@ -687,6 +688,7 @@ public class MockFileOp implements FileOp {
             if (content != null) {
                 return new ByteArrayInputStream(content);
             }
+            return new ByteArrayInputStream(new byte[0]);
         }
         throw new FileNotFoundException("Mock file has no content: " + getAgnosticAbsPath(file));
     }

@@ -40,19 +40,19 @@ public class FakeDownloader implements Downloader {
 
     private final MockFileOp mFileOp;
 
+    private final Map<URL, byte[]> mRegisteredFiles = Maps.newHashMap();
+
     public FakeDownloader(MockFileOp fop) {
         mFileOp = fop;
     }
 
     public void registerUrl(URL url, byte[] data) {
-        String filename = getFileName(url);
-        mFileOp.recordExistingFile(filename, data);
+        mRegisteredFiles.put(url, data);
     }
 
     public void registerUrl(URL url, InputStream content) throws IOException {
         byte[] data = ByteStreams.toByteArray(content);
-        String filename = getFileName(url);
-        mFileOp.recordExistingFile(filename, data);
+        mRegisteredFiles.put(url, data);
     }
 
     @NonNull
@@ -64,24 +64,27 @@ public class FakeDownloader implements Downloader {
     @NonNull
     public InputStream downloadAndStream(@NonNull URL url, @Nullable SettingsController controller,
                                          @NonNull ProgressIndicator indicator) throws IOException {
-        InputStream toWrap = null;
-        try {
-            toWrap = mFileOp.newFileInputStream(new File(getFileName(url)));
+        byte[] content = mRegisteredFiles.get(url);
+        if (content == null) {
+            throw new IOException("no content at " + url);
         }
-        catch (Exception e) {
-            // nothing
-        }
-        if (toWrap != null) {
-            return new ReopeningInputStream(toWrap);
-        }
-        throw new IOException("Failed to open " + url);
+        InputStream toWrap = new ByteArrayInputStream(content);
+        return new ReopeningInputStream(toWrap);
     }
 
     @Nullable
     @Override
     public File downloadFully(@NonNull URL url, @Nullable SettingsController settings,
             @NonNull ProgressIndicator indicator) throws IOException {
-        return new File(getFileName(url));
+        String filename = getFileName(url);
+        mFileOp.recordExistingFile(filename, mRegisteredFiles.get(url));
+        return new File(filename);
+    }
+
+    @Override
+    public void downloadFully(@NonNull URL url, @Nullable SettingsController settings,
+            @NonNull File target, @NonNull ProgressIndicator indicator) throws IOException {
+        mFileOp.recordExistingFile(target.getPath(), mRegisteredFiles.get(url));
     }
 
     /**

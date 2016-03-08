@@ -921,7 +921,7 @@ public class AvdManager {
             if (skinFolder != null) {
                 // skin does not exist!
                 if (!mFop.exists(skinFolder)) {
-                    log.error(null, "Skin '%1$s' does not exist.", skinName);
+                    log.error(null, "Skin '%1$s' does not exist at %2$s.", skinName, skinFolder.getPath());
                     return null;
                 }
 

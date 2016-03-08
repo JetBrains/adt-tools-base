@@ -25,6 +25,7 @@ import com.android.repository.api.LocalPackage;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
+import com.android.repository.api.RepoPackage;
 import com.android.repository.api.Repository;
 import com.android.repository.api.RepositorySource;
 import com.android.repository.api.UpdatablePackage;
@@ -33,6 +34,7 @@ import com.android.repository.impl.manager.LocalRepoLoader;
 import com.android.repository.impl.meta.Archive;
 import com.android.repository.impl.meta.CommonFactory;
 import com.android.repository.impl.meta.LocalPackageImpl;
+import com.android.repository.impl.meta.RemotePackageImpl;
 import com.android.repository.impl.meta.RepositoryPackages;
 import com.android.repository.impl.meta.RevisionType;
 import com.android.repository.impl.meta.SchemaModuleUtil;
@@ -61,11 +63,18 @@ import java.util.Queue;
 import java.util.Set;
 
 import javax.xml.bind.JAXBElement;
+import javax.xml.bind.JAXBException;
 
 /**
  * Utility methods for {@link PackageInstaller} implementations.
  */
 public class InstallerUtil {
+
+    /**
+     * The name of the package metadata file for a package in the process of being installed.
+     */
+    public static final String PENDING_PACKAGE_XML_FN = "package.xml.pending";
+    public static final String INSTALLER_DIR_FN = ".installer";
 
     /**
      * Unzips the given zipped input stream into the given directory.
@@ -123,6 +132,9 @@ public class InstallerUtil {
                         fraction += ((double) entry.getCompressedSize() / expectedSize) *
                                 ((double) size / entry.getSize());
                         progress.setFraction(fraction);
+                        if (progress.isCanceled()) {
+                            return;
+                        }
                     }
                 } finally {
                     bos.close();
@@ -134,11 +146,46 @@ public class InstallerUtil {
                     if ((mode & 0111) != 0) {
                         try {
                             fop.setExecutablePermission(entryFile);
-                        } catch (IOException ignore) {}
+                        } catch (IOException ignore) {
+                        }
                     }
                 }
             }
         }
+    }
+
+    public static void writePendingPackageXml(@NonNull RemotePackage p, @NonNull File packageRoot,
+            @NonNull RepoManager manager, @NonNull FileOp fop, @NonNull ProgressIndicator progress)
+            throws IOException {
+        if (!fop.exists(packageRoot) || !fop.isDirectory(packageRoot)) {
+            throw new IllegalArgumentException("packageRoot must exist and be a directory.");
+        }
+        CommonFactory factory = (CommonFactory) manager.getCommonModule().createLatestFactory();
+        // Create the package.xml
+        Repository repo = factory.createRepositoryType();
+        RemotePackageImpl toWrite = RemotePackageImpl.create(p);
+        repo.addChannel(p.getChannel());
+        repo.getRemotePackage().add(toWrite);
+        File packageXml = new File(new File(packageRoot, INSTALLER_DIR_FN), PENDING_PACKAGE_XML_FN);
+        writeRepoXml(p, manager, repo, packageXml, fop, progress);
+    }
+
+    @Nullable
+    public static RemotePackage readPendingPackageXml(@NonNull RemotePackage p,
+            @NonNull RepoManager manager, @NonNull FileOp fop,
+            @NonNull ProgressIndicator progress) throws IOException {
+        File path = getInstallPath(p, manager, progress);
+        Repository repo;
+        try {
+            repo = (Repository) SchemaModuleUtil.unmarshal(
+                    fop.newFileInputStream(
+                            new File(new File(path, INSTALLER_DIR_FN), PENDING_PACKAGE_XML_FN)),
+                    manager.getSchemaModules(), manager.getResourceResolver(progress), false,
+                    progress);
+        } catch (JAXBException e) {
+            throw new IOException("Failed to parse pending package xml", e);
+        }
+        return repo.getRemotePackage().get(0);
     }
 
     /**
@@ -163,11 +210,17 @@ public class InstallerUtil {
         Repository repo = factory.createRepositoryType();
         LocalPackageImpl impl = LocalPackageImpl.create(p);
         repo.setLocalPackage(impl);
+        File packageXml = new File(packageRoot, LocalRepoLoader.PACKAGE_XML_FN);
+        writeRepoXml(p, manager, repo, packageXml, fop, progress);
+    }
+
+    public static void writeRepoXml(@NonNull RemotePackage p, @NonNull RepoManager manager,
+            @NonNull Repository repo, @NonNull File packageXml, @NonNull FileOp fop,
+            @NonNull ProgressIndicator progress) throws IOException {
         License l = p.getLicense();
         if (l != null) {
             repo.addLicense(l);
         }
-        File packageXml = new File(packageRoot, LocalRepoLoader.PACKAGE_XML_FN);
         OutputStream fos = fop.newFileOutputStream(packageXml);
         JAXBElement<Repository> element = ((CommonFactory) RepoManager.getCommonModule()
                 .createLatestFactory()).generateRepository(repo);
@@ -225,9 +278,9 @@ public class InstallerUtil {
 
     /**
      * Compute the complete list of packages that need to be installed to meet the dependencies of
-     * the given list (including the requested packages themselves, if they are not already installed).
-     * Returns {@code null} if we were unable to compute a complete list of dependencies due to not
-     * being able to find required packages of the specified version.
+     * the given list (including the requested packages themselves, if they are not already
+     * installed). Returns {@code null} if we were unable to compute a complete list of dependencies
+     * due to not being able to find required packages of the specified version.
      *
      * Packages are returned in install order (that is, if we request A which depends on B, the
      * result will be [B, A]). If a dependency cycle is encountered the order of the returned
@@ -332,9 +385,8 @@ public class InstallerUtil {
 
     /**
      * Checks to see whether {@code path} is a valid install path. Specifically, checks whether
-     * there are any existing packages installed in parents or children of {@code path}.
-     * Returns {@code true} if the path is valid. Otherwise returns {@code false} and logs a
-     * warning.
+     * there are any existing packages installed in parents or children of {@code path}. Returns
+     * {@code true} if the path is valid. Otherwise returns {@code false} and logs a warning.
      */
     public static boolean checkValidPath(@NonNull File path, @NonNull RepoManager manager,
             @NonNull ProgressIndicator progress) {
@@ -362,12 +414,23 @@ public class InstallerUtil {
                     }
                 }
             }
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             progress.logWarning("Error while trying to check install path validity", e);
             return false;
         }
 
         return true;
+    }
+
+    @NonNull
+    public static File getInstallPath(@NonNull RemotePackage p, @NonNull RepoManager manager,
+            @NonNull ProgressIndicator progress) throws IOException {
+        String path = p.getPath();
+        path = path.replace(RepoPackage.PATH_SEPARATOR, File.separatorChar);
+        File dest = new File(manager.getLocalPath(), path);
+        if (!InstallerUtil.checkValidPath(dest, manager, progress)) {
+            throw new IOException("Invalid install path");
+        }
+        return dest;
     }
 }

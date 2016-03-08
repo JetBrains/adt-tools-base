@@ -54,4 +54,15 @@ public interface Downloader {
     @Nullable
     File downloadFully(@NonNull URL url, @Nullable SettingsController settings,
             @NonNull ProgressIndicator indicator) throws IOException;
+
+    /**
+     * Downloads the content at the given URL to the given file.
+     *
+     * @param url       The URL to fetch.
+     * @param settings  Settings (e.g. proxy configuration) for the connection.
+     * @param target    The location to download to.
+     * @param indicator Facility for showing download progress and logging.
+     */
+    void downloadFully(@NonNull URL url, @Nullable SettingsController settings,
+            @NonNull File target, @NonNull ProgressIndicator indicator) throws IOException;
 }
