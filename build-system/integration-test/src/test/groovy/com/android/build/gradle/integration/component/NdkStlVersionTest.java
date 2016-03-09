@@ -1,6 +1,7 @@
 package com.android.build.gradle.integration.component;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+import static javax.swing.text.html.HTML.Tag.HEAD;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp;
@@ -45,7 +46,10 @@ public class NdkStlVersionTest {
     @Test
     public void checkDefaultStlVersion() {
         project.execute("clean", "assembleDebug");
-        File cppOptions = project.file("build/tmp/compileHello-jniX86DebugSharedLibraryHello-jniMainCpp/options.txt");
+        File cppOptions =
+                project.file(
+                        "build/tmp/compileHello-jniX86DebugSharedLibraryHello-jniX86DebugSharedLibraryMainCpp/"
+                                + "options.txt");
         assertThat(cppOptions).containsAllOf("gnu-libstdc++/4.9/");
     }
 
@@ -61,7 +65,7 @@ public class NdkStlVersionTest {
                         + "    }\n"
                         + "}\n");
         project.execute("clean", "assembleDebug");
-        File cppOptions = project.file("build/tmp/compileHello-jniX86DebugSharedLibraryHello-jniMainCpp/options.txt");
+        File cppOptions = project.file("build/tmp/compileHello-jniX86DebugSharedLibraryHello-jniX86DebugSharedLibraryMainCpp/options.txt");
         assertThat(cppOptions).containsAllOf("gnu-libstdc++/4.8/");
     }
 }

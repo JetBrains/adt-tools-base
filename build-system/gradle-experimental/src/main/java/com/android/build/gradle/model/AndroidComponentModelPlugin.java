@@ -50,13 +50,9 @@ import org.gradle.model.Mutate;
 import org.gradle.model.Path;
 import org.gradle.model.RuleSource;
 import org.gradle.platform.base.BinarySpec;
-import org.gradle.platform.base.BinaryType;
-import org.gradle.platform.base.BinaryTypeBuilder;
 import org.gradle.platform.base.ComponentBinaries;
 import org.gradle.platform.base.ComponentType;
-import org.gradle.platform.base.ComponentTypeBuilder;
-import org.gradle.platform.base.LanguageType;
-import org.gradle.platform.base.LanguageTypeBuilder;
+import org.gradle.platform.base.TypeBuilder;
 import org.gradle.tooling.BuildException;
 import org.gradle.tooling.UnsupportedVersionException;
 
@@ -75,7 +71,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
      */
     public static final String COMPONENT_NAME = "android";
 
-    public static final String GRADLE_ACCEPTABLE_VERSION = "2.11";
+    public static final String GRADLE_ACCEPTABLE_VERSION = "2.14";
 
     private static final String GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY =
             "com.android.build.gradle.overrideVersionCheck";
@@ -131,19 +127,6 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
 
     public static class Rules extends RuleSource {
 
-        @LanguageType
-        public static void registerAndroidLanguageSourceSet(
-                LanguageTypeBuilder<AndroidLanguageSourceSet> builder) {
-            builder.setLanguageName("android");
-            builder.defaultImplementation(DefaultAndroidLanguageSourceSet.class);
-        }
-
-        @LanguageType
-        public static void registerJniLibsSourceSet(LanguageTypeBuilder<JniLibsSourceSet> builder) {
-            builder.setLanguageName("jniLibs");
-            builder.defaultImplementation(DefaultJniLibsSourceSet.class);
-        }
-
         /**
          * Create "android" model block.
          */
@@ -196,7 +179,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         }
 
         @ComponentType
-        public static void defineComponentType(ComponentTypeBuilder<AndroidComponentSpec> builder) {
+        public static void defineComponentType(TypeBuilder<AndroidComponentSpec> builder) {
             builder.defaultImplementation(DefaultAndroidComponentSpec.class);
             builder.internalView(AndroidComponentSpecInternal.class);
         }
@@ -256,8 +239,8 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
 
         }
 
-        @BinaryType
-        public static void defineBinaryType(BinaryTypeBuilder<AndroidBinary> builder) {
+        @ComponentType
+        public static void defineBinaryType(TypeBuilder<AndroidBinary> builder) {
             builder.defaultImplementation(DefaultAndroidBinary.class);
             builder.internalView(AndroidBinaryInternal.class);
         }

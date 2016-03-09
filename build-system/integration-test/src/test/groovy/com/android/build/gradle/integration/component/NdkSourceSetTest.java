@@ -83,7 +83,7 @@ public class NdkSourceSetTest {
         project.execute("clean", "assembleDebug");
         Optional<File> obj =
                 FileUtils.find(
-                        project.file("build/intermediates/objectFiles/x86DebugSharedLibrary/hello-jniMainC"),
+                        project.file("build/intermediates/objectFiles/hello-jniX86DebugSharedLibraryMainC"),
                         "hello-jni.o");
         assertThat(obj.isPresent()).isTrue();
     }
@@ -113,7 +113,7 @@ public class NdkSourceSetTest {
         project.execute("clean", "assembleDebug");
         Optional<File> obj =
                 FileUtils.find(
-                        project.file("build/intermediates/objectFiles/x86DebugSharedLibrary/hello-jniMainC"),
+                        project.file("build/intermediates/objectFiles/hello-jniX86DebugSharedLibraryMainC"),
                         "hello-jni.o");
         assertThat(obj.isPresent()).isTrue();
     }

@@ -19,15 +19,13 @@ package com.android.build.gradle.ndk.internal;
 import com.android.annotations.NonNull;
 import com.google.common.collect.ImmutableList;
 
-import org.gradle.platform.base.internal.toolchain.ArgWriter;
-
 import java.util.List;
 import java.util.regex.Pattern;
 
 /**
  * Utility to transform compiler arguments as they would when Gradle insert them into option.txt.
  *
- * Follow the format conversion use in {@link ArgWriter}.
+ * Follow the format conversion use in org.gradle.internal.process.ArgWriter.
  */
 public final class NativeCompilerArgsUtil {
 

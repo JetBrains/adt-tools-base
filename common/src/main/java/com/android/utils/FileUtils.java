@@ -414,7 +414,7 @@ public final class FileUtils {
      * Find a list of files in a directory, using a specified path pattern.
      */
     public static List<File> find(@NonNull File base, @NonNull final Pattern pattern) {
-        checkArgument(base.isDirectory(), "'base' must be a directory.");
+        checkArgument(base.isDirectory(), "'%s' must be a directory.", base.getAbsolutePath());
         return Files.fileTreeTraverser()
                 .preOrderTraversal(base)
                 .filter(Predicates.compose(Predicates.contains(pattern), File::getPath))
@@ -425,7 +425,7 @@ public final class FileUtils {
      * Find a file with the specified name in a given directory .
      */
     public static Optional<File> find(@NonNull File base, @NonNull final String name) {
-        checkArgument(base.isDirectory(), "'base' must be a directory.");
+        checkArgument(base.isDirectory(), "'%s' must be a directory.", base.getAbsolutePath());
         return Files.fileTreeTraverser()
                 .preOrderTraversal(base)
                 .filter(Predicates.compose(Predicates.equalTo(name), File::getName))

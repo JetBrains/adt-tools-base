@@ -32,6 +32,7 @@ import com.google.common.base.Preconditions;
 import org.gradle.api.Task;
 import org.gradle.model.ModelMap;
 import org.gradle.model.Mutate;
+import org.gradle.model.Path;
 import org.gradle.model.RuleSource;
 
 /**
@@ -43,7 +44,7 @@ public class AndroidComponentModelTestPlugin extends RuleSource {
     @Mutate
     public void createConnectedTestTasks(
             final ModelMap<Task> tasks,
-            ModelMap<AndroidBinaryInternal> binaries,
+            @Path("binaries") ModelMap<AndroidBinaryInternal> binaries,
             TaskManager taskManager,
             ModelMap<AndroidComponentSpecInternal> specs) {
         final VariantManager variantManager = specs.get(COMPONENT_NAME).getVariantManager();

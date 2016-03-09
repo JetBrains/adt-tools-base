@@ -77,6 +77,8 @@ import com.android.build.gradle.managed.adaptor.DataBindingOptionsAdapter;
 import com.android.build.gradle.managed.adaptor.ProductFlavorAdaptor;
 import com.android.build.gradle.model.internal.AndroidBinaryInternal;
 import com.android.build.gradle.model.internal.AndroidComponentSpecInternal;
+import com.android.build.gradle.model.internal.DefaultAndroidLanguageSourceSet;
+import com.android.build.gradle.model.internal.DefaultJniLibsSourceSet;
 import com.android.build.gradle.tasks.ExternalNativeBuildTaskUtils;
 import com.android.build.gradle.tasks.ExternalNativeJsonGenerator;
 import com.android.build.gradle.tasks.JackPreDexTransform;
@@ -122,6 +124,8 @@ import org.gradle.model.RuleSource;
 import org.gradle.model.internal.core.ModelReference;
 import org.gradle.model.internal.core.ModelRegistrations;
 import org.gradle.model.internal.registry.ModelRegistry;
+import org.gradle.platform.base.ComponentType;
+import org.gradle.platform.base.TypeBuilder;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import android.databinding.tool.DataBindingBuilder;
@@ -130,6 +134,7 @@ import java.io.File;
 import java.io.IOException;
 import java.security.KeyStore;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -295,6 +300,19 @@ public class BaseComponentModelPlugin implements Plugin<Project>, ToolingRegistr
 
     public static class Rules extends RuleSource {
 
+        @ComponentType
+        public static void registerJniLibsSourceSet(TypeBuilder<JniLibsSourceSet> builder) {
+            //builder.setLanguageName("jniLibs");
+            builder.defaultImplementation(DefaultJniLibsSourceSet.class);
+        }
+
+        @ComponentType
+        public static void registerAndroidLanguageSourceSet(
+                TypeBuilder<AndroidLanguageSourceSet> builder) {
+            //builder.setLanguageName("android");
+            builder.defaultImplementation(DefaultAndroidLanguageSourceSet.class);
+        }
+
         @Mutate
         public static void registerLanguageTransform(
                 LanguageTransformContainer languages,
@@ -416,24 +434,37 @@ public class BaseComponentModelPlugin implements Plugin<Project>, ToolingRegistr
         @Defaults
         public static void addDefaultAndroidSourceSet(
                 @Path("android.sources") ModelMap<FunctionalSourceSet> sources) {
-            sources.all(sourceSet -> {
-                sourceSet.create("resources", AndroidLanguageSourceSet.class);
-                sourceSet.create("java", AndroidLanguageSourceSet.class);
-                sourceSet.create("manifest", AndroidLanguageSourceSet.class);
-                sourceSet.create("res", AndroidLanguageSourceSet.class);
-                sourceSet.create("assets", AndroidLanguageSourceSet.class);
-                sourceSet.create("aidl", AndroidLanguageSourceSet.class);
-                sourceSet.create("renderscript", AndroidLanguageSourceSet.class);
-                sourceSet.create("jniLibs", JniLibsSourceSet.class);
+            sources.beforeEach(sourceSet -> {
+                DefaultSourceSetAction srcDirSetter =
+                        new DefaultSourceSetAction(sourceSet.getName());
+                sourceSet.create("resources", AndroidLanguageSourceSet.class, srcDirSetter);
+                sourceSet.create("java", AndroidLanguageSourceSet.class, srcDirSetter);
+                sourceSet.create("manifest", AndroidLanguageSourceSet.class, srcDirSetter);
+                sourceSet.create("res", AndroidLanguageSourceSet.class, srcDirSetter);
+                sourceSet.create("assets", AndroidLanguageSourceSet.class, srcDirSetter);
+                sourceSet.create("aidl", AndroidLanguageSourceSet.class, srcDirSetter);
+                sourceSet.create("renderscript", AndroidLanguageSourceSet.class, srcDirSetter);
+                sourceSet.create("jniLibs", JniLibsSourceSet.class, srcDirSetter);
 
-                sourceSet.named("manifest", new Action<LanguageSourceSet>() {
-                    @Override
-                    public void execute(LanguageSourceSet manifest) {
-                        manifest.getSource().setIncludes(
-                                ImmutableList.of("AndroidManifest.xml"));
-                    }
+                sourceSet.named("manifest", manifest -> {
+                    manifest.getSource().setIncludes(ImmutableList.of("AndroidManifest.xml"));
                 });
             });
+        }
+
+        private static class DefaultSourceSetAction implements Action<LanguageSourceSet> {
+            private final String name;
+
+            private DefaultSourceSetAction(String name) {
+                this.name = name;
+            }
+
+            @Override
+            public void execute(LanguageSourceSet sourceSet) {
+                sourceSet.getSource().setSrcDirs(
+                        Collections.singleton("src/" + name + "/" + sourceSet.getName()));
+
+            }
         }
 
         @Mutate
@@ -455,7 +486,7 @@ public class BaseComponentModelPlugin implements Plugin<Project>, ToolingRegistr
 
         @Model(JNILIBS_DEPENDENCIES)
         public static Multimap<String, NativeDependencyResolveResult> resolveJniLibsDependencies(
-                ModelMap<AndroidBinary> androidBinary,
+                @Path("binaries") ModelMap<AndroidBinary> androidBinary,
                 @Path("android.sources") final ModelMap<FunctionalSourceSet> sources,
                 final ServiceRegistry serviceRegistry) {
             Multimap<String, NativeDependencyResolveResult> dependencies =
@@ -521,15 +552,16 @@ public class BaseComponentModelPlugin implements Plugin<Project>, ToolingRegistr
                 variantManager.addProductFlavor(new ProductFlavorAdaptor(productFlavor));
             }
 
-            AndroidComponentSpecInternal spec =
-                    (AndroidComponentSpecInternal) androidSpecs.get(COMPONENT_NAME);
-            spec.setExtension(androidExtension);
-            spec.setVariantManager(variantManager);
+            androidSpecs.named(COMPONENT_NAME, androidSpec -> {
+                AndroidComponentSpecInternal spec = (AndroidComponentSpecInternal) androidSpec;
+                spec.setExtension(androidExtension);
+                spec.setVariantManager(variantManager);
+            });
         }
 
         @Mutate
         public static void createVariantData(
-                ModelMap<AndroidBinaryInternal> binaries,
+                @Path("binaries") ModelMap<AndroidBinaryInternal> binaries,
                 ModelMap<AndroidComponentSpec> specs,
                 TaskManager taskManager) {
             final VariantManager variantManager =
@@ -579,7 +611,7 @@ public class BaseComponentModelPlugin implements Plugin<Project>, ToolingRegistr
         @Mutate
         public static void createBinaryTasks(
                 final ModelMap<Task> tasks,
-                ModelMap<AndroidBinaryInternal> binaries,
+                @Path("binaries") ModelMap<AndroidBinaryInternal> binaries,
                 ModelMap<AndroidComponentSpec> specs,
                 TaskManager taskManager) {
             final VariantManager variantManager =

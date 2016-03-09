@@ -132,7 +132,7 @@ import java.util.jar.Manifest;
  */
 public abstract class BasePlugin implements ToolingRegistryProvider {
 
-    private static final GradleVersion GRADLE_MIN_VERSION = GradleVersion.parse("2.10");
+    private static final GradleVersion GRADLE_MIN_VERSION = GradleVersion.parse("2.14.1");
     /** default retirement age in days since its inception date for RC or beta versions. */
     private static final int DEFAULT_RETIREMENT_AGE_FOR_NON_RELEASE_IN_DAYS = 40;
 
@@ -614,13 +614,12 @@ public abstract class BasePlugin implements ToolingRegistryProvider {
 
     private void checkGradleVersion() {
         String currentVersion = project.getGradle().getGradleVersion();
-        if (GRADLE_MIN_VERSION.compareTo(currentVersion) > 0 || !currentVersion.startsWith("2")) {
+        if (GRADLE_MIN_VERSION.compareTo(currentVersion) > 0) {
             File file = new File("gradle" + separator + "wrapper" + separator +
                     "gradle-wrapper.properties");
             String errorMessage =
                     String.format(
-                            "Minimum supported Gradle version is %s, Gradle 3.x is not supported yet. "
-                                    + "Current version is %s. "
+                            "Minimum supported Gradle version is %s. Current version is %s. "
                                     + "If using the gradle wrapper, try editing the distributionUrl in %s "
                                     + "to gradle-%s-all.zip",
                             GRADLE_MIN_VERSION,

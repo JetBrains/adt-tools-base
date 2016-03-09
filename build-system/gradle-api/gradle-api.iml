@@ -16,7 +16,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/gradle-core-2.10.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/gradle-core-2.14.1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -25,7 +25,16 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/gradle-model-core-2.10.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/gradle-model-core-2.14.1.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/gradle-logging-2.14.1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

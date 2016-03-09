@@ -35,15 +35,13 @@ public class NdkNamingScheme {
 
     @NonNull
     public static File getObjectFilesOutputDirectory(
-            @NonNull NativeBinarySpec binary,
             @NonNull File buildDir,
             @NonNull String sourceSetName) {
         return new File(
                 buildDir,
                 String.format(
-                        "%s/objectFiles/%s/%s",
+                        "%s/objectFiles/%s",
                         FD_INTERMEDIATES ,
-                        binary.getName(),
                         sourceSetName));
     }
 

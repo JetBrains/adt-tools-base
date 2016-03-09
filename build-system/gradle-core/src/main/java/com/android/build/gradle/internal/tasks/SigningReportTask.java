@@ -27,8 +27,8 @@ import com.google.common.collect.Sets;
 
 import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.logging.StyledTextOutput;
-import org.gradle.logging.StyledTextOutputFactory;
+import org.gradle.internal.logging.text.StyledTextOutput;
+import org.gradle.internal.logging.text.StyledTextOutputFactory;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -43,10 +43,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import static org.gradle.logging.StyledTextOutput.Style.Description;
-import static org.gradle.logging.StyledTextOutput.Style.Failure;
-import static org.gradle.logging.StyledTextOutput.Style.Identifier;
-import static org.gradle.logging.StyledTextOutput.Style.Normal;
+import static org.gradle.internal.logging.text.StyledTextOutput.Style.Description;
+import static org.gradle.internal.logging.text.StyledTextOutput.Style.Failure;
+import static org.gradle.internal.logging.text.StyledTextOutput.Style.Identifier;
+import static org.gradle.internal.logging.text.StyledTextOutput.Style.Normal;
 
 /**
  * Report tasks displaying the signing information for all variants.

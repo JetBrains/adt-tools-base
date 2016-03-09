@@ -16,9 +16,9 @@
 
 package com.android.build.gradle.internal;
 
-import static org.gradle.logging.StyledTextOutput.Style.Description;
-import static org.gradle.logging.StyledTextOutput.Style.Identifier;
-import static org.gradle.logging.StyledTextOutput.Style.Info;
+import static org.gradle.internal.logging.text.StyledTextOutput.Style.Description;
+import static org.gradle.internal.logging.text.StyledTextOutput.Style.Identifier;
+import static org.gradle.internal.logging.text.StyledTextOutput.Style.Info;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -35,7 +35,7 @@ import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.tasks.diagnostics.internal.TextReportRenderer;
 import org.gradle.internal.graph.GraphRenderer;
-import org.gradle.logging.StyledTextOutput;
+import org.gradle.internal.logging.text.StyledTextOutput;
 import org.gradle.util.GUtil;
 
 import java.io.File;

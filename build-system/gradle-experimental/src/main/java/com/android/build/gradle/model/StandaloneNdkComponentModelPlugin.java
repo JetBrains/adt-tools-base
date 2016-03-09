@@ -27,7 +27,6 @@ import com.android.build.gradle.model.internal.AndroidBinaryInternal;
 import com.android.build.gradle.ndk.internal.NdkNamingScheme;
 import com.android.utils.StringHelper;
 
-import org.gradle.api.Action;
 import org.gradle.api.Named;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -67,7 +66,7 @@ public class StandaloneNdkComponentModelPlugin implements Plugin<Project> {
         @Mutate
         public static void copyOutputs(
                 final ModelMap<Task> tasks,
-                ModelMap<AndroidBinaryInternal> androidSpecs,
+                @Path("binaries") ModelMap<AndroidBinaryInternal> androidSpecs,
                 @Path("buildDir") final File buildDir) {
             for (AndroidBinaryInternal androidBinary : androidSpecs.values()) {
                 for (final NativeBinarySpec nativeBinary : androidBinary.getNativeBinaries()) {
@@ -121,7 +120,7 @@ public class StandaloneNdkComponentModelPlugin implements Plugin<Project> {
         @Mutate
         public static void createAssembleTasksForBinaries(
                 ModelMap<Task> tasks,
-                ModelMap<AndroidBinary> binaries) {
+                @Path("binaries") ModelMap<AndroidBinary> binaries) {
             for(final AndroidBinary binary : binaries.values()) {
                 String binaryAssembleTaskName = getAssembleTaskName(binary);
                 if (!binary.getProductFlavors().isEmpty()) {

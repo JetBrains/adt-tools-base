@@ -56,11 +56,9 @@ import org.gradle.model.Mutate;
 import org.gradle.model.RuleSource;
 import org.gradle.model.internal.registry.ModelRegistry;
 import org.gradle.platform.base.BinaryTasks;
-import org.gradle.platform.base.BinaryType;
-import org.gradle.platform.base.BinaryTypeBuilder;
 import org.gradle.platform.base.ComponentBinaries;
 import org.gradle.platform.base.ComponentType;
-import org.gradle.platform.base.ComponentTypeBuilder;
+import org.gradle.platform.base.TypeBuilder;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import java.io.File;
@@ -104,12 +102,12 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
     public static class Rules extends RuleSource {
         @ComponentType
         public static void defineComponentType(
-                ComponentTypeBuilder<ExternalNativeComponentSpec> builder) {
+                TypeBuilder<ExternalNativeComponentSpec> builder) {
             builder.defaultImplementation(DefaultExternalNativeComponentSpec.class);
         }
 
-        @BinaryType
-        public static void defineBinaryType(BinaryTypeBuilder<ExternalNativeBinarySpec> builder) {
+        @ComponentType
+        public static void defineBinaryType(TypeBuilder<ExternalNativeBinarySpec> builder) {
             builder.defaultImplementation(DefaultExternalNativeBinarySpec.class);
         }
 

@@ -21,7 +21,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-import org.apache.commons.lang.text.StrSubstitutor;
+import org.apache.commons.lang3.text.StrSubstitutor;
 
 import java.util.List;
 import java.util.Map;

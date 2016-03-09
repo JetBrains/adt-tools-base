@@ -107,7 +107,6 @@ public class NdkConfiguration {
                             String sourceSetName = task.getObjectFileDir().getName();
                             task.setObjectFileDir(
                                     NdkNamingScheme.getObjectFilesOutputDirectory(
-                                            binary,
                                             buildDir,
                                             sourceSetName));
                         }
@@ -118,7 +117,6 @@ public class NdkConfiguration {
                             String sourceSetName = task.getObjectFileDir().getName();
                             task.setObjectFileDir(
                                     NdkNamingScheme.getObjectFilesOutputDirectory(
-                                            binary,
                                             buildDir,
                                             sourceSetName));
                         }

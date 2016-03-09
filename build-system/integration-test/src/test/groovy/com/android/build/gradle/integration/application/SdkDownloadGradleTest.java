@@ -36,7 +36,6 @@ import com.android.utils.FileUtils;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 
-import org.apache.commons.lang.SystemUtils;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
@@ -400,7 +399,7 @@ public class SdkDownloadGradleTest {
 
     @Test
     public void checkPermissions_BuildTools() throws Exception {
-        Assume.assumeFalse(SystemUtils.IS_OS_WINDOWS);
+        Assume.assumeFalse(SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS);
 
         // Change the permissions.
         Path sdkHomePath = mSdkHome.toPath();

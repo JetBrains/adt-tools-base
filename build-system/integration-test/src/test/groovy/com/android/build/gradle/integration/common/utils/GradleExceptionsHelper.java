@@ -19,7 +19,7 @@ package com.android.build.gradle.integration.common.utils;
 import com.google.common.base.Throwables;
 
 import org.gradle.api.tasks.TaskExecutionException;
-import org.gradle.messaging.remote.internal.PlaceholderException;
+import org.gradle.internal.serialize.PlaceholderException;
 import org.gradle.tooling.GradleConnectionException;
 
 /**

@@ -36,8 +36,8 @@ public class DefaultNativeSourceSet extends AbstractNativeDependentSourceSet
     private final PatternFilterable cppFilter;
 
     public DefaultNativeSourceSet() {
-        this.exportedHeaders = new DefaultSourceDirectorySet("exported headers", fileResolver);
-        this.implicitHeaders = new DefaultSourceDirectorySet("implicit headers", fileResolver);
+        this.exportedHeaders = sourceDirectorySetFactory.create("exported headers");
+        this.implicitHeaders = sourceDirectorySetFactory.create("implicit headers");
         cFilter = new PatternSet();
         cppFilter = new PatternSet();
     }

@@ -18,14 +18,16 @@ dependencies {
     testCompile project(':base:testutils')
     testCompile project(':base:testing-infrastructure:device-pool:device-provider')
 
-
+    testCompile "junit:junit:4.12"
+    testCompile 'commons-io:commons-io:2.4'
+    testCompile 'org.apache.commons:commons-lang3:3.3.2'
     testCompile "com.google.protobuf:protobuf-java:2.5.0"
     testCompile 'com.google.truth:truth:0.28'
     testCompile "org.mockito:mockito-core:1.9.5"
 
     // Jacoco version should be the version bundled with Gradle.  Not the default version used by
     // the plugin.
-    testCompile 'org.jacoco:org.jacoco.agent:0.7.4.201502262128'
+    testCompile 'org.jacoco:org.jacoco.agent:0.7.5.201505241946'
 
     // Add dependency on plugin code.  Exclude transitive dependencies to avoid conflict due to
     // Groovy versions.

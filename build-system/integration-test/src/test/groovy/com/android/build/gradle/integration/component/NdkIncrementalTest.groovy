@@ -65,13 +65,13 @@ model {
     public void "check adding file"() {
         File helloJniO = FileUtils.find(
                 project.file("build/intermediates/objectFiles"),
-                Pattern.compile("x86Debug.*/hello-jni\\.o")).first()
+                Pattern.compile("X86Debug.*/hello-jni\\.o")).first()
         long helloJniTimestamp = helloJniO.lastModified()
 
         // check new-file.o does not exist.
         assertThat(FileUtils.find(
                 project.file("build/intermediates/objectFiles"),
-                Pattern.compile("x86Debug.*/new-file\\.o"))).hasSize(0)
+                Pattern.compile("X86Debug.*/new-file\\.o"))).hasSize(0)
 
         project.file("src/main/jni/new-file.c") << " ";
 
@@ -86,19 +86,19 @@ model {
 
         assertThat(FileUtils.find(
                 project.file("build/intermediates/objectFiles"),
-                Pattern.compile("x86Debug.*/new-file\\.o"))).hasSize(1)
+                Pattern.compile("X86Debug.*/new-file\\.o"))).hasSize(1)
     }
 
     @Test
     public void "check removing file"() {
         File helloJniO = FileUtils.find(
                 project.file("build/intermediates/objectFiles"),
-                Pattern.compile("x86Debug.*/hello-jni\\.o")).first()
+                Pattern.compile("X86Debug.*/hello-jni\\.o")).first()
         long helloJniTimestamp = helloJniO.lastModified()
 
         assertThat(FileUtils.find(
                 project.file("build/intermediates/objectFiles"),
-                Pattern.compile("x86Debug.*/empty\\.o"))).hasSize(1)
+                Pattern.compile("X86Debug.*/empty\\.o"))).hasSize(1)
 
         project.file("src/main/jni/empty.c").delete()
 
@@ -113,19 +113,19 @@ model {
 
         assertThat(FileUtils.find(
                 project.file("build/intermediates/objectFiles"),
-                Pattern.compile("x86Debug.*/empty\\.o"))).hasSize(0)
+                Pattern.compile("X86Debug.*/empty\\.o"))).hasSize(0)
     }
 
     @Test
     public void "check changing file"() {
         File helloJniO = FileUtils.find(
                 project.file("build/intermediates/objectFiles"),
-                Pattern.compile("x86Debug.*/hello-jni\\.o")).first()
+                Pattern.compile("X86Debug.*/hello-jni\\.o")).first()
         long helloJniTimestamp = helloJniO.lastModified()
 
         File emptyO = FileUtils.find(
                 project.file("build/intermediates/objectFiles"),
-                Pattern.compile("x86Debug.*/empty\\.o")).first()
+                Pattern.compile("X86Debug.*/empty\\.o")).first()
         long emptyTimestamp = emptyO.lastModified()
 
         project.file("src/main/jni/empty.c") << " ";

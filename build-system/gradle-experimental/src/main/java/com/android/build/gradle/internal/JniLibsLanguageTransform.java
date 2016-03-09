@@ -60,6 +60,11 @@ public class JniLibsLanguageTransform implements LanguageTransform<JniLibsSource
     }
 
     @Override
+    public String getLanguageName() {
+        return "jniLibs";
+    }
+
+    @Override
     public Class<JniLibsSourceSet> getSourceSetType() {
         return JniLibsSourceSet.class;
     }

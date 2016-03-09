@@ -22,7 +22,7 @@ import com.android.build.gradle.internal.variant.BaseVariantData;
 
 import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.logging.StyledTextOutputFactory;
+import org.gradle.internal.logging.text.StyledTextOutputFactory;
 
 import java.io.IOException;
 import java.util.Collection;

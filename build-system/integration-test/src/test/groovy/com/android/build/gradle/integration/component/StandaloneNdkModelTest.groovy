@@ -47,6 +47,7 @@ class StandaloneNdkModelTest {
     @Before
     public void setUp() {
         FileUtils.createFile(project.file("src/main/jni/empty.c"), "")
+        FileUtils.createFile(project.file("src/main/headers/empty.h"), "")
     }
 
     private final Set<String> ABIS = ImmutableSet.of(

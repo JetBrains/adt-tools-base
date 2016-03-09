@@ -54,7 +54,7 @@ import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.logging.ConsoleRenderer;
+import org.gradle.internal.logging.ConsoleRenderer;
 
 import java.io.File;
 import java.io.IOException;

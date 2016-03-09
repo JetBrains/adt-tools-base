@@ -63,7 +63,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import org.gradle.api.Action;
-import org.gradle.api.BuildableModelElement;
+import org.gradle.api.BuildableComponentSpec;
 import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -104,9 +104,9 @@ import org.gradle.nativeplatform.StaticLibraryBinarySpec;
 import org.gradle.nativeplatform.toolchain.NativeToolChainRegistry;
 import org.gradle.platform.base.BinaryContainer;
 import org.gradle.platform.base.BinarySpec;
-import org.gradle.platform.base.LanguageType;
-import org.gradle.platform.base.LanguageTypeBuilder;
+import org.gradle.platform.base.ComponentType;
 import org.gradle.platform.base.PlatformContainer;
+import org.gradle.platform.base.TypeBuilder;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import java.io.File;
@@ -153,9 +153,9 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
 
     public static class Rules extends RuleSource {
 
-        @LanguageType
-        public static void registerNativeSourceSet(LanguageTypeBuilder<NativeSourceSet> builder) {
-            builder.setLanguageName("jni");
+        @ComponentType
+        public static void registerNativeSourceSet(TypeBuilder<NativeSourceSet> builder) {
+            //builder.setLanguageName("jni");
             builder.defaultImplementation(DefaultNativeSourceSet.class);
         }
 
@@ -199,9 +199,12 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         @Defaults
         public static void addDefaultNativeSourceSet(
                 @Path("android.sources") ModelMap<FunctionalSourceSet> sources) {
-            sources.beforeEach(
-                    sourceSet -> sourceSet.create("jni", NativeSourceSet.class, nativeSourceSet -> {
-                        nativeSourceSet.getSource().srcDir("src/" + nativeSourceSet.getParentName() + "/" + "jni");
+            sources.beforeEach(sourceSet ->
+                    sourceSet.create("jni", NativeSourceSet.class, nativeSourceSet -> {
+                        nativeSourceSet.getSource().srcDir(
+                                "src/" + sourceSet.getName() + "/" + "jni");
+                        nativeSourceSet.getExportedHeaders().srcDir(
+                                "src/" + sourceSet.getName() + "/" + "headers");
                         addInclude(nativeSourceSet.getcFilter(), NativeSourceFileExtensions.C_FILE_EXTENSIONS);
                         addInclude(nativeSourceSet.getCppFilter(), NativeSourceFileExtensions.CPP_FILE_EXTENSIONS);
                     }));
@@ -260,12 +263,12 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
 
         @Validate
         public static void validateAbi(@Path("android.abis") ModelMap<NdkAbiOptions> abiConfigs) {
-            abiConfigs.afterEach(abiOptions -> {
+            for (NdkAbiOptions abiOptions : abiConfigs.values()) {
                 if (Abi.getByName(abiOptions.getName()) == null) {
                     throw new InvalidUserDataException("Target ABI '" + abiOptions.getName()
                             + "' is not supported.");
                 }
-            });
+            }
         }
 
         @Mutate
@@ -345,12 +348,12 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
          */
         @Model(NATIVE_DEPENDENCIES)
         public static Multimap<String, NativeDependencyResolveResult> resolveNativeDependencies(
-                ModelMap<NativeLibraryBinarySpec> nativeBinaries,
+                @Path("binaries") ModelMap<NativeBinarySpec> nativeBinaries,
                 @Path("android.sources") final ModelMap<FunctionalSourceSet> sources,
                 final ServiceRegistry serviceRegistry) {
             Multimap<String, NativeDependencyResolveResult> dependencies =
                     ArrayListMultimap.create();
-            for (NativeLibraryBinarySpec nativeBinary : nativeBinaries.values()) {
+            for (NativeBinarySpec nativeBinary : nativeBinaries.values()) {
                 Collection<NativeSourceSet> jniSources =
                         NdkConfiguration.findNativeSourceSets(nativeBinary, sources).values();
 
@@ -373,7 +376,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 @Path("android.ndk") final NdkConfig ndkConfig,
                 @Path(NATIVE_DEPENDENCIES) final Multimap<String, NativeDependencyResolveResult> dependencies,
                 final NdkHandler ndkHandler,
-                ModelMap<AndroidBinaryInternal> binaries,
+                @Path("binaries") ModelMap<AndroidBinaryInternal> binaries,
                 @Path("buildDir") final File buildDir) {
             if (!ndkHandler.isConfigured()) {
                 return;
@@ -455,7 +458,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         @Model(EXTERNAL_BUILD_CONFIG)
         public static void createNativeBuildModel(
                 NativeBuildConfig config,
-                ModelMap<AndroidBinaryInternal> binaries,
+                @Path("binaries") ModelMap<AndroidBinaryInternal> binaries,
                 @Path("android.abis") ModelMap<NdkAbiOptions> abiConfigs,
                 final NdkHandler ndkHandler) {
             boolean atLeastOneNativeBinarySpec = false;
@@ -546,7 +549,8 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                                 ((HeaderExportingSourceSet) sourceSet).getExportedHeaders()
                                         .getSrcDirs();
                         for (File headerDir : headerDirs) {
-                            if (!nativeLibrary.getExportedHeaders().contains(headerDir)) {
+                            if (headerDir.isDirectory()
+                                    && !nativeLibrary.getExportedHeaders().contains(headerDir)) {
                                 nativeLibrary.getExportedHeaders().add(headerDir);
 
                                 // Exported headers are not part of the binary's flag.  Need to add
@@ -587,7 +591,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
 
         @Finalize
         public static void attachNativeTasksToAndroidBinary(
-                ModelMap<AndroidBinaryInternal> binaries,
+                @Path("binaries") ModelMap<AndroidBinaryInternal> binaries,
                 @Path("androidInjectedBuildAbi") final String buildAbi) {
             binaries.afterEach(binary -> {
                 // Only build the first supported ABI of the device.
@@ -610,7 +614,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         @Model(ARTIFACTS)
         public static void createNativeLibraryArtifacts(
                 ArtifactContainer artifactContainer,
-                ModelMap<AndroidBinaryInternal> binaries,
+                @Path("binaries") ModelMap<AndroidBinaryInternal> binaries,
                 @Path("android.sources") final ModelMap<FunctionalSourceSet> sources,
                 final ModelMap<Task> tasks,
                 @Path(NATIVE_DEPENDENCIES) final Multimap<String, NativeDependencyResolveResult> dependencies,
@@ -730,7 +734,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         @Mutate
         public static void hideNativeTasks(
                 TaskContainer tasks,
-                ModelMap<NativeLibraryBinarySpec> binaries) {
+                @Path("binaries") ModelMap<NativeLibraryBinarySpec> binaries) {
             // Gradle do not support a way to remove created tasks.  The best workaround is to clear
             // the group of the task and have another task depends on it.  Therefore, we have to
             // create a dummy task to depend on all the tasks that we do not want to show up on the
@@ -796,7 +800,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
      * Return library binaries for a VariantConfiguration.
      */
     @NonNull
-    public Collection<? extends BuildableModelElement> getBinaries(
+    public Collection<? extends BuildableComponentSpec> getBinaries(
             @NonNull final VariantConfiguration variantConfig) {
         if (variantConfig.getType().isForTesting()) {
             // Do not return binaries for test variants as test source set is not supported at the

@@ -50,7 +50,11 @@ dependencies {
     // Add gradleApi to classpath for compilation, but use provided configuration so that groovy is
     // not exposed as a runtime dependency.
     provided gradleApi()
-    testCompile gradleApi()
+
+    // Exclude plugins/core-* to avoiding adding Gradle's ecj implementation to the classpath
+    testCompile fileTree(
+            dir:file("$rootProject.ext.androidHostOut/gradle-dist-link/lib"),
+            includes: ["*", "plugins/gradle*"])
 
     includeInJar project(':base:instant-run:instant-run-server')
 
@@ -58,7 +62,7 @@ dependencies {
 
     testCompile 'junit:junit:4.12'
     testCompile 'com.google.truth:truth:0.28'
-    testCompile 'org.mockito:mockito-all:1.9.5'
+    testCompile 'org.mockito:mockito-core:1.9.5'
     testCompile 'com.google.guava:guava:17.0'
     testCompile project(':base:project-test-lib')
     testCompile project(':base:testutils')
