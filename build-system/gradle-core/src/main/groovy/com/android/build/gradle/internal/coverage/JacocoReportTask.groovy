@@ -21,6 +21,7 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 /**
@@ -28,7 +29,12 @@ import org.gradle.api.tasks.TaskAction
  */
 public class JacocoReportTask extends DefaultTask {
     @InputFile
+    @Optional
     File coverageFile
+
+    @InputDirectory
+    @Optional
+    File coverageDirectory
 
     @OutputDirectory
     File reportDir
@@ -54,9 +60,22 @@ public class JacocoReportTask extends DefaultTask {
         getAnt().taskdef(name: 'reportWithJacoco',
                          classname: 'org.jacoco.ant.ReportTask',
                          classpath: getJacocoClasspath().asPath)
+        File fileInput = getCoverageFile()
+        File directoryInput = getCoverageDirectory()
+        boolean hasFileInput = fileInput != null && fileInput.isFile()
+        boolean hasDirectoryInput = directoryInput != null && directoryInput.isDirectory()
+        if (!hasFileInput && !hasDirectoryInput) {
+            throw new IllegalArgumentException("Must provide a coverageFile or coverageDirectory " +
+                    "to the JacocoReportTask")
+        }
         getAnt().reportWithJacoco {
             executiondata {
-                file(file: getCoverageFile())
+                if (hasFileInput) {
+                    file(file: getCoverageFile())
+                }
+                if (hasDirectoryInput) {
+                    fileset(dir: getCoverageDirectory())
+                }
             }
             structure(name: getReportName()) {
                 sourcefiles {

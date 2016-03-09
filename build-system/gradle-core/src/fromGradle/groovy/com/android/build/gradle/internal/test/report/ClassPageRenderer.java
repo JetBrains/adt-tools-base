@@ -88,13 +88,16 @@ class ClassPageRenderer extends PageRenderer<ClassTestResults> {
             for (String device : devices) {
                 Map<String, TestResult> deviceMap = results.get(device);
                 TestResult test = deviceMap.get(testName);
+                if (test != null) {
+                    htmlWriter.startElement("td").attribute("class", test.getStatusClass())
+                            .characters(String.format("%s (%s)",
+                                    test.getFormattedResultType(), test.getFormattedDuration()))
+                            .endElement();
 
-                htmlWriter.startElement("td").attribute("class", test.getStatusClass())
-                        .characters(String.format("%s (%s)",
-                            test.getFormattedResultType(), test.getFormattedDuration()))
-                .endElement();
-
-                currentType = combineResultType(currentType, test.getResultType());
+                    currentType = combineResultType(currentType, test.getResultType());
+                } else {
+                    htmlWriter.startElement("td").characters("not run ").endElement();
+                }
             }
 
             // finally based on whether if a single test failed, set the class on the test name.
@@ -173,7 +176,11 @@ class ClassPageRenderer extends PageRenderer<ClassTestResults> {
                 int failed = 0;
                 int total = 0;
                 for (Map<String, TestResult> deviceMap : results.values()) {
-                    ResultType resultType = deviceMap.get(testName).getResultType();
+                    TestResult testResult = deviceMap.get(testName);
+                    if (testResult == null) {
+                        continue;
+                    }
+                    ResultType resultType = testResult.getResultType();
 
                     if (resultType == ResultType.FAILURE) {
                         failed++;

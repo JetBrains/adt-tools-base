@@ -230,7 +230,7 @@ public class SimpleTestCallable implements Callable<Boolean> {
                             30, TimeUnit.SECONDS);
                     device.pullFile(
                             temporaryCoverageCopy,
-                            new File(coverageDir, FILE_COVERAGE_EC).getPath());
+                            new File(coverageDir, deviceName + "-" + FILE_COVERAGE_EC).getPath());
                     device.executeShellCommand("rm " + temporaryCoverageCopy,
                             outputReceiver,
                             30, TimeUnit.SECONDS);

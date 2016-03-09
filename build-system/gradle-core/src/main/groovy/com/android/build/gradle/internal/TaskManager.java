@@ -1767,14 +1767,12 @@ public abstract class TaskManager {
                                         }
                                     });
                             ConventionMappingHelper
-                                    .map(reportTask, "coverageFile", new Callable<File>() {
+                                    .map(reportTask, "coverageDirectory", new Callable<File>() {
                                         @Override
                                         public File call() {
-                                            return new File(
-                                                    ((TestVariantData) testVariantData.getScope()
+                                            return ((TestVariantData) testVariantData.getScope()
                                                             .getVariantData()).connectedTestTask
-                                                            .getCoverageDir(),
-                                                    SimpleTestCallable.FILE_COVERAGE_EC);
+                                                            .getCoverageDir();
                                         }
                                     });
                             ConventionMappingHelper
