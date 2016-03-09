@@ -614,6 +614,7 @@ public final class SdkConstants {
     public static final String CLASS_TAB_LAYOUT = "android.support.design.widget.TabLayout"; //$NON-NLS-1$
     public static final String CLASS_TEXT_INPUT_LAYOUT = "android.support.design.widget.TextInputLayout"; //$NON-NLS-1$
     public static final String CLASS_NESTED_SCROLL_VIEW = "android.support.v4.widget.NestedScrollView";  //$NON-NLS-1$
+    public static final String CLASS_DRAWER_LAYOUT = "android.support.v4.widget.DrawerLayout";  //$NON-NLS-1$
     public static final String CLASS_GRID_LAYOUT_V7 = "android.support.v7.widget.GridLayout";  //$NON-NLS-1$
     public static final String CLASS_TOOLBAR_V7 = "android.support.v7.widget.Toolbar";  //$NON-NLS-1$
     public static final String CLASS_RECYCLER_VIEW = "android.support.v7.widget.RecyclerView";  //$NON-NLS-1$
@@ -1017,6 +1018,7 @@ public final class SdkConstants {
     public static final String ATTR_INDEX = "index";                   //$NON-NLS-1$
     public static final String ATTR_ACTION_BAR_NAV_MODE = "actionBarNavMode"; //$NON-NLS-1$
     public static final String ATTR_MENU = "menu";                     //$NON-NLS-1$
+    public static final String ATTR_OPEN_DRAWER = "openDrawer";        //$NON-NLS-1$
     public static final String ATTR_SHOW_IN = "showIn";                //$NON-NLS-1$
 
     // Tools attributes for AdapterView inheritors
