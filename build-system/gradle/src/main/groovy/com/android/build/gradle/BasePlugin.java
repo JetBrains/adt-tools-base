@@ -687,7 +687,8 @@ public abstract class BasePlugin {
                     extension.getCompileSdkVersion(),
                     extension.getBuildToolsRevision(),
                     extension.getLibraryRequests(),
-                    androidBuilder);
+                    androidBuilder,
+                    SdkHandler.useCachedSdk(project));
         }
     }
 

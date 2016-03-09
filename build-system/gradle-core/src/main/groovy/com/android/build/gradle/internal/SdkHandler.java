@@ -20,6 +20,9 @@ import static com.android.SdkConstants.FN_LOCAL_PROPERTIES;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.concurrency.GuardedBy;
+import com.android.build.gradle.AndroidGradleOptions;
+import com.android.build.gradle.OptionalCompilationStep;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.LibraryRequest;
 import com.android.builder.sdk.DefaultSdkLoader;
@@ -31,6 +34,7 @@ import com.android.repository.Revision;
 import com.android.utils.ILogger;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Stopwatch;
 import com.google.common.io.Closeables;
 
 import org.gradle.api.Project;
@@ -42,6 +46,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Collection;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Handles the all things SDK for the Gradle plugin. There is one instance per project, around
@@ -51,6 +56,10 @@ public class SdkHandler {
 
     // Used for injecting SDK location in tests.
     public static File sTestSdkFolder;
+
+    private static final Object LOCK_FOR_SDK_HANDLER = new Object();
+    @GuardedBy("LOCK_FOR_SDK_HANDLER")
+    private static SdkLoader sSdkLoader;
 
     @NonNull
     private final ILogger logger;
@@ -62,6 +71,18 @@ public class SdkHandler {
 
     public static void setTestSdkFolder(File testSdkFolder) {
         sTestSdkFolder = testSdkFolder;
+    }
+
+    /**
+     * Returns true if we should use a cached SDK, false if we should force the re-parsing of the
+     * SDK components.
+     */
+    public static boolean useCachedSdk(Project project) {
+        // only used cached version of the sdk when in instant run mode but not
+        // syncing.
+        return AndroidGradleOptions.getOptionalCompilationSteps(project).contains(
+                OptionalCompilationStep.INSTANT_DEV)
+                && !AndroidGradleOptions.buildModelOnlyAdvanced(project);
     }
 
     public SdkHandler(@NonNull Project project,
@@ -79,16 +100,33 @@ public class SdkHandler {
             @NonNull String targetHash,
             @NonNull Revision buildToolRevision,
             @NonNull Collection<LibraryRequest> usedLibraries,
-            @NonNull AndroidBuilder androidBuilder) {
+            @NonNull AndroidBuilder androidBuilder,
+            boolean useCachedVersion) {
         Preconditions.checkNotNull(targetHash, "android.compileSdkVersion is missing!");
         Preconditions.checkNotNull(buildToolRevision, "android.buildToolsVersion is missing!");
 
-        SdkLoader sdkLoader = getSdkLoader();
+        synchronized (LOCK_FOR_SDK_HANDLER) {
+            if (useCachedVersion) {
+                if (sSdkLoader == null) {
+                    logger.info("Parsing the Sdk");
+                    sSdkLoader = getSdkLoader();
+                } else {
+                    logger.info("Reusing the SdkLoader");
+                }
+            } else {
+                logger.info("Parsing the SDK, no caching allowed");
+                sSdkLoader = getSdkLoader();
+            }
+            sdkLoader = sSdkLoader;
+        }
 
+
+        Stopwatch stopwatch = Stopwatch.createStarted();
         SdkInfo sdkInfo = sdkLoader.getSdkInfo(logger);
         TargetInfo targetInfo = sdkLoader.getTargetInfo(targetHash, buildToolRevision, logger);
 
         androidBuilder.setTargetInfo(sdkInfo, targetInfo, usedLibraries);
+        logger.verbose("SDK initialized in %1$d ms", stopwatch.elapsed(TimeUnit.MILLISECONDS));
     }
 
     @Nullable
