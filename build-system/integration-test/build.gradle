@@ -57,11 +57,15 @@ def testEnvironment = [
 task testPrebuilts(type: Test)
 task connectedIntegrationTestPrebuilts(type: Test)
 
+File tempFile = new File(project.buildDir, 'tmp')
+tempFile.mkdirs()
+
 configure([test, testPrebuilts]) {
     description =
             "Runs the project integration tests. This requires an SDK either from the Android " +
                     "source tree, under out/..., or an env var ANDROID_HOME."
     systemProperties['jar.path'] = jar.archivePath
+    systemProperties['java.io.tmpdir'] = tempFile.absolutePath
     environment = testEnvironment
 
     // Always run the task, when requested.
@@ -107,6 +111,7 @@ configure([connectedIntegrationTest, connectedIntegrationTestPrebuilts]) {
                     "and a device."
     group = "verification"
     systemProperties['jar.path'] = jar.archivePath
+    systemProperties['java.io.tmpdir'] = tempFile.absolutePath
     // Add to, rather than replace the environment, so that TEST_CLASSPATH_DEPENDENCY,
     // REMOTE_TEST_PROVIDER, ADDITIONAL_TEST_CUSTOM_REPO and any dependencies of the remote test
     // provider are present in the test environment only for these tests.
