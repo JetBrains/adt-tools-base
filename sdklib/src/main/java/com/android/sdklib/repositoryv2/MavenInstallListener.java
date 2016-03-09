@@ -17,16 +17,11 @@
 package com.android.sdklib.repositoryv2;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.repository.Revision;
-import com.android.repository.api.Downloader;
 import com.android.repository.api.LocalPackage;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemotePackage;
-import com.android.repository.api.RepoManager;
 import com.android.repository.api.RepoPackage;
-import com.android.repository.api.SettingsController;
-import com.android.repository.impl.installer.BasicInstaller;
 import com.android.repository.impl.installer.PackageInstaller;
 import com.android.repository.io.FileOp;
 import com.android.repository.util.InstallerUtil;
@@ -57,63 +52,54 @@ import javax.xml.namespace.QName;
 /**
  * A {@link PackageInstaller} that knows how to install Maven packages.
  */
-public class MavenInstaller extends BasicInstaller {
+public class MavenInstallListener implements PackageInstaller.StatusChangeListener {
 
     public static final String MAVEN_DIR_NAME = "m2repository";
 
     public static final String MAVEN_METADATA_FILE_NAME = "maven-metadata.xml";
 
-    @Override
-    public boolean uninstall(@NonNull LocalPackage p, @NonNull ProgressIndicator progress,
-            @NonNull RepoManager manager, @NonNull FileOp fop) {
-        fop.deleteFileOrFolder(p.getLocation());
+    public final FileOp mFop;
 
-        if (fop.exists(p.getLocation())) {
-            progress.logWarning("Failed to uninstall " + p);
-            return false;
-        }
-        manager.markInvalid();
-        return removeVersion(p, fop, progress);
+    public final AndroidSdkHandler mSdkHandler;
+
+    public MavenInstallListener(@NonNull AndroidSdkHandler sdkHandler, @NonNull FileOp fop) {
+        mFop = fop;
+        mSdkHandler = sdkHandler;
     }
 
     @Override
-    protected boolean doPrepareInstall(@NonNull RemotePackage p,
-            @NonNull File installTempPath,
-            @NonNull Downloader downloader,
-            @Nullable SettingsController settings,
-            @NonNull ProgressIndicator progress,
-            @NonNull RepoManager manager,
-            @NonNull FileOp fop) {
-        if (!p.getPath().startsWith(MAVEN_DIR_NAME)) {
-            progress.logError("Maven package paths must start with " + MAVEN_DIR_NAME);
-            return false;
+    public void statusChanged(@NonNull PackageInstaller installer,
+            @NonNull RepoPackage p, @NonNull ProgressIndicator progress) throws
+            PackageInstaller.StatusChangeListenerException {
+        switch (installer.getInstallStatus()) {
+            case PREPARING:
+            case UNINSTALL_STARTING:
+                if (!p.getPath().startsWith(MAVEN_DIR_NAME)) {
+                    progress.logError("Maven package paths must start with " + MAVEN_DIR_NAME);
+                    throw new IllegalArgumentException();
+                }
+                break;
+            case UNINSTALL_COMPLETE:
+                if (!removeVersion((LocalPackage)p, mFop, progress)) {
+                    throw new PackageInstaller.StatusChangeListenerException(
+                            "Failed to remove maven metadata for " + p.getDisplayName());
+                }
+                break;
+            case COMPLETE:
+                File dest;
+                try {
+                    dest = InstallerUtil.getInstallPath((RemotePackage)p,
+                            mSdkHandler.getSdkManager(progress), progress);
+                } catch (IOException e) {
+                    progress.logWarning("Failed to find install path", e);
+                    throw new PackageInstaller.StatusChangeListenerException(e);
+                }
+                PackageInfo info = parsePackageInfo(dest, p);
+                addVersion(new File(dest.getParentFile(), MAVEN_METADATA_FILE_NAME), info, progress,
+                        mFop);
         }
-        return super
-                .doPrepareInstall(p, installTempPath, downloader, settings, progress, manager, fop);
     }
 
-    @Override
-    protected boolean doCompleteInstall(@NonNull RemotePackage p,
-            @NonNull File installTempPath,
-            @NonNull File destination,
-            @NonNull ProgressIndicator progress,
-            @NonNull RepoManager manager,
-            @NonNull FileOp fop) {
-        if (!super.doCompleteInstall(p, installTempPath, destination, progress, manager, fop)) {
-            return false;
-        }
-        File dest;
-        try {
-            dest = InstallerUtil.getInstallPath(p, manager, progress);
-        } catch (IOException e) {
-            progress.logWarning("Failed to find install path", e);
-            return false;
-        }
-        PackageInfo info = parsePackageInfo(dest, p);
-        addVersion(new File(dest.getParentFile(), MAVEN_METADATA_FILE_NAME), info, progress,
-                fop);
-        return true;
-    }
 
     /**
      * Remove the specified package from the corresponding metadata file.
