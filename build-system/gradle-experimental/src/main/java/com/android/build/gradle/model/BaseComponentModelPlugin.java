@@ -26,6 +26,7 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.AndroidGradleOptions;
+import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.internal.AndroidConfigHelper;
 import com.android.build.gradle.internal.ExecutionConfigurationUtil;
 import com.android.build.gradle.internal.ExtraModelInfo;
@@ -505,7 +506,8 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             if (targetInfo == null) {
                 sdkHandler.initTarget(androidExtension.getCompileSdkVersion(),
                         androidExtension.getBuildToolsRevision(),
-                        androidExtension.getLibraryRequests(), androidBuilder);
+                        androidExtension.getLibraryRequests(), androidBuilder,
+                        SdkHandler.useCachedSdk(project));
             }
 
             VariantManager variantManager = new VariantManager(project, androidBuilder,
