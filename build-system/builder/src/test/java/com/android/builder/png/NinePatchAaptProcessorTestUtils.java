@@ -29,8 +29,12 @@ import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.repositoryv2.AndroidSdkHandler;
 import com.android.testutils.TestUtils;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
+import com.google.common.truth.FailureStrategy;
+import com.google.common.truth.TestVerb;
 
 import org.junit.Assert;
 
@@ -44,6 +48,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.DataFormatException;
@@ -54,6 +59,7 @@ import javax.imageio.ImageIO;
  * Utilities common to tests for both the synchronous and the asynchronous Aapt processor.
  */
 public class NinePatchAaptProcessorTestUtils {
+
 
     /**
      * Signature of a PNG file.
@@ -78,8 +84,11 @@ public class NinePatchAaptProcessorTestUtils {
     }
 
 
-    public static void tearDownAndCheck(int cruncherKey, Map<File, File> sourceAndCrunchedFiles,
-            PngCruncher cruncher, AtomicLong classStartTime)
+    public static void tearDownAndCheck(int cruncherKey,
+            @NonNull Map<File, File> sourceAndCrunchedFiles,
+            @NonNull PngCruncher cruncher,
+            @NonNull AtomicLong classStartTime,
+            @NonNull TestVerb expect)
             throws IOException, DataFormatException {
         long startTime = System.currentTimeMillis();
         try {
@@ -98,10 +107,11 @@ public class NinePatchAaptProcessorTestUtils {
                     sourceAndCrunched.getKey().getName() + getControlFileSuffix());
 
             //copyFile(sourceAndCrunched.getValue(), crunched);
-            Map<String, Chunk> testedChunks = compareChunks(crunched, sourceAndCrunched.getValue());
+            Map<String, Chunk> testedChunks =
+                    compareChunks(expect, crunched, sourceAndCrunched.getValue());
 
             try {
-                compareImageContent(crunched, sourceAndCrunched.getValue(), false);
+                compareImageContent(expect, crunched, sourceAndCrunched.getValue(), false);
             } catch (Throwable e) {
                 throw new RuntimeException("Failed with " + testedChunks.get("IHDR"), e);
             }
@@ -145,24 +155,27 @@ public class NinePatchAaptProcessorTestUtils {
     }
 
 
-    private static Map<String, Chunk> compareChunks(@NonNull File original, @NonNull File tested)
-            throws
-            IOException, DataFormatException {
+    private static Map<String, Chunk> compareChunks(
+            @NonNull TestVerb expect,
+            @NonNull File original,
+            @NonNull File tested)
+            throws IOException, DataFormatException {
         Map<String, Chunk> originalChunks = readChunks(original);
         Map<String, Chunk> testedChunks = readChunks(tested);
 
-        compareChunk(originalChunks, testedChunks, "IHDR");
-        compareChunk(originalChunks, testedChunks, "npLb");
-        compareChunk(originalChunks, testedChunks, "npTc");
+        compareChunk(expect, originalChunks, testedChunks, "IHDR");
+        compareChunk(expect, originalChunks, testedChunks, "npLb");
+        compareChunk(expect, originalChunks, testedChunks, "npTc");
 
         return testedChunks;
     }
 
     private static void compareChunk(
+            @NonNull TestVerb expect,
             @NonNull Map<String, Chunk> originalChunks,
             @NonNull Map<String, Chunk> testedChunks,
             @NonNull String chunkType) {
-        assertEquals(originalChunks.get(chunkType), testedChunks.get(chunkType));
+        expect.that(testedChunks.get(chunkType)).isEqualTo(originalChunks.get(chunkType));
     }
 
     public static Collection<Object[]> getNinePatches() {
@@ -186,9 +199,11 @@ public class NinePatchAaptProcessorTestUtils {
         return ImmutableList.of();
     }
 
-    protected static void compareImageContent(@NonNull File originalFile, @NonNull File createdFile,
-            boolean is9Patch)
-            throws IOException {
+    protected static void compareImageContent(
+            @NonNull TestVerb expect,
+            @NonNull File originalFile,
+            @NonNull File createdFile,
+            boolean is9Patch) throws IOException {
         BufferedImage originalImage = ImageIO.read(originalFile);
         BufferedImage createdImage = ImageIO.read(createdFile);
 
@@ -218,16 +233,20 @@ public class NinePatchAaptProcessorTestUtils {
         int[] createdContent = new int[createdWidth * createdHeight];
         createdImage.getRGB(0, 0, createdWidth, createdHeight, createdContent, 0, createdWidth);
 
+        List<String> errors = Lists.newArrayList();
+
         for (int y = 0; y < createdHeight; y++) {
             for (int x = 0; x < createdWidth; x++) {
                 int originalRGBA = originalContent[y * createdWidth + x];
                 int createdRGBA = createdContent[y * createdWidth + x];
-                Assert.assertEquals(
-                        String.format("%dx%d: 0x%08x : 0x%08x", x, y, originalRGBA, createdRGBA),
-                        originalRGBA,
-                        createdRGBA);
+                if (originalRGBA != createdRGBA) {
+                    errors.add(String.format(
+                            "%dx%d: 0x%08x : 0x%08x", x, y, originalRGBA, createdRGBA));
+                }
             }
         }
+
+        expect.that(errors).isEmpty();
     }
 
     @NonNull

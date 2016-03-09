@@ -23,9 +23,11 @@ import com.android.repository.Revision;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
 import com.google.common.collect.Maps;
+import com.google.common.truth.Expect;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,9 +45,11 @@ import java.util.zip.DataFormatException;
 /**
  * Asynchronous version of the aapt cruncher test.
  */
-@Ignore("http://b.android.com/202381")
 @RunWith(Parameterized.class)
 public class NinePatchAsyncAaptProcessTest {
+
+    @ClassRule
+    public static Expect expect = Expect.createAndEnableStackTrace();
 
     private static Map<File, File> mSourceAndCrunchedFiles;
 
@@ -76,7 +80,7 @@ public class NinePatchAsyncAaptProcessTest {
             throws IOException, DataFormatException, InterruptedException {
 
         NinePatchAaptProcessorTestUtils.tearDownAndCheck(
-                sCruncherKey.get(), mSourceAndCrunchedFiles, sCruncher, sClassStartTime);
+                sCruncherKey.get(), mSourceAndCrunchedFiles, sCruncher, sClassStartTime, expect);
         mSourceAndCrunchedFiles = null;
     }
 
