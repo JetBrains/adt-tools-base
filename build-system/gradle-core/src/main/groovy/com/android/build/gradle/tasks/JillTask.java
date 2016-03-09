@@ -85,7 +85,7 @@ public class JillTask extends BaseTask {
         }
 
         final Set<String> hashs = Sets.newHashSet();
-        final WaitableExecutor<Void> executor = new WaitableExecutor<Void>();
+        final WaitableExecutor<Void> executor = WaitableExecutor.useGlobalSharedThreadPool();
         final List<File> inputFileDetails = Lists.newArrayList();
 
         final AndroidBuilder builder = getBuilder();
