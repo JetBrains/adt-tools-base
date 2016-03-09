@@ -43,7 +43,6 @@ import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.language.base.FunctionalSourceSet;
 import org.gradle.language.base.LanguageSourceSet;
 import org.gradle.language.base.ProjectSourceSet;
-import org.gradle.language.base.internal.registry.LanguageRegistry;
 import org.gradle.language.base.plugins.ComponentModelBasePlugin;
 import org.gradle.model.Defaults;
 import org.gradle.model.Finalize;
@@ -76,7 +75,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
      */
     public static final String COMPONENT_NAME = "android";
 
-    public static final String GRADLE_ACCEPTABLE_VERSION = "2.10";
+    public static final String GRADLE_ACCEPTABLE_VERSION = "2.11";
 
     private static final String GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY =
             "com.android.build.gradle.overrideVersionCheck";
@@ -202,8 +201,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
                 @Path("android.buildTypes") final ModelMap<BuildType> buildTypes,
                 @Path("android.productFlavors") ModelMap<ProductFlavor> flavors,
                 List<ProductFlavorCombo<ProductFlavor>> flavorGroups,
-                ProjectSourceSet projectSourceSet,
-                LanguageRegistry languageRegistry) {
+                ProjectSourceSet projectSourceSet) {
 
             // Create main source set.
             sources.create("main");

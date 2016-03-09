@@ -110,7 +110,6 @@ import org.gradle.model.RuleSource;
 import org.gradle.model.internal.core.ModelReference;
 import org.gradle.model.internal.core.ModelRegistrations;
 import org.gradle.model.internal.registry.ModelRegistry;
-import org.gradle.platform.base.ComponentSpecContainer;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import android.databinding.tool.DataBindingBuilder;
@@ -486,7 +485,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
         @Mutate
         public static void createAndroidComponents(
-                ComponentSpecContainer androidSpecs,
+                ModelMap<AndroidComponentSpec> androidSpecs,
                 ServiceRegistry serviceRegistry, AndroidConfig androidExtension,
                 com.android.build.gradle.AndroidConfig adaptedModel,
                 @Path("android.buildTypes") ModelMap<BuildType> buildTypes,
