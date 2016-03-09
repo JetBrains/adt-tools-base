@@ -52,4 +52,9 @@ public abstract class Box implements BinaryObject {
     // TODO: slice types
     throw new UnsupportedOperationException();
   }
+
+  @Override
+  public String toString() {
+    return unwrap().toString();
+  }
 }
