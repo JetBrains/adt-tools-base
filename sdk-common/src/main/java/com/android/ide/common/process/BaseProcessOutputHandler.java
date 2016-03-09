@@ -45,8 +45,10 @@ public abstract class BaseProcessOutputHandler implements ProcessOutputHandler {
     }
 
     public static final class BaseProcessOutput implements ProcessOutput {
-        private final FileBackedOutputStream mStandardOutput = new FileBackedOutputStream(1024*10);
-        private final FileBackedOutputStream mErrorOutput = new FileBackedOutputStream(1024*10);
+        private final FileBackedOutputStream mStandardOutput =
+                new FileBackedOutputStream(1024*10, true);
+        private final FileBackedOutputStream mErrorOutput =
+                new FileBackedOutputStream(1024*10, true);
         private final AtomicBoolean mClosed = new AtomicBoolean(false);
 
         @NonNull
