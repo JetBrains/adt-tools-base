@@ -121,7 +121,7 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
         this.extraArtifacts = extraArtifacts;
         this.unresolvedDependencies = unresolvedDependencies;
         this.syncIssues = syncIssues;
-        javaCompileOptions = new DefaultJavaCompileOptions(compileOptions);
+        this.javaCompileOptions = new DefaultJavaCompileOptions(compileOptions);
         this.lintOptions = lintOptions;
         this.buildFolder = buildFolder;
         this.resourcePrefix = resourcePrefix;
