@@ -26,6 +26,7 @@ import com.android.ide.common.blame.MergingLog;
 import com.android.ide.common.blame.SourceFile;
 import com.android.ide.common.blame.SourceFilePosition;
 import com.android.ide.common.blame.SourcePosition;
+import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
 import com.android.testutils.TestUtils;
@@ -33,10 +34,8 @@ import com.android.utils.FileUtils;
 import com.android.utils.Pair;
 import com.google.common.base.Charsets;
 import com.google.common.base.Predicate;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import com.google.common.base.Strings;
+import com.google.common.collect.*;
 import com.google.common.io.Files;
 
 import org.mockito.Mock;
@@ -429,25 +428,31 @@ public class ResourceMergerTest extends BaseTestCase {
         assertTrue(parsedFile.getFile().equals(layoutFile));
         assertEquals("", parsedFile.getQualifiers());
         assertEquals(12, parsedFile.getItems().size());
-        assertEquals(1,
-                     Collections2.filter(parsedFile.getItems(), new Predicate<ResourceItem>() {
-                         @Override
-                         public boolean apply(ResourceItem input) {
-                             return input.getType() == ResourceType.LAYOUT &&
-                                    input.getName().equals("layout_for_id_scan") &&
-                                    input.getSource() != null &&
-                                    input.getSource().equals(parsedFile);
-                         }
-                     }).size());
-        assertEquals(11,
-                     Collections2.filter(parsedFile.getItems(), new Predicate<ResourceItem>() {
-                         @Override
-                         public boolean apply(ResourceItem input) {
-                             return input.getType() == ResourceType.ID &&
-                                    input.getSource() != null &&
-                                    input.getSource().equals(parsedFile);
-                         }
-                     }).size());
+        Collection<ResourceItem> layoutItems = Collections2.filter(parsedFile.getItems(), new Predicate<ResourceItem>() {
+            @Override
+            public boolean apply(ResourceItem input) {
+                return input.getType() == ResourceType.LAYOUT &&
+                       input.getName().equals("layout_for_id_scan") &&
+                       input.getSource() != null &&
+                       input.getSource().equals(parsedFile);
+            }
+        });
+        assertEquals(1, layoutItems.size());
+        // Also check that the layout item's ResourceValue makes sense.
+        ResourceItem layoutItem = Iterables.getFirst(layoutItems, null);
+        assertNotNull(layoutItem);
+        ResourceValue layoutValue = layoutItem.getResourceValue(false);
+        assertNotNull(layoutValue);
+        assertEquals(layoutFile.getAbsolutePath(), layoutValue.getValue());
+        Collection<ResourceItem> idItems = Collections2.filter(parsedFile.getItems(), new Predicate<ResourceItem>() {
+            @Override
+            public boolean apply(ResourceItem input) {
+                return input.getType() == ResourceType.ID &&
+                       input.getSource() != null &&
+                       input.getSource().equals(parsedFile);
+            }
+        });
+        assertEquals(11, idItems.size());
 
         File folder = Files.createTempDir();
         folder.deleteOnExit();
@@ -458,6 +463,24 @@ public class ResourceMergerTest extends BaseTestCase {
         assertTrue(loadedMerger.loadFromBlob(folder, true /*incrementalState*/));
 
         compareResourceMaps(merger, loadedMerger, true /*full compare*/);
+        // Also check that the layout item's ResourceValue makes sense after reload.
+        List<ResourceItem> loadedLayoutItems = loadedMerger.getDataMap().get("layout/layout_for_id_scan");
+        assertEquals(1, loadedLayoutItems.size());
+        layoutItem = Iterables.getFirst(loadedLayoutItems, null);
+        assertNotNull(layoutItem);
+        layoutValue = layoutItem.getResourceValue(false);
+        assertNotNull(layoutValue);
+        assertEquals(layoutFile.getAbsolutePath(), layoutValue.getValue());
+
+        // Check that the ID item's ResourceValue is nothing of consequence.
+        List<ResourceItem> loadedIdItems = loadedMerger.getDataMap().get("id/title_refresh_progress");
+        assertEquals(1, loadedIdItems.size());
+        ResourceItem idItem = Iterables.getFirst(loadedIdItems, null);
+        assertNotNull(idItem);
+        ResourceValue idValue = idItem.getResourceValue(false);
+        assertNotNull(idValue);
+        assertTrue(Strings.isNullOrEmpty(idValue.getValue()));
+
         checkLogger(logger);
     }
 
