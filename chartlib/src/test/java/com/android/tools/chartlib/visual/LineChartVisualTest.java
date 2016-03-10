@@ -23,18 +23,14 @@ import com.android.tools.chartlib.Choreographer;
 import com.android.tools.chartlib.LineChart;
 import com.android.tools.chartlib.model.LineChartData;
 import com.android.tools.chartlib.model.Range;
-import com.android.tools.chartlib.model.RangedSeries;
+import com.android.tools.chartlib.model.RangedContinuousSeries;
 
-import java.awt.Color;
-import java.awt.Dimension;
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.JPanel;
 
 public class LineChartVisualTest extends VisualTest {
 
@@ -54,7 +50,7 @@ public class LineChartVisualTest extends VisualTest {
         Range yRange = null;
         for (int i = 0; i < 4; i++) {
             yRange = i % 2 == 0 ? new Range(0.0, 100.0) : yRange;
-            RangedSeries ranged = new RangedSeries(xRange, yRange);
+            RangedContinuousSeries ranged = new RangedContinuousSeries(xRange, yRange);
             mData.add(ranged);
         }
         mLineChart = new LineChart(mData);
@@ -91,7 +87,7 @@ public class LineChartVisualTest extends VisualTest {
                     while (true) {
                         int v = variance.get();
                         long now = System.currentTimeMillis();
-                        for (RangedSeries rangedSeries : mData.series()) {
+                        for (RangedContinuousSeries rangedSeries : mData.series()) {
                             int size = rangedSeries.getSeries().size();
                             long last = size > 0 ? rangedSeries.getSeries().getY(size - 1) : 0;
                             float delta = (float) Math.random() * variance.get() - v * 0.45f;

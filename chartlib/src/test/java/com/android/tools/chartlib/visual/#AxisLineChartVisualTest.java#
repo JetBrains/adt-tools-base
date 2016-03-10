@@ -155,11 +155,14 @@ public class AxisLineChartVisualTest extends VisualTest {
                     while (true) {
                         // Moves time forward by updating global range to now.
                         long now = System.currentTimeMillis() - mStartTimeMs;
+<<<<<<< f5265ec2138a20f288bb141454d96739b2122b03
                         mXGlobalRange.setMax(now);
 
                         //  Insert new data point at now.
                         int v = variance.get();
-                        for (RangedContinuousSeries rangedSeries : mData.series()) {
+                        for (RangedSeries rangedSeries : mData.series()) {
+			    (RangedContinuousSeries rangedSeries : mData.series()) {
+>>>>>>> Added first version of event series for timeline + visual tests
                             int size = rangedSeries.getSeries().size();
                             long last = size > 0 ? rangedSeries.getSeries().getY(size - 1) : 0;
                             float delta = (float) Math.random() * variance.get() - v * 0.45f;

@@ -17,10 +17,10 @@
 package com.android.tools.chartlib;
 
 import com.android.annotations.NonNull;
+import com.android.tools.chartlib.model.ContinuousSeries;
 import com.android.tools.chartlib.model.LineChartData;
 import com.android.tools.chartlib.model.Range;
-import com.android.tools.chartlib.model.RangedSeries;
-import com.android.tools.chartlib.model.Series;
+import com.android.tools.chartlib.model.RangedContinuousSeries;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -61,8 +61,8 @@ public class LineChart extends AnimatedComponent {
     @Override
     protected void updateData() {
         Map<Range, Long> max = new HashMap<Range, Long>();
-        for (RangedSeries ranged : mData.series()) {
-            Series series = ranged.getSeries();
+        for (RangedContinuousSeries ranged : mData.series()) {
+            ContinuousSeries series = ranged.getSeries();
             long maxY = series.getMaxY();
             Long m = max.get(ranged.getYRange());
             max.put(ranged.getYRange(), m == null ? maxY : Math.max(maxY, m));
@@ -78,7 +78,7 @@ public class LineChart extends AnimatedComponent {
         }
 
         int p = 0;
-        for (RangedSeries ranged : mData.series()) {
+        for (RangedContinuousSeries ranged : mData.series()) {
             Path2D.Float path;
             if (p == mPaths.size()) {
                 path = new Path2D.Float();

@@ -18,38 +18,39 @@ package com.android.tools.chartlib.model;
 
 import com.android.annotations.NonNull;
 
-import gnu.trove.TLongArrayList;
-
-public class Series {
+/**
+ * Represents a view into a continuous series, where the data in view is only
+ * within given x and y ranged.
+ */
+public class RangedContinuousSeries {
 
     @NonNull
-    private final TLongArrayList mX = new TLongArrayList();
+    private final Range mXRange;
 
     @NonNull
-    private final TLongArrayList mY = new TLongArrayList();
+    private final Range mYRange;
 
-    long mMaxY;
+    @NonNull
+    private final ContinuousSeries mSeries;
 
-    public void add(long x, long y) {
-        mMaxY = Math.max(mMaxY, y);
-
-        mX.add(x);
-        mY.add(y);
+    public RangedContinuousSeries(Range xRange, Range yRange) {
+        mXRange = xRange;
+        mYRange = yRange;
+        mSeries = new ContinuousSeries();
     }
 
-    public int size() {
-        return mX.size();
+    @NonNull
+    public ContinuousSeries getSeries() {
+        return mSeries;
     }
 
-    public long getX(int index) {
-        return mX.get(index);
+    @NonNull
+    public Range getYRange() {
+        return mYRange;
     }
 
-    public long getY(int index) {
-        return mY.get(index);
-    }
-
-    public long getMaxY() {
-        return mMaxY;
+    @NonNull
+    public Range getXRange() {
+        return mXRange;
     }
 }
