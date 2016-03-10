@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package com.android.tools.profiler.support.profilerserver;
+package com.android.tools.profiler.support.profilers;
+
+import com.android.tools.profiler.support.profilerserver.MessageHeader;
 
 import java.nio.ByteBuffer;
 
-public interface ProfilerComponent {
+public interface ProfilerComponent extends Comparable<ProfilerComponent> {
     int RESPONSE_OK = 0;
     int RESPONSE_RECONNECT = 1; // Request that the server terminates and waits for reconnection from client.
 
