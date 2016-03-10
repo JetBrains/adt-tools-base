@@ -26,6 +26,7 @@ import com.android.build.api.transform.TransformInput;
 import com.android.build.gradle.shrinker.AbstractShrinker.CounterSet;
 import com.android.build.gradle.shrinker.IncrementalShrinker.IncrementalRunImpossibleException;
 import com.android.build.gradle.shrinker.TestClasses.Annotations;
+import com.android.build.gradle.shrinker.TestClasses.Interfaces;
 import com.android.build.gradle.shrinker.TestClassesForIncremental.Cycle;
 import com.android.build.gradle.shrinker.TestClassesForIncremental.Simple;
 import com.android.ide.common.internal.WaitableExecutor;
@@ -402,6 +403,49 @@ public class IncrementalShrinkerTest extends AbstractShrinkerTest {
         assertMembersLeft("CycleOne", "<init>:()V");
         assertMembersLeft("CycleTwo", "<init>:()V");
         assertClassSkipped("NotUsed");
+    }
+
+    @Test
+    public void interfaces_implementationFromSuperclass() throws Exception {
+        // Given:
+        Files.write(Interfaces.main(), new File(mTestPackageDir, "Main.class"));
+        Files.write(Interfaces.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
+        Files.write(Interfaces.myCharSequence(), new File(mTestPackageDir, "MyCharSequence.class"));
+        Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
+        Files.write(Interfaces.namedRunnable(), new File(mTestPackageDir, "NamedRunnable.class"));
+        Files.write(Interfaces.namedRunnableImpl(), new File(mTestPackageDir, "NamedRunnableImpl.class"));
+        Files.write(Interfaces.doesSomething(), new File(mTestPackageDir, "DoesSomething.class"));
+        Files.write(
+                Interfaces.implementationFromSuperclass(),
+                new File(mTestPackageDir, "ImplementationFromSuperclass.class"));
+
+        // When:
+        fullRun(
+                "Main",
+                "useImplementationFromSuperclass:(Ltest/ImplementationFromSuperclass;)V",
+                "useMyInterface:(Ltest/MyInterface;)V");
+
+        // Then:
+        assertMembersLeft(
+                "Main",
+                "useImplementationFromSuperclass:(Ltest/ImplementationFromSuperclass;)V",
+                "useMyInterface:(Ltest/MyInterface;)V");
+        assertMembersLeft("ImplementationFromSuperclass");
+        assertMembersLeft(
+                "MyInterface",
+                "doSomething:(Ljava/lang/Object;)V");
+        assertClassSkipped("MyImpl");
+        assertClassSkipped("MyCharSequence");
+
+        // This is the tricky part: this method should be kept, because a subclass is using it to
+        // implement an interface.
+        assertMembersLeft(
+                "DoesSomething",
+                "doSomething:(Ljava/lang/Object;)V");
+
+        assertImplements("ImplementationFromSuperclass", "test/MyInterface");
+
+        incrementalRun(ImmutableMap.of("ImplementationFromSuperclass", Status.CHANGED));
     }
 
     private void fullRun(String className, String... methods) throws IOException {
