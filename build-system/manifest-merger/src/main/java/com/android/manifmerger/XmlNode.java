@@ -137,11 +137,13 @@ public abstract class XmlNode {
 
     @NonNull
     public static NodeName fromXmlName(@NonNull String name) {
-        return (name.contains(":"))
-                ? new NamespaceAwareName(SdkConstants.ANDROID_URI,
-                        name.substring(0, name.indexOf(':')),
-                        name.substring(name.indexOf(':') + 1))
-                : new Name(name);
+        if (name.contains(":")) {
+            String prefix = name.substring(0, name.indexOf(':'));
+            return new NamespaceAwareName(
+              SdkConstants.XMLNS.equals(prefix) ? SdkConstants.XMLNS_URI : SdkConstants.ANDROID_URI,
+              prefix, name.substring(name.indexOf(':') + 1));
+        }
+        return new Name(name);
     }
 
     @NonNull

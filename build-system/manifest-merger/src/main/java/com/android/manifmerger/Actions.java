@@ -221,6 +221,11 @@ public class Actions {
             return mTargetId;
         }
 
+        @Nullable
+        public String getReason() {
+            return mReason;
+        }
+
         public void print(@NonNull StringBuilder stringBuilder) {
             stringBuilder.append(mActionType)
                     .append(" from ")
