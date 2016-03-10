@@ -87,14 +87,14 @@ public class MavenInstallListenerTest extends TestCase {
 
         RepositoryPackages pkgs = mgr.getPackages();
 
-        // Install
-        PackageInstaller installer = new BasicInstaller();
-        installer.registerStateChangeListener(
-                new MavenInstallListener(new AndroidSdkHandler(root, fop), fop));
         RemotePackage p = pkgs.getRemotePackages()
                 .get("m2repository;com;android;group1;artifact1;1.2.3");
-        installer.prepareInstall(p, downloader, new FakeSettingsController(false),
-                runner.getProgressIndicator(), mgr, fop);
+        // Install
+        PackageInstaller installer = new BasicInstaller(p, mgr, fop);
+        installer.registerStateChangeListener(
+                new MavenInstallListener(new AndroidSdkHandler(root, fop), fop));
+        installer.prepareInstall(downloader, new FakeSettingsController(false),
+                runner.getProgressIndicator());
         installer.completeInstall(p, runner.getProgressIndicator(), mgr, fop);
         runner.getProgressIndicator().assertNoErrorsOrWarnings();
 
@@ -187,14 +187,15 @@ public class MavenInstallListenerTest extends TestCase {
 
         RepositoryPackages pkgs = mgr.getPackages();
 
-        // Install
-        PackageInstaller installer = new BasicInstaller();
-        installer.registerStateChangeListener(
-                new MavenInstallListener(new AndroidSdkHandler(root, fop), fop));
         RemotePackage remotePackage = pkgs.getRemotePackages()
                 .get("m2repository;com;android;group1;artifact1;1.2.3");
-        installer.prepareInstall(remotePackage, downloader, new FakeSettingsController(false),
-                runner.getProgressIndicator(), mgr, fop);
+
+        // Install
+        PackageInstaller installer = new BasicInstaller(remotePackage, mgr, fop);
+        installer.registerStateChangeListener(
+                new MavenInstallListener(new AndroidSdkHandler(root, fop), fop));
+        installer.prepareInstall(downloader, new FakeSettingsController(false),
+                runner.getProgressIndicator());
         installer.completeInstall(remotePackage, runner.getProgressIndicator(), mgr, fop);
         runner.getProgressIndicator().assertNoErrorsOrWarnings();
 
@@ -310,14 +311,13 @@ public class MavenInstallListenerTest extends TestCase {
 
         Map<String, ? extends LocalPackage> locals = mgr.getPackages().getLocalPackages();
         assertEquals(2, locals.size());
-        assertTrue(locals.containsKey("m2repository;com;example;groupId;artifactId;1.2.4"));
-
-        PackageInstaller installer = new BasicInstaller();
+        LocalPackage p = locals.get("m2repository;com;example;groupId;artifactId;1.2.4");
+        assertNotNull(p);
+        PackageInstaller installer = new BasicInstaller(p, mgr, fop);
         installer.registerStateChangeListener(
                 new MavenInstallListener(new AndroidSdkHandler(root, fop), fop));
         FakeProgressIndicator progress = new FakeProgressIndicator();
-        installer.uninstall(locals.get("m2repository;com;example;groupId;artifactId;1.2.4"),
-                progress, mgr, fop);
+        installer.uninstall(progress);
         progress.assertNoErrorsOrWarnings();
         MavenInstallListener.MavenMetadata metadata = MavenInstallListener
                 .unmarshalMetadata(new File(metadataPath), progress, fop);
