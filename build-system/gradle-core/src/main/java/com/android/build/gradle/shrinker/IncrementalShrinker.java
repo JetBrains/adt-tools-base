@@ -51,8 +51,12 @@ public class IncrementalShrinker<T> extends AbstractShrinker<T> {
      * a full run instead.
      */
     public static class IncrementalRunImpossibleException extends RuntimeException {
-        public IncrementalRunImpossibleException(String message) {
+        IncrementalRunImpossibleException(String message) {
             super(message);
+        }
+
+        IncrementalRunImpossibleException(String message, Throwable cause) {
+            super(message, cause);
         }
     }
 

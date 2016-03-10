@@ -22,12 +22,12 @@ import static org.objectweb.asm.Opcodes.V1_6;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.api.transform.SecondaryFile;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
 import com.android.build.api.transform.JarInput;
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.QualifiedContent.Scope;
+import com.android.build.api.transform.SecondaryFile;
 import com.android.build.api.transform.Status;
 import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
@@ -52,8 +52,6 @@ import com.google.common.io.Files;
 
 import org.gradle.api.logging.Logger;
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.FieldVisitor;
-import org.objectweb.asm.MethodVisitor;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -200,6 +198,7 @@ public class InstantRunSlicer extends Transform {
                         // we are over 65K limit.
                         File outputFile = new File(dependenciesLocation,
                                 new File(packagePath, file.getName()).getPath());
+                        Files.createParentDirs(outputFile);
                         Files.copy(file, outputFile);
                     }
                 }

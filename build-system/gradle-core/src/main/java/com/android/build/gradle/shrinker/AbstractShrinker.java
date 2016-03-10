@@ -88,7 +88,8 @@ public abstract class AbstractShrinker<T> {
         } else {
             return className.startsWith("java/")
                     || (className.startsWith("android/")
-                            && !className.startsWith("android/support/"));
+                            // Match android/support and android/preview/support, possibly others.
+                            && !className.contains("/support/"));
         }
     }
 

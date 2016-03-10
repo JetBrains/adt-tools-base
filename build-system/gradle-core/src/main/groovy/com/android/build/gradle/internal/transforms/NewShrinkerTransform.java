@@ -20,9 +20,6 @@ import static com.android.build.gradle.shrinker.AbstractShrinker.logTime;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.build.api.transform.SecondaryInput;
-import com.android.build.api.transform.Context;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.JarInput;
 import com.android.build.api.transform.QualifiedContent;
@@ -156,7 +153,6 @@ public class NewShrinkerTransform extends ProguardConfigurable {
         } else {
             fullRun(invocation.getInputs(), referencedInputs, output);
         }
-
     }
 
     private void fullRun(
@@ -235,24 +231,25 @@ public class NewShrinkerTransform extends ProguardConfigurable {
             @NonNull Collection<TransformInput> inputs,
             @NonNull Collection<TransformInput> referencedInputs,
             @NonNull TransformOutputProvider output) throws IOException {
-        Stopwatch stopwatch = Stopwatch.createStarted();
-        JavaSerializationShrinkerGraph graph =
-                JavaSerializationShrinkerGraph.readFromDir(incrementalDir);
-        logTime("loading state", stopwatch);
-
-        ProguardConfig config = getConfig();
-
-        ShrinkerLogger shrinkerLogger =
-                new ShrinkerLogger(config.getFlags().getDontWarnSpecs(), logger);
-
-        IncrementalShrinker<String> shrinker =
-                new IncrementalShrinker<String>(new WaitableExecutor<Void>(), graph, shrinkerLogger);
-
         try {
+            Stopwatch stopwatch = Stopwatch.createStarted();
+            JavaSerializationShrinkerGraph graph =
+                    JavaSerializationShrinkerGraph.readFromDir(incrementalDir);
+            logTime("loading state", stopwatch);
+
+            ProguardConfig config = getConfig();
+
+            ShrinkerLogger shrinkerLogger =
+                    new ShrinkerLogger(config.getFlags().getDontWarnSpecs(), logger);
+
+            IncrementalShrinker<String> shrinker =
+                    new IncrementalShrinker<String>(new WaitableExecutor<Void>(), graph, shrinkerLogger);
             shrinker.incrementalRun(inputs, output);
             checkForWarnings(config, shrinkerLogger);
         } catch (IncrementalShrinker.IncrementalRunImpossibleException e) {
             logger.warn("Incremental shrinker run impossible: " + e.getMessage());
+            // Log the full stack trace at INFO level for debugging.
+            logger.info("Incremental shrinker run impossible: " + e.getMessage(), e);
             fullRun(inputs, referencedInputs, output);
         }
     }
