@@ -18,6 +18,9 @@ package com.android.tools.profiler.support.profilerserver;
 
 import android.os.SystemClock;
 import android.util.Log;
+
+import com.android.tools.profiler.support.profilers.MemoryProfiler;
+import com.android.tools.profiler.support.profilers.NetworkProfiler;
 import com.android.tools.profiler.support.profilers.ProfilerRegistry;
 
 import java.io.IOException;
@@ -97,6 +100,8 @@ public class ProfilerServer implements Runnable {
 
     private ProfilerServer() {
         registerComponent(new ServerComponent());
+        registerComponent(new MemoryProfiler());
+        registerComponent(new NetworkProfiler());
     }
 
     public static synchronized void start() throws IOException {
