@@ -442,6 +442,10 @@ public class FileManager {
                         } finally {
                             src.close();
                         }
+                        if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                            Log.v(LOG_TAG, "File written at " + System.currentTimeMillis());
+                            Log.v(LOG_TAG, "File last modified reported : " + dest.lastModified());
+                        }
                     }
                 }
 

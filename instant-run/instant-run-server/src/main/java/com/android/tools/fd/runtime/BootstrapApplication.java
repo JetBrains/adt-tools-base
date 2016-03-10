@@ -178,7 +178,10 @@ public class BootstrapApplication extends Application {
                             + " code patch");
                 }
 
-                if (apkModified == 0L || codeModified <= apkModified) {
+                // it is important to realize the lastModified() will only have a precision within
+                // one second so if an APK is installed and all its slices are extracted within a
+                // second, the codeModified will be equal to the apkModified.
+                if (apkModified == 0L || codeModified < apkModified) {
                     if (Log.isLoggable(LOG_TAG, Log.INFO)) {
                         Log.i(LOG_TAG, "Ignoring code patches, older than APK");
                     }
