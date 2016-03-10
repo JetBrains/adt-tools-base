@@ -13,38 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.android.tools.profiler.support.profilers;
 
 import com.android.tools.profiler.support.profilerserver.MessageHeader;
 import com.android.tools.profiler.support.profilerserver.ProfilerComponent;
-import com.android.tools.profiler.support.profilerserver.ProfilerServer;
 
-import android.os.Debug;
+import android.net.TrafficStats;
+import android.os.Process;
 
 import java.nio.ByteBuffer;
 
-public class MemoryProfiler implements ProfilerComponent {
-    private static final MemoryProfiler ourMemoryMonitor = new MemoryProfiler();
+public class NetworkProfiler implements ProfilerComponent {
 
-    private Debug.MemoryInfo myMemoryInfo = new Debug.MemoryInfo();
-
-    public static MemoryProfiler getInstance() {
-        return ourMemoryMonitor;
-    }
-
-    public Debug.MemoryInfo getMemoryInfo() {
-        return myMemoryInfo;
-    }
+    private final int myUid = Process.myUid();
 
     @Override
     public byte getComponentId() {
-        return ProfilerRegistry.MEMORY;
-    }
-
-    @Override
-    public String configure(byte flags) {
-        return null;
+        return ProfilerRegistry.NETWORKING;
     }
 
     @Override
@@ -58,12 +43,26 @@ public class MemoryProfiler implements ProfilerComponent {
     }
 
     @Override
-    public int receiveMessage(long frameStartTime, MessageHeader header, ByteBuffer input, ByteBuffer output) {
+    public String configure(byte flags) {
+        return null;
+    }
+
+    @Override
+    public int receiveMessage(long frameStartTime, MessageHeader header, ByteBuffer input,
+            ByteBuffer output) {
         return RESPONSE_OK;
     }
 
     @Override
     public int update(long frameStartTime, ByteBuffer output) {
+        // TODO: Change time to a customized world clock time when the world clock is ready.
+        long time = System.currentTimeMillis();
+        long txBytes = TrafficStats.getUidTxBytes(myUid);
+        long rxBytes = TrafficStats.getUidRxBytes(myUid);
+        MessageHeader.writeToBuffer(output, 36, (short) 0, (short) 0, (byte) 0x7f, ProfilerRegistry.NETWORKING, (short) 0);
+        output.putLong(time);
+        output.putLong(txBytes);
+        output.putLong(rxBytes);
         return UPDATE_DONE;
     }
 }
