@@ -461,7 +461,9 @@ public class IncrementalShrinkerTest extends AbstractShrinkerTest {
     private void incrementalRun(Map<String, Status> changes) throws Exception {
         IncrementalShrinker<String> incrementalShrinker = new IncrementalShrinker<String>(
                 WaitableExecutor.<Void>useGlobalSharedThreadPool(),
-                JavaSerializationShrinkerGraph.readFromDir(mIncrementalDir),
+                JavaSerializationShrinkerGraph.readFromDir(
+                        mIncrementalDir,
+                        this.getClass().getClassLoader()),
                 mShrinkerLogger);
 
         Map<File, Status> files = Maps.newHashMap();

@@ -234,7 +234,9 @@ public class NewShrinkerTransform extends ProguardConfigurable {
         try {
             Stopwatch stopwatch = Stopwatch.createStarted();
             JavaSerializationShrinkerGraph graph =
-                    JavaSerializationShrinkerGraph.readFromDir(incrementalDir);
+                    JavaSerializationShrinkerGraph.readFromDir(
+                            incrementalDir,
+                            this.getClass().getClassLoader());
             logTime("loading state", stopwatch);
 
             ProguardConfig config = getConfig();

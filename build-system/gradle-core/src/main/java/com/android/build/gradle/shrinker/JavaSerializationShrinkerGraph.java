@@ -48,6 +48,7 @@ import java.io.IOException;
 import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.ObjectStreamClass;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -119,11 +120,29 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
         return new JavaSerializationShrinkerGraph(stateDir);
     }
 
+    /**
+     * Constructs a graph by deserializing saved state.
+     *
+     * @param dir directory where the state was saved
+     * @param classLoader class loader used to resolve class names
+     * @throws IOException
+     */
     @SuppressWarnings("unchecked") // readObject() returns an Object, we need to cast it.
-    public static JavaSerializationShrinkerGraph readFromDir(File dir) throws IOException {
+    public static JavaSerializationShrinkerGraph readFromDir(
+            @NonNull File dir,
+            @NonNull final ClassLoader classLoader) throws IOException {
         File stateFile = getStateFile(dir);
+
+        // For some reason, when invoked from Gradle on a complex project, sometimes shrinker
+        // classes cannot be found. This seems to fix the problem.
         ObjectInputStream stream =
-                new ObjectInputStream(new BufferedInputStream(new FileInputStream(stateFile)));
+                new ObjectInputStream(new BufferedInputStream(new FileInputStream(stateFile))) {
+                    @Override
+                    protected Class<?> resolveClass(ObjectStreamClass desc)
+                            throws IOException, ClassNotFoundException {
+                        return Class.forName(desc.getName(), false, classLoader);
+                    }
+                };
         try {
             return new JavaSerializationShrinkerGraph(
                     dir,
