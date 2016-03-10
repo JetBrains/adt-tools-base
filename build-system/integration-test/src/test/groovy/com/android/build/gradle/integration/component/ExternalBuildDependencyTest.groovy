@@ -130,7 +130,7 @@ model {
         }
         toolchains {
             create("gcc") {
-                CCompilerExecutable = "${compiler.getPath()}"
+                cCompilerExecutable = "${compiler.getPath()}"
             }
         }
     }
