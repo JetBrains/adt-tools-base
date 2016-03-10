@@ -59,17 +59,26 @@ public class AndroidTargetHashTest extends TestCase {
         version = AndroidTargetHash.getPlatformVersion("5");
         assertNotNull(version);
         assertEquals(5, version.getApiLevel());
+        assertEquals(5, version.getFeatureLevel());
         assertNull(version.getCodename());
 
         version = AndroidTargetHash.getPlatformVersion("android-CUPCAKE");
         assertNotNull(version);
-        assertEquals(3, version.getApiLevel());
+        assertEquals(2, version.getApiLevel());
+        assertEquals(3, version.getFeatureLevel());
         assertEquals("CUPCAKE", version.getCodename());
 
         version = AndroidTargetHash.getPlatformVersion("android-KITKAT");
         assertNotNull(version);
-        assertEquals(19, version.getApiLevel());
+        assertEquals(18, version.getApiLevel());
+        assertEquals(19, version.getFeatureLevel());
         assertEquals("KITKAT", version.getCodename());
+
+        version = AndroidTargetHash.getPlatformVersion("android-N");
+        assertNotNull(version);
+        assertEquals(23, version.getApiLevel());
+        assertEquals(24, version.getFeatureLevel());
+        assertEquals("N", version.getCodename());
 
         version = AndroidTargetHash.getPlatformVersion("android-UNKNOWN");
         assertNotNull(version);
