@@ -28,6 +28,8 @@ public interface ProfilerComponent extends Comparable<ProfilerComponent> {
     int UPDATE_DONE = 0; // Signals that no more updates are required.
     int UPDATE_AGAIN = 1; // Signals that the component requires more updates.
 
+    void initialize();
+
     /**
      * @return the unique ID associated with this ProfilerComponent.
      */

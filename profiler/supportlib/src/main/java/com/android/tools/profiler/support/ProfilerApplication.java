@@ -29,6 +29,8 @@ public class ProfilerApplication extends Application {
         Log.i(ProfilerServer.SERVER_NAME, "Advanced profiling is enabled and ready.");
         super.onCreate();
 
+        ProfilerServer.getInstance().initialize(this);
+
         try {
             ProfilerServer.start();
             Log.i(ProfilerServer.SERVER_NAME, "Advanced profiling has started.");
