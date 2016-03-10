@@ -79,7 +79,7 @@ public class NativeBuildConfigGsonUtil {
             }
         }
         if (value.cFileExtensions != null) {
-            config.getCFileExtensions().addAll(value.cFileExtensions);
+            config.getcFileExtensions().addAll(value.cFileExtensions);
         }
         if (value.cppFileExtensions != null) {
             config.getCppFileExtensions().addAll(value.cppFileExtensions);
@@ -91,7 +91,7 @@ public class NativeBuildConfigGsonUtil {
             @NonNull NativeSourceFolder folder) {
         folder.setSrc(value.src);
         if (value.cFlags != null) {
-            folder.setCFlags(value.cFlags);
+            folder.setcFlags(value.cFlags);
         }
         if (value.cppFlags != null) {
             folder.setCppFlags(value.cppFlags);
@@ -152,7 +152,7 @@ public class NativeBuildConfigGsonUtil {
     private static void copyToNativeToolchain(
             @NonNull NativeToolchainValue value,
             @NonNull NativeToolchain toolchain) {
-        toolchain.setCCompilerExecutable(value.cCompilerExecutable);
+        toolchain.setcCompilerExecutable(value.cCompilerExecutable);
         toolchain.setCppCompilerExecutable(value.cppCompilerExecutable);
     }
 }
