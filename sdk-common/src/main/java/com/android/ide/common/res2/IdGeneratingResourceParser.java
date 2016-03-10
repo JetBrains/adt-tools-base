@@ -186,6 +186,14 @@ class IdGeneratingResourceParser {
             Node newNode = document.createElement(TAG_ITEM);
             NodeUtils.addAttribute(document, newNode, null, ATTR_NAME, getName());
             NodeUtils.addAttribute(document, newNode, null, ATTR_TYPE, getType().getName());
+            // Normally layouts are file-based resources and the ResourceValue is the file path.
+            // However, we're serializing it as XML and in that case the ResourceValue comes from
+            // parsing the XML. So store the file path in the XML to make the ResourceValues equivalent.
+            if (getType() != ResourceType.ID) {
+                ResourceFile sourceFile = getSource();
+                assert sourceFile != null;
+                newNode.setTextContent(sourceFile.getFile().getAbsolutePath());
+            }
             return newNode;
         }
     }
