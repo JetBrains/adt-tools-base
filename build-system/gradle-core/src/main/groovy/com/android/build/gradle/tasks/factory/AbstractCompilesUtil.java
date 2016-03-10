@@ -46,7 +46,7 @@ public class AbstractCompilesUtil {
         } else {
             if (0 < compileSdkLevel && compileSdkLevel <= 20) {
                 javaVersionToUse = JavaVersion.VERSION_1_6;
-            } else if (21 <= compileSdkLevel && compileSdkLevel <= 24) {
+            } else if (21 <= compileSdkLevel && compileSdkLevel < 24) {
                 javaVersionToUse = JavaVersion.VERSION_1_7;
             } else {
                 if (jackEnabled) {
@@ -59,7 +59,7 @@ public class AbstractCompilesUtil {
 
         JavaVersion jdkVersion =
                 JavaVersion.toVersion(System.getProperty("java.specification.version"));
-        if (jdkVersion.compareTo(javaVersionToUse) < 0) {
+        if (jdkVersion.compareTo(javaVersionToUse) < 0 && !jackEnabled) {
             compileTask.getLogger().warn(
                     "Default language level for compileSdkVersion '{}' is " +
                             "{}, but the JDK used is {}, so the JDK language level will be used.",
