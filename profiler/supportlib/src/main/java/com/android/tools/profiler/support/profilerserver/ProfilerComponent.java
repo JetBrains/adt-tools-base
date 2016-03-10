@@ -22,6 +22,7 @@ public interface ProfilerComponent {
     int RESPONSE_OK = 0;
     int RESPONSE_RECONNECT = 1; // Request that the server terminates and waits for reconnection from client.
 
+    int UPDATE_ERROR_RECONNECT = -1; // Signals that something went wrong during the update, and the server needs to terminate the connection.
     int UPDATE_DONE = 0; // Signals that no more updates are required.
     int UPDATE_AGAIN = 1; // Signals that the component requires more updates.
 

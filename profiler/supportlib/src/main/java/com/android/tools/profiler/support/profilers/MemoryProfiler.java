@@ -68,6 +68,6 @@ public class MemoryProfiler implements ProfilerComponent {
 
     @Override
     public int update(long frameStartTime, ByteBuffer output) {
-        return RESPONSE_OK;
+        return UPDATE_DONE;
     }
 }
