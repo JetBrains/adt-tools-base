@@ -19,9 +19,7 @@ package com.android.tools.profiler.support.profilerserver;
 import android.os.SystemClock;
 import android.util.Log;
 
-import com.android.tools.profiler.support.profilers.MemoryProfiler;
-import com.android.tools.profiler.support.profilers.NetworkProfiler;
-import com.android.tools.profiler.support.profilers.ProfilerRegistry;
+import com.android.tools.profiler.support.profilers.*;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -75,13 +73,6 @@ public class ProfilerServer implements Runnable {
     private static final byte OK_RESPONSE = (byte)0;
     private static final byte ERROR_RESPONSE = (byte)1;
     private static final byte STRING_TERMINATOR = (byte)0;
-
-    private static final Comparator<ProfilerComponent> COMPONENT_COMPARATOR = new Comparator<ProfilerComponent>() {
-        @Override
-        public int compare(ProfilerComponent a, ProfilerComponent b) {
-            return a.getComponentId() - b.getComponentId();
-        }
-    };
 
     private final List<ProfilerComponent> mRegisteredComponents = new ArrayList<ProfilerComponent>(ProfilerRegistry.TOTAL);
     private final MessageHeader mInputMessageHeader = new MessageHeader();
@@ -148,7 +139,7 @@ public class ProfilerServer implements Runnable {
             }
         }
         mRegisteredComponents.add(profilerComponent);
-        Collections.sort(mRegisteredComponents, COMPONENT_COMPARATOR);
+        Collections.sort(mRegisteredComponents);
     }
 
     private static void flushBuffer(SocketChannel socketChannel, ByteBuffer output) throws IOException {
@@ -259,8 +250,6 @@ public class ProfilerServer implements Runnable {
         socketChannel.read(mInputBuffer);
         mInputBuffer.flip();
         while (mInputBuffer.remaining() >= MessageHeader.MESSAGE_HEADER_LENGTH) {
-            mLastHeartbeatTime = frameStartTime;
-
             mInputBuffer.mark();
             mInputMessageHeader.parseFromBuffer(mInputBuffer);
             if (mInputBuffer.remaining() < mInputMessageHeader.length - MessageHeader.MESSAGE_HEADER_LENGTH) {
@@ -322,7 +311,7 @@ public class ProfilerServer implements Runnable {
         } while (updatesRequired > 0);
     }
 
-    private class ServerComponent implements ProfilerComponent {
+    private class ServerComponent extends AbstractProfilerComponent {
         @Override
         public byte getComponentId() {
             return ProfilerRegistry.SERVER;
