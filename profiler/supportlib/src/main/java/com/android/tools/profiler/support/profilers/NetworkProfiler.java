@@ -16,14 +16,13 @@
 package com.android.tools.profiler.support.profilers;
 
 import com.android.tools.profiler.support.profilerserver.MessageHeader;
-import com.android.tools.profiler.support.profilerserver.ProfilerComponent;
 
 import android.net.TrafficStats;
 import android.os.Process;
 
 import java.nio.ByteBuffer;
 
-public class NetworkProfiler implements ProfilerComponent {
+public class NetworkProfiler extends AbstractProfilerComponent {
 
     private final int myUid = Process.myUid();
 

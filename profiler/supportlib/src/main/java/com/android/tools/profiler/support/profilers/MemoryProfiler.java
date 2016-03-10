@@ -17,14 +17,12 @@
 package com.android.tools.profiler.support.profilers;
 
 import com.android.tools.profiler.support.profilerserver.MessageHeader;
-import com.android.tools.profiler.support.profilerserver.ProfilerComponent;
-import com.android.tools.profiler.support.profilerserver.ProfilerServer;
 
 import android.os.Debug;
 
 import java.nio.ByteBuffer;
 
-public class MemoryProfiler implements ProfilerComponent {
+public class MemoryProfiler extends AbstractProfilerComponent {
     private static final MemoryProfiler ourMemoryMonitor = new MemoryProfiler();
 
     private Debug.MemoryInfo myMemoryInfo = new Debug.MemoryInfo();
