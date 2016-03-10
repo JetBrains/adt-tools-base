@@ -166,8 +166,8 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
         @Finalize
         static void finalizeNativeBuildConfig(NativeBuildConfig config) {
             // Configure default file extensions if not already set by user.
-            if (config.getCFileExtensions().isEmpty()) {
-                config.getCFileExtensions().addAll(NativeSourceFileExtensions.C_FILE_EXTENSIONS);
+            if (config.getcFileExtensions().isEmpty()) {
+                config.getcFileExtensions().addAll(NativeSourceFileExtensions.C_FILE_EXTENSIONS);
             }
             if (config.getCppFileExtensions().isEmpty()) {
                 config.getCppFileExtensions().addAll(NativeSourceFileExtensions.CPP_FILE_EXTENSIONS);

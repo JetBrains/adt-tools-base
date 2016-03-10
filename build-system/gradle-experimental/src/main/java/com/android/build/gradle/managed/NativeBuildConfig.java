@@ -56,7 +56,7 @@ public interface NativeBuildConfig {
     ModelMap<NativeToolchain> getToolchains();
 
     @NonNull
-    List<String> getCFileExtensions();
+    List<String> getcFileExtensions();
 
     @NonNull
     List<String> getCppFileExtensions();

@@ -40,8 +40,8 @@ public interface NativeSourceFolder {
      * Compiler flags for all C files.
      */
     @NonNull
-    String getCFlags();
-    void setCFlags(String flags);
+    String getcFlags();
+    void setcFlags(String flags);
 
     /**
      * Compiler flags for all C++ files.

@@ -456,7 +456,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 ModelMap<AndroidBinaryInternal> binaries,
                 final NdkHandler ndkHandler) {
 
-            config.getCFileExtensions().addAll(NativeSourceFileExtensions.C_FILE_EXTENSIONS);
+            config.getcFileExtensions().addAll(NativeSourceFileExtensions.C_FILE_EXTENSIONS);
             config.getCppFileExtensions().addAll(NativeSourceFileExtensions.CPP_FILE_EXTENSIONS);
 
             for (final AndroidBinaryInternal binary : binaries.values()) {
@@ -477,7 +477,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                         new Action<NativeToolchain>() {
                             @Override
                             public void execute(NativeToolchain nativeToolchain) {
-                                nativeToolchain.setCCompilerExecutable(
+                                nativeToolchain.setcCompilerExecutable(
                                         ndkHandler.getCCompiler(abi));
                                 nativeToolchain.setCppCompilerExecutable(
                                         ndkHandler.getCppCompiler(abi));
@@ -542,8 +542,8 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                                 @Override
                                 public void execute(NativeSourceFolder nativeSourceFolder) {
                                     nativeSourceFolder.setSrc(srcFolder);
-                                    nativeSourceFolder.setCFlags(
-                                            nativeSourceFolder.getCFlags() + ' ' +
+                                    nativeSourceFolder.setcFlags(
+                                            nativeSourceFolder.getcFlags() + ' ' +
                                                     StringHelper.quoteAndJoinTokens(cFlags));
                                     nativeSourceFolder.setCppFlags(
                                             nativeSourceFolder.getCppFlags() + ' ' +

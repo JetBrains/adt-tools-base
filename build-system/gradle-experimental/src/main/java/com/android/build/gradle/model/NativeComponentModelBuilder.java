@@ -115,7 +115,7 @@ public class NativeComponentModelBuilder implements ToolingModelBuilder {
                                 src.getSrc(),
                                 ImmutableMap.of(
                                         "c", getSettingsName(StringHelper.tokenizeString(
-                                                src.getCFlags())),
+                                                src.getcFlags())),
                                         "c++", getSettingsName(StringHelper.tokenizeString(
                                                 src.getCppFlags()))),
                                 src.getWorkingDirectory()));
@@ -161,7 +161,7 @@ public class NativeComponentModelBuilder implements ToolingModelBuilder {
         for (NativeToolchain toolchain : config.getToolchains().values()) {
             toolchains.add(new NativeToolchainImpl(
                     toolchain.getName(),
-                    toolchain.getCCompilerExecutable(),
+                    toolchain.getcCompilerExecutable(),
                     toolchain.getCppCompilerExecutable()));
         }
         return toolchains;
@@ -169,7 +169,7 @@ public class NativeComponentModelBuilder implements ToolingModelBuilder {
 
     private Map<String, String> createFileExtensionMap() {
         Map<String, String> extensions = Maps.newHashMap();
-        for (String ext : config.getCFileExtensions()) {
+        for (String ext : config.getcFileExtensions()) {
             extensions.put(ext, "c");
         }
         for (String ext : config.getCppFileExtensions()) {
