@@ -67,6 +67,20 @@ public class Restarter {
     }
 
     private static void restartActivity(@NonNull Activity activity) {
+        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+            Log.i(LOG_TAG, "About to restart " + activity.getClass().getSimpleName());
+        }
+
+        // You can't restart activities that have parents: find the top-most activity
+        while (activity.getParent() != null) {
+            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                Log.i(LOG_TAG, activity.getClass().getSimpleName()
+                        + " is not a top level activity; restarting "
+                        + activity.getParent().getClass().getSimpleName() + " instead");
+            }
+            activity = activity.getParent();
+        }
+
         // Directly supported by the framework!
         activity.recreate();
     }
