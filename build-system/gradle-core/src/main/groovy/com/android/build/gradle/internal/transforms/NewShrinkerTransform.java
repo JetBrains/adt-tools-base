@@ -153,7 +153,6 @@ public class NewShrinkerTransform extends ProguardConfigurable {
         } else {
             fullRun(invocation.getInputs(), referencedInputs, output);
         }
-
     }
 
     private void fullRun(
@@ -232,27 +231,29 @@ public class NewShrinkerTransform extends ProguardConfigurable {
             @NonNull Collection<TransformInput> inputs,
             @NonNull Collection<TransformInput> referencedInputs,
             @NonNull TransformOutputProvider output) throws IOException {
-        Stopwatch stopwatch = Stopwatch.createStarted();
-        JavaSerializationShrinkerGraph graph =
-                JavaSerializationShrinkerGraph.readFromDir(incrementalDir);
-        logTime("loading state", stopwatch);
-
-        ProguardConfig config = getConfig();
-
-        ShrinkerLogger shrinkerLogger =
-                new ShrinkerLogger(config.getFlags().getDontWarnSpecs(), logger);
-
-        IncrementalShrinker<String> shrinker =
-                new IncrementalShrinker<String>(
-                        WaitableExecutor.<Void>useGlobalSharedThreadPool(),
-                        graph,
-                        shrinkerLogger);
-
         try {
+            Stopwatch stopwatch = Stopwatch.createStarted();
+            JavaSerializationShrinkerGraph graph =
+                    JavaSerializationShrinkerGraph.readFromDir(incrementalDir);
+            logTime("loading state", stopwatch);
+
+            ProguardConfig config = getConfig();
+
+            ShrinkerLogger shrinkerLogger =
+                    new ShrinkerLogger(config.getFlags().getDontWarnSpecs(), logger);
+
+            IncrementalShrinker<String> shrinker =
+                    new IncrementalShrinker<String>(
+                            WaitableExecutor.<Void>useGlobalSharedThreadPool(),
+                            graph,
+                            shrinkerLogger);
+
             shrinker.incrementalRun(inputs, output);
             checkForWarnings(config, shrinkerLogger);
         } catch (IncrementalShrinker.IncrementalRunImpossibleException e) {
             logger.warn("Incremental shrinker run impossible: " + e.getMessage());
+            // Log the full stack trace at INFO level for debugging.
+            logger.info("Incremental shrinker run impossible: " + e.getMessage(), e);
             fullRun(inputs, referencedInputs, output);
         }
     }
