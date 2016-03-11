@@ -55,6 +55,9 @@ public interface NativeBuildConfig {
     @NonNull
     ModelMap<NativeToolchain> getToolchains();
 
+    /**
+     * Lowercase 'c' because otherwise it would produce CFileExtensions instead of cFileExtensions.
+     */
     @NonNull
     List<String> getcFileExtensions();
 

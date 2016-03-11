@@ -249,11 +249,11 @@ echo '
             if (toolchain.getName().equals("toolchain1")) {
 
                 assertThat(toolchain.getName()).isEqualTo("toolchain1")
-                assertThat(toolchain.getcCompilerExecutable().getName()).isEqualTo("clang")
+                assertThat(toolchain.getCCompilerExecutable().getName()).isEqualTo("clang")
                 assertThat(toolchain.getCppCompilerExecutable().getName()).isEqualTo("clang++")
             } else {
                 assertThat(toolchain.getName()).isEqualTo("toolchain2")
-                assertThat(toolchain.getcCompilerExecutable().getName()).isEqualTo("gcc")
+                assertThat(toolchain.getCCompilerExecutable().getName()).isEqualTo("gcc")
                 assertThat(toolchain.getCppCompilerExecutable().getName()).isEqualTo("g++")
             }
         }
@@ -297,7 +297,9 @@ model {
         }
         toolchains {
             create("toolchain1") {
-                cCompilerExecutable = "clang"
+                // Needs to be CCompilerExecutable instead of the more correct cCompilerExecutable because,
+                // of a stupid bug with Gradle.
+                CCompilerExecutable = "clang"
                 cppCompilerExecutable "clang++"
 
             }
@@ -343,7 +345,7 @@ model {
         assertThat(model.getToolChains()).hasSize(1)
         NativeToolchain toolchain = model.getToolChains().first()
         assertThat(toolchain.getName()).isEqualTo("toolchain1")
-        assertThat(toolchain.getcCompilerExecutable().getName()).isEqualTo("clang")
+        assertThat(toolchain.getCCompilerExecutable().getName()).isEqualTo("clang")
         assertThat(toolchain.getCppCompilerExecutable().getName()).isEqualTo("clang++")
     }
 }
