@@ -224,10 +224,7 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
     public void testLibraryWithMissingClass() throws Exception {
         mScopes = null;
         mEnabled = Sets.newHashSet(MISSING);
-        assertEquals("AndroidManifest.xml:11: Error: Class referenced in the manifest, test.pkg.TestService, was not found in the project or the libraries [MissingRegistered]\n"
-                        + "        <service android:name=\".TestService\" />\n"
-                        + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                        + "1 errors, 0 warnings\n",
+        assertEquals("No warnings.",
                 lintProject(
                         xml("AndroidManifest.xml", ""
                                 + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
@@ -255,6 +252,53 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
                                 + "target=android-14\n"
                                 + "android.library=true\n"
                                 + "manifestmerger.enabled=true\n"))
+        );
+    }
+
+    public void testLibraryWithMissingClassInApp() throws Exception {
+        mScopes = null;
+        mEnabled = Sets.newHashSet(MISSING);
+
+        File master = getProjectDir("MasterProject",
+                // Master project
+                xml("AndroidManifest.xml", ""
+                        + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    package=\"test.pkg.app\">\n"
+                        + "</manifest>"),
+                copy("bytecode/TestProvider2.class.data",
+                        "bin/classes/test/pkg/TestProvider2.class"),
+                projectProperties().dependsOn("../LibraryProject").manifestMerger(true).compileSdk(14)
+        );
+        File library = getProjectDir("LibraryProject",
+                // Library project
+                xml("AndroidManifest.xml", ""
+                        + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    package=\"test.pkg\"\n"
+                        + "    android:versionCode=\"1\"\n"
+                        + "    android:versionName=\"1.0\" >\n"
+                        + "\n"
+                        + "    <uses-sdk android:minSdkVersion=\"14\" />\n"
+                        + "\n"
+                        + "    <application\n"
+                        + "        android:icon=\"@drawable/ic_launcher\"\n"
+                        + "        android:label=\"@string/app_name\" >\n"
+                        + "        <service android:name=\".TestService\" />\n"
+                        + "\n"
+                        + "    </application>\n"
+                        + "\n"
+                        + "</manifest>"),
+                projectProperties().library(true).compileSdk(14),
+                copy("bytecode/TestProvider2.class.data",
+                        "bin/classes/test/pkg/TestProvider2.class"),
+                copy("bytecode/.classpath", ".classpath")
+        );
+
+        assertEquals(""
+                + "/TESTROOT/LibraryProject/AndroidManifest.xml:11: Error: Class referenced in the manifest, test.pkg.app.TestService, was not found in the project or the libraries [MissingRegistered]\n"
+                + "        <service android:name=\".TestService\" />\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+                checkLint(Arrays.asList(master, library))
         );
     }
 
