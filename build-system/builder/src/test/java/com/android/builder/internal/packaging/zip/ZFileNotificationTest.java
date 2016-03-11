@@ -30,6 +30,9 @@ import com.google.common.collect.Lists;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -386,5 +389,46 @@ public class ZFileNotificationTest {
         StoredEntry barFile = zf2.get("bar");
         assertNotNull(barFile);
         zf2.close();
+    }
+
+    @Test
+    public void notifyOnceEntriesWritten() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
+        final ZFile zf = new ZFile(zipFile);
+
+        ZFileExtension ext = Mockito.mock(ZFileExtension.class);
+        zf.addZFileExtension(ext);
+
+        zf.add("foo", new ByteArrayInputStream(new byte[] { 1, 2 }));
+        zf.finishAllBackgroundTasks();
+
+        Mockito.verify(ext, Mockito.times(0)).entriesWritten();
+        zf.close();
+        Mockito.verify(ext, Mockito.times(1)).entriesWritten();
+    }
+
+    @Test
+    public void notifyTwiceEntriesWrittenIfCdChanged() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
+        final ZFile zf = new ZFile(zipFile);
+
+        final ZFileExtension ext = Mockito.mock(ZFileExtension.class);
+        Mockito.doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                zf.setExtraDirectoryOffset(10);
+                Mockito.doNothing().when(ext).entriesWritten();
+                return null;
+            }
+        }).when(ext).entriesWritten();
+
+        zf.addZFileExtension(ext);
+
+        zf.add("foo", new ByteArrayInputStream(new byte[] { 1, 2 }));
+        zf.finishAllBackgroundTasks();
+
+        Mockito.verify(ext, Mockito.times(0)).entriesWritten();
+        zf.close();
+        Mockito.verify(ext, Mockito.times(2)).entriesWritten();
     }
 }

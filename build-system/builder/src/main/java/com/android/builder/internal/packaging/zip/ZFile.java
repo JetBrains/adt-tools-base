@@ -173,6 +173,12 @@ public class ZFile implements Closeable {
     private static final int IO_BUFFER_SIZE = 1024 * 1024;
 
     /**
+     * When extensions request re-runs, we do maximum number of cycles until we decide to stop and
+     * flag a infinite recursion problem.
+     */
+    private static final int MAXIMUM_EXTENSION_CYCLE_COUNT = 10;
+
+    /**
      * File zip file.
      */
     @NonNull
@@ -793,19 +799,31 @@ public class ZFile implements Closeable {
             }
         }
 
-        computeCentralDirectory();
-        computeEocd();
+        boolean hasCentralDirectory;
+        int extensionBugDetector = MAXIMUM_EXTENSION_CYCLE_COUNT;
+        do {
+            computeCentralDirectory();
+            computeEocd();
 
-        notify(new IOExceptionFunction<ZFileExtension, IOExceptionRunnable>() {
-            @Nullable
-            @Override
-            public IOExceptionRunnable apply(@Nullable ZFileExtension input) throws IOException {
-                Verify.verifyNotNull(input);
-                assert input != null;
-                input.entriesWritten();
-                return null;
+            hasCentralDirectory = (mDirectoryEntry != null);
+
+            notify(new IOExceptionFunction<ZFileExtension, IOExceptionRunnable>() {
+                @Nullable
+                @Override
+                public IOExceptionRunnable apply(@Nullable ZFileExtension input)
+                        throws IOException {
+                    Verify.verifyNotNull(input);
+                    assert input != null;
+                    input.entriesWritten();
+                    return null;
+                }
+            });
+
+            if ((--extensionBugDetector) == 0) {
+                throw new IOException("Extensions keep resetting the central directory. This is "
+                        + "probably a bug.");
             }
-        });
+        } while (hasCentralDirectory && mDirectoryEntry == null);
 
         appendCentralDirectory();
         appendEocd();
@@ -926,11 +944,17 @@ public class ZFile implements Closeable {
             newStored.add(mapEntry.getStore());
         }
 
+        /*
+         * Make sure we truncate the map before computing the central directory's location since
+         * the central directory is the last part of the file.
+         */
+        mMap.truncate();
+
         CentralDirectory newDirectory = CentralDirectory.makeFromEntries(newStored, this);
         byte[] newDirectoryBytes = newDirectory.toBytes();
         long directoryOffset = mMap.size() + mExtraDirectoryOffset;
 
-        mMap.extend(directoryOffset+ newDirectoryBytes.length);
+        mMap.extend(directoryOffset + newDirectoryBytes.length);
 
         if (newDirectoryBytes.length > 0) {
             mDirectoryEntry = mMap.add(directoryOffset, directoryOffset + newDirectoryBytes.length,
@@ -1812,6 +1836,18 @@ public class ZFile implements Closeable {
     }
 
     /**
+     * Obtains the size the file has on disk. This may be out-of-sync with changes made if
+     * {@link #update()} has not been called.
+     *
+     * @return the size of the file on disk
+     * @throws IOException failed to read the file size
+     */
+    public long directSize() throws IOException {
+        Preconditions.checkNotNull(mRaf, "File is closed");
+        return mRaf.length();
+    }
+
+    /**
      * Adds all files and directories recursively.
      * <p>
      * Equivalent to calling {@link #addAllRecursively(File, Function)} using a function that
@@ -1965,6 +2001,7 @@ public class ZFile implements Closeable {
 
         if (mExtraDirectoryOffset != offset) {
             mExtraDirectoryOffset = offset;
+            deleteDirectoryAndEocd();
             mDirty = true;
         }
     }

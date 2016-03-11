@@ -25,9 +25,12 @@ import com.android.builder.internal.utils.IOExceptionFunction;
 import com.android.builder.internal.utils.IOExceptionRunnable;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Verify;
+import com.google.common.hash.Hashing;
+import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
 import com.google.common.primitives.Ints;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.PrivateKey;
@@ -207,7 +210,15 @@ public class FullApkSignExtension {
         long signatureStart = mFile.getCentralDirectoryOffset() - signatureBlockSize;
         Verify.verify(signatureStart >= 0, "signatureStart < 0");
 
+        if (signatureStart + signatureBlockSize >= mFile.directSize()) {
+            /*
+             * Not enough contents in the zip file to read the signature.
+             */
+            return null;
+        }
+
         byte[] signature = new byte[signatureBlockSize];
+
         mFile.directFullyRead(signatureStart, signature);
         return signature;
     }
@@ -225,6 +236,7 @@ public class FullApkSignExtension {
         long centralDirectoryStart = mFile.getCentralDirectoryOffset();
         long entriesEnd = centralDirectoryStart - mFile.getExtraDirectoryOffset();
         Verify.verify(entriesEnd >= 0);
+        Verify.verify(entriesEnd <= mFile.directSize());
 
         InputStream allEntriesData = mFile.directOpen(0, entriesEnd);
         boolean thrown = true;
@@ -268,7 +280,7 @@ public class FullApkSignExtension {
      * @return is the signature correct?
      * @throws IOException failed to verify the signature
      */
-    private boolean verifySignature(@NonNull InputStream zipEntriesContent,
+    private static boolean verifySignature(@NonNull InputStream zipEntriesContent,
             @NonNull byte[] centralDirectoryData, @NonNull byte[] eocdData,
             @NonNull byte[] signature) throws IOException {
         /*
@@ -290,12 +302,13 @@ public class FullApkSignExtension {
      * zip file
      */
     @NonNull
-    private byte[] computeSignature(@NonNull InputStream zipEntriesContent,
+    private static byte[] computeSignature(@NonNull InputStream zipEntriesContent,
             @NonNull byte[] centralDirectoryData, @NonNull byte[] eocdData) throws IOException {
-        /*
-         * TODO: Implement signature computation. For now we return an empty signature meaning
-         * nothing will be added to the zip.
-         */
-        return new byte[0];
+        // TODO: Implement a *real* signature here. This is just a hash...
+        ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
+        ByteStreams.copy(zipEntriesContent, bytesOut);
+        bytesOut.write(centralDirectoryData);
+        bytesOut.write(eocdData);
+        return Hashing.sha1().hashBytes(bytesOut.toByteArray()).asBytes();
     }
 }
