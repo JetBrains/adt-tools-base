@@ -517,6 +517,12 @@ public abstract class LintDetectorTest extends SdkTestCase {
             return this;
         }
 
+        public PropertyTestFile manifestMerger(boolean merger) {
+            mStringBuilder.append("manifestmerger.enabled=").append(Boolean.toString(merger))
+                    .append('\n');
+            return this;
+        }
+
         public PropertyTestFile dependsOn(String relative) {
             assertTrue(relative.startsWith("../"));
             mStringBuilder.append("android.library.reference.")
