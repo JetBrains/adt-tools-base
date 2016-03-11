@@ -19,12 +19,9 @@ package com.android.builder.files;
 import com.android.annotations.NonNull;
 import com.android.utils.FileUtils;
 import com.google.common.base.Function;
-import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
 
 import java.io.File;
-import java.util.Deque;
 
 /**
  * Representation of a file with respect to a base directory. A {@link RelativeFile} contains
@@ -111,7 +108,7 @@ public class RelativeFile {
     public static RelativeFile make(@NonNull File base, @NonNull File file) {
         Preconditions.checkArgument(!base.equals(file), "base.equals(file)");
 
-        String relativePath = FileUtils.relativePath(file, base);
+        String relativePath = FileUtils. relativePossiblyNonExistingPath(file, base);
         String osIndependentPath = FileUtils.toSystemIndependentPath(relativePath);
 
         return new RelativeFile(base, file, osIndependentPath);

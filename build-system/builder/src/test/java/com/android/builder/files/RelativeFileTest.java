@@ -157,4 +157,18 @@ public class RelativeFileTest {
         assertNotNull(findFile(files, "foo"));
         assertNotNull(findFile(files, "dir"));
     }
+
+    @Test
+    public void relativeFileAcceptsNonExistingFileInBase() throws Exception {
+        File existingBase = mTemporaryFolder.newFolder("foo");
+        File nonExistingFile = new File(existingBase, "bar");
+        RelativeFile relativeFile = RelativeFile.make(existingBase, nonExistingFile);
+    }
+
+    @Test
+    public void relativeFileAcceptsNonExistingFileInNonExistingBase() throws Exception {
+        File existingBase = new File(mTemporaryFolder.getRoot(), "foo");
+        File nonExistingFile = new File(existingBase, "bar");
+        RelativeFile relativeFile = RelativeFile.make(existingBase, nonExistingFile);
+    }
 }
