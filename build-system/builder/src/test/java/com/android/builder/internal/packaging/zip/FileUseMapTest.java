@@ -16,6 +16,7 @@
 
 package com.android.builder.internal.packaging.zip;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import com.google.common.base.Stopwatch;
@@ -116,5 +117,17 @@ public class FileUseMapTest {
                     + df.format(endAvg) + "ns. Average over the total of " + currentRun + " runs "
                     + "is " + df.format(totalAvg) + "ns.");
         }
+    }
+
+    @Test
+    public void testSizeComputation() {
+        FileUseMap m = new FileUseMap(200);
+
+        assertEquals(200, m.size());
+        assertEquals(0, m.usedSize());
+
+        m.add(10, 20, new Object());
+        assertEquals(200, m.size());
+        assertEquals(20, m.usedSize());
     }
 }
