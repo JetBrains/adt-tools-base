@@ -629,6 +629,10 @@ public final class SdkConstants {
     public static final String CLASS_PERCENT_RELATIVE_LAYOUT = "android.support.percent.PercentRelativeLayout"; //$NON-NLS-1$
     public static final String CLASS_PERCENT_FRAME_LAYOUT = "android.support.percent.PercentFrameLayout"; //$NON-NLS-1$
 
+    /* Android ConstraintLayout Constants */
+    public static final String CLASS_CONSTRAINT_LAYOUT = "com.google.tnt.sherpa.ConstraintLayout";     //$NON-NLS-1$
+    public static final String CLASS_TABLE_CONSTRAINT_LAYOUT = "com.google.tnt.sherpa.TableConstraintLayout";     //$NON-NLS-1$
+    public static final String CLASS_CONSTRAINT_LAYOUT_GUIDELINE = "com.google.tnt.sherpa.Guideline";     //$NON-NLS-1$
 
     /** Returns the appropriate name for the 'android' command, which is 'android.exe' for
      * Windows and 'android' for all other platforms. */
@@ -775,6 +779,9 @@ public final class SdkConstants {
     public static final String R_CLASS = "R";                          //$NON-NLS-1$
     public static final String ANDROID_PKG = "android";                //$NON-NLS-1$
 
+    public static final String SHERPA_PREFIX = "sherpa";               //$NON-NLS-1$
+    public static final String SHERPA_URI = "http://schemas.android.com/apk/res-auto";              //$NON-NLS-1$
+
     // Tags: Manifest
     public static final String TAG_SERVICE = "service";                //$NON-NLS-1$
     public static final String TAG_PERMISSION = "permission";          //$NON-NLS-1$
@@ -900,6 +907,11 @@ public final class SdkConstants {
     public static final String DETAILS_FRAGMENT = CLASS_DETAILS_FRAGMENT;
     public static final String PLAYBACK_OVERLAY_FRAGMENT = CLASS_PLAYBACK_OVERLAY_FRAGMENT;
     public static final String SEARCH_FRAGMENT = CLASS_SEARCH_FRAGMENT;
+
+    /* Android ConstraintLayout Tag Constants */
+    public static final String CONSTRAINT_LAYOUT = CLASS_CONSTRAINT_LAYOUT;
+    public static final String TABLE_CONSTRAINT_LAYOUT = CLASS_TABLE_CONSTRAINT_LAYOUT;
+    public static final String CONSTRAINT_LAYOUT_GUIDELINE = CLASS_CONSTRAINT_LAYOUT_GUIDELINE;
 
     // Tags: Drawables
     public static final String TAG_BITMAP = "bitmap";                  //$NON-NLS-1$
@@ -1035,6 +1047,33 @@ public final class SdkConstants {
     public static final String ATTR_LAYOUT_ROW_SPAN = "layout_rowSpan";//$NON-NLS-1$
     public static final String ATTR_LAYOUT_COLUMN = "layout_column";   //$NON-NLS-1$
     public static final String ATTR_LAYOUT_COLUMN_SPAN = "layout_columnSpan";       //$NON-NLS-1$
+
+    // ConstraintLayout layout params
+    public static final String ATTR_LAYOUT_EDITOR_ABSOLUTE_X = "layout_editor_absoluteX";
+    public static final String ATTR_LAYOUT_EDITOR_ABSOLUTE_Y = "layout_editor_absoluteY";
+    public static final String ATTR_LAYOUT_LEFT_MARGIN = "layout_constraintLeft_margin";
+    public static final String ATTR_LAYOUT_RIGHT_MARGIN = "layout_constraintRight_margin";
+    public static final String ATTR_LAYOUT_TOP_MARGIN = "layout_constraintTop_margin";
+    public static final String ATTR_LAYOUT_BOTTOM_MARGIN = "layout_constraintBottom_margin";
+    public static final String ATTR_LAYOUT_LEFT_STRENGTH = "layout_constraintLeft_strength";
+    public static final String ATTR_LAYOUT_RIGHT_STRENGTH = "layout_constraintRight_strength";
+    public static final String ATTR_LAYOUT_TOP_STRENGTH = "layout_constraintTop_strength";
+    public static final String ATTR_LAYOUT_BOTTOM_STRENGTH = "layout_constraintBottom_strength";
+    public static final String ATTR_LAYOUT_LEFT_TO_LEFT_OF = "layout_constraintLeft_toLeftOf";         //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_LEFT_TO_RIGHT_OF = "layout_constraintLeft_toRightOf";       //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_RIGHT_TO_LEFT_OF = "layout_constraintRight_toLeftOf";       //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_RIGHT_TO_RIGHT_OF = "layout_constraintRight_toRightOf";     //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_TOP_TO_TOP_OF = "layout_constraintTop_toTopOf";             //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_TOP_TO_BOTTOM_OF = "layout_constraintTop_toBottomOf";       //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_BOTTOM_TO_TOP_OF = "layout_constraintBottom_toTopOf";       //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_BOTTOM_TO_BOTTOM_OF = "layout_constraintBottom_toBottomOf"; //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_BASELINE_TO_BASELINE_OF = "layout_constraintBaseline_toBaselineOf";
+    public static final String ATTR_LAYOUT_CENTER_X_TO_CENTER_X_OF = "layout_constraintCenterX_toCenterX";
+    public static final String ATTR_LAYOUT_CENTER_Y_TO_CENTER_Y_OF = "layout_constraintCenterY_toCenterY";
+    public static final String ATTR_GUIDELINE_ORIENTATION = "orientation"; //$NON-NLS-1$
+    public static final String ATTR_GUIDELINE_ORIENTATION_HORIZONTAL = "horizontal"; //$NON-NLS-1$
+    public static final String ATTR_GUIDELINE_ORIENTATION_VERTICAL = "vertical"; //$NON-NLS-1$
+    public static final String ATTR_GUIDELINE_RELATIVE_BEGIN = "relativeBegin"; //$NON-NLS-1$
 
     // TableRow
     public static final String ATTR_LAYOUT_SPAN = "layout_span";       //$NON-NLS-1$
