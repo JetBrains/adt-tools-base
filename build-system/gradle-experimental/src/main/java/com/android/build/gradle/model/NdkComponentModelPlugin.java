@@ -477,7 +477,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                         new Action<NativeToolchain>() {
                             @Override
                             public void execute(NativeToolchain nativeToolchain) {
-                                nativeToolchain.setcCompilerExecutable(
+                                nativeToolchain.setCCompilerExecutable(
                                         ndkHandler.getCCompiler(abi));
                                 nativeToolchain.setCppCompilerExecutable(
                                         ndkHandler.getCppCompiler(abi));

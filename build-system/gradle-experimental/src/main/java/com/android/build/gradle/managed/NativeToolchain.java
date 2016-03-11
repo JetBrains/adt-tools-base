@@ -35,8 +35,8 @@ public interface NativeToolchain extends com.android.builder.model.NativeToolcha
      */
     @Override
     @Nullable
-    File getcCompilerExecutable();
-    void setcCompilerExecutable(@Nullable File exe);
+    File getCCompilerExecutable();
+    void setCCompilerExecutable(@Nullable File exe);
 
     /**
      * Returns the full path of the C++ compiler.

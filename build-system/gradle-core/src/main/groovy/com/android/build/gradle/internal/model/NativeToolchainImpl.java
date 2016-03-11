@@ -52,7 +52,7 @@ public class NativeToolchainImpl implements NativeToolchain, Serializable {
 
     @Nullable
     @Override
-    public File getcCompilerExecutable() {
+    public File getCCompilerExecutable() {
         return cCompilerExecutable;
     }
 
