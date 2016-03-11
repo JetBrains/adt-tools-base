@@ -21,6 +21,7 @@ import static com.android.utils.FileUtils.mkdirs;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.VisibleForTesting;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
 import com.android.build.api.transform.JarInput;
@@ -46,6 +47,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.jar.JarFile;
@@ -57,6 +60,9 @@ import java.util.zip.ZipInputStream;
  *
  */
 public class ExtractJarsTransform extends Transform {
+
+    @VisibleForTesting
+    static Logger LOGGER = Logging.getLogger(ExtractJarsTransform.class);
 
     @NonNull
     private final Set<ContentType> contentTypes;
@@ -102,8 +108,6 @@ public class ExtractJarsTransform extends Transform {
 
         // as_input transform and no referenced scopes, all the inputs will in InputOutputStreams.
         final boolean extractCode = contentTypes.contains(DefaultContentType.CLASSES);
-
-        Logger logger = Logging.getLogger(ExtractJarsTransform.class);
 
         if (!isIncremental) {
             outputProvider.deleteAll();
@@ -190,6 +194,8 @@ public class ExtractJarsTransform extends Transform {
             @NonNull File jarFile,
             boolean extractCode) throws IOException {
         mkdirs(outJarFolder);
+        HashSet<String> lowerCaseNames = new HashSet<>();
+        boolean foundCaseInsensitiveIssue = false;
 
         try (Closer closer = Closer.create()) {
             FileInputStream fis = closer.register(new FileInputStream(jarFile));
@@ -204,6 +210,9 @@ public class ExtractJarsTransform extends Transform {
                     if (entry.isDirectory()) {
                         continue;
                     }
+
+                    foundCaseInsensitiveIssue = foundCaseInsensitiveIssue ||
+                            !lowerCaseNames.add(name.toLowerCase(Locale.US));
 
                     Action action = getAction(name, extractCode);
                     if (action == Action.COPY) {
@@ -223,6 +232,15 @@ public class ExtractJarsTransform extends Transform {
                 }
             }
 
+        }
+
+        if (foundCaseInsensitiveIssue) {
+            LOGGER.error(
+                    "Jar '{}' contains multiple entries which will map to "
+                            + "the same file on case insensitive file systems.\n"
+                            + "This can be caused by obfuscation with useMixedCaseClassNames.\n"
+                            + "This build will be incorrect on case insensitive "
+                            + "file systems.", jarFile.getAbsolutePath());
         }
     }
 
