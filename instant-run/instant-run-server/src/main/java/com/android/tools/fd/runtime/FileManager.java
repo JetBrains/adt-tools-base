@@ -562,9 +562,12 @@ public class FileManager {
                 output.close();
             }
         } catch (IOException ioe) {
-            Log.e(LOG_TAG, "Failed to write file " + destination, ioe);
+            Log.wtf(LOG_TAG, "Failed to write file, clean project and rebuild " + destination, ioe);
+            throw new RuntimeException(
+                    String.format(
+                            "InstantRun could not write file %1$s, clean project and rebuild ",
+                            destination));
         }
-        return false;
     }
 
     public static boolean extractZip(@NonNull File destination, @NonNull byte[] zipBytes) {
