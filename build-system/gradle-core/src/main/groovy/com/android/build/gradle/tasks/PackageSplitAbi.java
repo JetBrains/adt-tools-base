@@ -148,7 +148,7 @@ public class PackageSplitAbi extends SplitRelatedTask {
                         ImmutableSet.of(matcher.group(1)),
                         isJniDebuggable(),
                         getSigningConfig(),
-                        outFile.getAbsolutePath(),
+                        outFile,
                         getMinSdkVersion());
                 unprocessedSplits.remove(matcher.group(1));
             }

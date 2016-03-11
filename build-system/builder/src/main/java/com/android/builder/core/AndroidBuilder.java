@@ -35,6 +35,10 @@ import com.android.builder.compiling.DependencyFileProcessor;
 import com.android.builder.core.BuildToolsServiceLoader.BuildToolServiceLoader;
 import com.android.builder.dependency.ManifestDependency;
 import com.android.builder.dependency.SymbolFileProvider;
+import com.android.builder.files.FileModificationType;
+import com.android.builder.files.NativeLibraryAbiPredicate;
+import com.android.builder.files.RelativeFile;
+import com.android.builder.files.RelativeFiles;
 import com.android.builder.internal.ClassFieldImpl;
 import com.android.builder.internal.SymbolLoader;
 import com.android.builder.internal.SymbolWriter;
@@ -99,15 +103,20 @@ import com.android.utils.ILogger;
 import com.android.utils.LineCollector;
 import com.android.utils.Pair;
 import com.google.common.base.Charsets;
+import com.google.common.base.Function;
+import com.google.common.base.Functions;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.io.Closer;
@@ -142,12 +151,12 @@ import java.util.zip.ZipFile;
  * create a builder with {@link #AndroidBuilder(String, String, ProcessExecutor, JavaProcessExecutor, ErrorReporter, ILogger, boolean)}
  *
  * then build steps can be done with
- * {@link #mergeManifests(File, List, List, String, int, String, String, String, Integer, String, String, ManifestMerger2.MergeType, Map, List, File)}
+ * {@link #mergeManifests(File, List, List, String, int, String, String, String, Integer, String, String, String, ManifestMerger2.MergeType, Map, List, File)}
  * {@link #processTestManifest(String, String, String, String, String, Boolean, Boolean, File, List, Map, File, File)}
  * {@link #processResources(AaptPackageProcessBuilder, boolean, ProcessOutputHandler)}
  * {@link #compileAllAidlFiles(List, File, File, Collection, List, DependencyFileProcessor, ProcessOutputHandler)}
  * {@link #convertByteCode(Collection, File, boolean, File, DexOptions, List, boolean, boolean, ProcessOutputHandler, boolean)}
- * {@link #packageApk(String, Set, Collection, Collection, Set, boolean, SigningConfig, String, int)}
+ * {@link #packageApk(String, Set, Collection, Collection, Set, boolean, SigningConfig, File, int)}
  *
  * Java compilation is not handled but the builder provides the bootclasspath with
  * {@link #getBootClasspath(boolean)}.
@@ -2034,6 +2043,13 @@ public class AndroidBuilder {
     /**
      * Packages the apk.
      *
+     * <p>If in debug mode (when {@code jniDebugBuild} is {@code true}), when native
+     * libraries are present, the packaging will also include one or more copies of
+     * {@code gdbserver} in the final APK file. These are used for debugging native code, to ensure
+     * that {@code gdbserver} is accessible to the application. There will be one version of
+     * {@code gdbserver} for each ABI supported by the application. The {@code gbdserver} files are
+     * placed in the {@code libs/abi/} folders automatically by the NDK.
+     *
      * @param androidResPkgLocation the location of the packaged resource file
      * @param dexFolders the folder(s) with the dex file(s).
      * @param javaResourcesLocations the processed Java resource folders and/or jars
@@ -2054,7 +2070,81 @@ public class AndroidBuilder {
             @NonNull Set<String> abiFilters,
             boolean jniDebugBuild,
             @Nullable SigningConfig signingConfig,
-            @NonNull String outApkLocation,
+            @NonNull File outApkLocation,
+            int minSdkVersion)
+            throws KeytoolException, PackagerException, SigningException, IOException {
+        checkNotNull(androidResPkgLocation, "androidResPkgLocation cannot be null.");
+        checkNotNull(outApkLocation, "outApkLocation cannot be null.");
+
+        /*
+         * This is because this method is not supposed be be called in an incremental build. So, if
+         * an out APK already exists, we delete it.
+         */
+        outApkLocation.delete();
+
+        Map<RelativeFile, FileModificationType> javaResourceMods = Maps.newHashMap();
+        Map<File, FileModificationType> javaResourceArchiveMods = Maps.newHashMap();
+        for (File resourceLocation : javaResourcesLocations) {
+            if (resourceLocation.isFile()) {
+                javaResourceArchiveMods.put(resourceLocation, FileModificationType.NEW);
+            } else {
+                Set<RelativeFile> files = RelativeFiles.fromDirectory(resourceLocation,
+                        RelativeFiles.fromFilePredicate(Files.isFile()));
+                javaResourceMods.putAll(Maps.asMap(files,
+                        Functions.constant(FileModificationType.NEW)));
+            }
+        }
+
+        NativeLibraryAbiPredicate nativeLibraryPredicate =
+                new NativeLibraryAbiPredicate(abiFilters, jniDebugBuild);
+        Map<RelativeFile, FileModificationType> jniMods = Maps.newHashMap();
+        Map<File, FileModificationType> jniArchiveMods = Maps.newHashMap();
+        for (File jniLoc : jniLibsLocations) {
+            if (jniLoc.isFile()) {
+                jniArchiveMods.put(jniLoc, FileModificationType.NEW);
+            } else {
+                Set<RelativeFile> files = RelativeFiles.fromDirectory(jniLoc,
+                        RelativeFiles.fromPathPredicate(nativeLibraryPredicate));
+                jniMods.putAll(Maps.asMap(files,
+                        Functions.constant(FileModificationType.NEW)));
+            }
+        }
+
+
+        packageApkIncrementally(androidResPkgLocation, dexFolders, javaResourceMods,
+                javaResourceArchiveMods, jniMods, jniArchiveMods, nativeLibraryPredicate,
+                signingConfig, outApkLocation, minSdkVersion);
+    }
+
+    /**
+     * Incrementally packages the apk.
+     *
+     * @param androidResPkgLocation the location of the packaged resource file
+     * @param dexFolders the folder(s) with the dex file(s).
+     * @param javaResources the processed Java resources and their modification status
+     * @param javaResourceArchives the processed archived (ziped) java resources and their
+     * modification status
+     * @param jniLibs the updated JNI libraries mapped to their change type
+     * @param jniLibArchives the archives with JNI libraries mapped to their change type
+     * @param jniLibsFilter filter to use when reading the JNI libs
+     * @param signingConfig the signing configuration
+     * @param outApkLocation location of the APK.
+     * @throws FileNotFoundException if the store location was not found
+     * @throws KeytoolException
+     * @throws PackagerException
+     * @throws SigningException when the key cannot be read from the keystore
+     *
+     */
+    public void packageApkIncrementally(
+            @NonNull String androidResPkgLocation,
+            @NonNull Set<File> dexFolders,
+            @NonNull Map<RelativeFile, FileModificationType> javaResources,
+            @NonNull Map<File, FileModificationType> javaResourceArchives,
+            @NonNull Map<RelativeFile, FileModificationType> jniLibs,
+            @NonNull Map<File, FileModificationType> jniLibArchives,
+            @NonNull Predicate<String> jniLibsFilter,
+            @Nullable SigningConfig signingConfig,
+            @NonNull File outApkLocation,
             int minSdkVersion)
             throws KeytoolException, PackagerException, SigningException, IOException {
         checkNotNull(androidResPkgLocation, "androidResPkgLocation cannot be null.");
@@ -2080,17 +2170,29 @@ public class AndroidBuilder {
                 packager.addDexFiles(dexFolders);
             }
 
-            packager.setJniDebugMode(jniDebugBuild);
-
             // add the output of the java resource merger
-            for (File javaResourcesLocation : javaResourcesLocations) {
-                packager.addResources(javaResourcesLocation);
+            for (Map.Entry<RelativeFile, FileModificationType> resourceUpdate :
+                    javaResources.entrySet()) {
+                packager.updateResource(resourceUpdate.getKey(), resourceUpdate.getValue());
             }
 
-            // and the output of the native lib merger.
-            for (File jniLibsLocation : jniLibsLocations) {
-                packager.addNativeLibraries(jniLibsLocation, abiFilters);
+            for (Map.Entry<File, FileModificationType> resourceArchiveUpdate :
+                    javaResourceArchives.entrySet()) {
+                packager.updateResourceArchive(resourceArchiveUpdate.getKey(),
+                        resourceArchiveUpdate.getValue(), Predicates.<String>alwaysTrue());
             }
+
+            for (Map.Entry<RelativeFile, FileModificationType> jniLibUpdates : jniLibs.entrySet()) {
+                packager.updateResource(jniLibUpdates.getKey(), jniLibUpdates.getValue());
+            }
+
+            for (Map.Entry<File, FileModificationType> resourceArchiveUpdate :
+                    jniLibArchives.entrySet()) {
+                packager.updateResourceArchive(resourceArchiveUpdate.getKey(),
+                        resourceArchiveUpdate.getValue(), jniLibsFilter);
+            }
+
+            packager.close();
         } catch (SealedPackageException e) {
             // shouldn't happen since we control the package from start to end.
             throw closer.rethrow(e);
@@ -2111,7 +2213,7 @@ public class AndroidBuilder {
             @NonNull String androidResPkgLocation,
             @NonNull File dexFile,
             @Nullable SigningConfig signingConfig,
-            @NonNull String outApkLocation) throws
+            @NonNull File outApkLocation) throws
                 KeytoolException, PackagerException, IOException {
 
         CertificateInfo certificateInfo = null;
