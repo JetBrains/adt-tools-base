@@ -16,50 +16,17 @@
 
 package com.android.ide.common.res2;
 
-import static com.android.ide.common.res2.ValueXmlHelper.escapeResourceString;
-import static com.android.ide.common.res2.ValueXmlHelper.isEscaped;
 import static com.android.ide.common.res2.ValueXmlHelper.unescapeResourceString;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
-public class ValueXmlHelperTest extends TestCase {
+public final class ValueXmlHelperTest {
 
-    public void testEscapeStringShouldEscapeXmlSpecialCharacters() throws Exception {
-        assertEquals("&lt;", escapeResourceString("<"));
-        assertEquals("&amp;", escapeResourceString("&"));
-        assertEquals("&lt;", escapeResourceString("<", true));
-        assertEquals("&amp;", escapeResourceString("&", true));
-        assertEquals("<", escapeResourceString("<", false));
-        assertEquals("&", escapeResourceString("&", false));
-    }
-
-    public void testEscapeStringShouldEscapeQuotes() throws Exception {
-        assertEquals("\\'", escapeResourceString("'"));
-        assertEquals("\\\"", escapeResourceString("\""));
-        assertEquals("\" ' \"", escapeResourceString(" ' "));
-    }
-
-    public void testEscapeStringShouldPreserveWhitespace() throws Exception {
-        assertEquals("\"at end  \"", escapeResourceString("at end  "));
-        assertEquals("\"  at begin\"", escapeResourceString("  at begin"));
-    }
-
-    public void testEscapeStringShouldEscapeAtSignAndQuestionMarkOnlyAtBeginning()
-            throws Exception {
-        assertEquals("\\@text", escapeResourceString("@text"));
-        assertEquals("a@text", escapeResourceString("a@text"));
-        assertEquals("\\?text", escapeResourceString("?text"));
-        assertEquals("a?text", escapeResourceString("a?text"));
-        assertEquals("\" ?text\"", escapeResourceString(" ?text"));
-    }
-
-    public void testEscapeStringShouldEscapeJavaEscapeSequences() throws Exception {
-        assertEquals("\\n", escapeResourceString("\n"));
-        assertEquals("\\t", escapeResourceString("\t"));
-        assertEquals("\\\\", escapeResourceString("\\"));
-    }
-
-    public void testTrim() throws Exception {
+    @Test
+    public void trim() {
         assertEquals("", unescapeResourceString("", false, true));
         assertEquals("", unescapeResourceString("  \n  ", false, true));
         assertEquals("test", unescapeResourceString("  test  ", false, true));
@@ -79,7 +46,8 @@ public class ValueXmlHelperTest extends TestCase {
         assertEquals("\\\\\\ ", unescapeResourceString("\\\\\\\\\\\\\\ ", false, true));
     }
 
-    public void testNoTrim() throws Exception {
+    @Test
+    public void noTrim() {
         assertEquals("", unescapeResourceString("", false, false));
         assertEquals("  \n  ", unescapeResourceString("  \n  ", false, false));
         assertEquals("  test  ", unescapeResourceString("  test  ", false, false));
@@ -88,16 +56,19 @@ public class ValueXmlHelperTest extends TestCase {
 
         assertEquals("  test\n  ", unescapeResourceString("  test\\n  ", false, false));
         assertEquals("\"  test\n  \"", unescapeResourceString("\"  test\\n  \"", false, false));
-        assertEquals("\n\t  te\\st \t\n ", unescapeResourceString("\n\t  te\\\\st \t\n ", false, false));
+        assertEquals("\n\t  te\\st \t\n ",
+                unescapeResourceString("\n\t  te\\\\st \t\n ", false, false));
         assertEquals("  te\\st  ", unescapeResourceString("  te\\\\st  ", false, false));
         assertEquals("\"\"\"test\"\"  ", unescapeResourceString("\"\"\"test\"\"  ", false, false));
-        assertEquals("\"\"\"test\"\"  ", unescapeResourceString("\"\"\\\"test\\\"\"  ", false, false));
+        assertEquals("\"\"\"test\"\"  ",
+                unescapeResourceString("\"\"\\\"test\\\"\"  ", false, false));
         assertEquals("test  ", unescapeResourceString("test\\  ", false, false));
         assertEquals("\\\\\\ ", unescapeResourceString("\\\\\\\\\\\\ ", false, false));
         assertEquals("\\\\\\ ", unescapeResourceString("\\\\\\\\\\\\\\ ", false, false));
     }
 
-    public void testUnescapeStringShouldUnescapeXmlSpecialCharacters() throws Exception {
+    @Test
+    public void unescapeStringShouldUnescapeXmlSpecialCharacters() {
         assertEquals("&lt;", unescapeResourceString("&lt;", false, true));
         assertEquals("&gt;", unescapeResourceString("&gt;", false, true));
         assertEquals("<", unescapeResourceString("&lt;", true, true));
@@ -111,19 +82,21 @@ public class ValueXmlHelperTest extends TestCase {
         assertEquals("!<", unescapeResourceString("!&lt;", true, true));
     }
 
-    public void testUnescapeStringShouldUnescapeQuotes() throws Exception {
+    @Test
+    public void unescapeStringShouldUnescapeQuotes() {
         assertEquals("'", unescapeResourceString("\\'", false, true));
         assertEquals("\"", unescapeResourceString("\\\"", false, true));
         assertEquals(" ' ", unescapeResourceString("\" ' \"", false, true));
     }
 
-    public void testUnescapeStringShouldPreserveWhitespace() throws Exception {
+    @Test
+    public void unescapeStringShouldPreserveWhitespace() {
         assertEquals("at end  ", unescapeResourceString("\"at end  \"", false, true));
         assertEquals("  at begin", unescapeResourceString("\"  at begin\"", false, true));
     }
 
-    public void testUnescapeStringShouldUnescapeAtSignAndQuestionMarkOnlyAtBeginning()
-            throws Exception {
+    @Test
+    public void unescapeStringShouldUnescapeAtSignAndQuestionMarkOnlyAtBeginning() {
         assertEquals("@text", unescapeResourceString("\\@text", false, true));
         assertEquals("a@text", unescapeResourceString("a@text", false, true));
         assertEquals("?text", unescapeResourceString("\\?text", false, true));
@@ -131,32 +104,36 @@ public class ValueXmlHelperTest extends TestCase {
         assertEquals(" ?text", unescapeResourceString("\" ?text\"", false, true));
     }
 
-    public void testUnescapeStringShouldUnescapeJavaUnescapeSequences() throws Exception {
+    @Test
+    public void unescapeStringShouldUnescapeJavaUnescapeSequences() {
         assertEquals("\n", unescapeResourceString("\\n", false, true));
         assertEquals("\t", unescapeResourceString("\\t", false, true));
         assertEquals("\\", unescapeResourceString("\\\\", false, true));
     }
 
-    public void testIsEscaped() throws Exception {
-        assertFalse(isEscaped("", 0));
-        assertFalse(isEscaped(" ", 0));
-        assertFalse(isEscaped(" ", 1));
-        assertFalse(isEscaped("x\\y ", 0));
-        assertFalse(isEscaped("x\\y ", 1));
-        assertTrue(isEscaped("x\\y ", 2));
-        assertFalse(isEscaped("x\\y ", 3));
-        assertFalse(isEscaped("x\\\\y ", 0));
-        assertFalse(isEscaped("x\\\\y ", 1));
-        assertTrue(isEscaped("x\\\\y ", 2));
-        assertFalse(isEscaped("x\\\\y ", 3));
-        assertFalse(isEscaped("\\\\\\\\y ", 0));
-        assertTrue(isEscaped( "\\\\\\\\y ", 1));
-        assertFalse(isEscaped("\\\\\\\\y ", 2));
-        assertTrue(isEscaped( "\\\\\\\\y ", 3));
-        assertFalse(isEscaped("\\\\\\\\y ", 4));
+    @Test
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    public void isEscaped() {
+        assertFalse(ValueXmlHelper.isEscaped("", 0));
+        assertFalse(ValueXmlHelper.isEscaped(" ", 0));
+        assertFalse(ValueXmlHelper.isEscaped(" ", 1));
+        assertFalse(ValueXmlHelper.isEscaped("x\\y ", 0));
+        assertFalse(ValueXmlHelper.isEscaped("x\\y ", 1));
+        assertTrue(ValueXmlHelper.isEscaped("x\\y ", 2));
+        assertFalse(ValueXmlHelper.isEscaped("x\\y ", 3));
+        assertFalse(ValueXmlHelper.isEscaped("x\\\\y ", 0));
+        assertFalse(ValueXmlHelper.isEscaped("x\\\\y ", 1));
+        assertTrue(ValueXmlHelper.isEscaped("x\\\\y ", 2));
+        assertFalse(ValueXmlHelper.isEscaped("x\\\\y ", 3));
+        assertFalse(ValueXmlHelper.isEscaped("\\\\\\\\y ", 0));
+        assertTrue(ValueXmlHelper.isEscaped("\\\\\\\\y ", 1));
+        assertFalse(ValueXmlHelper.isEscaped("\\\\\\\\y ", 2));
+        assertTrue(ValueXmlHelper.isEscaped("\\\\\\\\y ", 3));
+        assertFalse(ValueXmlHelper.isEscaped("\\\\\\\\y ", 4));
     }
 
-    public void testRewriteSpaces() throws Exception {
+    @Test
+    public void rewriteSpaces() {
         // Ensure that \n's in the input are rewritten as spaces, and multiple spaces
         // collapsed into a single one
         assertEquals("This is a test",
@@ -175,12 +152,14 @@ public class ValueXmlHelperTest extends TestCase {
                 unescapeResourceString("This is\n a\\n test", true, true));
     }
 
-    public void testHtmlEntities() throws Exception {
+    @Test
+    public void htmlEntities() {
         assertEquals("Entity \u00a9 \u00a9 Copyright",
                 unescapeResourceString("Entity &#169; &#xA9; Copyright", true, true));
     }
 
-    public void testMarkupConcatenation() throws Exception {
+    @Test
+    public void markupConcatenation() {
         assertEquals("<b>Sign in</b> or register",
                 unescapeResourceString("\n   <b>Sign in</b>\n      or register\n", true, true));
     }
