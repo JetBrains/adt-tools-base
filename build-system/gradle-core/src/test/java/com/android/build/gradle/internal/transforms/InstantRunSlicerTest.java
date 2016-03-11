@@ -58,7 +58,9 @@ import org.mockito.MockitoAnnotations;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -112,7 +114,9 @@ public class InstantRunSlicerTest {
         final File inputDir = createTmpDirectory("inputDir");
         final Map<File, Status> changedFiles;
         ImmutableMap.Builder<File, Status> builder = ImmutableMap.builder();
+        List<String> listOfFiles = new ArrayList<String>();
         for (int i=0; i<21; i++) {
+            listOfFiles.add("file" + i + ".class");
             builder.put(createFile(inputDir, "file" + i + ".class"), Status.ADDED);
         }
         changedFiles = builder.build();
@@ -129,18 +133,20 @@ public class InstantRunSlicerTest {
         // assert the file was copied in the output directory.
         File[] files = outputDir.listFiles();
         assertNotNull(files);
-        assertThat(files.length).isEqualTo(7);
-        for (int i=0; i<7; i++) {
+
+        assertThat(files.length).isEqualTo(InstantRunSlicer.NUMBER_OF_SLICES_FOR_PROJECT_CLASSES);
+        for (int i=0; i<InstantRunSlicer.NUMBER_OF_SLICES_FOR_PROJECT_CLASSES; i++) {
             assertThat(files[0]).named("slice-" + i);
             File slice = files[i];
             assertThat(slice.isDirectory()).isTrue();
             File[] sliceFiles = slice.listFiles();
             assertNotNull(sliceFiles);
-            assertThat(sliceFiles.length).isEqualTo(3);
-            for (int j=0; j<3; j++) {
-                assertThat(sliceFiles[j]).named("file" + (i*5 + j) + ".class");
+            assertThat(sliceFiles.length).isAtLeast(1);
+            for (File sliceFile : sliceFiles) {
+                assertThat(listOfFiles.remove(sliceFile.getName())).isTrue();
             }
         }
+        assertThat(listOfFiles).isEmpty();
         FileUtils.deleteFolder(jarOutputDir);
         FileUtils.deleteFolder(inputDir);
     }
@@ -187,23 +193,25 @@ public class InstantRunSlicerTest {
         // assert the file was copied in the output directory.
         File[] slices = outputDir.listFiles();
         assertNotNull(slices);
-        assertThat(slices.length).isEqualTo(7);
+        assertThat(slices.length).isEqualTo(InstantRunSlicer.NUMBER_OF_SLICES_FOR_PROJECT_CLASSES);
 
         // file7 should be in the last slice slice.
-        File slice6 = getFileByName(slices, "slice_6");
-        assertNotNull(slice6);
-        File[] slice6Files = slice6.listFiles();
+        int bucket = Math.abs((file7.getName()).hashCode() % 10);
+        File file7Slice = getFileByName(slices, "slice_" + bucket);
+        assertNotNull(file7Slice);
+        File[] slice6Files = file7Slice.listFiles();
         File updatedFile7 = getFileByName(slice6Files, "file7.class");
         assertNotNull(updatedFile7);
         assertThat(FileUtils.loadFileWithUnixLineSeparators(updatedFile7))
                 .isEqualTo("updated file7.class");
 
         // file14 was in the slice 3, it should be gone.
-        File slice3 = getFileByName(slices, "slice_2");
-        assertNotNull(slice3);
-        File[] slice3Files = slice3.listFiles();
-        assertNotNull(slice3Files);
-        assertNull(getFileByName(slice3Files, "file14.class"));
+        bucket = Math.abs(("file14.class").hashCode() % 10);
+        File file14Bucket = getFileByName(slices, "slice_" + bucket);
+        assertNotNull(file14Bucket);
+        File[] file14BucketFiles = file14Bucket.listFiles();
+        assertNotNull(file14BucketFiles);
+        assertNull(getFileByName(file14BucketFiles, "file14.class"));
 
         FileUtils.deleteFolder(jarOutputDir);
         FileUtils.deleteFolder(inputDir);
