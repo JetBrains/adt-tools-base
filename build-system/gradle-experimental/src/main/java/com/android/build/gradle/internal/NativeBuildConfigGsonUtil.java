@@ -152,7 +152,7 @@ public class NativeBuildConfigGsonUtil {
     private static void copyToNativeToolchain(
             @NonNull NativeToolchainValue value,
             @NonNull NativeToolchain toolchain) {
-        toolchain.setcCompilerExecutable(value.cCompilerExecutable);
+        toolchain.setCCompilerExecutable(value.cCompilerExecutable);
         toolchain.setCppCompilerExecutable(value.cppCompilerExecutable);
     }
 }

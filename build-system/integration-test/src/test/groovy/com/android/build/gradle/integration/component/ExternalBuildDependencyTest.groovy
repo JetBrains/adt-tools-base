@@ -130,7 +130,9 @@ model {
         }
         toolchains {
             create("gcc") {
-                cCompilerExecutable = "${compiler.getPath()}"
+                // Needs to be CCompilerExecutable instead of the more correct cCompilerExecutable,
+                // because of a stupid bug with Gradle.
+                CCompilerExecutable = "${compiler.getPath()}"
             }
         }
     }

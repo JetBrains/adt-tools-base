@@ -38,6 +38,8 @@ public interface NativeSourceFolder {
 
     /**
      * Compiler flags for all C files.
+     *
+     * Lowercase 'c' because otherwise it would produce CFlags instead of cFlags.
      */
     @NonNull
     String getcFlags();

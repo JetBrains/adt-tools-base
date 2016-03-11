@@ -43,7 +43,7 @@ public interface NativeToolchain {
      * @return the C compiler path.
      */
     @Nullable
-    File getcCompilerExecutable();
+    File getCCompilerExecutable();
 
     /**
      * Returns the full path of the C++ compiler.
