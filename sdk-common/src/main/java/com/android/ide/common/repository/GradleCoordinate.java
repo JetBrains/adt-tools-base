@@ -194,7 +194,10 @@ public class GradleCoordinate {
 
         @Override
         public boolean isPreview() {
-            return mString.startsWith(PREVIEW_ID) || mString.equals("SNAPSHOT");
+            return mString.startsWith(PREVIEW_ID)
+                   || mString.startsWith("alpha")
+                   || mString.startsWith("beta")
+                   || mString.equals("SNAPSHOT");
         }
 
         @Override
