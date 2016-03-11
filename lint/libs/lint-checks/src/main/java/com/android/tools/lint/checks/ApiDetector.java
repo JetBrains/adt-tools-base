@@ -34,8 +34,8 @@ import static com.android.SdkConstants.BUTTON;
 import static com.android.SdkConstants.CHECK_BOX;
 import static com.android.SdkConstants.CLASS_CONSTRUCTOR;
 import static com.android.SdkConstants.CONSTRUCTOR_NAME;
+import static com.android.SdkConstants.FQCN_TARGET_API;
 import static com.android.SdkConstants.PREFIX_ANDROID;
-import static com.android.SdkConstants.R_CLASS;
 import static com.android.SdkConstants.SWITCH;
 import static com.android.SdkConstants.TAG;
 import static com.android.SdkConstants.TAG_ITEM;
@@ -45,8 +45,8 @@ import static com.android.SdkConstants.TOOLS_URI;
 import static com.android.SdkConstants.VIEW_TAG;
 import static com.android.tools.lint.checks.RtlDetector.ATTR_SUPPORTS_RTL;
 import static com.android.tools.lint.detector.api.ClassContext.getFqcn;
-import static com.android.tools.lint.detector.api.ClassContext.getInternalName;
 import static com.android.tools.lint.detector.api.LintUtils.getNextInstruction;
+import static com.android.tools.lint.detector.api.LintUtils.skipParentheses;
 import static com.android.tools.lint.detector.api.Location.SearchDirection.BACKWARD;
 import static com.android.tools.lint.detector.api.Location.SearchDirection.EOL_NEAREST;
 import static com.android.tools.lint.detector.api.Location.SearchDirection.FORWARD;
@@ -67,32 +67,75 @@ import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.SdkVersionInfo;
 import com.android.sdklib.repositoryv2.AndroidSdkHandler;
 import com.android.tools.lint.client.api.IssueRegistry;
-import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
-import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
-import com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
+import com.android.tools.lint.client.api.JavaEvaluator;
 import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.DefaultPosition;
-import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Detector.ClassScanner;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Location.SearchHints;
-import com.android.tools.lint.detector.api.Position;
 import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.XmlContext;
-import com.android.utils.Pair;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import com.intellij.psi.JavaElementVisitor;
+import com.intellij.psi.JavaTokenType;
+import com.intellij.psi.PsiAnnotation;
+import com.intellij.psi.PsiAnnotationMemberValue;
+import com.intellij.psi.PsiAnnotationParameterList;
+import com.intellij.psi.PsiArrayInitializerMemberValue;
+import com.intellij.psi.PsiAssignmentExpression;
+import com.intellij.psi.PsiBinaryExpression;
+import com.intellij.psi.PsiBlockStatement;
+import com.intellij.psi.PsiCallExpression;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiClassType;
+import com.intellij.psi.PsiCodeBlock;
+import com.intellij.psi.PsiComment;
+import com.intellij.psi.PsiConditionalExpression;
+import com.intellij.psi.PsiDisjunctionType;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiExpressionList;
+import com.intellij.psi.PsiField;
+import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiIfStatement;
+import com.intellij.psi.PsiImportStatementBase;
+import com.intellij.psi.PsiImportStaticStatement;
+import com.intellij.psi.PsiJavaCodeReferenceElement;
+import com.intellij.psi.PsiLiteral;
+import com.intellij.psi.PsiLiteralExpression;
+import com.intellij.psi.PsiLocalVariable;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiMethodCallExpression;
+import com.intellij.psi.PsiModifierList;
+import com.intellij.psi.PsiModifierListOwner;
+import com.intellij.psi.PsiNameValuePair;
+import com.intellij.psi.PsiParameter;
+import com.intellij.psi.PsiParameterList;
+import com.intellij.psi.PsiPolyadicExpression;
+import com.intellij.psi.PsiPrimitiveType;
+import com.intellij.psi.PsiReferenceExpression;
+import com.intellij.psi.PsiResourceList;
+import com.intellij.psi.PsiReturnStatement;
+import com.intellij.psi.PsiStatement;
+import com.intellij.psi.PsiSwitchLabelStatement;
+import com.intellij.psi.PsiTryStatement;
+import com.intellij.psi.PsiType;
+import com.intellij.psi.PsiTypeCastExpression;
+import com.intellij.psi.PsiTypeElement;
+import com.intellij.psi.PsiWhiteSpace;
+import com.intellij.psi.tree.IElementType;
+import com.intellij.psi.util.PsiTreeUtil;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -118,54 +161,19 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import java.io.File;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import lombok.ast.Annotation;
-import lombok.ast.AnnotationElement;
-import lombok.ast.AnnotationMethodDeclaration;
-import lombok.ast.AnnotationValue;
-import lombok.ast.AstVisitor;
-import lombok.ast.BinaryExpression;
-import lombok.ast.BinaryOperator;
-import lombok.ast.Case;
-import lombok.ast.Cast;
-import lombok.ast.ConstructorDeclaration;
-import lombok.ast.ConstructorInvocation;
-import lombok.ast.Expression;
-import lombok.ast.ForwardingAstVisitor;
-import lombok.ast.If;
-import lombok.ast.ImportDeclaration;
-import lombok.ast.InlineIfExpression;
-import lombok.ast.IntegralLiteral;
-import lombok.ast.MethodDeclaration;
-import lombok.ast.MethodInvocation;
-import lombok.ast.Modifiers;
-import lombok.ast.Select;
-import lombok.ast.StrictListAccessor;
-import lombok.ast.StringLiteral;
-import lombok.ast.SuperConstructorInvocation;
-import lombok.ast.Switch;
-import lombok.ast.Try;
-import lombok.ast.TypeDeclaration;
-import lombok.ast.TypeReference;
-import lombok.ast.VariableDefinition;
-import lombok.ast.VariableDefinitionEntry;
-import lombok.ast.VariableReference;
 
 /**
  * Looks for usages of APIs that are not supported in all the versions targeted
  * by this application (according to its minimum API requirement in the manifest).
  */
 public class ApiDetector extends ResourceXmlDetector
-        implements Detector.ClassScanner, Detector.JavaScanner {
+        implements ClassScanner, JavaPsiScanner {
 
     /**
      * Whether we flag variable, field, parameter and return type declarations of a type
@@ -316,16 +324,9 @@ public class ApiDetector extends ResourceXmlDetector
     protected ApiLookup mApiDatabase;
     private boolean mWarnedMissingDb;
     private int mMinApi = -1;
-    private Map<String, List<Pair<String, Location>>> mPendingFields;
 
     /** Constructs a new API check */
     public ApiDetector() {
-    }
-
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.SLOW;
     }
 
     @Override
@@ -856,7 +857,8 @@ public class ApiDetector extends ResourceXmlDetector
             }
 
             List tryCatchBlocks = method.tryCatchBlocks;
-            if (!tryCatchBlocks.isEmpty()) {
+            // single-catch blocks are already handled by an AST level check in ApiVisitor
+            if (tryCatchBlocks.size() > 1) {
                 List<String> checked = Lists.newArrayList();
                 for (Object o : tryCatchBlocks) {
                     TryCatchBlockNode tryCatchBlock = (TryCatchBlockNode) o;
@@ -1084,9 +1086,6 @@ public class ApiDetector extends ResourceXmlDetector
                         }
 
                         String fqcn = getFqcn(owner) + '#' + name;
-                        if (mPendingFields != null) {
-                            mPendingFields.remove(fqcn);
-                        }
                         String message = String.format(
                                 "Field requires API level %1$d (current min is %2$d): `%3$s`",
                                 api, minSdk, fqcn);
@@ -1545,48 +1544,33 @@ public class ApiDetector extends ResourceXmlDetector
         context.report(UNSUPPORTED, method, node, location, message);
     }
 
-    @Override
-    public void afterCheckProject(@NonNull Context context) {
-        if (mPendingFields != null) {
-            for (List<Pair<String, Location>> list : mPendingFields.values()) {
-                for (Pair<String, Location> pair : list) {
-                    String message = pair.getFirst();
-                    Location location = pair.getSecond();
-                    context.report(INLINED, location, message);
-                }
-            }
-        }
-
-        super.afterCheckProject(context);
-    }
-
     // ---- Implements JavaScanner ----
 
     @Nullable
     @Override
-    public AstVisitor createJavaVisitor(@NonNull JavaContext context) {
+    public JavaElementVisitor createPsiVisitor(@NonNull JavaContext context) {
         if (mApiDatabase == null) {
-            return new ForwardingAstVisitor() {
+            return new JavaElementVisitor() {
+                @Override
+                public void visitElement(PsiElement element) {
+                    // No-op. Workaround for super currently calling
+                    //   ProgressIndicatorProvider.checkCanceled();
+                }
             };
         }
         return new ApiVisitor(context);
     }
 
-    @Nullable
     @Override
-    public List<Class<? extends lombok.ast.Node>> getApplicableNodeTypes() {
-        List<Class<? extends lombok.ast.Node>> types =
-                new ArrayList<Class<? extends lombok.ast.Node>>(10);
-        types.add(ImportDeclaration.class);
-        types.add(Select.class);
-        types.add(MethodDeclaration.class);
-        types.add(ConstructorDeclaration.class);
-        types.add(VariableDefinitionEntry.class);
-        types.add(VariableReference.class);
-        types.add(Try.class);
-        types.add(Cast.class);
-        types.add(BinaryExpression.class);
-        types.add(MethodInvocation.class);
+    public List<Class<? extends PsiElement>> getApplicablePsiTypes() {
+        List<Class<? extends PsiElement>> types = new ArrayList<Class<? extends PsiElement>>(7);
+        types.add(PsiImportStaticStatement.class);
+        types.add(PsiReferenceExpression.class);
+        types.add(PsiLocalVariable.class);
+        types.add(PsiTryStatement.class);
+        types.add(PsiTypeCastExpression.class);
+        types.add(PsiAssignmentExpression.class);
+        types.add(PsiCallExpression.class);
         return types;
     }
 
@@ -1601,7 +1585,7 @@ public class ApiDetector extends ResourceXmlDetector
      *              level of the constant
      */
     public static boolean isBenignConstantUsage(
-            @Nullable lombok.ast.Node node,
+            @Nullable PsiElement node,
             @NonNull String name,
             @NonNull String owner) {
         if (owner.equals("android/os/Build$VERSION_CODES")) {     //$NON-NLS-1$
@@ -1639,21 +1623,19 @@ public class ApiDetector extends ResourceXmlDetector
 
         // It's okay to reference the constant as a case constant (since that
         // code path won't be taken) or in a condition of an if statement
-        lombok.ast.Node curr = node.getParent();
+        PsiElement curr = node.getParent();
         while (curr != null) {
-            Class<? extends lombok.ast.Node> nodeType = curr.getClass();
-            if (nodeType == Case.class) {
-                Case caseStatement = (Case) curr;
-                Expression condition = caseStatement.astCondition();
-                return condition != null && isAncestor(condition, node);
-            } else if (nodeType == If.class) {
-                If ifStatement = (If) curr;
-                Expression condition = ifStatement.astCondition();
-                return condition != null && isAncestor(condition, node);
-            } else if (nodeType == InlineIfExpression.class) {
-                InlineIfExpression ifStatement = (InlineIfExpression) curr;
-                Expression condition = ifStatement.astCondition();
-                return condition != null && isAncestor(condition, node);
+            if (curr instanceof PsiSwitchLabelStatement) {
+                PsiExpression condition = ((PsiSwitchLabelStatement) curr).getCaseValue();
+                return condition != null && PsiTreeUtil.isAncestor(condition, node, false);
+            } else if (curr instanceof PsiIfStatement) {
+                PsiExpression condition = ((PsiIfStatement) curr).getCondition();
+                return condition != null && PsiTreeUtil.isAncestor(condition, node, false);
+            } else if (curr instanceof PsiConditionalExpression) {
+                PsiExpression condition = ((PsiConditionalExpression) curr).getCondition();
+                return PsiTreeUtil.isAncestor(condition, node, false);
+            } else if (curr instanceof PsiMethod || curr instanceof PsiClass) {
+                break;
             }
             curr = curr.getParent();
         }
@@ -1661,446 +1643,291 @@ public class ApiDetector extends ResourceXmlDetector
         return false;
     }
 
-    private static boolean isAncestor(
-            @NonNull lombok.ast.Node ancestor,
-            @Nullable lombok.ast.Node node) {
-        while (node != null) {
-            if (node == ancestor) {
-                return true;
-            }
-            node = node.getParent();
-        }
-
-        return false;
-    }
-
-    private final class ApiVisitor extends ForwardingAstVisitor {
-        private JavaContext mContext;
-        private Map<String, String> mClassToImport = Maps.newHashMap();
-        private List<String> mStarImports;
-        private Set<String> mLocalVars;
-        private lombok.ast.Node mCurrentMethod;
-        private Set<String> mFields;
-        private List<String> mStaticStarImports;
+    private final class ApiVisitor extends JavaElementVisitor {
+        private final JavaContext mContext;
 
         private ApiVisitor(JavaContext context) {
             mContext = context;
         }
 
         @Override
-        public boolean visitImportDeclaration(ImportDeclaration node) {
-            if (node.astStarImport()) {
-                // Similarly, if you're inheriting from a constants class, figure out
-                // how that works... :=(
-                String fqcn = node.asFullyQualifiedName();
-                int strip = fqcn.lastIndexOf('*');
-                if (strip != -1) {
-                    strip = fqcn.lastIndexOf('.', strip);
-                    if (strip != -1) {
-                        String pkgName = getInternalName(fqcn.substring(0, strip));
-                        if (ApiLookup.isRelevantOwner(pkgName)) {
-                            if (node.astStaticImport()) {
-                                if (mStaticStarImports == null) {
-                                    mStaticStarImports = Lists.newArrayList();
-                                }
-                                mStaticStarImports.add(pkgName);
-                            } else {
-                                if (mStarImports == null) {
-                                    mStarImports = Lists.newArrayList();
-                                }
-                                mStarImports.add(pkgName);
-                            }
-                        }
-                    }
-                }
-            } else if (node.astStaticImport()) {
-                String fqcn = node.asFullyQualifiedName();
-                String fieldName = getInternalName(fqcn);
-                int index = fieldName.lastIndexOf('$');
-                if (index != -1) {
-                    String owner = fieldName.substring(0, index);
-                    String name = fieldName.substring(index + 1);
-                    checkField(node, name, owner);
-                }
-            } else {
-                // Store in map -- if it's "one of ours"
-                // Use override detector's map for that purpose
-                String fqcn = node.asFullyQualifiedName();
-
-                int last = fqcn.lastIndexOf('.');
-                if (last != -1) {
-                    String className = fqcn.substring(last + 1);
-                    mClassToImport.put(className, fqcn);
+        public void visitImportStaticStatement(PsiImportStaticStatement statement) {
+            if (!statement.isOnDemand()) {
+                PsiElement resolved = statement.resolve();
+                if (resolved instanceof PsiField) {
+                    checkField(statement, (PsiField)resolved);
                 }
             }
-
-            return super.visitImportDeclaration(node);
         }
 
         @Override
-        public boolean visitSelect(Select node) {
-            boolean result = super.visitSelect(node);
-
-            if (node.getParent() instanceof Select) {
+        public void visitReferenceExpression(PsiReferenceExpression expression) {
+            if (skipParentheses(expression.getParent()) instanceof PsiReferenceExpression) {
                 // We only want to look at the leaf expressions; e.g. if you have
                 // "foo.bar.baz" we only care about the select foo.bar.baz, not foo.bar
-                return result;
+                return;
             }
 
-            // See if this corresponds to a field reference. We assume it's a field if
-            // it's a select (x.y) and either the identifier y is capitalized (e.g.
-            // foo.VIEW_MASK) or if it's a member of an R class (R.id.foo).
-            String name = node.astIdentifier().astValue();
-            boolean isField = Character.isUpperCase(name.charAt(0));
-            if (!isField) {
-                // See if there's an R class
-                Select current = node;
-                //noinspection ConstantConditions
-                while (current != null) {
-                    Expression operand = current.astOperand();
-                    if (operand instanceof Select) {
-                        current = (Select) operand;
-                        if (R_CLASS.equals(current.astIdentifier().astValue())) {
-                            isField = true;
-                            break;
-                        }
-                    } else if (operand instanceof VariableReference) {
-                        VariableReference reference = (VariableReference) operand;
-                        if (R_CLASS.equals(reference.astIdentifier().astValue())) {
-                            isField = true;
-                        }
-                        break;
-                    } else {
-                        break;
-                    }
-                }
+            PsiElement resolved = expression.resolve();
+            if (resolved instanceof PsiField) {
+                checkField(expression, (PsiField)resolved);
             }
-
-            if (isField) {
-                Expression operand = node.astOperand();
-                if (operand.getClass() == Select.class) {
-                    // Possibly a fully qualified name in place
-                    String cls = operand.toString();
-
-                    // See if it's an imported class with an inner class
-                    // (e.g. Manifest.permission.FIELD)
-                    if (Character.isUpperCase(cls.charAt(0))) {
-                        int firstDot = cls.indexOf('.');
-                        if (firstDot != -1) {
-                            String base = cls.substring(0, firstDot);
-                            String fqcn = mClassToImport.get(base);
-                            if (fqcn != null) {
-                                // Yes imported
-                                String owner = getInternalName(fqcn + cls.substring(firstDot));
-                                checkField(node, name, owner);
-                                return result;
-                            }
-
-                            // Might be a star import: have to iterate and check here
-                            if (mStarImports != null) {
-                                for (String packagePrefix : mStarImports) {
-                                    String owner = getInternalName(packagePrefix + '/' + cls);
-                                    if (checkField(node, name, owner)) {
-                                        mClassToImport.put(name, owner);
-                                        return result;
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // See if it's a fully qualified reference in place
-                    String owner = getInternalName(cls);
-                    checkField(node, name, owner);
-                    return result;
-                } else if (operand.getClass() == VariableReference.class) {
-                    String className = ((VariableReference) operand).astIdentifier().astValue();
-                    // Not a FQCN that we care about: look in imports
-                    String fqcn = mClassToImport.get(className);
-                    if (fqcn != null) {
-                        // Yes imported
-                        String owner = getInternalName(fqcn);
-                        checkField(node, name, owner);
-                        return result;
-                    }
-
-                    if (Character.isUpperCase(className.charAt(0))) {
-                        // Might be a star import: have to iterate and check here
-                        if (mStarImports != null) {
-                            for (String packagePrefix : mStarImports) {
-                                String owner = getInternalName(packagePrefix) + '/' + className;
-                                if (checkField(node, name, owner)) {
-                                    mClassToImport.put(name, owner);
-                                    return result;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            return result;
         }
 
         @Override
-        public boolean visitVariableReference(VariableReference node) {
-            boolean result = super.visitVariableReference(node);
+        public void visitTypeCastExpression(PsiTypeCastExpression expression) {
+            PsiTypeElement castTypeElement = expression.getCastType();
+            PsiExpression operand = expression.getOperand();
+            if (operand == null || castTypeElement == null) {
+                return;
+            }
+            PsiType operandType = operand.getType();
+            PsiType castType = castTypeElement.getType();
+            if (castType.equals(operandType)) {
+                return;
+            }
+            if (!(operandType instanceof PsiClassType)) {
+                return;
+            }
+            if (!(castType instanceof PsiClassType)) {
+                return;
+            }
+            PsiClassType classType = (PsiClassType)operandType;
+            PsiClassType interfaceType = (PsiClassType)castType;
+            checkCast(expression, classType, interfaceType);
+        }
 
-            if (node.getParent() != null) {
-                lombok.ast.Node parent = node.getParent();
-                Class<? extends lombok.ast.Node> parentClass = parent.getClass();
-                if (parentClass == Select.class
-                        || parentClass == Switch.class // look up on the switch expression type
-                        || parentClass == Case.class
-                        || parentClass == ConstructorInvocation.class
-                        || parentClass == SuperConstructorInvocation.class
-                        || parentClass == AnnotationElement.class) {
-                    return result;
-                }
-
-                if (parent instanceof MethodInvocation &&
-                        ((MethodInvocation) parent).astOperand() == node) {
-                    return result;
-                } else if (parent instanceof BinaryExpression) {
-                    BinaryExpression expression = (BinaryExpression) parent;
-                    if (expression.astLeft() == node) {
-                        return result;
-                    }
-                }
+        private void checkCast(@NonNull PsiElement node, @NonNull PsiClassType classType, @NonNull PsiClassType interfaceType) {
+            if (classType.equals(interfaceType)) {
+                return;
+            }
+            JavaEvaluator evaluator = mContext.getEvaluator();
+            String classTypeInternal = evaluator.getInternalName(classType);
+            String interfaceTypeInternal = evaluator.getInternalName(interfaceType);
+            if ("java/lang/Object".equals(interfaceTypeInternal)) {
+                return;
             }
 
-            String name = node.astIdentifier().astValue();
-            if (Character.isUpperCase(name.charAt(0))
-                    && (mLocalVars == null || !mLocalVars.contains(name))
-                    && (mFields == null || !mFields.contains(name))) {
-                // Potential field reference: check it
-                if (mStaticStarImports != null) {
-                    for (String owner : mStaticStarImports) {
-                        if (checkField(node, name, owner)) {
-                            break;
+            int api = mApiDatabase.getValidCastVersion(classTypeInternal, interfaceTypeInternal);
+            if (api == -1) {
+                return;
+            }
+
+            int minSdk = getMinSdk(mContext);
+            if (api <= minSdk) {
+                return;
+            }
+
+            if (isSuppressed(api, node, minSdk)) {
+                return;
+            }
+
+            Location location = mContext.getLocation(node);
+            String message = String.format("Cast from %1$s to %2$s requires API level %3$d (current min is %4$d)",
+                    classType.getClassName(),
+                    interfaceType.getClassName(), api, minSdk);
+            mContext.report(UNSUPPORTED, location, message);
+        }
+
+        @Override
+        public void visitCallExpression(PsiCallExpression expression) {
+            PsiMethod method = expression.resolveMethod();
+            if (method != null) {
+                PsiParameterList parameterList = method.getParameterList();
+                if (parameterList.getParametersCount() > 0) {
+                    PsiParameter[] parameters = parameterList.getParameters();
+                    PsiExpressionList argumentList = expression.getArgumentList();
+                    if (argumentList != null) {
+                        PsiExpression[] arguments = argumentList.getExpressions();
+                        for (int i = 0; i < parameters.length; i++) {
+                            PsiType parameterType = parameters[i].getType();
+                            if (parameterType instanceof PsiClassType) {
+                                if (i >= arguments.length) {
+                                    // We can end up with more arguments than parameters when
+                                    // there is a varargs call.
+                                    break;
+                                }
+                                PsiExpression argument = arguments[i];
+                                PsiType argumentType = argument.getType();
+                                if (argumentType == null || parameterType.equals(argumentType)
+                                        || !(argumentType instanceof PsiClassType)) {
+                                    continue;
+                                }
+                                checkCast(argument, (PsiClassType) argumentType,
+                                        (PsiClassType) parameterType);
+                            }
                         }
                     }
                 }
             }
-
-            return result;
         }
 
         @Override
-        public boolean visitVariableDefinitionEntry(VariableDefinitionEntry node) {
+        public void visitLocalVariable(PsiLocalVariable variable) {
+            PsiExpression initializer = variable.getInitializer();
+            if (initializer == null) {
+                return;
+            }
+
+            PsiType initializerType = initializer.getType();
+            if (!(initializerType instanceof PsiClassType)) {
+                return;
+            }
+
+            PsiType interfaceType = variable.getType();
+            if (initializerType.equals(interfaceType)) {
+                return;
+            }
+
+            if (!(interfaceType instanceof PsiClassType)) {
+                return;
+            }
+
+            checkCast(initializer, (PsiClassType)initializerType, (PsiClassType)interfaceType);
+        }
+
+        @Override
+        public void visitAssignmentExpression(PsiAssignmentExpression expression) {
+            PsiExpression rExpression = expression.getRExpression();
+            if (rExpression == null) {
+                return;
+            }
+
+            PsiType rhsType = rExpression.getType();
+            if (!(rhsType instanceof PsiClassType)) {
+                return;
+            }
+
+            PsiType interfaceType = expression.getLExpression().getType();
+            if (rhsType.equals(interfaceType)) {
+                return;
+            }
+
+            if (!(interfaceType instanceof PsiClassType)) {
+                return;
+            }
+
+            checkCast(rExpression, (PsiClassType)rhsType, (PsiClassType)interfaceType);
+        }
+
+        @Override
+        public void visitTryStatement(PsiTryStatement statement) {
+            PsiResourceList resourceList = statement.getResourceList();
             //noinspection VariableNotUsedInsideIf
-            if (mCurrentMethod != null) {
-                if (mLocalVars == null) {
-                    mLocalVars = Sets.newHashSet();
+            if (resourceList != null) {
+                int api = 19; // minSdk for try with resources
+                int minSdk = getMinSdk(mContext);
+
+                if (api > minSdk && api > getTargetApi(statement)) {
+                    Location location = mContext.getLocation(statement);
+                    String message = String.format("Try-with-resources requires "
+                            + "API level %1$d (current min is %2$d)", api, minSdk);
+                    LintDriver driver = mContext.getDriver();
+                    if (!driver.isSuppressed(mContext, UNSUPPORTED, statement)) {
+                        mContext.report(UNSUPPORTED, statement, location, message);
+                    }
                 }
-                mLocalVars.add(node.astName().astValue());
-            } else {
-                if (mFields == null) {
-                    mFields = Sets.newHashSet();
-                }
-                mFields.add(node.astName().astValue());
             }
 
-            Expression initializer = node.astInitializer();
-            if (initializer != null
-                    // Checking cast expressions is handled already; prevent duplicate errors
-                    && !(initializer instanceof Cast)) {
-                TypeDescriptor classType = mContext.getType(initializer);
-                if (classType != null && !classType.isPrimitive()) {
-                    String classOwner = classType.getInternalName();
-                    if (mApiDatabase.isKnownClass(classOwner)) {
-                        TypeDescriptor interfaceType = mContext.getType(node);
-                        if (interfaceType != null) {
-                            checkCast(initializer, classOwner, classType, interfaceType);
+            for (PsiParameter parameter : statement.getCatchBlockParameters()) {
+                PsiTypeElement typeElement = parameter.getTypeElement();
+                if (typeElement != null) {
+                    checkCatchTypeElement(statement, typeElement, typeElement.getType());
+                }
+            }
+        }
+
+        private void checkCatchTypeElement(@NonNull PsiTryStatement statement,
+                @NonNull PsiTypeElement typeElement,
+                @Nullable PsiType type) {
+            PsiClass resolved = null;
+            if (type instanceof PsiDisjunctionType) {
+                PsiDisjunctionType disjunctionType = (PsiDisjunctionType)type;
+                type = disjunctionType.getLeastUpperBound();
+                if (type instanceof PsiClassType) {
+                    resolved = ((PsiClassType)type).resolve();
+                }
+                for (PsiElement child : typeElement.getChildren()) {
+                    if (child instanceof PsiTypeElement) {
+                        PsiTypeElement childTypeElement = (PsiTypeElement)child;
+                        PsiType childType = childTypeElement.getType();
+                        if (!type.equals(childType)) {
+                            checkCatchTypeElement(statement, childTypeElement, childType);
                         }
                     }
                 }
+            } else if (type instanceof PsiClassType) {
+                resolved = ((PsiClassType)type).resolve();
             }
-
-            return super.visitVariableDefinitionEntry(node);
-        }
-
-        @Override
-        public boolean visitMethodDeclaration(MethodDeclaration node) {
-            mLocalVars = null;
-            mCurrentMethod = node;
-            return super.visitMethodDeclaration(node);
-        }
-
-        @Override
-        public boolean visitConstructorDeclaration(ConstructorDeclaration node) {
-            mLocalVars = null;
-            mCurrentMethod = node;
-            return super.visitConstructorDeclaration(node);
-        }
-
-        @Override
-        public boolean visitCast(Cast node) {
-            TypeDescriptor classType = mContext.getType(node.astOperand());
-            if (classType != null && !classType.isPrimitive()) {
-                TypeDescriptor interfaceType = mContext.getType(node);
-                checkCast(node, classType.getInternalName(), classType, interfaceType);
-            }
-
-            return super.visitCast(node);
-        }
-
-        @Override
-        public boolean visitBinaryExpression(BinaryExpression node) {
-            if (node.astOperator() == BinaryOperator.ASSIGN &&
-                    // Checking cast expressions is handled already; prevent duplicate errors
-                    !(node.astRight() instanceof Cast)) {
-                TypeDescriptor classType = mContext.getType(node.astRight());
-                if (classType != null && !classType.isPrimitive()) {
-                    String classOwner = classType.getInternalName();
-                    if (mApiDatabase.isKnownClass(classOwner)) {
-                        TypeDescriptor interfaceType = mContext.getType(node.astLeft());
-                        if (interfaceType != null && !interfaceType.isPrimitive()) {
-                            checkCast(node, classOwner, classType, interfaceType);
-                        }
+            if (resolved != null) {
+                String signature = mContext.getEvaluator().getInternalName(resolved);
+                int api = mApiDatabase.getClassVersion(signature);
+                if (api == -1) {
+                    return;
+                }
+                int minSdk = getMinSdk(mContext);
+                if (api <= minSdk) {
+                    return;
+                }
+                int target = getTargetApi(statement);
+                if (target != -1) {
+                    if (api <= target) {
+                        return;
                     }
                 }
-            }
-            return super.visitBinaryExpression(node);
-        }
 
-        @Override
-        public boolean visitMethodInvocation(MethodInvocation node) {
-            ResolvedMethod method = null;
-            int parameterIndex = 0;
-            for (Expression argument : node.astArguments()) {
-                TypeDescriptor argumentType = mContext.getType(argument);
-                if (argumentType != null && !argumentType.isPrimitive()) {
-                    if (method == null) {
-                        ResolvedNode resolved = mContext.resolve(node);
-                        if (resolved instanceof ResolvedMethod) {
-                            method = (ResolvedMethod) resolved;
-                        } else {
-                            break;
-                        }
-                    }
-                    if (parameterIndex >= method.getArgumentCount()) {
-                        // We can end up with more arguments than parameters when
-                        // there is a varargs call.
-                        break;
-                    }
-                    TypeDescriptor parameterType = method.getArgumentType(parameterIndex);
-                    String argumentOwner = argumentType.getInternalName();
-                    if (mApiDatabase.isKnownClass(argumentOwner)) {
-                        checkCast(argument, argumentOwner, argumentType,
-                                parameterType);
-                    }
+                Location location;
+                location = mContext.getLocation(typeElement);
+                String fqcn = resolved.getName();
+                String message = String.format("Class requires API level %1$d (current min is %2$d): %3$s", api, minSdk, fqcn);
+
+                // Special case reflective operation exception which can be implicitly used
+                // with multi-catches: see issue 153406
+                if (api == 19 && "ReflectiveOperationException".equals(fqcn)) {
+                    message = String.format("Multi-catch with these reflection exceptions requires API level 19 (current min is %2$d) " +
+                                    "because they get compiled to the common but new super type `ReflectiveOperationException`. " +
+                                    "As a workaround either create individual catch statements, or catch `Exception`.",
+                            api, minSdk);
                 }
-                parameterIndex++;
+                mContext.report(UNSUPPORTED, location, message);
             }
-
-            return super.visitMethodInvocation(node);
-        }
-
-        private void checkCast(
-                @NonNull lombok.ast.Node node,
-                @NonNull String classOwner,
-                @NonNull TypeDescriptor classType,
-                @Nullable TypeDescriptor interfaceType) {
-            if (interfaceType != null && !interfaceType.equals(classType)) {
-                String interfaceInternalName = interfaceType.getInternalName();
-                int api = mApiDatabase.getValidCastVersion(classOwner, interfaceInternalName);
-                if (api != -1 && !"java/lang/Object".equals(interfaceInternalName)) {
-                    int minSdk = getMinSdk(mContext);
-                    if (api > minSdk && api > getLocalMinSdk(node)) {
-                        LintDriver driver = mContext.getDriver();
-                        if (!driver.isSuppressed(mContext, UNSUPPORTED, node)) {
-                            Location location = mContext.getLocation(node);
-                            String message = String.format(
-                                    "Cast from %1$s to %2$s requires API level %3$d (current min is %4$d)",
-                                    classType.getSimpleName(), interfaceType.getSimpleName(),
-                                    api, minSdk);
-                            mContext.report(UNSUPPORTED, node, location, message);
-                        }
-                    }
-                }
-            }
-        }
-
-        @Override
-        public boolean visitTry(Try node) {
-            Object nativeNode = node.getNativeNode();
-            if (nativeNode != null && nativeNode.getClass().getName().equals(
-                    "org.eclipse.jdt.internal.compiler.ast.TryStatement")) {
-                boolean isTryWithResources = false;
-                try {
-                    Field field = nativeNode.getClass().getDeclaredField("resources");
-                    Object value = field.get(nativeNode);
-                    if (value instanceof Object[]) {
-                        Object[] resources = (Object[]) value;
-                        isTryWithResources = resources.length > 0;
-                    }
-                } catch (NoSuchFieldException e) {
-                    // Unexpected: ECJ parser internals have changed; can't detect try block
-                } catch (IllegalAccessException e) {
-                    // Unexpected: ECJ parser internals have changed; can't detect try block
-                }
-                if (isTryWithResources) {
-                    int minSdk = getMinSdk(mContext);
-                    int api = 19;  // minSdk for try with resources
-                    if (api > minSdk && api > getLocalMinSdk(node)) {
-                        Location location = mContext.getLocation(node);
-                        String message = String.format("Try-with-resources requires "
-                                + "API level %1$d (current min is %2$d)", api, minSdk);
-                        LintDriver driver = mContext.getDriver();
-                        if (!driver.isSuppressed(mContext, UNSUPPORTED, node)) {
-                            mContext.report(UNSUPPORTED, node, location, message);
-                        }
-                    }
-                }
-            }
-
-            return super.visitTry(node);
-        }
-
-        @Override
-        public void endVisit(lombok.ast.Node node) {
-            if (node == mCurrentMethod) {
-                mCurrentMethod = null;
-            }
-            super.endVisit(node);
         }
 
         /**
          * Checks a Java source field reference. Returns true if the field is known
          * regardless of whether it's an invalid field or not
          */
-        private boolean checkField(
-                @NonNull lombok.ast.Node node,
-                @NonNull String name,
-                @NonNull String owner) {
+        private boolean checkField(@NonNull PsiElement node, @NonNull PsiField field) {
+            PsiType type = field.getType();
+            // Only look for compile time constants. See JLS 15.28 and JLS 13.4.9.
+            if (!(type instanceof PsiPrimitiveType) && !LintUtils.isString(type)) {
+                return false;
+            }
+            String name = field.getName();
+            PsiClass containingClass = field.getContainingClass();
+            if (containingClass == null || name == null) {
+                return false;
+            }
+            String owner = mContext.getEvaluator().getInternalName(containingClass);
             int api = mApiDatabase.getFieldVersion(owner, name);
             if (api != -1) {
                 int minSdk = getMinSdk(mContext);
                 if (api > minSdk
-                        && api > getLocalMinSdk(node)) {
+                        && api > getTargetApi(node)) {
                     if (isBenignConstantUsage(node, name, owner)) {
                         return true;
                     }
 
-                    Location location = mContext.getLocation(node);
                     String fqcn = getFqcn(owner) + '#' + name;
 
-                    if (node instanceof ImportDeclaration) {
-                        // Replace import statement location range with just
-                        // the identifier part
-                        ImportDeclaration d = (ImportDeclaration) node;
-                        int startOffset = d.astParts().first().getPosition().getStart();
-                        Position start = location.getStart();
-                        assert start != null : location;
-                        int startColumn = start.getColumn();
-                        int startLine = start.getLine();
-                        start = new DefaultPosition(startLine,
-                                startColumn + startOffset - start.getOffset(), startOffset);
-                        int fqcnLength = fqcn.length();
-                        Position end = new DefaultPosition(startLine,
-                                start.getColumn() + fqcnLength,
-                                start.getOffset() + fqcnLength);
-                        location = Location.create(location.getFile(), start, end);
+                    // For import statements, place the underlines only under the
+                    // reference, not the import and static keywords
+                    if (node instanceof PsiImportStatementBase) {
+                        PsiJavaCodeReferenceElement reference
+                                = ((PsiImportStatementBase) node).getImportReference();
+                        if (reference != null) {
+                            node = reference;
+                        }
                     }
 
                     String message = String.format(
@@ -2108,9 +1935,9 @@ public class ApiDetector extends ResourceXmlDetector
                             api, minSdk, fqcn);
 
                     LintDriver driver = mContext.getDriver();
-                    if (driver.isSuppressed(mContext, INLINED, node)) {
-                        return true;
-                    }
+                    //if (driver.isSuppressed(mContext, INLINED, node)) {
+                    //    return true;
+                    //}
 
                     // Also allow to suppress these issues with NewApi, since some
                     // fields used to get identified that way
@@ -2118,38 +1945,8 @@ public class ApiDetector extends ResourceXmlDetector
                         return true;
                     }
 
-                    // We can't report the issue right away; we don't yet know if
-                    // this is an actual inlined (static primitive or String) yet.
-                    // So just make a note of it, and report these after the project
-                    // checking has finished; any fields that aren't inlined will be
-                    // cleared when they're noticed by the class check.
-                    if (mPendingFields == null) {
-                        mPendingFields = Maps.newHashMapWithExpectedSize(20);
-                    }
-                    List<Pair<String, Location>> list = mPendingFields.get(fqcn);
-                    if (list == null) {
-                        list = new ArrayList<Pair<String, Location>>();
-                        mPendingFields.put(fqcn, list);
-                    } else {
-                        // See if this location already exists. This can happen if
-                        // we have multiple references to an inlined field on the same
-                        // line. Since the class file only gives us line information, we
-                        // can't distinguish between these in the client as separate usages,
-                        // so they end up being identical errors.
-                        for (Pair<String, Location> pair : list) {
-                            Location existingLocation = pair.getSecond();
-                            //noinspection FileEqualsUsage
-                            if (location.getFile().equals(existingLocation.getFile())) {
-                                Position start = location.getStart();
-                                Position existingStart = existingLocation.getStart();
-                                if (start != null && existingStart != null
-                                        && start.getLine() == existingStart.getLine()) {
-                                    return true;
-                                }
-                            }
-                        }
-                    }
-                    list.add(Pair.of(message, location));
+                    Location location = mContext.getLocation(node);
+                    mContext.report(INLINED, node, location, message);
                 }
 
                 return true;
@@ -2157,106 +1954,101 @@ public class ApiDetector extends ResourceXmlDetector
 
             return false;
         }
+    }
 
-        /**
-         * Returns the minimum SDK to use according to the given AST node, or null
-         * if no {@code TargetApi} annotations were found
-         *
-         * @return the API level to use for this node, or -1
-         */
-        public int getLocalMinSdk(@Nullable lombok.ast.Node scope) {
-            while (scope != null) {
-                Class<? extends lombok.ast.Node> type = scope.getClass();
-                // The Lombok AST uses a flat hierarchy of node type implementation classes
-                // so no need to do instanceof stuff here.
-                if (type == VariableDefinition.class) {
-                    // Variable
-                    VariableDefinition declaration = (VariableDefinition) scope;
-                    int targetApi = getTargetApi(declaration.astModifiers());
-                    if (targetApi != -1) {
-                        return targetApi;
-                    }
-                } else if (type == MethodDeclaration.class) {
-                    // Method
-                    // Look for annotations on the method
-                    MethodDeclaration declaration = (MethodDeclaration) scope;
-                    int targetApi = getTargetApi(declaration.astModifiers());
-                    if (targetApi != -1) {
-                        return targetApi;
-                    }
-                } else if (type == ConstructorDeclaration.class) {
-                    // Constructor
-                    // Look for annotations on the method
-                    ConstructorDeclaration declaration = (ConstructorDeclaration) scope;
-                    int targetApi = getTargetApi(declaration.astModifiers());
-                    if (targetApi != -1) {
-                        return targetApi;
-                    }
-                } else if (TypeDeclaration.class.isAssignableFrom(type)) {
-                    // Class, annotation, enum, interface
-                    TypeDeclaration declaration = (TypeDeclaration) scope;
-                    int targetApi = getTargetApi(declaration.astModifiers());
-                    if (targetApi != -1) {
-                        return targetApi;
-                    }
-                } else if (type == AnnotationMethodDeclaration.class) {
-                    // Look for annotations on the method
-                    AnnotationMethodDeclaration declaration = (AnnotationMethodDeclaration) scope;
-                    int targetApi = getTargetApi(declaration.astModifiers());
-                    if (targetApi != -1) {
-                        return targetApi;
-                    }
-                }
-
-                scope = scope.getParent();
-            }
-
-            return -1;
+    private static boolean isSuppressed(int api, PsiElement element, int minSdk) {
+        if (api <= minSdk) {
+            return true;
         }
+        //if (mySeenTargetApi) {
+            int target = getTargetApi(element);
+            if (target != -1) {
+                if (api <= target) {
+                    return true;
+                }
+            }
+        //}
+// TODO: This MUST BE RESTORED
+//        if (context.getDriver().isSuppressed(UNSUPPORTED, element))
+//        if (/*mySeenSuppress &&*/
+//                (IntellijLintUtils.isSuppressed(element, myFile, UNSUPPORTED) || IntellijLintUtils.isSuppressed(element, myFile, INLINED))) {
+//            return true;
+//        }
+
+        if (isWithinVersionCheckConditional(element, api)) {
+            return true;
+        }
+        if (isPrecededByVersionCheckExit(element, api)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public static int getTargetApi(@Nullable PsiElement scope) {
+        while (scope != null) {
+            if (scope instanceof PsiModifierListOwner) {
+                PsiModifierList modifierList = ((PsiModifierListOwner) scope).getModifierList();
+                int targetApi = getTargetApi(modifierList);
+                if (targetApi != -1) {
+                    return targetApi;
+                }
+            }
+            scope = scope.getParent();
+            if (scope instanceof PsiFile) {
+                break;
+            }
+        }
+
+        return -1;
     }
 
     /**
      * Returns the API level for the given AST node if specified with
      * an {@code @TargetApi} annotation.
      *
-     * @param modifiers the modifier to check
+     * @param modifierList the modifier list to check
      * @return the target API level, or -1 if not specified
      */
-    public static int getTargetApi(@Nullable Modifiers modifiers) {
-        if (modifiers == null) {
-            return -1;
-        }
-        StrictListAccessor<Annotation, Modifiers> annotations = modifiers.astAnnotations();
-        if (annotations == null) {
+    public static int getTargetApi(@Nullable PsiModifierList modifierList) {
+        if (modifierList == null) {
             return -1;
         }
 
-        for (Annotation annotation : annotations) {
-            TypeReference t = annotation.astAnnotationTypeReference();
-            String typeName = t.getTypeName();
-            if (typeName.endsWith(TARGET_API)) {
-                StrictListAccessor<AnnotationElement, Annotation> values =
-                        annotation.astElements();
-                if (values != null) {
-                    for (AnnotationElement element : values) {
-                        AnnotationValue valueNode = element.astValue();
-                        if (valueNode == null) {
-                            continue;
+        for (PsiAnnotation annotation : modifierList.getAnnotations()) {
+            String fqcn = annotation.getQualifiedName();
+            if (fqcn != null && (fqcn.equals(FQCN_TARGET_API)
+                    || fqcn.equals(TARGET_API))) { // when missing imports
+                PsiAnnotationParameterList parameterList = annotation.getParameterList();
+                for (PsiNameValuePair pair : parameterList.getAttributes()) {
+                    PsiAnnotationMemberValue v = pair.getValue();
+                    if (v instanceof PsiLiteral) {
+                        PsiLiteral literal = (PsiLiteral)v;
+                        Object value = literal.getValue();
+                        if (value instanceof Integer) {
+                            return (Integer) value;
+                        } else if (value instanceof String) {
+                            return codeNameToApi((String) value);
                         }
-                        if (valueNode instanceof IntegralLiteral) {
-                            IntegralLiteral literal = (IntegralLiteral) valueNode;
-                            return literal.astIntValue();
-                        } else if (valueNode instanceof StringLiteral) {
-                            String value = ((StringLiteral) valueNode).astValue();
-                            return SdkVersionInfo.getApiByBuildCode(value, true);
-                        } else if (valueNode instanceof Select) {
-                            Select select = (Select) valueNode;
-                            String codename = select.astIdentifier().astValue();
-                            return SdkVersionInfo.getApiByBuildCode(codename, true);
-                        } else if (valueNode instanceof VariableReference) {
-                            VariableReference reference = (VariableReference) valueNode;
-                            String codename = reference.astIdentifier().astValue();
-                            return SdkVersionInfo.getApiByBuildCode(codename, true);
+                    } else if (v instanceof PsiArrayInitializerMemberValue) {
+                        PsiArrayInitializerMemberValue mv = (PsiArrayInitializerMemberValue)v;
+                        for (PsiAnnotationMemberValue mmv : mv.getInitializers()) {
+                            if (mmv instanceof PsiLiteral) {
+                                PsiLiteral literal = (PsiLiteral)mmv;
+                                Object value = literal.getValue();
+                                if (value instanceof Integer) {
+                                    return (Integer) value;
+                                } else if (value instanceof String) {
+                                    return codeNameToApi((String) value);
+                                }
+                            }
+                        }
+                    } else if (v instanceof PsiExpression) {
+                        if (v instanceof PsiReferenceExpression) {
+                            String name = ((PsiReferenceExpression)v).getQualifiedName();
+                            return codeNameToApi(name);
+                        } else {
+                            return codeNameToApi(v.getText());
                         }
                     }
                 }
@@ -2264,6 +2056,15 @@ public class ApiDetector extends ResourceXmlDetector
         }
 
         return -1;
+    }
+
+    public static int codeNameToApi(@NonNull String text) {
+        int dotIndex = text.lastIndexOf('.');
+        if (dotIndex != -1) {
+            text = text.substring(dotIndex + 1);
+        }
+
+        return SdkVersionInfo.getApiByBuildCode(text, true);
     }
 
     public static int getRequiredVersion(@NonNull Issue issue, @NonNull String errorMessage,
@@ -2440,5 +2241,266 @@ public class ApiDetector extends ResourceXmlDetector
 
             super.add(from, to);
         }
+    }
+
+    public static boolean isPrecededByVersionCheckExit(PsiElement element, int api) {
+        PsiElement current = PsiTreeUtil.getParentOfType(element, PsiStatement.class);
+        if (current != null) {
+            PsiElement prev = getPreviousStatement(current);
+            if (prev == null) {
+                //noinspection unchecked
+                current = PsiTreeUtil.getParentOfType(current, PsiStatement.class, true,
+                        PsiMethod.class, PsiClass.class);
+            } else {
+                current = prev;
+            }
+        }
+        while (current != null) {
+            if (current instanceof PsiIfStatement) {
+                PsiIfStatement ifStatement = (PsiIfStatement)current;
+                PsiStatement thenBranch = ifStatement.getThenBranch();
+                PsiStatement elseBranch = ifStatement.getElseBranch();
+                if (thenBranch != null) {
+                    Boolean level = isVersionCheckConditional(api, thenBranch, ifStatement);
+                    if (level != null) {
+                        // See if the body does an immediate return
+                        if (isUnconditionalReturn(thenBranch)) {
+                            return true;
+                        }
+                    }
+                }
+                if (elseBranch != null) {
+                    Boolean level = isVersionCheckConditional(api, elseBranch, ifStatement);
+                    if (level != null) {
+                        if (isUnconditionalReturn(elseBranch)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            PsiElement prev = getPreviousStatement(current);
+            if (prev == null) {
+                //noinspection unchecked
+                current = PsiTreeUtil.getParentOfType(current, PsiStatement.class, true,
+                        PsiMethod.class, PsiClass.class);
+                if (current == null) {
+                    return false;
+                }
+            } else {
+                current = prev;
+            }
+        }
+
+        return false;
+    }
+
+    private static boolean isUnconditionalReturn(PsiStatement statement) {
+        if (statement instanceof PsiBlockStatement) {
+            PsiBlockStatement blockStatement = (PsiBlockStatement)statement;
+            PsiCodeBlock block = blockStatement.getCodeBlock();
+            PsiStatement[] statements = block.getStatements();
+            if (statements.length == 1 && statements[0] instanceof PsiReturnStatement) {
+                return true;
+            }
+        }
+        if (statement instanceof PsiReturnStatement) {
+            return true;
+        }
+        return false;
+    }
+
+
+    @Nullable
+    public static PsiStatement getPreviousStatement(PsiElement element) {
+        final PsiElement prevStatement = PsiTreeUtil.skipSiblingsBackward(element,
+                PsiWhiteSpace.class, PsiComment.class);
+        return prevStatement instanceof PsiStatement ? (PsiStatement)prevStatement : null;
+    }
+
+    public static boolean isWithinVersionCheckConditional(PsiElement element, int api) {
+        PsiElement current = element.getParent();
+        PsiElement prev = element;
+        while (current != null) {
+            if (current instanceof PsiIfStatement) {
+                PsiIfStatement ifStatement = (PsiIfStatement)current;
+                Boolean isConditional = isVersionCheckConditional(api, prev, ifStatement);
+                if (isConditional != null) {
+                    return isConditional;
+                }
+            } else if (current instanceof PsiPolyadicExpression && isAndedWithConditional(current, api, prev)) {
+                return true;
+            } else if (current instanceof PsiMethod || current instanceof PsiFile) {
+                return false;
+            }
+            prev = current;
+            current = current.getParent();
+        }
+
+        return false;
+    }
+
+    @Nullable
+    private static Boolean isVersionCheckConditional(int api, PsiElement prev, PsiIfStatement ifStatement) {
+        PsiExpression condition = ifStatement.getCondition();
+        if (condition != prev && condition instanceof PsiBinaryExpression) {
+            Boolean isConditional = isVersionCheckConditional(api, prev, ifStatement, (PsiBinaryExpression)condition);
+            if (isConditional != null) {
+                return isConditional;
+            }
+        } else if (condition instanceof PsiPolyadicExpression) {
+            PsiPolyadicExpression ppe = (PsiPolyadicExpression)condition;
+            if (ppe.getOperationTokenType() == JavaTokenType.ANDAND && (prev == ifStatement.getThenBranch())) {
+                if (isAndedWithConditional(ppe, api, prev)) {
+                    return true;
+                }
+            }
+        } else if (condition instanceof PsiMethodCallExpression) {
+            PsiMethodCallExpression call = (PsiMethodCallExpression) condition;
+            PsiMethod method = call.resolveMethod();
+            if (method != null) {
+                PsiCodeBlock body = method.getBody();
+                if (body != null) {
+                    PsiStatement[] statements = body.getStatements();
+                    if (statements.length == 1) {
+                        PsiStatement statement = statements[0];
+                        if (statement instanceof PsiReturnStatement) {
+                            PsiReturnStatement returnStatement = (PsiReturnStatement) statement;
+                            PsiExpression returnValue = returnStatement.getReturnValue();
+                            if (returnValue instanceof PsiBinaryExpression) {
+                                Boolean isConditional = isVersionCheckConditional(api, null, null, (PsiBinaryExpression)returnValue);
+                                if (isConditional != null) {
+                                    return isConditional;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    private static Boolean isVersionCheckConditional(int api,
+            @Nullable PsiElement prev,
+            @Nullable PsiIfStatement ifStatement,
+            @NonNull PsiBinaryExpression binary) {
+        IElementType tokenType = binary.getOperationTokenType();
+        if (tokenType == JavaTokenType.GT || tokenType == JavaTokenType.GE ||
+                tokenType == JavaTokenType.LE || tokenType == JavaTokenType.LT ||
+                tokenType == JavaTokenType.EQEQ) {
+            PsiExpression left = binary.getLOperand();
+            if (left instanceof PsiReferenceExpression) {
+                PsiReferenceExpression ref = (PsiReferenceExpression)left;
+                if (SDK_INT.equals(ref.getReferenceName())) {
+                    PsiExpression right = binary.getROperand();
+                    int level = -1;
+                    if (right instanceof PsiReferenceExpression) {
+                        PsiReferenceExpression ref2 = (PsiReferenceExpression)right;
+                        String codeName = ref2.getReferenceName();
+                        if (codeName == null) {
+                            return false;
+                        }
+                        level = SdkVersionInfo.getApiByBuildCode(codeName, true);
+                    } else if (right instanceof PsiLiteralExpression) {
+                        PsiLiteralExpression lit = (PsiLiteralExpression)right;
+                        Object value = lit.getValue();
+                        if (value instanceof Integer) {
+                            level = ((Integer)value).intValue();
+                        }
+                    }
+                    if (level != -1) {
+                        boolean fromThen = ifStatement == null || prev == ifStatement.getThenBranch();
+                        boolean fromElse = ifStatement != null && prev == ifStatement.getElseBranch();
+                        assert fromThen == !fromElse;
+                        if (tokenType == JavaTokenType.GE) {
+                            // if (SDK_INT >= ICE_CREAM_SANDWICH) { <call> } else { ... }
+                            return level >= api && fromThen;
+                        }
+                        else if (tokenType == JavaTokenType.GT) {
+                            // if (SDK_INT > ICE_CREAM_SANDWICH) { <call> } else { ... }
+                            return level >= api - 1 && fromThen;
+                        }
+                        else if (tokenType == JavaTokenType.LE) {
+                            // if (SDK_INT <= ICE_CREAM_SANDWICH) { ... } else { <call> }
+                            return level >= api - 1 && fromElse;
+                        }
+                        else if (tokenType == JavaTokenType.LT) {
+                            // if (SDK_INT < ICE_CREAM_SANDWICH) { ... } else { <call> }
+                            return level >= api && fromElse;
+                        }
+                        else if (tokenType == JavaTokenType.EQEQ) {
+                            // if (SDK_INT == ICE_CREAM_SANDWICH) { <call> } else {  }
+                            return level >= api && fromThen;
+                        } else {
+                            assert false : tokenType;
+                        }
+                    }
+                }
+            }
+        } else if (tokenType == JavaTokenType.ANDAND && (ifStatement != null && prev == ifStatement.getThenBranch())) {
+            if (isAndedWithConditional(ifStatement.getCondition(), api, prev)) {
+                return true;
+            }
+        }
+        return null;
+    }
+
+    private static boolean isAndedWithConditional(PsiElement element, int api, @Nullable PsiElement before) {
+        if (element instanceof PsiBinaryExpression) {
+            PsiBinaryExpression inner = (PsiBinaryExpression)element;
+            if (inner.getOperationTokenType() == JavaTokenType.ANDAND) {
+                return isAndedWithConditional(inner.getLOperand(), api, before) ||
+                        inner.getROperand() != before &&  isAndedWithConditional(inner.getROperand(), api, before);
+            } else  if (inner.getLOperand() instanceof PsiReferenceExpression &&
+                    SDK_INT.equals(((PsiReferenceExpression)inner.getLOperand()).getReferenceName())) {
+                int level = -1;
+                IElementType tokenType = inner.getOperationTokenType();
+                PsiExpression right = inner.getROperand();
+                if (right instanceof PsiReferenceExpression) {
+                    PsiReferenceExpression ref2 = (PsiReferenceExpression)right;
+                    String codeName = ref2.getReferenceName();
+                    if (codeName == null) {
+                        return false;
+                    }
+                    level = SdkVersionInfo.getApiByBuildCode(codeName, true);
+                } else if (right instanceof PsiLiteralExpression) {
+                    PsiLiteralExpression lit = (PsiLiteralExpression)right;
+                    Object value = lit.getValue();
+                    if (value instanceof Integer) {
+                        level = ((Integer)value).intValue();
+                    }
+                }
+                if (level != -1) {
+                    if (tokenType == JavaTokenType.GE) {
+                        // if (SDK_INT >= ICE_CREAM_SANDWICH && <call>
+                        return level >= api;
+                    }
+                    else if (tokenType == JavaTokenType.GT) {
+                        // if (SDK_INT > ICE_CREAM_SANDWICH) && <call>
+                        return level >= api - 1;
+                    }
+                    else if (tokenType == JavaTokenType.EQEQ) {
+                        // if (SDK_INT == ICE_CREAM_SANDWICH) && <call>
+                        return level >= api;
+                    }
+                }
+            }
+        }
+        else if (element instanceof PsiPolyadicExpression) {
+            PsiPolyadicExpression ppe = (PsiPolyadicExpression)element;
+            if (ppe.getOperationTokenType() == JavaTokenType.ANDAND) {
+                for (PsiExpression operand : ppe.getOperands()) {
+                    if (operand == before) {
+                        break;
+                    }
+                    else if (isAndedWithConditional(operand, api, before)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 }

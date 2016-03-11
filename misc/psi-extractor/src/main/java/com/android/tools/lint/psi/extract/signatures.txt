@@ -1,0 +1,4875 @@
+com/intellij/AbstractBundle
+    LOG
+    myPathToBundle
+    ourCache
+    <clinit>()V
+    <init>(Ljava/lang/String;)V
+com/intellij/BundleBase
+    $assertionsDisabled
+    assertKeyIsFound
+    <clinit>()V
+    format(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+    message(Ljava/util/ResourceBundle;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+    messageOrDefault(Ljava/util/ResourceBundle;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+    replaceMnemonicAmpersand(Ljava/lang/String;)Ljava/lang/String;
+com/intellij/CommonBundle
+    message(Ljava/util/ResourceBundle;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+    messageOrDefault(Ljava/util/ResourceBundle;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+com/intellij/core/JavaCoreBundle
+    ourBundle
+    getBundle()Ljava/util/ResourceBundle;
+    message(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+com/intellij/lang/ASTNode
+    EMPTY_ARRAY
+    <clinit>()V
+    addChild(Lcom/intellij/lang/ASTNode;)V
+    addChild(Lcom/intellij/lang/ASTNode;Lcom/intellij/lang/ASTNode;)V
+    addChildren(Lcom/intellij/lang/ASTNode;Lcom/intellij/lang/ASTNode;Lcom/intellij/lang/ASTNode;)V
+    addLeaf(Lcom/intellij/psi/tree/IElementType;Ljava/lang/CharSequence;Lcom/intellij/lang/ASTNode;)V
+    clone()Ljava/lang/Object;
+    copyElement()Lcom/intellij/lang/ASTNode;
+    findChildByType(Lcom/intellij/psi/tree/IElementType;)Lcom/intellij/lang/ASTNode;
+    findChildByType(Lcom/intellij/psi/tree/IElementType;Lcom/intellij/lang/ASTNode;)Lcom/intellij/lang/ASTNode;
+    findChildByType(Lcom/intellij/psi/tree/TokenSet;)Lcom/intellij/lang/ASTNode;
+    findChildByType(Lcom/intellij/psi/tree/TokenSet;Lcom/intellij/lang/ASTNode;)Lcom/intellij/lang/ASTNode;
+    findLeafElementAt(I)Lcom/intellij/lang/ASTNode;
+    getChars()Ljava/lang/CharSequence;
+    getChildren(Lcom/intellij/psi/tree/TokenSet;)[Lcom/intellij/lang/ASTNode;
+    getCopyableUserData(Lcom/intellij/openapi/util/Key;)Ljava/lang/Object;
+    getElementType()Lcom/intellij/psi/tree/IElementType;
+    getFirstChildNode()Lcom/intellij/lang/ASTNode;
+    getLastChildNode()Lcom/intellij/lang/ASTNode;
+    getPsi()Lcom/intellij/psi/PsiElement;
+    getPsi(Ljava/lang/Class;)Lcom/intellij/psi/PsiElement;
+    getStartOffset()I
+    getText()Ljava/lang/String;
+    getTextLength()I
+    getTextRange()Lcom/intellij/openapi/util/TextRange;
+    getTreeNext()Lcom/intellij/lang/ASTNode;
+    getTreeParent()Lcom/intellij/lang/ASTNode;
+    getTreePrev()Lcom/intellij/lang/ASTNode;
+    putCopyableUserData(Lcom/intellij/openapi/util/Key;Ljava/lang/Object;)V
+    removeChild(Lcom/intellij/lang/ASTNode;)V
+    removeRange(Lcom/intellij/lang/ASTNode;Lcom/intellij/lang/ASTNode;)V
+    replaceAllChildrenToChildrenOf(Lcom/intellij/lang/ASTNode;)V
+    replaceChild(Lcom/intellij/lang/ASTNode;Lcom/intellij/lang/ASTNode;)V
+    textContains(C)Z
+com/intellij/lang/Language
+    ANY
+    LOG
+    myBaseLanguage
+    myDialects
+    myID
+    myMimeTypes
+    ourRegisteredIDs
+    ourRegisteredLanguages
+    ourRegisteredMimeTypes
+    <clinit>()V
+    <init>(Lcom/intellij/lang/Language;Ljava/lang/String;[Ljava/lang/String;)V
+    <init>(Ljava/lang/String;)V
+    <init>(Ljava/lang/String;Z)V
+    <init>(Ljava/lang/String;[Ljava/lang/String;)V
+    findInstance(Ljava/lang/Class;)Lcom/intellij/lang/Language;
+    findInstancesByMimeType(Ljava/lang/String;)Ljava/util/Collection;
+    findLanguageByID(Ljava/lang/String;)Lcom/intellij/lang/Language;
+    getAssociatedFileType()Lcom/intellij/openapi/fileTypes/LanguageFileType;
+    getBaseLanguage()Lcom/intellij/lang/Language;
+    getDialects()Ljava/util/List;
+    getDisplayName()Ljava/lang/String;
+    getID()Ljava/lang/String;
+    getMimeTypes()[Ljava/lang/String;
+    getRegisteredLanguages()Ljava/util/Collection;
+    is(Lcom/intellij/lang/Language;)Z
+    isCaseSensitive()Z
+    isKindOf(Lcom/intellij/lang/Language;)Z
+    isKindOf(Ljava/lang/String;)Z
+    toString()Ljava/lang/String;
+com/intellij/lang/Language$1
+    <init>(Ljava/lang/String;)V
+    getAssociatedFileType()Lcom/intellij/openapi/fileTypes/LanguageFileType;
+    toString()Ljava/lang/String;
+com/intellij/lang/java/JavaLanguage
+    INSTANCE
+    <clinit>()V
+    <init>()V
+    getDisplayName()Ljava/lang/String;
+    isCaseSensitive()Z
+com/intellij/navigation/NavigationItem
+    EMPTY_NAVIGATION_ITEM_ARRAY
+    <clinit>()V
+    getName()Ljava/lang/String;
+com/intellij/openapi/Disposable
+    dispose()V
+com/intellij/openapi/Forceable
+    force()V
+    isDirty()Z
+com/intellij/openapi/application/AccessToken
+    EMPTY_ACCESS_TOKEN
+    <clinit>()V
+    <init>()V
+com/intellij/openapi/application/AccessToken$1
+    <init>()V
+com/intellij/openapi/application/Application
+    acquireReadActionLock()Lcom/intellij/openapi/application/AccessToken;
+    acquireWriteActionLock(Ljava/lang/Class;)Lcom/intellij/openapi/application/AccessToken;
+    addApplicationListener(Lcom/intellij/openapi/application/ApplicationListener;)V
+    addApplicationListener(Lcom/intellij/openapi/application/ApplicationListener;Lcom/intellij/openapi/Disposable;)V
+    assertIsDispatchThread()V
+    assertReadAccessAllowed()V
+    assertWriteAccessAllowed()V
+    executeOnPooledThread(Ljava/lang/Runnable;)Ljava/util/concurrent/Future;
+    executeOnPooledThread(Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Future;
+    exit()V
+    getAnyModalityState()Lcom/intellij/openapi/application/ModalityState;
+    getCurrentModalityState()Lcom/intellij/openapi/application/ModalityState;
+    getDefaultModalityState()Lcom/intellij/openapi/application/ModalityState;
+    getIdleTime()J
+    getInvokator()Lcom/intellij/openapi/application/ModalityInvokator;
+    getModalityStateForComponent(Ljava/awt/Component;)Lcom/intellij/openapi/application/ModalityState;
+    getNoneModalityState()Lcom/intellij/openapi/application/ModalityState;
+    getStartTime()J
+    hasWriteAction(Ljava/lang/Class;)Z
+    invokeAndWait(Ljava/lang/Runnable;Lcom/intellij/openapi/application/ModalityState;)V
+    invokeLater(Ljava/lang/Runnable;)V
+    invokeLater(Ljava/lang/Runnable;Lcom/intellij/openapi/application/ModalityState;)V
+    invokeLater(Ljava/lang/Runnable;Lcom/intellij/openapi/application/ModalityState;Lcom/intellij/openapi/util/Condition;)V
+    invokeLater(Ljava/lang/Runnable;Lcom/intellij/openapi/util/Condition;)V
+    isActive()Z
+    isCommandLine()Z
+    isDispatchThread()Z
+    isDisposeInProgress()Z
+    isDisposed()Z
+    isEAP()Z
+    isHeadlessEnvironment()Z
+    isInternal()Z
+    isReadAccessAllowed()Z
+    isRestartCapable()Z
+    isUnitTestMode()Z
+    isWriteAccessAllowed()Z
+    removeApplicationListener(Lcom/intellij/openapi/application/ApplicationListener;)V
+    restart()V
+    runReadAction(Lcom/intellij/openapi/util/Computable;)Ljava/lang/Object;
+    runReadAction(Lcom/intellij/openapi/util/ThrowableComputable;)Ljava/lang/Object;
+    runReadAction(Ljava/lang/Runnable;)V
+    runWriteAction(Lcom/intellij/openapi/util/Computable;)Ljava/lang/Object;
+    runWriteAction(Lcom/intellij/openapi/util/ThrowableComputable;)Ljava/lang/Object;
+    runWriteAction(Ljava/lang/Runnable;)V
+    saveAll()V
+    saveSettings()V
+com/intellij/openapi/application/ApplicationListener
+    applicationExiting()V
+    beforeWriteActionStart(Ljava/lang/Object;)V
+    canExitApplication()Z
+    writeActionFinished(Ljava/lang/Object;)V
+    writeActionStarted(Ljava/lang/Object;)V
+com/intellij/openapi/application/ApplicationManager
+    ourApplication
+    <clinit>()V
+    getApplication()Lcom/intellij/openapi/application/Application;
+com/intellij/openapi/application/ModalityInvokator
+    invokeLater(Ljava/lang/Runnable;)Lcom/intellij/openapi/util/ActionCallback;
+    invokeLater(Ljava/lang/Runnable;Lcom/intellij/openapi/application/ModalityState;)Lcom/intellij/openapi/util/ActionCallback;
+    invokeLater(Ljava/lang/Runnable;Lcom/intellij/openapi/application/ModalityState;Lcom/intellij/openapi/util/Condition;)Lcom/intellij/openapi/util/ActionCallback;
+    invokeLater(Ljava/lang/Runnable;Lcom/intellij/openapi/util/Condition;)Lcom/intellij/openapi/util/ActionCallback;
+com/intellij/openapi/application/ModalityState
+    NON_MODAL
+    <clinit>()V
+com/intellij/openapi/application/PathManager
+    PATHS_SELECTOR
+    PROPERTY_REF
+    ourHomePath
+    ourSystemPath
+    <clinit>()V
+    checkAndCreate(Ljava/lang/String;Z)Z
+    extractRoot(Ljava/net/URL;Ljava/lang/String;)Ljava/lang/String;
+    getAbsolutePath(Ljava/lang/String;)Ljava/lang/String;
+    getHomePath()Ljava/lang/String;
+    getHomePathFor(Ljava/lang/Class;)Ljava/lang/String;
+    getIndexRoot()Ljava/io/File;
+    getOSSpecificBinSubdir()Ljava/lang/String;
+    getResourceRoot(Ljava/lang/Class;Ljava/lang/String;)Ljava/lang/String;
+    getSystemPath()Ljava/lang/String;
+    isIdeaHome(Ljava/io/File;)Z
+    log(Ljava/lang/String;)V
+    platformPath(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    platformPath(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    trimPathQuotes(Ljava/lang/String;)Ljava/lang/String;
+com/intellij/openapi/components/BaseComponent
+    disposeComponent()V
+    initComponent()V
+com/intellij/openapi/components/ComponentManager
+    getComponent(Ljava/lang/Class;)Ljava/lang/Object;
+    getComponent(Ljava/lang/Class;Ljava/lang/Object;)Ljava/lang/Object;
+    getComponent(Ljava/lang/String;)Lcom/intellij/openapi/components/BaseComponent;
+    getComponents(Ljava/lang/Class;)[Ljava/lang/Object;
+    getDisposed()Lcom/intellij/openapi/util/Condition;
+    getExtensions(Lcom/intellij/openapi/extensions/ExtensionPointName;)[Ljava/lang/Object;
+    getMessageBus()Lcom/intellij/util/messages/MessageBus;
+    getPicoContainer()Lorg/picocontainer/PicoContainer;
+    hasComponent(Ljava/lang/Class;)Z
+    isDisposed()Z
+com/intellij/openapi/components/NamedComponent
+    getComponentName()Ljava/lang/String;
+com/intellij/openapi/components/ServiceManager
+    LOG
+    <clinit>()V
+    doGetService(Lcom/intellij/openapi/components/ComponentManager;Ljava/lang/Class;)Ljava/lang/Object;
+    getService(Ljava/lang/Class;)Ljava/lang/Object;
+com/intellij/openapi/diagnostic/Attachment
+    EMPTY_ARRAY
+    <clinit>()V
+com/intellij/openapi/diagnostic/DefaultLogger
+    <init>(Ljava/lang/String;)V
+    debug(Ljava/lang/String;)V
+    debug(Ljava/lang/Throwable;)V
+    error(Ljava/lang/String;Ljava/lang/Throwable;[Ljava/lang/String;)V
+    info(Ljava/lang/String;)V
+    isDebugEnabled()Z
+    warn(Ljava/lang/String;Ljava/lang/Throwable;)V
+com/intellij/openapi/diagnostic/ExceptionWithAttachments
+    getAttachments()[Lcom/intellij/openapi/diagnostic/Attachment;
+com/intellij/openapi/diagnostic/LogUtil
+    objectAndClass(Ljava/lang/Object;)Ljava/lang/String;
+com/intellij/openapi/diagnostic/Logger
+    ourFactory
+    <clinit>()V
+    <init>()V
+    assertTrue(ZLjava/lang/Object;)Z
+    debug(Ljava/lang/String;)V
+    debug(Ljava/lang/Throwable;)V
+    error(Ljava/lang/String;)V
+    error(Ljava/lang/String;Ljava/lang/Throwable;)V
+    error(Ljava/lang/String;Ljava/lang/Throwable;[Ljava/lang/String;)V
+    error(Ljava/lang/Throwable;)V
+    getInstance(Ljava/lang/Class;)Lcom/intellij/openapi/diagnostic/Logger;
+    getInstance(Ljava/lang/String;)Lcom/intellij/openapi/diagnostic/Logger;
+    info(Ljava/lang/String;)V
+    isDebugEnabled()Z
+    warn(Ljava/lang/String;)V
+    warn(Ljava/lang/String;Ljava/lang/Throwable;)V
+    warn(Ljava/lang/Throwable;)V
+com/intellij/openapi/diagnostic/Logger$1
+com/intellij/openapi/diagnostic/Logger$DefaultFactory
+    <init>()V
+    <init>(Lcom/intellij/openapi/diagnostic/Logger$1;)V
+    getLoggerInstance(Ljava/lang/String;)Lcom/intellij/openapi/diagnostic/Logger;
+com/intellij/openapi/diagnostic/Logger$EmptyThrowable
+    <init>()V
+com/intellij/openapi/diagnostic/Logger$Factory
+    getLoggerInstance(Ljava/lang/String;)Lcom/intellij/openapi/diagnostic/Logger;
+com/intellij/openapi/fileTypes/FileType
+    EMPTY_ARRAY
+    <clinit>()V
+    getCharset(Lcom/intellij/openapi/vfs/VirtualFile;[B)Ljava/lang/String;
+    getDefaultExtension()Ljava/lang/String;
+    getDescription()Ljava/lang/String;
+    getIcon()Ljavax/swing/Icon;
+    getName()Ljava/lang/String;
+    isBinary()Z
+    isReadOnly()Z
+com/intellij/openapi/fileTypes/FileTypeRegistry
+    ourInstanceGetter
+    getFileTypeByFile(Lcom/intellij/openapi/vfs/VirtualFile;)Lcom/intellij/openapi/fileTypes/FileType;
+    getInstance()Lcom/intellij/openapi/fileTypes/FileTypeRegistry;
+    getRegisteredFileTypes()[Lcom/intellij/openapi/fileTypes/FileType;
+com/intellij/openapi/fileTypes/LanguageFileType
+    myLanguage
+    getCharset(Lcom/intellij/openapi/vfs/VirtualFile;[B)Ljava/lang/String;
+    getLanguage()Lcom/intellij/lang/Language;
+    isBinary()Z
+    isReadOnly()Z
+com/intellij/openapi/options/Scheme
+    getName()Ljava/lang/String;
+com/intellij/openapi/progress/ProcessCanceledException
+    <init>()V
+    <init>(Ljava/lang/Throwable;)V
+com/intellij/openapi/progress/ProgressIndicatorProvider
+    checkCanceled()V
+    getInstance()Lcom/intellij/openapi/progress/ProgressIndicatorProvider;
+com/intellij/openapi/progress/ProgressManager
+    checkCanceled()V
+    getInstance()Lcom/intellij/openapi/progress/ProgressManager;
+com/intellij/openapi/progress/ProgressManager$ProgressManagerHolder
+    ourInstance
+    <clinit>()V
+    access$000()Lcom/intellij/openapi/progress/ProgressManager;
+com/intellij/openapi/project/Project
+    getBaseDir()Lcom/intellij/openapi/vfs/VirtualFile;
+    getBasePath()Ljava/lang/String;
+    getLocationHash()Ljava/lang/String;
+    getName()Ljava/lang/String;
+    getPresentableUrl()Ljava/lang/String;
+    getProjectFile()Lcom/intellij/openapi/vfs/VirtualFile;
+    getProjectFilePath()Ljava/lang/String;
+    getWorkspaceFile()Lcom/intellij/openapi/vfs/VirtualFile;
+    isDefault()Z
+    isInitialized()Z
+    isOpen()Z
+    save()V
+com/intellij/openapi/util/ActionCallback
+    $assertionsDisabled
+    DONE
+    REJECTED
+    myDone
+    myError
+    myName
+    myRejected
+    <clinit>()V
+    <init>()V
+    <init>(Lcom/intellij/openapi/util/ExecutionCallback;Lcom/intellij/openapi/util/ExecutionCallback;)V
+    <init>(Lcom/intellij/openapi/util/ExecutionCallback;Lcom/intellij/openapi/util/ExecutionCallback;Lcom/intellij/openapi/util/ActionCallback$1;)V
+    <init>(Ljava/lang/String;)V
+    dispose()V
+com/intellij/openapi/util/ActionCallback$1
+    this$0
+    val$consumer
+    <init>(Lcom/intellij/openapi/util/ActionCallback;Lcom/intellij/util/Consumer;)V
+    run()V
+com/intellij/openapi/util/ActionCallback$Done
+    <init>()V
+com/intellij/openapi/util/ActionCallback$ExecutedExecutionCallback
+    <init>()V
+com/intellij/openapi/util/ActionCallback$IgnoreExecutionCallback
+    <init>()V
+    <init>(Lcom/intellij/openapi/util/ActionCallback$1;)V
+com/intellij/openapi/util/ActionCallback$Rejected
+    <init>()V
+com/intellij/openapi/util/AtomicNotNullLazyValue
+    myValue
+    ourGuard
+    <clinit>()V
+    <init>()V
+    getValue()Ljava/lang/Object;
+com/intellij/openapi/util/Comparing
+    equal(Ljava/lang/CharSequence;Ljava/lang/CharSequence;Z)Z
+    equal(Ljava/lang/Object;Ljava/lang/Object;)Z
+    equal(Ljava/lang/String;Ljava/lang/String;)Z
+com/intellij/openapi/util/Computable
+    compute()Ljava/lang/Object;
+com/intellij/openapi/util/Condition
+    FALSE
+    NOT_NULL
+    TRUE
+    <clinit>()V
+    value(Ljava/lang/Object;)Z
+com/intellij/openapi/util/Condition$1
+    <init>()V
+    value(Ljava/lang/Object;)Z
+com/intellij/openapi/util/Condition$2
+    <init>()V
+    value(Ljava/lang/Object;)Z
+com/intellij/openapi/util/Condition$3
+    <init>()V
+    value(Ljava/lang/Object;)Z
+com/intellij/openapi/util/ExecutionCallback
+    myCountToExecution
+    <init>()V
+    <init>(I)V
+com/intellij/openapi/util/Getter
+    get()Ljava/lang/Object;
+com/intellij/openapi/util/Iconable
+com/intellij/openapi/util/Key
+    allKeys
+    myIndex
+    myName
+    ourKeysCounter
+    <clinit>()V
+    <init>(Ljava/lang/String;)V
+    create(Ljava/lang/String;)Lcom/intellij/openapi/util/Key;
+    equals(Ljava/lang/Object;)Z
+    getKeyByIndex(I)Lcom/intellij/openapi/util/Key;
+    hashCode()I
+com/intellij/openapi/util/KeyWithDefaultValue
+    <init>(Ljava/lang/String;)V
+    create(Ljava/lang/String;Ljava/lang/Object;)Lcom/intellij/openapi/util/KeyWithDefaultValue;
+    getDefaultValue()Ljava/lang/Object;
+com/intellij/openapi/util/KeyWithDefaultValue$1
+    val$defValue
+    <init>(Ljava/lang/String;Ljava/lang/Object;)V
+    getDefaultValue()Ljava/lang/Object;
+com/intellij/openapi/util/ModificationTracker
+    EVER_CHANGED
+    NEVER_CHANGED
+    <clinit>()V
+    getModificationCount()J
+com/intellij/openapi/util/ModificationTracker$1
+    myCounter
+    <init>()V
+    getModificationCount()J
+com/intellij/openapi/util/ModificationTracker$2
+    <init>()V
+    getModificationCount()J
+com/intellij/openapi/util/NotNullLazyValue
+    myValue
+    ourGuard
+    <clinit>()V
+    <init>()V
+    compute()Ljava/lang/Object;
+    getValue()Ljava/lang/Object;
+com/intellij/openapi/util/Pair
+    EMPTY
+    first
+    second
+    <clinit>()V
+    <init>(Ljava/lang/Object;Ljava/lang/Object;)V
+    create(Ljava/lang/Object;Ljava/lang/Object;)Lcom/intellij/openapi/util/Pair;
+com/intellij/openapi/util/RecursionGuard
+    <init>()V
+    markStack()Lcom/intellij/openapi/util/RecursionGuard$StackStamp;
+com/intellij/openapi/util/RecursionGuard$StackStamp
+    mayCacheNow()Z
+com/intellij/openapi/util/RecursionManager
+    LOG
+    NULL
+    ourStack
+    <clinit>()V
+    access$100()Ljava/lang/ThreadLocal;
+    createGuard(Ljava/lang/String;)Lcom/intellij/openapi/util/RecursionGuard;
+com/intellij/openapi/util/RecursionManager$1
+    <init>()V
+    initialValue()Ljava/lang/Object;
+com/intellij/openapi/util/RecursionManager$2
+    val$id
+    <init>(Ljava/lang/String;)V
+    markStack()Lcom/intellij/openapi/util/RecursionGuard$StackStamp;
+com/intellij/openapi/util/RecursionManager$2$1
+    this$0
+    val$stamp
+    <init>(Lcom/intellij/openapi/util/RecursionManager$2;I)V
+    mayCacheNow()Z
+com/intellij/openapi/util/RecursionManager$CalculationStack
+    $assertionsDisabled
+    reentrancyCount
+    <clinit>()V
+    access$900(Lcom/intellij/openapi/util/RecursionManager$CalculationStack;)I
+com/intellij/openapi/util/Segment
+    EMPTY_ARRAY
+    <clinit>()V
+    getEndOffset()I
+    getStartOffset()I
+com/intellij/openapi/util/SystemInfo
+    ARCH_DATA_MODEL
+    JAVA_RUNTIME_VERSION
+    JAVA_VERSION
+    OS_ARCH
+    OS_NAME
+    OS_VERSION
+    SUN_DESKTOP
+    areSymLinksSupported
+    is32Bit
+    is64Bit
+    isAMD64
+    isAppleJvm
+    isFileSystemCaseSensitive
+    isFreeBSD
+    isIbmJvm
+    isJetbrainsJvm
+    isLinux
+    isMac
+    isMacIntel64
+    isMacOSElCapitan
+    isMacOSLeopard
+    isMacOSLion
+    isMacOSMavericks
+    isMacOSMountainLion
+    isMacOSSnowLeopard
+    isMacOSTiger
+    isMacOSYosemite
+    isMacSystemMenu
+    isOS2
+    isOracleJvm
+    isSolaris
+    isSunJvm
+    isUnix
+    isWin2kOrNewer
+    isWin7OrNewer
+    isWin8OrNewer
+    isWinVistaOrNewer
+    isWinXpOrNewer
+    isWindows
+    isWindowsXP
+    isXWindow
+    ourHasXdgMime
+    ourHasXdgOpen
+    ourOsReleaseInfo
+    <clinit>()V
+    hasXdgOpen()Z
+    isAppleJvm()Z
+    isIbmJvm()Z
+    isJavaVersionAtLeast(Ljava/lang/String;)Z
+    isJetbrainsJvm()Z
+    isOracleJvm()Z
+    isOsVersionAtLeast(Ljava/lang/String;)Z
+    isSunJvm()Z
+com/intellij/openapi/util/SystemInfo$1
+    <init>()V
+    compute()Ljava/lang/Object;
+com/intellij/openapi/util/SystemInfo$2
+    <init>()V
+    compute()Ljava/lang/Object;
+com/intellij/openapi/util/SystemInfo$3
+    <init>()V
+    compute()Ljava/lang/Object;
+com/intellij/openapi/util/SystemInfoRt
+    OS_NAME
+    OS_VERSION
+    _OS_NAME
+    isFileSystemCaseSensitive
+    isFreeBSD
+    isLinux
+    isMac
+    isOS2
+    isSolaris
+    isUnix
+    isWindows
+    <clinit>()V
+com/intellij/openapi/util/TextRange
+    $assertionsDisabled
+    EMPTY_RANGE
+    LOG
+    myEndOffset
+    myStartOffset
+    serialVersionUID
+    <clinit>()V
+    <init>(II)V
+    <init>(IIZ)V
+    allOf(Ljava/lang/String;)Lcom/intellij/openapi/util/TextRange;
+    areSegmentsEqual(Lcom/intellij/openapi/util/Segment;Lcom/intellij/openapi/util/Segment;)Z
+    assertProperRange(IILjava/lang/Object;)V
+    assertProperRange(Lcom/intellij/openapi/util/Segment;)V
+    assertProperRange(Lcom/intellij/openapi/util/Segment;Ljava/lang/Object;)V
+    contains(I)Z
+    contains(Lcom/intellij/openapi/util/Segment;)Z
+    contains(Lcom/intellij/openapi/util/TextRange;)Z
+    containsOffset(I)Z
+    containsRange(II)Z
+    containsRange(Lcom/intellij/openapi/util/Segment;Lcom/intellij/openapi/util/Segment;)Z
+    create(II)Lcom/intellij/openapi/util/TextRange;
+    create(Lcom/intellij/openapi/util/Segment;)Lcom/intellij/openapi/util/TextRange;
+    cutOut(Lcom/intellij/openapi/util/TextRange;)Lcom/intellij/openapi/util/TextRange;
+    equals(Ljava/lang/Object;)Z
+    equalsToRange(II)Z
+    from(II)Lcom/intellij/openapi/util/TextRange;
+    getEndOffset()I
+    getLength()I
+    getStartOffset()I
+    grown(I)Lcom/intellij/openapi/util/TextRange;
+    hashCode()I
+    intersection(Lcom/intellij/openapi/util/TextRange;)Lcom/intellij/openapi/util/TextRange;
+    intersects(II)Z
+    intersects(Lcom/intellij/openapi/util/Segment;)Z
+    intersects(Lcom/intellij/openapi/util/TextRange;)Z
+    intersectsStrict(II)Z
+    intersectsStrict(Lcom/intellij/openapi/util/TextRange;)Z
+    isEmpty()Z
+    replace(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    shiftRight(I)Lcom/intellij/openapi/util/TextRange;
+    subSequence(Ljava/lang/CharSequence;)Ljava/lang/CharSequence;
+    substring(Ljava/lang/String;)Ljava/lang/String;
+    toString()Ljava/lang/String;
+    union(Lcom/intellij/openapi/util/TextRange;)Lcom/intellij/openapi/util/TextRange;
+com/intellij/openapi/util/ThreadLocalCachedValue
+    myThreadLocal
+    <init>()V
+    create()Ljava/lang/Object;
+    getValue()Ljava/lang/Object;
+    init(Ljava/lang/Object;)V
+com/intellij/openapi/util/ThrowableComputable
+    compute()Ljava/lang/Object;
+com/intellij/openapi/util/UserDataHolder
+com/intellij/openapi/util/UserDataHolderBase
+    COPYABLE_USER_MAP_KEY
+    myUserMap
+    updater
+    <clinit>()V
+    <init>()V
+    changeUserMap(Lcom/intellij/util/keyFMap/KeyFMap;Lcom/intellij/util/keyFMap/KeyFMap;)Z
+    clearUserData()V
+    clone()Ljava/lang/Object;
+    copyCopyableDataTo(Lcom/intellij/openapi/util/UserDataHolderBase;)V
+    copyUserDataTo(Lcom/intellij/openapi/util/UserDataHolderBase;)V
+    getCopyableUserData(Lcom/intellij/openapi/util/Key;)Ljava/lang/Object;
+    getUserDataString()Ljava/lang/String;
+    getUserMap()Lcom/intellij/util/keyFMap/KeyFMap;
+    isUserDataEmpty()Z
+    putCopyableUserData(Lcom/intellij/openapi/util/Key;Ljava/lang/Object;)V
+    putUserDataIfAbsent(Lcom/intellij/openapi/util/Key;Ljava/lang/Object;)Ljava/lang/Object;
+    replace(Lcom/intellij/openapi/util/Key;Ljava/lang/Object;Ljava/lang/Object;)Z
+    setUserMap(Lcom/intellij/util/keyFMap/KeyFMap;)V
+com/intellij/openapi/util/UserDataHolderEx
+    putUserDataIfAbsent(Lcom/intellij/openapi/util/Key;Ljava/lang/Object;)Ljava/lang/Object;
+    replace(Lcom/intellij/openapi/util/Key;Ljava/lang/Object;Ljava/lang/Object;)Z
+com/intellij/openapi/util/io/FileAttributes
+    BROKEN_SYMLINK
+    flags
+    lastModified
+    length
+    type
+    <clinit>()V
+    <init>(Lcom/intellij/openapi/util/io/FileAttributes$Type;BJJ)V
+    <init>(ZZZZJJZ)V
+    flags(ZZZ)B
+    isSymLink()Z
+    type(ZZ)Lcom/intellij/openapi/util/io/FileAttributes$Type;
+com/intellij/openapi/util/io/FileAttributes$Flags
+com/intellij/openapi/util/io/FileAttributes$Type
+    $VALUES
+    DIRECTORY
+    FILE
+    SPECIAL
+    <clinit>()V
+    <init>(Ljava/lang/String;I)V
+    valueOf(Ljava/lang/String;)Lcom/intellij/openapi/util/io/FileAttributes$Type;
+    values()[Lcom/intellij/openapi/util/io/FileAttributes$Type;
+com/intellij/openapi/util/io/FileSystemUtil
+    LOG
+    ourMediator
+    <clinit>()V
+    access$500()Lcom/intellij/openapi/diagnostic/Logger;
+    check(Lcom/intellij/openapi/util/io/FileSystemUtil$Mediator;)Lcom/intellij/openapi/util/io/FileSystemUtil$Mediator;
+    getAttributes(Ljava/lang/String;)Lcom/intellij/openapi/util/io/FileAttributes;
+    getMediator()Lcom/intellij/openapi/util/io/FileSystemUtil$Mediator;
+    isSymLink(Ljava/io/File;)Z
+    isSymLink(Ljava/lang/String;)Z
+com/intellij/openapi/util/io/FileSystemUtil$1
+com/intellij/openapi/util/io/FileSystemUtil$FallbackMediatorImpl
+    myFileSystem
+    myGetBooleanAttributes
+    <init>()V
+    <init>(Lcom/intellij/openapi/util/io/FileSystemUtil$1;)V
+    getAttributes(Ljava/lang/String;)Lcom/intellij/openapi/util/io/FileAttributes;
+com/intellij/openapi/util/io/FileSystemUtil$IdeaWin32MediatorImpl
+    myInstance
+    <init>()V
+    <init>(Lcom/intellij/openapi/util/io/FileSystemUtil$1;)V
+    getAttributes(Ljava/lang/String;)Lcom/intellij/openapi/util/io/FileAttributes;
+com/intellij/openapi/util/io/FileSystemUtil$JnaUnixMediatorImpl
+    BSD_32
+    BSD_64
+    LINUX_32
+    LINUX_64
+    LINUX_ARM
+    LNX_PPC32
+    LNX_PPC64
+    SUN_OS_32
+    SUN_OS_64
+    myCoarseTs
+    myGid
+    myLibC
+    myOffsets
+    myUid
+    <clinit>()V
+    <init>()V
+    <init>(Lcom/intellij/openapi/util/io/FileSystemUtil$1;)V
+    getAttributes(Ljava/lang/String;)Lcom/intellij/openapi/util/io/FileAttributes;
+    getModeFlags(Lcom/sun/jna/Memory;)I
+    loadFileStatus(Ljava/lang/String;Lcom/sun/jna/Memory;)Z
+    ownFile(Lcom/sun/jna/Memory;)Z
+com/intellij/openapi/util/io/FileSystemUtil$JnaUnixMediatorImpl$LibC
+    __lxstat64(ILjava/lang/String;Lcom/sun/jna/Pointer;)I
+    __xstat64(ILjava/lang/String;Lcom/sun/jna/Pointer;)I
+    access(Ljava/lang/String;I)I
+    chmod(Ljava/lang/String;I)I
+    getgid()I
+    getuid()I
+    lstat(Ljava/lang/String;Lcom/sun/jna/Pointer;)I
+    stat(Ljava/lang/String;Lcom/sun/jna/Pointer;)I
+com/intellij/openapi/util/io/FileSystemUtil$Mediator
+    <init>()V
+    <init>(Lcom/intellij/openapi/util/io/FileSystemUtil$1;)V
+    getAttributes(Ljava/lang/String;)Lcom/intellij/openapi/util/io/FileAttributes;
+com/intellij/openapi/util/io/FileSystemUtil$Nio2MediatorImpl
+    myDefaultFileSystem
+    myGetPath
+    myIsSymbolicLink
+    myLinkOptions
+    myNoFollowLinkOptions
+    myReadAttributes
+    mySchema
+    mySetAttribute
+    myToMillis
+    <init>()V
+    <init>(Lcom/intellij/openapi/util/io/FileSystemUtil$1;)V
+    getAttributes(Ljava/lang/String;)Lcom/intellij/openapi/util/io/FileAttributes;
+com/intellij/openapi/util/io/FileUtil
+    $assertionsDisabled
+    FILE_HASHING_STRATEGY
+    LOG
+    PATH_HASHING_STRATEGY
+    REGEX_PATTERN_FLAGS
+    <clinit>()V
+    expandUserHome(Ljava/lang/String;)Ljava/lang/String;
+    processDots(Ljava/lang/StringBuilder;IIZ)Z
+    processRoot(Ljava/lang/String;Ljava/lang/Appendable;)I
+    toCanonicalPath(Ljava/lang/String;)Ljava/lang/String;
+    toCanonicalPath(Ljava/lang/String;CZ)Ljava/lang/String;
+    toCanonicalPath(Ljava/lang/String;CZZ)Ljava/lang/String;
+    toSystemDependentName(Ljava/lang/String;)Ljava/lang/String;
+com/intellij/openapi/util/io/FileUtil$4
+    val$finalPath
+    val$removeLastSlash
+    val$separatorChar
+    <init>(Ljava/lang/String;CZ)V
+    produce()Ljava/lang/Object;
+com/intellij/openapi/util/io/FileUtilRt
+    ALL_DIRECTORIES
+    ALL_FILES
+    BUFFER
+    LARGE_FOR_CONTENT_LOADING
+    USE_FILE_CHANNELS
+    ourCanonicalTempPathCache
+    <clinit>()V
+    getUserFileSizeLimit()I
+    toSystemDependentName(Ljava/lang/String;)Ljava/lang/String;
+    toSystemDependentName(Ljava/lang/String;C)Ljava/lang/String;
+com/intellij/openapi/util/io/NullAppendable
+    INSTANCE
+    <clinit>()V
+    <init>()V
+    append(C)Ljava/lang/Appendable;
+    append(Ljava/lang/CharSequence;)Ljava/lang/Appendable;
+    append(Ljava/lang/CharSequence;II)Ljava/lang/Appendable;
+com/intellij/openapi/util/io/win32/FileInfo
+    attributes
+    length
+    timestamp
+    toFileAttributes()Lcom/intellij/openapi/util/io/FileAttributes;
+com/intellij/openapi/util/io/win32/IdeaWin32
+    DEBUG_ENABLED
+    LOG
+    ourInstance
+    <clinit>()V
+    <init>()V
+    getInfo(Ljava/lang/String;)Lcom/intellij/openapi/util/io/win32/FileInfo;
+    getInfo0(Ljava/lang/String;)Lcom/intellij/openapi/util/io/win32/FileInfo;
+    getInstance()Lcom/intellij/openapi/util/io/win32/IdeaWin32;
+    initIDs()V
+    isAvailable()Z
+com/intellij/openapi/util/text/CharSequenceWithStringHash
+    hashCode()I
+com/intellij/openapi/util/text/StringUtil
+    $assertionsDisabled
+    EOL_SPLIT_DONT_TRIM_PATTERN
+    EOL_SPLIT_KEEP_SEPARATORS
+    EOL_SPLIT_PATTERN
+    EOL_SPLIT_PATTERN_WITH_EMPTY
+    LOG
+    MN_CHARS
+    MN_QUOTED
+    QUOTER
+    REPLACES_DISP
+    REPLACES_REFS
+    SINGLE_QUOTER
+    TRIMMER
+    UNICODE_CHAR
+    html2TextParser
+    ourPrepositions
+    <clinit>()V
+    charsEqualIgnoreCase(CC)Z
+    compareVersionNumbers(Ljava/lang/String;Ljava/lang/String;)I
+    containsIgnoreCase(Ljava/lang/String;Ljava/lang/String;)Z
+    endsWith(Ljava/lang/CharSequence;Ljava/lang/CharSequence;)Z
+    endsWithChar(Ljava/lang/CharSequence;C)Z
+    endsWithIgnoreCase(Ljava/lang/String;Ljava/lang/String;)Z
+    equals(Ljava/lang/CharSequence;Ljava/lang/CharSequence;)Z
+    indexOfIgnoreCase(Ljava/lang/String;Ljava/lang/String;I)I
+    isEmpty(Ljava/lang/CharSequence;)Z
+    isEmpty(Ljava/lang/String;)Z
+    isEmptyOrSpaces(Ljava/lang/CharSequence;)Z
+    isEmptyOrSpaces(Ljava/lang/String;)Z
+    join(Ljava/lang/Iterable;Lcom/intellij/util/Function;Ljava/lang/String;)Ljava/lang/String;
+    join(Ljava/util/Collection;Lcom/intellij/util/Function;Ljava/lang/String;)Ljava/lang/String;
+    lastIndexOf(Ljava/lang/CharSequence;CII)I
+    repeatSymbol(Ljava/lang/Appendable;CI)V
+    startsWithChar(Ljava/lang/CharSequence;C)Z
+    startsWithConcatenation(Ljava/lang/String;[Ljava/lang/String;)Z
+    stringHashCode(Ljava/lang/CharSequence;II)I
+    stringHashCodeInsensitive(Ljava/lang/CharSequence;)I
+    stringHashCodeInsensitive(Ljava/lang/CharSequence;II)I
+    toLowerCase(C)C
+    toUpperCase(C)C
+    trim(Ljava/lang/String;)Ljava/lang/String;
+    trimEnd(Ljava/lang/String;C)Ljava/lang/String;
+    trimEnd(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    trimStart(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+com/intellij/openapi/util/text/StringUtil$1
+    <init>()V
+    fun(Ljava/lang/Object;)Ljava/lang/Object;
+    fun(Ljava/lang/String;)Ljava/lang/String;
+com/intellij/openapi/util/text/StringUtil$2
+    <init>()V
+    fun(Ljava/lang/Object;)Ljava/lang/Object;
+    fun(Ljava/lang/String;)Ljava/lang/String;
+com/intellij/openapi/util/text/StringUtil$5
+    <init>()V
+    fun(Ljava/lang/Object;)Ljava/lang/Object;
+    fun(Ljava/lang/String;)Ljava/lang/String;
+com/intellij/openapi/util/text/StringUtil$MyHtml2Text
+    myBuffer
+    <init>()V
+    <init>(Lcom/intellij/openapi/util/text/StringUtil$1;)V
+    getText()Ljava/lang/String;
+    handleSimpleTag(Ljavax/swing/text/html/HTML$Tag;Ljavax/swing/text/MutableAttributeSet;I)V
+    handleStartTag(Ljavax/swing/text/html/HTML$Tag;Ljavax/swing/text/MutableAttributeSet;I)V
+    handleTag(Ljavax/swing/text/html/HTML$Tag;)V
+    handleText([CI)V
+    parse(Ljava/io/Reader;)V
+com/intellij/openapi/util/text/StringUtilRt
+    charsEqualIgnoreCase(CC)Z
+    endsWithChar(Ljava/lang/CharSequence;C)Z
+    endsWithIgnoreCase(Ljava/lang/CharSequence;Ljava/lang/CharSequence;)Z
+    lastIndexOf(Ljava/lang/CharSequence;CII)I
+    toLowerCase(C)C
+    toUpperCase(C)C
+com/intellij/openapi/vfs/CharsetToolkit
+    $assertionsDisabled
+    CHARSET_TO_MANDATORY_BOM
+    UTF16BE_BOM
+    UTF16LE_BOM
+    UTF32BE_BOM
+    UTF32LE_BOM
+    UTF8_BOM
+    UTF8_CHARSET
+    UTF_16BE_CHARSET
+    UTF_16LE_CHARSET
+    UTF_16_CHARSET
+    UTF_32BE_CHARSET
+    UTF_32LE_CHARSET
+    <clinit>()V
+    canHaveBom(Ljava/nio/charset/Charset;[B)Z
+    getMandatoryBom(Ljava/nio/charset/Charset;)[B
+com/intellij/openapi/vfs/VFileProperty
+    $VALUES
+    HIDDEN
+    SPECIAL
+    SYMLINK
+    <clinit>()V
+    <init>(Ljava/lang/String;I)V
+    getName()Ljava/lang/String;
+    valueOf(Ljava/lang/String;)Lcom/intellij/openapi/vfs/VFileProperty;
+    values()[Lcom/intellij/openapi/vfs/VFileProperty;
+com/intellij/openapi/vfs/VfsBundle
+    ourInstance
+    <clinit>()V
+    <init>()V
+    message(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+com/intellij/openapi/vfs/VirtualFile
+    BOM_KEY
+    CHARSET_KEY
+    DETECTED_LINE_SEPARATOR_KEY
+    EMPTY_ARRAY
+    LOG
+    PROP_HIDDEN
+    REQUESTOR_MARKER
+    <clinit>()V
+    <init>()V
+    contentsToByteArray()[B
+    contentsToByteArray(Z)[B
+    copy(Ljava/lang/Object;Lcom/intellij/openapi/vfs/VirtualFile;Ljava/lang/String;)Lcom/intellij/openapi/vfs/VirtualFile;
+    createChildData(Ljava/lang/Object;Ljava/lang/String;)Lcom/intellij/openapi/vfs/VirtualFile;
+    createChildDirectory(Ljava/lang/Object;Ljava/lang/String;)Lcom/intellij/openapi/vfs/VirtualFile;
+    delete(Ljava/lang/Object;)V
+    exists()Z
+    findChild(Ljava/lang/String;)Lcom/intellij/openapi/vfs/VirtualFile;
+    findFileByRelativePath(Ljava/lang/String;)Lcom/intellij/openapi/vfs/VirtualFile;
+    findOrCreateChildData(Ljava/lang/Object;Ljava/lang/String;)Lcom/intellij/openapi/vfs/VirtualFile;
+    getBOM()[B
+    getCanonicalFile()Lcom/intellij/openapi/vfs/VirtualFile;
+    getCanonicalPath()Ljava/lang/String;
+    getCharset()Ljava/nio/charset/Charset;
+    getChildren()[Lcom/intellij/openapi/vfs/VirtualFile;
+    getDetectedLineSeparator()Ljava/lang/String;
+    getExtension()Ljava/lang/String;
+    getFileSystem()Lcom/intellij/openapi/vfs/VirtualFileSystem;
+    getFileType()Lcom/intellij/openapi/fileTypes/FileType;
+    getInputStream()Ljava/io/InputStream;
+    getLength()J
+    getModificationCount()J
+    getModificationStamp()J
+    getName()Ljava/lang/String;
+    getNameSequence()Ljava/lang/CharSequence;
+    getNameWithoutExtension()Ljava/lang/String;
+    getOutputStream(Ljava/lang/Object;)Ljava/io/OutputStream;
+    getOutputStream(Ljava/lang/Object;JJ)Ljava/io/OutputStream;
+    getParent()Lcom/intellij/openapi/vfs/VirtualFile;
+    getPath()Ljava/lang/String;
+    getPresentableName()Ljava/lang/String;
+    getPresentableUrl()Ljava/lang/String;
+    getStoredCharset()Ljava/nio/charset/Charset;
+    getTimeStamp()J
+    getUrl()Ljava/lang/String;
+    is(Lcom/intellij/openapi/vfs/VFileProperty;)Z
+    isCharsetSet()Z
+    isDirectory()Z
+    isInLocalFileSystem()Z
+    isValid()Z
+    isValidName(Ljava/lang/String;)Z
+    isWritable()Z
+    move(Ljava/lang/Object;Lcom/intellij/openapi/vfs/VirtualFile;)V
+    nameEquals(Ljava/lang/String;)Z
+    refresh(ZZ)V
+    refresh(ZZLjava/lang/Runnable;)V
+    rename(Ljava/lang/Object;Ljava/lang/String;)V
+    setBOM([B)V
+    setBinaryContent([B)V
+    setBinaryContent([BJJ)V
+    setBinaryContent([BJJLjava/lang/Object;)V
+    setCharset(Ljava/nio/charset/Charset;)V
+    setCharset(Ljava/nio/charset/Charset;Ljava/lang/Runnable;)V
+    setDetectedLineSeparator(Ljava/lang/String;)V
+    setPreloadedContentHint([B)V
+    setWritable(Z)V
+    storeCharset(Ljava/nio/charset/Charset;)V
+    toString()Ljava/lang/String;
+com/intellij/openapi/vfs/VirtualFile$1
+    this$0
+    val$newParent
+    val$requestor
+    <init>(Lcom/intellij/openapi/vfs/VirtualFile;Ljava/lang/Object;Lcom/intellij/openapi/vfs/VirtualFile;)V
+    compute()Ljava/lang/Object;
+com/intellij/openapi/vfs/VirtualFile$2
+    this$0
+    val$copyName
+    val$newParent
+    val$requestor
+    <init>(Lcom/intellij/openapi/vfs/VirtualFile;Ljava/lang/Object;Lcom/intellij/openapi/vfs/VirtualFile;Ljava/lang/String;)V
+    compute()Ljava/lang/Object;
+com/intellij/openapi/vfs/VirtualFileManager
+    VFS_CHANGES
+    VFS_STRUCTURE_MODIFICATIONS
+    <clinit>()V
+    constructUrl(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    getInstance()Lcom/intellij/openapi/vfs/VirtualFileManager;
+    getModificationCount()J
+    getStructureModificationCount()J
+    notifyPropertyChanged(Lcom/intellij/openapi/vfs/VirtualFile;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;)V
+com/intellij/openapi/vfs/VirtualFileManager$1
+    <init>()V
+    getModificationCount()J
+com/intellij/openapi/vfs/VirtualFileSystem
+    createChildDirectory(Ljava/lang/Object;Lcom/intellij/openapi/vfs/VirtualFile;Ljava/lang/String;)Lcom/intellij/openapi/vfs/VirtualFile;
+    createChildFile(Ljava/lang/Object;Lcom/intellij/openapi/vfs/VirtualFile;Ljava/lang/String;)Lcom/intellij/openapi/vfs/VirtualFile;
+    deleteFile(Ljava/lang/Object;Lcom/intellij/openapi/vfs/VirtualFile;)V
+    extractPresentableUrl(Ljava/lang/String;)Ljava/lang/String;
+    getProtocol()Ljava/lang/String;
+    renameFile(Ljava/lang/Object;Lcom/intellij/openapi/vfs/VirtualFile;Ljava/lang/String;)V
+com/intellij/openapi/vfs/encoding/EncodingManager
+    getInstance()Lcom/intellij/openapi/vfs/encoding/EncodingManager;
+com/intellij/openapi/vfs/encoding/EncodingRegistry
+    doActionAndRestoreEncoding(Lcom/intellij/openapi/vfs/VirtualFile;Lcom/intellij/openapi/util/ThrowableComputable;)Lcom/intellij/openapi/vfs/VirtualFile;
+    getDefaultCharset()Ljava/nio/charset/Charset;
+    getEncoding(Lcom/intellij/openapi/vfs/VirtualFile;Z)Ljava/nio/charset/Charset;
+    getInstance()Lcom/intellij/openapi/vfs/encoding/EncodingRegistry;
+    setEncoding(Lcom/intellij/openapi/vfs/VirtualFile;Ljava/nio/charset/Charset;)V
+com/intellij/openapi/vfs/newvfs/BulkFileListener
+    after(Ljava/util/List;)V
+    before(Ljava/util/List;)V
+com/intellij/openapi/vfs/newvfs/events/VFileEvent
+com/intellij/pom/Navigatable
+    canNavigate()Z
+    canNavigateToSource()Z
+    navigate(Z)V
+com/intellij/pom/PomNamedTarget
+    EMPTY_ARRAY
+    <clinit>()V
+    getName()Ljava/lang/String;
+com/intellij/pom/PomRenameableTarget
+    isWritable()Z
+com/intellij/pom/PomTarget
+    EMPTY_ARRAY
+    <clinit>()V
+    isValid()Z
+com/intellij/pom/java/LanguageLevel
+    $VALUES
+    HIGHEST
+    JDK_1_3
+    JDK_1_4
+    JDK_1_5
+    JDK_1_6
+    JDK_1_7
+    JDK_1_8
+    JDK_1_9
+    JDK_X
+    KEY
+    myCompilerComplianceDefaultOption
+    myCompilerComplianceOptionVariants
+    myName
+    myPresentableText
+    <clinit>()V
+    <init>(Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;)V
+    getCompilerComplianceDefaultOption()Ljava/lang/String;
+    getName()Ljava/lang/String;
+    getPresentableText()Ljava/lang/String;
+    isAtLeast(Lcom/intellij/pom/java/LanguageLevel;)Z
+    isLessThan(Lcom/intellij/pom/java/LanguageLevel;)Z
+    parse(Ljava/lang/String;)Lcom/intellij/pom/java/LanguageLevel;
+    valueOf(Ljava/lang/String;)Lcom/intellij/pom/java/LanguageLevel;
+    values()[Lcom/intellij/pom/java/LanguageLevel;
+com/intellij/psi/AbstractElementManipulator
+    <init>()V
+    getRangeInElement(Lcom/intellij/psi/PsiElement;)Lcom/intellij/openapi/util/TextRange;
+    handleContentChange(Lcom/intellij/psi/PsiElement;Ljava/lang/String;)Lcom/intellij/psi/PsiElement;
+com/intellij/psi/CommonClassNames
+    CLASS_FILE_EXTENSION
+    DEFAULT_PACKAGE
+    JAVA_IO_EXTERNALIZABLE
+    JAVA_IO_FILE
+    JAVA_IO_SERIALIZABLE
+    JAVA_LANG_ABSTRACT_STRING_BUILDER
+    JAVA_LANG_ANNOTATION_ANNOTATION
+    JAVA_LANG_ANNOTATION_INHERITED
+    JAVA_LANG_ANNOTATION_REPEATABLE
+    JAVA_LANG_ANNOTATION_RETENTION
+    JAVA_LANG_ANNOTATION_TARGET
+    JAVA_LANG_ASSERTION_ERROR
+    JAVA_LANG_AUTO_CLOSEABLE
+    JAVA_LANG_BOOLEAN
+    JAVA_LANG_BYTE
+    JAVA_LANG_CHARACTER
+    JAVA_LANG_CLASS
+    JAVA_LANG_CLONEABLE
+    JAVA_LANG_COMPARABLE
+    JAVA_LANG_DEPRECATED
+    JAVA_LANG_DOUBLE
+    JAVA_LANG_ENUM
+    JAVA_LANG_ERROR
+    JAVA_LANG_EXCEPTION
+    JAVA_LANG_FLOAT
+    JAVA_LANG_FUNCTIONAL_INTERFACE
+    JAVA_LANG_INTEGER
+    JAVA_LANG_INVOKE_MH_POLYMORPHIC
+    JAVA_LANG_ITERABLE
+    JAVA_LANG_LONG
+    JAVA_LANG_NULL_POINTER_EXCEPTION
+    JAVA_LANG_NUMBER
+    JAVA_LANG_OBJECT
+    JAVA_LANG_OBJECT_SHORT
+    JAVA_LANG_OVERRIDE
+    JAVA_LANG_REFLECT_ARRAY
+    JAVA_LANG_RUNNABLE
+    JAVA_LANG_RUNTIME_EXCEPTION
+    JAVA_LANG_SHORT
+    JAVA_LANG_STRING
+    JAVA_LANG_STRING_BUFFER
+    JAVA_LANG_STRING_BUILDER
+    JAVA_LANG_STRING_SHORT
+    JAVA_LANG_THROWABLE
+    JAVA_LANG_VOID
+    JAVA_UTIL_ARRAYS
+    JAVA_UTIL_ARRAY_LIST
+    JAVA_UTIL_CALENDAR
+    JAVA_UTIL_COLLECTION
+    JAVA_UTIL_COLLECTIONS
+    JAVA_UTIL_COMPARATOR
+    JAVA_UTIL_CONCURRENT_CALLABLE
+    JAVA_UTIL_CONCURRENT_FUTURE
+    JAVA_UTIL_CONCURRENT_HASH_MAP
+    JAVA_UTIL_DATE
+    JAVA_UTIL_DICTIONARY
+    JAVA_UTIL_HASH_MAP
+    JAVA_UTIL_HASH_SET
+    JAVA_UTIL_ITERATOR
+    JAVA_UTIL_LIST
+    JAVA_UTIL_MAP
+    JAVA_UTIL_MAP_ENTRY
+    JAVA_UTIL_OPTIONAL
+    JAVA_UTIL_PROPERTIES
+    JAVA_UTIL_PROPERTY_RESOURCE_BUNDLE
+    JAVA_UTIL_SET
+    JAVA_UTIL_STREAM_BASE_STREAM
+    JAVA_UTIL_STREAM_COLLECTORS
+    JAVA_UTIL_STREAM_STREAM
+com/intellij/psi/ConstraintType
+    $VALUES
+    EQUALS
+    SUBTYPE
+    SUPERTYPE
+    <clinit>()V
+    <init>(Ljava/lang/String;I)V
+    valueOf(Ljava/lang/String;)Lcom/intellij/psi/ConstraintType;
+    values()[Lcom/intellij/psi/ConstraintType;
+com/intellij/psi/ContributedReferenceHost
+    getReferences()[Lcom/intellij/psi/PsiReference;
+com/intellij/psi/ElementManipulator
+    getRangeInElement(Lcom/intellij/psi/PsiElement;)Lcom/intellij/openapi/util/TextRange;
+    handleContentChange(Lcom/intellij/psi/PsiElement;Lcom/intellij/openapi/util/TextRange;Ljava/lang/String;)Lcom/intellij/psi/PsiElement;
+    handleContentChange(Lcom/intellij/psi/PsiElement;Ljava/lang/String;)Lcom/intellij/psi/PsiElement;
+com/intellij/psi/EmptySubstitutor
+    <init>()V
+    getInstance()Lcom/intellij/psi/EmptySubstitutor;
+com/intellij/psi/ExternallyDefinedPsiElement
+    getProblemTarget()Lcom/intellij/psi/PsiElement;
+com/intellij/psi/ForceableComparable
+    force()V
+com/intellij/psi/HierarchicalMethodSignature
+    <init>(Lcom/intellij/psi/util/MethodSignatureBackedByPsiMethod;)V
+    getParameterTypes(Lcom/intellij/psi/PsiMethod;)[Lcom/intellij/psi/PsiType;
+    getSuperSignatures()Ljava/util/List;
+com/intellij/psi/ImplicitVariable
+com/intellij/psi/JavaDocTokenType
+    ALL_JAVADOC_TOKENS
+    DOC_COMMENT_BAD_CHARACTER
+    DOC_COMMENT_DATA
+    DOC_COMMENT_END
+    DOC_COMMENT_LEADING_ASTERISKS
+    DOC_COMMENT_START
+    DOC_INLINE_TAG_END
+    DOC_INLINE_TAG_START
+    DOC_SPACE
+    DOC_TAG_NAME
+    DOC_TAG_VALUE_COMMA
+    DOC_TAG_VALUE_DOT
+    DOC_TAG_VALUE_GT
+    DOC_TAG_VALUE_LPAREN
+    DOC_TAG_VALUE_LT
+    DOC_TAG_VALUE_RPAREN
+    DOC_TAG_VALUE_SHARP_TOKEN
+    DOC_TAG_VALUE_TOKEN
+    <clinit>()V
+com/intellij/psi/JavaElementVisitor
+    <init>()V
+    visitAnnotation(Lcom/intellij/psi/PsiAnnotation;)V
+    visitAnnotationArrayInitializer(Lcom/intellij/psi/PsiArrayInitializerMemberValue;)V
+    visitAnnotationMethod(Lcom/intellij/psi/PsiAnnotationMethod;)V
+    visitAnnotationParameterList(Lcom/intellij/psi/PsiAnnotationParameterList;)V
+    visitAnonymousClass(Lcom/intellij/psi/PsiAnonymousClass;)V
+    visitArrayAccessExpression(Lcom/intellij/psi/PsiArrayAccessExpression;)V
+    visitArrayInitializerExpression(Lcom/intellij/psi/PsiArrayInitializerExpression;)V
+    visitAssertStatement(Lcom/intellij/psi/PsiAssertStatement;)V
+    visitAssignmentExpression(Lcom/intellij/psi/PsiAssignmentExpression;)V
+    visitBinaryExpression(Lcom/intellij/psi/PsiBinaryExpression;)V
+    visitBlockStatement(Lcom/intellij/psi/PsiBlockStatement;)V
+    visitBreakStatement(Lcom/intellij/psi/PsiBreakStatement;)V
+    visitCallExpression(Lcom/intellij/psi/PsiCallExpression;)V
+    visitCatchSection(Lcom/intellij/psi/PsiCatchSection;)V
+    visitClass(Lcom/intellij/psi/PsiClass;)V
+    visitClassInitializer(Lcom/intellij/psi/PsiClassInitializer;)V
+    visitClassObjectAccessExpression(Lcom/intellij/psi/PsiClassObjectAccessExpression;)V
+    visitCodeBlock(Lcom/intellij/psi/PsiCodeBlock;)V
+    visitConditionalExpression(Lcom/intellij/psi/PsiConditionalExpression;)V
+    visitContinueStatement(Lcom/intellij/psi/PsiContinueStatement;)V
+    visitDeclarationStatement(Lcom/intellij/psi/PsiDeclarationStatement;)V
+    visitDoWhileStatement(Lcom/intellij/psi/PsiDoWhileStatement;)V
+    visitDocComment(Lcom/intellij/psi/javadoc/PsiDocComment;)V
+    visitDocTag(Lcom/intellij/psi/javadoc/PsiDocTag;)V
+    visitDocTagValue(Lcom/intellij/psi/javadoc/PsiDocTagValue;)V
+    visitDocToken(Lcom/intellij/psi/javadoc/PsiDocToken;)V
+    visitEmptyStatement(Lcom/intellij/psi/PsiEmptyStatement;)V
+    visitEnumConstant(Lcom/intellij/psi/PsiEnumConstant;)V
+    visitEnumConstantInitializer(Lcom/intellij/psi/PsiEnumConstantInitializer;)V
+    visitExpression(Lcom/intellij/psi/PsiExpression;)V
+    visitExpressionList(Lcom/intellij/psi/PsiExpressionList;)V
+    visitExpressionListStatement(Lcom/intellij/psi/PsiExpressionListStatement;)V
+    visitExpressionStatement(Lcom/intellij/psi/PsiExpressionStatement;)V
+    visitField(Lcom/intellij/psi/PsiField;)V
+    visitForStatement(Lcom/intellij/psi/PsiForStatement;)V
+    visitForeachStatement(Lcom/intellij/psi/PsiForeachStatement;)V
+    visitIdentifier(Lcom/intellij/psi/PsiIdentifier;)V
+    visitIfStatement(Lcom/intellij/psi/PsiIfStatement;)V
+    visitImplicitVariable(Lcom/intellij/psi/ImplicitVariable;)V
+    visitImportList(Lcom/intellij/psi/PsiImportList;)V
+    visitImportStatement(Lcom/intellij/psi/PsiImportStatement;)V
+    visitImportStaticReferenceElement(Lcom/intellij/psi/PsiImportStaticReferenceElement;)V
+    visitImportStaticStatement(Lcom/intellij/psi/PsiImportStaticStatement;)V
+    visitInlineDocTag(Lcom/intellij/psi/javadoc/PsiInlineDocTag;)V
+    visitInstanceOfExpression(Lcom/intellij/psi/PsiInstanceOfExpression;)V
+    visitJavaFile(Lcom/intellij/psi/PsiJavaFile;)V
+    visitJavaToken(Lcom/intellij/psi/PsiJavaToken;)V
+    visitKeyword(Lcom/intellij/psi/PsiKeyword;)V
+    visitLabeledStatement(Lcom/intellij/psi/PsiLabeledStatement;)V
+    visitLambdaExpression(Lcom/intellij/psi/PsiLambdaExpression;)V
+    visitLiteralExpression(Lcom/intellij/psi/PsiLiteralExpression;)V
+    visitLocalVariable(Lcom/intellij/psi/PsiLocalVariable;)V
+    visitMethod(Lcom/intellij/psi/PsiMethod;)V
+    visitMethodCallExpression(Lcom/intellij/psi/PsiMethodCallExpression;)V
+    visitMethodReferenceExpression(Lcom/intellij/psi/PsiMethodReferenceExpression;)V
+    visitModifierList(Lcom/intellij/psi/PsiModifierList;)V
+    visitNameValuePair(Lcom/intellij/psi/PsiNameValuePair;)V
+    visitNewExpression(Lcom/intellij/psi/PsiNewExpression;)V
+    visitPackage(Lcom/intellij/psi/PsiPackage;)V
+    visitPackageStatement(Lcom/intellij/psi/PsiPackageStatement;)V
+    visitParameter(Lcom/intellij/psi/PsiParameter;)V
+    visitParameterList(Lcom/intellij/psi/PsiParameterList;)V
+    visitParenthesizedExpression(Lcom/intellij/psi/PsiParenthesizedExpression;)V
+    visitPolyadicExpression(Lcom/intellij/psi/PsiPolyadicExpression;)V
+    visitPostfixExpression(Lcom/intellij/psi/PsiPostfixExpression;)V
+    visitPrefixExpression(Lcom/intellij/psi/PsiPrefixExpression;)V
+    visitReceiverParameter(Lcom/intellij/psi/PsiReceiverParameter;)V
+    visitReferenceElement(Lcom/intellij/psi/PsiJavaCodeReferenceElement;)V
+    visitReferenceExpression(Lcom/intellij/psi/PsiReferenceExpression;)V
+    visitReferenceList(Lcom/intellij/psi/PsiReferenceList;)V
+    visitReferenceParameterList(Lcom/intellij/psi/PsiReferenceParameterList;)V
+    visitResourceExpression(Lcom/intellij/psi/PsiResourceExpression;)V
+    visitResourceList(Lcom/intellij/psi/PsiResourceList;)V
+    visitResourceVariable(Lcom/intellij/psi/PsiResourceVariable;)V
+    visitReturnStatement(Lcom/intellij/psi/PsiReturnStatement;)V
+    visitStatement(Lcom/intellij/psi/PsiStatement;)V
+    visitSuperExpression(Lcom/intellij/psi/PsiSuperExpression;)V
+    visitSwitchLabelStatement(Lcom/intellij/psi/PsiSwitchLabelStatement;)V
+    visitSwitchStatement(Lcom/intellij/psi/PsiSwitchStatement;)V
+    visitSynchronizedStatement(Lcom/intellij/psi/PsiSynchronizedStatement;)V
+    visitThisExpression(Lcom/intellij/psi/PsiThisExpression;)V
+    visitThrowStatement(Lcom/intellij/psi/PsiThrowStatement;)V
+    visitTryStatement(Lcom/intellij/psi/PsiTryStatement;)V
+    visitTypeCastExpression(Lcom/intellij/psi/PsiTypeCastExpression;)V
+    visitTypeElement(Lcom/intellij/psi/PsiTypeElement;)V
+    visitTypeParameter(Lcom/intellij/psi/PsiTypeParameter;)V
+    visitTypeParameterList(Lcom/intellij/psi/PsiTypeParameterList;)V
+    visitVariable(Lcom/intellij/psi/PsiVariable;)V
+    visitWhileStatement(Lcom/intellij/psi/PsiWhileStatement;)V
+com/intellij/psi/JavaRecursiveElementVisitor
+    myBinaryExpressions
+    myRefExprsInVisit
+    <init>()V
+    visitElement(Lcom/intellij/psi/PsiElement;)V
+    visitReferenceExpression(Lcom/intellij/psi/PsiReferenceExpression;)V
+com/intellij/psi/JavaRecursiveElementWalkingVisitor
+    myWalkingState
+    <init>()V
+    elementFinished(Lcom/intellij/psi/PsiElement;)V
+    stopWalking()V
+    visitElement(Lcom/intellij/psi/PsiElement;)V
+    visitReferenceExpression(Lcom/intellij/psi/PsiReferenceExpression;)V
+com/intellij/psi/JavaRecursiveElementWalkingVisitor$1
+    this$0
+    <init>(Lcom/intellij/psi/JavaRecursiveElementWalkingVisitor;Lcom/intellij/psi/PsiElementVisitor;)V
+    elementFinished(Lcom/intellij/psi/PsiElement;)V
+    elementFinished(Ljava/lang/Object;)V
+com/intellij/psi/JavaResolveResult
+    EMPTY
+    EMPTY_ARRAY
+    <clinit>()V
+    getCurrentFileResolveScope()Lcom/intellij/psi/PsiElement;
+    getSubstitutor()Lcom/intellij/psi/PsiSubstitutor;
+    isAccessible()Z
+    isPackagePrefixPackageReference()Z
+    isStaticsScopeCorrect()Z
+com/intellij/psi/JavaResolveResult$1
+    <init>()V
+    getCurrentFileResolveScope()Lcom/intellij/psi/PsiElement;
+    getElement()Lcom/intellij/psi/PsiElement;
+    getSubstitutor()Lcom/intellij/psi/PsiSubstitutor;
+    isAccessible()Z
+    isPackagePrefixPackageReference()Z
+    isStaticsScopeCorrect()Z
+    isValidResult()Z
+com/intellij/psi/JavaTokenType
+    ABSTRACT_KEYWORD
+    AND
+    ANDAND
+    ANDEQ
+    ARROW
+    ASSERT_KEYWORD
+    ASTERISK
+    ASTERISKEQ
+    AT
+    BOOLEAN_KEYWORD
+    BREAK_KEYWORD
+    BYTE_KEYWORD
+    CASE_KEYWORD
+    CATCH_KEYWORD
+    CHARACTER_LITERAL
+    CHAR_KEYWORD
+    CLASS_KEYWORD
+    COLON
+    COMMA
+    CONST_KEYWORD
+    CONTINUE_KEYWORD
+    C_STYLE_COMMENT
+    DEFAULT_KEYWORD
+    DIV
+    DIVEQ
+    DOT
+    DOUBLE_COLON
+    DOUBLE_KEYWORD
+    DOUBLE_LITERAL
+    DO_KEYWORD
+    ELLIPSIS
+    ELSE_KEYWORD
+    END_OF_LINE_COMMENT
+    ENUM_KEYWORD
+    EQ
+    EQEQ
+    EXCL
+    EXTENDS_KEYWORD
+    FALSE_KEYWORD
+    FINALLY_KEYWORD
+    FINAL_KEYWORD
+    FLOAT_KEYWORD
+    FLOAT_LITERAL
+    FOR_KEYWORD
+    GE
+    GOTO_KEYWORD
+    GT
+    GTGT
+    GTGTEQ
+    GTGTGT
+    GTGTGTEQ
+    IDENTIFIER
+    IF_KEYWORD
+    IMPLEMENTS_KEYWORD
+    IMPORT_KEYWORD
+    INSTANCEOF_KEYWORD
+    INTEGER_LITERAL
+    INTERFACE_KEYWORD
+    INT_KEYWORD
+    LBRACE
+    LBRACKET
+    LE
+    LONG_KEYWORD
+    LONG_LITERAL
+    LPARENTH
+    LT
+    LTLT
+    LTLTEQ
+    MINUS
+    MINUSEQ
+    MINUSMINUS
+    NATIVE_KEYWORD
+    NE
+    NEW_KEYWORD
+    NULL_KEYWORD
+    OR
+    OREQ
+    OROR
+    PACKAGE_KEYWORD
+    PERC
+    PERCEQ
+    PLUS
+    PLUSEQ
+    PLUSPLUS
+    PRIVATE_KEYWORD
+    PROTECTED_KEYWORD
+    PUBLIC_KEYWORD
+    QUEST
+    RBRACE
+    RBRACKET
+    RETURN_KEYWORD
+    RPARENTH
+    SEMICOLON
+    SHORT_KEYWORD
+    STATIC_KEYWORD
+    STRICTFP_KEYWORD
+    STRING_LITERAL
+    SUPER_KEYWORD
+    SWITCH_KEYWORD
+    SYNCHRONIZED_KEYWORD
+    THIS_KEYWORD
+    THROWS_KEYWORD
+    THROW_KEYWORD
+    TILDE
+    TRANSIENT_KEYWORD
+    TRUE_KEYWORD
+    TRY_KEYWORD
+    VOID_KEYWORD
+    VOLATILE_KEYWORD
+    WHILE_KEYWORD
+    XOR
+    XOREQ
+    <clinit>()V
+com/intellij/psi/LiteralTextEscaper
+    myHost
+    <init>(Lcom/intellij/psi/PsiLanguageInjectionHost;)V
+    createSimple(Lcom/intellij/psi/PsiLanguageInjectionHost;)Lcom/intellij/psi/LiteralTextEscaper;
+    decode(Lcom/intellij/openapi/util/TextRange;Ljava/lang/StringBuilder;)Z
+    getOffsetInHost(ILcom/intellij/openapi/util/TextRange;)I
+    getRelevantTextRange()Lcom/intellij/openapi/util/TextRange;
+    isOneLine()Z
+com/intellij/psi/LiteralTextEscaper$1
+    <init>(Lcom/intellij/psi/PsiLanguageInjectionHost;)V
+    decode(Lcom/intellij/openapi/util/TextRange;Ljava/lang/StringBuilder;)Z
+    getOffsetInHost(ILcom/intellij/openapi/util/TextRange;)I
+    isOneLine()Z
+com/intellij/psi/MultiRangeReference
+    getRanges()Ljava/util/List;
+com/intellij/psi/NavigatablePsiElement
+com/intellij/psi/OriginInfoAwareElement
+    getOriginInfo()Ljava/lang/String;
+com/intellij/psi/PackagePrefixFileSystemItem
+    getDirectory()Lcom/intellij/psi/PsiDirectory;
+com/intellij/psi/PsiAnnotation
+    ARRAY_FACTORY
+    DEFAULT_REFERENCED_METHOD_NAME
+    EMPTY_ARRAY
+    <clinit>()V
+    findAttributeValue(Ljava/lang/String;)Lcom/intellij/psi/PsiAnnotationMemberValue;
+    findDeclaredAttributeValue(Ljava/lang/String;)Lcom/intellij/psi/PsiAnnotationMemberValue;
+    getNameReferenceElement()Lcom/intellij/psi/PsiJavaCodeReferenceElement;
+    getOwner()Lcom/intellij/psi/PsiAnnotationOwner;
+    getParameterList()Lcom/intellij/psi/PsiAnnotationParameterList;
+    getQualifiedName()Ljava/lang/String;
+com/intellij/psi/PsiAnnotation$1
+    <init>()V
+    create(I)[Ljava/lang/Object;
+com/intellij/psi/PsiAnnotation$TargetType
+    $VALUES
+    ANNOTATION_TYPE
+    CONSTRUCTOR
+    EMPTY_ARRAY
+    FIELD
+    LOCAL_VARIABLE
+    METHOD
+    PACKAGE
+    PARAMETER
+    TYPE
+    TYPE_PARAMETER
+    TYPE_USE
+    UNKNOWN
+    <clinit>()V
+    <init>(Ljava/lang/String;I)V
+    valueOf(Ljava/lang/String;)Lcom/intellij/psi/PsiAnnotation$TargetType;
+    values()[Lcom/intellij/psi/PsiAnnotation$TargetType;
+com/intellij/psi/PsiAnnotationMemberValue
+    ARRAY_FACTORY
+    EMPTY_ARRAY
+    <clinit>()V
+com/intellij/psi/PsiAnnotationMemberValue$1
+    <init>()V
+    create(I)[Ljava/lang/Object;
+com/intellij/psi/PsiAnnotationMethod
+    EMPTY_ARRAY
+    <clinit>()V
+    getDefaultValue()Lcom/intellij/psi/PsiAnnotationMemberValue;
+com/intellij/psi/PsiAnnotationOwner
+    findAnnotation(Ljava/lang/String;)Lcom/intellij/psi/PsiAnnotation;
+    getAnnotations()[Lcom/intellij/psi/PsiAnnotation;
+    getApplicableAnnotations()[Lcom/intellij/psi/PsiAnnotation;
+com/intellij/psi/PsiAnnotationParameterList
+    getAttributes()[Lcom/intellij/psi/PsiNameValuePair;
+com/intellij/psi/PsiAnnotationSupport
+    createLiteralValue(Ljava/lang/String;Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiLiteral;
+com/intellij/psi/PsiAnonymousClass
+    getArgumentList()Lcom/intellij/psi/PsiExpressionList;
+    getBaseClassReference()Lcom/intellij/psi/PsiJavaCodeReferenceElement;
+    getBaseClassType()Lcom/intellij/psi/PsiClassType;
+    isInQualifiedNew()Z
+com/intellij/psi/PsiArrayAccessExpression
+    getArrayExpression()Lcom/intellij/psi/PsiExpression;
+    getIndexExpression()Lcom/intellij/psi/PsiExpression;
+com/intellij/psi/PsiArrayInitializerExpression
+    getInitializers()[Lcom/intellij/psi/PsiExpression;
+com/intellij/psi/PsiArrayInitializerMemberValue
+    getInitializers()[Lcom/intellij/psi/PsiAnnotationMemberValue;
+com/intellij/psi/PsiArrayType
+    myComponentType
+    <init>(Lcom/intellij/psi/PsiType;)V
+    <init>(Lcom/intellij/psi/PsiType;Lcom/intellij/psi/TypeAnnotationProvider;)V
+    <init>(Lcom/intellij/psi/PsiType;[Lcom/intellij/psi/PsiAnnotation;)V
+    accept(Lcom/intellij/psi/PsiTypeVisitor;)Ljava/lang/Object;
+    equals(Ljava/lang/Object;)Z
+    equalsToText(Ljava/lang/String;)Z
+    getCanonicalText(Z)Ljava/lang/String;
+    getComponentType()Lcom/intellij/psi/PsiType;
+    getInternalCanonicalText()Ljava/lang/String;
+    getPresentableText()Ljava/lang/String;
+    getSuperTypes()[Lcom/intellij/psi/PsiType;
+    getText(Ljava/lang/String;Ljava/lang/String;ZZ)Ljava/lang/String;
+    hashCode()I
+    isValid()Z
+com/intellij/psi/PsiAssertStatement
+    getAssertCondition()Lcom/intellij/psi/PsiExpression;
+    getAssertDescription()Lcom/intellij/psi/PsiExpression;
+com/intellij/psi/PsiAssignmentExpression
+    getLExpression()Lcom/intellij/psi/PsiExpression;
+    getOperationSign()Lcom/intellij/psi/PsiJavaToken;
+    getOperationTokenType()Lcom/intellij/psi/tree/IElementType;
+    getRExpression()Lcom/intellij/psi/PsiExpression;
+com/intellij/psi/PsiBinaryExpression
+    getLOperand()Lcom/intellij/psi/PsiExpression;
+    getOperationSign()Lcom/intellij/psi/PsiJavaToken;
+    getOperationTokenType()Lcom/intellij/psi/tree/IElementType;
+    getROperand()Lcom/intellij/psi/PsiExpression;
+com/intellij/psi/PsiBinaryFile
+com/intellij/psi/PsiBlockStatement
+    getCodeBlock()Lcom/intellij/psi/PsiCodeBlock;
+com/intellij/psi/PsiBreakStatement
+    findExitedStatement()Lcom/intellij/psi/PsiStatement;
+    getLabelIdentifier()Lcom/intellij/psi/PsiIdentifier;
+com/intellij/psi/PsiBundle
+    BUNDLE
+    ourBundle
+    <init>()V
+    getBundle()Ljava/util/ResourceBundle;
+    message(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
+    visibilityPresentation(Ljava/lang/String;)Ljava/lang/String;
+com/intellij/psi/PsiCall
+    getArgumentList()Lcom/intellij/psi/PsiExpressionList;
+    resolveMethod()Lcom/intellij/psi/PsiMethod;
+    resolveMethodGenerics()Lcom/intellij/psi/JavaResolveResult;
+com/intellij/psi/PsiCallExpression
+    getTypeArgumentList()Lcom/intellij/psi/PsiReferenceParameterList;
+    getTypeArguments()[Lcom/intellij/psi/PsiType;
+com/intellij/psi/PsiCapturedWildcardType
+    guard
+    myContext
+    myExistential
+    myParameter
+    myUpperBound
+    accept(Lcom/intellij/psi/PsiTypeVisitor;)Ljava/lang/Object;
+    getWildcard()Lcom/intellij/psi/PsiWildcardType;
+com/intellij/psi/PsiCapturedWildcardType$1
+    this$0
+    val$captured
+com/intellij/psi/PsiCatchSection
+    ARRAY_FACTORY
+    EMPTY_ARRAY
+    <clinit>()V
+    getCatchBlock()Lcom/intellij/psi/PsiCodeBlock;
+    getCatchType()Lcom/intellij/psi/PsiType;
+    getLParenth()Lcom/intellij/psi/PsiJavaToken;
+    getParameter()Lcom/intellij/psi/PsiParameter;
+    getPreciseCatchTypes()Ljava/util/List;
+    getRParenth()Lcom/intellij/psi/PsiJavaToken;
+    getTryStatement()Lcom/intellij/psi/PsiTryStatement;
+com/intellij/psi/PsiCatchSection$1
+    <init>()V
+    create(I)[Ljava/lang/Object;
+com/intellij/psi/PsiCheckedRenameElement
+com/intellij/psi/PsiChildLink
+    <init>()V
+    createChildRef(Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiElementRef;
+    createChildRef(Lcom/intellij/psi/PsiElementRef;)Lcom/intellij/psi/PsiElementRef;
+    findLinkedChild(Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiElement;
+com/intellij/psi/PsiClass
+    ARRAY_FACTORY
+    EMPTY_ARRAY
+    <clinit>()V
+    findFieldByName(Ljava/lang/String;Z)Lcom/intellij/psi/PsiField;
+    findInnerClassByName(Ljava/lang/String;Z)Lcom/intellij/psi/PsiClass;
+    findMethodBySignature(Lcom/intellij/psi/PsiMethod;Z)Lcom/intellij/psi/PsiMethod;
+    findMethodsAndTheirSubstitutorsByName(Ljava/lang/String;Z)Ljava/util/List;
+    findMethodsByName(Ljava/lang/String;Z)[Lcom/intellij/psi/PsiMethod;
+    findMethodsBySignature(Lcom/intellij/psi/PsiMethod;Z)[Lcom/intellij/psi/PsiMethod;
+    getAllFields()[Lcom/intellij/psi/PsiField;
+    getAllInnerClasses()[Lcom/intellij/psi/PsiClass;
+    getAllMethods()[Lcom/intellij/psi/PsiMethod;
+    getAllMethodsAndTheirSubstitutors()Ljava/util/List;
+    getConstructors()[Lcom/intellij/psi/PsiMethod;
+    getContainingClass()Lcom/intellij/psi/PsiClass;
+    getExtendsList()Lcom/intellij/psi/PsiReferenceList;
+    getExtendsListTypes()[Lcom/intellij/psi/PsiClassType;
+    getFields()[Lcom/intellij/psi/PsiField;
+    getImplementsList()Lcom/intellij/psi/PsiReferenceList;
+    getImplementsListTypes()[Lcom/intellij/psi/PsiClassType;
+    getInitializers()[Lcom/intellij/psi/PsiClassInitializer;
+    getInnerClasses()[Lcom/intellij/psi/PsiClass;
+    getInterfaces()[Lcom/intellij/psi/PsiClass;
+    getLBrace()Lcom/intellij/psi/PsiElement;
+    getMethods()[Lcom/intellij/psi/PsiMethod;
+    getNameIdentifier()Lcom/intellij/psi/PsiIdentifier;
+    getQualifiedName()Ljava/lang/String;
+    getRBrace()Lcom/intellij/psi/PsiElement;
+    getScope()Lcom/intellij/psi/PsiElement;
+    getSuperClass()Lcom/intellij/psi/PsiClass;
+    getSuperTypes()[Lcom/intellij/psi/PsiClassType;
+    getSupers()[Lcom/intellij/psi/PsiClass;
+    getVisibleSignatures()Ljava/util/Collection;
+    isAnnotationType()Z
+    isEnum()Z
+    isInheritor(Lcom/intellij/psi/PsiClass;Z)Z
+    isInheritorDeep(Lcom/intellij/psi/PsiClass;Lcom/intellij/psi/PsiClass;)Z
+    isInterface()Z
+com/intellij/psi/PsiClass$1
+    <init>()V
+    create(I)[Ljava/lang/Object;
+com/intellij/psi/PsiClassInitializer
+    ARRAY_FACTORY
+    EMPTY_ARRAY
+    <clinit>()V
+    getBody()Lcom/intellij/psi/PsiCodeBlock;
+com/intellij/psi/PsiClassInitializer$1
+    <init>()V
+    create(I)[Ljava/lang/Object;
+com/intellij/psi/PsiClassLevelDeclarationStatement
+com/intellij/psi/PsiClassObjectAccessExpression
+    getOperand()Lcom/intellij/psi/PsiTypeElement;
+    getType()Lcom/intellij/psi/PsiType;
+com/intellij/psi/PsiClassOwner
+    getClasses()[Lcom/intellij/psi/PsiClass;
+    getPackageName()Ljava/lang/String;
+com/intellij/psi/PsiClassOwnerEx
+    getClassNames()Ljava/util/Set;
+com/intellij/psi/PsiClassType
+    ARRAY_FACTORY
+    EMPTY_ARRAY
+    myLanguageLevel
+    <clinit>()V
+    <init>(Lcom/intellij/pom/java/LanguageLevel;)V
+    <init>(Lcom/intellij/pom/java/LanguageLevel;Lcom/intellij/psi/TypeAnnotationProvider;)V
+    <init>(Lcom/intellij/pom/java/LanguageLevel;[Lcom/intellij/psi/PsiAnnotation;)V
+    accept(Lcom/intellij/psi/PsiTypeVisitor;)Ljava/lang/Object;
+    getClassName()Ljava/lang/String;
+    getLanguageLevel()Lcom/intellij/pom/java/LanguageLevel;
+    getParameterCount()I
+    getParameters()[Lcom/intellij/psi/PsiType;
+    getSuperTypes()[Lcom/intellij/psi/PsiType;
+    hasParameters()Z
+    hashCode()I
+    isRaw()Z
+    isRaw(Lcom/intellij/psi/PsiClassType$ClassResolveResult;)Z
+    rawType()Lcom/intellij/psi/PsiClassType;
+    resolve()Lcom/intellij/psi/PsiClass;
+    resolveGenerics()Lcom/intellij/psi/PsiClassType$ClassResolveResult;
+com/intellij/psi/PsiClassType$1
+    <init>()V
+    create(I)[Ljava/lang/Object;
+com/intellij/psi/PsiClassType$ClassResolveResult
+    EMPTY
+    <clinit>()V
+    getElement()Lcom/intellij/psi/PsiClass;
+com/intellij/psi/PsiClassType$ClassResolveResult$1
+    <init>()V
+    getCurrentFileResolveScope()Lcom/intellij/psi/PsiElement;
+    getElement()Lcom/intellij/psi/PsiElement;
+    getSubstitutor()Lcom/intellij/psi/PsiSubstitutor;
+    isAccessible()Z
+    isPackagePrefixPackageReference()Z
+    isStaticsScopeCorrect()Z
+    isValidResult()Z
+com/intellij/psi/PsiClassType$Stub
+    <init>(Lcom/intellij/pom/java/LanguageLevel;Lcom/intellij/psi/TypeAnnotationProvider;)V
+    <init>(Lcom/intellij/pom/java/LanguageLevel;[Lcom/intellij/psi/PsiAnnotation;)V
+    getCanonicalText()Ljava/lang/String;
+    getCanonicalText(Z)Ljava/lang/String;
+com/intellij/psi/PsiCodeBlock
+    EMPTY_ARRAY
+    <clinit>()V
+    getFirstBodyElement()Lcom/intellij/psi/PsiElement;
+    getLBrace()Lcom/intellij/psi/PsiJavaToken;
+    getLastBodyElement()Lcom/intellij/psi/PsiElement;
+    getRBrace()Lcom/intellij/psi/PsiJavaToken;
+    getStatements()[Lcom/intellij/psi/PsiStatement;
+com/intellij/psi/PsiCodeFragment
+com/intellij/psi/PsiComment
+    getTokenType()Lcom/intellij/psi/tree/IElementType;
+com/intellij/psi/PsiCompiledElement
+    getMirror()Lcom/intellij/psi/PsiElement;
+com/intellij/psi/PsiCompiledFile
+    getDecompiledPsiFile()Lcom/intellij/psi/PsiFile;
+com/intellij/psi/PsiConditionalExpression
+    getCondition()Lcom/intellij/psi/PsiExpression;
+    getElseExpression()Lcom/intellij/psi/PsiExpression;
+    getThenExpression()Lcom/intellij/psi/PsiExpression;
+com/intellij/psi/PsiConstantEvaluationHelper
+    <init>()V
+    computeConstantExpression(Lcom/intellij/psi/PsiElement;)Ljava/lang/Object;
+    computeConstantExpression(Lcom/intellij/psi/PsiElement;Z)Ljava/lang/Object;
+    computeExpression(Lcom/intellij/psi/PsiExpression;ZLcom/intellij/psi/PsiConstantEvaluationHelper$AuxEvaluator;)Ljava/lang/Object;
+com/intellij/psi/PsiConstantEvaluationHelper$AuxEvaluator
+    computeExpression(Lcom/intellij/psi/PsiExpression;Lcom/intellij/psi/PsiConstantEvaluationHelper$AuxEvaluator;)Ljava/lang/Object;
+    getCacheMap(Z)Ljava/util/concurrent/ConcurrentMap;
+com/intellij/psi/PsiConstructorCall
+    resolveConstructor()Lcom/intellij/psi/PsiMethod;
+com/intellij/psi/PsiContinueStatement
+    findContinuedStatement()Lcom/intellij/psi/PsiStatement;
+    getLabelIdentifier()Lcom/intellij/psi/PsiIdentifier;
+com/intellij/psi/PsiDeclarationStatement
+    getDeclaredElements()[Lcom/intellij/psi/PsiElement;
+com/intellij/psi/PsiDiamondType
+    ourDiamondGuard
+    <clinit>()V
+    <init>([Lcom/intellij/psi/PsiAnnotation;)V
+    resolveInferredTypes()Lcom/intellij/psi/PsiDiamondType$DiamondInferenceResult;
+com/intellij/psi/PsiDiamondType$DiamondInferenceResult
+    ANONYMOUS_INNER_RESULT
+    EXPLICIT_CONSTRUCTOR_TYPE_ARGS
+    NULL_RESULT
+    UNRESOLVED_CONSTRUCTOR
+    myErrorMessage
+    myInferredTypes
+    myNewExpressionPresentableText
+    <clinit>()V
+    <init>()V
+    <init>(Ljava/lang/String;)V
+    addInferredType(Lcom/intellij/psi/PsiType;)V
+    equals(Ljava/lang/Object;)Z
+    failedToInfer()Z
+    getErrorMessage()Ljava/lang/String;
+    getInferredTypes()Ljava/util/List;
+    getTypes()[Lcom/intellij/psi/PsiType;
+    hashCode()I
+com/intellij/psi/PsiDiamondType$DiamondInferenceResult$1
+    <init>()V
+    getErrorMessage()Ljava/lang/String;
+    getTypes()[Lcom/intellij/psi/PsiType;
+com/intellij/psi/PsiDiamondType$DiamondInferenceResult$2
+    <init>()V
+    getErrorMessage()Ljava/lang/String;
+    getTypes()[Lcom/intellij/psi/PsiType;
+com/intellij/psi/PsiDiamondType$DiamondInferenceResult$3
+    <init>()V
+    getErrorMessage()Ljava/lang/String;
+    getTypes()[Lcom/intellij/psi/PsiType;
+com/intellij/psi/PsiDiamondType$DiamondInferenceResult$4
+    <init>()V
+    getErrorMessage()Ljava/lang/String;
+    getTypes()[Lcom/intellij/psi/PsiType;
+com/intellij/psi/PsiDirectory
+    EMPTY_ARRAY
+    <clinit>()V
+    checkCreateFile(Ljava/lang/String;)V
+    checkCreateSubdirectory(Ljava/lang/String;)V
+    copyFileFrom(Ljava/lang/String;Lcom/intellij/psi/PsiFile;)Lcom/intellij/psi/PsiFile;
+    createFile(Ljava/lang/String;)Lcom/intellij/psi/PsiFile;
+    createSubdirectory(Ljava/lang/String;)Lcom/intellij/psi/PsiDirectory;
+    findFile(Ljava/lang/String;)Lcom/intellij/psi/PsiFile;
+    findSubdirectory(Ljava/lang/String;)Lcom/intellij/psi/PsiDirectory;
+    getFiles()[Lcom/intellij/psi/PsiFile;
+    getName()Ljava/lang/String;
+    getParent()Lcom/intellij/psi/PsiDirectory;
+    getParentDirectory()Lcom/intellij/psi/PsiDirectory;
+    getSubdirectories()[Lcom/intellij/psi/PsiDirectory;
+com/intellij/psi/PsiDirectoryContainer
+com/intellij/psi/PsiDisjunctionType
+    $assertionsDisabled
+    myTypes
+    <init>(Ljava/util/List;Lcom/intellij/psi/PsiManager;)V
+    accept(Lcom/intellij/psi/PsiTypeVisitor;)Ljava/lang/Object;
+    equals(Ljava/lang/Object;)Z
+    equalsToText(Ljava/lang/String;)Z
+    getCanonicalText(Z)Ljava/lang/String;
+    getDisjunctions()Ljava/util/List;
+    getInternalCanonicalText()Ljava/lang/String;
+    getLeastUpperBound()Lcom/intellij/psi/PsiType;
+    getPresentableText()Ljava/lang/String;
+    getSuperTypes()[Lcom/intellij/psi/PsiType;
+    hashCode()I
+    isValid()Z
+com/intellij/psi/PsiDisjunctionType$1
+    this$0
+    <init>(Lcom/intellij/psi/PsiDisjunctionType;)V
+com/intellij/psi/PsiDisjunctionType$2
+    this$0
+    <init>(Lcom/intellij/psi/PsiDisjunctionType;)V
+    fun(Lcom/intellij/psi/PsiType;)Ljava/lang/String;
+    fun(Ljava/lang/Object;)Ljava/lang/Object;
+com/intellij/psi/PsiDisjunctionType$3
+    this$0
+    val$annotated
+    <init>(Lcom/intellij/psi/PsiDisjunctionType;Z)V
+    fun(Lcom/intellij/psi/PsiType;)Ljava/lang/String;
+    fun(Ljava/lang/Object;)Ljava/lang/Object;
+com/intellij/psi/PsiDisjunctionType$4
+    this$0
+    <init>(Lcom/intellij/psi/PsiDisjunctionType;)V
+    fun(Lcom/intellij/psi/PsiType;)Ljava/lang/String;
+    fun(Ljava/lang/Object;)Ljava/lang/Object;
+com/intellij/psi/PsiDoWhileStatement
+    getCondition()Lcom/intellij/psi/PsiExpression;
+    getLParenth()Lcom/intellij/psi/PsiJavaToken;
+    getRParenth()Lcom/intellij/psi/PsiJavaToken;
+    getWhileKeyword()Lcom/intellij/psi/PsiKeyword;
+com/intellij/psi/PsiDocCommentBase
+    getOwner()Lcom/intellij/psi/PsiElement;
+com/intellij/psi/PsiDocCommentOwner
+    getDocComment()Lcom/intellij/psi/javadoc/PsiDocComment;
+    isDeprecated()Z
+com/intellij/psi/PsiElement
+    ARRAY_FACTORY
+    EMPTY_ARRAY
+    <clinit>()V
+    accept(Lcom/intellij/psi/PsiElementVisitor;)V
+    acceptChildren(Lcom/intellij/psi/PsiElementVisitor;)V
+    getChildren()[Lcom/intellij/psi/PsiElement;
+    getContainingFile()Lcom/intellij/psi/PsiFile;
+    getContext()Lcom/intellij/psi/PsiElement;
+    getFirstChild()Lcom/intellij/psi/PsiElement;
+    getLanguage()Lcom/intellij/lang/Language;
+    getLastChild()Lcom/intellij/psi/PsiElement;
+    getNavigationElement()Lcom/intellij/psi/PsiElement;
+    getNextSibling()Lcom/intellij/psi/PsiElement;
+    getOriginalElement()Lcom/intellij/psi/PsiElement;
+    getParent()Lcom/intellij/psi/PsiElement;
+    getPrevSibling()Lcom/intellij/psi/PsiElement;
+    getReference()Lcom/intellij/psi/PsiReference;
+    getReferences()[Lcom/intellij/psi/PsiReference;
+    getStartOffsetInParent()I
+    getText()Ljava/lang/String;
+    getTextLength()I
+    getTextOffset()I
+    getTextRange()Lcom/intellij/openapi/util/TextRange;
+    isPhysical()Z
+    isValid()Z
+    isWritable()Z
+    textContains(C)Z
+    textMatches(Lcom/intellij/psi/PsiElement;)Z
+    textMatches(Ljava/lang/CharSequence;)Z
+    textToCharArray()[C
+    toString()Ljava/lang/String;
+com/intellij/psi/PsiElement$1
+    <init>()V
+    create(I)[Ljava/lang/Object;
+com/intellij/psi/PsiElementRef
+    LOG
+    myColleague
+    <clinit>()V
+    <init>(Lcom/intellij/psi/PsiElementRef$PsiRefColleague;)V
+    ensurePsiElementExists()Lcom/intellij/psi/PsiElement;
+    equals(Ljava/lang/Object;)Z
+    getPsiElement()Lcom/intellij/psi/PsiElement;
+    getRoot()Lcom/intellij/psi/PsiElement;
+    hashCode()I
+    imaginary(Lcom/intellij/psi/PsiElementRef;Lcom/intellij/psi/PsiRefElementCreator;)Lcom/intellij/psi/PsiElementRef;
+    isImaginary()Z
+    isValid()Z
+    real(Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiElementRef;
+com/intellij/psi/PsiElementRef$PsiRefColleague
+    getPsiElement()Lcom/intellij/psi/PsiElement;
+    getRoot()Lcom/intellij/psi/PsiElement;
+    isValid()Z
+    makeReal()Lcom/intellij/psi/PsiElementRef$PsiRefColleague$Real;
+com/intellij/psi/PsiElementRef$PsiRefColleague$Imaginary
+    myCreator
+    myParent
+    <init>(Lcom/intellij/psi/PsiElementRef;Lcom/intellij/psi/PsiRefElementCreator;)V
+    equals(Ljava/lang/Object;)Z
+    getPsiElement()Lcom/intellij/psi/PsiElement;
+    getRoot()Lcom/intellij/psi/PsiElement;
+    hashCode()I
+    isValid()Z
+    makeReal()Lcom/intellij/psi/PsiElementRef$PsiRefColleague$Real;
+com/intellij/psi/PsiElementRef$PsiRefColleague$Real
+    myElement
+    <init>(Lcom/intellij/psi/PsiElement;)V
+    equals(Ljava/lang/Object;)Z
+    getPsiElement()Lcom/intellij/psi/PsiElement;
+    getRoot()Lcom/intellij/psi/PsiElement;
+    hashCode()I
+    isValid()Z
+    makeReal()Lcom/intellij/psi/PsiElementRef$PsiRefColleague$Real;
+com/intellij/psi/PsiElementResolveResult
+    myElement
+    myValidResult
+    <init>(Lcom/intellij/psi/PsiElement;)V
+    <init>(Lcom/intellij/psi/PsiElement;Z)V
+    createResults(Ljava/util/Collection;)[Lcom/intellij/psi/ResolveResult;
+    createResults([Lcom/intellij/psi/PsiElement;)[Lcom/intellij/psi/ResolveResult;
+    equals(Ljava/lang/Object;)Z
+    getElement()Lcom/intellij/psi/PsiElement;
+    hashCode()I
+    isValidResult()Z
+    toString()Ljava/lang/String;
+com/intellij/psi/PsiElementVisitor
+    EMPTY_VISITOR
+    <clinit>()V
+    <init>()V
+    visitBinaryFile(Lcom/intellij/psi/PsiBinaryFile;)V
+    visitComment(Lcom/intellij/psi/PsiComment;)V
+    visitDirectory(Lcom/intellij/psi/PsiDirectory;)V
+    visitElement(Lcom/intellij/psi/PsiElement;)V
+    visitErrorElement(Lcom/intellij/psi/PsiErrorElement;)V
+    visitFile(Lcom/intellij/psi/PsiFile;)V
+    visitOuterLanguageElement(Lcom/intellij/psi/templateLanguages/OuterLanguageElement;)V
+    visitPlainText(Lcom/intellij/psi/PsiPlainText;)V
+    visitPlainTextFile(Lcom/intellij/psi/PsiPlainTextFile;)V
+    visitWhiteSpace(Lcom/intellij/psi/PsiWhiteSpace;)V
+com/intellij/psi/PsiElementVisitor$1
+    <init>()V
+com/intellij/psi/PsiEllipsisType
+    <init>(Lcom/intellij/psi/PsiType;)V
+    <init>(Lcom/intellij/psi/PsiType;Lcom/intellij/psi/TypeAnnotationProvider;)V
+    <init>(Lcom/intellij/psi/PsiType;[Lcom/intellij/psi/PsiAnnotation;)V
+    accept(Lcom/intellij/psi/PsiTypeVisitor;)Ljava/lang/Object;
+    createEllipsis(Lcom/intellij/psi/PsiType;[Lcom/intellij/psi/PsiAnnotation;)Lcom/intellij/psi/PsiType;
+    equalsToText(Ljava/lang/String;)Z
+    getCanonicalText(Z)Ljava/lang/String;
+    getInternalCanonicalText()Ljava/lang/String;
+    getPresentableText()Ljava/lang/String;
+    hashCode()I
+    toArrayType()Lcom/intellij/psi/PsiType;
+com/intellij/psi/PsiEmptyStatement
+com/intellij/psi/PsiEnumConstant
+    getArgumentList()Lcom/intellij/psi/PsiExpressionList;
+    getInitializingClass()Lcom/intellij/psi/PsiEnumConstantInitializer;
+    getOrCreateInitializingClass()Lcom/intellij/psi/PsiEnumConstantInitializer;
+com/intellij/psi/PsiEnumConstantInitializer
+    getEnumConstant()Lcom/intellij/psi/PsiEnumConstant;
+com/intellij/psi/PsiErrorElement
+    getErrorDescription()Ljava/lang/String;
+com/intellij/psi/PsiExpression
+    ARRAY_FACTORY
+    EMPTY_ARRAY
+    EXPRESSION_TO_TYPE
+    <clinit>()V
+    getType()Lcom/intellij/psi/PsiType;
+com/intellij/psi/PsiExpression$1
+    <init>()V
+    create(I)[Ljava/lang/Object;
+com/intellij/psi/PsiExpression$2
+    <init>()V
+    fun(Lcom/intellij/psi/PsiExpression;)Lcom/intellij/psi/PsiType;
+    fun(Ljava/lang/Object;)Ljava/lang/Object;
+com/intellij/psi/PsiExpressionList
+    getExpressionTypes()[Lcom/intellij/psi/PsiType;
+    getExpressions()[Lcom/intellij/psi/PsiExpression;
+com/intellij/psi/PsiExpressionListStatement
+    getExpressionList()Lcom/intellij/psi/PsiExpressionList;
+com/intellij/psi/PsiExpressionStatement
+    getExpression()Lcom/intellij/psi/PsiExpression;
+com/intellij/psi/PsiField
+    ARRAY_FACTORY
+    EMPTY_ARRAY
+    <clinit>()V
+    getNameIdentifier()Lcom/intellij/psi/PsiIdentifier;
+com/intellij/psi/PsiField$1
+    <init>()V
+    create(I)[Ljava/lang/Object;
+com/intellij/psi/PsiFile
+    EMPTY_ARRAY
+    <clinit>()V
+    getModificationStamp()J
+    getOriginalFile()Lcom/intellij/psi/PsiFile;
+    getParent()Lcom/intellij/psi/PsiDirectory;
+com/intellij/psi/PsiFileSystemItem
+    getName()Ljava/lang/String;
+    getParent()Lcom/intellij/psi/PsiFileSystemItem;
+    isDirectory()Z
+com/intellij/psi/PsiForStatement
+    getCondition()Lcom/intellij/psi/PsiExpression;
+    getInitialization()Lcom/intellij/psi/PsiStatement;
+    getLParenth()Lcom/intellij/psi/PsiJavaToken;
+    getRParenth()Lcom/intellij/psi/PsiJavaToken;
+    getUpdate()Lcom/intellij/psi/PsiStatement;
+com/intellij/psi/PsiForeachStatement
+    getIteratedValue()Lcom/intellij/psi/PsiExpression;
+    getIterationParameter()Lcom/intellij/psi/PsiParameter;
+    getLParenth()Lcom/intellij/psi/PsiJavaToken;
+    getRParenth()Lcom/intellij/psi/PsiJavaToken;
+com/intellij/psi/PsiFunctionalExpression
+    EMPTY_ARRAY
+    <clinit>()V
+    getFunctionalInterfaceType()Lcom/intellij/psi/PsiType;
+    isAcceptable(Lcom/intellij/psi/PsiType;)Z
+    isPotentiallyCompatible(Lcom/intellij/psi/PsiType;)Z
+com/intellij/psi/PsiIdentifier
+    EMPTY_ARRAY
+    <clinit>()V
+com/intellij/psi/PsiIfStatement
+    getCondition()Lcom/intellij/psi/PsiExpression;
+    getElseBranch()Lcom/intellij/psi/PsiStatement;
+    getElseElement()Lcom/intellij/psi/PsiKeyword;
+    getLParenth()Lcom/intellij/psi/PsiJavaToken;
+    getRParenth()Lcom/intellij/psi/PsiJavaToken;
+    getThenBranch()Lcom/intellij/psi/PsiStatement;
+com/intellij/psi/PsiImportHolder
+com/intellij/psi/PsiImportList
+    ARRAY_FACTORY
+    EMPTY_ARRAY
+    <clinit>()V
+    findOnDemandImportStatement(Ljava/lang/String;)Lcom/intellij/psi/PsiImportStatement;
+    findSingleClassImportStatement(Ljava/lang/String;)Lcom/intellij/psi/PsiImportStatement;
+    findSingleImportStatement(Ljava/lang/String;)Lcom/intellij/psi/PsiImportStatementBase;
+    getAllImportStatements()[Lcom/intellij/psi/PsiImportStatementBase;
+    getImportStatements()[Lcom/intellij/psi/PsiImportStatement;
+    getImportStaticStatements()[Lcom/intellij/psi/PsiImportStaticStatement;
+com/intellij/psi/PsiImportList$1
+    <init>()V
+    create(I)[Ljava/lang/Object;
+com/intellij/psi/PsiImportStatement
+    EMPTY_ARRAY
+    <clinit>()V
+    getQualifiedName()Ljava/lang/String;
+com/intellij/psi/PsiImportStatementBase
+    ARRAY_FACTORY
+    EMPTY_ARRAY
+    <clinit>()V
+    getImportReference()Lcom/intellij/psi/PsiJavaCodeReferenceElement;
+    isForeignFileImport()Z
+    isOnDemand()Z
+    resolve()Lcom/intellij/psi/PsiElement;
+com/intellij/psi/PsiImportStatementBase$1
+    <init>()V
+    create(I)[Ljava/lang/Object;
+com/intellij/psi/PsiImportStaticReferenceElement
+    getClassReference()Lcom/intellij/psi/PsiJavaCodeReferenceElement;
+com/intellij/psi/PsiImportStaticStatement
+    EMPTY_ARRAY
+    <clinit>()V
+    getReferenceName()Ljava/lang/String;
+    resolveTargetClass()Lcom/intellij/psi/PsiClass;
+com/intellij/psi/PsiInstanceOfExpression
+    getCheckType()Lcom/intellij/psi/PsiTypeElement;
+    getOperand()Lcom/intellij/psi/PsiExpression;
+com/intellij/psi/PsiIntersectionType
+    $assertionsDisabled
+    myConjuncts
+    accept(Lcom/intellij/psi/PsiTypeVisitor;)Ljava/lang/Object;
+    getConjuncts()[Lcom/intellij/psi/PsiType;
+com/intellij/psi/PsiIntersectionType$1
+    this$0
+com/intellij/psi/PsiIntersectionType$2
+    this$0
+com/intellij/psi/PsiInvalidElementAccessException
+    INVALIDATION_TRACE
+    REPORTING_EXCEPTION
+    myDiagnostic
+    myElementReference
+    myMessage
+    <init>(Lcom/intellij/psi/PsiElement;)V
+    <init>(Lcom/intellij/psi/PsiElement;Ljava/lang/String;)V
+    <init>(Lcom/intellij/psi/PsiElement;Ljava/lang/String;Ljava/lang/Throwable;)V
+    <init>(Lcom/intellij/psi/PsiElement;Ljava/lang/Throwable;)V
+com/intellij/psi/PsiJavaCodeReferenceElement
+    ARRAY_FACTORY
+    EMPTY_ARRAY
+    <clinit>()V
+    getParameterList()Lcom/intellij/psi/PsiReferenceParameterList;
+    getQualifiedName()Ljava/lang/String;
+    getReferenceNameElement()Lcom/intellij/psi/PsiElement;
+    getTypeParameters()[Lcom/intellij/psi/PsiType;
+    isQualified()Z
+com/intellij/psi/PsiJavaCodeReferenceElement$1
+    <init>()V
+    create(I)[Ljava/lang/Object;
+com/intellij/psi/PsiJavaFile
+    findImportReferenceTo(Lcom/intellij/psi/PsiClass;)Lcom/intellij/psi/PsiJavaCodeReferenceElement;
+    getImplicitlyImportedPackageReferences()[Lcom/intellij/psi/PsiJavaCodeReferenceElement;
+    getImplicitlyImportedPackages()[Ljava/lang/String;
+    getImportList()Lcom/intellij/psi/PsiImportList;
+    getLanguageLevel()Lcom/intellij/pom/java/LanguageLevel;
+    getOnDemandImports(ZZ)[Lcom/intellij/psi/PsiElement;
+    getPackageName()Ljava/lang/String;
+    getPackageStatement()Lcom/intellij/psi/PsiPackageStatement;
+    getSingleClassImports(Z)[Lcom/intellij/psi/PsiClass;
+com/intellij/psi/PsiJavaParserFacade
+    createAnnotationFromText(Ljava/lang/String;Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiAnnotation;
+    createClassFromText(Ljava/lang/String;Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiClass;
+    createCodeBlockFromText(Ljava/lang/String;Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiCodeBlock;
+    createCommentFromText(Ljava/lang/String;Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiComment;
+    createDocCommentFromText(Ljava/lang/String;)Lcom/intellij/psi/javadoc/PsiDocComment;
+    createDocTagFromText(Ljava/lang/String;)Lcom/intellij/psi/javadoc/PsiDocTag;
+    createEnumConstantFromText(Ljava/lang/String;Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiEnumConstant;
+    createExpressionFromText(Ljava/lang/String;Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiExpression;
+    createFieldFromText(Ljava/lang/String;Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiField;
+    createMethodFromText(Ljava/lang/String;Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiMethod;
+    createMethodFromText(Ljava/lang/String;Lcom/intellij/psi/PsiElement;Lcom/intellij/pom/java/LanguageLevel;)Lcom/intellij/psi/PsiMethod;
+    createParameterFromText(Ljava/lang/String;Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiParameter;
+    createPrimitiveType(Ljava/lang/String;[Lcom/intellij/psi/PsiAnnotation;)Lcom/intellij/psi/PsiType;
+    createReferenceFromText(Ljava/lang/String;Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiJavaCodeReferenceElement;
+    createResourceFromText(Ljava/lang/String;Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiResourceVariable;
+    createStatementFromText(Ljava/lang/String;Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiStatement;
+    createTypeElementFromText(Ljava/lang/String;Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiTypeElement;
+    createTypeFromText(Ljava/lang/String;Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiType;
+    createTypeParameterFromText(Ljava/lang/String;Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiTypeParameter;
+com/intellij/psi/PsiJavaReference
+com/intellij/psi/PsiJavaToken
+    getTokenType()Lcom/intellij/psi/tree/IElementType;
+com/intellij/psi/PsiKeyword
+    ABSTRACT
+    ASSERT
+    BOOLEAN
+    BREAK
+    BYTE
+    CASE
+    CATCH
+    CHAR
+    CLASS
+    CONST
+    CONTINUE
+    DEFAULT
+    DO
+    DOUBLE
+    ELSE
+    ENUM
+    EXTENDS
+    FALSE
+    FINAL
+    FINALLY
+    FLOAT
+    FOR
+    GOTO
+    IF
+    IMPLEMENTS
+    IMPORT
+    INSTANCEOF
+    INT
+    INTERFACE
+    LONG
+    NATIVE
+    NEW
+    NULL
+    PACKAGE
+    PRIVATE
+    PROTECTED
+    PUBLIC
+    RETURN
+    SHORT
+    STATIC
+    STRICTFP
+    SUPER
+    SWITCH
+    SYNCHRONIZED
+    THIS
+    THROW
+    THROWS
+    TRANSIENT
+    TRUE
+    TRY
+    VOID
+    VOLATILE
+    WHILE
+com/intellij/psi/PsiLabeledStatement
+    getLabelIdentifier()Lcom/intellij/psi/PsiIdentifier;
+    getName()Ljava/lang/String;
+    getStatement()Lcom/intellij/psi/PsiStatement;
+com/intellij/psi/PsiLambdaExpression
+    getBody()Lcom/intellij/psi/PsiElement;
+    getParameterList()Lcom/intellij/psi/PsiParameterList;
+    hasFormalParameterTypes()Z
+    isPotentiallyCompatible(Lcom/intellij/psi/PsiType;)Z
+    isValueCompatible()Z
+    isVoidCompatible()Z
+com/intellij/psi/PsiLambdaExpressionType
+    myExpression
+    <init>(Lcom/intellij/psi/PsiLambdaExpression;)V
+    accept(Lcom/intellij/psi/PsiTypeVisitor;)Ljava/lang/Object;
+    equalsToText(Ljava/lang/String;)Z
+    getCanonicalText()Ljava/lang/String;
+    getExpression()Lcom/intellij/psi/PsiLambdaExpression;
+    getInternalCanonicalText()Ljava/lang/String;
+    getPresentableText()Ljava/lang/String;
+    getSuperTypes()[Lcom/intellij/psi/PsiType;
+    isValid()Z
+com/intellij/psi/PsiLambdaParameterType
+    myParameter
+    <init>(Lcom/intellij/psi/PsiParameter;)V
+    accept(Lcom/intellij/psi/PsiTypeVisitor;)Ljava/lang/Object;
+    equalsToText(Ljava/lang/String;)Z
+    getCanonicalText()Ljava/lang/String;
+    getInternalCanonicalText()Ljava/lang/String;
+    getParameter()Lcom/intellij/psi/PsiParameter;
+    getPresentableText()Ljava/lang/String;
+    getSuperTypes()[Lcom/intellij/psi/PsiType;
+    isValid()Z
+com/intellij/psi/PsiLanguageInjectionHost
+    createLiteralTextEscaper()Lcom/intellij/psi/LiteralTextEscaper;
+    isValidHost()Z
+    updateText(Ljava/lang/String;)Lcom/intellij/psi/PsiLanguageInjectionHost;
+com/intellij/psi/PsiLanguageInjectionHost$InjectedPsiVisitor
+    visit(Lcom/intellij/psi/PsiFile;Ljava/util/List;)V
+com/intellij/psi/PsiLanguageInjectionHost$Shred
+    dispose()V
+    getHost()Lcom/intellij/psi/PsiLanguageInjectionHost;
+    getHostRangeMarker()Lcom/intellij/openapi/util/Segment;
+    getPrefix()Ljava/lang/String;
+    getRange()Lcom/intellij/openapi/util/TextRange;
+    getRangeInsideHost()Lcom/intellij/openapi/util/TextRange;
+    getSuffix()Ljava/lang/String;
+    isValid()Z
+com/intellij/psi/PsiLargeFile
+com/intellij/psi/PsiLiteral
+    getValue()Ljava/lang/Object;
+com/intellij/psi/PsiLiteralExpression
+com/intellij/psi/PsiLocalVariable
+    getTypeElement()Lcom/intellij/psi/PsiTypeElement;
+com/intellij/psi/PsiLock
+    LOCK
+    <clinit>()V
+    <init>()V
+com/intellij/psi/PsiLoopStatement
+    getBody()Lcom/intellij/psi/PsiStatement;
+com/intellij/psi/PsiMember
+    EMPTY_ARRAY
+    <clinit>()V
+    getContainingClass()Lcom/intellij/psi/PsiClass;
+com/intellij/psi/PsiMethod
+    ARRAY_FACTORY
+    EMPTY_ARRAY
+    <clinit>()V
+    findDeepestSuperMethod()Lcom/intellij/psi/PsiMethod;
+    findDeepestSuperMethods()[Lcom/intellij/psi/PsiMethod;
+    findSuperMethods()[Lcom/intellij/psi/PsiMethod;
+    findSuperMethods(Lcom/intellij/psi/PsiClass;)[Lcom/intellij/psi/PsiMethod;
+    findSuperMethods(Z)[Lcom/intellij/psi/PsiMethod;
+    getBody()Lcom/intellij/psi/PsiCodeBlock;
+    getModifierList()Lcom/intellij/psi/PsiModifierList;
+    getName()Ljava/lang/String;
+    getNameIdentifier()Lcom/intellij/psi/PsiIdentifier;
+    getParameterList()Lcom/intellij/psi/PsiParameterList;
+    getReturnType()Lcom/intellij/psi/PsiType;
+    getReturnTypeElement()Lcom/intellij/psi/PsiTypeElement;
+    getThrowsList()Lcom/intellij/psi/PsiReferenceList;
+    isConstructor()Z
+    isVarArgs()Z
+com/intellij/psi/PsiMethod$1
+    <init>()V
+    create(I)[Ljava/lang/Object;
+com/intellij/psi/PsiMethodCallExpression
+    getArgumentList()Lcom/intellij/psi/PsiExpressionList;
+    getMethodExpression()Lcom/intellij/psi/PsiReferenceExpression;
+com/intellij/psi/PsiMethodReferenceExpression
+    getPotentiallyApplicableMember()Lcom/intellij/psi/PsiMember;
+    getQualifierType()Lcom/intellij/psi/PsiTypeElement;
+    isAcceptable(Lcom/intellij/psi/PsiType;)Z
+    isConstructor()Z
+    isExact()Z
+    isPotentiallyCompatible(Lcom/intellij/psi/PsiType;)Z
+com/intellij/psi/PsiMethodReferenceType
+    myReference
+    <init>(Lcom/intellij/psi/PsiMethodReferenceExpression;)V
+    accept(Lcom/intellij/psi/PsiTypeVisitor;)Ljava/lang/Object;
+    equalsToText(Ljava/lang/String;)Z
+    getCanonicalText()Ljava/lang/String;
+    getExpression()Lcom/intellij/psi/PsiMethodReferenceExpression;
+    getInternalCanonicalText()Ljava/lang/String;
+    getPresentableText()Ljava/lang/String;
+    getSuperTypes()[Lcom/intellij/psi/PsiType;
+    isValid()Z
+com/intellij/psi/PsiMigration
+    createClass(Ljava/lang/String;)Lcom/intellij/psi/PsiClass;
+    createPackage(Ljava/lang/String;)Lcom/intellij/psi/PsiPackage;
+    finish()V
+com/intellij/psi/PsiMirrorElement
+    getPrototype()Lcom/intellij/psi/PsiElement;
+com/intellij/psi/PsiModifiableCodeBlock
+    shouldChangeModificationCount(Lcom/intellij/psi/PsiElement;)Z
+com/intellij/psi/PsiModifier
+    ABSTRACT
+    DEFAULT
+    FINAL
+    MODIFIERS
+    NATIVE
+    PACKAGE_LOCAL
+    PRIVATE
+    PROTECTED
+    PUBLIC
+    STATIC
+    STRICTFP
+    SYNCHRONIZED
+    TRANSIENT
+    VOLATILE
+    <clinit>()V
+com/intellij/psi/PsiModifier$ModifierConstant
+com/intellij/psi/PsiModifierList
+    hasExplicitModifier(Ljava/lang/String;)Z
+    hasModifierProperty(Ljava/lang/String;)Z
+com/intellij/psi/PsiModifierListOwner
+    getModifierList()Lcom/intellij/psi/PsiModifierList;
+    hasModifierProperty(Ljava/lang/String;)Z
+com/intellij/psi/PsiNameHelper
+    WHITESPACE_PATTERN
+    <clinit>()V
+    <init>()V
+    appendAnnotations(Ljava/lang/StringBuilder;Ljava/util/List;Z)Z
+    appendAnnotations(Ljava/lang/StringBuilder;[Lcom/intellij/psi/PsiAnnotation;Z)Z
+    appendTypeArgs(Ljava/lang/StringBuilder;[Lcom/intellij/psi/PsiType;ZZ)V
+    getClassParametersText(Ljava/lang/String;)[Ljava/lang/String;
+    getPresentableText(Lcom/intellij/psi/PsiJavaCodeReferenceElement;)Ljava/lang/String;
+    getPresentableText(Ljava/lang/String;[Lcom/intellij/psi/PsiAnnotation;[Lcom/intellij/psi/PsiType;)Ljava/lang/String;
+    getQualifiedClassName(Ljava/lang/String;Z)Ljava/lang/String;
+    getShortClassName(Ljava/lang/String;)Ljava/lang/String;
+    isIdentifier(Ljava/lang/String;)Z
+    isIdentifier(Ljava/lang/String;Lcom/intellij/pom/java/LanguageLevel;)Z
+    isKeyword(Ljava/lang/String;)Z
+    isQualifiedName(Ljava/lang/String;)Z
+    isSubpackageOf(Ljava/lang/String;Ljava/lang/String;)Z
+    removeWhitespace(Ljava/lang/String;)Ljava/lang/String;
+com/intellij/psi/PsiNameIdentifierOwner
+    getNameIdentifier()Lcom/intellij/psi/PsiElement;
+com/intellij/psi/PsiNameValuePair
+    ARRAY_FACTORY
+    EMPTY_ARRAY
+    <clinit>()V
+    getLiteralValue()Ljava/lang/String;
+    getName()Ljava/lang/String;
+    getNameIdentifier()Lcom/intellij/psi/PsiIdentifier;
+    getValue()Lcom/intellij/psi/PsiAnnotationMemberValue;
+com/intellij/psi/PsiNameValuePair$1
+    <init>()V
+    create(I)[Ljava/lang/Object;
+com/intellij/psi/PsiNamedElement
+    EMPTY_ARRAY
+    <clinit>()V
+    getName()Ljava/lang/String;
+com/intellij/psi/PsiNewExpression
+    getAnonymousClass()Lcom/intellij/psi/PsiAnonymousClass;
+    getArrayDimensions()[Lcom/intellij/psi/PsiExpression;
+    getArrayInitializer()Lcom/intellij/psi/PsiArrayInitializerExpression;
+    getClassOrAnonymousClassReference()Lcom/intellij/psi/PsiJavaCodeReferenceElement;
+    getClassReference()Lcom/intellij/psi/PsiJavaCodeReferenceElement;
+    getOwner(Lcom/intellij/psi/PsiAnnotation;)Lcom/intellij/psi/PsiType;
+    getQualifier()Lcom/intellij/psi/PsiExpression;
+com/intellij/psi/PsiPackage
+    EMPTY_ARRAY
+    PACKAGE_INFO_CLASS
+    PACKAGE_INFO_FILE
+    <clinit>()V
+    getAnnotationList()Lcom/intellij/psi/PsiModifierList;
+    getName()Ljava/lang/String;
+    getParentPackage()Lcom/intellij/psi/PsiPackage;
+    getQualifiedName()Ljava/lang/String;
+com/intellij/psi/PsiPackageStatement
+    getAnnotationList()Lcom/intellij/psi/PsiModifierList;
+    getPackageName()Ljava/lang/String;
+    getPackageReference()Lcom/intellij/psi/PsiJavaCodeReferenceElement;
+com/intellij/psi/PsiParameter
+    ARRAY_FACTORY
+    EMPTY_ARRAY
+    <clinit>()V
+    getTypeElement()Lcom/intellij/psi/PsiTypeElement;
+    isVarArgs()Z
+com/intellij/psi/PsiParameter$1
+    <init>()V
+    create(I)[Ljava/lang/Object;
+com/intellij/psi/PsiParameterList
+    getParameterIndex(Lcom/intellij/psi/PsiParameter;)I
+    getParameters()[Lcom/intellij/psi/PsiParameter;
+    getParametersCount()I
+com/intellij/psi/PsiParenthesizedExpression
+    getExpression()Lcom/intellij/psi/PsiExpression;
+com/intellij/psi/PsiPlainText
+com/intellij/psi/PsiPlainTextFile
+com/intellij/psi/PsiPolyVariantReference
+com/intellij/psi/PsiPolyVariantReferenceBase
+    <init>(Lcom/intellij/psi/PsiElement;)V
+    <init>(Lcom/intellij/psi/PsiElement;Lcom/intellij/openapi/util/TextRange;)V
+    <init>(Lcom/intellij/psi/PsiElement;Lcom/intellij/openapi/util/TextRange;Z)V
+    <init>(Lcom/intellij/psi/PsiElement;Z)V
+    resolve()Lcom/intellij/psi/PsiElement;
+com/intellij/psi/PsiPolyadicExpression
+    getOperands()[Lcom/intellij/psi/PsiExpression;
+    getOperationTokenType()Lcom/intellij/psi/tree/IElementType;
+com/intellij/psi/PsiPostfixExpression
+    getOperand()Lcom/intellij/psi/PsiExpression;
+    getOperationSign()Lcom/intellij/psi/PsiJavaToken;
+    getOperationTokenType()Lcom/intellij/psi/tree/IElementType;
+com/intellij/psi/PsiPrefixExpression
+    getOperand()Lcom/intellij/psi/PsiExpression;
+    getOperationSign()Lcom/intellij/psi/PsiJavaToken;
+    getOperationTokenType()Lcom/intellij/psi/tree/IElementType;
+com/intellij/psi/PsiPrimitiveType
+    $assertionsDisabled
+    myName
+    ourQNameToUnboxed
+    ourUnboxedToQName
+    <clinit>()V
+    <init>(Ljava/lang/String;Lcom/intellij/psi/TypeAnnotationProvider;)V
+    <init>(Ljava/lang/String;Ljava/lang/String;)V
+    <init>(Ljava/lang/String;[Lcom/intellij/psi/PsiAnnotation;)V
+    accept(Lcom/intellij/psi/PsiTypeVisitor;)Ljava/lang/Object;
+    equals(Ljava/lang/Object;)Z
+    equalsToText(Ljava/lang/String;)Z
+    getAllBoxedTypeNames()Ljava/util/Collection;
+    getBoxedTypeName()Ljava/lang/String;
+    getCanonicalText(Z)Ljava/lang/String;
+    getInternalCanonicalText()Ljava/lang/String;
+    getPresentableText()Ljava/lang/String;
+    getSuperTypes()[Lcom/intellij/psi/PsiType;
+    getText(ZZ)Ljava/lang/String;
+    getUnboxedType(Lcom/intellij/psi/PsiType;)Lcom/intellij/psi/PsiPrimitiveType;
+    hashCode()I
+    isValid()Z
+com/intellij/psi/PsiQualifiedExpression
+    getQualifier()Lcom/intellij/psi/PsiJavaCodeReferenceElement;
+com/intellij/psi/PsiQualifiedNamedElement
+    getContainer()Lcom/intellij/psi/PsiQualifiedNamedElement;
+    getName()Ljava/lang/String;
+    getQualifiedName()Ljava/lang/String;
+com/intellij/psi/PsiQualifiedReference
+    getQualifier()Lcom/intellij/psi/PsiElement;
+    getReferenceName()Ljava/lang/String;
+com/intellij/psi/PsiQualifiedReferenceElement
+com/intellij/psi/PsiReceiverParameter
+    getIdentifier()Lcom/intellij/psi/PsiThisExpression;
+com/intellij/psi/PsiRecursiveElementVisitor
+    myVisitAllFileRoots
+    <init>()V
+    <init>(Z)V
+    visitElement(Lcom/intellij/psi/PsiElement;)V
+com/intellij/psi/PsiRecursiveElementWalkingVisitor
+    myVisitAllFileRoots
+    myWalkingState
+    <init>()V
+    <init>(Z)V
+    elementFinished(Lcom/intellij/psi/PsiElement;)V
+    stopWalking()V
+    visitElement(Lcom/intellij/psi/PsiElement;)V
+com/intellij/psi/PsiRecursiveElementWalkingVisitor$1
+    this$0
+    <init>(Lcom/intellij/psi/PsiRecursiveElementWalkingVisitor;Lcom/intellij/psi/PsiElementVisitor;)V
+    elementFinished(Lcom/intellij/psi/PsiElement;)V
+    elementFinished(Ljava/lang/Object;)V
+com/intellij/psi/PsiRefElementCreator
+    createChild(Ljava/lang/Object;)Ljava/lang/Object;
+com/intellij/psi/PsiReference
+    ARRAY_FACTORY
+    EMPTY_ARRAY
+    <clinit>()V
+    getCanonicalText()Ljava/lang/String;
+    getElement()Lcom/intellij/psi/PsiElement;
+    getRangeInElement()Lcom/intellij/openapi/util/TextRange;
+    isSoft()Z
+    resolve()Lcom/intellij/psi/PsiElement;
+com/intellij/psi/PsiReference$1
+    <init>()V
+    create(I)[Ljava/lang/Object;
+com/intellij/psi/PsiReferenceBase
+    LOG
+    myElement
+    myRangeInElement
+    mySoft
+    <clinit>()V
+    <init>(Lcom/intellij/psi/PsiElement;)V
+    <init>(Lcom/intellij/psi/PsiElement;Lcom/intellij/openapi/util/TextRange;)V
+    <init>(Lcom/intellij/psi/PsiElement;Lcom/intellij/openapi/util/TextRange;Z)V
+    <init>(Lcom/intellij/psi/PsiElement;Z)V
+    createSelfReference(Lcom/intellij/psi/PsiElement;Lcom/intellij/openapi/util/TextRange;Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiReferenceBase;
+    createSelfReference(Lcom/intellij/psi/PsiElement;Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiReferenceBase;
+    getCanonicalText()Ljava/lang/String;
+    getElement()Lcom/intellij/psi/PsiElement;
+    isSoft()Z
+com/intellij/psi/PsiReferenceBase$Immediate
+    myResolveTo
+    <init>(Lcom/intellij/psi/PsiElement;Lcom/intellij/openapi/util/TextRange;Lcom/intellij/psi/PsiElement;)V
+    <init>(Lcom/intellij/psi/PsiElement;Lcom/intellij/openapi/util/TextRange;ZLcom/intellij/psi/PsiElement;)V
+    <init>(Lcom/intellij/psi/PsiElement;Lcom/intellij/psi/PsiElement;)V
+    <init>(Lcom/intellij/psi/PsiElement;ZLcom/intellij/psi/PsiElement;)V
+    resolve()Lcom/intellij/psi/PsiElement;
+com/intellij/psi/PsiReferenceBase$Poly
+    <init>(Lcom/intellij/psi/PsiElement;)V
+    <init>(Lcom/intellij/psi/PsiElement;Lcom/intellij/openapi/util/TextRange;Z)V
+    <init>(Lcom/intellij/psi/PsiElement;Z)V
+    resolve()Lcom/intellij/psi/PsiElement;
+com/intellij/psi/PsiReferenceExpression
+    getQualifierExpression()Lcom/intellij/psi/PsiExpression;
+com/intellij/psi/PsiReferenceFactory
+    getReferencesByElement(Lcom/intellij/psi/PsiElement;)[Lcom/intellij/psi/PsiReference;
+com/intellij/psi/PsiReferenceList
+    EMPTY_ARRAY
+    <clinit>()V
+    getReferenceElements()[Lcom/intellij/psi/PsiJavaCodeReferenceElement;
+    getReferencedTypes()[Lcom/intellij/psi/PsiClassType;
+    getRole()Lcom/intellij/psi/PsiReferenceList$Role;
+com/intellij/psi/PsiReferenceList$Role
+    $VALUES
+    EXTENDS_BOUNDS_LIST
+    EXTENDS_LIST
+    IMPLEMENTS_LIST
+    THROWS_LIST
+    <clinit>()V
+    <init>(Ljava/lang/String;I)V
+    valueOf(Ljava/lang/String;)Lcom/intellij/psi/PsiReferenceList$Role;
+    values()[Lcom/intellij/psi/PsiReferenceList$Role;
+com/intellij/psi/PsiReferenceParameterList
+    getTypeArguments()[Lcom/intellij/psi/PsiType;
+    getTypeParameterElements()[Lcom/intellij/psi/PsiTypeElement;
+com/intellij/psi/PsiReferenceWrapper
+    myOriginalPsiReference
+    <init>(Lcom/intellij/psi/PsiReference;)V
+    cast(Ljava/lang/Class;)Lcom/intellij/psi/PsiReference;
+    getCanonicalText()Ljava/lang/String;
+    getElement()Lcom/intellij/psi/PsiElement;
+    getRangeInElement()Lcom/intellij/openapi/util/TextRange;
+    isInstance(Ljava/lang/Class;)Z
+    isSoft()Z
+    resolve()Lcom/intellij/psi/PsiElement;
+com/intellij/psi/PsiResourceExpression
+    getExpression()Lcom/intellij/psi/PsiExpression;
+com/intellij/psi/PsiResourceList
+    getResourceVariables()Ljava/util/List;
+    getResourceVariablesCount()I
+com/intellij/psi/PsiResourceListElement
+    getType()Lcom/intellij/psi/PsiType;
+com/intellij/psi/PsiResourceVariable
+com/intellij/psi/PsiReturnStatement
+    EMPTY_ARRAY
+    <clinit>()V
+    getReturnValue()Lcom/intellij/psi/PsiExpression;
+com/intellij/psi/PsiStatement
+    ARRAY_FACTORY
+    EMPTY_ARRAY
+    <clinit>()V
+com/intellij/psi/PsiStatement$1
+    <init>()V
+    create(I)[Ljava/lang/Object;
+com/intellij/psi/PsiSubstitutor
+    EMPTY
+    KEY
+    UNKNOWN
+    <clinit>()V
+    ensureValid()V
+    getSubstitutionMap()Ljava/util/Map;
+    isValid()Z
+    put(Lcom/intellij/psi/PsiTypeParameter;Lcom/intellij/psi/PsiType;)Lcom/intellij/psi/PsiSubstitutor;
+    putAll(Lcom/intellij/psi/PsiClass;[Lcom/intellij/psi/PsiType;)Lcom/intellij/psi/PsiSubstitutor;
+    putAll(Lcom/intellij/psi/PsiSubstitutor;)Lcom/intellij/psi/PsiSubstitutor;
+    substitute(Lcom/intellij/psi/PsiType;)Lcom/intellij/psi/PsiType;
+    substitute(Lcom/intellij/psi/PsiTypeParameter;)Lcom/intellij/psi/PsiType;
+    substituteWithBoundsPromotion(Lcom/intellij/psi/PsiTypeParameter;)Lcom/intellij/psi/PsiType;
+com/intellij/psi/PsiSuperExpression
+    getQualifier()Lcom/intellij/psi/PsiJavaCodeReferenceElement;
+com/intellij/psi/PsiSwitchLabelStatement
+    getCaseValue()Lcom/intellij/psi/PsiExpression;
+    getEnclosingSwitchStatement()Lcom/intellij/psi/PsiSwitchStatement;
+    isDefaultCase()Z
+com/intellij/psi/PsiSwitchStatement
+    getBody()Lcom/intellij/psi/PsiCodeBlock;
+    getExpression()Lcom/intellij/psi/PsiExpression;
+    getLParenth()Lcom/intellij/psi/PsiJavaToken;
+    getRParenth()Lcom/intellij/psi/PsiJavaToken;
+com/intellij/psi/PsiSynchronizedStatement
+    getBody()Lcom/intellij/psi/PsiCodeBlock;
+    getLockExpression()Lcom/intellij/psi/PsiExpression;
+com/intellij/psi/PsiSyntheticClass
+com/intellij/psi/PsiTarget
+    getNavigationElement()Lcom/intellij/psi/PsiElement;
+com/intellij/psi/PsiTemplateStatement
+com/intellij/psi/PsiThisExpression
+    getQualifier()Lcom/intellij/psi/PsiJavaCodeReferenceElement;
+com/intellij/psi/PsiThrowStatement
+    getException()Lcom/intellij/psi/PsiExpression;
+com/intellij/psi/PsiTryStatement
+    getCatchBlockParameters()[Lcom/intellij/psi/PsiParameter;
+    getCatchBlocks()[Lcom/intellij/psi/PsiCodeBlock;
+    getCatchSections()[Lcom/intellij/psi/PsiCatchSection;
+    getFinallyBlock()Lcom/intellij/psi/PsiCodeBlock;
+    getResourceList()Lcom/intellij/psi/PsiResourceList;
+    getTryBlock()Lcom/intellij/psi/PsiCodeBlock;
+com/intellij/psi/PsiType
+    ARRAY_FACTORY
+    BOOLEAN
+    BYTE
+    CHAR
+    DOUBLE
+    EMPTY_ARRAY
+    FLOAT
+    INT
+    LONG
+    NULL
+    SHORT
+    VOID
+    myAnnotationProvider
+    <clinit>()V
+    <init>(Lcom/intellij/psi/TypeAnnotationProvider;)V
+    <init>([Lcom/intellij/psi/PsiAnnotation;)V
+    accept(Lcom/intellij/psi/PsiTypeVisitor;)Ljava/lang/Object;
+    createArray(I)[Lcom/intellij/psi/PsiType;
+    createArrayType()Lcom/intellij/psi/PsiArrayType;
+    createArrayType([Lcom/intellij/psi/PsiAnnotation;)Lcom/intellij/psi/PsiArrayType;
+    equalsToText(Ljava/lang/String;)Z
+    findAnnotation(Ljava/lang/String;)Lcom/intellij/psi/PsiAnnotation;
+    getAnnotationProvider()Lcom/intellij/psi/TypeAnnotationProvider;
+    getAnnotations()[Lcom/intellij/psi/PsiAnnotation;
+    getApplicableAnnotations()[Lcom/intellij/psi/PsiAnnotation;
+    getArrayDimensions()I
+    getCanonicalText()Ljava/lang/String;
+    getCanonicalText(Z)Ljava/lang/String;
+    getDeepComponentType()Lcom/intellij/psi/PsiType;
+    getInternalCanonicalText()Ljava/lang/String;
+    getPresentableText()Ljava/lang/String;
+    getSuperTypes()[Lcom/intellij/psi/PsiType;
+    isValid()Z
+    toString()Ljava/lang/String;
+com/intellij/psi/PsiType$1
+    <init>()V
+    create(I)[Ljava/lang/Object;
+com/intellij/psi/PsiType$2
+    val$annotations
+    <init>([Lcom/intellij/psi/PsiAnnotation;)V
+    getAnnotations()[Lcom/intellij/psi/PsiAnnotation;
+com/intellij/psi/PsiType$Stub
+    <init>(Lcom/intellij/psi/TypeAnnotationProvider;)V
+    <init>([Lcom/intellij/psi/PsiAnnotation;)V
+    getCanonicalText()Ljava/lang/String;
+    getCanonicalText(Z)Ljava/lang/String;
+com/intellij/psi/PsiTypeCastExpression
+    getCastType()Lcom/intellij/psi/PsiTypeElement;
+    getOperand()Lcom/intellij/psi/PsiExpression;
+com/intellij/psi/PsiTypeElement
+    ARRAY_FACTORY
+    EMPTY_ARRAY
+    <clinit>()V
+    getInnermostComponentReferenceElement()Lcom/intellij/psi/PsiJavaCodeReferenceElement;
+    getType()Lcom/intellij/psi/PsiType;
+com/intellij/psi/PsiTypeElement$1
+    <init>()V
+    create(I)[Ljava/lang/Object;
+com/intellij/psi/PsiTypeParameter
+    ARRAY_FACTORY
+    EMPTY_ARRAY
+    <clinit>()V
+    getExtendsList()Lcom/intellij/psi/PsiReferenceList;
+    getIndex()I
+    getOwner()Lcom/intellij/psi/PsiTypeParameterListOwner;
+com/intellij/psi/PsiTypeParameter$1
+    <init>()V
+    create(I)[Ljava/lang/Object;
+com/intellij/psi/PsiTypeParameterList
+    getTypeParameterIndex(Lcom/intellij/psi/PsiTypeParameter;)I
+    getTypeParameters()[Lcom/intellij/psi/PsiTypeParameter;
+com/intellij/psi/PsiTypeParameterListOwner
+    getTypeParameterList()Lcom/intellij/psi/PsiTypeParameterList;
+    getTypeParameters()[Lcom/intellij/psi/PsiTypeParameter;
+    hasTypeParameters()Z
+com/intellij/psi/PsiTypeVisitor
+    <init>()V
+    visitArrayType(Lcom/intellij/psi/PsiArrayType;)Ljava/lang/Object;
+    visitCapturedWildcardType(Lcom/intellij/psi/PsiCapturedWildcardType;)Ljava/lang/Object;
+    visitClassType(Lcom/intellij/psi/PsiClassType;)Ljava/lang/Object;
+    visitDiamondType(Lcom/intellij/psi/PsiDiamondType;)Ljava/lang/Object;
+    visitDisjunctionType(Lcom/intellij/psi/PsiDisjunctionType;)Ljava/lang/Object;
+    visitEllipsisType(Lcom/intellij/psi/PsiEllipsisType;)Ljava/lang/Object;
+    visitIntersectionType(Lcom/intellij/psi/PsiIntersectionType;)Ljava/lang/Object;
+    visitLambdaExpressionType(Lcom/intellij/psi/PsiLambdaExpressionType;)Ljava/lang/Object;
+    visitMethodReferenceType(Lcom/intellij/psi/PsiMethodReferenceType;)Ljava/lang/Object;
+    visitPrimitiveType(Lcom/intellij/psi/PsiPrimitiveType;)Ljava/lang/Object;
+    visitType(Lcom/intellij/psi/PsiType;)Ljava/lang/Object;
+    visitWildcardType(Lcom/intellij/psi/PsiWildcardType;)Ljava/lang/Object;
+com/intellij/psi/PsiVariable
+    computeConstantValue()Ljava/lang/Object;
+    getInitializer()Lcom/intellij/psi/PsiExpression;
+    getNameIdentifier()Lcom/intellij/psi/PsiIdentifier;
+    getType()Lcom/intellij/psi/PsiType;
+    getTypeElement()Lcom/intellij/psi/PsiTypeElement;
+    hasInitializer()Z
+com/intellij/psi/PsiWalkingState
+    LOG
+    myVisitor
+    <clinit>()V
+    <init>(Lcom/intellij/psi/PsiElementVisitor;)V
+    <init>(Lcom/intellij/psi/PsiElementVisitor;Lcom/intellij/util/WalkingState$TreeGuide;)V
+    elementStarted(Lcom/intellij/psi/PsiElement;)V
+    elementStarted(Ljava/lang/Object;)V
+    visit(Lcom/intellij/psi/PsiElement;)V
+    visit(Ljava/lang/Object;)V
+com/intellij/psi/PsiWalkingState$PsiTreeGuide
+    instance
+    <clinit>()V
+    <init>()V
+    access$000()Lcom/intellij/psi/PsiWalkingState$PsiTreeGuide;
+    getFirstChild(Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiElement;
+    getFirstChild(Ljava/lang/Object;)Ljava/lang/Object;
+    getNextSibling(Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiElement;
+    getNextSibling(Ljava/lang/Object;)Ljava/lang/Object;
+    getParent(Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiElement;
+    getParent(Ljava/lang/Object;)Ljava/lang/Object;
+    getPrevSibling(Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiElement;
+    getPrevSibling(Ljava/lang/Object;)Ljava/lang/Object;
+com/intellij/psi/PsiWhileStatement
+    getCondition()Lcom/intellij/psi/PsiExpression;
+    getLParenth()Lcom/intellij/psi/PsiJavaToken;
+    getRParenth()Lcom/intellij/psi/PsiJavaToken;
+com/intellij/psi/PsiWhiteSpace
+com/intellij/psi/PsiWildcardType
+    EXTENDS_PREFIX
+    LOG
+    SUPER_PREFIX
+    UNBOUNDED_WILDCARD
+    myBound
+    myIsExtending
+    accept(Lcom/intellij/psi/PsiTypeVisitor;)Ljava/lang/Object;
+com/intellij/psi/PsiWildcardType$1
+    this$0
+    val$annotations
+com/intellij/psi/ReferenceRange
+    <init>()V
+    containsOffsetInElement(Lcom/intellij/psi/PsiReference;I)Z
+    containsRangeInElement(Lcom/intellij/psi/PsiReference;Lcom/intellij/openapi/util/TextRange;)Z
+    getAbsoluteRanges(Lcom/intellij/psi/PsiReference;)Ljava/util/List;
+    getRange(Lcom/intellij/psi/PsiReference;)Lcom/intellij/openapi/util/TextRange;
+    getRanges(Lcom/intellij/psi/PsiReference;)Ljava/util/List;
+com/intellij/psi/ResolveResult
+    EMPTY_ARRAY
+    <clinit>()V
+    getElement()Lcom/intellij/psi/PsiElement;
+    isValidResult()Z
+com/intellij/psi/ResolveState
+    ourInitialState
+    <clinit>()V
+    <init>()V
+    get(Lcom/intellij/openapi/util/Key;)Ljava/lang/Object;
+    initial()Lcom/intellij/psi/ResolveState;
+    put(Lcom/intellij/openapi/util/Key;Ljava/lang/Object;)Lcom/intellij/psi/ResolveState;
+com/intellij/psi/ResolveState$1
+com/intellij/psi/ResolveState$ManyElementResolveState
+    myValues
+    <init>(Lcom/intellij/psi/ResolveState$ManyElementResolveState;Lcom/intellij/openapi/util/Key;Ljava/lang/Object;)V
+    <init>(Lcom/intellij/psi/ResolveState$TwoElementResolveState;Lcom/intellij/openapi/util/Key;Ljava/lang/Object;)V
+    get(Lcom/intellij/openapi/util/Key;)Ljava/lang/Object;
+    put(Lcom/intellij/openapi/util/Key;Ljava/lang/Object;)Lcom/intellij/psi/ResolveState;
+com/intellij/psi/ResolveState$OneElementResolveState
+    myKey
+    myValue
+    <init>(Lcom/intellij/openapi/util/Key;Ljava/lang/Object;)V
+    <init>(Lcom/intellij/openapi/util/Key;Ljava/lang/Object;Lcom/intellij/psi/ResolveState$1;)V
+    get(Lcom/intellij/openapi/util/Key;)Ljava/lang/Object;
+    put(Lcom/intellij/openapi/util/Key;Ljava/lang/Object;)Lcom/intellij/psi/ResolveState;
+com/intellij/psi/ResolveState$TwoElementResolveState
+    myKey1
+    myKey2
+    myValue1
+    myValue2
+    <init>(Lcom/intellij/openapi/util/Key;Ljava/lang/Object;Lcom/intellij/openapi/util/Key;Ljava/lang/Object;)V
+    access$100(Lcom/intellij/psi/ResolveState$TwoElementResolveState;)Lcom/intellij/openapi/util/Key;
+    access$200(Lcom/intellij/psi/ResolveState$TwoElementResolveState;)Ljava/lang/Object;
+    access$300(Lcom/intellij/psi/ResolveState$TwoElementResolveState;)Lcom/intellij/openapi/util/Key;
+    access$400(Lcom/intellij/psi/ResolveState$TwoElementResolveState;)Ljava/lang/Object;
+    get(Lcom/intellij/openapi/util/Key;)Ljava/lang/Object;
+    put(Lcom/intellij/openapi/util/Key;Ljava/lang/Object;)Lcom/intellij/psi/ResolveState;
+com/intellij/psi/ResolvingHint
+    canResolveTo(Ljava/lang/Class;)Z
+com/intellij/psi/ServerPageFile
+com/intellij/psi/StringEscapesTokenTypes
+    INVALID_CHARACTER_ESCAPE_TOKEN
+    INVALID_UNICODE_ESCAPE_TOKEN
+    STRING_LITERAL_ESCAPES
+    VALID_STRING_ESCAPE_TOKEN
+    <clinit>()V
+com/intellij/psi/StubBasedPsiElement
+    getElementType()Lcom/intellij/psi/stubs/IStubElementType;
+    getStub()Lcom/intellij/psi/stubs/StubElement;
+com/intellij/psi/StubBuilder
+    buildStubTree(Lcom/intellij/psi/PsiFile;)Lcom/intellij/psi/stubs/StubElement;
+    skipChildProcessingWhenBuildingStubs(Lcom/intellij/lang/ASTNode;Lcom/intellij/lang/ASTNode;)Z
+com/intellij/psi/SyntheticElement
+com/intellij/psi/TokenType
+    BAD_CHARACTER
+    CODE_FRAGMENT
+    DUMMY_HOLDER
+    ERROR_ELEMENT
+    NEW_LINE_INDENT
+    WHITE_SPACE
+    <clinit>()V
+com/intellij/psi/TypeAnnotationProvider
+    EMPTY
+    <clinit>()V
+    getAnnotations()[Lcom/intellij/psi/PsiAnnotation;
+com/intellij/psi/TypeAnnotationProvider$1
+    <init>()V
+    getAnnotations()[Lcom/intellij/psi/PsiAnnotation;
+com/intellij/psi/Weigher
+    myDebugName
+    <init>()V
+    toString()Ljava/lang/String;
+    weigh(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Comparable;
+com/intellij/psi/WeighingComparable
+    NULL
+    myComputedWeighs
+    myElement
+    myLocation
+    myWeighers
+    <clinit>()V
+    <init>(Lcom/intellij/openapi/util/Computable;Ljava/lang/Object;[Lcom/intellij/psi/Weigher;)V
+    compareTo(Lcom/intellij/psi/WeighingComparable;)I
+    compareTo(Ljava/lang/Object;)I
+    force()V
+    getWeight(I)Ljava/lang/Comparable;
+    toString()Ljava/lang/String;
+com/intellij/psi/WeighingComparable$1
+    <init>()V
+    compareTo(Ljava/lang/Object;)I
+com/intellij/psi/javadoc/CustomJavadocTagProvider
+    EP_NAME
+    <clinit>()V
+    getSupportedTags()Ljava/util/List;
+com/intellij/psi/javadoc/JavadocManager
+    getTagInfo(Ljava/lang/String;)Lcom/intellij/psi/javadoc/JavadocTagInfo;
+    getTagInfos(Lcom/intellij/psi/PsiElement;)[Lcom/intellij/psi/javadoc/JavadocTagInfo;
+com/intellij/psi/javadoc/JavadocManager$SERVICE
+    <init>()V
+com/intellij/psi/javadoc/JavadocTagInfo
+    EP_NAME
+    <clinit>()V
+    checkTagValue(Lcom/intellij/psi/javadoc/PsiDocTagValue;)Ljava/lang/String;
+    getName()Ljava/lang/String;
+    getPossibleValues(Lcom/intellij/psi/PsiElement;Lcom/intellij/psi/PsiElement;Ljava/lang/String;)[Ljava/lang/Object;
+    getReference(Lcom/intellij/psi/javadoc/PsiDocTagValue;)Lcom/intellij/psi/PsiReference;
+    isInline()Z
+    isValidInContext(Lcom/intellij/psi/PsiElement;)Z
+com/intellij/psi/javadoc/PsiDocComment
+    findTagByName(Ljava/lang/String;)Lcom/intellij/psi/javadoc/PsiDocTag;
+    findTagsByName(Ljava/lang/String;)[Lcom/intellij/psi/javadoc/PsiDocTag;
+    getDescriptionElements()[Lcom/intellij/psi/PsiElement;
+    getOwner()Lcom/intellij/psi/PsiDocCommentOwner;
+    getTags()[Lcom/intellij/psi/javadoc/PsiDocTag;
+com/intellij/psi/javadoc/PsiDocTag
+    EMPTY_ARRAY
+    <clinit>()V
+    getContainingComment()Lcom/intellij/psi/javadoc/PsiDocComment;
+    getDataElements()[Lcom/intellij/psi/PsiElement;
+    getName()Ljava/lang/String;
+    getNameElement()Lcom/intellij/psi/PsiElement;
+    getValueElement()Lcom/intellij/psi/javadoc/PsiDocTagValue;
+com/intellij/psi/javadoc/PsiDocTagValue
+com/intellij/psi/javadoc/PsiDocToken
+    getTokenType()Lcom/intellij/psi/tree/IElementType;
+com/intellij/psi/javadoc/PsiInlineDocTag
+com/intellij/psi/meta/PsiMetaData
+    getDeclaration()Lcom/intellij/psi/PsiElement;
+    getDependences()[Ljava/lang/Object;
+    getName()Ljava/lang/String;
+    getName(Lcom/intellij/psi/PsiElement;)Ljava/lang/String;
+    init(Lcom/intellij/psi/PsiElement;)V
+com/intellij/psi/meta/PsiMetaOwner
+    getMetaData()Lcom/intellij/psi/meta/PsiMetaData;
+com/intellij/psi/search/PsiElementProcessor
+    execute(Lcom/intellij/psi/PsiElement;)Z
+com/intellij/psi/search/PsiElementProcessor$CollectElements
+    myCollection
+    <init>()V
+    <init>(Ljava/util/Collection;)V
+    execute(Lcom/intellij/psi/PsiElement;)Z
+    getCollection()Ljava/util/Collection;
+com/intellij/psi/search/PsiElementProcessor$CollectFilteredElements
+    myFilter
+    <init>(Lcom/intellij/psi/util/PsiElementFilter;)V
+    execute(Lcom/intellij/psi/PsiElement;)Z
+com/intellij/psi/search/PsiElementProcessor$FindElement
+    myFoundElement
+    <init>()V
+    execute(Lcom/intellij/psi/PsiElement;)Z
+    getFoundElement()Lcom/intellij/psi/PsiElement;
+com/intellij/psi/stubs/IStubElementType
+    $assertionsDisabled
+    <clinit>()V
+    <init>(Ljava/lang/String;Lcom/intellij/lang/Language;)V
+    createPsi(Lcom/intellij/psi/stubs/StubElement;)Lcom/intellij/psi/PsiElement;
+com/intellij/psi/stubs/IndexSink
+    occurrence(Lcom/intellij/psi/stubs/StubIndexKey;Ljava/lang/Object;)V
+com/intellij/psi/stubs/ObjectStubBase
+    myParent
+    <init>(Lcom/intellij/psi/stubs/Stub;)V
+    getParentStub()Lcom/intellij/psi/stubs/Stub;
+com/intellij/psi/stubs/ObjectStubSerializer
+    deserialize(Lcom/intellij/psi/stubs/StubInputStream;Lcom/intellij/psi/stubs/Stub;)Lcom/intellij/psi/stubs/Stub;
+    getExternalId()Ljava/lang/String;
+    indexStub(Lcom/intellij/psi/stubs/Stub;Lcom/intellij/psi/stubs/IndexSink;)V
+    serialize(Lcom/intellij/psi/stubs/Stub;Lcom/intellij/psi/stubs/StubOutputStream;)V
+com/intellij/psi/stubs/Stub
+    getChildrenStubs()Ljava/util/List;
+    getParentStub()Lcom/intellij/psi/stubs/Stub;
+    getStubType()Lcom/intellij/psi/stubs/ObjectStubSerializer;
+com/intellij/psi/stubs/StubBase
+    $assertionsDisabled
+    myChildren
+    myElementType
+    myPsi
+    <clinit>()V
+    <init>(Lcom/intellij/psi/stubs/StubElement;Lcom/intellij/psi/stubs/IStubElementType;)V
+    countChildren(Lcom/intellij/psi/tree/IElementType;)I
+    countChildren(Lcom/intellij/psi/tree/TokenSet;)I
+    fillFilteredChildren(Lcom/intellij/psi/tree/IElementType;[Lcom/intellij/psi/PsiElement;)V
+    fillFilteredChildren(Lcom/intellij/psi/tree/TokenSet;[Lcom/intellij/psi/PsiElement;)V
+    findChildStubByType(Lcom/intellij/psi/stubs/IStubElementType;)Lcom/intellij/psi/stubs/StubElement;
+    getCachedPsi()Lcom/intellij/psi/PsiElement;
+    getChildrenByType(Lcom/intellij/psi/tree/IElementType;Lcom/intellij/util/ArrayFactory;)[Lcom/intellij/psi/PsiElement;
+    getChildrenByType(Lcom/intellij/psi/tree/IElementType;[Lcom/intellij/psi/PsiElement;)[Lcom/intellij/psi/PsiElement;
+    getChildrenByType(Lcom/intellij/psi/tree/TokenSet;Lcom/intellij/util/ArrayFactory;)[Lcom/intellij/psi/PsiElement;
+    getChildrenByType(Lcom/intellij/psi/tree/TokenSet;[Lcom/intellij/psi/PsiElement;)[Lcom/intellij/psi/PsiElement;
+    getChildrenStubs()Ljava/util/List;
+    getParentStub()Lcom/intellij/psi/stubs/Stub;
+    getParentStubOfType(Ljava/lang/Class;)Lcom/intellij/psi/PsiElement;
+    getPsi()Lcom/intellij/psi/PsiElement;
+    getStubType()Lcom/intellij/psi/stubs/ObjectStubSerializer;
+    printTree()Ljava/lang/String;
+    printTree(Ljava/lang/StringBuilder;I)V
+    toString()Ljava/lang/String;
+com/intellij/psi/stubs/StubElement
+    findChildStubByType(Lcom/intellij/psi/stubs/IStubElementType;)Lcom/intellij/psi/stubs/StubElement;
+    getChildrenByType(Lcom/intellij/psi/tree/IElementType;Lcom/intellij/util/ArrayFactory;)[Lcom/intellij/psi/PsiElement;
+    getChildrenByType(Lcom/intellij/psi/tree/IElementType;[Lcom/intellij/psi/PsiElement;)[Lcom/intellij/psi/PsiElement;
+    getChildrenByType(Lcom/intellij/psi/tree/TokenSet;Lcom/intellij/util/ArrayFactory;)[Lcom/intellij/psi/PsiElement;
+    getChildrenByType(Lcom/intellij/psi/tree/TokenSet;[Lcom/intellij/psi/PsiElement;)[Lcom/intellij/psi/PsiElement;
+    getChildrenStubs()Ljava/util/List;
+    getParentStub()Lcom/intellij/psi/stubs/StubElement;
+    getParentStubOfType(Ljava/lang/Class;)Lcom/intellij/psi/PsiElement;
+    getPsi()Lcom/intellij/psi/PsiElement;
+    getStubType()Lcom/intellij/psi/stubs/IStubElementType;
+com/intellij/psi/stubs/StubIndexKey
+com/intellij/psi/stubs/StubInputStream
+    myNameStorage
+    myStringIOBuffer
+    <init>(Ljava/io/InputStream;Lcom/intellij/util/io/AbstractStringEnumerator;)V
+    readName()Lcom/intellij/util/io/StringRef;
+    readUTFFast()Ljava/lang/String;
+    readVarInt()I
+    stringFromId(I)Ljava/lang/String;
+com/intellij/psi/stubs/StubOutputStream
+    myNameStorage
+    myStringIOBuffer
+    <init>(Ljava/io/OutputStream;Lcom/intellij/util/io/AbstractStringEnumerator;)V
+    getStringId(Ljava/lang/String;)I
+    writeName(Ljava/lang/String;)V
+    writeUTFFast(Ljava/lang/String;)V
+    writeVarInt(I)V
+com/intellij/psi/stubs/StubSerializer
+com/intellij/psi/templateLanguages/OuterLanguageElement
+com/intellij/psi/tree/IElementType
+    $assertionsDisabled
+    EMPTY_ARRAY
+    FACTORY
+    LOG
+    TRUE
+    lock
+    myDebugName
+    myIndex
+    myLanguage
+    ourRegistry
+    size
+    <clinit>()V
+    <init>(Ljava/lang/String;Lcom/intellij/lang/Language;)V
+    <init>(Ljava/lang/String;Lcom/intellij/lang/Language;Z)V
+    getIndex()S
+    push([Lcom/intellij/psi/tree/IElementType;)[Lcom/intellij/psi/tree/IElementType;
+com/intellij/psi/tree/IElementType$1
+    <init>()V
+    matches(Lcom/intellij/psi/tree/IElementType;)Z
+com/intellij/psi/tree/IElementType$2
+    <init>()V
+    create(I)[Ljava/lang/Object;
+com/intellij/psi/tree/IElementType$Predicate
+    matches(Lcom/intellij/psi/tree/IElementType;)Z
+com/intellij/psi/tree/IFileElementType
+    $assertionsDisabled
+    <clinit>()V
+    <init>(Ljava/lang/String;Lcom/intellij/lang/Language;)V
+    <init>(Ljava/lang/String;Lcom/intellij/lang/Language;Z)V
+com/intellij/psi/tree/ILazyParseableElementType
+    $assertionsDisabled
+    LANGUAGE_KEY
+    <clinit>()V
+    <init>(Ljava/lang/String;Lcom/intellij/lang/Language;)V
+    <init>(Ljava/lang/String;Lcom/intellij/lang/Language;Z)V
+com/intellij/psi/tree/TokenSet
+    $assertionsDisabled
+    EMPTY
+    myMax
+    myShift
+    myWords
+    <clinit>()V
+    <init>(SS)V
+    <init>(SSLcom/intellij/psi/tree/TokenSet$1;)V
+    contains(Lcom/intellij/psi/tree/IElementType;)Z
+    create([Lcom/intellij/psi/tree/IElementType;)Lcom/intellij/psi/tree/TokenSet;
+    get(I)Z
+com/intellij/psi/tree/TokenSet$1
+    <init>(SS)V
+    contains(Lcom/intellij/psi/tree/IElementType;)Z
+com/intellij/psi/tree/java/IJavaDocElementType
+    <init>(Ljava/lang/String;)V
+com/intellij/psi/tree/java/IJavaElementType
+    myLeftBound
+    <init>(Ljava/lang/String;)V
+    <init>(Ljava/lang/String;Z)V
+com/intellij/psi/tree/java/IKeywordElementType
+    <init>(Ljava/lang/String;)V
+com/intellij/psi/util/CachedValueProvider
+    compute()Lcom/intellij/psi/util/CachedValueProvider$Result;
+com/intellij/psi/util/CachedValueProvider$Result
+    LOG
+    <clinit>()V
+com/intellij/psi/util/MethodSignature
+    EMPTY_ARRAY
+    <clinit>()V
+    getName()Ljava/lang/String;
+    getParameterTypes()[Lcom/intellij/psi/PsiType;
+    getSubstitutor()Lcom/intellij/psi/PsiSubstitutor;
+    getTypeParameters()[Lcom/intellij/psi/PsiTypeParameter;
+    isConstructor()Z
+    isRaw()Z
+com/intellij/psi/util/MethodSignatureBackedByPsiMethod
+    $assertionsDisabled
+    myIsRaw
+    myMethod
+    myName
+    <clinit>()V
+    <init>(Lcom/intellij/psi/PsiMethod;Lcom/intellij/psi/PsiSubstitutor;Z[Lcom/intellij/psi/PsiType;[Lcom/intellij/psi/PsiTypeParameter;)V
+    getMethod()Lcom/intellij/psi/PsiMethod;
+    isRaw()Z
+com/intellij/psi/util/MethodSignatureBase
+    $assertionsDisabled
+    myParameterTypes
+    mySubstitutor
+    myTypeParameters
+    <clinit>()V
+    <init>(Lcom/intellij/psi/PsiSubstitutor;[Lcom/intellij/psi/PsiType;[Lcom/intellij/psi/PsiTypeParameter;)V
+    getParameterTypes()[Lcom/intellij/psi/PsiType;
+    getSubstitutor()Lcom/intellij/psi/PsiSubstitutor;
+    getTypeParameters()[Lcom/intellij/psi/PsiTypeParameter;
+com/intellij/psi/util/PsiElementFilter
+    isAccepted(Lcom/intellij/psi/PsiElement;)Z
+com/intellij/psi/util/PsiTreeUtil
+    $assertionsDisabled
+    INDEX
+    LOG
+    MARKER
+    <clinit>()V
+    <init>()V
+    childIterator(Lcom/intellij/psi/PsiElement;Ljava/lang/Class;)Ljava/util/Iterator;
+    collectElements(Lcom/intellij/psi/PsiElement;Lcom/intellij/psi/util/PsiElementFilter;)[Lcom/intellij/psi/PsiElement;
+    collectElementsOfType(Lcom/intellij/psi/PsiElement;[Ljava/lang/Class;)Ljava/util/Collection;
+    filterAncestors([Lcom/intellij/psi/PsiElement;)[Lcom/intellij/psi/PsiElement;
+    findChildOfAnyType(Lcom/intellij/psi/PsiElement;Z[Ljava/lang/Class;)Lcom/intellij/psi/PsiElement;
+    findChildOfAnyType(Lcom/intellij/psi/PsiElement;[Ljava/lang/Class;)Lcom/intellij/psi/PsiElement;
+    findChildOfType(Lcom/intellij/psi/PsiElement;Ljava/lang/Class;)Lcom/intellij/psi/PsiElement;
+    findChildOfType(Lcom/intellij/psi/PsiElement;Ljava/lang/Class;Z)Lcom/intellij/psi/PsiElement;
+    findChildrenOfAnyType(Lcom/intellij/psi/PsiElement;[Ljava/lang/Class;)Ljava/util/Collection;
+    findChildrenOfType(Lcom/intellij/psi/PsiElement;Ljava/lang/Class;)Ljava/util/Collection;
+    findCommonContext(Lcom/intellij/psi/PsiElement;Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiElement;
+    findCommonContext(Ljava/util/Collection;)Lcom/intellij/psi/PsiElement;
+    findCommonContext([Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiElement;
+    findCommonParent(Lcom/intellij/psi/PsiElement;Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiElement;
+    findCommonParent(Ljava/util/List;)Lcom/intellij/psi/PsiElement;
+    findCommonParent([Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiElement;
+    findFirstParent(Lcom/intellij/psi/PsiElement;Lcom/intellij/openapi/util/Condition;)Lcom/intellij/psi/PsiElement;
+    findFirstParent(Lcom/intellij/psi/PsiElement;ZLcom/intellij/openapi/util/Condition;)Lcom/intellij/psi/PsiElement;
+    findPrevParent(Lcom/intellij/psi/PsiElement;Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiElement;
+    firstChild(Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiElement;
+    getChildOfAnyType(Lcom/intellij/psi/PsiElement;[Ljava/lang/Class;)Lcom/intellij/psi/PsiElement;
+    getChildOfType(Lcom/intellij/psi/PsiElement;Ljava/lang/Class;)Lcom/intellij/psi/PsiElement;
+    getChildrenOfType(Lcom/intellij/psi/PsiElement;Ljava/lang/Class;)[Lcom/intellij/psi/PsiElement;
+    getChildrenOfTypeAsList(Lcom/intellij/psi/PsiElement;Ljava/lang/Class;)Ljava/util/List;
+    getContextOfType(Lcom/intellij/psi/PsiElement;Ljava/lang/Class;Z)Lcom/intellij/psi/PsiElement;
+    getContextOfType(Lcom/intellij/psi/PsiElement;Ljava/lang/Class;Z[Ljava/lang/Class;)Lcom/intellij/psi/PsiElement;
+    getContextOfType(Lcom/intellij/psi/PsiElement;Z[Ljava/lang/Class;)Lcom/intellij/psi/PsiElement;
+    getContextOfType(Lcom/intellij/psi/PsiElement;[Ljava/lang/Class;)Lcom/intellij/psi/PsiElement;
+    getContexts(Lcom/intellij/psi/PsiElement;Lcom/intellij/psi/PsiElement;)Ljava/util/ArrayList;
+    getDeepestFirst(Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiElement;
+    getDeepestLast(Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiElement;
+    getNextSiblingOfType(Lcom/intellij/psi/PsiElement;Ljava/lang/Class;)Lcom/intellij/psi/PsiElement;
+    getNonStrictParentOfType(Lcom/intellij/psi/PsiElement;[Ljava/lang/Class;)Lcom/intellij/psi/PsiElement;
+    getParentOfType(Lcom/intellij/psi/PsiElement;Ljava/lang/Class;)Lcom/intellij/psi/PsiElement;
+    getParentOfType(Lcom/intellij/psi/PsiElement;Ljava/lang/Class;Z)Lcom/intellij/psi/PsiElement;
+    getParentOfType(Lcom/intellij/psi/PsiElement;Ljava/lang/Class;ZI)Lcom/intellij/psi/PsiElement;
+    getParentOfType(Lcom/intellij/psi/PsiElement;Ljava/lang/Class;Z[Ljava/lang/Class;)Lcom/intellij/psi/PsiElement;
+    getParentOfType(Lcom/intellij/psi/PsiElement;[Ljava/lang/Class;)Lcom/intellij/psi/PsiElement;
+    getParents(Lcom/intellij/psi/PsiElement;Lcom/intellij/psi/PsiElement;)Ljava/util/ArrayList;
+    getPrevSiblingOfType(Lcom/intellij/psi/PsiElement;Ljava/lang/Class;)Lcom/intellij/psi/PsiElement;
+    getRequiredChildOfType(Lcom/intellij/psi/PsiElement;Ljava/lang/Class;)Lcom/intellij/psi/PsiElement;
+    getStubOrPsiParent(Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiElement;
+    getStubOrPsiParentOfType(Lcom/intellij/psi/PsiElement;Ljava/lang/Class;)Lcom/intellij/psi/PsiElement;
+    getTopmostParentOfType(Lcom/intellij/psi/PsiElement;Ljava/lang/Class;)Lcom/intellij/psi/PsiElement;
+    hasErrorElements(Lcom/intellij/psi/PsiElement;)Z
+    instanceOf(Ljava/lang/Object;[Ljava/lang/Class;)Z
+    isAncestor(Lcom/intellij/psi/PsiElement;Lcom/intellij/psi/PsiElement;Z)Z
+    isContextAncestor(Lcom/intellij/psi/PsiElement;Lcom/intellij/psi/PsiElement;Z)Z
+    lastChild(Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiElement;
+    nextLeaf(Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiElement;
+    nextLeaf(Lcom/intellij/psi/PsiElement;Z)Lcom/intellij/psi/PsiElement;
+    nextVisibleLeaf(Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiElement;
+    prevLeaf(Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiElement;
+    prevLeaf(Lcom/intellij/psi/PsiElement;Z)Lcom/intellij/psi/PsiElement;
+    prevVisibleLeaf(Lcom/intellij/psi/PsiElement;)Lcom/intellij/psi/PsiElement;
+    processElements(Lcom/intellij/psi/PsiElement;Lcom/intellij/psi/search/PsiElementProcessor;)Z
+    processElements(Lcom/intellij/psi/search/PsiElementProcessor;[Lcom/intellij/psi/PsiElement;)Z
+    skipParentsOfType(Lcom/intellij/psi/PsiElement;[Ljava/lang/Class;)Lcom/intellij/psi/PsiElement;
+    skipSiblingsBackward(Lcom/intellij/psi/PsiElement;[Ljava/lang/Class;)Lcom/intellij/psi/PsiElement;
+    skipSiblingsForward(Lcom/intellij/psi/PsiElement;[Ljava/lang/Class;)Lcom/intellij/psi/PsiElement;
+    treeWalkUp(Lcom/intellij/psi/PsiElement;Lcom/intellij/psi/PsiElement;Lcom/intellij/util/PairProcessor;)Z
+com/intellij/psi/util/PsiTreeUtil$1
+    val$classes
+    val$element
+    val$strict
+    <init>(ZLcom/intellij/psi/PsiElement;[Ljava/lang/Class;)V
+    execute(Lcom/intellij/psi/PsiElement;)Z
+com/intellij/psi/util/PsiTreeUtil$2
+    val$classes
+    val$element
+    <init>(Lcom/intellij/psi/PsiElement;[Ljava/lang/Class;)V
+    execute(Lcom/intellij/psi/PsiElement;)Z
+com/intellij/psi/util/PsiTreeUtil$3
+    val$classes
+    <init>([Ljava/lang/Class;)V
+    isAccepted(Lcom/intellij/psi/PsiElement;)Z
+com/intellij/psi/util/PsiTreeUtil$4
+    val$processor
+    val$result
+    <init>(Lcom/intellij/psi/search/PsiElementProcessor;[Z)V
+    visitElement(Lcom/intellij/psi/PsiElement;)V
+com/intellij/psi/util/PsiTreeUtil$5
+    next
+    val$aClass
+    val$element
+    <init>(Lcom/intellij/psi/PsiElement;Ljava/lang/Class;)V
+    hasNext()Z
+    next()Ljava/lang/Object;
+    remove()V
+com/intellij/psi/util/PsiUtil
+    $assertionsDisabled
+    BY_POSITION
+    FILE_LANGUAGE_LEVEL_KEY
+    LOG
+    VALID_VOID_TYPE_IN_CODE_FRAGMENT
+    accessModifiers
+    <clinit>()V
+    ensureValidType(Lcom/intellij/psi/PsiType;)V
+    ensureValidType(Lcom/intellij/psi/PsiType;Ljava/lang/String;)V
+    isRawSubstitutor(Lcom/intellij/psi/PsiTypeParameterListOwner;Lcom/intellij/psi/PsiSubstitutor;)Z
+    typeParametersIterable(Lcom/intellij/psi/PsiTypeParameterListOwner;)Ljava/lang/Iterable;
+com/intellij/psi/util/PsiUtil$1
+    <init>()V
+    compare(Lcom/intellij/psi/PsiElement;Lcom/intellij/psi/PsiElement;)I
+    compare(Ljava/lang/Object;Ljava/lang/Object;)I
+com/intellij/psi/util/PsiUtilCore
+    LOG
+    NULL_PSI_ELEMENT
+    NULL_PSI_FILE
+    <clinit>()V
+    compareElementsByPosition(Lcom/intellij/psi/PsiElement;Lcom/intellij/psi/PsiElement;)I
+    ensureValid(Lcom/intellij/psi/PsiElement;)V
+    toPsiElementArray(Ljava/util/Collection;)[Lcom/intellij/psi/PsiElement;
+com/intellij/psi/util/PsiUtilCore$1
+    compute()Ljava/lang/Object;
+com/intellij/psi/util/PsiUtilCore$NullPsiElement
+    <init>()V
+    <init>(Lcom/intellij/psi/util/PsiUtilCore$1;)V
+    accept(Lcom/intellij/psi/PsiElementVisitor;)V
+    acceptChildren(Lcom/intellij/psi/PsiElementVisitor;)V
+    createException()Lcom/intellij/psi/PsiInvalidElementAccessException;
+    getChildren()[Lcom/intellij/psi/PsiElement;
+    getContainingFile()Lcom/intellij/psi/PsiFile;
+    getContext()Lcom/intellij/psi/PsiElement;
+    getFirstChild()Lcom/intellij/psi/PsiElement;
+    getLanguage()Lcom/intellij/lang/Language;
+    getLastChild()Lcom/intellij/psi/PsiElement;
+    getNavigationElement()Lcom/intellij/psi/PsiElement;
+    getNextSibling()Lcom/intellij/psi/PsiElement;
+    getOriginalElement()Lcom/intellij/psi/PsiElement;
+    getParent()Lcom/intellij/psi/PsiElement;
+    getPrevSibling()Lcom/intellij/psi/PsiElement;
+    getReference()Lcom/intellij/psi/PsiReference;
+    getReferences()[Lcom/intellij/psi/PsiReference;
+    getStartOffsetInParent()I
+    getText()Ljava/lang/String;
+    getTextLength()I
+    getTextOffset()I
+    getTextRange()Lcom/intellij/openapi/util/TextRange;
+    isPhysical()Z
+    isValid()Z
+    isWritable()Z
+    textContains(C)Z
+    textMatches(Lcom/intellij/psi/PsiElement;)Z
+    textMatches(Ljava/lang/CharSequence;)Z
+    textToCharArray()[C
+    toString()Ljava/lang/String;
+com/intellij/psi/util/PsiUtilCore$NullPsiFile
+    <init>()V
+    <init>(Lcom/intellij/psi/util/PsiUtilCore$1;)V
+    getModificationStamp()J
+    getOriginalFile()Lcom/intellij/psi/PsiFile;
+    getParent()Lcom/intellij/psi/PsiFileSystemItem;
+    toString()Ljava/lang/String;
+com/intellij/reference/SoftReference
+    <init>(Ljava/lang/Object;)V
+    <init>(Ljava/lang/Object;Ljava/lang/ref/ReferenceQueue;)V
+    deref(Lcom/intellij/openapi/util/Getter;)Ljava/lang/Object;
+    dereference(Ljava/lang/ref/Reference;)Ljava/lang/Object;
+com/intellij/util/ArrayFactory
+    create(I)[Ljava/lang/Object;
+com/intellij/util/ArrayUtil
+    $assertionsDisabled
+    EMPTY_BOOLEAN_ARRAY
+    EMPTY_BYTE_ARRAY
+    EMPTY_CHAR_ARRAY
+    EMPTY_CHAR_SEQUENCE
+    EMPTY_CLASS_ARRAY
+    EMPTY_COLLECTION_ARRAY
+    EMPTY_FILE_ARRAY
+    EMPTY_INT_ARRAY
+    EMPTY_LONG_ARRAY
+    EMPTY_OBJECT_ARRAY
+    EMPTY_RUNNABLE_ARRAY
+    EMPTY_SHORT_ARRAY
+    EMPTY_STRING_ARRAY
+    OBJECT_ARRAY_FACTORY
+    STRING_ARRAY_FACTORY
+    <clinit>()V
+    append([II)[I
+    append([Ljava/lang/Object;Ljava/lang/Object;Lcom/intellij/util/ArrayFactory;)[Ljava/lang/Object;
+    contains(Ljava/lang/String;[Ljava/lang/String;)Z
+    ensureExactSize(I[Ljava/lang/Object;)[Ljava/lang/Object;
+    newIntArray(I)[I
+    newObjectArray(I)[Ljava/lang/Object;
+    prepend(Ljava/lang/Object;[Ljava/lang/Object;)[Ljava/lang/Object;
+    prepend(Ljava/lang/Object;[Ljava/lang/Object;Ljava/lang/Class;)[Ljava/lang/Object;
+    realloc([II)[I
+    realloc([Ljava/lang/Object;ILcom/intellij/util/ArrayFactory;)[Ljava/lang/Object;
+    remove([II)[I
+    remove([Ljava/lang/Object;ILcom/intellij/util/ArrayFactory;)[Ljava/lang/Object;
+    toObjectArray(Ljava/util/Collection;Ljava/lang/Class;)[Ljava/lang/Object;
+com/intellij/util/ArrayUtil$1
+    <init>()V
+    create(I)[Ljava/lang/Object;
+com/intellij/util/ArrayUtil$2
+    <init>()V
+    create(I)[Ljava/lang/Object;
+com/intellij/util/ArrayUtilRt
+    EMPTY_BOOLEAN_ARRAY
+    EMPTY_BYTE_ARRAY
+    EMPTY_CHAR_ARRAY
+    EMPTY_CLASS_ARRAY
+    EMPTY_COLLECTION_ARRAY
+    EMPTY_FILE_ARRAY
+    EMPTY_INT_ARRAY
+    EMPTY_LONG_ARRAY
+    EMPTY_OBJECT_ARRAY
+    EMPTY_RUNNABLE_ARRAY
+    EMPTY_SHORT_ARRAY
+    EMPTY_STRING_ARRAY
+    <clinit>()V
+com/intellij/util/BitUtil
+    $assertionsDisabled
+    <clinit>()V
+    assertOneBitMask(J)V
+    isSet(BB)Z
+    isSet(II)Z
+    notSet(II)Z
+com/intellij/util/ConcurrencyUtil
+    cacheOrGet(Ljava/util/concurrent/ConcurrentMap;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+com/intellij/util/Consumer
+    EMPTY_CONSUMER
+    <clinit>()V
+    consume(Ljava/lang/Object;)V
+com/intellij/util/Consumer$1
+    <init>()V
+    consume(Ljava/lang/Object;)V
+com/intellij/util/Function
+    ID
+    NULL
+    TO_STRING
+    <clinit>()V
+    fun(Ljava/lang/Object;)Ljava/lang/Object;
+com/intellij/util/Function$1
+    <init>()V
+com/intellij/util/Function$2
+    <init>()V
+    fun(Ljava/lang/Object;)Ljava/lang/Object;
+com/intellij/util/Function$Mono
+com/intellij/util/IncorrectOperationException
+    <init>()V
+    <init>(Ljava/lang/String;)V
+    <init>(Ljava/lang/String;Ljava/lang/Exception;)V
+    <init>(Ljava/lang/String;Ljava/lang/Throwable;)V
+    <init>(Ljava/lang/Throwable;)V
+com/intellij/util/NotNullFunction
+    fun(Ljava/lang/Object;)Ljava/lang/Object;
+com/intellij/util/NotNullProducer
+    produce()Ljava/lang/Object;
+com/intellij/util/NullableFunction
+    NULL
+    <clinit>()V
+    fun(Ljava/lang/Object;)Ljava/lang/Object;
+com/intellij/util/NullableFunction$1
+    <init>()V
+    fun(Ljava/lang/Object;)Ljava/lang/Object;
+com/intellij/util/ObjectUtils
+    NULL
+    <clinit>()V
+    notNull(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+com/intellij/util/PairProcessor
+    FALSE
+    TRUE
+    <clinit>()V
+    process(Ljava/lang/Object;Ljava/lang/Object;)Z
+com/intellij/util/PairProcessor$1
+    <init>()V
+    process(Ljava/lang/Object;Ljava/lang/Object;)Z
+com/intellij/util/PairProcessor$2
+    <init>()V
+    process(Ljava/lang/Object;Ljava/lang/Object;)Z
+com/intellij/util/Producer
+    produce()Ljava/lang/Object;
+com/intellij/util/ReflectionUtil
+    $assertionsDisabled
+    LOG
+    acquireConstructorAccessorMethod
+    getConstructorAccessorMethod
+    <clinit>()V
+    filterRealMethods([Ljava/lang/reflect/Method;)Ljava/util/List;
+    findAssignableField(Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/String;)Ljava/lang/reflect/Field;
+    findMethod(Ljava/util/Collection;Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;
+    getClassDeclaredMethods(Ljava/lang/Class;Z)Ljava/util/List;
+    getDeclaredMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;
+    getStaticFieldValue(Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/String;)Ljava/lang/Object;
+    processFields(Ljava/lang/Class;Lcom/intellij/openapi/util/Condition;)Ljava/lang/reflect/Field;
+com/intellij/util/ReflectionUtil$2
+    val$fieldName
+    val$fieldType
+    <init>(Ljava/lang/String;Ljava/lang/Class;)V
+    value(Ljava/lang/Object;)Z
+    value(Ljava/lang/reflect/Field;)Z
+com/intellij/util/SmartList
+    myElem
+    mySize
+    <init>()V
+    <init>(Ljava/lang/Object;)V
+    <init>(Ljava/util/Collection;)V
+    <init>([Ljava/lang/Object;)V
+    access$000(Lcom/intellij/util/SmartList;)I
+    access$100(Lcom/intellij/util/SmartList;)Ljava/lang/Object;
+    access$200(Lcom/intellij/util/SmartList;)I
+    access$300(Lcom/intellij/util/SmartList;)I
+    add(ILjava/lang/Object;)V
+    add(Ljava/lang/Object;)Z
+    clear()V
+    get(I)Ljava/lang/Object;
+    getModificationCount()I
+    iterator()Ljava/util/Iterator;
+    remove(I)Ljava/lang/Object;
+    set(ILjava/lang/Object;)Ljava/lang/Object;
+    size()I
+    sort(Ljava/util/Comparator;)V
+    toArray([Ljava/lang/Object;)[Ljava/lang/Object;
+    trimToSize()V
+com/intellij/util/SystemProperties
+    getBooleanProperty(Ljava/lang/String;Z)Z
+    getJavaVendor()Ljava/lang/String;
+    getJavaVmVendor()Ljava/lang/String;
+    getLineSeparator()Ljava/lang/String;
+    getUserHome()Ljava/lang/String;
+com/intellij/util/TimeoutUtil
+    sleep(J)V
+com/intellij/util/WalkingState
+    $assertionsDisabled
+    isDown
+    myWalker
+    startedWalking
+    stopped
+    <clinit>()V
+    <init>(Lcom/intellij/util/WalkingState$TreeGuide;)V
+    elementFinished(Ljava/lang/Object;)V
+    elementStarted(Ljava/lang/Object;)V
+    next(Ljava/lang/Object;Ljava/lang/Object;Z)Ljava/lang/Object;
+    visit(Ljava/lang/Object;)V
+    walkChildren(Ljava/lang/Object;)V
+com/intellij/util/WalkingState$TreeGuide
+    getFirstChild(Ljava/lang/Object;)Ljava/lang/Object;
+    getNextSibling(Ljava/lang/Object;)Ljava/lang/Object;
+    getParent(Ljava/lang/Object;)Ljava/lang/Object;
+    getPrevSibling(Ljava/lang/Object;)Ljava/lang/Object;
+com/intellij/util/concurrency/AtomicFieldUpdater
+    offset
+    unsafe
+    <clinit>()V
+    <init>(Ljava/lang/Class;Ljava/lang/Class;)V
+    compareAndSet(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Z
+    forFieldOfType(Ljava/lang/Class;Ljava/lang/Class;)Lcom/intellij/util/concurrency/AtomicFieldUpdater;
+    getTheOnlyVolatileFieldOfClass(Ljava/lang/Class;Ljava/lang/Class;)Ljava/lang/reflect/Field;
+    getUnsafe()Lsun/misc/Unsafe;
+com/intellij/util/containers/ConcurrentHashMap
+    ABASE
+    ASHIFT
+    BASECOUNT
+    CELLSBUSY
+    CELLVALUE
+    DEFAULT_CAPACITY
+    HASH_BITS
+    LOAD_FACTOR
+    MAXIMUM_CAPACITY
+    MAX_ARRAY_SIZE
+    MAX_RESIZERS
+    MIN_TRANSFER_STRIDE
+    MIN_TREEIFY_CAPACITY
+    MOVED
+    NCPU
+    RESIZE_STAMP_BITS
+    RESIZE_STAMP_SHIFT
+    SIZECTL
+    THIS
+    TRANSFERINDEX
+    TREEBIN
+    TREEIFY_THRESHOLD
+    U
+    UNTREEIFY_THRESHOLD
+    baseCount
+    cellsBusy
+    counterCells
+    entrySet
+    keySet
+    myHashingStrategy
+    nextTable
+    sizeCtl
+    table
+    transferIndex
+    values
+    <clinit>()V
+    <init>()V
+    <init>(I)V
+    <init>(IF)V
+    <init>(IFI)V
+    <init>(IFILgnu/trove/TObjectHashingStrategy;)V
+    <init>(Lgnu/trove/TObjectHashingStrategy;)V
+    <init>(Ljava/util/Map;)V
+    access$1300(Ljava/lang/Object;)Ljava/lang/Class;
+    access$1400(Ljava/lang/Class;Ljava/lang/Object;Ljava/lang/Object;)I
+    access$2400(Lcom/intellij/util/containers/ConcurrentHashMap;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+    access$2600(Lcom/intellij/util/containers/ConcurrentHashMap;Ljava/lang/Object;)I
+    access$2700(Lcom/intellij/util/containers/ConcurrentHashMap;Ljava/lang/Object;Ljava/lang/Object;)Z
+    access$2800(Lcom/intellij/util/containers/ConcurrentHashMap;)J
+    access$2900(Lcom/intellij/util/containers/ConcurrentHashMap;)[Lcom/intellij/util/containers/ConcurrentHashMap$Node;
+    access$3000(Lcom/intellij/util/containers/ConcurrentHashMap;Ljava/lang/Object;Ljava/lang/Object;Z)Ljava/lang/Object;
+    access$700([Lcom/intellij/util/containers/ConcurrentHashMap$Node;I)Lcom/intellij/util/containers/ConcurrentHashMap$Node;
+    access$800(Ljava/lang/Object;Ljava/lang/Object;Lgnu/trove/TObjectHashingStrategy;)Z
+    addCount(JI)V
+    casTabAt([Lcom/intellij/util/containers/ConcurrentHashMap$Node;ILcom/intellij/util/containers/ConcurrentHashMap$Node;Lcom/intellij/util/containers/ConcurrentHashMap$Node;)Z
+    clear()V
+    comparableClassFor(Ljava/lang/Object;)Ljava/lang/Class;
+    compareComparables(Ljava/lang/Class;Ljava/lang/Object;Ljava/lang/Object;)I
+    computeHashCode(Ljava/lang/Object;)I
+    containsKey(Ljava/lang/Object;)Z
+    containsValue(Ljava/lang/Object;)Z
+    elements()Ljava/util/Enumeration;
+    entrySet()Ljava/util/Set;
+    equals(Ljava/lang/Object;)Z
+    equals(Ljava/lang/Object;Ljava/lang/Object;)Z
+    fullAddCount(JZ)V
+    get(Ljava/lang/Object;)Ljava/lang/Object;
+    getOrDefault(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+    hash(Ljava/lang/Object;)I
+    hashCode()I
+    helpTransfer([Lcom/intellij/util/containers/ConcurrentHashMap$Node;Lcom/intellij/util/containers/ConcurrentHashMap$Node;)[Lcom/intellij/util/containers/ConcurrentHashMap$Node;
+    initTable()[Lcom/intellij/util/containers/ConcurrentHashMap$Node;
+    isEmpty()Z
+    isEqual(Ljava/lang/Object;Ljava/lang/Object;)Z
+    isEqual(Ljava/lang/Object;Ljava/lang/Object;Lgnu/trove/TObjectHashingStrategy;)Z
+    keySet()Ljava/util/Set;
+    keys()Ljava/util/Enumeration;
+    mappingCount()J
+    newKeySet()Lcom/intellij/util/containers/ConcurrentHashMap$KeySetView;
+    put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+    putAll(Ljava/util/Map;)V
+    putIfAbsent(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+    putVal(Ljava/lang/Object;Ljava/lang/Object;Z)Ljava/lang/Object;
+    remove(Ljava/lang/Object;)Ljava/lang/Object;
+    remove(Ljava/lang/Object;Ljava/lang/Object;)Z
+    replace(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+    replace(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Z
+    replaceNode(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+    resizeStamp(I)I
+    setTabAt([Lcom/intellij/util/containers/ConcurrentHashMap$Node;ILcom/intellij/util/containers/ConcurrentHashMap$Node;)V
+    size()I
+    spread(I)I
+    sumCount()J
+    tabAt([Lcom/intellij/util/containers/ConcurrentHashMap$Node;I)Lcom/intellij/util/containers/ConcurrentHashMap$Node;
+    tableSizeFor(I)I
+    toString()Ljava/lang/String;
+    transfer([Lcom/intellij/util/containers/ConcurrentHashMap$Node;[Lcom/intellij/util/containers/ConcurrentHashMap$Node;)V
+    treeifyBin([Lcom/intellij/util/containers/ConcurrentHashMap$Node;I)V
+    tryPresize(I)V
+    untreeify(Lcom/intellij/util/containers/ConcurrentHashMap$Node;)Lcom/intellij/util/containers/ConcurrentHashMap$Node;
+    values()Ljava/util/Collection;
+com/intellij/util/containers/ConcurrentHashMap$1
+    <init>()V
+    computeHashCode(Ljava/lang/Object;)I
+    equals(Ljava/lang/Object;Ljava/lang/Object;)Z
+com/intellij/util/containers/ConcurrentHashMap$BaseIterator
+    map
+    <init>([Lcom/intellij/util/containers/ConcurrentHashMap$Node;IIILcom/intellij/util/containers/ConcurrentHashMap;)V
+    <init>([Lcom/intellij/util/containers/ConcurrentHashMap$Node;IIILcom/intellij/util/containers/ConcurrentHashMap;Lcom/intellij/util/containers/ConcurrentHashMap$1;)V
+com/intellij/util/containers/ConcurrentHashMap$CollectionView
+    map
+    <init>(Lcom/intellij/util/containers/ConcurrentHashMap;)V
+    clear()V
+    contains(Ljava/lang/Object;)Z
+    containsAll(Ljava/util/Collection;)Z
+    getMap()Lcom/intellij/util/containers/ConcurrentHashMap;
+    isEmpty()Z
+    iterator()Ljava/util/Iterator;
+    remove(Ljava/lang/Object;)Z
+    removeAll(Ljava/util/Collection;)Z
+    retainAll(Ljava/util/Collection;)Z
+    size()I
+    toArray()[Ljava/lang/Object;
+    toArray([Ljava/lang/Object;)[Ljava/lang/Object;
+    toString()Ljava/lang/String;
+com/intellij/util/containers/ConcurrentHashMap$CounterCell
+    value
+    <init>(J)V
+com/intellij/util/containers/ConcurrentHashMap$EntrySetView
+    <init>(Lcom/intellij/util/containers/ConcurrentHashMap;)V
+    <init>(Lcom/intellij/util/containers/ConcurrentHashMap;Lcom/intellij/util/containers/ConcurrentHashMap$1;)V
+    add(Ljava/lang/Object;)Z
+    add(Ljava/util/Map$Entry;)Z
+    addAll(Ljava/util/Collection;)Z
+    contains(Ljava/lang/Object;)Z
+    equals(Ljava/lang/Object;)Z
+    hashCode()I
+    iterator()Ljava/util/Iterator;
+    remove(Ljava/lang/Object;)Z
+com/intellij/util/containers/ConcurrentHashMap$ForwardingNode
+    nextTable
+    <init>([Lcom/intellij/util/containers/ConcurrentHashMap$Node;Lgnu/trove/TObjectHashingStrategy;)V
+    <init>([Lcom/intellij/util/containers/ConcurrentHashMap$Node;Lgnu/trove/TObjectHashingStrategy;Lcom/intellij/util/containers/ConcurrentHashMap$1;)V
+    access$900(Lcom/intellij/util/containers/ConcurrentHashMap$ForwardingNode;)[Lcom/intellij/util/containers/ConcurrentHashMap$Node;
+    find(ILjava/lang/Object;)Lcom/intellij/util/containers/ConcurrentHashMap$Node;
+com/intellij/util/containers/ConcurrentHashMap$KeyIterator
+    <init>([Lcom/intellij/util/containers/ConcurrentHashMap$Node;IIILcom/intellij/util/containers/ConcurrentHashMap;)V
+    next()Ljava/lang/Object;
+    nextElement()Ljava/lang/Object;
+com/intellij/util/containers/ConcurrentHashMap$KeySetView
+    value
+    <init>(Lcom/intellij/util/containers/ConcurrentHashMap;Ljava/lang/Object;)V
+    add(Ljava/lang/Object;)Z
+    addAll(Ljava/util/Collection;)Z
+    contains(Ljava/lang/Object;)Z
+    equals(Ljava/lang/Object;)Z
+    getMappedValue()Ljava/lang/Object;
+    hashCode()I
+    iterator()Ljava/util/Iterator;
+    remove(Ljava/lang/Object;)Z
+com/intellij/util/containers/ConcurrentHashMap$Node
+    hash
+    key
+    myHashingStrategy
+    next
+    val
+    <init>(ILjava/lang/Object;Ljava/lang/Object;Lcom/intellij/util/containers/ConcurrentHashMap$Node;Lgnu/trove/TObjectHashingStrategy;)V
+    equals(Ljava/lang/Object;)Z
+    find(ILjava/lang/Object;)Lcom/intellij/util/containers/ConcurrentHashMap$Node;
+    getKey()Ljava/lang/Object;
+    getValue()Ljava/lang/Object;
+    hashCode()I
+    setValue(Ljava/lang/Object;)Ljava/lang/Object;
+    toString()Ljava/lang/String;
+com/intellij/util/containers/ConcurrentHashMap$TableStack
+    index
+    length
+    next
+    tab
+    <init>()V
+    <init>(Lcom/intellij/util/containers/ConcurrentHashMap$1;)V
+    access$1900(Lcom/intellij/util/containers/ConcurrentHashMap$TableStack;)Lcom/intellij/util/containers/ConcurrentHashMap$TableStack;
+    access$1902(Lcom/intellij/util/containers/ConcurrentHashMap$TableStack;Lcom/intellij/util/containers/ConcurrentHashMap$TableStack;)Lcom/intellij/util/containers/ConcurrentHashMap$TableStack;
+    access$2100(Lcom/intellij/util/containers/ConcurrentHashMap$TableStack;)[Lcom/intellij/util/containers/ConcurrentHashMap$Node;
+    access$2102(Lcom/intellij/util/containers/ConcurrentHashMap$TableStack;[Lcom/intellij/util/containers/ConcurrentHashMap$Node;)[Lcom/intellij/util/containers/ConcurrentHashMap$Node;
+    access$2200(Lcom/intellij/util/containers/ConcurrentHashMap$TableStack;)I
+    access$2202(Lcom/intellij/util/containers/ConcurrentHashMap$TableStack;I)I
+    access$2300(Lcom/intellij/util/containers/ConcurrentHashMap$TableStack;)I
+    access$2302(Lcom/intellij/util/containers/ConcurrentHashMap$TableStack;I)I
+com/intellij/util/containers/ConcurrentHashMap$Traverser
+    baseIndex
+    baseLimit
+    baseSize
+    index
+    next
+    spare
+    stack
+    tab
+    <init>([Lcom/intellij/util/containers/ConcurrentHashMap$Node;III)V
+    <init>([Lcom/intellij/util/containers/ConcurrentHashMap$Node;IIILcom/intellij/util/containers/ConcurrentHashMap$1;)V
+    advance()Lcom/intellij/util/containers/ConcurrentHashMap$Node;
+    pushState([Lcom/intellij/util/containers/ConcurrentHashMap$Node;II)V
+    recoverState(I)V
+com/intellij/util/containers/ConcurrentHashMap$TreeBin
+    $assertionsDisabled
+    LOCKSTATE
+    U
+    first
+    lockState
+    root
+    waiter
+    <clinit>()V
+    <init>(Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;Lgnu/trove/TObjectHashingStrategy;)V
+    <init>(Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;Lgnu/trove/TObjectHashingStrategy;Lcom/intellij/util/containers/ConcurrentHashMap$1;)V
+    access$100(Lcom/intellij/util/containers/ConcurrentHashMap$TreeBin;ILjava/lang/Object;Ljava/lang/Object;)Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;
+    access$200(Lcom/intellij/util/containers/ConcurrentHashMap$TreeBin;)Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;
+    access$400(Lcom/intellij/util/containers/ConcurrentHashMap$TreeBin;Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;)Z
+    access$500(Lcom/intellij/util/containers/ConcurrentHashMap$TreeBin;)Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;
+    balanceDeletion(Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;)Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;
+    balanceInsertion(Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;)Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;
+    checkInvariants(Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;)Z
+    contendedLock()V
+    find(ILjava/lang/Object;)Lcom/intellij/util/containers/ConcurrentHashMap$Node;
+    lockRoot()V
+    putTreeVal(ILjava/lang/Object;Ljava/lang/Object;)Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;
+    removeTreeNode(Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;)Z
+    rotateLeft(Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;)Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;
+    rotateRight(Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;)Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;
+    tieBreakOrder(Ljava/lang/Object;Ljava/lang/Object;)I
+    unlockRoot()V
+com/intellij/util/containers/ConcurrentHashMap$TreeNode
+    left
+    parent
+    prev
+    red
+    right
+    <init>(ILjava/lang/Object;Ljava/lang/Object;Lcom/intellij/util/containers/ConcurrentHashMap$Node;Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;Lgnu/trove/TObjectHashingStrategy;)V
+    access$1100(Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;)Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;
+    access$1102(Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;)Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;
+    access$1500(Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;)Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;
+    access$1502(Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;)Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;
+    access$1600(Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;)Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;
+    access$1602(Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;)Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;
+    access$1700(Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;)Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;
+    access$1702(Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;)Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;
+    access$1800(Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;)Z
+    access$1802(Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;Z)Z
+    access$300(Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;ILjava/lang/Object;Ljava/lang/Class;)Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;
+    find(ILjava/lang/Object;)Lcom/intellij/util/containers/ConcurrentHashMap$Node;
+    findTreeNode(ILjava/lang/Object;Ljava/lang/Class;)Lcom/intellij/util/containers/ConcurrentHashMap$TreeNode;
+com/intellij/util/containers/ConcurrentHashMap$ValueIterator
+    <init>([Lcom/intellij/util/containers/ConcurrentHashMap$Node;IIILcom/intellij/util/containers/ConcurrentHashMap;)V
+    next()Ljava/lang/Object;
+    nextElement()Ljava/lang/Object;
+com/intellij/util/containers/ConcurrentHashMap$ValuesView
+    <init>(Lcom/intellij/util/containers/ConcurrentHashMap;)V
+    add(Ljava/lang/Object;)Z
+    addAll(Ljava/util/Collection;)Z
+    contains(Ljava/lang/Object;)Z
+    iterator()Ljava/util/Iterator;
+    remove(Ljava/lang/Object;)Z
+com/intellij/util/containers/ConcurrentIntObjectHashMap
+    ABASE
+    ASHIFT
+    BASECOUNT
+    CELLSBUSY
+    CELLVALUE
+    DEFAULT_CAPACITY
+    HASH_BITS
+    MAXIMUM_CAPACITY
+    MAX_ARRAY_SIZE
+    MAX_RESIZERS
+    MIN_TRANSFER_STRIDE
+    MIN_TREEIFY_CAPACITY
+    MOVED
+    NCPU
+    RESERVED
+    RESIZE_STAMP_BITS
+    RESIZE_STAMP_SHIFT
+    SIZECTL
+    TRANSFERINDEX
+    TREEBIN
+    TREEIFY_THRESHOLD
+    U
+    UNTREEIFY_THRESHOLD
+    baseCount
+    cellsBusy
+    counterCells
+    entrySet
+    nextTable
+    sizeCtl
+    table
+    transferIndex
+    values
+    <clinit>()V
+    <init>()V
+    <init>(I)V
+    <init>(IF)V
+    <init>(IFI)V
+    access$000()Lsun/misc/Unsafe;
+    addCount(JI)V
+    cacheOrGet(ILjava/lang/Object;)Ljava/lang/Object;
+    casTabAt([Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$Node;ILcom/intellij/util/containers/ConcurrentIntObjectHashMap$Node;Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$Node;)Z
+    clear()V
+    contains(Ljava/lang/Object;)Z
+    containsKey(I)Z
+    containsValue(Ljava/lang/Object;)Z
+    elements()Ljava/util/Enumeration;
+    entries()Ljava/lang/Iterable;
+    entrySet()Ljava/util/Set;
+    equals(Ljava/lang/Object;)Z
+    fullAddCount(JZ)V
+    get(I)Ljava/lang/Object;
+    getOrDefault(ILjava/lang/Object;)Ljava/lang/Object;
+    getUnsafe()Lsun/misc/Unsafe;
+    hashCode()I
+    helpTransfer([Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$Node;Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$Node;)[Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$Node;
+    initTable()[Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$Node;
+    isEmpty()Z
+    keys()[I
+    mappingCount()J
+    put(ILjava/lang/Object;)Ljava/lang/Object;
+    putIfAbsent(ILjava/lang/Object;)Ljava/lang/Object;
+    putVal(ILjava/lang/Object;Z)Ljava/lang/Object;
+    remove(I)Ljava/lang/Object;
+    remove(ILjava/lang/Object;)Z
+    replace(ILjava/lang/Object;)Ljava/lang/Object;
+    replace(ILjava/lang/Object;Ljava/lang/Object;)Z
+    replaceNode(ILjava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+    resizeStamp(I)I
+    setTabAt([Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$Node;ILcom/intellij/util/containers/ConcurrentIntObjectHashMap$Node;)V
+    size()I
+    spread(I)I
+    sumCount()J
+    tabAt([Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$Node;I)Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$Node;
+    tableSizeFor(I)I
+    toString()Ljava/lang/String;
+    transfer([Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$Node;[Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$Node;)V
+    treeifyBin([Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$Node;I)V
+    tryPresize(I)V
+    untreeify(Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$Node;)Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$Node;
+    values()Ljava/util/Collection;
+com/intellij/util/containers/ConcurrentIntObjectHashMap$BaseIterator
+    map
+    <init>([Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$Node;IIILcom/intellij/util/containers/ConcurrentIntObjectHashMap;)V
+com/intellij/util/containers/ConcurrentIntObjectHashMap$CollectionView
+    map
+    <init>(Lcom/intellij/util/containers/ConcurrentIntObjectHashMap;)V
+    clear()V
+    contains(Ljava/lang/Object;)Z
+    containsAll(Ljava/util/Collection;)Z
+    getMap()Lcom/intellij/util/containers/ConcurrentIntObjectHashMap;
+    isEmpty()Z
+    iterator()Ljava/util/Iterator;
+    remove(Ljava/lang/Object;)Z
+    removeAll(Ljava/util/Collection;)Z
+    retainAll(Ljava/util/Collection;)Z
+    size()I
+    toArray()[Ljava/lang/Object;
+    toArray([Ljava/lang/Object;)[Ljava/lang/Object;
+    toString()Ljava/lang/String;
+com/intellij/util/containers/ConcurrentIntObjectHashMap$EntrySetView
+    <init>(Lcom/intellij/util/containers/ConcurrentIntObjectHashMap;)V
+    add(Lcom/intellij/util/containers/ConcurrentIntObjectMap$IntEntry;)Z
+    add(Ljava/lang/Object;)Z
+    addAll(Ljava/util/Collection;)Z
+    contains(Ljava/lang/Object;)Z
+    equals(Ljava/lang/Object;)Z
+    hashCode()I
+    iterator()Ljava/util/Iterator;
+    remove(Ljava/lang/Object;)Z
+com/intellij/util/containers/ConcurrentIntObjectHashMap$ForwardingNode
+    nextTable
+    <init>([Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$Node;)V
+    find(II)Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$Node;
+com/intellij/util/containers/ConcurrentIntObjectHashMap$Node
+    hash
+    key
+    next
+    val
+    <init>(IILjava/lang/Object;Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$Node;)V
+    find(II)Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$Node;
+    getKey()I
+    getValue()Ljava/lang/Object;
+    hashCode()I
+com/intellij/util/containers/ConcurrentIntObjectHashMap$TableStack
+    index
+    length
+    next
+    tab
+    <init>()V
+com/intellij/util/containers/ConcurrentIntObjectHashMap$Traverser
+    baseIndex
+    baseLimit
+    baseSize
+    index
+    next
+    spare
+    stack
+    tab
+    <init>([Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$Node;III)V
+    advance()Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$Node;
+    pushState([Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$Node;II)V
+    recoverState(I)V
+com/intellij/util/containers/ConcurrentIntObjectHashMap$TreeBin
+    $assertionsDisabled
+    LOCKSTATE
+    U
+    first
+    lockState
+    root
+    waiter
+    <clinit>()V
+    <init>(Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$TreeNode;)V
+    balanceDeletion(Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$TreeNode;Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$TreeNode;)Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$TreeNode;
+    balanceInsertion(Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$TreeNode;Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$TreeNode;)Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$TreeNode;
+    checkInvariants(Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$TreeNode;)Z
+    contendedLock()V
+    find(II)Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$Node;
+    getAndAddInt(Ljava/lang/Object;JI)I
+    lockRoot()V
+    putTreeVal(IILjava/lang/Object;)Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$TreeNode;
+    removeTreeNode(Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$TreeNode;)Z
+    rotateLeft(Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$TreeNode;Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$TreeNode;)Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$TreeNode;
+    rotateRight(Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$TreeNode;Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$TreeNode;)Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$TreeNode;
+    unlockRoot()V
+com/intellij/util/containers/ConcurrentIntObjectHashMap$TreeNode
+    left
+    parent
+    prev
+    red
+    right
+    <init>(IILjava/lang/Object;Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$Node;Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$TreeNode;)V
+    find(II)Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$Node;
+    findTreeNode(II)Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$TreeNode;
+com/intellij/util/containers/ConcurrentIntObjectHashMap$ValueIterator
+    <init>([Lcom/intellij/util/containers/ConcurrentIntObjectHashMap$Node;IIILcom/intellij/util/containers/ConcurrentIntObjectHashMap;)V
+    next()Ljava/lang/Object;
+    nextElement()Ljava/lang/Object;
+com/intellij/util/containers/ConcurrentIntObjectHashMap$ValuesView
+    <init>(Lcom/intellij/util/containers/ConcurrentIntObjectHashMap;)V
+    add(Ljava/lang/Object;)Z
+    addAll(Ljava/util/Collection;)Z
+    contains(Ljava/lang/Object;)Z
+    iterator()Ljava/util/Iterator;
+    remove(Ljava/lang/Object;)Z
+com/intellij/util/containers/ConcurrentIntObjectMap
+    cacheOrGet(ILjava/lang/Object;)Ljava/lang/Object;
+    clear()V
+    containsKey(I)Z
+    containsValue(Ljava/lang/Object;)Z
+    elements()Ljava/util/Enumeration;
+    entries()Ljava/lang/Iterable;
+    get(I)Ljava/lang/Object;
+    isEmpty()Z
+    keys()[I
+    put(ILjava/lang/Object;)Ljava/lang/Object;
+    putIfAbsent(ILjava/lang/Object;)Ljava/lang/Object;
+    remove(I)Ljava/lang/Object;
+    remove(ILjava/lang/Object;)Z
+    replace(ILjava/lang/Object;Ljava/lang/Object;)Z
+    size()I
+    values()Ljava/util/Collection;
+com/intellij/util/containers/ConcurrentIntObjectMap$IntEntry
+    getKey()I
+    getValue()Ljava/lang/Object;
+com/intellij/util/containers/ConcurrentList
+    addAllAbsent(Ljava/util/Collection;)I
+    addIfAbsent(Ljava/lang/Object;)Z
+com/intellij/util/containers/ConcurrentLongObjectHashMap
+    ABASE
+    ASHIFT
+    BASECOUNT
+    CELLSBUSY
+    CELLVALUE
+    DEFAULT_CAPACITY
+    HASH_BITS
+    MAXIMUM_CAPACITY
+    MAX_ARRAY_SIZE
+    MAX_RESIZERS
+    MIN_TRANSFER_STRIDE
+    MIN_TREEIFY_CAPACITY
+    MOVED
+    NCPU
+    RESERVED
+    RESIZE_STAMP_BITS
+    RESIZE_STAMP_SHIFT
+    SIZECTL
+    TRANSFERINDEX
+    TREEBIN
+    TREEIFY_THRESHOLD
+    U
+    UNTREEIFY_THRESHOLD
+    baseCount
+    cellsBusy
+    counterCells
+    entrySet
+    nextTable
+    sizeCtl
+    table
+    transferIndex
+    values
+    <clinit>()V
+    <init>()V
+    <init>(I)V
+    <init>(IF)V
+    <init>(IFI)V
+    access$000()Lsun/misc/Unsafe;
+    addCount(JI)V
+    cacheOrGet(JLjava/lang/Object;)Ljava/lang/Object;
+    casTabAt([Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$Node;ILcom/intellij/util/containers/ConcurrentLongObjectHashMap$Node;Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$Node;)Z
+    clear()V
+    contains(Ljava/lang/Object;)Z
+    containsKey(J)Z
+    containsValue(Ljava/lang/Object;)Z
+    elements()Ljava/util/Enumeration;
+    entries()Ljava/lang/Iterable;
+    entrySet()Ljava/util/Set;
+    equals(Ljava/lang/Object;)Z
+    fullAddCount(JZ)V
+    get(J)Ljava/lang/Object;
+    getOrDefault(JLjava/lang/Object;)Ljava/lang/Object;
+    getUnsafe()Lsun/misc/Unsafe;
+    hashCode()I
+    helpTransfer([Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$Node;Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$Node;)[Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$Node;
+    initTable()[Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$Node;
+    isEmpty()Z
+    keys()[J
+    mappingCount()J
+    put(JLjava/lang/Object;)Ljava/lang/Object;
+    putIfAbsent(JLjava/lang/Object;)Ljava/lang/Object;
+    putVal(JLjava/lang/Object;Z)Ljava/lang/Object;
+    remove(J)Ljava/lang/Object;
+    remove(JLjava/lang/Object;)Z
+    replace(JLjava/lang/Object;)Ljava/lang/Object;
+    replace(JLjava/lang/Object;Ljava/lang/Object;)Z
+    replaceNode(JLjava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+    resizeStamp(I)I
+    setTabAt([Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$Node;ILcom/intellij/util/containers/ConcurrentLongObjectHashMap$Node;)V
+    size()I
+    spread(J)I
+    sumCount()J
+    tabAt([Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$Node;I)Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$Node;
+    tableSizeFor(I)I
+    toString()Ljava/lang/String;
+    transfer([Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$Node;[Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$Node;)V
+    treeifyBin([Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$Node;I)V
+    tryPresize(I)V
+    untreeify(Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$Node;)Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$Node;
+    values()Ljava/util/Collection;
+com/intellij/util/containers/ConcurrentLongObjectHashMap$BaseIterator
+    map
+    <init>([Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$Node;IIILcom/intellij/util/containers/ConcurrentLongObjectHashMap;)V
+com/intellij/util/containers/ConcurrentLongObjectHashMap$CollectionView
+    map
+    <init>(Lcom/intellij/util/containers/ConcurrentLongObjectHashMap;)V
+    clear()V
+    contains(Ljava/lang/Object;)Z
+    containsAll(Ljava/util/Collection;)Z
+    getMap()Lcom/intellij/util/containers/ConcurrentLongObjectHashMap;
+    isEmpty()Z
+    iterator()Ljava/util/Iterator;
+    remove(Ljava/lang/Object;)Z
+    removeAll(Ljava/util/Collection;)Z
+    retainAll(Ljava/util/Collection;)Z
+    size()I
+    toArray()[Ljava/lang/Object;
+    toArray([Ljava/lang/Object;)[Ljava/lang/Object;
+    toString()Ljava/lang/String;
+com/intellij/util/containers/ConcurrentLongObjectHashMap$EntrySetView
+    <init>(Lcom/intellij/util/containers/ConcurrentLongObjectHashMap;)V
+    add(Lcom/intellij/util/containers/ConcurrentLongObjectMap$LongEntry;)Z
+    add(Ljava/lang/Object;)Z
+    addAll(Ljava/util/Collection;)Z
+    contains(Ljava/lang/Object;)Z
+    equals(Ljava/lang/Object;)Z
+    hashCode()I
+    iterator()Ljava/util/Iterator;
+    remove(Ljava/lang/Object;)Z
+com/intellij/util/containers/ConcurrentLongObjectHashMap$ForwardingNode
+    nextTable
+    <init>([Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$Node;)V
+    find(IJ)Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$Node;
+com/intellij/util/containers/ConcurrentLongObjectHashMap$Node
+    hash
+    key
+    next
+    val
+    <init>(IJLjava/lang/Object;Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$Node;)V
+    find(IJ)Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$Node;
+    getKey()J
+    getValue()Ljava/lang/Object;
+    hashCode()I
+com/intellij/util/containers/ConcurrentLongObjectHashMap$TableStack
+    index
+    length
+    next
+    tab
+    <init>()V
+com/intellij/util/containers/ConcurrentLongObjectHashMap$Traverser
+    baseIndex
+    baseLimit
+    baseSize
+    index
+    next
+    spare
+    stack
+    tab
+    <init>([Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$Node;III)V
+    advance()Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$Node;
+    pushState([Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$Node;II)V
+    recoverState(I)V
+com/intellij/util/containers/ConcurrentLongObjectHashMap$TreeBin
+    $assertionsDisabled
+    LOCKSTATE
+    U
+    first
+    lockState
+    root
+    waiter
+    <clinit>()V
+    <init>(Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$TreeNode;)V
+    balanceDeletion(Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$TreeNode;Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$TreeNode;)Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$TreeNode;
+    balanceInsertion(Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$TreeNode;Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$TreeNode;)Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$TreeNode;
+    checkInvariants(Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$TreeNode;)Z
+    contendedLock()V
+    find(IJ)Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$Node;
+    getAndAddInt(Ljava/lang/Object;JI)I
+    lockRoot()V
+    putTreeVal(IJLjava/lang/Object;)Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$TreeNode;
+    removeTreeNode(Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$TreeNode;)Z
+    rotateLeft(Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$TreeNode;Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$TreeNode;)Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$TreeNode;
+    rotateRight(Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$TreeNode;Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$TreeNode;)Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$TreeNode;
+    unlockRoot()V
+com/intellij/util/containers/ConcurrentLongObjectHashMap$TreeNode
+    left
+    parent
+    prev
+    red
+    right
+    <init>(IJLjava/lang/Object;Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$Node;Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$TreeNode;)V
+    find(IJ)Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$Node;
+    findTreeNode(IJ)Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$TreeNode;
+com/intellij/util/containers/ConcurrentLongObjectHashMap$ValueIterator
+    <init>([Lcom/intellij/util/containers/ConcurrentLongObjectHashMap$Node;IIILcom/intellij/util/containers/ConcurrentLongObjectHashMap;)V
+    next()Ljava/lang/Object;
+    nextElement()Ljava/lang/Object;
+com/intellij/util/containers/ConcurrentLongObjectHashMap$ValuesView
+    <init>(Lcom/intellij/util/containers/ConcurrentLongObjectHashMap;)V
+    add(Ljava/lang/Object;)Z
+    addAll(Ljava/util/Collection;)Z
+    contains(Ljava/lang/Object;)Z
+    iterator()Ljava/util/Iterator;
+    remove(Ljava/lang/Object;)Z
+com/intellij/util/containers/ConcurrentLongObjectMap
+    cacheOrGet(JLjava/lang/Object;)Ljava/lang/Object;
+    clear()V
+    containsKey(J)Z
+    containsValue(Ljava/lang/Object;)Z
+    elements()Ljava/util/Enumeration;
+    entries()Ljava/lang/Iterable;
+    get(J)Ljava/lang/Object;
+    isEmpty()Z
+    keys()[J
+    put(JLjava/lang/Object;)Ljava/lang/Object;
+    putIfAbsent(JLjava/lang/Object;)Ljava/lang/Object;
+    remove(J)Ljava/lang/Object;
+    remove(JLjava/lang/Object;)Z
+    replace(JLjava/lang/Object;)Ljava/lang/Object;
+    replace(JLjava/lang/Object;Ljava/lang/Object;)Z
+    size()I
+    values()Ljava/util/Collection;
+com/intellij/util/containers/ConcurrentLongObjectMap$LongEntry
+    getKey()J
+    getValue()Ljava/lang/Object;
+com/intellij/util/containers/ConcurrentRefValueIntObjectHashMap
+    myMap
+    myQueue
+    <init>()V
+    cacheOrGet(ILjava/lang/Object;)Ljava/lang/Object;
+    clear()V
+    containsKey(I)Z
+    containsValue(Ljava/lang/Object;)Z
+    createReference(ILjava/lang/Object;Ljava/lang/ref/ReferenceQueue;)Lcom/intellij/util/containers/ConcurrentRefValueIntObjectHashMap$IntReference;
+    elements()Ljava/util/Enumeration;
+    entries()Ljava/lang/Iterable;
+    get(I)Ljava/lang/Object;
+    isEmpty()Z
+    keys()[I
+    processQueue()V
+    put(ILjava/lang/Object;)Ljava/lang/Object;
+    putIfAbsent(ILjava/lang/Object;)Ljava/lang/Object;
+    remove(I)Ljava/lang/Object;
+    remove(ILjava/lang/Object;)Z
+    replace(ILjava/lang/Object;Ljava/lang/Object;)Z
+    size()I
+    values()Ljava/util/Collection;
+com/intellij/util/containers/ConcurrentRefValueIntObjectHashMap$IntReference
+    get()Ljava/lang/Object;
+    getKey()I
+com/intellij/util/containers/ConcurrentWeakValueIntObjectHashMap
+    <init>()V
+    createReference(ILjava/lang/Object;Ljava/lang/ref/ReferenceQueue;)Lcom/intellij/util/containers/ConcurrentRefValueIntObjectHashMap$IntReference;
+com/intellij/util/containers/ConcurrentWeakValueIntObjectHashMap$MyRef
+    hash
+    key
+    <init>(ILjava/lang/Object;Ljava/lang/ref/ReferenceQueue;)V
+    equals(Ljava/lang/Object;)Z
+    getKey()I
+    hashCode()I
+com/intellij/util/containers/ContainerUtil
+    $assertionsDisabled
+    CHM_FACTORY
+    DEFAULT_CONCURRENCY_LEVEL
+    LOG
+    PLATFORM_MAP_FACTORY
+    V8_MAP_FACTORY
+    <clinit>()V
+    access$200()I
+    addAll(Ljava/util/Collection;Ljava/util/Enumeration;)V
+    addAll(Ljava/util/Collection;[Ljava/lang/Object;)Ljava/util/Collection;
+    canonicalStrategy()Lgnu/trove/TObjectHashingStrategy;
+    createConcurrentIntObjectMap()Lcom/intellij/util/containers/ConcurrentIntObjectMap;
+    createConcurrentIntObjectWeakValueMap()Lcom/intellij/util/containers/ConcurrentIntObjectMap;
+    createConcurrentList()Lcom/intellij/util/containers/ConcurrentList;
+    createLockFreeCopyOnWriteList()Ljava/util/List;
+    emptyList()Ljava/util/List;
+    findAll(Ljava/util/Collection;Lcom/intellij/openapi/util/Condition;)Ljava/util/List;
+    isAtLeastJava7()Z
+    newArrayList()Ljava/util/ArrayList;
+    newArrayList(Ljava/lang/Iterable;)Ljava/util/ArrayList;
+    newConcurrentMap()Ljava/util/concurrent/ConcurrentMap;
+    skipNulls(Ljava/util/Collection;)Ljava/util/List;
+com/intellij/util/containers/ContainerUtil$18
+    <init>()V
+    createMap()Ljava/util/concurrent/ConcurrentMap;
+    createMap(I)Ljava/util/concurrent/ConcurrentMap;
+    createMap(IFI)Ljava/util/concurrent/ConcurrentMap;
+    createMap(IFILgnu/trove/TObjectHashingStrategy;)Ljava/util/concurrent/ConcurrentMap;
+    createMap(Lgnu/trove/TObjectHashingStrategy;)Ljava/util/concurrent/ConcurrentMap;
+com/intellij/util/containers/ContainerUtil$19
+    <init>()V
+    createMap()Ljava/util/concurrent/ConcurrentMap;
+    createMap(I)Ljava/util/concurrent/ConcurrentMap;
+    createMap(IFI)Ljava/util/concurrent/ConcurrentMap;
+    createMap(IFILgnu/trove/TObjectHashingStrategy;)Ljava/util/concurrent/ConcurrentMap;
+    createMap(Lgnu/trove/TObjectHashingStrategy;)Ljava/util/concurrent/ConcurrentMap;
+com/intellij/util/containers/ContainerUtil$ConcurrentMapFactory
+    createMap()Ljava/util/concurrent/ConcurrentMap;
+    createMap(I)Ljava/util/concurrent/ConcurrentMap;
+    createMap(IFI)Ljava/util/concurrent/ConcurrentMap;
+    createMap(IFILgnu/trove/TObjectHashingStrategy;)Ljava/util/concurrent/ConcurrentMap;
+    createMap(Lgnu/trove/TObjectHashingStrategy;)Ljava/util/concurrent/ConcurrentMap;
+com/intellij/util/containers/ContainerUtilRt
+    copy(Ljava/util/Collection;Ljava/lang/Iterable;)Ljava/util/Collection;
+    emptyList()Ljava/util/List;
+    newArrayList()Ljava/util/ArrayList;
+    newArrayList(Ljava/lang/Iterable;)Ljava/util/ArrayList;
+com/intellij/util/containers/ContainerUtilRt$EmptyList
+    INSTANCE
+    <clinit>()V
+    <init>()V
+    access$000()Lcom/intellij/util/containers/ContainerUtilRt$EmptyList;
+    contains(Ljava/lang/Object;)Z
+    get(I)Ljava/lang/Object;
+    iterator()Ljava/util/Iterator;
+    size()I
+    toArray()[Ljava/lang/Object;
+    toArray([Ljava/lang/Object;)[Ljava/lang/Object;
+com/intellij/util/containers/EmptyIterable
+    INSTANCE
+    <clinit>()V
+    <init>()V
+    getInstance()Lcom/intellij/util/containers/EmptyIterable;
+    iterator()Ljava/util/Iterator;
+com/intellij/util/containers/FactoryMap
+    myMap
+    ourGuard
+    <clinit>()V
+    <init>()V
+    clear()V
+    containsKey(Ljava/lang/Object;)Z
+    containsValue(Ljava/lang/Object;)Z
+    create(Ljava/lang/Object;)Ljava/lang/Object;
+    createMap()Ljava/util/Map;
+    entrySet()Ljava/util/Set;
+    get(Ljava/lang/Object;)Ljava/lang/Object;
+    getKey(Ljava/lang/Object;)Ljava/lang/Object;
+    getMap()Ljava/util/Map;
+    isEmpty()Z
+    keySet()Ljava/util/Set;
+    notNullValues()Ljava/util/Collection;
+    put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+    putAll(Ljava/util/Map;)V
+    remove(Ljava/lang/Object;)Ljava/lang/Object;
+    removeValue(Ljava/lang/Object;)Z
+    size()I
+    values()Ljava/util/Collection;
+com/intellij/util/containers/LockFreeCopyOnWriteArrayList
+    ARRAY_UPDATER
+    array
+    <clinit>()V
+    <init>()V
+    <init>(Ljava/util/Collection;)V
+    add(ILjava/lang/Object;)V
+    add(Ljava/lang/Object;)Z
+    addAll(ILjava/util/Collection;)Z
+    addAll(Ljava/util/Collection;)Z
+    addAllAbsent(Ljava/util/Collection;)I
+    addIfAbsent(Ljava/lang/Object;)Z
+    clear()V
+    contains(Ljava/lang/Object;)Z
+    containsAll(Ljava/util/Collection;)Z
+    createArrayAdd([Ljava/lang/Object;ILjava/lang/Object;)[Ljava/lang/Object;
+    createArrayAdd([Ljava/lang/Object;Ljava/lang/Object;)[Ljava/lang/Object;
+    createArrayAddAll([Ljava/lang/Object;I[Ljava/lang/Object;)[Ljava/lang/Object;
+    createArrayAddAll([Ljava/lang/Object;[Ljava/lang/Object;)[Ljava/lang/Object;
+    createArrayRemove([Ljava/lang/Object;I)[Ljava/lang/Object;
+    createArrayRemove([Ljava/lang/Object;Ljava/lang/Object;)[Ljava/lang/Object;
+    createArrayRemoveAll([Ljava/lang/Object;Ljava/util/Collection;)[Ljava/lang/Object;
+    createArrayRetainAll([Ljava/lang/Object;Ljava/util/Collection;)[Ljava/lang/Object;
+    createArraySet([Ljava/lang/Object;ILjava/lang/Object;)[Ljava/lang/Object;
+    eq(Ljava/lang/Object;Ljava/lang/Object;)Z
+    equals(Ljava/lang/Object;)Z
+    get(I)Ljava/lang/Object;
+    get([Ljava/lang/Object;I)Ljava/lang/Object;
+    getArray()[Ljava/lang/Object;
+    hashCode()I
+    indexOf(Ljava/lang/Object;)I
+    indexOf(Ljava/lang/Object;I)I
+    indexOf(Ljava/lang/Object;[Ljava/lang/Object;II)I
+    isEmpty()Z
+    iterator()Ljava/util/Iterator;
+    lastIndexOf(Ljava/lang/Object;)I
+    lastIndexOf(Ljava/lang/Object;I)I
+    lastIndexOf(Ljava/lang/Object;[Ljava/lang/Object;I)I
+    listIterator()Ljava/util/ListIterator;
+    listIterator(I)Ljava/util/ListIterator;
+    remove(I)Ljava/lang/Object;
+    remove(Ljava/lang/Object;)Z
+    removeAll(Ljava/util/Collection;)Z
+    removeRange(II)V
+    replaceArray([Ljava/lang/Object;[Ljava/lang/Object;)Z
+    retainAll(Ljava/util/Collection;)Z
+    set(ILjava/lang/Object;)Ljava/lang/Object;
+    size()I
+    subList(II)Ljava/util/List;
+    toArray()[Ljava/lang/Object;
+    toArray([Ljava/lang/Object;)[Ljava/lang/Object;
+    toString()Ljava/lang/String;
+com/intellij/util/containers/Stack
+    <init>()V
+    <init>(I)V
+    <init>(Ljava/util/Collection;)V
+    <init>([Ljava/lang/Object;)V
+    empty()Z
+    equals(Ljava/lang/Object;)Z
+    peek()Ljava/lang/Object;
+    pop()Ljava/lang/Object;
+    push(Ljava/lang/Object;)V
+    tryPop()Ljava/lang/Object;
+com/intellij/util/containers/ThreadLocalRandom
+    probeGenerator
+    seeder
+    tlr
+    <clinit>()V
+    advanceProbe(I)I
+    getProbe()I
+    localInit()V
+    mix64(J)J
+com/intellij/util/containers/ThreadLocalRandom$1
+    <init>()V
+    initialValue()Ljava/lang/Object;
+com/intellij/util/containers/ThreadLocalRandom$Tlr
+    threadLocalRandomProbe
+    threadLocalRandomSeed
+com/intellij/util/indexing/ID
+    $assertionsDisabled
+    ourNameToIdRegistry
+    ourRegistry
+    <clinit>()V
+    getEnumFile()Ljava/io/File;
+    writeEnumFile()V
+com/intellij/util/indexing/ID$1
+    val$names
+    <init>([Ljava/lang/String;)V
+    execute(Ljava/lang/Object;I)Z
+    execute(Ljava/lang/String;I)Z
+com/intellij/util/io/AbstractStringEnumerator
+    markCorrupted()V
+com/intellij/util/io/DataEnumerator
+    enumerate(Ljava/lang/Object;)I
+    valueOf(I)Ljava/lang/Object;
+com/intellij/util/io/DataInputOutputUtil
+    readINT(Ljava/io/DataInput;)I
+    readNAME(Ljava/io/DataInput;Lcom/intellij/util/io/AbstractStringEnumerator;)Lcom/intellij/util/io/StringRef;
+    writeINT(Ljava/io/DataOutput;I)V
+    writeNAME(Ljava/io/DataOutput;Ljava/lang/String;Lcom/intellij/util/io/AbstractStringEnumerator;)V
+com/intellij/util/io/DataOutputStream
+    <init>(Ljava/io/OutputStream;)V
+    getWrittenBytesCount()I
+    resetWrittenBytesCount()I
+    write(I)V
+    write([BII)V
+com/intellij/util/io/IOUtil
+    US_ASCII
+    ourByteBuffersUseNativeByteOrder
+    ourReadWriteBuffersCache
+    spareBufferLocal
+    <clinit>()V
+    allocReadWriteUTFBuffer()[B
+    readString(Ljava/io/DataInput;)Ljava/lang/String;
+    readUTFFast([BLjava/io/DataInput;)Ljava/lang/String;
+    writeString(Ljava/lang/String;Ljava/io/DataOutput;)V
+    writeUTFFast([BLjava/io/DataOutput;Ljava/lang/String;)V
+com/intellij/util/io/IOUtil$1
+    <init>()V
+    create()Ljava/lang/Object;
+com/intellij/util/io/IOUtil$2
+    <init>()V
+    create()Ljava/lang/Object;
+com/intellij/util/io/StringRef
+    EMPTY_ARRAY
+    id
+    name
+    store
+    <clinit>()V
+    <init>(ILcom/intellij/util/io/AbstractStringEnumerator;)V
+    fromStream(Ljava/io/DataInput;Lcom/intellij/util/io/AbstractStringEnumerator;)Lcom/intellij/util/io/StringRef;
+com/intellij/util/io/URLUtil
+    DATA_URI_PATTERN
+    URL_PATTERN
+    <clinit>()V
+    decode(C)I
+    splitJarUrl(Ljava/lang/String;)Lcom/intellij/openapi/util/Pair;
+    unescapePercentSequences(Ljava/lang/String;)Ljava/lang/String;
+com/intellij/util/keyFMap/ArrayBackedFMap
+    keys
+    values
+    <init>([I[Ljava/lang/Object;)V
+    get(Lcom/intellij/openapi/util/Key;)Ljava/lang/Object;
+    getKeys()[Lcom/intellij/openapi/util/Key;
+    getKeysByIndices([I)[Lcom/intellij/openapi/util/Key;
+    isEmpty()Z
+    minus(Lcom/intellij/openapi/util/Key;)Lcom/intellij/util/keyFMap/KeyFMap;
+    plus(Lcom/intellij/openapi/util/Key;Ljava/lang/Object;)Lcom/intellij/util/keyFMap/KeyFMap;
+    size()I
+    toString()Ljava/lang/String;
+com/intellij/util/keyFMap/EmptyFMap
+    EMPTY_KEYS_ARRAY
+    <clinit>()V
+    <init>()V
+    get(Lcom/intellij/openapi/util/Key;)Ljava/lang/Object;
+    getKeys()[Lcom/intellij/openapi/util/Key;
+    isEmpty()Z
+    minus(Lcom/intellij/openapi/util/Key;)Lcom/intellij/util/keyFMap/KeyFMap;
+    plus(Lcom/intellij/openapi/util/Key;Ljava/lang/Object;)Lcom/intellij/util/keyFMap/KeyFMap;
+    toString()Ljava/lang/String;
+com/intellij/util/keyFMap/KeyFMap
+    EMPTY_MAP
+    <clinit>()V
+    get(Lcom/intellij/openapi/util/Key;)Ljava/lang/Object;
+    getKeys()[Lcom/intellij/openapi/util/Key;
+    isEmpty()Z
+    minus(Lcom/intellij/openapi/util/Key;)Lcom/intellij/util/keyFMap/KeyFMap;
+    plus(Lcom/intellij/openapi/util/Key;Ljava/lang/Object;)Lcom/intellij/util/keyFMap/KeyFMap;
+    toString()Ljava/lang/String;
+com/intellij/util/keyFMap/OneElementFMap
+    myKey
+    myValue
+    <init>(Lcom/intellij/openapi/util/Key;Ljava/lang/Object;)V
+    get(Lcom/intellij/openapi/util/Key;)Ljava/lang/Object;
+    getKeys()[Lcom/intellij/openapi/util/Key;
+    isEmpty()Z
+    minus(Lcom/intellij/openapi/util/Key;)Lcom/intellij/util/keyFMap/KeyFMap;
+    plus(Lcom/intellij/openapi/util/Key;Ljava/lang/Object;)Lcom/intellij/util/keyFMap/KeyFMap;
+    toString()Ljava/lang/String;
+com/intellij/util/keyFMap/PairElementsFMap
+    $assertionsDisabled
+    key1
+    key2
+    value1
+    value2
+    <clinit>()V
+    <init>(Lcom/intellij/openapi/util/Key;Ljava/lang/Object;Lcom/intellij/openapi/util/Key;Ljava/lang/Object;)V
+    get(Lcom/intellij/openapi/util/Key;)Ljava/lang/Object;
+    getKeys()[Lcom/intellij/openapi/util/Key;
+    isEmpty()Z
+    minus(Lcom/intellij/openapi/util/Key;)Lcom/intellij/util/keyFMap/KeyFMap;
+    plus(Lcom/intellij/openapi/util/Key;Ljava/lang/Object;)Lcom/intellij/util/keyFMap/KeyFMap;
+    toString()Ljava/lang/String;
+com/intellij/util/messages/MessageBus
+    asyncPublisher(Lcom/intellij/util/messages/Topic;)Ljava/lang/Object;
+    connect()Lcom/intellij/util/messages/MessageBusConnection;
+    connect(Lcom/intellij/openapi/Disposable;)Lcom/intellij/util/messages/MessageBusConnection;
+    dispose()V
+    getParent()Lcom/intellij/util/messages/MessageBus;
+    syncPublisher(Lcom/intellij/util/messages/Topic;)Ljava/lang/Object;
+com/intellij/util/messages/MessageBusConnection
+    deliverImmediately()V
+    disconnect()V
+    setDefaultHandler(Lcom/intellij/util/messages/MessageHandler;)V
+    subscribe(Lcom/intellij/util/messages/Topic;)V
+    subscribe(Lcom/intellij/util/messages/Topic;Ljava/lang/Object;)V
+com/intellij/util/messages/MessageHandler
+    handle(Ljava/lang/reflect/Method;[Ljava/lang/Object;)V
+com/intellij/util/messages/Topic
+    myBroadcastDirection
+    myDisplayName
+    myListenerClass
+    <init>(Ljava/lang/String;Ljava/lang/Class;)V
+    <init>(Ljava/lang/String;Ljava/lang/Class;Lcom/intellij/util/messages/Topic$BroadcastDirection;)V
+com/intellij/util/messages/Topic$BroadcastDirection
+    $VALUES
+    NONE
+    TO_CHILDREN
+    TO_PARENT
+    <clinit>()V
+    <init>(Ljava/lang/String;I)V
+    valueOf(Ljava/lang/String;)Lcom/intellij/util/messages/Topic$BroadcastDirection;
+    values()[Lcom/intellij/util/messages/Topic$BroadcastDirection;
+com/intellij/util/text/CaseInsensitiveStringHashingStrategy
+    INSTANCE
+    <clinit>()V
+    <init>()V
+    computeHashCode(Ljava/lang/Object;)I
+    computeHashCode(Ljava/lang/String;)I
+    equals(Ljava/lang/Object;Ljava/lang/Object;)Z
+    equals(Ljava/lang/String;Ljava/lang/String;)Z
+com/intellij/util/text/CharArrayCharSequence
+    hash
+    myChars
+    myEnd
+    myStart
+    <init>([C)V
+    <init>([CII)V
+    charAt(I)C
+    equals(Ljava/lang/Object;)Z
+    getChars()[C
+    getChars([CI)V
+    hashCode()I
+    length()I
+    readCharsTo(I[CII)I
+    subSequence(II)Ljava/lang/CharSequence;
+    toString()Ljava/lang/String;
+com/intellij/util/text/CharSequenceBackedByArray
+    getChars()[C
+    getChars([CI)V
+com/intellij/util/text/FilePathHashingStrategy
+    create()Lgnu/trove/TObjectHashingStrategy;
+    create(Z)Lgnu/trove/TObjectHashingStrategy;
+gnu/trove/CanonicalEquality
+    <init>()V
+    equals(Ljava/lang/Object;Ljava/lang/Object;)Z
+gnu/trove/Equality
+    CANONICAL
+    IDENTITY
+    <clinit>()V
+    equals(Ljava/lang/Object;Ljava/lang/Object;)Z
+gnu/trove/HashFunctions
+    hash(I)I
+    hash(Ljava/lang/Object;)I
+gnu/trove/IdentityEquality
+    <init>()V
+    equals(Ljava/lang/Object;Ljava/lang/Object;)Z
+gnu/trove/PrimeFinder
+    primeCapacities
+    <clinit>()V
+    nextPrime(I)I
+gnu/trove/SerializationProcedure
+    exception
+    stream
+    <init>(Ljava/io/ObjectOutputStream;)V
+    execute(B)Z
+    execute(BB)Z
+    execute(BD)Z
+    execute(BF)Z
+    execute(BI)Z
+    execute(BJ)Z
+    execute(BLjava/lang/Object;)Z
+    execute(D)Z
+    execute(DB)Z
+    execute(DD)Z
+    execute(DF)Z
+    execute(DI)Z
+    execute(DJ)Z
+    execute(DLjava/lang/Object;)Z
+    execute(F)Z
+    execute(FB)Z
+    execute(FD)Z
+    execute(FF)Z
+    execute(FI)Z
+    execute(FJ)Z
+    execute(FLjava/lang/Object;)Z
+    execute(I)Z
+    execute(IB)Z
+    execute(ID)Z
+    execute(IF)Z
+    execute(II)Z
+    execute(IJ)Z
+    execute(ILjava/lang/Object;)Z
+    execute(J)Z
+    execute(JB)Z
+    execute(JD)Z
+    execute(JF)Z
+    execute(JI)Z
+    execute(JJ)Z
+    execute(JLjava/lang/Object;)Z
+    execute(Ljava/lang/Object;)Z
+    execute(Ljava/lang/Object;B)Z
+    execute(Ljava/lang/Object;D)Z
+    execute(Ljava/lang/Object;F)Z
+    execute(Ljava/lang/Object;I)Z
+    execute(Ljava/lang/Object;J)Z
+    execute(Ljava/lang/Object;Ljava/lang/Object;)Z
+gnu/trove/TByteByteProcedure
+    execute(BB)Z
+gnu/trove/TByteDoubleProcedure
+    execute(BD)Z
+gnu/trove/TByteFloatProcedure
+    execute(BF)Z
+gnu/trove/TByteIntProcedure
+    execute(BI)Z
+gnu/trove/TByteLongProcedure
+    execute(BJ)Z
+gnu/trove/TByteObjectProcedure
+    execute(BLjava/lang/Object;)Z
+gnu/trove/TByteProcedure
+    execute(B)Z
+gnu/trove/TDoubleByteProcedure
+    execute(DB)Z
+gnu/trove/TDoubleDoubleProcedure
+    execute(DD)Z
+gnu/trove/TDoubleFloatProcedure
+    execute(DF)Z
+gnu/trove/TDoubleIntProcedure
+    execute(DI)Z
+gnu/trove/TDoubleLongProcedure
+    execute(DJ)Z
+gnu/trove/TDoubleObjectProcedure
+    execute(DLjava/lang/Object;)Z
+gnu/trove/TDoubleProcedure
+    execute(D)Z
+gnu/trove/TFloatByteProcedure
+    execute(FB)Z
+gnu/trove/TFloatDoubleProcedure
+    execute(FD)Z
+gnu/trove/TFloatFloatProcedure
+    execute(FF)Z
+gnu/trove/TFloatIntProcedure
+    execute(FI)Z
+gnu/trove/TFloatLongProcedure
+    execute(FJ)Z
+gnu/trove/TFloatObjectProcedure
+    execute(FLjava/lang/Object;)Z
+gnu/trove/TFloatProcedure
+    execute(F)Z
+gnu/trove/THash
+    _deadkeys
+    _free
+    _loadFactor
+    _maxSize
+    _size
+    <init>()V
+    <init>(I)V
+    <init>(IF)V
+    calculateGrownCapacity()I
+    capacity()I
+    clear()V
+    clone()Ljava/lang/Object;
+    compact()V
+    compactIfNecessary()V
+    computeMaxSize(I)V
+    ensureCapacity(I)V
+    isEmpty()Z
+    postInsertHook(Z)V
+    rehash(I)V
+    removeAt(I)V
+    setUp(I)I
+    size()I
+    startCompactingOnRemove(Z)V
+    stopCompactingOnRemove()V
+    trimToSize()V
+gnu/trove/THashMap
+    _values
+    <init>()V
+    <init>(I)V
+    <init>(IF)V
+    <init>(IFLgnu/trove/TObjectHashingStrategy;)V
+    <init>(ILgnu/trove/TObjectHashingStrategy;)V
+    <init>(Lgnu/trove/TObjectHashingStrategy;)V
+    <init>(Ljava/util/Map;)V
+    <init>(Ljava/util/Map;Lgnu/trove/TObjectHashingStrategy;)V
+    clear()V
+    clone()Ljava/lang/Object;
+    containsKey(Ljava/lang/Object;)Z
+    containsValue(Ljava/lang/Object;)Z
+    entrySet()Ljava/util/Set;
+    equals(Ljava/lang/Object;)Z
+    forEachEntry(Lgnu/trove/TObjectObjectProcedure;)Z
+    forEachKey(Lgnu/trove/TObjectProcedure;)Z
+    forEachValue(Lgnu/trove/TObjectProcedure;)Z
+    get(Ljava/lang/Object;)Ljava/lang/Object;
+    hashCode()I
+    keySet()Ljava/util/Set;
+    put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+    putAll(Ljava/util/Map;)V
+    readObject(Ljava/io/ObjectInputStream;)V
+    rehash(I)V
+    remove(Ljava/lang/Object;)Ljava/lang/Object;
+    removeAt(I)V
+    retainEntries(Lgnu/trove/TObjectObjectProcedure;)Z
+    setUp(I)I
+    toString()Ljava/lang/String;
+    transformValues(Lgnu/trove/TObjectFunction;)V
+    values()Ljava/util/Collection;
+    writeObject(Ljava/io/ObjectOutputStream;)V
+gnu/trove/THashMap$1
+    this$0
+    val$sb
+    <init>(Lgnu/trove/THashMap;Ljava/lang/StringBuilder;)V
+    execute(Ljava/lang/Object;Ljava/lang/Object;)Z
+gnu/trove/THashMap$EqProcedure
+    _otherMap
+    <init>(Ljava/util/Map;)V
+    execute(Ljava/lang/Object;Ljava/lang/Object;)Z
+gnu/trove/THashMap$HashProcedure
+    h
+    this$0
+    <init>(Lgnu/trove/THashMap;)V
+    execute(Ljava/lang/Object;Ljava/lang/Object;)Z
+    getHashCode()I
+gnu/trove/TIntArrayList
+    _data
+    _pos
+    <init>()V
+    <init>(I)V
+    <init>([I)V
+    add(I)V
+    add([I)V
+    add([III)V
+    binarySearch(I)I
+    binarySearch(III)I
+    clear()V
+    clear(I)V
+    clone()Ljava/lang/Object;
+    contains(I)Z
+    ensureCapacity(I)V
+    equals(Ljava/lang/Object;)Z
+    fill(I)V
+    fill(III)V
+    forEach(Lgnu/trove/TIntProcedure;)Z
+    forEachDescending(Lgnu/trove/TIntProcedure;)Z
+    get(I)I
+    getQuick(I)I
+    getSet(II)I
+    grep(Lgnu/trove/TIntProcedure;)Lgnu/trove/TIntArrayList;
+    hashCode()I
+    indexOf(I)I
+    indexOf(II)I
+    insert(II)V
+    insert(I[I)V
+    insert(I[III)V
+    inverseGrep(Lgnu/trove/TIntProcedure;)Lgnu/trove/TIntArrayList;
+    isEmpty()Z
+    lastIndexOf(I)I
+    lastIndexOf(II)I
+    max()I
+    min()I
+    readObject(Ljava/io/ObjectInputStream;)V
+    remove(I)I
+    remove(II)V
+    reset()V
+    resetQuick()V
+    reverse()V
+    reverse(II)V
+    set(II)V
+    set(I[I)V
+    set(I[III)V
+    setQuick(II)V
+    shuffle(Ljava/util/Random;)V
+    size()I
+    sort()V
+    sort(II)V
+    swap(II)V
+    toNativeArray()[I
+    toNativeArray(II)[I
+    toNativeArray([III)V
+    toString()Ljava/lang/String;
+    transformValues(Lgnu/trove/TIntFunction;)V
+    trimToSize()V
+    writeObject(Ljava/io/ObjectOutputStream;)V
+gnu/trove/TIntArrayList$1
+    this$0
+    val$buf
+    <init>(Lgnu/trove/TIntArrayList;Ljava/lang/StringBuffer;)V
+    execute(I)Z
+gnu/trove/TIntByteProcedure
+    execute(IB)Z
+gnu/trove/TIntDoubleProcedure
+    execute(ID)Z
+gnu/trove/TIntFloatProcedure
+    execute(IF)Z
+gnu/trove/TIntFunction
+    execute(I)I
+gnu/trove/TIntHashingStrategy
+    computeHashCode(I)I
+gnu/trove/TIntIntProcedure
+    execute(II)Z
+gnu/trove/TIntLongProcedure
+    execute(IJ)Z
+gnu/trove/TIntObjectHashMap
+    _hashingStrategy
+    _set
+    _values
+    <init>()V
+    <init>(I)V
+    <init>(IF)V
+    <init>(IFLgnu/trove/TIntHashingStrategy;)V
+    <init>(ILgnu/trove/TIntHashingStrategy;)V
+    <init>(Lgnu/trove/TIntHashingStrategy;)V
+    capacity()I
+    clear()V
+    clone()Ljava/lang/Object;
+    computeHashCode(I)I
+    contains(I)Z
+    containsKey(I)Z
+    containsValue(Ljava/lang/Object;)Z
+    equals(Ljava/lang/Object;)Z
+    forEach(Lgnu/trove/TIntProcedure;)Z
+    forEachEntry(Lgnu/trove/TIntObjectProcedure;)Z
+    forEachKey(Lgnu/trove/TIntProcedure;)Z
+    forEachValue(Lgnu/trove/TObjectProcedure;)Z
+    get(I)Ljava/lang/Object;
+    getValues()[Ljava/lang/Object;
+    hashCode()I
+    index(I)I
+    insertionIndex(I)I
+    isFree([Ljava/lang/Object;I)Z
+    isFull([Ljava/lang/Object;I)Z
+    isRemoved([Ljava/lang/Object;I)Z
+    iterator()Lgnu/trove/TIntObjectIterator;
+    keys()[I
+    put(ILjava/lang/Object;)Ljava/lang/Object;
+    readObject(Ljava/io/ObjectInputStream;)V
+    rehash(I)V
+    remove(I)Ljava/lang/Object;
+    removeAt(I)V
+    retainEntries(Lgnu/trove/TIntObjectProcedure;)Z
+    setUp(I)I
+    toString()Ljava/lang/String;
+    transformValues(Lgnu/trove/TObjectFunction;)V
+    unwrapNull(Ljava/lang/Object;)Ljava/lang/Object;
+    wrapNull(Ljava/lang/Object;)Ljava/lang/Object;
+    writeObject(Ljava/io/ObjectOutputStream;)V
+gnu/trove/TIntObjectHashMap$1
+    this$0
+    val$sb
+    <init>(Lgnu/trove/TIntObjectHashMap;Ljava/lang/StringBuilder;)V
+    execute(ILjava/lang/Object;)Z
+gnu/trove/TIntObjectHashMap$EqProcedure
+    _otherMap
+    <init>(Lgnu/trove/TIntObjectHashMap;)V
+    eq(Ljava/lang/Object;Ljava/lang/Object;)Z
+    execute(ILjava/lang/Object;)Z
+gnu/trove/TIntObjectHashMap$HashProcedure
+    h
+    this$0
+    <init>(Lgnu/trove/TIntObjectHashMap;)V
+    execute(ILjava/lang/Object;)Z
+    getHashCode()I
+gnu/trove/TIntObjectIterator
+    _map
+    <init>(Lgnu/trove/TIntObjectHashMap;)V
+    nextIndex()I
+gnu/trove/TIntObjectProcedure
+    execute(ILjava/lang/Object;)Z
+gnu/trove/TIntProcedure
+    execute(I)Z
+gnu/trove/TIterator
+    _expectedSize
+    _hash
+    _index
+    <init>(Lgnu/trove/THash;)V
+    nextIndex()I
+gnu/trove/TLongByteProcedure
+    execute(JB)Z
+gnu/trove/TLongDoubleProcedure
+    execute(JD)Z
+gnu/trove/TLongFloatProcedure
+    execute(JF)Z
+gnu/trove/TLongIntProcedure
+    execute(JI)Z
+gnu/trove/TLongLongProcedure
+    execute(JJ)Z
+gnu/trove/TLongObjectProcedure
+    execute(JLjava/lang/Object;)Z
+gnu/trove/TLongProcedure
+    execute(J)Z
+gnu/trove/TObjectByteProcedure
+    execute(Ljava/lang/Object;B)Z
+gnu/trove/TObjectCanonicalHashingStrategy
+    <init>()V
+    computeHashCode(Ljava/lang/Object;)I
+    equals(Ljava/lang/Object;Ljava/lang/Object;)Z
+gnu/trove/TObjectDoubleProcedure
+    execute(Ljava/lang/Object;D)Z
+gnu/trove/TObjectFloatProcedure
+    execute(Ljava/lang/Object;F)Z
+gnu/trove/TObjectFunction
+    execute(Ljava/lang/Object;)Ljava/lang/Object;
+gnu/trove/TObjectHash
+    NULL
+    REMOVED
+    _hashingStrategy
+    _set
+    <clinit>()V
+    <init>()V
+    <init>(I)V
+    <init>(IF)V
+    <init>(IFLgnu/trove/TObjectHashingStrategy;)V
+    <init>(ILgnu/trove/TObjectHashingStrategy;)V
+    <init>(Lgnu/trove/TObjectHashingStrategy;)V
+    capacity()I
+    clone()Ljava/lang/Object;
+    computeHashCode(Ljava/lang/Object;)I
+    contains(Ljava/lang/Object;)Z
+    equals(Ljava/lang/Object;Ljava/lang/Object;)Z
+    forEach(Lgnu/trove/TObjectProcedure;)Z
+    index(Ljava/lang/Object;)I
+    insertionIndex(Ljava/lang/Object;)I
+    removeAt(I)V
+    setUp(I)I
+    throwObjectContractViolation(Ljava/lang/Object;Ljava/lang/Object;)V
+gnu/trove/TObjectHash$NULL
+    <init>()V
+gnu/trove/TObjectHashingStrategy
+    CANONICAL
+    IDENTITY
+    <clinit>()V
+    computeHashCode(Ljava/lang/Object;)I
+    equals(Ljava/lang/Object;Ljava/lang/Object;)Z
+gnu/trove/TObjectIdentityHashingStrategy
+    <init>()V
+    computeHashCode(Ljava/lang/Object;)I
+    equals(Ljava/lang/Object;Ljava/lang/Object;)Z
+gnu/trove/TObjectIntHashMap
+    _values
+    <init>()V
+    <init>(I)V
+    <init>(IF)V
+    <init>(IFLgnu/trove/TObjectHashingStrategy;)V
+    <init>(ILgnu/trove/TObjectHashingStrategy;)V
+    <init>(Lgnu/trove/TObjectHashingStrategy;)V
+    adjustValue(Ljava/lang/Object;I)Z
+    clear()V
+    containsKey(Ljava/lang/Object;)Z
+    containsValue(I)Z
+    equals(Ljava/lang/Object;)Z
+    forEachEntry(Lgnu/trove/TObjectIntProcedure;)Z
+    forEachKey(Lgnu/trove/TObjectProcedure;)Z
+    forEachValue(Lgnu/trove/TIntProcedure;)Z
+    get(Ljava/lang/Object;)I
+    getValues()[I
+    hashCode()I
+    increment(Ljava/lang/Object;)Z
+    iterator()Lgnu/trove/TObjectIntIterator;
+    keys()[Ljava/lang/Object;
+    put(Ljava/lang/Object;I)I
+    readObject(Ljava/io/ObjectInputStream;)V
+    rehash(I)V
+    remove(Ljava/lang/Object;)I
+    removeAt(I)V
+    retainEntries(Lgnu/trove/TObjectIntProcedure;)Z
+    setUp(I)I
+    toString()Ljava/lang/String;
+    transformValues(Lgnu/trove/TIntFunction;)V
+    writeObject(Ljava/io/ObjectOutputStream;)V
+gnu/trove/TObjectIntHashMap$1
+    this$0
+    val$sb
+    <init>(Lgnu/trove/TObjectIntHashMap;Ljava/lang/StringBuilder;)V
+    execute(Ljava/lang/Object;I)Z
+gnu/trove/TObjectIntHashMap$EqProcedure
+    _otherMap
+    <init>(Lgnu/trove/TObjectIntHashMap;)V
+    eq(II)Z
+    execute(Ljava/lang/Object;I)Z
+gnu/trove/TObjectIntHashMap$HashProcedure
+    h
+    this$0
+    <init>(Lgnu/trove/TObjectIntHashMap;)V
+    execute(Ljava/lang/Object;I)Z
+    getHashCode()I
+gnu/trove/TObjectIntIterator
+    _map
+    <init>(Lgnu/trove/TObjectIntHashMap;)V
+    nextIndex()I
+gnu/trove/TObjectIntProcedure
+    execute(Ljava/lang/Object;I)Z
+gnu/trove/TObjectLongProcedure
+    execute(Ljava/lang/Object;J)Z
+gnu/trove/TObjectObjectProcedure
+    execute(Ljava/lang/Object;Ljava/lang/Object;)Z
+gnu/trove/TObjectProcedure
+    execute(Ljava/lang/Object;)Z
+org/jetbrains/annotations/Contract
+    pure()Z
+    value()Ljava/lang/String;
+org/jetbrains/annotations/Nls
+    capitalization()Lorg/jetbrains/annotations/Nls$Capitalization;
+org/jetbrains/annotations/Nls$Capitalization
+    $VALUES
+    NotSpecified
+    Sentence
+    Title
+    <clinit>()V
+    <init>(Ljava/lang/String;I)V
+    valueOf(Ljava/lang/String;)Lorg/jetbrains/annotations/Nls$Capitalization;
+    values()[Lorg/jetbrains/annotations/Nls$Capitalization;
+org/jetbrains/annotations/NonNls
+org/jetbrains/annotations/NotNull
+    exception()Ljava/lang/Class;
+    value()Ljava/lang/String;
+org/jetbrains/annotations/Nullable
+    value()Ljava/lang/String;

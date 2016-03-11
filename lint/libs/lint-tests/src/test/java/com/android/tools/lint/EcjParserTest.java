@@ -36,6 +36,11 @@ import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LintUtilsTest;
 import com.android.tools.lint.detector.api.Project;
 import com.google.common.collect.Lists;
+import com.intellij.psi.JavaRecursiveElementVisitor;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiElementVisitor;
+import com.intellij.psi.PsiJavaFile;
 
 import org.intellij.lang.annotations.Language;
 import org.junit.Assert;
@@ -144,8 +149,11 @@ public class EcjParserTest extends AbstractCheckTest {
                 "    }\n" +
                 "}\n";
 
-        Node unit = LintUtilsTest.getCompilationUnit(testClass);
-        assertNotNull(unit);
+        // Make sure PSI parsing works here too
+        assertNotNull(LintUtilsTest.parsePsi(testClass).getJavaFile());
+        JavaContext context = LintUtilsTest.parse(testClass);
+        assertNotNull(context);
+        Node unit = context.getCompilationUnit();
 
         // Now print the AST back and make sure that it contains at least the essence of the AST
         TextFormatter formatter = new TextFormatter();

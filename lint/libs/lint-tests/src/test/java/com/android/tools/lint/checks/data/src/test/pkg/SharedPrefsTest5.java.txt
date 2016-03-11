@@ -43,7 +43,7 @@ class SharedPrefsTest5 {
         preferences.edit().putString(PREF_FOO, "bar").commit();
     }
 
-    private final SharedPreferences mPrefs;
+    private final SharedPreferences mPrefs = null;
 
     public void ok3() {
         final SharedPreferences.Editor editor = mPrefs.edit().putBoolean(

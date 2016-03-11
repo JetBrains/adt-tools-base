@@ -18,33 +18,29 @@ package com.android.tools.lint.checks;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser;
-import com.android.tools.lint.client.api.JavaParser.ResolvedField;
-import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
-import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
+import com.android.tools.lint.client.api.JavaEvaluator;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Detector;
-import com.android.tools.lint.detector.api.Detector.JavaScanner;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
+import com.intellij.psi.JavaElementVisitor;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiField;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiMethodCallExpression;
+import com.intellij.psi.PsiNewExpression;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import lombok.ast.AstVisitor;
-import lombok.ast.ConstructorInvocation;
-import lombok.ast.Expression;
-import lombok.ast.ForwardingAstVisitor;
-import lombok.ast.Identifier;
-import lombok.ast.MethodInvocation;
-import lombok.ast.Node;
-
-public class AllowAllHostnameVerifierDetector extends Detector implements JavaScanner {
+public class AllowAllHostnameVerifierDetector extends Detector implements JavaPsiScanner {
 
     @SuppressWarnings("unchecked")
     private static final Implementation IMPLEMENTATION =
@@ -71,11 +67,8 @@ public class AllowAllHostnameVerifierDetector extends Detector implements JavaSc
     }
 
     @Override
-    public void visitConstructor(
-            @NonNull JavaContext context,
-            @Nullable AstVisitor visitor,
-            @NonNull ConstructorInvocation node,
-            @NonNull ResolvedMethod constructor) {
+    public void visitConstructor(@NonNull JavaContext context, @Nullable JavaElementVisitor visitor,
+            @NonNull PsiNewExpression node, @NonNull PsiMethod constructor) {
         Location location = context.getLocation(node);
         context.report(ISSUE, node, location,
                 "Using the AllowAllHostnameVerifier HostnameVerifier is unsafe " +
@@ -90,26 +83,21 @@ public class AllowAllHostnameVerifierDetector extends Detector implements JavaSc
     }
 
     @Override
-    public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor,
-            @NonNull MethodInvocation node) {
-        ResolvedNode resolved = context.resolve(node);
-        if (resolved instanceof ResolvedMethod) {
-            ResolvedMethod method = (ResolvedMethod) resolved;
-            if (method.getArgumentCount() == 1 &&
-                    node.astArguments().size() == 1 &&
-                    method.getArgumentType(0).matchesName("javax.net.ssl.HostnameVerifier")) {
-                Expression argument = node.astArguments().first();
-                ResolvedNode resolvedArgument = context.resolve(argument);
-                if (resolvedArgument instanceof ResolvedField) {
-                    ResolvedField field = (ResolvedField) resolvedArgument;
-                    if (field.getName().equals("ALLOW_ALL_HOSTNAME_VERIFIER")) {
-                        Location location = context.getLocation(argument);
-                        String message = "Using the ALLOW_ALL_HOSTNAME_VERIFIER HostnameVerifier "
-                                + "is unsafe because it always returns true, which could cause "
-                                + "insecure network traffic due to trusting TLS/SSL server "
-                                + "certificates for wrong hostnames";
-                        context.report(ISSUE, argument, location, message);
-                    }
+    public void visitMethod(@NonNull JavaContext context, @Nullable JavaElementVisitor visitor,
+            @NonNull PsiMethodCallExpression node, @NonNull PsiMethod method) {
+        JavaEvaluator evaluator = context.getEvaluator();
+        if (evaluator.methodMatches(method, null, false, "javax.net.ssl.HostnameVerifier")) {
+            PsiExpression argument = node.getArgumentList().getExpressions()[0];
+            PsiElement resolvedArgument = evaluator.resolve(argument);
+            if (resolvedArgument instanceof PsiField) {
+                PsiField field = (PsiField) resolvedArgument;
+                if ("ALLOW_ALL_HOSTNAME_VERIFIER".equals(field.getName())) {
+                    Location location = context.getLocation(argument);
+                    String message = "Using the ALLOW_ALL_HOSTNAME_VERIFIER HostnameVerifier "
+                            + "is unsafe because it always returns true, which could cause "
+                            + "insecure network traffic due to trusting TLS/SSL server "
+                            + "certificates for wrong hostnames";
+                    context.report(ISSUE, argument, location, message);
                 }
             }
         }

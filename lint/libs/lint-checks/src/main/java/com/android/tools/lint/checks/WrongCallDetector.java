@@ -23,34 +23,30 @@ import static com.android.tools.lint.checks.JavaPerformanceDetector.ON_MEASURE;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
-import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
-import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.TextFormat;
+import com.intellij.psi.JavaElementVisitor;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiMethodCallExpression;
+import com.intellij.psi.PsiSuperExpression;
+import com.intellij.psi.util.PsiTreeUtil;
 
 import java.util.Arrays;
 import java.util.List;
 
-import lombok.ast.AstVisitor;
-import lombok.ast.Expression;
-import lombok.ast.MethodDeclaration;
-import lombok.ast.MethodInvocation;
-import lombok.ast.Node;
-import lombok.ast.Super;
-
 /**
  * Checks for cases where the wrong call is being made
  */
-public class WrongCallDetector extends Detector implements Detector.JavaScanner {
+public class WrongCallDetector extends Detector implements JavaPsiScanner {
     /** Calling the wrong method */
     public static final Issue ISSUE = Issue.create(
             "WrongCall", //$NON-NLS-1$
@@ -70,12 +66,6 @@ public class WrongCallDetector extends Detector implements Detector.JavaScanner 
     public WrongCallDetector() {
     }
 
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.FAST;
-    }
-
     // ---- Implements JavaScanner ----
 
     @Override
@@ -89,44 +79,42 @@ public class WrongCallDetector extends Detector implements Detector.JavaScanner 
     }
 
     @Override
-    public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor,
-            @NonNull MethodInvocation node) {
-
+    public void visitMethod(@NonNull JavaContext context, @Nullable JavaElementVisitor visitor,
+            @NonNull PsiMethodCallExpression node, @NonNull PsiMethod calledMethod) {
         // Call is only allowed if it is both only called on the super class (invoke special)
         // as well as within the same overriding method (e.g. you can't call super.onLayout
         // from the onMeasure method)
-        Expression operand = node.astOperand();
-        if (!(operand instanceof Super)) {
-            report(context, node);
+        PsiElement operand = node.getMethodExpression().getQualifier();
+        if (!(operand instanceof PsiSuperExpression)) {
+            report(context, node, calledMethod);
             return;
         }
 
-        Node method = StringFormatDetector.getParentMethod(node);
-        if (!(method instanceof MethodDeclaration) ||
-                !((MethodDeclaration)method).astMethodName().astValue().equals(
-                        node.astName().astValue())) {
-            report(context, node);
+        PsiMethod method = PsiTreeUtil.getParentOfType(node, PsiMethod.class, true);
+        if (method != null) {
+            String callName = node.getMethodExpression().getReferenceName();
+            if (callName != null && !callName.equals(method.getName())) {
+                report(context, node, calledMethod);
+            }
         }
     }
 
-    private static void report(JavaContext context, MethodInvocation node) {
+    private static void report(
+            @NonNull JavaContext context,
+            @NonNull PsiMethodCallExpression node,
+            @NonNull PsiMethod method) {
         // Make sure the call is on a view
-        ResolvedNode resolved = context.resolve(node);
-        if (resolved instanceof ResolvedMethod) {
-            ResolvedMethod method = (ResolvedMethod) resolved;
-            ResolvedClass containingClass = method.getContainingClass();
-            if (!containingClass.isSubclassOf(CLASS_VIEW, false)) {
-                return;
-            }
+        if (!context.getEvaluator().isMemberInSubClassOf(method, CLASS_VIEW, false)) {
+            return;
         }
 
-        String name = node.astName().astValue();
+        String name = method.getName();
         String suggestion = Character.toLowerCase(name.charAt(2)) + name.substring(3);
         String message = String.format(
                 // Keep in sync with {@link #getOldValue} and {@link #getNewValue} below!
                 "Suspicious method call; should probably call \"`%1$s`\" rather than \"`%2$s`\"",
                 suggestion, name);
-        context.report(ISSUE, node, context.getLocation(node.astName()), message);
+        context.report(ISSUE, node, context.getNameLocation(node), message);
     }
 
     /**

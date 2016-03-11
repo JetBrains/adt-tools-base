@@ -16,7 +16,6 @@
 
 package com.android.tools.lint.checks;
 
-import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_EXPORTED;
 import static com.android.SdkConstants.ATTR_NAME;
@@ -38,13 +37,11 @@ import static com.android.xml.AndroidManifest.NODE_ACTION;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
-import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
-import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ConstantEvaluator;
-import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
+import com.android.tools.lint.detector.api.Detector.XmlScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
@@ -52,31 +49,26 @@ import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
+import com.intellij.psi.JavaElementVisitor;
+import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiMethodCallExpression;
+import com.intellij.psi.PsiReferenceExpression;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import lombok.ast.AstVisitor;
-import lombok.ast.Expression;
-import lombok.ast.ForwardingAstVisitor;
-import lombok.ast.Identifier;
-import lombok.ast.MethodInvocation;
-import lombok.ast.StrictListAccessor;
-
 /**
  * Checks that exported services request a permission.
  */
-public class SecurityDetector extends Detector implements Detector.XmlScanner,
-        Detector.JavaScanner {
+public class SecurityDetector extends Detector implements XmlScanner, JavaPsiScanner {
 
     private static final Implementation IMPLEMENTATION_MANIFEST = new Implementation(
             SecurityDetector.class,
@@ -196,17 +188,6 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
 
     /** Constructs a new {@link SecurityDetector} check */
     public SecurityDetector() {
-    }
-
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.FAST;
-    }
-
-    @Override
-    public boolean appliesTo(@NonNull Context context, @NonNull File file) {
-        return file.getName().equals(ANDROID_MANIFEST_XML);
     }
 
     // ---- Implements Detector.XmlScanner ----
@@ -406,52 +387,47 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
     }
 
     @Override
-    public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor,
-            @NonNull MethodInvocation node) {
-        ResolvedNode resolved = context.resolve(node);
-        if (resolved instanceof ResolvedMethod) {
-            ResolvedClass resolvedClass = ((ResolvedMethod) resolved).getContainingClass();
-            String methodName = node.astName().astValue();
-            if (resolvedClass.isSubclassOf(FILE_CLASS, false)) {
-                // Report calls to java.io.File.setReadable(true, false) or
-                // java.io.File.setWritable(true, false)
-                if ("setReadable".equals(methodName)) {
-                    if (node.astArguments().size() == 2 &&
-                            Boolean.TRUE.equals(ConstantEvaluator.evaluate(context,
-                                    node.astArguments().first())) &&
-                            Boolean.FALSE.equals(ConstantEvaluator.evaluate(context,
-                                    node.astArguments().last()))) {
-                        context.report(SET_READABLE, node, context.getLocation(node),
-                                "Setting file permissions to world-readable can be " +
-                                        "risky, review carefully");
-                    }
-                    return;
-                } else if ("setWritable".equals(methodName)) {
-                    if (node.astArguments().size() == 2 &&
-                            Boolean.TRUE.equals(ConstantEvaluator.evaluate(context,
-                                    node.astArguments().first())) &&
-                            Boolean.FALSE.equals(ConstantEvaluator.evaluate(context,
-                                    node.astArguments().last()))) {
-                        context.report(SET_WRITABLE, node, context.getLocation(node),
-                                "Setting file permissions to world-writable can be " +
-                                        "risky, review carefully");
-                    }
-                    return;
+    public void visitMethod(@NonNull JavaContext context, @Nullable JavaElementVisitor visitor,
+            @NonNull PsiMethodCallExpression node, @NonNull PsiMethod method) {
+        PsiExpression[] args = node.getArgumentList().getExpressions();
+        String methodName = node.getMethodExpression().getReferenceName();
+        if (context.getEvaluator().isMemberInSubClassOf(method, FILE_CLASS, false)) {
+            // Report calls to java.io.File.setReadable(true, false) or
+            // java.io.File.setWritable(true, false)
+            if ("setReadable".equals(methodName)) {
+                if (args.length == 2 &&
+                        Boolean.TRUE.equals(ConstantEvaluator.evaluate(context, args[0])) &&
+                        Boolean.FALSE.equals(ConstantEvaluator.evaluate(context, args[1]))) {
+                    context.report(SET_READABLE, node, context.getLocation(node),
+                            "Setting file permissions to world-readable can be " +
+                                    "risky, review carefully");
                 }
+                return;
+            } else if ("setWritable".equals(methodName)) {
+                if (args.length == 2 &&
+                        Boolean.TRUE.equals(ConstantEvaluator.evaluate(context, args[0])) &&
+                        Boolean.FALSE.equals(ConstantEvaluator.evaluate(context, args[1]))) {
+                    context.report(SET_WRITABLE, node, context.getLocation(node),
+                            "Setting file permissions to world-writable can be " +
+                                    "risky, review carefully");
+                }
+                return;
             }
         }
-        StrictListAccessor<Expression,MethodInvocation> args = node.astArguments();
-        for (Expression arg : args) {
+
+        assert visitor != null;
+        for (PsiExpression arg : args) {
             arg.accept(visitor);
         }
     }
 
+    @Nullable
     @Override
-    public AstVisitor createJavaVisitor(@NonNull JavaContext context) {
+    public JavaElementVisitor createPsiVisitor(@NonNull JavaContext context) {
         return new IdentifierVisitor(context);
     }
 
-    private static class IdentifierVisitor extends ForwardingAstVisitor {
+    private static class IdentifierVisitor extends JavaElementVisitor {
         private final JavaContext mContext;
 
         public IdentifierVisitor(JavaContext context) {
@@ -460,20 +436,21 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
         }
 
         @Override
-        public boolean visitIdentifier(Identifier node) {
-            if ("MODE_WORLD_WRITEABLE".equals(node.astValue())) { //$NON-NLS-1$
+        public void visitReferenceExpression(PsiReferenceExpression node) {
+            super.visitReferenceExpression(node);
+
+            String name = node.getReferenceName();
+            if ("MODE_WORLD_WRITEABLE".equals(name)) { //$NON-NLS-1$
                 Location location = mContext.getLocation(node);
                 mContext.report(WORLD_WRITEABLE, node, location,
                         "Using `MODE_WORLD_WRITEABLE` when creating files can be " +
                                 "risky, review carefully");
-            } else if ("MODE_WORLD_READABLE".equals(node.astValue())) { //$NON-NLS-1$
+            } else if ("MODE_WORLD_READABLE".equals(name)) { //$NON-NLS-1$
                 Location location = mContext.getLocation(node);
                 mContext.report(WORLD_READABLE, node, location,
                         "Using `MODE_WORLD_READABLE` when creating files can be " +
                                 "risky, review carefully");
             }
-
-            return false;
         }
     }
 }

@@ -32,6 +32,7 @@ public class SslCertificateSocketFactoryDetectorTest extends AbstractCheckTest {
         return true;
     }
 
+    @SuppressWarnings("ClassNameDiffersFromFileName")
     public void test() throws Exception {
         assertEquals(
                 "src/test/pkg/SSLCertificateSocketFactoryTest.java:21: Warning: Use of SSLCertificateSocketFactory.createSocket() with an InetAddress parameter can cause insecure network traffic due to trusting arbitrary hostnames in TLS/SSL certificates presented by peers [SSLCertificateSocketFactoryCreateSocket]\n" +

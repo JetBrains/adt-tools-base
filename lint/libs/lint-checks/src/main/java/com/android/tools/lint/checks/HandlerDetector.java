@@ -16,37 +16,38 @@
 
 package com.android.tools.lint.checks;
 
+import static com.intellij.psi.util.PsiTreeUtil.getParentOfType;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
-import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
-import com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
+import com.intellij.psi.PsiAnonymousClass;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiClassType;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiExpressionList;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiNewExpression;
+import com.intellij.psi.PsiParameter;
+import com.intellij.psi.PsiType;
 
-import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.List;
-
-import lombok.ast.ClassDeclaration;
-import lombok.ast.ConstructorInvocation;
-import lombok.ast.Expression;
-import lombok.ast.MethodDeclaration;
-import lombok.ast.Node;
-import lombok.ast.NormalTypeBody;
 
 /**
  * Checks that Handler implementations are top level classes or static.
  * See the corresponding check in the android.os.Handler source code.
  */
-public class HandlerDetector extends Detector implements Detector.JavaScanner {
+public class HandlerDetector extends Detector implements JavaPsiScanner {
 
     /** Potentially leaking handlers */
     public static final Issue ISSUE = Issue.create(
@@ -76,12 +77,6 @@ public class HandlerDetector extends Detector implements Detector.JavaScanner {
     public HandlerDetector() {
     }
 
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.FAST;
-    }
-
     // ---- Implements JavaScanner ----
 
     @Nullable
@@ -91,84 +86,61 @@ public class HandlerDetector extends Detector implements Detector.JavaScanner {
     }
 
     @Override
-    public void checkClass(@NonNull JavaContext context, @Nullable ClassDeclaration declaration,
-            @NonNull Node node, @NonNull ResolvedClass cls) {
-        if (!isInnerClass(declaration)) {
+    public void checkClass(@NonNull JavaContext context, @NonNull PsiClass declaration) {
+        // Only consider static inner classes
+        if (context.getEvaluator().isStatic(declaration)) {
+            return;
+        }
+        boolean isAnonymous = declaration instanceof PsiAnonymousClass;
+        if (declaration.getContainingClass() == null && !isAnonymous) {
             return;
         }
 
-        if (isStaticClass(declaration)) {
-            return;
-        }
-
-        // Only flag handlers using the default looper
-        ConstructorInvocation invocation = null;
-        Node current = node;
-        while (current != null) {
-            if (current instanceof ConstructorInvocation) {
-                invocation = (ConstructorInvocation) current;
-                break;
-            } else if (current instanceof MethodDeclaration ||
-                    current instanceof ClassDeclaration) {
-                break;
-            }
-            current = current.getParent();
-        }
-
+        //// Only flag handlers using the default looper
+        //noinspection unchecked
+        PsiNewExpression invocation = getParentOfType(declaration, PsiNewExpression.class,
+                true, PsiMethod.class);
         if (invocation != null) {
-            for (Expression expression : invocation.astArguments()) {
-                TypeDescriptor type = context.getType(expression);
-                if (type != null && type.matchesName(LOOPER_CLS)) {
-                    return;
+            PsiExpressionList argumentList = invocation.getArgumentList();
+            if (argumentList != null && isAnonymous) {
+                ((PsiAnonymousClass)declaration).getArgumentList();
+                for (PsiExpression expression : argumentList.getExpressions()) {
+                    PsiType type = expression.getType();
+                    if (type instanceof PsiClassType
+                            && LOOPER_CLS.equals(type.getCanonicalText())) {
+                        return;
+                    }
                 }
             }
-        } else if (hasLooperConstructorParameter(cls)) {
+        } else if (hasLooperConstructorParameter(declaration)) {
             // This is an inner class which takes a Looper parameter:
             // possibly used correctly from elsewhere
             return;
         }
 
-        Location location;
-        Node locationNode;
-        if (node instanceof ClassDeclaration) {
-            locationNode = node;
-            location = context.getLocation(((ClassDeclaration) node).astName());
-        } else if (node instanceof NormalTypeBody
-                && node.getParent() instanceof ConstructorInvocation) {
-            ConstructorInvocation parent = (ConstructorInvocation)node.getParent();
-            locationNode = parent;
-            location = context.getRangeLocation(parent, 0, parent.astTypeReference(), 0);
+        PsiElement locationNode = JavaContext.findNameElement(declaration);
+        if (locationNode == null) {
+            locationNode = declaration;
+        }
+        Location location = context.getLocation(locationNode);
+        String name;
+        if (isAnonymous) {
+            name = "anonymous " + ((PsiAnonymousClass)declaration).getBaseClassReference().getQualifiedName();
         } else {
-            locationNode = node;
-            location = context.getLocation(node);;
+            name = declaration.getQualifiedName();
         }
 
         //noinspection VariableNotUsedInsideIf
         context.report(ISSUE, locationNode, location, String.format(
                 "This Handler class should be static or leaks might occur (%1$s)",
-                declaration == null ? "anonymous " + cls.getName() : cls.getName()));
+                name));
     }
 
-    private static boolean isInnerClass(@Nullable ClassDeclaration node) {
-        return node == null || // null class declarations means anonymous inner class
-                JavaContext.getParentOfType(node, ClassDeclaration.class, true) != null;
-    }
-
-    private static boolean isStaticClass(@Nullable ClassDeclaration node) {
-        if (node == null) {
-            // A null class declaration means anonymous inner class, and these can't be static
-            return false;
-        }
-
-        int flags = node.astModifiers().getEffectiveModifierFlags();
-        return (flags & Modifier.STATIC) != 0;
-    }
-
-    private static boolean hasLooperConstructorParameter(@NonNull ResolvedClass cls) {
-        for (ResolvedMethod constructor : cls.getConstructors()) {
-            for (int i = 0, n = constructor.getArgumentCount(); i < n; i++) {
-                TypeDescriptor type = constructor.getArgumentType(i);
-                if (type.matchesSignature(LOOPER_CLS)) {
+    private static boolean hasLooperConstructorParameter(@NonNull PsiClass cls) {
+        for (PsiMethod constructor : cls.getConstructors()) {
+            for (PsiParameter parameter : constructor.getParameterList().getParameters()) {
+                PsiType type = parameter.getType();
+                if (LOOPER_CLS.equals(type.getCanonicalText())) {
                     return true;
                 }
             }

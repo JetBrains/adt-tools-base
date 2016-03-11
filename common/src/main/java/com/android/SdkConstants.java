@@ -577,6 +577,7 @@ public final class SdkConstants {
     public static final String CLASS_INTENT = "android.content.Intent"; //$NON-NLS-1$
     public static final String CLASS_CONTEXT = "android.content.Context"; //$NON-NLS-1$
     public static final String CLASS_RESOURCES = "android.content.res.Resources"; //$NON-NLS-1$
+    public static final String CLS_TYPED_ARRAY = "android.content.res.TypedArray";   //$NON-NLS-1$
     public static final String CLASS_VIEW = "android.view.View"; //$NON-NLS-1$
     public static final String CLASS_VIEWGROUP = "android.view.ViewGroup"; //$NON-NLS-1$
     public static final String CLASS_NAME_LAYOUTPARAMS = "LayoutParams"; //$NON-NLS-1$

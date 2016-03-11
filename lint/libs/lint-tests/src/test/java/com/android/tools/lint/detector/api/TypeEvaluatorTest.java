@@ -17,6 +17,11 @@
 package com.android.tools.lint.detector.api;
 
 import com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
+import com.intellij.psi.JavaRecursiveElementVisitor;
+import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiJavaFile;
+import com.intellij.psi.PsiLocalVariable;
+import com.intellij.psi.PsiType;
 
 import junit.framework.TestCase;
 
@@ -32,8 +37,49 @@ import lombok.ast.VariableDefinitionEntry;
 
 @SuppressWarnings("ClassNameDiffersFromFileName")
 public class TypeEvaluatorTest extends TestCase {
+    private static void checkPsi(Object expected, @Language("JAVA") String source,
+            final String targetVariable) {
+        JavaContext context = LintUtilsTest.parsePsi(source, new File("src/test/pkg/Test.java"));
+        assertNotNull(context);
+        PsiJavaFile javaFile = context.getJavaFile();
+        assertNotNull(javaFile);
+
+        // Find the expression
+        final AtomicReference<PsiExpression> reference = new AtomicReference<PsiExpression>();
+        javaFile.accept(new JavaRecursiveElementVisitor() {
+            @Override
+            public void visitLocalVariable(PsiLocalVariable variable) {
+                super.visitLocalVariable(variable);
+                String name = variable.getName();
+                if (name != null && name.equals(targetVariable)) {
+                    reference.set(variable.getInitializer());
+                }
+            }
+        });
+        PsiExpression expression = reference.get();
+        PsiType actual = TypeEvaluator.evaluate(context, expression);
+        if (expected == null) {
+            assertNull(actual);
+        } else {
+            assertNotNull("Couldn't compute type for " + source + ", expected " + expected,
+                    actual);
+
+            if (expected instanceof PsiType) {
+                assertEquals(expected, actual);
+            } else {
+                String expectedString = expected.toString();
+                if (expectedString.startsWith("class ")) {
+                    expectedString = expectedString.substring("class ".length());
+                }
+                assertEquals(expectedString, actual.getCanonicalText());
+            }
+        }
+    }
+
     private static void check(Object expected, @Language("JAVA") String source,
             final String targetVariable) {
+        checkPsi(expected, source, targetVariable);
+
         JavaContext context = LintUtilsTest.parse(source, new File("src/test/pkg/Test.java"));
         assertNotNull(context);
         CompilationUnit unit = (CompilationUnit) context.getCompilationUnit();
@@ -52,6 +98,13 @@ public class TypeEvaluatorTest extends TestCase {
         });
         Expression expression = reference.get();
         TypeDescriptor actual = TypeEvaluator.evaluate(context, expression);
+
+        if (expected == PsiType.NULL) {
+            // TypeDescriptor doesn't have a null type; this test is
+            // intended for the new PSI type evaluator
+            expected = null;
+        }
+
         if (expected == null) {
             assertNull(actual);
         } else {
@@ -101,7 +154,7 @@ public class TypeEvaluatorTest extends TestCase {
     }
 
     public void testNull() throws Exception {
-        checkExpression(null, "null");
+        checkExpression(PsiType.NULL, "null");
     }
 
     public void testStrings() throws Exception {
@@ -142,11 +195,13 @@ public class TypeEvaluatorTest extends TestCase {
         checkExpression(Integer.TYPE, "5 & 1");
         checkExpression(Integer.TYPE, "~5");
         checkExpression(Long.TYPE, "~(long)5");
-        checkExpression(Short.TYPE, "~(short)5");
-        checkExpression(Byte.TYPE, "~(byte)5");
+        // Psi and Lombok differ; PSI knows expression promotion
+        // and will treat bytes and shorts etc as promoted to int
+        //checkExpression(Integer.TYPE, "~(short)5");
+        //checkExpression(Byte.TYPE, "~(byte)5");
+        //checkExpression(Short.TYPE, "-(short)5");
+        //checkExpression(Byte.TYPE, "-(byte)5");
         checkExpression(Long.TYPE, "-(long)5");
-        checkExpression(Short.TYPE, "-(short)5");
-        checkExpression(Byte.TYPE, "-(byte)5");
         checkExpression(Double.TYPE, "-(double)5");
         checkExpression(Float.TYPE, "-(float)5");
         checkExpression(Integer.TYPE, "1 + -3");

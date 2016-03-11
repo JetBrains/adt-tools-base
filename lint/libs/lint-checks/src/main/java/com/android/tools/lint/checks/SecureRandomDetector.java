@@ -18,33 +18,31 @@ package com.android.tools.lint.checks;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
-import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
-import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
-import com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
+import com.android.tools.lint.client.api.JavaEvaluator;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ConstantEvaluator;
 import com.android.tools.lint.detector.api.Detector;
-import com.android.tools.lint.detector.api.Detector.JavaScanner;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.TypeEvaluator;
+import com.intellij.psi.JavaElementVisitor;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiMethodCallExpression;
+import com.intellij.psi.PsiType;
 
 import java.util.Collections;
 import java.util.List;
 
-import lombok.ast.AstVisitor;
-import lombok.ast.Expression;
-import lombok.ast.MethodInvocation;
-import lombok.ast.Node;
-
 /**
  * Checks for hardcoded seeds with random numbers.
  */
-public class SecureRandomDetector extends Detector implements JavaScanner {
+public class SecureRandomDetector extends Detector implements JavaPsiScanner {
     /** Unregistered activities and services */
     public static final Issue ISSUE = Issue.create(
             "SecureRandom", //$NON-NLS-1$
@@ -78,20 +76,16 @@ public class SecureRandomDetector extends Detector implements JavaScanner {
     }
 
     @Override
-    public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor,
-            @NonNull MethodInvocation call) {
-        ResolvedNode resolved = context.resolve(call);
-        if (!(resolved instanceof ResolvedMethod)) {
+    public void visitMethod(@NonNull JavaContext context, @Nullable JavaElementVisitor visitor,
+            @NonNull PsiMethodCallExpression call, @NonNull PsiMethod method) {
+        PsiExpression[] arguments = call.getArgumentList().getExpressions();
+        if (arguments.length == 0) {
             return;
         }
-        ResolvedMethod method = (ResolvedMethod) resolved;
-        Expression seedArgument = call.astArguments().first();
-        if (seedArgument == null) {
-            return;
-        }
-        ResolvedClass containingClass = method.getContainingClass();
-        if (containingClass.matches(JAVA_SECURITY_SECURE_RANDOM) ||
-                containingClass.isSubclassOf(JAVA_UTIL_RANDOM, false)
+        PsiExpression seedArgument = arguments[0];
+        JavaEvaluator evaluator = context.getEvaluator();
+        if (evaluator.isMemberInClass(method, JAVA_SECURITY_SECURE_RANDOM)
+                || evaluator.isMemberInSubClassOf(method, JAVA_UTIL_RANDOM, false)
                         && isSecureRandomReceiver(context, call)) {
             // Called with a fixed seed?
             Object seed = ConstantEvaluator.evaluate(context, seedArgument);
@@ -102,12 +96,12 @@ public class SecureRandomDetector extends Detector implements JavaScanner {
                                 "it is not secure. Use `getSeed()`.");
             } else {
                 // Called with a simple System.currentTimeMillis() seed or something like that?
-                ResolvedNode resolvedArgument = context.resolve(seedArgument);
-                if (resolvedArgument instanceof ResolvedMethod) {
-                    ResolvedMethod seedMethod = (ResolvedMethod) resolvedArgument;
+                PsiElement resolvedArgument = evaluator.resolve(seedArgument);
+                if (resolvedArgument instanceof PsiMethod) {
+                    PsiMethod seedMethod = (PsiMethod) resolvedArgument;
                     String methodName = seedMethod.getName();
-                    if (methodName.equals("currentTimeMillis") || methodName
-                            .equals("nanoTime")) {
+                    if (methodName.equals("currentTimeMillis")
+                            || methodName.equals("nanoTime")) {
                         context.report(ISSUE, call, context.getLocation(call),
                                 "It is dangerous to seed `SecureRandom` with the current "
                                         + "time because that value is more predictable to "
@@ -121,18 +115,20 @@ public class SecureRandomDetector extends Detector implements JavaScanner {
     /**
      * Returns true if the given invocation is assigned a SecureRandom type
      */
-    private static boolean isSecureRandomReceiver(@NonNull JavaContext context,
-            @NonNull MethodInvocation call) {
-        Expression operand = call.astOperand();
+    private static boolean isSecureRandomReceiver(
+            @NonNull JavaContext context,
+            @NonNull PsiMethodCallExpression call) {
+        PsiElement operand = call.getMethodExpression().getQualifier();
         return operand != null && isSecureRandomType(context, operand);
     }
 
     /**
      * Returns true if the node evaluates to an instance of type SecureRandom
      */
-    private static boolean isSecureRandomType(@NonNull JavaContext context, @NonNull Node node) {
-        TypeDescriptor type = TypeEvaluator.evaluate(context, node);
-        return type != null && type.matchesName(JAVA_SECURITY_SECURE_RANDOM);
-
+    private static boolean isSecureRandomType(
+            @NonNull JavaContext context,
+            @NonNull PsiElement node) {
+        PsiType type = TypeEvaluator.evaluate(context, node);
+        return type != null && JAVA_SECURITY_SECURE_RANDOM.equals(type.getCanonicalText());
     }
 }

@@ -761,4 +761,14 @@ public class LintCliClient extends LintClient {
     public boolean haveErrors() {
         return mErrorCount > 0;
     }
+
+    @VisibleForTesting
+    public void reset() {
+        mWarnings.clear();
+        mErrorCount = 0;
+        mWarningCount = 0;
+
+        mProjectDirs = Sets.newHashSet();
+        mDirToProject = null;
+    }
 }

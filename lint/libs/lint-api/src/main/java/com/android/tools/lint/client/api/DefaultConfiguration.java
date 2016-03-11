@@ -364,7 +364,6 @@ public class DefaultConfiguration extends Configuration {
         }
     }
 
-    @VisibleForTesting
     @NonNull
     public static String globToRegexp(@NonNull String glob) {
         StringBuilder sb = new StringBuilder(glob.length() * 2);

@@ -129,7 +129,7 @@ class DefaultSdkInfo extends SdkInfo {
             if (parent.equals(child)) {
                 return true;
             }
-            if (implementsInterface(child, parentType)) {
+            if (implementsInterface(child, parent)) {
                 return true;
             }
             child = PARENTS.get(child);

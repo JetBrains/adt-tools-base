@@ -24,20 +24,16 @@ import static com.android.SdkConstants.CLASS_V4_FRAGMENT;
 import static com.android.SdkConstants.DOT_JAVA;
 import static com.android.SdkConstants.FORMAT_METHOD;
 import static com.android.SdkConstants.GET_STRING_METHOD;
-import static com.android.SdkConstants.R_CLASS;
 import static com.android.SdkConstants.TAG_STRING;
-import static com.android.tools.lint.client.api.JavaParser.TYPE_BOOLEAN;
-import static com.android.tools.lint.client.api.JavaParser.TYPE_BYTE;
-import static com.android.tools.lint.client.api.JavaParser.TYPE_CHAR;
-import static com.android.tools.lint.client.api.JavaParser.TYPE_DOUBLE;
-import static com.android.tools.lint.client.api.JavaParser.TYPE_FLOAT;
-import static com.android.tools.lint.client.api.JavaParser.TYPE_INT;
-import static com.android.tools.lint.client.api.JavaParser.TYPE_LONG;
-import static com.android.tools.lint.client.api.JavaParser.TYPE_NULL;
-import static com.android.tools.lint.client.api.JavaParser.TYPE_OBJECT;
-import static com.android.tools.lint.client.api.JavaParser.TYPE_SHORT;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_BOOLEAN_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_BYTE_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_CHARACTER_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_DOUBLE_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_FLOAT_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_INTEGER_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_LONG_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_SHORT_WRAPPER;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_STRING;
-import static com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -45,15 +41,14 @@ import com.android.annotations.VisibleForTesting;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.res2.ResourceItem;
+import com.android.ide.common.resources.ResourceUrl;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
-import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
-import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
-import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
+import com.android.tools.lint.client.api.JavaEvaluator;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
-import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
@@ -61,6 +56,7 @@ import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Location.Handle;
 import com.android.tools.lint.detector.api.Position;
+import com.android.tools.lint.detector.api.ResourceEvaluator;
 import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
@@ -70,6 +66,19 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.intellij.psi.JavaElementVisitor;
+import com.intellij.psi.PsiArrayInitializerExpression;
+import com.intellij.psi.PsiClassType;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiLiteral;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiMethodCallExpression;
+import com.intellij.psi.PsiNewExpression;
+import com.intellij.psi.PsiParameterList;
+import com.intellij.psi.PsiReference;
+import com.intellij.psi.PsiType;
+import com.intellij.psi.PsiVariable;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -83,42 +92,19 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import lombok.ast.ArrayCreation;
-import lombok.ast.ArrayDimension;
-import lombok.ast.ArrayInitializer;
-import lombok.ast.AstVisitor;
-import lombok.ast.BooleanLiteral;
-import lombok.ast.CharLiteral;
-import lombok.ast.ConstructorDeclaration;
-import lombok.ast.ConstructorInvocation;
-import lombok.ast.Expression;
-import lombok.ast.FloatingPointLiteral;
-import lombok.ast.ForwardingAstVisitor;
-import lombok.ast.IntegralLiteral;
-import lombok.ast.MethodDeclaration;
-import lombok.ast.MethodInvocation;
-import lombok.ast.NullLiteral;
-import lombok.ast.Select;
-import lombok.ast.StrictListAccessor;
-import lombok.ast.StringLiteral;
-import lombok.ast.VariableDefinitionEntry;
-import lombok.ast.VariableReference;
-
 /**
  * Check which looks for problems with formatting strings such as inconsistencies between
  * translations or between string declaration and string usage in Java.
  * <p>
- * TODO: Verify booleans!
  * TODO: Handle Resources.getQuantityString as well
  */
-public class StringFormatDetector extends ResourceXmlDetector implements Detector.JavaScanner {
+public class StringFormatDetector extends ResourceXmlDetector implements JavaPsiScanner {
     private static final Implementation IMPLEMENTATION_XML = new Implementation(
             StringFormatDetector.class,
             Scope.ALL_RESOURCES_SCOPE);
@@ -836,7 +822,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
             // Argument Index
             "(\\d+\\$)?" +                                                      //$NON-NLS-1$
             // Flags
-            "([-+#, 0(\\<]*)?" +                                                //$NON-NLS-1$
+            "([-+#, 0(<]*)?" +                                                  //$NON-NLS-1$
             // Width
             "(\\d+)?" +                                                         //$NON-NLS-1$
             // Precision
@@ -910,7 +896,6 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
      * {@code seenArguments} parameter is not null, put the indices of any
      * observed arguments into it.
      */
-    @VisibleForTesting
     static int getFormatArgumentCount(@NonNull String s, @Nullable Set<Integer> seenArguments) {
         Matcher matcher = FORMAT.matcher(s);
         int index = 0;
@@ -1032,24 +1017,21 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
     }
 
     @Override
-    public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor,
-            @NonNull MethodInvocation node) {
+    public void visitMethod(@NonNull JavaContext context, @Nullable JavaElementVisitor visitor,
+            @NonNull PsiMethodCallExpression node, @NonNull PsiMethod method) {
         if (mFormatStrings == null && !context.getClient().supportsProjectResources()) {
             return;
         }
 
-        ResolvedNode resolved = context.resolve(node);
-        if (!(resolved instanceof ResolvedMethod)) {
-            return;
-        }
-        ResolvedMethod method = (ResolvedMethod) resolved;
-        String methodName = node.astName().astValue();
+        JavaEvaluator evaluator = context.getEvaluator();
+        String methodName = method.getName();
         if (methodName.equals(FORMAT_METHOD)) {
-            if (method.getContainingClass().matches(TYPE_STRING)) {
+            if (evaluator.isMemberInClass(method, TYPE_STRING)) {
                 // Check formatting parameters for
                 //   java.lang.String#format(String format, Object... formatArgs)
                 //   java.lang.String#format(Locale locale, String format, Object... formatArgs)
-                checkFormatCall(context, node, method.getArgumentCount() == 3);
+                checkStringFormatCall(context, method, node,
+                        method.getParameterList().getParametersCount() == 3);
 
                 // TODO: Consider also enforcing
                 // java.util.Formatter#format(String string, Object... formatArgs)
@@ -1067,16 +1049,15 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
             // also possible that they're looking up strings that are not intended to be used
             // for formatting so while we may want to warn about this it's not necessarily
             // an error.
-            if (method.getArgumentCount() < 2) {
+            if (method.getParameterList().getParametersCount() < 2) {
                 return;
             }
 
-            ResolvedClass containingClass = method.getContainingClass();
-            if (containingClass.isSubclassOf(CLASS_RESOURCES, false) ||
-                    containingClass.isSubclassOf(CLASS_CONTEXT, false) ||
-                    containingClass.isSubclassOf(CLASS_FRAGMENT, false) ||
-                    containingClass.isSubclassOf(CLASS_V4_FRAGMENT, false)) {
-                checkFormatCall(context, node, false);
+            if (evaluator.isMemberInSubClassOf(method, CLASS_RESOURCES, false) ||
+                    evaluator.isMemberInSubClassOf(method, CLASS_CONTEXT, false) ||
+                    evaluator.isMemberInSubClassOf(method, CLASS_FRAGMENT, false) ||
+                    evaluator.isMemberInSubClassOf(method, CLASS_V4_FRAGMENT, false)) {
+                checkStringFormatCall(context, method, node, false);
             }
 
             // TODO: Consider also looking up
@@ -1084,14 +1065,6 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
             //              Object... formatArgs)
             // though this will require being smarter about cross referencing formatting
             // strings since we'll need to go via the quantity string definitions
-        }
-    }
-
-    private void checkFormatCall(JavaContext context, MethodInvocation node,
-            boolean specifiesLocale) {
-        lombok.ast.Node current = getParentMethod(node);
-        if (current != null) {
-            checkStringFormatCall(context, current, node, specifiesLocale);
         }
     }
 
@@ -1104,7 +1077,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
      */
     private static void checkNotFormattedHandle(
             JavaContext context,
-            MethodInvocation call,
+            PsiMethodCallExpression call,
             String name,
             Handle handle) {
         Object clientData = handle.getClientData();
@@ -1127,37 +1100,38 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
     /**
      * Check the given String.format call (with the given arguments) to see if the string format is
      * being used correctly
-     *
-     * @param context         the context to report errors to
-     * @param method          the method containing the {@link String#format} call
-     * @param call            the AST node for the {@link String#format}
-     * @param specifiesLocale whether the first parameter is a locale string, shifting the
-     *                        formatting string to the second argument
+     *  @param context           the context to report errors to
+     * @param calledMethod      the method being called
+     * @param call              the AST node for the {@link String#format}
+     * @param specifiesLocale   whether the first parameter is a locale string, shifting the
      */
     private void checkStringFormatCall(
             JavaContext context,
-            lombok.ast.Node method,
-            MethodInvocation call,
+            PsiMethod calledMethod,
+            PsiMethodCallExpression call,
             boolean specifiesLocale) {
 
-        StrictListAccessor<Expression, MethodInvocation> args = call.astArguments();
-        if (args.isEmpty()) {
+        int argIndex = specifiesLocale ? 1 : 0;
+        PsiExpression[] args = call.getArgumentList().getExpressions();
+
+        if (args.length <= argIndex) {
             return;
         }
 
-        StringTracker tracker = new StringTracker(context, method, call, specifiesLocale ? 1 : 0);
-        method.accept(tracker);
-        String name = tracker.getFormatStringName();
-        if (name == null) {
+        PsiExpression argument = args[argIndex];
+        ResourceUrl resource = ResourceEvaluator.getResource(context.getEvaluator(), argument);
+        if (resource == null || resource.framework || resource.type != ResourceType.STRING) {
             return;
         }
 
+        String name = resource.name;
         if (mIgnoreStrings != null && mIgnoreStrings.contains(name)) {
             return;
         }
 
         boolean passingVarArgsArray = false;
-        int callCount = args.size() - 1 - (specifiesLocale ? 1 : 0);
+        int callCount = args.length - 1 - argIndex;
+
         if (callCount == 1) {
             // If instead of a varargs call like
             //    getString(R.string.foo, arg1, arg2, arg3)
@@ -1165,29 +1139,55 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
             //    getString(R.string.foo, new Object[] { arg1, arg2, arg3 })
             // we'll need to handle that such that we don't think this is a single
             // argument
-            TypeDescriptor type = context.getType(args.last());
-            if (type != null && type.isArray() && !type.isPrimitive()) {
+
+            PsiExpression lastArg = args[args.length - 1];
+            PsiParameterList parameterList = calledMethod.getParameterList();
+            int parameterCount = parameterList.getParametersCount();
+            if (parameterCount > 0 && parameterList.getParameters()[parameterCount - 1].isVarArgs()) {
                 boolean knownArity = false;
-                if (args.last() instanceof ArrayCreation) {
-                    ArrayCreation creation = (ArrayCreation) args.last();
-                    ArrayInitializer initializer = creation.astInitializer();
-                    if (initializer != null) {
-                        callCount = initializer.astExpressions().size();
-                        knownArity = true;
-                    } else if (creation.astDimensions() != null
-                            && creation.astDimensions().size() == 1) {
-                        ArrayDimension first = creation.astDimensions().first();
-                        Expression expression = first.astDimension();
-                        if (expression instanceof IntegralLiteral) {
-                            callCount = ((IntegralLiteral) expression).astIntValue();
-                            knownArity = true;
+
+                boolean argWasReference = false;
+                if (lastArg instanceof PsiReference) {
+                    PsiElement resolved = ((PsiReference) lastArg).resolve();
+
+
+                    if (resolved instanceof PsiVariable) {
+                        PsiExpression initializer = ((PsiVariable) resolved).getInitializer();
+                        if (initializer instanceof PsiNewExpression) {
+                            argWasReference = true;
+                            // Now handled by check below
+                            lastArg = initializer;
                         }
                     }
                 }
-                if (!knownArity) {
-                    return;
+
+                if (lastArg instanceof PsiNewExpression) {
+                    PsiNewExpression newExpression = (PsiNewExpression) lastArg;
+                    PsiArrayInitializerExpression initializer = newExpression.getArrayInitializer();
+                    if (initializer != null) {
+                        callCount = initializer.getInitializers().length;
+                        knownArity = true;
+                    } else {
+                        PsiExpression[] arrayDimensions = newExpression.getArrayDimensions();
+                        if (arrayDimensions.length == 1) {
+                            PsiExpression first = arrayDimensions[0];
+                            if (first instanceof PsiLiteral) {
+                                Object o = ((PsiLiteral)first).getValue();
+                                if (o instanceof Integer) {
+                                    callCount = (Integer)o;
+                                    knownArity = true;
+                                }
+                            }
+                        }
+                    }
+                    if (!knownArity) {
+                        if (!argWasReference) {
+                            return;
+                        }
+                    } else {
+                        passingVarArgsArray = true;
+                    }
                 }
-                passingVarArgsArray = true;
             }
         }
 
@@ -1285,7 +1285,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                             "Wrong argument count, format string `%1$s` requires `%2$d` but format " +
                             "call supplies `%3$d`",
                             name, count, callCount);
-                    context.report(ARG_TYPES, method, location, message);
+                    context.report(ARG_TYPES, call, location, message);
                     if (reported == null) {
                         reported = Sets.newHashSet();
                     }
@@ -1297,8 +1297,8 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                         return;
                     }
                     for (int i = 1; i <= count; i++) {
-                        int argumentIndex = i + (specifiesLocale ? 1 : 0);
-                        Class<?> type = tracker.getArgumentType(argumentIndex);
+                        int argumentIndex = i + argIndex;
+                        PsiType type = args[argumentIndex].getType();
                         if (type != null) {
                             boolean valid = true;
                             String formatType = getFormatArgumentType(s, i);
@@ -1319,7 +1319,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                                 // unusual and probably not intended.
                                 case 'b':
                                 case 'B':
-                                    valid = type == Boolean.TYPE;
+                                    valid = isBooleanType(type);
                                     break;
 
                                 // Numeric: integer and floats in various formats
@@ -1334,17 +1334,12 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                                 case 'G':
                                 case 'a':
                                 case 'A':
-                                    valid = type == Integer.TYPE
-                                            || type == Float.TYPE
-                                            || type == Double.TYPE
-                                            || type == Long.TYPE
-                                            || type == Byte.TYPE
-                                            || type == Short.TYPE;
+                                    valid = isNumericType(type, true);
                                     break;
                                 case 'c':
                                 case 'C':
                                     // Unicode character
-                                    valid = type == Character.TYPE;
+                                    valid = isCharacterType(type);
                                     break;
                                 case 'h':
                                 case 'H': // Hex print of hash code of objects
@@ -1354,25 +1349,28 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                                     // numbers since you may have meant more
                                     // specific formatting. Use special issue
                                     // explanation for this?
-                                    valid = type != Boolean.TYPE &&
-                                        !Number.class.isAssignableFrom(type);
+                                    valid = !isBooleanType(type) &&
+                                            !isNumericType(type, false);
                                     break;
                             }
 
                             if (!valid) {
-                                Expression argument = tracker.getArgument(argumentIndex);
-                                Location location = context.getLocation(argument);
+                                Location location = context.getLocation(args[argumentIndex]);
                                 Location secondary = handle.resolve();
                                 secondary.setMessage("Conflicting argument declaration here");
                                 location.setSecondary(secondary);
+
+                                String canonicalText = type.getCanonicalText();
+                                canonicalText = canonicalText.substring(
+                                        canonicalText.lastIndexOf('.') + 1);
 
                                 String message = String.format(
                                         "Wrong argument type for formatting argument '#%1$d' " +
                                         "in `%2$s`: conversion is '`%3$s`', received `%4$s` " +
                                         "(argument #%5$d in method call)",
-                                        i, name, formatType, type.getSimpleName(),
+                                        i, name, formatType, canonicalText,
                                         argumentIndex + 1);
-                                context.report(ARG_TYPES, method, location, message);
+                                context.report(ARG_TYPES, call, location, message);
                                 if (reported == null) {
                                     reported = Sets.newHashSet();
                                 }
@@ -1385,409 +1383,61 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
         }
     }
 
-    private static boolean isLocaleReference(@Nullable TypeDescriptor reference) {
-        return reference != null && isLocaleReference(reference.getName());
+    private static boolean isCharacterType(PsiType type) {
+        //return PsiType.CHAR.isAssignableFrom(type);
+        if (type == PsiType.CHAR) {
+            return true;
+        }
+        if (type instanceof PsiClassType) {
+            String fqn = type.getCanonicalText();
+            return TYPE_CHARACTER_WRAPPER.equals(fqn);
+        }
+
+        return false;
     }
 
-    private static boolean isLocaleReference(@Nullable String typeName) {
-        return typeName != null && (typeName.equals("Locale")            //$NON-NLS-1$
-                || typeName.equals("java.util.Locale"));                 //$NON-NLS-1$
+    private static boolean isBooleanType(PsiType type) {
+        //return PsiType.BOOLEAN.isAssignableFrom(type);
+        if (type == PsiType.BOOLEAN) {
+            return true;
+        }
+        if (type instanceof PsiClassType) {
+            String fqn = type.getCanonicalText();
+            return TYPE_BOOLEAN_WRAPPER.equals(fqn);
+        }
+
+        return false;
     }
 
-    /** Returns the parent method of the given AST node */
-    @Nullable
-    public static lombok.ast.Node getParentMethod(@NonNull lombok.ast.Node node) {
-        lombok.ast.Node current = node.getParent();
-        while (current != null
-                && !(current instanceof MethodDeclaration)
-                && !(current instanceof ConstructorDeclaration)) {
-            current = current.getParent();
+    //PsiType:java.lang.Boolean
+    private static boolean isNumericType(@NonNull PsiType type, boolean allowBigNumbers) {
+        if (PsiType.INT.equals(type)
+                || PsiType.FLOAT.equals(type)
+                || PsiType.DOUBLE.equals(type)
+                || PsiType.LONG.equals(type)
+                || PsiType.BYTE.equals(type)
+                || PsiType.SHORT.equals(type)) {
+            return true;
         }
 
-        return current;
-    }
-
-    /** Returns the resource name corresponding to the first argument in the given call */
-    @Nullable
-    public static String getResourceForFirstArg(
-            @NonNull lombok.ast.Node method,
-            @NonNull lombok.ast.Node call) {
-        assert call instanceof MethodInvocation || call instanceof ConstructorInvocation;
-        StringTracker tracker = new StringTracker(null, method, call, 0);
-        method.accept(tracker);
-
-        return tracker.getFormatStringName();
-    }
-
-    /** Returns the resource name corresponding to the given argument in the given call */
-    @Nullable
-    public static String getResourceArg(
-            @NonNull lombok.ast.Node method,
-            @NonNull lombok.ast.Node call,
-            int argIndex) {
-        assert call instanceof MethodInvocation || call instanceof ConstructorInvocation;
-        StringTracker tracker = new StringTracker(null, method, call, argIndex);
-        method.accept(tracker);
-
-        return tracker.getFormatStringName();
-    }
-
-    /**
-     * Given a variable reference, finds the original R.string value corresponding to it.
-     * For example:
-     * <pre>
-     * {@code
-     *  String target = "World";
-     *  String hello = getResources().getString(R.string.hello);
-     *  String output = String.format(hello, target);
-     * }
-     * </pre>
-     *
-     * Given the {@code String.format} call, we want to find out what R.string resource
-     * corresponds to the first argument, in this case {@code R.string.hello}.
-     * To do this, we look for R.string references, and track those through assignments
-     * until we reach the target node.
-     * <p>
-     * In addition, it also does some primitive type tracking such that it (in some cases)
-     * can answer questions about the types of variables. This allows it to check whether
-     * certain argument types are valid. Note however that it does not do full-blown
-     * type analysis by checking method call signatures and so on.
-     */
-    private static class StringTracker extends ForwardingAstVisitor {
-        /** Method we're searching within */
-        private final lombok.ast.Node mTop;
-        /** The argument index in the method we're targeting */
-        private final int mArgIndex;
-        /** Map from variable name to corresponding string resource name */
-        private final Map<String, String> mMap = new HashMap<String, String>();
-        /** Map from variable name to corresponding type */
-        private final Map<String, Class<?>> mTypes = new HashMap<String, Class<?>>();
-        /** The AST node for the String.format we're interested in */
-        private final lombok.ast.Node mTargetNode;
-        private boolean mDone;
-        @Nullable
-        private JavaContext mContext;
-
-        /**
-         * Result: the name of the string resource being passed to the
-         * String.format, if any
-         */
-        private String mName;
-
-        public StringTracker(@Nullable JavaContext context, lombok.ast.Node top, lombok.ast.Node targetNode, int argIndex) {
-            mContext = context;
-            mTop = top;
-            mArgIndex = argIndex;
-            mTargetNode = targetNode;
-        }
-
-        public String getFormatStringName() {
-            return mName;
-        }
-
-        /** Returns the argument type of the given formatting argument of the
-         * target node. Note: This is in the formatting string, which is one higher
-         * than the String.format parameter number, since the first argument is the
-         * formatting string itself.
-         *
-         * @param argument the argument number
-         * @return the class (such as {@link Integer#TYPE} etc) or null if not known
-         */
-        public Class<?> getArgumentType(int argument) {
-            Expression arg = getArgument(argument);
-            if (arg != null) {
-                // Look up type based on the source code literals
-                Class<?> type = getType(arg);
-                if (type != null) {
-                    return type;
-                }
-
-                // If the AST supports type resolution, use that for other types
-                // of expressions
-                if (mContext != null) {
-                    return getTypeClass(mContext.getType(arg));
+        if (type instanceof PsiClassType) {
+            String fqn = type.getCanonicalText();
+            if (TYPE_INTEGER_WRAPPER.equals(fqn)
+                    || TYPE_FLOAT_WRAPPER.equals(fqn)
+                    || TYPE_DOUBLE_WRAPPER.equals(fqn)
+                    || TYPE_LONG_WRAPPER.equals(fqn)
+                    || TYPE_BYTE_WRAPPER.equals(fqn)
+                    || TYPE_SHORT_WRAPPER.equals(fqn)) {
+                return true;
+            }
+            if (allowBigNumbers) {
+                if ("java.math.BigInteger".equals(fqn) ||
+                        "java.math.BigDecimal".equals(fqn)) {
+                    return true;
                 }
             }
-
-            return null;
         }
 
-        private static Class<?> getTypeClass(@Nullable TypeDescriptor type) {
-            if (type != null) {
-                return getTypeClass(type.getName());
-            }
-            return null;
-        }
-
-        private static Class<?> getTypeClass(@Nullable String fqcn) {
-            if (fqcn == null) {
-                return null;
-            } else if (fqcn.equals(TYPE_STRING) || fqcn.equals("String")) {   //$NON-NLS-1$
-                return String.class;
-            } else if (fqcn.equals(TYPE_INT)) {
-                return Integer.TYPE;
-            } else if (fqcn.equals(TYPE_BOOLEAN)) {
-                return Boolean.TYPE;
-            } else if (fqcn.equals(TYPE_NULL)) {
-                return Object.class;
-            } else if (fqcn.equals(TYPE_LONG)) {
-                return Long.TYPE;
-            } else if (fqcn.equals(TYPE_FLOAT)) {
-                return Float.TYPE;
-            } else if (fqcn.equals(TYPE_DOUBLE)) {
-                return Double.TYPE;
-            } else if (fqcn.equals(TYPE_CHAR)) {
-                return Character.TYPE;
-            } else if (fqcn.equals("BigDecimal")                //$NON-NLS-1$
-                    || fqcn.equals("java.math.BigDecimal")) {   //$NON-NLS-1$
-                return Float.TYPE;
-            } else if (fqcn.equals("BigInteger")                //$NON-NLS-1$
-                    || fqcn.equals("java.math.BigInteger")) {   //$NON-NLS-1$
-                return Integer.TYPE;
-            } else if (fqcn.equals(TYPE_OBJECT)) {
-              return null;
-            } else if (fqcn.startsWith("java.lang.")) {
-              if (fqcn.equals("java.lang.Integer")
-                  || fqcn.equals("java.lang.Short")
-                  || fqcn.equals("java.lang.Byte")
-                  || fqcn.equals("java.lang.Long")) {
-                return Integer.TYPE;
-              } else if (fqcn.equals("java.lang.Float")
-                || fqcn.equals("java.lang.Double")) {
-                return Float.TYPE;
-              } else {
-                return null;
-              }
-            } else if (fqcn.equals(TYPE_BYTE)) {
-              return Byte.TYPE;
-            } else if (fqcn.equals(TYPE_SHORT)) {
-                return Short.TYPE;
-            } else {
-                return null;
-            }
-        }
-
-        public Expression getArgument(int argument) {
-            if (!(mTargetNode instanceof MethodInvocation)) {
-                return null;
-            }
-            MethodInvocation call = (MethodInvocation) mTargetNode;
-            StrictListAccessor<Expression, MethodInvocation> args = call.astArguments();
-            if (argument >= args.size()) {
-                return null;
-            }
-
-            Iterator<Expression> iterator = args.iterator();
-            int index = 0;
-            while (iterator.hasNext()) {
-                Expression arg = iterator.next();
-                if (index++ == argument) {
-                    return arg;
-                }
-            }
-
-            return null;
-        }
-
-        @Override
-        public boolean visitNode(lombok.ast.Node node) {
-            return mDone || super.visitNode(node);
-
-        }
-
-        @Override
-        public boolean visitVariableReference(VariableReference node) {
-            if (node.astIdentifier().astValue().equals(R_CLASS) &&   //$NON-NLS-1$
-                    node.getParent() instanceof Select &&
-                    node.getParent().getParent() instanceof Select) {
-
-                // See if we're on the right hand side of an assignment
-                lombok.ast.Node current = node.getParent().getParent();
-                String reference = ((Select) current).astIdentifier().astValue();
-                lombok.ast.Node prev = current;
-                while (current != mTop && !(current instanceof VariableDefinitionEntry)) {
-                    if (current == mTargetNode) {
-                        // Make sure the reference we found was part of the
-                        // target parameter (e.g. for a string format check,
-                        // the actual formatting string, not one of the arguments
-                        // supplied to the formatting string)
-                        boolean isParameterArg = false;
-                        Iterator<Expression> iterator = null;
-                        if (mTargetNode instanceof MethodInvocation) {
-                            MethodInvocation call = (MethodInvocation) mTargetNode;
-                            iterator = call.astArguments().iterator();
-                        } else if (mTargetNode instanceof ConstructorInvocation) {
-                            ConstructorInvocation call = (ConstructorInvocation) mTargetNode;
-                            iterator = call.astArguments().iterator();
-                        }
-                        if (iterator != null) {
-                            Expression arg = null;
-                            for (int i = 0; i <= mArgIndex; i++) {
-                                if (iterator.hasNext()) {
-                                    arg = iterator.next();
-                                } else {
-                                    arg = null;
-                                }
-                            }
-                            if (arg == prev) {
-                                isParameterArg = true;
-                            }
-                        } else {
-                            // Constructor?
-                            isParameterArg = true;
-                        }
-                        if (isParameterArg) {
-                            mName = reference;
-                            mDone = true;
-                            return false;
-                        }
-                    }
-                    prev = current;
-                    current = current.getParent();
-                }
-                if (current instanceof VariableDefinitionEntry) {
-                    VariableDefinitionEntry entry = (VariableDefinitionEntry) current;
-                    String variable = entry.astName().astValue();
-                    mMap.put(variable, reference);
-                }
-            }
-
-            return false;
-        }
-
-        @Nullable
-        private Expression getTargetArgument() {
-            Iterator<Expression> iterator;
-            if (mTargetNode instanceof MethodInvocation) {
-                iterator = ((MethodInvocation) mTargetNode).astArguments().iterator();
-            } else if (mTargetNode instanceof ConstructorInvocation) {
-                iterator = ((ConstructorInvocation) mTargetNode).astArguments().iterator();
-            } else {
-                return null;
-            }
-            int i = 0;
-            while (i < mArgIndex && iterator.hasNext()) {
-                iterator.next();
-                i++;
-            }
-            if (iterator.hasNext()) {
-                Expression next = iterator.next();
-                if (next != null && mContext != null && iterator.hasNext()) {
-                    TypeDescriptor type = mContext.getType(next);
-                    if (isLocaleReference(type)) {
-                        next = iterator.next();
-                    } else if (type == null
-                            && next.toString().startsWith("Locale.")) { //$NON-NLS-1$
-                        next = iterator.next();
-                    }
-                }
-                return next;
-            }
-
-            return null;
-        }
-
-        @Override
-        public boolean visitMethodInvocation(MethodInvocation node) {
-            if (node == mTargetNode) {
-                Expression arg = getTargetArgument();
-                if (arg instanceof VariableReference) {
-                      VariableReference reference = (VariableReference) arg;
-                      String variable = reference.astIdentifier().astValue();
-                      mName = mMap.get(variable);
-                      mDone = true;
-                      return true;
-                }
-            }
-
-            // Is this a getString() call? On a resource object? If so,
-            // promote the resource argument up to the left hand side
-            return super.visitMethodInvocation(node);
-        }
-
-        @Override
-        public boolean visitConstructorInvocation(ConstructorInvocation node) {
-            if (node == mTargetNode) {
-                Expression arg = getTargetArgument();
-                if (arg instanceof VariableReference) {
-                      VariableReference reference = (VariableReference) arg;
-                      String variable = reference.astIdentifier().astValue();
-                      mName = mMap.get(variable);
-                      mDone = true;
-                      return true;
-                }
-            }
-
-            // Is this a getString() call? On a resource object? If so,
-            // promote the resource argument up to the left hand side
-            return super.visitConstructorInvocation(node);
-        }
-
-        @Override
-        public boolean visitVariableDefinitionEntry(VariableDefinitionEntry node) {
-            String name = node.astName().astValue();
-            Expression rhs = node.astInitializer();
-            Class<?> type = getType(rhs);
-            if (type != null) {
-                mTypes.put(name, type);
-            } else {
-                // Make sure we're not visiting the String.format node itself. If you have
-                //    msg = String.format("%1$s", msg)
-                // then we'd be wiping out the type of "msg" before visiting the
-                // String.format call!
-                if (rhs != mTargetNode) {
-                    mTypes.remove(name);
-                }
-            }
-
-            return super.visitVariableDefinitionEntry(node);
-        }
-
-        private Class<?> getType(Expression expression) {
-            if (expression == null) {
-              return null;
-            }
-
-            if (expression instanceof VariableReference) {
-                VariableReference reference = (VariableReference) expression;
-                String variable = reference.astIdentifier().astValue();
-                Class<?> type = mTypes.get(variable);
-                if (type != null) {
-                    return type;
-                }
-            } else if (expression instanceof MethodInvocation) {
-                MethodInvocation method = (MethodInvocation) expression;
-                String methodName = method.astName().astValue();
-                if (methodName.equals(GET_STRING_METHOD)) {
-                    return String.class;
-                }
-            } else if (expression instanceof StringLiteral) {
-                return String.class;
-            } else if (expression instanceof IntegralLiteral) {
-                return Integer.TYPE;
-            } else if (expression instanceof FloatingPointLiteral) {
-                return Float.TYPE;
-            } else if (expression instanceof CharLiteral) {
-                return Character.TYPE;
-            } else if (expression instanceof BooleanLiteral) {
-                return Boolean.TYPE;
-            } else if (expression instanceof NullLiteral) {
-                return Object.class;
-            }
-
-            if (mContext != null) {
-                TypeDescriptor type = mContext.getType(expression);
-                if (type != null) {
-                    Class<?> typeClass = getTypeClass(type);
-                    if (typeClass != null) {
-                        return typeClass;
-                    } else {
-                        return Object.class;
-                    }
-                }
-            }
-
-            return null;
-        }
+        return false;
     }
 }

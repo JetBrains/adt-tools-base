@@ -27,7 +27,6 @@ import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
-import com.android.tools.lint.detector.api.Detector.JavaScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LintUtils;
@@ -52,7 +51,7 @@ import java.util.Map;
  * The rules are specified in
  * https://developer.android.com/reference/android/content/RestrictionsManager.html
  */
-public class RestrictionsDetector extends ResourceXmlDetector implements JavaScanner {
+public class RestrictionsDetector extends ResourceXmlDetector {
 
     // Copied from Google Play store's AppRestrictionBuilder
     @VisibleForTesting static final int MAX_NESTING_DEPTH = 20;

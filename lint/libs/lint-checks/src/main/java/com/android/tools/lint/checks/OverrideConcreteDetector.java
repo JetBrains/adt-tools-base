@@ -16,33 +16,30 @@
 
 package com.android.tools.lint.checks;
 
-import static com.android.tools.lint.client.api.JavaParser.ResolvedClass;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
+import com.android.tools.lint.client.api.JavaEvaluator;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Detector;
-import com.android.tools.lint.detector.api.Detector.JavaScanner;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.util.PsiTreeUtil;
 
-import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.List;
-
-import lombok.ast.ClassDeclaration;
-import lombok.ast.Node;
 
 /**
  * Checks that subclasses of certain APIs are overriding all methods that were abstract
  * in one or more earlier API levels that are still targeted by the minSdkVersion
  * of this project.
  */
-public class OverrideConcreteDetector extends Detector implements JavaScanner {
+public class OverrideConcreteDetector extends Detector implements JavaPsiScanner {
     /** Are previously-abstract methods all overridden? */
     public static final Issue ISSUE = Issue.create(
         "OverrideAbstract", //$NON-NLS-1$
@@ -92,17 +89,13 @@ public class OverrideConcreteDetector extends Detector implements JavaScanner {
     }
 
     @Override
-    public void checkClass(@NonNull JavaContext context, @Nullable ClassDeclaration node,
-            @NonNull Node declarationOrAnonymous, @NonNull ResolvedClass resolvedClass) {
-        if (node == null) {
-            return;
-        }
-        int flags = node.astModifiers().getEffectiveModifierFlags();
-        if ((flags & Modifier.ABSTRACT) != 0) {
+    public void checkClass(@NonNull JavaContext context, @NonNull PsiClass declaration) {
+        JavaEvaluator evaluator = context.getEvaluator();
+        if (evaluator.isAbstract(declaration)) {
             return;
         }
 
-        int minSdk = Math.max(context.getProject().getMinSdk(), getTargetApi(node));
+        int minSdk = Math.max(context.getProject().getMinSdk(), getTargetApi(declaration));
         if (minSdk >= CONCRETE_IN) {
             return;
         }
@@ -110,23 +103,26 @@ public class OverrideConcreteDetector extends Detector implements JavaScanner {
         String[] methodNames = {ON_NOTIFICATION_POSTED, ON_NOTIFICATION_REMOVED};
         for (String methodName : methodNames) {
             boolean found = false;
-            for (ResolvedMethod method : resolvedClass.getMethods(methodName, true)) {
+            for (PsiMethod method : declaration.findMethodsByName(methodName, true)) {
                 // Make sure it's not the base method, but that it's been defined
                 // in a subclass, concretely
-                ResolvedClass containingClass = method.getContainingClass();
-                if (containingClass.matches(NOTIFICATION_LISTENER_SERVICE_FQN)) {
+                PsiClass containingClass = method.getContainingClass();
+                if (containingClass == null) {
+                    continue;
+                }
+                if (NOTIFICATION_LISTENER_SERVICE_FQN.equals(containingClass.getQualifiedName())) {
                     continue;
                 }
                 // Make sure subclass isn't just defining another abstract definition
                 // of the method
-                if ((method.getModifiers() & Modifier.ABSTRACT) != 0) {
+                if (evaluator.isAbstract(method)) {
                     continue;
                 }
                 // Make sure it has the exact right signature
-                if (method.getArgumentCount() != 1) {
+                if (method.getParameterList().getParametersCount() != 1) {
                     continue; // Wrong signature
                 }
-                if (!method.getArgumentType(0).matchesName(STATUS_BAR_NOTIFICATION_FQN)) {
+                if (!evaluator.parameterHasType(method, 0, STATUS_BAR_NOTIFICATION_FQN)) {
                     continue;
                 }
 
@@ -139,23 +135,21 @@ public class OverrideConcreteDetector extends Detector implements JavaScanner {
                         "Must override `%1$s.%2$s(%3$s)`: Method was abstract until %4$d, and your `minSdkVersion` is %5$d",
                         NOTIFICATION_LISTENER_SERVICE_FQN, methodName,
                         STATUS_BAR_NOTIFICATION_FQN, CONCRETE_IN, minSdk);
-                Node nameNode = node.astName();
-                context.report(ISSUE, node, context.getLocation(nameNode),
-                        message);
+                context.report(ISSUE, declaration, context.getNameLocation(declaration), message);
                 break;
             }
 
         }
     }
 
-    private static int getTargetApi(ClassDeclaration node) {
+    private static int getTargetApi(@NonNull PsiClass node) {
         while (node != null) {
-            int targetApi = ApiDetector.getTargetApi(node.astModifiers());
+            int targetApi = ApiDetector.getTargetApi(node.getModifierList());
             if (targetApi != -1) {
                 return targetApi;
             }
 
-            node = JavaContext.findSurroundingClass(node.getParent());
+            node = PsiTreeUtil.getParentOfType(node, PsiClass.class, true);
         }
 
         return -1;

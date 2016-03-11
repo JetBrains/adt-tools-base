@@ -19,34 +19,31 @@ import static com.android.SdkConstants.CLASS_INTENT;
 import static com.android.tools.lint.checks.SupportAnnotationDetector.PERMISSION_ANNOTATION;
 import static com.android.tools.lint.checks.SupportAnnotationDetector.PERMISSION_ANNOTATION_READ;
 import static com.android.tools.lint.checks.SupportAnnotationDetector.PERMISSION_ANNOTATION_WRITE;
-import static com.android.tools.lint.detector.api.JavaContext.getParentOfType;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser;
-import com.android.tools.lint.client.api.JavaParser.ResolvedAnnotation;
-import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
-import com.android.tools.lint.client.api.JavaParser.ResolvedField;
-import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.detector.api.JavaContext;
-
-import java.util.ListIterator;
-
-import lombok.ast.BinaryExpression;
-import lombok.ast.BinaryOperator;
-import lombok.ast.Cast;
-import lombok.ast.ConstructorInvocation;
-import lombok.ast.Expression;
-import lombok.ast.ExpressionStatement;
-import lombok.ast.InlineIfExpression;
-import lombok.ast.Node;
-import lombok.ast.NullLiteral;
-import lombok.ast.Select;
-import lombok.ast.Statement;
-import lombok.ast.VariableDeclaration;
-import lombok.ast.VariableDefinition;
-import lombok.ast.VariableDefinitionEntry;
-import lombok.ast.VariableReference;
+import com.intellij.psi.PsiAnnotation;
+import com.intellij.psi.PsiAssignmentExpression;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiConditionalExpression;
+import com.intellij.psi.PsiDeclarationStatement;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiExpressionList;
+import com.intellij.psi.PsiExpressionStatement;
+import com.intellij.psi.PsiField;
+import com.intellij.psi.PsiJavaCodeReferenceElement;
+import com.intellij.psi.PsiLiteral;
+import com.intellij.psi.PsiLocalVariable;
+import com.intellij.psi.PsiModifierList;
+import com.intellij.psi.PsiNameValuePair;
+import com.intellij.psi.PsiNewExpression;
+import com.intellij.psi.PsiParenthesizedExpression;
+import com.intellij.psi.PsiReferenceExpression;
+import com.intellij.psi.PsiStatement;
+import com.intellij.psi.PsiTypeCastExpression;
+import com.intellij.psi.util.PsiTreeUtil;
 
 /**
  * Utility for locating permissions required by an intent or content resolver
@@ -103,7 +100,7 @@ public class PermissionFinder {
     public static Result findRequiredPermissions(
             @NonNull Operation operation,
             @NonNull JavaContext context,
-            @NonNull Node parameter) {
+            @NonNull PsiElement parameter) {
 
         // To find the permission required by an intent, we proceed in 3 steps:
         // (1) Locate the parameter in the start call that corresponds to
@@ -127,56 +124,77 @@ public class PermissionFinder {
     @NonNull private final Operation mOperation;
 
     @Nullable
-    public Result search(@NonNull Node node) {
-        if (node instanceof NullLiteral) {
+    public Result search(@NonNull PsiElement node) {
+        if (node instanceof PsiLiteral && "null".equals(node.getText())) {
             return null;
-        } else if (node instanceof InlineIfExpression) {
-            InlineIfExpression expression = (InlineIfExpression) node;
-            if (expression.astIfTrue() != null) {
-                Result result = search(expression.astIfTrue());
+        } else if (node instanceof PsiConditionalExpression) {
+            PsiConditionalExpression expression = (PsiConditionalExpression) node;
+            if (expression.getThenExpression() != null) {
+                Result result = search(expression.getThenExpression());
                 if (result != null) {
                     return result;
                 }
             }
-            if (expression.astIfFalse() != null) {
-                Result result = search(expression.astIfFalse());
+            if (expression.getElseExpression() != null) {
+                Result result = search(expression.getElseExpression());
                 if (result != null) {
                     return result;
                 }
             }
-        } else if (node instanceof Cast) {
-            Cast cast = (Cast) node;
-            return search(cast.astOperand());
-        } else if (node instanceof ConstructorInvocation && mOperation == Operation.ACTION) {
+        } else if (node instanceof PsiTypeCastExpression) {
+            PsiTypeCastExpression cast = (PsiTypeCastExpression) node;
+            PsiExpression operand = cast.getOperand();
+            if (operand != null) {
+                return search(operand);
+            }
+        } else if (node instanceof PsiParenthesizedExpression) {
+            PsiParenthesizedExpression parens = (PsiParenthesizedExpression) node;
+            PsiExpression expression = parens.getExpression();
+            if (expression != null) {
+                return search(expression);
+            }
+        } else if (node instanceof PsiNewExpression && mOperation == Operation.ACTION) {
             // Identifies "new Intent(argument)" calls and, if found, continues
             // resolving the argument instead looking for the action definition
-            ConstructorInvocation call = (ConstructorInvocation) node;
-            String type = call.astTypeReference().getTypeName();
-            if (type.equals("Intent") || type.equals(CLASS_INTENT)) {
-                Expression action = call.astArguments().first();
-                if (action != null) {
-                    return search(action);
+            PsiNewExpression call = (PsiNewExpression) node;
+            PsiJavaCodeReferenceElement classReference = call.getClassReference();
+            String type = classReference != null ? classReference.getQualifiedName() : null;
+            if (CLASS_INTENT.equals(type)) {
+                PsiExpressionList argumentList = call.getArgumentList();
+                if (argumentList != null) {
+                    PsiExpression[] expressions = argumentList.getExpressions();
+                    if (expressions.length > 0) {
+                        PsiExpression action = expressions[0];
+                        if (action != null) {
+                            return search(action);
+                        }
+                    }
                 }
             }
             return null;
-        } else if ((node instanceof VariableReference || node instanceof Select)) {
-            ResolvedNode resolved = mContext.resolve(node);
-            if (resolved instanceof ResolvedField) {
-                ResolvedField field = (ResolvedField) resolved;
+        } else if (node instanceof PsiReferenceExpression) {
+            PsiElement resolved = ((PsiReferenceExpression) node).resolve();
+            if (resolved instanceof PsiField) {
+                PsiField field = (PsiField) resolved;
                 if (mOperation == Operation.ACTION) {
-                    ResolvedAnnotation annotation = field.getAnnotation(PERMISSION_ANNOTATION);
+                    PsiModifierList modifierList = field.getModifierList();
+                    PsiAnnotation annotation = modifierList != null
+                            ? modifierList.findAnnotation(PERMISSION_ANNOTATION) : null;
                     if (annotation != null) {
                         return getPermissionRequirement(field, annotation);
                     }
                 } else if (mOperation == Operation.READ || mOperation == Operation.WRITE) {
                     String fqn = mOperation == Operation.READ
                             ? PERMISSION_ANNOTATION_READ : PERMISSION_ANNOTATION_WRITE;
-                    ResolvedAnnotation annotation = field.getAnnotation(fqn);
+                    PsiModifierList modifierList = field.getModifierList();
+                    PsiAnnotation annotation = modifierList != null
+                            ? modifierList.findAnnotation(fqn) : null;
                     if (annotation != null) {
-                        Object o = annotation.getValue();
-                        if (o instanceof ResolvedAnnotation) {
-                            annotation = (ResolvedAnnotation) o;
-                            if (annotation.matches(PERMISSION_ANNOTATION)) {
+                        PsiNameValuePair[] attributes = annotation.getParameterList().getAttributes();
+                        PsiNameValuePair o = attributes.length == 1 ? attributes[0] : null;
+                        if (o != null && o.getValue() instanceof PsiAnnotation) {
+                            annotation = (PsiAnnotation) o.getValue();
+                            if (PERMISSION_ANNOTATION.equals(annotation.getQualifiedName())) {
                                 return getPermissionRequirement(field, annotation);
                             }
                         } else {
@@ -192,46 +210,48 @@ public class PermissionFinder {
                 } else {
                     assert false : mOperation;
                 }
-            } else if (node instanceof VariableReference) {
-                Statement statement = getParentOfType(node, Statement.class, false);
-                if (statement != null) {
-                    ListIterator<Node> iterator =
-                            statement.getParent().getChildren().listIterator();
-                    while (iterator.hasNext()) {
-                        if (iterator.next() == statement) {
-                            if (iterator.hasPrevious()) { // should always be true
-                                iterator.previous();
-                            }
-                            break;
-                        }
-                    }
+            } else if (resolved instanceof PsiLocalVariable) {
+                PsiLocalVariable variable = (PsiLocalVariable) resolved;
+                String targetName = variable.getName();
+                PsiStatement statement = PsiTreeUtil.getParentOfType(node, PsiStatement.class, false);
+                if (statement != null && targetName != null) {
+                    PsiStatement prev = PsiTreeUtil.getPrevSiblingOfType(statement,
+                            PsiStatement.class);
 
-                    String targetName = ((VariableReference)node).astIdentifier().astValue();
-                    while (iterator.hasPrevious()) {
-                        Node previous = iterator.previous();
-                        if (previous instanceof VariableDeclaration) {
-                            VariableDeclaration declaration = (VariableDeclaration) previous;
-                            VariableDefinition definition = declaration.astDefinition();
-                            for (VariableDefinitionEntry entry : definition
-                                    .astVariables()) {
-                                if (entry.astInitializer() != null
-                                        && entry.astName().astValue().equals(targetName)) {
-                                    return search(entry.astInitializer());
+                    while (prev != null) {
+                        if (prev instanceof PsiDeclarationStatement) {
+                            for (PsiElement element : ((PsiDeclarationStatement) prev)
+                                    .getDeclaredElements()) {
+                                if (variable.equals(element)) {
+                                    if (variable.getInitializer() != null) {
+                                        return search(variable.getInitializer());
+                                    } else {
+                                        break;
+                                    }
                                 }
                             }
-                        } else if (previous instanceof ExpressionStatement) {
-                            ExpressionStatement expressionStatement =
-                                    (ExpressionStatement) previous;
-                            Expression expression = expressionStatement.astExpression();
-                            if (expression instanceof BinaryExpression &&
-                                    ((BinaryExpression) expression).astOperator()
-                                            == BinaryOperator.ASSIGN) {
-                                BinaryExpression binaryExpression = (BinaryExpression) expression;
-                                if (targetName.equals(binaryExpression.astLeft().toString())) {
-                                    return search(binaryExpression.astRight());
+                        } else if (prev instanceof PsiExpressionStatement) {
+                            PsiExpression expression = ((PsiExpressionStatement) prev)
+                                    .getExpression();
+                            if (expression instanceof PsiAssignmentExpression) {
+                                PsiAssignmentExpression assign
+                                        = (PsiAssignmentExpression) expression;
+                                PsiExpression lhs = assign.getLExpression();
+                                if (lhs instanceof PsiReferenceExpression) {
+                                    PsiReferenceExpression reference = (PsiReferenceExpression) lhs;
+                                    if (targetName.equals(reference.getReferenceName()) &&
+                                            reference.getQualifier() == null) {
+                                        if (assign.getRExpression() != null) {
+                                            return search(assign.getRExpression());
+                                        } else {
+                                            break;
+                                        }
+                                    }
                                 }
                             }
                         }
+                        prev = PsiTreeUtil.getPrevSiblingOfType(prev,
+                                PsiStatement.class);
                     }
                 }
             }
@@ -242,13 +262,14 @@ public class PermissionFinder {
 
     @NonNull
     private Result getPermissionRequirement(
-            @NonNull ResolvedField field,
-            @NonNull ResolvedAnnotation annotation) {
+            @NonNull PsiField field,
+            @NonNull PsiAnnotation annotation) {
         PermissionRequirement requirement = PermissionRequirement.create(mContext, annotation);
-        ResolvedClass containingClass = field.getContainingClass();
+        PsiClass containingClass = field.getContainingClass();
         String name = containingClass != null
-                ? containingClass.getSimpleName() + "." + field.getName()
+                ? containingClass.getName() + "." + field.getName()
                 : field.getName();
+        assert name != null;
         return new Result(mOperation, requirement, name);
     }
 }

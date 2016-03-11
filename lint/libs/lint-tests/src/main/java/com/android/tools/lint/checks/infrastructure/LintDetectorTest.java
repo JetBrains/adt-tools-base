@@ -49,12 +49,12 @@ import com.android.tools.lint.client.api.Configuration;
 import com.android.tools.lint.client.api.DefaultConfiguration;
 import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.client.api.JavaParser;
+import com.android.tools.lint.client.api.JavaPsiVisitor;
 import com.android.tools.lint.client.api.JavaVisitor;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.client.api.LintRequest;
 import com.android.tools.lint.detector.api.Context;
-import com.android.tools.lint.detector.api.DefaultPosition;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
@@ -64,6 +64,7 @@ import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.TextFormat;
+import com.android.tools.lint.psi.EcjPsiBuilder;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.android.utils.SdkUtils;
@@ -101,6 +102,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.CodeSource;
@@ -130,12 +132,12 @@ import javax.xml.bind.DatatypeConverter;
 @Beta
 @SuppressWarnings("javadoc")
 public abstract class LintDetectorTest extends SdkTestCase {
-
     @Override
     protected void setUp() throws Exception {
         super.setUp();
         BuiltinIssueRegistry.reset();
         JavaVisitor.clearCrashCount();
+        JavaPsiVisitor.clearCrashCount();
     }
 
     @Override
@@ -152,7 +154,9 @@ public abstract class LintDetectorTest extends SdkTestCase {
         }
         for (Issue issue : issues) {
             if (issue.getImplementation().getScope().contains(Scope.JAVA_FILE)) {
-                assertEquals(0, JavaVisitor.getCrashCount());
+                if (JavaVisitor.getCrashCount() > 0 || JavaPsiVisitor.getCrashCount() > 0) {
+                    fail("There was a crash during lint execution; consult log for details");
+                }
                 break;
             }
         }
@@ -171,6 +175,18 @@ public abstract class LintDetectorTest extends SdkTestCase {
     }
 
     protected boolean allowCompilationErrors() {
+        return false;
+    }
+
+    /**
+     * If false (the default), lint will run your detectors <b>twice</b>, first on the
+     * plain source code, and then a second time where it has inserted whitespace
+     * and parentheses pretty much everywhere, to help catch bugs where your detector
+     * is only checking direct parents or siblings rather than properly allowing for
+     * whitespace and parenthesis nodes which can be present for example when using
+     * PSI inside the IDE.
+     */
+    protected boolean skipExtraTokenChecks() {
         return false;
     }
 
@@ -226,6 +242,37 @@ public abstract class LintDetectorTest extends SdkTestCase {
 
         mOutput = new StringBuilder();
         String result = lintClient.analyze(files);
+
+        if (getDetector() instanceof Detector.JavaPsiScanner && !skipExtraTokenChecks()) {
+            mOutput.setLength(0);
+            lintClient.reset();
+            try {
+                //lintClient.mWarnings.clear();
+                Field field = LintCliClient.class.getDeclaredField("mWarnings");
+                field.setAccessible(true);
+                List list = (List)field.get(lintClient);
+                list.clear();
+            } catch (Throwable t) {
+                fail(t.toString());
+            }
+
+            String secondResult;
+            try {
+                EcjPsiBuilder.setDebugOptions(true, true);
+                secondResult = lintClient.analyze(files);
+            } finally {
+                EcjPsiBuilder.setDebugOptions(false, false);
+            }
+
+            assertEquals("The lint check produced different results when run on the "
+                    + "normal test files and a version where parentheses and whitespace tokens "
+                    + "have been inserted everywhere. The lint check should be resilient towards "
+                    + "these kinds of differences (since in the IDE, PSI will include both "
+                    + "types of nodes. Your detector should call LintUtils.skipParenthes(parent) "
+                    + "to jump across parentheses nodes when checking parents, and there are "
+                    + "similar methods in LintUtils to skip across whitespace siblings.\n",
+                    result, secondResult);
+        }
 
         // The output typically contains a few directory/filenames.
         // On Windows we need to change the separators to the unix-style
@@ -828,6 +875,12 @@ public abstract class LintDetectorTest extends SdkTestCase {
             return super.getSuperClass(project, name);
         }
 
+        @Override
+        public void reset() {
+            super.reset();
+            mWriter.getBuffer().setLength(0);
+        }
+
         public String analyze(List<File> files) throws Exception {
             mDriver = new LintDriver(new CustomIssueRegistry(), this);
             configureDriver(mDriver);
@@ -907,45 +960,32 @@ public abstract class LintDetectorTest extends SdkTestCase {
                 public void prepareJavaParse(@NonNull List<JavaContext> contexts) {
                     super.prepareJavaParse(contexts);
                     if (!allowCompilationErrors() && mEcjResult != null) {
-                        assertTrue(!contexts.isEmpty());
-                        JavaContext first = contexts.get(0);
-                        boolean foundErrors = false;
+                        StringBuilder sb = new StringBuilder();
                         for (CompilationUnitDeclaration unit : mEcjResult.getCompilationUnits()) {
                             // so maybe I don't need my map!!
                             CategorizedProblem[] problems = unit.compilationResult()
                                     .getAllProblems();
-                            if (problems != null && problems.length > 0) {
+                            if (problems != null) {
                                 for (IProblem problem : problems) {
                                     if (problem == null || !problem.isError()) {
                                         continue;
                                     }
-
-                                    foundErrors = true;
-                                    char[] path = problem.getOriginatingFileName();
-                                    File file = new File(new String(path));
-                                    JavaContext context = new JavaContext(first.getDriver(),
-                                                first.getProject(), first.getMainProject(),
-                                                file, first.getParser());
-                                    Location location = Location.create(context.file,
-                                            new DefaultPosition(problem.getSourceLineNumber() - 1,
-                                                    -1, problem.getSourceStart()),
-                                            new DefaultPosition(problem.getSourceLineNumber() - 1,
-                                                    -1, problem.getSourceEnd()));
-                                    String message = problem.getMessage();
-                                    context.report(IssueRegistry.PARSER_ERROR, location,
-                                            message);
+                                    String filename = new File(new String(
+                                            problem.getOriginatingFileName())).getName();
+                                    sb.append(filename)
+                                            .append(":")
+                                            .append(problem.isError() ? "Error" : "Warning")
+                                            .append(": ").append(problem.getSourceLineNumber())
+                                            .append(": ").append(problem.getMessage())
+                                            .append('\n');
                                 }
                             }
                         }
-                        if (foundErrors) {
-                            Context context = new Context(first.getDriver(),
-                                    first.getProject(), first.getMainProject(),
-                                    first.getProject().getDir());
-                            context.report(IssueRegistry.PARSER_ERROR,
-                                    Location.create(context.file),
-                                    "Found compilation problems in lint test not overriding "
-                                            + "allowCompilationErrors()");
+                        if (sb.length() > 0) {
+                            fail("Found compilation problems in lint test not overriding "
+                                    + "allowCompilationErrors():\n" + sb);
                         }
+
                     }
                 }
             };
@@ -962,7 +1002,6 @@ public abstract class LintDetectorTest extends SdkTestCase {
             if (ignoreSystemErrors() && (issue == IssueRegistry.LINT_ERROR)) {
                 return;
             }
-
             // Use plain ascii in the test golden files for now. (This also ensures
             // that the markup is well-formed, e.g. if we have a ` without a matching
             // closing `, the ` would show up in the plain text.)
@@ -1019,7 +1058,9 @@ public abstract class LintDetectorTest extends SdkTestCase {
             System.err.println(sb);
 
             if (exception != null) {
-                fail(exception.toString());
+                // Ensure that we get the full cause
+                //fail(exception.toString());
+                throw new RuntimeException(exception);
             }
         }
 

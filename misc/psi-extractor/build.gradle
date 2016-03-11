@@ -1,0 +1,22 @@
+apply plugin: 'application'
+apply plugin: 'java'
+
+mainClassName = "com.android.apigenerator.Main"
+mainClassName = "com.android.tools.lint.psi.extract.ExtractPsi"
+applicationDefaultJvmArgs = ["-ea", "-Xms2048m", "-Xmx2048m"]
+
+sourceCompatibility = 1.6
+
+repositories {
+    jcenter()
+}
+dependencies {
+    compile project(':base:lint-api')
+}
+
+defaultTasks 'installApp'
+
+// Once built you can run the app in
+// out/build/base/psi-extractor/build/install/psi-extractor/bin/
+// e.g. from this directory, invoke
+// ../../../../out/build/base/psi-extractor/build/install/psi-extractor/bin/psi-extractor

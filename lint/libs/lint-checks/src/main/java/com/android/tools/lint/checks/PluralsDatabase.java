@@ -33,14 +33,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Database used by the {@link com.android.tools.lint.checks.PluralsDetector} to get information
+ * Database used by the {@link PluralsDetector} to get information
  * about plural forms for a given language
  */
 public class PluralsDatabase {
     private static final EnumSet<Quantity> NONE = EnumSet.noneOf(Quantity.class);
 
     private static final PluralsDatabase sInstance = new PluralsDatabase();
-    private Map<String, EnumSet<Quantity>> mPlurals = Maps.newHashMap();
+    private final Map<String, EnumSet<Quantity>> mPlurals = Maps.newHashMap();
 
     /** Bit set if this language uses quantity zero */
     @SuppressWarnings("PointlessBitwiseExpression")

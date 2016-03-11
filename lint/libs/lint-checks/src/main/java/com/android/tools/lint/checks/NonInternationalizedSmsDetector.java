@@ -19,26 +19,24 @@ package com.android.tools.lint.checks;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Category;
-import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
+import com.intellij.psi.JavaElementVisitor;
+import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiLiteral;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiMethodCallExpression;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import lombok.ast.AstVisitor;
-import lombok.ast.Expression;
-import lombok.ast.MethodInvocation;
-import lombok.ast.StrictListAccessor;
-import lombok.ast.StringLiteral;
-
 /** Detector looking for text messages sent to an unlocalized phone number. */
-public class NonInternationalizedSmsDetector extends Detector implements Detector.JavaScanner {
+public class NonInternationalizedSmsDetector extends Detector implements JavaPsiScanner {
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "UnlocalizedSms", //$NON-NLS-1$
@@ -60,12 +58,6 @@ public class NonInternationalizedSmsDetector extends Detector implements Detecto
     public NonInternationalizedSmsDetector() {
     }
 
-    @Override
-    public boolean appliesTo(@NonNull Context context, @NonNull File file) {
-        return true;
-    }
-
-
     // ---- Implements JavaScanner ----
 
     @Override
@@ -77,28 +69,32 @@ public class NonInternationalizedSmsDetector extends Detector implements Detecto
     }
 
     @Override
-    public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor,
-            @NonNull MethodInvocation node) {
-        assert node.astName().astValue().equals("sendTextMessage") ||  //$NON-NLS-1$
-            node.astName().astValue().equals("sendMultipartTextMessage");  //$NON-NLS-1$
-        if (node.astOperand() == null) {
+    public void visitMethod(@NonNull JavaContext context, @Nullable JavaElementVisitor visitor,
+            @NonNull PsiMethodCallExpression call, @NonNull PsiMethod method) {
+        if (call.getMethodExpression().getQualifier() == null) {
             // "sendTextMessage"/"sendMultipartTextMessage" in the code with no operand
             return;
         }
 
-        StrictListAccessor<Expression, MethodInvocation> args = node.astArguments();
-        if (args.size() == 5) {
-            Expression destinationAddress = args.first();
-            if (destinationAddress instanceof StringLiteral) {
-                String number = ((StringLiteral) destinationAddress).astValue();
-
-                if (!number.startsWith("+")) {  //$NON-NLS-1$
-                   context.report(ISSUE, node, context.getLocation(destinationAddress),
-                       "To make sure the SMS can be sent by all users, please start the SMS number " +
-                       "with a + and a country code or restrict the code invocation to people in the country " +
-                       "you are targeting.");
-                }
-            }
+        PsiExpression[] args = call.getArgumentList().getExpressions();
+        if (args.length != 5) {
+            return;
         }
+        PsiExpression destinationAddress = args[0];
+        if (!(destinationAddress instanceof PsiLiteral)) {
+            return;
+        }
+        Object literal = ((PsiLiteral)destinationAddress).getValue();
+        if (!(literal instanceof String)) {
+            return;
+        }
+        String number = (String) literal;
+        if (number.startsWith("+")) {  //$NON-NLS-1$
+            return;
+        }
+        context.report(ISSUE, call, context.getLocation(destinationAddress),
+            "To make sure the SMS can be sent by all users, please start the SMS number " +
+            "with a + and a country code or restrict the code invocation to people in the " +
+            "country you are targeting.");
     }
 }

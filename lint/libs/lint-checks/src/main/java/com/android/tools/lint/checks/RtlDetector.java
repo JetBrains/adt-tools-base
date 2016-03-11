@@ -58,12 +58,9 @@ import static com.android.SdkConstants.TAG_APPLICATION;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
-import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
-import com.android.tools.lint.client.api.JavaParser.ResolvedField;
-import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
-import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
@@ -73,8 +70,11 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
+import com.intellij.psi.JavaElementVisitor;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiField;
+import com.intellij.psi.PsiReferenceExpression;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
@@ -87,20 +87,10 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 
-import lombok.ast.AstVisitor;
-import lombok.ast.EnumConstant;
-import lombok.ast.ForwardingAstVisitor;
-import lombok.ast.Identifier;
-import lombok.ast.ImportDeclaration;
-import lombok.ast.Node;
-import lombok.ast.Select;
-import lombok.ast.VariableDefinitionEntry;
-import lombok.ast.VariableReference;
-
 /**
  * Check which looks for RTL issues (right-to-left support) in layouts
  */
-public class RtlDetector extends LayoutDetector implements Detector.JavaScanner {
+public class RtlDetector extends LayoutDetector implements JavaPsiScanner {
 
     @SuppressWarnings("unchecked")
     private static final Implementation IMPLEMENTATION = new Implementation(
@@ -194,9 +184,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
 
     private static final String RIGHT_FIELD = "RIGHT";                          //$NON-NLS-1$
     private static final String LEFT_FIELD = "LEFT";                            //$NON-NLS-1$
-    private static final String GRAVITY_CLASS = "Gravity";                      //$NON-NLS-1$
     private static final String FQCN_GRAVITY = "android.view.Gravity";          //$NON-NLS-1$
-    private static final String FQCN_GRAVITY_PREFIX = "android.view.Gravity.";  //$NON-NLS-1$
     private static final String ATTR_TEXT_ALIGNMENT = "textAlignment";          //$NON-NLS-1$
     static final String ATTR_SUPPORTS_RTL = "supportsRtl";                      //$NON-NLS-1$
 
@@ -213,12 +201,6 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
 
     /** Constructs a new {@link RtlDetector} */
     public RtlDetector() {
-    }
-
-    @Override
-    @NonNull
-    public  Speed getSpeed() {
-        return Speed.NORMAL;
     }
 
     private boolean rtlApplies(@NonNull Context context) {
@@ -567,25 +549,21 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
     // ---- Implements JavaScanner ----
 
     @Override
-    public boolean appliesTo(@NonNull Context context, @NonNull File file) {
-        return true;
+    public List<Class<? extends PsiElement>> getApplicablePsiTypes() {
+        return Collections.<Class<? extends PsiElement>>singletonList(PsiReferenceExpression.class);
     }
 
+    @Nullable
     @Override
-    public List<Class<? extends Node>> getApplicableNodeTypes() {
-        return Collections.<Class<? extends Node>>singletonList(Identifier.class);
-    }
-
-    @Override
-    public AstVisitor createJavaVisitor(@NonNull JavaContext context) {
+    public JavaElementVisitor createPsiVisitor(@NonNull JavaContext context) {
         if (rtlApplies(context)) {
             return new IdentifierChecker(context);
         }
 
-        return new ForwardingAstVisitor() { };
+        return null;
     }
 
-    private static class IdentifierChecker extends ForwardingAstVisitor {
+    private static class IdentifierChecker extends JavaElementVisitor {
         private final JavaContext mContext;
 
         public IdentifierChecker(JavaContext context) {
@@ -593,44 +571,22 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
         }
 
         @Override
-        public boolean visitIdentifier(Identifier node) {
-            String identifier = node.astValue();
+        public void visitReferenceExpression(PsiReferenceExpression node) {
+            String identifier = node.getReferenceName();
             boolean isLeft = LEFT_FIELD.equals(identifier);
             boolean isRight = RIGHT_FIELD.equals(identifier);
             if (!isLeft && !isRight) {
-                return false;
+                return;
             }
 
-            Node parent = node.getParent();
-            if (parent instanceof ImportDeclaration || parent instanceof EnumConstant
-                    || parent instanceof VariableDefinitionEntry) {
-                return false;
-            }
 
-            ResolvedNode resolved = mContext.resolve(node);
-            if (resolved != null) {
-                if (!(resolved instanceof ResolvedField)) {
-                    return false;
-                } else {
-                    ResolvedField field = (ResolvedField) resolved;
-                    ResolvedClass containingClass = field.getContainingClass();
-                    if (containingClass == null || !containingClass.matches(FQCN_GRAVITY)) {
-                        return false;
-                    }
-                }
+            PsiElement resolved = node.resolve();
+            if (!(resolved instanceof PsiField)) {
+                return;
             } else {
-                // Can't resolve types (for example while editing code with errors):
-                // rely on heuristics like import statements and class qualifiers
-                if (parent instanceof Select &&
-                        !(GRAVITY_CLASS.equals(((Select) parent).astOperand().toString()))) {
-                    return false;
-                }
-                if (parent instanceof VariableReference) {
-                    // No operand: make sure it's statically imported
-                    if (!LintUtils.isImported(mContext.getCompilationUnit(),
-                            FQCN_GRAVITY_PREFIX + identifier)) {
-                        return false;
-                    }
+                PsiField field = (PsiField) resolved;
+                if (!mContext.getEvaluator().isMemberInClass(field, FQCN_GRAVITY)) {
+                    return;
                 }
             }
 
@@ -639,10 +595,12 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                             + "behavior in right-to-left locales",
                     (isLeft ? GRAVITY_VALUE_START : GRAVITY_VALUE_END).toUpperCase(Locale.US),
                     (isLeft ? GRAVITY_VALUE_LEFT : GRAVITY_VALUE_RIGHT).toUpperCase(Locale.US));
-            Location location = mContext.getLocation(node);
+            PsiElement locationNode = node.getReferenceNameElement();
+            if (locationNode == null) {
+                locationNode = node;
+            }
+            Location location = mContext.getLocation(locationNode);
             mContext.report(USE_START, node, location, message);
-
-            return true;
         }
     }
 }
