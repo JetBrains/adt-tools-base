@@ -28,6 +28,7 @@ import com.google.common.io.Files;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.dsl.RepositoryHandler;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
@@ -44,6 +45,8 @@ import java.util.*;
 public class ProfilerPlugin implements Plugin<Project> {
   private static final String PROPERTY_PROPERTIES_FILE = "android.profiler.properties";
   private static final String PROPERTY_ENABLED = "android.profiler.enabled";
+  private static final String PROPERTY_GAPID_ENABLED = "android.profiler.gapid.enabled";
+  private static final String PROPERTY_GAPID_TRACER_AAR = "android.profiler.gapid.tracer_aar";
 
   @NonNull
   private static File toOutputFile(File outputDir, File inputDir, File inputFile) {
@@ -78,10 +81,12 @@ public class ProfilerPlugin implements Plugin<Project> {
       FileOutputStream fileOutputStream = new FileOutputStream(getOutputFile());
       try {
         ByteStreams.copy(jar, fileOutputStream);
-      } finally {
+      }
+      finally {
         try {
           jar.close();
-        } finally {
+        }
+        finally {
           fileOutputStream.close();
         }
       }
@@ -91,19 +96,45 @@ public class ProfilerPlugin implements Plugin<Project> {
   @Override
   public void apply(final Project project) {
     Properties properties = getProperties(project);
-    final boolean isEnabled = Boolean.parseBoolean(properties.getProperty(PROPERTY_ENABLED, "false"));
-
-    if (isEnabled) {
-      String path = "build/profilers-gen/profilers-support-lib.jar";
-
-      ConfigurableFileCollection files = project.files(path);
-      ExtractSupportLibJarTask task = project.getTasks()
-        .create("unpackProfilersLib", ExtractSupportLibJarTask.class);
-      task.setOutputFile(project.file(path));
-      files.builtBy(task);
-      project.getDependencies().add("compile", files);
+    boolean enabled = Boolean.parseBoolean(properties.getProperty(PROPERTY_ENABLED, "false"));
+    if (enabled) {
+      addProfilersLib(project);
+      applyGapidOptions(project, properties);
     }
+    // instrumentApp with enabled == false will undo any previous instrumentation.
+    instrumentApp(project, enabled);
+  }
 
+  private void addProfilersLib(Project project) {
+    String path = "build/profilers-gen/profilers-support-lib.jar";
+    ConfigurableFileCollection files = project.files(path);
+    ExtractSupportLibJarTask task = project.getTasks()
+      .create("unpackProfilersLib", ExtractSupportLibJarTask.class);
+    task.setOutputFile(project.file(path));
+    files.builtBy(task);
+    project.getDependencies().add("compile", files);
+  }
+
+  private void applyGapidOptions(Project project, Properties properties) {
+    if (Boolean.parseBoolean(properties.getProperty(PROPERTY_GAPID_ENABLED, "false"))) {
+      String aarFileName = properties.getProperty(PROPERTY_GAPID_TRACER_AAR);
+      final File aarFile = (aarFileName == null) ? null : new File(aarFileName);
+      if (aarFile != null && aarFile.exists()) {
+        RepositoryHandler repositories = project.getRepositories();
+        repositories.add(repositories.flatDir(new HashMap<String, Object>() {{
+          put("name", "gfxtracer");
+          put("dirs", Arrays.asList(aarFile.getParentFile().getAbsolutePath()));
+        }}));
+        final String baseName = Files.getNameWithoutExtension(aarFileName), extension = Files.getFileExtension(aarFileName);
+        project.getDependencies().add("compile", new HashMap<String, String>() {{
+          put("name", baseName);
+          put("ext", extension);
+        }});
+      }
+    }
+  }
+
+  private void instrumentApp(Project project, final boolean enabled) {
     // TODO: The following line won't work for the experimental plugin. For that we may need to
     // register a rule that will get executed at the right time. Investigate this before
     // shipping the plugin.
@@ -137,9 +168,7 @@ public class ProfilerPlugin implements Plugin<Project> {
         }
 
         @Override
-        public void transform(@NonNull TransformInvocation invocation)
-          throws InterruptedException, IOException {
-
+        public void transform(@NonNull TransformInvocation invocation) throws InterruptedException, IOException {
           assert invocation.getOutputProvider() != null;
           File outputDir = invocation.getOutputProvider().getContentLocation(
             "main", getOutputTypes(), getScopes(), Format.DIRECTORY);
@@ -175,15 +204,9 @@ public class ProfilerPlugin implements Plugin<Project> {
           }
         }
 
-        private void instrumentFile(File inputFile, File outputFile)
-          throws IOException {
+        private void instrumentFile(File inputFile, File outputFile) throws IOException {
           Files.createParentDirs(outputFile);
-
-          // TODO: This MainActivity check is temporary and here as a proof of concept that
-          // instrumenting an Android app works. Later, we'll replace this with logic that
-          // inserts a profiler support library as a dependency into the user's app as
-          // well as instrument it.
-          if (isEnabled) {
+          if (enabled) {
             ApplicationInstrumentor.instrument(inputFile, outputFile);
           }
           else {
