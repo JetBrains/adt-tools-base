@@ -24,7 +24,7 @@ import com.android.annotations.NonNull;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
-import com.android.tools.lint.detector.api.Detector.JavaScanner;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
@@ -32,8 +32,11 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
+import com.intellij.psi.JavaElementVisitor;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiField;
+import com.intellij.psi.PsiJavaCodeReferenceElement;
 
 import org.w3c.dom.Attr;
 
@@ -42,17 +45,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import lombok.ast.AstVisitor;
-import lombok.ast.ForwardingAstVisitor;
-import lombok.ast.Node;
-import lombok.ast.Select;
-
 /**
  * Check which looks for usage of showAsAction="always" in menus (or
  * MenuItem.SHOW_AS_ACTION_ALWAYS in code), which is usually a style guide violation.
  * (Use ifRoom instead).
  */
-public class AlwaysShowActionDetector extends ResourceXmlDetector implements JavaScanner {
+public class AlwaysShowActionDetector extends ResourceXmlDetector implements
+        JavaPsiScanner {
 
     /** The main issue discovered by this detector */
     @SuppressWarnings("unchecked")
@@ -98,12 +97,6 @@ public class AlwaysShowActionDetector extends ResourceXmlDetector implements Jav
     @Override
     public boolean appliesTo(@NonNull ResourceFolderType folderType) {
         return folderType == ResourceFolderType.MENU;
-    }
-
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.FAST;
     }
 
     @Override
@@ -196,17 +189,16 @@ public class AlwaysShowActionDetector extends ResourceXmlDetector implements Jav
     // ---- Implements JavaScanner ----
 
     @Override
-    public
-    List<Class<? extends Node>> getApplicableNodeTypes() {
-        return Collections.<Class<? extends Node>>singletonList(Select.class);
+    public List<Class<? extends PsiElement>> getApplicablePsiTypes() {
+        return Collections.<Class<? extends PsiElement>>singletonList(PsiJavaCodeReferenceElement.class);
     }
 
     @Override
-    public AstVisitor createJavaVisitor(@NonNull JavaContext context) {
+    public JavaElementVisitor createPsiVisitor(@NonNull JavaContext context) {
         return new FieldAccessChecker(context);
     }
 
-    private class FieldAccessChecker extends ForwardingAstVisitor {
+    private class FieldAccessChecker extends JavaElementVisitor {
         private final JavaContext mContext;
 
         public FieldAccessChecker(JavaContext context) {
@@ -214,26 +206,28 @@ public class AlwaysShowActionDetector extends ResourceXmlDetector implements Jav
         }
 
         @Override
-        public boolean visitSelect(Select node) {
-            String description = node.astIdentifier().astValue();
-            boolean isIfRoom = description.equals("SHOW_AS_ACTION_IF_ROOM"); //$NON-NLS-1$
-            boolean isAlways = description.equals("SHOW_AS_ACTION_ALWAYS");  //$NON-NLS-1$
-            if ((isIfRoom || isAlways)
-                    && node.astOperand().toString().equals("MenuItem")) { //$NON-NLS-1$
-                if (isAlways) {
-                    if (mContext.getDriver().isSuppressed(mContext, ISSUE, node)) {
-                        return super.visitSelect(node);
+        public void visitReferenceElement(PsiJavaCodeReferenceElement node) {
+            String description = node.getReferenceName();
+            boolean isIfRoom = "SHOW_AS_ACTION_IF_ROOM".equals(description); //$NON-NLS-1$
+            boolean isAlways = "SHOW_AS_ACTION_ALWAYS".equals(description);  //$NON-NLS-1$
+            if (isIfRoom || isAlways) {
+                PsiElement resolved = node.resolve();
+                if (resolved instanceof PsiField
+                        && mContext.getEvaluator().isMemberInClass((PsiField)resolved,
+                        "android.view.MenuItem")) {
+                    if (isAlways) {
+                        if (mContext.getDriver().isSuppressed(mContext, ISSUE, node)) {
+                            return;
+                        }
+                        if (mAlwaysFields == null) {
+                            mAlwaysFields = new ArrayList<Location>();
+                        }
+                        mAlwaysFields.add(mContext.getLocation(node));
+                    } else {
+                        mHasIfRoomRefs = true;
                     }
-                    if (mAlwaysFields == null) {
-                        mAlwaysFields = new ArrayList<Location>();
-                    }
-                    mAlwaysFields.add(mContext.getLocation(node));
-                } else {
-                    mHasIfRoomRefs = true;
                 }
             }
-
-            return super.visitSelect(node);
         }
     }
 }

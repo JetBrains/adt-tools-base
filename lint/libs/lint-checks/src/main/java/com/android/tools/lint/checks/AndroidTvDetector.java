@@ -539,6 +539,7 @@ public class AndroidTvDetector extends Detector implements Detector.XmlScanner {
      * @param format The format of the error message.
      * @return the corresponding featureName, or null if not recognized
      */
+    @SuppressWarnings("unused") // Used by the IDE
     @Nullable
     public static String getHardwareFeature(@NonNull String errorMessage,
             @NonNull TextFormat format) {

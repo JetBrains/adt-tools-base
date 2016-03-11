@@ -57,7 +57,7 @@ public class Api {
             inputStream.close();
 
             // Also read in API (unless regenerating the map for newer libraries)
-            //noinspection PointlessBooleanExpression
+            //noinspection PointlessBooleanExpression,TestOnlyProblems
             if (!ApiLookup.DEBUG_FORCE_REGENERATE_BINARY) {
                 inputStream = Api.class.getResourceAsStream("api-versions-support-library.xml");
                 if (inputStream != null) {

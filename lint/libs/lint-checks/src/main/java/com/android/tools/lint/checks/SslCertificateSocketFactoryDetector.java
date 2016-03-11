@@ -18,29 +18,26 @@ package com.android.tools.lint.checks;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
-import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
-import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
-import com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
+import com.intellij.psi.JavaElementVisitor;
+import com.intellij.psi.PsiClassType;
+import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiMethodCallExpression;
+import com.intellij.psi.PsiType;
 
 import java.util.Arrays;
 import java.util.List;
 
-import lombok.ast.AstVisitor;
-import lombok.ast.Expression;
-import lombok.ast.MethodInvocation;
-import lombok.ast.StrictListAccessor;
-
 public class SslCertificateSocketFactoryDetector extends Detector
-        implements Detector.JavaScanner {
+        implements JavaPsiScanner {
 
     private static final Implementation IMPLEMENTATION_JAVA = new Implementation(
             SslCertificateSocketFactoryDetector.class,
@@ -83,13 +80,7 @@ public class SslCertificateSocketFactoryDetector extends Detector
     private static final String SSL_CERTIFICATE_SOCKET_FACTORY_CLASS =
             "android.net.SSLCertificateSocketFactory";
 
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.FAST;
-    }
-
-    // ---- Implements Detector.JavaScanner ----
+    // ---- Implements JavaScanner ----
 
     @Override
     public List<String> getApplicableMethodNames() {
@@ -98,36 +89,31 @@ public class SslCertificateSocketFactoryDetector extends Detector
     }
 
     @Override
-    public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor,
-            @NonNull MethodInvocation node) {
-        ResolvedNode resolved = context.resolve(node);
-        if (resolved instanceof ResolvedMethod) {
-            String methodName = node.astName().astValue();
-            ResolvedClass resolvedClass = ((ResolvedMethod) resolved).getContainingClass();
-            if (resolvedClass.isSubclassOf(SSL_CERTIFICATE_SOCKET_FACTORY_CLASS, false)) {
-                if ("createSocket".equals(methodName)) {
-                    StrictListAccessor<Expression, MethodInvocation> argumentList =
-                            node.astArguments();
-                    if (argumentList != null) {
-                        TypeDescriptor firstParameterType = context.getType(argumentList.first());
-                        if (firstParameterType != null) {
-                            ResolvedClass firstParameterClass = firstParameterType.getTypeClass();
-                            if (firstParameterClass != null &&
-                                    firstParameterClass.isSubclassOf(INET_ADDRESS_CLASS, false)) {
-                                context.report(CREATE_SOCKET, node, context.getLocation(node),
-                                        "Use of `SSLCertificateSocketFactory.createSocket()` " +
-                                        "with an InetAddress parameter can cause insecure " +
-                                        "network traffic due to trusting arbitrary hostnames in " +
-                                        "TLS/SSL certificates presented by peers");
-                            }
-                        }
+    public void visitMethod(@NonNull JavaContext context, @Nullable JavaElementVisitor visitor,
+            @NonNull PsiMethodCallExpression call, @NonNull PsiMethod method) {
+        if (context.getEvaluator().isMemberInSubClassOf(method,
+                SSL_CERTIFICATE_SOCKET_FACTORY_CLASS, false)) {
+            String methodName = method.getName();
+            if ("createSocket".equals(methodName)) {
+                PsiExpression[] args = call.getArgumentList().getExpressions();
+                if (args.length > 0) {
+                    PsiType type = args[0].getType();
+                    if (type != null
+                            && (INET_ADDRESS_CLASS.equals(type.getCanonicalText())
+                            || context.getEvaluator().extendsClass(((PsiClassType)type).resolve(),
+                            INET_ADDRESS_CLASS, false))) {
+                        context.report(CREATE_SOCKET, call, context.getLocation(call),
+                                "Use of `SSLCertificateSocketFactory.createSocket()` " +
+                                "with an InetAddress parameter can cause insecure " +
+                                "network traffic due to trusting arbitrary hostnames in " +
+                                "TLS/SSL certificates presented by peers");
                     }
-                } else if ("getInsecure".equals(methodName)) {
-                    context.report(GET_INSECURE, node, context.getLocation(node),
-                            "Use of `SSLCertificateSocketFactory.getInsecure()` can cause " +
-                            "insecure network traffic due to trusting arbitrary TLS/SSL " +
-                            "certificates presented by peers");
                 }
+            } else if ("getInsecure".equals(methodName)) {
+                context.report(GET_INSECURE, call, context.getLocation(call),
+                        "Use of `SSLCertificateSocketFactory.getInsecure()` can cause " +
+                        "insecure network traffic due to trusting arbitrary TLS/SSL " +
+                        "certificates presented by peers");
             }
         }
     }

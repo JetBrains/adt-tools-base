@@ -485,7 +485,6 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
                 ));
     }
 
-
     public void testMissingClass() throws Exception {
         mScopes = null;
         mEnabled = Sets.newHashSet(MISSING, INSTANTIATABLE, INNERCLASS);

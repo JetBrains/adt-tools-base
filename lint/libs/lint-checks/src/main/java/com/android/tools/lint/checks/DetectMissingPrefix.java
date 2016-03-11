@@ -133,7 +133,7 @@ public class DetectMissingPrefix extends LayoutDetector {
             Element element = attribute.getOwnerElement();
             if (isCustomView(element) && context.getResourceFolderType() != null) {
                 return;
-            } else if (context.getResourceFolderType() == ResourceFolderType.LAYOUT) {
+            } else if (context.getResourceFolderType() == LAYOUT) {
                 // Data binding: These look like Android framework views but
                 // are data binding directives not in the Android namespace
                 Element root = element.getOwnerDocument().getDocumentElement();
@@ -158,7 +158,7 @@ public class DetectMissingPrefix extends LayoutDetector {
                     "Attribute is missing the Android namespace prefix");
         } else if (!ANDROID_URI.equals(uri)
                 && !TOOLS_URI.equals(uri)
-                && context.getResourceFolderType() == ResourceFolderType.LAYOUT
+                && context.getResourceFolderType() == LAYOUT
                 && !isCustomView(attribute.getOwnerElement())
                 && !isFragment(attribute.getOwnerElement())
                 && !attribute.getLocalName().startsWith(ATTR_LAYOUT_RESOURCE_PREFIX)
@@ -168,7 +168,7 @@ public class DetectMissingPrefix extends LayoutDetector {
                 // ....&& !attribute.getLocalName().startsWith(ATTR_LAYOUT_RESOURCE_PREFIX)
                 && attribute.getOwnerElement().getParentNode().getNodeType() == Node.ELEMENT_NODE
                 && !isCustomView((Element) attribute.getOwnerElement().getParentNode())) {
-            if (context.getResourceFolderType() == ResourceFolderType.LAYOUT
+            if (context.getResourceFolderType() == LAYOUT
                     && AUTO_URI.equals(uri)) {
                 // Data binding: Can add attributes like onClickListener to buttons etc.
                 Element root = attribute.getOwnerDocument().getDocumentElement();

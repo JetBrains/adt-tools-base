@@ -22,10 +22,30 @@ import static com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.tools.lint.client.api.JavaEvaluator;
 import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
 import com.android.tools.lint.client.api.LintDriver;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.google.common.collect.Iterators;
+import com.intellij.openapi.util.TextRange;
+import com.intellij.psi.PsiAnnotation;
+import com.intellij.psi.PsiAnonymousClass;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiEnumConstant;
+import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiField;
+import com.intellij.psi.PsiJavaCodeReferenceElement;
+import com.intellij.psi.PsiJavaFile;
+import com.intellij.psi.PsiLabeledStatement;
+import com.intellij.psi.PsiMember;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiMethodCallExpression;
+import com.intellij.psi.PsiNewExpression;
+import com.intellij.psi.PsiReferenceExpression;
+import com.intellij.psi.PsiSwitchStatement;
+import com.intellij.psi.util.PsiTreeUtil;
 
 import java.io.File;
 import java.util.Iterator;
@@ -43,7 +63,6 @@ import lombok.ast.MethodInvocation;
 import lombok.ast.Node;
 import lombok.ast.Position;
 import lombok.ast.TypeDeclaration;
-import lombok.ast.VariableDeclaration;
 import lombok.ast.VariableReference;
 
 /**
@@ -55,8 +74,16 @@ import lombok.ast.VariableReference;
 public class JavaContext extends Context {
     static final String SUPPRESS_COMMENT_PREFIX = "//noinspection "; //$NON-NLS-1$
 
-    /** The parse tree */
+    /**
+     * The parse tree
+     *
+     * @deprecated Use {@link #mJavaFile} instead (see {@link JavaPsiScanner})
+     */
+    @Deprecated
     private Node mCompilationUnit;
+
+    /** The parse tree */
+    private PsiJavaFile mJavaFile;
 
     /** The parser which produced the parse tree */
     private final JavaParser mParser;
@@ -116,6 +143,25 @@ public class JavaContext extends Context {
     }
 
     /**
+     * Returns a location for the given node range (from the starting offset of the first node to
+     * the ending offset of the second node).
+     *
+     * @param from      the AST node to get a starting location from
+     * @param fromDelta Offset delta to apply to the starting offset
+     * @param to        the AST node to get a ending location from
+     * @param toDelta   Offset delta to apply to the ending offset
+     * @return a location for the given node
+     */
+    @NonNull
+    public Location getRangeLocation(
+            @NonNull PsiElement from,
+            int fromDelta,
+            @NonNull PsiElement to,
+            int toDelta) {
+        return mParser.getRangeLocation(this, from, fromDelta, to, toDelta);
+    }
+
+    /**
      * Returns a {@link Location} for the given node. This attempts to pick a shorter
      * location range than the entire node; for a class or method for example, it picks
      * the name node (if found). For statement constructs such as a {@code switch} statement
@@ -129,9 +175,39 @@ public class JavaContext extends Context {
         return mParser.getNameLocation(this, node);
     }
 
+    /**
+     * Returns a {@link Location} for the given node. This attempts to pick a shorter
+     * location range than the entire node; for a class or method for example, it picks
+     * the name node (if found). For statement constructs such as a {@code switch} statement
+     * it will highlight the keyword, etc.
+     *
+     * @param element the AST node to create a location for
+     * @return a location for the given node
+     */
+    @NonNull
+    public Location getNameLocation(@NonNull PsiElement element) {
+        if (element instanceof PsiSwitchStatement) {
+            // Just use keyword
+            int length = element.getTextRange().getLength();
+            // 6: "switch".length()
+            return mParser.getRangeLocation(this, element, 0, element, -(length - 6));
+        }
+        return mParser.getNameLocation(this, element);
+    }
+
+    @NonNull
+    public Location getLocation(@NonNull PsiElement node) {
+        return mParser.getLocation(this, node);
+    }
+
     @NonNull
     public JavaParser getParser() {
         return mParser;
+    }
+
+    @NonNull
+    public JavaEvaluator getEvaluator() {
+        return mParser.getEvaluator();
     }
 
     @Nullable
@@ -147,6 +223,26 @@ public class JavaContext extends Context {
      */
     public void setCompilationUnit(@Nullable Node compilationUnit) {
         mCompilationUnit = compilationUnit;
+    }
+
+    /**
+     * Returns the {@link PsiJavaFile}.
+     *
+     * @return the parsed Java source file
+     */
+    @Nullable
+    public PsiJavaFile getJavaFile() {
+        return mJavaFile;
+    }
+
+    /**
+     * Sets the compilation result. Not intended for client usage; the lint infrastructure
+     * will set this when a context has been processed
+     *
+     * @param javaFile the parse tree
+     */
+    public void setJavaFile(@Nullable PsiJavaFile javaFile) {
+        mJavaFile = javaFile;
     }
 
     @Override
@@ -180,6 +276,17 @@ public class JavaContext extends Context {
         super.report(issue, location, message);
     }
 
+    public void report(
+            @NonNull Issue issue,
+            @Nullable PsiElement scope,
+            @Nullable Location location,
+            @NonNull String message) {
+        if (scope != null && mDriver.isSuppressed(this, issue, scope)) {
+            return;
+        }
+        super.report(issue, location, message);
+    }
+
     /**
      * Report an error.
      * Like {@link #report(Issue, Node, Location, String)} but with
@@ -199,6 +306,11 @@ public class JavaContext extends Context {
         report(issue, scope, location, message);
     }
 
+    /**
+     * @deprecated Use {@link PsiTreeUtil#getParentOfType(PsiElement, Class[])}
+     * with PsiMethod.class instead
+     */
+    @Deprecated
     @Nullable
     public static Node findSurroundingMethod(Node scope) {
         while (scope != null) {
@@ -215,6 +327,11 @@ public class JavaContext extends Context {
         return null;
     }
 
+    /**
+     * @deprecated Use {@link PsiTreeUtil#getParentOfType(PsiElement, Class[])}
+     * with PsiMethod.class instead
+     */
+    @Deprecated
     @Nullable
     public static ClassDeclaration findSurroundingClass(@Nullable Node scope) {
         while (scope != null) {
@@ -237,6 +354,10 @@ public class JavaContext extends Context {
         return SUPPRESS_COMMENT_PREFIX;
     }
 
+    /**
+     * @deprecated Use {@link #isSuppressedWithComment(PsiElement, Issue)} instead
+     */
+    @Deprecated
     public boolean isSuppressedWithComment(@NonNull Node scope, @NonNull Issue issue) {
         // Check whether there is a comment marker
         String contents = getContents();
@@ -250,26 +371,60 @@ public class JavaContext extends Context {
         return isSuppressedWithComment(start, issue);
     }
 
+    public boolean isSuppressedWithComment(@NonNull PsiElement scope, @NonNull Issue issue) {
+        // Check whether there is a comment marker
+        String contents = getContents();
+        assert contents != null; // otherwise we wouldn't be here
+        TextRange textRange = scope.getTextRange();
+        if (textRange == null) {
+            return false;
+        }
+        int start = textRange.getStartOffset();
+        return isSuppressedWithComment(start, issue);
+    }
+
+    /**
+     * @deprecated Location handles aren't needed for AST nodes anymore; just use the
+     * {@link PsiElement} from the AST
+     */
+    @Deprecated
     @NonNull
     public Location.Handle createLocationHandle(@NonNull Node node) {
         return mParser.createLocationHandle(this, node);
     }
 
+    /**
+     * @deprecated Use PsiElement resolve methods (varies by AST node type, e.g.
+     * {@link PsiMethodCallExpression#resolveMethod()}
+     */
+    @Deprecated
     @Nullable
     public ResolvedNode resolve(@NonNull Node node) {
         return mParser.resolve(this, node);
     }
 
+    /**
+     * @deprecated Use {@link JavaEvaluator#findClass(String)} instead
+     */
+    @Deprecated
     @Nullable
     public ResolvedClass findClass(@NonNull String fullyQualifiedName) {
         return mParser.findClass(this, fullyQualifiedName);
     }
 
+    /**
+     * @deprecated Use {@link PsiExpression#getType()} )} instead
+     */
+    @Deprecated
     @Nullable
     public TypeDescriptor getType(@NonNull Node node) {
         return mParser.getType(this, node);
     }
 
+    /**
+     * @deprecated Use {@link #getMethodName(PsiElement)} instead
+     */
+    @Deprecated
     @Nullable
     public static String getMethodName(@NonNull Node call) {
         if (call instanceof MethodInvocation) {
@@ -283,10 +438,30 @@ public class JavaContext extends Context {
         }
     }
 
+    @Nullable
+    public static String getMethodName(@NonNull PsiElement call) {
+        if (call instanceof PsiMethodCallExpression) {
+            return ((PsiMethodCallExpression)call).getMethodExpression().getReferenceName();
+        } else if (call instanceof PsiNewExpression) {
+            PsiJavaCodeReferenceElement classReference = ((PsiNewExpression) call).getClassReference();
+            if (classReference != null) {
+                return classReference.getReferenceName();
+            } else {
+                return null;
+            }
+        } else if (call instanceof PsiEnumConstant) {
+            return ((PsiEnumConstant)call).getName();
+        } else {
+            return null;
+        }
+    }
+
     /**
      * Searches for a name node corresponding to the given node
      * @return the name node to use, if applicable
+     * @deprecated Use {@link #findNameElement(PsiElement)} instead
      */
+    @Deprecated
     @Nullable
     public static Node findNameNode(@NonNull Node node) {
         if (node instanceof TypeDeclaration) {
@@ -315,6 +490,38 @@ public class JavaContext extends Context {
         return null;
     }
 
+    /**
+     * Searches for a name node corresponding to the given node
+     * @return the name node to use, if applicable
+     */
+    @Nullable
+    public static PsiElement findNameElement(@NonNull PsiElement element) {
+        if (element instanceof PsiClass) {
+            if (element instanceof PsiAnonymousClass) {
+                return ((PsiAnonymousClass)element).getBaseClassReference();
+            }
+            return ((PsiClass) element).getNameIdentifier();
+        } else if (element instanceof PsiMethod) {
+            return ((PsiMethod) element).getNameIdentifier();
+        } else if (element instanceof PsiMethodCallExpression) {
+            return ((PsiMethodCallExpression) element).getMethodExpression().
+                    getReferenceNameElement();
+        } else if (element instanceof PsiNewExpression) {
+            return ((PsiNewExpression) element).getClassReference();
+        } else if (element instanceof PsiField) {
+            return ((PsiField)element).getNameIdentifier();
+        } else if (element instanceof PsiAnnotation) {
+            return ((PsiAnnotation)element).getNameReferenceElement();
+        } else if (element instanceof PsiReferenceExpression) {
+            return ((PsiReferenceExpression) element).getReferenceNameElement();
+        } else if (element instanceof PsiLabeledStatement) {
+            return ((PsiLabeledStatement)element).getLabelIdentifier();
+        }
+
+        return null;
+    }
+
+    @Deprecated
     @NonNull
     public static Iterator<Expression> getParameters(@NonNull Node call) {
         if (call instanceof MethodInvocation) {
@@ -328,6 +535,7 @@ public class JavaContext extends Context {
         }
     }
 
+    @Deprecated
     @Nullable
     public static Node getParameter(@NonNull Node call, int parameter) {
         Iterator<Expression> iterator = getParameters(call);
@@ -347,7 +555,9 @@ public class JavaContext extends Context {
      *
      * @param node the method call node
      * @return true iff the method call is on a class extending context
+     * @deprecated use {@link JavaEvaluator#isMemberInSubClassOf(PsiMember, String, boolean)} instead
      */
+    @Deprecated
     public boolean isContextMethod(@NonNull MethodInvocation node) {
         // Method name used in many other contexts where it doesn't have the
         // same semantics; only use this one if we can resolve types
@@ -370,7 +580,9 @@ public class JavaContext extends Context {
      * @param clz     the target node type
      * @param <T>     the target node type
      * @return the nearest ancestor node in the parent chain, or null if not found
+     * @deprecated Use {@link PsiTreeUtil#getParentOfType} instead
      */
+    @Deprecated
     @Nullable
     public static <T extends Node> T getParentOfType(
             @Nullable Node element,
@@ -386,7 +598,9 @@ public class JavaContext extends Context {
      * @param strict  if true, do not consider the element itself, only its parents
      * @param <T>     the target node type
      * @return the nearest ancestor node in the parent chain, or null if not found
+     * @deprecated Use {@link PsiTreeUtil#getParentOfType} instead
      */
+    @Deprecated
     @Nullable
     public static <T extends Node> T getParentOfType(
             @Nullable Node element,
@@ -420,7 +634,9 @@ public class JavaContext extends Context {
      * @param terminators optional node types to terminate the search at
      * @param <T>         the target node type
      * @return the nearest ancestor node in the parent chain, or null if not found
+     * @deprecated Use {@link PsiTreeUtil#getParentOfType} instead
      */
+    @Deprecated
     @Nullable
     public static <T extends Node> T getParentOfType(@Nullable Node element,
             @NonNull Class<T> clz,
@@ -453,7 +669,9 @@ public class JavaContext extends Context {
      * @param clz     the type to look for
      * @param <T>     the type
      * @return the first sibling of the given type, or null
+     * @deprecated Use {@link PsiTreeUtil#getNextSiblingOfType(PsiElement, Class)} instead
      */
+    @Deprecated
     @Nullable
     public static <T extends Node> T getNextSiblingOfType(@Nullable Node sibling,
             @NonNull Class<T> clz) {
@@ -493,6 +711,7 @@ public class JavaContext extends Context {
      * @return the argument at the given index
      * @throws IllegalArgumentException if index is outside the valid range
      */
+    @Deprecated
     @NonNull
     public static Node getArgumentNode(@NonNull MethodInvocation call, int index) {
         int i = 0;

@@ -24,6 +24,7 @@ public class AlarmDetectorTest extends AbstractCheckTest {
         return new AlarmDetector();
     }
 
+    @SuppressWarnings("ClassNameDiffersFromFileName")
     public void test() throws Exception {
         assertEquals(""
                 + "src/test/pkg/AlarmTest.java:9: Warning: Value will be forced up to 5000 as of Android 5.1; don't rely on this to be exact [ShortAlarm]\n"
@@ -40,6 +41,29 @@ public class AlarmDetectorTest extends AbstractCheckTest {
                 + "                                                                       ~~~~~~~~~\n"
                 + "0 errors, 4 warnings\n",
 
-                lintProject("src/test/pkg/AlarmTest.java.txt=>src/test/pkg/AlarmTest.java"));
+                lintProject(
+                        java("src/test/pkg/AlarmTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.app.AlarmManager;\n"
+                                + "\n"
+                                + "public class AlarmTest {\n"
+                                + "    public void test(AlarmManager alarmManager) {\n"
+                                + "        alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, 5000, 60000, null); // OK\n"
+                                + "        alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, 6000, 70000, null); // OK\n"
+                                + "        alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, 50, 10, null); // ERROR\n"
+                                + "        alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, 5000,  // ERROR\n"
+                                + "                OtherClass.MY_INTERVAL, null);                          // ERROR\n"
+                                + "\n"
+                                + "        // Check value flow analysis\n"
+                                + "        int interval = 10;\n"
+                                + "        long interval2 = 2 * interval;\n"
+                                + "        alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, 5000, interval2, null); // ERROR\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    private static class OtherClass {\n"
+                                + "        public static final long MY_INTERVAL = 1000L;\n"
+                                + "    }\n"
+                                + "}\n")));
     }
 }

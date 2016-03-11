@@ -73,7 +73,7 @@ public class ResourcePrefixDetector extends ResourceXmlDetector implements
                     Scope.RESOURCE_FILE_SCOPE,
                     Scope.BINARY_RESOURCE_FILE_SCOPE));
 
-    /** Constructs a new {@link com.android.tools.lint.checks.ResourcePrefixDetector} */
+    /** Constructs a new {@link ResourcePrefixDetector} */
     public ResourcePrefixDetector() {
     }
 

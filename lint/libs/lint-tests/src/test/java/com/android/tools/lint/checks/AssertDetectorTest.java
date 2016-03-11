@@ -25,6 +25,7 @@ public class AssertDetectorTest extends AbstractCheckTest {
         return new AssertDetector();
     }
 
+    @SuppressWarnings("ClassNameDiffersFromFileName")
     public void test() throws Exception {
         assertEquals(""
                 + "src/test/pkg/Assert.java:7: Warning: Assertions are unreliable. Use BuildConfig.DEBUG conditional checks instead. [Assert]\n"
@@ -41,6 +42,33 @@ public class AssertDetectorTest extends AbstractCheckTest {
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "0 errors, 4 warnings\n",
 
-            lintProject("src/test/pkg/Assert.java.txt=>src/test/pkg/Assert.java"));
+            lintProject(java("src/test/pkg/Assert.java", ""
+                    + "package test.pkg;\n"
+                    + "\n"
+                    + "import android.annotation.SuppressLint;\n"
+                    + "\n"
+                    + "public class Assert {\n"
+                    + "    public Assert(int param, Object param2, Object param3) {\n"
+                    + "        assert false;                              // ERROR\n"
+                    + "        assert param > 5 : \"My description\";       // ERROR\n"
+                    + "        assert param2 == param3;                   // ERROR\n"
+                    + "        assert param2 != null && param3 == param2; // ERROR\n"
+                    + "        assert true;                               // OK\n"
+                    + "        assert param2 == null;                     // OK\n"
+                    + "        assert param2 != null && param3 == null;   // OK\n"
+                    + "        assert param2 == null && param3 != null;   // OK\n"
+                    + "        assert param2 != null && param3 != null;   // OK\n"
+                    + "        assert null != param2;                     // OK\n"
+                    + "        assert param2 != null;                     // OK\n"
+                    + "        assert param2 != null : \"My description\";  // OK\n"
+                    + "        assert checkSuppressed(5) != null;         // OK\n"
+                    + "    }\n"
+                    + "\n"
+                    + "    @SuppressLint(\"Assert\")\n"
+                    + "    public static Object checkSuppressed(int param) {\n"
+                    + "        assert param > 5 : \"My description\";\n"
+                    + "        return null;\n"
+                    + "    }\n"
+                    + "}\n")));
     }
 }

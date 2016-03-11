@@ -39,7 +39,6 @@ import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -110,10 +109,10 @@ public class AppLinksAutoVerifyDetector extends Detector implements Detector.Xml
 
     /* Maps website host url to a future task which will send HTTP request to fetch the JSON file
      * and also return the status code during the fetching process. */
-    private Map<String, Future<HttpResult>> mFutures = Maps.newHashMap();
+    private final Map<String, Future<HttpResult>> mFutures = Maps.newHashMap();
 
     /* Maps website host url to host attribute in AndroidManifest.xml. */
-    private Map<String, Attr> mJsonHost = Maps.newHashMap();
+    private final Map<String, Attr> mJsonHost = Maps.newHashMap();
 
     @Override
     public void visitDocument(@NonNull XmlContext context, @NonNull Document document) {
@@ -409,8 +408,8 @@ public class AppLinksAutoVerifyDetector extends Detector implements Detector.Xml
     static final class HttpResult {
 
         /* HTTP response code or others errors related to HTTP connection, JSON file parsing. */
-        private int mStatus;
-        private JsonElement mJsonFile;
+        private final int mStatus;
+        private final JsonElement mJsonFile;
 
         @VisibleForTesting
         HttpResult(int status, JsonElement jsonFile) {

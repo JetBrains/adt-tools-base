@@ -16,42 +16,38 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.SdkConstants.CLASS_CONTEXT;
 import static com.android.SdkConstants.CLASS_VIEW;
 import static com.android.SdkConstants.CLASS_VIEWGROUP;
 import static com.android.SdkConstants.DOT_LAYOUT_PARAMS;
 import static com.android.SdkConstants.R_STYLEABLE_PREFIX;
+import static com.android.tools.lint.detector.api.LintUtils.skipParentheses;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
-import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.detector.api.Category;
-import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
-import com.google.common.collect.Iterators;
+import com.intellij.psi.JavaElementVisitor;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiExpressionStatement;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiMethodCallExpression;
+import com.intellij.psi.util.PsiTreeUtil;
 
-import java.io.File;
 import java.util.Collections;
 import java.util.List;
-
-import lombok.ast.AstVisitor;
-import lombok.ast.ClassDeclaration;
-import lombok.ast.Expression;
-import lombok.ast.ExpressionStatement;
-import lombok.ast.MethodInvocation;
-import lombok.ast.StrictListAccessor;
 
 /**
  * Makes sure that custom views use a declare styleable that matches
  * the name of the custom view
  */
-public class CustomViewDetector extends Detector implements Detector.JavaScanner {
+public class CustomViewDetector extends Detector implements Detector.JavaPsiScanner {
 
     private static final Implementation IMPLEMENTATION = new Implementation(
             CustomViewDetector.class,
@@ -76,19 +72,8 @@ public class CustomViewDetector extends Detector implements Detector.JavaScanner
 
     private static final String OBTAIN_STYLED_ATTRIBUTES = "obtainStyledAttributes"; //$NON-NLS-1$
 
-    /** Constructs a new {@link com.android.tools.lint.checks.CustomViewDetector} check */
+    /** Constructs a new {@link CustomViewDetector} check */
     public CustomViewDetector() {
-    }
-
-    @Override
-    public boolean appliesTo(@NonNull Context context, @NonNull File file) {
-        return true;
-    }
-
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.FAST;
     }
 
     // ---- Implements JavaScanner ----
@@ -99,14 +84,14 @@ public class CustomViewDetector extends Detector implements Detector.JavaScanner
     }
 
     @Override
-    public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor,
-            @NonNull MethodInvocation node) {
-        if (node.getParent() instanceof ExpressionStatement) {
-            if (!context.isContextMethod(node)) {
+    public void visitMethod(@NonNull JavaContext context, @Nullable JavaElementVisitor visitor,
+            @NonNull PsiMethodCallExpression node, @NonNull PsiMethod method) {
+        if (skipParentheses(node.getParent()) instanceof PsiExpressionStatement) {
+            if (!context.getEvaluator().isMemberInSubClassOf(method, CLASS_CONTEXT, false)) {
                 return;
             }
-            StrictListAccessor<Expression, MethodInvocation> expressions = node.astArguments();
-            int size = expressions.size();
+            PsiExpression[] arguments = node.getArgumentList().getExpressions();
+            int size = arguments.length;
             // Which parameter contains the styleable (attrs) ?
             int parameterIndex;
             if (size == 1) {
@@ -118,43 +103,34 @@ public class CustomViewDetector extends Detector implements Detector.JavaScanner
                 // obtainStyledAttributes(AttributeSet set, int[] attrs, int defStyleAttr, int defStyleRes)
                 parameterIndex = 1;
             }
-            Expression expression = Iterators.get(node.astArguments().iterator(), parameterIndex,
-                    null);
-            if (expression == null) {
-                return;
-            }
-            String s = expression.toString();
+            PsiExpression expression = arguments[parameterIndex];
+            String s = expression.getText();
             if (!s.startsWith(R_STYLEABLE_PREFIX)) {
                 return;
             }
             String styleableName = s.substring(R_STYLEABLE_PREFIX.length());
-            ClassDeclaration cls = JavaContext.findSurroundingClass(node);
+            PsiClass cls = PsiTreeUtil.getParentOfType(node, PsiClass.class, false);
             if (cls == null) {
                 return;
             }
 
-            ResolvedNode resolved = context.resolve(cls);
-            if (!(resolved instanceof ResolvedClass)) {
-                return;
-            }
-
-            String className = cls.astName().astValue();
-            ResolvedClass resolvedClass = (ResolvedClass) resolved;
-            if (resolvedClass.isSubclassOf(CLASS_VIEW, false)) {
+            String className = cls.getName();
+            if (context.getEvaluator().extendsClass(cls, CLASS_VIEW, false)) {
                 if (!styleableName.equals(className)) {
                     String message = String.format(
-                        "By convention, the custom view (`%1$s`) and the declare-styleable (`%2$s`) "
-                                + "should have the same name (various editor features rely on "
-                                + "this convention)",
-                        className, styleableName);
+                            "By convention, the custom view (`%1$s`) and the declare-styleable (`%2$s`) "
+                                    + "should have the same name (various editor features rely on "
+                                    + "this convention)",
+                            className, styleableName);
                     context.report(ISSUE, node, context.getLocation(expression), message);
                 }
-            } else if (resolvedClass.isSubclassOf(CLASS_VIEWGROUP + DOT_LAYOUT_PARAMS, false)) {
-                ClassDeclaration outer = JavaContext.findSurroundingClass(cls.getParent());
+            } else if (context.getEvaluator().extendsClass(cls,
+                    CLASS_VIEWGROUP + DOT_LAYOUT_PARAMS, false)) {
+                PsiClass outer = PsiTreeUtil.getParentOfType(cls, PsiClass.class, true);
                 if (outer == null) {
                     return;
                 }
-                String layoutClassName = outer.astName().astValue();
+                String layoutClassName = outer.getName();
                 String expectedName = layoutClassName + "_Layout";
                 if (!styleableName.equals(expectedName)) {
                     String message = String.format(

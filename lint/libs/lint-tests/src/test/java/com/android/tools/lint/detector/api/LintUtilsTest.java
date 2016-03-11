@@ -16,6 +16,7 @@
 
 package com.android.tools.lint.detector.api;
 
+import static com.android.SdkConstants.DOT_JAVA;
 import static com.android.tools.lint.detector.api.LintUtils.computeResourceName;
 import static com.android.tools.lint.detector.api.LintUtils.convertVersion;
 import static com.android.tools.lint.detector.api.LintUtils.findSubstring;
@@ -24,6 +25,7 @@ import static com.android.tools.lint.detector.api.LintUtils.getLocaleAndRegion;
 import static com.android.tools.lint.detector.api.LintUtils.isImported;
 import static com.android.tools.lint.detector.api.LintUtils.splitPath;
 import static com.android.utils.SdkUtils.escapePropertyValue;
+import static java.io.File.separatorChar;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -38,6 +40,7 @@ import com.android.tools.lint.checks.BuiltinIssueRegistry;
 import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.LintDriver;
 import com.google.common.collect.Iterables;
+import com.intellij.psi.PsiJavaFile;
 
 import junit.framework.TestCase;
 
@@ -50,6 +53,8 @@ import java.io.OutputStreamWriter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import lombok.ast.Node;
 
@@ -362,14 +367,59 @@ public class LintUtilsTest extends TestCase {
         return getCompilationUnit(javaSource, new File("test"));
     }
 
-
     public static Node getCompilationUnit(@Language("JAVA") String javaSource, File relativePath) {
         JavaContext context = parse(javaSource, relativePath);
         return context.getCompilationUnit();
     }
 
+    private static final Pattern PACKAGE_PATTERN = Pattern.compile("package\\s+(.*)\\s*;");
+    private static final Pattern CLASS_PATTERN = Pattern
+            .compile("class\\s*(\\S+)\\s*(extends.*)?(implements.*)?\\{");
+
+    public static JavaContext parsePsi(@Language("JAVA") String javaSource) {
+        // Figure out the "to" path: the package plus class name + java in the src/ folder
+        Matcher matcher = PACKAGE_PATTERN.matcher(javaSource);
+        String pkg = "";
+        if (matcher.find()) {
+            pkg = matcher.group(1).trim();
+        }
+        matcher = CLASS_PATTERN.matcher(javaSource);
+        assertTrue("Couldn't find class declaration in source", matcher.find());
+        String cls = matcher.group(1).trim();
+        int typeParameter = cls.indexOf('<');
+        if (typeParameter != -1) {
+            cls = cls.substring(0, typeParameter);
+        }
+        String path = "src/" + pkg.replace('.', '/') + '/' + cls + DOT_JAVA;
+        return parsePsi(javaSource, new File(path.replace('/', separatorChar)));
+    }
+
+    public static JavaContext parse(@Language("JAVA") String javaSource) {
+        // Figure out the "to" path: the package plus class name + java in the src/ folder
+        Matcher matcher = PACKAGE_PATTERN.matcher(javaSource);
+        String pkg = "";
+        if (matcher.find()) {
+            pkg = matcher.group(1).trim();
+        }
+        matcher = CLASS_PATTERN.matcher(javaSource);
+        assertTrue("Couldn't find class declaration in source", matcher.find());
+        String cls = matcher.group(1).trim();
+        String path = "src/" + pkg.replace('.', '/') + '/' + cls + DOT_JAVA;
+        return parse(javaSource, new File(path.replace('/', separatorChar)));
+    }
+
     public static JavaContext parse(@Language("JAVA") final String javaSource,
             final File relativePath) {
+        return parse(javaSource, relativePath, true, false);
+    }
+
+    public static JavaContext parsePsi(@Language("JAVA") final String javaSource,
+            final File relativePath) {
+        return parse(javaSource, relativePath, false, true);
+    }
+
+    public static JavaContext parse(@Language("JAVA") final String javaSource,
+            final File relativePath, boolean lombok, boolean psi) {
         File dir = new File("projectDir");
         final File fullPath = new File(dir, relativePath.getPath());
         LintCliClient client = new LintCliClient() {
@@ -404,9 +454,16 @@ public class LintUtilsTest extends TestCase {
         TestContext context = new TestContext(driver, client, project, javaSource, fullPath);
         JavaParser parser = context.getParser();
         parser.prepareJavaParse(Collections.<JavaContext>singletonList(context));
-        Node compilationUnit = parser.parseJava(context);
-        assertNotNull(javaSource, compilationUnit);
-        context.setCompilationUnit(compilationUnit);
+        if (lombok) {
+            Node compilationUnit = parser.parseJava(context);
+            assertNotNull(javaSource, compilationUnit);
+            context.setCompilationUnit(compilationUnit);
+        }
+        if (psi) {
+            PsiJavaFile javaFile = parser.parseJavaToPsi(context);
+            assertNotNull("Couldn't parse source", javaFile);
+            context.setJavaFile(javaFile);
+        }
         return context;
     }
 

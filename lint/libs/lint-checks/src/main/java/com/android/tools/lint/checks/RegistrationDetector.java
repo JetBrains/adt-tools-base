@@ -32,12 +32,11 @@ import static com.android.SdkConstants.TAG_SERVICE;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidProject;
-import com.android.builder.model.BuildTypeContainer;
 import com.android.builder.model.ProductFlavorContainer;
 import com.android.builder.model.SourceProviderContainer;
-import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
+import com.android.tools.lint.client.api.JavaEvaluator;
 import com.android.tools.lint.detector.api.Category;
-import com.android.tools.lint.detector.api.Detector.JavaScanner;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
@@ -45,10 +44,10 @@ import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.android.utils.SdkUtils;
 import com.google.common.collect.Maps;
+import com.intellij.psi.PsiClass;
 
 import org.w3c.dom.Element;
 
@@ -59,15 +58,11 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 
-import lombok.ast.ClassDeclaration;
-import lombok.ast.Modifiers;
-import lombok.ast.Node;
-
 /**
  * Checks for missing manifest registrations for activities, services etc
  * and also makes sure that they are registered with the correct tag
  */
-public class RegistrationDetector extends LayoutDetector implements JavaScanner {
+public class RegistrationDetector extends LayoutDetector implements JavaPsiScanner {
     /** Unregistered activities and services */
     public static final Issue ISSUE = Issue.create(
             "Registered", //$NON-NLS-1$
@@ -92,12 +87,6 @@ public class RegistrationDetector extends LayoutDetector implements JavaScanner 
 
     /** Constructs a new {@link RegistrationDetector} */
     public RegistrationDetector() {
-    }
-
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.FAST;
     }
 
     // ---- Implements XmlScanner ----
@@ -167,45 +156,43 @@ public class RegistrationDetector extends LayoutDetector implements JavaScanner 
     }
 
     @Override
-    public void checkClass(@NonNull JavaContext context, @Nullable ClassDeclaration node,
-            @NonNull Node declarationOrAnonymous, @NonNull ResolvedClass cls) {
-        if (node == null) {
+    public void checkClass(@NonNull JavaContext context, @NonNull PsiClass cls) {
+        if (cls.getName() == null) {
             // anonymous class; can't be registered
             return;
         }
 
-        Modifiers modifiers = node.astModifiers();
-        if (modifiers.isAbstract()) {
-            // Abstract classes do not need to be registered
+        JavaEvaluator evaluator = context.getEvaluator();
+        if (evaluator.isAbstract(cls) || evaluator.isPrivate(cls)) {
+            // Abstract classes do not need to be registered, and
+            // private classes are clearly not intended to be registered
             return;
         }
 
-        if (modifiers.isPrivate()) {
-            // Private classes are clearly not intended to be registered
-            return;
-        }
-
-        String rightTag = getTag(cls);
+        String rightTag = getTag(evaluator, cls);
         if (rightTag == null) {
             // some non-registered Context, such as a BackupAgent
             return;
         }
-        String className = cls.getName();
+        String className = cls.getQualifiedName();
+        if (className == null) {
+            return;
+        }
         if (mManifestRegistrations != null) {
             String framework = mManifestRegistrations.get(className);
             if (framework == null) {
-                reportMissing(context, node, className, rightTag);
-            } else if (!cls.isSubclassOf(framework, false)) {
-                reportWrongTag(context, node, rightTag, className, framework);
+                reportMissing(context, cls, className, rightTag);
+            } else if (!evaluator.extendsClass(cls, framework, false)) {
+                reportWrongTag(context, cls, rightTag, className, framework);
             }
         } else {
-            reportMissing(context, node, className, rightTag);
+            reportMissing(context, cls, className, rightTag);
         }
     }
 
     private static void reportWrongTag(
             @NonNull JavaContext context,
-            @NonNull ClassDeclaration node,
+            @NonNull PsiClass node,
             @NonNull String rightTag,
             @NonNull String className,
             @NonNull String framework) {
@@ -227,7 +214,7 @@ public class RegistrationDetector extends LayoutDetector implements JavaScanner 
 
     private static void reportMissing(
             @NonNull JavaContext context,
-            @NonNull ClassDeclaration node,
+            @NonNull PsiClass node,
             @NonNull String className,
             @NonNull String tag) {
         if (tag.equals(TAG_RECEIVER)) {
@@ -274,10 +261,10 @@ public class RegistrationDetector extends LayoutDetector implements JavaScanner 
         context.report(ISSUE, location, message);
     }
 
-    private static String getTag(@NonNull ResolvedClass cls) {
+    private static String getTag(@NonNull JavaEvaluator evaluator, @NonNull PsiClass cls) {
         String tag = null;
         for (String s : sClasses) {
-            if (cls.isSubclassOf(s, false)) {
+            if (evaluator.extendsClass(cls, s, false)) {
                 tag = classToTag(s);
                 break;
             }

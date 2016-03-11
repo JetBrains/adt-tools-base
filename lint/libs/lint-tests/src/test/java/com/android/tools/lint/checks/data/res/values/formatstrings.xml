@@ -4,4 +4,5 @@
     <string name="hello2">Hello %1$s, %2$s?</string>
     <string name="missing">Hello %3$s World</string>
     <string name="score">Score: %1$d</string>
+    <string name="score2">Score: %1$b</string>
 </resources>

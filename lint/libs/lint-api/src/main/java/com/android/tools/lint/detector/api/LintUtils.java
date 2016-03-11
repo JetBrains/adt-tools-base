@@ -54,15 +54,23 @@ import com.android.resources.ResourceType;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.SdkVersionInfo;
-import com.android.repository.Revision;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.utils.PositionXmlParser;
 import com.android.utils.SdkUtils;
 import com.google.common.annotations.Beta;
+import com.google.common.base.Objects;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.intellij.psi.CommonClassNames;
+import com.intellij.psi.PsiClassType;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiImportStatement;
+import com.intellij.psi.PsiLiteral;
+import com.intellij.psi.PsiParenthesizedExpression;
+import com.intellij.psi.PsiType;
+import com.intellij.psi.PsiWhiteSpace;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AbstractInsnNode;
@@ -810,7 +818,10 @@ public class LintUtils {
      * @param fullyQualifiedName the fully qualified class name
      * @return true if the given imported name refers to the given fully
      *         qualified name
+     * @deprecated Use PSI element hierarchies instead where type resolution is more directly
+     *  available (call {@link PsiImportStatement#resolve()})
      */
+    @Deprecated
     public static boolean isImported(
             @Nullable lombok.ast.Node compilationUnit,
             @NonNull String fullyQualifiedName) {
@@ -1267,5 +1278,66 @@ public class LintUtils {
             location = Location.create(dir);
         }
         return location;
+    }
+
+    /**
+     * Returns true if the given element is the null literal
+     *
+     * @param element the element to check
+     * @return true if the element is "null"
+     */
+    public static boolean isNullLiteral(@Nullable PsiElement element) {
+        return element instanceof PsiLiteral && "null".equals(element.getText());
+    }
+
+    public static boolean isTrueLiteral(@Nullable PsiElement element) {
+        return element instanceof PsiLiteral && "true".equals(element.getText());
+    }
+
+    public static boolean isFalseLiteral(@Nullable PsiElement element) {
+        return element instanceof PsiLiteral && "false".equals(element.getText());
+    }
+
+    @Nullable
+    public static PsiElement skipParentheses(@Nullable PsiElement element) {
+        while (element instanceof PsiParenthesizedExpression) {
+            element = element.getParent();
+        }
+
+        return element;
+    }
+
+    @Nullable
+    public static PsiElement nextNonWhitespace(@Nullable PsiElement element) {
+        if (element != null) {
+            element = element.getNextSibling();
+            while (element instanceof PsiWhiteSpace) {
+                element = element.getNextSibling();
+            }
+        }
+
+        return element;
+    }
+
+    @Nullable
+    public static PsiElement prevNonWhitespace(@Nullable PsiElement element) {
+        if (element != null) {
+            element = element.getPrevSibling();
+            while (element instanceof PsiWhiteSpace) {
+                element = element.getPrevSibling();
+            }
+        }
+
+        return element;
+    }
+
+    public static boolean isString(@NonNull PsiType type) {
+        if (type instanceof PsiClassType) {
+            final String shortName = ((PsiClassType)type).getClassName();
+            if (!Objects.equal(shortName, CommonClassNames.JAVA_LANG_STRING_SHORT)) {
+                return false;
+            }
+        }
+        return CommonClassNames.JAVA_LANG_STRING.equals(type.getCanonicalText());
     }
 }

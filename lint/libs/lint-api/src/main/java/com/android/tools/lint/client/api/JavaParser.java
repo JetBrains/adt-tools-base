@@ -23,11 +23,16 @@ import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.DefaultPosition;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Position;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Splitter;
+import com.intellij.openapi.util.TextRange;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiJavaFile;
+import com.intellij.psi.PsiType;
 
 import java.lang.reflect.Modifier;
 import java.util.Collections;
@@ -53,19 +58,29 @@ import lombok.ast.While;
  * <b>NOTE: This is not public or final API; if you rely on this be prepared
  * to adjust your code for the next tools release.</b>
  */
+// Currently ships with deprecated API support
+@SuppressWarnings({"deprecation", "UnusedParameters"})
 @Beta
 public abstract class JavaParser {
-    public static final String TYPE_OBJECT = "java.lang.Object";        //$NON-NLS-1$
-    public static final String TYPE_STRING = "java.lang.String";        //$NON-NLS-1$
-    public static final String TYPE_INT = "int";                        //$NON-NLS-1$
-    public static final String TYPE_LONG = "long";                      //$NON-NLS-1$
-    public static final String TYPE_CHAR = "char";                      //$NON-NLS-1$
-    public static final String TYPE_FLOAT = "float";                    //$NON-NLS-1$
-    public static final String TYPE_DOUBLE = "double";                  //$NON-NLS-1$
-    public static final String TYPE_BOOLEAN = "boolean";                //$NON-NLS-1$
-    public static final String TYPE_SHORT = "short";                    //$NON-NLS-1$
-    public static final String TYPE_BYTE = "byte";                      //$NON-NLS-1$
-    public static final String TYPE_NULL = "null";                      //$NON-NLS-1$
+    public static final String TYPE_OBJECT = "java.lang.Object";
+    public static final String TYPE_STRING = "java.lang.String";
+    public static final String TYPE_INT = "int";
+    public static final String TYPE_LONG = "long";
+    public static final String TYPE_CHAR = "char";
+    public static final String TYPE_FLOAT = "float";
+    public static final String TYPE_DOUBLE = "double";
+    public static final String TYPE_BOOLEAN = "boolean";
+    public static final String TYPE_SHORT = "short";
+    public static final String TYPE_BYTE = "byte";
+    public static final String TYPE_NULL = "null";
+    public static final String TYPE_INTEGER_WRAPPER = "java.lang.Integer";
+    public static final String TYPE_BOOLEAN_WRAPPER = "java.lang.Boolean";
+    public static final String TYPE_BYTE_WRAPPER = "java.lang.Byte";
+    public static final String TYPE_SHORT_WRAPPER = "java.lang.Short";
+    public static final String TYPE_LONG_WRAPPER = "java.lang.Long";
+    public static final String TYPE_DOUBLE_WRAPPER = "java.lang.Double";
+    public static final String TYPE_FLOAT_WRAPPER = "java.lang.Float";
+    public static final String TYPE_CHARACTER_WRAPPER = "java.lang.Character";
 
     /**
      * Prepare to parse the given contexts. This method will be called before
@@ -88,9 +103,34 @@ public abstract class JavaParser {
      *            {@link Context#file} can also be used to map to an existing
      *            editor buffer in the surrounding tool, etc)
      * @return the compilation unit node for the file
+     * @deprecated Use {@link #parseJavaToPsi(JavaContext)} instead
+     */
+    @Deprecated
+    @Nullable
+    public Node parseJava(@NonNull JavaContext context) {
+        return null;
+    }
+
+    /**
+     * Parse the file pointed to by the given context.
+     *
+     * @param context the context pointing to the file to be parsed, typically
+     *            via {@link Context#getContents()} but the file handle (
+     *            {@link Context#file} can also be used to map to an existing
+     *            editor buffer in the surrounding tool, etc)
+     * @return the compilation unit node for the file
      */
     @Nullable
-    public abstract Node parseJava(@NonNull JavaContext context);
+    public abstract PsiJavaFile parseJavaToPsi(@NonNull JavaContext context);
+
+    /**
+     * Returns an evaluator which can perform various resolution tasks,
+     * evaluate inheritance lookup etc.
+     *
+     * @return an evaluator
+     */
+    @NonNull
+    public abstract JavaEvaluator getEvaluator();
 
     /**
      * Returns a {@link Location} for the given node
@@ -98,9 +138,50 @@ public abstract class JavaParser {
      * @param context information about the file being parsed
      * @param node    the node to create a location for
      * @return a location for the given node
+     * @deprecated Use {@link #getNameLocation(JavaContext, PsiElement)} instead
      */
+    @Deprecated
+    @Nullable
+    public Location getLocation(@NonNull JavaContext context, @NonNull Node node) {
+        // No longer mandatory to override for children; this is a deprecated API
+        return null;
+    }
+
+    /**
+     * Returns a {@link Location} for the given element
+     *
+     * @param context information about the file being parsed
+     * @param element the element to create a location for
+     * @return a location for the given node
+     */
+    @SuppressWarnings("MethodMayBeStatic") // subclasses may want to override/optimize
     @NonNull
-    public abstract Location getLocation(@NonNull JavaContext context, @NonNull Node node);
+    public Location getLocation(@NonNull JavaContext context, @NonNull PsiElement element) {
+        TextRange range = element.getTextRange();
+        return Location.create(context.file, context.getContents(), range.getStartOffset(),
+                               range.getEndOffset());
+    }
+
+    /**
+     * Returns a {@link Location} for the given node range (from the starting offset of the first
+     * node to the ending offset of the second node).
+     *
+     * @param from      the AST node to get a starting location from
+     * @param fromDelta Offset delta to apply to the starting offset
+     * @param to        the AST node to get a ending location from
+     * @param toDelta   Offset delta to apply to the ending offset
+     * @return a location for the given node
+     * @deprecated Use {@link #getRangeLocation(JavaContext, PsiElement, int, PsiElement, int)}
+     * instead
+     */
+    @Deprecated
+    @NonNull
+    public abstract Location getRangeLocation(
+            @NonNull JavaContext context,
+            @NonNull Node from,
+            int fromDelta,
+            @NonNull Node to,
+            int toDelta);
 
     /**
      * Returns a {@link Location} for the given node range (from the starting offset of the first
@@ -112,13 +193,20 @@ public abstract class JavaParser {
      * @param toDelta   Offset delta to apply to the ending offset
      * @return a location for the given node
      */
+    @SuppressWarnings("MethodMayBeStatic") // subclasses may want to override/optimize
     @NonNull
-    public abstract Location getRangeLocation(
+    public Location getRangeLocation(
             @NonNull JavaContext context,
-            @NonNull Node from,
+            @NonNull PsiElement from,
             int fromDelta,
-            @NonNull Node to,
-            int toDelta);
+            @NonNull PsiElement to,
+            int toDelta) {
+        String contents = context.getContents();
+        int start = Math.max(0, from.getTextRange().getStartOffset() + fromDelta);
+        int end = Math.min(contents == null ? Integer.MAX_VALUE : contents.length(),
+        to.getTextRange().getEndOffset() + toDelta);
+        return Location.create(context.file, contents, start, end);
+    }
 
     /**
      * Returns a {@link Location} for the given node. This attempts to pick a shorter
@@ -129,7 +217,9 @@ public abstract class JavaParser {
      * @param context information about the file being parsed
      * @param node the node to create a location for
      * @return a location for the given node
+     * @deprecated Use {@link #getNameLocation(JavaContext, PsiElement)} instead
      */
+    @Deprecated
     @NonNull
     public Location getNameLocation(@NonNull JavaContext context, @NonNull Node node) {
         Node nameNode = JavaContext.findNameNode(node);
@@ -160,6 +250,25 @@ public abstract class JavaParser {
     }
 
     /**
+     * Returns a {@link Location} for the given node. This attempts to pick a shorter
+     * location range than the entire node; for a class or method for example, it picks
+     * the name node (if found). For statement constructs such as a {@code switch} statement
+     * it will highlight the keyword, etc.
+     *
+     * @param context information about the file being parsed
+     * @param element the node to create a location for
+     * @return a location for the given node
+     */
+    @NonNull
+    public Location getNameLocation(@NonNull JavaContext context, @NonNull PsiElement element) {
+        PsiElement nameNode = JavaContext.findNameElement(element);
+        if (nameNode != null) {
+            element = nameNode;
+        }
+
+        return getLocation(context, element);
+    }
+    /**
      * Creates a light-weight handle to a location for the given node. It can be
      * turned into a full fledged location by
      * {@link com.android.tools.lint.detector.api.Location.Handle#resolve()}.
@@ -168,7 +277,9 @@ public abstract class JavaParser {
      * @param node the node (element or attribute) to create a location handle
      *            for
      * @return a location handle
+     * @deprecated Use PSI instead (where handles aren't necessary; use PsiElement directly)
      */
+    @Deprecated
     @NonNull
     public abstract Location.Handle createLocationHandle(@NonNull JavaContext context,
             @NonNull Node node);
@@ -177,8 +288,18 @@ public abstract class JavaParser {
      * Dispose any data structures held for the given context.
      * @param context information about the file previously parsed
      * @param compilationUnit the compilation unit being disposed
+     * @deprecated Use {@link #dispose(JavaContext, PsiJavaFile)} instead
      */
+    @Deprecated
     public void dispose(@NonNull JavaContext context, @NonNull Node compilationUnit) {
+    }
+
+    /**
+     * Dispose any data structures held for the given context.
+     * @param context information about the file previously parsed
+     * @param compilationUnit the compilation unit being disposed
+     */
+    public void dispose(@NonNull JavaContext context, @NonNull PsiJavaFile compilationUnit) {
     }
 
     /**
@@ -196,9 +317,13 @@ public abstract class JavaParser {
      * @param node the node to resolve
      * @return a node representing the resolved fully type: class/interface/annotation,
      *          field, method or variable
+     * @deprecated Use {@link JavaPsiScanner} APIs instead
      */
+    @Deprecated
     @Nullable
-    public abstract ResolvedNode resolve(@NonNull JavaContext context, @NonNull Node node);
+    public ResolvedNode resolve(@NonNull JavaContext context, @NonNull Node node) {
+        return null;
+    }
 
     /**
      * Finds the given type, if possible (which should be reachable from the compilation
@@ -220,7 +345,9 @@ public abstract class JavaParser {
      * <p>
      * This is a workaround for the fact that the Lombok AST API (and implementation)
      * doesn't support multi-catch statements.
+     * @deprecated Use {@link JavaPsiScanner} APIs instead
      */
+    @Deprecated
     public List<TypeDescriptor> getCatchTypes(@NonNull JavaContext context,
             @NonNull Catch catchBlock) {
         TypeReference typeReference = catchBlock.astExceptionDeclaration().astTypeReference();
@@ -234,11 +361,27 @@ public abstract class JavaParser {
      * @param context information about the file being parsed
      * @param node the node to look up the type for
      * @return the type of the node, if known
+     * @deprecated Use {@link JavaPsiScanner} APIs instead
      */
+    @Deprecated
     @Nullable
-    public abstract TypeDescriptor getType(@NonNull JavaContext context, @NonNull Node node);
+    public TypeDescriptor getType(@NonNull JavaContext context, @NonNull Node node) {
+        return null;
+    }
 
-    /** A description of a type, such as a primitive int or the android.app.Activity class */
+    /**
+     * Runs the given runnable under a readlock such that it can access the PSI
+     *
+     * @param runnable the runnable to be run
+     */
+    public abstract void runReadAction(@NonNull Runnable runnable);
+
+    /**
+     * A description of a type, such as a primitive int or the android.app.Activity class
+     * @deprecated Use {@link PsiType} instead
+     */
+    @SuppressWarnings("unused")
+    @Deprecated
     public abstract static class TypeDescriptor {
         /**
          * Returns the fully qualified name of the type, such as "int" or "android.app.Activity"
@@ -317,7 +460,11 @@ public abstract class JavaParser {
         }
     }
 
-    /** Convenience implementation of {@link TypeDescriptor} */
+    /**
+     * Convenience implementation of {@link TypeDescriptor}
+     * @deprecated Use {@link JavaPsiScanner} APIs instead
+     */
+    @Deprecated
     public static class DefaultTypeDescriptor extends TypeDescriptor {
 
         private String mName;
@@ -390,7 +537,12 @@ public abstract class JavaParser {
         }
     }
 
-    /** A resolved declaration from an AST Node reference */
+    /**
+     * A resolved declaration from an AST Node reference
+     * @deprecated Use {@link JavaPsiScanner} APIs instead
+     */
+    @SuppressWarnings("unused")
+    @Deprecated
     public abstract static class ResolvedNode {
         @NonNull
         public abstract String getName();
@@ -453,7 +605,12 @@ public abstract class JavaParser {
         }
     }
 
-    /** A resolved class declaration (class, interface, enumeration or annotation) */
+    /**
+     * A resolved class declaration (class, interface, enumeration or annotation)
+     * @deprecated Use {@link JavaPsiScanner} APIs instead
+     */
+    @SuppressWarnings("unused")
+    @Deprecated
     public abstract static class ResolvedClass extends ResolvedNode {
         /** Returns the fully qualified name of this class */
         @Override
@@ -573,7 +730,12 @@ public abstract class JavaParser {
         }
     }
 
-    /** A method or constructor declaration */
+    /**
+     * A method or constructor declaration
+     * @deprecated Use {@link JavaPsiScanner} APIs instead
+     */
+    @SuppressWarnings("unused")
+    @Deprecated
     public abstract static class ResolvedMethod extends ResolvedNode {
         @Override
         @NonNull
@@ -687,21 +849,31 @@ public abstract class JavaParser {
         }
     }
 
+    /**
+     * @deprecated Use {@link JavaPsiScanner} APIs instead
+     */
+    @Deprecated
     private static boolean haveSameCompilationUnit(@Nullable ResolvedClass cls1,
             @Nullable ResolvedClass cls2) {
         if (cls1 == null || cls2 == null) {
             return false;
         }
+        //noinspection ConstantConditions
         while (cls1.getContainingClass() != null) {
             cls1 = cls1.getContainingClass();
         }
+        //noinspection ConstantConditions
         while (cls2.getContainingClass() != null) {
             cls2 = cls2.getContainingClass();
         }
         return cls1.equals(cls2);
     }
 
-    /** A field declaration */
+    /**
+     * A field declaration
+     * @deprecated Use {@link JavaPsiScanner} APIs instead
+     */
+    @Deprecated
     public abstract static class ResolvedField extends ResolvedNode {
         @Override
         @NonNull
@@ -749,7 +921,9 @@ public abstract class JavaParser {
      * An annotation <b>reference</b>. Note that this refers to a usage of an annotation,
      * not a declaraton of an annotation. You can call {@link #getClassType()} to
      * find the declaration for the annotation.
+     * @deprecated Use {@link JavaPsiScanner} APIs instead
      */
+    @Deprecated
     public abstract static class ResolvedAnnotation extends ResolvedNode {
         @Override
         @NonNull
@@ -800,7 +974,12 @@ public abstract class JavaParser {
         }
     }
 
-    /** A package declaration */
+    /**
+     * A package declaration
+     * @deprecated Use {@link JavaPsiScanner} APIs instead
+     */
+    @SuppressWarnings("unused")
+    @Deprecated
     public abstract static class ResolvedPackage extends ResolvedNode {
         /** Returns the parent package of this package, if any. */
         @Nullable
@@ -813,7 +992,11 @@ public abstract class JavaParser {
         }
     }
 
-    /** A local variable or parameter declaration */
+    /**
+     * A local variable or parameter declaration
+     * @deprecated Use {@link JavaPsiScanner} APIs instead
+     */
+    @Deprecated
     public abstract static class ResolvedVariable extends ResolvedNode {
         @Override
         @NonNull

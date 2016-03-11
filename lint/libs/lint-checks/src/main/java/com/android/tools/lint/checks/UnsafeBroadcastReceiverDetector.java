@@ -28,13 +28,10 @@ import static com.android.SdkConstants.TAG_RECEIVER;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
-import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
-import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
-import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
-import com.android.tools.lint.client.api.JavaParser.ResolvedVariable;
+import com.android.tools.lint.client.api.JavaEvaluator;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Detector;
-import com.android.tools.lint.detector.api.Detector.JavaScanner;
+import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
 import com.android.tools.lint.detector.api.Detector.XmlScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
@@ -45,6 +42,13 @@ import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.google.common.collect.Sets;
+import com.intellij.psi.JavaRecursiveElementVisitor;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiMethodCallExpression;
+import com.intellij.psi.PsiParameter;
+import com.intellij.psi.PsiReferenceExpression;
 
 import org.w3c.dom.Element;
 
@@ -55,15 +59,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import lombok.ast.ClassDeclaration;
-import lombok.ast.ForwardingAstVisitor;
-import lombok.ast.MethodDeclaration;
-import lombok.ast.MethodInvocation;
-import lombok.ast.Node;
-import lombok.ast.VariableReference;
-
 public class UnsafeBroadcastReceiverDetector extends Detector
-        implements JavaScanner, XmlScanner {
+        implements JavaPsiScanner, XmlScanner {
 
     /* Description of check implementations:
      *
@@ -379,7 +376,7 @@ public class UnsafeBroadcastReceiverDetector extends Detector
     private static final Set<String> PROTECTED_BROADCAST_SET =
             Sets.newHashSet(PROTECTED_BROADCASTS);
 
-    private Set<String> mReceiversWithProtectedBroadcastIntentFilter = new HashSet<String>();
+    private final Set<String> mReceiversWithProtectedBroadcastIntentFilter = new HashSet<String>();
 
     public UnsafeBroadcastReceiverDetector() {
     }
@@ -451,38 +448,29 @@ public class UnsafeBroadcastReceiverDetector extends Detector
     }
 
     @Override
-    public void checkClass(@NonNull JavaContext context, @Nullable ClassDeclaration node,
-            @NonNull Node declarationOrAnonymous, @NonNull ResolvedClass cls) {
-        if (node == null) { // anonymous classes can't be the ones referenced in the manifest
+    public void checkClass(@NonNull JavaContext context, @NonNull PsiClass declaration) {
+        String name = declaration.getName();
+        if (name == null) {
+            // anonymous classes can't be the ones referenced in the manifest
             return;
         }
-        String name = cls.getName();
-        if (!mReceiversWithProtectedBroadcastIntentFilter.contains(name)) {
+        String qualifiedName = declaration.getQualifiedName();
+        if (qualifiedName == null) {
             return;
         }
-        for (Node member : node.astBody().astMembers()) {
-            if (member instanceof MethodDeclaration) {
-                MethodDeclaration declaration = (MethodDeclaration)member;
-                if ("onReceive".equals(declaration.astMethodName().astValue())
-                        && declaration.astParameters().size() == 2) {
-                    ResolvedNode resolved = context.resolve(declaration);
-                    if (resolved instanceof ResolvedMethod) {
-                        ResolvedMethod method = (ResolvedMethod) resolved;
-                        if (method.getArgumentCount() == 2
-                                && method.getArgumentType(0).matchesName(CLASS_CONTEXT)
-                                && method.getArgumentType(1).matchesName(CLASS_INTENT)) {
-                            checkOnReceive(context, declaration, method);
-                            break;
-                        }
-                    }
-                }
+        if (!mReceiversWithProtectedBroadcastIntentFilter.contains(qualifiedName)) {
+            return;
+        }
+        JavaEvaluator evaluator = context.getEvaluator();
+        for (PsiMethod method : declaration.findMethodsByName("onReceive", false)) {
+            if (evaluator.parametersMatch(method, CLASS_CONTEXT, CLASS_INTENT)) {
+                checkOnReceive(context, method);
             }
         }
     }
 
     private static void checkOnReceive(@NonNull JavaContext context,
-            @NonNull MethodDeclaration declaration,
-            @NonNull ResolvedMethod method) {
+            @NonNull PsiMethod method) {
         // Search for call to getAction but also search for references to aload_2,
         // which indicates that the method is making use of the received intent in
         // some way.
@@ -492,16 +480,9 @@ public class UnsafeBroadcastReceiverDetector extends Detector
         // method that might be performing the getAction check, so we warn that the
         // finding may be a false positive. (An alternative option would be to not
         // report a finding at all in this case.)
-        assert method.getArgumentCount() == 2;
-        ResolvedVariable parameter = null;
-        if (declaration.astParameters().size() == 2) {
-            ResolvedNode resolved = context.resolve(declaration.astParameters().last());
-            if (resolved instanceof ResolvedVariable) {
-                parameter = (ResolvedVariable) resolved;
-            }
-        }
-        OnReceiveVisitor visitor = new OnReceiveVisitor(context, parameter);
-        declaration.accept(visitor);
+        PsiParameter parameter = method.getParameterList().getParameters()[1];
+        OnReceiveVisitor visitor = new OnReceiveVisitor(context.getEvaluator(), parameter);
+        method.accept(visitor);
         if (!visitor.getCallsGetAction()) {
             String report;
             if (!visitor.getUsesIntent()) {
@@ -529,19 +510,19 @@ public class UnsafeBroadcastReceiverDetector extends Detector
                         "to another method that checked the action string. If so, this " +
                         "finding can safely be ignored.";
             }
-            Location location = context.getNameLocation(declaration);
-            context.report(ACTION_STRING, declaration, location, report);
+            Location location = context.getNameLocation(method);
+            context.report(ACTION_STRING, method, location, report);
         }
     }
 
-    private static class OnReceiveVisitor extends ForwardingAstVisitor {
-        @NonNull private final JavaContext mContext;
-        @Nullable private final ResolvedVariable mParameter;
+    private static class OnReceiveVisitor extends JavaRecursiveElementVisitor {
+        @NonNull private final JavaEvaluator mEvaluator;
+        @Nullable private final PsiParameter mParameter;
         private boolean mCallsGetAction;
         private boolean mUsesIntent;
 
-        public OnReceiveVisitor(@NonNull JavaContext context, @Nullable ResolvedVariable parameter) {
-            mContext = context;
+        public OnReceiveVisitor(@NonNull JavaEvaluator context, @Nullable PsiParameter parameter) {
+            mEvaluator = context;
             mParameter = parameter;
         }
 
@@ -554,30 +535,27 @@ public class UnsafeBroadcastReceiverDetector extends Detector
         }
 
         @Override
-        public boolean visitMethodInvocation(@NonNull MethodInvocation node) {
+        public void visitMethodCallExpression(PsiMethodCallExpression node) {
             if (!mCallsGetAction) {
-                ResolvedNode resolved = mContext.resolve(node);
-                if (resolved instanceof ResolvedMethod) {
-                    ResolvedMethod method = (ResolvedMethod) resolved;
-                    if (method.getName().equals("getAction") &&
-                            method.getContainingClass().isSubclassOf(CLASS_INTENT, false)) {
-                        mCallsGetAction = true;
-                    }
+                PsiMethod method = node.resolveMethod();
+                if (method != null && "getAction".equals(method.getName()) &&
+                        mEvaluator.isMemberInSubClassOf(method, CLASS_INTENT, false)) {
+                    mCallsGetAction = true;
                 }
             }
-            return super.visitMethodInvocation(node);
+
+            super.visitMethodCallExpression(node);
         }
 
         @Override
-        public boolean visitVariableReference(@NonNull VariableReference node) {
+        public void visitReferenceExpression(PsiReferenceExpression expression) {
             if (!mUsesIntent && mParameter != null) {
-                ResolvedNode resolved = mContext.resolve(node);
+                PsiElement resolved = expression.resolve();
                 if (mParameter.equals(resolved)) {
                     mUsesIntent = true;
                 }
             }
-
-            return super.visitVariableReference(node);
+            super.visitReferenceExpression(expression);
         }
     }
 }
