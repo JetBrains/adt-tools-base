@@ -137,9 +137,9 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
                     (ConcurrentMap) stream.readObject(),
                     (Map) stream.readObject());
         } catch (ClassNotFoundException e) {
-            throw new IncrementalRunImpossibleException("Can't load incremental state.");
+            throw new IncrementalRunImpossibleException("Failed to load incremental state.", e);
         } catch (InvalidClassException e) {
-            throw new IncrementalRunImpossibleException("Can't load incremental state.");
+            throw new IncrementalRunImpossibleException("Failed to load incremental state.", e);
         } finally {
             stream.close();
         }
