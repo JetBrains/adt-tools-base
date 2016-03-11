@@ -214,9 +214,6 @@ public class SdkVersionInfo {
         if (buildCode.equalsIgnoreCase("L")) {
             return 21; // For now the Build class also provides this as an alias to Lollipop
         }
-        if (buildCode.equalsIgnoreCase("N")) {
-            return 24; // For now the Build class also provides this as an alias to N
-        }
         return recognizeUnknowns ? HIGHEST_KNOWN_API + 1 : -1;
     }
 

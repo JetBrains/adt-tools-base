@@ -38,7 +38,7 @@ public class AbstractCompilesUtil {
             String compileSdkVersion,
             boolean jackEnabled) {
         final AndroidVersion hash = AndroidTargetHash.getVersionFromHash(compileSdkVersion);
-        Integer compileSdkLevel = (hash == null ? null : hash.getApiLevel());
+        Integer compileSdkLevel = (hash == null ? null : hash.getFeatureLevel());
 
         JavaVersion javaVersionToUse;
         if (compileSdkLevel == null) {
