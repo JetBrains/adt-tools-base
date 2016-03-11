@@ -15,19 +15,21 @@
     <merge from="root/res/values/strings.xml.ftl"
              to="${escapeXmlAttribute(resOut)}/values/strings.xml" />
 
-    <merge from="root/res/values/colors.xml.ftl"
-             to="${escapeXmlAttribute(resOut)}/values/colors.xml" />
-
-    <merge from="root/res/values/dimens.xml.ftl"
-             to="${escapeXmlAttribute(resOut)}/values/dimens.xml" />
-
     <copy from="root/res/xml/watch_face.xml"
             to="${escapeXmlAttribute(resOut)}/xml/watch_face.xml" />
 
 <#if style == "analog">
+    <dependency mavenUrl="com.android.support:palette-v7:${buildApi}.+" />
+
     <copy from="root/res/drawable-nodpi/preview_analog.png"
             to="${escapeXmlAttribute(resOut)}/drawable-nodpi/preview_analog.png" />
+    <copy from="root/res/drawable-nodpi/bg.png"
+            to="${escapeXmlAttribute(resOut)}/drawable-nodpi/bg.png" />
 <#elseif style == "digital">
+    <merge from="root/res/values/dimens.xml.ftl"
+             to="${escapeXmlAttribute(resOut)}/values/dimens.xml" />
+    <merge from="root/res/values/colors.xml.ftl"
+             to="${escapeXmlAttribute(resOut)}/values/colors.xml" />
     <copy from="root/res/drawable-nodpi/preview_digital.png"
             to="${escapeXmlAttribute(resOut)}/drawable-nodpi/preview_digital.png" />
     <copy from="root/res/drawable-nodpi/preview_digital_circular.png"
