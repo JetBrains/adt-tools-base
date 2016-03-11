@@ -23,6 +23,8 @@ import static com.android.SdkConstants.FN_APK_CLASSES_N_DEX;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.files.FileModificationType;
+import com.android.builder.files.RelativeFile;
 import com.android.builder.internal.packaging.JavaResourceProcessor.IArchiveBuilder;
 import com.android.builder.packaging.ApkBuilderFactory;
 import com.android.builder.packaging.ApkCreator;
@@ -34,11 +36,13 @@ import com.android.builder.signing.SignedJarBuilderFactory;
 import com.android.ide.common.signing.CertificateInfo;
 import com.android.utils.ILogger;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.io.Closer;
 
 import java.io.Closeable;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -50,8 +54,6 @@ import java.util.HashMap;
 import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Class making the final app package.
@@ -115,58 +117,12 @@ public final class Packager implements IArchiveBuilder, Closeable {
     }
 
     /**
-     * A filter to filter out unwanted ABIs.
-     */
-    private static final class NativeLibZipFilter implements ZipEntryFilter {
-        @NonNull
-        private final ZipEntryFilter parentFilter;
-        @NonNull
-        private final Set<String> acceptedAbis;
-        private final boolean mJniDebugMode;
-
-        private final Pattern mAbiPattern = Pattern.compile("lib/([^/]+)/[^/]+");
-        private final Pattern mFilenamePattern = Pattern.compile(".*\\.so");
-
-        private NativeLibZipFilter(
-                @NonNull Set<String> acceptedAbis,
-                @NonNull ZipEntryFilter parentFilter,
-                boolean jniDebugMode) {
-            this.acceptedAbis = acceptedAbis;
-            this.parentFilter = parentFilter;
-            this.mJniDebugMode = jniDebugMode;
-        }
-
-        @Override
-        public boolean checkEntry(String archivePath) throws ZipAbortException {
-            if (!parentFilter.checkEntry(archivePath)) {
-                return false;
-            }
-
-            // extract abi from path and convert.
-            Matcher m = mAbiPattern.matcher(archivePath);
-
-            // if the ABI is accepted, check the 3rd segment
-            if (m.matches() && (acceptedAbis.isEmpty() || acceptedAbis.contains(m.group(1)))) {
-                // remove the beginning of the path (lib/<abi>/)
-                String filename = archivePath.substring(5 + m.group(1).length());
-                return mFilenamePattern.matcher(filename).matches() ||
-                        (mJniDebugMode &&
-                                (SdkConstants.FN_GDBSERVER.equals(filename) ||
-                                        SdkConstants.FN_GDB_SETUP.equals(filename)));
-            }
-
-            return false;
-        }
-    }
-
-    /**
      * APK creator. {@code null} if not open.
      */
     @Nullable
     private ApkCreator mApkCreator;
 
     private final ILogger mLogger;
-    private boolean mJniDebugMode = false;
 
     private final DuplicateZipFilter mNoDuplicateFilter = new DuplicateZipFilter();
     private final NoJavaClassZipFilter mNoJavaClassZipFilter = new NoJavaClassZipFilter(
@@ -194,7 +150,7 @@ public final class Packager implements IArchiveBuilder, Closeable {
      * @throws com.android.builder.packaging.PackagerException
      */
     public Packager(
-            @NonNull String apkLocation,
+            @NonNull File apkLocation,
             @Nullable String resLocation,
             @Nullable CertificateInfo certificateInfo,
             @Nullable String createdBy,
@@ -203,8 +159,7 @@ public final class Packager implements IArchiveBuilder, Closeable {
 
         Closer closer = Closer.create();
         try {
-            File apkFile = new File(apkLocation);
-            checkOutputFile(apkFile);
+            checkOutputFile(apkLocation);
 
             File resFile = null;
             if (resLocation != null) {
@@ -216,14 +171,14 @@ public final class Packager implements IArchiveBuilder, Closeable {
 
             ApkBuilderFactory factory = new SignedJarBuilderFactory();
 
-            mApkCreator = factory.make(apkFile,
+            mApkCreator = factory.make(apkLocation,
                     certificateInfo != null ? certificateInfo.getKey() : null,
                     certificateInfo != null ? certificateInfo.getCertificate() : null,
                     getLocalVersion(),
                     createdBy,
                     minSdkVersion);
 
-            mLogger.verbose("Packaging %s", apkFile.getName());
+            mLogger.verbose("Packaging %s", apkLocation.getName());
 
             // add the resources
             if (resFile != null) {
@@ -291,24 +246,6 @@ public final class Packager implements IArchiveBuilder, Closeable {
         return dexIndex;
     }
 
-
-    /**
-     * Sets the JNI debug mode. In debug mode, when native libraries are present, the packaging
-     * will also include one or more copies of gdbserver in the final APK file.
-     *
-     * <p>These are used for debugging native code, to ensure that gdbserver is accessible to the
-     * application.
-     *
-     * <p>There will be one version of gdbserver for each ABI supported by the application.
-     *
-     * <p>The gbdserver files are placed in the libs/abi/ folders automatically by the NDK.
-     *
-     * @param jniDebugMode the jni-debug mode flag
-     */
-    public void setJniDebugMode(boolean jniDebugMode) {
-        mJniDebugMode = jniDebugMode;
-    }
-
     /**
      * Adds a file to the APK at a given path.
      *
@@ -321,7 +258,7 @@ public final class Packager implements IArchiveBuilder, Closeable {
     public void addFile(File file, String archivePath) throws PackagerException, IOException {
         Preconditions.checkState(mApkCreator != null, "mApkCreator == null");
 
-        doAddFile(file, archivePath, null);
+        doAddFile(file, archivePath);
     }
 
     /**
@@ -345,108 +282,85 @@ public final class Packager implements IArchiveBuilder, Closeable {
     }
 
     /**
-     * Adds all resources from a merged folder or jar file. There cannot be any duplicates and all
-     * files present must be added unless it is a "binary" file like a .class or .dex (jack
-     * produces the classes.dex in the same location as the obfuscated resources).
+     * Incrementally updates a resource in the packaging. The resource can be added or removed,
+     * depending on the change made to the file.
      *
-     * @param jarFileOrDirectory a jar file or directory reference.
-     * @throws PackagerException could not add an entry to the package.
-     * @throws IOException failed to release resources
+     * @param file the file to update
+     * @param modificationType the type of file modification
+     * @throws PackagerException failed to update the package
      */
-    public void addResources(@NonNull File jarFileOrDirectory)
-            throws PackagerException, IOException {
-        Preconditions.checkState(mApkCreator != null, "mApkCreator == null");
-
-        mNoDuplicateFilter.reset(jarFileOrDirectory);
-        if (jarFileOrDirectory.isDirectory()) {
-            addResourcesFromDirectory(jarFileOrDirectory, "");
+    public void updateResource(@NonNull RelativeFile file,
+            @NonNull FileModificationType modificationType) throws PackagerException {
+        if (modificationType == FileModificationType.NEW
+                || modificationType == FileModificationType.CHANGED) {
+            doAddFile(file.getFile(), file.getOsIndependentRelativePath());
         } else {
-            mApkCreator.writeZip(jarFileOrDirectory, mNoJavaClassZipFilter);
-        }
-    }
-
-    private void addResourcesFromDirectory(@NonNull File directory, String path)
-            throws IOException, ZipAbortException {
-        File[] directoryFiles = directory.listFiles();
-        if (directoryFiles == null) {
-            return;
-        }
-        for (File file : directoryFiles) {
-            String entryName = path.isEmpty() ? file.getName() : path + "/" + file.getName();
-            if (file.isDirectory()) {
-                addResourcesFromDirectory(file, entryName);
-            } else {
-                doAddFile(file, entryName, null);
-            }
+            throw new UnsupportedOperationException("Cannot remove a file from archive.");
         }
     }
 
     /**
-     * Adds the native libraries from a directory or jar file.
+     * Incrementally updates resources in the packaging. The resources can be added or removed,
+     * depending on the changes made to the file. Updating an archive file as modified will update
+     * the entries, but will not remove archive entries tht are no longer in the archive.
      *
-     * <p>The content must be the various ABI folders.
-     *
-     * <p>This may or may not copy gdbserver into the apk based on whether the debug mode is set.
-     *
-     * @param jarFileOrDirectory a jar file or directory reference
-     * @param abiFilters a list of abi filters to include. If empty, all abis are included
-     * @throws PackagerException if an error occurred
-     * @throws IOException failed to release resources
-     * @see #setJniDebugMode(boolean)
+     * @param file the archive file (zip)
+     * @param modificationType the type of file modification
+     * @param filter the filter to apply to the contents of the archive; the filter is applied
+     * before processing: filtered out files are exactly the same as inexistent files; the filter
+     * applies to the path stored in the zip
+     * @throws PackagerException failed to update the package
      */
-    public void addNativeLibraries(
-            @NonNull File jarFileOrDirectory,
-            @NonNull Set<String> abiFilters)
-            throws PackagerException, IOException {
-        Preconditions.checkState(mApkCreator != null, "mApkCreator == null");
+    public void updateResourceArchive(@NonNull File file,
+            @NonNull FileModificationType modificationType, @NonNull final Predicate<String> filter)
+            throws PackagerException {
+        Preconditions.checkNotNull(mApkCreator, "mApkCreator == null");
 
-        mLogger.verbose("Native Libraries input: %s", jarFileOrDirectory);
+        if (modificationType == FileModificationType.NEW
+                || modificationType == FileModificationType.CHANGED) {
+            try {
+                Closer closer = Closer.create();
+                try {
+                    FileInputStream fis = closer.register(new FileInputStream(file));
 
-        NativeLibZipFilter filter = new NativeLibZipFilter(
-                abiFilters, mNoDuplicateFilter, mJniDebugMode);
-        mNoDuplicateFilter.reset(jarFileOrDirectory);
+                    ZipEntryFilter zipFilter = new ZipEntryFilter() {
+                        @Override
+                        public boolean checkEntry(String archivePath)
+                                throws ZipAbortException {
+                            if (!mNoJavaClassZipFilter.checkEntry(archivePath)) {
+                                return false;
+                            }
 
-        if (jarFileOrDirectory.isDirectory()) {
-            addNativeLibrariesFromDirectory(jarFileOrDirectory, "", filter);
-        } else {
-            mApkCreator.writeZip(jarFileOrDirectory, filter);
-        }
-    }
+                            return filter.apply(archivePath);
+                        }
+                    };
 
-    private void addNativeLibrariesFromDirectory(
-            @NonNull File directory,
-            @NonNull String path,
-            @NonNull NativeLibZipFilter zipFilter)
-            throws IOException, ZipAbortException {
-        File[] directoryFiles = directory.listFiles();
-        if (directoryFiles == null) {
-            return;
-        }
-        for (File file : directoryFiles) {
-            String entryName = path.isEmpty() ? file.getName() : path + "/" + file.getName();
-            if (file.isDirectory()) {
-                addNativeLibrariesFromDirectory(file, entryName, zipFilter);
-            } else {
-                doAddFile(file, entryName, zipFilter);
+                    mApkCreator.writeZip(file, zipFilter);
+                } catch (IOException e) {
+                    throw closer.rethrow(e, IOException.class);
+                } catch (Throwable t) {
+                    throw closer.rethrow(t);
+                } finally {
+                    closer.close();
+                }
+            } catch (IOException e) {
+                throw new PackagerException(e);
             }
         }
     }
 
     private void doAddFile(
             @NonNull File file,
-            @NonNull String archivePath,
-            @Nullable ZipEntryFilter filter) throws ZipAbortException,
-            IOException {
-        if (filter == null) {
-            filter = mNoJavaClassZipFilter;
-        }
-
-        if (!filter.checkEntry(archivePath)) {
-            return;
-        }
+            @NonNull String archivePath) throws PackagerException {
+        Preconditions.checkNotNull(mApkCreator, "mApkCreator == null");
 
         mAddedFiles.put(archivePath, file);
-        mApkCreator.writeFile(file, archivePath);
+
+        try {
+            mApkCreator.writeFile(file, archivePath);
+        } catch (IOException e) {
+            throw new PackagerException(e);
+        }
     }
 
     /**
