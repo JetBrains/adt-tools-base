@@ -79,6 +79,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(ClickableViewAccessibilityDetector.ISSUE);
         issues.add(CommentDetector.EASTER_EGG);
         issues.add(CommentDetector.STOP_SHIP);
+        issues.add(CordovaVersionDetector.ISSUE);
         issues.add(CustomViewDetector.ISSUE);
         issues.add(CutPasteDetector.ISSUE);
         issues.add(DateFormatDetector.DATE_FORMAT);
