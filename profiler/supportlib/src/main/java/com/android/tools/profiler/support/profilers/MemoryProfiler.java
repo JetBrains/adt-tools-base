@@ -56,6 +56,11 @@ public class MemoryProfiler extends AbstractProfilerComponent {
     }
 
     @Override
+    public void initialize() {
+
+    }
+
+    @Override
     public int receiveMessage(long frameStartTime, MessageHeader header, ByteBuffer input, ByteBuffer output) {
         return RESPONSE_OK;
     }
