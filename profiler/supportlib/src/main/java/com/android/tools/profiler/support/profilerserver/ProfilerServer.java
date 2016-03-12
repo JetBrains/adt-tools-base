@@ -16,6 +16,8 @@
 
 package com.android.tools.profiler.support.profilerserver;
 
+import android.content.Context;
+import android.net.TrafficStats;
 import android.os.SystemClock;
 import android.util.Log;
 
@@ -73,6 +75,10 @@ public class ProfilerServer implements Runnable {
     private static final byte OK_RESPONSE = (byte)0;
     private static final byte ERROR_RESPONSE = (byte)1;
     private static final byte STRING_TERMINATOR = (byte)0;
+
+    private static final int THREAD_STATS_TAG = 0xFFFFFEFF;
+
+    private static Context mContext;
 
     private final List<ProfilerComponent> mRegisteredComponents = new ArrayList<ProfilerComponent>(ProfilerRegistry.TOTAL);
     private final MessageHeader mInputMessageHeader = new MessageHeader();
@@ -151,8 +157,20 @@ public class ProfilerServer implements Runnable {
         output.clear();
     }
 
+    public void initialize(Context context) {
+        mContext = context;
+        for (ProfilerComponent component : mRegisteredComponents) {
+            component.initialize();
+        }
+    }
+
+    public Context getContext() {
+        return mContext;
+    }
+
     @Override
     public void run() {
+        TrafficStats.setThreadStatsTag(THREAD_STATS_TAG);
         Log.v(SERVER_NAME, "Started profiling server");
         SocketChannel socketChannel = null;
 
@@ -221,6 +239,7 @@ public class ProfilerServer implements Runnable {
             }
         }
         Log.v(SERVER_NAME, "Stopped profiling server");
+        TrafficStats.clearThreadStatsTag();
     }
 
     private SocketChannel acceptConnection() {
@@ -327,6 +346,9 @@ public class ProfilerServer implements Runnable {
 
         @Override
         public void onClientDisconnection() {}
+
+        @Override
+        public void initialize() {}
 
         @Override
         public int receiveMessage(long frameStartTime, MessageHeader header, ByteBuffer input, ByteBuffer output) {
