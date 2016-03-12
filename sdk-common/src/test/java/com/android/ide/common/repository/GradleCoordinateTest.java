@@ -335,4 +335,16 @@ public class GradleCoordinateTest extends BaseTestCase {
                         "com.google.android.gms:play-services:5.2.08"));
 
     }
+
+    public void testAlphaBeta() throws Exception {
+        GradleCoordinate actual = GradleCoordinate.parseCoordinateString("com.android.support:appcompat-v7:24.0.0-alpha1");
+        assertNotNull(actual);
+        assertEquals(24, actual.getMajorVersion());
+        assertTrue(actual.isPreview());
+
+        actual = GradleCoordinate.parseCoordinateString("com.android.support:appcompat-v7:24.0.0-beta7");
+        assertNotNull(actual);
+        assertEquals(24, actual.getMajorVersion());
+        assertTrue(actual.isPreview());
+    }
 }
