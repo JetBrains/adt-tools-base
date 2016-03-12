@@ -80,6 +80,7 @@ public class ProfilerServer implements Runnable {
 
     private static Context mContext;
 
+    private final ServerComponent mServerComponent = new ServerComponent();
     private final List<ProfilerComponent> mRegisteredComponents = new ArrayList<ProfilerComponent>(ProfilerRegistry.TOTAL);
     private final MessageHeader mInputMessageHeader = new MessageHeader();
     private final MessageHeader mOutputMessageHeader = new MessageHeader();
@@ -96,7 +97,7 @@ public class ProfilerServer implements Runnable {
     }
 
     private ProfilerServer() {
-        registerComponent(new ServerComponent());
+        registerComponent(mServerComponent);
         registerComponent(new MemoryProfiler());
         registerComponent(new NetworkProfiler());
     }
@@ -187,6 +188,10 @@ public class ProfilerServer implements Runnable {
                 mOutstandingHeartbeat = mHeartbeat;
                 mLastHeartbeatTime = SystemClock.elapsedRealtimeNanos();
 
+                if (mServerComponent.processHandshake(mLastHeartbeatTime, socketChannel) == ProfilerComponent.RESPONSE_RECONNECT) {
+                    continue;
+                }
+
                 try {
                     for (int i = 0; i < mRegisteredComponents.size(); i++) {
                         mRegisteredComponents.get(i).onClientConnection();
@@ -230,7 +235,7 @@ public class ProfilerServer implements Runnable {
                 if (socketChannel != null) {
                     try {
                         socketChannel.close();
-                        Log.v(SERVER_NAME, "Aborted profiling server");
+                        Log.v(SERVER_NAME, "Reinitializing profiling server");
                     } catch (IOException ignored) {}
                     finally {
                         socketChannel = null;
@@ -284,10 +289,16 @@ public class ProfilerServer implements Runnable {
             // We got a message from the client, so it means the client is still alive.
             mLastHeartbeatTime = frameStartTime;
 
+            if (mInputMessageHeader.length < MessageHeader.MESSAGE_HEADER_LENGTH ||
+                    mInputMessageHeader.length > mInputBuffer.capacity()) {
+                throw new RuntimeException("Invalid length in message.");
+            }
+
             Log.v(SERVER_NAME, "Processing message");
             for (int i = 0; i < mRegisteredComponents.size(); i++) {
                 try {
-                    mRegisteredComponents.get(i).receiveMessage(frameStartTime, mInputMessageHeader, mInputBuffer, mOutputBuffer);
+                    mRegisteredComponents.get(i).receiveMessage(
+                            frameStartTime, mInputMessageHeader, mInputBuffer, mOutputBuffer);
                 }
                 catch (Exception e) {
                     Log.e("ProfileServer", Log.getStackTraceString(e));
@@ -296,14 +307,9 @@ public class ProfilerServer implements Runnable {
                 mInputBuffer.position(payloadPosition);
             }
 
-            // Manually advance the position past the end of the message.
-            if (mInputMessageHeader.length < MessageHeader.MESSAGE_HEADER_LENGTH ||
-                mInputMessageHeader.length > mInputBuffer.capacity()) {
-                throw new RuntimeException("Unexpected message length.");
-            }
-
             Log.v(SERVER_NAME, "Processed message");
             mInputBuffer.reset();
+            // Manually advance the position past the end of the message.
             mInputBuffer.position(mInputBuffer.position() + mInputMessageHeader.length);
         }
         mInputBuffer.compact();
@@ -352,25 +358,11 @@ public class ProfilerServer implements Runnable {
 
         @Override
         public int receiveMessage(long frameStartTime, MessageHeader header, ByteBuffer input, ByteBuffer output) {
+            if (mInputMessageHeader.type != ProfilerRegistry.SERVER) {
+                return RESPONSE_OK;
+            }
+
             switch (mInputMessageHeader.subType) {
-                case SUBTYPE_HANDSHAKE: // Process handshake and send confirmation.
-                    mOutputMessageHeader.copyFrom(mInputMessageHeader);
-                    mOutputMessageHeader.length = MessageHeader.MESSAGE_HEADER_LENGTH + 1; // 1 extra byte for the response.
-                    mOutputMessageHeader.flags = RESPONSE_MASK;
-                    mOutputMessageHeader.writeToBuffer(output);
-                    if (mInputMessageHeader.length != HANDSHAKE_HEADER_LENGTH || input.getInt() != VERSION) {
-                        output.put(ERROR_RESPONSE);
-                        if (mInputMessageHeader.length != HANDSHAKE_HEADER_LENGTH) {
-                            Log.e(SERVER_NAME, "Invalid handshake message.");
-                        } else {
-                            Log.e(SERVER_NAME, "Incompatible client version.");
-                        }
-                        return RESPONSE_RECONNECT;
-                    }
-                    output.put(OK_RESPONSE);
-                    mDoHeartBeat = true;
-                    Log.v(SERVER_NAME, "Handshake Done");
-                    break;
                 case SUBTYPE_PING:
                     // Process heartbeat.
                     if ((mInputMessageHeader.flags & RESPONSE_MASK) == 0) {
@@ -412,6 +404,9 @@ public class ProfilerServer implements Runnable {
                         output.put(result.getBytes(StandardCharsets.US_ASCII));
                     }
                     break;
+                case SUBTYPE_HANDSHAKE:
+                    Log.v(SERVER_NAME, "Client sent invalid handshake.");
+                    return RESPONSE_RECONNECT;
             }
             return RESPONSE_OK;
         }
@@ -443,6 +438,55 @@ public class ProfilerServer implements Runnable {
             }
 
             return UPDATE_DONE;
+        }
+
+        private int processHandshake(long frameStartTime, SocketChannel socketChannel) throws IOException {
+            int totalRead = 0;
+            try {
+                while (totalRead < HANDSHAKE_HEADER_LENGTH &&
+                       SystemClock.elapsedRealtimeNanos() - frameStartTime < HEARTBEAT_TIMEOUT &&
+                       !mContinueRunningLatch.await(SERVER_UPDATE_TIME_NS, TimeUnit.NANOSECONDS)) {
+                    totalRead += socketChannel.read(mInputBuffer);
+                }
+                if (SystemClock.elapsedRealtimeNanos() - frameStartTime >= HEARTBEAT_TIMEOUT ||
+                        mContinueRunningLatch.getCount() == 0) {
+                    Log.v(SERVER_NAME, "Connection timed out before handshake completed.");
+                    return RESPONSE_RECONNECT;
+                }
+            } catch (InterruptedException e) {
+                Log.v(SERVER_NAME, "Server stopped before handshake completed.");
+                return RESPONSE_RECONNECT;
+            }
+
+            mInputBuffer.flip();
+            mInputMessageHeader.parseFromBuffer(mInputBuffer);
+
+            if (mInputMessageHeader.type != ProfilerRegistry.SERVER ||
+                    mInputMessageHeader.subType != SUBTYPE_HANDSHAKE ||
+                    mInputBuffer.limit() != HANDSHAKE_HEADER_LENGTH) {
+                Log.v(SERVER_NAME, "Client did not send only handshake as first message. Reconnecting.");
+                return RESPONSE_RECONNECT;
+            }
+
+            // Process handshake and send confirmation.
+            mOutputMessageHeader.copyFrom(mInputMessageHeader);
+            mOutputMessageHeader.length = MessageHeader.MESSAGE_HEADER_LENGTH + 1; // 1 extra byte for the response.
+            mOutputMessageHeader.flags = RESPONSE_MASK;
+            mOutputMessageHeader.writeToBuffer(mOutputBuffer);
+            if (mInputMessageHeader.length != HANDSHAKE_HEADER_LENGTH || mInputBuffer.getInt() != VERSION) {
+                mOutputBuffer.put(ERROR_RESPONSE);
+                if (mInputMessageHeader.length != HANDSHAKE_HEADER_LENGTH) {
+                    Log.e(SERVER_NAME, "Invalid handshake message.");
+                } else {
+                    Log.e(SERVER_NAME, "Incompatible client version.");
+                }
+                return RESPONSE_RECONNECT;
+            }
+            mOutputBuffer.put(OK_RESPONSE);
+            mDoHeartBeat = true;
+            Log.v(SERVER_NAME, "Handshake Done");
+            mInputBuffer.compact();
+            return RESPONSE_OK;
         }
     }
 }
