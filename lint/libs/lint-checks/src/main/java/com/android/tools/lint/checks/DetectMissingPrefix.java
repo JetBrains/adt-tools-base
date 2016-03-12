@@ -26,6 +26,7 @@ import static com.android.SdkConstants.ATTR_LAYOUT_RESOURCE_PREFIX;
 import static com.android.SdkConstants.ATTR_PACKAGE;
 import static com.android.SdkConstants.ATTR_STYLE;
 import static com.android.SdkConstants.AUTO_URI;
+import static com.android.SdkConstants.IMAGE_VIEW;
 import static com.android.SdkConstants.TAG_LAYOUT;
 import static com.android.SdkConstants.TOOLS_URI;
 import static com.android.SdkConstants.VIEW_TAG;
@@ -176,8 +177,9 @@ public class DetectMissingPrefix extends LayoutDetector {
                     return;
                 }
 
-                // Quickfix for http://b.android.com/201790
-                if (attribute.getOwnerElement().getTagName().equals(SdkConstants.IMAGE_VIEW) && attribute.getLocalName().equals("srcCompat")) {
+                // Appcompat now encourages decorating standard views (like ImageView and
+                // ImageButton) with srcCompat in the app namespace
+                if (attribute.getLocalName().equals("srcCompat")) {
                     return;
                 }
             }
