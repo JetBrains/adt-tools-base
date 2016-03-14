@@ -164,4 +164,24 @@ public class DetectMissingPrefixTest extends AbstractCheckTest {
                         + "    </LinearLayout>\n"
                         + "</layout>")));
     }
+
+    public void testAppCompat() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=201790
+        assertEquals("No warnings.",
+                lintProject(xml("res/layout/app_compat.xml", ""
+                        + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                        + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:app=\"http://schemas.android.com/apk/res-auto\"\n"
+                        + "    android:layout_width=\"match_parent\"\n"
+                        + "    android:layout_height=\"match_parent\"\n"
+                        + "    android:orientation=\"vertical\">\n"
+                        + "\n"
+                        + "    <ImageButton\n"
+                        + "        android:id=\"@+id/vote_button\"\n"
+                        + "        android:layout_width=\"wrap_content\"\n"
+                        + "        android:layout_height=\"wrap_content\"\n"
+                        + "        app:srcCompat=\"@mipmap/ic_launcher\" />\n"
+                        + "\n"
+                        + "</LinearLayout>")));
+    }
 }
