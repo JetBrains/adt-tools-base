@@ -16,11 +16,13 @@
 
 package com.android.build.gradle.internal.transforms;
 
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_SUPER;
+import static org.objectweb.asm.Opcodes.V1_6;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.api.transform.SecondaryFile;
-import com.android.build.api.transform.SecondaryInput;
-import com.android.build.api.transform.Context;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
 import com.android.build.api.transform.JarInput;
@@ -32,7 +34,6 @@ import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformInvocation;
 import com.android.build.api.transform.TransformOutputProvider;
-import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -40,7 +41,7 @@ import com.android.build.gradle.tasks.ColdswapArtifactsKickerTask;
 import com.android.build.gradle.tasks.MarkerFile;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
-import com.android.utils.XmlUtils;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.google.common.collect.FluentIterable;
@@ -50,12 +51,9 @@ import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 
 import org.gradle.api.logging.Logger;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.MethodVisitor;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -64,21 +62,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
-
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 
 /**
  * Transform that slices the project's classes into approximately 12 slices.
@@ -94,6 +84,9 @@ import javax.xml.parsers.ParserConfigurationException;
 public class InstantRunSlicer extends Transform {
 
     public static final String MAIN_SLICE_NAME = "main_slice";
+
+    @VisibleForTesting
+    static final String PACKAGE_FOR_GUARD_CLASSS = "com/android/tools/fd/dummy";
 
     // since we use the last digit of the FQCN hashcode() as the bucket, 10 is the appropriate
     // number of slices.
@@ -527,13 +520,15 @@ public class InstantRunSlicer extends Transform {
         }
 
         private void writeTo(@NonNull TransformOutputProvider outputProvider) throws IOException {
-            if (slicedElements.isEmpty()) {
-                return;
-            }
+
             File sliceOutputLocation = outputProvider.getContentLocation(name,
                     TransformManager.CONTENT_CLASS,
                     Sets.immutableEnumSet(Scope.PROJECT, Scope.SUB_PROJECTS),
                     Format.DIRECTORY);
+
+            // always write our dummy guard class, nobody will ever delete this file which mean
+            // the slice will continue existing even it there is no other .class file in it.
+            createGuardClass(name, sliceOutputLocation);
 
             // now copy all the files into its new location.
             for (Slice.SlicedElement slicedElement : slicedElements) {
@@ -543,5 +538,22 @@ public class InstantRunSlicer extends Transform {
                 Files.copy(slicedElement.slicedFile, outputFile);
             }
         }
+    }
+
+    private static void createGuardClass(@NonNull String name, @NonNull File outputDir)
+            throws IOException {
+
+        ClassWriter cw = new ClassWriter(0);
+
+        File packageDir = new File(outputDir, PACKAGE_FOR_GUARD_CLASSS);
+        File outputFile = new File(packageDir, name + ".class");
+        Files.createParentDirs(outputFile);
+
+        // use package separator below which is always /
+        String appInfoOwner = PACKAGE_FOR_GUARD_CLASSS + '/' + name;
+        cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, appInfoOwner, null, "java/lang/Object", null);
+        cw.visitEnd();
+
+        Files.write(cw.toByteArray(), outputFile);
     }
 }
