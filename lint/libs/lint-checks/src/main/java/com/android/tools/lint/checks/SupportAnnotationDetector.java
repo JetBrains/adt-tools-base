@@ -107,6 +107,7 @@ import com.intellij.psi.PsiReferenceExpression;
 import com.intellij.psi.PsiStatement;
 import com.intellij.psi.PsiTryStatement;
 import com.intellij.psi.PsiType;
+import com.intellij.psi.PsiTypeCastExpression;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.util.PsiTreeUtil;
 
@@ -313,7 +314,7 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
     private void checkParameterAnnotations(
             @NonNull JavaContext context,
             @NonNull PsiExpression argument,
-            @NonNull PsiElement call,
+            @NonNull PsiCall call,
             @NonNull PsiMethod method,
             @NonNull PsiAnnotation[] annotations) {
         boolean handledResourceTypes = false;
@@ -379,7 +380,7 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
                     }
 
                     if (types != null) {
-                        checkResourceType(context, argument, types);
+                        checkResourceType(context, argument, types, call, method);
                     }
                 }
             }
@@ -909,7 +910,9 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
     private static void checkResourceType(
             @NonNull JavaContext context,
             @NonNull PsiElement argument,
-            @NonNull EnumSet<ResourceType> expectedType) {
+            @NonNull EnumSet<ResourceType> expectedType,
+            @NonNull PsiCall call,
+            @NonNull PsiMethod calledMethod) {
         EnumSet<ResourceType> actual = ResourceEvaluator.getResourceTypes(context.getEvaluator(),
                 argument);
 
@@ -922,6 +925,17 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
         }
 
         if (isIgnoredInIde(RESOURCE_TYPE, context, argument)) {
+            return;
+        }
+
+        if (expectedType.contains(ResourceType.STYLEABLE) && (expectedType.size() == 1)
+                && context.getEvaluator().isMemberInClass(calledMethod,
+                        "android.content.res.TypedArray")
+                && (call instanceof PsiMethodCallExpression)
+                && typeArrayFromArrayLiteral(((PsiMethodCallExpression) call)
+                    .getMethodExpression().getQualifierExpression())) {
+            // You're generally supposed to provide a styleable to the TypedArray methods,
+            // but you're also allowed to supply an integer array
             return;
         }
 
@@ -939,6 +953,94 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
             message = "Expected resource identifier (`R`.type.`name`)";
         }
         context.report(RESOURCE_TYPE, argument, context.getLocation(argument), message);
+    }
+
+    /**
+     * Returns true if the node is pointing to a TypedArray whose value was obtained
+     * from an array literal
+     */
+    public static boolean typeArrayFromArrayLiteral(@Nullable PsiElement node) {
+        if (node instanceof PsiMethodCallExpression) {
+            PsiMethodCallExpression expression = (PsiMethodCallExpression) node;
+            String name = expression.getMethodExpression().getReferenceName();
+            if (name != null && "obtainStyledAttributes".equals(name)) {
+                PsiExpressionList argumentList = expression.getArgumentList();
+                PsiExpression[] expressions = argumentList.getExpressions();
+                if (expressions.length > 0) {
+                    return ConstantEvaluator.isArrayLiteral(expressions[0]);
+                }
+            }
+        } else if (node instanceof PsiReference) {
+            PsiElement resolved = ((PsiReference) node).resolve();
+            if (resolved instanceof PsiField) {
+                PsiField field = (PsiField) resolved;
+                if (field.getInitializer() != null) {
+                    return typeArrayFromArrayLiteral(field.getInitializer());
+                }
+            } else if (resolved instanceof PsiLocalVariable) {
+                PsiLocalVariable variable = (PsiLocalVariable) resolved;
+                PsiStatement statement = PsiTreeUtil.getParentOfType(node, PsiStatement.class,
+                        false);
+                if (statement != null) {
+                    PsiStatement prev = PsiTreeUtil.getPrevSiblingOfType(statement,
+                            PsiStatement.class);
+                    String targetName = variable.getName();
+                    if (targetName == null) {
+                        return false;
+                    }
+                    while (prev != null) {
+                        if (prev instanceof PsiDeclarationStatement) {
+                            for (PsiElement element : ((PsiDeclarationStatement) prev)
+                                    .getDeclaredElements()) {
+                                if (variable.equals(element)) {
+                                    return typeArrayFromArrayLiteral(variable.getInitializer());
+                                }
+                            }
+                        } else if (prev instanceof PsiExpressionStatement) {
+                            PsiExpression expression = ((PsiExpressionStatement) prev)
+                                    .getExpression();
+                            if (expression instanceof PsiAssignmentExpression) {
+                                PsiAssignmentExpression assign
+                                        = (PsiAssignmentExpression) expression;
+                                PsiExpression lhs = assign.getLExpression();
+                                if (lhs instanceof PsiReferenceExpression) {
+                                    PsiReferenceExpression reference = (PsiReferenceExpression) lhs;
+                                    if (targetName.equals(reference.getReferenceName()) &&
+                                            reference.getQualifier() == null) {
+                                        return typeArrayFromArrayLiteral(assign.getRExpression());
+                                    }
+                                }
+                            }
+                        }
+                        prev = PsiTreeUtil.getPrevSiblingOfType(prev,
+                                PsiStatement.class);
+                    }
+                }
+            }
+        } else if (node instanceof PsiNewExpression) {
+            PsiNewExpression creation = (PsiNewExpression) node;
+            if (creation.getArrayInitializer() != null) {
+                return true;
+            }
+            PsiType type = creation.getType();
+            if (type instanceof PsiArrayType) {
+                return true;
+            }
+        } else if (node instanceof PsiParenthesizedExpression) {
+            PsiParenthesizedExpression parenthesizedExpression = (PsiParenthesizedExpression) node;
+            PsiExpression expression = parenthesizedExpression.getExpression();
+            if (expression != null) {
+                return typeArrayFromArrayLiteral(expression);
+            }
+        } else if (node instanceof PsiTypeCastExpression) {
+            PsiTypeCastExpression castExpression = (PsiTypeCastExpression) node;
+            PsiExpression operand = castExpression.getOperand();
+            if (operand != null) {
+                return typeArrayFromArrayLiteral(operand);
+            }
+        }
+
+        return false;
     }
 
     private static void checkIntRange(

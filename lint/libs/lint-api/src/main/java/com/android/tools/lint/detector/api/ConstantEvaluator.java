@@ -1100,6 +1100,83 @@ public class ConstantEvaluator {
     }
 
     /**
+     * Returns true if the node is pointing to a an array literal
+     */
+    public static boolean isArrayLiteral(@Nullable PsiElement node) {
+        if (node instanceof PsiReference) {
+            PsiElement resolved = ((PsiReference) node).resolve();
+            if (resolved instanceof PsiField) {
+                PsiField field = (PsiField) resolved;
+                if (field.getInitializer() != null) {
+                    return isArrayLiteral(field.getInitializer());
+                }
+            } else if (resolved instanceof PsiLocalVariable) {
+                PsiLocalVariable variable = (PsiLocalVariable) resolved;
+                PsiStatement statement = PsiTreeUtil.getParentOfType(node, PsiStatement.class,
+                        false);
+                if (statement != null) {
+                    PsiStatement prev = PsiTreeUtil.getPrevSiblingOfType(statement,
+                            PsiStatement.class);
+                    String targetName = variable.getName();
+                    if (targetName == null) {
+                        return false;
+                    }
+                    while (prev != null) {
+                        if (prev instanceof PsiDeclarationStatement) {
+                            for (PsiElement element : ((PsiDeclarationStatement) prev)
+                                    .getDeclaredElements()) {
+                                if (variable.equals(element)) {
+                                    return isArrayLiteral(variable.getInitializer());
+                                }
+                            }
+                        } else if (prev instanceof PsiExpressionStatement) {
+                            PsiExpression expression = ((PsiExpressionStatement) prev)
+                                    .getExpression();
+                            if (expression instanceof PsiAssignmentExpression) {
+                                PsiAssignmentExpression assign
+                                        = (PsiAssignmentExpression) expression;
+                                PsiExpression lhs = assign.getLExpression();
+                                if (lhs instanceof PsiReferenceExpression) {
+                                    PsiReferenceExpression reference = (PsiReferenceExpression) lhs;
+                                    if (targetName.equals(reference.getReferenceName()) &&
+                                            reference.getQualifier() == null) {
+                                        return isArrayLiteral(assign.getRExpression());
+                                    }
+                                }
+                            }
+                        }
+                        prev = PsiTreeUtil.getPrevSiblingOfType(prev,
+                                PsiStatement.class);
+                    }
+                }
+            }
+        } else if (node instanceof PsiNewExpression) {
+            PsiNewExpression creation = (PsiNewExpression) node;
+            if (creation.getArrayInitializer() != null) {
+                return true;
+            }
+            PsiType type = creation.getType();
+            if (type instanceof PsiArrayType) {
+                return true;
+            }
+        } else if (node instanceof PsiParenthesizedExpression) {
+            PsiParenthesizedExpression parenthesizedExpression = (PsiParenthesizedExpression) node;
+            PsiExpression expression = parenthesizedExpression.getExpression();
+            if (expression != null) {
+                return isArrayLiteral(expression);
+            }
+        } else if (node instanceof PsiTypeCastExpression) {
+            PsiTypeCastExpression castExpression = (PsiTypeCastExpression) node;
+            PsiExpression operand = castExpression.getOperand();
+            if (operand != null) {
+                return isArrayLiteral(operand);
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Evaluates the given node and returns the constant value it resolves to, if any. Convenience
      * wrapper which creates a new {@linkplain ConstantEvaluator}, evaluates the node and returns
      * the result.
