@@ -39,6 +39,8 @@ abstract class BaseConfigImpl implements BaseConfig, Serializable {
 
     @Nullable
     private String mApplicationIdSuffix;
+    @Nullable
+    private String mVersionNameSuffix;
     @NonNull
     private final Map<String, Object> mManifestPlaceholders;
     @NonNull
@@ -56,6 +58,7 @@ abstract class BaseConfigImpl implements BaseConfig, Serializable {
 
     protected BaseConfigImpl(@NonNull BaseConfig baseConfig) {
         mApplicationIdSuffix = baseConfig.getApplicationIdSuffix();
+        mVersionNameSuffix = baseConfig.getVersionNameSuffix();
         mManifestPlaceholders = ImmutableMap.copyOf(baseConfig.getManifestPlaceholders());
         mBuildConfigFields = ImmutableMap.copyOf(baseConfig.getBuildConfigFields());
         mResValues = ImmutableMap.copyOf(baseConfig.getResValues());
@@ -69,6 +72,12 @@ abstract class BaseConfigImpl implements BaseConfig, Serializable {
     @Override
     public String getApplicationIdSuffix() {
         return mApplicationIdSuffix;
+    }
+
+    @Nullable
+    @Override
+    public String getVersionNameSuffix() {
+        return mVersionNameSuffix;
     }
 
     @NonNull
@@ -135,6 +144,7 @@ abstract class BaseConfigImpl implements BaseConfig, Serializable {
     public String toString() {
         return "BaseConfigImpl{" +
                 "applicationIdSuffix='" + mApplicationIdSuffix + '\'' +
+                ", versionNameSuffix='" + mVersionNameSuffix + '\'' +
                 ", mManifestPlaceholders=" + mManifestPlaceholders +
                 ", mBuildConfigFields=" + mBuildConfigFields +
                 ", mResValues=" + mResValues +
