@@ -424,6 +424,13 @@ public class EcjPsiBuilder {
         if (parens > 0) {
             sourceStart += parens;
             endOffset -= parens;
+            if (endOffset < sourceStart) {
+                // This shouldn't happen, but has for some source files discovered by
+                // the unit tests: Give up on parenthesis adjustment if it leads to impossible
+                // offsets
+                sourceStart = node.sourceStart;
+                endOffset = node.sourceEnd + 1;
+            }
         }
 
         return new TextRange(sourceStart, endOffset);
