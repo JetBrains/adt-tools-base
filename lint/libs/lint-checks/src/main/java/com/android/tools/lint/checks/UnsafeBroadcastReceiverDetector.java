@@ -22,6 +22,7 @@ import static com.android.SdkConstants.ATTR_PERMISSION;
 import static com.android.SdkConstants.CLASS_BROADCASTRECEIVER;
 import static com.android.SdkConstants.CLASS_CONTEXT;
 import static com.android.SdkConstants.CLASS_INTENT;
+import static com.android.SdkConstants.TAG_ACTION;
 import static com.android.SdkConstants.TAG_INTENT_FILTER;
 import static com.android.SdkConstants.TAG_RECEIVER;
 
@@ -411,7 +412,7 @@ public class UnsafeBroadcastReceiverDetector extends Detector
                     name = name.replace('$', '.');
                     List<Element> children2 = LintUtils.getChildren(child);
                     for (Element child2 : children2) {
-                        if ("action".equals(child2.getTagName())) {
+                        if (TAG_ACTION.equals(child2.getTagName())) {
                             String actionName = child2.getAttributeNS(
                                     ANDROID_URI, ATTR_NAME);
                             if (("android.provider.Telephony.SMS_DELIVER".equals(actionName) ||

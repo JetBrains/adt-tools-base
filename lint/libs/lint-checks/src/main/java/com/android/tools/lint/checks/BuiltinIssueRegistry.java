@@ -31,7 +31,7 @@ import java.util.List;
 public class BuiltinIssueRegistry extends IssueRegistry {
     private static final List<Issue> sIssues;
 
-    static final int INITIAL_CAPACITY = 260;
+    static final int INITIAL_CAPACITY = 261;
 
     static {
         List<Issue> issues = new ArrayList<Issue>(INITIAL_CAPACITY);
@@ -64,6 +64,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(ArraySizeDetector.INCONSISTENT);
         issues.add(AssertDetector.ISSUE);
         issues.add(BadHostnameVerifierDetector.ISSUE);
+        issues.add(BatteryDetector.ISSUE);
         issues.add(ButtonDetector.BACK_BUTTON);
         issues.add(ButtonDetector.CASE);
         issues.add(ButtonDetector.ORDER);
@@ -329,7 +330,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
             } else if (scope.contains(Scope.CLASS_FILE)) {
                 initialSize += 15;
             } else if (scope.contains(Scope.MANIFEST)) {
-                initialSize += 37;
+                initialSize += 38;
             } else if (scope.contains(Scope.GRADLE_FILE)) {
                 initialSize += 5;
             }
