@@ -192,7 +192,7 @@ class ExtractAnnotations extends AbstractAndroidCompile {
                 def path = file.getPath()
                 if (path.endsWith(DOT_JAVA) && file.isFile()) {
                     char[] contents = Util.getFileCharContent(file, encoding);
-                    ICompilationUnit unit = new EcjSourceFile(contents, path, encoding);
+                    ICompilationUnit unit = new EcjSourceFile(contents, file, encoding);
                     sourceUnits.add(unit);
                 }
             }

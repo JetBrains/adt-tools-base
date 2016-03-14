@@ -294,7 +294,7 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
         );
 
         assertEquals(""
-                + "/TESTROOT/LibraryProject/AndroidManifest.xml:11: Error: Class referenced in the manifest, test.pkg.app.TestService, was not found in the project or the libraries [MissingRegistered]\n"
+                + "LibraryProject/AndroidManifest.xml:11: Error: Class referenced in the manifest, test.pkg.app.TestService, was not found in the project or the libraries [MissingRegistered]\n"
                 + "        <service android:name=\".TestService\" />\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "1 errors, 0 warnings\n",
