@@ -299,7 +299,6 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "1 errors, 0 warnings\n",
                 checkLint(Arrays.asList(master, library)).replace("/TESTROOT/",""));
-        );
     }
 
     public void testInnerClassStatic() throws Exception {
