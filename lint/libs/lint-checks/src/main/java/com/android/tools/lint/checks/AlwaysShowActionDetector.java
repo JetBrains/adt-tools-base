@@ -21,6 +21,7 @@ import static com.android.SdkConstants.VALUE_ALWAYS;
 import static com.android.SdkConstants.VALUE_IF_ROOM;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
@@ -41,6 +42,7 @@ import com.intellij.psi.PsiJavaCodeReferenceElement;
 import org.w3c.dom.Attr;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -188,45 +190,28 @@ public class AlwaysShowActionDetector extends ResourceXmlDetector implements
 
     // ---- Implements JavaScanner ----
 
+    @Nullable
     @Override
-    public List<Class<? extends PsiElement>> getApplicablePsiTypes() {
-        return Collections.<Class<? extends PsiElement>>singletonList(PsiJavaCodeReferenceElement.class);
+    public List<String> getApplicableReferenceNames() {
+        return Arrays.asList("SHOW_AS_ACTION_IF_ROOM", "SHOW_AS_ACTION_ALWAYS");
     }
 
     @Override
-    public JavaElementVisitor createPsiVisitor(@NonNull JavaContext context) {
-        return new FieldAccessChecker(context);
-    }
-
-    private class FieldAccessChecker extends JavaElementVisitor {
-        private final JavaContext mContext;
-
-        public FieldAccessChecker(JavaContext context) {
-            mContext = context;
-        }
-
-        @Override
-        public void visitReferenceElement(PsiJavaCodeReferenceElement node) {
-            String description = node.getReferenceName();
-            boolean isIfRoom = "SHOW_AS_ACTION_IF_ROOM".equals(description); //$NON-NLS-1$
-            boolean isAlways = "SHOW_AS_ACTION_ALWAYS".equals(description);  //$NON-NLS-1$
-            if (isIfRoom || isAlways) {
-                PsiElement resolved = node.resolve();
-                if (resolved instanceof PsiField
-                        && mContext.getEvaluator().isMemberInClass((PsiField)resolved,
-                        "android.view.MenuItem")) {
-                    if (isAlways) {
-                        if (mContext.getDriver().isSuppressed(mContext, ISSUE, node)) {
-                            return;
-                        }
-                        if (mAlwaysFields == null) {
-                            mAlwaysFields = new ArrayList<Location>();
-                        }
-                        mAlwaysFields.add(mContext.getLocation(node));
-                    } else {
-                        mHasIfRoomRefs = true;
-                    }
+    public void visitReference(@NonNull JavaContext context, @Nullable JavaElementVisitor visitor,
+            @NonNull PsiJavaCodeReferenceElement reference, @NonNull PsiElement resolved) {
+        if (resolved instanceof PsiField
+                && context.getEvaluator().isMemberInClass((PsiField) resolved,
+                "android.view.MenuItem")) {
+            if ("SHOW_AS_ACTION_ALWAYS".equals(reference.getReferenceName())) {
+                if (context.getDriver().isSuppressed(context, ISSUE, reference)) {
+                    return;
                 }
+                if (mAlwaysFields == null) {
+                    mAlwaysFields = new ArrayList<Location>();
+                }
+                mAlwaysFields.add(context.getLocation(reference));
+            } else {
+                mHasIfRoomRefs = true;
             }
         }
     }
