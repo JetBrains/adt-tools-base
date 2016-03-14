@@ -22,10 +22,10 @@ import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.tasks.annotations.ApiDatabase
 import com.android.build.gradle.tasks.annotations.Extractor
 import com.android.tools.lint.EcjParser
+import com.android.tools.lint.EcjSourceFile
 import com.google.common.collect.Lists
 import org.eclipse.jdt.core.compiler.IProblem
 import org.eclipse.jdt.internal.compiler.ast.CompilationUnitDeclaration
-import org.eclipse.jdt.internal.compiler.batch.CompilationUnit
 import org.eclipse.jdt.internal.compiler.env.ICompilationUnit
 import org.eclipse.jdt.internal.compiler.impl.CompilerOptions
 import org.eclipse.jdt.internal.compiler.util.Util
@@ -192,7 +192,7 @@ class ExtractAnnotations extends AbstractAndroidCompile {
                 def path = file.getPath()
                 if (path.endsWith(DOT_JAVA) && file.isFile()) {
                     char[] contents = Util.getFileCharContent(file, encoding);
-                    ICompilationUnit unit = new CompilationUnit(contents, path, encoding);
+                    ICompilationUnit unit = new EcjSourceFile(contents, path, encoding);
                     sourceUnits.add(unit);
                 }
             }
@@ -234,6 +234,8 @@ class ExtractAnnotations extends AbstractAndroidCompile {
             return EcjParser.getLanguageLevel(1, 7);
         } else if ("1.5") {
             return EcjParser.getLanguageLevel(1, 5);
+        } else if ("1.8") {
+            return EcjParser.getLanguageLevel(1, 8);
         } else {
             return EcjParser.getLanguageLevel(1, 7);
         }
@@ -249,7 +251,7 @@ class ExtractAnnotations extends AbstractAndroidCompile {
             }
         } else if (file.getPath().endsWith(DOT_JAVA) && file.isFile()) {
             char[] contents = Util.getFileCharContent(file, encoding);
-            ICompilationUnit unit = new CompilationUnit(contents, file.getPath(), encoding);
+            ICompilationUnit unit = new EcjSourceFile(contents, file.getPath(), encoding);
             sourceUnits.add(unit);
         }
     }
