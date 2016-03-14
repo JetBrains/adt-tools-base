@@ -24,7 +24,6 @@ import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.api.transform.SecondaryInput;
 import com.android.build.api.transform.Context;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
@@ -34,24 +33,24 @@ import com.android.build.api.transform.Status;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
-import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.pipeline.TransformInvocationBuilder;
-import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.tasks.ColdswapArtifactsKickerTask;
 import com.android.build.gradle.tasks.MarkerFile;
 import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
 
 import org.gradle.api.logging.Logger;
-import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -86,24 +85,29 @@ public class InstantRunSlicerTest {
     @Mock
     InstantRunBuildContext instantRunBuildContext;
 
-    File instantRunSupportDir;
+    @Rule
+    public TemporaryFolder instantRunSupportDir = new TemporaryFolder();
+    @Rule
+    public TemporaryFolder inputDir = new TemporaryFolder();
+    @Rule
+    public TemporaryFolder outputDir = new TemporaryFolder();
+    @Rule
+    public TemporaryFolder jarOutputDir = new TemporaryFolder();
+
+    File jarOutput;
 
     @Before
     public void beforeTest() throws IOException {
         MockitoAnnotations.initMocks(this);
-        instantRunSupportDir = createTmpDirectory("instantRunSupport");
-        when(variantScope.getInstantRunSupportDir()).thenReturn(instantRunSupportDir);
+        when(variantScope.getInstantRunSupportDir()).thenReturn(instantRunSupportDir.getRoot());
+        when(variantScope.getRestartDexOutputFolder()).thenReturn(instantRunSupportDir.getRoot());
         MarkerFile.createMarkerFile(
                 ColdswapArtifactsKickerTask.ConfigAction.getMarkerFile(variantScope),
                 MarkerFile.Command.RUN);
         when(variantScope.getInstantRunBuildContext()).thenReturn(instantRunBuildContext);
-    }
 
-    @After
-    public void afterTest() throws IOException {
-        FileUtils.deleteFolder(instantRunSupportDir);
+        jarOutput = new File(jarOutputDir.getRoot(), "output.jar");
     }
-
 
     @Test
     public void testNonIncrementalModeOnlyDirs()
@@ -111,27 +115,22 @@ public class InstantRunSlicerTest {
 
         InstantRunSlicer slicer = new InstantRunSlicer(logger, variantScope);
 
-        final File inputDir = createTmpDirectory("inputDir");
         final Map<File, Status> changedFiles;
         ImmutableMap.Builder<File, Status> builder = ImmutableMap.builder();
         List<String> listOfFiles = new ArrayList<String>();
         for (int i=0; i<21; i++) {
             listOfFiles.add("file" + i + ".class");
-            builder.put(createFile(inputDir, "file" + i + ".class"), Status.ADDED);
+            builder.put(createFile(getInputDir(), "file" + i + ".class"), Status.ADDED);
         }
         changedFiles = builder.build();
 
-        final File outputDir  = createTmpDirectory("outputDir");
-        File jarOutputDir = createTmpDirectory("jarOutputDir");
-        final File jarOutput = new File(jarOutputDir, "output.jar");
-
         slicer.transform(new TransformInvocationBuilder(context)
-                .addInputs(ImmutableList.of(getInput(inputDir, changedFiles)))
-                .addOutputProvider(getOutputProvider(outputDir, jarOutput))
+                .addInputs(ImmutableList.of(getInput(getInputDir(), changedFiles)))
+                .addOutputProvider(getOutputProvider(getOutputDir(), jarOutput))
                 .build());
 
         // assert the file was copied in the output directory.
-        File[] files = outputDir.listFiles();
+        File[] files = getOutputDir().listFiles();
         assertNotNull(files);
 
         assertThat(files.length).isEqualTo(InstantRunSlicer.NUMBER_OF_SLICES_FOR_PROJECT_CLASSES);
@@ -143,12 +142,12 @@ public class InstantRunSlicerTest {
             assertNotNull(sliceFiles);
             assertThat(sliceFiles.length).isAtLeast(1);
             for (File sliceFile : sliceFiles) {
-                assertThat(listOfFiles.remove(sliceFile.getName())).isTrue();
+                if (sliceFile.getName().startsWith("file")) {
+                    assertThat(listOfFiles.remove(sliceFile.getName())).isTrue();
+                }
             }
         }
         assertThat(listOfFiles).isEmpty();
-        FileUtils.deleteFolder(jarOutputDir);
-        FileUtils.deleteFolder(inputDir);
     }
 
     @Test
@@ -157,45 +156,41 @@ public class InstantRunSlicerTest {
 
         InstantRunSlicer slicer = new InstantRunSlicer(logger, variantScope);
 
-        final File inputDir = createTmpDirectory("inputDir");
         Map<File, Status> changedFiles;
         ImmutableMap.Builder<File, Status> builder = ImmutableMap.builder();
         for (int i=0; i<21; i++) {
-            builder.put(createFile(inputDir, "file" + i + ".class"), Status.CHANGED);
+            builder.put(createFile(getInputDir(), "file" + i + ".class"), Status.CHANGED);
         }
         changedFiles = builder.build();
 
-        final File outputDir  = createTmpDirectory("outputDir");
-        File jarOutputDir = createTmpDirectory("jarOutputDir");
-        final File jarOutput = new File(jarOutputDir, "output.jar");
-
         slicer.transform(new TransformInvocationBuilder(context)
-                .addInputs(ImmutableList.of(getInput(inputDir, changedFiles)))
-                .addOutputProvider(getOutputProvider(outputDir, jarOutput))
+                .addInputs(ImmutableList.of(getInput(getInputDir(), changedFiles)))
+                .addOutputProvider(getOutputProvider(getOutputDir(), jarOutput))
                 .build());
 
         // incrementally change a few slices.
-        File file7 = createFile(inputDir, "file7.class", "updated file7.class");
+        File file7 = createFile(getInputDir(), "file7.class", "updated file7.class");
         changedFiles = ImmutableMap.of();
 
-        File incrementalChanges = InstantRunBuildType.RESTART.getIncrementalChangesFile(variantScope);
+        File incrementalChanges = InstantRunBuildType.RESTART
+                .getIncrementalChangesFile(variantScope);
         Files.write(
                 "CHANGED," + file7.getAbsolutePath() + "\n" +
-                "REMOVED," + new File(inputDir, "file14.class").getAbsolutePath(),
+                "REMOVED," + new File(getInputDir(), "file14.class").getAbsolutePath(),
                 incrementalChanges, Charsets.UTF_8);
 
         slicer.transform(new TransformInvocationBuilder(context)
-                .addInputs(ImmutableList.of(getInput(inputDir, changedFiles)))
-                .addOutputProvider(getOutputProvider(outputDir, jarOutput))
+                .addInputs(ImmutableList.of(getInput(getInputDir(), changedFiles)))
+                .addOutputProvider(getOutputProvider(getOutputDir(), jarOutput))
                 .setIncrementalMode(true)
                 .build());
 
         // assert the file was copied in the output directory.
-        File[] slices = outputDir.listFiles();
+        File[] slices = getOutputDir().listFiles();
         assertNotNull(slices);
         assertThat(slices.length).isEqualTo(InstantRunSlicer.NUMBER_OF_SLICES_FOR_PROJECT_CLASSES);
 
-        // file7 should be in the last slice slice.
+        // file7 should have been updated.
         int bucket = Math.abs((file7.getName()).hashCode() % 10);
         File file7Slice = getFileByName(slices, "slice_" + bucket);
         assertNotNull(file7Slice);
@@ -205,16 +200,124 @@ public class InstantRunSlicerTest {
         assertThat(FileUtils.loadFileWithUnixLineSeparators(updatedFile7))
                 .isEqualTo("updated file7.class");
 
-        // file14 was in the slice 3, it should be gone.
+        // file14 should have been removed
         bucket = Math.abs(("file14.class").hashCode() % 10);
         File file14Bucket = getFileByName(slices, "slice_" + bucket);
         assertNotNull(file14Bucket);
         File[] file14BucketFiles = file14Bucket.listFiles();
         assertNotNull(file14BucketFiles);
         assertNull(getFileByName(file14BucketFiles, "file14.class"));
+    }
 
-        FileUtils.deleteFolder(jarOutputDir);
-        FileUtils.deleteFolder(inputDir);
+    @Test
+    public void testNonIncrementalRemovingClass()
+            throws IOException, TransformException, InterruptedException {
+        testRemovingClass(false  /* isIncremental */);
+    }
+
+    @Test
+    public void testIncrementalRemovingClass()
+            throws IOException, TransformException, InterruptedException {
+        testRemovingClass(true /* isIncremental */);
+    }
+
+    private void testRemovingClass(boolean isIncremental)
+            throws IOException, TransformException, InterruptedException {
+        InstantRunSlicer slicer = new InstantRunSlicer(logger, variantScope);
+
+        String packagePath = "com/foo/bar";
+        File singleClassFile = createFile(new File(getInputDir(), packagePath), "file0.class");
+        Map<File, Status> changedFiles = ImmutableMap.of(singleClassFile, Status.ADDED);
+
+        slicer.transform(new TransformInvocationBuilder(context)
+                .addInputs(ImmutableList.of(getInput(getInputDir(), changedFiles)))
+                .addOutputProvider(getOutputProvider(getOutputDir(), jarOutput))
+                .build());
+
+        File[] outputSlices = getOutputDir().listFiles();
+        assertThat(outputSlices).isNotNull();
+        assertThat(outputSlices).hasLength(InstantRunSlicer.NUMBER_OF_SLICES_FOR_PROJECT_CLASSES);
+
+        Optional<Integer> sliceForFile =
+                findSliceForFile(getOutputDir(), getInputDir(), singleClassFile);
+        assertThat(sliceForFile).isPresent();
+        int slot = sliceForFile.get();
+
+        File outputSlice = outputSlices[slot];
+        String sliceName = outputSlice.getName();
+        File outputFile = new File(new File(outputSlice, packagePath), "file0.class");
+        assertThat(outputFile.exists()).isTrue();
+
+        // delete the input file.
+        assertThat(singleClassFile.delete()).isTrue();
+        changedFiles = ImmutableMap.of();
+
+        if (!isIncremental) {
+            // delete the output directory and create a new clean one.
+            FileUtils.deleteFolder(getOutputDir());
+            outputDir.create();
+        } else {
+            // create the incremental change file.
+            FileUtils.createFile(InstantRunBuildType.RESTART
+                    .getIncrementalChangesFile(variantScope),
+                Status.REMOVED.toString() + "," + singleClassFile.getAbsolutePath());
+        }
+
+        slicer.transform(new TransformInvocationBuilder(context)
+                .addInputs(ImmutableList.of(getInput(getInputDir(), changedFiles)))
+                .addOutputProvider(getOutputProvider(getOutputDir(), jarOutput))
+                .setIncrementalMode(isIncremental)
+                .build());
+
+        outputSlices = getOutputDir().listFiles();
+        assertThat(outputSlices).isNotNull();
+        assertThat(outputSlices).hasLength(InstantRunSlicer.NUMBER_OF_SLICES_FOR_PROJECT_CLASSES);
+        outputSlice = new File(getOutputDir(), sliceName);
+        outputFile = new File(new File(outputSlice, packagePath), "file0.class");
+        // check that the file was removed but the slice remained.
+        assertThat(outputFile.exists()).isFalse();
+    }
+
+    @Test
+    public void testEmptyPackages() throws IOException, TransformException, InterruptedException {
+        InstantRunSlicer slicer = new InstantRunSlicer(logger, variantScope);
+
+        // call with an empty input directory.
+        slicer.transform(new TransformInvocationBuilder(context)
+                .addInputs(ImmutableList.of(
+                        getInput(getInputDir(), ImmutableMap.<File, Status>of())))
+                .addOutputProvider(getOutputProvider(getOutputDir(), jarOutput))
+                .build());
+
+        File[] outputSlices = getOutputDir().listFiles();
+        assertThat(outputSlices).isNotNull();
+        assertThat(outputSlices).hasLength(InstantRunSlicer.NUMBER_OF_SLICES_FOR_PROJECT_CLASSES);
+
+        for (File slice : outputSlices) {
+            // ensure guard class presence.
+            File guardClassPackage = new File(slice,
+                    InstantRunSlicer.PACKAGE_FOR_GUARD_CLASSS
+                            + File.separator + slice.getName() + ".class");
+            assertThat(guardClassPackage.exists()).isTrue();
+        }
+    }
+
+    private static Optional<Integer> findSliceForFile(
+            @NonNull File outputDir, @NonNull  File inputDir, File file) {
+
+        File[] slices = outputDir.listFiles();
+        if (slices == null) {
+            return Optional.absent();
+        }
+
+        String relativePath = FileUtils.relativePath(file, inputDir);
+        for (int i=0; i<slices.length; i++) {
+            File potentialMatch = new File(slices[i], relativePath);
+            if (potentialMatch.exists()) {
+                return Optional.of(i);
+            }
+        }
+        return Optional.absent();
     }
 
     @Nullable
@@ -302,19 +405,13 @@ public class InstantRunSlicerTest {
         }
     }
 
-    private static File createTmpDirectory(String name) throws IOException {
-        File dir = File.createTempFile(name, "");
-        assertTrue(dir.delete());
-        assertTrue(dir.mkdirs());
-        return dir;
-    }
-
     private static File createFile(File directory, String name) throws IOException {
         return createFile(directory, name, name);
     }
 
     private static File createFile(File directory, String name, String content) throws IOException {
         File newFile = new File(directory, name);
+        Files.createParentDirs(newFile);
         FileWriter writer = new FileWriter(newFile);
         try {
             writer.append(content);
@@ -322,5 +419,13 @@ public class InstantRunSlicerTest {
             writer.close();
         }
         return newFile;
+    }
+
+    private File getOutputDir() {
+        return outputDir.getRoot();
+    }
+
+    private File getInputDir() {
+        return inputDir.getRoot();
     }
 }
