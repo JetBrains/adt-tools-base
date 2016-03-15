@@ -23,6 +23,7 @@ import com.android.repository.api.LocalPackage;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
+import com.android.repository.api.RepoPackage;
 import com.android.repository.api.SettingsController;
 import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
@@ -44,8 +45,14 @@ public interface PackageInstaller {
         PREPARED,
         /** The SDK is being modified. */
         INSTALLING,
-        /** The installation has completed. */
-        COMPLETE
+        /** The installation has completed successfully. */
+        FAILED,
+        /** The installation has ended unsuccessfully. */
+        COMPLETE,
+        /** Uninstall is starting. */
+        UNINSTALL_STARTING,
+        /** Uninstall has completed. */
+        UNINSTALL_COMPLETE
     }
 
     /**
@@ -112,7 +119,20 @@ public interface PackageInstaller {
      * changes.
      */
     interface StatusChangeListener {
-        void statusChanged(@NonNull PackageInstaller installer);
+
+        void statusChanged(@NonNull PackageInstaller installer,
+          @NonNull RepoPackage p, @NonNull ProgressIndicator progress)
+                throws StatusChangeListenerException;
+    }
+
+    class StatusChangeListenerException extends Exception {
+        public StatusChangeListenerException(Exception e) {
+            super(e);
+        }
+
+        public StatusChangeListenerException(String reason) {
+            super(reason);
+        }
     }
 }
 

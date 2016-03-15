@@ -22,6 +22,7 @@ import com.android.repository.api.LocalPackage;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
 import com.android.repository.api.RepoManager.RepoLoadedCallback;
+import com.android.repository.impl.installer.BasicInstaller;
 import com.android.repository.impl.installer.PackageInstaller;
 import com.android.repository.impl.manager.RepoManagerImpl;
 import com.android.repository.impl.meta.RepositoryPackages;
@@ -43,9 +44,9 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 /**
- * Tests for {@link MavenInstaller}
+ * Tests for {@link MavenInstallListener}
  */
-public class MavenInstallerTest extends TestCase {
+public class MavenInstallListenerTest extends TestCase {
 
     public void testInstallFirst() throws Exception {
         File root = new File("/repo");
@@ -87,17 +88,19 @@ public class MavenInstallerTest extends TestCase {
         RepositoryPackages pkgs = mgr.getPackages();
 
         // Install
-        PackageInstaller mavenInstaller = new MavenInstaller();
+        PackageInstaller installer = new BasicInstaller();
+        installer.registerStateChangeListener(
+                new MavenInstallListener(new AndroidSdkHandler(root, fop), fop));
         RemotePackage p = pkgs.getRemotePackages()
                 .get("m2repository;com;android;group1;artifact1;1.2.3");
-        mavenInstaller.prepareInstall(p, downloader, new FakeSettingsController(false),
+        installer.prepareInstall(p, downloader, new FakeSettingsController(false),
                 runner.getProgressIndicator(), mgr, fop);
-        mavenInstaller.completeInstall(p, runner.getProgressIndicator(), mgr, fop);
+        installer.completeInstall(p, runner.getProgressIndicator(), mgr, fop);
         runner.getProgressIndicator().assertNoErrorsOrWarnings();
 
         File artifactRoot = new File(root, "m2repository/com/android/group1/artifact1");
         File mavenMetadata = new File(artifactRoot, "maven-metadata.xml");
-        MavenInstaller.MavenMetadata metadata = MavenInstaller.unmarshalMetadata(
+        MavenInstallListener.MavenMetadata metadata = MavenInstallListener.unmarshalMetadata(
                 mavenMetadata, runner.getProgressIndicator(), fop);
 
         assertEquals("artifact1", metadata.artifactId);
@@ -185,17 +188,19 @@ public class MavenInstallerTest extends TestCase {
         RepositoryPackages pkgs = mgr.getPackages();
 
         // Install
-        PackageInstaller mavenInstaller = new MavenInstaller();
+        PackageInstaller installer = new BasicInstaller();
+        installer.registerStateChangeListener(
+                new MavenInstallListener(new AndroidSdkHandler(root, fop), fop));
         RemotePackage remotePackage = pkgs.getRemotePackages()
                 .get("m2repository;com;android;group1;artifact1;1.2.3");
-        mavenInstaller.prepareInstall(remotePackage, downloader, new FakeSettingsController(false),
+        installer.prepareInstall(remotePackage, downloader, new FakeSettingsController(false),
                 runner.getProgressIndicator(), mgr, fop);
-        mavenInstaller.completeInstall(remotePackage, runner.getProgressIndicator(), mgr, fop);
+        installer.completeInstall(remotePackage, runner.getProgressIndicator(), mgr, fop);
         runner.getProgressIndicator().assertNoErrorsOrWarnings();
 
         File artifactRoot = new File(root, "m2repository/com/android/group1/artifact1");
         File mavenMetadata = new File(artifactRoot, "maven-metadata.xml");
-        MavenInstaller.MavenMetadata metadata = MavenInstaller
+        MavenInstallListener.MavenMetadata metadata = MavenInstallListener
                 .unmarshalMetadata(mavenMetadata, runner.getProgressIndicator(), fop);
 
         assertEquals("artifact1", metadata.artifactId);
@@ -307,11 +312,14 @@ public class MavenInstallerTest extends TestCase {
         assertEquals(2, locals.size());
         assertTrue(locals.containsKey("m2repository;com;example;groupId;artifactId;1.2.4"));
 
-        MavenInstaller installer = new MavenInstaller();
+        PackageInstaller installer = new BasicInstaller();
+        installer.registerStateChangeListener(
+                new MavenInstallListener(new AndroidSdkHandler(root, fop), fop));
         FakeProgressIndicator progress = new FakeProgressIndicator();
-        installer.uninstall(locals.get("m2repository;com;example;groupId;artifactId;1.2.4"), progress, mgr, fop);
+        installer.uninstall(locals.get("m2repository;com;example;groupId;artifactId;1.2.4"),
+                progress, mgr, fop);
         progress.assertNoErrorsOrWarnings();
-        MavenInstaller.MavenMetadata metadata = MavenInstaller
+        MavenInstallListener.MavenMetadata metadata = MavenInstallListener
                 .unmarshalMetadata(new File(metadataPath), progress, fop);
         progress.assertNoErrorsOrWarnings();
         assertNotNull(metadata);

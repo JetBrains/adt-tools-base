@@ -76,6 +76,9 @@ public class BasicInstaller implements PackageInstaller {
     @Override
     public boolean uninstall(@NonNull LocalPackage p, @NonNull ProgressIndicator progress,
             @NonNull RepoManager manager, @NonNull FileOp fop) {
+        if (!updateStatus(InstallStatus.UNINSTALL_STARTING, p, progress)) {
+            return false;
+        }
         String path = p.getPath();
         path = path.replace(RepoPackage.PATH_SEPARATOR, File.separatorChar);
         File location = new File(manager.getLocalPath(), path);
@@ -83,6 +86,9 @@ public class BasicInstaller implements PackageInstaller {
         fop.deleteFileOrFolder(location);
         manager.markInvalid();
 
+        if (!updateStatus(InstallStatus.UNINSTALL_COMPLETE, p, progress)) {
+            return false;
+        }
         return !fop.exists(location);
     }
 
@@ -100,7 +106,9 @@ public class BasicInstaller implements PackageInstaller {
             @NonNull ProgressIndicator progress,
             @NonNull RepoManager manager,
             @NonNull FileOp fop) {
-        updateStatus(InstallStatus.PREPARING);
+        if (!updateStatus(InstallStatus.PREPARING, p, progress)) {
+            return false;
+        }
         manager.installBeginning(p, this);
         boolean result = false;
         try {
@@ -115,8 +123,7 @@ public class BasicInstaller implements PackageInstaller {
                 if (doPrepareInstall(p, installTempPath, downloader, settings, progress, manager,
                         fop)) {
                     fop.createNewFile(prepareCompleteMarker);
-                    updateStatus(InstallStatus.PREPARED);
-                    result = true;
+                    result = updateStatus(InstallStatus.PREPARED, p, progress);
                 }
             } else {
                 progress.logInfo("Found existing prepared package.");
@@ -129,7 +136,7 @@ public class BasicInstaller implements PackageInstaller {
         finally {
             if (!result) {
                 manager.installEnded(p);
-                updateStatus(InstallStatus.COMPLETE);
+                updateStatus(InstallStatus.FAILED, p, progress);
                 // If there was a failure don't clean up the files, so we can continue if requested
                 if (progress.isCanceled()) {
                     try {
@@ -219,11 +226,28 @@ public class BasicInstaller implements PackageInstaller {
         return mInstallStatus;
     }
 
-    private void updateStatus(@NonNull PackageInstaller.InstallStatus status) {
+    private boolean updateStatus(@NonNull PackageInstaller.InstallStatus status,
+      @NonNull RepoPackage p,
+      @NonNull ProgressIndicator progress) {
         mInstallStatus = status;
-        for (StatusChangeListener listener : mListeners) {
-            listener.statusChanged(this);
+        try {
+            for (StatusChangeListener listener : mListeners) {
+                try {
+                    listener.statusChanged(this, p, progress);
+                }
+                catch (Exception e) {
+                    if (status != InstallStatus.FAILED) {
+                        throw e;
+                    }
+                    // else ignore and continue with the other listeners
+                }
+            }
         }
+        catch (Exception e) {
+            updateStatus(InstallStatus.FAILED, p, progress);
+            return false;
+        }
+        return true;
     }
 
 
@@ -308,7 +332,9 @@ public class BasicInstaller implements PackageInstaller {
             @NonNull ProgressIndicator progress,
             @NonNull RepoManager manager,
             @NonNull FileOp fop) {
-        updateStatus(InstallStatus.INSTALLING);
+        if (!updateStatus(InstallStatus.INSTALLING, p, progress)) {
+            return false;
+        }
         boolean result = false;
         try {
             File dest = InstallerUtil.getInstallPath(p, manager, progress);
@@ -332,7 +358,7 @@ public class BasicInstaller implements PackageInstaller {
                     // ignore
                 }
             }
-            updateStatus(InstallStatus.COMPLETE);
+            result &= updateStatus(result ? InstallStatus.COMPLETE : InstallStatus.FAILED, p, progress);
             manager.installEnded(p);
         }
         return result;
