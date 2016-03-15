@@ -535,15 +535,11 @@ public final class AndroidSdkHandler {
         }
     }
 
-    /**
-     * Finds the best {@link PackageInstaller} for the given {@link RepoPackage}.
-     */
-    @NonNull
-    public static PackageInstaller findBestInstaller(@NonNull RepoPackage p) {
+    public void registerInstallerListeners(@NonNull PackageInstaller installer,
+      @NonNull RepoPackage p) {
         if (p.getTypeDetails() instanceof DetailsTypes.MavenType) {
-            return new MavenInstaller();
+            installer.registerStateChangeListener(new MavenInstallListener(this, mFop));
         }
-        return new BasicInstaller();
     }
 
     /**
