@@ -1130,6 +1130,155 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testDefaultMethods() throws Exception {
+        if (createClient().getHighestKnownApiLevel() < 24) {
+            // This test only works if you have at least Android N installed
+            return;
+        }
+
+        // Default methods require minSdkVersion >= N
+        //noinspection ClassNameDiffersFromFileName
+        assertEquals(""
+                + "src/test/pkg/InterfaceMethodTest.java:6: Error: Default method requires API level 24 (current min is 15) [NewApi]\n"
+                + "    default void method2() {\n"
+                + "    ^\n"
+                + "1 errors, 0 warnings\n",
+                lintProject(
+                        manifest().minSdk(15),
+                        java("src/test/pkg/InterfaceMethodTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "@SuppressWarnings(\"unused\")\n"
+                                + "public interface InterfaceMethodTest {\n"
+                                + "    void someMethod();\n"
+                                + "    default void method2() {\n"
+                                + "        System.out.println(\"test\");\n"
+                                + "    }\n"
+                                + "}")
+                ));
+    }
+
+    public void testDefaultMethodsOk() throws Exception {
+        // Default methods require minSdkVersion=N
+        //noinspection ClassNameDiffersFromFileName
+        assertEquals("No warnings.",
+                lintProject(
+                        manifest().minSdk(24),
+                        java("src/test/pkg/InterfaceMethodTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "@SuppressWarnings(\"unused\")\n"
+                                + "public interface InterfaceMethodTest {\n"
+                                + "    void someMethod();\n"
+                                + "    default void method2() {\n"
+                                + "        System.out.println(\"test\");\n"
+                                + "    }\n"
+                                + "}")
+                ));
+    }
+
+    public void testRepeatableAnnotations() throws Exception {
+        if (createClient().getHighestKnownApiLevel() < 24) {
+            // This test only works if you have at least Android N installed
+            return;
+        }
+
+        // Repeatable annotations require minSdkVersion >= N
+        //noinspection ClassNameDiffersFromFileName
+        assertEquals(""
+                + "src/test/pkg/MyAnnotation.java:5: Error: Repeatable annotation requires API level 24 (current min is 15) [NewApi]\n"
+                + "@Repeatable(android.annotation.SuppressLint.class)\n"
+                + "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+                lintProject(
+                        manifest().minSdk(15),
+                        java("src/test/pkg/MyAnnotation.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import java.lang.annotation.Repeatable;\n"
+                                + "\n"
+                                + "@Repeatable(android.annotation.SuppressLint.class)\n"
+                                + "public @interface MyAnnotation {\n"
+                                + "    int test() default 1;\n"
+                                + "}")
+                ));
+    }
+
+    @SuppressWarnings("OnDemandImport")
+    public void testTypeAnnotations() throws Exception {
+        if (createClient().getHighestKnownApiLevel() < 24) {
+            // This test only works if you have at least Android N installed
+            return;
+        }
+
+        // Type annotations are not supported
+        //noinspection ClassNameDiffersFromFileName
+        assertEquals(""
+                + "src/test/pkg/MyAnnotation.java:9: Error: Type annotations are not supported in Android: TYPE_PARAMETER [NewApi]\n"
+                + "@Target({METHOD, PARAMETER, FIELD, LOCAL_VARIABLE, TYPE_PARAMETER, TYPE_USE})\n"
+                + "                                                   ~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/MyAnnotation.java:9: Error: Type annotations are not supported in Android: TYPE_USE [NewApi]\n"
+                + "@Target({METHOD, PARAMETER, FIELD, LOCAL_VARIABLE, TYPE_PARAMETER, TYPE_USE})\n"
+                + "                                                                   ~~~~~~~~\n"
+                + "src/test/pkg/MyAnnotation2.java:9: Error: Type annotations are not supported in Android: TYPE_PARAMETER [NewApi]\n"
+                + "@Target(TYPE_PARAMETER)\n"
+                + "        ~~~~~~~~~~~~~~\n"
+                + "3 errors, 0 warnings\n",
+                lintProject(
+                        manifest().minSdk(15),
+                        java("src/test/pkg/MyAnnotation.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import java.lang.annotation.*;\n"
+                                + "import static java.lang.annotation.ElementType.*;\n"
+                                + "import static java.lang.annotation.RetentionPolicy.*;\n"
+                                + "\n"
+                                + "@Documented\n"
+                                + "@Retention(SOURCE)\n"
+                                + "@Target({METHOD, PARAMETER, FIELD, LOCAL_VARIABLE, TYPE_PARAMETER, TYPE_USE})\n"
+                                + "public @interface MyAnnotation {\n"
+                                + "}"),
+                        java("src/test/pkg/MyAnnotation2.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import java.lang.annotation.*;\n"
+                                + "import static java.lang.annotation.ElementType.*;\n"
+                                + "import static java.lang.annotation.RetentionPolicy.*;\n"
+                                + "\n"
+                                + "@Documented\n"
+                                + "@Retention(RUNTIME)\n"
+                                + "@Target(TYPE_PARAMETER)\n"
+                                + "public @interface MyAnnotation2 {\n"
+                                + "}"),
+                        java("src/test/pkg/MyAnnotation3.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.annotation.SuppressLint;\n"
+                                + "import java.lang.annotation.*;\n"
+                                + "import static java.lang.annotation.ElementType.*;\n"
+                                + "import static java.lang.annotation.RetentionPolicy.*;\n"
+                                + "\n"
+                                + "@Documented\n"
+                                + "@Retention(SOURCE)\n"
+                                + "@SuppressLint(\"NewApi\")\n"
+                                + "@Target(TYPE_PARAMETER)\n"
+                                + "public @interface MyAnnotation3 {\n"
+                                + "}"),
+                        java("src/test/pkg/MyAnnotation4.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import java.lang.annotation.*;\n"
+                                + "import static java.lang.annotation.ElementType.*;\n"
+                                + "import static java.lang.annotation.RetentionPolicy.*;\n"
+                                + "\n"
+                                + "@Documented\n"
+                                // No warnings if not using runtime retention (class is default)
+                                + "@Target(TYPE_PARAMETER)\n"
+                                + "public @interface MyAnnotation2 {\n"
+                                + "}")
+                ));
+    }
+
     public void testReflectiveOperationException() throws Exception {
         assertEquals(""
                 + "src/test/pkg/Java7API.java:8: Error: Multi-catch with these reflection exceptions requires API level 19 (current min is 1) because they get compiled to the common but new super type ReflectiveOperationException. As a workaround either create individual catch statements, or catch Exception. [NewApi]\n"
@@ -2251,6 +2400,9 @@ public class ApiDetectorTest extends AbstractCheckTest {
             @NonNull Severity severity, @NonNull Location location, @NonNull String message) {
         if (issue == UNSUPPORTED || issue == INLINED) {
             if (message.startsWith("The SDK platform-tools version (")) {
+                return;
+            }
+            if (message.startsWith("Type annotations")) {
                 return;
             }
             int requiredVersion = ApiDetector.getRequiredVersion(issue, message, TEXT);

@@ -117,6 +117,7 @@ import com.intellij.psi.PsiLiteralExpression;
 import com.intellij.psi.PsiLocalVariable;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiMethodCallExpression;
+import com.intellij.psi.PsiModifier;
 import com.intellij.psi.PsiModifierList;
 import com.intellij.psi.PsiModifierListOwner;
 import com.intellij.psi.PsiNameValuePair;
@@ -1563,7 +1564,7 @@ public class ApiDetector extends ResourceXmlDetector
 
     @Override
     public List<Class<? extends PsiElement>> getApplicablePsiTypes() {
-        List<Class<? extends PsiElement>> types = new ArrayList<Class<? extends PsiElement>>(7);
+        List<Class<? extends PsiElement>> types = new ArrayList<Class<? extends PsiElement>>(9);
         types.add(PsiImportStaticStatement.class);
         types.add(PsiReferenceExpression.class);
         types.add(PsiLocalVariable.class);
@@ -1571,6 +1572,8 @@ public class ApiDetector extends ResourceXmlDetector
         types.add(PsiTypeCastExpression.class);
         types.add(PsiAssignmentExpression.class);
         types.add(PsiCallExpression.class);
+        types.add(PsiClass.class);
+        types.add(PsiMethod.class);
         return types;
     }
 
@@ -1727,6 +1730,81 @@ public class ApiDetector extends ResourceXmlDetector
                     classType.getClassName(),
                     interfaceType.getClassName(), api, minSdk);
             mContext.report(UNSUPPORTED, location, message);
+        }
+
+        @Override
+        public void visitMethod(PsiMethod method) {
+            // API check for default methods
+            if (method.getModifierList().hasExplicitModifier(PsiModifier.DEFAULT)) {
+                int api = 24; // minSdk for default methods
+                int minSdk = getMinSdk(mContext);
+
+                if (!isSuppressed(api, method, minSdk)) {
+                    Location location = mContext.getLocation(method);
+                    String message = String.format("Default method requires API level %1$d "
+                            + "(current min is %2$d)", api, minSdk);
+                    mContext.report(UNSUPPORTED, method, location, message);
+                }
+            }
+        }
+
+        @Override
+        public void visitClass(PsiClass aClass) {
+            // Check for repeatable annotations
+            if (aClass.isAnnotationType()) {
+                PsiModifierList modifierList = aClass.getModifierList();
+                if (modifierList != null) {
+                    for (PsiAnnotation annotation : modifierList.getAnnotations()) {
+                        String name = annotation.getQualifiedName();
+                        if ("java.lang.annotation.Repeatable".equals(name)) {
+                            int api = 24; // minSdk for repeatable annotations
+                            int minSdk = getMinSdk(mContext);
+                            if (!isSuppressed(api, aClass, minSdk)) {
+                                Location location = mContext.getLocation(annotation);
+                                String message = String.format("Repeatable annotation requires "
+                                        + "API level %1$d (current min is %2$d)", api, minSdk);
+                                mContext.report(UNSUPPORTED, annotation, location, message);
+                            }
+                        } else if ("java.lang.annotation.Target".equals(name)) {
+                            PsiNameValuePair[] attributes = annotation.getParameterList()
+                                    .getAttributes();
+                            for (PsiNameValuePair pair : attributes) {
+                                PsiAnnotationMemberValue value = pair.getValue();
+                                if (value instanceof PsiArrayInitializerMemberValue) {
+                                    PsiArrayInitializerMemberValue array
+                                            = (PsiArrayInitializerMemberValue) value;
+                                    for (PsiAnnotationMemberValue t : array.getInitializers()) {
+                                        checkAnnotationTarget(t, modifierList);
+                                    }
+                                } else if (value != null) {
+                                    checkAnnotationTarget(value, modifierList);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private void checkAnnotationTarget(@NonNull PsiAnnotationMemberValue element,
+                PsiModifierList modifierList) {
+            if (element instanceof PsiReferenceExpression) {
+                PsiReferenceExpression ref = (PsiReferenceExpression) element;
+                if ("TYPE_PARAMETER".equals(ref.getReferenceName())
+                        || "TYPE_USE".equals(ref.getReferenceName())) {
+
+                    boolean isRuntime = false;
+                    PsiAnnotation retention = modifierList
+                            .findAnnotation("java.lang.annotation.Retention");
+                    if (retention == null ||
+                            retention.getText().contains("RUNTIME")) {
+                        Location location = mContext.getLocation(element);
+                        String message = String.format("Type annotations are not "
+                                + "supported in Android: %1$s", ref.getReferenceName());
+                        mContext.report(UNSUPPORTED, element, location, message);
+                    }
+                }
+            }
         }
 
         @Override
