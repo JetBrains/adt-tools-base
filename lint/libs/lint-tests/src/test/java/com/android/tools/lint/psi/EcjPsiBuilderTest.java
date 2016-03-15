@@ -785,7 +785,7 @@ public class EcjPsiBuilderTest extends TestCase {
         PsiMethod[] methods = cls.getMethods();
         assertNotNull(methods);
         assertEquals(27, methods.length);
-        assertEquals(35, cls.getAllMethods().length); // Adding in java lang methods etc
+        assertTrue(cls.getAllMethods().length >= 35); // java lang methods etc. Can vary by target.
 
         methods = cls.findMethodsByName("operators", false);
         assertNotNull(methods);
