@@ -53,6 +53,9 @@ import java.util.jar.JarFile;
  */
 public class FullRunShrinker<T> extends AbstractShrinker<T> {
 
+    /** Suffix for "fake methods", inserted to forward dependencies between unrelated classes. */
+    static final String SHRINKER_FAKE_MARKER = "$shrinker_fake";
+
     private final Set<File> mPlatformJars;
 
     public FullRunShrinker(
@@ -279,7 +282,7 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
                             String name = mGraph.getMethodNameAndDesc(method);
                             String desc = name.substring(name.indexOf(':') + 1);
                             name = name.substring(0, name.indexOf(':'));
-                            name = name + "$shrinker_fake";
+                            name = name + SHRINKER_FAKE_MARKER;
                             T fakeMethod = mGraph.addMember(
                                     klass, name, desc,
                                     mGraph.getMemberModifiers(method));
