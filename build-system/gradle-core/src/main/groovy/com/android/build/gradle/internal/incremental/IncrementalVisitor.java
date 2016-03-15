@@ -426,7 +426,10 @@ public class IncrementalVisitor extends ClassVisitor {
                     currentParentName = parentNode.superName;
                 } catch (IOException e) {
                     // Could not locate parent class. This is as far as we can go locating parents.
-                    LOG.error(e, "IncrementalVisitor parseParents could not locate class %s.\n", currentParentName);
+                    LOG.error(null,
+                            "IncrementalVisitor parseParents could not locate %1$s "
+                                    + "which is an ancestor of project class %2$s.\n",
+                            currentParentName, classNode.name);
                     currentParentName = null;
                 }
             }
