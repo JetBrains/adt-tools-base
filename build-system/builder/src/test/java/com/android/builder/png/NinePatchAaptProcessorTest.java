@@ -16,6 +16,9 @@
 
 package com.android.builder.png;
 
+import static com.google.common.truth.Truth.THROW_ASSERTION_ERROR;
+import static com.google.common.truth.Truth.assert_;
+
 import com.android.annotations.NonNull;
 import com.android.ide.common.internal.AaptCruncher;
 import com.android.ide.common.internal.PngCruncher;
@@ -28,9 +31,11 @@ import com.android.repository.Revision;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
 import com.google.common.collect.Maps;
+import com.google.common.truth.Expect;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,9 +49,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.DataFormatException;
 
-@Ignore("http://b.android.com/202381")
 @RunWith(Parameterized.class)
 public class NinePatchAaptProcessorTest {
+
+    @ClassRule
+    public static Expect expect = Expect.createAndEnableStackTrace();
 
     private static Map<File, File> mSourceAndCrunchedFiles;
 
@@ -77,7 +84,7 @@ public class NinePatchAaptProcessorTest {
     @AfterClass
     public static void tearDownAndCheck() throws IOException, DataFormatException {
         NinePatchAaptProcessorTestUtils.tearDownAndCheck(
-                sCruncherKey.get(), mSourceAndCrunchedFiles, sCruncher, sClassStartTime);
+                sCruncherKey.get(), mSourceAndCrunchedFiles, sCruncher, sClassStartTime, expect);
         mSourceAndCrunchedFiles = null;
     }
 
