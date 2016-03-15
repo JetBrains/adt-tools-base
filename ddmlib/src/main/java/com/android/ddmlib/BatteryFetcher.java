@@ -190,6 +190,8 @@ class BatteryFetcher {
                         if (setBatteryLevel(receiver.getBatteryLevel())) {
                             return;
                         }
+                    } else {
+                        return;
                     }
                     exception = new IOException("Unrecognized response to battery level queries");
                 } catch (TimeoutException e) {
