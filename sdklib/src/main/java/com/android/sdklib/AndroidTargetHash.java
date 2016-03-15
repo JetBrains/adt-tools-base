@@ -88,7 +88,7 @@ public abstract class AndroidTargetHash {
                     // but it doesn't know whether a build code is in preview or not.
                     // Here, we make use of the knowledge that we are actually constructing a preview version,
                     // so this is the feature level:
-                    int apiFeatureLevel = SdkVersionInfo.getApiByPreviewName(suffix, false);
+                    int apiFeatureLevel = SdkVersionInfo.getApiByPreviewName(suffix, true);
                     int apiLevel = apiFeatureLevel - 1;
                     if (apiLevel < 1) {
                         apiLevel = 1;
