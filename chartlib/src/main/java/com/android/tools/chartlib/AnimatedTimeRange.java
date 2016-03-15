@@ -27,8 +27,11 @@ public class AnimatedTimeRange implements Animatable {
 
     private boolean mShift;
 
-    public AnimatedTimeRange(Range range) {
+    private long mOffset;
+
+    public AnimatedTimeRange(Range range, long offset) {
         mRange = range;
+        mOffset = offset;
     }
 
     /**
@@ -40,7 +43,7 @@ public class AnimatedTimeRange implements Animatable {
 
     @Override
     public void animate(float frameLength) {
-        long now = System.currentTimeMillis();
+        long now = System.currentTimeMillis() - mOffset;
         double min = mRange.getMin();
         double max = mRange.getMax();
         mRange.setMax(now);
