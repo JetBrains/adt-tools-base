@@ -31,9 +31,11 @@ import com.google.common.annotations.Beta;
 import com.google.common.base.Splitter;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiType;
 
+import java.io.File;
 import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.List;
@@ -141,10 +143,10 @@ public abstract class JavaParser {
      * @deprecated Use {@link #getNameLocation(JavaContext, PsiElement)} instead
      */
     @Deprecated
-    @Nullable
+    @NonNull
     public Location getLocation(@NonNull JavaContext context, @NonNull Node node) {
         // No longer mandatory to override for children; this is a deprecated API
-        return null;
+        return Location.NONE;
     }
 
     /**
@@ -158,7 +160,21 @@ public abstract class JavaParser {
     @NonNull
     public Location getLocation(@NonNull JavaContext context, @NonNull PsiElement element) {
         TextRange range = element.getTextRange();
-        return Location.create(context.file, context.getContents(), range.getStartOffset(),
+        PsiFile containingFile = element.getContainingFile();
+        File file = context.file;
+        if (containingFile != context.getJavaFile()) {
+            // Reporting an error in a different file.
+            if (context.getDriver().getScope().size() == 1) {
+                // Don't bother with this error if it's in a different file during single-file analysis
+                return Location.NONE;
+            }
+            File ioFile = context.getEvaluator().getFile(containingFile);
+            if (ioFile == null) {
+                return Location.NONE;
+            }
+            file = ioFile;
+        }
+        return Location.create(file, context.getContents(), range.getStartOffset(),
                                range.getEndOffset());
     }
 
@@ -166,6 +182,7 @@ public abstract class JavaParser {
      * Returns a {@link Location} for the given node range (from the starting offset of the first
      * node to the ending offset of the second node).
      *
+     * @param context   information about the file being parsed
      * @param from      the AST node to get a starting location from
      * @param fromDelta Offset delta to apply to the starting offset
      * @param to        the AST node to get a ending location from
@@ -187,6 +204,7 @@ public abstract class JavaParser {
      * Returns a {@link Location} for the given node range (from the starting offset of the first
      * node to the ending offset of the second node).
      *
+     * @param context   information about the file being parsed
      * @param from      the AST node to get a starting location from
      * @param fromDelta Offset delta to apply to the starting offset
      * @param to        the AST node to get a ending location from
@@ -204,8 +222,31 @@ public abstract class JavaParser {
         String contents = context.getContents();
         int start = Math.max(0, from.getTextRange().getStartOffset() + fromDelta);
         int end = Math.min(contents == null ? Integer.MAX_VALUE : contents.length(),
-        to.getTextRange().getEndOffset() + toDelta);
+                to.getTextRange().getEndOffset() + toDelta);
         return Location.create(context.file, contents, start, end);
+    }
+
+    /**
+     * Like {@link #getRangeLocation(JavaContext, PsiElement, int, PsiElement, int)}
+     * but both offsets are relative to the starting offset of the given node. This is
+     * sometimes more convenient than operating relative to the ending offset when you
+     * have a fixed range in mind.
+     *
+     * @param context   information about the file being parsed
+     * @param from      the AST node to get a starting location from
+     * @param fromDelta Offset delta to apply to the starting offset
+     * @param toDelta   Offset delta to apply to the starting offset
+     * @return a location for the given node
+     */
+    @SuppressWarnings("MethodMayBeStatic") // subclasses may want to override/optimize
+    @NonNull
+    public Location getRangeLocation(
+            @NonNull JavaContext context,
+            @NonNull PsiElement from,
+            int fromDelta,
+            int toDelta) {
+        return getRangeLocation(context, from, fromDelta, from,
+                -(from.getTextRange().getLength() - toDelta));
     }
 
     /**

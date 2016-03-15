@@ -979,7 +979,7 @@ public class LintDriver {
                     // Must provide an issue since API guarantees that the issue parameter
                 IssueRegistry.CANCELLED,
                 Severity.INFORMATIONAL,
-                null /*range*/,
+                Location.create(project.getDir()),
                 "Lint canceled by user", TextFormat.RAW);
         }
 
@@ -1917,9 +1917,16 @@ public class LintDriver {
                 @NonNull Context context,
                 @NonNull Issue issue,
                 @NonNull Severity severity,
-                @Nullable Location location,
+                @NonNull Location location,
                 @NonNull String message,
                 @NonNull TextFormat format) {
+            //noinspection ConstantConditions
+            if (location == null) {
+                // Misbehaving third-party lint detectors
+                assert false : issue;
+                return;
+            }
+
             assert mCurrentProject != null;
             if (!mCurrentProject.getReportIssues()) {
                 return;

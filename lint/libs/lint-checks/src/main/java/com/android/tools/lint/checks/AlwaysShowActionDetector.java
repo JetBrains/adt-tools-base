@@ -154,8 +154,10 @@ public class AlwaysShowActionDetector extends ResourceXmlDetector implements
                             location.setSecondary(next);
                         }
                     }
-                    context.report(ISSUE, location,
-                            "Prefer \"`ifRoom`\" instead of \"`always`\"");
+                    if (location != null) {
+                        context.report(ISSUE, location,
+                                "Prefer \"`ifRoom`\" instead of \"`always`\"");
+                    }
                 }
             }
         }

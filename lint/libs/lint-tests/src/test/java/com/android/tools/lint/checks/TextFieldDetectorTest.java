@@ -64,10 +64,7 @@ public class TextFieldDetectorTest extends AbstractCheckTest {
             "res/layout/edit_type.xml:83: Warning: This text field does not specify an inputType or a hint [TextFields]\n" +
             "    <EditText\n" +
             "    ^\n" +
-            "res/layout/edit_type.xml:84: Warning: The view name (@+id/number_of_items) suggests this is a number, but it does not include a numeric inputType (such as 'numberSigned') [TextFields]\n" +
-            "        android:id=\"@+id/number_of_items\"\n" +
-            "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "0 errors, 8 warnings\n",
+            "0 errors, 7 warnings\n",
 
             lintFiles("res/layout/edit_type.xml"));
     }

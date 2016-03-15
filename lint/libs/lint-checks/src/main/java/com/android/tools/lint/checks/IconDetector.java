@@ -699,7 +699,9 @@ public class IconDetector extends ResourceXmlDetector implements JavaPsiScanner 
                             String message = String.format(
                                 "The `%1$s` icon has identical contents in the following configuration folders: %2$s",
                                         lastName, sb.toString());
+                            if (location != null) {
                                 context.report(DUPLICATES_CONFIGURATIONS, location, message);
+                            }
                         } else {
                             StringBuilder sb = new StringBuilder(sameFiles.size() * 16);
                             for (File file : sameFiles) {
@@ -913,7 +915,9 @@ public class IconDetector extends ResourceXmlDetector implements JavaPsiScanner 
                         "The image `%1$s` varies significantly in its density-independent (dip) " +
                         "size across the various density versions: %2$s",
                             name, sb.toString());
-                    context.report(ICON_DIP_SIZE, location, message);
+                    if (location != null) {
+                        context.report(ICON_DIP_SIZE, location, message);
+                    }
                 }
             }
         }

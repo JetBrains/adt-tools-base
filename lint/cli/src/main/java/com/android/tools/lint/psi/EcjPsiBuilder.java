@@ -751,7 +751,9 @@ public class EcjPsiBuilder {
         PsiClass containingClass = parent.getContainingClass();
         if (containingClass != null) {
             EcjPsiModifierList modifierList = (EcjPsiModifierList) containingClass.getModifierList();
-            modifierList.setModifiers(modifierList.getModifiers() & ~Modifier.FINAL);
+            if (modifierList != null) {
+                modifierList.setModifiers(modifierList.getModifiers() & ~Modifier.FINAL);
+            }
         }
         return cls;
     }

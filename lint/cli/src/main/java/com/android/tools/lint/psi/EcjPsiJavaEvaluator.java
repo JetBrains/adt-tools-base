@@ -25,6 +25,7 @@ import com.google.common.collect.Lists;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassType;
+import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiModifierList;
 import com.intellij.psi.PsiModifierListOwner;
@@ -39,6 +40,7 @@ import org.eclipse.jdt.internal.compiler.lookup.Binding;
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.List;
 
@@ -390,5 +392,16 @@ public class EcjPsiJavaEvaluator extends JavaEvaluator {
     public PsiAnnotation findAnnotation(@Nullable PsiModifierListOwner listOwner,
             @NonNull String... annotationNames) {
         throw new UnimplementedLintPsiApiException();
+    }
+
+    @Nullable
+    @Override
+    public File getFile(@NonNull PsiFile file) {
+        if (file instanceof EcjPsiJavaFile) {
+            EcjPsiJavaFile javaFile = (EcjPsiJavaFile) file;
+            return javaFile.getIoFile();
+        }
+
+        return null;
     }
 }

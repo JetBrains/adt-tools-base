@@ -314,6 +314,7 @@ public abstract class Reporter {
                 InputStream input = closer.register(url.openStream());
                 ByteStreams.copy(input, output);
             } catch (Throwable e) {
+                //noinspection ThrowableResultOfMethodCallIgnored
                 closer.rethrow(e);
             } finally {
                 closer.close();

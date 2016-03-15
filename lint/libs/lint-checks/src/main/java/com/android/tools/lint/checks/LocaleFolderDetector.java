@@ -395,6 +395,7 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
                     String message = String.format(
                             "Multiple locale folders for language `%1$s` map to a single folder in versions < API 21: %2$s",
                             language, Joiner.on(", ").join(folderNames));
+                    assert location != null; // because we will iterate at least once in the loop
                     context.report(INVALID_FOLDER, location, message);
                 }
             }
