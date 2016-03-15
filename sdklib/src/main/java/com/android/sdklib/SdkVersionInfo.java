@@ -37,11 +37,37 @@ public class SdkVersionInfo {
      */
     public static final int HIGHEST_KNOWN_STABLE_API = 23;
 
-   /**
-    * The lowest active API level in the ecosystem. This number will change over time
-    * as the distribution of older platforms decreases.
-    */
+    /**
+     * The lowest active API level in the ecosystem. This number will change over time
+     * as the distribution of older platforms decreases.
+     */
     public static final int LOWEST_ACTIVE_API = 8;
+
+    /**
+     * The highest known API level for Wearables. Note the tools at the
+     * downloadable system images for wearables to see if there are more recent
+     * versions.
+     */
+    public static final int HIGHEST_KNOWN_API_WEAR = 23;
+
+    /**
+     * The lowest active api for wearables. This number will change over time
+     * as the distribution of older platforms decreases.
+     */
+    public static final int LOWEST_ACTIVE_API_WEAR = 20;
+
+    /**
+     * The highest known API level for Android TV. Note the tools at the
+     * downloadable system images for TV to see if there are more recent
+     * versions.
+     */
+    public static final int HIGHEST_KNOWN_API_TV = 24;
+
+    /**
+     * The lowest active api for TV. This number will change over time
+     * as the distribution of older platforms decreases.
+     */
+    public static final int LOWEST_ACTIVE_API_TV = 21;
 
     /**
      * Returns the Android version and code name of the given API level
