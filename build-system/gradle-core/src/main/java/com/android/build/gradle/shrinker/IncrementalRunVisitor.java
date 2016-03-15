@@ -243,8 +243,10 @@ class IncrementalRunVisitor<T> extends DependencyFinderVisitor<T> {
                             mGraph.getFieldDesc(field)));
         }
 
-        T method = Iterables.getFirst(mMethods, null);
-        if (method != null) {
+        for (T method : mMethods) {
+            if (mGraph.getMemberName(method).contains(FullRunShrinker.SHRINKER_FAKE_MARKER)) {
+                continue;
+            }
             throw new IncrementalShrinker.IncrementalRunImpossibleException(
                     String.format(
                             "Method %s.%s removed.",
