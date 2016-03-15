@@ -16,7 +16,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Map;
 
-@SuppressWarnings({"JavaDoc", "UnusedDeclaration", "SpellCheckingInspection"})
+@SuppressWarnings({"JavaDoc", "UnusedDeclaration", "SpellCheckingInspection", "SupportAnnotationUsage"})
 public class ExtractTest {
     public ExtractTest(@IdRes int param1, @NonNull @StringRes String param2) {
     }
