@@ -21,8 +21,10 @@ import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp
 import com.android.build.gradle.integration.common.fixture.app.EmptyAndroidTestApp
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
+import com.android.build.gradle.integration.common.utils.GradleExceptionsHelper
 import com.google.common.io.Files
 import groovy.transform.CompileStatic
+import org.gradle.tooling.GradleConnectionException
 import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -31,6 +33,7 @@ import org.junit.Test
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
+
 /**
  * Assemble tests for packagingOptions.
  *
@@ -41,11 +44,14 @@ class PackagingOptionsTest {
 
     // Projects to create jar files.
     private static AndroidTestApp jarProject1 = new EmptyAndroidTestApp()
+
     static {
         jarProject1.addFile(new TestSourceFile("", "build.gradle", "apply plugin: 'java'"))
         jarProject1.addFile(new TestSourceFile("src/main/resources", "conflict.txt", "foo"))
     }
+
     private static AndroidTestApp jarProject2 = new EmptyAndroidTestApp()
+
     static {
         jarProject2.addFile(new TestSourceFile("", "build.gradle", "apply plugin: 'java'"))
         jarProject2.addFile(new TestSourceFile("src/main/resources", "conflict.txt", "foo"))
@@ -58,6 +64,7 @@ class PackagingOptionsTest {
             .fromTestApp(jarProject1)
             .withName("jar1")
             .create()
+
     @ClassRule
     public static GradleTestProject jar2 = GradleTestProject.builder()
             .fromTestApp(jarProject2)
@@ -188,8 +195,44 @@ dependencies {
         createFile('src/main/resources/conflict.txt') << "project-foo"
         project.execute("clean", "assembleDebug")
         // we expect to only see the one in src/main because it overrides the dependency one.
-        assertThatZip(project.getApk("debug")).containsFileWithContent("conflict.txt", "project-foo")
+        assertThatZip(project.getApk("debug")).
+                containsFileWithContent("conflict.txt", "project-foo")
     }
+
+    @Test
+    void "check merge action specified on a direct file and a jar entry"() {
+        project.getBuildFile() << """
+dependencies {
+    compile files('jar1.jar')
+}
+
+android{
+    packagingOptions {
+        merge 'conflict.txt'
+    }
+}
+"""
+        createFile('src/main/resources/conflict.txt') << "project-foo"
+        project.execute("clean", "assembleDebug")
+        // files should be merged
+        assertThatZip(project.getApk("debug")).
+                containsFileWithContent("conflict.txt", "fooproject-foo")
+    }
+
+    @Test
+    void "throws exception without merge action for conflict"() {
+        project.getBuildFile() << """
+dependencies {
+    compile files('jar1.jar')
+    compile files('jar2.jar')
+}
+"""
+        GradleConnectionException exception =
+                project.executeExpectingFailure("clean", "assembleDebug")
+        assertThat(GradleExceptionsHelper.getTaskFailureMessage(exception))
+                .contains("Duplicate files copied in APK conflict.txt")
+    }
+
 
     /**
      * Create a new empty file including its directories.

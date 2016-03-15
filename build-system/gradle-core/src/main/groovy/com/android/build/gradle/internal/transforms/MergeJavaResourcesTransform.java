@@ -276,9 +276,21 @@ public class MergeJavaResourcesTransform extends Transform {
 
                 List<QualifiedContent> contentSourceList = sourceFileList.get(key);
 
-                // if there is only one content or if one of the source is PROJECT then it wins.
-                // This is similar behavior as the other merger (assets, res, manifest).
-                QualifiedContent selectedContent = findUniqueOrProjectContent(contentSourceList);
+                // if no action is specified, and the key is META-INF/services,
+                // default action is merge
+                if (packagingAction == PackagingOptions.Action.NONE && isMetaServices(key)){
+                    packagingAction = PackagingOptions.Action.MERGE;
+                }
+
+                QualifiedContent selectedContent;
+                if (packagingAction == PackagingOptions.Action.MERGE){
+                    // if merge is specified, project files have no precedence
+                    selectedContent = null;
+                } else{
+                    // if there is only one content or if one of the source is PROJECT then it wins.
+                    // This is similar behavior as the other merger (assets, res, manifest).
+                    selectedContent = findUniqueOrProjectContent(contentSourceList);
+                }
 
                 // otherwise search for a selection
                 if (selectedContent == null) {
@@ -361,6 +373,11 @@ public class MergeJavaResourcesTransform extends Transform {
                                 zipFile.close();
                             }
                         }
+                        if (isMetaServices(key)){
+                            // With this, files without newline at the end will be merged
+                            // successfully for the ServiceLoader
+                            baos.write(System.getProperty("line.separator").getBytes());
+                        }
                     }
 
                     if (hasJarSource) {
@@ -382,7 +399,9 @@ public class MergeJavaResourcesTransform extends Transform {
                             mkdirs(outFolder);
                         }
 
-                        Files.write(baos.toByteArray(), computeFile(outFolder, key));
+                        File computedFile = computeFile(outFolder, key);
+                        Files.createParentDirs(computedFile);
+                        Files.write(baos.toByteArray(), computedFile);
                     }
                 }
             }
@@ -407,6 +426,13 @@ public class MergeJavaResourcesTransform extends Transform {
         }
 
         return null;
+    }
+
+    private boolean isMetaServices(String key){
+        if (key.startsWith("/")) {
+            key = key.substring(1);
+        }
+        return key.startsWith("META-INF/services/");
     }
 
     private void copyFromFolder(
