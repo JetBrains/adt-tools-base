@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,10 @@ package com.android.repository.impl.installer;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.api.Downloader;
+import com.android.repository.api.Installer;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
-import com.android.repository.api.RepoPackage;
 import com.android.repository.api.SettingsController;
 import com.android.repository.impl.meta.Archive;
 import com.android.repository.io.FileOp;
@@ -39,33 +39,16 @@ import java.io.InputStream;
 import java.net.URL;
 
 /**
- * A simple {@link PackageInstaller} that just unzips the {@code complete} version of an {@link
+ * A simple {@link Installer} that just unzips the {@code complete} version of an {@link
  * Archive} into its destination directory.
+ *
+ * Probably instances should be created by {@link BasicInstallerFactory}
  */
-public class BasicInstaller extends PackageInstaller {
+public class BasicInstaller extends AbstractPackageOperation.AbstractInstaller {
 
-    private static final String UNZIP_DIR_FN = "unzip";
-
-    public BasicInstaller(RepoPackage p, RepoManager repoManager, FileOp fop) {
-        super(p, repoManager, fop);
-    }
-
-    /**
-     * Just deletes the package.
-     *
-     * {@inheritDoc}
-     */
-    @Override
-    protected boolean doUninstall(@NonNull ProgressIndicator progress) {
-
-        String path = getPackage().getPath();
-        path = path.replace(RepoPackage.PATH_SEPARATOR, File.separatorChar);
-        File location = new File(getRepoManager().getLocalPath(), path);
-
-        mFop.deleteFileOrFolder(location);
-        getRepoManager().markInvalid();
-
-        return !mFop.exists(location);
+    protected BasicInstaller(@NonNull RemotePackage p, @NonNull RepoManager mgr,
+            @NonNull FileOp fop) {
+        super(p, mgr, fop);
     }
 
     /**
@@ -75,17 +58,19 @@ public class BasicInstaller extends PackageInstaller {
      */
     @Override
     protected boolean doPrepareInstall(@NonNull File installTempPath,
-            @NonNull Downloader downloader, @Nullable SettingsController settings,
-            @NonNull ProgressIndicator progress) {
-        URL url = InstallerUtil.resolveCompleteArchiveUrl((RemotePackage) getPackage(), progress);
+      @NonNull Downloader downloader, @Nullable SettingsController settings,
+      @NonNull ProgressIndicator progress) {
+        URL url = InstallerUtil.resolveCompleteArchiveUrl(getPackage(), progress);
         if (url == null) {
             progress.logWarning("No compatible archive found!");
             return false;
         }
+        Archive archive = getPackage().getArchive();
+        assert archive != null;
         try {
             File downloadLocation = new File(installTempPath, url.getFile());
             // TODO: allow resuming of partial downloads
-            if (!isFileDownloaded(downloadLocation, progress)) {
+            if (!isFileDownloaded(downloadLocation, archive, progress)) {
                 downloader.downloadFully(url, settings, downloadLocation, progress);
             }
             if (progress.isCanceled()) {
@@ -95,11 +80,10 @@ public class BasicInstaller extends PackageInstaller {
                 progress.logWarning("Failed to download package!");
                 return false;
             }
-            File unzip = new File(installTempPath, UNZIP_DIR_FN);
+            File unzip = new File(installTempPath, BasicInstallerFactory.UNZIP_DIR_FN);
             mFop.mkdirs(unzip);
-            RemotePackage p = (RemotePackage) getPackage();
             InstallerUtil.unzip(downloadLocation, unzip, mFop,
-                    p.getArchive().getComplete().getSize(), progress);
+              archive.getComplete().getSize(), progress);
             if (progress.isCanceled()) {
                 return false;
             }
@@ -109,22 +93,21 @@ public class BasicInstaller extends PackageInstaller {
         } catch (IOException e) {
             String message = e.getMessage();
             progress.logWarning(String.format(
-                    "An error occurred while preparing SDK package %1$s: %2$s",
-                    getPackage().getDisplayName(),
-                    (message.isEmpty() ? "." : ": " + message + ".")), e);
+              "An error occurred while preparing SDK package %1$s: %2$s",
+              getPackage().getDisplayName(),
+              (message.isEmpty() ? "." : ": " + message + ".")), e);
         }
         return false;
     }
 
-    private boolean isFileDownloaded(@NonNull File downloadLocation,
-            @NonNull ProgressIndicator progress) throws IOException {
+    private boolean isFileDownloaded(@NonNull File downloadLocation, @NonNull Archive archive,
+      @NonNull ProgressIndicator progress) throws IOException {
         if (!mFop.exists(downloadLocation)) {
             return false;
         }
         progress.logInfo("Checking existing downloaded package...");
         boolean alreadyDownloaded;
-        RemotePackage p = (RemotePackage) getPackage();
-        String checksum = p.getArchive().getComplete().getChecksum();
+        String checksum = archive.getComplete().getChecksum();
         InputStream in = new BufferedInputStream(mFop.newFileInputStream(downloadLocation));
         String hash = hashFile(in, downloadLocation.length(), progress);
         alreadyDownloaded = checksum.equals(hash);
@@ -134,8 +117,8 @@ public class BasicInstaller extends PackageInstaller {
     @VisibleForTesting
     @NonNull
     static String hashFile(@NonNull InputStream in, long fileSize,
-            @NonNull ProgressIndicator progress)
-            throws IOException {
+      @NonNull ProgressIndicator progress)
+      throws IOException {
         Hasher sha1 = Hashing.sha1().newHasher();
         byte[] buf = new byte[5120];
         long totalRead = 0;
@@ -163,13 +146,13 @@ public class BasicInstaller extends PackageInstaller {
      */
     @Override
     protected boolean doCompleteInstall(@NonNull File installTempPath,
-            @NonNull File destination, @NonNull ProgressIndicator progress) {
+      @NonNull File destination, @NonNull ProgressIndicator progress) {
         try {
             if (progress.isCanceled()) {
                 return false;
             }
             // Archives must contain a single top-level directory.
-            File unzipDir = new File(installTempPath, UNZIP_DIR_FN);
+            File unzipDir = new File(installTempPath, BasicInstallerFactory.UNZIP_DIR_FN);
             File[] topDirContents = mFop.listFiles(unzipDir);
             File packageRoot;
             if (topDirContents.length != 1) {
@@ -183,8 +166,8 @@ public class BasicInstaller extends PackageInstaller {
             }
 
             progress
-                    .logInfo(String.format("Installing %1$s in %2$s", getPackage().getDisplayName(),
-                            destination));
+              .logInfo(String.format("Installing %1$s in %2$s", getPackage().getDisplayName(),
+                destination));
 
             // Move the final unzipped archive into place.
             FileOpUtils.safeRecursiveOverwrite(packageRoot, destination, mFop, progress);
@@ -193,7 +176,7 @@ public class BasicInstaller extends PackageInstaller {
         } catch (IOException e) {
             String message = e.getMessage();
             progress.logWarning("An error occurred during installation" +
-                    (message.isEmpty() ? "." : ": " + message + "."), e);
+              (message.isEmpty() ? "." : ": " + message + "."), e);
         } finally {
             progress.setFraction(1);
         }
