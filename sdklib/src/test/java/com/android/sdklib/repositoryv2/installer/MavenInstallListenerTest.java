@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,23 +14,27 @@
  * limitations under the License.
  */
 
-package com.android.sdklib.repositoryv2;
+package com.android.sdklib.repositoryv2.installer;
 
 import com.android.repository.Revision;
 import com.android.repository.api.ConstantSourceProvider;
+import com.android.repository.api.Installer;
+import com.android.repository.api.InstallerFactory;
 import com.android.repository.api.LocalPackage;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
 import com.android.repository.api.RepoManager.RepoLoadedCallback;
-import com.android.repository.impl.installer.BasicInstaller;
-import com.android.repository.impl.installer.PackageInstaller;
+import com.android.repository.api.Uninstaller;
+import com.android.repository.impl.installer.BasicInstallerFactory;
 import com.android.repository.impl.manager.RepoManagerImpl;
 import com.android.repository.impl.meta.RepositoryPackages;
 import com.android.repository.testframework.FakeDownloader;
+import com.android.repository.testframework.FakeInstallListenerFactory;
 import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.repository.testframework.FakeProgressRunner;
 import com.android.repository.testframework.FakeSettingsController;
 import com.android.repository.testframework.MockFileOp;
+import com.android.sdklib.repositoryv2.AndroidSdkHandler;
 import com.google.common.collect.ImmutableList;
 
 import junit.framework.TestCase;
@@ -60,7 +64,7 @@ public class MavenInstallListenerTest extends TestCase {
 
         // The repo we're going to download
         downloader.registerUrl(repoUrl,
-                getClass().getResourceAsStream("testdata/remote_maven_repo.xml"));
+                getClass().getResourceAsStream("../testdata/remote_maven_repo.xml"));
 
         // Create the archive and register the URL
         URL archiveUrl = new URL("http://example.com/2/arch1");
@@ -90,12 +94,13 @@ public class MavenInstallListenerTest extends TestCase {
         RemotePackage p = pkgs.getRemotePackages()
                 .get("m2repository;com;android;group1;artifact1;1.2.3");
         // Install
-        PackageInstaller installer = new BasicInstaller(p, mgr, fop);
-        installer.registerStateChangeListener(
-                new MavenInstallListener(new AndroidSdkHandler(root, fop), fop));
+        BasicInstallerFactory factory = new BasicInstallerFactory();
+        factory.setListenerFactory(new FakeInstallListenerFactory(
+                new MavenInstallListener(new AndroidSdkHandler(root, fop))));
+        Installer installer = factory.createInstaller(p, mgr, fop);
         installer.prepareInstall(downloader, new FakeSettingsController(false),
                 runner.getProgressIndicator());
-        installer.completeInstall(p, runner.getProgressIndicator(), mgr, fop);
+        installer.completeInstall(runner.getProgressIndicator());
         runner.getProgressIndicator().assertNoErrorsOrWarnings();
 
         File artifactRoot = new File(root, "m2repository/com/android/group1/artifact1");
@@ -159,7 +164,7 @@ public class MavenInstallListenerTest extends TestCase {
 
         // The repo we're going to download
         downloader.registerUrl(repoUrl,
-                getClass().getResourceAsStream("testdata/remote_maven_repo.xml"));
+                getClass().getResourceAsStream("../testdata/remote_maven_repo.xml"));
 
         // Create the archive and register the URL
         URL archiveUrl = new URL("http://example.com/2/arch1");
@@ -191,12 +196,13 @@ public class MavenInstallListenerTest extends TestCase {
                 .get("m2repository;com;android;group1;artifact1;1.2.3");
 
         // Install
-        PackageInstaller installer = new BasicInstaller(remotePackage, mgr, fop);
-        installer.registerStateChangeListener(
-                new MavenInstallListener(new AndroidSdkHandler(root, fop), fop));
+        InstallerFactory factory = new BasicInstallerFactory();
+        factory.setListenerFactory(new FakeInstallListenerFactory(
+                new MavenInstallListener(new AndroidSdkHandler(root, fop))));
+        Installer installer = factory.createInstaller(remotePackage, mgr, fop);
         installer.prepareInstall(downloader, new FakeSettingsController(false),
                 runner.getProgressIndicator());
-        installer.completeInstall(remotePackage, runner.getProgressIndicator(), mgr, fop);
+        installer.completeInstall(runner.getProgressIndicator());
         runner.getProgressIndicator().assertNoErrorsOrWarnings();
 
         File artifactRoot = new File(root, "m2repository/com/android/group1/artifact1");
@@ -313,11 +319,12 @@ public class MavenInstallListenerTest extends TestCase {
         assertEquals(2, locals.size());
         LocalPackage p = locals.get("m2repository;com;example;groupId;artifactId;1.2.4");
         assertNotNull(p);
-        PackageInstaller installer = new BasicInstaller(p, mgr, fop);
-        installer.registerStateChangeListener(
-                new MavenInstallListener(new AndroidSdkHandler(root, fop), fop));
+        InstallerFactory factory = new BasicInstallerFactory();
+        factory.setListenerFactory(new FakeInstallListenerFactory(
+                new MavenInstallListener(new AndroidSdkHandler(root, fop))));
+        Uninstaller uninstaller = factory.createUninstaller(p, mgr, fop);
         FakeProgressIndicator progress = new FakeProgressIndicator();
-        installer.uninstall(progress);
+        uninstaller.uninstall(progress);
         progress.assertNoErrorsOrWarnings();
         MavenInstallListener.MavenMetadata metadata = MavenInstallListener
                 .unmarshalMetadata(new File(metadataPath), progress, fop);
