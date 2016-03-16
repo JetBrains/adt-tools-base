@@ -30,19 +30,17 @@ public interface RepositorySourceProvider {
      * Gets the {@link RepositorySource}s from this provider.
      *
      * @param downloader   The {@link Downloader}, if required by this provider.
-     * @param settings     The {@link SettingsController}, if required by this provider.
      * @param logger       A {@link ProgressIndicator} to be used for showing progress and logging.
      * @param forceRefresh If true, this provider should refresh its list of sources, rather than
      *                     using a cached version.
      */
     @NonNull
     List<RepositorySource> getSources(@Nullable Downloader downloader,
-            @Nullable SettingsController settings,
             @NonNull ProgressIndicator logger, boolean forceRefresh);
 
     /**
      * Add a source to this provider, if this provider is editable. Changes will be reflected in
-     * {@link #getSources(Downloader, SettingsController, ProgressIndicator, boolean)}, but not
+     * {@link #getSources(Downloader, ProgressIndicator, boolean)}, but not
      * persisted until {@link #save(ProgressIndicator)} is called.
      *
      * @param source The source to add.

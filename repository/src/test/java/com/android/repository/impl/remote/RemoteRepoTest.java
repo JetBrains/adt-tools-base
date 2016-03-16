@@ -27,7 +27,6 @@ import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
 import com.android.repository.api.RepositorySource;
 import com.android.repository.api.RepositorySourceProvider;
-import com.android.repository.api.SettingsController;
 import com.android.repository.api.SimpleRepositorySource;
 import com.android.repository.impl.manager.RemoteRepoLoader;
 import com.android.repository.impl.meta.Archive;
@@ -248,8 +247,8 @@ public class RemoteRepoTest extends TestCase {
 
         @NonNull
         @Override
-        public List<RepositorySource> getSources(Downloader downloader, SettingsController settings,
-                ProgressIndicator logger, boolean forceRefresh) {
+        public List<RepositorySource> getSources(Downloader downloader, ProgressIndicator logger,
+                boolean forceRefresh) {
             return mSources;
         }
 

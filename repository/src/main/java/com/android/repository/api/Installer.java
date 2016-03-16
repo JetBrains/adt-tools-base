@@ -51,12 +51,9 @@ public interface Installer extends PackageOperation {
      * else that can be done without affecting the installed SDK or other state.
      *
      * @param downloader The {@link Downloader} used to download the archive.
-     * @param settings   The {@link SettingsController} to provide any settings needed.
      * @param progress   A {@link ProgressIndicator}, to show install progress and facilitate
      *                   logging.
      * @return {@code true} if the operation succeeded, {@code false} otherwise.
      */
-    boolean prepareInstall(@NonNull Downloader downloader,
-            @Nullable SettingsController settings,
-            @NonNull ProgressIndicator progress);
+    boolean prepareInstall(@NonNull Downloader downloader, @NonNull ProgressIndicator progress);
 }

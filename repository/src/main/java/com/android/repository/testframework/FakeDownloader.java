@@ -20,8 +20,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.api.Downloader;
 import com.android.repository.api.ProgressIndicator;
-import com.android.repository.api.SettingsController;
-import com.android.repository.io.FileOp;
 import com.google.common.collect.Maps;
 import com.google.common.io.ByteStreams;
 
@@ -62,8 +60,8 @@ public class FakeDownloader implements Downloader {
 
     @Override
     @NonNull
-    public InputStream downloadAndStream(@NonNull URL url, @Nullable SettingsController controller,
-                                         @NonNull ProgressIndicator indicator) throws IOException {
+    public InputStream downloadAndStream(@NonNull URL url, @NonNull ProgressIndicator indicator)
+            throws IOException {
         byte[] content = mRegisteredFiles.get(url);
         if (content == null) {
             throw new IOException("no content at " + url);
@@ -74,16 +72,16 @@ public class FakeDownloader implements Downloader {
 
     @Nullable
     @Override
-    public File downloadFully(@NonNull URL url, @Nullable SettingsController settings,
-            @NonNull ProgressIndicator indicator) throws IOException {
+    public File downloadFully(@NonNull URL url, @NonNull ProgressIndicator indicator)
+            throws IOException {
         String filename = getFileName(url);
         mFileOp.recordExistingFile(filename, mRegisteredFiles.get(url));
         return new File(filename);
     }
 
     @Override
-    public void downloadFully(@NonNull URL url, @Nullable SettingsController settings,
-            @NonNull File target, @NonNull ProgressIndicator indicator) throws IOException {
+    public void downloadFully(@NonNull URL url, @NonNull File target,
+            @NonNull ProgressIndicator indicator) throws IOException {
         mFileOp.recordExistingFile(target.getPath(), mRegisteredFiles.get(url));
     }
 

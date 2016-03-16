@@ -98,8 +98,7 @@ public class MavenInstallListenerTest extends TestCase {
         factory.setListenerFactory(new FakeInstallListenerFactory(
                 new MavenInstallListener(new AndroidSdkHandler(root, fop))));
         Installer installer = factory.createInstaller(p, mgr, fop);
-        installer.prepareInstall(downloader, new FakeSettingsController(false),
-                runner.getProgressIndicator());
+        installer.prepareInstall(downloader, runner.getProgressIndicator());
         installer.completeInstall(runner.getProgressIndicator());
         runner.getProgressIndicator().assertNoErrorsOrWarnings();
 
@@ -200,8 +199,7 @@ public class MavenInstallListenerTest extends TestCase {
         factory.setListenerFactory(new FakeInstallListenerFactory(
                 new MavenInstallListener(new AndroidSdkHandler(root, fop))));
         Installer installer = factory.createInstaller(remotePackage, mgr, fop);
-        installer.prepareInstall(downloader, new FakeSettingsController(false),
-                runner.getProgressIndicator());
+        installer.prepareInstall(downloader, runner.getProgressIndicator());
         installer.completeInstall(runner.getProgressIndicator());
         runner.getProgressIndicator().assertNoErrorsOrWarnings();
 

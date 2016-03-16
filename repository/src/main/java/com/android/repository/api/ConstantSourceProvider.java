@@ -41,7 +41,6 @@ public class ConstantSourceProvider implements RepositorySourceProvider {
     @Override
     @NonNull
     public List<RepositorySource> getSources(@Nullable Downloader downloader,
-            @Nullable SettingsController settings,
             @Nullable ProgressIndicator indicator, boolean forceRefresh) {
         return ImmutableList.of(mSource);
     }

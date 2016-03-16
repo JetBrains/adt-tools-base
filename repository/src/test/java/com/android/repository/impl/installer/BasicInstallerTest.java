@@ -27,7 +27,6 @@ import com.android.repository.api.LocalPackage;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
-import com.android.repository.api.SettingsController;
 import com.android.repository.impl.manager.RepoManagerImpl;
 import com.android.repository.impl.meta.RepositoryPackages;
 import com.android.repository.testframework.FakeDownloader;
@@ -141,8 +140,7 @@ public class BasicInstallerTest extends TestCase {
         // Install one of the packages.
         RemotePackage p = pkgs.getRemotePackages().get("dummy;bar");
         Installer basicInstaller = new BasicInstallerFactory().createInstaller(p, mgr, fop);
-        basicInstaller.prepareInstall(downloader, new FakeSettingsController(false),
-                runner.getProgressIndicator());
+        basicInstaller.prepareInstall(downloader, runner.getProgressIndicator());
         basicInstaller.completeInstall(runner.getProgressIndicator());
         runner.getProgressIndicator().assertNoErrorsOrWarnings();
 
@@ -222,7 +220,7 @@ public class BasicInstallerTest extends TestCase {
         // Install the update
         FakeProgressIndicator progress = new FakeProgressIndicator();
         Installer basicInstaller = new BasicInstallerFactory().createInstaller(update, mgr, fop);
-        basicInstaller.prepareInstall(downloader, new FakeSettingsController(false), progress);
+        basicInstaller.prepareInstall(downloader, progress);
         basicInstaller.completeInstall(progress);
 
         // Reload the repo
@@ -275,7 +273,7 @@ public class BasicInstallerTest extends TestCase {
         FakeDownloader downloader = new FakeDownloader(fop);
 
         assertFalse(new BasicInstallerFactory().createInstaller(remote, mgr, fop)
-                .prepareInstall(downloader, new FakeSettingsController(false), progress));
+                .prepareInstall(downloader, progress));
         boolean found = false;
         for (String warning : progress.getWarnings()) {
             if (warning.contains("child")) {
@@ -309,7 +307,7 @@ public class BasicInstallerTest extends TestCase {
         FakeDownloader downloader = new FakeDownloader(fop);
 
         assertFalse(new BasicInstallerFactory().createInstaller(remote, mgr, fop)
-                .prepareInstall(downloader, new FakeSettingsController(false), progress));
+                .prepareInstall(downloader, progress));
         boolean found = false;
         for (String warning : progress.getWarnings()) {
             if (warning.contains("parent")) {
@@ -326,9 +324,9 @@ public class BasicInstallerTest extends TestCase {
         mgr.setLocalPath(root);
         FakeDownloader downloader = new FakeDownloader(fop) {
             @Override
-            public void downloadFully(@NonNull URL url, @Nullable SettingsController settings,
-              @NonNull File target, @NonNull ProgressIndicator indicator) throws IOException {
-                super.downloadFully(url, settings, target, indicator);
+            public void downloadFully(@NonNull URL url, @NonNull File target,
+                    @NonNull ProgressIndicator indicator) throws IOException {
+                super.downloadFully(url, target, indicator);
                 throw new IOException("expected");
             }
         };
@@ -394,8 +392,7 @@ public class BasicInstallerTest extends TestCase {
         Installer basicInstaller = new BasicInstallerFactory().createInstaller(p, mgr, fop);
         FakeProgressIndicator firstInstallProgress = new FakeProgressIndicator();
         boolean result = basicInstaller
-                .prepareInstall(downloader, new FakeSettingsController(false),
-                        firstInstallProgress);
+                .prepareInstall(downloader, firstInstallProgress);
 
         // be sure it was actually cancelled
         assertFalse(result);
@@ -404,31 +401,29 @@ public class BasicInstallerTest extends TestCase {
             @Nullable
             @Override
             public InputStream downloadAndStream(@NonNull URL url,
-              @Nullable SettingsController settings,
-              @NonNull ProgressIndicator indicator) throws IOException {
+                    @NonNull ProgressIndicator indicator) throws IOException {
                 fail();
                 return null;
             }
 
             @Nullable
             @Override
-            public File downloadFully(@NonNull URL url, @Nullable SettingsController settings,
-              @NonNull ProgressIndicator indicator) throws IOException {
+            public File downloadFully(@NonNull URL url, @NonNull ProgressIndicator indicator)
+                    throws IOException {
                 fail();
                 return null;
             }
 
             @Override
-            public void downloadFully(@NonNull URL url, @Nullable SettingsController settings,
-              @NonNull File target, @NonNull ProgressIndicator indicator) throws IOException {
+            public void downloadFully(@NonNull URL url, @NonNull File target,
+                    @NonNull ProgressIndicator indicator) throws IOException {
                 fail();
             }
         };
 
         // Try again with the failing downloader; it should not be called.
         FakeProgressIndicator secondInstallProgress = new FakeProgressIndicator();
-        result = basicInstaller.prepareInstall(failingDownloader, new FakeSettingsController(false),
-                secondInstallProgress);
+        result = basicInstaller.prepareInstall(failingDownloader, secondInstallProgress);
         assertTrue(result);
         result = basicInstaller.completeInstall(secondInstallProgress);
 

@@ -25,7 +25,6 @@ import com.android.repository.api.PackageOperation;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
-import com.android.repository.api.SettingsController;
 import com.android.repository.api.Uninstaller;
 import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
@@ -185,17 +184,15 @@ public abstract class AbstractPackageOperation implements PackageOperation {
 
         /**
          * Writes information used to restore the install process, then calls {@link
-         * #doPrepareInstall(File, Downloader, SettingsController, ProgressIndicator)}
+         * #doPrepareInstall(File, Downloader, ProgressIndicator)}
          *
          * @param downloader The {@link Downloader} used to download the archive.
-         * @param settings   The {@link SettingsController} to provide any settings needed.
          * @param progress   A {@link ProgressIndicator}, to show install progress and facilitate
          *                   logging.
          * @return {@code true} if the operation succeeded, {@code false} otherwise.
          */
         @Override
         public final boolean prepareInstall(@NonNull Downloader downloader,
-                @Nullable SettingsController settings,
                 @NonNull ProgressIndicator progress) {
             try {
                 File dest = InstallerUtil
@@ -219,7 +216,7 @@ public abstract class AbstractPackageOperation implements PackageOperation {
                 }
                 File prepareCompleteMarker = new File(installTempPath, PREPARE_COMPLETE_FN);
                 if (!mFop.exists(prepareCompleteMarker)) {
-                    if (doPrepareInstall(installTempPath, downloader, settings, progress)) {
+                    if (doPrepareInstall(installTempPath, downloader, progress)) {
                         mFop.createNewFile(prepareCompleteMarker);
                         result = updateStatus(InstallStatus.PREPARED, progress);
                     }
@@ -307,12 +304,10 @@ public abstract class AbstractPackageOperation implements PackageOperation {
          *
          * @param installTempPath The dir that should be used for any intermediate processing.
          * @param downloader      {@link Downloader} to use for fetching remote packages.
-         * @param settings        {@link SettingsController} to use for download settings.
          * @param progress        For logging and progress display
          */
         protected abstract boolean doPrepareInstall(@NonNull File installTempPath,
-                @NonNull Downloader downloader, @Nullable SettingsController settings,
-                @NonNull ProgressIndicator progress);
+                @NonNull Downloader downloader, @NonNull ProgressIndicator progress);
 
         @Nullable
         protected File writeInstallerMetadata(@NonNull File installPath,
