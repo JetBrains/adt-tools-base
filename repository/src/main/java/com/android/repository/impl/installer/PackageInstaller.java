@@ -179,30 +179,45 @@ public abstract class PackageInstaller {
             return false;
         }
         boolean result = false;
+        File dest = null;
+        String installTempPath = mInstallProperties.getProperty(PATH_KEY);
+        if (installTempPath == null) {
+            return false;
+        }
+        File installTemp = new File(installTempPath);
         try {
-            File dest = InstallerUtil.getInstallPath(p, manager, progress);
-            String installTempPath = mInstallProperties.getProperty(PATH_KEY);
-            if (installTempPath == null) {
-                return false;
-            }
-            File installTemp = new File(installTempPath);
+            dest = InstallerUtil.getInstallPath(p, manager, progress);
             result = doCompleteInstall(installTemp, dest, progress);
-            InstallerUtil.writePackageXml(p, dest, manager, fop, progress);
-            fop.delete(installTemp);
-            manager.markInvalid();
         } catch (IOException e) {
             result = false;
         } finally {
             if (!result && progress.isCanceled()) {
                 try {
                     cleanup(InstallerUtil.getInstallPath(p, manager, progress), fop);
-                } catch (IOException e) {
+                }
+                catch (IOException e) {
                     // ignore
                 }
             }
             result &= updateStatus(result ? InstallStatus.COMPLETE : InstallStatus.FAILED,
-              progress);
+                                   progress);
+            manager.markInvalid();
+        }
+        try {
+            if (result) {
+                try {
+                    InstallerUtil.writePackageXml(p, dest, manager, fop, progress);
+                    fop.delete(installTemp);
+                }
+                catch (IOException e) {
+                    progress.logWarning("Failed to update package.xml", e);
+                    result = false;
+                }
+            }
+        }
+        finally {
             manager.installEnded(p);
+            manager.markInvalid();
         }
         return result;
     }
