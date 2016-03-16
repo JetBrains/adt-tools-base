@@ -24,7 +24,6 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidProject;
 import com.android.repository.Revision;
 import com.android.sdklib.BuildToolInfo;
@@ -2249,7 +2248,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
 
     @Override
     protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
-            @NonNull Severity severity, @Nullable Location location, @NonNull String message) {
+            @NonNull Severity severity, @NonNull Location location, @NonNull String message) {
         if (issue == UNSUPPORTED || issue == INLINED) {
             if (message.startsWith("The SDK platform-tools version (")) {
                 return;

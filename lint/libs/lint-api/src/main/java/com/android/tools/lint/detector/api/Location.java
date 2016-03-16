@@ -21,7 +21,9 @@ import com.android.annotations.Nullable;
 import com.android.ide.common.blame.SourcePosition;
 import com.android.ide.common.res2.ResourceFile;
 import com.android.ide.common.res2.ResourceItem;
+import com.android.tools.lint.client.api.JavaParser;
 import com.google.common.annotations.Beta;
+import com.intellij.psi.PsiElement;
 
 import java.io.File;
 
@@ -41,6 +43,13 @@ public class Location {
     private String mMessage;
     private Location mSecondary;
     private Object mClientData;
+
+    /**
+     * Special marker location which means location not available, or not applicable, or filtered out, etc.
+     * For example, the infrastructure may return {@link #NONE} if you ask {@link JavaParser#getLocation(JavaContext, PsiElement)}
+     * for an element which is not in the current file during an incremental lint run in a single file.
+     */
+    public static final Location NONE = new Location(new File("NONE"), null, null);
 
     /**
      * (Private constructor, use one of the factory methods

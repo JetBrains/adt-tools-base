@@ -28,7 +28,6 @@ import com.intellij.psi.PsiInvalidElementAccessException;
 import com.intellij.psi.PsiReference;
 
 import org.eclipse.jdt.internal.compiler.ast.ASTNode;
-import org.eclipse.jdt.internal.compiler.ast.Statement;
 
 abstract class EcjPsiSourceElement extends EcjPsiElement
         implements PsiElement, NavigationItem, Navigatable {

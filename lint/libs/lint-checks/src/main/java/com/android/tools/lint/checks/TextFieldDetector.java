@@ -41,7 +41,6 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
 
 import org.w3c.dom.Attr;
@@ -84,12 +83,6 @@ public class TextFieldDetector extends LayoutDetector {
 
     /** Constructs a new {@link TextFieldDetector} */
     public TextFieldDetector() {
-    }
-
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.FAST;
     }
 
     @Override
@@ -146,7 +139,10 @@ public class TextFieldDetector extends LayoutDetector {
 
             context.report(ISSUE, element, context.getLocation(element),
                     "This text field does not specify an `inputType` or a `hint`");
+            return;
         }
+
+        assert inputType != null; // because inputTypeNode || !haveHint check + return above
 
         Attr idNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_ID);
         if (idNode == null) {
@@ -275,11 +271,7 @@ public class TextFieldDetector extends LayoutDetector {
             boolean allowSuffix) {
         int index = indexOfWord(sentence, word, allowPrefix, allowSuffix);
 
-        if (index != -1) {
-            return index == sentence.length() - word.length();
-        }
-
-        return false;
+        return index != -1 && index == sentence.length() - word.length();
     }
 
     /**

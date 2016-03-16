@@ -26,7 +26,6 @@ import static com.android.SdkConstants.ATTR_LAYOUT_RESOURCE_PREFIX;
 import static com.android.SdkConstants.ATTR_PACKAGE;
 import static com.android.SdkConstants.ATTR_STYLE;
 import static com.android.SdkConstants.AUTO_URI;
-import static com.android.SdkConstants.IMAGE_VIEW;
 import static com.android.SdkConstants.TAG_LAYOUT;
 import static com.android.SdkConstants.TOOLS_URI;
 import static com.android.SdkConstants.VIEW_TAG;

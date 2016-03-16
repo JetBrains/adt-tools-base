@@ -67,6 +67,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.intellij.psi.JavaElementVisitor;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiAnnotationMemberValue;
@@ -107,6 +108,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Checks annotations to make sure they are valid
@@ -204,6 +206,12 @@ public class AnnotationDetector extends Detector implements JavaPsiScanner {
 
     // ---- Implements JavaScanner ----
 
+    /**
+     * Set of fields we've already warned about {@link #FLAG_STYLE} for; these can
+     * be referenced multiple times, so we should only flag them once
+     */
+    private Set<PsiElement> mWarnedFlags;
+
     @Override
     public List<Class<? extends PsiElement>> getApplicablePsiTypes() {
         List<Class<? extends PsiElement>> types = new ArrayList<Class<? extends PsiElement>>(2);
@@ -218,7 +226,7 @@ public class AnnotationDetector extends Detector implements JavaPsiScanner {
         return new AnnotationChecker(context);
     }
 
-    private static class AnnotationChecker extends JavaElementVisitor {
+    private class AnnotationChecker extends JavaElementVisitor {
         private final JavaContext mContext;
 
         public AnnotationChecker(JavaContext context) {
@@ -747,6 +755,12 @@ public class AnnotationDetector extends Detector implements JavaPsiScanner {
                                 continue;
                             }
                             int shift = Long.numberOfTrailingZeros(value);
+                            if (mWarnedFlags == null) {
+                                mWarnedFlags = Sets.newHashSet();
+                            }
+                            if (!mWarnedFlags.add(resolved)) {
+                                return;
+                            }
                             String message = String.format(
                                     "Consider declaring this constant using 1 << %1$d instead",
                                     shift);
@@ -778,45 +792,45 @@ public class AnnotationDetector extends Detector implements JavaPsiScanner {
 
             return true;
         }
+    }
 
-        @NonNull
-        private static List<String> computeFieldNames(@NonNull PsiSwitchStatement node,
-                Iterable<?> allowedValues) {
-            List<String> list = Lists.newArrayList();
-            for (Object o : allowedValues) {
-                if (o instanceof PsiReferenceExpression) {
-                    PsiElement resolved = ((PsiReferenceExpression) o).resolve();
-                    if (resolved != null) {
-                        o = resolved;
-                    }
-                } else if (o instanceof PsiLiteral) {
-                    list.add("`" + ((PsiLiteral) o).getValue() + '`');
-                    continue;
+    @NonNull
+    private static List<String> computeFieldNames(@NonNull PsiSwitchStatement node,
+            Iterable<?> allowedValues) {
+        List<String> list = Lists.newArrayList();
+        for (Object o : allowedValues) {
+            if (o instanceof PsiReferenceExpression) {
+                PsiElement resolved = ((PsiReferenceExpression) o).resolve();
+                if (resolved != null) {
+                    o = resolved;
                 }
-
-                if (o instanceof PsiField) {
-                    PsiField field = (PsiField) o;
-                    // Only include class name if necessary
-                    String name = field.getName();
-                    PsiClass clz = PsiTreeUtil.getParentOfType(node, PsiClass.class, true);
-                    if (clz != null) {
-                        PsiClass containingClass = field.getContainingClass();
-                        if (containingClass != null && !containingClass.equals(clz)) {
-
-                            //if (Objects.equal(containingClass.getPackage(),
-                            //        ((ResolvedClass) resolved).getPackage())) {
-                            //    name = containingClass.getSimpleName() + '.' + field.getName();
-                            //} else {
-                                name = containingClass.getName() + '.' + field.getName();
-                            //}
-                        }
-                    }
-                    list.add('`' + name + '`');
-                }
+            } else if (o instanceof PsiLiteral) {
+                list.add("`" + ((PsiLiteral) o).getValue() + '`');
+                continue;
             }
-            Collections.sort(list);
-            return list;
+
+            if (o instanceof PsiField) {
+                PsiField field = (PsiField) o;
+                // Only include class name if necessary
+                String name = field.getName();
+                PsiClass clz = PsiTreeUtil.getParentOfType(node, PsiClass.class, true);
+                if (clz != null) {
+                    PsiClass containingClass = field.getContainingClass();
+                    if (containingClass != null && !containingClass.equals(clz)) {
+
+                        //if (Objects.equal(containingClass.getPackage(),
+                        //        ((ResolvedClass) resolved).getPackage())) {
+                        //    name = containingClass.getSimpleName() + '.' + field.getName();
+                        //} else {
+                            name = containingClass.getName() + '.' + field.getName();
+                        //}
+                    }
+                }
+                list.add('`' + name + '`');
+            }
         }
+        Collections.sort(list);
+        return list;
     }
 
     /**

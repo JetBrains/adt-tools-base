@@ -16,6 +16,7 @@
 
 package com.android.tools.lint;
 
+import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.utils.SdkUtils;
@@ -243,7 +244,7 @@ public class MultiProjectHtmlReporter extends HtmlReporter {
         }
 
         @Override
-        public int compareTo(ProjectEntry other) {
+        public int compareTo(@NonNull ProjectEntry other) {
             int delta = other.errorCount - errorCount;
             if (delta != 0) {
                 return delta;

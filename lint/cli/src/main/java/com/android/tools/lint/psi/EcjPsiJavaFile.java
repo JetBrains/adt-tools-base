@@ -34,6 +34,8 @@ import com.intellij.psi.PsiPackageStatement;
 
 import org.eclipse.jdt.internal.compiler.ast.CompilationUnitDeclaration;
 
+import java.io.File;
+
 class EcjPsiJavaFile extends EcjPsiSourceElement implements PsiJavaFile {
 
     private final EcjSourceFile mSource;
@@ -183,5 +185,9 @@ class EcjPsiJavaFile extends EcjPsiSourceElement implements PsiJavaFile {
     @Override
     public PsiFile getOriginalFile() {
         return this;
+    }
+
+    public File getIoFile() {
+        return mSource.getFile();
     }
 }

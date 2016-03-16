@@ -25,7 +25,6 @@ import com.android.annotations.VisibleForTesting;
 import com.android.resources.ResourceType;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Detector.JavaPsiScanner;
-import com.android.tools.lint.detector.api.Detector.JavaScanner;
 import com.android.tools.lint.detector.api.Detector.XmlScanner;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.google.common.collect.Maps;

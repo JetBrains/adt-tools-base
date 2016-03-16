@@ -87,10 +87,12 @@ public abstract class LintClient {
     private static final String PROP_BIN_DIR  = "com.android.tools.lint.bindir";  //$NON-NLS-1$
 
     protected LintClient(@NonNull String clientName) {
+        //noinspection AssignmentToStaticFieldFromInstanceMethod
         sClientName = clientName;
     }
 
     protected LintClient() {
+        //noinspection AssignmentToStaticFieldFromInstanceMethod
         sClientName = "unknown";
     }
 
@@ -127,7 +129,7 @@ public abstract class LintClient {
             @NonNull Context context,
             @NonNull Issue issue,
             @NonNull Severity severity,
-            @Nullable Location location,
+            @NonNull Location location,
             @NonNull String message,
             @NonNull TextFormat format);
 
@@ -552,7 +554,7 @@ public abstract class LintClient {
                 File[] jars = libs.listFiles();
                 if (jars != null) {
                     for (File jar : jars) {
-                        if (LintUtils.endsWith(jar.getPath(), DOT_JAR)
+                        if (endsWith(jar.getPath(), DOT_JAR)
                                 && !libraries.contains(jar)) {
                             libraries.add(jar);
                         }
@@ -1027,7 +1029,7 @@ public abstract class LintClient {
      * settings.
      *
      * @param url the URL to read
-     * @return a {@link java.net.URLConnection} or null
+     * @return a {@link URLConnection} or null
      * @throws IOException if any kind of IO exception occurs
      */
     @Nullable
@@ -1035,7 +1037,7 @@ public abstract class LintClient {
         return url.openConnection();
     }
 
-    /** Closes a connection previously returned by {@link #openConnection(java.net.URL)} */
+    /** Closes a connection previously returned by {@link #openConnection(URL)} */
     public void closeConnection(@NonNull URLConnection connection) throws IOException {
         if (connection instanceof HttpURLConnection) {
             ((HttpURLConnection)connection).disconnect();

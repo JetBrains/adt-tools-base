@@ -47,7 +47,6 @@ import static com.android.xml.AndroidManifest.NODE_DATA;
 import static com.android.xml.AndroidManifest.NODE_METADATA;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.BuildTypeContainer;
@@ -488,7 +487,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
         }
     }
 
-    @Nullable
+    @NonNull
     private Location getMainApplicationTagLocation(@NonNull Context context) {
         if (mApplicationTagHandle != null) {
             return mApplicationTagHandle.resolve();
@@ -499,7 +498,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             return Location.create(manifestFiles.get(0));
         }
 
-        return null;
+        return Location.NONE;
     }
 
     private static void checkDocumentElement(XmlContext context, Element element) {

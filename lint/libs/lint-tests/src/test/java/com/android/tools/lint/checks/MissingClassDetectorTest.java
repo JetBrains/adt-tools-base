@@ -22,7 +22,6 @@ import static com.android.tools.lint.checks.MissingClassDetector.MISSING;
 import static com.android.tools.lint.detector.api.TextFormat.TEXT;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
@@ -599,7 +598,7 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
 
     @Override
     protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
-            @NonNull Severity severity, @Nullable Location location, @NonNull String message) {
+            @NonNull Severity severity, @NonNull Location location, @NonNull String message) {
         if (issue == INNERCLASS) {
             assertNotNull(message, MissingClassDetector.getOldValue(issue, message, TEXT));
             assertNotNull(message, MissingClassDetector.getNewValue(issue, message, TEXT));
