@@ -27,6 +27,7 @@ import com.google.common.annotations.Beta;
 import com.intellij.psi.JavaElementVisitor;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiJavaCodeReferenceElement;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiMethodCallExpression;
 import com.intellij.psi.PsiNewExpression;
@@ -554,6 +555,38 @@ public abstract class Detector {
                 @Nullable JavaElementVisitor visitor,
                 @NonNull PsiNewExpression node,
                 @NonNull PsiMethod constructor);
+
+        /**
+         * Return the list of reference names types this detector is interested in, or null. If this
+         * method returns non-null, then any AST elements that match a reference in the list will be
+         * passed to the {@link #visitReference(JavaContext, JavaElementVisitor,
+         * PsiJavaCodeReferenceElement, PsiElement)} method for processing. The visitor created by
+         * {@link #createJavaVisitor(JavaContext)} is also passed to that method, although it can be
+         * null. <p> This makes it easy to write detectors that focus on some fixed references.
+         *
+         * @return a set of applicable reference names, or null.
+         */
+        @Nullable
+        List<String> getApplicableReferenceNames();
+
+        /**
+         * Method invoked for any references found that matches any names returned by {@link
+         * #getApplicableReferenceNames()}. This also passes back the visitor that was created by
+         * {@link #createPsiVisitor(JavaContext)}, but a visitor is not required. It is intended for
+         * detectors that need to do additional AST processing, but also want the convenience of not
+         * having to look for method names on their own.
+         *
+         * @param context    the context of the lint request
+         * @param visitor    the visitor created from {@link #createPsiVisitor(JavaContext)}, or
+         *                   null
+         * @param reference  the {@link PsiJavaCodeReferenceElement} element
+         * @param referenced the referenced element
+         */
+        void visitReference(
+                @NonNull JavaContext context,
+                @Nullable JavaElementVisitor visitor,
+                @NonNull PsiJavaCodeReferenceElement reference,
+                @NonNull PsiElement referenced);
 
         /**
          * Returns whether this detector cares about Android resource references
@@ -1173,5 +1206,18 @@ public abstract class Detector {
     @Nullable @SuppressWarnings({"UnusedParameters", "unused", "javadoc"})
     public List<Class<? extends PsiElement>> getApplicablePsiTypes() {
         return null;
+    }
+
+    @Nullable @SuppressWarnings({"unused", "javadoc"})
+    public List<String> getApplicableReferenceNames() {
+        return null;
+    }
+
+    @SuppressWarnings({"UnusedParameters", "unused", "javadoc"})
+    public void visitReference(
+            @NonNull JavaContext context,
+            @Nullable JavaElementVisitor visitor,
+            @NonNull PsiJavaCodeReferenceElement reference,
+            @NonNull PsiElement referenced) {
     }
 }
