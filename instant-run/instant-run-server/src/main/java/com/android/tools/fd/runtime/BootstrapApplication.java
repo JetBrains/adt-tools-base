@@ -150,8 +150,8 @@ public class BootstrapApplication extends Application {
         }
     }
 
-    private static void setupClassLoaders(String codeCacheDir, long apkModified) {
-        List<String> dexList = FileManager.getDexList(apkModified);
+    private static void setupClassLoaders(Context context, String codeCacheDir, long apkModified) {
+        List<String> dexList = FileManager.getDexList(context, apkModified);
 
         // Make sure class loader finds these
         @SuppressWarnings("unused") Class<Server> server = Server.class;
@@ -258,7 +258,7 @@ public class BootstrapApplication extends Application {
             String apkFile = context.getApplicationInfo().sourceDir;
             long apkModified = apkFile != null ? new File(apkFile).lastModified() : 0L;
             createResources(apkModified);
-            setupClassLoaders(context.getCacheDir().getPath(), apkModified);
+            setupClassLoaders(context, context.getCacheDir().getPath(), apkModified);
         }
 
         createRealApplication();
