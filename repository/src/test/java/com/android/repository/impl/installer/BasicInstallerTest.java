@@ -80,7 +80,7 @@ public class BasicInstallerTest extends TestCase {
         // Get one of the packages to uninstall.
         LocalPackage p = pkgs.getLocalPackages().get("dummy;foo");
         // Uninstall it
-        new BasicInstaller().uninstall(p, new FakeProgressIndicator(), mgr, fop);
+        new BasicInstaller(p, mgr, fop).uninstall(new FakeProgressIndicator());
         File[] contents = fop.listFiles(root);
         // Verify that the deleted dir is gone.
         assertEquals(1, contents.length);
@@ -137,9 +137,9 @@ public class BasicInstallerTest extends TestCase {
 
         // Install one of the packages.
         RemotePackage p = pkgs.getRemotePackages().get("dummy;bar");
-        BasicInstaller basicInstaller = new BasicInstaller();
-        basicInstaller.prepareInstall(p, downloader, new FakeSettingsController(false),
-                runner.getProgressIndicator(), mgr, fop);
+        BasicInstaller basicInstaller = new BasicInstaller(p, mgr, fop);
+        basicInstaller.prepareInstall(downloader, new FakeSettingsController(false),
+                runner.getProgressIndicator());
         basicInstaller.completeInstall(p, runner.getProgressIndicator(), mgr, fop);
         runner.getProgressIndicator().assertNoErrorsOrWarnings();
 
@@ -218,9 +218,8 @@ public class BasicInstallerTest extends TestCase {
 
         // Install the update
         FakeProgressIndicator progress = new FakeProgressIndicator();
-        BasicInstaller basicInstaller = new BasicInstaller();
-        basicInstaller.prepareInstall(update, downloader, new FakeSettingsController(false),
-                                            progress, mgr, fop);
+        BasicInstaller basicInstaller = new BasicInstaller(update, mgr, fop);
+        basicInstaller.prepareInstall(downloader, new FakeSettingsController(false), progress);
         basicInstaller.completeInstall(update, progress, mgr, fop);
 
         // Reload the repo
@@ -272,9 +271,8 @@ public class BasicInstallerTest extends TestCase {
         remote.setCompleteUrl("http://www.example.com/package.zip");
         FakeDownloader downloader = new FakeDownloader(fop);
 
-        assertFalse(new BasicInstaller()
-                .prepareInstall(remote, downloader, new FakeSettingsController(false), progress,
-                        mgr, fop));
+        assertFalse(new BasicInstaller(remote, mgr, fop)
+                .prepareInstall(downloader, new FakeSettingsController(false), progress));
         boolean found = false;
         for (String warning : progress.getWarnings()) {
             if (warning.contains("child")) {
@@ -307,9 +305,8 @@ public class BasicInstallerTest extends TestCase {
         remote.setCompleteUrl("http://www.example.com/package.zip");
         FakeDownloader downloader = new FakeDownloader(fop);
 
-        assertFalse(new BasicInstaller()
-                .prepareInstall(remote, downloader, new FakeSettingsController(false), progress,
-                        mgr, fop));
+        assertFalse(new BasicInstaller(remote, mgr, fop)
+                .prepareInstall(downloader, new FakeSettingsController(false), progress));
         boolean found = false;
         for (String warning : progress.getWarnings()) {
             if (warning.contains("parent")) {
@@ -389,10 +386,11 @@ public class BasicInstallerTest extends TestCase {
 
         // Install one of the packages.
         RemotePackage p = mgr.getPackages().getRemotePackages().get("dummy;bar");
-        BasicInstaller basicInstaller = new BasicInstaller();
+        BasicInstaller basicInstaller = new BasicInstaller(p, mgr, fop);
         FakeProgressIndicator firstInstallProgress = new FakeProgressIndicator();
-        boolean result = basicInstaller.prepareInstall(p, downloader,
-          new FakeSettingsController(false), firstInstallProgress, mgr, fop);
+        boolean result = basicInstaller
+                .prepareInstall(downloader, new FakeSettingsController(false),
+                        firstInstallProgress);
 
         // be sure it was actually cancelled
         assertFalse(result);
@@ -424,8 +422,8 @@ public class BasicInstallerTest extends TestCase {
 
         // Try again with the failing downloader; it should not be called.
         FakeProgressIndicator secondInstallProgress = new FakeProgressIndicator();
-        result = basicInstaller.prepareInstall(p, failingDownloader,
-          new FakeSettingsController(false), secondInstallProgress, mgr, fop);
+        result = basicInstaller.prepareInstall(failingDownloader, new FakeSettingsController(false),
+                secondInstallProgress);
         assertTrue(result);
         result = basicInstaller.completeInstall(p, secondInstallProgress, mgr, fop);
 

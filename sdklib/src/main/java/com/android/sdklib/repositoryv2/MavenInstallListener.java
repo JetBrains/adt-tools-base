@@ -69,12 +69,13 @@ public class MavenInstallListener implements PackageInstaller.StatusChangeListen
 
     @Override
     public void statusChanged(@NonNull PackageInstaller installer,
-            @NonNull RepoPackage p, @NonNull ProgressIndicator progress) throws
-            PackageInstaller.StatusChangeListenerException {
+            @NonNull ProgressIndicator progress)
+            throws PackageInstaller.StatusChangeListenerException {
+        RepoPackage p = installer.getPackage();
         switch (installer.getInstallStatus()) {
             case PREPARING:
             case UNINSTALL_STARTING:
-                if (!p.getPath().startsWith(MAVEN_DIR_NAME)) {
+                if (!installer.getPackage().getPath().startsWith(MAVEN_DIR_NAME)) {
                     progress.logError("Maven package paths must start with " + MAVEN_DIR_NAME);
                     throw new IllegalArgumentException();
                 }
