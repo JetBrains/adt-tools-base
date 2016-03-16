@@ -31,8 +31,6 @@ import com.android.repository.api.Repository;
 import com.android.repository.api.RepositorySource;
 import com.android.repository.api.RepositorySourceProvider;
 import com.android.repository.api.SchemaModule;
-import com.android.repository.impl.installer.BasicInstaller;
-import com.android.repository.impl.installer.PackageInstaller;
 import com.android.repository.impl.meta.RepositoryPackages;
 import com.android.repository.impl.sources.LocalSourceProvider;
 import com.android.repository.io.FileOp;
@@ -532,13 +530,6 @@ public final class AndroidSdkHandler {
 
             result.setFallbackRemoteRepoLoader(remoteFallbackLoader);
             return result;
-        }
-    }
-
-    public void registerInstallerListeners(@NonNull PackageInstaller installer,
-      @NonNull RepoPackage p) {
-        if (p.getTypeDetails() instanceof DetailsTypes.MavenType) {
-            installer.registerStateChangeListener(new MavenInstallListener(this, mFop));
         }
     }
 

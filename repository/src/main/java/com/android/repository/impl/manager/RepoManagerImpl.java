@@ -23,6 +23,7 @@ import com.android.repository.api.Downloader;
 import com.android.repository.api.FallbackLocalRepoLoader;
 import com.android.repository.api.FallbackRemoteRepoLoader;
 import com.android.repository.api.LocalPackage;
+import com.android.repository.api.PackageOperation;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.ProgressRunner;
 import com.android.repository.api.RemotePackage;
@@ -32,7 +33,6 @@ import com.android.repository.api.RepositorySource;
 import com.android.repository.api.RepositorySourceProvider;
 import com.android.repository.api.SchemaModule;
 import com.android.repository.api.SettingsController;
-import com.android.repository.impl.installer.PackageInstaller;
 import com.android.repository.impl.meta.RepositoryPackages;
 import com.android.repository.impl.meta.SchemaModuleUtil;
 import com.android.repository.io.FileOp;
@@ -46,7 +46,6 @@ import com.google.common.collect.Sets;
 import org.w3c.dom.ls.LSResourceResolver;
 
 import java.io.File;
-import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -380,21 +379,21 @@ public class RepoManagerImpl extends RepoManager {
         mRemoteListeners.add(listener);
     }
 
-    private final Map<RemotePackage, PackageInstaller> mInProgressInstalls = Maps.newHashMap();
+    private final Map<RepoPackage, PackageOperation> mInProgressInstalls = Maps.newHashMap();
 
     @Override
-    public void installBeginning(@NonNull RemotePackage remotePackage, @NonNull PackageInstaller installer) {
+    public void installBeginning(@NonNull RepoPackage remotePackage, @NonNull PackageOperation installer) {
         mInProgressInstalls.put(remotePackage, installer);
     }
 
     @Override
-    public void installEnded(@NonNull RemotePackage remotePackage) {
+    public void installEnded(@NonNull RepoPackage remotePackage) {
         mInProgressInstalls.remove(remotePackage);
     }
 
     @Nullable
     @Override
-    public PackageInstaller getInProgressInstaller(@NonNull RemotePackage remotePackage) {
+    public PackageOperation getInProgressInstallOperation(@NonNull RepoPackage remotePackage) {
         return mInProgressInstalls.get(remotePackage);
     }
 
