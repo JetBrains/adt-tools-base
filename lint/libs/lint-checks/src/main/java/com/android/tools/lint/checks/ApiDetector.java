@@ -2262,6 +2262,7 @@ public class ApiDetector extends ResourceXmlDetector
                 PsiStatement elseBranch = ifStatement.getElseBranch();
                 if (thenBranch != null) {
                     Boolean level = isVersionCheckConditional(api, thenBranch, ifStatement);
+                    //noinspection VariableNotUsedInsideIf
                     if (level != null) {
                         // See if the body does an immediate return
                         if (isUnconditionalReturn(thenBranch)) {
@@ -2271,6 +2272,7 @@ public class ApiDetector extends ResourceXmlDetector
                 }
                 if (elseBranch != null) {
                     Boolean level = isVersionCheckConditional(api, elseBranch, ifStatement);
+                    //noinspection VariableNotUsedInsideIf
                     if (level != null) {
                         if (isUnconditionalReturn(elseBranch)) {
                             return true;

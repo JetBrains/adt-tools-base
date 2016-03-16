@@ -42,7 +42,6 @@ import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiAnnotationParameterList;
 import com.intellij.psi.PsiLiteral;
 import com.intellij.psi.PsiNameValuePair;
-import com.intellij.psi.PsiParameterList;
 
 import junit.framework.TestCase;
 

@@ -21,7 +21,6 @@ import com.android.annotations.Nullable;
 import com.intellij.psi.JavaElementVisitor;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.PsiLocalVariable;
-import com.intellij.psi.PsiResourceVariable;
 
 import org.eclipse.jdt.internal.compiler.ast.LocalDeclaration;
 

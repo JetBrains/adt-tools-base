@@ -325,6 +325,7 @@ public class TypoLookupTest extends AbstractCheckTest {
                 Set<String> seen = new HashSet<String>();
                 for (String s : Splitter.on(',').omitEmptyStrings().split(replacements)) {
                     if (seen.contains(s)) {
+                        seen.add(s);
                         fixDictionary(f);
                         fail(msg(f, i, "For typo " + typo
                                 + " there are repeated replacements (" + s + "): " + line));

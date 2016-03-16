@@ -323,6 +323,9 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements JavaP
                     // Keep in sync with getUnusedResource() below
                     String message = String.format("The resource `%1$s` appears to be unused",
                             resource.getField());
+                    if (location == null) {
+                        location = Location.create(context.getProject().getDir());
+                    }
                     context.report(getIssue(resource), location, message);
                 }
             }

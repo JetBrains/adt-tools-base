@@ -188,9 +188,7 @@ public class JavaContext extends Context {
     public Location getNameLocation(@NonNull PsiElement element) {
         if (element instanceof PsiSwitchStatement) {
             // Just use keyword
-            int length = element.getTextRange().getLength();
-            // 6: "switch".length()
-            return mParser.getRangeLocation(this, element, 0, element, -(length - 6));
+            return mParser.getRangeLocation(this, element, 0, 6); // 6: "switch".length()
         }
         return mParser.getNameLocation(this, element);
     }
@@ -246,7 +244,7 @@ public class JavaContext extends Context {
     }
 
     @Override
-    public void report(@NonNull Issue issue, @Nullable Location location,
+    public void report(@NonNull Issue issue, @NonNull Location location,
             @NonNull String message) {
         if (mDriver.isSuppressed(this, issue, mCompilationUnit)) {
             return;
@@ -268,7 +266,7 @@ public class JavaContext extends Context {
     public void report(
             @NonNull Issue issue,
             @Nullable Node scope,
-            @Nullable Location location,
+            @NonNull Location location,
             @NonNull String message) {
         if (scope != null && mDriver.isSuppressed(this, issue, scope)) {
             return;
@@ -279,7 +277,7 @@ public class JavaContext extends Context {
     public void report(
             @NonNull Issue issue,
             @Nullable PsiElement scope,
-            @Nullable Location location,
+            @NonNull Location location,
             @NonNull String message) {
         if (scope != null && mDriver.isSuppressed(this, issue, scope)) {
             return;
@@ -300,7 +298,7 @@ public class JavaContext extends Context {
     public void report(
             @NonNull Issue issue,
             @Nullable Node scope,
-            @Nullable Location location,
+            @NonNull Location location,
             @NonNull String message,
             @SuppressWarnings("UnusedParameters") @Nullable Object data) {
         report(issue, scope, location, message);

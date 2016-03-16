@@ -512,7 +512,7 @@ public class ConstantEvaluator {
                 if (!values.isEmpty()) {
                     Object o = Array.newInstance(commonType, values.size());
                     return values.toArray((Object[]) o);
-                } else {
+                } else if (mContext != null) {
                     ResolvedNode type = mContext.resolve(typeReference);
                     System.out.println(type);
                     // TODO: return new array of this type

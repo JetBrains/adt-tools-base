@@ -253,7 +253,7 @@ public class HtmlReporter extends Reporter {
                                 String name = l.getFile().getName();
                                 if (!(endsWith(name, DOT_PNG) || endsWith(name, DOT_JPG))) {
                                     String s = mClient.readFile(l.getFile());
-                                    if (s != null && !s.isEmpty()) {
+                                    if (!s.isEmpty()) {
                                         mWriter.write("<pre class=\"errorlines\">\n");   //$NON-NLS-1$
                                         int offset = start != null ? start.getOffset() : -1;
                                         appendCodeBlock(s, line, offset);

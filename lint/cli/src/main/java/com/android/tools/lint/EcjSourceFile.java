@@ -30,18 +30,21 @@ import java.io.File;
  */
 public class EcjSourceFile extends CompilationUnit {
 
+    private File mFile;
     private String mSource;
 
     public EcjSourceFile(@NonNull char[] source, @NonNull File file,
             @NonNull String encoding) {
         super(source, file.getPath(), encoding);
         mSource = new String(source);
+        mFile = file;
     }
 
     public EcjSourceFile(@NonNull String source, @NonNull File file,
             @NonNull String encoding) {
         super(source.toCharArray(), file.getPath(), encoding);
         mSource = source;
+        mFile = file;
     }
 
     public EcjSourceFile(@NonNull String source, @NonNull File file) {
@@ -54,5 +57,10 @@ public class EcjSourceFile extends CompilationUnit {
             mSource = new String(getContents());
         }
         return mSource;
+    }
+
+    @NonNull
+    public File getFile() {
+        return mFile;
     }
 }

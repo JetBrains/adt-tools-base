@@ -294,7 +294,7 @@ public class ClassContext extends Context {
     @Override
     public void report(
             @NonNull Issue issue,
-            @Nullable Location location,
+            @NonNull Location location,
             @NonNull String message) {
         if (mDriver.isSuppressed(issue, mClassNode)) {
             return;
@@ -358,7 +358,7 @@ public class ClassContext extends Context {
             @NonNull Issue issue,
             @Nullable MethodNode method,
             @Nullable AbstractInsnNode instruction,
-            @Nullable Location location,
+            @NonNull Location location,
             @NonNull String message) {
         if (method != null && mDriver.isSuppressed(issue, mClassNode, method, instruction)) {
             return;
@@ -379,7 +379,7 @@ public class ClassContext extends Context {
     public void report(
             @NonNull Issue issue,
             @Nullable FieldNode field,
-            @Nullable Location location,
+            @NonNull Location location,
             @NonNull String message) {
         if (field != null && mDriver.isSuppressed(issue, field)) {
             return;
@@ -401,7 +401,7 @@ public class ClassContext extends Context {
             @NonNull Issue issue,
             @Nullable MethodNode method,
             @Nullable AbstractInsnNode instruction,
-            @Nullable Location location,
+            @NonNull Location location,
             @NonNull String message,
             @SuppressWarnings("UnusedParameters") @Nullable Object data) {
         report(issue, method, instruction, location, message);
@@ -420,7 +420,7 @@ public class ClassContext extends Context {
     public void report(
             @NonNull Issue issue,
             @Nullable FieldNode field,
-            @Nullable Location location,
+            @NonNull Location location,
             @NonNull String message,
             @SuppressWarnings("UnusedParameters") @Nullable Object data) {
         report(issue, field, location, message);

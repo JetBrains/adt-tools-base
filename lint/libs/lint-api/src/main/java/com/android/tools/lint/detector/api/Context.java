@@ -248,23 +248,33 @@ public class Context {
      * Reports an issue. Convenience wrapper around {@link LintClient#report}
      *
      * @param issue the issue to report
-     * @param location the location of the issue, or null if not known
+     * @param location the location of the issue
      * @param message the message for this warning
      */
     public void report(
             @NonNull Issue issue,
-            @Nullable Location location,
+            @NonNull Location location,
             @NonNull String message) {
+        //noinspection ConstantConditions
+        if (location == null) {
+            // Misbehaving third-party lint detectors
+            assert false : issue;
+            return;
+        }
+
+        if (location == Location.NONE) {
+            // Detector reported error for issue in a non-applicable location etc
+            return;
+        }
+
         Configuration configuration = mConfiguration;
 
         // If this error was computed for a context where the context corresponds to
         // a project instead of a file, the actual error may be in a different project (e.g.
         // a library project), so adjust the configuration as necessary.
-        if (location != null && location.getFile() != null) {
-            Project project = mDriver.findProjectFor(location.getFile());
-            if (project != null) {
-                configuration = project.getConfiguration(mDriver);
-            }
+        Project project = mDriver.findProjectFor(location.getFile());
+        if (project != null) {
+            configuration = project.getConfiguration(mDriver);
         }
 
         // If an error occurs in a library project, but you've disabled that check in the
@@ -296,7 +306,7 @@ public class Context {
     @Deprecated
     public void report(
             @NonNull Issue issue,
-            @Nullable Location location,
+            @NonNull Location location,
             @NonNull String message,
             @SuppressWarnings("UnusedParameters") @Nullable Object data) {
         report(issue, location, message);

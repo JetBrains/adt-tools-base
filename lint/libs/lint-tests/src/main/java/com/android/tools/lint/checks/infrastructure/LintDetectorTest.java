@@ -292,7 +292,7 @@ public abstract class LintDetectorTest extends SdkTestCase {
             @NonNull Context context,
             @NonNull Issue issue,
             @NonNull Severity severity,
-            @Nullable Location location,
+            @NonNull Location location,
             @NonNull String message) {
     }
 
@@ -1002,9 +1002,11 @@ public abstract class LintDetectorTest extends SdkTestCase {
                 @NonNull Context context,
                 @NonNull Issue issue,
                 @NonNull Severity severity,
-                @Nullable Location location,
+                @NonNull Location location,
                 @NonNull String message,
                 @NonNull TextFormat format) {
+            assertNotNull(location);
+
             if (ignoreSystemErrors() && (issue == IssueRegistry.LINT_ERROR)) {
                 return;
             }
@@ -1022,7 +1024,7 @@ public abstract class LintDetectorTest extends SdkTestCase {
 
             // For messages into all secondary locations to ensure they get
             // specifically included in the text report
-            if (location != null && location.getSecondary() != null) {
+            if (location.getSecondary() != null) {
                 Location l = location.getSecondary();
                 if (l == location) {
                     fail("Location link cycle");
@@ -1262,6 +1264,7 @@ public abstract class LintDetectorTest extends SdkTestCase {
 
                                     // Creating the resource file will set the source of
                                     // idItem.
+                                    //noinspection ResultOfObjectAllocationIgnored
                                     new ResourceFile(file, idItem, qualifiers);
                                     idMap.put(id, idItem);
                                 }
