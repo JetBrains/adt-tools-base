@@ -39,6 +39,7 @@ import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.SplitHandlingPolicy;
 import com.android.build.gradle.tasks.AndroidJarTask;
 import com.android.builder.core.AndroidBuilder;
+import com.android.builder.model.SyncIssue;
 import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
@@ -235,6 +236,7 @@ public class ApplicationTaskManager extends TaskManager {
                     public Void call() {
                         CoreJackOptions jackOptions =
                                 variantData.getVariantConfiguration().getJackOptions();
+
                         AndroidTask<? extends JavaCompile> javacTask =
                                 createJavacTask(tasks, variantScope);
 
@@ -243,6 +245,24 @@ public class ApplicationTaskManager extends TaskManager {
                                     createJackTask(tasks, variantScope, true /*compileJavaSource*/);
                             setJavaCompilerTask(jackTask, tasks, variantScope);
                         } else {
+                            // Prevent the use of java 1.8 without jack, which would otherwise cause an
+                            // internal javac error.
+                            if(variantScope.getGlobalScope().getExtension().getCompileOptions()
+                                    .getTargetCompatibility().isJava8Compatible()) {
+                                // Only warn for users of retrolambda.
+                                if (project.getPlugins().hasPlugin("me.tatarka.retrolambda")) {
+                                    getLogger().warn("Jack is required to support java 8 language "
+                                            + "features.");
+                                } else {
+                                    androidBuilder.getErrorReporter().handleSyncError(
+                                            variantScope.getVariantConfiguration().getFullName(),
+                                            SyncIssue.TYPE_JACK_REQUIRED_FOR_JAVA_8_LANGUAGE_FEATURES,
+                                            "Jack is required to support java 8 language features. "
+                                                    + "Either enable Jack or remove "
+                                                    + "sourceCompatibility JavaVersion.VERSION_1_8."
+                                    );
+                                }
+                            }
                             addJavacClassesStream(variantScope);
                             setJavaCompilerTask(javacTask, tasks, variantScope);
                             getAndroidTasks().create(tasks,

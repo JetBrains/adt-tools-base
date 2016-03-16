@@ -88,7 +88,11 @@ public interface SyncIssue {
     // Data contains STDERR which should be interpreted by Android Studio
     int TYPE_EXTERNAL_NATIVE_BUILD_PROCESS_EXCEPTION = 17;
 
-    int TYPE_MAX                      = 17; // increment when adding new types.
+    // Cannot use Java 8 Language features without Jack.
+    int TYPE_JACK_REQUIRED_FOR_JAVA_8_LANGUAGE_FEATURES = 18;
+
+
+    int TYPE_MAX                      = 18; // increment when adding new types.
 
     /**
      * Returns the severity of the issue.
