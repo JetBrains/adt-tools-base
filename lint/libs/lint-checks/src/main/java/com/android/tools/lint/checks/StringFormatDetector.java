@@ -404,9 +404,21 @@ public class StringFormatDetector extends ResourceXmlDetector implements JavaPsi
                 }
                 list.add(Pair.of(handle, text));
             } else {
-                mNotFormatStrings.put(name, handle);
+                if (!isReference(text)) {
+                    mNotFormatStrings.put(name, handle);
+                }
             }
         }
+    }
+
+    private static boolean isReference(@NonNull String text) {
+        for (int i = 0, n = text.length(); i < n; i++) {
+            char c = text.charAt(i);
+            if (!Character.isWhitespace(c)) {
+                return c == '@' || c == '?';
+            }
+        }
+        return false;
     }
 
     /**

@@ -764,4 +764,27 @@ public class StringFormatDetectorTest extends AbstractCheckTest {
                                 + "\n")
                 ));
     }
+
+    public void testIssue202241() throws Exception {
+        // Regression test for
+        //   http://b.android.com/202241
+        // We need to handle string references.
+        assertEquals("No warnings.",
+
+                lintProject(
+                        xml("res/values/strings.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<resources>\n"
+                                + "   <string name=\"test_string_en\">This is English fallback - %1$d</string>\n"
+                                + "   <string name=\"test_string\" translatable=\"false\">  @string/test_string_en  </string>\n"
+                                + "</resources>\n"
+                                + "\n"),
+                        xml("res/values/strings-es.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<resources xmlns:xliff=\"urn:oasis:names:tc:xliff:document:1.2\">\n"
+                                + "    <string name=\"test_string\">Pretend this is French - %1$d</string>\n"
+                                + "</resources>\n"
+                                + "\n")
+                ));
+    }
 }
