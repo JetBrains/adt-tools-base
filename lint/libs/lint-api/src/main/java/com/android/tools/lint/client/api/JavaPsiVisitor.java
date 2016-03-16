@@ -151,9 +151,11 @@ public class JavaPsiVisitor {
     private static final int SAME_TYPE_COUNT = 8;
 
     private final Map<String, List<VisitingDetector>> mMethodDetectors =
-            Maps.newHashMapWithExpectedSize(40);
+            Maps.newHashMapWithExpectedSize(80);
     private final Map<String, List<VisitingDetector>> mConstructorDetectors =
             Maps.newHashMapWithExpectedSize(12);
+    private final Map<String, List<VisitingDetector>> mReferenceDetectors =
+            Maps.newHashMapWithExpectedSize(10);
     private Set<String> mConstructorSimpleNames;
     private final List<VisitingDetector> mResourceFieldDetectors =
             new ArrayList<VisitingDetector>();
@@ -244,9 +246,25 @@ public class JavaPsiVisitor {
                 }
             }
 
+            List<String> referenceNames = detector.getApplicableReferenceNames();
+            if (referenceNames != null) {
+                // not supported in Java visitors; adding a method invocation node is trivial
+                // for that case.
+                assert referenceNames != XmlScanner.ALL;
+
+                for (String name : referenceNames) {
+                    List<VisitingDetector> list = mReferenceDetectors.get(name);
+                    if (list == null) {
+                        list = new ArrayList<VisitingDetector>(SAME_TYPE_COUNT);
+                        mReferenceDetectors.put(name, list);
+                    }
+                    list.add(v);
+                }
+            }
+
             if (detector.appliesToResourceRefs()) {
                 mResourceFieldDetectors.add(v);
-            } else if ((names == null || names.isEmpty())
+            } else if ((referenceNames == null || referenceNames.isEmpty())
                     && (nodePsiTypes == null || nodePsiTypes.isEmpty())
                     && (types == null || types.isEmpty())) {
                 mFullTreeDetectors.add(v);
@@ -296,8 +314,10 @@ public class JavaPsiVisitor {
                     });
                 }
 
-                if (!mMethodDetectors.isEmpty() || !mResourceFieldDetectors.isEmpty() ||
-                        !mConstructorDetectors.isEmpty()) {
+                if (!mMethodDetectors.isEmpty()
+                        || !mResourceFieldDetectors.isEmpty()
+                        || !mConstructorDetectors.isEmpty()
+                        || !mReferenceDetectors.isEmpty()) {
                     mParser.runReadAction(new Runnable() {
                         @Override
                         public void run() {
@@ -1529,6 +1549,7 @@ public class JavaPsiVisitor {
         private final boolean mVisitResources;
         private final boolean mVisitMethods;
         private final boolean mVisitConstructors;
+        private final boolean mVisitReferences;
 
         public DelegatingPsiVisitor(JavaContext context) {
             mContext = context;
@@ -1536,6 +1557,31 @@ public class JavaPsiVisitor {
             mVisitMethods = !mMethodDetectors.isEmpty();
             mVisitConstructors = !mConstructorDetectors.isEmpty();
             mVisitResources = !mResourceFieldDetectors.isEmpty();
+            mVisitReferences = !mReferenceDetectors.isEmpty();
+        }
+
+        @Override
+        public void visitReferenceElement(PsiJavaCodeReferenceElement element) {
+            if (mVisitReferences) {
+                String name = element.getReferenceName();
+                if (name != null) {
+                    List<VisitingDetector> list = mReferenceDetectors.get(name);
+                    if (list != null) {
+                        PsiElement referenced = element.resolve();
+                        if (referenced != null) {
+                            for (VisitingDetector v : list) {
+                                JavaPsiScanner javaPsiScanner = v.getJavaScanner();
+                                if (javaPsiScanner != null) {
+                                    javaPsiScanner.visitReference(mContext, v.getVisitor(),
+                                            element, referenced);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            super.visitReferenceElement(element);
         }
 
         @Override
