@@ -28,6 +28,7 @@ import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.repositoryv2.AndroidSdkHandler;
 import com.android.testutils.TestUtils;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -101,6 +102,7 @@ public class NinePatchAaptProcessorTestUtils {
         System.out.println("total time : " + (System.currentTimeMillis() - classStartTime.get()));
         System.out.println("Comparing crunched files");
         long comparisonStartTime = System.currentTimeMillis();
+        syncFileSystem();
         for (Map.Entry<File, File> sourceAndCrunched : sourceAndCrunchedFiles.entrySet()) {
             System.out.println(sourceAndCrunched.getKey().getName());
             File crunched = new File(sourceAndCrunched.getKey().getParent(),
@@ -312,5 +314,19 @@ public class NinePatchAaptProcessorTestUtils {
         File folder = TestUtils.getRoot("png");
         assertTrue(folder.isDirectory());
         return folder;
+    }
+
+    private static void syncFileSystem() {
+        try {
+            if (System.getProperty("os.name").contains("Linux")) {
+                if (Runtime.getRuntime().exec("/bin/sync").waitFor() != 0) {
+                    throw new IOException("Failed to sync file system.");
+                }
+            }
+        } catch (IOException e) {
+            System.err.println(Throwables.getStackTraceAsString(e));
+        } catch (InterruptedException e) {
+            System.err.println(Throwables.getStackTraceAsString(e));
+        }
     }
 }
