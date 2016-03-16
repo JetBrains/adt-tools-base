@@ -24,6 +24,9 @@ import android.content.Intent;
 import android.os.Build;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+
+import android.os.Handler;
+import android.os.Looper;
 import android.util.ArrayMap;
 import android.util.Log;
 import android.widget.Toast;
@@ -156,10 +159,16 @@ public class Restarter {
                         }
                     }
 
+                    // For longer messages, leave the message up longer
+                    int duration = Toast.LENGTH_SHORT;
+                    if (text.length() >= 60 || text.indexOf('\n') != -1) {
+                        duration = Toast.LENGTH_LONG;
+                    }
+
                     // Avoid crashing when not available, e.g.
                     //   java.lang.RuntimeException: Can't create handler inside thread that has
                     //        not called Looper.prepare()
-                    Toast.makeText(activity, text, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(activity, text, duration).show();
                 } catch (Throwable e) {
                     if (Log.isLoggable(LOG_TAG, Log.WARN)) {
                         Log.w(LOG_TAG, "Couldn't show toast", e);
@@ -263,5 +272,37 @@ public class Restarter {
         // Note: This doesn't handle manifest changes like changing the application title
 
         restartActivity(activity);
+    }
+
+    /** Show a toast when an activity becomes available (if possible). */
+    public static void showToastWhenPossible(@Nullable Context context, @NonNull String message) {
+        Activity activity = Restarter.getForegroundActivity(context);
+        if (activity != null) {
+            Restarter.showToast(activity, message);
+        } else {
+            // Only try for about 10 seconds
+            showToastWhenPossible(context, message, 10);
+        }
+    }
+
+    private static void showToastWhenPossible(
+            @Nullable final Context context,
+            @NonNull final String message,
+            final int remainingAttempts) {
+        Looper mainLooper = Looper.getMainLooper();
+        Handler handler = new Handler(mainLooper);
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                Activity activity = getForegroundActivity(context);
+                if (activity != null) {
+                    showToast(activity, message);
+                } else {
+                    if (remainingAttempts > 0) {
+                        showToastWhenPossible(context, message, remainingAttempts - 1);
+                    }
+                }
+            }
+        }, 1000);
     }
 }

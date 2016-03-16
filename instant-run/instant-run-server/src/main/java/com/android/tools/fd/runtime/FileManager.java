@@ -22,6 +22,7 @@ import static com.android.tools.fd.runtime.BootstrapApplication.LOG_TAG;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
+import android.content.Context;
 import android.os.Build;
 import android.util.Log;
 
@@ -95,6 +96,9 @@ public class FileManager {
 
     /** Filename suffix for dex index files */
     private static final String EXT_INDEX_FILE = ".index";
+
+    /** Whether we've purged temp dex files in this session */
+    private static boolean sHavePurgedTempDexFolder;
 
     /**
      * The folder where resources and code are located. Within this folder we have two
@@ -290,11 +294,10 @@ public class FileManager {
      *                    installation.
      */
     @NonNull
-    public static List<String> getDexList(long apkModified) {
+    public static List<String> getDexList(Context context, long apkModified) {
         File dataFolder = getDataFolder();
 
-        // Get rid of reload dex files from previous runs, if any
-        FileManager.purgeTempDexFiles(dataFolder);
+        long newestHotswapPatch = FileManager.getMostRecentTempDexTime(dataFolder);
 
         // Get rid of patches no longer applicable
         if (Build.VERSION.SDK_INT < 21) {
@@ -344,12 +347,18 @@ public class FileManager {
         // See if any of the slices are older than the APK. This will only be the case
         // if it's not the first run, and the APK has been reinstalled while there are some
         // potentially stale dex files.
+        //
+        // Note that we're *also* computing the timestamp of the *newest* coldswap slice.
+        // We'll use that below to post a toast if the app seems to be missing hotswap patches.
+        long newestColdswapPatch = apkModified;
         if (!extractedSlices && dexFiles.length > 0) {
-            long oldest = apkModified;
+            long oldestColdSwapPatch = apkModified;
             for (File dex : dexFiles) {
-                oldest = Math.min(dex.lastModified(), oldest);
+                long dexModified = dex.lastModified();
+                oldestColdSwapPatch = Math.min(dexModified, oldestColdSwapPatch);
+                newestColdswapPatch = Math.max(dexModified, newestColdswapPatch);
             }
-            if (oldest < apkModified) {
+            if (oldestColdSwapPatch < apkModified) {
                 // At least one slice is older than the APK: re-extract those that
                 // need it
                 if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
@@ -357,6 +366,23 @@ public class FileManager {
                 }
                 extractSlices(dexFolder, apkModified);
             }
+        } else if (newestHotswapPatch > 0L) {
+            // If the code is newer than the hotswap patches, delete them such that we don't
+            // have to keep iterating through them each successive startup
+            purgeTempDexFiles(dataFolder);
+        }
+
+        if (newestHotswapPatch > newestColdswapPatch) {
+            String message = "Your app does not have the latest code changes because it "
+                    + "was restarted manually. Please run from IDE instead.";
+
+            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                Log.i(LOG_TAG, message);
+            }
+
+            // We now want to show a toast to the user showing that the app is older.
+            // However, it's too early to show it here:
+            Restarter.showToastWhenPossible(context, message);
         }
 
         for (File dex : dexFiles) {
@@ -511,14 +537,25 @@ public class FileManager {
     @Nullable
     public static File getTempDexFile() {
         // Find the file name of the next dex file to write
-        File dexFolder = getTempDexFileFolder(getDataFolder());
+        File dataFolder = getDataFolder();
+        File dexFolder = getTempDexFileFolder(dataFolder);
         if (!dexFolder.exists()) {
             boolean created = dexFolder.mkdirs();
             if (!created) {
                 Log.e(LOG_TAG, "Failed to create directory " + dexFolder);
                 return null;
             }
+        } else {
+            // The *first* time we write a reload dex file in the new process, we'll
+            // delete previously stashes reload dex files. (We keep them around
+            // such that we can (repeatedly) warn an app on startup if its hotswap patches
+            // are more recent than the app itself, such that developers aren't confused
+            // when the app is not reflecting the most recent changes
+            if (!sHavePurgedTempDexFolder) {
+                purgeTempDexFiles(dataFolder);
+            }
         }
+
         File[] files = dexFolder.listFiles();
         int max = -1;
 
@@ -768,9 +805,35 @@ public class FileManager {
     }
 
     /**
+     * Returns the modification time of the newest hotswap (reload) dex file
+     * or 0 if there are no hotswap dex files in the passed dataFolder
+     */
+    public static long getMostRecentTempDexTime(@NonNull File dataFolder) {
+        File dexFolder = getTempDexFileFolder(dataFolder);
+        if (!dexFolder.isDirectory()) {
+            return 0L;
+        }
+        File[] files = dexFolder.listFiles();
+        if (files == null) {
+            return 0L;
+        }
+
+        long newest = 0L;
+        for (File file : files) {
+            if (file.getPath().endsWith(CLASSES_DEX_SUFFIX)) {
+                newest = Math.max(newest, file.lastModified());
+            }
+        }
+
+        return newest;
+    }
+
+    /**
      * Removes .dex files from the temp dex file folder
      */
     public static void purgeTempDexFiles(@NonNull File dataFolder) {
+        sHavePurgedTempDexFolder = true;
+
         File dexFolder = getTempDexFileFolder(dataFolder);
         if (!dexFolder.isDirectory()) {
             return;
