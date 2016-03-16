@@ -26,6 +26,7 @@ import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.google.common.annotations.Beta;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -271,6 +272,7 @@ public abstract class IssueRegistry {
      *
      * @return an iterator for all the categories, never null
      */
+    @SuppressWarnings("AssignmentToStaticFieldFromInstanceMethod")
     @NonNull
     public List<Category> getCategories() {
         List<Category> categories = sCategories;
@@ -278,18 +280,23 @@ public abstract class IssueRegistry {
             synchronized (IssueRegistry.class) {
                 categories = sCategories;
                 if (categories == null) {
-                    Set<Category> categorySet = new HashSet<Category>();
-                    for (Issue issue : getIssues()) {
-                        categorySet.add(issue.getCategory());
-                    }
-                    List<Category> sorted = new ArrayList<Category>(categorySet);
-                    Collections.sort(sorted);
-                    sCategories = categories = Collections.unmodifiableList(sorted);
+                    sCategories = categories = Collections.unmodifiableList(createCategoryList());
                 }
             }
         }
 
         return categories;
+    }
+
+    @NonNull
+    private List<Category> createCategoryList() {
+        Set<Category> categorySet = Sets.newHashSetWithExpectedSize(20);
+        for (Issue issue : getIssues()) {
+            categorySet.add(issue.getCategory());
+        }
+        List<Category> sorted = new ArrayList<Category>(categorySet);
+        Collections.sort(sorted);
+        return sorted;
     }
 
     /**
@@ -298,6 +305,7 @@ public abstract class IssueRegistry {
      * @param id the id to be checked
      * @return the corresponding issue, or null
      */
+    @SuppressWarnings("AssignmentToStaticFieldFromInstanceMethod")
     @Nullable
     public final Issue getIssue(@NonNull String id) {
         Map<String, Issue> map = sIdToIssue;
@@ -305,18 +313,26 @@ public abstract class IssueRegistry {
             synchronized (IssueRegistry.class) {
                 map = sIdToIssue;
                 if (map == null) {
-                    List<Issue> issues = getIssues();
-                    sIdToIssue = map = new HashMap<String, Issue>(issues.size());
-                    for (Issue issue : issues) {
-                        map.put(issue.getId(), issue);
-                    }
-                    map.put(PARSER_ERROR.getId(), PARSER_ERROR);
-                    map.put(LINT_ERROR.getId(), LINT_ERROR);
+                    map = createIdToIssueMap();
+                    sIdToIssue = map;
                 }
             }
         }
 
         return map.get(id);
+    }
+
+    @NonNull
+    private Map<String, Issue> createIdToIssueMap() {
+        List<Issue> issues = getIssues();
+        Map<String, Issue> map = Maps.newHashMapWithExpectedSize(issues.size() + 2);
+        for (Issue issue : issues) {
+            map.put(issue.getId(), issue);
+        }
+
+        map.put(PARSER_ERROR.getId(), PARSER_ERROR);
+        map.put(LINT_ERROR.getId(), LINT_ERROR);
+        return map;
     }
 
     /**
