@@ -844,16 +844,9 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     @Nullable
     public String getIdOverride() {
         String idName = mMergedFlavor.getApplicationId();
-        String idSuffix = Objects.firstNonNull(mMergedFlavor.getApplicationIdSuffix(), "");
 
-        String buildTypeIdSuffix = mBuildType.getApplicationIdSuffix();
-        if (!Strings.isNullOrEmpty(buildTypeIdSuffix)) {
-            if (buildTypeIdSuffix.charAt(0) == '.') {
-                idSuffix = idSuffix + buildTypeIdSuffix;
-            } else {
-                idSuffix = idSuffix + '.' + buildTypeIdSuffix;
-            }
-        }
+        String idSuffix = DefaultProductFlavor.mergeApplicationIdSuffix(
+                mBuildType.getApplicationIdSuffix(), mMergedFlavor.getApplicationIdSuffix());
 
         if (!idSuffix.isEmpty()) {
             if (idName == null) {
@@ -880,11 +873,14 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     @Nullable
     public String getVersionName() {
         String versionName = mMergedFlavor.getVersionName();
-        String versionSuffix = mBuildType.getVersionNameSuffix();
+        String versionSuffix = mMergedFlavor.getVersionNameSuffix();
 
         if (versionName == null && !mType.isForTesting()) {
             versionName = getVersionNameFromManifest();
         }
+
+        versionSuffix = DefaultProductFlavor.mergeVersionNameSuffix(
+                mBuildType.getVersionNameSuffix(), versionSuffix);
 
         if (versionSuffix != null && !versionSuffix.isEmpty()) {
             versionName = Strings.nullToEmpty(versionName) + versionSuffix;

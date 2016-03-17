@@ -42,6 +42,16 @@ public interface BaseConfig {
     String getApplicationIdSuffix();
 
     /**
+     * Returns the version name suffix of this flavor or null if none have been set.
+     * This is only the value set on this product flavor, not necessarily the actual
+     * version name suffix used.
+     *
+     * @return the version name suffix, or {@code null} if not specified
+     */
+    @Nullable
+    String getVersionNameSuffix();
+
+    /**
      * Map of Build Config Fields where the key is the field name.
      *
      * @return a non-null map of class fields (possibly empty).

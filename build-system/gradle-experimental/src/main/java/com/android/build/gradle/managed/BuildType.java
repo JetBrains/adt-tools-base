@@ -66,14 +66,6 @@ public interface BuildType extends BaseConfig {
     void setRenderscriptOptimLevel(Integer renderscriptOptimLevel);
 
     /**
-     * Returns the version name suffix.
-     *
-     * @return the version name suffix.
-     */
-    String getVersionNameSuffix();
-    void setVersionNameSuffix(String versionNameSuffix);
-
-    /**
      * Returns whether minification is enabled for this build type.
      *
      * @return true if minification is enabled.

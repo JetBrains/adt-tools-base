@@ -133,6 +133,12 @@ public class BaseConfigAdaptor implements BaseConfig {
         return baseConfig.getApplicationIdSuffix();
     }
 
+    @Nullable
+    @Override
+    public String getVersionNameSuffix() {
+        return baseConfig.getVersionNameSuffix();
+    }
+
     @NonNull
     @Override
     public List<File> getJarJarRuleFiles() {

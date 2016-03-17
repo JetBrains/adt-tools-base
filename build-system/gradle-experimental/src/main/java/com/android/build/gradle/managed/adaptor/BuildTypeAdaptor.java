@@ -68,12 +68,6 @@ public class BuildTypeAdaptor extends BaseConfigAdaptor implements CoreBuildType
         return buildType.getRenderscriptOptimLevel();
     }
 
-    @Nullable
-    @Override
-    public String getVersionNameSuffix() {
-        return buildType.getVersionNameSuffix();
-    }
-
     @Override
     public boolean isMinifyEnabled() {
         return buildType.getMinifyEnabled();
