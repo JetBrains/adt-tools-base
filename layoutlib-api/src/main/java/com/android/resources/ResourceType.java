@@ -17,6 +17,9 @@
 package com.android.resources;
 
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Enum representing a type of compiled resource.
  */
@@ -58,6 +61,27 @@ public enum ResourceType {
         mAlternateXmlNames = alternateXmlNames;
     }
 
+    private static final Map<String, ResourceType> sNameToType;
+
+    static {
+        int size = 0;
+        for (ResourceType type : ResourceType.values()) {
+            ++size;
+            if (type.mAlternateXmlNames != null) {
+                size += (type.mAlternateXmlNames.length);
+            }
+        }
+        sNameToType = new HashMap<String, ResourceType>(2 * size);
+        for (ResourceType type : ResourceType.values()) {
+            sNameToType.put(type.getName(), type);
+            if (type.mAlternateXmlNames != null) {
+                for (String alternateName : type.mAlternateXmlNames) {
+                    sNameToType.put(alternateName, type);
+                }
+            }
+        }
+    }
+
     /**
      * Returns the resource type name, as used by XML files.
      */
@@ -78,19 +102,7 @@ public enum ResourceType {
      * @return the matching {@link ResourceType} or <code>null</code> if no match was found.
      */
     public static ResourceType getEnum(String name) {
-        for (ResourceType rType : values()) {
-            if (rType.mName.equals(name)) {
-                return rType;
-            } else if (rType.mAlternateXmlNames != null) {
-                // if there are alternate Xml Names, we test those too
-                for (String alternate : rType.mAlternateXmlNames) {
-                    if (alternate.equals(name)) {
-                        return rType;
-                    }
-                }
-            }
-        }
-        return null;
+        return sNameToType.get(name);
     }
 
     /**
