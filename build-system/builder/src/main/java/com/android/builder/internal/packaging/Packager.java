@@ -26,14 +26,13 @@ import com.android.annotations.Nullable;
 import com.android.builder.files.FileModificationType;
 import com.android.builder.files.RelativeFile;
 import com.android.builder.internal.packaging.JavaResourceProcessor.IArchiveBuilder;
-import com.android.builder.packaging.ApkBuilderFactory;
+import com.android.builder.packaging.ApkCreatorFactory;
 import com.android.builder.packaging.ApkCreator;
 import com.android.builder.packaging.DuplicateFileException;
 import com.android.builder.packaging.PackagerException;
 import com.android.builder.packaging.ZipAbortException;
 import com.android.builder.packaging.ZipEntryFilter;
-import com.android.builder.signing.SignedJarBuilderFactory;
-import com.android.ide.common.signing.CertificateInfo;
+import com.android.builder.signing.SignedJarApkCreatorFactory;
 import com.android.utils.ILogger;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
@@ -42,7 +41,6 @@ import com.google.common.io.Closer;
 
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -132,34 +130,21 @@ public final class Packager implements IArchiveBuilder, Closeable {
     /**
      * Creates a new instance.
      *
-     * This creates a new builder that will create the specified output file, using the two
-     * mandatory given input files.
+     * <p>This creates a new builder that will create the specified output file.
      *
-     * An optional debug keystore can be provided. If set, it is expected that the store password
-     * is 'android' and the key alias and password are 'androiddebugkey' and 'android'.
-     *
-     * An optional {@link ILogger} can also be provided for verbose output. If null, there will
-     * be no output.
-     *
-     * @param apkLocation the file to create
-     * @param resLocation the file representing the packaged resource file.
-     * @param certificateInfo the signing information used to sign the package. Optional the OS
-     *                        path to the debug keystore, if needed or null.
-     * @param logger the logger.
-     * @param minSdkVersion minSdkVersion of the package.
-     * @throws com.android.builder.packaging.PackagerException
+     * @param creationData APK creation data
+     * @param resLocation location of the zip with the resources, if any
+     * @param logger the logger
+     * @throws PackagerException failed to create the initial APK
+     * @throws IOException failed to create the APK
      */
-    public Packager(
-            @NonNull File apkLocation,
-            @Nullable String resLocation,
-            @Nullable CertificateInfo certificateInfo,
-            @Nullable String createdBy,
-            @NonNull ILogger logger,
-            int minSdkVersion) throws PackagerException, IOException {
+    public Packager(@NonNull ApkCreatorFactory.CreationData creationData, @Nullable String resLocation,
+            @NonNull ILogger logger) throws PackagerException, IOException {
+        checkOutputFile(creationData.getApkPath());
 
         Closer closer = Closer.create();
         try {
-            checkOutputFile(apkLocation);
+            checkOutputFile(creationData.getApkPath());
 
             File resFile = null;
             if (resLocation != null) {
@@ -169,16 +154,11 @@ public final class Packager implements IArchiveBuilder, Closeable {
 
             mLogger = logger;
 
-            ApkBuilderFactory factory = new SignedJarBuilderFactory();
+            ApkCreatorFactory factory = new SignedJarApkCreatorFactory();
 
-            mApkCreator = factory.make(apkLocation,
-                    certificateInfo != null ? certificateInfo.getKey() : null,
-                    certificateInfo != null ? certificateInfo.getCertificate() : null,
-                    getLocalVersion(),
-                    createdBy,
-                    minSdkVersion);
+            mApkCreator = factory.make(creationData);
 
-            mLogger.verbose("Packaging %s", apkLocation.getName());
+            mLogger.verbose("Packaging %s", creationData.getApkPath().getName());
 
             // add the resources
             if (resFile != null) {
@@ -321,8 +301,6 @@ public final class Packager implements IArchiveBuilder, Closeable {
             try {
                 Closer closer = Closer.create();
                 try {
-                    FileInputStream fis = closer.register(new FileInputStream(file));
-
                     ZipEntryFilter zipFilter = new ZipEntryFilter() {
                         @Override
                         public boolean checkEntry(String archivePath)

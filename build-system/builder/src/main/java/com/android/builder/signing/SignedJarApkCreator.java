@@ -23,6 +23,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.packaging.ApkCreator;
 import com.android.builder.packaging.ManifestAttributes;
+import com.android.builder.packaging.ApkCreatorFactory;
 import com.android.builder.packaging.ZipEntryFilter;
 import com.android.builder.packaging.ZipAbortException;
 import com.google.common.io.Closer;
@@ -72,7 +73,7 @@ import java.util.zip.ZipInputStream;
 /**
  * A Jar file builder with signature support.
  */
-public class SignedJarBuilder implements ApkCreator {
+public class SignedJarApkCreator implements ApkCreator {
 
     private final int mMinSdkVersion;
 
@@ -117,40 +118,32 @@ public class SignedJarBuilder implements ApkCreator {
 
 
     /**
-     * Creates a {@link SignedJarBuilder} with a given output stream, and signing information.
-     * <p/>If either <code>key</code> or <code>certificate</code> is <code>null</code> then
-     * the archive will not be signed.
-     * @param out where to write the Jar archive.
-     * @param key the {@link PrivateKey} used to sign the archive, or <code>null</code>.
-     * @param certificate the {@link X509Certificate} used to sign the archive, or
-     * <code>null</code>.
-     * @param minSdkVersion minSdkVersion of the package contained in this JAR.
+     * Creates a {@link SignedJarApkCreator} with a given data.
+     *
+     * @param creationData the data to create the jar
      * @throws IOException
      * @throws NoSuchAlgorithmException
      */
-    public SignedJarBuilder(@NonNull File out,
-                            @Nullable PrivateKey key,
-                            @Nullable X509Certificate certificate,
-                            @Nullable String builtBy,
-                            @Nullable String createdBy,
-                            int minSdkVersion)
+    public SignedJarApkCreator(@NonNull ApkCreatorFactory.CreationData creationData)
             throws IOException, NoSuchAlgorithmException {
-        mMinSdkVersion = minSdkVersion;
-        mOutputJar = new JarOutputStream(new BufferedOutputStream(new FileOutputStream(out)));
+        mMinSdkVersion = creationData.getMinSdkVersion();
+        mOutputJar = new JarOutputStream(new BufferedOutputStream(new FileOutputStream(
+                creationData.getApkPath())));
         mOutputJar.setLevel(9);
-        mKey = key;
-        mCertificate = certificate;
+        mKey = creationData.getPrivateKey();
+        mCertificate = creationData.getCertificate();
 
         if (mKey != null && mCertificate != null) {
             mManifest = new Manifest();
             Attributes main = mManifest.getMainAttributes();
             main.putValue(ManifestAttributes.MANIFEST_VERSION,
                     ManifestAttributes.CURRENT_MANIFEST_VERSION);
-            if (builtBy != null) {
-                main.putValue(ManifestAttributes.BUILT_BY, builtBy);
+            if (creationData.getBuiltBy() != null) {
+                main.putValue(ManifestAttributes.BUILT_BY, creationData.getBuiltBy());
             }
-            if (createdBy != null) {
-                main.putValue(ManifestAttributes.CREATED_BY, createdBy);
+
+            if (creationData.getCreatedBy() != null) {
+                main.putValue(ManifestAttributes.CREATED_BY, creationData.getCreatedBy());
             }
 
             String digestAttributeDigestAlgorithm;
