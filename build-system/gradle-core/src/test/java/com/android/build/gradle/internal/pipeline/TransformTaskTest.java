@@ -50,6 +50,7 @@ import org.gradle.api.tasks.incremental.InputFileDetails;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
@@ -61,6 +62,9 @@ public class TransformTaskTest extends TaskTestUtils {
 
     @Rule
     public final ExpectedException exception = ExpectedException.none();
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Test
     public void nonIncWithJarInputInOriginalStream()
@@ -122,8 +126,7 @@ public class TransformTaskTest extends TaskTestUtils {
     public void nonIncWithJarInputInIntermediateStream()
             throws IOException, TransformException, InterruptedException {
         // create a stream and add it to the pipeline
-        File rootFolder = Files.createTempDir();
-        rootFolder.deleteOnExit();
+        File rootFolder = temporaryFolder.newFolder();
 
         IntermediateStream projectClass = IntermediateStream.builder()
                 .addContentTypes(QualifiedContent.DefaultContentType.CLASSES.CLASSES)
@@ -243,11 +246,10 @@ public class TransformTaskTest extends TaskTestUtils {
     public void nonIncWithReferencedJarInputInIntermediateStream()
             throws IOException, TransformException, InterruptedException {
         // create a stream and add it to the pipeline
-        File rootFolder = Files.createTempDir();
-        rootFolder.deleteOnExit();
+        File rootFolder = temporaryFolder.newFolder();
 
         IntermediateStream projectClass = IntermediateStream.builder()
-                .addContentTypes(QualifiedContent.DefaultContentType.CLASSES.CLASSES)
+                .addContentTypes(QualifiedContent.DefaultContentType.CLASSES)
                 .addScopes(Scope.PROJECT)
                 .setRootLocation(rootFolder)
                 .setDependency("my dependency")
@@ -263,7 +265,7 @@ public class TransformTaskTest extends TaskTestUtils {
 
         // create the transform
         TestTransform t = TestTransform.builder()
-                .setInputTypes(QualifiedContent.DefaultContentType.CLASSES.CLASSES)
+                .setInputTypes(QualifiedContent.DefaultContentType.CLASSES)
                 .setReferencedScopes(Scope.PROJECT)
                 .build();
 
@@ -364,8 +366,7 @@ public class TransformTaskTest extends TaskTestUtils {
     public void nonIncWithFolderInputInIntermediateStream()
             throws IOException, TransformException, InterruptedException {
         // create a stream and add it to the pipeline
-        File rootFolder = Files.createTempDir();
-        rootFolder.deleteOnExit();
+        File rootFolder = temporaryFolder.newFolder();
 
         IntermediateStream projectClass = IntermediateStream.builder()
                 .addContentTypes(DefaultContentType.CLASSES)
@@ -484,8 +485,7 @@ public class TransformTaskTest extends TaskTestUtils {
     public void nonIncWithReferencedFolderInputInIntermediateStream()
             throws IOException, TransformException, InterruptedException {
         // create a stream and add it to the pipeline
-        File rootFolder = Files.createTempDir();
-        rootFolder.deleteOnExit();
+        File rootFolder = temporaryFolder.newFolder();
 
         IntermediateStream projectClass = IntermediateStream.builder()
                 .addContentTypes(DefaultContentType.CLASSES)
@@ -602,8 +602,7 @@ public class TransformTaskTest extends TaskTestUtils {
     public void incTaskWithNonIncTransformWithJarInputInIntermediateStream()
             throws TransformException, InterruptedException, IOException {
         // create a stream and add it to the pipeline
-        File rootFolder = Files.createTempDir();
-        rootFolder.deleteOnExit();
+        File rootFolder = temporaryFolder.newFolder();
 
         IntermediateStream projectClass = IntermediateStream.builder()
                 .addContentTypes(DefaultContentType.CLASSES)
@@ -721,8 +720,7 @@ public class TransformTaskTest extends TaskTestUtils {
     public void incTaskWithNonIncTransformWithFolderInputInIntermediateStream()
             throws TransformException, InterruptedException, IOException {
         // create a stream and add it to the pipeline
-        File rootFolder = Files.createTempDir();
-        rootFolder.deleteOnExit();
+        File rootFolder = temporaryFolder.newFolder();
 
         IntermediateStream projectClass = IntermediateStream.builder()
                 .addContentTypes(DefaultContentType.CLASSES)
@@ -853,8 +851,7 @@ public class TransformTaskTest extends TaskTestUtils {
     public void incrementalJarInputInIntermediateStream()
             throws TransformException, InterruptedException, IOException {
         // create a stream and add it to the pipeline
-        File rootFolder = Files.createTempDir();
-        rootFolder.deleteOnExit();
+        File rootFolder = temporaryFolder.newFolder();
 
         IntermediateStream projectClass = IntermediateStream.builder()
                 .addContentTypes(DefaultContentType.CLASSES)
@@ -927,8 +924,7 @@ public class TransformTaskTest extends TaskTestUtils {
     public void incrementalFolderInputInOriginalStream()
             throws TransformException, InterruptedException, IOException {
         // create a stream and add it to the pipeline
-        File rootFolder = Files.createTempDir();
-        rootFolder.deleteOnExit();
+        File rootFolder = temporaryFolder.newFolder();
         OriginalStream projectClass = OriginalStream.builder()
                 .addContentType(DefaultContentType.CLASSES)
                 .addScope(Scope.PROJECT)
@@ -992,8 +988,7 @@ public class TransformTaskTest extends TaskTestUtils {
     public void incrementalFolderInputInIntermediateStream()
             throws TransformException, InterruptedException, IOException {
         // create a stream and add it to the pipeline
-        File rootFolder = Files.createTempDir();
-        rootFolder.deleteOnExit();
+        File rootFolder = temporaryFolder.newFolder();
 
         IntermediateStream projectClass = IntermediateStream.builder()
                 .addContentTypes(DefaultContentType.CLASSES)
@@ -1119,8 +1114,7 @@ public class TransformTaskTest extends TaskTestUtils {
     public void deletedJarInputInIntermediateStream()
             throws TransformException, InterruptedException, IOException {
         // create a stream and add it to the pipeline
-        File rootFolder = Files.createTempDir();
-        rootFolder.deleteOnExit();
+        File rootFolder = temporaryFolder.newFolder();
 
         IntermediateStream projectClass = IntermediateStream.builder()
                 .addContentTypes(DefaultContentType.CLASSES)
@@ -1195,8 +1189,7 @@ public class TransformTaskTest extends TaskTestUtils {
     public void deletedFolderInputInOriginalStream()
             throws TransformException, InterruptedException, IOException {
         // create a stream and add it to the pipeline
-        File rootFolder = Files.createTempDir();
-        rootFolder.deleteOnExit();
+        File rootFolder = temporaryFolder.newFolder();
         OriginalStream projectClass = OriginalStream.builder()
                 .addContentType(DefaultContentType.CLASSES)
                 .addScope(Scope.PROJECT)
@@ -1252,9 +1245,7 @@ public class TransformTaskTest extends TaskTestUtils {
     public void deletedFolderInputInIntermediateStream()
             throws TransformException, InterruptedException, IOException {
         // create a stream and add it to the pipeline
-        File rootFolder = Files.createTempDir();
-        rootFolder.deleteOnExit();
-
+        File rootFolder = temporaryFolder.newFolder();
         IntermediateStream projectClass = IntermediateStream.builder()
                 .addContentTypes(DefaultContentType.CLASSES)
                 .addScopes(Scope.PROJECT)
@@ -1346,8 +1337,7 @@ public class TransformTaskTest extends TaskTestUtils {
                 .setDependency("my dependency")
                 .build();
 
-        File scope2Root = Files.createTempDir();
-        scope2Root.deleteOnExit();
+        File scope2Root = temporaryFolder.newFolder();
         IntermediateStream scope2 = IntermediateStream.builder()
                 .addContentTypes(DefaultContentType.CLASSES)
                 .addScopes(Scope.PROJECT_LOCAL_DEPS)
@@ -1374,8 +1364,7 @@ public class TransformTaskTest extends TaskTestUtils {
                 .setDependency("my dependency")
                 .build();
 
-        File scope4Root = Files.createTempDir();
-        scope4Root.deleteOnExit();
+        File scope4Root = temporaryFolder.newFolder();
         IntermediateStream scope4 = IntermediateStream.builder()
                 .addContentTypes(DefaultContentType.CLASSES)
                 .addScopes(Scope.EXTERNAL_LIBRARIES)
@@ -1523,7 +1512,7 @@ public class TransformTaskTest extends TaskTestUtils {
     public void secondaryFileAddedWithJarInputInOriginalStream()
             throws TransformException, InterruptedException, IOException {
         // create a stream and add it to the pipeline
-        File jarFile = Files.createTempDir();
+        File jarFile = temporaryFolder.newFolder();
         TransformStream projectClass = OriginalStream.builder()
                 .addContentType(DefaultContentType.CLASSES)
                 .addScope(Scope.PROJECT)
@@ -1583,8 +1572,7 @@ public class TransformTaskTest extends TaskTestUtils {
     public void secondaryFileAddedWithFolderInputInOriginalStream()
             throws TransformException, InterruptedException, IOException {
         // create a stream and add it to the pipeline
-        File rootFolder = Files.createTempDir();
-        rootFolder.deleteOnExit();
+        File rootFolder = temporaryFolder.newFolder();
         TransformStream projectClass = OriginalStream.builder()
                 .addContentType(DefaultContentType.CLASSES)
                 .addScope(Scope.PROJECT)
@@ -1815,8 +1803,7 @@ public class TransformTaskTest extends TaskTestUtils {
     public void streamWithTooManyScopes()
             throws IOException, TransformException, InterruptedException {
         // create a stream and add it to the pipeline
-        File rootFolder = Files.createTempDir();
-        rootFolder.deleteOnExit();
+        File rootFolder = temporaryFolder.newFolder();
 
         IntermediateStream stream = IntermediateStream.builder()
                 .addContentTypes(DefaultContentType.CLASSES)

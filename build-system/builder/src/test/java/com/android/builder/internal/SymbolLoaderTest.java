@@ -15,22 +15,31 @@
  */
 package com.android.builder.internal;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import com.android.utils.NullLogger;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Table;
 import com.google.common.io.Files;
 
-import junit.framework.TestCase;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 
 @SuppressWarnings("javadoc")
-public class SymbolLoaderTest extends TestCase {
+public class SymbolLoaderTest {
+
+    @Rule
+    public TemporaryFolder mTemporaryFolder = new TemporaryFolder();
+
+    @Test
     public void test() throws Exception {
         String r = "" +
                 "int xml authenticator 0x7f040000\n";
-        File file = File.createTempFile(getClass().getSimpleName(), "txt");
-        file.deleteOnExit();
+        File file = mTemporaryFolder.newFile();
         Files.write(r, file, Charsets.UTF_8);
         SymbolLoader loader = new SymbolLoader(file, NullLogger.getLogger());
         loader.load();
@@ -41,14 +50,14 @@ public class SymbolLoaderTest extends TestCase {
         assertEquals("0x7f040000", symbols.get("xml", "authenticator").getValue());
     }
 
+    @Test
     public void testStyleables() throws Exception {
         String r = "" +
             "int[] styleable LimitedSizeLinearLayout { 0x7f010000, 0x7f010001 }\n" +
             "int styleable LimitedSizeLinearLayout_max_height 1\n" +
             "int styleable LimitedSizeLinearLayout_max_width 0\n" +
             "int xml authenticator 0x7f040000\n";
-        File file = File.createTempFile(getClass().getSimpleName(), "txt");
-        file.deleteOnExit();
+        File file = mTemporaryFolder.newFile();
         Files.write(r, file, Charsets.UTF_8);
         SymbolLoader loader = new SymbolLoader(file, NullLogger.getLogger());
         loader.load();

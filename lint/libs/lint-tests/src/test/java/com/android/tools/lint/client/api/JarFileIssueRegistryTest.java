@@ -17,6 +17,7 @@ package com.android.tools.lint.client.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.testutils.TestUtils;
 import com.android.tools.lint.checks.AbstractCheckTest;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Severity;
@@ -39,7 +40,7 @@ public class JarFileIssueRegistryTest extends AbstractCheckTest {
     }
 
     public void testCached() throws Exception {
-        File targetDir = Files.createTempDir();
+        File targetDir = TestUtils.createTempDirDeletedOnExit();
         File file1 = getTestfile(targetDir, "rules/appcompat.jar.data");
         File file2 = getTestfile(targetDir, "apicheck/unsupported.jar.data");
         assertTrue(file1.getPath(), file1.exists());

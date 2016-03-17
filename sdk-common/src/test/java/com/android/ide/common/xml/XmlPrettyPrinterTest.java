@@ -16,14 +16,19 @@
 
 package com.android.ide.common.xml;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.testutils.TestUtils;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 
 import junit.framework.TestCase;
 
+import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -38,7 +43,10 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 @SuppressWarnings("javadoc")
-public class XmlPrettyPrinterTest extends TestCase {
+public class XmlPrettyPrinterTest {
+
+
+
     private void checkFormat(XmlFormatPreferences prefs,
             String xml,
             String expected, String delimiter, String startNodeName,
@@ -100,6 +108,7 @@ public class XmlPrettyPrinterTest extends TestCase {
         checkFormat(prefs, xml, expected);
     }
 
+    @Test
     public void testLayout1() throws Exception {
         checkFormat(
                 "<LinearLayout><Button></Button></LinearLayout>",
@@ -111,6 +120,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 "</LinearLayout>");
     }
 
+    @Test
     public void testLayout2() throws Exception {
         checkFormat(
                 "<LinearLayout><Button foo=\"bar\"></Button></LinearLayout>",
@@ -122,6 +132,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 "</LinearLayout>");
     }
 
+    @Test
     public void testLayout3() throws Exception {
         XmlFormatPreferences prefs = XmlFormatPreferences.defaults();
         prefs.oneAttributeOnFirstLine = true;
@@ -136,6 +147,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 "</LinearLayout>");
     }
 
+    @Test
     public void testClosedElements() throws Exception {
         checkFormat(
                 "<resources>\n" +
@@ -151,6 +163,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 "</resources>");
     }
 
+    @Test
     public void testResources() throws Exception {
         checkFormat(
                 "<resources><item name=\"foo\">Text value here </item></resources>",
@@ -159,6 +172,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 "\n</resources>");
     }
 
+    @Test
     public void testNodeTypes() throws Exception {
         // Ensures that a document with all kinds of node types is serialized correctly
         checkFormat(
@@ -212,6 +226,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 "</LinearLayout>");
     }
 
+    @Test
     public void testWindowsDelimiters() throws Exception {
         checkFormat(
                 XmlFormatPreferences.defaults(),
@@ -225,6 +240,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 "\r\n");
     }
 
+    @Test
     public void testRemoveBlanklines() throws Exception {
         XmlFormatPreferences prefs = XmlFormatPreferences.defaults();
         prefs.removeEmptyLines = true;
@@ -245,6 +261,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 + "</foo>");
     }
 
+    @Test
     public void testRange() throws Exception {
         checkFormat(
                 XmlFormatPreferences.defaults(),
@@ -257,6 +274,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 "Button", "CheckBox");
     }
 
+    @Test
     public void testOpenTagOnly() throws Exception {
         checkFormat(
                 XmlFormatPreferences.defaults(),
@@ -271,6 +289,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 "Button", "Button");
     }
 
+    @Test
     public void testRange2() throws Exception {
         XmlFormatPreferences prefs = XmlFormatPreferences.defaults();
         prefs.removeEmptyLines = true;
@@ -289,6 +308,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 "baz1", "baz12");
     }
 
+    @Test
     public void testEOLcomments() throws Exception {
         checkFormat(
                 "<selector xmlns:android=\"http://schemas.android.com/apk/res/android\">\n" +
@@ -313,6 +333,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 + "</selector>");
     }
 
+    @Test
     public void testFormatColorList() throws Exception {
         checkFormat(
                 "<selector xmlns:android=\"http://schemas.android.com/apk/res/android\">\n" +
@@ -331,6 +352,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 + "</selector>");
     }
 
+    @Test
     public void testPreserveNewlineAfterComment() throws Exception {
         checkFormat(
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
@@ -367,6 +389,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 "</resources>");
     }
 
+    @Test
     public void testPlurals() throws Exception {
         checkFormat(
                 "<resources xmlns:xliff=\"urn:oasis:names:tc:xliff:document:1.2\">\n" +
@@ -393,6 +416,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 "</resources>");
     }
 
+    @Test
     public void testMultiAttributeResource() throws Exception {
         checkFormat(
                 "<resources><string name=\"debug_enable_debug_logging_label\" translatable=\"false\">Enable extra debug logging?</string></resources>",
@@ -404,6 +428,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 "</resources>");
     }
 
+    @Test
     public void testMultilineCommentAlignment() throws Exception {
         checkFormat(
                 "<resources>" +
@@ -425,6 +450,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 "</resources>");
     }
 
+    @Test
     public void testLineCommentSpacing() throws Exception {
         checkFormat(
                 "<resources>\n" +
@@ -460,6 +486,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 "</resources>");
     }
 
+    @Test
     public void testCommentHandling() throws Exception {
         checkFormat(
                 XmlFormatPreferences.defaults(),
@@ -504,6 +531,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 "</foo>");
     }
 
+    @Test
     public void testCommentHandling2() throws Exception {
         checkFormat(
                 XmlFormatPreferences.defaults(),
@@ -522,6 +550,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 "</foo>");
     }
 
+    @Test
     public void testMenus1() throws Exception {
         checkFormat(
                 XmlFormatPreferences.defaults(),
@@ -576,6 +605,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 "</menu>");
     }
 
+    @Test
     public void testMenus2() throws Exception {
         XmlFormatPreferences prefs = XmlFormatPreferences.defaults();
         prefs.removeEmptyLines = true;
@@ -627,6 +657,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 "</layer-list>");
     }
 
+    @Test
     public void testMenus3() throws Exception {
         checkFormat(
                 XmlFormatPreferences.defaults(),
@@ -665,6 +696,7 @@ public class XmlPrettyPrinterTest extends TestCase {
 
     }
 
+    @Test
     public void testColors1() throws Exception {
         checkFormat(
                 XmlFormatPreferences.defaults(),
@@ -682,6 +714,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 "</resources>");
     }
 
+    @Test
     public void testEclipseFormatStyle1() throws Exception {
         XmlFormatPreferences prefs = new XmlFormatPreferences() {
             @Override
@@ -710,6 +743,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 "</resources>");
     }
 
+    @Test
     public void testEclipseFormatStyle2() throws Exception {
         XmlFormatPreferences prefs = new XmlFormatPreferences() {
             @Override
@@ -739,6 +773,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 "</resources>");
     }
 
+    @Test
     public void testNameSorting() throws Exception {
         checkFormat(
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
@@ -754,6 +789,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 "</resources>");
     }
 
+    @Test
     public void testStableText() throws Exception {
         checkFormat(
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
@@ -775,6 +811,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 "</LinearLayout>");
     }
 
+    @Test
     public void testResources1() throws Exception {
         checkFormat(
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
@@ -793,6 +830,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 "</resources>");
     }
 
+    @Test
     public void testMarkup() throws Exception {
         checkFormat(
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
@@ -840,6 +878,7 @@ public class XmlPrettyPrinterTest extends TestCase {
     }
     */
 
+    @Test
     public void testCData1() throws Exception {
         checkFormat(
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
@@ -855,6 +894,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 "</resources>");
     }
 
+    @Test
     public void testCData2() throws Exception {
         checkFormat(
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
@@ -878,6 +918,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 "</resources>");
     }
 
+    @Test
     public void testComplexString() throws Exception {
         checkFormat(
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
@@ -897,6 +938,7 @@ public class XmlPrettyPrinterTest extends TestCase {
     }
 
 
+    @Test
     public void testToXml() throws Exception {
         Document doc = createEmptyPlainDocument();
         assertNotNull(doc);
@@ -941,6 +983,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 xml);
     }
 
+    @Test
     public void testToXml2() throws Exception {
         String xml = ""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
@@ -983,6 +1026,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 formatted);
     }
 
+    @Test
     public void testToXml3() throws Exception {
         String xml = ""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
@@ -1010,6 +1054,7 @@ public class XmlPrettyPrinterTest extends TestCase {
                 xml);
     }
 
+    @Test
     public void testToXml3b() throws Exception {
         String xml = ""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
@@ -1272,7 +1317,7 @@ public class XmlPrettyPrinterTest extends TestCase {
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public void testDriver4() throws Exception {
-        File root = Files.createTempDir();
+        File root = TestUtils.createTempDirDeletedOnExit();
         String xml = ""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
                 + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\""

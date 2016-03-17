@@ -16,21 +16,32 @@
 
 package com.android.ide.common.signing;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.utils.ILogger;
-import com.google.common.io.Files;
-import junit.framework.TestCase;
+
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Calendar;
 
-public class KeyStoreHelperTest extends TestCase {
+public class KeyStoreHelperTest {
 
+    @Rule
+    public TemporaryFolder mTemporaryFolder = new TemporaryFolder();
+
+    @Test
     public void testCreateAndCheckKey() throws Exception {
-        File tempFolder = Files.createTempDir();
+        File tempFolder = mTemporaryFolder.newFolder();
         File keystoreFile = new File(tempFolder, "debug.keystore");
         keystoreFile.deleteOnExit();
 

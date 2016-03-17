@@ -19,6 +19,7 @@ import junit.framework.TestCase;
 import static com.android.ide.common.res2.DataSet.isIgnored;
 import static java.io.File.separator;
 
+import com.android.testutils.TestUtils;
 import com.google.common.io.Files;
 
 import java.io.File;
@@ -57,7 +58,7 @@ public class DataSetTest extends TestCase {
 
         // Don't match on non-directory
         assertFalse(isIgnored(new File("_test")));
-        File dir = new File(Files.createTempDir(), "_test");
+        File dir = new File(TestUtils.createTempDirDeletedOnExit(), "_test");
         assertTrue(dir.mkdirs());
         assertTrue(isIgnored(dir));
     }

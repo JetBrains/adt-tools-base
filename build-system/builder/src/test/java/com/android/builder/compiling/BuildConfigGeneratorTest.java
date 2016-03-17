@@ -16,20 +16,30 @@
 
 package com.android.builder.compiling;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import com.android.builder.core.AndroidBuilder;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
-import junit.framework.TestCase;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.util.List;
 
 @SuppressWarnings("ResultOfMethodCallIgnored")
-public class BuildConfigGeneratorTest extends TestCase {
+public class BuildConfigGeneratorTest {
+
+    @Rule
+    public TemporaryFolder mTemporaryFolder = new TemporaryFolder();
+
+    @Test
     public void testFalse() throws Exception {
-        File tempDir = Files.createTempDir();
+        File tempDir = mTemporaryFolder.newFolder();
         BuildConfigGenerator generator = new BuildConfigGenerator(tempDir, "my.app.pkg");
 
         generator.addField("boolean", "DEBUG", "false").generate();
@@ -50,8 +60,9 @@ public class BuildConfigGeneratorTest extends TestCase {
         tempDir.delete();
     }
 
+    @Test
     public void testTrue() throws Exception {
-        File tempDir = Files.createTempDir();
+        File tempDir = mTemporaryFolder.newFolder();
         BuildConfigGenerator generator = new BuildConfigGenerator(tempDir, "my.app.pkg");
         generator.addField("boolean", "DEBUG", "Boolean.parseBoolean(\"true\")").generate();
 
@@ -71,8 +82,10 @@ public class BuildConfigGeneratorTest extends TestCase {
         tempDir.delete();
     }
 
+
+    @Test
     public void testExtra() throws Exception {
-        File tempDir = Files.createTempDir();
+        File tempDir = mTemporaryFolder.newFolder();
         BuildConfigGenerator generator = new BuildConfigGenerator(tempDir, "my.app.pkg");
 
         List<Object> items = Lists.newArrayList();

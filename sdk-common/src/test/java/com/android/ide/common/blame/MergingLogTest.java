@@ -17,16 +17,21 @@
 package com.android.ide.common.blame;
 
 import com.google.common.collect.Maps;
-import com.google.common.io.Files;
 
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
 public class MergingLogTest {
+
+    @Rule
+    public TemporaryFolder mTemporaryFolder = new TemporaryFolder();
 
     @Test
     public void testMergingLog() throws IOException {
@@ -39,7 +44,7 @@ public class MergingLogTest {
                 new SourceFile(absoluteFile("exploded/b/values/values.xml")),
                 new SourcePosition(2, 3, 14));
 
-        File tempDir = Files.createTempDir();
+        File tempDir = mTemporaryFolder.newFolder();
         MergingLog mergingLog = new MergingLog(tempDir);
 
         mergingLog.logCopy(absoluteFile("exploded/layout/a"), absoluteFile("merged/layout/a"));
@@ -108,7 +113,12 @@ public class MergingLogTest {
         mergingLog.write();
     }
 
-    private File testPath = Files.createTempDir();
+    private File testPath;
+
+    @Before
+    public void setupTestPath() throws IOException {
+        testPath = mTemporaryFolder.newFolder();
+    }
 
     private File absoluteFile(String path) {
         return new File(testPath, path);
