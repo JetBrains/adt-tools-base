@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.build.gradle.integration.common.utils.ProductFlavorHelper
 import com.android.build.gradle.integration.common.utils.SourceProviderHelper
@@ -28,9 +29,12 @@ import com.android.builder.model.ProductFlavorContainer
 import com.android.builder.model.SourceProviderContainer
 import com.android.builder.model.Variant
 import groovy.transform.CompileStatic
+import org.junit.After
 import org.junit.AfterClass
+import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
+import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
@@ -46,25 +50,16 @@ import static com.google.common.truth.Truth.assertThat;
  */
 @CompileStatic
 class FlavorsTest {
-    @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("flavors")
             .create()
-    static AndroidProject model
-
-    @BeforeClass
-    static void setUp() {
-        model = project.executeAndReturnModel("clean", "assembleDebug")
-    }
-
-    @AfterClass
-    static void cleanUp() {
-        project = null
-        model = null
-    }
+    AndroidProject model
 
     @Test
     void "check flavors show up in model"() throws Exception {
+        model = project.executeAndReturnModel("clean", "assembleDebug")
+
         File projectDir = project.getTestDir()
 
         assertFalse("Library Project", model.isLibrary())
@@ -109,6 +104,8 @@ class FlavorsTest {
 
     @Test
     public void "compound source sets are in the model"() throws Exception {
+        model = project.executeAndReturnModel("clean", "assembleDebug")
+
         for (variant in model.variants) {
             assert variant.extraJavaArtifacts.every { it.multiFlavorSourceProvider != null }
             assert variant.extraJavaArtifacts.every { it.variantSourceProvider != null }
@@ -122,5 +119,90 @@ class FlavorsTest {
     @Category(DeviceTests.class)
     void connectedCheck() {
         project.executeConnectedCheck()
+    }
+
+    private void addProductFlavorsVersionNameSuffixes(){
+        project.getBuildFile() << """
+android{
+    defaultConfig {
+        versionName '1.0'
+    }
+    productFlavors {
+        f1 {
+            versionNameSuffix 'f1'
+        }
+        f2 {
+            versionNameSuffix '-f2'
+        }
+        fa {
+            versionNameSuffix '-fa'
+        }
+        fb {
+            versionNameSuffix 'fb'
+        }
+    }
+}
+"""
+    }
+
+    private void addBuildTypesVersionNameSuffixes(){
+        project.getBuildFile() << """
+android{
+    defaultConfig {
+        versionName '1.0'
+    }
+    buildTypes {
+        release {
+            versionNameSuffix 'release'
+        }
+        debug {
+            versionNameSuffix '-debug'
+        }
+    }
+}
+"""
+    }
+
+    @Test
+    public void "check version name with buildTypes only suffix"() throws Exception{
+        addBuildTypesVersionNameSuffixes()
+        project.execute("clean", "assembleDebug", "assembleRelease")
+        TruthHelper.assertThatApk(project.getApk("f1", "fa", "debug")).hasVersionName("1.0-debug")
+        TruthHelper.assertThatApk(project.getApk("f1", "fb", "debug")).hasVersionName("1.0-debug")
+
+        TruthHelper.assertThatApk(project.getApk("f1", "fa", "release", "unsigned"))
+                .hasVersionName("1.0release")
+        TruthHelper.assertThatApk(project.getApk("f1", "fb", "release", "unsigned"))
+                .hasVersionName("1.0release")
+    }
+
+    @Test
+    public void "check version name  with productFlavors only suffix"() throws Exception{
+        addProductFlavorsVersionNameSuffixes()
+        project.execute("clean", "assembleDebug", "assembleRelease")
+        TruthHelper.assertThatApk(project.getApk("f1", "fb", "debug")).hasVersionName("1.0f1fb")
+        TruthHelper.assertThatApk(project.getApk("f1", "fa", "debug")).hasVersionName("1.0f1-fa")
+
+        TruthHelper.assertThatApk(project.getApk("f1", "fb", "release", "unsigned"))
+                .hasVersionName("1.0f1fb")
+        TruthHelper.assertThatApk(project.getApk("f1", "fa", "release", "unsigned"))
+                .hasVersionName("1.0f1-fa")
+    }
+
+    @Test
+    public void "check version name for flavors and build types suffix"() throws Exception{
+        addBuildTypesVersionNameSuffixes()
+        addProductFlavorsVersionNameSuffixes()
+
+        project.execute("clean", "assembleDebug", "assembleRelease")
+        TruthHelper.assertThatApk(project.getApk("f1", "fb", "debug"))
+                .hasVersionName("1.0f1fb-debug")
+        TruthHelper.assertThatApk(project.getApk("f2", "fb", "debug"))
+                .hasVersionName("1.0-f2fb-debug")
+
+        TruthHelper.assertThatApk(project.getApk("f2", "fa", "release", "unsigned"))
+                .hasVersionName("1.0-f2-farelease")
+        TruthHelper.assertThatApk(project.getApk("f1", "fa", "release", "unsigned"))
+                .hasVersionName("1.0f1-farelease")
     }
 }

@@ -36,6 +36,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     private static final long serialVersionUID = 1L;
 
     private String mApplicationIdSuffix = null;
+    private String mVersionNameSuffix = null;
     private final Map<String, ClassField> mBuildConfigFields = Maps.newTreeMap();
     private final Map<String, ClassField> mResValues = Maps.newTreeMap();
     private final List<File> mProguardFiles = Lists.newArrayList();
@@ -70,6 +71,24 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     @Nullable
     public String getApplicationIdSuffix() {
         return mApplicationIdSuffix;
+    }
+
+    /**
+     * Version name suffix applied to this base config.
+     */
+    @NonNull
+    public BaseConfigImpl setVersionNameSuffix(@Nullable String versionNameSuffix) {
+        mVersionNameSuffix = versionNameSuffix;
+        return this;
+    }
+
+    /**
+     * Version name suffix applied to this base config.
+     */
+    @Override
+    @Nullable
+    public String getVersionNameSuffix() {
+        return mVersionNameSuffix;
     }
 
     /**
@@ -196,6 +215,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         setResValues(that.getResValues());
 
         mApplicationIdSuffix = that.getApplicationIdSuffix();
+        mVersionNameSuffix = that.getVersionNameSuffix();
 
         mProguardFiles.clear();
         mProguardFiles.addAll(that.getProguardFiles());
@@ -282,6 +302,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         BaseConfigImpl that = (BaseConfigImpl) o;
 
         return Objects.equal(mApplicationIdSuffix, that.mApplicationIdSuffix) &&
+                Objects.equal(mVersionNameSuffix, that.mVersionNameSuffix) &&
                 Objects.equal(mBuildConfigFields, that.mBuildConfigFields) &&
                 Objects.equal(mConsumerProguardFiles, that.mConsumerProguardFiles) &&
                 Objects.equal(mManifestPlaceholders, that.mManifestPlaceholders) &&
@@ -298,6 +319,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     public int hashCode() {
         return Objects.hashCode(
                 mApplicationIdSuffix,
+                mVersionNameSuffix,
                 mBuildConfigFields,
                 mResValues,
                 mProguardFiles,
@@ -313,6 +335,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     public String toString() {
         return "BaseConfigImpl{" +
                 "applicationIdSuffix=" + mApplicationIdSuffix +
+                ", versionNameSuffix=" + mVersionNameSuffix+
                 ", mBuildConfigFields=" + mBuildConfigFields +
                 ", mResValues=" + mResValues +
                 ", mProguardFiles=" + mProguardFiles +

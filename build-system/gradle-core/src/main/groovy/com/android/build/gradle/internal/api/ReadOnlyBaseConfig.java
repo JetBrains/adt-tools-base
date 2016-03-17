@@ -66,6 +66,12 @@ public abstract class ReadOnlyBaseConfig extends GroovyObjectSupport implements 
         return baseConfig.getApplicationIdSuffix();
     }
 
+    @Nullable
+    @Override
+    public String getVersionNameSuffix() {
+        return baseConfig.getVersionNameSuffix();
+    }
+
     @NonNull
     @Override
     public Map<String, ClassField> getBuildConfigFields() {

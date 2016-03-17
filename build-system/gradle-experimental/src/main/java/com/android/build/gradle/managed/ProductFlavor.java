@@ -66,8 +66,8 @@ public interface ProductFlavor extends DimensionAware, BaseConfig {
 
     /**
      * Returns the version name. This is only the value set on this product flavor.
-     * To get the final value, use {@link Variant#getMergedFlavor()} as well as
-     * {@link BuildType#getVersionNameSuffix()}
+     * To get the final value, use {@link Variant#getMergedFlavor()} with
+     * {@link #getVersionNameSuffix()} and {@link BuildType#getVersionNameSuffix()}.
      *
      * @return the version name.
      */

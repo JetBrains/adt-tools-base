@@ -482,17 +482,13 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
 
         flavor.mVersionCode = chooseNotNull(overlay.getVersionCode(), base.getVersionCode());
         flavor.mVersionName = chooseNotNull(overlay.getVersionName(), base.getVersionName());
+        flavor.setVersionNameSuffix(mergeVersionNameSuffix(
+                overlay.getVersionNameSuffix(), base.getVersionNameSuffix()));
 
         flavor.mApplicationId = chooseNotNull(overlay.getApplicationId(), base.getApplicationId());
+        flavor.setApplicationIdSuffix(mergeApplicationIdSuffix(
+                overlay.getApplicationIdSuffix(), base.getApplicationIdSuffix()));
 
-        if (!Strings.isNullOrEmpty(overlay.getApplicationIdSuffix())) {
-            String baseSuffix = chooseNotNull(base.getApplicationIdSuffix(), "");
-            if (overlay.getApplicationIdSuffix().charAt(0) == '.') {
-                flavor.setApplicationIdSuffix(baseSuffix + overlay.getApplicationIdSuffix());
-            } else {
-                flavor.setApplicationIdSuffix(baseSuffix + '.' + overlay.getApplicationIdSuffix());
-            }
-        }
 
         flavor.mTestApplicationId = chooseNotNull(
                 overlay.getTestApplicationId(),
@@ -578,6 +574,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
 
         flavor.mVersionCode = productFlavor.getVersionCode();
         flavor.mVersionName = productFlavor.getVersionName();
+        flavor.setVersionNameSuffix(productFlavor.getVersionNameSuffix());
 
         flavor.mApplicationId = productFlavor.getApplicationId();
 
@@ -609,6 +606,30 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
 
     private static <T> T chooseNotNull(T overlay, T base) {
         return overlay != null ? overlay : base;
+    }
+
+    public static String mergeApplicationIdSuffix(@Nullable  String overlay, @Nullable String base){
+        return Strings.nullToEmpty(joinWithSeparator(overlay, base, '.'));
+    }
+
+    public static String mergeVersionNameSuffix(@Nullable  String overlay, @Nullable String base){
+        return Strings.nullToEmpty(joinWithSeparator(overlay, base, null));
+    }
+
+    @Nullable
+    private static String joinWithSeparator(@Nullable  String overlay, @Nullable String base,
+            @Nullable Character separator){
+        if (!Strings.isNullOrEmpty(overlay)) {
+            String baseSuffix = chooseNotNull(base, "");
+            if (separator == null || overlay.charAt(0) == separator) {
+                return baseSuffix + overlay;
+            } else {
+                return baseSuffix + separator + overlay;
+            }
+        }
+        else{
+            return base;
+        }
     }
 
     @Override
