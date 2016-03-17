@@ -28,7 +28,6 @@ import com.google.common.truth.Expect;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -70,6 +69,7 @@ public class NinePatchAsyncAaptProcessTest {
 
     @Test
     public void run() throws PngException, IOException {
+        NinePatchAaptProcessorTestUtils.skipOnJenkins();
         File outFile = NinePatchAaptProcessorTestUtils.crunchFile(
                 sCruncherKey.get(), mFile, sCruncher);
         mSourceAndCrunchedFiles.put(mFile, outFile);

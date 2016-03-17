@@ -16,9 +16,6 @@
 
 package com.android.builder.png;
 
-import static com.google.common.truth.Truth.THROW_ASSERTION_ERROR;
-import static com.google.common.truth.Truth.assert_;
-
 import com.android.annotations.NonNull;
 import com.android.ide.common.internal.AaptCruncher;
 import com.android.ide.common.internal.PngCruncher;
@@ -36,7 +33,6 @@ import com.google.common.truth.Expect;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -75,6 +71,7 @@ public class NinePatchAaptProcessorTest {
 
     @Test
     public void run() throws PngException, IOException {
+        NinePatchAaptProcessorTestUtils.skipOnJenkins();
         File outFile = NinePatchAaptProcessorTestUtils.crunchFile(
                 sCruncherKey.get(), mFile, sCruncher);
         mSourceAndCrunchedFiles.put(mFile, outFile);

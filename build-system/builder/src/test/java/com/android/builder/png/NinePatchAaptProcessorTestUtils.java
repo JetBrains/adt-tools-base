@@ -16,7 +16,6 @@
 
 package com.android.builder.png;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import com.android.SdkConstants;
@@ -30,14 +29,13 @@ import com.android.sdklib.repositoryv2.AndroidSdkHandler;
 import com.android.testutils.TestUtils;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
-import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.TestVerb;
 
 import org.junit.Assert;
+import org.junit.Assume;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -328,5 +326,14 @@ public class NinePatchAaptProcessorTestUtils {
         } catch (InterruptedException e) {
             System.err.println(Throwables.getStackTraceAsString(e));
         }
+    }
+
+    /**
+     *  Skips the test if running on Jenkins.
+     *
+     *  <p>The 9-patch tests don't seem to play well with a network file system.
+     */
+    static void skipOnJenkins() {
+        Assume.assumeTrue(System.getProperty("JENKINS_URL") == null);
     }
 }
