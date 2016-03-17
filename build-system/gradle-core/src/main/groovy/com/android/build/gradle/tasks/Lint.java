@@ -14,63 +14,77 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.tasks
+package com.android.build.gradle.tasks;
 
-import com.android.annotations.NonNull
-import com.android.annotations.Nullable
-import com.android.build.gradle.internal.LintGradleClient
-import com.android.build.gradle.internal.dsl.LintOptions
-import com.android.build.gradle.internal.scope.TaskConfigAction
-import com.android.build.gradle.internal.scope.VariantScope
-import com.android.build.gradle.internal.tasks.BaseTask
-import com.android.builder.model.AndroidProject
-import com.android.builder.model.Variant
-import com.android.tools.lint.LintCliFlags
-import com.android.tools.lint.Reporter
-import com.android.tools.lint.Warning
-import com.android.tools.lint.checks.BuiltinIssueRegistry
-import com.android.tools.lint.checks.GradleDetector
-import com.android.tools.lint.checks.UnusedResourceDetector
-import com.android.tools.lint.client.api.IssueRegistry
-import com.android.tools.lint.detector.api.Issue
-import com.android.tools.lint.detector.api.Severity
-import com.google.common.collect.Maps
-import com.google.common.collect.Sets
-import org.gradle.api.GradleException
-import org.gradle.api.Project
-import org.gradle.api.plugins.JavaBasePlugin
-import org.gradle.api.tasks.ParallelizableTask
-import org.gradle.api.tasks.TaskAction
-import org.gradle.tooling.provider.model.ToolingModelBuilder
-import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.LintGradleClient;
+import com.android.build.gradle.internal.dsl.LintOptions;
+import com.android.build.gradle.internal.scope.TaskConfigAction;
+import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.Variant;
+import com.android.tools.lint.LintCliFlags;
+import com.android.tools.lint.Reporter;
+import com.android.tools.lint.Warning;
+import com.android.tools.lint.checks.BuiltinIssueRegistry;
+import com.android.tools.lint.checks.GradleDetector;
+import com.android.tools.lint.checks.UnusedResourceDetector;
+import com.android.tools.lint.client.api.IssueRegistry;
+import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.Severity;
+import com.android.utils.StringHelper;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+
+import org.gradle.api.GradleException;
+import org.gradle.api.Project;
+import org.gradle.api.logging.Logger;
+import org.gradle.api.logging.Logging;
+import org.gradle.api.plugins.JavaBasePlugin;
+import org.gradle.api.tasks.ParallelizableTask;
+import org.gradle.api.tasks.TaskAction;
+import org.gradle.tooling.provider.model.ToolingModelBuilder;
+import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @ParallelizableTask
 public class Lint extends BaseTask {
-    @NonNull private LintOptions mLintOptions
-    @Nullable private File mSdkHome
-    private boolean mFatalOnly
-    private ToolingModelBuilderRegistry mToolingRegistry
+
+    private static final Logger LOG = Logging.getLogger(Lint.class);
+
+    @Nullable private LintOptions mLintOptions;
+    @Nullable private File mSdkHome;
+    private boolean mFatalOnly;
+    private ToolingModelBuilderRegistry mToolingRegistry;
 
     public void setLintOptions(@NonNull LintOptions lintOptions) {
-        mLintOptions = lintOptions
+        mLintOptions = lintOptions;
     }
 
     public void setSdkHome(@NonNull File sdkHome) {
-        mSdkHome = sdkHome
+        mSdkHome = sdkHome;
     }
 
-    void setToolingRegistry(ToolingModelBuilderRegistry toolingRegistry) {
-        mToolingRegistry = toolingRegistry
+    public void setToolingRegistry(ToolingModelBuilderRegistry toolingRegistry) {
+        mToolingRegistry = toolingRegistry;
     }
 
     public void setFatalOnly(boolean fatalOnly) {
-        mFatalOnly = fatalOnly
+        mFatalOnly = fatalOnly;
     }
 
-    @SuppressWarnings("GroovyUnusedDeclaration")
     @TaskAction
-    public void lint() {
-        def modelProject = createAndroidProject(project)
+    public void lint() throws IOException {
+        AndroidProject modelProject = createAndroidProject(getProject());
         if (getVariantName() != null && !getVariantName().isEmpty()) {
             for (Variant variant : modelProject.getVariants()) {
                 if (variant.getName().equals(getVariantName())) {
@@ -86,43 +100,39 @@ public class Lint extends BaseTask {
      * Runs lint individually on all the variants, and then compares the results
      * across variants and reports these
      */
-    public void lintAllVariants(@NonNull AndroidProject modelProject) {
+    public void lintAllVariants(@NonNull AndroidProject modelProject) throws IOException {
         // In the Gradle integration we iterate over each variant, and
         // attribute unused resources to each variant, so don't make
         // each variant run go and inspect the inactive variant sources
         UnusedResourceDetector.sIncludeInactiveReferences = false;
 
-        Map<Variant,List<Warning>> warningMap = Maps.newHashMap()
+        Map<Variant,List<Warning>> warningMap = Maps.newHashMap();
         for (Variant variant : modelProject.getVariants()) {
-            try {
-                List<Warning> warnings = runLint(modelProject, variant, false)
-                warningMap.put(variant, warnings)
-            } catch (IOException e) {
-                throw new GradleException("Invalid arguments.", e)
-            }
+            List<Warning> warnings = runLint(modelProject, variant, false);
+            warningMap.put(variant, warnings);
         }
 
         // Compute error matrix
-        def quiet = mLintOptions.quiet
+        boolean quiet = mLintOptions.isQuiet();
 
 
         for (Map.Entry<Variant,List<Warning>> entry : warningMap.entrySet()) {
-            def variant = entry.getKey()
-            def warnings = entry.getValue()
+            Variant variant = entry.getKey();
+            List<Warning> warnings = entry.getValue();
             if (!mFatalOnly && !quiet) {
-                println "Ran lint on variant " + variant.getName() + ": " + warnings.size() +
-                        " issues found"
+                LOG.warn("Ran lint on variant {}: {} issues found",
+                        variant.getName(), warnings.size());
             }
         }
 
-        List<Warning> mergedWarnings = LintGradleClient.merge(warningMap, modelProject)
-        int errorCount = 0
-        int warningCount = 0
+        List<Warning> mergedWarnings = LintGradleClient.merge(warningMap, modelProject);
+        int errorCount = 0;
+        int warningCount = 0;
         for (Warning warning : mergedWarnings) {
             if (warning.severity == Severity.ERROR || warning.severity == Severity.FATAL) {
-                errorCount++
+                errorCount++;
             } else if (warning.severity == Severity.WARNING) {
-                warningCount++
+                warningCount++;
             }
         }
 
@@ -130,35 +140,36 @@ public class Lint extends BaseTask {
          * We pick the first variant to generate the full report and don't generate if we don't
          * have any variants.
          */
-        if (modelProject.getVariants().size() > 0) {
+        if (!modelProject.getVariants().isEmpty()) {
             Set<Variant> allVariants = Sets.newTreeSet(new Comparator<Variant>() {
                 @Override
-                int compare(Variant v1, Variant v2) {
-                    v1.getName().compareTo(v2.getName());
+                public int compare(Variant v1, Variant v2) {
+                    return v1.getName().compareTo(v2.getName());
                 }
             });
 
             allVariants.addAll(modelProject.getVariants());
             Variant variant = allVariants.iterator().next();
 
-            IssueRegistry registry = new BuiltinIssueRegistry()
-            LintCliFlags flags = new LintCliFlags()
-            LintGradleClient client = new LintGradleClient(registry, flags, project, modelProject,
-                    mSdkHome, variant, getBuildTools())
-            syncOptions(mLintOptions, client, flags, variant, project, true, mFatalOnly)
+            IssueRegistry registry = new BuiltinIssueRegistry();
+            LintCliFlags flags = new LintCliFlags();
+            LintGradleClient client = new LintGradleClient(
+                    registry, flags, getProject(), modelProject,
+                    mSdkHome, variant, getBuildTools());
+            syncOptions(mLintOptions, client, flags, variant, getProject(), true, mFatalOnly);
 
             for (Reporter reporter : flags.getReporters()) {
-                reporter.write(errorCount, warningCount, mergedWarnings)
+                reporter.write(errorCount, warningCount, mergedWarnings);
             }
 
             if (flags.isSetExitCode() && errorCount > 0) {
-                abort()
+                abort();
             }
         }
     }
 
     private void abort() {
-        def message;
+        String message;
         if (mFatalOnly) {
             message = "" +
                     "Lint found fatal errors while assembling a release target.\n" +
@@ -173,8 +184,7 @@ public class Lint extends BaseTask {
                     "        abortOnError false\n" +
                     "    }\n" +
                     "}\n" +
-                    "..."
-                    ""
+                    "...";
         } else {
             message = "" +
                     "Lint found errors in the project; aborting build.\n" +
@@ -186,7 +196,7 @@ public class Lint extends BaseTask {
                     "        abortOnError false\n" +
                     "    }\n" +
                     "}\n" +
-                    "..."
+                    "...";
         }
         throw new GradleException(message);
     }
@@ -195,7 +205,7 @@ public class Lint extends BaseTask {
      * Runs lint on a single specified variant
      */
     public void lintSingleVariant(@NonNull AndroidProject modelProject, @NonNull Variant variant) {
-        runLint(modelProject, variant, true)
+        runLint(modelProject, variant, true);
     }
 
     /** Runs lint on the given variant and returns the set of warnings */
@@ -203,36 +213,36 @@ public class Lint extends BaseTask {
             @NonNull AndroidProject modelProject,
             @NonNull Variant variant,
             boolean report) {
-        IssueRegistry registry = createIssueRegistry()
-        LintCliFlags flags = new LintCliFlags()
-        LintGradleClient client = new LintGradleClient(registry, flags, project, modelProject,
-                mSdkHome, variant, getBuildTools())
+        IssueRegistry registry = createIssueRegistry();
+        LintCliFlags flags = new LintCliFlags();
+        LintGradleClient client = new LintGradleClient(registry, flags, getProject(), modelProject,
+                mSdkHome, variant, getBuildTools());
         if (mFatalOnly) {
             if (!mLintOptions.isCheckReleaseBuilds()) {
-                return Collections.emptyList()
+                return Collections.emptyList();
             }
-            flags.setFatalOnly(true)
+            flags.setFatalOnly(true);
         }
-        syncOptions(mLintOptions, client, flags, variant, project, report, mFatalOnly)
+        syncOptions(mLintOptions, client, flags, variant, getProject(), report, mFatalOnly);
         if (!report || mFatalOnly) {
-            flags.setQuiet(true)
+            flags.setQuiet(true);
         }
 
         List<Warning> warnings;
         try {
-            warnings = client.run(registry)
+            warnings = client.run(registry);
         } catch (IOException e) {
-            throw new GradleException("Invalid arguments.", e)
+            throw new GradleException("Invalid arguments.", e);
         }
 
         if (report && client.haveErrors() && flags.isSetExitCode()) {
-            abort()
+            abort();
         }
 
         return warnings;
     }
 
-    private static syncOptions(
+    private static void syncOptions(
             @NonNull LintOptions options,
             @NonNull LintGradleClient client,
             @NonNull LintCliFlags flags,
@@ -240,24 +250,24 @@ public class Lint extends BaseTask {
             @NonNull Project project,
             boolean report,
             boolean fatalOnly) {
-        options.syncTo(client, flags, variant.getName(), project, report)
+        options.syncTo(client, flags, variant.getName(), project, report);
 
-        if (fatalOnly || flags.quiet) {
+        if (fatalOnly || flags.isQuiet()) {
             for (Reporter reporter : flags.getReporters()) {
-                reporter.setDisplayEmpty(false)
+                reporter.setDisplayEmpty(false);
             }
         }
     }
 
     private AndroidProject createAndroidProject(@NonNull Project gradleProject) {
-        String modelName = AndroidProject.class.getName()
-        ToolingModelBuilder modelBuilder = mToolingRegistry.getBuilder(modelName)
-        assert modelBuilder != null
-        return (AndroidProject) modelBuilder.buildAll(modelName, gradleProject)
+        String modelName = AndroidProject.class.getName();
+        ToolingModelBuilder modelBuilder = mToolingRegistry.getBuilder(modelName);
+        assert modelBuilder != null;
+        return (AndroidProject) modelBuilder.buildAll(modelName, gradleProject);
     }
 
     private static BuiltinIssueRegistry createIssueRegistry() {
-        return new LintGradleIssueRegistry()
+        return new LintGradleIssueRegistry();
     }
 
     // Issue registry when Lint is run inside Gradle: we replace the Gradle
@@ -291,34 +301,34 @@ public class Lint extends BaseTask {
 
     public static class ConfigAction implements TaskConfigAction<Lint> {
 
-        @NonNull
-        VariantScope scope
+        private final VariantScope scope;
 
-        ConfigAction(@NonNull VariantScope scope) {
-            this.scope = scope
+        public ConfigAction(@NonNull VariantScope scope) {
+            this.scope = scope;
         }
 
         @Override
         @NonNull
-        String getName() {
-            return scope.getTaskName("lint")
+        public String getName() {
+            return scope.getTaskName("lint");
         }
 
         @Override
         @NonNull
-        Class<Lint> getType() {
-            return Lint
+        public Class<Lint> getType() {
+            return Lint.class;
         }
 
         @Override
-        void execute(@NonNull Lint lint) {
-            lint.setLintOptions(scope.globalScope.getExtension().lintOptions)
-            lint.setSdkHome(scope.globalScope.sdkHandler.getSdkFolder())
-            lint.androidBuilder = scope.globalScope.androidBuilder
-            lint.setVariantName(scope.variantConfiguration.fullName)
-            lint.setToolingRegistry(scope.globalScope.toolingRegistry)
-            lint.description = "Runs lint on the " + scope.variantConfiguration.fullName.capitalize() + " build."
-            lint.group = JavaBasePlugin.VERIFICATION_GROUP
+        public void execute(@NonNull Lint lint) {
+            lint.setLintOptions(scope.getGlobalScope().getExtension().getLintOptions());
+            lint.setSdkHome(scope.getGlobalScope().getSdkHandler().getSdkFolder());
+            lint.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+            lint.setVariantName(scope.getVariantConfiguration().getFullName());
+            lint.setToolingRegistry(scope.getGlobalScope().getToolingRegistry());
+            lint.setDescription("Runs lint on the " + StringHelper
+                            .capitalize(scope.getVariantConfiguration().getFullName()) + " build.");
+            lint.setGroup(JavaBasePlugin.VERIFICATION_GROUP);
         }
     }
 }
