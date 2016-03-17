@@ -177,16 +177,17 @@ public final class SunburstComponent extends AnimatedComponent {
         updateArea();
         updateStructure(mSlice, mData, false);
 
-        mCurrentAngle = Math.abs(mCurrentAngle - mAngle) < 0.1f ? mAngle
-                : lerp(mCurrentAngle, mAngle, 0.999f);
+        mCurrentAngle = Math.abs(mCurrentAngle - mAngle) < 0.1f ?
+                        mAngle : Choreographer.lerp(mCurrentAngle, mAngle, 0.999f, mFrameLength);
         if (mAutoSize) {
             float full = Math.min(mMaxDepth, mMaxSide) - mGap - 20;
             float none = mMaxDepth * 2 - mGap - 20;
             float factor = mCurrentAngle / 360.0f;
             float depth = full * factor + none * (1 - factor);
-            mFixed = lerp(mFixed, (float) ((mMaxSide - 20) / Math.PI), 0.999f);
+            mFixed = Choreographer.lerp(mFixed, (float) ((mMaxSide - 20) / Math.PI),
+                                        0.999f, mFrameLength);
             float width = depth / getMaxDepth(mSlice);
-            mSliceWidth = lerp(mSliceWidth, width, 0.999f);
+            mSliceWidth = Choreographer.lerp(mSliceWidth, width, 0.999f, mFrameLength);
         }
 
         // mDelta is the extra radius needed to keep the same length at the fixes radius
@@ -263,10 +264,12 @@ public final class SunburstComponent extends AnimatedComponent {
         }
         zoom = zoom || children;
 
-        slice.selected = lerp(slice.selected, slice == mySelection ? 1.0f : 0.0f, 0.99f);
-        slice.visible = lerp(slice.visible, zoom ? 1.0f : 0.0f, 0.99f);
-        slice.zoom = lerp(slice.zoom,
-                level < myZoomLevel ? (level == myZoomLevel - 1) ? 0.5f : 0.0f : 1.0f, 0.99f);
+        slice.selected = Choreographer.lerp(slice.selected, slice == mySelection ? 1.0f : 0.0f,
+                                            0.99f, mFrameLength);
+        slice.visible = Choreographer.lerp(slice.visible, zoom ? 1.0f : 0.0f, 0.99f, mFrameLength);
+        slice.zoom = Choreographer.lerp(slice.zoom,
+                level < myZoomLevel ? (level == myZoomLevel - 1) ? 0.5f : 0.0f : 1.0f,
+                0.99f, mFrameLength);
 
         return zoom;
     }
@@ -377,11 +380,15 @@ public final class SunburstComponent extends AnimatedComponent {
 
     private boolean updateStructure(Slice slice, ValuedTreeNode node, boolean hasSiblings) {
         if (node == null) {
-            slice.depth = lerp(slice.depth, hasSiblings ? slice.depth : 0.0f, 0.99f);
-            slice.value = lerp(slice.value, hasSiblings ? 0.0f : slice.value, 0.99f);
+            slice.depth = Choreographer.lerp(slice.depth, hasSiblings ? slice.depth : 0.0f,
+                                             0.99f, mFrameLength);
+            slice.value = Choreographer.lerp(slice.value, hasSiblings ? 0.0f : slice.value,
+                                             0.99f, mFrameLength);
         } else {
-            slice.depth = lerp(slice.depth, node.getParent() == null ? 0.0f : 1.0f, 0.99f);
-            slice.value = lerp(slice.value, getFraction(node), 0.99f);
+            slice.depth = Choreographer.lerp(slice.depth, node.getParent() == null ? 0.0f : 1.0f,
+                                             0.99f, mFrameLength);
+            slice.value = Choreographer.lerp(slice.value, getFraction(node),
+                                             0.99f, mFrameLength);
         }
         slice.node = node;
 

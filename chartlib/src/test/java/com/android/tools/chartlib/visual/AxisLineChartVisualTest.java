@@ -24,14 +24,13 @@ import com.android.tools.chartlib.model.RangedSeries;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
+import java.awt.event.*;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class AxisLineChartVisualTest extends VisualTest {
+
+    private static final float ZOOM_FACTOR = 0.1f;
 
     private static final int AXIS_SIZE = 100;
 
@@ -41,7 +40,7 @@ public class AxisLineChartVisualTest extends VisualTest {
     private final Range mXRange;
 
     @NonNull
-    private final AnimatedTimeRange mAnimatedRange;
+    private final Range mXGlobalRange;
 
     @NonNull
     private final LineChart mLineChart;
@@ -61,13 +60,17 @@ public class AxisLineChartVisualTest extends VisualTest {
     @NonNull
     private GridComponent mGrid;
 
+    @NonNull
+    private final RangeScrollbar mScrollbar;
+
     public AxisLineChartVisualTest(Choreographer choreographer) {
         mData = new LineChartData();
         mLineChart = new LineChart(mData);
 
         mStartTimeMs = System.currentTimeMillis();
-        mXRange = new Range(0, 10000);
-        mAnimatedRange = new AnimatedTimeRange(mXRange, mStartTimeMs);
+        mXRange = new Range(0, 0);
+        mXGlobalRange = new Range(0, 0);
+        mScrollbar = new RangeScrollbar(mXGlobalRange, mXRange);
 
         // add horizontal time axis
         mTimeAxis = new AxisComponent(mXRange, "TIME", AxisComponent.AxisOrientation.BOTTOM,
@@ -107,7 +110,7 @@ public class AxisLineChartVisualTest extends VisualTest {
         mGrid.addAxis(mMemoryAxis1);
         mGrid.addAxis(mMemoryAxis2);
 
-        choreographer.register(mAnimatedRange);
+        choreographer.register(mScrollbar);
         choreographer.register(mLineChart);
         choreographer.register(mTimeAxis);
         choreographer.register(mMemoryAxis1);
@@ -143,21 +146,26 @@ public class AxisLineChartVisualTest extends VisualTest {
         panel.add(controls, BorderLayout.WEST);
 
         final AtomicInteger variance = new AtomicInteger(10);
-        final AtomicInteger delay = new AtomicInteger(100);
+        final AtomicInteger delay = new AtomicInteger(10);
         new Thread() {
             @Override
             public void run() {
                 super.run();
                 try {
                     while (true) {
-                        int v = variance.get();
+                        // Moves time forward by updating global range to now.
                         long now = System.currentTimeMillis() - mStartTimeMs;
+                        mXGlobalRange.setMax(now);
+
+                        //  Insert new data point at now.
+                        int v = variance.get();
                         for (RangedSeries rangedSeries : mData.series()) {
                             int size = rangedSeries.getSeries().size();
                             long last = size > 0 ? rangedSeries.getSeries().getY(size - 1) : 0;
                             float delta = (float) Math.random() * variance.get() - v * 0.45f;
                             rangedSeries.getSeries().add(now, last + (long) delta);
                         }
+
                         Thread.sleep(delay.get());
                     }
                 } catch (InterruptedException e) {
@@ -187,10 +195,22 @@ public class AxisLineChartVisualTest extends VisualTest {
                 return variance.get();
             }
         }));
-        controls.add(VisualTests.createCheckbox("Shift xRange Min", new ItemListener() {
+        controls.add(VisualTests.createCheckbox("Stable Scroll", new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent itemEvent) {
-                mAnimatedRange.setShift(itemEvent.getStateChange() == ItemEvent.SELECTED);
+                mScrollbar.setStableScrolling(itemEvent.getStateChange() == ItemEvent.SELECTED);
+            }
+        }));
+        controls.add(VisualTests.createButton("Zoom In Test", new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mScrollbar.zoom(-ZOOM_FACTOR);
+            }
+        }));
+        controls.add(VisualTests.createButton("Zoom Out Test", new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mScrollbar.zoom(ZOOM_FACTOR);
             }
         }));
 
@@ -209,6 +229,7 @@ public class AxisLineChartVisualTest extends VisualTest {
         timelinePane.add(mTimeAxis);
         timelinePane.add(mLineChart);
         timelinePane.add(mGrid);
+        timelinePane.add(mScrollbar);
         timelinePane.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
@@ -232,6 +253,9 @@ public class AxisLineChartVisualTest extends VisualTest {
                                     axis.setBounds(0, 0, dim.width, AXIS_SIZE);
                                     break;
                             }
+                        } else if (c instanceof RangeScrollbar) {
+                            int sbHeight = c.getPreferredSize().height;
+                            c.setBounds(0, dim.height - sbHeight, dim.width, sbHeight);
                         } else {
                             c.setBounds(AXIS_SIZE, AXIS_SIZE, dim.width - AXIS_SIZE * 2, dim.height - AXIS_SIZE * 2);
                         }

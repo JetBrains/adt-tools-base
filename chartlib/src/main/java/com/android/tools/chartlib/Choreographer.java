@@ -92,4 +92,25 @@ public class Choreographer implements ActionListener {
             component.animate(frameLength);
         }
     }
+
+    /**
+     * A linear interpolation that accumulates over time. This gives an exponential effect where the
+     * value {@code from} moves towards the value {@code to} at a rate of {@code fraction} per
+     * second. The actual interpolated amount depends on the current frame length.
+     *
+     * @param from          the value to interpolate from.
+     * @param to            the target value.
+     * @param fraction      the interpolation fraction.
+     * @param frameLength   the frame length in seconds.
+     * @return the interpolated value.
+     */
+    public static float lerp(float from, float to, float fraction, float frameLength) {
+        float q = (float) Math.pow(1.0f - fraction, frameLength);
+        return from * q + to * (1.0f - q);
+    }
+
+    public static double lerp(double from, double to, float fraction, float frameLength) {
+        double q = Math.pow(1.0f - fraction, frameLength);
+        return from * q + to * (1.0 - q);
+    }
 }
