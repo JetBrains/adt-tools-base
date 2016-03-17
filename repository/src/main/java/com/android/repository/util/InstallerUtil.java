@@ -22,7 +22,6 @@ import com.android.repository.Revision;
 import com.android.repository.api.Dependency;
 import com.android.repository.api.License;
 import com.android.repository.api.LocalPackage;
-import com.android.repository.api.PackageOperation;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
@@ -30,6 +29,7 @@ import com.android.repository.api.RepoPackage;
 import com.android.repository.api.Repository;
 import com.android.repository.api.RepositorySource;
 import com.android.repository.api.UpdatablePackage;
+import com.android.repository.impl.installer.PackageInstaller;
 import com.android.repository.impl.manager.LocalRepoLoader;
 import com.android.repository.impl.meta.Archive;
 import com.android.repository.impl.meta.CommonFactory;
@@ -66,7 +66,7 @@ import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 
 /**
- * Utility methods for {@link PackageOperation} implementations.
+ * Utility methods for {@link PackageInstaller} implementations.
  */
 public class InstallerUtil {
 
@@ -143,7 +143,6 @@ public class InstallerUtil {
                 if (!fop.isWindows()) {
                     // get the mode and test if it contains the executable bit
                     int mode = entry.getUnixMode();
-                    //noinspection OctalInteger
                     if ((mode & 0111) != 0) {
                         try {
                             fop.setExecutablePermission(entryFile);

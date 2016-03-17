@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.sdklib.repositoryv2.installer;
+package com.android.sdklib.repositoryv2;
 
 import com.android.annotations.NonNull;
 import com.android.repository.Revision;
@@ -22,10 +22,9 @@ import com.android.repository.api.LocalPackage;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoPackage;
-import com.android.repository.api.PackageOperation;
+import com.android.repository.impl.installer.PackageInstaller;
 import com.android.repository.io.FileOp;
 import com.android.repository.util.InstallerUtil;
-import com.android.sdklib.repositoryv2.AndroidSdkHandler;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 
@@ -51,25 +50,27 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.namespace.QName;
 
 /**
- * A {@link PackageOperation.StatusChangeListener} that knows how to install and uninstall Maven
- * packages.
+ * A {@link PackageInstaller} that knows how to install Maven packages.
  */
-public class MavenInstallListener implements PackageOperation.StatusChangeListener {
+public class MavenInstallListener implements PackageInstaller.StatusChangeListener {
 
     public static final String MAVEN_DIR_NAME = "m2repository";
 
     public static final String MAVEN_METADATA_FILE_NAME = "maven-metadata.xml";
 
+    public final FileOp mFop;
+
     public final AndroidSdkHandler mSdkHandler;
 
-    public MavenInstallListener(@NonNull AndroidSdkHandler sdkHandler) {
+    public MavenInstallListener(@NonNull AndroidSdkHandler sdkHandler, @NonNull FileOp fop) {
+        mFop = fop;
         mSdkHandler = sdkHandler;
     }
 
     @Override
-    public void statusChanged(@NonNull PackageOperation installer,
+    public void statusChanged(@NonNull PackageInstaller installer,
             @NonNull ProgressIndicator progress)
-            throws PackageOperation.StatusChangeListenerException {
+            throws PackageInstaller.StatusChangeListenerException {
         RepoPackage p = installer.getPackage();
         switch (installer.getInstallStatus()) {
             case PREPARING:
@@ -80,8 +81,8 @@ public class MavenInstallListener implements PackageOperation.StatusChangeListen
                 }
                 break;
             case UNINSTALL_COMPLETE:
-                if (!removeVersion((LocalPackage)p, progress)) {
-                    throw new PackageOperation.StatusChangeListenerException(
+                if (!removeVersion((LocalPackage)p, mFop, progress)) {
+                    throw new PackageInstaller.StatusChangeListenerException(
                             "Failed to remove maven metadata for " + p.getDisplayName());
                 }
                 break;
@@ -92,11 +93,11 @@ public class MavenInstallListener implements PackageOperation.StatusChangeListen
                             mSdkHandler.getSdkManager(progress), progress);
                 } catch (IOException e) {
                     progress.logWarning("Failed to find install path", e);
-                    throw new PackageOperation.StatusChangeListenerException(e);
+                    throw new PackageInstaller.StatusChangeListenerException(e);
                 }
                 PackageInfo info = parsePackageInfo(dest, p);
-                addVersion(new File(dest.getParentFile(), MAVEN_METADATA_FILE_NAME), info,
-                        progress);
+                addVersion(new File(dest.getParentFile(), MAVEN_METADATA_FILE_NAME), info, progress,
+                        mFop);
         }
     }
 
@@ -104,17 +105,18 @@ public class MavenInstallListener implements PackageOperation.StatusChangeListen
     /**
      * Remove the specified package from the corresponding metadata file.
      */
-    private boolean removeVersion(@NonNull LocalPackage p, @NonNull ProgressIndicator progress) {
+    private static boolean removeVersion(@NonNull LocalPackage p, @NonNull FileOp fop,
+            @NonNull ProgressIndicator progress) {
         PackageInfo info = parsePackageInfo(p.getLocation(), p);
         MavenMetadata metadata = parseMetadata(
                 new File(p.getLocation().getParent(), MAVEN_METADATA_FILE_NAME), info, progress,
-                mSdkHandler.getFileOp());
+                fop);
         if (metadata == null) {
             return false;
         }
         metadata.versioning.versions.version.remove(info.version);
         return writeMetadata(new File(p.getLocation().getParentFile(), MAVEN_METADATA_FILE_NAME),
-                progress, mSdkHandler.getFileOp(), metadata);
+                progress, fop, metadata);
     }
 
     /**
@@ -133,17 +135,16 @@ public class MavenInstallListener implements PackageOperation.StatusChangeListen
     /**
      * Adds the specified packageInfo to the corresponding maven metadata file.
      */
-    private boolean addVersion(@NonNull File metadataFile, @NonNull PackageInfo info,
-            @NonNull ProgressIndicator progress) {
-        FileOp fileOp = mSdkHandler.getFileOp();
-        MavenMetadata metadata = parseMetadata(metadataFile, info, progress, fileOp);
+    private static boolean addVersion(@NonNull File metadataFile, @NonNull PackageInfo info,
+            @NonNull ProgressIndicator progress, FileOp fop) {
+        MavenMetadata metadata = parseMetadata(metadataFile, info, progress, fop);
 
         if (metadata == null) {
             return false;
         }
 
         metadata.versioning.versions.version.add(info.version);
-        return writeMetadata(metadataFile, progress, fileOp, metadata);
+        return writeMetadata(metadataFile, progress, fop, metadata);
     }
 
     /**

@@ -21,8 +21,6 @@ import com.android.annotations.Nullable;
 import com.android.repository.Revision;
 import com.android.repository.api.ConstantSourceProvider;
 import com.android.repository.api.Downloader;
-import com.android.repository.api.Installer;
-import com.android.repository.api.InstallerFactory;
 import com.android.repository.api.LocalPackage;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemotePackage;
@@ -52,7 +50,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 /**
- * Tests for {@link BasicInstallerFactory}.
+ * Tests for {@link BasicInstaller}.
  *
  * TODO: more tests.
  */
@@ -82,8 +80,7 @@ public class BasicInstallerTest extends TestCase {
         // Get one of the packages to uninstall.
         LocalPackage p = pkgs.getLocalPackages().get("dummy;foo");
         // Uninstall it
-        InstallerFactory factory = new BasicInstallerFactory();
-        factory.createUninstaller(p, mgr, fop).uninstall(new FakeProgressIndicator());
+        new BasicInstaller(p, mgr, fop).uninstall(new FakeProgressIndicator());
         File[] contents = fop.listFiles(root);
         // Verify that the deleted dir is gone.
         assertEquals(1, contents.length);
@@ -140,10 +137,10 @@ public class BasicInstallerTest extends TestCase {
 
         // Install one of the packages.
         RemotePackage p = pkgs.getRemotePackages().get("dummy;bar");
-        Installer basicInstaller = new BasicInstallerFactory().createInstaller(p, mgr, fop);
+        BasicInstaller basicInstaller = new BasicInstaller(p, mgr, fop);
         basicInstaller.prepareInstall(downloader, new FakeSettingsController(false),
                 runner.getProgressIndicator());
-        basicInstaller.completeInstall(runner.getProgressIndicator());
+        basicInstaller.completeInstall(p, runner.getProgressIndicator(), mgr, fop);
         runner.getProgressIndicator().assertNoErrorsOrWarnings();
 
         // Reload the packages.
@@ -221,9 +218,9 @@ public class BasicInstallerTest extends TestCase {
 
         // Install the update
         FakeProgressIndicator progress = new FakeProgressIndicator();
-        Installer basicInstaller = new BasicInstallerFactory().createInstaller(update, mgr, fop);
+        BasicInstaller basicInstaller = new BasicInstaller(update, mgr, fop);
         basicInstaller.prepareInstall(downloader, new FakeSettingsController(false), progress);
-        basicInstaller.completeInstall(progress);
+        basicInstaller.completeInstall(update, progress, mgr, fop);
 
         // Reload the repo
         mgr.load(0, ImmutableList.<RepoManager.RepoLoadedCallback>of(),
@@ -274,7 +271,7 @@ public class BasicInstallerTest extends TestCase {
         remote.setCompleteUrl("http://www.example.com/package.zip");
         FakeDownloader downloader = new FakeDownloader(fop);
 
-        assertFalse(new BasicInstallerFactory().createInstaller(remote, mgr, fop)
+        assertFalse(new BasicInstaller(remote, mgr, fop)
                 .prepareInstall(downloader, new FakeSettingsController(false), progress));
         boolean found = false;
         for (String warning : progress.getWarnings()) {
@@ -308,7 +305,7 @@ public class BasicInstallerTest extends TestCase {
         remote.setCompleteUrl("http://www.example.com/package.zip");
         FakeDownloader downloader = new FakeDownloader(fop);
 
-        assertFalse(new BasicInstallerFactory().createInstaller(remote, mgr, fop)
+        assertFalse(new BasicInstaller(remote, mgr, fop)
                 .prepareInstall(downloader, new FakeSettingsController(false), progress));
         boolean found = false;
         for (String warning : progress.getWarnings()) {
@@ -364,9 +361,7 @@ public class BasicInstallerTest extends TestCase {
                       "                <complete>\n" +
                       "                    <size>2345</size>\n" +
                       "                    <checksum>" +
-                      BasicInstaller.hashFile(
-                              new ByteArrayInputStream(zipBytes), zipBytes.length,
-                              new FakeProgressIndicator()) +
+                      BasicInstaller.hashFile(new ByteArrayInputStream(zipBytes), zipBytes.length, new FakeProgressIndicator()) +
                       "</checksum>\n" +
                       "                    <url>http://example.com/2/arch1</url>\n" +
                       "                </complete>\n" +
@@ -391,7 +386,7 @@ public class BasicInstallerTest extends TestCase {
 
         // Install one of the packages.
         RemotePackage p = mgr.getPackages().getRemotePackages().get("dummy;bar");
-        Installer basicInstaller = new BasicInstallerFactory().createInstaller(p, mgr, fop);
+        BasicInstaller basicInstaller = new BasicInstaller(p, mgr, fop);
         FakeProgressIndicator firstInstallProgress = new FakeProgressIndicator();
         boolean result = basicInstaller
                 .prepareInstall(downloader, new FakeSettingsController(false),
@@ -430,7 +425,7 @@ public class BasicInstallerTest extends TestCase {
         result = basicInstaller.prepareInstall(failingDownloader, new FakeSettingsController(false),
                 secondInstallProgress);
         assertTrue(result);
-        result = basicInstaller.completeInstall(secondInstallProgress);
+        result = basicInstaller.completeInstall(p, secondInstallProgress, mgr, fop);
 
         assertTrue(result);
         secondInstallProgress.assertNoErrorsOrWarnings();
