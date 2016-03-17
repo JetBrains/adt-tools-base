@@ -26,7 +26,6 @@ import com.android.repository.api.RepoManager;
 import com.android.repository.api.RepositorySource;
 import com.android.repository.api.RepositorySourceProvider;
 import com.android.repository.api.SchemaModule;
-import com.android.repository.api.SettingsController;
 import com.android.repository.impl.meta.SchemaModuleUtil;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -108,8 +107,6 @@ public class RemoteListSourceProviderImpl extends RemoteListSourceProvider {
      *
      * @param downloader         The {@link Downloader} to use to download the source list.
      *                           Required.
-     * @param settingsController The {@link SettingsController} to use for the download settings.
-     *                           Required if required by the downloader.
      * @param progress           {@link ProgressIndicator} for logging.
      * @param forceRefresh       If true, this provider should refresh its list of sources, rather
      *                           than return cached ones.
@@ -118,8 +115,7 @@ public class RemoteListSourceProviderImpl extends RemoteListSourceProvider {
     @NonNull
     @Override
     public List<RepositorySource> getSources(@Nullable Downloader downloader,
-            @Nullable SettingsController settingsController, @NonNull ProgressIndicator progress,
-            boolean forceRefresh) {
+            @NonNull ProgressIndicator progress, boolean forceRefresh) {
         if (downloader == null) {
             throw new IllegalArgumentException("downloader must not be null");
         }
@@ -139,7 +135,7 @@ public class RemoteListSourceProviderImpl extends RemoteListSourceProvider {
             String urlStr = String.format(mUrl, version);
             try {
                 url = new URL(urlStr);
-                xml = downloader.downloadAndStream(url, settingsController, progress);
+                xml = downloader.downloadAndStream(url, progress);
             } catch (FileNotFoundException expected) {
                 // do nothing
             } catch (UnknownHostException e) {

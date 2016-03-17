@@ -19,9 +19,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.api.Downloader;
 import com.android.repository.api.ProgressIndicator;
-import com.android.repository.api.SettingsController;
 import com.android.repository.io.FileOp;
-import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.internal.repository.CanceledByUserException;
 import com.android.sdklib.internal.repository.DownloadCache;
 import com.android.utils.Pair;
@@ -51,8 +49,8 @@ public class LegacyDownloader implements Downloader {
 
     @Override
     @Nullable
-    public InputStream downloadAndStream(@NonNull URL url, @Nullable SettingsController controller,
-            @NonNull ProgressIndicator indicator) throws IOException {
+    public InputStream downloadAndStream(@NonNull URL url, @NonNull ProgressIndicator indicator)
+            throws IOException {
         try {
             return mDownloadCache.openCachedUrl(url.toString(), new LegacyTaskMonitor(indicator));
         } catch (CanceledByUserException e) {
@@ -63,18 +61,16 @@ public class LegacyDownloader implements Downloader {
 
     @Nullable
     @Override
-    public File downloadFully(@NonNull URL url, @Nullable SettingsController settings,
-            @NonNull ProgressIndicator indicator)
+    public File downloadFully(@NonNull URL url, @NonNull ProgressIndicator indicator)
             throws IOException {
         File target = File.createTempFile("LegacyDownloader", null);
-        downloadFully(url, settings, target, indicator);
+        downloadFully(url, target, indicator);
         return target;
     }
 
     @Override
-    public void downloadFully(@NonNull URL url, @Nullable SettingsController settings,
-            @NonNull File target, @NonNull ProgressIndicator indicator)
-            throws IOException {
+    public void downloadFully(@NonNull URL url, @NonNull File target,
+            @NonNull ProgressIndicator indicator) throws IOException {
         OutputStream out = mFileOp.newFileOutputStream(target);
         try {
             Pair<InputStream, Integer> downloadedResult = mDownloadCache

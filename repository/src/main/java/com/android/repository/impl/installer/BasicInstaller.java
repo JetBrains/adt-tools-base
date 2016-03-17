@@ -17,13 +17,11 @@
 package com.android.repository.impl.installer;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.repository.api.Downloader;
 import com.android.repository.api.Installer;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
-import com.android.repository.api.SettingsController;
 import com.android.repository.impl.meta.Archive;
 import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
@@ -54,12 +52,11 @@ public class BasicInstaller extends AbstractPackageOperation.AbstractInstaller {
     /**
      * Downloads and unzips the complete archive for {@code p} into {@code installTempPath}.
      *
-     * @see #prepareInstall(Downloader, SettingsController, ProgressIndicator)
+     * @see #prepareInstall(Downloader, ProgressIndicator)
      */
     @Override
     protected boolean doPrepareInstall(@NonNull File installTempPath,
-      @NonNull Downloader downloader, @Nullable SettingsController settings,
-      @NonNull ProgressIndicator progress) {
+      @NonNull Downloader downloader, @NonNull ProgressIndicator progress) {
         URL url = InstallerUtil.resolveCompleteArchiveUrl(getPackage(), progress);
         if (url == null) {
             progress.logWarning("No compatible archive found!");
@@ -71,7 +68,7 @@ public class BasicInstaller extends AbstractPackageOperation.AbstractInstaller {
             File downloadLocation = new File(installTempPath, url.getFile());
             // TODO: allow resuming of partial downloads
             if (!isFileDownloaded(downloadLocation, archive, progress)) {
-                downloader.downloadFully(url, settings, downloadLocation, progress);
+                downloader.downloadFully(url, downloadLocation, progress);
             }
             if (progress.isCanceled()) {
                 return false;

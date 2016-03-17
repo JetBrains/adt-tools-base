@@ -46,7 +46,7 @@ public class AddonListSourceProviderTest extends TestCase {
         downloader
                 .registerUrl(new URL("https://dl.google.com/android/repository/addons_list-1.xml"),
                         getClass().getResourceAsStream("testdata/addons_list_sample_1.xml"));
-        List<RepositorySource> sources = provider.getSources(downloader, null, progress, false);
+        List<RepositorySource> sources = provider.getSources(downloader, progress, false);
         progress.assertNoErrorsOrWarnings();
         assertEquals(4, sources.size());
         assertEquals("ありがとうございます。", sources.get(1).getDisplayName());
@@ -56,7 +56,7 @@ public class AddonListSourceProviderTest extends TestCase {
                 .registerUrl(new URL("https://dl.google.com/android/repository/addons_list-2.xml"),
                         getClass().getResourceAsStream("testdata/addons_list_sample_2.xml"));
 
-        sources = provider.getSources(downloader, null, progress, true);
+        sources = provider.getSources(downloader, progress, true);
         progress.assertNoErrorsOrWarnings();
         assertEquals(6, sources.size());
         assertEquals("ありがとうございます。", sources.get(1).getDisplayName());
@@ -70,7 +70,7 @@ public class AddonListSourceProviderTest extends TestCase {
                 .registerUrl(new URL("https://dl.google.com/android/repository/addons_list-3.xml"),
                         getClass().getResourceAsStream("testdata/addons_list_sample_3.xml"));
 
-        sources = provider.getSources(downloader, null, progress, true);
+        sources = provider.getSources(downloader, progress, true);
         progress.assertNoErrorsOrWarnings();
         assertEquals(6, sources.size());
         assertEquals(ImmutableSet.of(AndroidSdkHandler.getAddonModule()),
@@ -92,8 +92,7 @@ public class AddonListSourceProviderTest extends TestCase {
         FakeProgressIndicator progress = new FakeProgressIndicator();
         handler.getSdkManager(progress);
         RepositorySourceProvider provider = handler.getUserSourceProvider(progress);
-        List<RepositorySource> result = provider
-                .getSources(null, null, progress, false);
+        List<RepositorySource> result = provider.getSources(null, progress, false);
         progress.assertNoErrorsOrWarnings();
         assertEquals(3, result.size());
         RepositorySource s0 = result.get(0);

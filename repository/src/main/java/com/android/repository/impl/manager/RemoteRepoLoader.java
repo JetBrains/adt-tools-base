@@ -101,13 +101,13 @@ public class RemoteRepoLoader {
         Map<String, RemotePackage> result = Maps.newHashMap();
         for (RepositorySourceProvider provider : mSourceProviders) {
             for (RepositorySource source : provider
-                    .getSources(downloader, settings, progress, false)) {
+                    .getSources(downloader, progress, false)) {
                 if (!source.isEnabled()) {
                     continue;
                 }
                 try {
                     InputStream repoStream = downloader
-                            .downloadAndStream(new URL(source.getUrl()), settings, progress);
+                            .downloadAndStream(new URL(source.getUrl()), progress);
                     final List<String> errors = Lists.newArrayList();
 
                     // Don't show the errors, in case the fallback loader can read it. But keep

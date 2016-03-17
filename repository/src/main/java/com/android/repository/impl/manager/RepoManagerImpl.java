@@ -203,11 +203,10 @@ public class RepoManagerImpl extends RepoManager {
     @Override
     @NonNull
     public Set<RepositorySource> getSources(@Nullable Downloader downloader,
-            @Nullable SettingsController settings, @NonNull ProgressIndicator progress,
-            boolean forceRefresh) {
+      @NonNull ProgressIndicator progress, boolean forceRefresh) {
         Set<RepositorySource> result = Sets.newHashSet();
         for (RepositorySourceProvider provider : mSourceProviders) {
-            result.addAll(provider.getSources(downloader, settings, progress, forceRefresh));
+            result.addAll(provider.getSources(downloader, progress, forceRefresh));
         }
         return result;
     }

@@ -24,7 +24,6 @@ import com.android.repository.api.RepoManager;
 import com.android.repository.api.RepositorySource;
 import com.android.repository.api.RepositorySourceProvider;
 import com.android.repository.api.SchemaModule;
-import com.android.repository.api.SettingsController;
 import com.android.repository.api.SimpleRepositorySource;
 import com.android.repository.io.FileOp;
 import com.android.repository.io.impl.FileOpImpl;
@@ -165,7 +164,6 @@ public class LocalSourceProvider implements RepositorySourceProvider {
      * Gets the {@link RepositorySource}s from this provider.
      *
      * @param downloader   Unused by this provider.
-     * @param settings     Unused by this provider.
      * @param logger       A {@link ProgressIndicator} to be used for showing progress and logging.
      * @param forceRefresh If true, this provider should refresh its list of sources, rather than
      *                     return any cached sources.
@@ -173,8 +171,7 @@ public class LocalSourceProvider implements RepositorySourceProvider {
     @NonNull
     @Override
     public List<RepositorySource> getSources(@Nullable Downloader downloader,
-            @Nullable SettingsController settings, @NonNull ProgressIndicator logger,
-            boolean forceRefresh) {
+            @NonNull ProgressIndicator logger, boolean forceRefresh) {
         synchronized (LOCK) {
             if (mSources == null || forceRefresh) {
                 loadUserAddons(logger);

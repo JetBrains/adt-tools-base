@@ -16,7 +16,7 @@
 
 package com.android.repository.api;
 
-import static com.android.repository.impl.meta.TypeDetails.*;
+import static com.android.repository.impl.meta.TypeDetails.GenericType;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -211,7 +211,6 @@ public abstract class RepoManager {
      * Probably should only be needed by a repository UI.
      *
      * @param downloader   The {@link Downloader} to use for downloading source lists, if needed.
-     * @param settings     The settings to use when downloading or reading source lists.
      * @param progress     A {@link ProgressIndicator} for source providers to use to show their
      *                     progress and for logging.
      * @param forceRefresh Individual {@link RepositorySourceProvider}s may cache their results. If
@@ -220,8 +219,7 @@ public abstract class RepoManager {
      * @return The {@link RepositorySource}s obtained from the providers.
      */
     public abstract Set<RepositorySource> getSources(@Nullable Downloader downloader,
-            @Nullable SettingsController settings, @NonNull ProgressIndicator progress,
-            boolean forceRefresh);
+            @NonNull ProgressIndicator progress, boolean forceRefresh);
 
 
     /**
