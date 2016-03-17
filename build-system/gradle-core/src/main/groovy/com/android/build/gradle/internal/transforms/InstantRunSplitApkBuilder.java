@@ -73,6 +73,7 @@ public class InstantRunSplitApkBuilder extends BaseTask {
     private File zipAlignExe;
     private AaptOptions aaptOptions;
     private File supportDir;
+    private File incrementalDir;
 
     private ApkVariantOutputData variantOutputData;
 
@@ -180,7 +181,7 @@ public class InstantRunSplitApkBuilder extends BaseTask {
         Files.createParentDirs(outputLocation);
         File resPackageFile = generateSplitApkManifest(file.encodeName());
         getBuilder().packageCodeSplitApk(resPackageFile.getAbsolutePath(),
-                file.dexFile, signingConf, outputLocation);
+                file.dexFile, signingConf, outputLocation, incrementalDir);
         // zip align it.
         final File alignedOutput = new File(getOutputDirectory(), file.encodeName() + ".apk");
         ProcessInfoBuilder processInfoBuilder = new ProcessInfoBuilder();
@@ -292,6 +293,7 @@ public class InstantRunSplitApkBuilder extends BaseTask {
             task.setAndroidBuilder(variantScope.getGlobalScope().getAndroidBuilder());
             task.instantRunBuildContext = variantScope.getInstantRunBuildContext();
             task.supportDir = variantScope.getInstantRunSliceSupportDir();
+            task.incrementalDir = variantScope.getIncrementalDir(task.getName());
 
             ConventionMappingHelper.map(task, "zipAlignExe", new Callable<File>() {
                 @Override
