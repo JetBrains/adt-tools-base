@@ -1,0 +1,21 @@
+apply from: '../../commonLocalRepo.gradle'
+
+apply plugin: 'java'
+apply plugin: 'maven'
+
+dependencies {
+    compile gradleApi()
+    compile 'com.android.tools.build:transform-api:1.5.0'
+    compile 'com.googlecode.jarjar:jarjar:1.3'
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: uri("../testrepo"))
+            pom.version = '0.1'
+            pom.groupId = 'com.example.transformapi'
+            pom.artifactId = 'jarjarplugin'
+        }
+    }
+}

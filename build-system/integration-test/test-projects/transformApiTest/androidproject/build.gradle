@@ -1,0 +1,45 @@
+apply from: "../../commonHeader.gradle"
+apply from: '../../commonLocalRepo.gradle'
+buildscript { apply from: "../../commonBuildScript.gradle" }
+
+rootProject.ext.buildToolsVersion = '23.0.0'
+rootProject.ext.latestCompileSdk = 23
+
+buildscript {
+    repositories {
+        maven {
+            url='../testrepo'
+        }
+        maven { url System.env.CUSTOM_REPO }
+    }
+    dependencies {
+        classpath 'com.example.transformapi:jarjarplugin:0.1'
+    }
+}
+
+
+if (buildToolsVersion < '21.0.0') {
+    println ("Warning : this sample requires build-tools version 21 or above")
+}
+
+apply plugin: 'com.android.application'
+apply plugin: 'com.example.android.build.transform.jarjar'
+
+android {
+  compileSdkVersion rootProject.latestCompileSdk
+  buildToolsVersion = rootProject.buildToolsVersion
+
+  defaultConfig {
+    versionCode 12
+    minSdkVersion 16
+    targetSdkVersion 20
+  }
+}
+
+repositories {
+  maven { url System.env.CUSTOM_REPO }
+}
+
+dependencies {
+  compile 'com.google.code.gson:gson:2.3'
+}
