@@ -101,4 +101,9 @@ public interface ISystemImage extends Comparable<ISystemImage> {
      */
     @NonNull
     AndroidVersion getAndroidVersion();
+
+    /**
+     * Returns true if this system image is obsolete.
+     */
+    boolean obsolete();
 }
