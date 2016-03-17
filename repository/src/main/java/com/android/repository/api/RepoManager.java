@@ -21,6 +21,7 @@ import static com.android.repository.impl.meta.TypeDetails.*;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.repository.impl.installer.PackageInstaller;
 import com.android.repository.impl.manager.RepoManagerImpl;
 import com.android.repository.impl.meta.RepositoryPackages;
 import com.android.repository.io.FileOp;
@@ -349,21 +350,21 @@ public abstract class RepoManager {
     /**
      * Record that the given package is in the process of being installed by the given installer.
      */
-    public abstract void installBeginning(@NonNull RepoPackage repoPackage,
-      @NonNull PackageOperation installer);
+    public abstract void installBeginning(@NonNull RemotePackage remotePackage,
+      @NonNull PackageInstaller installer);
 
     /**
      * Record that the given package is no longer in the process of being installed (that is,
      * install completed either successfully or unsuccessfully).
      */
-    public abstract void installEnded(@NonNull RepoPackage repoPackage);
+    public abstract void installEnded(@NonNull RemotePackage remotePackage);
 
     /**
      * Gets the previously-registered installer that is currently installing the given package, or
      * {@code null} if there is none.
      */
     @Nullable
-    public abstract PackageOperation getInProgressInstallOperation(@NonNull RepoPackage remotePackage);
+    public abstract PackageInstaller getInProgressInstaller(@NonNull RemotePackage remotePackage);
 
     /**
      * Callback for when repository load is completed/partially completed.
