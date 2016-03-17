@@ -85,7 +85,7 @@ public final class RelativeFiles {
         File[] directoryFiles =
                 Verify.verifyNotNull(directory.listFiles(), "directory.listFiles() == null");
         for (File file : directoryFiles) {
-            files.add(RelativeFile.make(base, file));
+            files.add(new RelativeFile(base, file));
 
             if (file.isDirectory()) {
                 files.addAll(fromDirectory(base, file));

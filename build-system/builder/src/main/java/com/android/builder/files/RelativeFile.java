@@ -19,6 +19,7 @@ package com.android.builder.files;
 import com.android.annotations.NonNull;
 import com.android.utils.FileUtils;
 import com.google.common.base.Function;
+import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 
 import java.io.File;
@@ -32,6 +33,16 @@ import java.io.File;
  * <p>Neither the file nor the base need to exist. They are treated as abstract paths.
  */
 public class RelativeFile {
+
+    /**
+     * Function that extracts the file from a relative file.
+     */
+    public static Function<RelativeFile, File> EXTRACT_BASE = new Function<RelativeFile, File>() {
+        @Override
+        public File apply(RelativeFile input) {
+            return input.getBase();
+        }
+    };
 
     /**
      * Function that extracts the file from a relative file.
@@ -76,42 +87,18 @@ public class RelativeFile {
      * Creates a new relative file.
      *
      * @param base the base directory
-     * @param file the file
-     * @param osIndependentRelativePath the OS independent relative path
-     */
-    private RelativeFile(@NonNull File base, @NonNull File file,
-            @NonNull String osIndependentRelativePath) {
-        mBase = base;
-        mFile = file;
-        mOsIndependentRelativePath = osIndependentRelativePath;
-    }
-
-    /**
-     * Creates a new relative file of a file, relative to its parent. This is equivalent to
-     * {@code make(file.getParentFile(), file)}.
-     *
-     * @param file the file
-     * @return the relative file
-     */
-    public static RelativeFile make(@NonNull File file) {
-        return RelativeFile.make(file.getParentFile(), file);
-    }
-
-    /**
-     * Creates a new relative file.
-     *
-     * @param base the base directory
      * @param file the file, must not be the same as the base directory and must be located inside
      * {@code base}
-     * @return the relative file
      */
-    public static RelativeFile make(@NonNull File base, @NonNull File file) {
+    public RelativeFile(@NonNull File base, @NonNull File file) {
         Preconditions.checkArgument(!base.equals(file), "base.equals(file)");
 
-        String relativePath = FileUtils. relativePossiblyNonExistingPath(file, base);
-        String osIndependentPath = FileUtils.toSystemIndependentPath(relativePath);
+        mBase = base;
+        mFile = file;
 
-        return new RelativeFile(base, file, osIndependentPath);
+        String relativePath = FileUtils. relativePossiblyNonExistingPath(file, base);
+
+        mOsIndependentRelativePath = FileUtils.toSystemIndependentPath(relativePath);;
     }
 
     /**
@@ -144,5 +131,29 @@ public class RelativeFile {
     @NonNull
     public String getOsIndependentRelativePath() {
         return mOsIndependentRelativePath;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(mBase, mFile);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof RelativeFile)) {
+            return false;
+        }
+
+        RelativeFile rf = (RelativeFile) obj;
+        return Objects.equal(mBase, rf.mBase) && Objects.equal(mFile, rf.mFile);
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this)
+                .add("base", mBase)
+                .add("file", mFile)
+                .add("path", mOsIndependentRelativePath)
+                .toString();
     }
 }
