@@ -43,12 +43,15 @@ import com.intellij.psi.PsiTypeParameter;
 import com.intellij.psi.PsiTypeParameterList;
 import com.intellij.psi.javadoc.PsiDocComment;
 
+import org.eclipse.jdt.internal.compiler.ast.TypeDeclaration;
 import org.eclipse.jdt.internal.compiler.classfmt.ClassFileConstants;
 import org.eclipse.jdt.internal.compiler.lookup.AnnotationBinding;
 import org.eclipse.jdt.internal.compiler.lookup.FieldBinding;
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding;
+import org.eclipse.jdt.internal.compiler.lookup.TypeBinding;
 import org.eclipse.jdt.internal.compiler.lookup.TypeConstants;
+import org.eclipse.jdt.internal.compiler.problem.AbortCompilation;
 
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -485,7 +488,10 @@ class EcjPsiBinaryClass extends EcjPsiBinaryElement implements PsiClass, PsiModi
     @Nullable
     @Override
     public PsiClass getContainingClass() {
-        throw new UnimplementedLintPsiApiException();
+        if (mTypeBinding.enclosingType() != null) {
+            return mManager.findClass(mTypeBinding.enclosingType());
+        }
+        return null;
     }
 
     @NonNull
@@ -561,7 +567,17 @@ class EcjPsiBinaryClass extends EcjPsiBinaryElement implements PsiClass, PsiModi
         if (mBinding instanceof ReferenceBinding) {
             ReferenceBinding cls = (ReferenceBinding) mBinding;
             while (cls != null) {
-                AnnotationBinding[] annotations = cls.getAnnotations();
+                AnnotationBinding[] annotations;
+                try {
+                    annotations = cls.getAnnotations();
+                } catch (AbortCompilation e) {
+                    // ECJ  will in some cases go and attempt to load the standard annotations
+                    // as part of the annotation lookup above (in
+                    // AnnotationBinding#addStandardAnnotations), but if for some reason the
+                    // class path is incorrect, this will throw an AbortCompilation. In this
+                    // case, just ignore the annotations.
+                    annotations = new AnnotationBinding[0];
+                }
                 int count = annotations.length;
                 if (count > 0) {
                     all = Lists.newArrayListWithExpectedSize(count);
@@ -601,5 +617,34 @@ class EcjPsiBinaryClass extends EcjPsiBinaryElement implements PsiClass, PsiModi
             }
         }
         return null;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null) {
+            return false;
+        }
+        ReferenceBinding binding = mTypeBinding;
+        TypeBinding otherBinding;
+        if (o instanceof EcjPsiClass) {
+            TypeDeclaration otherTypeDeclaration =
+                    (TypeDeclaration) (((EcjPsiClass) o).getNativeNode());
+            assert otherTypeDeclaration != null;
+            otherBinding = otherTypeDeclaration.binding;
+            return binding != null && otherBinding != null && binding.equals(otherBinding);
+        } else if (o instanceof EcjPsiBinaryClass) {
+            otherBinding = ((EcjPsiBinaryClass) o).mTypeBinding;
+            return binding != null && otherBinding != null && binding.equals(otherBinding);
+        }
+
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return mTypeBinding != null ? mTypeBinding.hashCode() : 0;
     }
 }

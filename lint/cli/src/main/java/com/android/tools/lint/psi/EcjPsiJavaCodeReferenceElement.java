@@ -97,7 +97,7 @@ class EcjPsiJavaCodeReferenceElement extends EcjPsiSourceElement
         }
         TypeReference typeReference = (TypeReference)mNativeNode;
         TypeReference[][] typeArguments = typeReference.getTypeArguments();
-        if (typeArguments.length == 0) {
+        if (typeArguments == null || typeArguments.length == 0) {
             return PsiType.EMPTY_ARRAY;
         }
 

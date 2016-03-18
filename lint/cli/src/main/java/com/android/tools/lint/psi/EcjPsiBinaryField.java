@@ -84,7 +84,9 @@ class EcjPsiBinaryField extends EcjPsiBinaryElement implements PsiField, PsiModi
     @Override
     public PsiType getType() {
         PsiType type = mManager.findType(mBinding.type);
-        assert type != null : this;
+        if (type == null) {
+            type = PsiType.NULL;
+        }
         return type;
     }
 
@@ -207,5 +209,28 @@ class EcjPsiBinaryField extends EcjPsiBinaryElement implements PsiField, PsiModi
             }
         }
         return null;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null) {
+            return false;
+        }
+        FieldBinding binding = mBinding;
+        FieldBinding otherBinding = null;
+        if (o instanceof EcjPsiField) {
+            otherBinding = (((EcjPsiField) o).mDeclaration).binding;
+        } else if (o instanceof EcjPsiBinaryField) {
+            otherBinding = (((EcjPsiBinaryField)o).getBinding());
+        }
+        return !(binding == null || otherBinding == null) && binding.equals(otherBinding);
+    }
+
+    @Override
+    public int hashCode() {
+        return mBinding.hashCode();
     }
 }

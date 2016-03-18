@@ -46,7 +46,9 @@ import com.intellij.psi.javadoc.PsiDocComment;
 import org.eclipse.jdt.internal.compiler.ast.TypeDeclaration;
 import org.eclipse.jdt.internal.compiler.ast.TypeReference;
 import org.eclipse.jdt.internal.compiler.classfmt.ClassFileConstants;
+import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding;
 import org.eclipse.jdt.internal.compiler.lookup.SourceTypeBinding;
+import org.eclipse.jdt.internal.compiler.lookup.TypeBinding;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -675,5 +677,39 @@ class EcjPsiClass extends EcjPsiSourceElement implements PsiClass {
             last = element;
         }
         mLastChild.mNextSibling = null;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null) {
+            return false;
+        }
+        TypeDeclaration typeDeclaration = (TypeDeclaration) mNativeNode;
+        SourceTypeBinding binding = typeDeclaration.binding;
+        TypeBinding otherBinding;
+        if (o instanceof EcjPsiClass) {
+            TypeDeclaration otherTypeDeclaration =
+                    (TypeDeclaration) (((EcjPsiClass) o).getNativeNode());
+            assert otherTypeDeclaration != null;
+            otherBinding = otherTypeDeclaration.binding;
+            if (binding == null || otherBinding == null) {
+                return typeDeclaration.equals(otherTypeDeclaration);
+            }
+            return binding.equals(otherBinding);
+        } else if (o instanceof EcjPsiBinaryClass) {
+            otherBinding = (ReferenceBinding) (((EcjPsiBinaryClass) o).getBinding());
+            return binding != null && otherBinding != null && binding.equals(otherBinding);
+        }
+
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        SourceTypeBinding binding = ((TypeDeclaration) mNativeNode).binding;
+        return binding != null ? binding.hashCode() : 0;
     }
 }

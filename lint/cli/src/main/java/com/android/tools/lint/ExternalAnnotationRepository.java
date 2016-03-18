@@ -917,12 +917,13 @@ public class ExternalAnnotationRepository {
 
         @Nullable
         private ClassInfo findClass(@NonNull ReferenceBinding cls) {
-            return mClassMap.get(getTypeName(cls.compoundName));
+            return cls.compoundName != null ? mClassMap.get(getTypeName(cls.compoundName)) : null;
         }
 
         @Nullable
         private ClassInfo findPackage(@NonNull PackageBinding pkg) {
-            return mClassMap.get(getTypeName(pkg.compoundName) +".package-info");
+            return pkg.compoundName != null
+                    ? mClassMap.get(getTypeName(pkg.compoundName) + ".package-info") : null;
         }
 
         @Nullable
