@@ -40,8 +40,8 @@ import java.util.Map;
  * The format is binary and follows the following format:
  *
  * (Header Tag)(version number: int)
- * (Start Tag)(Main File)[(2ndary Tag)(2ndary File)...][(Output tag)(output file)...][(2ndary Output tag)(output file)...]
- * (Start Tag)(Main File)[(2ndary Tag)(2ndary File)...][(Output tag)(output file)...][(2ndary Output tag)(output file)...]
+ * (Start Tag)(Main File)[(secondary Tag)(secondary File)...][(Output tag)(output file)...][(secondary Output tag)(output file)...]
+ * (Start Tag)(Main File)[(secondary Tag)(secondary File)...][(Output tag)(output file)...][(secondary Output tag)(output file)...]
  * ...
  *
  * All files are written as (size in int)(byte array, using UTF8 encoding).
@@ -50,9 +50,9 @@ public class DependencyDataStore {
 
     private static final byte TAG_HEADER = 0x7F;
     private static final byte TAG_START = 0x70;
-    private static final byte TAG_2NDARY_FILE = 0x71;
+    private static final byte TAG_SECONDARY_FILE = 0x71;
     private static final byte TAG_OUTPUT = 0x73;
-    private static final byte TAG_2NDARY_OUTPUT = 0x74;
+    private static final byte TAG_SECONDARY_OUTPUT = 0x74;
     private static final byte TAG_END = 0x77;
 
     private static final int CURRENT_VERSION = 1;
@@ -121,7 +121,7 @@ public class DependencyDataStore {
                 writePath(fos, data.getMainFile());
 
                 for (String path : data.getSecondaryFiles()) {
-                    fos.write(TAG_2NDARY_FILE);
+                    fos.write(TAG_SECONDARY_FILE);
                     writePath(fos, path);
                 }
 
@@ -131,7 +131,7 @@ public class DependencyDataStore {
                 }
 
                 for (String path : data.getSecondaryOutputFiles()) {
-                    fos.write(TAG_2NDARY_OUTPUT);
+                    fos.write(TAG_SECONDARY_OUTPUT);
                     writePath(fos, path);
                 }
 
@@ -193,14 +193,14 @@ public class DependencyDataStore {
                         mMainFileMap.put(path, currentData);
                         inputMap.put(path, currentData);
                         break;
-                    case TAG_2NDARY_FILE:
+                    case TAG_SECONDARY_FILE:
                         currentData.addSecondaryFile(path);
                         inputMap.put(path, currentData);
                         break;
                     case TAG_OUTPUT:
                         currentData.addOutputFile(path);
                         break;
-                    case TAG_2NDARY_OUTPUT:
+                    case TAG_SECONDARY_OUTPUT:
                         currentData.addSecondaryOutputFile(path);
                         break;
                 }

@@ -57,7 +57,7 @@ import java.util.jar.Manifest;
  * Class making the final app package.
  * The inputs are:
  * - packaged resources (output of aapt)
- * - code file (ouput of dx)
+ * - code file (output of dx)
  * - Java resources coming from the project, its libraries, and its jar files
  * - Native libraries from the project or its library.
  *
@@ -395,8 +395,7 @@ public final class Packager implements IArchiveBuilder, Closeable {
      * Checks an input {@link File} object.
      * This checks the following:
      * - the file is not an existing directory.
-     * - that the file exists (if <var>throwIfDoesntExist</var> is <code>false</code>) and can
-     *    be read.
+     * - that the file exists and can be read.
      * @param file the File to check
      * @throws FileNotFoundException if the file is not here.
      * @throws PackagerException If the file is a folder or a file that cannot be read.

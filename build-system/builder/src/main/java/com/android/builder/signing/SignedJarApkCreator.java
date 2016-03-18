@@ -276,9 +276,9 @@ public class SignedJarApkCreator implements ApkCreator {
                 // CERT.SF
                 mOutputJar.putNextEntry(new JarEntry("META-INF/CERT.SF"));
 
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                writeSignatureFile(baos);
-                byte[] signedData = baos.toByteArray();
+                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                writeSignatureFile(byteArrayOutputStream);
+                byte[] signedData = byteArrayOutputStream.toByteArray();
                 mOutputJar.write(signedData);
 
                 // CERT.*
