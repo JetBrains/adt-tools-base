@@ -16,7 +16,6 @@
 
 package com.android.ide.common.repository;
 
-import com.android.annotations.Nullable;
 import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.repository.testframework.MockFileOp;
 import com.android.sdklib.repositoryv2.AndroidSdkHandler;

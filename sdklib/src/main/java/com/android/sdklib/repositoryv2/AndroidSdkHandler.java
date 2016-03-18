@@ -515,7 +515,6 @@ public final class AndroidSdkHandler {
                 userProvider.setRepoManager(result);
             }
 
-
             result.setLocalPath(localLocation);
 
             if (localLocation != null) {

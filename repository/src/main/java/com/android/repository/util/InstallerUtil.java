@@ -30,7 +30,7 @@ import com.android.repository.api.RepoPackage;
 import com.android.repository.api.Repository;
 import com.android.repository.api.RepositorySource;
 import com.android.repository.api.UpdatablePackage;
-import com.android.repository.impl.manager.LocalRepoLoader;
+import com.android.repository.impl.manager.LocalRepoLoaderImpl;
 import com.android.repository.impl.meta.Archive;
 import com.android.repository.impl.meta.CommonFactory;
 import com.android.repository.impl.meta.LocalPackageImpl;
@@ -211,7 +211,7 @@ public class InstallerUtil {
         Repository repo = factory.createRepositoryType();
         LocalPackageImpl impl = LocalPackageImpl.create(p);
         repo.setLocalPackage(impl);
-        File packageXml = new File(packageRoot, LocalRepoLoader.PACKAGE_XML_FN);
+        File packageXml = new File(packageRoot, LocalRepoLoaderImpl.PACKAGE_XML_FN);
         writeRepoXml(p, manager, repo, packageXml, fop, progress);
     }
 

@@ -387,4 +387,14 @@ public class FileOpImpl implements FileOp {
     public boolean equals(Object o) {
         return o instanceof FileOpImpl;
     }
+
+    @Override
+    public boolean setLastModified(@NonNull File file, long time) throws IOException {
+        try {
+            return file.setLastModified(time);
+        }
+        catch (SecurityException e) {
+            throw new IOException(e);
+        }
+    }
 }
