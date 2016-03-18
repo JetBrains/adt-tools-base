@@ -158,7 +158,7 @@ import java.util.zip.ZipFile;
  * {@link #processResources(AaptPackageProcessBuilder, boolean, ProcessOutputHandler)}
  * {@link #compileAllAidlFiles(List, File, File, Collection, List, DependencyFileProcessor, ProcessOutputHandler)}
  * {@link #convertByteCode(Collection, File, boolean, File, DexOptions, List, boolean, boolean, ProcessOutputHandler, boolean)}
- * {@link #packageApk(String, Set, Collection, Collection, Set, boolean, SigningConfig, File, int)}
+ * {@link #packageApk(String, Set, Collection, Collection, Set, boolean, SigningConfig, File, int, File)}
  *
  * Java compilation is not handled but the builder provides the bootclasspath with
  * {@link #getBootClasspath(boolean)}.
@@ -180,9 +180,9 @@ public class AndroidBuilder {
     private static final AtomicInteger DEX_PROCESS_COUNT = new AtomicInteger(2);
 
     /**
-     * API level for marshmellow.
+     * API level for split APKs.
      */
-    private static final int API_LEVEL_SPLIT_APK = 23;
+    private static final int API_LEVEL_SPLIT_APK = 21;
 
     /**
      * {@link ExecutorService} used to run all dexing code (either in-process or out-of-process).
@@ -2180,11 +2180,19 @@ public class AndroidBuilder {
                 certificate = null;
             }
 
-            ApkCreatorFactory.CreationData
-                    creationData = new ApkCreatorFactory.CreationData(outApkLocation,
-                    key, certificate, null, mCreatedBy, minSdkVersion);
-            Packager packager = closer.register(new Packager(creationData, androidResPkgLocation,
-                    mLogger));
+            ApkCreatorFactory.CreationData creationData =
+                    new ApkCreatorFactory.CreationData(
+                            outApkLocation,
+                            key,
+                            certificate,
+                            null,   // BuiltBy
+                            mCreatedBy,
+                            minSdkVersion);
+            Packager packager = closer.register(
+                    new Packager(
+                        creationData,
+                        androidResPkgLocation,
+                        mLogger));
 
             // add dex folder to the apk root.
             if (!dexFolders.isEmpty()) {
