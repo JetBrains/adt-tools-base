@@ -17,12 +17,10 @@
 package com.android.sdklib.repositoryv2;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.sdklib.repositoryv2.meta.SdkCommonFactory;
 
-import java.util.Locale;
-
 import javax.xml.bind.annotation.XmlTransient;
+import java.util.Locale;
 
 /**
  * A string with both user-friendly and easily-parsed versions.
