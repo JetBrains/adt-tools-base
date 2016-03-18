@@ -24,6 +24,7 @@ import static com.android.SdkConstants.ATTR_CORE_APP;
 import static com.android.SdkConstants.ATTR_LAYOUT;
 import static com.android.SdkConstants.ATTR_LAYOUT_RESOURCE_PREFIX;
 import static com.android.SdkConstants.ATTR_PACKAGE;
+import static com.android.SdkConstants.ATTR_SRC_COMPAT;
 import static com.android.SdkConstants.ATTR_STYLE;
 import static com.android.SdkConstants.AUTO_URI;
 import static com.android.SdkConstants.TAG_LAYOUT;
@@ -178,7 +179,7 @@ public class DetectMissingPrefix extends LayoutDetector {
 
                 // Appcompat now encourages decorating standard views (like ImageView and
                 // ImageButton) with srcCompat in the app namespace
-                if (attribute.getLocalName().equals("srcCompat")) {
+                if (attribute.getLocalName().equals(ATTR_SRC_COMPAT)) {
                     return;
                 }
             }
