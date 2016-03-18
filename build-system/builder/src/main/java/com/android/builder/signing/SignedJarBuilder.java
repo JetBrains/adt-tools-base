@@ -22,6 +22,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.packaging.ApkCreator;
+import com.android.builder.packaging.ManifestAttributes;
 import com.android.builder.packaging.ZipEntryFilter;
 import com.android.builder.packaging.ZipAbortException;
 import com.google.common.io.Closer;
@@ -143,12 +144,13 @@ public class SignedJarBuilder implements ApkCreator {
         if (mKey != null && mCertificate != null) {
             mManifest = new Manifest();
             Attributes main = mManifest.getMainAttributes();
-            main.putValue("Manifest-Version", "1.0");
+            main.putValue(ManifestAttributes.MANIFEST_VERSION,
+                    ManifestAttributes.CURRENT_MANIFEST_VERSION);
             if (builtBy != null) {
-                main.putValue("Built-By", builtBy);
+                main.putValue(ManifestAttributes.BUILT_BY, builtBy);
             }
             if (createdBy != null) {
-                main.putValue("Created-By", createdBy);
+                main.putValue(ManifestAttributes.CREATED_BY, createdBy);
             }
 
             String digestAttributeDigestAlgorithm;
