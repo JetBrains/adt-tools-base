@@ -17,7 +17,6 @@
 package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.RESOURCE_CLZ_ID;
-import static com.android.tools.lint.detector.api.LintUtils.nextNonWhitespace;
 import static com.android.tools.lint.detector.api.LintUtils.skipParentheses;
 
 import com.android.annotations.NonNull;
@@ -35,19 +34,22 @@ import com.intellij.psi.JavaElementVisitor;
 import com.intellij.psi.PsiArrayAccessExpression;
 import com.intellij.psi.PsiAssignmentExpression;
 import com.intellij.psi.PsiBinaryExpression;
-import com.intellij.psi.PsiDoWhileStatement;
+import com.intellij.psi.PsiBreakStatement;
+import com.intellij.psi.PsiContinueStatement;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiExpression;
-import com.intellij.psi.PsiForStatement;
-import com.intellij.psi.PsiForeachStatement;
 import com.intellij.psi.PsiIfStatement;
+import com.intellij.psi.PsiJavaToken;
 import com.intellij.psi.PsiLocalVariable;
+import com.intellij.psi.PsiLoopStatement;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiMethodCallExpression;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.PsiReferenceExpression;
+import com.intellij.psi.PsiReturnStatement;
+import com.intellij.psi.PsiStatement;
 import com.intellij.psi.PsiTypeCastExpression;
-import com.intellij.psi.PsiWhileStatement;
+import com.intellij.psi.PsiWhiteSpace;
 import com.intellij.psi.util.PsiTreeUtil;
 
 import java.util.Collections;
@@ -188,63 +190,97 @@ public class CutPasteDetector extends Detector implements Detector.JavaPsiScanne
         return null;
     }
 
-    private static boolean isReachableFrom(
+    static boolean isReachableFrom(
             @NonNull PsiMethod method,
-            @NonNull PsiMethodCallExpression from,
-            @NonNull PsiMethodCallExpression to) {
-        PsiElement current = from;
+            @NonNull PsiElement from,
+            @NonNull PsiElement to) {
+        PsiElement prev = from;
+        PsiElement curr = next(method, from, to, null);
         //noinspection ConstantConditions
-        while (current != null && current != method) {
-            if (containsElement(current, to)) {
+        while (curr != null) {
+            if (containsElement(method, curr, to)) {
                 return true;
             }
-
-            if (current.getNextSibling() != null) {
-                current = current.getNextSibling();
-            } else {
-                while (current.getParent() != null && current.getParent() != method) {
-                    if (nextNonWhitespace(current.getParent()) != null) {
-                        current = nextNonWhitespace(current.getParent());
-                        assert current != null;
-                        if (current.getParent() instanceof PsiIfStatement) {
-                            // Don't want to move from then to else siblings
-                            current = current.getParent();
-                        } else {
-                            break;
-                        }
-                    } else {
-                        current = current.getParent();
-                    }
-                }
-
-                PsiElement parent = skipParentheses(current.getParent());
-                if (parent instanceof PsiForStatement
-                        || parent instanceof PsiForeachStatement
-                        || parent instanceof PsiWhileStatement
-                        || parent instanceof PsiDoWhileStatement) {
-                    if (containsElement(current, to)) {
-                        return true;
-                    }
-                } else if (parent == method) {
-                    return false;
-                }
-            }
+            curr = next(method, curr, to, prev);
+            prev = curr;
         }
 
         return false;
     }
 
-    private static boolean containsElement(@NonNull PsiElement root, @NonNull PsiElement element) {
-        if (root.equals(element)) {
-            return true;
+    @Nullable
+    static PsiElement next(
+            @NonNull PsiMethod method,
+            @NonNull PsiElement curr,
+            @NonNull PsiElement target,
+            @Nullable PsiElement prev) {
+
+        if (curr instanceof PsiMethod) {
+            return null;
         }
 
-        PsiElement curr = root.getFirstChild();
-        while (curr != null) {
-            if (containsElement(curr, element)) {
+        PsiElement parent = curr.getParent();
+        if (curr instanceof PsiContinueStatement) {
+            PsiStatement continuedStatement = ((PsiContinueStatement) curr)
+                    .findContinuedStatement();
+            if (continuedStatement != null) {
+                if (containsElement(method, continuedStatement, target)) {
+                    return target;
+                }
+                return next(method, continuedStatement, target, curr);
+            } else {
+                return next(method, parent, target, curr);
+            }
+        } else if (curr instanceof PsiBreakStatement) {
+            PsiStatement exitedStatement = ((PsiBreakStatement) curr).findExitedStatement();
+            if (exitedStatement != null) {
+                return next(method, exitedStatement, target, curr);
+            } else {
+                return next(method, parent, target, curr);
+            }
+        } else if (curr instanceof PsiReturnStatement) {
+            return null;
+        } else if (curr instanceof PsiLoopStatement && prev != null &&
+                containsElement(method, curr, prev)) {
+            // If we stepped *up* (from a last child nested in the loop) up to the loop
+            // itself, mark all children in the loop as reachable since we're iterating
+            if (containsElement(method, curr, target)) {
+                return target;
+            }
+        }
+
+        PsiElement sibling = curr.getNextSibling();
+        while (sibling instanceof PsiWhiteSpace || sibling instanceof PsiJavaToken) {
+            // Skip whitespaces and tokens such as PsiJavaToken.SEMICOLON etc
+            sibling = sibling.getNextSibling();
+        }
+        if (sibling == null) {
+            return next(method, parent, target, curr);
+        }
+
+        if (parent instanceof PsiIfStatement &&
+                curr == ((PsiIfStatement)parent).getThenBranch()) {
+            return next(method, parent, target, curr);
+        } else if (parent instanceof PsiLoopStatement) {
+            if (containsElement(method, parent, target)) {
+                return target;
+            }
+        }
+
+        return sibling;
+    }
+
+    private static boolean containsElement(@
+            NonNull PsiMethod method,
+            @NonNull PsiElement root,
+            @NonNull PsiElement element) {
+        //noinspection ConstantConditions
+        while (element != null && element != method) {
+            if (root.equals(element)) {
                 return true;
             }
-            curr = curr.getNextSibling();
+
+            element = element.getParent();
         }
 
         return false;
