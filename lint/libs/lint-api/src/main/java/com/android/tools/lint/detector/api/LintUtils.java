@@ -1098,29 +1098,20 @@ public class LintUtils {
     /**
      * Returns true if the given Gradle model is older than the given version number
      */
-    public static boolean isModelOlderThan(@Nullable AndroidProject project,
+    public static boolean isModelOlderThan(@NonNull Project project,
             int major, int minor, int micro) {
-        if (project != null) {
-            String modelVersion = project.getModelVersion();
-            try {
-                GradleVersion version = GradleVersion.tryParse(modelVersion);
-                if (version == null) {
-                    return false;
-                }
-
-                if (version.getMajor() != major) {
-                    return version.getMajor() < major;
-                }
-                if (version.getMinor() != minor) {
-                    return version.getMinor() < minor;
-                }
-                return version.getMicro() < micro;
-            } catch (NumberFormatException e) {
-                // ignore
-            }
+        GradleVersion version = project.getGradleModelVersion();
+        if (version == null) {
+            return false;
         }
 
-        return false;
+        if (version.getMajor() != major) {
+            return version.getMajor() < major;
+        }
+        if (version.getMinor() != minor) {
+            return version.getMinor() < minor;
+        }
+        return version.getMicro() < micro;
     }
 
     /**
