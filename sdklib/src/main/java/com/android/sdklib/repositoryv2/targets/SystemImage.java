@@ -38,6 +38,34 @@ public class SystemImage implements ISystemImage {
     public static final IdDisplay DEFAULT_TAG = IdDisplay.create("default", "Default");
 
     /**
+     * Tag to apply to system images for wearables.
+     */
+    public static final IdDisplay WEAR_TAG = IdDisplay.create("android-wear", "Android Wear");
+
+    /**
+     * Tag to apply to system images for Android TV.
+     */
+    public static final IdDisplay TV_TAG = IdDisplay.create("android-tv", "Android TV");
+
+    /**
+     * Tag to apply to system images for Glass.
+     */
+    public static final IdDisplay GLASS_TAG = IdDisplay.create("google_gdk", "Android Glass");
+
+    /**
+     * Tag to apply to system images that include Google APIs.
+     * Note that {@link #WEAR_TAG} and {@link #TV_TAG} implies the presence of Google APIs in addition
+     * there is one system image that uses {@link #GOOGLE_APIS_X86_TAG}.
+     */
+    public static final IdDisplay GOOGLE_APIS_TAG = IdDisplay.create("google_apis", "Google APIs");
+
+    /**
+     * A separate tag to apply to system images that include Google APIs on x86 systems.
+     * Note this tag was used for api 19 and has been used since.
+     */
+    public static final IdDisplay GOOGLE_APIS_X86_TAG = IdDisplay.create("google_apis_x86", "Google APIs x86");
+
+    /**
      * Directory containing the system image.
      */
     private final File mLocation;
