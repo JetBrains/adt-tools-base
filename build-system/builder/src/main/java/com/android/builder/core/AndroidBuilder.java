@@ -56,13 +56,14 @@ import com.android.builder.internal.packaging.Packager;
 import com.android.builder.model.ClassField;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.model.SyncIssue;
+import com.android.builder.packaging.ApkCreatorFactory;
 import com.android.builder.packaging.PackagerException;
 import com.android.builder.packaging.SealedPackageException;
 import com.android.builder.packaging.SigningException;
 import com.android.builder.packaging.ZipAbortException;
 import com.android.builder.sdk.SdkInfo;
 import com.android.builder.sdk.TargetInfo;
-import com.android.builder.signing.SignedJarBuilder;
+import com.android.builder.signing.SignedJarApkCreator;
 import com.android.ide.common.internal.AaptCruncher;
 import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.internal.PngCruncher;
@@ -103,7 +104,6 @@ import com.android.utils.ILogger;
 import com.android.utils.LineCollector;
 import com.android.utils.Pair;
 import com.google.common.base.Charsets;
-import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
@@ -128,6 +128,8 @@ import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -176,6 +178,11 @@ public class AndroidBuilder {
 
     private static final Object LOCK_FOR_DEX = new Object();
     private static final AtomicInteger DEX_PROCESS_COUNT = new AtomicInteger(2);
+
+    /**
+     * API level for marshmellow.
+     */
+    private static final int API_LEVEL_SPLIT_APK = 23;
 
     /**
      * {@link ExecutorService} used to run all dexing code (either in-process or out-of-process).
@@ -2154,20 +2161,30 @@ public class AndroidBuilder {
         checkNotNull(androidResPkgLocation, "androidResPkgLocation cannot be null.");
         checkNotNull(outApkLocation, "outApkLocation cannot be null.");
 
-        CertificateInfo certificateInfo = null;
-        if (signingConfig != null && signingConfig.isSigningReady()) {
-            //noinspection ConstantConditions - isSigningReady() called above.
-            certificateInfo = KeystoreHelper.getCertificateInfo(signingConfig.getStoreType(),
-                    signingConfig.getStoreFile(), signingConfig.getStorePassword(),
-                    signingConfig.getKeyPassword(), signingConfig.getKeyAlias());
-        }
-
         Closer closer = Closer.create();
         try {
-            Packager packager = closer.register(new Packager(
-                    outApkLocation, androidResPkgLocation,
-                    certificateInfo, mCreatedBy, mLogger,
-                    minSdkVersion));
+            PrivateKey key;
+            X509Certificate certificate;
+
+            if (signingConfig != null && signingConfig.isSigningReady()) {
+                CertificateInfo certificateInfo = KeystoreHelper.getCertificateInfo(
+                        signingConfig.getStoreType(),
+                        Preconditions.checkNotNull(signingConfig.getStoreFile()),
+                        Preconditions.checkNotNull(signingConfig.getStorePassword()),
+                        Preconditions.checkNotNull(signingConfig.getKeyPassword()),
+                        Preconditions.checkNotNull(signingConfig.getKeyAlias()));
+                key = certificateInfo.getKey();
+                certificate = certificateInfo.getCertificate();
+            } else {
+                key = null;
+                certificate = null;
+            }
+
+            ApkCreatorFactory.CreationData
+                    creationData = new ApkCreatorFactory.CreationData(outApkLocation,
+                    key, certificate, null, mCreatedBy, minSdkVersion);
+            Packager packager = closer.register(new Packager(creationData, androidResPkgLocation,
+                    mLogger));
 
             // add dex folder to the apk root.
             if (!dexFolders.isEmpty()) {
@@ -2221,20 +2238,31 @@ public class AndroidBuilder {
             @NonNull File intermediateDir)
             throws KeytoolException, PackagerException, IOException {
 
-        CertificateInfo certificateInfo = null;
+        PrivateKey key;
+        X509Certificate certificate;
+
         if (signingConfig != null && signingConfig.isSigningReady()) {
-            //noinspection ConstantConditions - isSigningReady() called above.
-            certificateInfo = KeystoreHelper.getCertificateInfo(signingConfig.getStoreType(),
-                    signingConfig.getStoreFile(), signingConfig.getStorePassword(),
-                    signingConfig.getKeyPassword(), signingConfig.getKeyAlias());
+            CertificateInfo certificateInfo = KeystoreHelper.getCertificateInfo(
+                    signingConfig.getStoreType(),
+                    Preconditions.checkNotNull(signingConfig.getStoreFile()),
+                    Preconditions.checkNotNull(signingConfig.getStorePassword()),
+                    Preconditions.checkNotNull(signingConfig.getKeyPassword()),
+                    Preconditions.checkNotNull(signingConfig.getKeyAlias()));
+            key = certificateInfo.getKey();
+            certificate = certificateInfo.getCertificate();
+        } else {
+            key = null;
+            certificate = null;
         }
+
+        ApkCreatorFactory.CreationData
+                creationData = new ApkCreatorFactory.CreationData(outApkLocation,
+                key, certificate, null, mCreatedBy, API_LEVEL_SPLIT_APK);
 
         Closer closer = Closer.create();
         try {
-            Packager packager = closer.register(new Packager(
-                    outApkLocation, androidResPkgLocation,
-                    certificateInfo, mCreatedBy, mLogger,
-                    23 /* minSdkVersion, MarshMallow */));
+            Packager packager = closer.register(new Packager(creationData, androidResPkgLocation,
+                    mLogger));
 
             packager.addFile(dexFile, "classes.dex");
         } catch (SealedPackageException e) {
@@ -2267,20 +2295,28 @@ public class AndroidBuilder {
             ZipAbortException,
             com.android.builder.signing.SigningException, IOException {
 
-        CertificateInfo certificateInfo = null;
+        PrivateKey key;
+        X509Certificate certificate;
+
         if (signingConfig != null && signingConfig.isSigningReady()) {
-            //noinspection ConstantConditions - isSigningReady() called above.
-            certificateInfo = KeystoreHelper.getCertificateInfo(signingConfig.getStoreType(),
-                    signingConfig.getStoreFile(), signingConfig.getStorePassword(),
-                    signingConfig.getKeyPassword(), signingConfig.getKeyAlias());
+            CertificateInfo certificateInfo = KeystoreHelper.getCertificateInfo(
+                    signingConfig.getStoreType(),
+                    Preconditions.checkNotNull(signingConfig.getStoreFile()),
+                    Preconditions.checkNotNull(signingConfig.getStorePassword()),
+                    Preconditions.checkNotNull(signingConfig.getKeyPassword()),
+                    Preconditions.checkNotNull(signingConfig.getKeyAlias()));
+            key = certificateInfo.getKey();
+            certificate = certificateInfo.getCertificate();
+        } else {
+            key = null;
+            certificate = null;
         }
 
-        SignedJarBuilder signedJarBuilder = new SignedJarBuilder(
-                out,
-                certificateInfo != null ? certificateInfo.getKey() : null,
-                certificateInfo != null ? certificateInfo.getCertificate() : null,
-                Packager.getLocalVersion(), mCreatedBy, 1 /* minSdkVersion */);
+        ApkCreatorFactory.CreationData
+                creationData = new ApkCreatorFactory.CreationData(out,
+                key, certificate, null, null, 1);
 
+        SignedJarApkCreator signedJarBuilder = new SignedJarApkCreator(creationData);
 
         signedJarBuilder.writeZip(in);
         signedJarBuilder.close();
