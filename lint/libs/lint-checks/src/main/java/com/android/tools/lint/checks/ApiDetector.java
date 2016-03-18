@@ -56,7 +56,6 @@ import static com.android.utils.SdkUtils.getResourceFieldName;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.model.AndroidProject;
 import com.android.ide.common.repository.GradleVersion;
 import com.android.repository.Revision;
 import com.android.repository.api.LocalPackage;
@@ -1500,13 +1499,10 @@ public class ApiDetector extends ResourceXmlDetector
             return false;
         }
 
-        AndroidProject gradleModel = context.getProject().getGradleProjectModel();
-        if (gradleModel != null) {
-            GradleVersion gradleModelVersion =
-                    GradleVersion.tryParse(gradleModel.getModelVersion());
+        GradleVersion gradleModelVersion = context.getProject().getGradleModelVersion();
+        if (gradleModelVersion != null) {
             GradleVersion minVersion = GradleVersion.tryParse(minGradleVersionString);
-            if (gradleModelVersion != null
-                    && minVersion != null
+            if (minVersion != null
                     && gradleModelVersion.compareIgnoringQualifiers(minVersion) >= 0) {
                 return true;
             }
