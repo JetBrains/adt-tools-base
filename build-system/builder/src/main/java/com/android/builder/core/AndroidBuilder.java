@@ -2058,6 +2058,7 @@ public class AndroidBuilder {
      * @param jniDebugBuild whether the app should include jni debug data
      * @param signingConfig the signing configuration
      * @param outApkLocation location of the APK.
+     * @param intermediateDir a directory where to store intermediate files
      * @throws FileNotFoundException if the store location was not found
      * @throws KeytoolException
      * @throws PackagerException
@@ -2071,7 +2072,8 @@ public class AndroidBuilder {
             boolean jniDebugBuild,
             @Nullable SigningConfig signingConfig,
             @NonNull File outApkLocation,
-            int minSdkVersion)
+            int minSdkVersion,
+            @NonNull File intermediateDir)
             throws KeytoolException, PackagerException, SigningException, IOException {
         checkNotNull(androidResPkgLocation, "androidResPkgLocation cannot be null.");
         checkNotNull(outApkLocation, "outApkLocation cannot be null.");
@@ -2113,7 +2115,7 @@ public class AndroidBuilder {
 
         packageApkIncrementally(androidResPkgLocation, dexFolders, javaResourceMods,
                 javaResourceArchiveMods, jniMods, jniArchiveMods, nativeLibraryPredicate,
-                signingConfig, outApkLocation, minSdkVersion);
+                signingConfig, outApkLocation, minSdkVersion, intermediateDir);
     }
 
     /**
@@ -2129,6 +2131,7 @@ public class AndroidBuilder {
      * @param jniLibsFilter filter to use when reading the JNI libs
      * @param signingConfig the signing configuration
      * @param outApkLocation location of the APK.
+     * @param intermediateDir a directory where to store intermediate files
      * @throws FileNotFoundException if the store location was not found
      * @throws KeytoolException
      * @throws PackagerException
@@ -2145,7 +2148,8 @@ public class AndroidBuilder {
             @NonNull Predicate<String> jniLibsFilter,
             @Nullable SigningConfig signingConfig,
             @NonNull File outApkLocation,
-            int minSdkVersion)
+            int minSdkVersion,
+            @NonNull File intermediateDir)
             throws KeytoolException, PackagerException, SigningException, IOException {
         checkNotNull(androidResPkgLocation, "androidResPkgLocation cannot be null.");
         checkNotNull(outApkLocation, "outApkLocation cannot be null.");
@@ -2213,8 +2217,9 @@ public class AndroidBuilder {
             @NonNull String androidResPkgLocation,
             @NonNull File dexFile,
             @Nullable SigningConfig signingConfig,
-            @NonNull File outApkLocation) throws
-                KeytoolException, PackagerException, IOException {
+            @NonNull File outApkLocation,
+            @NonNull File intermediateDir)
+            throws KeytoolException, PackagerException, IOException {
 
         CertificateInfo certificateInfo = null;
         if (signingConfig != null && signingConfig.isSigningReady()) {

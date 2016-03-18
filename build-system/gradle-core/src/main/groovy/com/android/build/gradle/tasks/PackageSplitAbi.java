@@ -82,6 +82,8 @@ public class PackageSplitAbi extends SplitRelatedTask {
 
     private ApiVersion minSdkVersion;
 
+    private File incrementalDir;
+
     @OutputFiles
     public List<File> getOutputFiles() {
         ImmutableList.Builder<File> builder = ImmutableList.builder();
@@ -149,7 +151,8 @@ public class PackageSplitAbi extends SplitRelatedTask {
                         isJniDebuggable(),
                         getSigningConfig(),
                         outFile,
-                        getMinSdkVersion());
+                        getMinSdkVersion(),
+                        incrementalDir);
                 unprocessedSplits.remove(matcher.group(1));
             }
         }
@@ -291,6 +294,8 @@ public class PackageSplitAbi extends SplitRelatedTask {
             packageSplitAbiTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             packageSplitAbiTask.setVariantName(config.getFullName());
             packageSplitAbiTask.setMinSdkVersion(config.getMinSdkVersion());
+            packageSplitAbiTask.incrementalDir = scope.getIncrementalDir(
+                    packageSplitAbiTask.getName());
 
             ConventionMappingHelper.map(packageSplitAbiTask, "jniFolders",
                     new Callable<Set<File>>() {

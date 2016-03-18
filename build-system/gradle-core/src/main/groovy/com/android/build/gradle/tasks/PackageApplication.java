@@ -279,7 +279,8 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                     getJniDebugBuild(),
                     getSigningConfig(),
                     getOutputFile(),
-                    getMinSdkVersion());
+                    getMinSdkVersion(),
+                    getIncrementalFolder());
         } catch (DuplicateFileException e) {
             Logger logger = getLogger();
             logger.error("Error: duplicate files during packaging of APK " + getOutputFile()
@@ -422,6 +423,7 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
             packageApp.instantRunContext = variantScope.getInstantRunBuildContext();
             packageApp.dexPackagingPolicy = dexPackagingPolicy;
             packageApp.instantRunSupportDir = variantScope.getInstantRunSupportDir();
+            packageApp.setIncrementalFolder(variantScope.getIncrementalDir(packageApp.getName()));
 
             if (config.isMinifyEnabled()
                     && config.getBuildType().isShrinkResources()
