@@ -20,6 +20,7 @@ import static com.android.SdkConstants.ANDROID_URI;
 
 import com.android.annotations.NonNull;
 import com.android.builder.model.AndroidProject;
+import com.android.ide.common.repository.GradleVersion;
 import com.android.ide.common.resources.ResourceUrl;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
@@ -29,7 +30,6 @@ import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
 
 import org.w3c.dom.Attr;
@@ -73,31 +73,18 @@ public class VectorDetector extends ResourceXmlDetector {
         return folderType == ResourceFolderType.DRAWABLE;
     }
 
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.FAST;
-    }
-
-
     /**
      * Returns true if the given Gradle project model supports vector image generation
      *
      * @param project the project to check
      * @return true if the plugin supports vector image generation
      */
-    public static boolean isVectorGenerationSupported(@NonNull AndroidProject project) {
-        String modelVersion = project.getModelVersion();
-
-        // Requires 1.4.x or higher. Rather than doing string => x.y.z decomposition and then
-        // checking higher than 1.4.0, we'll just exclude the 4 possible prefixes that don't satisfy
-        // this requirement.
-        return !(modelVersion.startsWith("1.0")
-                 || modelVersion.startsWith("1.1")
-                 || modelVersion.startsWith("1.2")
-                 || modelVersion.startsWith("1.3"));
+    public static boolean isVectorGenerationSupported(@NonNull Project project) {
+        GradleVersion modelVersion = project.getGradleModelVersion();
+        // Requires 1.4.x or higher.
+        return modelVersion != null
+                && (modelVersion.getMajor() >= 2 || modelVersion.getMinor() >= 4);
     }
-
 
     @Override
     public void visitDocument(@NonNull XmlContext context, @NonNull Document document) {
@@ -113,8 +100,7 @@ public class VectorDetector extends ResourceXmlDetector {
         }
 
         // Not using a plugin that supports vector image generation?
-        AndroidProject model = project.getGradleProjectModel();
-        if (model == null || !isVectorGenerationSupported(model)) {
+        if (!isVectorGenerationSupported(project)) {
             return;
         }
 

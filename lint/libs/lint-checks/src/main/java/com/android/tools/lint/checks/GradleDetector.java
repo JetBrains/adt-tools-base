@@ -718,7 +718,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     }
 
     private static boolean isModelOlderThan011(@NonNull Context context) {
-        return LintUtils.isModelOlderThan(context.getProject().getGradleProjectModel(), 0, 11, 0);
+        return LintUtils.isModelOlderThan(context.getProject(), 0, 11, 0);
     }
 
     private static int sMajorBuildTools;

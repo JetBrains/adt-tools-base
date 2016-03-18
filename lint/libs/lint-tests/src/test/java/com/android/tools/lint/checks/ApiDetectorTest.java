@@ -2036,6 +2036,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
                     Project fromSuper = super.createProject(dir, referenceDir);
                     Project spy = spy(fromSuper);
                     when(spy.getGradleProjectModel()).thenReturn(model);
+                    when(spy.isGradleProject()).thenReturn(true);
                     return spy;
                 }
             };
