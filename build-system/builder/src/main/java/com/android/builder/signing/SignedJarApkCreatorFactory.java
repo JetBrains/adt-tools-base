@@ -17,26 +17,19 @@
 package com.android.builder.signing;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
+import com.android.builder.packaging.ApkCreatorFactory;
 import com.android.builder.packaging.ApkCreator;
-import com.android.builder.packaging.ApkBuilderFactory;
 import com.android.builder.packaging.PackagerException;
 
-import java.io.File;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
-
 /**
- * APK builder factory that creates {@link SignedJarBuilder}s.
+ * APK builder factory that creates {@link SignedJarApkCreator}s.
  */
-public class SignedJarBuilderFactory implements ApkBuilderFactory {
+public class SignedJarApkCreatorFactory implements ApkCreatorFactory {
 
     @Override
-    public ApkCreator make(@NonNull File out, @Nullable PrivateKey key,
-            @Nullable X509Certificate certificate, @Nullable String builtBy,
-            @Nullable String createdBy, int minSdkVersion) throws PackagerException {
+    public ApkCreator make(@NonNull CreationData creationData) throws PackagerException {
         try {
-            return new SignedJarBuilder(out, key, certificate, builtBy, createdBy, minSdkVersion);
+            return new SignedJarApkCreator(creationData);
         } catch (Exception e) {
             throw new PackagerException(e);
         }
