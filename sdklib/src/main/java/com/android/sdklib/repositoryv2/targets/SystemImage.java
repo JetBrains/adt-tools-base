@@ -129,6 +129,11 @@ public class SystemImage implements ISystemImage {
     }
 
     @Override
+    public boolean obsolete() {
+        return mPackage.obsolete();
+    }
+
+    @Override
     public int compareTo(ISystemImage o) {
         int res = getTag().compareTo(o.getTag());
         if (res != 0) {
