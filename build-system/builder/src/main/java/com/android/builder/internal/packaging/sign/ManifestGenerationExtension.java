@@ -23,6 +23,7 @@ import com.android.builder.internal.packaging.zip.ZFile;
 import com.android.builder.internal.packaging.zip.ZFileExtension;
 import com.android.builder.internal.packaging.zip.utils.CachedSupplier;
 import com.android.builder.internal.utils.IOExceptionRunnable;
+import com.android.builder.packaging.ManifestAttributes;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Verify;
 import com.google.common.collect.Maps;
@@ -61,26 +62,6 @@ public class ManifestGenerationExtension {
      * Name of the manifest file.
      */
     public static final String MANIFEST_NAME = META_INF_DIR + "/MANIFEST.MF";
-
-    /**
-     * Manifest attribute with the manifest version.
-     */
-    private static final String MANIFEST_VERSION = "Manifest-Version";
-
-    /**
-     * Manifest attribute value with the manifest version.
-     */
-    private static final String CURRENT_MANIFEST_VERSION = "1.0";
-
-    /**
-     * Manifest attribute with the built by information.
-     */
-    private static final String BUILT_BY = "Built-By";
-
-    /**
-     * Manifest attribute with the created by information.
-     */
-    private static final String CREATED_BY = "Created-By";
 
     /**
      * Who shoule be reported as the manifest builder.
@@ -195,12 +176,13 @@ public class ManifestGenerationExtension {
         }
 
         Attributes mainAttributes = mManifest.getMainAttributes();
-        String currentVersion = mainAttributes.getValue(MANIFEST_VERSION);
+        String currentVersion = mainAttributes.getValue(ManifestAttributes.MANIFEST_VERSION);
         if (currentVersion == null) {
-            mainAttributes.putValue(MANIFEST_VERSION, CURRENT_MANIFEST_VERSION);
+            mainAttributes.putValue(ManifestAttributes.MANIFEST_VERSION,
+                    ManifestAttributes.CURRENT_MANIFEST_VERSION);
             mDirty = true;
         } else {
-            if (!currentVersion.equals(CURRENT_MANIFEST_VERSION)) {
+            if (!currentVersion.equals(ManifestAttributes.CURRENT_MANIFEST_VERSION)) {
                 throw new IOException("Unsupported manifest version: " + currentVersion + ".");
             }
         }
@@ -208,8 +190,8 @@ public class ManifestGenerationExtension {
         /*
          * We "blindly" override all other main attributes.
          */
-        setMainAttribute(BUILT_BY, mBuiltBy);
-        setMainAttribute(CREATED_BY, mCreatedBy);
+        setMainAttribute(ManifestAttributes.BUILT_BY, mBuiltBy);
+        setMainAttribute(ManifestAttributes.CREATED_BY, mCreatedBy);
 
         /*
          * Even if we don't have changes in the manifest, we have re-read it so it is safer to
