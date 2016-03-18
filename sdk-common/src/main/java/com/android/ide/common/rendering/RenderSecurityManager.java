@@ -283,6 +283,16 @@ public class RenderSecurityManager extends SecurityManager {
             if (lib.startsWith(System.getProperty("java.home"))) {
                 return; // Allow loading JRE libraries
             }
+            // Allow loading webp library
+            int lastSlash = lib.lastIndexOf(File.separatorChar);
+            if (lastSlash != -1) {
+                if (lib.substring(lastSlash).contains("webp_jni")) {
+                    // TODO: Figure out a better way.
+                    // This doesn't ensure that we restrict only loading the library that we ship.
+                    // Maybe move this to the plugin.
+                    return;
+                }
+            }
             throw RenderSecurityException.create("Link", lib);
         }
     }
