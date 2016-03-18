@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.transforms;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.build.api.transform.SecondaryFile;
 import com.android.build.api.transform.DirectoryInput;
@@ -240,7 +239,6 @@ public class InstantRunDex extends Transform {
                 false /* multiDexEnabled */,
                 null /*getMainDexListFile */,
                 dexOptions,
-                ImmutableList.<String>of() /* getAdditionalParameters */,
                 false /* incremental */,
                 true /* optimize */,
                 new LoggedProcessOutputHandler(logger),

@@ -119,7 +119,6 @@ class DexTask extends DefaultTask {
                 false /* multiDexEnabled */,
                 null /*getMainDexListFile */,
                 new com.android.build.gradle.internal.dsl.DexOptions(),
-                ImmutableList.<String>of() /* getAdditionalParameters */,
                 false /* incremental */,
                 true /* optimize */,
                 new com.android.ide.common.process.LoggedProcessOutputHandler(

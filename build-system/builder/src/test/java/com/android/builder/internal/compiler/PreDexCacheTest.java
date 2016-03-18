@@ -50,6 +50,7 @@ import com.android.utils.FileUtils;
 import com.android.utils.NullLogger;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
 import junit.framework.TestCase;
@@ -237,6 +238,12 @@ public class PreDexCacheTest extends TestCase {
         @Override
         public Integer getMaxProcessCount() {
             return null;
+        }
+
+        @NonNull
+        @Override
+        public List<String> getAdditionalParameters() {
+            return Lists.newArrayList();
         }
     }
 
