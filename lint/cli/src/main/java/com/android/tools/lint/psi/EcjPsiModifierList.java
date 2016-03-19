@@ -27,6 +27,12 @@ import com.intellij.psi.PsiModifierList;
 import java.lang.reflect.Modifier;
 
 class EcjPsiModifierList extends EcjPsiSourceElement implements PsiModifierList {
+    /**
+     * Mask representing the "default" keyword which can be specified on methods in interfaces;
+     * this isn't exposed a a flag in the modifier class, so we reuse the enum bit which
+     * won't apply on methods, the only place where the default modifier is allowed.
+     */
+    static final int DEFAULT_MASK = 0x00004000;
 
     private int mModifiers;
 
@@ -142,7 +148,9 @@ class EcjPsiModifierList extends EcjPsiSourceElement implements PsiModifierList 
         if (PsiModifier.STRICTFP.equals(s)) {
             return (modifiers & Modifier.STRICT) != 0;
         }
-        // What about PACKAGE_LOCAL and DEFAULT?
+        if (PsiModifier.DEFAULT.equals(s)) {
+            return (modifiers & DEFAULT_MASK) != 0;
+        }
         return false;
     }
 
