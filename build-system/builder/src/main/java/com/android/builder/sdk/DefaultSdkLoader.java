@@ -111,8 +111,9 @@ public class DefaultSdkLoader implements SdkLoader {
 
     private synchronized void init(@NonNull ILogger logger) {
         if (mSdkHandler == null) {
-            // Intentionally don't use sdk handler caching mechanism
-            mSdkHandler = new AndroidSdkHandler(mSdkLocation, FileOpUtils.create());
+            mSdkHandler = AndroidSdkHandler.getInstance(mSdkLocation);
+            mSdkHandler.getSdkManager(new LoggerProgressIndicatorWrapper(logger))
+                    .invalidateLocalIfNeeded();
 
             File toolsFolder = new File(mSdkLocation, FD_TOOLS);
             File supportToolsFolder = new File(toolsFolder, FD_SUPPORT);
