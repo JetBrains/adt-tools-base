@@ -540,6 +540,9 @@ public class EcjPsiBuilder {
         if ((modifiers & ClassFileConstants.AccVolatile) != 0) {
             flags |= Modifier.VOLATILE;
         }
+        if ((modifiers & ExtraCompilerModifiers.AccDefaultMethod) != 0) {
+            flags |= EcjPsiModifierList.DEFAULT_MASK;
+        }
 
         EcjPsiModifierList modifierList = new EcjPsiModifierList(mManager, flags);
         parent.adoptChild(modifierList);
