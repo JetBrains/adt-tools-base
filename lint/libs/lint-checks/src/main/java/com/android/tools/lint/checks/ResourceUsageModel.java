@@ -464,6 +464,7 @@ public class ResourceUsageModel {
                     // Styles not yet handled correctly: don't mark as unused
                     && resource.type != ResourceType.ATTR
                     && resource.type != ResourceType.DECLARE_STYLEABLE
+                    && resource.type != ResourceType.STYLEABLE
                     // Don't flag known service keys read by library
                     && !TranslationDetector.isServiceKey(resource.name)) {
                 unused.add(resource);

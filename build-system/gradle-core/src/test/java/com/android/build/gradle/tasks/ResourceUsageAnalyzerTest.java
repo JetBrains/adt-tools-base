@@ -23,6 +23,7 @@ import static java.io.File.separatorChar;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.resources.ResourceType;
 import com.android.tools.lint.checks.ResourceUsageModel.Resource;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
@@ -965,7 +966,19 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                 + "com.example.shrinkunittest.app.MainActivity -> com.example.shrinkunittest.app.MainActivity:\n"
                 + "    void onCreate(android.os.Bundle) -> onCreate\n"
                 + "    boolean onCreateOptionsMenu(android.view.Menu) -> onCreateOptionsMenu\n"
-                + "    boolean onOptionsItemSelected(android.view.MenuItem) -> onOptionsItemSelected");
+                + "    boolean onOptionsItemSelected(android.view.MenuItem) -> onOptionsItemSelected\n"
+                + "com.foo.bar.R$layout -> com.foo.bar.t:\n"
+                + "    int checkable_option_view_layout -> a\n"
+                + "    int error_layout -> b\n"
+                + "    int glyph_button_icon_only -> c\n"
+                + "    int glyph_button_icon_with_text_below -> d\n"
+                + "    int glyph_button_icon_with_text_right -> e\n"
+                + "    int structure_status_view -> f\n"
+                + "android.support.annotation.FloatRange -> android.support.annotation.FloatRange:\n"
+                + "    double from() -> from\n"
+                + "    double to() -> to\n"
+                + "    boolean fromInclusive() -> fromInclusive\n"
+                + "    boolean toInclusive() -> toInclusive\n");
     }
 
     public void testFormatStringRegexp() {
@@ -1070,14 +1083,26 @@ public class ResourceUsageAnalyzerTest extends TestCase {
         }
     }
 
-    public void testIsResourceClass() {
+    public void testIsResourceClass() throws Exception {
         File dummy = new File("dummy");
+        File mappingFile = createMappingFile(Files.createTempDir());
         ResourceUsageAnalyzer analyzer = new ResourceUsageAnalyzer(dummy, dummy, dummy,
-                dummy, dummy, null);
+                mappingFile, dummy, null);
+        analyzer.getModel().addDeclaredResource(ResourceType.LAYOUT, "structure_status_view", null, true);
+        analyzer.recordMapping(mappingFile);
         assertTrue(analyzer.isResourceClass("android/support/v7/appcompat/R$attr.class"));
         assertTrue(analyzer.isResourceClass("android/support/v7/appcompat/R$attr.class"));
         assertTrue(analyzer.isResourceClass("android/support/v7/appcompat/R$bool.class"));
         assertFalse(analyzer.isResourceClass("android/support/v7/appcompat/R.class"));
         assertFalse(analyzer.isResourceClass("com/google/samples/apps/iosched/ui/BrowseSessionsActivity.class"));
+        assertFalse(analyzer.isResourceClass("android/support/annotation/FloatRange.class"));
+        assertTrue(analyzer.isResourceClass("com/foo/bar/t.class"));
+        assertTrue(analyzer.isResourceClass("com/foo/bar/t"));
+        Resource resource = analyzer.getResourceFromCode("com/foo/bar/t", "f");
+        assertNotNull(resource);
+        assertEquals("structure_status_view", resource.name);
+        assertEquals(ResourceType.LAYOUT, resource.type);
+        assertNull(analyzer.getResourceFromCode("android/support/annotation/FloatRange",
+                "fromInclusive"));
     }
 }
