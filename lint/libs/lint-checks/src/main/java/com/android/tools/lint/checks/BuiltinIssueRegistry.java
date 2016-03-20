@@ -31,7 +31,7 @@ import java.util.List;
 public class BuiltinIssueRegistry extends IssueRegistry {
     private static final List<Issue> sIssues;
 
-    static final int INITIAL_CAPACITY = 258;
+    static final int INITIAL_CAPACITY = 259;
 
     static {
         List<Issue> issues = new ArrayList<Issue>(INITIAL_CAPACITY);
@@ -143,6 +143,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(LabelForDetector.ISSUE);
         issues.add(LayoutConsistencyDetector.INCONSISTENT_IDS);
         issues.add(LayoutInflationDetector.ISSUE);
+        issues.add(LeakDetector.ISSUE);
         issues.add(LocaleDetector.STRING_LOCALE);
         issues.add(LocaleFolderDetector.DEPRECATED_CODE);
         issues.add(LocaleFolderDetector.INVALID_FOLDER);
