@@ -6,6 +6,7 @@
                 <tr><td>Name</td></tr>
             </thead>
             <tr><td>applicationId</td></tr>
+            <tr><td>applicationIdSuffix</td></tr>
             <tr><td>dimension</td></tr>
             <tr><td>flavorDimension</td></tr>
             <tr><td>generatedDensities</td></tr>
@@ -21,6 +22,7 @@
             <tr><td>vectorDrawables</td></tr>
             <tr><td>versionCode</td></tr>
             <tr><td>versionName</td></tr>
+            <tr><td>versionNameSuffix</td></tr>
         </table>
     </section>
     <section>

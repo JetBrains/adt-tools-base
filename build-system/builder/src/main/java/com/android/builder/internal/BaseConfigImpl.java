@@ -56,7 +56,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     private List<File> mJarJarRuleFiles = Lists.newArrayList();
 
     /**
-     * Application id suffix applied to this base config.
+     * @see #getApplicationIdSuffix()
      */
     @NonNull
     public BaseConfigImpl setApplicationIdSuffix(@Nullable String applicationIdSuffix) {
@@ -65,7 +65,10 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     }
 
     /**
-     * Application id suffix applied to this base config.
+     * Application id suffix.
+     *
+     * <p>This is appended to the "base" application id when calculating the final application id
+     * for a variant.
      */
     @Override
     @Nullable
@@ -74,7 +77,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     }
 
     /**
-     * Version name suffix applied to this base config.
+     * @see #getVersionNameSuffix()
      */
     @NonNull
     public BaseConfigImpl setVersionNameSuffix(@Nullable String versionNameSuffix) {
@@ -83,7 +86,10 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     }
 
     /**
-     * Version name suffix applied to this base config.
+     * Version name suffix.
+     *
+     * <p>This is appended to the "base" version name when calculating the final version name
+     * for a variant.
      */
     @Override
     @Nullable
