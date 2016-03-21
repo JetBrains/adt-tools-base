@@ -82,26 +82,86 @@ public final class FileUtils {
         };
     }
 
-    public static void deleteFolder(@NonNull final File folder) throws IOException {
-        if (!folder.exists()) {
+    /**
+     * Recursively deletes a path.
+     *
+     * @param path the path delete, may exist or not
+     * @throws IOException failed to delete the file / directory
+     */
+    public static void deletePath(@NonNull final File path) throws IOException {
+        if (!path.exists()) {
             return;
         }
-        File[] files = folder.listFiles();
-        if (files != null) { // i.e. is a directory.
-            for (final File file : files) {
-                deleteFolder(file);
-            }
+
+        if (path.isDirectory()) {
+            deleteDirectoryContents(path);
         }
-        if (!folder.delete()) {
-            throw new IOException(String.format("Could not delete folder %s", folder));
+
+        if (!path.delete()) {
+            throw new IOException(String.format("Could not delete path '%s'.", path));
         }
     }
 
-    public static void emptyFolder(@NonNull final File folder) throws IOException {
-        deleteFolder(folder);
-        if (!folder.mkdirs()) {
-            throw new IOException(String.format("Could not create empty folder %s", folder));
+    /**
+     * Recursively deletes a directory or file.
+     *
+     * @param directory the directory, that must exist and be a valid directory
+     * @throws IOException failed to delete the file / directory
+     */
+    public static void deleteDirectoryContents(@NonNull final File directory) throws IOException {
+        Preconditions.checkArgument(directory.isDirectory(), "!directory.isDirectory");
+
+        File[] files = directory.listFiles();
+        Preconditions.checkNotNull(files);
+        for (File file : files) {
+            deletePath(file);
         }
+    }
+
+    /**
+     * Recursively deletes a directory or file.
+     *
+     * @param directory the directory / file to delete, may exist or not
+     * @throws IOException failed to delete the file / directory
+     * @deprecated use {@link #deletePath(File)} instead
+     */
+    @Deprecated
+    public static void deleteFolder(@NonNull final File directory) throws IOException {
+        deletePath(directory);
+    }
+
+    /**
+     * Makes sure {@code path} is an empty directory. If {@code path} is a directory, its contents
+     * are removed recursively, leaving an empty directory. If {@code path} is not a directory,
+     * it is removed and a directory created with the given path. If {@code path} does not
+     * exist, a directory is created with the given path.
+     *
+     * @param path the path, that may exist or not and may be a file or directory
+     * @throws IOException failed to delete directory contents, failed to delete {@code path} or
+     * failed to create a directory at {@code path}
+     */
+    public static void cleanOutputDir(@NonNull File path) throws IOException {
+        if (!path.isDirectory()) {
+            if (path.exists()) {
+                deletePath(path);
+            }
+
+            if (!path.mkdirs()) {
+                throw new IOException(String.format("Could not create empty folder %s", path));
+            }
+
+            return;
+        }
+
+        deleteDirectoryContents(path);
+    }
+
+    /**
+     * @deprecated use {@link #cleanOutputDir(File)}
+     */
+    @Deprecated
+    public static void emptyFolder(@NonNull File directory) throws IOException {
+        cleanOutputDir(directory);
     }
 
     public static void copy(@NonNull final File from, @NonNull final File toDir)
@@ -130,6 +190,12 @@ public final class FileUtils {
         }
     }
 
+    /**
+     * Deletes a file.
+     *
+     * @param file the file to delete; the file must exist
+     * @throws IOException failed to delete the file
+     */
     public static void delete(@NonNull File file) throws IOException {
         boolean result = file.delete();
         if (!result) {

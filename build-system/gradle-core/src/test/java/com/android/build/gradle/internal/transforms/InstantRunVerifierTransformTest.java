@@ -138,7 +138,7 @@ public class InstantRunVerifierTransformTest {
             .build());
 
         // clean up.
-        FileUtils.deleteFolder(tmpDir);
+        FileUtils.deletePath(tmpDir);
 
         // input class should have been copied.
         assertThat(recordedVerification).isEmpty();
@@ -201,7 +201,7 @@ public class InstantRunVerifierTransformTest {
                 .build());
 
         // clean up.
-        FileUtils.deleteFolder(tmpDir);
+        FileUtils.deletePath(tmpDir);
 
         // changed class should have been verified
         assertThat(recordedVerification).isEmpty();
@@ -267,7 +267,7 @@ public class InstantRunVerifierTransformTest {
                 .build());
 
         // clean up.
-        FileUtils.deleteFolder(tmpDir);
+        FileUtils.deletePath(tmpDir);
 
         // changed class should have been verified
         assertThat(recordedVerification).hasSize(1);
@@ -331,7 +331,7 @@ public class InstantRunVerifierTransformTest {
                 .build());
 
         // clean up.
-        FileUtils.deleteFolder(tmpDir);
+        FileUtils.deletePath(tmpDir);
 
         // input class should have been copied.
         assertThat(recordedCopies).hasSize(5);
@@ -397,7 +397,7 @@ public class InstantRunVerifierTransformTest {
                 .build());
 
         // clean up.
-        FileUtils.deleteFolder(tmpDir);
+        FileUtils.deletePath(tmpDir);
 
         // input class should have been verified.
         assertThat(recordedVerification).hasSize(5);

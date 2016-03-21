@@ -95,10 +95,10 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
             TestRunner.NoAuthorizedDeviceFoundException, TestException {
 
         File resultsOutDir = getResultsDir();
-        FileUtils.emptyFolder(resultsOutDir);
+        FileUtils.cleanOutputDir(resultsOutDir);
 
         File coverageOutDir = getCoverageDir();
-        FileUtils.emptyFolder(coverageOutDir);
+        FileUtils.cleanOutputDir(coverageOutDir);
 
         boolean success = false;
         // If there are tests to run, and the test runner returns with no results, we fail (since
@@ -142,7 +142,7 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
 
         // run the report from the results.
         File reportOutDir = getReportsDir();
-        FileUtils.emptyFolder(reportOutDir);
+        FileUtils.cleanOutputDir(reportOutDir);
 
         TestReport report = new TestReport(ReportType.SINGLE_FLAVOR, resultsOutDir, reportOutDir);
         report.generateReport();

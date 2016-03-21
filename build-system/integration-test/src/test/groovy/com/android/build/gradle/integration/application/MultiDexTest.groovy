@@ -157,7 +157,7 @@ class MultiDexTest {
     public void "check additional flags"() throws Exception {
         Assume.assumeFalse("additionalParameters not supported by Jack", GradleTestProject.USE_JACK)
 
-        FileUtils.deleteFolder(project.file("src/main/java/com/android/tests/basic/manymethods"))
+        FileUtils.deletePath(project.file("src/main/java/com/android/tests/basic/manymethods"))
 
         project.buildFile << "\nandroid.dexOptions.additionalParameters = ['--minimal-main-dex']\n"
 

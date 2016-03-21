@@ -51,10 +51,10 @@ public class DepOnLocalJarThroughAModuleTest {
     public static void setUp() throws IOException {
         appendToFile(project.getSubproject("app").getBuildFile(),
                 "\n" +
-                "\n" +
-                "dependencies {\n" +
-                "    compile project(\":localJarAsModule\")\n" +
-                "}\n");
+                        "\n" +
+                        "dependencies {\n" +
+                        "    compile project(\":localJarAsModule\")\n" +
+                        "}\n");
         models = project.executeAndReturnMultiModel("clean", ":app:assembleDebug");
     }
 
@@ -66,7 +66,7 @@ public class DepOnLocalJarThroughAModuleTest {
 
     @Test
     public void checkJarIsPackaged() throws IOException, ProcessException {
-        assertThatApk(project.getSubproject("app").getApk("debug", "unaligned"))
+        assertThatApk(project.getSubproject("app").getApk("debug"))
                 .containsClass("Lcom/example/android/multiproject/person/People;");
     }
 

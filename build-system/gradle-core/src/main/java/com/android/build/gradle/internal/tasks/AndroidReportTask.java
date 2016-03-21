@@ -135,8 +135,8 @@ public class AndroidReportTask extends DefaultTask implements AndroidTestTask {
         File reportOutDir = getReportsDir();
 
         // empty the folders
-        FileUtils.emptyFolder(resultsOutDir);
-        FileUtils.emptyFolder(reportOutDir);
+        FileUtils.cleanOutputDir(resultsOutDir);
+        FileUtils.cleanOutputDir(reportOutDir);
 
         // do the copy.
         copyResults(resultsOutDir);

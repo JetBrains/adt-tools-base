@@ -90,7 +90,7 @@ public class MergeSourceSetFolders extends IncrementalTask {
     protected void doFullTaskAction() throws IOException {
         // this is full run, clean the previous output
         File destinationDir = getOutputDir();
-        FileUtils.emptyFolder(destinationDir);
+        FileUtils.cleanOutputDir(destinationDir);
 
         List<AssetSet> assetSets = getInputDirectorySets();
 

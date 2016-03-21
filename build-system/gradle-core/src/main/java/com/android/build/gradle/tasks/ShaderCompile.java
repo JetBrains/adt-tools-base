@@ -86,7 +86,7 @@ public class ShaderCompile extends BaseTask {
     protected void compileShaders() throws IOException {
         // this is full run, clean the previous output
         File destinationDir = getOutputDir();
-        FileUtils.emptyFolder(destinationDir);
+        FileUtils.cleanOutputDir(destinationDir);
 
         try {
             getBuilder().compileAllShaderFiles(

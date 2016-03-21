@@ -56,16 +56,16 @@ public class TestWithFlavorsWithCompileDirectJarTest {
     public static void setUp() throws IOException {
         appendToFile(project.getSubproject("app").getBuildFile(),
                 "\n" +
-                "android {\n" +
-                "    productFlavors {\n" +
-                "      pro { }\n" +
-                "      free { }\n" +
-                "    }\n" +
-                "}\n" +
-                "\n" +
-                "dependencies {\n" +
-                "    androidTestCompile project(\":jar\")\n" +
-                "}\n");
+                        "android {\n" +
+                        "    productFlavors {\n" +
+                        "      pro { }\n" +
+                        "      free { }\n" +
+                        "    }\n" +
+                        "}\n" +
+                        "\n" +
+                        "dependencies {\n" +
+                        "    androidTestCompile project(\":jar\")\n" +
+                        "}\n");
         models = project.executeAndReturnMultiModel("clean", ":app:assembleFreeDebugAndroidTest");
     }
 
@@ -77,7 +77,7 @@ public class TestWithFlavorsWithCompileDirectJarTest {
 
     @Test
     public void checkCompiledJarIsPackaged() throws IOException, ProcessException {
-        assertThatApk(project.getSubproject("app").getApk("free", "debug", "androidTest", "unaligned"))
+        assertThatApk(project.getSubproject("app").getTestApk("free", "debug"))
                 .containsClass("Lcom/example/android/multiproject/person/People;");
     }
 

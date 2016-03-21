@@ -72,7 +72,7 @@ public class GenerateApkDataTask extends BaseTask {
             InterruptedException {
         // always empty output dir.
         File outDir = getResOutputDir();
-        FileUtils.emptyFolder(outDir);
+        FileUtils.cleanOutputDir(outDir);
 
         File apk = getApkFile();
         // copy the file into the destination, by sanitizing the name first.

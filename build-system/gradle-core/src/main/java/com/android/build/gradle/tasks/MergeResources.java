@@ -153,7 +153,7 @@ public class MergeResources extends IncrementalTask {
 
         // this is full run, clean the previous output
         File destinationDir = getOutputDir();
-        FileUtils.emptyFolder(destinationDir);
+        FileUtils.cleanOutputDir(destinationDir);
 
         List<ResourceSet> resourceSets = getConfiguredResourceSets(preprocessor);
 

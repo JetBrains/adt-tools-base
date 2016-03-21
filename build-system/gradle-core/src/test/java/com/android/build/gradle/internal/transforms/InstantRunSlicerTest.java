@@ -254,7 +254,7 @@ public class InstantRunSlicerTest {
 
         if (!isIncremental) {
             // delete the output directory and create a new clean one.
-            FileUtils.deleteFolder(getOutputDir());
+            FileUtils.deletePath(getOutputDir());
             outputDir.create();
         } else {
             // create the incremental change file.

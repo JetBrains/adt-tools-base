@@ -41,7 +41,7 @@ public class TestLibraryWithDep {
 
     @Test
     public void checkLibDependencyJarIsPackaged() throws IOException, ProcessException {
-        assertThatApk(project.getApk("debug", "androidTest", "unaligned"))
+        assertThatApk(project.getTestApk("debug"))
                 .containsClass("Lcom/google/common/base/Splitter;");
     }
 }

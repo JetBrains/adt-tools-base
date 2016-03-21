@@ -123,7 +123,7 @@ public class ProcessAndroidResources extends IncrementalTask {
         // we have to clean the source folder output in case the package name changed.
         File srcOut = getSourceOutputDir();
         if (srcOut != null) {
-            FileUtils.emptyFolder(srcOut);
+            FileUtils.cleanOutputDir(srcOut);
         }
 
         @Nullable

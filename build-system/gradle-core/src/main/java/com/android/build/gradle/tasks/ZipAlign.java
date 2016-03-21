@@ -3,7 +3,6 @@ package com.android.build.gradle.tasks;
 import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.annotations.ApkFile;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
@@ -11,10 +10,7 @@ import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
 import com.android.build.gradle.internal.tasks.FileSupplier;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
-import com.android.builder.internal.packaging.ZFiles;
-import com.android.builder.internal.packaging.zip.ZFile;
 import com.google.common.base.Preconditions;
-import com.google.common.io.Files;
 
 import org.gradle.api.Action;
 import org.gradle.api.DefaultTask;
@@ -62,11 +58,6 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
 
     // ----- PRIVATE TASK API -----
 
-    /**
-     * Should we use the old packaging code?
-     */
-    private boolean useOldPackaging;
-
     private File outputFile;
 
     @ApkFile
@@ -113,25 +104,15 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
                     + "' exists but is not a file.");
         }
 
-        if (useOldPackaging) {
-            getProject().exec(new Action<ExecSpec>() {
-                @Override
-                public void execute(ExecSpec execSpec) {
-                    execSpec.executable(getZipAlignExe());
-                    execSpec.args("-f", "4");
-                    execSpec.args(getInputFile());
-                    execSpec.args(getOutputFile());
-                }
-            });
-        } else {
-            if (!inputFile.equals(outputFile)) {
-                Files.copy(inputFile, outputFile);
+        getProject().exec(new Action<ExecSpec>() {
+            @Override
+            public void execute(ExecSpec execSpec) {
+                execSpec.executable(getZipAlignExe());
+                execSpec.args("-f", "4");
+                execSpec.args(getInputFile());
+                execSpec.args(getOutputFile());
             }
-
-            ZFile apkFile = ZFiles.apk(outputFile);
-            apkFile.realign();
-            apkFile.close();
-        }
+        });
 
         // mark this APK production, this will eventually be saved when instant-run is enabled.
         try {
@@ -212,8 +193,6 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
                 }
             });
             zipAlign.instantRunBuildContext = scope.getVariantScope().getInstantRunBuildContext();
-            zipAlign.useOldPackaging = AndroidGradleOptions.useOldPackaging(
-                    scope.getGlobalScope().getProject());
         }
     }
 }

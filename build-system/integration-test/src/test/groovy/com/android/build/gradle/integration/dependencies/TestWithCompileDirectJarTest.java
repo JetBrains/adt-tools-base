@@ -57,9 +57,9 @@ public class TestWithCompileDirectJarTest {
     public static void setUp() throws IOException {
         appendToFile(project.getSubproject("app").getBuildFile(),
                 "\n" +
-                "dependencies {\n" +
-                "    androidTestCompile project(\":jar\")\n" +
-                "}\n");
+                        "dependencies {\n" +
+                        "    androidTestCompile project(\":jar\")\n" +
+                        "}\n");
         models = project.executeAndReturnMultiModel("clean", ":app:assembleDebugAndroidTest");
     }
 
@@ -71,7 +71,7 @@ public class TestWithCompileDirectJarTest {
 
     @Test
     public void checkCompiledJarIsPackaged() throws IOException, ProcessException {
-        assertThatApk(project.getSubproject("app").getApk("debug", "androidTest", "unaligned"))
+        assertThatApk(project.getSubproject("app").getTestApk("debug"))
                 .containsClass("Lcom/example/android/multiproject/person/People;");
     }
 
