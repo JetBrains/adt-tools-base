@@ -31,7 +31,7 @@ import java.util.List;
 public class BuiltinIssueRegistry extends IssueRegistry {
     private static final List<Issue> sIssues;
 
-    static final int INITIAL_CAPACITY = 256;
+    static final int INITIAL_CAPACITY = 257;
 
     static {
         List<Issue> issues = new ArrayList<Issue>(INITIAL_CAPACITY);
@@ -278,6 +278,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(UselessViewDetector.USELESS_PARENT);
         issues.add(Utf8Detector.ISSUE);
         issues.add(VectorDetector.ISSUE);
+        issues.add(VectorDrawableCompatDetector.ISSUE);
         issues.add(ViewConstructorDetector.ISSUE);
         issues.add(ViewHolderDetector.ISSUE);
         issues.add(ViewTagDetector.ISSUE);

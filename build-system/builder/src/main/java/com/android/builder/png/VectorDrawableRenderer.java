@@ -16,6 +16,7 @@
 
 package com.android.builder.png;
 
+import static com.android.SdkConstants.TAG_VECTOR;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -189,7 +190,7 @@ public class VectorDrawableRenderer implements ResourcePreprocessor {
             DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
             Document doc = dBuilder.parse(resourceFile);
             Element root = doc.getDocumentElement();
-            if (root != null && root.getNodeName().equalsIgnoreCase("vector")) {
+            if (root != null && root.getNodeName().equalsIgnoreCase(TAG_VECTOR)) {
                 result = true;
             }
         } catch (Exception e) {
