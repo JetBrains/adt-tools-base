@@ -27,7 +27,6 @@ import android.util.Log;
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -156,45 +155,6 @@ public class BootstrapApplication extends Application {
         // Make sure class loader finds these
         @SuppressWarnings("unused") Class<Server> server = Server.class;
         @SuppressWarnings("unused") Class<MonkeyPatcher> patcher = MonkeyPatcher.class;
-
-        if (!dexList.isEmpty()) {
-            try {
-                long codeModified = 0L;
-                String lastClass = dexList.get(0);
-                if (new File(lastClass).getName().startsWith(Paths.DEX_SLICE_PREFIX)) {
-                    // Dex slices are not sorted by modification time, so I need
-                    // to look at all of them
-                    for (String file : dexList) {
-                        codeModified = Math.max(codeModified, new File(file).lastModified());
-                    }
-                } else {
-                    codeModified = new File(lastClass).lastModified();
-                }
-
-                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                    Log.i(LOG_TAG, "Last code patch: " + lastClass);
-                    Log.i(LOG_TAG, "APK last modified: " + apkModified + " " +
-                            (apkModified > codeModified ? ">" : "<") + " " + codeModified
-                            + " code patch");
-                }
-
-                // it is important to realize the lastModified() will only have a precision within
-                // one second so if an APK is installed and all its slices are extracted within a
-                // second, the codeModified will be equal to the apkModified.
-                if (apkModified == 0L || codeModified < apkModified) {
-                    if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                        Log.i(LOG_TAG, "Ignoring code patches, older than APK");
-                    }
-                    dexList = Collections.emptyList();
-                }
-            } catch (Throwable t) {
-                Log.e(LOG_TAG, "Failed to check patch timestamps", t);
-            }
-        } else {
-            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                Log.i(LOG_TAG, "No override .dex files found");
-            }
-        }
 
         if (!dexList.isEmpty()) {
             if (Log.isLoggable(LOG_TAG, Log.INFO)) {
