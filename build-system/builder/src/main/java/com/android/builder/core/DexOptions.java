@@ -16,7 +16,10 @@
 
 package com.android.builder.core;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+
+import java.util.List;
 
 public interface DexOptions {
 
@@ -30,4 +33,7 @@ public interface DexOptions {
     Integer getThreadCount();
     @Nullable
     Integer getMaxProcessCount();
+
+    @NonNull
+    List<String> getAdditionalParameters();
 }

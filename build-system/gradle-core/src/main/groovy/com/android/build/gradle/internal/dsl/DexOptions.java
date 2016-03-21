@@ -16,14 +16,20 @@
 
 package com.android.build.gradle.internal.dsl;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.google.common.collect.Lists;
 
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * DSL object for configuring dx options.
  */
+@SuppressWarnings("unused") // public methods exposed in the DSL
 public class DexOptions implements com.android.builder.core.DexOptions {
 
     private boolean isIncrementalFlag = false;
@@ -32,11 +38,11 @@ public class DexOptions implements com.android.builder.core.DexOptions {
 
     private boolean isJumboModeFlag = false;
 
-    private Boolean isDexInProcess = null;
-
     private Integer threadCount = null;
 
     private String javaMaxHeapSize;
+
+    private List<String> additionalParameters = Lists.newArrayList();
 
     private volatile Integer maxProcessCount = null;
 
@@ -133,5 +139,22 @@ public class DexOptions implements com.android.builder.core.DexOptions {
 
     public void setMaxProcessCount(int maxProcessCount) {
         this.maxProcessCount = maxProcessCount;
+    }
+
+    /**
+     * List of additional parameters to be passed to {@code dx}.
+     */
+    @NonNull
+    @Override
+    public List<String> getAdditionalParameters() {
+        return additionalParameters;
+    }
+
+    public void setAdditionalParameters(Iterable<String> additionalParameters) {
+        this.additionalParameters = Lists.newArrayList(additionalParameters);
+    }
+
+    public void additionalParameters(String... parameters) {
+        this.additionalParameters = Arrays.asList(parameters);
     }
 }

@@ -54,6 +54,7 @@ import com.android.utils.ILogger;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -183,6 +184,9 @@ public class DexTransform extends Transform {
             params.put("jumbo", dexOptions.getJumboMode());
             params.put("multidex", multiDex);
             params.put("multidex-legacy",  multiDex && mainDexListFile != null);
+            params.put(
+                    "additional-parameters",
+                    Iterables.toString(dexOptions.getAdditionalParameters()));
 
             TargetInfo targetInfo = androidBuilder.getTargetInfo();
             Preconditions.checkState(targetInfo != null,
@@ -254,7 +258,6 @@ public class DexTransform extends Transform {
                         multiDex,
                         mainDexListFile,
                         dexOptions,
-                        null,
                         false,
                         true,
                         outputHandler,
@@ -410,7 +413,6 @@ public class DexTransform extends Transform {
                             multiDex,
                             mainDexListFile,
                             dexOptions,
-                            null,
                             false,
                             true,
                             outputHandler,

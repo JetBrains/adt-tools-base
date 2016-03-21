@@ -50,7 +50,7 @@ public class DexWrapper {
         int res;
         try {
             DxContext dxContext = new DxContext(output.getStandardOutput(), output.getErrorOutput());
-            Main.Arguments args = buildArguments(processBuilder, dexOptions);
+            Main.Arguments args = buildArguments(processBuilder, dexOptions, dxContext);
             res = new Main(dxContext).run(args);
         } finally {
             output.close();
@@ -63,7 +63,8 @@ public class DexWrapper {
     @NonNull
     private static Main.Arguments buildArguments(
             @NonNull DexProcessBuilder processBuilder,
-            @NonNull DexOptions dexOptions)
+            @NonNull DexOptions dexOptions,
+            @NonNull DxContext dxContext)
             throws ProcessException {
         Main.Arguments args = new Main.Arguments();
 
@@ -91,6 +92,9 @@ public class DexWrapper {
         args.optimize = !processBuilder.isNoOptimize();
         args.numThreads = Objects.firstNonNull(dexOptions.getThreadCount(), 4);
         args.forceJumbo = dexOptions.getJumboMode();
+
+        args.parseFlags(Iterables.toArray(dexOptions.getAdditionalParameters(), String.class));
+        args.makeOptionsObjects(dxContext);
 
         return args;
     }
