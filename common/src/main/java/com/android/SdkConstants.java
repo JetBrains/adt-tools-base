@@ -916,6 +916,7 @@ public final class SdkConstants {
 
     // Tags: Drawables
     public static final String TAG_BITMAP = "bitmap";                  //$NON-NLS-1$
+    public static final String TAG_VECTOR = "vector";                  //$NON-NLS-1$
 
     // Tags: Data-Binding
     public static final String TAG_LAYOUT = "layout";                  //$NON-NLS-1$
@@ -1537,6 +1538,7 @@ public final class SdkConstants {
     public static final String FQCN_IMAGE_VIEW = "android.widget.ImageView"; //$NON-NLS-1$
 
     public static final String ATTR_SRC = "src"; //$NON-NLS-1$
+    public static final String ATTR_SRC_COMPAT = "srcCompat"; //$NON-NLS-1$
 
     public static final String ATTR_GRAVITY = "gravity";        //$NON-NLS-1$
 
