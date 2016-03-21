@@ -64,9 +64,10 @@ public class PublicMethodTest {
                 .that(publicMethodInvoker.invokeAllPublicArrayMethods(allAccessMethods)).isEqualTo(
                 "invoker:a:b-5:2:3-3:4:5-a:b:c-true:true:false-12.0:8.0:9.0-56.0:6.0:7.0-5");
 
-        publicMethodInvoker = new PublicMethodInvoker(7);
-        assertWithMessage("base: PublicMethodInvoker:invokeAllPublicMethods()")
-                .that(publicMethodInvoker.invokeAllPublicMethods(allAccessMethods)).isEqualTo(
-                "public_method:1.0invoker_reloaded12-2-6-24.0-true-48.24-a-14");
+        // disabled due to constructor use
+        //publicMethodInvoker = new PublicMethodInvoker(7);
+        //assertWithMessage("base: PublicMethodInvoker:invokeAllPublicMethods()")
+        //        .that(publicMethodInvoker.invokeAllPublicMethods(allAccessMethods)).isEqualTo(
+        //        "public_method:1.0invoker_reloaded12-2-6-24.0-true-48.24-a-14");
     }
 }

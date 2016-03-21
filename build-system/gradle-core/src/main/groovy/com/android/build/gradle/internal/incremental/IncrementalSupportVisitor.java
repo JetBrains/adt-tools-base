@@ -150,6 +150,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
 
         if (hasIncompatibleChange || disableRedirectionForClass
                 || !isAccessCompatibleWithInstantRun(access)
+                || name.equals(AsmUtils.CONSTRUCTOR)
                 || name.equals(AsmUtils.CLASS_INITIALIZER)) {
             return defaultVisitor;
         } else {

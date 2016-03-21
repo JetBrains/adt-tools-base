@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.incremental;
 
 import static com.android.build.gradle.internal.incremental.InstantRunVerifierStatus.CLASS_ANNOTATION_CHANGE;
 import static com.android.build.gradle.internal.incremental.InstantRunVerifierStatus.COMPATIBLE;
+import static com.android.build.gradle.internal.incremental.InstantRunVerifierStatus.CONSTRUCTOR_CHANGED;
 import static com.android.build.gradle.internal.incremental.InstantRunVerifierStatus.FIELD_ADDED;
 import static com.android.build.gradle.internal.incremental.InstantRunVerifierStatus.FIELD_REMOVED;
 import static com.android.build.gradle.internal.incremental.InstantRunVerifierStatus.FIELD_TYPE_CHANGE;
@@ -289,7 +290,9 @@ public class InstantRunVerifier {
 
             InstantRunVerifierStatus change = methodNode.name.equals(AsmUtils.CLASS_INITIALIZER)
                     ? visitClassInitializer(methodNode, updatedMethod)
-                    : verifyMethod(methodNode, updatedMethod);
+                    : methodNode.name.equals(AsmUtils.CONSTRUCTOR)
+                        ? visitConstructor(methodNode, updatedMethod)
+                        : verifyMethod(methodNode, updatedMethod);
 
             if (change != COMPATIBLE) {
                 return change;
@@ -300,6 +303,15 @@ public class InstantRunVerifier {
             return METHOD_ADDED;
         }
         return COMPATIBLE;
+    }
+
+    @NonNull
+    private static InstantRunVerifierStatus visitConstructor(MethodNode originalConstructor,
+            MethodNode updatedConstructor) {
+
+        return METHOD_COMPARATOR.areEqual(originalConstructor, updatedConstructor)
+                ? COMPATIBLE
+                : CONSTRUCTOR_CHANGED;
     }
 
     @NonNull
