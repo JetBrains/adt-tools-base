@@ -645,7 +645,8 @@ public class ManifestMerger2 {
             }
         },
         /**
-         * http://developer.android.com/guide/topics/manifest/manifest-element.html#vcode
+         * @see <a href="http://developer.android.com/guide/topics/manifest/manifest-element.html#vcode">
+         *     http://developer.android.com/guide/topics/manifest/manifest-element.html#vcode</a>
          */
         VERSION_CODE {
             @Override
@@ -656,7 +657,8 @@ public class ManifestMerger2 {
             }
         },
         /**
-         * http://developer.android.com/guide/topics/manifest/manifest-element.html#vname
+         * @see <a href=" http://developer.android.com/guide/topics/manifest/manifest-element.html#vname">
+         *      http://developer.android.com/guide/topics/manifest/manifest-element.html#vname</a>
          */
         VERSION_NAME {
             @Override
@@ -667,7 +669,8 @@ public class ManifestMerger2 {
             }
         },
         /**
-         * http://developer.android.com/guide/topics/manifest/uses-sdk-element.html#min
+         * @see <a href="http://developer.android.com/guide/topics/manifest/uses-sdk-element.html#min">
+         *     http://developer.android.com/guide/topics/manifest/uses-sdk-element.html#min</a>
          */
         MIN_SDK_VERSION {
             @Override
@@ -679,7 +682,8 @@ public class ManifestMerger2 {
             }
         },
         /**
-         * http://developer.android.com/guide/topics/manifest/uses-sdk-element.html#target
+         * @see <a href="http://developer.android.com/guide/topics/manifest/uses-sdk-element.html#target">
+         *     http://developer.android.com/guide/topics/manifest/uses-sdk-element.html#target</a>
          */
         TARGET_SDK_VERSION {
             @Override
@@ -690,7 +694,10 @@ public class ManifestMerger2 {
                         createOrGetUseSdk(actionRecorder, document));
             }
         },
-
+        /**
+         * @see <a href="http://developer.android.com/guide/topics/manifest/uses-sdk-element.html#max">
+         *     http://developer.android.com/guide/topics/manifest/uses-sdk-element.html#max</a>
+         */
         MAX_SDK_VERSION {
             @Override
             public void addTo(@NonNull ActionRecorder actionRecorder,
@@ -698,6 +705,81 @@ public class ManifestMerger2 {
                     @NonNull String value) {
                 addToElementInAndroidNS(this, actionRecorder, value,
                         createOrGetUseSdk(actionRecorder, document));
+            }
+        },
+        /**
+         * Name of the instrumentation runner.
+         *
+         * @see <a href="http://developer.android.com/guide/topics/manifest/instrumentation-element.html">
+         *     http://developer.android.com/guide/topics/manifest/instrumentation-element.html</a>
+         */
+        NAME {
+            @Override
+            public void addTo(@NonNull ActionRecorder actionRecorder,
+                              @NonNull XmlDocument document,
+                              @NonNull String value) {
+                addToElementInAndroidNS(this, actionRecorder, value,
+                                        createOrGetInstrumentation(actionRecorder, document));
+            }
+        },
+        /**
+         * Target package for the instrumentation.
+         *
+         * @see <a href="http://developer.android.com/guide/topics/manifest/instrumentation-element.html">
+         *     http://developer.android.com/guide/topics/manifest/instrumentation-element.html</a>
+         */
+        TARGET_PACKAGE {
+            @Override
+            public void addTo(@NonNull ActionRecorder actionRecorder,
+                              @NonNull XmlDocument document,
+                              @NonNull String value) {
+                addToElementInAndroidNS(this, actionRecorder, value,
+                                        createOrGetInstrumentation(actionRecorder, document));
+            }
+        },
+        /**
+         * Functional test attribute for the instrumentation.
+         *
+         * @see <a href="http://developer.android.com/guide/topics/manifest/instrumentation-element.html">
+         *     http://developer.android.com/guide/topics/manifest/instrumentation-element.html</a>
+         */
+        FUNCTIONAL_TEST {
+            @Override
+            public void addTo(@NonNull ActionRecorder actionRecorder,
+                    @NonNull XmlDocument document,
+                    @NonNull String value) {
+                addToElementInAndroidNS(this, actionRecorder, value,
+                        createOrGetInstrumentation(actionRecorder, document));
+            }
+        },
+        /**
+         * Handle profiling attribute for the instrumentation.
+         *
+         * @see <a href="http://developer.android.com/guide/topics/manifest/instrumentation-element.html">
+         *     http://developer.android.com/guide/topics/manifest/instrumentation-element.html</a>
+         */
+        HANDLE_PROFILING {
+            @Override
+            public void addTo(@NonNull ActionRecorder actionRecorder,
+                    @NonNull XmlDocument document,
+                    @NonNull String value) {
+                addToElementInAndroidNS(this, actionRecorder, value,
+                        createOrGetInstrumentation(actionRecorder, document));
+            }
+        },
+        /**
+         * Label attribute for the instrumentation.
+         *
+         * @see <a href="http://developer.android.com/guide/topics/manifest/instrumentation-element.html">
+         *     http://developer.android.com/guide/topics/manifest/instrumentation-element.html</a>
+         */
+        LABEL {
+            @Override
+            public void addTo(@NonNull ActionRecorder actionRecorder,
+                    @NonNull XmlDocument document,
+                    @NonNull String value) {
+                addToElementInAndroidNS(this, actionRecorder, value,
+                        createOrGetInstrumentation(actionRecorder, document));
             }
         };
 
@@ -757,33 +839,44 @@ public class ManifestMerger2 {
         @NonNull
         private static XmlElement createOrGetUseSdk(
                 @NonNull ActionRecorder actionRecorder, @NonNull XmlDocument document) {
+            return createOrGetElement(actionRecorder, document,
+                    ManifestModel.NodeTypes.USES_SDK, "use-sdk injection requested");
+        }
+
+        /** See above for details, similar like for uses-sdk tag*/
+        @NonNull
+        private static XmlElement createOrGetInstrumentation(
+          @NonNull ActionRecorder actionRecorder, @NonNull XmlDocument document) {
+            return createOrGetElement(actionRecorder, document,
+                    ManifestModel.NodeTypes.INSTRUMENTATION, "instrumentation injection requested");
+        }
+
+        @NonNull
+        private static XmlElement createOrGetElement(
+                @NonNull ActionRecorder actionRecorder, @NonNull XmlDocument document,
+                @NonNull ManifestModel.NodeTypes nodeType, @NonNull String message) {
 
             Element manifest = document.getXml().getDocumentElement();
-            NodeList usesSdks = manifest
-                    .getElementsByTagName(ManifestModel.NodeTypes.USES_SDK.toXmlName());
-            if (usesSdks.getLength() == 0) {
-                usesSdks = manifest
-                        .getElementsByTagNameNS(
-                                SdkConstants.ANDROID_URI,
-                                ManifestModel.NodeTypes.USES_SDK.toXmlName());
+            NodeList nodes = manifest.getElementsByTagName(nodeType.toXmlName());
+            if (nodes.getLength() == 0) {
+                nodes = manifest.getElementsByTagNameNS(
+                        SdkConstants.ANDROID_URI, nodeType.toXmlName());
             }
-            if (usesSdks.getLength() == 0) {
+            if (nodes.getLength() == 0) {
                 // create it first.
-                Element useSdk = manifest.getOwnerDocument().createElement(
-                        ManifestModel.NodeTypes.USES_SDK.toXmlName());
-                manifest.appendChild(useSdk);
-                XmlElement xmlElement = new XmlElement(useSdk, document);
+                Element node = manifest.getOwnerDocument().createElement(nodeType.toXmlName());
+                manifest.appendChild(node);
+                XmlElement xmlElement = new XmlElement(node, document);
                 Actions.NodeRecord nodeRecord = new Actions.NodeRecord(
                         Actions.ActionType.INJECTED,
-                        new SourceFilePosition(xmlElement.getSourceFile(),
-                                SourcePosition.UNKNOWN),
+                        new SourceFilePosition(xmlElement.getSourceFile(), SourcePosition.UNKNOWN),
                         xmlElement.getId(),
-                        "use-sdk injection requested",
+                        message,
                         NodeOperationType.STRICT);
                 actionRecorder.recordNodeAction(xmlElement, nodeRecord);
                 return xmlElement;
             } else {
-                return new XmlElement((Element) usesSdks.item(0), document);
+                return new XmlElement((Element) nodes.item(0), document);
             }
         }
     }

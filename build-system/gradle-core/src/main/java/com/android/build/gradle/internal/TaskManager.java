@@ -57,6 +57,7 @@ import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.pipeline.TransformStream;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.publishing.ApkPublishArtifact;
+import com.android.build.gradle.internal.publishing.ManifestPublishArtifact;
 import com.android.build.gradle.internal.publishing.MappingPublishArtifact;
 import com.android.build.gradle.internal.publishing.MetadataPublishArtifact;
 import com.android.build.gradle.internal.scope.AndroidTask;
@@ -116,6 +117,7 @@ import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.GenerateSplitAbiRes;
 import com.android.build.gradle.tasks.JackPreDexTransform;
 import com.android.build.gradle.tasks.Lint;
+import com.android.build.gradle.tasks.ManifestProcessorTask;
 import com.android.build.gradle.tasks.MergeManifests;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.MergeSourceSetFolders;
@@ -510,7 +512,6 @@ public abstract class TaskManager {
     public void createMergeAppManifestsTask(
             @NonNull TaskFactory tasks,
             @NonNull VariantScope variantScope) {
-
         ApplicationVariantData appVariantData =
                 (ApplicationVariantData) variantScope.getVariantData();
         Set<String> screenSizes = appVariantData.getCompatibleScreens();
@@ -532,12 +533,55 @@ public abstract class TaskManager {
                     ? ImmutableList.of(ManifestMerger2.Invoker.Feature.INSTANT_RUN_REPLACEMENT)
                     : ImmutableList.of();
 
-            scope.setManifestProcessorTask(androidTasks.create(tasks,
-                    new MergeManifests.ConfigAction(scope, optionalFeatures)));
+            scope.setManifestProcessorTask(
+                    androidTasks.create(tasks, getMergeManifestConfig(scope, optionalFeatures)));
 
             if (csmTask != null) {
                 scope.getManifestProcessorTask().dependsOn(tasks, csmTask);
             }
+
+            addManifestArtifact(tasks, scope.getVariantScope().getVariantData());
+        }
+
+    }
+
+    /** Creates configuration action for the merge manifests task. */
+    @NonNull
+    protected TaskConfigAction<? extends ManifestProcessorTask> getMergeManifestConfig(
+            @NonNull VariantOutputScope scope,
+            @NonNull List<ManifestMerger2.Invoker.Feature> optionalFeatures) {
+        return new MergeManifests.ConfigAction(scope, optionalFeatures);
+    }
+
+    /**
+     * Adds the manifest artifact for the variant.
+     *
+     * This artifact is added if the publishNonDefault option is {@code true}.
+     * See {@link VariantDependencies#compute variant dependencies evaluation} for more details
+     */
+    private void addManifestArtifact(
+            @NonNull TaskFactory tasks,
+            @NonNull  BaseVariantData<? extends BaseVariantOutputData> variantData) {
+        if (variantData.getVariantDependency().getManifestConfiguration() != null) {
+            ManifestProcessorTask mergeManifestsTask =
+                    variantData.getOutputs().get(0).getScope().getManifestProcessorTask()
+                    .get(tasks);
+            project.getArtifacts().add(
+                    variantData.getVariantDependency().getManifestConfiguration().getName(),
+                    new ManifestPublishArtifact(
+                            globalScope.getProjectBaseName(),
+                            new FileSupplier() {
+                                @NonNull
+                                @Override
+                                public Task getTask() {
+                                    return mergeManifestsTask;
+                                }
+
+                                @Override
+                                public File get() {
+                                    return mergeManifestsTask.getManifestOutputFile();
+                                }
+                            }));
         }
     }
 

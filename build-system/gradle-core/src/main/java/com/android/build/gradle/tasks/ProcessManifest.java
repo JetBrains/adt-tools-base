@@ -25,7 +25,6 @@ import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.VariantConfiguration;
-import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.ProductFlavor;
 import com.android.manifmerger.ManifestMerger2;
@@ -39,7 +38,6 @@ import org.gradle.api.tasks.ParallelizableTask;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Callable;
 
 /**
  * a Task that only merge a single manifest with its overlays.
@@ -63,10 +61,10 @@ public class ProcessManifest extends ManifestProcessorTask {
         File aaptManifestFile = getAaptFriendlyManifestOutputFile();
         String aaptFriendlyManifestOutputFilePath =
                 aaptManifestFile == null ? null : aaptManifestFile.getAbsolutePath();
-        getBuilder().mergeManifests(
+        getBuilder().mergeManifestsForApplication(
                 getMainManifest(),
                 getManifestOverlays(),
-                Collections.<AndroidLibrary>emptyList(),
+                Collections.emptyList(),
                 getPackageOverride(),
                 getVersionCode(),
                 getVersionName(),
@@ -78,7 +76,7 @@ public class ProcessManifest extends ManifestProcessorTask {
                 null /* outInstantRunManifestLocation */,
                 ManifestMerger2.MergeType.LIBRARY,
                 variantConfiguration.getManifestPlaceholders(),
-                Collections.<ManifestMerger2.Invoker.Feature>emptyList(),
+                Collections.emptyList(),
                 getReportFile());
     }
 
@@ -208,45 +206,35 @@ public class ProcessManifest extends ManifestProcessorTask {
 
             final ProductFlavor mergedFlavor = config.getMergedFlavor();
 
-            ConventionMappingHelper.map(processManifest, "minSdkVersion", new Callable<String>() {
-                @Override
-                public String call() throws Exception {
-                    if (androidBuilder.isPreviewTarget()) {
-                        return androidBuilder.getTargetCodename();
-                    }
-                    ApiVersion minSdkVersion = mergedFlavor.getMinSdkVersion();
-                    if (minSdkVersion == null) {
-                        return null;
-                    }
-                    return minSdkVersion.getApiString();
+            ConventionMappingHelper.map(processManifest, "minSdkVersion", () -> {
+                if (androidBuilder.isPreviewTarget()) {
+                    return androidBuilder.getTargetCodename();
                 }
+                ApiVersion minSdkVersion1 = mergedFlavor.getMinSdkVersion();
+                if (minSdkVersion1 == null) {
+                    return null;
+                }
+                return minSdkVersion1.getApiString();
             });
 
-            ConventionMappingHelper.map(processManifest, "targetSdkVersion",
-                    new Callable<String>() {
-                        @Override
-                        public String call() throws Exception {
-                            if (androidBuilder.isPreviewTarget()) {
-                                return androidBuilder.getTargetCodename();
-                            }
-                            ApiVersion targetSdkVersion = mergedFlavor.getTargetSdkVersion();
-                            if (targetSdkVersion == null) {
-                                return null;
-                            }
-                            return targetSdkVersion.getApiString();
+            ConventionMappingHelper.map(processManifest, "targetSdkVersion", () -> {
+                        if (androidBuilder.isPreviewTarget()) {
+                            return androidBuilder.getTargetCodename();
                         }
+                        ApiVersion targetSdkVersion = mergedFlavor.getTargetSdkVersion();
+                        if (targetSdkVersion == null) {
+                            return null;
+                        }
+                        return targetSdkVersion.getApiString();
                     });
 
-            ConventionMappingHelper.map(processManifest, "maxSdkVersion", new Callable<Integer>() {
-                @Override
-                public Integer call() throws Exception {
-                    if (androidBuilder.isPreviewTarget()) {
-                        return null;
-                    } else {
-                        return mergedFlavor.getMaxSdkVersion();
-                    }
-                }
-            });
+            ConventionMappingHelper.map(processManifest, "maxSdkVersion", () -> {
+                        if (androidBuilder.isPreviewTarget()) {
+                            return null;
+                        } else {
+                            return mergedFlavor.getMaxSdkVersion();
+                        }
+                    });
 
             processManifest.setManifestOutputFile(
                     variantOutputData.getScope().getManifestOutputFile());

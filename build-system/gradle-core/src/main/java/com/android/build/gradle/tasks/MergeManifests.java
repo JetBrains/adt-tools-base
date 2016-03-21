@@ -66,7 +66,7 @@ public class MergeManifests extends ManifestProcessorTask {
 
     @Override
     protected void doFullTaskAction() {
-        getBuilder().mergeManifests(
+        getBuilder().mergeManifestsForApplication(
                 getMainManifest(),
                 getManifestOverlays(),
                 getLibraries(),

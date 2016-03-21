@@ -16,7 +16,7 @@
 package com.android.build.gradle.tasks;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.internal.DependencyManager;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
@@ -25,8 +25,11 @@ import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.model.AndroidLibrary;
+import com.android.io.FileWrapper;
+import com.android.xml.AndroidManifest;
 import com.google.common.collect.Lists;
 
+import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
@@ -38,15 +41,24 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 
 /**
- * A task that processes the manifest
+ * A task that processes the manifest for test modules and tests in androidTest.
+ *
+ * <p>For both test modules and tests in androidTest process is the same, expect
+ * for how the tested application id is extracted.</p>
+ *
+ * <p>Tests in androidTest get that info form the
+ * {@link VariantConfiguration#getTestedApplicationId()}, while the test modules get the info from
+ * the {@link com.android.build.gradle.internal.publishing.ManifestPublishArtifact} of the
+ * tested app.</p>
  */
 @ParallelizableTask
 public class ProcessTestManifest extends ManifestProcessorTask {
 
+    @Nullable
     private File testManifestFile;
+
     private File tmpDir;
     private String testApplicationId;
     private String minSdkVersion;
@@ -58,9 +70,12 @@ public class ProcessTestManifest extends ManifestProcessorTask {
     private Map<String, Object> placeholdersValues;
     private List<AndroidLibrary> libraries;
 
+    @Nullable
+    private String testLabel;
+
     @Override
     protected void doFullTaskAction() throws IOException {
-        getBuilder().processTestManifest(
+        getBuilder().mergeManifestsForTestVariant(
                 getTestApplicationId(),
                 getMinSdkVersion(),
                 getTargetSdkVersion(),
@@ -68,6 +83,7 @@ public class ProcessTestManifest extends ManifestProcessorTask {
                 getInstrumentationRunner(),
                 getHandleProfiling(),
                 getFunctionalTest(),
+                getTestLabel(),
                 getTestManifestFile(),
                 getLibraries(),
                 getPlaceholdersValues(),
@@ -157,6 +173,16 @@ public class ProcessTestManifest extends ManifestProcessorTask {
     }
 
     @Input
+    @Optional
+    public String getTestLabel() {
+        return testLabel;
+    }
+
+    public void setTestLabel(String testLabel) {
+        this.testLabel = testLabel;
+    }
+
+    @Input
     public Map<String, Object> getPlaceholdersValues() {
         return placeholdersValues;
     }
@@ -200,10 +226,20 @@ public class ProcessTestManifest extends ManifestProcessorTask {
 
     public static class ConfigAction implements TaskConfigAction<ProcessTestManifest> {
 
-        private VariantScope scope;
+        @NonNull
+        private final VariantScope scope;
 
-        public ConfigAction(VariantScope scope) {
+        @Nullable
+        private final Configuration targetManifestConfiguration;
+
+        public ConfigAction(@NonNull VariantScope scope) {
+            this(scope, null);
+        }
+
+        public ConfigAction(
+                @NonNull VariantScope scope, @Nullable Configuration targetManifestConfiguration){
             this.scope = scope;
+            this.targetManifestConfiguration = targetManifestConfiguration;
         }
 
         @NonNull
@@ -237,80 +273,60 @@ public class ProcessTestManifest extends ManifestProcessorTask {
 
             processTestManifestTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             processTestManifestTask.setVariantName(config.getFullName());
+            processTestManifestTask.setTestApplicationId(config.getTestApplicationId());
 
-            processTestManifestTask.setTestApplicationId(config.getApplicationId());
-            ConventionMappingHelper.map(processTestManifestTask, "minSdkVersion",
-                    new Callable<String>() {
-                        @Override
-                        public String call() throws Exception {
-                            if (scope.getGlobalScope().getAndroidBuilder().isPreviewTarget()) {
-                                return scope.getGlobalScope().getAndroidBuilder()
-                                        .getTargetCodename();
-                            }
-                            return config.getMinSdkVersion().getApiString();
+            ConventionMappingHelper.map(processTestManifestTask, "minSdkVersion", () -> {
+                        if (scope.getGlobalScope().getAndroidBuilder().isPreviewTarget()) {
+                            return scope.getGlobalScope().getAndroidBuilder()
+                                    .getTargetCodename();
                         }
+                        return config.getMinSdkVersion().getApiString();
                     });
 
-            ConventionMappingHelper.map(processTestManifestTask, "targetSdkVersion",
-                    new Callable<String>() {
-                        @Override
-                        public String call() throws Exception {
-                            if (scope.getGlobalScope().getAndroidBuilder().isPreviewTarget()) {
-                                return scope.getGlobalScope().getAndroidBuilder()
-                                        .getTargetCodename();
-                            }
+            ConventionMappingHelper.map(processTestManifestTask, "targetSdkVersion", () -> {
+                        if (scope.getGlobalScope().getAndroidBuilder().isPreviewTarget()) {
+                            return scope.getGlobalScope().getAndroidBuilder()
+                                    .getTargetCodename();
+                        }
 
-                            return config.getTargetSdkVersion().getApiString();
-                        }
-                    });
-            ConventionMappingHelper.map(processTestManifestTask, "testedApplicationId",
-                    new Callable<String>() {
-                        @Override
-                        public String call() throws Exception {
-                            return config.getTestedApplicationId();
-                        }
-                    });
-            ConventionMappingHelper.map(processTestManifestTask, "instrumentationRunner",
-                    new Callable<String>() {
-                        @Override
-                        public String call() throws Exception {
-                            return config.getInstrumentationRunner();
-                        }
+                        return config.getTargetSdkVersion().getApiString();
                     });
 
-            ConventionMappingHelper.map(processTestManifestTask, "handleProfiling",
-                    new Callable<Boolean>() {
-                        @Override
-                        public Boolean call() throws Exception {
-                            return config.getHandleProfiling();
-                        }
-                    });
-            ConventionMappingHelper.map(processTestManifestTask, "functionalTest",
-                    new Callable<Boolean>() {
-                        @Override
-                        public Boolean call() throws Exception {
-                            return config.getFunctionalTest();
-                        }
-                    });
+            if (targetManifestConfiguration != null){
+                // it is a task for the test module, get the tested application id from its manifest
+                ConventionMappingHelper.map(processTestManifestTask, "testedApplicationId", () ->
+                        AndroidManifest.getPackage(
+                                new FileWrapper(
+                                        targetManifestConfiguration
+                                                .getSingleFile().getAbsolutePath())));
+            }
+            else {
+                ConventionMappingHelper.map(
+                        processTestManifestTask, "testedApplicationId", () ->{
+                            String testedApp = config.getTestedApplicationId();
+                            // we should not be null, although the above method is @Nullable
+                            assert testedApp != null;
+                            return testedApp;
+                        });
+            }
 
-            ConventionMappingHelper.map(processTestManifestTask, "libraries",
-                    new Callable<List<AndroidLibrary>>() {
-                        @Override
-                        public List<AndroidLibrary> call() throws Exception {
-                            return config.getCompileAndroidLibraries();
-                        }
-                    });
+            ConventionMappingHelper.map(
+                    processTestManifestTask, "instrumentationRunner",
+                    config::getInstrumentationRunner);
+            ConventionMappingHelper.map(
+                    processTestManifestTask, "handleProfiling", config::getHandleProfiling);
+            ConventionMappingHelper.map(
+                    processTestManifestTask, "functionalTest", config::getFunctionalTest);
+            ConventionMappingHelper.map(
+                    processTestManifestTask, "testLabel", config::getTestLabel);
+            ConventionMappingHelper.map(
+                    processTestManifestTask, "libraries", config::getCompileAndroidLibraries);
 
             processTestManifestTask.setManifestOutputFile(
                     variantOutputData.getScope().getManifestOutputFile());
 
-            ConventionMappingHelper.map(processTestManifestTask, "placeholdersValues",
-                    new Callable<Map<String, Object>>() {
-                        @Override
-                        public Map<String, Object> call() throws Exception {
-                            return config.getManifestPlaceholders();
-                        }
-                    });
+            ConventionMappingHelper.map(
+                    processTestManifestTask, "placeholdersValues", config::getManifestPlaceholders);
         }
     }
 }

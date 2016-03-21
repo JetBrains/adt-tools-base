@@ -21,9 +21,9 @@ import com.android.build.gradle.internal.ConfigurationProvider;
 import com.android.builder.core.ErrorReporter;
 import com.android.builder.core.VariantType;
 import com.android.builder.dependency.DependencyContainer;
-import com.android.builder.model.AndroidLibrary;
 import com.google.common.base.Objects;
 import com.google.common.collect.Sets;
+
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 
@@ -56,6 +56,9 @@ public class VariantDependencies {
     private Configuration classesConfiguration;
     @Nullable
     private Configuration metadataConfiguration;
+
+    @Nullable
+    private Configuration manifestConfiguration;
 
     private DependencyContainer compileDependencies;
     private DependencyContainer packageDependencies;
@@ -112,7 +115,11 @@ public class VariantDependencies {
         apk.setDescription("## Internal use, do not manually configure ##");
         apk.setExtendsFrom(apkConfigs);
 
-        Configuration publish = null, mapping = null, classes = null, metadata = null;
+        Configuration publish = null;
+        Configuration mapping = null;
+        Configuration classes = null;
+        Configuration metadata = null;
+        Configuration manifest = null;
         if (publishVariant) {
             publish = project.getConfigurations().maybeCreate(variantName);
             publish.setDescription("Published Configuration for Variant " + variantName);
@@ -133,6 +140,11 @@ public class VariantDependencies {
 
             classes = project.getConfigurations().maybeCreate(variantName + "-classes");
             classes.setDescription("Published classes configuration for Variant " + variantName);
+
+            // create configuration for -manifest
+            manifest = project.getConfigurations().maybeCreate(variantName + "-manifest");
+            manifest.setDescription("Published manifest configuration for Variant " + variantName);
+
             // because we need the transitive dependencies for the classes, extend the compile config.
             classes.setExtendsFrom(compileConfigs);
         }
@@ -152,7 +164,8 @@ public class VariantDependencies {
                 publish,
                 mapping,
                 classes,
-                metadata);
+                metadata,
+                manifest);
     }
 
     private VariantDependencies(
@@ -163,7 +176,8 @@ public class VariantDependencies {
             @Nullable Configuration publishConfiguration,
             @Nullable Configuration mappingConfiguration,
             @Nullable Configuration classesConfiguration,
-            @Nullable Configuration metadataConfiguration) {
+            @Nullable Configuration metadataConfiguration,
+            @Nullable Configuration manifestConfiguration) {
         this.variantName = variantName;
         this.compileConfiguration = compileConfiguration;
         this.packageConfiguration = packageConfiguration;
@@ -171,6 +185,7 @@ public class VariantDependencies {
         this.mappingConfiguration = mappingConfiguration;
         this.classesConfiguration = classesConfiguration;
         this.metadataConfiguration = metadataConfiguration;
+        this.manifestConfiguration = manifestConfiguration;
         this.checker = dependencyChecker;
     }
 
@@ -206,6 +221,11 @@ public class VariantDependencies {
     @Nullable
     public Configuration getMetadataConfiguration() {
         return metadataConfiguration;
+    }
+
+    @Nullable
+    public Configuration getManifestConfiguration() {
+        return manifestConfiguration;
     }
 
     public void setDependencies(@NonNull DependencyContainer compileDependencies, @NonNull DependencyContainer packageDependencies) {
