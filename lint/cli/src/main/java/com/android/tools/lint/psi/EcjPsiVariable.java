@@ -28,6 +28,7 @@ import com.intellij.psi.PsiVariable;
 import com.intellij.util.IncorrectOperationException;
 
 import org.eclipse.jdt.internal.compiler.ast.LocalDeclaration;
+import org.eclipse.jdt.internal.compiler.lookup.LocalVariableBinding;
 
 abstract class EcjPsiVariable extends EcjPsiSourceElement implements PsiVariable {
     protected final LocalDeclaration mVariable;
@@ -116,5 +117,27 @@ abstract class EcjPsiVariable extends EcjPsiSourceElement implements PsiVariable
     @Override
     public Object computeConstantValue() {
         throw new UnimplementedLintPsiApiException();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof EcjPsiVariable)) {
+            return false;
+        }
+        LocalVariableBinding binding = mVariable.binding;
+        LocalVariableBinding otherBinding = (((EcjPsiVariable)o).mVariable.binding);
+        if (binding == null || otherBinding == null) {
+            return mVariable.equals(((EcjPsiVariable)o).mVariable);
+        }
+
+        return binding.equals(otherBinding);
+    }
+
+    @Override
+    public int hashCode() {
+        return mVariable.binding != null ? mVariable.binding.hashCode() : 0;
     }
 }

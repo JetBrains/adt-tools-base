@@ -19,10 +19,19 @@ package com.android.tools.lint.psi;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.intellij.psi.JavaElementVisitor;
+import com.intellij.psi.PsiAnonymousClass;
 import com.intellij.psi.PsiBreakStatement;
+import com.intellij.psi.PsiClassInitializer;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.PsiIdentifier;
+import com.intellij.psi.PsiLabeledStatement;
+import com.intellij.psi.PsiLambdaExpression;
+import com.intellij.psi.PsiLoopStatement;
+import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiStatement;
+import com.intellij.psi.PsiSwitchStatement;
+import com.intellij.psi.util.PsiTreeUtil;
 
 import org.eclipse.jdt.internal.compiler.ast.Statement;
 
@@ -57,6 +66,51 @@ class EcjPsiBreakStatement extends EcjPsiStatement implements PsiBreakStatement 
     @Nullable
     @Override
     public PsiStatement findExitedStatement() {
-        throw new UnimplementedLintPsiApiException();
+        return findStatement(this, getLabelIdentifier());
+    }
+
+    /**
+     * Returns the statement pointed to by the given break/continue statement, with the
+     * given optional label, if any
+     */
+    @Nullable
+    public static PsiStatement findStatement(@NonNull PsiElement element,
+            @Nullable PsiIdentifier label) {
+        if (label != null) {
+            String labelName = label.getText();
+            PsiElement curr = element.getParent();
+            while (curr != null) {
+                if (curr instanceof PsiMethod
+                        || curr instanceof PsiAnonymousClass
+                        || curr instanceof PsiLambdaExpression) {
+                    return null;
+                }
+                PsiLabeledStatement statement = PsiTreeUtil.getParentOfType(curr,
+                        PsiLabeledStatement.class, true);
+                if (statement != null) {
+                    if (labelName.equals(statement.getLabelIdentifier().getText())) {
+                        return statement.getStatement();
+                    }
+                }
+                curr = statement;
+            }
+        } else {
+            PsiElement curr = element.getParent();
+            while (curr != null) {
+                if (curr instanceof PsiLoopStatement) {
+                    return (PsiLoopStatement) curr;
+                } else if (curr instanceof PsiSwitchStatement
+                        // Only break works in switch statement
+                        && element instanceof PsiBreakStatement) {
+                    return (PsiSwitchStatement) curr;
+                } else if (curr instanceof PsiMethod
+                        || curr instanceof PsiClassInitializer) {
+                    return null;
+                }
+                curr = curr.getParent();
+            }
+        }
+
+        return null;
     }
 }

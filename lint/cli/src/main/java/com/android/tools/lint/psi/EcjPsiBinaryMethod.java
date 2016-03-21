@@ -274,12 +274,6 @@ class EcjPsiBinaryMethod extends EcjPsiBinaryElement implements PsiMethod, PsiPa
         return getParameters().length;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        return o instanceof EcjPsiBinaryMethod && mMethodBinding.equals(
-                ((EcjPsiBinaryMethod)o).mMethodBinding);
-    }
-
     // Modifier list inlined here
 
     @NonNull
@@ -358,5 +352,43 @@ class EcjPsiBinaryMethod extends EcjPsiBinaryElement implements PsiMethod, PsiPa
             }
         }
         return null;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null) {
+            return false;
+        }
+        MethodBinding binding = mMethodBinding;
+        MethodBinding otherBinding;
+        if (o instanceof EcjPsiMethod) {
+            otherBinding = (((EcjPsiMethod) o).getBinding());
+            return binding != null && otherBinding != null && binding.equals(otherBinding);
+        } else if (o instanceof EcjPsiBinaryMethod) {
+            otherBinding = (((EcjPsiBinaryMethod) o).getBinding());
+            return binding != null && otherBinding != null && binding.equals(otherBinding);
+        } else if (o instanceof ExternalPsiReferenceExpressionMemberValue) {
+            String signature = ((ExternalPsiReferenceExpressionMemberValue) o).getQualifiedName();
+            PsiClass containingClass = getContainingClass();
+            if (containingClass != null) {
+                String fqn = containingClass.getQualifiedName();
+                if (fqn != null) {
+                    if (signature.startsWith(fqn) && signature.endsWith(getName())
+                            && signature.length() == fqn.length() + getName().length() + 1) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return mMethodBinding.hashCode();
     }
 }

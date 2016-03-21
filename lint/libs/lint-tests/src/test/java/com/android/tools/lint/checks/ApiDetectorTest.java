@@ -2163,6 +2163,34 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    @SuppressWarnings("all") // sample code
+    public void testEnumInitialization() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/ApiDetectorTest2.java:8: Warning: Field requires API level 19 (current min is 15): android.location.LocationManager#MODE_CHANGED_ACTION [InlinedApi]\n"
+                + "    LOCATION_MODE_CHANGED(LocationManager.MODE_CHANGED_ACTION) {\n"
+                + "                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
+                lintProject(
+                        manifest().minSdk(15),
+                        java("src/test/pkg/ApiDetectorTest2.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.location.LocationManager;\n"
+                                + "\n"
+                                + "@SuppressWarnings({\"FieldCanBeLocal\", \"unused\"})\n"
+                                + "public class ApiDetectorTest2 {\n"
+                                + "public enum HealthChangeHandler {\n"
+                                + "    LOCATION_MODE_CHANGED(LocationManager.MODE_CHANGED_ACTION) {\n"
+                                + "        @Override String toString() { return super.toString(); }\n"
+                                + "};\n"
+                                + "\n"
+                                + "    HealthChangeHandler(String mode) {\n"
+                                + "    }\n"
+                                + "}\n"
+                                + "}")
+                ));
+    }
+
     @Override
     protected TestLintClient createClient() {
         if (getName().equals("testMissingApiDatabase")) {

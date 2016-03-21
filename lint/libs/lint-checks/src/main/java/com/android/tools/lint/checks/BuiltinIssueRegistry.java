@@ -316,9 +316,9 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         } else {
             int initialSize = 12;
             if (scope.contains(Scope.RESOURCE_FILE)) {
-                initialSize += 75;
+                initialSize += 78;
             } else if (scope.contains(Scope.ALL_RESOURCE_FILES)) {
-                initialSize += 10;
+                initialSize += 12;
             }
 
             if (scope.contains(Scope.JAVA_FILE)) {

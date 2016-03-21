@@ -61,7 +61,9 @@ class EcjPsiTypeElement extends EcjPsiSourceElement implements PsiTypeElement {
             return PsiEllipsisType.createEllipsis(type.getDeepComponentType(),
                     type.getAnnotations());
         }
-        assert type != null;
+        if (type == null) {
+            type = PsiType.NULL;
+        }
         return type;
     }
 

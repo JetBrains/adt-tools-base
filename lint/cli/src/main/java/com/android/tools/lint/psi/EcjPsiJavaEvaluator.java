@@ -238,6 +238,10 @@ public class EcjPsiJavaEvaluator extends JavaEvaluator {
             ExternalAnnotationRepository manager = mManager.getAnnotationRepository();
 
             while (method != null) {
+                if (method.declaringClass == null) {
+                    // for example, for unresolved problem bindings
+                    break;
+                }
                 AnnotationBinding[] annotations = method.getAnnotations();
                 int count = annotations.length;
                 if (count > 0) {
@@ -336,6 +340,10 @@ public class EcjPsiJavaEvaluator extends JavaEvaluator {
             ExternalAnnotationRepository manager = mManager.getAnnotationRepository();
 
             while (method != null) {
+                if (method.declaringClass == null) {
+                    // for example, for unresolved problem bindings
+                    break;
+                }
                 AnnotationBinding[][] parameterAnnotations = method.getParameterAnnotations();
                 if (parameterAnnotations != null && index < parameterAnnotations.length) {
                     AnnotationBinding[] annotations = parameterAnnotations[index];

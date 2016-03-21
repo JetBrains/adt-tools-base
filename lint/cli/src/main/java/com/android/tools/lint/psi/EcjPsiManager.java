@@ -70,6 +70,7 @@ import org.eclipse.jdt.internal.compiler.lookup.ArrayBinding;
 import org.eclipse.jdt.internal.compiler.lookup.BaseTypeBinding;
 import org.eclipse.jdt.internal.compiler.lookup.Binding;
 import org.eclipse.jdt.internal.compiler.lookup.FieldBinding;
+import org.eclipse.jdt.internal.compiler.lookup.IntersectionCastTypeBinding;
 import org.eclipse.jdt.internal.compiler.lookup.LocalVariableBinding;
 import org.eclipse.jdt.internal.compiler.lookup.LookupEnvironment;
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding;
@@ -307,7 +308,15 @@ public class EcjPsiManager {
                     // PsiWildcardType here, but we don't have full PsiWildcardType
                     return findType(binding.genericType);
                 } else if (referenceBinding instanceof TypeVariableBinding) {
-                    typeName = new String(((TypeVariableBinding)referenceBinding).sourceName);
+                    typeName = new String(((TypeVariableBinding) referenceBinding).sourceName);
+                } else if (referenceBinding instanceof IntersectionCastTypeBinding) {
+                    IntersectionCastTypeBinding binding
+                            = (IntersectionCastTypeBinding) referenceBinding;
+                    if (binding.intersectingTypes != null && binding.intersectingTypes.length > 0) {
+                        return findType(binding.intersectingTypes[0]);
+                    } else {
+                        return null;
+                    }
                 } else {
                     assert false : referenceBinding;
                     return null;
@@ -360,7 +369,10 @@ public class EcjPsiManager {
             }
             return type;
         } else if (typeBinding instanceof PolyTypeBinding) {
-            throw new UnimplementedLintPsiApiException();
+            // There isn't an accessor on PolyTypeBinding which gives us the type we need :-(
+            // (it's only available on PolyTypeBinding.expression (either valueIfTrue or
+            // valueIfFalse)
+            return null;
         }
 
         return null;
@@ -646,22 +658,26 @@ public class EcjPsiManager {
         // to initialize these:
         if (binding instanceof FieldBinding) {
             ReferenceBinding declaringClass = ((FieldBinding) binding).declaringClass;
-            PsiJavaFile file = mEcjResult.findFileContaining(declaringClass);
-            //noinspection VariableNotUsedInsideIf
-            if (file != null) {
-                element = mElementMap.get(binding);
-                if (element != null) {
-                    return element;
+            if (declaringClass instanceof SourceTypeBinding) {
+                PsiJavaFile file = mEcjResult.findFileContaining(declaringClass);
+                //noinspection VariableNotUsedInsideIf
+                if (file != null) {
+                    element = mElementMap.get(binding);
+                    if (element != null) {
+                        return element;
+                    }
                 }
             }
         } else if (binding instanceof MethodBinding) {
             ReferenceBinding declaringClass = ((MethodBinding) binding).declaringClass;
-            PsiJavaFile file = mEcjResult.findFileContaining(declaringClass);
-            //noinspection VariableNotUsedInsideIf
-            if (file != null) {
-                element = mElementMap.get(binding);
-                if (element != null) {
-                    return element;
+            if (declaringClass instanceof SourceTypeBinding) {
+                PsiJavaFile file = mEcjResult.findFileContaining(declaringClass);
+                //noinspection VariableNotUsedInsideIf
+                if (file != null) {
+                    element = mElementMap.get(binding);
+                    if (element != null) {
+                        return element;
+                    }
                 }
             }
         }
