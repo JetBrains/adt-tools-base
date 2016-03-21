@@ -23,11 +23,13 @@ import com.android.build.gradle.internal.incremental.fixture.ClassEnhancement;
 import com.example.basic.FinalFieldsInCtor;
 
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
  * Test for classes that sets their final fields in their constructors.
  */
+@Ignore
 public class FinalFieldsInCtorTest {
 
     @ClassRule

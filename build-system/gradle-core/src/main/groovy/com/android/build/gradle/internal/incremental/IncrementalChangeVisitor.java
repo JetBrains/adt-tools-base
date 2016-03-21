@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.VisibleForTesting;
+import com.android.utils.AsmUtils;
 
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassVisitor;
@@ -169,8 +170,12 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             // Nothing to generate.
             return null;
         }
-        if (name.equals("<clinit>")) {
+        if (name.equals(AsmUtils.CLASS_INITIALIZER)) {
             // we skip the class init as it can reset static fields which we don't support right now
+            return null;
+        }
+        if (name.equals(AsmUtils.CONSTRUCTOR)) {
+            // we skip constructors too as they will force the a coldswap for now.
             return null;
         }
 
