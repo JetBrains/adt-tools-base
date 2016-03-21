@@ -16,16 +16,18 @@
 
 package com.android.ide.common.rendering;
 
+import com.android.ide.common.rendering.api.LayoutlibCallback;
 import com.android.ide.common.rendering.api.RenderParams;
 import com.android.ide.common.rendering.api.SessionParams.Key;
 
 /**
  * This contains all known keys for the {@link RenderParams#setFlag(Key, Object)}.
  * <p/>
- * LayoutLib has it's own copy of this class which may be newer or older than this one.
+ * LayoutLib has its own copy of this class which may be newer or older than this one.
  * <p/>
  * Constants should never be modified or removed from this class.
  */
+@SuppressWarnings("unused")
 public final class RenderParamsFlags {
 
     public static final Key<String> FLAG_KEY_ROOT_TAG =
@@ -42,11 +44,16 @@ public final class RenderParamsFlags {
     public static final Key<Boolean> FLAG_KEY_RECYCLER_VIEW_SUPPORT =
         new Key<Boolean>("recyclerViewSupport", Boolean.class);
     /**
-     * The application package name. Used via
-     * {@link com.android.ide.common.rendering.api.LayoutlibCallback#getFlag(Key)}
+     * The application package name. Used via {@link LayoutlibCallback#getFlag(Key)}
      */
     public static final Key<String> FLAG_KEY_APPLICATION_PACKAGE =
         new Key<String>("applicationPackage", String.class);
+    /**
+     * To tell LayoutLib that IDE supports providing XML Parser for a file (useful for getting in
+     * memory contents of the file). Used via {@link LayoutlibCallback#getFlag(Key)}
+     */
+    public static final Key<Boolean> FLAG_KEY_XML_FILE_PARSER_SUPPORT =
+        new Key<Boolean>("xmlFileParser", Boolean.class);
 
     // Disallow instances.
     private RenderParamsFlags() {}

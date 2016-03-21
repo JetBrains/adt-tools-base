@@ -101,10 +101,15 @@ public abstract class LayoutlibCallback implements IProjectCallback,
         throw new ClassNotFoundException(name + " not found.");
     }
 
-  /**
-   * Returns an {@link XmlPullParser} for the psi version of an xml file
-   * @param fileName name of the file to parse
-   */
+    /**
+     * Returns an {@link XmlPullParser} for the psi version of an xml file.
+     *
+     * The call to the method should be guarded by a check for
+     * {@code RenderParamsFlag.FLAG_KEY_XML_FILE_PARSER_SUPPORT}.
+     *
+     * @param fileName name of the file to parse
+     * @since API 16
+     */
     @Nullable
     public XmlPullParser getXmlFileParser(String fileName) {
         return null;
