@@ -209,4 +209,10 @@ public interface FileOp {
      * @see File#deleteOnExit()
      */
     void deleteOnExit(File file);
+
+    /**
+     * @see File#setLastModified(long)
+     * @throws IOException if there is an error setting the modification time.
+     */
+    boolean setLastModified(@NonNull File file, long time) throws IOException;
 }

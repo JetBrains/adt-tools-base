@@ -20,7 +20,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.Revision;
 import com.android.repository.api.Channel;
-import com.android.repository.api.Downloader;
 import com.android.repository.api.FallbackRemoteRepoLoader;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemotePackage;
@@ -29,12 +28,14 @@ import com.android.repository.api.RepositorySource;
 import com.android.repository.api.RepositorySourceProvider;
 import com.android.repository.api.SimpleRepositorySource;
 import com.android.repository.impl.manager.RemoteRepoLoader;
+import com.android.repository.impl.manager.RemoteRepoLoaderImpl;
 import com.android.repository.impl.meta.Archive;
 import com.android.repository.impl.meta.RemotePackageImpl;
 import com.android.repository.impl.meta.TypeDetails;
 import com.android.repository.testframework.FakeDownloader;
 import com.android.repository.testframework.FakePackage;
 import com.android.repository.testframework.FakeProgressIndicator;
+import com.android.repository.testframework.FakeRepositorySourceProvider;
 import com.android.repository.testframework.FakeSettingsController;
 import com.android.repository.testframework.MockFileOp;
 import com.google.common.collect.ImmutableList;
@@ -45,11 +46,10 @@ import junit.framework.TestCase;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 /**
- * Tests for {@link com.android.repository.impl.manager.RemoteRepoLoader}
+ * Tests for {@link RemoteRepoLoaderImpl}
  */
 public class RemoteRepoTest extends TestCase {
 
@@ -62,7 +62,7 @@ public class RemoteRepoTest extends TestCase {
         downloader.registerUrl(new URL("http://www.example.com"),
                 getClass().getResourceAsStream("../testData/testRepo.xml"));
         FakeProgressIndicator progress = new FakeProgressIndicator();
-        RemoteRepoLoader loader = new RemoteRepoLoader(ImmutableList.<RepositorySourceProvider>of(
+        RemoteRepoLoader loader = new RemoteRepoLoaderImpl(ImmutableList.<RepositorySourceProvider>of(
                 new FakeRepositorySourceProvider(ImmutableList.of(source))), null, null);
         Map<String, RemotePackage> pkgs = loader
                 .fetchPackages(progress, downloader, new FakeSettingsController(false));
@@ -96,7 +96,7 @@ public class RemoteRepoTest extends TestCase {
         downloader.registerUrl(new URL("http://www.example.com"),
                                getClass().getResourceAsStream("../testData/testRepoWithChannels.xml"));
         FakeProgressIndicator progress = new FakeProgressIndicator();
-        RemoteRepoLoader loader = new RemoteRepoLoader(ImmutableList.<RepositorySourceProvider>of(
+        RemoteRepoLoader loader = new RemoteRepoLoaderImpl(ImmutableList.<RepositorySourceProvider>of(
           new FakeRepositorySourceProvider(ImmutableList.of(source))), null, null);
         FakeSettingsController settings = new FakeSettingsController(false);
         Map<String, RemotePackage> pkgs = loader
@@ -141,7 +141,7 @@ public class RemoteRepoTest extends TestCase {
         downloader.registerUrl(new URL(legacyUrl),
                 "foo".getBytes());
         FakeProgressIndicator progress = new FakeProgressIndicator();
-        RemoteRepoLoader loader = new RemoteRepoLoader(ImmutableList.<RepositorySourceProvider>of(
+        RemoteRepoLoader loader = new RemoteRepoLoaderImpl(ImmutableList.<RepositorySourceProvider>of(
                 new FakeRepositorySourceProvider(ImmutableList.of(source, legacySource))), null,
                 new FallbackRemoteRepoLoader() {
                     @Nullable
@@ -178,7 +178,7 @@ public class RemoteRepoTest extends TestCase {
         downloader.registerUrl(new URL(legacyUrl),
                 "foo".getBytes());
         FakeProgressIndicator progress = new FakeProgressIndicator();
-        RemoteRepoLoader loader = new RemoteRepoLoader(ImmutableList.<RepositorySourceProvider>of(
+        RemoteRepoLoader loader = new RemoteRepoLoaderImpl(ImmutableList.<RepositorySourceProvider>of(
                 new FakeRepositorySourceProvider(ImmutableList.of(source, legacySource))), null,
                 new FallbackRemoteRepoLoader() {
                     @Nullable
@@ -215,7 +215,7 @@ public class RemoteRepoTest extends TestCase {
         downloader.registerUrl(new URL(legacyUrl),
                 "foo".getBytes());
         FakeProgressIndicator progress = new FakeProgressIndicator();
-        RemoteRepoLoader loader = new RemoteRepoLoader(ImmutableList.<RepositorySourceProvider>of(
+        RemoteRepoLoader loader = new RemoteRepoLoaderImpl(ImmutableList.<RepositorySourceProvider>of(
                 new FakeRepositorySourceProvider(ImmutableList.of(source, legacySource))), null,
                 new FallbackRemoteRepoLoader() {
                     @Nullable
@@ -237,39 +237,4 @@ public class RemoteRepoTest extends TestCase {
         assertTrue(pkgs.get("dummy;foo") instanceof FakePackage);
     }
 
-    private static class FakeRepositorySourceProvider implements RepositorySourceProvider {
-
-        private List<RepositorySource> mSources;
-
-        public FakeRepositorySourceProvider(List<RepositorySource> sources) {
-            mSources = sources;
-        }
-
-        @NonNull
-        @Override
-        public List<RepositorySource> getSources(Downloader downloader, ProgressIndicator logger,
-                boolean forceRefresh) {
-            return mSources;
-        }
-
-        @Override
-        public boolean addSource(@NonNull RepositorySource source) {
-            return false;
-        }
-
-        @Override
-        public boolean isModifiable() {
-            return false;
-        }
-
-        @Override
-        public void save(@NonNull ProgressIndicator progress) {
-
-        }
-
-        @Override
-        public boolean removeSource(@NonNull RepositorySource source) {
-            return false;
-        }
-    }
 }

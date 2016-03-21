@@ -34,6 +34,7 @@ public class FakeProgressRunner implements ProgressRunner {
                 r.run(mProgressIndicator, FakeProgressRunner.this);
             }
         });
+        t.start();
     }
 
     @Override

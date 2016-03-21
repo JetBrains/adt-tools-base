@@ -117,6 +117,11 @@ public class LegacyLocalRepoLoader implements FallbackLocalRepoLoader {
         mPkgs = null;
     }
 
+    @Override
+    public boolean shouldParse(@NonNull File root) {
+        return mFop.exists(new File(root, SdkConstants.FN_SOURCE_PROP));
+    }
+
     /**
      * {@link LocalPackage} wrapper around a {@link LocalPkgInfo}.
      */

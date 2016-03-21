@@ -319,6 +319,15 @@ public abstract class RepoManager {
     public abstract void markInvalid();
 
     /**
+     * Check to see if there have been any changes to the local repo since the last load.
+     * This includes scanning the local repo for packages, but does not involve any reading or
+     * parsing of package metadata files.
+     * Just loading normally will usually be good enough. This method should only be needed if
+     * you want to be extra-sure that there haven't been changes made to the repo manually.
+     */
+    public abstract void invalidateLocalIfNeeded();
+
+    /**
      * Gets the currently-loaded {@link RepositoryPackages}.
      */
     @NonNull
