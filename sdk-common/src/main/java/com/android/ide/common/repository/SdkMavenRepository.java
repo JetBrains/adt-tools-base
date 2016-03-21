@@ -192,8 +192,6 @@ public enum SdkMavenRepository {
             @Nullable String filter,
             boolean allowPreview,
             @NonNull FileOp fileOp) {
-        assert FD_M2_REPOSITORY.equals(repository.getName()) : repository;
-
         File versionDir = new File(repository,
                 groupId.replace('.', separatorChar) + separator + artifactId);
         File[] versions = fileOp.listFiles(versionDir);
