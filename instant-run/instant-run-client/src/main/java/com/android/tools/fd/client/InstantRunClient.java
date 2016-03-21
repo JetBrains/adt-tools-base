@@ -17,7 +17,6 @@
 package com.android.tools.fd.client;
 
 import static com.android.tools.fd.client.InstantRunArtifactType.DEX;
-import static com.android.tools.fd.client.InstantRunArtifactType.RESTART_DEX;
 import static com.android.tools.fd.client.InstantRunArtifactType.SPLIT;
 import static com.android.tools.fd.common.ProtocolConstants.MESSAGE_EOF;
 import static com.android.tools.fd.common.ProtocolConstants.MESSAGE_PATCHES;
@@ -342,16 +341,13 @@ public class InstantRunClient {
                     String name = file.getParentFile().getName() + "-" + file.getName();
                     files.add(FileTransfer.createSliceDex(file, name));
                     break;
-                case RESTART_DEX:
-                    files.add(FileTransfer.createRestartDex(file));
-                    break;
                 case RELOAD_DEX:
                     if (appInForeground) {
                         files.add(FileTransfer.createHotswapPatch(file));
                     } else {
                         // Gradle created a reload dex, but the app is no longer running.
                         // If it created a cold swap artifact, we can use it; otherwise we're out of luck.
-                        if (!buildInfo.hasOneOf(DEX, RESTART_DEX, SPLIT)) {
+                        if (!buildInfo.hasOneOf(DEX, SPLIT)) {
                             throw new InstantRunPushFailedException("Can't apply hot swap patch: app is no longer running");
                         }
                     }
@@ -588,13 +584,6 @@ public class InstantRunClient {
     public static final int TRANSFER_MODE_SLICE = 1;
 
     /**
-     * Transfer the file as a dex coldswap overlay file. This means
-     * that its remote path should be a new, unique (and numerically
-     * highest) dex file name in the dex folder.
-     */
-    public static final int TRANSFER_MODE_NEW_DEX = 2;
-
-    /**
      * Transfer the file as a hotswap overlay file. This means
      * that its remote path should be a temporary file.
      */
@@ -623,11 +612,6 @@ public class InstantRunClient {
         }
 
         @NonNull
-        public static FileTransfer createRestartDex(@NonNull File source) {
-            return new FileTransfer(TRANSFER_MODE_NEW_DEX, source, Paths.RESTART_DEX_FILE_NAME);
-        }
-
-        @NonNull
         public static FileTransfer createSliceDex(@NonNull File source, @NonNull String name) {
             return new FileTransfer(TRANSFER_MODE_SLICE, source, name);
         }
@@ -653,7 +637,6 @@ public class InstantRunClient {
                 case TRANSFER_MODE_SLICE:
                     path = Paths.DEX_SLICE_PREFIX + name;
                     break;
-                case TRANSFER_MODE_NEW_DEX:
                 case TRANSFER_MODE_HOTSWAP:
                 case TRANSFER_MODE_RESOURCES:
                     path = name;
@@ -712,9 +695,6 @@ public class InstantRunClient {
         try {
             Set<String> createdDirs = Sets.newHashSet();
 
-            // List the files in the dex folder to compute a new .dex file name that follows the existing
-            // naming pattern but is numbered higher than any existing .dex files
-            int max = -1;
             for (FileTransfer file : files) {
                 String folder;
                 String name;
@@ -722,19 +702,6 @@ public class InstantRunClient {
                     case TRANSFER_MODE_SLICE:
                         folder = Paths.getDexFileDirectory(mPackageName);
                         name = Paths.DEX_SLICE_PREFIX + file.name;
-                        break;
-                    case TRANSFER_MODE_NEW_DEX:
-                        // Compute a unique name
-                        if (max == -1) {
-                            CollectingOutputReceiver receiver = new CollectingOutputReceiver();
-                            String dexFolder = Paths.getDexFileDirectory(mPackageName);
-                            String cmd = "run-as " + mPackageName + " ls " + dexFolder;
-                            device.executeShellCommand(cmd, receiver);
-                            max = getMaxDexFileNumber(receiver.getOutput());
-                        }
-                        folder = Paths.getDexFileDirectory(mPackageName);
-                        name = String.format("%s0x%04x%s", CLASSES_DEX_PREFIX, ++max,
-                                CLASSES_DEX_SUFFIX);
                         break;
                     case TRANSFER_MODE_RESOURCES:
                         folder = Paths.getInboxDirectory(mPackageName);
