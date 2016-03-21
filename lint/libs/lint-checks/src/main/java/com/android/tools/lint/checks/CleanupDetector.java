@@ -58,13 +58,12 @@ import com.intellij.psi.PsiReferenceExpression;
 import com.intellij.psi.PsiReturnStatement;
 import com.intellij.psi.PsiStatement;
 import com.intellij.psi.PsiType;
+import com.intellij.psi.PsiVariable;
 import com.intellij.psi.PsiWhileStatement;
+import com.intellij.psi.util.PsiTreeUtil;
 
 import java.util.Arrays;
 import java.util.List;
-
-// TODO: Make sure I handle this for the SharedPrefs editor code!:
-//                  // If you just do "return editor.commit() don't warn
 
 /**
  * Checks for missing {@code recycle} calls on resources that encourage it, and
@@ -290,7 +289,7 @@ public class CleanupDetector extends Detector implements JavaPsiScanner {
 
     private static void checkRecycled(@NonNull final JavaContext context, @NonNull PsiElement node,
             @NonNull final String recycleType, @NonNull final String recycleName) {
-        PsiLocalVariable boundVariable = getVariableElement(node);
+        PsiVariable boundVariable = getVariableElement(node);
         if (boundVariable == null) {
             return;
         }
@@ -355,7 +354,7 @@ public class CleanupDetector extends Detector implements JavaPsiScanner {
     private static void checkTransactionCommits(@NonNull JavaContext context,
             @NonNull PsiMethodCallExpression node, @NonNull PsiMethod calledMethod) {
         if (isBeginTransaction(context, calledMethod)) {
-            PsiLocalVariable boundVariable = getVariableElement(node);
+            PsiVariable boundVariable = getVariableElement(node, true);
             if (boundVariable == null && isCommittedInChainedCalls(context, node)) {
                 return;
             }
@@ -487,7 +486,7 @@ public class CleanupDetector extends Detector implements JavaPsiScanner {
     private static void checkEditorApplied(@NonNull JavaContext context,
             @NonNull PsiMethodCallExpression node, @NonNull PsiMethod calledMethod) {
         if (isSharedEditorCreation(context, calledMethod)) {
-            PsiLocalVariable boundVariable = getVariableElement(node, true);
+            PsiVariable boundVariable = getVariableElement(node, true);
             if (isEditorCommittedInChainedCalls(context, node)) {
                 return;
             }
@@ -537,6 +536,9 @@ public class CleanupDetector extends Detector implements JavaPsiScanner {
                 if (commitVisitor.isCleanedUp() || commitVisitor.variableEscapes()) {
                     return;
                 }
+            } else if (PsiTreeUtil.getParentOfType(node, PsiReturnStatement.class) != null) {
+                // Allocation is in a return statement
+                return;
             }
 
             String message = "`SharedPreferences.edit()` without a corresponding `commit()` or "
@@ -657,12 +659,12 @@ public class CleanupDetector extends Detector implements JavaPsiScanner {
 
     /** Returns the variable the expression is assigned to, if any */
     @Nullable
-    public static PsiLocalVariable getVariableElement(@NonNull PsiElement rhs) {
+    public static PsiVariable getVariableElement(@NonNull PsiElement rhs) {
         return getVariableElement(rhs, false);
     }
 
     @Nullable
-    public static PsiLocalVariable getVariableElement(@NonNull PsiElement rhs,
+    public static PsiVariable getVariableElement(@NonNull PsiElement rhs,
             boolean allowChainedCalls) {
         PsiElement parent = skipParentheses(rhs.getParent());
 
@@ -689,12 +691,13 @@ public class CleanupDetector extends Detector implements JavaPsiScanner {
             PsiExpression lhs = assignment.getLExpression();
             if (lhs instanceof PsiReference) {
                 PsiElement resolved = ((PsiReference)lhs).resolve();
-                if (resolved instanceof PsiLocalVariable) {
-                    return (PsiLocalVariable) resolved;
+                if (resolved instanceof PsiVariable && !(resolved instanceof PsiField)) {
+                    // e.g. local variable, parameter - but not a field
+                    return (PsiVariable) resolved;
                 }
             }
-        } else if (parent instanceof PsiLocalVariable) {
-            return (PsiLocalVariable) parent;
+        } else if (parent instanceof PsiVariable && !(parent instanceof PsiField)) {
+            return (PsiVariable) parent;
         }
 
         return null;
@@ -722,13 +725,13 @@ public class CleanupDetector extends Detector implements JavaPsiScanner {
      */
     private abstract static class FinishVisitor extends JavaRecursiveElementVisitor {
         protected final JavaContext mContext;
-        protected final List<PsiLocalVariable> mVariables;
-        private final PsiLocalVariable mOriginalVariableNode;
+        protected final List<PsiVariable> mVariables;
+        private final PsiVariable mOriginalVariableNode;
 
         private boolean mContainsCleanup;
         private boolean mEscapes;
 
-        public FinishVisitor(JavaContext context, @NonNull PsiLocalVariable variableNode) {
+        public FinishVisitor(JavaContext context, @NonNull PsiVariable variableNode) {
             mContext = context;
             mOriginalVariableNode = variableNode;
             mVariables = Lists.newArrayList(variableNode);

@@ -19,14 +19,13 @@ package com.android.tools.lint.psi;
 import com.android.annotations.NonNull;
 import com.intellij.psi.JavaElementVisitor;
 import com.intellij.psi.PsiArrayInitializerExpression;
-import com.intellij.psi.PsiArrayInitializerMemberValue;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.PsiExpression;
 
 import org.eclipse.jdt.internal.compiler.ast.Expression;
 
 class EcjPsiArrayInitializerExpression extends EcjPsiExpression implements
-        PsiArrayInitializerExpression, PsiArrayInitializerMemberValue {
+        PsiArrayInitializerExpression {
 
     private PsiExpression[] mInitializers;
 

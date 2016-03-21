@@ -181,6 +181,9 @@ class EcjPsiMethod extends EcjPsiMember implements PsiMethod {
     }
 
     private PsiMethod[] getSuperMethods(boolean checkAccess) {
+        if (mDeclaration.binding == null) {
+            return PsiMethod.EMPTY_ARRAY;
+        }
         MethodBinding superBinding = EcjPsiManager.findSuperMethodBinding(mDeclaration.binding,
                 false, checkAccess);
         if (superBinding != null) {
@@ -251,9 +254,48 @@ class EcjPsiMethod extends EcjPsiMember implements PsiMethod {
                 : PsiTypeParameter.EMPTY_ARRAY;
     }
 
+    MethodBinding getBinding() {
+        return mDeclaration.binding;
+    }
+
     @Override
     public boolean equals(Object o) {
-        return o instanceof EcjPsiMethod && mDeclaration.binding.equals(
-                ((EcjPsiMethod)o).mDeclaration.binding);
+        if (this == o) {
+            return true;
+        }
+        if (o == null) {
+            return false;
+        }
+        MethodBinding binding = mDeclaration.binding;
+        MethodBinding otherBinding;
+        if (o instanceof EcjPsiMethod) {
+            otherBinding = (((EcjPsiMethod) o).getBinding());
+            if (binding == null || otherBinding == null) {
+                return mDeclaration.equals(((EcjPsiMethod) o).mDeclaration);
+            }
+            return binding.equals(otherBinding);
+        } else if (o instanceof EcjPsiBinaryMethod) {
+            otherBinding = (((EcjPsiBinaryMethod) o).getBinding());
+            return binding != null && otherBinding != null && binding.equals(otherBinding);
+        } else if (o instanceof ExternalPsiReferenceExpressionMemberValue) {
+            String signature = ((ExternalPsiReferenceExpressionMemberValue) o).getQualifiedName();
+            PsiClass containingClass = getContainingClass();
+            if (containingClass != null) {
+                String fqn = containingClass.getQualifiedName();
+                if (fqn != null) {
+                    if (signature.startsWith(fqn) && signature.endsWith(getName())
+                            && signature.length() == fqn.length() + getName().length() + 1) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return mDeclaration.binding != null ? mDeclaration.binding.hashCode() : 0;
     }
 }

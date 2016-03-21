@@ -363,9 +363,17 @@ public class EcjParser extends JavaParser {
                         : mSourceToUnit.entrySet()) {
                     CompilationUnitDeclaration unit = entry.getValue();
                     EcjSourceFile sourceUnit = entry.getKey();
+                    //noinspection ConstantConditions
                     mUnitToSource.put(unit, sourceUnit);
 
+                    if (unit.types == null) {
+                        // Usually not the case, but for really misconfigured projects with broken
+                        // classpath setup etc this is possible
+                        continue;
+                    }
+
                     for (TypeDeclaration declaration : unit.types) {
+                        //noinspection ConstantConditions
                         recordTypeAssociation(mBindingToUnit, declaration, unit);
                     }
                 }

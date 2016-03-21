@@ -67,6 +67,7 @@ public class EcjPsiBuilderTest extends TestCase {
     @Language("JAVA")
     @SuppressWarnings("all") // testcase code intentionally not following recommended practices :-)
     private String mTestClass = ""
+            + "\n"
             + "package test.pkg;\n"
             + "\n"
             + "import java.io.BufferedReader;\n"
@@ -85,6 +86,10 @@ public class EcjPsiBuilderTest extends TestCase {
             + "import java.util.function.Consumer;\n"
             + "import java.util.function.Supplier;\n"
             + "import java.util.regex.MatchResult;\n"
+            + "import android.database.Cursor;\n"
+            + "import android.database.CursorWrapper;\n"
+            + "import android.view.Gravity;\n"
+            + "import android.view.ViewDebug;\n"
             + "\n"
             + "import static java.lang.annotation.ElementType.FIELD;\n"
             + "import static java.lang.annotation.ElementType.LOCAL_VARIABLE;\n"
@@ -126,7 +131,7 @@ public class EcjPsiBuilderTest extends TestCase {
             + "    static {\n"
             + "        ourStatic = 5;\n"
             + "    }\n"
-            + "    \n"
+            + "\n"
             + "    // Instance initializer\n"
             + "    {\n"
             + "        myField = 5;\n"
@@ -278,7 +283,18 @@ public class EcjPsiBuilderTest extends TestCase {
             + "            System.out.println(s);\n"
             + "        }\n"
             + "\n"
-            + "    label:\n"
+            + "        int m, n;\n"
+            + "        for (m = 0, n = 0; m < list.size(); m++) {\n"
+            + "            String s = list.get(m);\n"
+            + "            System.out.println(s);\n"
+            + "        }\n"
+            + "\n"
+            + "        Cursor cursor = new CursorWrapper(null);\n"
+            + "        for (cursor.moveToFirst(); (! cursor.isAfterLast()); cursor.moveToNext()) {\n"
+            + "            cursor.getColumnCount();\n"
+            + "        }\n"
+            + "\n"
+            + "        label:\n"
             + "        for (int i = 0; i < array.length; i++) {\n"
             + "            char[] inner = array[i];\n"
             + "            for (int j = 0; j < inner.length; j++) {\n"
@@ -376,9 +392,9 @@ public class EcjPsiBuilderTest extends TestCase {
             + "        }\n"
             + "\n"
             + "        class MyTypeDeclarationStatement {\n"
-            + "          public void test() {\n"
-            + "              System.out.println(\"test\");\n"
-            + "          }\n"
+            + "            public void test() {\n"
+            + "                System.out.println(\"test\");\n"
+            + "            }\n"
             + "        };\n"
             + "        new MyTypeDeclarationStatement().test();\n"
             + "\n"
@@ -530,6 +546,13 @@ public class EcjPsiBuilderTest extends TestCase {
             + "        MyAnnotation2 value();\n"
             + "    }\n"
             + "\n"
+            + "    @ViewDebug.ExportedProperty(mapping = {\n"
+            + "            @ViewDebug.IntToString(from =  -1,                       to = \"NONE\"),\n"
+            + "            @ViewDebug.IntToString(from = Gravity.TOP,               to = \"TOP\"),\n"
+            + "            @ViewDebug.IntToString(from = Gravity.BOTTOM,            to = \"BOTTOM\")\n"
+            + "    })\n"
+            + "    public int gravity = -1;\n"
+            + "\n"
             + "    protected volatile int modifierFields;\n"
             + "\n"
             + "    int defaultPackage;\n"
@@ -660,7 +683,7 @@ public class EcjPsiBuilderTest extends TestCase {
         PsiImportList importList = mJavaFile.getImportList();
         assertNotNull(importList);
         PsiImportStatementBase[] imports = importList.getAllImportStatements();
-        assertEquals(25, imports.length);
+        assertEquals(29, imports.length);
 
         PsiImportStatement statement = importList.findSingleClassImportStatement("java.util.List");
         assertNotNull(statement);
@@ -775,7 +798,7 @@ public class EcjPsiBuilderTest extends TestCase {
         assertEquals("ourStatic", ourStatic.getNameIdentifier().getText());
         PsiField[] fields = cls.getFields();
         assertNotNull(fields);
-        assertEquals(9, fields.length);
+        assertEquals(10, fields.length);
 
         PsiMethod[] constructors = cls.getConstructors();
         assertNotNull(constructors);

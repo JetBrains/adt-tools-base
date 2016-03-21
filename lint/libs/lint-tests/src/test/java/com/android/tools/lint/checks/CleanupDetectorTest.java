@@ -428,4 +428,90 @@ public class CleanupDetectorTest extends AbstractCheckTest {
                         + "    }\n"
                         + "}\n")));
     }
+
+    @SuppressWarnings("ALL") // sample code with warnings
+    public void testCommitDetector() throws Exception {
+        assertEquals("No warnings.",
+                lintProject(
+                        java("src/test/pkg/CommitTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.app.Activity;\n"
+                                + "import android.app.FragmentManager;\n"
+                                + "import android.app.FragmentTransaction;\n"
+                                + "import android.content.Context;\n"
+                                + "\n"
+                                + "public class CommitTest {\n"
+                                + "    private Context mActivity;\n"
+                                + "    public void selectTab1() {\n"
+                                + "        FragmentTransaction trans = null;\n"
+                                + "        if (mActivity instanceof Activity) {\n"
+                                + "            trans = ((Activity)mActivity).getFragmentManager().beginTransaction()\n"
+                                + "                    .disallowAddToBackStack();\n"
+                                + "        }\n"
+                                + "\n"
+                                + "        if (trans != null && !trans.isEmpty()) {\n"
+                                + "            trans.commit();\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public void select(FragmentManager fragmentManager) {\n"
+                                + "        FragmentTransaction trans = fragmentManager.beginTransaction().disallowAddToBackStack();\n"
+                                + "        trans.commit();\n"
+                                + "    }"
+                                + "}")));
+    }
+
+    @SuppressWarnings("ALL") // sample code with warnings
+    public void testCommitDetectorOnParameters() throws Exception {
+        // Handle transactions assigned to parameters (this used to not work)
+        assertEquals("No warnings.",
+                lintProject(
+                        java("src/test/pkg/CommitTest2.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.app.FragmentManager;\n"
+                                + "import android.app.FragmentTransaction;\n"
+                                + "\n"
+                                + "@SuppressWarnings(\"unused\")\n"
+                                + "public class CommitTest2 {\n"
+                                + "    private void navigateToFragment(FragmentTransaction transaction,\n"
+                                + "                                    FragmentManager supportFragmentManager) {\n"
+                                + "        if (transaction == null) {\n"
+                                + "            transaction = supportFragmentManager.beginTransaction();\n"
+                                + "        }\n"
+                                + "\n"
+                                + "        transaction.commit();\n"
+                                + "    }\n"
+                                + "}")));
+    }
+
+    @SuppressWarnings("ALL") // sample code with warnings
+    public void testReturn() throws Exception {
+        // If you return the object to be cleaned up, it doesn'st have to be cleaned up (caller
+        // may do that)
+        assertEquals("No warnings.",
+                lintProject(
+                        java("src/test/pkg/SharedPrefsTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.content.Context;\n"
+                                + "import android.content.SharedPreferences;\n"
+                                + "import android.preference.PreferenceManager;\n"
+                                + "\n"
+                                + "@SuppressWarnings(\"unused\")\n"
+                                + "public abstract class SharedPrefsTest extends Context {\n"
+                                + "    private SharedPreferences.Editor getEditor() {\n"
+                                + "        return getPreferences().edit();\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    private boolean editAndCommit() {\n"
+                                + "        return getPreferences().edit().commit();\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    private SharedPreferences getPreferences() {\n"
+                                + "        return PreferenceManager.getDefaultSharedPreferences(this);\n"
+                                + "    }\n"
+                                + "}")));
+    }
 }

@@ -31,6 +31,7 @@ import com.intellij.psi.javadoc.PsiDocComment;
 
 import org.eclipse.jdt.internal.compiler.ast.FieldDeclaration;
 import org.eclipse.jdt.internal.compiler.classfmt.ClassFileConstants;
+import org.eclipse.jdt.internal.compiler.lookup.FieldBinding;
 
 class EcjPsiField extends EcjPsiMember implements PsiField {
 
@@ -118,7 +119,9 @@ class EcjPsiField extends EcjPsiMember implements PsiField {
     @Override
     public PsiType getType() {
         PsiType type = mManager.findType(mDeclaration.type);
-        assert type != null : mDeclaration;
+        if (type == null) {
+            type = PsiType.NULL;
+        }
         return type;
     }
 
@@ -150,5 +153,28 @@ class EcjPsiField extends EcjPsiMember implements PsiField {
     public boolean isDeprecated() {
         return mDeclaration.binding != null
                 && (mDeclaration.binding.modifiers & ClassFileConstants.AccDeprecated) != 0;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null) {
+            return false;
+        }
+        FieldBinding binding = mDeclaration.binding;
+        FieldBinding otherBinding = null;
+        if (o instanceof EcjPsiField) {
+            otherBinding = (((EcjPsiField) o).mDeclaration).binding;
+        } else if (o instanceof EcjPsiBinaryField) {
+            otherBinding = (((EcjPsiBinaryField) o).getBinding());
+        }
+        return !(binding == null || otherBinding == null) && binding.equals(otherBinding);
+    }
+
+    @Override
+    public int hashCode() {
+        return mDeclaration.binding != null ? mDeclaration.binding.hashCode() : 0;
     }
 }

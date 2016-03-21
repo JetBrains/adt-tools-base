@@ -17,46 +17,40 @@
 package com.android.tools.lint.psi;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.intellij.psi.JavaElementVisitor;
-import com.intellij.psi.PsiContinueStatement;
+import com.intellij.psi.PsiAnnotationMemberValue;
+import com.intellij.psi.PsiArrayInitializerMemberValue;
 import com.intellij.psi.PsiElementVisitor;
-import com.intellij.psi.PsiIdentifier;
-import com.intellij.psi.PsiStatement;
 
-import org.eclipse.jdt.internal.compiler.ast.Statement;
+import org.eclipse.jdt.internal.compiler.ast.Expression;
 
-class EcjPsiContinueStatement extends EcjPsiStatement implements PsiContinueStatement {
+class EcjPsiArrayInitializerMemberValue extends EcjPsiSourceElement implements
+        PsiArrayInitializerMemberValue {
 
-    private PsiIdentifier mIdentifier;
+    private PsiAnnotationMemberValue[] mInitializers;
 
-    EcjPsiContinueStatement(@NonNull EcjPsiManager manager,
-            @Nullable Statement statement) {
-        super(manager, statement);
-    }
-
-    void setIdentifier(PsiIdentifier identifier) {
-        mIdentifier = identifier;
+    EcjPsiArrayInitializerMemberValue(@NonNull EcjPsiManager manager,
+            @NonNull Expression expression) {
+        super(manager, expression);
     }
 
     @Override
     public void accept(@NonNull PsiElementVisitor visitor) {
         if (visitor instanceof JavaElementVisitor) {
-            ((JavaElementVisitor)visitor).visitContinueStatement(this);
+            ((JavaElementVisitor)visitor).visitAnnotationArrayInitializer(this);
         }
         else {
             visitor.visitElement(this);
-        }    }
-
-    @Nullable
-    @Override
-    public PsiIdentifier getLabelIdentifier() {
-        return mIdentifier;
+        }
     }
 
-    @Nullable
+    void setInitializers(PsiAnnotationMemberValue[] initializers) {
+        mInitializers = initializers;
+    }
+
+    @NonNull
     @Override
-    public PsiStatement findContinuedStatement() {
-        return EcjPsiBreakStatement.findStatement(this, getLabelIdentifier());
+    public PsiAnnotationMemberValue[] getInitializers() {
+        return mInitializers;
     }
 }

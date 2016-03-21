@@ -68,7 +68,9 @@ public class EcjPsiBinaryParameter extends EcjPsiBinaryElement implements PsiPar
     @Override
     public PsiType getType() {
         PsiType type = mManager.findType((TypeBinding) mBinding);
-        assert type != null;
+        if (type == null) {
+            type = PsiType.NULL;
+        }
         return type;
     }
 

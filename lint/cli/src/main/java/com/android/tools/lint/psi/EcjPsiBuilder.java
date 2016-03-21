@@ -28,6 +28,7 @@ import com.google.common.collect.ObjectArrays;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.JavaElementVisitor;
 import com.intellij.psi.JavaTokenType;
+import com.intellij.psi.PsiAnnotationMemberValue;
 import com.intellij.psi.PsiCatchSection;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassInitializer;
@@ -623,7 +624,7 @@ public class EcjPsiBuilder {
                     pair.setRange(memberValuePair.sourceStart, value.sourceEnd + 1);
                 }
             } else {
-                pair.setMemberValue(toExpression(pair, value));
+                pair.setMemberValue(toMemberValue(pair, value));
                 pair.setRange(memberValuePair.sourceStart, value.sourceEnd + 1);
             }
         } else {
@@ -884,9 +885,11 @@ public class EcjPsiBuilder {
             psiMethod.setTypeParameters(toTypeParameterList(psiMethod, typeParameters));
         }
 
-        if (method instanceof MethodDeclaration) {
+        if (method instanceof MethodDeclaration && !method.isConstructor()) {
             TypeReference returnType = ((MethodDeclaration) method).returnType;
-            psiMethod.setReturnTypeElement(toTypeElement(psiMethod, returnType));
+            if (returnType != null) {
+                psiMethod.setReturnTypeElement(toTypeElement(psiMethod, returnType));
+            }
         }
 
         psiMethod.setNameIdentifier(toIdentifier(cls, method.selector,
@@ -930,6 +933,21 @@ public class EcjPsiBuilder {
     }
 
     @NonNull
+    private PsiAnnotationMemberValue toMemberValue(
+            @NonNull EcjPsiSourceElement parent,
+            @NonNull ASTNode node) {
+        if (node instanceof Annotation) {
+            return toAnnotation(parent, (Annotation) node);
+        } else if (node instanceof ArrayInitializer) {
+            return toArrayInitializerMemberValue(parent, (ArrayInitializer) node);
+        } else if (node instanceof Expression) {
+            return toExpression(parent, (Expression)node);
+        } else {
+            throw new IllegalArgumentException(node.getClass().getName());
+        }
+    }
+
+    @NonNull
     private EcjPsiExpression toExpression(
             @NonNull EcjPsiSourceElement parent,
             @NonNull Expression expression) {
@@ -970,6 +988,26 @@ public class EcjPsiBuilder {
             PsiExpression initializers[] = new PsiExpression[expression.expressions.length];
             for (int i = 0; i < expression.expressions.length; i++) {
                 initializers[i] = toExpression(e, expression.expressions[i]);
+            }
+            e.setInitializers(initializers);
+        } else {
+            e.setInitializers(PsiExpression.EMPTY_ARRAY);
+        }
+        parent.adoptChild(e);
+        return e;
+    }
+
+    @NonNull
+    private EcjPsiArrayInitializerMemberValue toArrayInitializerMemberValue(
+            @NonNull EcjPsiSourceElement parent,
+            @NonNull ArrayInitializer expression) {
+        EcjPsiArrayInitializerMemberValue e = new EcjPsiArrayInitializerMemberValue(mManager,
+                expression);
+        if (expression.expressions != null) {
+            PsiAnnotationMemberValue initializers[] =
+                    new PsiAnnotationMemberValue[expression.expressions.length];
+            for (int i = 0; i < expression.expressions.length; i++) {
+                initializers[i] = toMemberValue(e, expression.expressions[i]);
             }
             e.setInitializers(initializers);
         } else {
@@ -1620,7 +1658,6 @@ public class EcjPsiBuilder {
         EcjPsiTypeElement element = new EcjPsiTypeElement(mManager, reference);
         parent.adoptChild(element);
 
-
         if (reference.resolvedType instanceof ReferenceBinding) {
             EcjPsiJavaCodeReferenceElement nameElement = toTypeReference(
                     element, reference);
@@ -2193,6 +2230,12 @@ public class EcjPsiBuilder {
             return toEmptyStatement(parent);
         }
 
+        if (!(statements[0] instanceof LocalDeclaration)) {
+            // All the statements are assignments (you can't mix and match declarations
+            // and assignments
+            return toForUpdateStatement(parent, statements);
+        }
+
         EcjPsiDeclarationStatement declaration =
                 new EcjPsiDeclarationStatement(mManager, null);
         parent.adoptChild(declaration);
@@ -2368,16 +2411,18 @@ public class EcjPsiBuilder {
 
         Expression init = field.initialization;
         if (init != null) {
-            if (init instanceof QualifiedAllocationExpression) {
-                EcjPsiEnumConstantInitializer initializer = toEnumInitializer(psiField, init);
-                if (initializer != null) {
-                    psiField.setInitializer(initializer);
-                    initializer.setConstant(psiField);
-                }
-            } else if (init instanceof AllocationExpression) {
+            if (init instanceof AllocationExpression) {
                 EcjPsiExpressionList arguments = toArguments(psiField,
                         ((AllocationExpression) init).arguments);
                 psiField.setArgumentList(arguments);
+
+                if (init instanceof QualifiedAllocationExpression) {
+                    EcjPsiEnumConstantInitializer initializer = toEnumInitializer(psiField, init);
+                    if (initializer != null) {
+                        psiField.setInitializer(initializer);
+                        initializer.setConstant(psiField);
+                    }
+                }
             }
         }
 
