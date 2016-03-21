@@ -342,6 +342,6 @@ public class NinePatchAaptProcessorTestUtils {
     }
 
     private static boolean isOnJenkins() {
-        return System.getProperty("JENKINS_URL") != null;
+        return System.getenv("JENKINS_URL") != null;
     }
 }
