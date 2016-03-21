@@ -111,7 +111,7 @@ public class JackConversionCache extends PreProcessCache<PreProcessCache.Key> {
                 // haven't process this file yet so do it and record it.
                 List<File> files;
                 if (isJackInProcess) {
-                    files = AndroidBuilder.convertLibaryWithJillUsingApis(
+                    files = AndroidBuilder.convertLibraryWithJillUsingApis(
                             inputFile,
                             outFile,
                             buildToolInfo,

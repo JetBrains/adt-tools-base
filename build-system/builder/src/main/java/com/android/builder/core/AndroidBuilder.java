@@ -160,7 +160,7 @@ import java.util.zip.ZipFile;
  * {@link #convertByteCode(Collection, File, boolean, File, DexOptions, List, boolean, boolean, ProcessOutputHandler, boolean)}
  * {@link #packageApk(String, Set, Collection, Collection, Set, boolean, SigningConfig, File, int, File)}
  *
- * Java compilation is not handled but the builder provides the bootclasspath with
+ * Java compilation is not handled but the builder provides the boot classpath with
  * {@link #getBootClasspath(boolean)}.
  */
 public class AndroidBuilder {
@@ -1861,7 +1861,7 @@ public class AndroidBuilder {
                     compilationTask = config.getTask();
                 } catch (ConfigNotSupportedException e) {
                     mLogger.error(e,
-                            "jack.jar from buildtools "
+                            "jack.jar from build tools "
                                     + mTargetInfo.getBuildTools().getRevision()
                                     + " does not support Jack API v01.");
                     throw e;
@@ -1972,7 +1972,7 @@ public class AndroidBuilder {
                 mLogger);
     }
 
-    public static List<File> convertLibaryWithJillUsingApis(
+    public static List<File> convertLibraryWithJillUsingApis(
             @NonNull File inputFile,
             @NonNull File outFile,
             @NonNull BuildToolInfo buildToolInfo,
@@ -2131,7 +2131,7 @@ public class AndroidBuilder {
      * @param androidResPkgLocation the location of the packaged resource file
      * @param dexFolders the folder(s) with the dex file(s).
      * @param javaResources the processed Java resources and their modification status
-     * @param javaResourceArchives the processed archived (ziped) java resources and their
+     * @param javaResourceArchives the processed archived (zipped) java resources and their
      * modification status
      * @param jniLibs the updated JNI libraries mapped to their change type
      * @param jniLibArchives the archives with JNI libraries mapped to their change type

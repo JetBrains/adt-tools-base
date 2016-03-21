@@ -336,6 +336,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
      * ./gradlew connectedAndroidTest -Pandroid.testInstrumentationRunnerArguments.foo=bar
      * </pre>
      */
+    @SuppressWarnings("SpellCheckingInspection")
     @Override
     @NonNull
     public Map<String, String> getTestInstrumentationRunnerArguments() {

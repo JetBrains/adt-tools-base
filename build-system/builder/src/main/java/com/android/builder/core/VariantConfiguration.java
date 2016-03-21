@@ -36,7 +36,6 @@ import com.android.ide.common.res2.AssetSet;
 import com.android.ide.common.res2.ResourceSet;
 import com.android.sdklib.SdkVersionInfo;
 import com.android.utils.StringHelper;
-import com.google.common.base.Objects;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -1669,14 +1668,14 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         // For tests of library projects, the local jars are showing both in
         // the tested library bundle and in the test variant. This removes
         // them from the test variant where they don't belong anyway.
-        Set<File> testedlocalJars = null;
+        Set<File> testedLocalJars = null;
         if (mTestedConfig != null && mTestedConfig.getType() == VariantType.LIBRARY) {
-            testedlocalJars = mTestedConfig.getLocalPackagedJars();
+            testedLocalJars = mTestedConfig.getLocalPackagedJars();
         }
 
         for (JarDependency jar : mLocalJars) {
             File jarFile = jar.getJarFile();
-            if (testedlocalJars == null || !testedlocalJars.contains(jarFile)) {
+            if (testedLocalJars == null || !testedLocalJars.contains(jarFile)) {
                 if (jar.isPackaged() && jarFile.exists()) {
                     jars.add(jarFile);
                 }
@@ -1874,8 +1873,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
                 return "unresolved-lib-"  + jarFile.getName() + "-" + jarFile.getPath().hashCode();
             }
 
-            for (File localjar : libraryDependency.getLocalJars()) {
-                if (jarFile.equals(localjar)) {
+            for (File localJar : libraryDependency.getLocalJars()) {
+                if (jarFile.equals(localJar)) {
                     if (libraryDependency.getResolvedCoordinates() != null) {
                         return libraryDependency.getResolvedCoordinates().toString() + ":" + jarFile.getName();
                     }
@@ -1958,7 +1957,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     /**
      * Return the merged build config fields for the variant.
      *
-     * This is made of of the variant-specific fields overlayed on top of the build type ones,
+     * This is made of of the variant-specific fields overlaid on top of the build type ones,
      * the flavors ones, and the default config ones.
      *
      * @return a map of merged fields
@@ -1984,7 +1983,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     /**
      * Return the merged res values for the variant.
      *
-     * This is made of of the variant-specific fields overlayed on top of the build type ones,
+     * This is made of of the variant-specific fields overlaid on top of the build type ones,
      * the flavors ones, and the default config ones.
      *
      * @return a map of merged fields

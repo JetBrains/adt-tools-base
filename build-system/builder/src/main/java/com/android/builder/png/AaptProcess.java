@@ -39,10 +39,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class AaptProcess {
 
-    private static final int DEFAULT_SLAVE_APPT_TIMEOUT_IN_SECONDS = 5;
+    private static final int DEFAULT_SLAVE_AAPT_TIMEOUT_IN_SECONDS = 5;
     private static final int SLAVE_AAPT_TIMEOUT_IN_SECONDS =
             System.getenv("SLAVE_AAPT_TIMEOUT") == null
-                    ? DEFAULT_SLAVE_APPT_TIMEOUT_IN_SECONDS
+                    ? DEFAULT_SLAVE_AAPT_TIMEOUT_IN_SECONDS
                     : Integer.parseInt(System.getenv("SLAVE_AAPT_TIMEOUT"));
 
     private final String mAaptLocation;
@@ -88,7 +88,7 @@ public class AaptProcess {
         NotifierProcessOutput notifier =
                 new NotifierProcessOutput(job, mProcessOutputFacade, mLogger);
 
-        mLogger.verbose("Processs(%1$d) length = %2$d:$3$d",
+        mLogger.verbose("Process(%1$d) length = %2$d:%3$d",
                 hashCode(), in.getAbsolutePath().length(), out.getAbsolutePath().length());
         mProcessOutputFacade.setNotifier(notifier);
         mWriter.write("s\n");

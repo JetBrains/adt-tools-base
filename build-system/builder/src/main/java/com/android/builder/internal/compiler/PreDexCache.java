@@ -87,7 +87,7 @@ public class PreDexCache extends PreProcessCache<DexKey> {
      * @param builder {@link AndroidBuilder} instance used to dex the library
      * @param inputFile the jar to pre-dex
      * @param outFile the output file or folder (if multi-dex is enabled), must exist
-     * @param multiDex whether mutli-dex is enabled
+     * @param multiDex whether multi-dex is enabled
      * @param dexOptions the dex options to run pre-dex
      * @throws IOException
      * @throws ProcessException

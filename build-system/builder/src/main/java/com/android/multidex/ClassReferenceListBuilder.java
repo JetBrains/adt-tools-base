@@ -127,17 +127,17 @@ public class ClassReferenceListBuilder {
         if (descriptor.endsWith(";")) {
             int lastBrace = descriptor.lastIndexOf('[');
             if (lastBrace < 0) {
-                addClassWithHierachy(descriptor.substring(1, descriptor.length()-1));
+                addClassWithHierarchy(descriptor.substring(1, descriptor.length()-1));
             } else {
                 assert descriptor.length() > lastBrace + 3
                 && descriptor.charAt(lastBrace + 1) == 'L';
-                addClassWithHierachy(descriptor.substring(lastBrace + 2,
+                addClassWithHierarchy(descriptor.substring(lastBrace + 2,
                         descriptor.length() - 1));
             }
         }
     }
 
-    private void addClassWithHierachy(String classBinaryName) {
+    private void addClassWithHierarchy(String classBinaryName) {
         if (classNames.contains(classBinaryName)) {
             return;
         }
@@ -150,13 +150,13 @@ public class ClassReferenceListBuilder {
             classNames.add(classBinaryName);
             CstType superClass = classFile.getSuperclass();
             if (superClass != null) {
-                addClassWithHierachy(superClass.getClassType().getClassName());
+                addClassWithHierarchy(superClass.getClassType().getClassName());
             }
 
             TypeList interfaceList = classFile.getInterfaces();
             int interfaceNumber = interfaceList.size();
             for (int i = 0; i < interfaceNumber; i++) {
-                addClassWithHierachy(interfaceList.getType(i).getClassName());
+                addClassWithHierarchy(interfaceList.getType(i).getClassName());
             }
         } catch (FileNotFoundException e) {
             // Ignore: The referenced type is not in the path it must be part of the libraries.
