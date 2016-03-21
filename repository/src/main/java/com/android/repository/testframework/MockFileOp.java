@@ -142,6 +142,18 @@ public class MockFileOp implements FileOp {
         // nothing
     }
 
+    @Override
+    public boolean setLastModified(@NonNull File file, long time) throws IOException {
+        FileInfo fi = mExistingFiles.get(getAgnosticAbsPath(file));
+        if (fi != null) {
+            fi.setLastModified(time);
+        }
+        else {
+            throw new IOException("file doesn't exist!");
+        }
+        return true;
+    }
+
     public void setIsWindows(boolean isWindows) {
         mIsWindows = isWindows;
     }
@@ -724,6 +736,10 @@ public class MockFileOp implements FileOp {
 
         public long getLastModified() {
             return mLastModified;
+        }
+
+        public void setLastModified(long time) {
+            mLastModified = time;
         }
 
         @Nullable

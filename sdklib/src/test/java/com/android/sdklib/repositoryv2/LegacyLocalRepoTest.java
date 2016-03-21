@@ -23,6 +23,7 @@ import com.android.repository.api.RepoManager;
 import com.android.repository.api.Repository;
 import com.android.repository.api.SchemaModule;
 import com.android.repository.impl.manager.LocalRepoLoader;
+import com.android.repository.impl.manager.LocalRepoLoaderImpl;
 import com.android.repository.impl.meta.SchemaModuleUtil;
 import com.android.repository.impl.meta.TypeDetails;
 import com.android.repository.testframework.FakeProgressIndicator;
@@ -66,7 +67,7 @@ public class LegacyLocalRepoTest extends TestCase {
         RepoManager mgr = AndroidSdkHandler.getInstance(root).getSdkManager(progress);
         progress.assertNoErrorsOrWarnings();
 
-        LocalRepoLoader sdk = new LocalRepoLoader(root, mgr,
+        LocalRepoLoader sdk = new LocalRepoLoaderImpl(root, mgr,
                 new LegacyLocalRepoLoader(root, mockFop), mockFop);
         Map<String, LocalPackage> packages = sdk.getPackages(progress);
         progress.assertNoErrorsOrWarnings();

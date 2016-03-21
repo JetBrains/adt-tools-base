@@ -83,12 +83,9 @@ public class BasicInstallerTest extends TestCase {
         // Uninstall it
         InstallerFactory factory = new BasicInstallerFactory();
         factory.createUninstaller(p, mgr, fop).uninstall(new FakeProgressIndicator());
-        File[] contents = fop.listFiles(root);
         // Verify that the deleted dir is gone.
-        assertEquals(1, contents.length);
-        contents = fop.listFiles(contents[0]);
-        assertEquals(1, contents.length);
-        assertEquals(new File("/repo/dummy/bar"), contents[0]);
+        assertFalse(fop.exists(new File("/repo/dummy/foo")));
+        assertTrue(fop.exists(new File("/repo/dummy/bar/package.xml")));
     }
 
     // Test installing a new package

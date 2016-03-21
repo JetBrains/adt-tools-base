@@ -23,6 +23,7 @@ import com.android.repository.api.LocalPackage;
 import com.android.repository.api.RepoManager;
 import com.android.repository.api.Repository;
 import com.android.repository.impl.manager.LocalRepoLoader;
+import com.android.repository.impl.manager.LocalRepoLoaderImpl;
 import com.android.repository.impl.manager.RepoManagerImpl;
 import com.android.repository.impl.meta.CommonFactory;
 import com.android.repository.impl.meta.GenericFactory;
@@ -49,7 +50,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 /**
- * Tests for {@link LocalRepoLoader}.
+ * Tests for {@link LocalRepoLoaderImpl}.
  */
 public class LocalRepoTest extends TestCase {
 
@@ -87,7 +88,7 @@ public class LocalRepoTest extends TestCase {
         );
 
         RepoManager manager = RepoManager.create(mockFop);
-        LocalRepoLoader localLoader = new LocalRepoLoader(new File("/repo"), manager, null,
+        LocalRepoLoader localLoader = new LocalRepoLoaderImpl(new File("/repo"), manager, null,
                 mockFop);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         LocalPackage p = localLoader.getPackages(progress).get("random");
@@ -202,7 +203,7 @@ public class LocalRepoTest extends TestCase {
         );
 
         RepoManager manager = RepoManager.create(mockFop);
-        LocalRepoLoader localLoader = new LocalRepoLoader(new File("/repo"), manager, null,
+        LocalRepoLoader localLoader = new LocalRepoLoaderImpl(new File("/repo"), manager, null,
                 mockFop);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         LocalPackage p = localLoader.getPackages(progress).get("random");
@@ -243,7 +244,7 @@ public class LocalRepoTest extends TestCase {
         );
 
         RepoManager manager = RepoManager.create(mockFop);
-        LocalRepoLoader localLoader = new LocalRepoLoader(new File("/repo"), manager, null,
+        LocalRepoLoader localLoader = new LocalRepoLoaderImpl(new File("/repo"), manager, null,
                 mockFop);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         LocalPackage p = localLoader.getPackages(progress).get("random");
