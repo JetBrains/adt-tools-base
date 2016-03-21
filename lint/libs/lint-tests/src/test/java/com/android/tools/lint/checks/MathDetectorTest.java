@@ -16,17 +16,11 @@
 
 package com.android.tools.lint.checks;
 
+import com.android.sdklib.IAndroidTarget;
 import com.android.tools.lint.detector.api.Detector;
 
 @SuppressWarnings({"javadoc", "ClassNameDiffersFromFileName"})
 public class MathDetectorTest extends AbstractCheckTest {
-
-    @Override
-    protected boolean allowCompilationErrors() {
-        // FloatMath methods were removed in API 23; the test below attempts to
-        // use API 3, but if not available in test environment ensure test doesn't fail.
-        return true;
-    }
 
     private TestFile mTestFile = java("src/test/bytecode/MathTest.java", ""
             + "package test.bytecode;\n"
@@ -59,7 +53,25 @@ public class MathDetectorTest extends AbstractCheckTest {
         return new MathDetector();
     }
 
+    public int getHighestTargetSmallerThan(int max) {
+        IAndroidTarget[] targets = createClient().getTargets();
+        for (int i = targets.length - 1; i >= 0; i--) {
+            IAndroidTarget target = targets[i];
+            if (target.getVersion().getApiLevel() < max
+                    && target.isPlatform() ) {
+                return target.getVersion().getApiLevel();
+            }
+        }
+
+        return -1;
+    }
+
     public void test() throws Exception {
+        int compileSdkVersion = getHighestTargetSmallerThan(23);
+        if (compileSdkVersion < 9) {
+            // Need to have a pre-M, post-Froyo target installed
+            return;
+        }
         assertEquals(""
                 + "src/test/bytecode/MathTest.java:12: Warning: Use java.lang.Math#cos instead of android.util.FloatMath#cos() since it is faster as of API 8 [FloatMath]\n"
                 + "        floatResult = FloatMath.cos(x);\n"
@@ -83,16 +95,20 @@ public class MathDetectorTest extends AbstractCheckTest {
 
             lintProject(
                     mTestFile,
-                    source("project.properties", "target=android-19"),
+                    projectProperties().compileSdk(compileSdkVersion),
                     copy("apicheck/minsdk14.xml", "AndroidManifest.xml")));
     }
 
     public void testNoWarningsPreFroyo() throws Exception {
+        int compileSdkVersion = getHighestTargetSmallerThan(8);
+        if (compileSdkVersion < 3) {
+            return;
+        }
         assertEquals(
             "No warnings.",
 
             lintProject(mTestFile,
-                    source("project.properties", "target=android-3"),
+                    projectProperties().compileSdk(compileSdkVersion),
                     copy("apicheck/minsdk2.xml", "AndroidManifest.xml")));
     }
 
