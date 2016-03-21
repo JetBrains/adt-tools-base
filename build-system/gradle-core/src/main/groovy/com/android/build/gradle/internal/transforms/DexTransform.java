@@ -526,7 +526,13 @@ public class DexTransform extends Transform {
             @NonNull TransformOutputProvider output,
             @NonNull QualifiedContent qualifiedContent,
             @NonNull File file) {
-        File contentLocation = output.getContentLocation(getFilename(file),
+        // In InstantRun mode, all files are guaranteed to have a unique name due to the slicer
+        // transform. adding sha1 to the name can lead to cleaning issues in device, it's much
+        // easier if the slices always have the same names, irrespective of the current vairiant,
+        // last version wins.
+        String name = instantRunBuildContext.isInInstantRunMode()
+                ? file.getName() : getFilename(file);
+        File contentLocation = output.getContentLocation(name,
                 TransformManager.CONTENT_DEX, qualifiedContent.getScopes(),
                 multiDex ? Format.DIRECTORY : Format.JAR);
         if (multiDex) {
