@@ -18,6 +18,8 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.runner.FilterableParameterized
+import com.android.utils.FileUtils
 import com.google.common.io.Files
 import groovy.transform.CompileStatic
 import org.gradle.api.JavaVersion
@@ -25,8 +27,11 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
+import static com.android.build.gradle.integration.common.truth.AbstractAndroidSubject.ClassFileScope.ALL
+import static com.android.build.gradle.integration.common.truth.AbstractAndroidSubject.ClassFileScope.MAIN
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
@@ -35,6 +40,7 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
  * Assemble tests for multiDex.
  */
 @CompileStatic
+@RunWith(FilterableParameterized)
 class MultiDexTest {
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
@@ -132,6 +138,26 @@ class MultiDexTest {
                 .doesNotContainClass("Lcom/android/tests/basic/NotUsed;")
         assertThatApk(project.getApk("ics", "minified"))
                 .doesNotContainClass("Lcom/android/tests/basic/DeadCode;")
+    }
+
+    @Test
+    public void "check additional flags"() throws Exception {
+        FileUtils.deleteFolder(project.file("src/main/java/com/android/tests/basic/manymethods"))
+
+        project.buildFile << "\nandroid.dexOptions.additionalParameters = ['--minimal-main-dex']\n"
+
+        project.execute("assembleIcsDebug")
+
+        assertThatApk(project.getApk("ics", "debug"))
+                .containsClass("Lcom/android/tests/basic/NotUsed;", ALL)
+        assertThatApk(project.getApk("ics", "debug"))
+                .doesNotContainClass("Lcom/android/tests/basic/NotUsed;", MAIN)
+
+        project.buildFile << "\nandroid.dexOptions.additionalParameters '--set-max-idx-number=10'\n"
+
+        project.executeExpectingFailure("assembleIcsDebug")
+
+        assertThat(project.stderr).contains("main dex capacity exceeded")
     }
 
     private void commonApkChecks(String buildType) {

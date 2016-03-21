@@ -53,7 +53,6 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
     private boolean mMultiDex = false;
     private File mMainDexList = null;
     private Set<File> mInputs = Sets.newHashSet();
-    private List<String> mAdditionalParams = null;
 
     public DexProcessBuilder(@NonNull File outputFile) {
         mOutputFile = outputFile;
@@ -98,17 +97,6 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
     @NonNull
     public DexProcessBuilder addInputs(@NonNull Collection<File> inputs) {
         mInputs.addAll(inputs);
-        return this;
-    }
-
-    @NonNull
-    public DexProcessBuilder additionalParameters(@NonNull List<String> params) {
-        if (mAdditionalParams == null) {
-            mAdditionalParams = Lists.newArrayListWithExpectedSize(params.size());
-        }
-
-        mAdditionalParams.addAll(params);
-
         return this;
     }
 
@@ -209,12 +197,9 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
             }
         }
 
-        if (mAdditionalParams != null) {
-            for (String arg : mAdditionalParams) {
-                builder.addArgs(arg);
-            }
+        for (String arg : dexOptions.getAdditionalParameters()) {
+            builder.addArgs(arg);
         }
-
 
         builder.addArgs("--output", mOutputFile.getAbsolutePath());
 

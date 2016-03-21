@@ -19,6 +19,7 @@ package com.android.dx.command.dexer;
 import static java.lang.System.err;
 import static java.lang.System.out;
 
+import com.android.annotations.NonNull;
 import com.android.dex.Dex;
 import com.android.dex.DexException;
 import com.android.dex.DexFormat;
@@ -243,7 +244,7 @@ public class Main {
     public static void main(String[] argArray) throws IOException {
         DxContext context = new DxContext();
         Arguments arguments = new Arguments();
-        arguments.parse(argArray, context);
+        arguments.parseCommandLine(argArray, context);
 
         int result = new Main(context).run(arguments);
 
@@ -1308,7 +1309,7 @@ public class Main {
          *  to allow merges between dex files with many strings. */
         public boolean forceJumbo = false;
 
-        /** {@code non-null} after {@link #parse}; file name arguments */
+        /** {@code non-null} after {@link #parseCommandLine}; file name arguments */
         public String[] fileNames;
 
         /** whether to do SSA/register optimization */
@@ -1449,17 +1450,80 @@ public class Main {
             }
         }
 
+        private static class OutputOptions {
+            boolean outputIsDirectory = false;
+            boolean outputIsDirectDex = false;
+        }
+
         /**
-         * Parses the given command-line arguments.
+         * Parses all command-line arguments.
          *
          * @param args {@code non-null;} the arguments
          * @param context
          */
-        public void parse(String[] args, DxContext context) {
+        public void parseCommandLine(String[] args, DxContext context) {
             ArgumentsParser parser = new ArgumentsParser(args);
 
-            boolean outputIsDirectory = false;
-            boolean outputIsDirectDex = false;
+            OutputOptions outputOptions = parseFlags(parser);
+
+            fileNames = parser.getRemaining();
+            if(inputList != null && !inputList.isEmpty()) {
+                // append the file names to the end of the input list
+                inputList.addAll(Arrays.asList(fileNames));
+                fileNames = inputList.toArray(new String[inputList.size()]);
+            }
+
+            if (fileNames.length == 0) {
+                if (!emptyOk) {
+                    err.println("no input files specified");
+                    throw new UsageException();
+                }
+            } else if (emptyOk) {
+                out.println("ignoring input files");
+            }
+
+            if ((humanOutName == null) && (methodToDump != null)) {
+                humanOutName = "-";
+            }
+
+            if (mainDexListFile != null && !multiDex) {
+                err.println(MAIN_DEX_LIST_OPTION + " is only supported in combination with "
+                    + MULTI_DEX_OPTION);
+                throw new UsageException();
+            }
+
+            if (minimalMainDex && (mainDexListFile == null || !multiDex)) {
+                err.println(MINIMAL_MAIN_DEX_OPTION + " is only supported in combination with "
+                    + MULTI_DEX_OPTION + " and " + MAIN_DEX_LIST_OPTION);
+                throw new UsageException();
+            }
+
+            if (multiDex && incremental) {
+                err.println(INCREMENTAL_OPTION + " is not supported with "
+                    + MULTI_DEX_OPTION);
+                throw new UsageException();
+            }
+
+            if (multiDex && outputOptions.outputIsDirectDex) {
+                err.println("Unsupported output \"" + outName +"\". " + MULTI_DEX_OPTION +
+                        " supports only archive or directory output");
+                throw new UsageException();
+            }
+
+            if (outputOptions.outputIsDirectory && !multiDex) {
+                outName = new File(outName, DexFormat.DEX_IN_JAR_NAME).getPath();
+            }
+
+            makeOptionsObjects(context);
+        }
+
+        public void parseFlags(String[] flags) {
+            parseFlags(new ArgumentsParser(flags));
+        }
+
+        @NonNull
+        private OutputOptions parseFlags(ArgumentsParser parser) {
+            OutputOptions outputOptions = new OutputOptions();
 
             while(parser.getNext()) {
                 if (parser.isArg("--debug")) {
@@ -1502,13 +1566,13 @@ public class Main {
                     outName = parser.getLastValue();
                     if (new File(outName).isDirectory()) {
                         jarOutput = false;
-                        outputIsDirectory = true;
+                        outputOptions.outputIsDirectory = true;
                     } else if (FileUtils.hasArchiveSuffix(outName)) {
                         jarOutput = true;
                     } else if (outName.endsWith(".dex") ||
                                outName.equals("-")) {
                         jarOutput = false;
-                        outputIsDirectDex = true;
+                        outputOptions.outputIsDirectDex = true;
                     } else {
                         err.println("unknown output extension: " +
                                            outName);
@@ -1566,63 +1630,14 @@ public class Main {
                     throw new UsageException();
                 }
             }
-
-            fileNames = parser.getRemaining();
-            if(inputList != null && !inputList.isEmpty()) {
-                // append the file names to the end of the input list
-                inputList.addAll(Arrays.asList(fileNames));
-                fileNames = inputList.toArray(new String[inputList.size()]);
-            }
-
-            if (fileNames.length == 0) {
-                if (!emptyOk) {
-                    err.println("no input files specified");
-                    throw new UsageException();
-                }
-            } else if (emptyOk) {
-                out.println("ignoring input files");
-            }
-
-            if ((humanOutName == null) && (methodToDump != null)) {
-                humanOutName = "-";
-            }
-
-            if (mainDexListFile != null && !multiDex) {
-                err.println(MAIN_DEX_LIST_OPTION + " is only supported in combination with "
-                    + MULTI_DEX_OPTION);
-                throw new UsageException();
-            }
-
-            if (minimalMainDex && (mainDexListFile == null || !multiDex)) {
-                err.println(MINIMAL_MAIN_DEX_OPTION + " is only supported in combination with "
-                    + MULTI_DEX_OPTION + " and " + MAIN_DEX_LIST_OPTION);
-                throw new UsageException();
-            }
-
-            if (multiDex && incremental) {
-                err.println(INCREMENTAL_OPTION + " is not supported with "
-                    + MULTI_DEX_OPTION);
-                throw new UsageException();
-            }
-
-            if (multiDex && outputIsDirectDex) {
-                err.println("Unsupported output \"" + outName +"\". " + MULTI_DEX_OPTION +
-                        " supports only archive or directory output");
-                throw new UsageException();
-            }
-
-            if (outputIsDirectory && !multiDex) {
-                outName = new File(outName, DexFormat.DEX_IN_JAR_NAME).getPath();
-            }
-
-            makeOptionsObjects(context);
+            return outputOptions;
         }
 
         /**
-         * Copies relevent arguments over into CfOptions and
+         * Copies relevant arguments over into CfOptions and
          * DexOptions instances.
          */
-        private void makeOptionsObjects(DxContext context) {
+        public void makeOptionsObjects(DxContext context) {
             cfOptions = new CfOptions();
             cfOptions.positionInfo = positionInfo;
             cfOptions.localInfo = localInfo;
@@ -1678,7 +1693,7 @@ public class Main {
         }
     }
 
-    /** Callable helper class to parse class bytes. */
+    /** Callable helper class to parseCommandLine class bytes. */
     private class ClassParserTask implements Callable<DirectClassFile> {
 
         String name;

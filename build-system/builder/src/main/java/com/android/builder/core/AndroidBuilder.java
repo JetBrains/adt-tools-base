@@ -157,7 +157,7 @@ import java.util.zip.ZipFile;
  * {@link #processTestManifest(String, String, String, String, String, Boolean, Boolean, File, List, Map, File, File)}
  * {@link #processResources(AaptPackageProcessBuilder, boolean, ProcessOutputHandler)}
  * {@link #compileAllAidlFiles(List, File, File, Collection, List, DependencyFileProcessor, ProcessOutputHandler)}
- * {@link #convertByteCode(Collection, File, boolean, File, DexOptions, List, boolean, boolean, ProcessOutputHandler, boolean)}
+ * {@link #convertByteCode(Collection, File, boolean, File, DexOptions, boolean, boolean, ProcessOutputHandler, boolean)}
  * {@link #packageApk(String, Set, Collection, Collection, Set, boolean, SigningConfig, File, int, File)}
  *
  * Java compilation is not handled but the builder provides the boot classpath with
@@ -1446,7 +1446,6 @@ public class AndroidBuilder {
      * @param inputs the input files
      * @param outDexFolder the location of the output folder
      * @param dexOptions dex options
-     * @param additionalParameters list of additional parameters to give to dx
      * @param incremental true if it should attempt incremental dex if applicable
      * @param instantRunMode true if we are invoking dex to convert classes while creating
      *                       instant-run related artifacts.
@@ -1458,10 +1457,9 @@ public class AndroidBuilder {
     public void convertByteCode(
             @NonNull Collection<File> inputs,
             @NonNull File outDexFolder,
-                     boolean multidex,
+            boolean multidex,
             @Nullable File mainDexList,
             @NonNull DexOptions dexOptions,
-            @Nullable List<String> additionalParameters,
             boolean incremental,
             boolean optimize,
             @NonNull ProcessOutputHandler processOutputHandler,
@@ -1489,10 +1487,6 @@ public class AndroidBuilder {
                 .setMultiDex(multidex)
                 .setMainDexList(mainDexList)
                 .addInputs(verifiedInputs.build());
-
-        if (additionalParameters != null) {
-            builder.additionalParameters(additionalParameters);
-        }
 
         runDexer(builder, dexOptions, processOutputHandler, instantRunMode);
     }
