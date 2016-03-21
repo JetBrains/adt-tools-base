@@ -20,6 +20,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.AndroidConfig;
+import com.android.build.gradle.TestAndroidConfig;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
 import com.android.build.gradle.internal.dsl.CoreExternalNativeCmakeOptions;
 import com.android.build.gradle.internal.dsl.CoreExternalNativeNdkBuildOptions;
@@ -30,6 +32,7 @@ import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.model.SourceProvider;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -43,7 +46,7 @@ import java.util.Set;
  * Version of {@link com.android.builder.core.VariantConfiguration} that uses the specific
  * types used in the Gradle plugins.
  *
- * It also adds support for Ndk support that is not ready to go in the builder library.
+ * <p>It also adds support for Ndk support that is not ready to go in the builder library.
  */
 public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildType, CoreProductFlavor, CoreProductFlavor> {
 
@@ -73,44 +76,129 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
     }
 
     /**
-     * Creates a {@link GradleVariantConfiguration} for a normal (non-test) variant.
+     * Creates a {@link GradleVariantConfiguration} for a testing variant derived from this variant.
      */
-    public static GradleVariantConfiguration create(
-            @NonNull CoreProductFlavor defaultConfig,
+    public GradleVariantConfiguration getMyTestConfig(
             @NonNull SourceProvider defaultSourceProvider,
-            @NonNull CoreBuildType buildType,
             @Nullable SourceProvider buildTypeSourceProvider,
-            @NonNull VariantType type,
-            @Nullable SigningConfig signingConfigOverride) {
+            @NonNull VariantType type) {
         return new GradleVariantConfiguration(
-                null /*testedConfig*/,
-                defaultConfig,
+                this,
+                getDefaultConfig(),
                 defaultSourceProvider,
-                buildType,
+                getBuildType(),
                 buildTypeSourceProvider,
                 type,
-                signingConfigOverride);
+                getSigningConfig());
     }
 
     /**
-     * Creates a {@link GradleVariantConfiguration} for a testing variant.
+     * Interface for building the {@link GradleVariantConfiguration} instances.
      */
-    public static GradleVariantConfiguration createTestConfig(
-            @Nullable VariantConfiguration testedConfig,
-            @NonNull CoreProductFlavor defaultConfig,
-            @NonNull SourceProvider defaultSourceProvider,
-            @NonNull CoreBuildType buildType,
-            @Nullable SourceProvider buildTypeSourceProvider,
-            @NonNull VariantType type,
-            @Nullable SigningConfig signingConfigOverride) {
-        return new GradleVariantConfiguration(
-                testedConfig,
-                defaultConfig,
-                defaultSourceProvider,
-                buildType,
-                buildTypeSourceProvider,
-                type,
-                signingConfigOverride);
+    public interface Builder{
+        /** Creates a variant configuration */
+        @NonNull
+        GradleVariantConfiguration create(
+                @NonNull CoreProductFlavor defaultConfig,
+                @NonNull SourceProvider defaultSourceProvider,
+                @NonNull CoreBuildType buildType,
+                @Nullable SourceProvider buildTypeSourceProvider,
+                @NonNull VariantType type,
+                @Nullable SigningConfig signingConfigOverride);
+    }
+
+    /** Builder for non-testing variant configurations */
+    private static class VariantConfigurationBuilder implements Builder{
+        @Override
+        @NonNull
+        public GradleVariantConfiguration create(
+                @NonNull CoreProductFlavor defaultConfig,
+                @NonNull SourceProvider defaultSourceProvider,
+                @NonNull CoreBuildType buildType,
+                @Nullable SourceProvider buildTypeSourceProvider,
+                @NonNull VariantType type,
+                @Nullable SigningConfig signingConfigOverride){
+            return new GradleVariantConfiguration(
+                    null /*testedConfig*/,
+                    defaultConfig,
+                    defaultSourceProvider,
+                    buildType,
+                    buildTypeSourceProvider,
+                    type,
+                    signingConfigOverride);
+        }
+    }
+
+    /**
+     * Creates a {@link GradleVariantConfiguration} for a testing module variant.
+     *
+     * <p>The difference from the regular modules is how the original application id,
+     * and application id are resolved. Our build process supports the absence of manifest
+     * file for these modules, and that is why the value resolution for these attributes
+     * is different.
+     */
+    private static class TestModuleConfigurationBuilder implements Builder{
+
+        @NonNull
+        @Override
+        public GradleVariantConfiguration create(
+                @NonNull CoreProductFlavor defaultConfig,
+                @NonNull SourceProvider defaultSourceProvider,
+                @NonNull CoreBuildType buildType,
+                @Nullable SourceProvider buildTypeSourceProvider,
+                @NonNull VariantType type,
+                @Nullable SigningConfig signingConfigOverride) {
+            return new GradleVariantConfiguration(
+                    null /*testedConfig*/,
+                    defaultConfig,
+                    defaultSourceProvider,
+                    buildType,
+                    buildTypeSourceProvider,
+                    type,
+                    signingConfigOverride){
+                @NonNull
+                @Override
+                public String getApplicationId() {
+                    String applicationId = getMergedFlavor().getTestApplicationId();
+
+                    if (Strings.isNullOrEmpty(applicationId)){
+                        applicationId = super.getApplicationId();
+                    }
+
+                    return applicationId;
+                }
+
+                @Nullable
+                @Override
+                public String getOriginalApplicationId() {
+                    return getApplicationId();
+                }
+
+                @NonNull
+                @Override
+                public String getTestApplicationId() {
+                    return getApplicationId();
+                }
+
+                @Override
+                public GradleVariantConfiguration getMyTestConfig(
+                        @NonNull SourceProvider defaultSourceProvider,
+                        @Nullable SourceProvider buildTypeSourceProvider, @NonNull VariantType type) {
+                    throw new UnsupportedOperationException("Test modules have no test variants.");
+                }
+            };
+        }
+    }
+
+    /** Depending on the extension, gets appropriate variant configuration builder */
+    public static Builder getBuilderForExtension(@NonNull AndroidConfig extension){
+        if (extension instanceof TestAndroidConfig) {
+            // if this is the test module
+            return new TestModuleConfigurationBuilder();
+        } else{
+            // if this is non-test variant
+            return new VariantConfigurationBuilder();
+        }
     }
 
     @NonNull

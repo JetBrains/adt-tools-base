@@ -22,6 +22,7 @@ import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 
 import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.TaskAction;
 
@@ -35,7 +36,9 @@ import java.util.concurrent.Callable;
 public class CheckManifest extends DefaultAndroidTask {
 
     private File manifest;
+    private Boolean isOptional;
 
+    @Optional
     @InputFile
     public File getManifest() {
         return manifest;
@@ -45,11 +48,19 @@ public class CheckManifest extends DefaultAndroidTask {
         this.manifest = manifest;
     }
 
+    public Boolean getOptional() {
+        return isOptional;
+    }
+
+    public void setOptional(Boolean optional) {
+        isOptional = optional;
+    }
+
     @TaskAction
     void check() {
         // use getter to resolve convention mapping
         File f = getManifest();
-        if (!f.isFile()) {
+        if (!isOptional && f != null && !f.isFile()) {
             throw new IllegalArgumentException(String.format(
                     "Main Manifest missing for variant %1$s. Expected path: %2$s",
                     getVariantName(), getManifest().getAbsolutePath()));
@@ -60,9 +71,11 @@ public class CheckManifest extends DefaultAndroidTask {
     public static class ConfigAction implements TaskConfigAction<CheckManifest> {
 
         private final VariantScope scope;
+        private final boolean isManifestOptional;
 
-        public ConfigAction(@NonNull VariantScope scope) {
+        public ConfigAction(@NonNull VariantScope scope, boolean isManifestOptional) {
             this.scope = scope;
+            this.isManifestOptional = isManifestOptional;
         }
 
         @NonNull
@@ -82,9 +95,9 @@ public class CheckManifest extends DefaultAndroidTask {
             scope.getVariantData().checkManifestTask = checkManifestTask;
             checkManifestTask.setVariantName(
                     scope.getVariantData().getVariantConfiguration().getFullName());
+            checkManifestTask.setOptional(isManifestOptional);
             ConventionMappingHelper.map(checkManifestTask, "manifest", (Callable<File>) () ->
-                    scope.getVariantData().getVariantConfiguration().getDefaultSourceSet()
-                                    .getManifestFile());
+                    scope.getVariantData().getVariantConfiguration().getMainManifest());
         }
     }
 }
