@@ -16,8 +16,10 @@
       <w>aload</w>
       <w>androiddebugkey</w>
       <w>anim</w>
+      <w>anydpi</w>
       <w>aosp</w>
       <w>apkbuilder</w>
+      <w>apks</w>
       <w>apos</w>
       <w>appname</w>
       <w>areturn</w>
@@ -32,12 +34,14 @@
       <w>avd's</w>
       <w>avdname</w>
       <w>backfill</w>
+      <w>badging</w>
       <w>basename</w>
       <w>basenames</w>
       <w>bicubic</w>
       <w>bilinear</w>
       <w>bindir</w>
       <w>bipush</w>
+      <w>bitcode</w>
       <w>bitcodelib</w>
       <w>bitmask</w>
       <w>blockquote</w>
@@ -47,8 +51,10 @@
       <w>borderless</w>
       <w>bytecode</w>
       <w>calloc</w>
+      <w>cdh</w>
       <w>charsets</w>
       <w>checkable</w>
+      <w>checksums</w>
       <w>chksum</w>
       <w>classfile</w>
       <w>classname</w>
@@ -69,10 +75,16 @@
       <w>ddmlib</w>
       <w>ddms</w>
       <w>debuggable</w>
+      <w>deflater</w>
+      <w>defs</w>
       <w>densityless</w>
+      <w>deps</w>
       <w>designtime</w>
       <w>dest</w>
       <w>dexdump</w>
+      <w>dexed</w>
+      <w>dexer</w>
+      <w>dexing</w>
       <w>digester</w>
       <w>dimen</w>
       <w>dirname</w>
@@ -84,9 +96,11 @@
       <w>dumpsys</w>
       <w>eabi</w>
       <w>easymock</w>
+      <w>ecdsa</w>
       <w>emdash</w>
       <w>endian</w>
       <w>enqueued</w>
+      <w>eocd</w>
       <w>errno</w>
       <w>executables</w>
       <w>expectedly</w>
@@ -121,6 +135,7 @@
       <w>iaload</w>
       <w>iastore</w>
       <w>iconst</w>
+      <w>inexistent</w>
       <w>inflater</w>
       <w>infos</w>
       <w>inlined</w>
@@ -131,11 +146,13 @@
       <w>instrumentations</w>
       <w>interpolator</w>
       <w>ints</w>
+      <w>invokespecial</w>
       <w>invokestatic</w>
       <w>invokevirtual</w>
       <w>ireturn</w>
       <w>iterable</w>
       <w>jarfile</w>
+      <w>jarjar</w>
       <w>jarlist</w>
       <w>jarpath</w>
       <w>javabuilder</w>
@@ -184,8 +201,12 @@
       <w>minsdk</w>
       <w>mipmap</w>
       <w>mkdirs</w>
+      <w>mmap</w>
+      <w>mockable</w>
       <w>monospace</w>
       <w>moreunit</w>
+      <w>multidex</w>
+      <w>multiflavor</w>
       <w>multipart</w>
       <w>multitouch</w>
       <w>nano</w>
@@ -206,14 +227,19 @@
       <w>opcode</w>
       <w>opcodes</w>
       <w>optim</w>
+      <w>parallelization</w>
       <w>pathname</w>
       <w>picasa</w>
       <w>plugin's</w>
       <w>png's</w>
+      <w>pngs</w>
       <w>prebuilts</w>
+      <w>precompute</w>
+      <w>predex</w>
       <w>prefs</w>
       <w>preload</w>
       <w>prepending</w>
+      <w>preprocessing</w>
       <w>printf</w>
       <w>println</w>
       <w>proc</w>
@@ -221,7 +247,9 @@
       <w>progdir</w>
       <w>programmatically</w>
       <w>proguard</w>
+      <w>proguarded</w>
       <w>prolog</w>
+      <w>pseudolocalization</w>
       <w>qemu</w>
       <w>quickfix</w>
       <w>quickstart</w>
@@ -229,6 +257,8 @@
       <w>rasterize</w>
       <w>rasterizer</w>
       <w>realloc</w>
+      <w>recompressed</w>
+      <w>recompression</w>
       <w>recurse</w>
       <w>reflow</w>
       <w>reformats</w>
@@ -238,6 +268,7 @@
       <w>resizability</w>
       <w>resized</w>
       <w>rrggbb</w>
+      <w>runnables</w>
       <w>sccs</w>
       <w>screenshot</w>
       <w>scroller</w>
@@ -250,6 +281,7 @@
       <w>sdks</w>
       <w>serialnumber</w>
       <w>severities</w>
+      <w>shaders</w>
       <w>sparsearray</w>
       <w>sqrt</w>
       <w>stacktrace</w>
@@ -263,6 +295,8 @@
       <w>subclassing</w>
       <w>subfolder</w>
       <w>submenu</w>
+      <w>subproject</w>
+      <w>subprojects</w>
       <w>superset</w>
       <w>sysdir</w>
       <w>sysimg</w>
@@ -274,7 +308,9 @@
       <w>traceview</w>
       <w>tuple</w>
       <w>tvdpi</w>
+      <w>ubyte</w>
       <w>uiautomator</w>
+      <w>uint</w>
       <w>uname</w>
       <w>unarchive</w>
       <w>unary</w>
@@ -283,11 +319,14 @@
       <w>unescape</w>
       <w>unescaping</w>
       <w>unformatted</w>
+      <w>uninstantiable</w>
       <w>unlocalized</w>
       <w>unmanages</w>
       <w>unregister</w>
       <w>unregisters</w>
+      <w>unstubbed</w>
       <w>userdata</w>
+      <w>ushort</w>
       <w>versioncode</w>
       <w>vert</w>
       <w>vmsig</w>
@@ -296,6 +335,7 @@
       <w>wakelocks</w>
       <w>wakeup</w>
       <w>webkit</w>
+      <w>whitelist</w>
       <w>wikipedia</w>
       <w>workdir</w>
       <w>wqvga</w>
@@ -316,6 +356,7 @@
       <w>ydpi</w>
       <w>yyyy</w>
       <w>zipalign</w>
+      <w>zwidth</w>
     </words>
   </dictionary>
 </component>

@@ -118,7 +118,7 @@ public class AidlProcessor implements SourceSearcher.SourceFileProcessor {
 
             if (isParcelable || isWhiteListed)  {
                 // looks like a parcelable or is white-listed.
-                // Store it in the 2ndary output of the DependencyData object.
+                // Store it in the secondary output of the DependencyData object.
 
                 File destFile = new File(mPackagedOutputDir, relative);
                 //noinspection ResultOfMethodCallIgnored

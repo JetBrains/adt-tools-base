@@ -64,7 +64,7 @@ public class ManifestGenerationExtension {
     public static final String MANIFEST_NAME = META_INF_DIR + "/MANIFEST.MF";
 
     /**
-     * Who shoule be reported as the manifest builder.
+     * Who should be reported as the manifest builder.
      */
     @NonNull
     private final String mBuiltBy;
@@ -107,7 +107,7 @@ public class ManifestGenerationExtension {
     private ZFileExtension mExtension;
 
     /**
-     * Creates a new extension. This will not reigster the extension with the provided
+     * Creates a new extension. This will not register the extension with the provided
      * {@link ZFile}. Until {@link #register(ZFile)} is invoked, this extension is not used.
      *
      * @param builtBy who built the manifest?
@@ -130,12 +130,12 @@ public class ManifestGenerationExtension {
     /**
      * Registers the extension with the {@link ZFile} provided in the constructor.
      *
-     * @param zfile the zip file to add the extension to
+     * @param zFile the zip file to add the extension to
      * @throws IOException failed to analyze the zip
      */
-    public void register(@NonNull ZFile zfile) throws IOException {
+    public void register(@NonNull ZFile zFile) throws IOException {
         Preconditions.checkState(mExtension == null, "register() has already been invoked.");
-        mZFile = zfile;
+        mZFile = zFile;
 
         rebuildManifest();
 

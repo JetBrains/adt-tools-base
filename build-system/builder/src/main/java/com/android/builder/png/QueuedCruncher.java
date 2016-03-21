@@ -52,7 +52,7 @@ public class QueuedCruncher implements PngCruncher {
         /**
          * Creates a new {@link com.android.builder.png.QueuedCruncher} or return an existing one
          * based on the underlying AAPT executable location.
-         * @param aaptLocation the APPT executable location.
+         * @param aaptLocation the AAPT executable location.
          * @param logger the logger to use
          * @return a new of existing instance of the {@link com.android.builder.png.QueuedCruncher}
          */

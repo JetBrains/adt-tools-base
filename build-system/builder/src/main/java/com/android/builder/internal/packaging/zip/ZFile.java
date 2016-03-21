@@ -102,7 +102,7 @@ import java.util.concurrent.Future;
  *
  * <p>{@code ZFile} supports <em>alignment</em>. Alignment means that file data (not entries -- the
  * local header must be discounted) must start at offsets that are multiple of a number -- the
- * alginment. Alignment is defined by setting rules in an {@link AlignmentRules} object that can
+ * alignment. Alignment is defined by setting rules in an {@link AlignmentRules} object that can
  * be obtained using {@link #getAlignmentRules()}.
  *
  * <p>When a file is added to the zip, the alignment rules will be checked and alignment will be
@@ -1606,8 +1606,8 @@ public class ZFile implements Closeable {
         Verify.verify(entry == mapEntry.getStore());
         long currentDataOffset = mapEntry.getStart() + entry.getLocalHeaderSize();
 
-        long disalignment = currentDataOffset % expectedAlignment;
-        if (disalignment == 0) {
+        long misalignment = currentDataOffset % expectedAlignment;
+        if (misalignment == 0) {
             /*
              * Good. File is aligned properly.
              */
@@ -1873,7 +1873,7 @@ public class ZFile implements Closeable {
             @NonNull Function<? super File, Boolean> mayCompress) throws IOException {
         /*
          * The case of file.isFile() is different because if file.isFile() we will add it to the
-         * zip in the root. However, if file.isDirectory() we won't add it and add its chilren.
+         * zip in the root. However, if file.isDirectory() we won't add it and add its children.
          */
         if (file.isFile()) {
             boolean mayCompressFile = Verify.verifyNotNull(mayCompress.apply(file),

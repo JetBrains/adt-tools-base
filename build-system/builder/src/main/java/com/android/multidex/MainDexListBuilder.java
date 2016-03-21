@@ -93,7 +93,7 @@ public class MainDexListBuilder {
             Set<String> toKeep = builder.getMainDexList();
             printList(toKeep);
         } catch (IOException e) {
-            System.err.println("A fatal error occured: " + e.getMessage());
+            System.err.println("A fatal error occurred: " + e.getMessage());
             System.exit(STATUS_ERROR);
             return;
         }
