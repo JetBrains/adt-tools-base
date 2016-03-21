@@ -43,7 +43,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -282,8 +284,6 @@ public class FileManager {
 
         long newestHotswapPatch = FileManager.getMostRecentTempDexTime(dataFolder);
 
-        List<String> list = new ArrayList<String>();
-
         // We don't need "double buffering" for dex files - we never rewrite files, so we
         // can accumulate in the same dir
         File dexFolder = getDexFileFolder(dataFolder, false);
@@ -301,6 +301,7 @@ public class FileManager {
         // extractor, if the timestamp is positive, we check before writing each slice that
         // it doesn't already exist and is newer than the APK.
         boolean extractedSlices = false;
+        File[] dexFiles;
         if (dexFolder == null || !dexFolder.isDirectory()) {
             // It's the first run of a freshly installed app, and we need to extract the
             // slices from within the APK into the dex folder
@@ -311,15 +312,16 @@ public class FileManager {
             if (dexFolder == null) {
                 // Failed to create dex folder.
                 Log.wtf(LOG_TAG, "Couldn't create dex code folder");
-                return list; // unreachable
+                return Collections.emptyList(); // unreachable
             }
-            extractedSlices = extractSlices(dexFolder, -1); // -1: unconditionally extract all
+            dexFiles = extractSlices(dexFolder, null, -1); // -1: unconditionally extract all
+            extractedSlices = dexFiles.length > 0;
+        } else {
+            dexFiles = dexFolder.listFiles();
         }
-
-        File[] dexFiles = dexFolder.listFiles();
-        if (dexFiles == null) {
+        if (dexFiles == null || dexFiles.length == 0) {
             Log.v(LOG_TAG, "Cannot find dex classes, not patching them in");
-            return list;
+            return Collections.emptyList();
         }
 
         // See if any of the slices are older than the APK. This will only be the case
@@ -342,7 +344,7 @@ public class FileManager {
                 if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
                     Log.v(LOG_TAG, "One or more slices were older than APK: extracting newer slices");
                 }
-                extractSlices(dexFolder, apkModified);
+                dexFiles = extractSlices(dexFolder, dexFiles, apkModified);
             }
         } else if (newestHotswapPatch > 0L) {
             // If the code is newer than the hotswap patches, delete them such that we don't
@@ -363,6 +365,7 @@ public class FileManager {
             Restarter.showToastWhenPossible(context, message);
         }
 
+        List<String> list = new ArrayList<String>(dexFiles.length);
         for (File dex : dexFiles) {
             if (dex.getName().endsWith(CLASSES_DEX_SUFFIX)) {
                 list.add(dex.getPath());
@@ -379,17 +382,22 @@ public class FileManager {
     /**
      * Extracts the slices found in the APK root directory (instant-run.zip) into the dex folder,
      * and skipping any files that already exist and are newer than apkModified (unless apkModified
-     * <= 0)
+     * <= 0). It <b>also</b> deletes any <b>unrecognized</b> slices. This is necessary
+     * since there are scenarios (such as b.android.com/204341) where we end up with slice files
+     * in the dex folder that should <b>not</b> be loaded.
      */
-    private static boolean extractSlices(@NonNull File dexFolder, long apkModified) {
+    private static File[] extractSlices(@NonNull File dexFolder, @Nullable File[] dexFolderFiles,
+            long apkModified) {
         if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
             Log.v(LOG_TAG, "Extracting slices into " + dexFolder);
         }
         InputStream stream = BootstrapApplication.class.getResourceAsStream("/instant-run.zip");
         if (stream == null) {
             Log.v(LOG_TAG, "Could not find slices in APK; aborting.");
-            return false;
+            return new File[0];
         }
+        List<File> slices = new ArrayList<File>(30);
+        Set<String> sliceNames = new HashSet<String>(30);
         try {
             ZipInputStream zipInputStream = new ZipInputStream(stream);
             try {
@@ -412,7 +420,10 @@ public class FileManager {
                         // Map slice name to the scheme already used by the code to push slices
                         // via the embedded server as well as the code to push via adb:
                         //   slice-<slicedir>
-                        File dest = new File(dexFolder, Paths.DEX_SLICE_PREFIX + name);
+                        String sliceName = Paths.DEX_SLICE_PREFIX + name;
+                        sliceNames.add(sliceName);
+                        File dest = new File(dexFolder, sliceName);
+                        slices.add(dest);
 
                         if (apkModified > 0) {
                             long sliceModified = dest.lastModified();
@@ -433,7 +444,7 @@ public class FileManager {
                             boolean created = parent.mkdirs();
                             if (!created) {
                                 Log.wtf(LOG_TAG, "Failed to create directory " + dest);
-                                return false;
+                                return new File[0];
                             }
                         }
 
@@ -453,10 +464,27 @@ public class FileManager {
                     }
                 }
 
-                return true;
+                // Remove old slice names
+                if (dexFolderFiles != null) {
+                    for (File file : dexFolderFiles) {
+                        if (!sliceNames.contains(file.getName())) {
+                            if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                                Log.v(LOG_TAG, "Removing old slice " + file);
+                            }
+                            boolean deleted = file.delete();
+                            if (!deleted) {
+                                if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                                    Log.v(LOG_TAG, "Could not delete " + file);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                return slices.toArray(new File[slices.size()]);
             } catch (IOException ioe) {
                 Log.wtf(LOG_TAG, "Failed to extract slices into directory " + dexFolder, ioe);
-                return false;
+                return new File[0];
             } finally {
                 try {
                     zipInputStream.close();
