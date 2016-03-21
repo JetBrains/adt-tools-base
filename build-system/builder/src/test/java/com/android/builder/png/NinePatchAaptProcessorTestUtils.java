@@ -89,6 +89,10 @@ public class NinePatchAaptProcessorTestUtils {
             @NonNull AtomicLong classStartTime,
             @NonNull TestVerb expect)
             throws IOException, DataFormatException {
+        if (isOnJenkins()) {
+            return;
+        }
+
         long startTime = System.currentTimeMillis();
         try {
             cruncher.end(cruncherKey);
@@ -334,6 +338,10 @@ public class NinePatchAaptProcessorTestUtils {
      *  <p>The 9-patch tests don't seem to play well with a network file system.
      */
     static void skipOnJenkins() {
-        Assume.assumeTrue(System.getProperty("JENKINS_URL") == null);
+        Assume.assumeFalse(isOnJenkins());
+    }
+
+    private static boolean isOnJenkins() {
+        return System.getProperty("JENKINS_URL") != null;
     }
 }
