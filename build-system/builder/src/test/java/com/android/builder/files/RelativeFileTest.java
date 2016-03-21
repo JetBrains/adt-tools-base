@@ -17,6 +17,7 @@
 package com.android.builder.files;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -51,7 +52,7 @@ public class RelativeFileTest {
      * @return the found relative file, {@code null} if no file was found
      */
     @Nullable
-    private RelativeFile findFile(@NonNull Set<RelativeFile> files, @NonNull String name) {
+    private static RelativeFile findFile(@NonNull Set<RelativeFile> files, @NonNull String name) {
         for (RelativeFile rf : files) {
             if (rf.getFile().getName().equals(name)) {
                 return rf;
@@ -71,7 +72,7 @@ public class RelativeFileTest {
     public void loadFilesRecursively() throws Exception {
         mTemporaryFolder.newFile("foo");
         mTemporaryFolder.newFile("bar");
-        File subFolder = mTemporaryFolder.newFolder("sub");
+        mTemporaryFolder.newFolder("sub");
         mTemporaryFolder.newFile("sub" + File.separator + "file-in-sub");
 
         Set<RelativeFile> files = RelativeFiles.fromDirectory(mTemporaryFolder.getRoot());
@@ -130,15 +131,6 @@ public class RelativeFileTest {
     }
 
     @Test
-    public void relativeFileOfFile() throws Exception {
-        File foo = mTemporaryFolder.newFile("foo");
-        RelativeFile relative = RelativeFile.make(foo);
-        assertEquals(foo, relative.getFile());
-        assertEquals(foo.getParentFile(), relative.getBase());
-        assertEquals("foo", relative.getOsIndependentRelativePath());
-    }
-
-    @Test
     public void relativePathFilter() throws Exception {
         mTemporaryFolder.newFile("foo");
         mTemporaryFolder.newFolder("dir");
@@ -162,13 +154,54 @@ public class RelativeFileTest {
     public void relativeFileAcceptsNonExistingFileInBase() throws Exception {
         File existingBase = mTemporaryFolder.newFolder("foo");
         File nonExistingFile = new File(existingBase, "bar");
-        RelativeFile relativeFile = RelativeFile.make(existingBase, nonExistingFile);
+        @SuppressWarnings("unused")
+        RelativeFile unused = new RelativeFile(existingBase, nonExistingFile);
     }
 
     @Test
     public void relativeFileAcceptsNonExistingFileInNonExistingBase() throws Exception {
         File existingBase = new File(mTemporaryFolder.getRoot(), "foo");
         File nonExistingFile = new File(existingBase, "bar");
-        RelativeFile relativeFile = RelativeFile.make(existingBase, nonExistingFile);
+        @SuppressWarnings("unused")
+        RelativeFile unused = new RelativeFile(existingBase, nonExistingFile);
+    }
+
+    @Test
+    public void relativeFileNotEqualsIfDifferentFile() throws Exception {
+        File base = new File("base");
+        File relative = new File(base, "relative");
+        RelativeFile rf1 = new RelativeFile(base, relative);
+        RelativeFile rf2 = new RelativeFile(base, new File("relative2"));
+        assertFalse(rf1.equals(rf2));
+    }
+
+    @Test
+    public void relativeFileNotEqualsIfDifferentBase() throws Exception {
+        File base = new File("base");
+        File relative = new File(base, "relative");
+        RelativeFile rf1 = new RelativeFile(base, relative);
+        File base2 = new File("base2");
+        RelativeFile rf2 = new RelativeFile(base2, new File(base2, "relative"));
+        assertFalse(rf1.equals(rf2));
+    }
+
+    @Test
+    public void relativeFileEqualsIfSameBaseAndRelative() throws Exception {
+        File base = new File("base");
+        File relative = new File(base, "relative");
+        RelativeFile rf1 = new RelativeFile(base, relative);
+        RelativeFile rf2 = new RelativeFile(base, relative);
+        assertTrue(rf1.equals(rf2));
+        assertTrue(rf1.hashCode() == rf2.hashCode());
+    }
+
+    @Test
+    public void relativeFileToString() {
+        File base = new File("basic");
+        File relative = new File(new File(base, "foo"), "bar");
+
+        String toString = new RelativeFile(base, relative).toString();
+        assertTrue(toString.contains("basic"));
+        assertTrue(toString.contains("foo/bar"));
     }
 }
