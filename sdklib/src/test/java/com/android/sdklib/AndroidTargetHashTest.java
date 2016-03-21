@@ -82,7 +82,8 @@ public class AndroidTargetHashTest extends TestCase {
 
         version = AndroidTargetHash.getPlatformVersion("android-UNKNOWN");
         assertNotNull(version);
-        assertEquals(1, version.getApiLevel());
+        assertEquals(SdkVersionInfo.HIGHEST_KNOWN_API, version.getApiLevel());
+        assertEquals(SdkVersionInfo.HIGHEST_KNOWN_API + 1, version.getFeatureLevel());
         assertEquals("UNKNOWN", version.getCodename());
     }
 }
