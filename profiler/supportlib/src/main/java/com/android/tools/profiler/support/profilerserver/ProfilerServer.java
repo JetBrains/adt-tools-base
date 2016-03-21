@@ -17,6 +17,8 @@
 package com.android.tools.profiler.support.profilerserver;
 
 import android.content.Context;
+import android.net.LocalServerSocket;
+import android.net.LocalSocket;
 import android.net.TrafficStats;
 import android.os.SystemClock;
 import android.util.Log;
@@ -24,11 +26,8 @@ import android.util.Log;
 import com.android.tools.profiler.support.profilers.*;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
@@ -45,21 +44,17 @@ import static com.android.tools.profiler.support.profilerserver.MessageHeader.RE
  * The server is a singleton, and is designed such that the {@link #start()}
  * and {@link #stop()} methods are reentrant.
  */
+@SuppressWarnings("ForLoopReplaceableByForEach")
 public class ProfilerServer implements Runnable {
     public static final String SERVER_NAME = "StudioProfiler";
 
     private static final long HEARTBEAT_INTERVAL = TimeUnit.NANOSECONDS.convert(2L, TimeUnit.SECONDS);
     private static final long HEARTBEAT_TIMEOUT = TimeUnit.NANOSECONDS.convert(5L, TimeUnit.SECONDS);
-    private static final int INPUT_BUFFER_SIZE = 1024;
-    private static final int OUTPUT_BUFFER_SIZE = 64 * 1024;
+    private static final int INPUT_ARRAY_SIZE = 1024;
+    private static final int OUTPUT_ARRAY_SIZE = 64 * 1024;
 
     private static final ProfilerServer INSTANCE = new ProfilerServer();
 
-    private static volatile ServerSocketChannel ourServerSocketChannel;
-    private static volatile Thread ourServerThread;
-
-    private static final int LIVE_SERVER_PORT = 5044;
-    private static final InetSocketAddress SOCKET_ADDRESS = new InetSocketAddress(LIVE_SERVER_PORT);
     private static final long CONNECTION_RETRY_TIME_MS = 100L;
     private static final long SERVER_UPDATE_TIME_NS = TimeUnit.NANOSECONDS.convert(1L, TimeUnit.SECONDS) / 60L; // 60FPS
 
@@ -78,14 +73,21 @@ public class ProfilerServer implements Runnable {
 
     private static final int THREAD_STATS_TAG = 0xFFFFFEFF;
 
-    private static Context mContext;
+    private static final String UNIX_SOCKET_NAME = "StudioProfiler_pid" + android.os.Process.myPid();
+
+    private volatile Context mContext;
 
     private final ServerComponent mServerComponent = new ServerComponent();
     private final List<ProfilerComponent> mRegisteredComponents = new ArrayList<ProfilerComponent>(ProfilerRegistry.TOTAL);
     private final MessageHeader mInputMessageHeader = new MessageHeader();
     private final MessageHeader mOutputMessageHeader = new MessageHeader();
-    private final ByteBuffer mInputBuffer = ByteBuffer.allocateDirect(INPUT_BUFFER_SIZE).order(ByteOrder.LITTLE_ENDIAN);
-    private final ByteBuffer mOutputBuffer = ByteBuffer.allocateDirect(OUTPUT_BUFFER_SIZE).order(ByteOrder.LITTLE_ENDIAN);
+    private final byte[] mInputArray = new byte[INPUT_ARRAY_SIZE];
+    private final byte[] mOutputArray = new byte[OUTPUT_ARRAY_SIZE];
+    private final ByteBuffer mInputBuffer = ByteBuffer.wrap(mInputArray).order(ByteOrder.LITTLE_ENDIAN);
+    private final ByteBuffer mOutputBuffer = ByteBuffer.wrap(mOutputArray).order(ByteOrder.LITTLE_ENDIAN);
+
+    private volatile Thread mServerThread;
+    private LocalServerSocket ourServerSocket;
     private CountDownLatch mContinueRunningLatch;
     private long mLastHeartbeatTime = 0;
     private short mHeartbeat = 0;
@@ -102,38 +104,44 @@ public class ProfilerServer implements Runnable {
         registerComponent(new NetworkProfiler());
     }
 
-    public static synchronized void start() throws IOException {
-        if (ourServerThread == null) {
-            Log.v(SERVER_NAME, "Starting server");
-            ourServerSocketChannel = ServerSocketChannel.open();
-            ourServerSocketChannel.socket().setReuseAddress(true);
-            ourServerSocketChannel.socket().bind(SOCKET_ADDRESS);
-            ourServerSocketChannel.configureBlocking(false);
+    /**
+     * Starts the singleton App Server as a separate thread.
+     */
+    public synchronized void start() throws IOException {
+        if (mServerThread == null) {
+            Log.v(SERVER_NAME, "Starting advanced profiling server");
+            ourServerSocket = new LocalServerSocket(UNIX_SOCKET_NAME);
             INSTANCE.mContinueRunningLatch = new CountDownLatch(1);
-            ourServerThread = new Thread(INSTANCE, SERVER_NAME);
-            ourServerThread.start();
-            Log.v(SERVER_NAME, "Started server");
+            mServerThread = new Thread(INSTANCE, SERVER_NAME);
+            mServerThread.start();
+            Log.v(SERVER_NAME, "Advanced profiling server started");
         }
     }
 
-    public static synchronized void stop() throws IOException {
-        if (ourServerThread != null) {
-            Log.v(SERVER_NAME, "Stopping server");
+    /**
+     * Stops and joins the singleton server.
+     */
+    public synchronized void stop() throws IOException {
+        if (mServerThread != null) {
+            Log.v(SERVER_NAME, "Stopping advanced profiling server");
             INSTANCE.mContinueRunningLatch.countDown();
-            ourServerThread.interrupt();
+            mServerThread.interrupt();
             try {
-                ourServerThread.join();
+                mServerThread.join();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 Log.v(SERVER_NAME, Log.getStackTraceString(e));
             }
-            ourServerThread = null;
-            ourServerSocketChannel.close();
-            ourServerSocketChannel = null;
-            Log.v(SERVER_NAME, "Stopped server");
+            mServerThread = null;
+            ourServerSocket.close();
+            ourServerSocket = null;
+            Log.v(SERVER_NAME, "Advanced profiling server stopped");
         }
     }
 
+    /**
+     * Registers a component with the server to listen for events.
+     */
     public void registerComponent(ProfilerComponent profilerComponent) {
         byte componentId = profilerComponent.getComponentId();
         if (componentId < 0 || componentId >= ProfilerRegistry.TOTAL) {
@@ -147,15 +155,6 @@ public class ProfilerServer implements Runnable {
         }
         mRegisteredComponents.add(profilerComponent);
         Collections.sort(mRegisteredComponents);
-    }
-
-    private static void flushBuffer(SocketChannel socketChannel, ByteBuffer output) throws IOException {
-        output.flip();
-        while (output.hasRemaining()) {
-            int bytesWritten = socketChannel.write(output);
-            Log.v(SERVER_NAME, "Wrote " + bytesWritten + " bytes");
-        }
-        output.clear();
     }
 
     public void initialize(Context context) {
@@ -172,30 +171,31 @@ public class ProfilerServer implements Runnable {
     @Override
     public void run() {
         TrafficStats.setThreadStatsTag(THREAD_STATS_TAG);
-        Log.v(SERVER_NAME, "Started profiling server");
-        SocketChannel socketChannel = null;
+        Log.v(SERVER_NAME, "Advanced profiling server thread started");
+        LocalSocket localSocket = null;
 
         while (mContinueRunningLatch.getCount() > 0) {
             try {
-                socketChannel = acceptConnection();
-                if (socketChannel == null) {
+                Log.v(SERVER_NAME, "Advanced profiling server is listening for connection");
+                localSocket = accept();
+                if (localSocket == null) {
                     mContinueRunningLatch.countDown();
+                    Log.v(SERVER_NAME, "Could not accept socket");
                     break;
                 }
 
-                socketChannel.configureBlocking(false);
                 mHeartbeat = 0;
                 mOutstandingHeartbeat = mHeartbeat;
                 mLastHeartbeatTime = SystemClock.elapsedRealtimeNanos();
 
-                if (mServerComponent.processHandshake(mLastHeartbeatTime, socketChannel) == ProfilerComponent.RESPONSE_RECONNECT) {
+                if (mServerComponent.processHandshake(mLastHeartbeatTime, localSocket) == ProfilerComponent.RESPONSE_RECONNECT) {
                     continue;
                 }
 
                 try {
                     for (int i = 0; i < mRegisteredComponents.size(); i++) {
                         mRegisteredComponents.get(i).onClientConnection();
-                        flushBuffer(socketChannel, mOutputBuffer);
+                        flushBuffer(localSocket);
                     }
                 } catch (IOException e) {
                     Log.e(SERVER_NAME, e.toString());
@@ -206,8 +206,8 @@ public class ProfilerServer implements Runnable {
                     long startTime = SystemClock.elapsedRealtimeNanos();
 
                     try {
-                        processMessages(startTime, socketChannel);
-                        updateComponents(startTime, socketChannel);
+                        processMessages(startTime, localSocket);
+                        updateComponents(startTime, localSocket);
                     }
                     catch (IOException e) {
                         Log.e(SERVER_NAME, Log.getStackTraceString(e));
@@ -232,13 +232,13 @@ public class ProfilerServer implements Runnable {
             } catch (Exception e) {
                 Log.e(SERVER_NAME, Log.getStackTraceString(e));
             } finally {
-                if (socketChannel != null) {
+                if (localSocket != null) {
                     try {
-                        socketChannel.close();
+                        localSocket.close();
                         Log.v(SERVER_NAME, "Reinitializing profiling server");
                     } catch (IOException ignored) {}
                     finally {
-                        socketChannel = null;
+                        localSocket = null;
                     }
                 }
             }
@@ -247,20 +247,29 @@ public class ProfilerServer implements Runnable {
         TrafficStats.clearThreadStatsTag();
     }
 
-    private SocketChannel acceptConnection() {
-        SocketChannel socketChannel = null;
+    private void flushBuffer(LocalSocket localSocket) throws IOException {
+        mOutputBuffer.flip();
+        if (mOutputBuffer.hasRemaining()) {
+            localSocket.getOutputStream().write(mOutputArray, 0, mOutputBuffer.limit());
+            Log.v(SERVER_NAME, "Wrote " + mOutputBuffer.limit() + " bytes");
+        }
+        mOutputBuffer.clear();
+        localSocket.getOutputStream().flush();
+    }
 
+    private LocalSocket accept() {
+        LocalSocket localSocket = null;
         try {
-            while (mContinueRunningLatch.getCount() > 0 && socketChannel == null) {
-                socketChannel = ourServerSocketChannel.accept();
-                if (socketChannel == null) {
+            while (mContinueRunningLatch.getCount() > 0 && localSocket == null) {
+                localSocket = ourServerSocket.accept();
+                if (localSocket == null) {
                     mContinueRunningLatch.await(CONNECTION_RETRY_TIME_MS, TimeUnit.MILLISECONDS);
                 }
             }
             Log.v(SERVER_NAME, "Socket accepted");
             mInputBuffer.clear();
             mOutputBuffer.clear();
-            return socketChannel;
+            return localSocket;
         } catch (IOException e) {
             Log.e(SERVER_NAME, e.toString());
         } catch (InterruptedException e) {
@@ -270,9 +279,19 @@ public class ProfilerServer implements Runnable {
         return null;
     }
 
-    private void processMessages(long frameStartTime, SocketChannel socketChannel) throws IOException {
-        socketChannel.read(mInputBuffer);
+    private void processMessages(long frameStartTime, LocalSocket localSocket) throws IOException {
+        if (localSocket.getInputStream().available() <= 0) {
+            return;
+        }
+
+        int bytesRead = localSocket.getInputStream().read(mInputArray, mInputBuffer.position(), mInputBuffer.limit());
+        if (bytesRead <= 0) {
+            return;
+        }
+
+        mInputBuffer.position(mInputBuffer.position() + bytesRead);
         mInputBuffer.flip();
+
         while (mInputBuffer.remaining() >= MessageHeader.MESSAGE_HEADER_LENGTH) {
             mInputBuffer.mark();
             mInputMessageHeader.parseFromBuffer(mInputBuffer);
@@ -303,7 +322,7 @@ public class ProfilerServer implements Runnable {
                 catch (Exception e) {
                     Log.e("ProfileServer", Log.getStackTraceString(e));
                 }
-                flushBuffer(socketChannel, mOutputBuffer);
+                flushBuffer(localSocket);
                 mInputBuffer.position(payloadPosition);
             }
 
@@ -315,10 +334,11 @@ public class ProfilerServer implements Runnable {
         mInputBuffer.compact();
     }
 
-    private void updateComponents(long frameStartTime, SocketChannel socketChannel) throws IOException {
+    private void updateComponents(long frameStartTime, LocalSocket localSocket) throws IOException {
         int updatesRequired;
         do {
             updatesRequired = 0;
+
             for (int i = 0; i < mRegisteredComponents.size(); i++) {
                 try {
                     ProfilerComponent component = mRegisteredComponents.get(i);
@@ -327,7 +347,7 @@ public class ProfilerServer implements Runnable {
                         throw new IOException("Error encountered when updating component with ID " + component.getComponentId());
                     }
                     updatesRequired += result;
-                    flushBuffer(socketChannel, mOutputBuffer);
+                    flushBuffer(localSocket);
                 }
                 catch (RuntimeException e) {
                     Log.e(SERVER_NAME, Log.getStackTraceString(e));
@@ -384,6 +404,7 @@ public class ProfilerServer implements Runnable {
                     byte targetComponent = input.get();
                     byte flags = input.get();
                     String result = null;
+
                     for (int i = 0; i < mRegisteredComponents.size(); i++) {
                         ProfilerComponent component = mRegisteredComponents.get(i);
                         if (component.getComponentId() == targetComponent) {
@@ -440,13 +461,15 @@ public class ProfilerServer implements Runnable {
             return UPDATE_DONE;
         }
 
-        private int processHandshake(long frameStartTime, SocketChannel socketChannel) throws IOException {
+        private int processHandshake(long frameStartTime, LocalSocket localSocket) throws IOException {
             int totalRead = 0;
             try {
                 while (totalRead < HANDSHAKE_HEADER_LENGTH &&
                        SystemClock.elapsedRealtimeNanos() - frameStartTime < HEARTBEAT_TIMEOUT &&
                        !mContinueRunningLatch.await(SERVER_UPDATE_TIME_NS, TimeUnit.NANOSECONDS)) {
-                    totalRead += socketChannel.read(mInputBuffer);
+                    int bytesRead = localSocket.getInputStream().read(mInputArray, mInputBuffer.position(), mInputBuffer.limit());
+                    mInputBuffer.position(mInputBuffer.position() + bytesRead);
+                    totalRead += bytesRead;
                 }
                 if (SystemClock.elapsedRealtimeNanos() - frameStartTime >= HEARTBEAT_TIMEOUT ||
                         mContinueRunningLatch.getCount() == 0) {
@@ -483,6 +506,7 @@ public class ProfilerServer implements Runnable {
                 return RESPONSE_RECONNECT;
             }
             mOutputBuffer.put(OK_RESPONSE);
+            flushBuffer(localSocket);
             mDoHeartBeat = true;
             Log.v(SERVER_NAME, "Handshake Done");
             mInputBuffer.compact();
