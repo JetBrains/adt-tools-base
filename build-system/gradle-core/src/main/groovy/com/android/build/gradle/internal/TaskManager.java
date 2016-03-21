@@ -1997,6 +1997,8 @@ public abstract class TaskManager {
         AndroidTask<InstantRunWrapperTask> incrementalBuildWrapperTask = null;
         if (getIncrementalMode(variantScope.getVariantConfiguration()) != IncrementalMode.NONE) {
 
+            variantScope.getInstantRunBuildContext().setInstantRunMode(true);
+
             // we are creating two anchor tasks
             // 1. allActionAnchorTask to anchor tasks that should be executed whether a full build or
             //    incremental build is invoked.
