@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.transforms;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.build.api.transform.SecondaryFile;
 import com.android.build.api.transform.DirectoryInput;
@@ -80,6 +79,9 @@ public class InstantRunDex extends Transform {
     @NonNull
     private final VariantScope variantScope;
 
+    @NonNull
+    private final InstantRunBuildContext instantRunBuildContext;
+
     public InstantRunDex(
             @NonNull VariantScope variantScope,
             @NonNull InstantRunBuildType buildType,
@@ -93,6 +95,7 @@ public class InstantRunDex extends Transform {
         this.dexOptions = dexOptions;
         this.logger = new LoggerWrapper(logger);
         this.inputTypes = inputTypes;
+        this.instantRunBuildContext = variantScope.getInstantRunBuildContext();
     }
 
     @Override
@@ -129,6 +132,10 @@ public class InstantRunDex extends Transform {
                 } else {
                     logger.warning("InstantRun incompatible change detected for API 20 or below,"
                             + " full APK rebuild necessary, aborting");
+
+                    // abort the build.
+                    instantRunBuildContext.abort();
+
                     File incremental = buildType.getIncrementalChangesFile(variantScope);
                     if (incremental.exists()) {
                         incremental.delete();

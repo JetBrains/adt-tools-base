@@ -2096,7 +2096,8 @@ public abstract class TaskManager {
         NoChangesVerifierTransform jniLibsVerifierTransform = new NoChangesVerifierTransform(
                 variantScope,
                 ImmutableSet.<ContentType>of(DefaultContentType.RESOURCES, ExtendedContentType.NATIVE_LIBS),
-                getResMergingScopes(variantScope), InstantRunVerifierStatus.JAVA_RESOURCES_CHANGED);
+                getResMergingScopes(variantScope), InstantRunVerifierStatus.JAVA_RESOURCES_CHANGED,
+                true /* abortBuild */);
         AndroidTask<TransformTask> jniLibsVerifierTask =
                 variantScope.getTransformManager().addTransform(
                         tasks,
@@ -2112,7 +2113,8 @@ public abstract class TaskManager {
                                 Scope.PROJECT_LOCAL_DEPS,
                                 Scope.SUB_PROJECTS_LOCAL_DEPS,
                                 Scope.EXTERNAL_LIBRARIES),
-                        InstantRunVerifierStatus.DEPENDENCY_CHANGED);
+                        InstantRunVerifierStatus.DEPENDENCY_CHANGED,
+                        false /* abortBuild */);
         AndroidTask<TransformTask> dependenciesVerifierTask =
                 variantScope.getTransformManager().addTransform(
                         tasks,

@@ -272,6 +272,7 @@ public class InstantRunBuildContext {
     private final TreeMap<Long, Build> previousBuilds = new TreeMap<Long, Build>();
     private File tmpBuildInfo = null;
     private boolean isInstantRunMode = false;
+    private volatile boolean isAborted = false;
 
     public void setInstantRunMode(boolean instantRunMode) {
         isInstantRunMode = instantRunMode;
@@ -304,7 +305,10 @@ public class InstantRunBuildContext {
     }
 
     public void setVerifierResult(@NonNull InstantRunVerifierStatus verifierStatus) {
-        currentBuild.verifierStatus = Optional.of(verifierStatus);
+        if (!currentBuild.verifierStatus.isPresent() ||
+                currentBuild.getVerifierStatus().get() == InstantRunVerifierStatus.COMPATIBLE) {
+            currentBuild.verifierStatus = Optional.of(verifierStatus);
+        }
     }
 
     /**
@@ -422,6 +426,10 @@ public class InstantRunBuildContext {
         } catch (ParserConfigurationException e) {
             throw new IOException(e);
         }
+    }
+
+    public void abort() {
+        isAborted = true;
     }
 
     @Nullable
@@ -592,6 +600,10 @@ public class InstantRunBuildContext {
      * Close all activities related to InstantRun.
      */
     public void close() {
+        if (isAborted) {
+            currentBuild.artifacts.clear();
+        }
+
         // add the current build to the list of builds to be persisted.
         previousBuilds.put(currentBuild.buildId, currentBuild);
 
