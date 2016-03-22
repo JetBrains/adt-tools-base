@@ -28,19 +28,13 @@ import java.io.Serializable;
 public class InstantRunImpl implements InstantRun, Serializable {
 
     @NonNull private final String incrementalBuildTaskName;
-    @NonNull private final File restartDexFile;
-    @NonNull private final File reloadDexFile;
     @NonNull private final File infoFile;
     private final boolean isSupported;
 
     public InstantRunImpl(
             @NonNull String incrementalBuildTaskName,
-            @NonNull File restartDexFile,
-            @NonNull File reloadDexFile,
             @NonNull File infoFile, boolean isSupported) {
         this.incrementalBuildTaskName = incrementalBuildTaskName;
-        this.restartDexFile = restartDexFile;
-        this.reloadDexFile = reloadDexFile;
         this.infoFile = infoFile;
         this.isSupported = isSupported;
     }
@@ -49,18 +43,6 @@ public class InstantRunImpl implements InstantRun, Serializable {
     @Override
     public String getIncrementalAssembleTaskName() {
         return incrementalBuildTaskName;
-    }
-
-    @NonNull
-    @Override
-    public File getRestartDexFile() {
-        return restartDexFile;
-    }
-
-    @NonNull
-    @Override
-    public File getReloadDexFile() {
-        return reloadDexFile;
     }
 
     @NonNull
