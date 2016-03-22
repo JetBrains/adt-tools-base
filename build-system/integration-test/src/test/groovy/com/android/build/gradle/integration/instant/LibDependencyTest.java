@@ -158,17 +158,14 @@ public class LibDependencyTest {
 
         project.execute(getInstantRunArgs(), instantRunModel.getIncrementalAssembleTaskName());
 
-        // TODO: The instant run model methods are gone -- this test needs to be
-        // updated to use
-        //    instantRunModel.getInfoFile()
-        // (See InstantRunBuildInfo in the IDE)
-        //expect.about(DexFileSubject.FACTORY)
-        //        .that(instantRunModel.getReloadDexFile())
-        //        .hasClass("Lcom/android/tests/libstest/lib/Lib$override;");
-        //
-        //// the restart .dex should not be present.
-        //expect.about(FileSubject.FACTORY).that(instantRunModel.getRestartDexFile()).doesNotExist();
+        expect.about(DexFileSubject.FACTORY)
+                .that(instantRunModel.getReloadDexFile())
+                .hasClass("Lcom/android/tests/libstest/lib/Lib$override;");
+
+        // the restart .dex should not be present.
+        expect.about(FileSubject.FACTORY).that(instantRunModel.getRestartDexFile()).doesNotExist();
     }
+
 
     private void createLibraryClass(String message)
             throws IOException {
