@@ -271,7 +271,15 @@ public class InstantRunBuildContext {
             System.nanoTime(), Optional.<InstantRunVerifierStatus>absent());
     private final TreeMap<Long, Build> previousBuilds = new TreeMap<Long, Build>();
     private File tmpBuildInfo = null;
+    private boolean isInstantRunMode = false;
 
+    public void setInstantRunMode(boolean instantRunMode) {
+        isInstantRunMode = instantRunMode;
+    }
+
+    public boolean isInInstantRunMode() {
+        return isInstantRunMode;
+    }
 
     public void setTmpBuildInfo(File tmpBuildInfo) {
         this.tmpBuildInfo = tmpBuildInfo;
