@@ -32,6 +32,7 @@ import android.app.Application;
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
+import android.os.Build;
 import android.util.ArrayMap;
 import android.util.Log;
 import android.util.LongSparseArray;
@@ -328,19 +329,37 @@ public class MonkeyPatcher {
             mEnsureStringBlocks.setAccessible(true);
             mEnsureStringBlocks.invoke(newAssetManager);
 
-            Field mAssets = Resources.class.getDeclaredField("mAssets");
-            mAssets.setAccessible(true);
-
             if (activities != null) {
                 for (Activity activity : activities) {
                     Resources resources = activity.getResources();
-                    mAssets.set(resources, newAssetManager);
+
+                    try {
+                        Field mAssets = Resources.class.getDeclaredField("mAssets");
+                        mAssets.setAccessible(true);
+                        mAssets.set(resources, newAssetManager);
+                    } catch (Throwable ignore) {
+                        Field mResourcesImpl = Resources.class.getDeclaredField("mResourcesImpl");
+                        mResourcesImpl.setAccessible(true);
+                        Object resourceImpl = mResourcesImpl.get(resources);
+                        Field implAssets = resourceImpl.getClass().getDeclaredField("mAssets");
+                        implAssets.setAccessible(true);
+                        implAssets.set(resourceImpl, newAssetManager);
+                    }
 
                     Resources.Theme theme = activity.getTheme();
                     try {
-                        Field ma = Resources.Theme.class.getDeclaredField("mAssets");
-                        ma.setAccessible(true);
-                        ma.set(theme, newAssetManager);
+                        try {
+                            Field ma = Resources.Theme.class.getDeclaredField("mAssets");
+                            ma.setAccessible(true);
+                            ma.set(theme, newAssetManager);
+                        } catch (NoSuchFieldException ignore) {
+                            Field themeField = Resources.Theme.class.getDeclaredField("mThemeImpl");
+                            themeField.setAccessible(true);
+                            Object impl = themeField.get(theme);
+                            Field ma = impl.getClass().getDeclaredField("mAssets");
+                            ma.setAccessible(true);
+                            ma.set(impl, newAssetManager);
+                        }
 
                         Field mt = ContextThemeWrapper.class.getDeclaredField("mTheme");
                         mt.setAccessible(true);
@@ -372,12 +391,19 @@ public class MonkeyPatcher {
                 Method mGetInstance = resourcesManagerClass.getDeclaredMethod("getInstance");
                 mGetInstance.setAccessible(true);
                 Object resourcesManager = mGetInstance.invoke(null);
-                Field fMActiveResources = resourcesManagerClass.getDeclaredField("mActiveResources");
-                fMActiveResources.setAccessible(true);
-                @SuppressWarnings("unchecked")
-                ArrayMap<?, WeakReference<Resources>> arrayMap =
-                        (ArrayMap<?, WeakReference<Resources>>) fMActiveResources.get(resourcesManager);
-                references = arrayMap.values();
+                try {
+                    Field fMActiveResources = resourcesManagerClass.getDeclaredField("mActiveResources");
+                    fMActiveResources.setAccessible(true);
+                    @SuppressWarnings("unchecked")
+                    ArrayMap<?, WeakReference<Resources>> arrayMap =
+                            (ArrayMap<?, WeakReference<Resources>>) fMActiveResources.get(resourcesManager);
+                    references = arrayMap.values();
+                } catch (NoSuchFieldException ignore) {
+                    Field mResourceReferences = resourcesManagerClass.getDeclaredField("mResourceReferences");
+                    mResourceReferences.setAccessible(true);
+                    //noinspection unchecked
+                    references = (Collection<WeakReference<Resources>>) mResourceReferences.get(resourcesManager);
+                }
             } else {
                 Class<?> activityThread = Class.forName("android.app.ActivityThread");
                 Field fMActiveResources = activityThread.getDeclaredField("mActiveResources");
@@ -392,7 +418,18 @@ public class MonkeyPatcher {
                 Resources resources = wr.get();
                 if (resources != null) {
                     // Set the AssetManager of the Resources instance to our brand new one
-                    mAssets.set(resources, newAssetManager);
+                    try {
+                        Field mAssets = Resources.class.getDeclaredField("mAssets");
+                        mAssets.setAccessible(true);
+                        mAssets.set(resources, newAssetManager);
+                    } catch (Throwable ignore) {
+                        Field mResourcesImpl = Resources.class.getDeclaredField("mResourcesImpl");
+                        mResourcesImpl.setAccessible(true);
+                        Object resourceImpl = mResourcesImpl.get(resources);
+                        Field implAssets = resourceImpl.getClass().getDeclaredField("mAssets");
+                        implAssets.setAccessible(true);
+                        implAssets.set(resourceImpl, newAssetManager);
+                    }
 
                     resources.updateConfiguration(resources.getConfiguration(), resources.getDisplayMetrics());
                 }
@@ -402,7 +439,7 @@ public class MonkeyPatcher {
         }
     }
 
-    private static void pruneResourceCaches(@NonNull Resources resources) {
+    private static void pruneResourceCaches(@NonNull Object resources) {
         // Drain TypedArray instances from the typed array pool since these can hold on
         // to stale asset data
         if (SDK_INT >= LOLLIPOP) {
@@ -424,11 +461,23 @@ public class MonkeyPatcher {
             }
         }
 
+        if (SDK_INT >= Build.VERSION_CODES.M) {
+            // Really should only be N; fix this as soon as it has its own API level
+            try {
+                Field mResourcesImpl = Resources.class.getDeclaredField("mResourcesImpl");
+                mResourcesImpl.setAccessible(true);
+                // For the remainder, use the ResourcesImpl instead, where all the fields
+                // now live
+                resources = mResourcesImpl.get(resources);
+            } catch (Throwable ignore) {
+            }
+        }
+
         // Prune bitmap and color state lists etc caches
         Object lock = null;
         if (SDK_INT >= JELLY_BEAN_MR2) {
             try {
-                Field field = Resources.class.getDeclaredField("mAccessLock");
+                Field field = resources.getClass().getDeclaredField("mAccessLock");
                 field.setAccessible(true);
                 lock = field.get(resources);
             } catch (Throwable ignore) {
@@ -459,10 +508,16 @@ public class MonkeyPatcher {
         }
     }
 
-    private static boolean pruneResourceCache(@NonNull Resources resources,
+    private static boolean pruneResourceCache(@NonNull Object resources,
             @NonNull String fieldName) {
         try {
-            Field cacheField = Resources.class.getDeclaredField(fieldName);
+            Class<?> resourcesClass = resources.getClass();
+            Field cacheField;
+            try {
+                cacheField = resourcesClass.getDeclaredField(fieldName);
+            } catch (NoSuchFieldException ignore) {
+                cacheField = Resources.class.getDeclaredField(fieldName);
+            }
             cacheField.setAccessible(true);
             Object cache = cacheField.get(resources);
 
