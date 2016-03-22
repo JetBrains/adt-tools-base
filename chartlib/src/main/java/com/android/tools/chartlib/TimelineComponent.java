@@ -817,10 +817,12 @@ public final class TimelineComponent extends AnimatedComponent {
             cappedMax = Math.min(mAbsoluteMax, Math.max(mCurrentMax, cappedMax));
             cappedMin = Math.max(-mAbsoluteMax, Math.min(mCurrentMin, cappedMin));
             if (cappedMax > mCurrentMax) {
-                mCurrentMax = lerp(mCurrentMax, cappedMax, mFirstFrame ? 1.f : .95f);
+                mCurrentMax = Choreographer.lerp(mCurrentMax, cappedMax,
+                                                 mFirstFrame ? 1.f : .95f, mFrameLength);
             }
             if (cappedMin == 0.0f || cappedMin < mCurrentMin) {
-                mCurrentMin = lerp(mCurrentMin, cappedMin, mFirstFrame ? 1.f : .95f);
+                mCurrentMin = Choreographer.lerp(mCurrentMin, cappedMin,
+                                                 mFirstFrame ? 1.f : .95f, mFrameLength);
             }
 
             // Animate the fade in/out of markers.
@@ -841,7 +843,8 @@ public final class TimelineComponent extends AnimatedComponent {
                     mEvenMarkersAlpha = 0.0f;
                 }
             }
-            mEvenMarkersAlpha = lerp(mEvenMarkersAlpha, evenMarkersTarget, 0.999f);
+            mEvenMarkersAlpha = Choreographer.lerp(mEvenMarkersAlpha, evenMarkersTarget,
+                                                   0.999f, mFrameLength);
         }
         synchronized (mEvents) {
             mEventsSize = mEvents.size();
@@ -865,7 +868,7 @@ public final class TimelineComponent extends AnimatedComponent {
                 mEventProgress = 0.0f;
             }
             mEventProgressStart = (mEventProgressStart + mFrameLength * 200.0f) % 360.0f;
-            mEventProgress = lerp(mEventProgress, 1.0f, .99f);
+            mEventProgress = Choreographer.lerp(mEventProgress, 1.0f, .99f, mFrameLength);
         }
     }
 

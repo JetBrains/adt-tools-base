@@ -71,7 +71,8 @@ public class LineChart extends AnimatedComponent {
         int count = 0;
         for (Map.Entry<Range, Long> entry : max.entrySet()) {
             Range range = entry.getKey();
-            double currentMax = lerp(range.getMax(), entry.getValue(), .95f);
+            double currentMax = Choreographer.lerp(range.getMax(), entry.getValue(),
+                                                   .95f, mFrameLength);
             addDebugInfo("Range%d Max: %.2f", count++, currentMax);
             range.setMax(currentMax);
         }

@@ -42,4 +42,8 @@ public class Range {
     public void setMax(double to) {
         mMax = to;
     }
+
+    public double getLength() {
+        return mMax - mMin;
+    }
 }

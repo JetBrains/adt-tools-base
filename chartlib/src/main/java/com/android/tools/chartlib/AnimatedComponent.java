@@ -51,26 +51,6 @@ public abstract class AnimatedComponent extends JComponent implements Animatable
         mDebugInfo = new LinkedList<String>();
     }
 
-    /**
-     * A linear interpolation that accumulates over time. This gives an exponential effect where the
-     * value {@code from} moves towards the value {@code to} at a rate of {@code fraction} per
-     * second. The actual interpolated amount depends on the current frame length.
-     *
-     * @param from     the value to interpolate from.
-     * @param to       the target value.
-     * @param fraction the interpolation fraction.
-     * @return the interpolated value.
-     */
-    protected final float lerp(float from, float to, float fraction) {
-        float q = (float) Math.pow(1.0f - fraction, mFrameLength);
-        return from * q + to * (1.0f - q);
-    }
-
-    protected final double lerp(double from, double to, float fraction) {
-        double q = Math.pow(1.0f - fraction, mFrameLength);
-        return from * q + to * (1.0 - q);
-    }
-
     public final boolean isDrawDebugInfo() {
         return mDrawDebugInfo;
     }
