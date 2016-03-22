@@ -48,7 +48,7 @@ public class NativeBuildConfigValueBuilderTest {
 
         NativeBuildConfigValue actualValue =
                 new NativeBuildConfigValueBuilder(new File(projectPath))
-                        .addCommands("debug", string, true)
+                        .addCommands("echo build command", "debug", string, true)
                         .build();
 
         NativeBuildConfigValue expectedValue =
@@ -74,7 +74,8 @@ public class NativeBuildConfigValueBuilderTest {
                 + "  ],\n"
                 + "  \"libraries\": {\n"
                 + "    \"x-a-debug\": {\n"
-                + "      \"buildCommand\": \"\\\"${NDK}/ndk-build\\\" \\\"x/a.so\\\"\",\n"
+                + "      abi : \"x\","
+                + "      \"buildCommand\": \"echo build command\",\n"
                 + "      \"toolchain\": \"toolchain-x\",\n"
                 + "      \"files\": [\n"
                 + "        {\n"
@@ -89,7 +90,8 @@ public class NativeBuildConfigValueBuilderTest {
                 + "      }\n"
                 + "    },\n"
                 + "    \"y-a-debug\": {\n"
-                + "      \"buildCommand\": \"\\\"${NDK}/ndk-build\\\" \\\"y/a.so\\\"\",\n"
+                + "      abi : \"y\","
+                + "      \"buildCommand\": \"echo build command\",\n"
                 + "      \"toolchain\": \"toolchain-y\",\n"
                 + "      \"files\": [\n"
                 + "        {\n"
@@ -138,7 +140,8 @@ public class NativeBuildConfigValueBuilderTest {
                 + "  ],\n"
                 + "  \"libraries\": {\n"
                 + "    \"y-a-debug\": {\n"
-                + "      \"buildCommand\": \"\\\"${NDK}/ndk-build\\\" \\\"y/a.so\\\"\",\n"
+                + "      abi : \"y\","
+                + "      \"buildCommand\": \"echo build command\",\n"
                 + "      \"toolchain\": \"toolchain-y\",\n"
                 + "      \"files\": [\n"
                 + "        {\n"
@@ -189,7 +192,8 @@ public class NativeBuildConfigValueBuilderTest {
                 + "  ],\n"
                 + "  \"libraries\": {\n"
                 + "    \"y-a-debug\": {\n"
-                + "      \"buildCommand\": \"\\\"${NDK}/ndk-build\\\" \\\"y/a.so\\\"\",\n"
+                + "      abi : \"y\","
+                + "      \"buildCommand\": \"echo build command\",\n"
                 + "      \"toolchain\": \"toolchain-y\",\n"
                 + "      \"files\": [\n"
                 + "        {\n"

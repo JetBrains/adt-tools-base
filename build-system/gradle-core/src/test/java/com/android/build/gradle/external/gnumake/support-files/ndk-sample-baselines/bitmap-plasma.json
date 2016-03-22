@@ -8,84 +8,26 @@
     }
   ],
   "libraries": {
-    "armeabi-v7a-libplasma-debug": {
-      "buildCommand": "\"${NDK}/ndk-build\" \"{ndkPath}/samples/bitmap-plasma/obj/local/armeabi-v7a/libplasma.so\"",
-      "toolchain": "toolchain-armeabi-v7a",
+    "mips64-libplasma-debug": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-mips64",
+      "abi": "mips64",
       "files": [
         {
           "src": {
             "path": "{ndkPath}/samples/bitmap-plasma/jni/plasma.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
         }
       ],
       "output": {
-        "path": "{ndkPath}/samples/bitmap-plasma/obj/local/armeabi-v7a/libplasma.so"
-      }
-    },
-    "armeabi-libplasma-debug": {
-      "buildCommand": "\"${NDK}/ndk-build\" \"{ndkPath}/samples/bitmap-plasma/obj/local/armeabi/libplasma.so\"",
-      "toolchain": "toolchain-armeabi",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/bitmap-plasma/jni/plasma.c"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/bitmap-plasma/obj/local/armeabi/libplasma.so"
-      }
-    },
-    "x86-libplasma-release": {
-      "buildCommand": "\"${NDK}/ndk-build\" \"{ndkPath}/samples/bitmap-plasma/obj/local/x86/libplasma.so\"",
-      "toolchain": "toolchain-x86",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/bitmap-plasma/jni/plasma.c"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/bitmap-plasma/obj/local/x86/libplasma.so"
-      }
-    },
-    "x86-libplasma-debug": {
-      "buildCommand": "\"${NDK}/ndk-build\" \"{ndkPath}/samples/bitmap-plasma/obj/local/x86/libplasma.so\"",
-      "toolchain": "toolchain-x86",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/bitmap-plasma/jni/plasma.c"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/bitmap-plasma/obj/local/x86/libplasma.so"
-      }
-    },
-    "mips-libplasma-release": {
-      "buildCommand": "\"${NDK}/ndk-build\" \"{ndkPath}/samples/bitmap-plasma/obj/local/mips/libplasma.so\"",
-      "toolchain": "toolchain-mips",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/bitmap-plasma/jni/plasma.c"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/bitmap-plasma/obj/local/mips/libplasma.so"
+        "path": "{ndkPath}/samples/bitmap-plasma/obj/local/mips64/libplasma.so"
       }
     },
     "mips-libplasma-debug": {
-      "buildCommand": "\"${NDK}/ndk-build\" \"{ndkPath}/samples/bitmap-plasma/obj/local/mips/libplasma.so\"",
+      "buildCommand": "echo build command",
       "toolchain": "toolchain-mips",
+      "abi": "mips",
       "files": [
         {
           "src": {
@@ -98,39 +40,10 @@
         "path": "{ndkPath}/samples/bitmap-plasma/obj/local/mips/libplasma.so"
       }
     },
-    "arm64-v8a-libplasma-debug": {
-      "buildCommand": "\"${NDK}/ndk-build\" \"{ndkPath}/samples/bitmap-plasma/obj/local/arm64-v8a/libplasma.so\"",
-      "toolchain": "toolchain-arm64-v8a",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/bitmap-plasma/jni/plasma.c"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/bitmap-plasma/obj/local/arm64-v8a/libplasma.so"
-      }
-    },
-    "x86_64-libplasma-debug": {
-      "buildCommand": "\"${NDK}/ndk-build\" \"{ndkPath}/samples/bitmap-plasma/obj/local/x86_64/libplasma.so\"",
-      "toolchain": "toolchain-x86_64",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/bitmap-plasma/jni/plasma.c"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/bitmap-plasma/obj/local/x86_64/libplasma.so"
-      }
-    },
     "armeabi-libplasma-release": {
-      "buildCommand": "\"${NDK}/ndk-build\" \"{ndkPath}/samples/bitmap-plasma/obj/local/armeabi/libplasma.so\"",
+      "buildCommand": "echo build command",
       "toolchain": "toolchain-armeabi",
+      "abi": "armeabi",
       "files": [
         {
           "src": {
@@ -143,9 +56,58 @@
         "path": "{ndkPath}/samples/bitmap-plasma/obj/local/armeabi/libplasma.so"
       }
     },
+    "x86-libplasma-release": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-x86",
+      "abi": "x86",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/bitmap-plasma/jni/plasma.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/bitmap-plasma/obj/local/x86/libplasma.so"
+      }
+    },
+    "armeabi-libplasma-debug": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-armeabi",
+      "abi": "armeabi",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/bitmap-plasma/jni/plasma.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv5te\" \"-mtune\u003dxscale\" \"-msoft-float\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/bitmap-plasma/obj/local/armeabi/libplasma.so"
+      }
+    },
+    "x86_64-libplasma-release": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-x86_64",
+      "abi": "x86_64",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/bitmap-plasma/jni/plasma.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/bitmap-plasma/obj/local/x86_64/libplasma.so"
+      }
+    },
     "mips64-libplasma-release": {
-      "buildCommand": "\"${NDK}/ndk-build\" \"{ndkPath}/samples/bitmap-plasma/obj/local/mips64/libplasma.so\"",
+      "buildCommand": "echo build command",
       "toolchain": "toolchain-mips64",
+      "abi": "mips64",
       "files": [
         {
           "src": {
@@ -159,8 +121,9 @@
       }
     },
     "armeabi-v7a-libplasma-release": {
-      "buildCommand": "\"${NDK}/ndk-build\" \"{ndkPath}/samples/bitmap-plasma/obj/local/armeabi-v7a/libplasma.so\"",
+      "buildCommand": "echo build command",
       "toolchain": "toolchain-armeabi-v7a",
+      "abi": "armeabi-v7a",
       "files": [
         {
           "src": {
@@ -173,39 +136,26 @@
         "path": "{ndkPath}/samples/bitmap-plasma/obj/local/armeabi-v7a/libplasma.so"
       }
     },
-    "x86_64-libplasma-release": {
-      "buildCommand": "\"${NDK}/ndk-build\" \"{ndkPath}/samples/bitmap-plasma/obj/local/x86_64/libplasma.so\"",
-      "toolchain": "toolchain-x86_64",
+    "arm64-v8a-libplasma-debug": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-arm64-v8a",
+      "abi": "arm64-v8a",
       "files": [
         {
           "src": {
             "path": "{ndkPath}/samples/bitmap-plasma/jni/plasma.c"
           },
-          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
         }
       ],
       "output": {
-        "path": "{ndkPath}/samples/bitmap-plasma/obj/local/x86_64/libplasma.so"
-      }
-    },
-    "mips64-libplasma-debug": {
-      "buildCommand": "\"${NDK}/ndk-build\" \"{ndkPath}/samples/bitmap-plasma/obj/local/mips64/libplasma.so\"",
-      "toolchain": "toolchain-mips64",
-      "files": [
-        {
-          "src": {
-            "path": "{ndkPath}/samples/bitmap-plasma/jni/plasma.c"
-          },
-          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O0\" \"-g\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
-        }
-      ],
-      "output": {
-        "path": "{ndkPath}/samples/bitmap-plasma/obj/local/mips64/libplasma.so"
+        "path": "{ndkPath}/samples/bitmap-plasma/obj/local/arm64-v8a/libplasma.so"
       }
     },
     "arm64-v8a-libplasma-release": {
-      "buildCommand": "\"${NDK}/ndk-build\" \"{ndkPath}/samples/bitmap-plasma/obj/local/arm64-v8a/libplasma.so\"",
+      "buildCommand": "echo build command",
       "toolchain": "toolchain-arm64-v8a",
+      "abi": "arm64-v8a",
       "files": [
         {
           "src": {
@@ -217,12 +167,76 @@
       "output": {
         "path": "{ndkPath}/samples/bitmap-plasma/obj/local/arm64-v8a/libplasma.so"
       }
+    },
+    "armeabi-v7a-libplasma-debug": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-armeabi-v7a",
+      "abi": "armeabi-v7a",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/bitmap-plasma/jni/plasma.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector\" \"-no-canonical-prefixes\" \"-march\u003darmv7-a\" \"-mfpu\u003dvfpv3-d16\" \"-mfloat-abi\u003dsoftfp\" \"-mthumb\" \"-Os\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fno-strict-aliasing\" \"-finline-limit\u003d64\" \"-O0\" \"-UNDEBUG\" \"-marm\" \"-fno-omit-frame-pointer\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/bitmap-plasma/obj/local/armeabi-v7a/libplasma.so"
+      }
+    },
+    "mips-libplasma-release": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-mips",
+      "abi": "mips",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/bitmap-plasma/jni/plasma.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-fpic\" \"-fno-strict-aliasing\" \"-finline-functions\" \"-ffunction-sections\" \"-funwind-tables\" \"-fmessage-length\u003d0\" \"-fno-inline-functions-called-once\" \"-fgcse-after-reload\" \"-frerun-cse-after-loop\" \"-frename-registers\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/bitmap-plasma/obj/local/mips/libplasma.so"
+      }
+    },
+    "x86-libplasma-debug": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-x86",
+      "abi": "x86",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/bitmap-plasma/jni/plasma.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-no-canonical-prefixes\" \"-fstack-protector\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/bitmap-plasma/obj/local/x86/libplasma.so"
+      }
+    },
+    "x86_64-libplasma-debug": {
+      "buildCommand": "echo build command",
+      "toolchain": "toolchain-x86_64",
+      "abi": "x86_64",
+      "files": [
+        {
+          "src": {
+            "path": "{ndkPath}/samples/bitmap-plasma/jni/plasma.c"
+          },
+          "flags": "\"-MMD\" \"-MP\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-no-canonical-prefixes\" \"-O2\" \"-g\" \"-DNDEBUG\" \"-fomit-frame-pointer\" \"-fstrict-aliasing\" \"-funswitch-loops\" \"-finline-limit\u003d300\" \"-O0\" \"-UNDEBUG\" \"-fno-omit-frame-pointer\" \"-fno-strict-aliasing\" \"-DANDROID\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\""
+        }
+      ],
+      "output": {
+        "path": "{ndkPath}/samples/bitmap-plasma/obj/local/x86_64/libplasma.so"
+      }
     }
   },
   "toolchains": {
-    "toolchain-mips": {
+    "toolchain-armeabi": {
       "cCompilerExecutable": {
-        "path": "{ndkPath}/toolchains/mipsel-{platform}-android-4.8/prebuilt/{platform}-x86_64/bin/mipsel-{platform}-android-gcc"
+        "path": "{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-gcc"
       }
     },
     "toolchain-mips64": {
@@ -230,9 +244,14 @@
         "path": "{ndkPath}/toolchains/mips64el-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/mips64el-{platform}-android-gcc"
       }
     },
-    "toolchain-x86": {
+    "toolchain-mips": {
       "cCompilerExecutable": {
-        "path": "{ndkPath}/toolchains/x86-4.8/prebuilt/{platform}-x86_64/bin/i686-{platform}-android-gcc"
+        "path": "{ndkPath}/toolchains/mipsel-{platform}-android-4.8/prebuilt/{platform}-x86_64/bin/mipsel-{platform}-android-gcc"
+      }
+    },
+    "toolchain-arm64-v8a": {
+      "cCompilerExecutable": {
+        "path": "{ndkPath}/toolchains/aarch64-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/aarch64-{platform}-android-gcc"
       }
     },
     "toolchain-x86_64": {
@@ -245,14 +264,9 @@
         "path": "{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-gcc"
       }
     },
-    "toolchain-arm64-v8a": {
+    "toolchain-x86": {
       "cCompilerExecutable": {
-        "path": "{ndkPath}/toolchains/aarch64-{platform}-android-4.9/prebuilt/{platform}-x86_64/bin/aarch64-{platform}-android-gcc"
-      }
-    },
-    "toolchain-armeabi": {
-      "cCompilerExecutable": {
-        "path": "{ndkPath}/toolchains/arm-{platform}-androideabi-4.8/prebuilt/{platform}-x86_64/bin/arm-{platform}-androideabi-gcc"
+        "path": "{ndkPath}/toolchains/x86-4.8/prebuilt/{platform}-x86_64/bin/i686-{platform}-android-gcc"
       }
     }
   },
