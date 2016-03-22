@@ -16,6 +16,7 @@
 package com.android.tools.chartlib;
 
 import com.android.annotations.NonNull;
+import gnu.trove.TFloatArrayList;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -55,26 +56,21 @@ public final class GridComponent extends AnimatedComponent {
         Path2D.Float path = new Path2D.Float();
         for (int i = 0; i < mAxes.size(); i++) {
             AxisComponent axis = mAxes.get(i);
-            int numMarkers = axis.getNumMarkers();
-            int interval = axis.getInterval();
-            double firstOffset = axis.getFirstMarkerValue();
-
+            TFloatArrayList markers = axis.getMajorMarkerPositions();
             switch (axis.getOrientation()) {
                 case LEFT:
                 case RIGHT:
-                    for (int j = 0; j < numMarkers; j++) {
-                        float offset = axis.getPositionAtValue(firstOffset + j * interval);
-                        path.moveTo(0, offset);
-                        path.lineTo(dim.width, offset);
+                    for (int j = 0; j < markers.size(); j++) {
+                        path.moveTo(0, dim.height - markers.get(j) - 1);
+                        path.lineTo(dim.width - 1, dim.height - markers.get(j) - 1);
                     }
 
                     break;
                 case TOP:
                 case BOTTOM:
-                    for (int j = 0; j < numMarkers; j++) {
-                        float offset = axis.getPositionAtValue(firstOffset + j * interval);
-                        path.moveTo(offset, 0);
-                        path.lineTo(offset, dim.height);
+                    for (int j = 0; j < markers.size(); j++) {
+                        path.moveTo(markers.get(j), 0);
+                        path.lineTo(markers.get(j), dim.height - 1);
                     }
                     break;
             }

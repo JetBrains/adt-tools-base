@@ -79,42 +79,26 @@ public class AxisLineChartVisualTest extends VisualTest {
         mScrollbar = new RangeScrollbar(mXGlobalRange, mXRange);
 
         // add horizontal time axis
-        mTimeAxis = new AxisComponent(mXRange, "TIME", AxisComponent.AxisOrientation.BOTTOM,
-                                      1000, 1, AXIS_SIZE, AXIS_SIZE, new AxisComponent.MarkerFormatter() {
-            @Override
-            public String getFormattedString(double value) {
-                return String.format("%.2f%s", value / 1000f, "s");
-            }
-        });
+        mTimeAxis = new AxisComponent(mXRange, mXGlobalRange, "TIME", AxisComponent.AxisOrientation.BOTTOM,
+                                      AXIS_SIZE, AXIS_SIZE, false, new TimeAxisDomain(10, 50, 5));
 
         // left memory data + axis
         Range yRange1 = new Range(0f, 100f);
-        mMemoryAxis1 = new AxisComponent(yRange1, "MEMORY1", AxisComponent.AxisOrientation.LEFT,
-                                         2, 1, AXIS_SIZE, AXIS_SIZE, new AxisComponent.MarkerFormatter() {
-            @Override
-            public String getFormattedString(double value) {
-                return String.format("%.2f%s", value, "KB");
-            }
-        });
+        mMemoryAxis1 = new AxisComponent(yRange1, yRange1, "MEMORY1", AxisComponent.AxisOrientation.LEFT,
+                                         AXIS_SIZE, AXIS_SIZE, true, new MemoryAxisDomain(10, 50, 5));
         RangedContinuousSeries ranged1 = new RangedContinuousSeries(mXRange, yRange1);
         mData.add(ranged1);
 
         // right memory data + axis
         Range yRange2 = new Range(0f, 100f);
-        mMemoryAxis2 = new AxisComponent(yRange2, "MEMORY2", AxisComponent.AxisOrientation.RIGHT,
-                                         2, 1, AXIS_SIZE, AXIS_SIZE, new AxisComponent.MarkerFormatter() {
-            @Override
-            public String getFormattedString(double value) {
-                return String.format("%.2f%s", value, "KB");
-            }
-        });
+        mMemoryAxis2 = new AxisComponent(yRange2, yRange2, "MEMORY2", AxisComponent.AxisOrientation.RIGHT,
+                                         AXIS_SIZE, AXIS_SIZE, true, new MemoryAxisDomain(10, 50, 5));
         RangedContinuousSeries ranged2 = new RangedContinuousSeries(mXRange, yRange2);
         mData.add(ranged2);
 
         mGrid = new GridComponent();
         mGrid.addAxis(mTimeAxis);
         mGrid.addAxis(mMemoryAxis1);
-        mGrid.addAxis(mMemoryAxis2);
 
         mXSelectionRange = new Range(0, 0);
         mSelection = new SelectionComponent(mTimeAxis, mXSelectionRange, mXGlobalRange, mXRange);
