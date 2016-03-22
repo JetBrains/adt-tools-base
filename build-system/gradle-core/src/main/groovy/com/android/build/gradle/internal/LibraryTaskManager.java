@@ -582,15 +582,14 @@ public class LibraryTaskManager extends TaskManager {
                         .getFullName()
                         + " variant into the archive file");
         task.setGroup(BasePlugin.BUILD_GROUP);
-        task.variant = variantData;
+        task.setVariant(variantData);
         task.setDestinationDir(new File(
                 variantData.getScope().getGlobalScope().getIntermediatesDir(),
                 ANNOTATIONS + "/" + config.getDirName()));
-        task.output = new File(task.getDestinationDir(), FN_ANNOTATIONS_ZIP);
-        task.classDir = new File(variantData.getScope().getGlobalScope().getIntermediatesDir(),
-                "classes/" + variantData.getVariantConfiguration().getDirName());
+        task.setOutput(new File(task.getDestinationDir(), FN_ANNOTATIONS_ZIP));
+        task.setClassDir(variantData.getScope().getJavaOutputDir());
         task.setSource(variantData.getJavaSources());
-        task.encoding = getExtension().getCompileOptions().getEncoding();
+        task.setEncoding(getExtension().getCompileOptions().getEncoding());
         task.setSourceCompatibility(
                 getExtension().getCompileOptions().getSourceCompatibility().toString());
         ConventionMappingHelper.map(task, "classpath", new Callable<ConfigurableFileCollection>() {
@@ -608,7 +607,8 @@ public class LibraryTaskManager extends TaskManager {
             public void execute(Task task) {
                 if (task instanceof ExtractAnnotations) {
                     ExtractAnnotations extractAnnotations = (ExtractAnnotations) task;
-                    extractAnnotations.bootClasspath = androidBuilder.getBootClasspathAsStrings(false);
+                    extractAnnotations.setBootClasspath(
+                            androidBuilder.getBootClasspathAsStrings(false));
                 }
             }
         });
