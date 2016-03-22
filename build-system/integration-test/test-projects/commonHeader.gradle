@@ -71,11 +71,3 @@ plugins.withId("com.android.application") { plugin ->
     }
 }
 
-plugins.withId("com.android.library") { plugin ->
-    if (ext.useJack != null) {
-        plugin.extension.defaultConfig.jackOptions.enabled = ext.useJack
-    }
-    if (ext.jackInProcess != null) {
-        plugin.extension.defaultConfig.jackOptions.jackInProcess = ext.jackInProcess
-    }
-}
