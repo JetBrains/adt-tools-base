@@ -34,9 +34,6 @@ public final class Paths {
     /** Name of file to write resource data into, if not extracting resources */
     public static final String RESOURCE_FILE_NAME = "resources.ap_";
 
-    /** Name for restart files */
-    public static final String RESTART_DEX_FILE_NAME = "classes.dex";
-
     /** Name for reload dex files */
     public static final String RELOAD_DEX_FILE_NAME = "classes.dex.3";
 

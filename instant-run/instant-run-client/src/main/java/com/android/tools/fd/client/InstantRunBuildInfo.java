@@ -245,7 +245,7 @@ public class InstantRunBuildInfo {
     public boolean isCompatibleFormat() {
         // Right don't accept older versions; due to bugs we want to force everyone to use the latest or no instant run at all.
         // In the future we'll probably accept a range of values here.
-        return getFormat() == 6;
+        return getFormat() == 7;
     }
 
     public int getFormat() {
