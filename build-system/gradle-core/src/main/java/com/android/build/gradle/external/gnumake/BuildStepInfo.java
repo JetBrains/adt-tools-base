@@ -17,6 +17,7 @@ package com.android.build.gradle.external.gnumake;
 
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 
 import java.util.List;
 
@@ -33,18 +34,31 @@ class BuildStepInfo {
     private final boolean inputsAreSourceFiles;
 
     BuildStepInfo(CommandLine command, List<String> inputs, List<String> outputs) {
-        this.command = command;
-        this.inputs = inputs;
-        this.outputs = outputs;
-        this.inputsAreSourceFiles = false;
+        this(command, inputs, outputs, false);
     }
 
     BuildStepInfo(CommandLine command, List<String> inputs, List<String> outputs,
             boolean inputsAreSourceFiles) {
         this.command = command;
-        this.inputs = inputs;
-        this.outputs = outputs;
+        this.inputs = Lists.newArrayList(inputs);
+        this.outputs = Lists.newArrayList(outputs);
         this.inputsAreSourceFiles = inputsAreSourceFiles;
+        for (String input : inputs) {
+            if (input == null) {
+                throw new RuntimeException(String.format("GNUMAKE: Unexpected null input in %s", this));
+            }
+        }
+
+        if (inputsAreSourceFiles()) {
+            if (getInputs().size() != 1) {
+                throw new RuntimeException(
+                        String.format(
+                                "GNUMAKE: Expected exactly one source file in compile step:"
+                                        + " %s\nbut received: \n%s",
+                                this,
+                                Joiner.on("\n").join(getInputs())));
+            }
+        }
     }
 
     String getOnlyInput() {

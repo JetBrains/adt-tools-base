@@ -69,7 +69,6 @@ public class NativeBuildConfigValueBuilder {
     private final Set<String> cFileExtensions = new HashSet<String>();
     private final Set<String> cppFileExtensions = new HashSet<String>();
     private final File projectRootPath;
-    private File ndkPath;
     private final List<Output> outputs;
 
     /**
@@ -80,26 +79,20 @@ public class NativeBuildConfigValueBuilder {
      */
     public NativeBuildConfigValueBuilder(File projectRootPath) {
         this.projectRootPath = projectRootPath;
-        this.ndkPath = null;
         this.outputs = new ArrayList<Output>();
-    }
-
-    /**
-     * Set the path to use for the NDK. If this method isn't called then ${NDK} will be used.
-     */
-    public NativeBuildConfigValueBuilder setNdkPath(File ndkPath) {
-        this.ndkPath = ndkPath;
-        return this;
     }
 
     /**
      * Add commands for a particular variant.
      */
     public NativeBuildConfigValueBuilder addCommands(
-            String variantName, String commands, boolean isWin32) {
+            String buildCommand,
+            String variantName,
+            String commands,
+            boolean isWin32) {
         ListMultimap<String, List<BuildStepInfo>> outputs = FlowAnalyzer.analyze(commands, isWin32);
         for (Map.Entry<String, List<BuildStepInfo>> entry : outputs.entries()) {
-            this.outputs.add(new Output(entry.getKey(), entry.getValue(), variantName));
+            this.outputs.add(new Output(entry.getKey(), entry.getValue(), buildCommand, variantName));
         }
         return this;
     }
@@ -271,16 +264,9 @@ public class NativeBuildConfigValueBuilder {
 
         for (Output output : outputs) {
             NativeLibraryValue value = new NativeLibraryValue();
-            List<String> buildCommand = new ArrayList<String>();
             librariesMap.put(output.libraryName, value);
-            // TODO: remove ndkPath once ${NDK} is always available upstream.
-            if (ndkPath != null) {
-                buildCommand.add(new File(ndkPath, "ndk-build").getAbsolutePath());
-            } else {
-                buildCommand.add("${NDK}/ndk-build");
-            }
-            buildCommand.add(output.outputName);
-            value.buildCommand = StringHelper.quoteAndJoinTokens(buildCommand);
+            value.buildCommand = output.buildCommand;
+            value.abi = getParentFolder(output.outputName);
             value.toolchain = output.toolchain;
             value.output = new File(output.outputName);
             value.files = new ArrayList<NativeSourceFileValue>();
@@ -344,13 +330,16 @@ public class NativeBuildConfigValueBuilder {
     private static class Output {
         final String outputName;
         final List<BuildStepInfo> commandInputs;
+        final String buildCommand;
         final String variantName;
         String libraryName;
         String toolchain;
 
-        Output(String outputName, List<BuildStepInfo> commandInputs, String variantName) {
+        Output(String outputName, List<BuildStepInfo> commandInputs,
+                String buildCommand, String variantName) {
             this.outputName = outputName;
             this.commandInputs = commandInputs;
+            this.buildCommand = buildCommand;
             this.variantName = variantName;
         }
     }

@@ -16,6 +16,7 @@
 package com.android.build.gradle.external.gnumake;
 
 import com.android.utils.SparseArray;
+import com.google.common.base.Joiner;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 
@@ -56,6 +57,16 @@ class FlowAnalyzer {
 
         for (int i = 0; i < commandSummaries.size(); ++i) {
             BuildStepInfo current = commandSummaries.get(i);
+            if (current.inputsAreSourceFiles()) {
+                if (current.getInputs().size() != 1) {
+                    throw new RuntimeException(
+                            String.format(
+                                    "GNUMAKE: Expected exactly one source file in compile step:"
+                                            + " %s\nbut received: \n%s",
+                                    current,
+                                    Joiner.on("\n").join(current.getInputs())));
+                }
+            }
             commandOutputsConsumed.put(i, new HashSet<String>());
 
             // For each input, find the line that created it or null if this is a terminal input.
@@ -69,12 +80,7 @@ class FlowAnalyzer {
                     commandOutputsConsumed.get(inputCommandIndex).add(input);
                     continue;
                 }
-
                 if (current.inputsAreSourceFiles()) {
-                    if (current.getInputs().size() != 1) {
-                        throw new RuntimeException(
-                                "Expected exactly one source file in compile step");
-                    }
                     terminals.add(current);
                 }
             }
