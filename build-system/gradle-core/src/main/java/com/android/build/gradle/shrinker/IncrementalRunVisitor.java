@@ -78,7 +78,7 @@ class IncrementalRunVisitor<T> extends DependencyFinderVisitor<T> {
     }
 
     private void checkModifiers(T klass, int modifiers) {
-        int oldModifiers = mGraph.getClassModifiers(klass);
+        int oldModifiers = mGraph.getModifiers(klass);
         if (oldModifiers != modifiers) {
             throw new IncrementalShrinker.IncrementalRunImpossibleException(
                     String.format(
@@ -137,7 +137,7 @@ class IncrementalRunVisitor<T> extends DependencyFinderVisitor<T> {
                             desc));
         }
 
-        if (mGraph.getMemberModifiers(field) != access) {
+        if (mGraph.getModifiers(field) != access) {
             throw new IncrementalShrinker.IncrementalRunImpossibleException(
                     String.format(
                             "Field %s.%s:%s modifiers changed.",
@@ -177,7 +177,7 @@ class IncrementalRunVisitor<T> extends DependencyFinderVisitor<T> {
                             desc));
         }
 
-        if (mGraph.getMemberModifiers(method) != access) {
+        if (mGraph.getModifiers(method) != access) {
             throw new IncrementalShrinker.IncrementalRunImpossibleException(
                     String.format(
                             "Method %s.%s:%s modifiers changed.",
@@ -239,19 +239,20 @@ class IncrementalRunVisitor<T> extends DependencyFinderVisitor<T> {
                     String.format(
                             "Field %s.%s:%s removed.",
                             mClassName,
-                            mGraph.getFieldName(field),
-                            mGraph.getFieldDesc(field)));
+                            mGraph.getMemberName(field),
+                            mGraph.getMemberDescriptor(field)));
         }
 
         for (T method : mMethods) {
-            if (mGraph.getMemberName(method).contains(FullRunShrinker.SHRINKER_FAKE_MARKER)) {
+            if (mGraph.getMemberName(method).endsWith(FullRunShrinker.SHRINKER_FAKE_MARKER)) {
                 continue;
             }
             throw new IncrementalShrinker.IncrementalRunImpossibleException(
                     String.format(
-                            "Method %s.%s removed.",
+                            "Method %s.%s:%s removed.",
                             mClassName,
-                            mGraph.getMethodNameAndDesc(method)));
+                            mGraph.getMemberName(method),
+                            mGraph.getMemberDescriptor(method)));
         }
 
         checkForRemovedAnnotation(mAnnotations, mClassName);

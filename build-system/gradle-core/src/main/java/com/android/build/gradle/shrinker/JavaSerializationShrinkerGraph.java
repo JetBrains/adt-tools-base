@@ -187,8 +187,8 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
 
     @NonNull
     @Override
-    public Set<Dependency<String>> getDependencies(@NonNull String member) {
-        return Sets.newHashSet(mDependencies.get(member));
+    public Set<Dependency<String>> getDependencies(@NonNull String node) {
+        return Sets.newHashSet(mDependencies.get(node));
     }
 
     @NonNull
@@ -218,9 +218,9 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     }
 
     @Override
-    public boolean incrementAndCheck(@NonNull String memberOrClass, @NonNull DependencyType type, @NonNull CounterSet counterSet) {
+    public boolean incrementAndCheck(@NonNull String node, @NonNull DependencyType type, @NonNull CounterSet counterSet) {
         try {
-            return getCounters(counterSet).mReferenceCounters.get(memberOrClass).incrementAndCheck(type);
+            return getCounters(counterSet).mReferenceCounters.get(node).incrementAndCheck(type);
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         }
@@ -250,17 +250,17 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     }
 
     @Override
-    public boolean isReachable(@NonNull String klass, @NonNull CounterSet counterSet) {
+    public boolean isReachable(@NonNull String node, @NonNull CounterSet counterSet) {
         try {
-            return getCounters(counterSet).mReferenceCounters.get(klass).isReachable();
+            return getCounters(counterSet).mReferenceCounters.get(node).isReachable();
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public void removeAllCodeDependencies(@NonNull String source) {
-        Set<Dependency<String>> dependencies = mDependencies.get(source);
+    public void removeAllCodeDependencies(@NonNull String node) {
+        Set<Dependency<String>> dependencies = mDependencies.get(node);
         for (Iterator<Dependency<String>> iterator = dependencies.iterator(); iterator.hasNext(); ) {
             Dependency<String> dependency = iterator.next();
             if (dependency.type == DependencyType.REQUIRED_CODE_REFERENCE
@@ -344,7 +344,7 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
                     }
                 }
             } else {
-                if (!mMembers.containsEntry(getClassForMember(target), target)) {
+                if (!mMembers.containsEntry(getOwnerClass(target), target)) {
                     shrinkerLogger.invalidMemberReference(source, target);
                     invalidDeps.put(source, entry.getValue());
                 }
@@ -394,7 +394,7 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
 
     @NonNull
     @Override
-    public String getClassForMember(@NonNull String member) {
+    public String getOwnerClass(@NonNull String member) {
         return AsmUtils.getClassName(member);
     }
 
@@ -440,44 +440,22 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
         return klass;
     }
 
-    @NonNull
-    @Override
-    public String getMethodNameAndDesc(@NonNull String method) {
-        return method.substring(method.indexOf('.') + 1);
-    }
 
-    @NonNull
     @Override
-    public String getFieldName(@NonNull String field) {
-        return field.substring(field.indexOf('.') + 1, field.indexOf(':'));
-    }
-
-    @NonNull
-    @Override
-    public String getFieldDesc(@NonNull String field) {
-        return field.substring(field.indexOf(':') + 1);
+    public int getModifiers(@NonNull String node) {
+        return mModifiers.get(node);
     }
 
     @Override
-    public int getClassModifiers(@NonNull String klass) {
-        return mModifiers.get(klass);
-    }
-
-    @Override
-    public int getMemberModifiers(@NonNull String member) {
-        return mModifiers.get(member);
-    }
-
-    @Override
-    public void addAnnotation(@NonNull String classOrMember, @NonNull String annotationName) {
+    public void addAnnotation(@NonNull String node, @NonNull String annotationName) {
         Preconditions.checkArgument(!annotationName.endsWith(";"));
-        mAnnotations.put(classOrMember, annotationName);
+        mAnnotations.put(node, annotationName);
     }
 
     @NonNull
     @Override
-    public Iterable<String> getAnnotations(@NonNull String classOrMember) {
-        return mAnnotations.get(classOrMember);
+    public Iterable<String> getAnnotations(@NonNull String node) {
+        return mAnnotations.get(node);
     }
 
     @Override
@@ -499,7 +477,17 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
 
     @Override
     public String getMemberName(@NonNull String member) {
+        return member.substring(member.indexOf('.') + 1, member.indexOf(':'));
+    }
+
+    @Override
+    public String getFullMemberName(@NonNull String member) {
         return member;
+    }
+
+    @Override
+    public String getMemberDescriptor(@NonNull String member) {
+        return member.substring(member.indexOf(':') + 1);
     }
 
     @Override
