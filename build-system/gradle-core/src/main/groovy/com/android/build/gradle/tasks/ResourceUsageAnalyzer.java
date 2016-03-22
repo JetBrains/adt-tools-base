@@ -42,6 +42,7 @@ import com.android.tools.lint.checks.ResourceUsageModel;
 import com.android.tools.lint.checks.ResourceUsageModel.Resource;
 import com.android.tools.lint.checks.StringFormatDetector;
 import com.android.utils.AsmUtils;
+import com.android.utils.Pair;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
@@ -207,10 +208,13 @@ public class ResourceUsageAnalyzer {
     /** The computed set of unused resources */
     private List<Resource> mUnused;
 
-    /** Map from resource class owners (VM format class) to corresponding resource types.
-     * This will typically be the fully qualified names of the R classes, as well as
-     * any renamed versions of those discovered in the mapping.txt file from ProGuard */
-    private Map<String, ResourceType> mResourceClassOwners = Maps.newHashMapWithExpectedSize(20);
+    /**
+     * Map from resource class owners (VM format class) to corresponding resource entries.
+     * This lets us map back from code references (obfuscated class and possibly obfuscated field
+     * reference) back to the corresponding resource type and name.
+     */
+    private Map<String, Pair<ResourceType, Map<String, String>>> mResourceObfuscation =
+            Maps.newHashMapWithExpectedSize(30);
 
     /** Obfuscated name of android/support/v7/widget/SuggestionsAdapter.java */
     private String mSuggestionsAdapter;
@@ -1116,15 +1120,43 @@ public class ResourceUsageAnalyzer {
         }
     }
 
-    private void recordMapping(@Nullable File mapping) throws IOException {
+    @VisibleForTesting
+    void recordMapping(@Nullable File mapping) throws IOException {
         if (mapping == null || !mapping.exists()) {
             return;
         }
         final String ARROW = " -> ";
         final String RESOURCE = ".R$";
+        Map<String, String> nameMap = null;
         for (String line : Files.readLines(mapping, UTF_8)) {
             if (line.startsWith(" ") || line.startsWith("\t")) {
+                if (nameMap != null) {
+                    // We're processing the members of a resource class: record names into the map
+                    int n = line.length();
+                    int i = 0;
+                    for (; i < n; i++) {
+                        if (!Character.isWhitespace(line.charAt(i))) {
+                            break;
+                        }
+                    }
+                    if (i < n && line.startsWith("int", i)) { // int or int[]
+                        int start = line.indexOf(' ', i + 3) + 1;
+                        int arrow = line.indexOf(ARROW);
+                        if (start > 0 && arrow != -1) {
+                            int end = line.indexOf(' ', start + 1);
+                            if (end != -1) {
+                                String oldName = line.substring(start, end);
+                                String newName = line.substring(arrow + ARROW.length()).trim();
+                                if (!newName.equals(oldName)) {
+                                    nameMap.put(newName, oldName);
+                                }
+                            }
+                        }
+                    }
+                }
                 continue;
+            } else {
+                nameMap = null;
             }
             int index = line.indexOf(RESOURCE);
             if (index == -1) {
@@ -1160,9 +1192,12 @@ public class ResourceUsageAnalyzer {
             }
             String target = line.substring(arrow + ARROW.length(), end).trim();
             String ownerName = AsmUtils.toInternalName(target);
-            mResourceClassOwners.put(ownerName, type);
+
+            nameMap = Maps.newHashMap();
+            Pair<ResourceType, Map<String, String>> pair = Pair.of(type, nameMap);
+            mResourceObfuscation.put(ownerName, pair);
             // For fast lookup in isResourceClass
-            mResourceClassOwners.put(ownerName + DOT_CLASS, type);
+            mResourceObfuscation.put(ownerName + DOT_CLASS, pair);
         }
     }
 
@@ -1263,7 +1298,7 @@ public class ResourceUsageAnalyzer {
     /** Returns whether the given class file name points to an aapt-generated compiled R class */
     @VisibleForTesting
     boolean isResourceClass(@NonNull String name) {
-        if (mResourceClassOwners.containsKey(name)) {
+        if (mResourceObfuscation.containsKey(name)) {
             return true;
         }
         assert name.endsWith(DOT_CLASS) : name;
@@ -1274,6 +1309,22 @@ public class ResourceUsageAnalyzer {
         }
 
         return false;
+    }
+
+    @VisibleForTesting
+    @Nullable
+    Resource getResourceFromCode(@NonNull String owner, @NonNull String name) {
+        Pair<ResourceType, Map<String, String>> pair = mResourceObfuscation.get(owner);
+        if (pair != null) {
+            ResourceType type = pair.getFirst();
+            Map<String, String> nameMap = pair.getSecond();
+            String renamedField = nameMap.get(name);
+            if (renamedField != null) {
+                name = renamedField;
+            }
+            return mModel.getResource(type, name);
+        }
+        return null;
     }
 
     private void gatherResourceValues(File file) throws IOException {
@@ -1319,7 +1370,13 @@ public class ResourceUsageAnalyzer {
             }
 
             if (pkg != null) {
-                mResourceClassOwners.put(pkg + "/R$" + type.getName(), type);
+                String owner = pkg + "/R$" + type.getName();
+                Pair<ResourceType, Map<String, String>> pair = mResourceObfuscation.get(owner);
+                if (pair == null) {
+                    Map<String, String> nameMap = Maps.newHashMap();
+                    pair = Pair.of(type, nameMap);
+                }
+                mResourceObfuscation.put(owner, pair);
             }
 
             index = end;
@@ -1330,7 +1387,9 @@ public class ResourceUsageAnalyzer {
                 if (Character.isWhitespace(c)) {
                     //noinspection UnnecessaryContinue
                     continue;
-                } else if (c == '/') {
+                }
+
+                if (c == '/') {
                     char next = s.charAt(index + 1);
                     if (next == '*') {
                         // Scan forward to comment end
@@ -1355,14 +1414,19 @@ public class ResourceUsageAnalyzer {
                     if (type == ResourceType.STYLEABLE) {
                         start = s.indexOf(" int", index);
                         if (s.startsWith(" int[] ", start)) {
+                            start += " int[] ".length();
                             end = s.indexOf('=', start);
                             assert end != -1;
                             String styleable = s.substring(start, end).trim();
                             mModel.addResource(ResourceType.DECLARE_STYLEABLE, styleable, null);
-
+                            mModel.addResource(ResourceType.STYLEABLE, styleable, null);
                             // TODO: Read in all the action bar ints!
                             // For now, we're simply treating all R.attr fields as used
-                        } else if (s.startsWith(" int ")) {
+                            index = s.indexOf(';', index);
+                            if (index == -1) {
+                                break;
+                            }
+                        } else if (s.startsWith(" int ", start)) {
                             // Read these fields in and correlate with the attr R's. Actually
                             // we don't need this for anything; the local attributes are
                             // found by the R attr thing. I just need to record the class
@@ -1435,12 +1499,9 @@ public class ResourceUsageAnalyzer {
                 @Override
                 public void visitFieldInsn(int opcode, String owner, String name, String desc) {
                     if (opcode == Opcodes.GETSTATIC) {
-                        ResourceType type = mResourceClassOwners.get(owner);
-                        if (type != null) {
-                            Resource resource = mModel.getResource(type, name);
-                            if (resource != null) {
-                                ResourceUsageModel.markReachable(resource);
-                            }
+                        Resource resource = getResourceFromCode(owner, name);
+                        if (resource != null) {
+                            ResourceUsageModel.markReachable(resource);
                         }
                     }
                 }
