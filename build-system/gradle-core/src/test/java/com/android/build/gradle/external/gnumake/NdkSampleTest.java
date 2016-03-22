@@ -162,7 +162,12 @@ public class NdkSampleTest {
         return Spawner.spawn(command);
     }
 
-    private void checkJson(String path) throws IOException, InterruptedException {
+    private void checkJson(String path)
+            throws IOException, InterruptedException {
+        checkJson(path, true);
+    }
+    private void checkJson(String path, boolean ndkBuildable)
+            throws IOException, InterruptedException {
         File ndkPath = getNdkPath();
         File testPath = new File(ndkPath, path);
         Map<String, String> variantConfigs = getVariantConfigs();
@@ -170,7 +175,7 @@ public class NdkSampleTest {
         // Get the baseline config
         File baselineJsonFile = getJsonFile(testPath);
 
-        if (REGENERATE_TEST_BASELINES) {
+        if (REGENERATE_TEST_BASELINES && ndkBuildable) {
             File directory = new File(THIS_TEST_FOLDER + "support-files/ndk-sample-baselines");
             if (!directory.exists()) {
                 //noinspection ResultOfMethodCallIgnored
@@ -200,7 +205,7 @@ public class NdkSampleTest {
             File variantBuildOutputFile = getVariantBuildOutputFile(testPath, variantName);
             String variantBuildOutputText = Joiner.on('\n')
                     .join(Files.readLines(variantBuildOutputFile, Charsets.UTF_8));
-            builder.addCommands(variantName, variantBuildOutputText, true);
+            builder.addCommands("echo build command", variantName, variantBuildOutputText, true);
         }
         NativeBuildConfigValue actualConfig = builder.build();
         String actualResult = new GsonBuilder()
