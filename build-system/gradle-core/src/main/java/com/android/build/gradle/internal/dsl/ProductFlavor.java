@@ -68,6 +68,9 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
     private final JackOptions jackOptions;
 
     @NonNull
+    private final JavaCompileOptions javaCompileOptions;
+
+    @NonNull
     private final ShaderOptions shaderOptions;
 
     public ProductFlavor(
@@ -84,6 +87,7 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
         externalNativeNdkBuildOptions = instantiator.newInstance(ExternalNativeNdkBuildOptions.class);
         externalNativeCmakeOptions = instantiator.newInstance(ExternalNativeCmakeOptions.class);
         jackOptions = instantiator.newInstance(JackOptions.class);
+        javaCompileOptions = instantiator.newInstance(JavaCompileOptions.class, instantiator);
         shaderOptions = instantiator.newInstance(ShaderOptions.class);
     }
 
@@ -530,6 +534,33 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
         LoggingUtil.displayDeprecationWarning(
                 logger, project, "useJack is deprecated.  Use jackOptions.enabled instead.");
         jackOptions.setEnabled(useJack);
+    }
+
+    /**
+     * Whether the experimental Jack toolchain should be used.
+     *
+     * <p>See <a href="http://tools.android.com/tech-docs/jackandjill">Jack and Jill</a>
+     *
+     * @deprecated use getJack.setEnabled instead.
+     */
+    @Deprecated
+    public void useJack(Boolean useJack) {
+        LoggingUtil.displayDeprecationWarning(
+                logger, project, "useJack is deprecated.  Use jackOptions.enabled instead.");
+        jackOptions.setEnabled(useJack);
+    }
+
+    /**
+     * Options for configuration Java compilation.
+     */
+    @Override
+    @NonNull
+    public JavaCompileOptions getJavaCompileOptions() {
+        return javaCompileOptions;
+    }
+
+    public void javaCompileOptions(@NonNull Action<JavaCompileOptions> action) {
+        action.execute(javaCompileOptions);
     }
 
     /**

@@ -76,31 +76,33 @@ public interface AndroidSourceSet {
 
     /**
      * Returns the name of the compile configuration for this source set.
-     * @return The configuration name
      */
     @NonNull
     String getCompileConfigurationName();
 
     /**
      * Returns the name of the runtime configuration for this source set.
-     * @return The runtime configuration name
      */
     @NonNull
     String getPackageConfigurationName();
 
     /**
      * Returns the name of the compiled-only configuration for this source set.
-     * @return The provided configuration name
      */
     @NonNull
     String getProvidedConfigurationName();
 
     /**
      * Returns the name of the wearApp configuration for this source set.
-     * @return The configuration name
      */
     @NonNull
     String getWearAppConfigurationName();
+
+    /**
+     * Returns the name of the annotation processing tool classpath for this source set.
+     */
+    @NonNull
+    String getAnnotationProcessorConfigurationName();
 
     /**
      * The Android Manifest file for this source set.

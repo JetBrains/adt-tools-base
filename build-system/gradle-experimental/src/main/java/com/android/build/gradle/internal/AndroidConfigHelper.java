@@ -83,15 +83,15 @@ public class AndroidConfigHelper {
                 createConfiguration(
                         configurations,
                         sourceSet.getCompileConfigurationName(),
-                        "Classpath for compiling the ${sourceSet.name} sources.");
+                        "Classpath for compiling the " + sourceSet.getName() + " sources.");
 
                 String packageConfigDescription;
                 if (isLibrary) {
                     packageConfigDescription
-                            = "Classpath only used when publishing '${sourceSet.name}'.";
+                            = "Classpath only used when publishing '" + sourceSet.getName() + "'.";
                 } else {
-                    packageConfigDescription
-                            = "Classpath packaged with the compiled '${sourceSet.name}' classes.";
+                    packageConfigDescription = "Classpath packaged with the compiled '"
+                            + sourceSet.getName() + "' classes.";
                 }
                 createConfiguration(
                         configurations,
@@ -101,12 +101,17 @@ public class AndroidConfigHelper {
                 createConfiguration(
                         configurations,
                         sourceSet.getProvidedConfigurationName(),
-                        "Classpath for only compiling the ${sourceSet.name} sources.");
+                        "Classpath for only compiling the " + sourceSet.getName() + " sources.");
 
                 createConfiguration(
                         configurations,
                         sourceSet.getWearAppConfigurationName(),
-                        "Link to a wear app to embed for object '${sourceSet.name}'.");
+                        "Link to a wear app to embed for object '" + sourceSet.getName() + "}'.");
+
+                createConfiguration(
+                        configurations,
+                        sourceSet.getAnnotationProcessorConfigurationName(),
+                        "Classpath for the annotation processor for '" + sourceSet.getName() + "'.");
 
                 sourceSet.setRoot(String.format("src/%s", sourceSet.getName()));
 

@@ -22,11 +22,17 @@ import com.android.builder.core.ErrorReporter;
 import com.android.builder.core.VariantType;
 import com.android.builder.dependency.DependencyContainer;
 import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.artifacts.ResolvedArtifact;
 
+import java.io.File;
+import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -53,18 +59,20 @@ public class VariantDependencies {
     private final String variantName;
 
     @NonNull
-    private Configuration compileConfiguration;
+    private final Configuration compileConfiguration;
     @NonNull
-    private Configuration packageConfiguration;
+    private final Configuration packageConfiguration;
+    @Nullable
+    private final Configuration publishConfiguration;
     @NonNull
-    private Configuration publishConfiguration;
+    private final Configuration annotationProcessorConfiguration;
 
     @Nullable
-    private Configuration mappingConfiguration;
+    private final Configuration mappingConfiguration;
     @Nullable
-    private Configuration classesConfiguration;
+    private final Configuration classesConfiguration;
     @Nullable
-    private Configuration metadataConfiguration;
+    private final Configuration metadataConfiguration;
 
     @Nullable
     private Configuration manifestConfiguration;
@@ -92,6 +100,7 @@ public class VariantDependencies {
             @NonNull ConfigurationProvider... providers) {
         Set<Configuration> compileConfigs = Sets.newHashSetWithExpectedSize(providers.length * 2);
         Set<Configuration> apkConfigs = Sets.newHashSetWithExpectedSize(providers.length);
+        Set<Configuration> annotationConfigs = Sets.newHashSetWithExpectedSize(providers.length);
 
         for (ConfigurationProvider provider : providers) {
             if (provider != null) {
@@ -102,18 +111,26 @@ public class VariantDependencies {
 
                 apkConfigs.add(provider.getCompileConfiguration());
                 apkConfigs.add(provider.getPackageConfiguration());
+                annotationConfigs.add(provider.getAnnotationProcessorConfiguration());
             }
         }
 
         if (parentVariant != null) {
             compileConfigs.add(parentVariant.getCompileConfiguration());
             apkConfigs.add(parentVariant.getPackageConfiguration());
+            annotationConfigs.add(parentVariant.getAnnotationProcessorConfiguration());
         }
 
         Configuration compile = project.getConfigurations().maybeCreate("_" + variantName + "Compile");
         compile.setVisible(false);
         compile.setDescription("## Internal use, do not manually configure ##");
         compile.setExtendsFrom(compileConfigs);
+
+        Configuration annotationProcessor =
+                project.getConfigurations().maybeCreate("_" + variantName + "AnnotationProcessor");
+        annotationProcessor.setVisible(false);
+        annotationProcessor.setDescription("## Internal use, do not manually configure ##");
+        annotationProcessor.setExtendsFrom(annotationConfigs);
 
         Configuration apk = project.getConfigurations().maybeCreate(
                 variantType == VariantType.LIBRARY
@@ -172,6 +189,7 @@ public class VariantDependencies {
                 compile,
                 apk,
                 publish,
+                annotationProcessor,
                 mapping,
                 classes,
                 metadata,
@@ -184,6 +202,7 @@ public class VariantDependencies {
             @NonNull  Configuration compileConfiguration,
             @NonNull  Configuration packageConfiguration,
             @Nullable Configuration publishConfiguration,
+            @NonNull  Configuration annotationProcessorConfiguration,
             @Nullable Configuration mappingConfiguration,
             @Nullable Configuration classesConfiguration,
             @Nullable Configuration metadataConfiguration,
@@ -192,6 +211,7 @@ public class VariantDependencies {
         this.compileConfiguration = compileConfiguration;
         this.packageConfiguration = packageConfiguration;
         this.publishConfiguration = publishConfiguration;
+        this.annotationProcessorConfiguration = annotationProcessorConfiguration;
         this.mappingConfiguration = mappingConfiguration;
         this.classesConfiguration = classesConfiguration;
         this.metadataConfiguration = metadataConfiguration;
@@ -216,6 +236,11 @@ public class VariantDependencies {
     @Nullable
     public Configuration getPublishConfiguration() {
         return publishConfiguration;
+    }
+
+    @NonNull
+    public Configuration getAnnotationProcessorConfiguration() {
+        return annotationProcessorConfiguration;
     }
 
     @Nullable
@@ -249,6 +274,18 @@ public class VariantDependencies {
 
     public DependencyContainer getPackageDependencies() {
         return packageDependencies;
+    }
+
+    @NonNull
+    public List<File> resolveAndGetAnnotationProcessorClassPath() {
+        Set<ResolvedArtifact> artifacts = getAnnotationProcessorConfiguration()
+                .getResolvedConfiguration().getResolvedArtifacts();
+
+        ImmutableList.Builder<File> files = ImmutableList.builder();
+        for (ResolvedArtifact artifact: artifacts) {
+            files.add(artifact.getFile());
+        }
+        return files.build();
     }
 
     @NonNull

@@ -190,6 +190,11 @@ public interface ProductFlavor extends DimensionAware, BaseConfig {
     JackOptions getJackOptions();
 
     /**
+     * Returns the apt options for this product flavor.
+     */
+    JavaCompileOptions getJavaCompileOptions();
+
+    /**
      * Returns the shader compiler options for this product flavor.
      */
     ShaderOptions getShaders();

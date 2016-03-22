@@ -383,7 +383,7 @@ public class GradleTestProject implements TestRule {
                     }
                 }
             }
-            assertTrue(root.delete());
+            assertTrue("Failed to delete " + root.getAbsolutePath(), root.delete());
         }
     }
 

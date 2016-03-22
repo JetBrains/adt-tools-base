@@ -158,6 +158,16 @@ public class DefaultAndroidSourceSet implements AndroidSourceSet, SourceProvider
         }
     }
 
+    @NonNull
+    @Override
+    public String getAnnotationProcessorConfigurationName() {
+        if (name.equals(SourceSet.MAIN_SOURCE_SET_NAME)) {
+            return "annotationProcessor";
+        } else {
+            return String.format("%sAnnotationProcessor", name);
+        }
+    }
+
     @Override
     @NonNull
     public AndroidSourceFile getManifest() {

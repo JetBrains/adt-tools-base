@@ -24,6 +24,7 @@ import com.google.common.base.Objects;
  *
  * <p>See <a href="http://tools.android.com/tech-docs/jackandjill">Jack and Jill</a>
  */
+@SuppressWarnings("UnnecessaryInheritDoc")
 public class JackOptions implements CoreJackOptions {
     @Nullable
     private Boolean isEnabledFlag;
