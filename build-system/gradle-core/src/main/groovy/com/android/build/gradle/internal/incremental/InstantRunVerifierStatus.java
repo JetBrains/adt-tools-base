@@ -67,4 +67,6 @@ public enum InstantRunVerifierStatus {
     JAVA_RESOURCES_CHANGED,
 
     DEPENDENCY_CHANGED,
+
+    CONSTRUCTOR_CHANGED,
 }
