@@ -18,23 +18,38 @@ package com.android.tools.chartlib.model;
 
 import com.android.annotations.NonNull;
 
-import java.util.LinkedList;
-import java.util.List;
+import gnu.trove.TLongArrayList;
 
-/**
- * The data model used by a LineChart component
- */
-public class LineChartData {
+public class ContinuousSeries {
 
     @NonNull
-    private final List<RangedContinuousSeries> mSeries = new LinkedList<RangedContinuousSeries>();
+    private final TLongArrayList mX = new TLongArrayList();
 
-    public void add(@NonNull RangedContinuousSeries series) {
-        mSeries.add(series);
+    @NonNull
+    private final TLongArrayList mY = new TLongArrayList();
+
+    long mMaxY;
+
+    public void add(long x, long y) {
+        mMaxY = Math.max(mMaxY, y);
+
+        mX.add(x);
+        mY.add(y);
     }
 
-    @NonNull
-    public List<RangedContinuousSeries> series() {
-        return mSeries;
+    public int size() {
+        return mX.size();
+    }
+
+    public long getX(int index) {
+        return mX.get(index);
+    }
+
+    public long getY(int index) {
+        return mY.get(index);
+    }
+
+    public long getMaxY() {
+        return mMaxY;
     }
 }

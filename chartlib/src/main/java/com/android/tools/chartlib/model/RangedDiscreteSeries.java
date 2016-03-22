@@ -19,34 +19,25 @@ package com.android.tools.chartlib.model;
 import com.android.annotations.NonNull;
 
 /**
- * Represents a view into a data series, where the data in view is only
- * within given x and y ranged.
+ * Represents a view into a discrete series, where the data in view is only
+ * within given x range.
  */
-public class RangedSeries {
+public class RangedDiscreteSeries {
 
     @NonNull
     private final Range mXRange;
 
     @NonNull
-    private final Range mYRange;
+    private final DiscreteSeries mSeries;
 
-    @NonNull
-    private final Series mSeries;
-
-    public RangedSeries(Range xRange, Range yRange) {
+    public RangedDiscreteSeries(Class<? extends Enum> clazz, Range xRange) {
         mXRange = xRange;
-        mYRange = yRange;
-        mSeries = new Series();
+        mSeries = new DiscreteSeries(clazz);
     }
 
     @NonNull
-    public Series getSeries() {
+    public DiscreteSeries getSeries() {
         return mSeries;
-    }
-
-    @NonNull
-    public Range getYRange() {
-        return mYRange;
     }
 
     @NonNull

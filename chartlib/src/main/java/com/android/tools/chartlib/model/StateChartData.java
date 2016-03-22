@@ -21,20 +21,17 @@ import com.android.annotations.NonNull;
 import java.util.LinkedList;
 import java.util.List;
 
-/**
- * The data model used by a LineChart component
- */
-public class LineChartData {
+public class StateChartData {
 
     @NonNull
-    private final List<RangedContinuousSeries> mSeries = new LinkedList<RangedContinuousSeries>();
+    private final List<RangedDiscreteSeries> mSeries = new LinkedList<RangedDiscreteSeries>();
 
-    public void add(@NonNull RangedContinuousSeries series) {
+    public void add(@NonNull RangedDiscreteSeries series) {
         mSeries.add(series);
     }
 
     @NonNull
-    public List<RangedContinuousSeries> series() {
+    public List<RangedDiscreteSeries> series() {
         return mSeries;
     }
 }
