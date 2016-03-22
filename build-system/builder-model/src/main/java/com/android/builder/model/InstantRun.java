@@ -32,14 +32,6 @@ public interface InstantRun {
     @NonNull
     String getIncrementalAssembleTaskName();
 
-    @Deprecated
-    @NonNull
-    File getRestartDexFile();
-
-    @Deprecated
-    @NonNull
-    File getReloadDexFile();
-
     /**
      * Returns the last incremental build information, including success or failure, verifier
      * reason for requesting a restart, etc...

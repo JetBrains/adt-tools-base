@@ -425,8 +425,6 @@ public class ModelBuilder implements ToolingModelBuilder {
 
         InstantRunImpl instantRun = new InstantRunImpl(
                 InstantRunAnchorTask.ConfigAction.getName(scope),
-                new File(scope.getRestartDexOutputFolder(), "classes.dex"),
-                new File(scope.getReloadDexOutputFolder(), "classes.dex"),
                 // todo : move this to a shared location.
                 InstantRunWrapperTask.ConfigAction.getBuildInfoFile(scope),
                 variantConfiguration.isInstantRunSupported());
