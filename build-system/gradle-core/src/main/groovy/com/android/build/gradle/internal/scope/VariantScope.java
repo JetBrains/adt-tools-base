@@ -192,6 +192,9 @@ public interface VariantScope extends BaseScope {
     File getRenderscriptResOutputDir();
 
     @NonNull
+    File getRenderscriptObjOutputDir();
+
+    @NonNull
     File getPackagedJarsJavaResDestinationDir();
 
     @NonNull

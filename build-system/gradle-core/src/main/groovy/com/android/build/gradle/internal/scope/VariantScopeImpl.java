@@ -568,6 +568,17 @@ public class VariantScopeImpl implements VariantScope {
 
     @NonNull
     @Override
+    public File getRenderscriptObjOutputDir() {
+        return FileUtils.join(
+                globalScope.getIntermediatesDir(),
+                StringHelper.toStrings(
+                        "rs",
+                        getDirectorySegments(),
+                        "obj"));
+    }
+
+    @NonNull
+    @Override
     public File getShadersOutputDir() {
         return getGeneratedAssetsDir("shaders");
     }

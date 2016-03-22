@@ -14,41 +14,70 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.tasks
+package com.android.build.gradle.internal.tasks;
 
-import com.android.build.gradle.internal.dsl.CoreNdkOptions
-import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.Optional
+import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.dsl.CoreNdkOptions;
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Optional;
+
+import java.util.List;
+import java.util.Set;
 
 /**
  * Base task for tasks that require an NdkConfig
  */
-class NdkTask extends BaseTask {
+public class NdkTask extends BaseTask {
 
-    CoreNdkOptions ndkConfig
+    @Nullable
+    private CoreNdkOptions ndkConfig;
 
-    @Input @Optional
-    String getModuleName() {
-        return getNdkConfig()?.moduleName
+    @Nullable
+    public CoreNdkOptions getNdkConfig() {
+        return ndkConfig;
+    }
+
+    public void setNdkConfig(@Nullable CoreNdkOptions ndkConfig) {
+        this.ndkConfig = ndkConfig;
     }
 
     @Input @Optional
-    String getcFlags() {
-        return getNdkConfig()?.cFlags
+    public String getModuleName() {
+        if (getNdkConfig() == null) {
+            return null;
+        }
+        return getNdkConfig().getModuleName();
     }
 
     @Input @Optional
-    Set<String> getLdLibs() {
-        return getNdkConfig()?.ldLibs
+    public String getcFlags() {
+        if (getNdkConfig() == null) {
+            return null;
+        }
+        return getNdkConfig().getcFlags();
     }
 
     @Input @Optional
-    Set<String> getAbiFilters() {
-        return getNdkConfig()?.abiFilters
+    public List<String> getLdLibs() {
+        if (getNdkConfig() == null) {
+            return null;
+        }
+        return getNdkConfig().getLdLibs();
     }
 
     @Input @Optional
-    String getStl() {
-        return getNdkConfig()?.stl
+    public Set<String> getAbiFilters() {
+        if (getNdkConfig() == null) {
+            return null;
+        }
+        return getNdkConfig().getAbiFilters();
+    }
+
+    @Input @Optional
+    public String getStl() {
+        if (getNdkConfig() == null) {
+            return null;
+        }
+        return getNdkConfig().getStl();
     }
 }

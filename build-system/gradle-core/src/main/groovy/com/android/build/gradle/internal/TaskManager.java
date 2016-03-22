@@ -1188,7 +1188,7 @@ public abstract class TaskManager {
         ndkCompile.setAndroidBuilder(androidBuilder);
         ndkCompile.setVariantName(variantData.getName());
         ndkCompile.setNdkDirectory(sdkHandler.getNdkFolder());
-        ndkCompile.setIsForTesting(variantData.getType().isForTesting());
+        ndkCompile.setForTesting(variantData.getType().isForTesting());
         variantData.ndkCompileTask = ndkCompile;
         variantData.compileTask.dependsOn(variantData.ndkCompileTask);
 
