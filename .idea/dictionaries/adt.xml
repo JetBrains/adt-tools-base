@@ -282,6 +282,7 @@
       <w>serialnumber</w>
       <w>severities</w>
       <w>shaders</w>
+      <w>shrinker</w>
       <w>sparsearray</w>
       <w>sqrt</w>
       <w>stacktrace</w>
