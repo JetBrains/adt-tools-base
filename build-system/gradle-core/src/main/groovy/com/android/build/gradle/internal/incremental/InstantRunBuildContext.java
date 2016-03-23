@@ -274,6 +274,13 @@ public class InstantRunBuildContext {
     private boolean isInstantRunMode = false;
     private volatile boolean isAborted = false;
 
+    public void setInstantRunMode(boolean instantRunMode) {
+        isInstantRunMode = instantRunMode;
+    }
+
+    public boolean isInInstantRunMode() {
+        return isInstantRunMode;
+    }
 
     public void setTmpBuildInfo(File tmpBuildInfo) {
         this.tmpBuildInfo = tmpBuildInfo;
