@@ -15,6 +15,7 @@
  */
 package com.android.build.gradle.tasks;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidGradleOptions;
@@ -23,6 +24,7 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dependency.SymbolFileProviderImpl;
 import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
 import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
@@ -42,8 +44,10 @@ import com.android.ide.common.blame.parser.aapt.AaptOutputParser;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.utils.FileUtils;
+import com.google.common.base.Charsets;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
+import com.google.common.io.Files;
 
 import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.Input;
@@ -62,6 +66,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.jar.JarFile;
+import java.util.zip.ZipEntry;
 
 @ParallelizableTask
 public class ProcessAndroidResources extends IncrementalTask {
@@ -106,6 +112,8 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     private InstantRunBuildContext instantRunBuildContext;
 
+    private File instantRunSupportDir;
+
     private File buildInfoFile;
 
     @Override
@@ -121,7 +129,7 @@ public class ProcessAndroidResources extends IncrementalTask {
 
         // If are in instant run mode and we have an instant run enabled manifest
         File instantRunManifest = getInstantRunManifestFile();
-        File manifestFileToPackage = instantRunBuildContext.getPatchingPolicy() != null &&
+        File manifestFileToPackage = instantRunBuildContext.isInInstantRunMode() &&
                 instantRunManifest != null && instantRunManifest.exists()
                     ? instantRunManifest
                     : getManifestFile();
@@ -157,8 +165,38 @@ public class ProcessAndroidResources extends IncrementalTask {
                     getEnforceUniquePackageName(),
                     processOutputHandler);
             if (resOutBaseNameFile != null) {
-                instantRunBuildContext.addChangedFile(
-                        InstantRunBuildContext.FileType.RESOURCES, resOutBaseNameFile);
+                if (instantRunBuildContext.isInInstantRunMode()) {
+
+                    instantRunBuildContext.addChangedFile(
+                            InstantRunBuildContext.FileType.RESOURCES, resOutBaseNameFile);
+
+                    // get the new manifest file CRC
+                    JarFile jarFile = new JarFile(resOutBaseNameFile);
+                    String currentIterationCRC = null;
+                    try {
+                        ZipEntry entry = jarFile.getEntry(SdkConstants.ANDROID_MANIFEST_XML);
+                        if (entry != null) {
+                            currentIterationCRC = String.valueOf(entry.getCrc());
+                        }
+                    } finally {
+                        jarFile.close();
+                    }
+
+                    // check the manifest file binary format.
+                    File crcFile = new File(instantRunSupportDir, "manifest.crc");
+                    if (crcFile.exists() && currentIterationCRC != null) {
+                        // compare its content with the new binary file crc.
+                        String previousIterationCRC = Files.readFirstLine(crcFile, Charsets.UTF_8);
+                        if (!currentIterationCRC.equals(previousIterationCRC)) {
+                            instantRunBuildContext.setVerifierResult(
+                                    InstantRunVerifierStatus.BINARY_MANIFEST_FILE_CHANGE);
+                        }
+                    }
+
+                    // write the new manifest file CRC.
+                    Files.createParentDirs(crcFile);
+                    Files.write(currentIterationCRC, crcFile, Charsets.UTF_8);
+                }
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -354,6 +392,9 @@ public class ProcessAndroidResources extends IncrementalTask {
 
             processResources.setMergeBlameLogFolder(
                     scope.getVariantScope().getResourceBlameLogDir());
+
+            processResources.instantRunSupportDir =
+                    scope.getVariantScope().getInstantRunSupportDir();
 
             processResources.instantRunBuildContext =
                     scope.getVariantScope().getInstantRunBuildContext();
