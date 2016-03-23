@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.databinding;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.runner.FilterableParameterized;
@@ -25,6 +26,8 @@ import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.ide.common.process.ProcessException;
 import com.google.common.io.Files;
 
+import org.junit.Assume;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,8 +41,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import javax.xml.parsers.ParserConfigurationException;
-
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
 
 
 @RunWith(FilterableParameterized.class)
@@ -73,6 +74,10 @@ public class DataBindingIncrementalTest {
                 .create();
     }
 
+    @Before
+    public void skipOnJack() throws Exception {
+        Assume.assumeFalse(GradleTestProject.USE_JACK);
+    }
 
     @Test
     public void compileWithoutChange() throws UnsupportedEncodingException {
