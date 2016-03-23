@@ -27,4 +27,9 @@ public final class Constant {
     public Object getValue() {
         return mValue;
     }
+
+    @Override
+    public String toString() {
+        return mName + " = " + mValue;
+    }
 }
