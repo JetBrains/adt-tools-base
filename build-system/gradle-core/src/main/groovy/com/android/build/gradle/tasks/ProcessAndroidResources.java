@@ -188,6 +188,7 @@ public class ProcessAndroidResources extends IncrementalTask {
                         // compare its content with the new binary file crc.
                         String previousIterationCRC = Files.readFirstLine(crcFile, Charsets.UTF_8);
                         if (!currentIterationCRC.equals(previousIterationCRC)) {
+                            instantRunBuildContext.abort();
                             instantRunBuildContext.setVerifierResult(
                                     InstantRunVerifierStatus.BINARY_MANIFEST_FILE_CHANGE);
                         }
