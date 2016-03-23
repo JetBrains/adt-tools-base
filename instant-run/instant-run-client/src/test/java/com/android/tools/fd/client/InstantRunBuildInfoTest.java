@@ -15,10 +15,6 @@
  */
 package com.android.tools.fd.client;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import com.android.annotations.NonNull;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
@@ -28,6 +24,8 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.List;
+
+import static org.junit.Assert.*;
 
 public class InstantRunBuildInfoTest {
 
@@ -41,6 +39,18 @@ public class InstantRunBuildInfoTest {
     public void testApiLevel() throws IOException {
         InstantRunBuildInfo info = getBuildInfo("instantrun", "build-info1.xml");
         assertEquals(23, info.getFeatureLevel());
+    }
+
+    @Test
+    public void testHasNoChanges() throws IOException {
+        InstantRunBuildInfo info = getBuildInfo("instantrun", "build-info-no-artifacts.xml");
+        assertFalse("If verifier is not empty, then there are changes that weren't captured in this build.", info.hasNoChanges());
+
+        info = getBuildInfo("instantrun", "build-info-res.xml");
+        assertFalse("If there is an artifact, then there are changes", info.hasNoChanges());
+
+        info = getBuildInfo("instantrun", "no-changes.xml");
+        assertTrue(info.hasNoChanges());
     }
 
     @Test
