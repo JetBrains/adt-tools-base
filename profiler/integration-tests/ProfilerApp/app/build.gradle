@@ -13,7 +13,7 @@ android {
 
         ndk {
             moduleName "profilermodule"
-            stl "stlport_shared"
+            stl "c++_shared"
         }
     }
     buildTypes {
