@@ -377,4 +377,9 @@ public final class FileUtils {
 
         return data;
     }
+
+    @NonNull
+    public static String computeClasspath(@NonNull Iterable<File> files) {
+        return Joiner.on(':').join(Iterables.transform(files, GET_ABSOLUTE_PATH));
+    }
 }
