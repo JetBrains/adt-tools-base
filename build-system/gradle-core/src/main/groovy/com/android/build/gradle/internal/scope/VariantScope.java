@@ -33,7 +33,6 @@ import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
-import com.android.build.gradle.tasks.JackTask;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
@@ -44,7 +43,6 @@ import org.gradle.api.DefaultTask;
 import org.gradle.api.Task;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.Sync;
-import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.JavaCompile;
 
 import java.io.File;
@@ -220,6 +218,9 @@ public interface VariantScope extends BaseScope {
     File getIncrementalDir(String name);
 
     @NonNull
+    File getJackEcjOptionsFile();
+
+    @NonNull
     File getJillPackagedLibrariesDir();
 
     @NonNull
@@ -360,19 +361,14 @@ public interface VariantScope extends BaseScope {
     AndroidTask<TransformTask> getMergeJavaResourcesTask();
 
     @Nullable
-    AndroidTask<? extends AbstractCompile> getJavaCompilerTask();
-
-    @Nullable
-    AndroidTask<JackTask> getJackTask();
-
-    void setJackTask(@Nullable AndroidTask<JackTask> jackTask);
+    AndroidTask<? extends Task> getJavaCompilerTask();
 
     @Nullable
     AndroidTask<? extends JavaCompile> getJavacTask();
 
     void setJavacTask(@Nullable AndroidTask<? extends JavaCompile> javacTask);
 
-    void setJavaCompilerTask(@NonNull AndroidTask<? extends AbstractCompile> javaCompileTask);
+    void setJavaCompilerTask(@NonNull AndroidTask<? extends Task> javaCompileTask);
 
     AndroidTask<Task> getCompileTask();
 

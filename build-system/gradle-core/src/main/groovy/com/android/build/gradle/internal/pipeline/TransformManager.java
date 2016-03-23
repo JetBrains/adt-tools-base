@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.pipeline;
 
 import static com.android.build.api.transform.QualifiedContent.DefaultContentType.CLASSES;
 import static com.android.build.api.transform.QualifiedContent.DefaultContentType.RESOURCES;
+import static com.android.build.gradle.internal.pipeline.ExtendedContentType.JACK;
 import static com.android.utils.StringHelper.capitalize;
 
 import com.android.annotations.NonNull;
@@ -30,6 +31,7 @@ import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.QualifiedContent.ContentType;
 import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.api.transform.Transform;
+import com.android.build.gradle.internal.transforms.JillTransform;
 import com.android.builder.core.ErrorReporter;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.SyncIssue;
@@ -53,8 +55,8 @@ import java.util.Set;
 /**
  * Manages the transforms for a variant.
  *
- * Th actual execution is handled by Gradle through the tasks.
- * Instead it's a mean to more easily configure a series of transforms that consume each other's
+ * <p>The actual execution is handled by Gradle through the tasks.
+ * Instead it's a means to more easily configure a series of transforms that consume each other's
  * inputs when several of these transform are optional.
  */
 public class TransformManager extends FilterableStreamCollection {
@@ -72,6 +74,7 @@ public class TransformManager extends FilterableStreamCollection {
             ExtendedContentType.NATIVE_LIBS);
     public static final Set<ContentType> CONTENT_DEX = ImmutableSet.<ContentType>of(
             ExtendedContentType.DEX);
+    public static final Set<ContentType> CONTENT_JACK = ImmutableSet.<ContentType>of(JACK);
     public static final Set<Scope> SCOPE_FULL_PROJECT = Sets.immutableEnumSet(
             Scope.PROJECT,
             Scope.PROJECT_LOCAL_DEPS,
@@ -123,20 +126,36 @@ public class TransformManager extends FilterableStreamCollection {
         streams.add(stream);
     }
 
+    /**
+     * Adds a Transform.
+     *
+     * <p>This makes the current transform consumes whatever Streams are currently available and
+     * creates new ones for the transform output.
+     *
+     * <p>This also creates a {@link TransformTask} to run the transform and wire it up with the
+     * dependencies of the consumed streams.
+     *
+     * @param taskFactory the task factory
+     * @param scope the current scope
+     * @param transform the transform to add
+     * @param <T> the type of the transform
+     * @return the AndroidTask for the given transform task or null if it cannot be created.
+     */
+    @Nullable
     public <T extends Transform> AndroidTask<TransformTask> addTransform(
             @NonNull TaskFactory taskFactory,
-            @NonNull BaseScope variantScope,
+            @NonNull BaseScope scope,
             @NonNull T transform) {
-        return addTransform(taskFactory, variantScope, transform, null /*callback*/);
+        return addTransform(taskFactory, scope, transform, null /*callback*/);
     }
 
     /**
      * Adds a Transform.
      *
-     * This makes the current transform consumes whatever Streams are currently available and
+     * <p>This makes the current transform consumes whatever Streams are currently available and
      * creates new ones for the transform output.
      *
-     * This also creates a {@link TransformTask} to run the transform and wire it up with the
+     * <p>his also creates a {@link TransformTask} to run the transform and wire it up with the
      * dependencies of the consumed streams.
      *
      * @param taskFactory the task factory
@@ -255,10 +274,10 @@ public class TransformManager extends FilterableStreamCollection {
     /**
      * Finds the stream the transform consumes, and return them.
      *
-     * This also removes them from the instance list. They will be replaced with the output
+     * <p>This also removes them from the instance list. They will be replaced with the output
      * stream(s) from the transform.
      *
-     * This returns an optional output stream.
+     * <p>This returns an optional output stream.
      *
      * @param transform the transform.
      * @param scope the scope the transform is applied to.
@@ -391,7 +410,8 @@ public class TransformManager extends FilterableStreamCollection {
 
         // check some scopes are not consumed.
         Set<Scope> scopes = transform.getScopes();
-        if (scopes.contains(Scope.PROVIDED_ONLY)) {
+        // Allow Jill transform to consume provided classes as the .jack files are needed.
+        if (scopes.contains(Scope.PROVIDED_ONLY) && !isJillRuntimeLibs(transform)) {
             errorReporter.handleSyncError(null, SyncIssue.TYPE_GENERIC,
                     String.format("PROVIDED_ONLY scope cannot be consumed by Transform '%1$s'",
                             transform.getName()));
@@ -422,5 +442,10 @@ public class TransformManager extends FilterableStreamCollection {
             }
         }
         return true;
+    }
+
+    private static boolean isJillRuntimeLibs(@NonNull Transform transform) {
+        return (transform instanceof JillTransform)
+                && ((JillTransform) transform).isForRuntimeLibs();
     }
 }

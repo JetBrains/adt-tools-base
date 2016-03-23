@@ -48,12 +48,12 @@ public class JackJava8Test {
 
     @Before
     public void setUp() throws IOException {
-        AssumeUtil.assumeBuildToolsAtLeast(24, 0, 0, 1);
         Assume.assumeTrue("Jack tool requires Java 7", JavaVersion.current().isJava7Compatible());
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 "android {\n"
-                        + "    compileSdkVersion \"android-N\"\n"
+                        + "    buildToolsVersion '24.0.0-rc2'\n"
+                        + "    compileSdkVersion 'android-N'\n"
                         + "    defaultConfig {\n"
                         + "        jackOptions {\n"
                         + "            enabled true\n"
@@ -108,6 +108,8 @@ public class JackJava8Test {
 
     @Test
     public void java8FeaturesSanityTest() throws IOException {
+        Assume.assumeTrue("Only implicitly upgrades with JDK 1.8",
+                JavaVersion.current().isJava8Compatible());
         project.execute("assembleDebug");
     }
 

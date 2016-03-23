@@ -230,7 +230,9 @@ public class JackProcessBuilder extends ProcessEnvBuilder<JackProcessBuilder> {
 
         builder.addArgs("-D", "jack.android.min-api-level=" + mMinSdkVersion);
 
-        builder.addArgs("@" + mEcjOptionFile.getAbsolutePath());
+        if (mEcjOptionFile != null) {
+            builder.addArgs("@" + mEcjOptionFile.getAbsolutePath());
+        }
 
         return builder.createJavaProcess();
     }

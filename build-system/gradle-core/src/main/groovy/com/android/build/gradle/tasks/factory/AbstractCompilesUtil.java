@@ -21,6 +21,7 @@ import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
 
 import org.gradle.api.JavaVersion;
+import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.compile.AbstractCompile;
 
 /**
@@ -34,6 +35,15 @@ public class AbstractCompilesUtil {
      */
     public static void configureLanguageLevel(
             AbstractCompile compileTask,
+            final CompileOptions compileOptions,
+            String compileSdkVersion,
+            boolean jackEnabled) {
+        setDefaultJavaVersion(compileOptions, compileSdkVersion, jackEnabled);
+        compileTask.setSourceCompatibility(compileOptions.getSourceCompatibility().toString());
+        compileTask.setTargetCompatibility(compileOptions.getTargetCompatibility().toString());
+    }
+
+    public static void setDefaultJavaVersion(
             final CompileOptions compileOptions,
             String compileSdkVersion,
             boolean jackEnabled) {
@@ -59,8 +69,8 @@ public class AbstractCompilesUtil {
 
         JavaVersion jdkVersion =
                 JavaVersion.toVersion(System.getProperty("java.specification.version"));
-        if (jdkVersion.compareTo(javaVersionToUse) < 0 && !jackEnabled) {
-            compileTask.getLogger().warn(
+        if (jdkVersion.compareTo(javaVersionToUse) < 0) {
+            Logging.getLogger(AbstractCompilesUtil.class).warn(
                     "Default language level for compileSdkVersion '{}' is " +
                             "{}, but the JDK used is {}, so the JDK language level will be used.",
                     compileSdkVersion,
@@ -70,8 +80,5 @@ public class AbstractCompilesUtil {
         }
 
         compileOptions.setDefaultJavaVersion(javaVersionToUse);
-
-        compileTask.setSourceCompatibility(compileOptions.getSourceCompatibility().toString());
-        compileTask.setTargetCompatibility(compileOptions.getTargetCompatibility().toString());
     }
 }
