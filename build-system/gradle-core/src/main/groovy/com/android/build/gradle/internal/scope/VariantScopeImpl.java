@@ -44,7 +44,6 @@ import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.BinaryFileProviderTask;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
-import com.android.build.gradle.tasks.JackTask;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.build.gradle.tasks.NdkCompile;
@@ -63,7 +62,6 @@ import org.gradle.api.DefaultTask;
 import org.gradle.api.Task;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.Sync;
-import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.JavaCompile;
 
 import java.io.File;
@@ -131,11 +129,9 @@ public class VariantScopeImpl implements VariantScope {
 
     /** @see BaseVariantData#javaCompilerTask */
     @Nullable
-    private AndroidTask<? extends AbstractCompile> javaCompilerTask;
+    private AndroidTask<? extends Task> javaCompilerTask;
     @Nullable
     private AndroidTask<? extends JavaCompile> javacTask;
-    @Nullable
-    private AndroidTask<JackTask> jackTask;
 
     // empty anchor compile task to set all compilations tasks as dependents.
     private AndroidTask<Task> compileTask;
@@ -623,6 +619,13 @@ public class VariantScopeImpl implements VariantScope {
                 DIR_BUNDLES + "/" + getVariantConfiguration().getDirName() + "/aidl");
     }
 
+    @NonNull
+    @Override
+    public File getJackEcjOptionsFile() {
+        return new File(globalScope.getIntermediatesDir(),
+                "jack/" + getDirName() + "/ecj-options.txt");
+    }
+
     @Override
     @NonNull
     public File getJillPackagedLibrariesDir() {
@@ -980,20 +983,8 @@ public class VariantScopeImpl implements VariantScope {
 
     @Override
     @Nullable
-    public AndroidTask<? extends AbstractCompile> getJavaCompilerTask() {
+    public AndroidTask<? extends Task> getJavaCompilerTask() {
         return javaCompilerTask;
-    }
-
-    @Override
-    @Nullable
-    public AndroidTask<JackTask> getJackTask() {
-        return jackTask;
-    }
-
-    @Override
-    public void setJackTask(
-            @Nullable AndroidTask<JackTask> jackTask) {
-        this.jackTask = jackTask;
     }
 
     @Override
@@ -1010,7 +1001,7 @@ public class VariantScopeImpl implements VariantScope {
 
     @Override
     public void setJavaCompilerTask(
-            @NonNull AndroidTask<? extends AbstractCompile> javaCompileTask) {
+            @NonNull AndroidTask<? extends Task> javaCompileTask) {
         this.javaCompilerTask = javaCompileTask;
     }
 

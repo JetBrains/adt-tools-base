@@ -37,7 +37,6 @@ import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.BinaryFileProviderTask;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
-import com.android.build.gradle.tasks.JackTask;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.build.gradle.tasks.NdkCompile;
@@ -53,24 +52,16 @@ import com.android.ide.common.res2.ResourceSet;
 import com.android.utils.StringHelper;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.file.ConfigurableFileTree;
-import org.gradle.api.file.DirectoryTree;
-import org.gradle.api.file.SourceDirectorySet;
-import org.gradle.api.internal.file.DefaultSourceDirectorySet;
-import org.gradle.api.internal.file.FileResolver;
-import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.Copy;
 import org.gradle.api.tasks.Sync;
 import org.gradle.api.tasks.bundling.Jar;
-import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.JavaCompile;
-import org.gradle.api.tasks.util.PatternSet;
 
 import android.databinding.tool.LayoutXmlProcessor;
 
@@ -138,9 +129,9 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     public NdkCompile ndkCompileTask;
 
     /** Can be JavaCompile or JackTask depending on user's settings. */
-    public AbstractCompile javaCompilerTask;
+    public Task javaCompilerTask;
     public JavaCompile javacTask;
-    public JackTask jackTask;
+    public Task jackTask;
     public Jar classesJarTask;
     // empty anchor compile task to set all compilations tasks as dependents.
     public Task compileTask;
@@ -340,11 +331,6 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
 
         for (File f : generatedSourceFolders) {
             javacTask.source(f);
-
-            // Jack task is not always created.
-            if (jackTask != null) {
-                jackTask.source(f);
-            }
         }
 
         addJavaSourceFoldersToModel(generatedSourceFolders);
@@ -355,11 +341,6 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
 
         for (File f : generatedSourceFolders) {
             javacTask.source(f);
-
-            // Jack task is not always created.
-            if (jackTask != null) {
-                jackTask.source(f);
-            }
         }
 
         addJavaSourceFoldersToModel(generatedSourceFolders);

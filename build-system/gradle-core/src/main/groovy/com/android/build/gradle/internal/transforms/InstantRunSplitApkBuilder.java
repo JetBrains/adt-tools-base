@@ -315,7 +315,7 @@ public class InstantRunSplitApkBuilder extends BaseTask {
                     .map(task, "dexFolders", new Callable<Set<File>>() {
                         @Override
                         public  Set<File> call() {
-                            if (config.getUseJack()) {
+                            if (config.getJackOptions().isEnabled()) {
                                 throw new IllegalStateException(
                                         "InstantRun does not support Jack compiler yet.");
                             }

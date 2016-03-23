@@ -23,6 +23,7 @@ import static java.io.File.separator;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.build.api.transform.Transform;
 import com.android.build.gradle.internal.ApiObjectFactory;
 import com.android.build.gradle.internal.BadPluginException;
 import com.android.build.gradle.internal.DependencyManager;
@@ -51,7 +52,7 @@ import com.android.build.gradle.internal.profile.RecordingBuildListener;
 import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.VariantFactory;
-import com.android.build.gradle.tasks.JillTask;
+import com.android.build.gradle.internal.transforms.JillTransform;
 import com.android.builder.Version;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.BuilderConstants;
@@ -424,17 +425,18 @@ public abstract class BasePlugin {
                     public void graphPopulated(TaskExecutionGraph taskGraph) {
                         for (Task task : taskGraph.getAllTasks()) {
                             if (task instanceof TransformTask) {
-                                if (((TransformTask) task).getTransform() instanceof DexTransform) {
+                                Transform transform = ((TransformTask) task).getTransform();
+                                if (transform instanceof DexTransform) {
                                     PreDexCache.getCache().load(
                                             new File(project.getRootProject().getBuildDir(),
                                                     FD_INTERMEDIATES + "/dex-cache/cache.xml"));
                                     break;
+                                } else if (transform instanceof JillTransform) {
+                                    JackConversionCache.getCache().load(
+                                            new File(project.getRootProject().getBuildDir(),
+                                                    FD_INTERMEDIATES + "/jack-cache/cache.xml"));
+                                    break;
                                 }
-                            } else if (task instanceof JillTask) {
-                                JackConversionCache.getCache().load(
-                                        new File(project.getRootProject().getBuildDir(),
-                                                FD_INTERMEDIATES + "/jack-cache/cache.xml"));
-                                break;
                             }
                         }
                     }

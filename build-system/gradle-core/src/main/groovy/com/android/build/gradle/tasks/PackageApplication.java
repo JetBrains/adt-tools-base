@@ -427,7 +427,7 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
 
             if (config.isMinifyEnabled()
                     && config.getBuildType().isShrinkResources()
-                    && !config.getUseJack()) {
+                    && !config.getJackOptions().isEnabled()) {
                 ConventionMappingHelper.map(packageApp, "resourceFile", new Callable<File>() {
                     @Override
                     public File call() {
@@ -446,9 +446,6 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
             ConventionMappingHelper.map(packageApp, "dexFolders", new Callable<Set<File>>() {
                 @Override
                 public  Set<File> call() {
-                    if (config.getUseJack()) {
-                        return ImmutableSet.of(variantScope.getJackDestinationDir());
-                    }
                     return variantScope.getTransformManager()
                             .getPipelineOutput(sDexFilter).keySet();
                 }

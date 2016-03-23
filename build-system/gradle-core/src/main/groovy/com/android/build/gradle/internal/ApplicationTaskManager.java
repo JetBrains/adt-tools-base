@@ -20,10 +20,12 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.gradle.AndroidConfig;
+import com.android.build.gradle.internal.dsl.CoreJackOptions;
 import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.pipeline.TransformStream;
+import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.transforms.InstantRunSplitApkBuilder;
@@ -213,12 +215,17 @@ public class ApplicationTaskManager extends TaskManager {
                 new Recorder.Block<Void>() {
                     @Override
                     public Void call() {
+                        CoreJackOptions jackOptions =
+                                variantData.getVariantConfiguration().getJackOptions();
                         AndroidTask<? extends JavaCompile> javacTask =
                                 createJavacTask(tasks, variantScope);
 
-                        if (variantData.getVariantConfiguration().getUseJack()) {
-                            createJackTask(tasks, variantScope);
+                        if (jackOptions.isEnabled()) {
+                            AndroidTask<TransformTask> jackTask =
+                                    createJackTask(tasks, variantScope, true /*compileJavaSource*/);
+                            setJavaCompilerTask(jackTask, tasks, variantScope);
                         } else {
+                            addJavacClassesStream(variantScope);
                             setJavaCompilerTask(javacTask, tasks, variantScope);
                             createJarTasks(tasks, variantScope);
                             createPostCompilationTasks(tasks, variantScope);

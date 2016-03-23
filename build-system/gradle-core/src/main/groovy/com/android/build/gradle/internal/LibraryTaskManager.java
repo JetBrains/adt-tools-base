@@ -264,6 +264,7 @@ public class LibraryTaskManager extends TaskManager {
                     public Void call() throws Exception {
                         AndroidTask<? extends JavaCompile> javacTask =
                                 createJavacTask(tasks, variantScope);
+                        addJavacClassesStream(variantScope);
                         TaskManager.setJavaCompilerTask(javacTask, tasks, variantScope);
                         return null;
                     }

@@ -35,7 +35,6 @@ import com.google.common.collect.Lists;
 
 import org.gradle.api.Task;
 import org.gradle.api.tasks.Sync;
-import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.JavaCompile;
 
 import java.io.File;
@@ -188,7 +187,7 @@ abstract class BaseVariantImpl implements BaseVariant {
 
     @NonNull
     @Override
-    public AbstractCompile getJavaCompiler() {
+    public Task getJavaCompiler() {
         return getVariantData().javaCompilerTask;
     }
 
