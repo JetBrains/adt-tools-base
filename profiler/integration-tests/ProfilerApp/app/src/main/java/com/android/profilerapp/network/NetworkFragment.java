@@ -86,12 +86,23 @@ public class NetworkFragment extends Fragment {
 
     private Thread getStatisticThread() {
         return new Thread(new Runnable() {
+
+            private Statistics statistics;
+            private long myStartSendBytes;
+            private long myStartReceiveBytes;
+
+            private void initialize() {
+                statistics = new Statistics();
+                myStartSendBytes = TrafficStats.getUidTxBytes(myUid);
+                myStartReceiveBytes = TrafficStats.getUidRxBytes(myUid);
+            }
+
             @Override
             public void run() {
+                initialize();
                 while (!Thread.currentThread().isInterrupted()) {
-                    Statistics statistics = new Statistics();
-                    statistics.sendBytes = TrafficStats.getUidTxBytes(myUid);
-                    statistics.receiveBytes = TrafficStats.getUidRxBytes(myUid);
+                    statistics.sendBytes = TrafficStats.getUidTxBytes(myUid) - myStartSendBytes;
+                    statistics.receiveBytes = TrafficStats.getUidRxBytes(myUid) - myStartReceiveBytes;
                     NetworkInfo networkInfo = myConnectivityManager.getActiveNetworkInfo();
                     statistics.networkName = networkInfo != null && networkInfo.getSubtype() != TelephonyManager.NETWORK_TYPE_UNKNOWN
                             ? networkInfo.getSubtypeName() : networkInfo.getTypeName();
@@ -119,7 +130,7 @@ public class NetworkFragment extends Fragment {
                         statistics.sendBytes, statistics.receiveBytes);
                 bytesView.setText(bytesText);
                 TextView networkNameView = (TextView) myFragmentView.findViewById(R.id.networkType);
-                networkNameView.setText(statistics.networkName);
+                networkNameView.setText("Network type: " + statistics.networkName);
                 TextView radioStatusView = (TextView) myFragmentView.findViewById(R.id.radioStatus);
                 radioStatusView.setText(statistics.radioStatus);
                 TextView openConnectionsView = (TextView) myFragmentView.findViewById(R.id.openConnections);

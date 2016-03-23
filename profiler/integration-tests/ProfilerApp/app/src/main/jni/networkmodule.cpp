@@ -16,6 +16,7 @@
 
 #include <fstream>
 #include <jni.h>
+#include <regex>
 #include <string>
 
 using namespace std;
@@ -31,7 +32,9 @@ const char* CONNECTION_FILES[] = {
     "/proc/net/udp6"
 };
 const int CONNECTION_FILE_COUNT = sizeof(CONNECTION_FILES) / sizeof(const char*);;
-const int UID_TOKEN_INDEX = 10;
+const int UID_TOKEN_INDEX = 7;
+const basic_regex<char> REGEX_CONNECTION_LISTENING_ALL_INTERFACES =
+        regex("^[ ]*[0-9]+:[ ]+0+:[0-9A-Fa-f]{4}[ ]+0+:[0-9A-Fa-f]{4}[ ]+0A.+$");
 
 /**
  * Returns the number of connections open that belongs to a specific app.
@@ -50,11 +53,17 @@ jint Java_com_android_profilerapp_network_NetworkFragment_getConnectionCount(JNI
 
             string line;
             while(getline(inStream, line)) {
+                // Filters out the connection listening to all local interfaces, input line should look like
+                // " 0: 00000000000000000000000000000000:13B4 00000000000000000000000000000000:0000 0A ...".
+                if (regex_match(line, REGEX_CONNECTION_LISTENING_ALL_INTERFACES)) {
+                    continue;
+                }
+
                 int prev = 0;
                 int pos;
                 int tokenIndex = -1;
                 while ((pos = line.find_first_of(" \t\r\n\f", prev)) != std::string::npos) {
-                    if (++tokenIndex == UID_TOKEN_INDEX) {
+                    if (pos != prev && ++tokenIndex == UID_TOKEN_INDEX) {
                         string token = line.substr(prev, pos - prev);
                         if (!token.compare(uidChars)) {
                             ++connectionCount;
