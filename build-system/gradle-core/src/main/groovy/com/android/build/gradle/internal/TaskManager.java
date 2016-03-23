@@ -121,6 +121,7 @@ import com.android.build.gradle.tasks.CompatibleScreensManifest;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.GenerateSplitAbiRes;
+import com.android.build.gradle.tasks.JackPreDexTransform;
 import com.android.build.gradle.tasks.Lint;
 import com.android.build.gradle.tasks.MergeManifests;
 import com.android.build.gradle.tasks.MergeResources;
@@ -2353,6 +2354,14 @@ public abstract class TaskManager {
                 scope.getVariantConfiguration().getJackOptions().isJackInProcess(),
                 false);
         scope.getTransformManager().addTransform(tasks, scope, jillRuntimeLibTransform);
+
+        // ----- Create PreDex tasks -----
+        JackPreDexTransform preDexPackagedTransform = new JackPreDexTransform(
+                androidBuilder,
+                globalScope.getExtension().getDexOptions().getJavaMaxHeapSize(),
+                scope.getVariantConfiguration().getJackOptions().isJackInProcess());
+        scope.getTransformManager().addTransform(tasks, scope, preDexPackagedTransform);
+
 
         // ----- Create Jack Task -----
         JackTransform jackTransform = new JackTransform(scope, isDebugLog(), compileJavaSources);

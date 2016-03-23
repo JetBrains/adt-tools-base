@@ -16,6 +16,9 @@
 
 package com.android.builder.core;
 
+import static com.android.builder.core.JackProcessOptions.JACK_MIN_REV;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.ide.common.process.JavaProcessInfo;
@@ -24,128 +27,23 @@ import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.repository.Revision;
 import com.android.sdklib.BuildToolInfo;
-import com.google.common.collect.Lists;
+import com.android.utils.FileUtils;
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
 
 import java.io.File;
-import java.util.Collection;
-import java.util.List;
+import java.io.IOException;
 
 /**
  * A builder to create a Jack-specific ProcessInfoBuilder
  */
 public class JackProcessBuilder extends ProcessEnvBuilder<JackProcessBuilder> {
 
-    static final Revision JACK_MIN_REV = new Revision(24, 0, 0);
-
-    private boolean mDebugLog = false;
-    private boolean mVerbose = false;
-    private String mClasspath = null;
-    private File mDexOutputFolder = null;
-    private File mJackOutputFile = null;
-    private List<File> mImportFiles = null;
-    private List<File> mProguardFiles = null;
-    private String mJavaMaxHeapSize = null;
-    private File mMappingFile = null;
-    private boolean mMultiDex = false;
-    private int mMinSdkVersion = 21;
-    private File mEcjOptionFile = null;
-    private Collection<File> mJarJarRuleFiles = null;
-    private String mSourceCompatibility = null;
-    private File mIncrementalDir = null;
-
-    public JackProcessBuilder() {
-    }
-
     @NonNull
-    public JackProcessBuilder setDebugLog(boolean debugLog) {
-        mDebugLog = debugLog;
-        return this;
-    }
+    private final JackProcessOptions options;
 
-    @NonNull
-    public JackProcessBuilder setVerbose(boolean verbose) {
-        mVerbose = verbose;
-        return this;
-    }
-
-    @NonNull
-    public JackProcessBuilder setJavaMaxHeapSize(String javaMaxHeapSize) {
-        mJavaMaxHeapSize = javaMaxHeapSize;
-        return this;
-    }
-
-    @NonNull
-    public JackProcessBuilder setClasspath(String classpath) {
-        mClasspath = classpath;
-        return this;
-    }
-
-    @NonNull
-    public JackProcessBuilder setDexOutputFolder(File dexOutputFolder) {
-        mDexOutputFolder = dexOutputFolder;
-        return this;
-    }
-
-    @NonNull
-    public JackProcessBuilder setJackOutputFile(File jackOutputFile) {
-        mJackOutputFile = jackOutputFile;
-        return this;
-    }
-
-    @NonNull
-    public JackProcessBuilder addImportFiles(@NonNull Collection<File> importFiles) {
-        if (mImportFiles == null) {
-            mImportFiles = Lists.newArrayListWithExpectedSize(importFiles.size());
-        }
-
-        mImportFiles.addAll(importFiles);
-        return this;
-    }
-
-    @NonNull
-    public JackProcessBuilder addProguardFiles(@NonNull Collection<File> proguardFiles) {
-        if (mProguardFiles == null) {
-            mProguardFiles = Lists.newArrayListWithExpectedSize(proguardFiles.size());
-        }
-
-        mProguardFiles.addAll(proguardFiles);
-        return this;
-    }
-
-    @NonNull
-    public JackProcessBuilder setMappingFile(File mappingFile) {
-        mMappingFile = mappingFile;
-        return this;
-    }
-
-    @NonNull
-    public JackProcessBuilder setMultiDex(boolean multiDex) {
-        mMultiDex = multiDex;
-        return this;
-    }
-
-    @NonNull
-    public JackProcessBuilder setMinSdkVersion(int minSdkVersion) {
-        mMinSdkVersion = minSdkVersion;
-        return this;
-    }
-
-    @NonNull
-    public JackProcessBuilder setEcjOptionFile(File ecjOptionFile) {
-        mEcjOptionFile = ecjOptionFile;
-        return this;
-    }
-
-    @NonNull
-    public JackProcessBuilder setJarJarRuleFiles(@NonNull Collection<File> jarJarRuleFiles) {
-        mJarJarRuleFiles = jarJarRuleFiles;
-        return this;
-    }
-
-    @NonNull
-    public JackProcessBuilder setSourceCompatibility(String sourceCompatibility) {
-        mSourceCompatibility = sourceCompatibility;
-        return this;
+    public JackProcessBuilder(@NonNull JackProcessOptions options) {
+        this.options = options;
     }
 
     @NonNull
@@ -172,68 +70,96 @@ public class JackProcessBuilder extends ProcessEnvBuilder<JackProcessBuilder> {
         builder.setClasspath(jackJar);
         builder.setMain("com.android.jack.Main");
 
-        if (mJavaMaxHeapSize != null) {
-            builder.addJvmArg("-Xmx" + mJavaMaxHeapSize);
+        if (options.getJavaMaxHeapSize() != null) {
+            builder.addJvmArg("-Xmx" + options.getJavaMaxHeapSize());
         } else {
             builder.addJvmArg("-Xmx1024M");
         }
 
-        if (mDebugLog) {
+        if (options.isDebugLog()) {
             builder.addArgs("--verbose", "debug");
-        } else if (mVerbose) {
+        } else if (options.isVerbose()) {
             builder.addArgs("--verbose", "info");
         }
 
-        builder.addArgs("--classpath", mClasspath);
-
-        if (mImportFiles != null) {
-            for (File lib : mImportFiles) {
-                builder.addArgs("--import", lib.getAbsolutePath());
-            }
+        if (!options.getClasspaths().isEmpty()) {
+            builder.addArgs("--classpath", FileUtils.computeClasspath(options.getClasspaths()));
         }
 
-        builder.addArgs("--output-dex", mDexOutputFolder.getAbsolutePath());
+        for (File lib : options.getImportFiles()) {
+            builder.addArgs("--import", lib.getAbsolutePath());
+        }
 
-        builder.addArgs("--output-jack", mJackOutputFile.getAbsolutePath());
+        if (options.getDexOutputDirectory() != null) {
+            builder.addArgs("--output-dex", options.getDexOutputDirectory().getAbsolutePath());
+        }
+
+        if (options.getOutputFile() != null) {
+            builder.addArgs("--output-jack", options.getOutputFile().getAbsolutePath());
+        }
 
         builder.addArgs("-D", "jack.import.resource.policy=keep-first");
 
-        if (mProguardFiles != null && !mProguardFiles.isEmpty()) {
-            for (File file : mProguardFiles) {
-                builder.addArgs("--config-proguard", file.getAbsolutePath());
-            }
+        for (File file : options.getProguardFiles()) {
+            builder.addArgs("--config-proguard", file.getAbsolutePath());
         }
 
-        if (mMappingFile != null) {
+        if (options.getMappingFile() != null) {
             builder.addArgs("-D", "jack.obfuscation.mapping.dump=true");
-            builder.addArgs("-D", "jack.obfuscation.mapping.dump.file=" + mMappingFile.getAbsolutePath());
+            builder.addArgs("-D", "jack.obfuscation.mapping.dump.file=" + options.getMappingFile().getAbsolutePath());
         }
 
-        if (mMultiDex) {
+        if (options.isMultiDex()) {
             builder.addArgs("--multi-dex");
-            if (mMinSdkVersion < 21) {
+            if (options.getMinSdkVersion() < 21) {
                 builder.addArgs("legacy");
             } else {
                 builder.addArgs("native");
             }
         }
 
-        if (mJarJarRuleFiles != null) {
-            for (File jarjarRuleFile : mJarJarRuleFiles) {
-                builder.addArgs("--config-jarjar", jarjarRuleFile.getAbsolutePath());
+        for (File jarjarRuleFile : options.getJarJarRuleFiles()) {
+            builder.addArgs("--config-jarjar", jarjarRuleFile.getAbsolutePath());
+        }
+
+        if (options.getSourceCompatibility() != null) {
+            builder.addArgs("-D", "jack.java.source.version=" + options.getSourceCompatibility());
+        }
+
+        if (options.getMinSdkVersion() > 0) {
+            builder.addArgs("-D", "jack.android.min-api-level=" + options.getMinSdkVersion());
+        }
+
+        if (!options.getInputFiles().isEmpty()) {
+            if (options.getEcjOptionFile() != null) {
+                try {
+                    createEcjOptionFile();
+                } catch (IOException e) {
+                    throw new ProcessException(
+                            "Unable to create " + options.getEcjOptionFile() + ".");
+                }
+                builder.addArgs("@" + options.getEcjOptionFile().getAbsolutePath());
+            } else {
+                for (File file : options.getInputFiles()) {
+                    builder.addArgs(file.getAbsolutePath());
+                }
             }
-        }
-
-        if (mSourceCompatibility != null) {
-            builder.addArgs("-D", "jack.java.source.version=" + mSourceCompatibility);
-        }
-
-        builder.addArgs("-D", "jack.android.min-api-level=" + mMinSdkVersion);
-
-        if (mEcjOptionFile != null) {
-            builder.addArgs("@" + mEcjOptionFile.getAbsolutePath());
         }
 
         return builder.createJavaProcess();
     }
+
+    private void createEcjOptionFile() throws IOException {
+        checkNotNull(options.getEcjOptionFile());
+
+        StringBuilder sb = new StringBuilder();
+        for (File sourceFile : options.getInputFiles()) {
+            sb.append('\"').append(sourceFile.getAbsolutePath()).append('\"').append("\n");
+        }
+
+        FileUtils.mkdirs(options.getEcjOptionFile().getParentFile());
+
+        Files.write(sb.toString(), options.getEcjOptionFile(), Charsets.UTF_8);
+    }
+
 }

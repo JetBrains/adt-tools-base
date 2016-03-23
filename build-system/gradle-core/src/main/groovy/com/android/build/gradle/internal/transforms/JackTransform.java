@@ -20,15 +20,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
-import com.android.build.api.transform.JarInput;
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.SecondaryFile;
 import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
-import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformInvocation;
 import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.internal.CompileOptions;
@@ -39,7 +35,7 @@ import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.tasks.factory.AbstractCompilesUtil;
 import com.android.builder.core.AndroidBuilder;
-import com.android.ide.common.process.LoggedProcessOutputHandler;
+import com.android.builder.core.JackProcessOptions;
 import com.android.ide.common.process.ProcessException;
 import com.android.jack.api.ConfigNotSupportedException;
 import com.android.jack.api.v01.CompilationException;
@@ -48,14 +44,10 @@ import com.android.jack.api.v01.UnrecoverableException;
 import com.android.repository.Revision;
 import com.android.sdklib.BuildToolInfo;
 import com.android.utils.FileUtils;
-import com.google.common.base.Charsets;
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.google.common.io.Files;
 
 import org.gradle.api.Project;
 import org.gradle.api.file.ConfigurableFileTree;
@@ -99,27 +91,9 @@ public class JackTransform extends Transform {
 
     private AndroidBuilder androidBuilder;
 
-    private boolean isDebugLog;
+    private JackProcessOptions options;
 
-    private Collection<File> proguardFiles;
-    private Collection<File> jarJarRuleFiles;
-
-    private File ecjOptionsFile;
-    private File outputJackFileForTestCompilation;
-    private File javaResourcesFolder;
-
-    private File mappingFile;
-
-    private boolean multiDexEnabled;
-
-    private int minSdkVersion;
-
-    private String javaMaxHeapSize;
-
-    private File incrementalDir;
     private boolean jackInProcess;
-
-    private String sourceCompatibility;
 
     private final List<ConfigurableFileTree> sources = Lists.newArrayList();
 
@@ -133,12 +107,10 @@ public class JackTransform extends Transform {
     @Override
     public Collection<SecondaryFile> getSecondaryFiles() {
         ImmutableList.Builder<SecondaryFile> builder = ImmutableList.builder();
-        if (proguardFiles != null) {
-            for (File file : proguardFiles) {
-                builder.add(new SecondaryFile(file, false));
-            }
+        for (File file : options.getProguardFiles()) {
+            builder.add(new SecondaryFile(file, false));
         }
-        for (File file : jarJarRuleFiles) {
+        for (File file : options.getJarJarRuleFiles()) {
             builder.add(new SecondaryFile(file, false));
         }
         checkNotNull(androidBuilder.getTargetInfo());
@@ -156,9 +128,11 @@ public class JackTransform extends Transform {
     @Override
     public Collection<File> getSecondaryFileOutputs() {
         ImmutableList.Builder<File> builder = ImmutableList.builder();
-        builder.add(outputJackFileForTestCompilation);
-        if (mappingFile != null) {
-            builder.add(mappingFile);
+        if (options.getOutputFile() != null) {
+            builder.add(options.getOutputFile());
+        }
+        if (options.getMappingFile() != null) {
+            builder.add(options.getMappingFile());
         }
         return builder.build();
     }
@@ -167,12 +141,12 @@ public class JackTransform extends Transform {
     @Override
     public Map<String, Object> getParameterInputs() {
         Map<String, Object> params = Maps.newHashMap();
-        params.put("javaResourcesFolder", javaResourcesFolder);
-        params.put("isDebugLog", isDebugLog);
-        params.put("multiDexEnabled", multiDexEnabled);
-        params.put("minSdkVersion", minSdkVersion);
-        params.put("javaMaxHeapSize", javaMaxHeapSize);
-        params.put("sourceCompatibility", sourceCompatibility);
+        params.put("javaResourcesFolder", options.getResourceDirectories());
+        params.put("isDebugLog", options.isDebugLog());
+        params.put("multiDexEnabled", options.isMultiDex());
+        params.put("minSdkVersion", options.getMinSdkVersion());
+        params.put("javaMaxHeapSize", options.getJavaMaxHeapSize());
+        params.put("sourceCompatibility", options.getSourceCompatibility());
         params.put("buildToolsRev",
                 androidBuilder.getTargetInfo().getBuildTools().getRevision().toString());
         return params;
@@ -236,84 +210,19 @@ public class JackTransform extends Transform {
 
         TransformOutputProvider outputProvider = transformInvocation.getOutputProvider();
         checkNotNull(outputProvider);
-        final File outDirectory = outputProvider.getContentLocation("main",
+        final File outDirectory = outputProvider.getContentLocation(
+                "main",
                 getOutputTypes(),
                 getScopes(),
                 Format.DIRECTORY);
 
-        FileUtils.mkdirs(outDirectory);
-        FileUtils.mkdirs(outputJackFileForTestCompilation.getParentFile());
+        options.setDexOutputDirectory(outDirectory);
+        options.setClasspaths(
+                TransformInputUtil.getAllFiles(transformInvocation.getReferencedInputs()));
+        options.setImportFiles(TransformInputUtil.getAllFiles(transformInvocation.getInputs()));
+        options.setInputFiles(getSourceFiles());
 
-        if (jackInProcess) {
-            androidBuilder.convertByteCodeUsingJackApis(
-                    outDirectory,
-                    outputJackFileForTestCompilation,
-                    getAllInputFiles(transformInvocation.getReferencedInputs()),
-                    getAllInputFiles(transformInvocation.getInputs()),
-                    getSourceFiles(),
-                    proguardFiles,
-                    mappingFile,
-                    jarJarRuleFiles,
-                    incrementalDir,
-                    javaResourcesFolder,
-                    sourceCompatibility,
-                    multiDexEnabled,
-                    minSdkVersion);
-        } else {
-            // no incremental support through command line so far.
-            androidBuilder.convertByteCodeWithJack(
-                    outDirectory,
-                    outputJackFileForTestCompilation,
-                    computeClasspath(getAllInputFiles(transformInvocation.getReferencedInputs())),
-                    getAllInputFiles(transformInvocation.getInputs()),
-                    computeEcjOptionFile(),
-                    proguardFiles,
-                    mappingFile,
-                    jarJarRuleFiles,
-                    sourceCompatibility,
-                    multiDexEnabled,
-                    minSdkVersion,
-                    isDebugLog,
-                    javaMaxHeapSize,
-                    new LoggedProcessOutputHandler(androidBuilder.getLogger()));
-        }
-    }
-
-    private static List<File> getAllInputFiles(Collection<TransformInput> transformInputs) {
-        List<File> inputFiles = Lists.newArrayList();
-        for (TransformInput input : transformInputs) {
-            for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
-                inputFiles.add(directoryInput.getFile());
-            }
-            for (JarInput jarInput : input.getJarInputs()) {
-                inputFiles.add(jarInput.getFile());
-            }
-        }
-        return inputFiles;
-    }
-
-    @Nullable
-    private File computeEcjOptionFile() throws IOException {
-        if (getSourceFiles().isEmpty()) {
-            return null;
-        }
-
-        FileUtils.mkdirs(ecjOptionsFile.getParentFile());
-
-        StringBuilder sb = new StringBuilder();
-
-        for (File sourceFile : getSourceFiles()) {
-            sb.append('\"').append(sourceFile.getAbsolutePath()).append('\"').append("\n");
-        }
-
-        Files.write(sb.toString(), ecjOptionsFile, Charsets.UTF_8);
-
-        return ecjOptionsFile;
-    }
-
-    private static String computeClasspath(Iterable<File> files) {
-        return Joiner.on(':').join(
-                Iterables.transform(files, FileUtils.GET_ABSOLUTE_PATH));
+        androidBuilder.convertByteCodeUsingJack(options, jackInProcess);
     }
 
     private Collection<File> getSourceFiles() {
@@ -325,7 +234,7 @@ public class JackTransform extends Transform {
     }
 
     public File getMappingFile() {
-        return mappingFile;
+        return options.getMappingFile();
     }
 
     public JackTransform(
@@ -333,11 +242,12 @@ public class JackTransform extends Transform {
             final boolean isDebugLog,
             final boolean compileJavaSources) {
 
-        this.isDebugLog = isDebugLog;
+        options = new JackProcessOptions();
+
+        options.setDebugLog(isDebugLog);
         GlobalScope globalScope = scope.getGlobalScope();
 
         androidBuilder = globalScope.getAndroidBuilder();
-        javaMaxHeapSize = globalScope.getExtension().getDexOptions().getJavaMaxHeapSize();
 
         Project project = globalScope.getProject();
         if (compileJavaSources) {
@@ -350,15 +260,15 @@ public class JackTransform extends Transform {
             }
         }
         final GradleVariantConfiguration config = scope.getVariantData().getVariantConfiguration();
-        multiDexEnabled = config.isMultiDexEnabled();
-        minSdkVersion = config.getMinSdkVersion().getApiLevel();
-        incrementalDir = scope.getIncrementalDir(getName());
+        options.setJavaMaxHeapSize(globalScope.getExtension().getDexOptions().getJavaMaxHeapSize());
+        options.setMultiDex(config.isMultiDexEnabled());
+        options.setMinSdkVersion(config.getMinSdkVersion().getApiLevel());
+        options.setIncrementalDir(scope.getIncrementalDir(getName()));
+        options.setOutputFile(scope.getJackClassesZip());
+        options.setResourceDirectories(ImmutableList.of(scope.getJavaResourcesDestinationDir()));
+        options.setEcjOptionFile(scope.getJackEcjOptionsFile());
+
         jackInProcess = config.getJackOptions().isJackInProcess();
-
-        outputJackFileForTestCompilation = scope.getJackClassesZip();
-        ecjOptionsFile = scope.getJackEcjOptionsFile();
-
-        javaResourcesFolder = scope.getJavaResourcesDestinationDir();
 
         if (config.isMinifyEnabled()) {
             // since all the output use the same resources, we can use the first output
@@ -381,21 +291,21 @@ public class JackTransform extends Transform {
                         .getProcessAndroidResourcesProguardOutputFile();
                 proguardFiles.add(proguardResFile);
             }
-            this.proguardFiles = proguardFiles;
-            mappingFile = new File(scope.getProguardOutputFolder(), "mapping.txt");
+            options.setProguardFiles(proguardFiles);
+            options.setMappingFile(new File(scope.getProguardOutputFolder(), "mapping.txt"));
         }
 
-        jarJarRuleFiles = Lists.newArrayListWithCapacity(
-                config.getJarJarRuleFiles().size());
-        for (File file: config.getJarJarRuleFiles()) {
+        ImmutableList.Builder<File> jarJarRuleFiles = ImmutableList.builder();
+        for (File file : config.getJarJarRuleFiles()) {
             jarJarRuleFiles.add(project.file(file));
         }
+        options.setJarJarRuleFiles(jarJarRuleFiles.build());
 
         CompileOptions compileOptions = scope.getGlobalScope().getExtension().getCompileOptions();
         AbstractCompilesUtil.setDefaultJavaVersion(
                 compileOptions,
                 scope.getGlobalScope().getExtension().getCompileSdkVersion(),
                 true /*jackEnabled*/);
-        sourceCompatibility = compileOptions.getSourceCompatibility().toString();
+        options.setSourceCompatibility(compileOptions.getSourceCompatibility().toString());
     }
 }
