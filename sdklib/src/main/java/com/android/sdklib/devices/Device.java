@@ -307,10 +307,7 @@ public final class Device {
             for (State s : d.getAllStates()) {
                 mState.add(s.deepCopy());
             }
-            mSoftware.addAll(d.getAllSoftware());
-            mState.addAll(d.getAllStates());
             mMeta = d.getMeta();
-            mDefaultState = d.getDefaultState();
         }
 
         public void setName(@NonNull String name) {
