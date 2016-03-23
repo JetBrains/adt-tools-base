@@ -22,6 +22,7 @@ import static com.android.build.gradle.integration.shrinker.ShrinkerTestUtils.ch
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -36,6 +37,11 @@ public class IoScheduleShrinkerTest {
     public GradleTestProject project = GradleTestProject.builder()
             .fromExternalProject("iosched")
             .create();
+
+    @Before
+    public void skipOnJack() throws Exception {
+        Assume.assumeFalse(GradleTestProject.USE_JACK);
+    }
 
     @Before
     public void enableShrinker() throws Exception {

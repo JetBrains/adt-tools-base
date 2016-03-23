@@ -27,6 +27,7 @@ import com.android.build.gradle.integration.common.truth.ApkSubject;
 import com.android.ide.common.process.ProcessException;
 import com.google.common.base.Joiner;
 
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -78,6 +79,11 @@ public class DataBindingTest {
     public final GradleTestProject project;
 
     private String buildOutput;
+
+    @Before
+    public void skipOnJack() throws Exception {
+        Assume.assumeFalse(GradleTestProject.USE_JACK);
+    }
 
     @Before
     public void setUp() {

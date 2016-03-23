@@ -23,6 +23,7 @@ import com.android.utils.FileUtils
 import com.google.common.io.Files
 import groovy.transform.CompileStatic
 import org.gradle.api.JavaVersion
+import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -142,6 +143,8 @@ class MultiDexTest {
 
     @Test
     public void "check additional flags"() throws Exception {
+        Assume.assumeFalse("additionalParameters not supported by Jack", GradleTestProject.USE_JACK)
+
         FileUtils.deleteFolder(project.file("src/main/java/com/android/tests/basic/manymethods"))
 
         project.buildFile << "\nandroid.dexOptions.additionalParameters = ['--minimal-main-dex']\n"
