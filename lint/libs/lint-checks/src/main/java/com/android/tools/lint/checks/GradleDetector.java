@@ -265,6 +265,8 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
 
     /** Group ID for GMS */
     public static final String GMS_GROUP_ID = "com.google.android.gms";
+    public static final String GOOGLE_SUPPORT_GROUP_ID = "com.google.android.support";
+    public static final String ANDROID_WEAR_GROUP_ID = "com.google.android.support";
 
     private int mMinSdkVersion;
     private int mCompileSdkVersion;
@@ -831,7 +833,9 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                             + "compileSdkVersion < 21 is not necessary");
             }
             return;
-        } else if (GMS_GROUP_ID.equals(dependency.getGroupId())
+        } else if ((GMS_GROUP_ID.equals(dependency.getGroupId())
+                || GOOGLE_SUPPORT_GROUP_ID.equals(dependency.getGroupId())
+                || ANDROID_WEAR_GROUP_ID.equals(dependency.getGroupId()))
                 && dependency.getArtifactId() != null) {
 
             // 5.2.08 is not supported; special case and warn about this
