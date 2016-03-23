@@ -127,6 +127,13 @@ public class LayoutLibrary {
         return mClassLoader;
     }
 
+  /**
+   * Returns a {@link LayoutLibrary} instance using the given {@link Bridge} and {@link ClassLoader}
+   */
+    public static LayoutLibrary load(Bridge bridge, ClassLoader classLoader) {
+        return new LayoutLibrary(bridge, null, classLoader, LoadStatus.LOADED, null);
+    }
+
     /**
      * Loads the layoutlib.jar file located at the given path and returns a {@link LayoutLibrary}
      * object representing the result.
