@@ -47,16 +47,19 @@ public class NoChangesVerifierTransform extends Transform {
     private final Set<Scope> mergeScopes;
     @NonNull
     private final InstantRunVerifierStatus failureStatus;
+    private final boolean abortBuild;
 
     public NoChangesVerifierTransform(
             @NonNull VariantScope variantScope,
             @NonNull Set<ContentType> inputTypes,
             @NonNull Set<Scope> mergeScopes,
-            @NonNull InstantRunVerifierStatus failureStatus) {
+            @NonNull InstantRunVerifierStatus failureStatus,
+            boolean abortBuild) {
         this.variantScope = variantScope;
         this.inputTypes = inputTypes;
         this.mergeScopes = mergeScopes;
         this.failureStatus = failureStatus;
+        this.abortBuild = abortBuild;
     }
 
     @NonNull
@@ -96,6 +99,9 @@ public class NoChangesVerifierTransform extends Transform {
         // treated as Java resources in the plugin)
         if (hasChangedInputs(transformInvocation.getReferencedInputs())) {
             variantScope.getInstantRunBuildContext().setVerifierResult(failureStatus);
+            if (abortBuild) {
+                variantScope.getInstantRunBuildContext().abort();
+            }
         }
     }
 
