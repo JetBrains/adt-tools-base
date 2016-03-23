@@ -204,7 +204,7 @@ public class RegistrationDetector extends LayoutDetector implements JavaPsiScann
         String message = String.format("`%1$s` is %2$s but is registered "
                         + "in the manifest as %3$s", className, describeTag(rightTag),
                 describeTag(wrongTag));
-        context.report(ISSUE, location, message);
+        context.report(ISSUE, node, location, message);
     }
 
     private static String describeTag(@NonNull String tag) {
@@ -258,7 +258,7 @@ public class RegistrationDetector extends LayoutDetector implements JavaPsiScann
         Location location = context.getNameLocation(node);
         String message = String.format("The `<%1$s> %2$s` is not registered in the manifest",
                 tag, className);
-        context.report(ISSUE, location, message);
+        context.report(ISSUE, node, location, message);
     }
 
     private static String getTag(@NonNull JavaEvaluator evaluator, @NonNull PsiClass cls) {
