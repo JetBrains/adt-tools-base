@@ -23,7 +23,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 import android.content.Context;
-import android.os.Build;
 import android.util.Log;
 
 import java.io.BufferedInputStream;
@@ -37,26 +36,18 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-
-import dalvik.system.DexFile;
 
 /**
  * Class which handles locating existing code and resource files on the device,
@@ -85,17 +76,11 @@ public class FileManager {
     /** Name of the right directory */
     private static final String FOLDER_NAME_RIGHT = "right";
 
-    /** Prefix for classes.dex files */
-    private static final String CLASSES_DEX_PREFIX = "classes";
-
     /** Prefix for reload.dex files */
     private static final String RELOAD_DEX_PREFIX = "reload";
 
     /** Suffix for classes.dex files */
     public static final String CLASSES_DEX_SUFFIX = ".dex";
-
-    /** Filename suffix for dex index files */
-    private static final String EXT_INDEX_FILE = ".index";
 
     /** Whether we've purged temp dex files in this session */
     private static boolean sHavePurgedTempDexFolder;
@@ -299,13 +284,6 @@ public class FileManager {
 
         long newestHotswapPatch = FileManager.getMostRecentTempDexTime(dataFolder);
 
-        // Get rid of patches no longer applicable
-        if (Build.VERSION.SDK_INT < 21) {
-            FileManager.purgeMaskedDexFiles(dataFolder, apkModified);
-        }
-
-        List<String> list = new ArrayList<String>();
-
         // We don't need "double buffering" for dex files - we never rewrite files, so we
         // can accumulate in the same dir
         File dexFolder = getDexFileFolder(dataFolder, false);
@@ -323,6 +301,7 @@ public class FileManager {
         // extractor, if the timestamp is positive, we check before writing each slice that
         // it doesn't already exist and is newer than the APK.
         boolean extractedSlices = false;
+        File[] dexFiles;
         if (dexFolder == null || !dexFolder.isDirectory()) {
             // It's the first run of a freshly installed app, and we need to extract the
             // slices from within the APK into the dex folder
@@ -333,15 +312,16 @@ public class FileManager {
             if (dexFolder == null) {
                 // Failed to create dex folder.
                 Log.wtf(LOG_TAG, "Couldn't create dex code folder");
-                return list; // unreachable
+                return Collections.emptyList(); // unreachable
             }
-            extractedSlices = extractSlices(dexFolder, -1); // -1: unconditionally extract all
+            dexFiles = extractSlices(dexFolder, null, -1); // -1: unconditionally extract all
+            extractedSlices = dexFiles.length > 0;
+        } else {
+            dexFiles = dexFolder.listFiles();
         }
-
-        File[] dexFiles = dexFolder.listFiles();
-        if (dexFiles == null) {
+        if (dexFiles == null || dexFiles.length == 0) {
             Log.v(LOG_TAG, "Cannot find dex classes, not patching them in");
-            return list;
+            return Collections.emptyList();
         }
 
         // See if any of the slices are older than the APK. This will only be the case
@@ -364,7 +344,7 @@ public class FileManager {
                 if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
                     Log.v(LOG_TAG, "One or more slices were older than APK: extracting newer slices");
                 }
-                extractSlices(dexFolder, apkModified);
+                dexFiles = extractSlices(dexFolder, dexFiles, apkModified);
             }
         } else if (newestHotswapPatch > 0L) {
             // If the code is newer than the hotswap patches, delete them such that we don't
@@ -385,6 +365,7 @@ public class FileManager {
             Restarter.showToastWhenPossible(context, message);
         }
 
+        List<String> list = new ArrayList<String>(dexFiles.length);
         for (File dex : dexFiles) {
             if (dex.getName().endsWith(CLASSES_DEX_SUFFIX)) {
                 list.add(dex.getPath());
@@ -401,17 +382,22 @@ public class FileManager {
     /**
      * Extracts the slices found in the APK root directory (instant-run.zip) into the dex folder,
      * and skipping any files that already exist and are newer than apkModified (unless apkModified
-     * <= 0)
+     * <= 0). It <b>also</b> deletes any <b>unrecognized</b> slices. This is necessary
+     * since there are scenarios (such as b.android.com/204341) where we end up with slice files
+     * in the dex folder that should <b>not</b> be loaded.
      */
-    private static boolean extractSlices(@NonNull File dexFolder, long apkModified) {
+    private static File[] extractSlices(@NonNull File dexFolder, @Nullable File[] dexFolderFiles,
+            long apkModified) {
         if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
             Log.v(LOG_TAG, "Extracting slices into " + dexFolder);
         }
         InputStream stream = BootstrapApplication.class.getResourceAsStream("/instant-run.zip");
         if (stream == null) {
             Log.v(LOG_TAG, "Could not find slices in APK; aborting.");
-            return false;
+            return new File[0];
         }
+        List<File> slices = new ArrayList<File>(30);
+        Set<String> sliceNames = new HashSet<String>(30);
         try {
             ZipInputStream zipInputStream = new ZipInputStream(stream);
             try {
@@ -434,7 +420,10 @@ public class FileManager {
                         // Map slice name to the scheme already used by the code to push slices
                         // via the embedded server as well as the code to push via adb:
                         //   slice-<slicedir>
-                        File dest = new File(dexFolder, Paths.DEX_SLICE_PREFIX + name);
+                        String sliceName = Paths.DEX_SLICE_PREFIX + name;
+                        sliceNames.add(sliceName);
+                        File dest = new File(dexFolder, sliceName);
+                        slices.add(dest);
 
                         if (apkModified > 0) {
                             long sliceModified = dest.lastModified();
@@ -455,7 +444,7 @@ public class FileManager {
                             boolean created = parent.mkdirs();
                             if (!created) {
                                 Log.wtf(LOG_TAG, "Failed to create directory " + dest);
-                                return false;
+                                return new File[0];
                             }
                         }
 
@@ -475,10 +464,27 @@ public class FileManager {
                     }
                 }
 
-                return true;
+                // Remove old slice names
+                if (dexFolderFiles != null) {
+                    for (File file : dexFolderFiles) {
+                        if (!sliceNames.contains(file.getName())) {
+                            if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                                Log.v(LOG_TAG, "Removing old slice " + file);
+                            }
+                            boolean deleted = file.delete();
+                            if (!deleted) {
+                                if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                                    Log.v(LOG_TAG, "Could not delete " + file);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                return slices.toArray(new File[slices.size()]);
             } catch (IOException ioe) {
                 Log.wtf(LOG_TAG, "Failed to extract slices into directory " + dexFolder, ioe);
-                return false;
+                return new File[0];
             } finally {
                 try {
                     zipInputStream.close();
@@ -491,46 +497,6 @@ public class FileManager {
             } catch (IOException ignore) {
             }
         }
-    }
-
-    /** Produces the next available dex file path */
-    @Nullable
-    public static File getNextDexFile() {
-        // Find the file name of the next dex file to write
-        File dexFolder = getDexFileFolder(getDataFolder(), true);
-        if (dexFolder == null) {
-            return null;
-        }
-        File[] files = dexFolder.listFiles();
-        int max = -1;
-
-        // Pick highest available number + 1 - we want these to be sortable
-        if (files != null) {
-            for (File file : files) {
-                String name = file.getName();
-                if (name.startsWith(CLASSES_DEX_PREFIX) && name.endsWith(CLASSES_DEX_SUFFIX)) {
-                    String middle = name.substring(CLASSES_DEX_PREFIX.length(),
-                            name.length() - CLASSES_DEX_SUFFIX.length());
-                    try {
-                        int version = Integer.decode(middle);
-                        if (version > max) {
-                            max = version;
-                        }
-                    } catch (NumberFormatException ignore) {
-                    }
-                }
-            }
-        }
-
-        String fileName = String.format("%s0x%04x%s", CLASSES_DEX_PREFIX, max + 1,
-                CLASSES_DEX_SUFFIX);
-        File file = new File(dexFolder, fileName);
-
-        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-            Log.i(LOG_TAG, "Writing new dex file: " + file);
-        }
-
-        return file;
     }
 
     /** Produces the next available dex file name */
@@ -684,73 +650,6 @@ public class FileManager {
         return file;
     }
 
-    @Nullable
-    public static File writeDexFile(@NonNull byte[] bytes, boolean writeIndex) {
-        File file = getNextDexFile();
-        if (file != null && Build.VERSION.SDK_INT < 21) {
-            writeDexFile(bytes, writeIndex, file);
-        }
-
-        return file;
-    }
-
-    @Nullable
-    public static File writeDexFile(@NonNull byte[] bytes, boolean writeIndex,
-            @NonNull File file) {
-        writeRawBytes(file, bytes);
-        if (writeIndex) {
-            File indexFile = getIndexFile(file);
-            try {
-                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(
-                        new FileOutputStream(indexFile), getUtf8Charset()));
-                try {
-                    // Use a temporary jar file with a unique name to avoid caching issues
-                    // when reusing the file names between restart.dex and reload.dex
-                    File tmpFile = File.createTempFile("install", ".jar");
-                    Log.i(LOG_TAG, "Temp jar file : " + tmpFile.getAbsolutePath());
-                    JarOutputStream jarOutputStream = new JarOutputStream(
-                            new BufferedOutputStream(new FileOutputStream(tmpFile)));
-                    try {
-                        jarOutputStream.putNextEntry(new ZipEntry("classes.dex"));
-                        jarOutputStream.write(bytes);
-                        jarOutputStream.closeEntry();
-                    } finally {
-                        jarOutputStream.close();
-                    }
-                    DexFile dexFile = DexFile.loadDex(
-                            tmpFile.getAbsolutePath(),
-                            new File(file.getParentFile(), tmpFile.getName()).getAbsolutePath(), 0);
-                    if (!tmpFile.delete()) {
-                        Log.i(LOG_TAG, "Cannot delete " + tmpFile.getAbsolutePath());
-                    }
-                    Enumeration<String> entries = dexFile.entries();
-                    while (entries.hasMoreElements()) {
-                        String nextPath = entries.nextElement();
-
-                        // Skip inner classes: we only care about classes at the
-                        // compilation unit level
-                        if (nextPath.indexOf('$') != -1) {
-                            continue;
-                        }
-
-                        writer.write(nextPath);
-                        writer.write('\n');
-                    }
-                } finally {
-                    writer.close();
-                }
-
-                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                    Log.i(LOG_TAG, "Wrote restart patch index " + indexFile);
-                }
-            } catch (IOException ioe) {
-                Log.e(LOG_TAG, "Failed to write dex index file " + indexFile, ioe);
-            }
-        }
-
-        return file;
-    }
-
     public static void writeAaptResources(@NonNull String relativePath, @NonNull byte[] bytes) {
         // TODO: Take relativePath into account for the actual destination file
         File resourceFile = getResourceFile(getWriteFolder(false));
@@ -791,17 +690,6 @@ public class FileManager {
             Log.e(LOG_TAG, "No file to write temp dex content to");
         }
         return null;
-    }
-
-    /** Returns the class index file for the given .dex file */
-    private static File getIndexFile(@NonNull File file) {
-        return new File(file.getPath() + EXT_INDEX_FILE);
-    }
-
-    /** Returns the dex file for the given index file */
-    private static File getDexFile(@NonNull File file) {
-        String path = file.getPath();
-        return new File(path.substring(0, path.length() - EXT_INDEX_FILE.length()));
     }
 
     /**
@@ -851,100 +739,6 @@ public class FileManager {
                 }
             }
         }
-    }
-
-    /**
-     * Removes .dex files that contain only classes seen in later patches (e.g. none
-     * of the classes in the .dex file will be found by the application class loader
-     * because there are newer versions available)
-     */
-    public static void purgeMaskedDexFiles(@NonNull File dataFolder, long apkModified) {
-        File dexFolder = getDexFileFolder(dataFolder, false);
-        if (dexFolder == null) {
-            return;
-        }
-        File[] files = dexFolder.listFiles();
-        if (files == null || files.length < 2) {
-            return;
-        }
-        Arrays.sort(files);
-
-        // Go back through patches in reverse order, and for any patch that contains a
-        // class not seen in later patches, mark that patch file as relevant
-        Set<String> classes = new HashSet<String>(200);
-        // contains the list of dex file that have an index file associated.
-
-        Charset utf8 = getUtf8Charset();
-        for (int i = files.length - 1; i >= 0; i--) {
-            File file = files[i];
-            String path = file.getPath();
-            if (path.endsWith(EXT_INDEX_FILE)) {
-                try {
-                    boolean containsUniqueClasses = false;
-                    InputStreamReader is = new InputStreamReader(new FileInputStream(file), utf8);
-                    BufferedReader reader = new BufferedReader(is);
-                    try {
-
-                        while (true) {
-                            String line = reader.readLine();
-                            if (line == null) {
-                                break;
-                            }
-                            if (line.isEmpty()) {
-                                continue;
-                            }
-                            if (!classes.contains(line)) {
-                                classes.add(line);
-                                containsUniqueClasses = true;
-                            }
-                        }
-                    } finally {
-                        reader.close();
-                    }
-
-                    // check if the dex file is not older than the APK.
-                    File dexFile = getDexFile(file);
-
-                    if (!containsUniqueClasses || dexFile.lastModified() < apkModified) {
-                        // Nearly always true, unless user has gone in there and deleted
-                        // stuff
-                        if (dexFile.exists()) {
-                            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                                Log.i(LOG_TAG, "Removing dex patch " + dexFile
-                                        + ": All classes in it are hidden by later patches");
-                            }
-                            boolean deleted = dexFile.delete();
-                            if (!deleted) {
-                                Log.e(LOG_TAG, "Could not prune " + dexFile);
-                            } else {
-                                Log.i(LOG_TAG, "pruned " + file.getAbsolutePath());
-                            }
-                        }
-                        boolean deleted = file.delete();
-                        if (!deleted) {
-                            Log.e(LOG_TAG, "Could not prune " + file);
-                        }
-
-                    }
-                } catch (IOException ioe) {
-                    Log.e(LOG_TAG, "Could not read dex index file " + file, ioe);
-                }
-            }
-        }
-
-        // TODO: Consider reordering the files here such that we close holes and
-        // stay with lower patch numbers
-    }
-
-    @NonNull
-    private static Charset getUtf8Charset() {
-        Charset utf8;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
-            utf8 = StandardCharsets.UTF_8;
-        } else {
-            utf8 = Charset.forName("UTF-8");
-        }
-        return utf8;
     }
 
     public static long getFileSize(@NonNull String path) {
