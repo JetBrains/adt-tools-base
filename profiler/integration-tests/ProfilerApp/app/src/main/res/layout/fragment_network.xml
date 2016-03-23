@@ -3,4 +3,18 @@
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <Button style="@style/smallButtonStyle" android:id="@+id/download" android:text="Download 5MB file" />
+    
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="5dp"
+        android:orientation="vertical">
+        <TextView style="@style/normalTextStyle" android:id="@+id/bytes" />
+        <TextView style="@style/normalTextStyle" android:id="@+id/networkType" />
+        <TextView style="@style/normalTextStyle" android:id="@+id/radioStatus" />
+        <TextView style="@style/normalTextStyle" android:id="@+id/openConnections" />
+    </LinearLayout>
+    
+
 </LinearLayout>

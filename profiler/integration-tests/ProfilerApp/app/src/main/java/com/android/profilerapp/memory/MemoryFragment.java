@@ -48,7 +48,7 @@ import java.util.Set;
 public class MemoryFragment extends Fragment implements View.OnClickListener {
 
     static {
-        System.loadLibrary("memorymodule");
+        System.loadLibrary("profilermodule");
     }
 
     private native void jniAllocIntArray(int bytes, boolean initialize);
