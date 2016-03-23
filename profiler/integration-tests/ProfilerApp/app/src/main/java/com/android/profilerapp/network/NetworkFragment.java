@@ -25,10 +25,12 @@ import android.os.Bundle;
 import android.os.Process;
 import android.support.v4.app.Fragment;
 import android.telephony.TelephonyManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.android.profilerapp.R;
@@ -38,16 +40,20 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class NetworkFragment extends Fragment {
+
+    private static final String TAG = "NetworkFragment";
 
     static {
         System.loadLibrary("profilermodule");
     }
 
-    private static final String DOWNLOAD_URL = "http://ipv4.download.thinkbroadband.com:8080/5MB.zip";
-
     private native int getConnectionCount(String uidString);
+
+    private final AtomicInteger myNumDownloadsTotal = new AtomicInteger();
+    private final AtomicInteger myNumDownloadsSoFar = new AtomicInteger();
 
     private final int myUid = Process.myUid();
     private View myFragmentView;
@@ -60,11 +66,32 @@ public class NetworkFragment extends Fragment {
         myFragmentView = inflater.inflate(R.layout.fragment_network, container, false);
         myConnectivityManager = (ConnectivityManager) getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
 
-        Button downloadButton = (Button) myFragmentView.findViewById(R.id.download);
+        final SeekBar numDownloadsSeekBar = ((SeekBar) myFragmentView.findViewById(R.id.seekNumDownloads));
+        final Button downloadButton = (Button) myFragmentView.findViewById(R.id.download);
+        updateButtonText(numDownloadsSeekBar, downloadButton);
         downloadButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                download();
+                int numSimultaneousDownloads = numDownloadsSeekBar.getProgress() + 1;
+                for (int i = 0; i < numSimultaneousDownloads; i++) {
+                    download();
+                }
+            }
+        });
+        numDownloadsSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                updateButtonText(numDownloadsSeekBar, downloadButton);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
             }
         });
 
@@ -74,6 +101,11 @@ public class NetworkFragment extends Fragment {
         }
 
         return myFragmentView;
+    }
+
+    private void updateButtonText(SeekBar numDownloadsSeekBar, Button downloadButton) {
+        downloadButton.setText(String.format(getString(R.string.network_download_images),
+            numDownloadsSeekBar.getProgress() + 1));
     }
 
     @Override
@@ -124,7 +156,6 @@ public class NetworkFragment extends Fragment {
                 radioStatusView.setText(statistics.radioStatus);
                 TextView openConnectionsView = (TextView) myFragmentView.findViewById(R.id.openConnections);
                 openConnectionsView.setText("Open connections count: " + statistics.openConnectionCount);
-
             }
         });
     }
@@ -135,7 +166,8 @@ public class NetworkFragment extends Fragment {
             public void run() {
                 URL url;
                 try {
-                    url = new URL(DOWNLOAD_URL);
+                    int next = myNumDownloadsTotal.getAndIncrement() % DownloadUrls.IMAGE_URLS.length;
+                    url = new URL(DownloadUrls.IMAGE_URLS[next]);
                 } catch (MalformedURLException e) {
                     e.printStackTrace();
                     return;
@@ -144,8 +176,13 @@ public class NetworkFragment extends Fragment {
                 HttpURLConnection connection;
                 try {
                     connection = (HttpURLConnection) url.openConnection();
+                    String urlString = url.toString();
+                    Log.d(TAG, String.format("Connection opened [%d %d]: %s", myUid, Thread.currentThread().getId(),
+                        urlString));
                     BufferedInputStream in = new BufferedInputStream(connection.getInputStream());
                     while(in.read() != -1) {}
+                    Log.d(TAG, String.format("Finished %d / %d: %s", myNumDownloadsSoFar.incrementAndGet(),
+                        myNumDownloadsTotal.get(), urlString));
                 } catch (IOException e) {
                     e.printStackTrace();
                     return;

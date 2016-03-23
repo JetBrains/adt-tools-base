@@ -3,10 +3,23 @@
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <Button
-        android:id="@+id/download"
-        style="@style/smallButtonStyle"
-        android:text="Download 5MB file"/>
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <Button
+            android:id="@+id/download"
+            style="@style/smallButtonStyle"
+            android:text="@string/network_download_images"/>
+
+        <SeekBar
+            android:id="@+id/seekNumDownloads"
+            android:max="19"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_weight="1"/>
+
+    </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -18,6 +31,6 @@
         <TextView style="@style/normalTextStyle" android:id="@+id/radioStatus"/>
         <TextView style="@style/normalTextStyle" android:id="@+id/openConnections"/>
     </LinearLayout>
-    
+
 
 </LinearLayout>
