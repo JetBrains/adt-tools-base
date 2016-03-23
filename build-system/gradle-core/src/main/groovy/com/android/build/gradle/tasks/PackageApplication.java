@@ -78,6 +78,8 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
         INSTANT_RUN
     }
 
+    public static final String INSTANT_RUN_PACKAGES_PREFIX = "instant-run";
+
     private boolean useOldPackaging;
 
     public static final FilterableStreamCollection.StreamFilter sDexFilter =
@@ -328,7 +330,7 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
 
         try {
             for (File dexFolder : dexFolders) {
-                if (dexFolder.getName().contains(InstantRunSlicer.MAIN_SLICE_NAME)) {
+                if (dexFolder.getName().contains(INSTANT_RUN_PACKAGES_PREFIX)) {
                     dexFoldersForApk.add(dexFolder);
                 } else {
                     for (File file : Files.fileTreeTraverser().breadthFirstTraversal(dexFolder)) {

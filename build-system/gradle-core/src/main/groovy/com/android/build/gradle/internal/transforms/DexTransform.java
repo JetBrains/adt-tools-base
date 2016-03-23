@@ -531,6 +531,8 @@ public class DexTransform extends Transform {
         // easier if the slices always have the same names, irrespective of the current vairiant,
         // last version wins.
         String name = instantRunBuildContext.isInInstantRunMode()
+                && (qualifiedContent.getScopes().contains(Scope.PROJECT)
+                    || qualifiedContent.getScopes().contains(Scope.SUB_PROJECTS))
                 ? file.getName() : getFilename(file);
         File contentLocation = output.getContentLocation(name,
                 TransformManager.CONTENT_DEX, qualifiedContent.getScopes(),

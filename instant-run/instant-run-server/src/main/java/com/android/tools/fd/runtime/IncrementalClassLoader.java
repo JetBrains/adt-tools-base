@@ -127,7 +127,8 @@ public class IncrementalClassLoader extends ClassLoader {
         }
 
         if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-            Log.i(LOG_TAG, "Incremental dex path is " + pathBuilder);
+            Log.i(LOG_TAG, "Incremental dex path is "
+                    + BootstrapApplication.join('\n', dexes));
         }
         return pathBuilder.toString();
     }

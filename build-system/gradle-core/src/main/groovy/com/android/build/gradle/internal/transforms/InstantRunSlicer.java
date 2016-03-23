@@ -60,6 +60,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
@@ -69,13 +70,10 @@ import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 
 /**
- * Transform that slices the project's classes into approximately 12 slices.
- * <ul>10 slices for {@link Scope#PROJECT} and {@link Scope#SUB_PROJECTS}</ul>
- * <ul>1 slice for all the remaining classes provided as directories</ul>
- * <ul>1 slice for all the remaining classes provided as jars</ul>
+ * Transform that slices the project's classes into approximately 10 slices for
+ * {@link Scope#PROJECT} and {@link Scope#SUB_PROJECTS}</ul>
  *
- * The last slice in the list above will be a jar file slice while the eleven remaining ones are
- * directory based slices.
+ * Dependencies are not processed by the Slicer but will be dex'ed separately.
  *
  *
  */
@@ -121,7 +119,7 @@ public class InstantRunSlicer extends Transform {
     @NonNull
     @Override
     public Set<Scope> getScopes() {
-        return TransformManager.SCOPE_FULL_PROJECT;
+        return EnumSet.of(Scope.PROJECT, Scope.SUB_PROJECTS);
     }
 
     @Override
@@ -130,7 +128,7 @@ public class InstantRunSlicer extends Transform {
     }
 
     @Override
-    public void transform(TransformInvocation transformInvocation)
+    public void transform(@NonNull TransformInvocation transformInvocation)
             throws IOException, TransformException, InterruptedException {
 
         TransformOutputProvider outputProvider = transformInvocation.getOutputProvider();
@@ -210,6 +208,10 @@ public class InstantRunSlicer extends Transform {
     }
 
     /**
+     *
+     * WARNING : This code is no longer active as the transform scope if only PROJECT and
+     * SUB_PROJECTS but keeping it around in case it becomes useful again with a split APK solution.
+     *
      * Combine all input jars with a different scope than {@link Scope#PROJECT} and
      * {@link Scope#SUB_PROJECTS}
      * @param inputs the transform's input

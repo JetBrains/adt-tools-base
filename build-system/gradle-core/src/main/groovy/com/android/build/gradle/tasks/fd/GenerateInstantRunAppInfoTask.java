@@ -40,6 +40,7 @@ import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.build.gradle.tasks.PackageApplication;
 import com.android.ide.common.packaging.PackagingUtils;
 import com.android.utils.XmlUtils;
 
@@ -251,7 +252,8 @@ public class GenerateInstantRunAppInfoTask extends BaseTask {
         public void execute(@NonNull GenerateInstantRunAppInfoTask task) {
             task.setVariantName(variantScope.getVariantConfiguration().getFullName());
             task.outputFile =
-                    new File(variantScope.getIncrementalApplicationSupportDir(), "classes.jar");
+                    new File(variantScope.getIncrementalApplicationSupportDir(),
+                            PackageApplication.INSTANT_RUN_PACKAGES_PREFIX + "-bootstrap.jar");
 
             BaseVariantOutputData variantOutput = variantScope.getVariantData()
                     .getOutputs().get(0);

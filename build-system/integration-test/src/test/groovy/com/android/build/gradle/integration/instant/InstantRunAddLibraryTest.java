@@ -103,7 +103,7 @@ public class InstantRunAddLibraryTest {
         assertThat(context.getArtifacts()).hasSize(2);
         for (InstantRunArtifact artifact: context.getArtifacts()) {
             expect.that(artifact.type).isEqualTo(InstantRunArtifactType.DEX);
-            if (artifact.file.getParentFile().getName().startsWith("dependencies")) {
+            if (artifact.file.getParentFile().getName().contains("guava")) {
                 //TODO: a real test for the dependencies dex being rebuilt.
                 foundDependencies = true;
             }
