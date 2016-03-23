@@ -479,11 +479,6 @@ public class Server {
             if (Log.isLoggable(LOG_TAG, Log.INFO)) {
                 Log.i(LOG_TAG, "Received dex shard " + file);
             }
-        } else {
-            File file = FileManager.writeDexFile(patch.getBytes(), true);
-            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                Log.i(LOG_TAG, "Received restart code patch - " + file);
-            }
         }
     }
 

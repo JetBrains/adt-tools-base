@@ -48,7 +48,9 @@ public enum InstantRunArtifactType {
 
     /**
      * Classes that can be used on Dalvik devices
+     * @deprecated No longer used; remove once the Gradle parts are gone (InstantRunBuildContext.FileType.RESTART_DEX)
      */
+    @Deprecated
     RESTART_DEX,
 
     /**
