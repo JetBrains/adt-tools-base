@@ -85,11 +85,19 @@ public class VariantScopeImpl implements VariantScope {
     @Nullable
     private Collection<Object> ndkBuildable;
     @Nullable
+    private Collection<Object> externalNativeBuildable;
+    @Nullable
     private Collection<File> ndkSoFolder;
     @Nullable
+    private Collection<File> externalNativeBuildSoFolder;
+    @Nullable
     private File ndkObjFolder;
+    @Nullable
+    private File externalNativeBuildObjFolder;
     @NonNull
     private Map<Abi, File> ndkDebuggableLibraryFolders = Maps.newHashMap();
+    @NonNull
+    private Map<Abi, File> externalNativeBuildDebuggableLibraryFolders = Maps.newHashMap();
 
     @Nullable
     private File mergeResourceOutputDir;
@@ -216,6 +224,17 @@ public class VariantScopeImpl implements VariantScope {
         this.ndkBuildable = ndkBuildable;
     }
 
+    @Override
+    @Nullable
+    public Collection<Object> getExternalNativeBuildable() {
+        return externalNativeBuildable;
+    }
+
+    @Override
+    public void setExternalNativeBuildable(@NonNull Collection<Object> externalNativeBuildable) {
+        this.externalNativeBuildable = externalNativeBuildable;
+    }
+
     @Nullable
     @Override
     public AndroidTask<DataBindingExportBuildInfoTask> getDataBindingExportInfoTask() {
@@ -251,6 +270,18 @@ public class VariantScopeImpl implements VariantScope {
         this.ndkSoFolder = ndkSoFolder;
     }
 
+    @Nullable
+    @Override
+    public Collection<File> getExternalNativeBuildSoFolder() {
+        return  externalNativeBuildSoFolder;
+    }
+
+    @Override
+    public void setExternalNativeBuildSoFolder(@NonNull Collection<File> folder) {
+        this.externalNativeBuildSoFolder = folder;
+
+    }
+
     @Override
     @Nullable
     public File getNdkObjFolder() {
@@ -260,6 +291,17 @@ public class VariantScopeImpl implements VariantScope {
     @Override
     public void setNdkObjFolder(@NonNull File ndkObjFolder) {
         this.ndkObjFolder = ndkObjFolder;
+    }
+
+    @Nullable
+    @Override
+    public File getExternalNativeBuildObjFolder() {
+        return externalNativeBuildObjFolder;
+    }
+
+    @Override
+    public void setExternalNativeBuildObjFolder(@NonNull File folder) {
+        this.externalNativeBuildObjFolder = folder;
     }
 
     /**
@@ -274,6 +316,19 @@ public class VariantScopeImpl implements VariantScope {
     @Override
     public void addNdkDebuggableLibraryFolders(@NonNull Abi abi, @NonNull File searchPath) {
         this.ndkDebuggableLibraryFolders.put(abi, searchPath);
+    }
+
+    @Nullable
+    @Override
+    public File getExternalNativeBuildDebuggableLibraryFolders(@NonNull Abi abi) {
+        return externalNativeBuildDebuggableLibraryFolders.get(abi);
+    }
+
+    @Override
+    public void addExternalNativeBuildDebuggableLibraryFolders(@NonNull Abi abi,
+            @NonNull File searchPath) {
+        this.externalNativeBuildDebuggableLibraryFolders.put(abi, searchPath);
+
     }
 
     @Override
