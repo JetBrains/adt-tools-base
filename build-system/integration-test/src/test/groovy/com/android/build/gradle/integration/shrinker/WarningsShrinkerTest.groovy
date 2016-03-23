@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import groovy.transform.CompileStatic
 import org.gradle.tooling.GradleConnectionException
+import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -39,6 +40,11 @@ class WarningsShrinkerTest {
     private File rules
     private File activity
     private int changeCounter
+
+    @Before
+    public void skipOnJack() throws Exception {
+        Assume.assumeFalse(GradleTestProject.USE_JACK)
+    }
 
     @Before
     public void enableShrinking() throws Exception {

@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.shrinker
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import groovy.transform.CompileStatic
+import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -34,6 +35,11 @@ class MinifyProjectShrinkerTest {
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("minify")
             .create()
+
+    @Before
+    public void skipOnJack() throws Exception {
+        Assume.assumeFalse(GradleTestProject.USE_JACK)
+    }
 
     @Before
     public void enableShrinker() throws Exception {

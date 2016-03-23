@@ -21,6 +21,7 @@ import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.utils.FileUtils
 import groovy.transform.CompileStatic
+import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -39,8 +40,10 @@ class HelloWorldShrinkerTest {
             .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
             .create()
 
-    private File helloWorldClass
-    private File utilsClass
+    @Before
+    public void skipOnJack() throws Exception {
+        Assume.assumeFalse(GradleTestProject.USE_JACK)
+    }
 
     @Before
     public void enableShrinking() throws Exception {
