@@ -13,88 +13,177 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.build.gradle.tasks
-import com.android.annotations.NonNull
-import com.android.build.gradle.internal.scope.ConventionMappingHelper
-import com.android.build.gradle.internal.scope.TaskConfigAction
-import com.android.build.gradle.internal.scope.VariantScope
-import com.android.build.gradle.internal.tasks.BaseTask
-import com.android.build.gradle.internal.variant.BaseVariantData
-import com.android.build.gradle.internal.variant.BaseVariantOutputData
-import com.android.builder.compiling.BuildConfigGenerator
-import com.android.builder.core.VariantConfiguration
-import com.android.builder.model.ClassField
-import com.android.utils.FileUtils
-import com.google.common.base.Strings
-import com.google.common.collect.Lists
-import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.OutputDirectory
-import org.gradle.api.tasks.ParallelizableTask
-import org.gradle.api.tasks.TaskAction
+package com.android.build.gradle.tasks;
+
+import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.scope.TaskConfigAction;
+import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.build.gradle.internal.variant.BaseVariantData;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.builder.compiling.BuildConfigGenerator;
+import com.android.builder.model.ClassField;
+import com.android.utils.FileUtils;
+import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.OutputDirectory;
+import org.gradle.api.tasks.ParallelizableTask;
+import org.gradle.api.tasks.TaskAction;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.Callable;
 
 @ParallelizableTask
 public class GenerateBuildConfig extends BaseTask {
 
     // ----- PUBLIC TASK API -----
 
+    private File sourceOutputDir;
+
     @OutputDirectory
-    File sourceOutputDir
+    public File getSourceOutputDir() {
+        return sourceOutputDir;
+    }
+
+    public void setSourceOutputDir(File sourceOutputDir) {
+        this.sourceOutputDir = sourceOutputDir;
+    }
 
     // ----- PRIVATE TASK API -----
 
-    @Input
-    String buildConfigPackageName
+    private String buildConfigPackageName;
+
+    private String appPackageName;
+
+    private boolean debuggable;
+
+    private String flavorName;
+
+    private List<String> flavorNamesWithDimensionNames;
+
+    private String buildTypeName;
+
+    private String versionName;
+
+    private int versionCode;
+
+    private List<Object> items;
 
     @Input
-    String appPackageName
+    public String getBuildConfigPackageName() {
+        return buildConfigPackageName;
+    }
+
+    public void setBuildConfigPackageName(String buildConfigPackageName) {
+        this.buildConfigPackageName = buildConfigPackageName;
+    }
 
     @Input
-    boolean debuggable
+    public String getAppPackageName() {
+        return appPackageName;
+    }
+
+    public void setAppPackageName(String appPackageName) {
+        this.appPackageName = appPackageName;
+    }
 
     @Input
-    String flavorName
+    public boolean isDebuggable() {
+        return debuggable;
+    }
+
+    public void setDebuggable(boolean debuggable) {
+        this.debuggable = debuggable;
+    }
 
     @Input
-    List<String> flavorNamesWithDimensionNames
+    public String getFlavorName() {
+        return flavorName;
+    }
+
+    public void setFlavorName(String flavorName) {
+        this.flavorName = flavorName;
+    }
 
     @Input
-    String buildTypeName
+    public List<String> getFlavorNamesWithDimensionNames() {
+        return flavorNamesWithDimensionNames;
+    }
+
+    public void setFlavorNamesWithDimensionNames(
+            List<String> flavorNamesWithDimensionNames) {
+        this.flavorNamesWithDimensionNames = flavorNamesWithDimensionNames;
+    }
+
+    @Input
+    public String getBuildTypeName() {
+        return buildTypeName;
+    }
+
+    public void setBuildTypeName(String buildTypeName) {
+        this.buildTypeName = buildTypeName;
+    }
 
     @Input
     @Optional
-    String versionName
+    public String getVersionName() {
+        return versionName;
+    }
+
+    public void setVersionName(String versionName) {
+        this.versionName = versionName;
+    }
 
     @Input
-    int versionCode
+    public int getVersionCode() {
+        return versionCode;
+    }
 
-    List<Object> items;
+    public void setVersionCode(int versionCode) {
+        this.versionCode = versionCode;
+    }
 
+    public List<Object> getItems() {
+        return items;
+    }
+
+    public void setItems(List<Object> items) {
+        this.items = items;
+    }
+
+
+    @SuppressWarnings("unused") // Synthetic input for items.
     @Input
     List<String> getItemValues() {
-        List<Object> resolvedItems = getItems()
-        List<String> list = Lists.newArrayListWithCapacity(resolvedItems.size() * 3)
+        List<Object> resolvedItems = getItems();
+        List<String> list = Lists.newArrayListWithCapacity(resolvedItems.size() * 3);
 
         for (Object object : resolvedItems) {
             if (object instanceof String) {
-                list.add((String) object)
+                list.add((String) object);
             } else if (object instanceof ClassField) {
-                ClassField field = (ClassField) object
-                list.add(field.type)
-                list.add(field.name)
-                list.add(field.value)
+                ClassField field = (ClassField) object;
+                list.add(field.getType());
+                list.add(field.getName());
+                list.add(field.getValue());
             }
         }
 
-        return list
+        return list;
     }
 
     @TaskAction
     void generate() throws IOException {
         // must clear the folder in case the packagename changed, otherwise,
         // there'll be two classes.
-        File destinationDir = getSourceOutputDir()
-        FileUtils.emptyFolder(destinationDir)
+        File destinationDir = getSourceOutputDir();
+        FileUtils.emptyFolder(destinationDir);
 
         BuildConfigGenerator generator = new BuildConfigGenerator(
                 getSourceOutputDir(),
@@ -108,100 +197,89 @@ public class GenerateBuildConfig extends BaseTask {
         // at source code.
         //map.put(PH_DEBUG, Boolean.toString(mDebug));
         generator.addField("boolean", "DEBUG",
-                getDebuggable() ? "Boolean.parseBoolean(\"true\")" : "false")
-                .addField("String", "APPLICATION_ID", "\"${getAppPackageName()}\"")
-                .addField("String", "BUILD_TYPE", "\"${getBuildTypeName()}\"")
-                .addField("String", "FLAVOR", "\"${getFlavorName()}\"")
+                isDebuggable() ? "Boolean.parseBoolean(\"true\")" : "false")
+                .addField("String", "APPLICATION_ID", '"' + getAppPackageName() + '"')
+                .addField("String", "BUILD_TYPE", '"' + getBuildTypeName() + '"')
+                .addField("String", "FLAVOR", '"' + getFlavorName() + '"')
                 .addField("int", "VERSION_CODE", Integer.toString(getVersionCode()))
-                .addField("String", "VERSION_NAME", "\"${Strings.nullToEmpty(getVersionName())}\"")
-                .addItems(getItems())
+                .addField("String", "VERSION_NAME", '"' + Strings.nullToEmpty(getVersionName()) + '"')
+                .addItems(getItems());
 
-        List<String> flavors = getFlavorNamesWithDimensionNames()
-        int count = flavors.size()
+        List<String> flavors = getFlavorNamesWithDimensionNames();
+        int count = flavors.size();
         if (count > 1) {
             for (int i = 0; i < count; i += 2) {
-                generator.
-                        addField("String", "FLAVOR_${flavors.get(i + 1)}", "\"${flavors.get(i)}\"")
+                generator.addField(
+                        "String", "FLAVOR_" + flavors.get(i + 1), '"' + flavors.get(i) + '"');
             }
         }
 
-        generator.generate()
+        generator.generate();
     }
 
     // ----- Config Action -----
 
-    public static class ConfigAction implements TaskConfigAction<GenerateBuildConfig> {
+    public static final class ConfigAction implements TaskConfigAction<GenerateBuildConfig> {
 
         @NonNull
-        VariantScope scope
+        private final VariantScope scope;
 
-        ConfigAction(@NonNull VariantScope scope) {
-            this.scope = scope
+        public ConfigAction(@NonNull VariantScope scope) {
+            this.scope = scope;
         }
 
         @Override
         @NonNull
-        String getName() {
+        public String getName() {
             return scope.getTaskName("generate", "BuildConfig");
         }
 
         @Override
         @NonNull
-        Class<GenerateBuildConfig> getType() {
-            return GenerateBuildConfig
+        public Class<GenerateBuildConfig> getType() {
+            return GenerateBuildConfig.class;
         }
 
 
         @Override
-        void execute(@NonNull GenerateBuildConfig generateBuildConfigTask) {
-            BaseVariantData<? extends BaseVariantOutputData> variantData = scope.variantData
+        public void execute(@NonNull GenerateBuildConfig generateBuildConfigTask) {
+            BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
 
-            variantData.generateBuildConfigTask = generateBuildConfigTask
+            variantData.generateBuildConfigTask = generateBuildConfigTask;
 
-            VariantConfiguration variantConfiguration = variantData.variantConfiguration
+            final GradleVariantConfiguration variantConfiguration =
+                    variantData.getVariantConfiguration();
 
-            generateBuildConfigTask.androidBuilder = scope.globalScope.androidBuilder
-            generateBuildConfigTask.setVariantName(scope.getVariantConfiguration().getFullName())
+            generateBuildConfigTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+            generateBuildConfigTask.setVariantName(scope.getVariantConfiguration().getFullName());
 
-            ConventionMappingHelper.map(generateBuildConfigTask, "buildConfigPackageName") {
-                variantConfiguration.originalApplicationId
-            }
+            ConventionMappingHelper.map(generateBuildConfigTask, "buildConfigPackageName",
+                    (Callable<String>) variantConfiguration::getOriginalApplicationId);
 
-            ConventionMappingHelper.map(generateBuildConfigTask, "appPackageName") {
-                variantConfiguration.applicationId
-            }
+            ConventionMappingHelper.map(generateBuildConfigTask, "appPackageName",
+                    (Callable<String>) variantConfiguration::getApplicationId);
 
-            ConventionMappingHelper.map(generateBuildConfigTask, "versionName") {
-                variantConfiguration.versionName
-            }
+            ConventionMappingHelper.map(generateBuildConfigTask, "versionName",
+                    (Callable<String>) variantConfiguration::getVersionName);
 
-            ConventionMappingHelper.map(generateBuildConfigTask, "versionCode") {
-                variantConfiguration.versionCode
-            }
+            ConventionMappingHelper.map(generateBuildConfigTask, "versionCode",
+                    (Callable<Integer>) variantConfiguration::getVersionCode);
+            ConventionMappingHelper.map(generateBuildConfigTask, "debuggable",
+                    (Callable<Boolean>) () -> variantConfiguration.getBuildType().isDebuggable());
 
-            ConventionMappingHelper.map(generateBuildConfigTask, "debuggable") {
-                variantConfiguration.buildType.isDebuggable()
-            }
+            ConventionMappingHelper.map(generateBuildConfigTask, "buildTypeName",
+                    (Callable<String>) () -> variantConfiguration.getBuildType().getName());
 
-            ConventionMappingHelper.map(generateBuildConfigTask, "buildTypeName") {
-                variantConfiguration.buildType.name
-            }
+            ConventionMappingHelper.map(generateBuildConfigTask, "flavorName",
+                    (Callable<String>) variantConfiguration::getFlavorName);
 
-            ConventionMappingHelper.map(generateBuildConfigTask, "flavorName") {
-                variantConfiguration.flavorName
-            }
+            ConventionMappingHelper.map(generateBuildConfigTask, "flavorNamesWithDimensionNames",
+                    (Callable<List<String>>) variantConfiguration::getFlavorNamesWithDimensionNames);
 
-            ConventionMappingHelper.map(generateBuildConfigTask, "flavorNamesWithDimensionNames") {
-                variantConfiguration.flavorNamesWithDimensionNames
-            }
+            ConventionMappingHelper.map(generateBuildConfigTask, "items",
+                    (Callable<List<Object>>) variantConfiguration::getBuildConfigItems);
 
-            ConventionMappingHelper.map(generateBuildConfigTask, "items") {
-                variantConfiguration.buildConfigItems
-            }
-
-            ConventionMappingHelper.map(generateBuildConfigTask, "sourceOutputDir") {
-                scope.getBuildConfigSourceOutputDir()
-            }
+            generateBuildConfigTask.setSourceOutputDir(scope.getBuildConfigSourceOutputDir());
         }
     }
 }
