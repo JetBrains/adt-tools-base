@@ -49,6 +49,11 @@ public class MathDetectorTest extends AbstractCheckTest {
 
 
     @Override
+    protected boolean allowCompilationErrors() {
+        return true;
+    }
+
+    @Override
     protected Detector getDetector() {
         return new MathDetector();
     }
