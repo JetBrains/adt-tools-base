@@ -399,6 +399,8 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
     /** Permission name of mock location permission */
     public static final String MOCK_LOCATION_PERMISSION =
             "android.permission.ACCESS_MOCK_LOCATION";   //$NON-NLS-1$
+    // Error message used by quick fix
+    public static final String MISSING_FULL_BACKUP_CONTENT_RESOURCE = "Missing `<full-backup-content>` resource";
 
     /** Constructs a new {@link ManifestDetector} check */
     public ManifestDetector() {
@@ -840,7 +842,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                         && !resources.hasResourceItem(url.type, url.name)) {
                     Location location = context.getValueLocation(fullBackupNode);
                     context.report(ALLOW_BACKUP, fullBackupNode, location,
-                            "Missing `<full-backup-content>` resource");
+                            MISSING_FULL_BACKUP_CONTENT_RESOURCE);
                 }
             } else if (fullBackupNode == null && !VALUE_FALSE.equals(allowBackup)
                     && !context.getProject().isLibrary()
