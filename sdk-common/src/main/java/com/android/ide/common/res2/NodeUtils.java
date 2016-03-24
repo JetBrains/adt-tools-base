@@ -77,7 +77,7 @@ class NodeUtils {
     static Node duplicateNode(Document document, Node node) {
         Node newNode;
         if (node.getNamespaceURI() != null) {
-            newNode = document.createElementNS(node.getNamespaceURI(), node.getLocalName());
+            newNode = document.createElementNS(node.getNamespaceURI(), node.getNodeName());
         } else {
             newNode = document.createElement(node.getNodeName());
         }
@@ -89,7 +89,7 @@ class NodeUtils {
 
             Attr newAttr;
             if (attr.getNamespaceURI() != null) {
-                newAttr = document.createAttributeNS(attr.getNamespaceURI(), attr.getLocalName());
+                newAttr = document.createAttributeNS(attr.getNamespaceURI(), attr.getNodeName());
                 newNode.getAttributes().setNamedItemNS(newAttr);
             } else {
                 newAttr = document.createAttribute(attr.getName());
@@ -187,12 +187,18 @@ class NodeUtils {
      * @return false if the attribute is to be dropped
      */
     private static boolean processSingleNodeNamespace(Node node, Document document) {
-        if ("xmlns".equals(node.getLocalName())) {
+        if (SdkConstants.XMLNS.equals(node.getLocalName())) {
             return false;
         }
 
         String ns = node.getNamespaceURI();
         if (ns != null) {
+            // XMLNS prefix declarations will be moved to the top-level docAttributes so remove any local declarations.
+            // The scoping of prefixes will thus be lost, but any prefix overriding in the original document should
+            // have been respected when cloning.
+            if (ns.equals(SdkConstants.XMLNS_URI)) {
+                return false;
+            }
             NamedNodeMap docAttributes = getDocumentNamespaceAttributes(document);
 
             String prefix = getPrefixForNs(docAttributes, ns);

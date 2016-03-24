@@ -195,8 +195,8 @@ public class NodeUtilsTest extends TestCase {
         Node rootNode = document.createElement("root");
         String nsURI1 = "http://some.uri";
         String nsURI2 = "http://some.other.uri";
-        NodeUtils.addAttribute(document, rootNode, null, "xmlns:prefix1", nsURI1);
-        NodeUtils.addAttribute(document, rootNode, null, "xmlns:prefix2", nsURI2);
+        NodeUtils.addAttribute(document, rootNode, SdkConstants.XMLNS_URI, "xmlns:prefix1", nsURI1);
+        NodeUtils.addAttribute(document, rootNode, SdkConstants.XMLNS_URI, "xmlns:prefix2", nsURI2);
         document.appendChild(rootNode);
 
         Node node1 = document.createElement("N1");
@@ -245,7 +245,7 @@ public class NodeUtilsTest extends TestCase {
         Document document = createDocument();
         Node rootNode = document.createElement("root");
         String nsURI = "urn:oasis:names:tc:xliff:document:1.2";
-        NodeUtils.addAttribute(document, rootNode, null, "xmlns:xliff", nsURI);
+        NodeUtils.addAttribute(document, rootNode, SdkConstants.XMLNS_URI, "xmlns:xliff", nsURI);
         document.appendChild(rootNode);
 
         Node node1 = document.createElementNS(nsURI, "xliff:g");
@@ -272,6 +272,7 @@ public class NodeUtilsTest extends TestCase {
         Document document = createDocument();
         Node rootNode = document.createElement("root");
         String nsURI = "urn:oasis:names:tc:xliff:document:1.2";
+        // Set the default namespace.
         NodeUtils.addAttribute(document, rootNode, null, "xmlns", nsURI);
         document.appendChild(rootNode);
 
@@ -289,6 +290,118 @@ public class NodeUtilsTest extends TestCase {
 
         assertFalse(NodeUtils.compareElementNode(node1, node1B, true));
         assertFalse(NodeUtils.compareElementNode(node1B, node1, true));
+    }
+
+    public void testAdoptNodeNSFromChildNodes() throws Exception {
+        // Test what happens if an xmlns:prefix="some.uri" declaration is declared under
+        // a child node that we are duplicating and adopting, instead of at the root.
+        // The duplicate and adopt process will move the xmlns declaration to the root
+        // of the new document, and remove it from the child node.
+        Document document = createDocument();
+        Node rootNode = document.createElement("root");
+        document.appendChild(rootNode);
+
+        Node node1 = document.createElement("N1");
+        rootNode.appendChild(node1);
+        Node node2 = document.createElement("item");
+        node1.appendChild(node2);
+
+        String toolsUri = SdkConstants.TOOLS_URI;
+        NodeUtils.addAttribute(document, node1, null, "c", "d");
+        NodeUtils.addAttribute(document, node1, SdkConstants.XMLNS_URI, "xmlns:tools", toolsUri);
+        NodeUtils.addAttribute(document, node1, toolsUri, "tools:targetApi", "17");
+
+        // create the other document to receive the duplicated and adopted node. It must have a root node.
+        Document document2 = createDocument();
+        rootNode = document2.createElement("root");
+        document2.appendChild(rootNode);
+
+        Node adoptedNode1 = NodeUtils.duplicateAndAdoptNode(document2, node1);
+        // The nodes are not quite the same, so we compare them manually
+        assertEquals(node1.getNodeName(), adoptedNode1.getNodeName());
+        Node adoptedNode2 = adoptedNode1.getFirstChild();
+        assertEquals(node2.getNodeName(), adoptedNode2.getNodeName());
+
+        NamedNodeMap doc2NamespaceAttrs = NodeUtils.getDocumentNamespaceAttributes(document2);
+        String adoptedToolsPrefix = NodeUtils.getPrefixForNs(doc2NamespaceAttrs, toolsUri);
+        assertNotNull(adoptedToolsPrefix);
+        assertTrue(adoptedToolsPrefix.startsWith(SdkConstants.XMLNS_PREFIX));
+        adoptedToolsPrefix = adoptedToolsPrefix.substring(SdkConstants.XMLNS_PREFIX.length());
+
+        assertEquals(3, node1.getAttributes().getLength());
+        assertEquals(2, adoptedNode1.getAttributes().getLength());
+        assertEquals(node1.getAttributes().getNamedItem("tools:targetApi").getNodeValue(),
+                     adoptedNode1.getAttributes().getNamedItem(adoptedToolsPrefix + ":targetApi").getNodeValue());
+        assertEquals(node1.getAttributes().getNamedItem("c").getNodeValue(),
+                     adoptedNode1.getAttributes().getNamedItem("c").getNodeValue());
+    }
+
+    public void testAdoptNodeNSOverriding() throws Exception {
+        // Test what happens if a node provides an xmlns:prefix="some.uri" declaration,
+        // that is used in some nodes, and then a child node re-declares the same prefix
+        // to override it with another uri, and uses that.
+        // The duplicate and adopt process will move the xmlns declaration to the root of the
+        // new document, but the two namespace URIs should remain distinct.
+        Document document = createDocument();
+        Node rootNode = document.createElement("root");
+        document.appendChild(rootNode);
+
+        Node node1 = document.createElement("N1");
+        rootNode.appendChild(node1);
+        String someNs = "http://some.uri";
+        NodeUtils.addAttribute(document, node1, SdkConstants.XMLNS_URI, "xmlns:prefix", someNs);
+        NodeUtils.addAttribute(document, node1, someNs, "prefix:attr1", "value1");
+
+        Node node2 = document.createElement("N2");
+        node1.appendChild(node2);
+        Node node3 = document.createElement("item");
+        node2.appendChild(node3);
+
+        String otherNs = "http://other.uri";
+        NodeUtils.addAttribute(document, node2, null, "c", "d");
+        NodeUtils.addAttribute(document, node2, SdkConstants.XMLNS_URI, "xmlns:prefix", otherNs);
+        NodeUtils.addAttribute(document, node2, otherNs, "prefix:attr2", "value2");
+
+        // create the other document to receive the duplicated and adopted node. It must have a root node.
+        Document document2 = createDocument();
+        rootNode = document2.createElement("root");
+        document2.appendChild(rootNode);
+
+        Node adoptedNode1 = NodeUtils.duplicateAndAdoptNode(document2, node1);
+
+        // The nodes are not quite the same, so we compare things manually.
+        assertEquals(node1.getNodeName(), adoptedNode1.getNodeName());
+        Node adoptedNode2 = adoptedNode1.getFirstChild();
+        assertEquals(node2.getNodeName(), adoptedNode2.getNodeName());
+        Node adoptedNode3 = adoptedNode2.getFirstChild();
+        assertEquals(node3.getNodeName(), adoptedNode3.getNodeName());
+
+        NamedNodeMap doc2NamespaceAttrs = NodeUtils.getDocumentNamespaceAttributes(document2);
+        String adoptedSomeNsPrefix = NodeUtils.getPrefixForNs(doc2NamespaceAttrs, someNs);
+        assertNotNull(adoptedSomeNsPrefix);
+        assertTrue(adoptedSomeNsPrefix.startsWith(SdkConstants.XMLNS_PREFIX));
+        adoptedSomeNsPrefix = adoptedSomeNsPrefix.substring(SdkConstants.XMLNS_PREFIX.length());
+
+        String adoptedOtherNsPrefix = NodeUtils.getPrefixForNs(doc2NamespaceAttrs, otherNs);
+        assertNotNull(adoptedOtherNsPrefix);
+        assertTrue(adoptedOtherNsPrefix.startsWith(SdkConstants.XMLNS_PREFIX));
+        adoptedOtherNsPrefix = adoptedOtherNsPrefix.substring(SdkConstants.XMLNS_PREFIX.length());
+
+        assertNotSame(adoptedSomeNsPrefix, adoptedOtherNsPrefix);
+
+        assertEquals(2, node1.getAttributes().getLength());
+        assertEquals(1, adoptedNode1.getAttributes().getLength());
+        assertEquals(node1.getAttributes().getNamedItem("prefix:attr1").getNodeValue(),
+                     adoptedNode1.getAttributes().getNamedItem(
+                       adoptedSomeNsPrefix + ":attr1").getNodeValue());
+
+        assertEquals(3, node2.getAttributes().getLength());
+        assertEquals(2, adoptedNode2.getAttributes().getLength());
+        assertEquals(node2.getAttributes().getNamedItem("c").getNodeValue(),
+                     adoptedNode2.getAttributes().getNamedItem("c").getNodeValue());
+        assertEquals(node2.getAttributes().getNamedItem("prefix:attr2").getNodeValue(),
+                     adoptedNode2.getAttributes().getNamedItem(
+                       adoptedOtherNsPrefix + ":attr2").getNodeValue());
     }
 
     private static Document createDocument() throws ParserConfigurationException {
