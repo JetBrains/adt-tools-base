@@ -71,9 +71,9 @@
             android:layout_alignParentTop="true"/>
         <TextView
             android:id="@+id/textUsage"
+            android:text="smaps Layout:"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="smaps Layout:" />
+            android:layout_height="wrap_content"/>
     </RelativeLayout>
 
 
@@ -125,11 +125,11 @@
         <Button
             android:id="@+id/buttonBigBitmapUninit"
             style="@style/smallButtonStyle"
-            android:text="(uninit)" />
+            android:text="(uninit)"/>
         <Button
             android:id="@+id/buttonReleaseBigBitmaps"
             style="@style/smallButtonStyle"
-            android:text="Release" />
+            android:text="Release"/>
         <Button
             android:id="@+id/buttonBitmapChurn"
             style="@style/smallButtonStyle"
