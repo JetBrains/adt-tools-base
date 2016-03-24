@@ -31,6 +31,8 @@ ext.proguardVersion = "5.2.1"
 dependencies {
     compile project(':base:builder')
     compile project(':base:lint')
+    // TODO: Switch to remote dependency once the empty deprecated transform-api is published
+    compile project(':base:transform-api')
     compile project(':base:gradle-api')
     compile project(':dataBinding:compilerCommon')
     compile 'org.ow2.asm:asm:5.0.4'
