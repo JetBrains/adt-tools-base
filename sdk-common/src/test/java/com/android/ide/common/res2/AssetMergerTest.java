@@ -68,8 +68,9 @@ public class AssetMergerTest extends BaseTestCase {
     public void testMergeBlob() throws Exception {
         AssetMerger merger = getAssetMerger();
 
-        File folder = Files.createTempDir();
-        merger.writeBlobTo(folder, new MergedAssetWriter(Files.createTempDir()), false);
+        File folder = TestUtils.createTempDirDeletedOnExit();
+        merger.writeBlobTo(
+                folder, new MergedAssetWriter(TestUtils.createTempDirDeletedOnExit()), false);
 
         AssetMerger loadedMerger = new AssetMerger();
         loadedMerger.loadFromBlob(folder, true /*incrementalState*/);
@@ -229,8 +230,9 @@ public class AssetMergerTest extends BaseTestCase {
         assertTrue(merger1.checkValidUpdate(merger2.getDataSets()));
 
         // write merger1 on disk to test writing empty AssetSets.
-        File folder = Files.createTempDir();
-        merger1.writeBlobTo(folder, new MergedAssetWriter(Files.createTempDir()), false);
+        File folder = TestUtils.createTempDirDeletedOnExit();
+        merger1.writeBlobTo(
+                folder, new MergedAssetWriter(TestUtils.createTempDirDeletedOnExit()), false);
 
         // reload it
         AssetMerger loadedMerger = new AssetMerger();
@@ -376,7 +378,7 @@ public class AssetMergerTest extends BaseTestCase {
     private static File getWrittenResources() throws MergingException, IOException {
         AssetMerger assetMerger = getAssetMerger();
 
-        File folder = Files.createTempDir();
+        File folder = TestUtils.createTempDirDeletedOnExit();
 
         MergedAssetWriter writer = new MergedAssetWriter(folder);
         assetMerger.mergeData(writer, false /*doCleanUp*/);
@@ -390,7 +392,7 @@ public class AssetMergerTest extends BaseTestCase {
     }
 
     private static File getFolderCopy(File folder) throws IOException {
-        File dest = Files.createTempDir();
+        File dest = TestUtils.createTempDirDeletedOnExit();
         copyFolder(folder, dest);
         return dest;
     }

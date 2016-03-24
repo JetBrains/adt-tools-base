@@ -20,6 +20,11 @@ import static com.android.build.gradle.tasks.ResourceUsageAnalyzer.NO_MATCH;
 import static com.android.build.gradle.tasks.ResourceUsageAnalyzer.REPLACE_DELETED_WITH_EMPTY;
 import static com.android.build.gradle.tasks.ResourceUsageAnalyzer.convertFormatStringToRegexp;
 import static java.io.File.separatorChar;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -30,7 +35,9 @@ import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 
-import junit.framework.TestCase;
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -46,26 +53,33 @@ import java.util.zip.ZipOutputStream;
 
 /** TODO: Test Resources#getIdentifier() handling */
 @SuppressWarnings("SpellCheckingInspection")
-public class ResourceUsageAnalyzerTest extends TestCase {
+public class ResourceUsageAnalyzerTest {
 
+    @ClassRule
+    public static TemporaryFolder sTemporaryFolder = new TemporaryFolder();
+
+    @Test
     public void testObfuscatedInPlace() throws Exception {
         check(true, true);
     }
 
+    @Test
     public void testObfuscatedCopy() throws Exception {
         check(true, false);
     }
 
+    @Test
     public void testNoProGuardInPlace() throws Exception {
         check(false, true);
     }
 
+    @Test
     public void testNoProGuardCopy() throws Exception {
         check(false, false);
     }
 
     private static void check(boolean useProguard, boolean inPlace) throws Exception {
-        File dir = Files.createTempDir();
+        File dir = sTemporaryFolder.newFolder();
 
         File mapping;
         File classes;
@@ -127,7 +141,7 @@ public class ResourceUsageAnalyzerTest extends TestCase {
         assertTrue(unusedBitmap.exists());
 
         if (ResourceUsageAnalyzer.TWO_PASS_AAPT) {
-            File destination = inPlace ? null : Files.createTempDir();
+            File destination = inPlace ? null : sTemporaryFolder.newFolder();
 
             analyzer.setDryRun(true);
             analyzer.removeUnused(destination);
@@ -981,6 +995,7 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                 + "    boolean toInclusive() -> toInclusive\n");
     }
 
+    @Test
     public void testFormatStringRegexp() {
         assertEquals(NO_MATCH, convertFormatStringToRegexp(""));
         assertEquals("\\Qfoo_\\E", convertFormatStringToRegexp("foo_"));
@@ -1083,6 +1098,7 @@ public class ResourceUsageAnalyzerTest extends TestCase {
         }
     }
 
+    @Test
     public void testIsResourceClass() throws Exception {
         File dummy = new File("dummy");
         File mappingFile = createMappingFile(Files.createTempDir());

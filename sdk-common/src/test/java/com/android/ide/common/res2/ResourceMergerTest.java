@@ -288,7 +288,7 @@ public class ResourceMergerTest extends BaseTestCase {
     public void testNotMergedAttrFromMerge() throws Exception {
         ResourceMerger merger = getResourceMerger();
 
-        File folder = Files.createTempDir();
+        File folder = TestUtils.createTempDirDeletedOnExit();
         merger.writeBlobTo(folder, getConsumer(), false);
 
         ResourceMerger loadedMerger = new ResourceMerger(0);
@@ -307,7 +307,7 @@ public class ResourceMergerTest extends BaseTestCase {
         assertEquals(1, items.size());
         assertFalse(items.get(0).getIgnoredFromDiskMerge());
 
-        File folder = Files.createTempDir();
+        File folder = TestUtils.createTempDirDeletedOnExit();
         merger.writeBlobTo(folder, getConsumer(), false);
 
         ResourceMerger loadedMerger = new ResourceMerger(0);
@@ -319,7 +319,7 @@ public class ResourceMergerTest extends BaseTestCase {
 
         // Now mark the item ignored and try write + load again
         loadedItems.get(0).setIgnoredFromDiskMerge(true);
-        folder = Files.createTempDir();
+        folder = TestUtils.createTempDirDeletedOnExit();
         loadedMerger.writeBlobTo(folder, getConsumer(), false);
 
         ResourceMerger loadedMerger2 = new ResourceMerger(0);
@@ -386,7 +386,7 @@ public class ResourceMergerTest extends BaseTestCase {
     public void testMergeBlob() throws Exception {
         ResourceMerger merger = getResourceMerger();
 
-        File folder = Files.createTempDir();
+        File folder = TestUtils.createTempDirDeletedOnExit();
         merger.writeBlobTo(folder, getConsumer(), false);
 
         ResourceMerger loadedMerger = new ResourceMerger(0);
@@ -454,7 +454,7 @@ public class ResourceMergerTest extends BaseTestCase {
         });
         assertEquals(11, idItems.size());
 
-        File folder = Files.createTempDir();
+        File folder = TestUtils.createTempDirDeletedOnExit();
         folder.deleteOnExit();
         merger.writeBlobTo(folder, getConsumer(), false);
 
@@ -488,7 +488,7 @@ public class ResourceMergerTest extends BaseTestCase {
         // Test that in a drawable directory with both XML and PNG, we can pick up IDs
         // without being confused about the PNG.
         File srcDrawables = FileUtils.join(TestUtils.getRoot("resources", "idGenerating"), "drawable-v21");
-        File copiedRoot = Files.createTempDir();
+        File copiedRoot = TestUtils.createTempDirDeletedOnExit();
         copiedRoot.deleteOnExit();
         File copiedDrawables = FileUtils.join(copiedRoot, "drawable-v21");
         copyFolder(srcDrawables, copiedDrawables);
@@ -753,7 +753,7 @@ public class ResourceMergerTest extends BaseTestCase {
         File resFolder = getFolderCopy(new File(root, "resOut"));
         resFolder.deleteOnExit();
 
-        File mergeLogFolder = Files.createTempDir();
+        File mergeLogFolder = TestUtils.createTempDirDeletedOnExit();
         mergeLogFolder.deleteOnExit();
 
         // write the content of the resource merger.
@@ -880,7 +880,7 @@ public class ResourceMergerTest extends BaseTestCase {
         File resFolder = getFolderCopy(new File(root, "resOut"));
 
 
-        File mergeLogFolder = Files.createTempDir();
+        File mergeLogFolder = TestUtils.createTempDirDeletedOnExit();
         mergeLogFolder.deleteOnExit();
 
         // write the content of the resource merger.
@@ -1110,7 +1110,7 @@ public class ResourceMergerTest extends BaseTestCase {
         assertTrue(merger1.checkValidUpdate(merger2.getDataSets()));
 
         // write merger1 on disk to test writing empty ResourceSets.
-        File folder = Files.createTempDir();
+        File folder = TestUtils.createTempDirDeletedOnExit();
         merger1.writeBlobTo(folder, getConsumer(), false);
 
         // reload it
@@ -1260,7 +1260,7 @@ public class ResourceMergerTest extends BaseTestCase {
         assertTrue(new File(outDrawableFolder, "icon.png").isFile());
 
         // now write the blob
-        File outBlobFolder = Files.createTempDir();
+        File outBlobFolder = TestUtils.createTempDirDeletedOnExit();
         resourceMerger.writeBlobTo(outBlobFolder, writer, false);
 
         // check the removed icon is not present.
@@ -1296,7 +1296,7 @@ public class ResourceMergerTest extends BaseTestCase {
         resourceMerger.addDataSet(overlaySet);
 
         // write the merge result.
-        File folder = Files.createTempDir();
+        File folder = TestUtils.createTempDirDeletedOnExit();
         folder.deleteOnExit();
 
         MergedResourceWriter writer = getConsumer(folder);
@@ -1570,7 +1570,7 @@ public class ResourceMergerTest extends BaseTestCase {
         resourceMerger.addDataSet(baseSet);
 
         // write the merge result.
-        File folder = Files.createTempDir();
+        File folder = TestUtils.createTempDirDeletedOnExit();
         folder.deleteOnExit();
 
         MergedResourceWriter writer = getConsumer(folder);
@@ -1668,7 +1668,7 @@ public class ResourceMergerTest extends BaseTestCase {
     private File getWrittenResources() throws MergingException, IOException {
         ResourceMerger resourceMerger = getResourceMerger();
 
-        File folder = Files.createTempDir();
+        File folder = TestUtils.createTempDirDeletedOnExit();
 
         MergedResourceWriter writer = getConsumer(folder);
         resourceMerger.mergeData(writer, false /*doCleanUp*/);
@@ -1682,7 +1682,7 @@ public class ResourceMergerTest extends BaseTestCase {
     }
 
     private static File getFolderCopy(File folder) throws IOException {
-        File dest = Files.createTempDir();
+        File dest = TestUtils.createTempDirDeletedOnExit();
         copyFolder(folder, dest);
         return dest;
     }
@@ -1760,7 +1760,7 @@ public class ResourceMergerTest extends BaseTestCase {
     public void testWritePermission() throws Exception {
         ResourceMerger merger = getResourceMerger();
 
-        File folder = Files.createTempDir();
+        File folder = TestUtils.createTempDirDeletedOnExit();
         boolean writable = folder.setWritable(false);
         if (!writable) {
             // Not supported on this platform
@@ -1940,7 +1940,7 @@ public class ResourceMergerTest extends BaseTestCase {
 
     @NonNull
     private MergedResourceWriter getConsumer() {
-        return getConsumer(Files.createTempDir());
+        return getConsumer(TestUtils.createTempDirDeletedOnExit());
     }
 
     @NonNull

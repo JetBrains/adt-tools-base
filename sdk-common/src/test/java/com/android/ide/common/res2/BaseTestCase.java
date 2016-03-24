@@ -17,6 +17,7 @@
 package com.android.ide.common.res2;
 
 import com.android.annotations.NonNull;
+import com.android.testutils.TestUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ListMultimap;
 import com.google.common.io.Files;
@@ -132,7 +133,7 @@ public abstract class BaseTestCase extends TestCase {
                 "\\$TOP\\$", Matcher.quoteReplacement(folder.getAbsolutePath())).
                 replaceAll("\\$SEP\\$", Matcher.quoteReplacement(File.separator));
 
-        File tempFolder = Files.createTempDir();
+        File tempFolder = TestUtils.createTempDirDeletedOnExit();
         Files.write(content, new File(tempFolder, DataMerger.FN_MERGER_XML), Charsets.UTF_8);
 
         return tempFolder;

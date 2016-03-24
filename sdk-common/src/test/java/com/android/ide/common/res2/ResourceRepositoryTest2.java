@@ -28,6 +28,7 @@ import com.android.ide.common.resources.configuration.LocaleQualifier;
 import com.android.ide.common.resources.configuration.ScreenOrientationQualifier;
 import com.android.resources.ResourceType;
 import com.android.resources.ScreenOrientation;
+import com.android.testutils.TestUtils;
 import com.android.utils.ILogger;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
@@ -55,7 +56,7 @@ public class ResourceRepositoryTest2 extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
 
-        mTempDir = Files.createTempDir();
+        mTempDir = TestUtils.createTempDirDeletedOnExit();
         mRes = new File(mTempDir, FD_RES);
         mRes.mkdirs();
         File layout = new File(mRes, FD_RES_LAYOUT);

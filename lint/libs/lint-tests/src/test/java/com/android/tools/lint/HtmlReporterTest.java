@@ -17,6 +17,7 @@
 package com.android.tools.lint;
 
 import com.android.annotations.NonNull;
+import com.android.testutils.TestUtils;
 import com.android.tools.lint.checks.AbstractCheckTest;
 import com.android.tools.lint.checks.HardcodedValuesDetector;
 import com.android.tools.lint.checks.ManifestDetector;
@@ -39,7 +40,7 @@ import java.util.List;
 public class HtmlReporterTest extends AbstractCheckTest {
     public void test() throws Exception {
         //noinspection ResultOfMethodCallIgnored
-        File projectDir = Files.createTempDir();
+        File projectDir = TestUtils.createTempDirDeletedOnExit();
         File buildDir = new File(projectDir, "build");
         File reportFile = new File(buildDir, "report");
         //noinspection ResultOfMethodCallIgnored

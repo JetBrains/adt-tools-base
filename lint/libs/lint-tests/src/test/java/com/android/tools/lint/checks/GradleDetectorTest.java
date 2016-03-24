@@ -43,6 +43,7 @@ import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.MavenCoordinates;
 import com.android.builder.model.Variant;
+import com.android.testutils.TestUtils;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.DefaultPosition;
@@ -113,7 +114,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
         if (mSdkDir == null) {
             // Make fake SDK "installation" such that we can predict the set
             // of Maven repositories discovered by this test
-            mSdkDir = Files.createTempDir();
+            mSdkDir = TestUtils.createTempDirDeletedOnExit();
 
             String[] paths = new String[]{
                     // Android repository

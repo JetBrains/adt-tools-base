@@ -53,7 +53,9 @@ import org.gradle.api.Project;
 import org.gradle.api.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
@@ -104,19 +106,22 @@ public class InstantRunDexTest {
     @Mock
     InstantRunDex.JarClassesBuilder jarClassesBuilder;
 
-    File directoryInput;
-    File incrementalChanges;
-    File changedFile;
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+    private File directoryInput;
+    private File incrementalChanges;
+    private File changedFile;
 
 
     @Before
     public void setUp() throws IOException {
 
-        final File reloadOutputFolder = Files.createTempDir();
+        final File reloadOutputFolder = temporaryFolder.newFolder();
         File oldDexFile = new File(reloadOutputFolder, "reload.dex");
         assertTrue(oldDexFile.createNewFile());
 
-        final File restartOutputFolder = Files.createTempDir();
+        final File restartOutputFolder = temporaryFolder.newFolder();
         File oldRestartFile = new File(restartOutputFolder, "restart.dex");
         assertTrue(oldRestartFile.createNewFile());
 

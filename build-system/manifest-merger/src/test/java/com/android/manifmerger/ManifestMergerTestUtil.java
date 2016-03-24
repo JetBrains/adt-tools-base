@@ -87,8 +87,7 @@ public class ManifestMergerTestUtil {
     /**
      * Delimiter for starts a section that declares how to inject an attribute. The section is
      * composed of one or more lines with the syntax: "/node/node|attr-URI attrName=attrValue". This
-     * is essentially a pseudo XPath-like expression that is described in {@link
-     * ManifestMerger#process(Document, File[], Map, String)}.
+     * is essentially a pseudo XPath-like expression.
      */
     private static final String DELIM_INJECT_ATTR = "inject";
 
@@ -161,6 +160,7 @@ public class ManifestMergerTestUtil {
             reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
 
             final File tempDir = Files.createTempDir();
+            tempDir.deleteOnExit();
             Runtime.getRuntime().addShutdownHook(new Thread() {
                 @Override
                 public void run() {
