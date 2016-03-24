@@ -13,143 +13,173 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.build.gradle.tasks
-import com.android.annotations.NonNull
-import com.android.build.gradle.internal.scope.ConventionMappingHelper
-import com.android.build.gradle.internal.scope.TaskConfigAction
-import com.android.build.gradle.internal.scope.VariantScope
-import com.android.build.gradle.internal.tasks.IncrementalTask
-import com.android.build.gradle.internal.variant.BaseVariantData
-import com.android.build.gradle.internal.variant.BaseVariantOutputData
-import com.android.builder.core.VariantConfiguration
-import com.android.builder.core.VariantType
-import com.android.ide.common.res2.AssetMerger
-import com.android.ide.common.res2.AssetSet
-import com.android.ide.common.res2.FileStatus
-import com.android.ide.common.res2.FileValidity
-import com.android.ide.common.res2.MergedAssetWriter
-import com.android.ide.common.res2.MergingException
-import com.android.utils.FileUtils
-import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.OutputDirectory
-import org.gradle.api.tasks.ParallelizableTask
+package com.android.build.gradle.tasks;
+
+import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.scope.TaskConfigAction;
+import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.tasks.IncrementalTask;
+import com.android.build.gradle.internal.variant.BaseVariantData;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.builder.core.VariantConfiguration;
+import com.android.builder.core.VariantType;
+import com.android.ide.common.res2.AssetMerger;
+import com.android.ide.common.res2.AssetSet;
+import com.android.ide.common.res2.FileStatus;
+import com.android.ide.common.res2.FileValidity;
+import com.android.ide.common.res2.MergedAssetWriter;
+import com.android.ide.common.res2.MergingException;
+import com.android.utils.FileUtils;
+
+import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.OutputDirectory;
+import org.gradle.api.tasks.ParallelizableTask;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
 
 @ParallelizableTask
 public class MergeSourceSetFolders extends IncrementalTask {
 
     // ----- PUBLIC TASK API -----
 
+    private File outputDir;
+
     @OutputDirectory
-    File outputDir
+    public File getOutputDir() {
+        return outputDir;
+    }
+
+    public void setOutputDir(File outputDir) {
+        this.outputDir = outputDir;
+    }
 
     // ----- PRIVATE TASK API -----
 
-    // fake input to detect changes. Not actually used by the task
+    @SuppressWarnings("unused") // fake input to detect changes. Not actually used by the task
     @InputFiles
-    Iterable<File> getRawInputFolders() {
-        return flattenSourceSets(getInputDirectorySets())
+    public Iterable<File> getRawInputFolders() {
+        return IncrementalTask.flattenSourceSets(getInputDirectorySets());
     }
 
     // actual inputs
-    List<AssetSet> inputDirectorySets
+    private List<AssetSet> inputDirectorySets;
 
-    private final FileValidity<AssetSet> fileValidity = new FileValidity<AssetSet>();
+    public List<AssetSet> getInputDirectorySets() {
+        return inputDirectorySets;
+    }
+
+    public void setInputDirectorySets(List<AssetSet> inputDirectorySets) {
+        this.inputDirectorySets = inputDirectorySets;
+    }
+
+    private final FileValidity<AssetSet> fileValidity = new FileValidity<>();
 
     @Override
     protected boolean isIncremental() {
-        return true
+        return true;
     }
 
     @Override
-    protected void doFullTaskAction() {
+    protected void doFullTaskAction() throws IOException {
         // this is full run, clean the previous output
-        File destinationDir = getOutputDir()
-        FileUtils.emptyFolder(destinationDir)
+        File destinationDir = getOutputDir();
+        FileUtils.emptyFolder(destinationDir);
 
-        List<AssetSet> assetSets = getInputDirectorySets()
+        List<AssetSet> assetSets = getInputDirectorySets();
 
         // create a new merger and populate it with the sets.
-        AssetMerger merger = new AssetMerger()
+        AssetMerger merger = new AssetMerger();
 
         try {
             for (AssetSet assetSet : assetSets) {
                 // set needs to be loaded.
-                assetSet.loadFromFiles(getILogger())
-                merger.addDataSet(assetSet)
+                assetSet.loadFromFiles(getILogger());
+                merger.addDataSet(assetSet);
             }
 
             // get the merged set and write it down.
-            MergedAssetWriter writer = new MergedAssetWriter(destinationDir)
+            MergedAssetWriter writer = new MergedAssetWriter(destinationDir);
 
-            merger.mergeData(writer, false /*doCleanUp*/)
+            merger.mergeData(writer, false /*doCleanUp*/);
 
             // No exception? Write the known state.
-            merger.writeBlobTo(getIncrementalFolder(), writer, false)
+            merger.writeBlobTo(getIncrementalFolder(), writer, false);
         } catch (MergingException e) {
-            println e.getMessage()
-            merger.cleanBlob(getIncrementalFolder())
-            throw new ResourceException(e.getMessage(), e)
+            getLogger().error("Could not merge source set folders: ", e);
+            merger.cleanBlob(getIncrementalFolder());
+            throw new ResourceException(e.getMessage(), e);
         }
     }
 
     @Override
-    protected void doIncrementalTaskAction(Map<File, FileStatus> changedInputs) {
+    protected void doIncrementalTaskAction(Map<File, FileStatus> changedInputs) throws IOException {
         // create a merger and load the known state.
-        AssetMerger merger = new AssetMerger()
+        AssetMerger merger = new AssetMerger();
         try {
             if (!merger.loadFromBlob(getIncrementalFolder(), true /*incrementalState*/)) {
-                doFullTaskAction()
-                return
+                doFullTaskAction();
+                return;
             }
 
             // compare the known state to the current sets to detect incompatibility.
             // This is in case there's a change that's too hard to do incrementally. In this case
             // we'll simply revert to full build.
-            List<AssetSet> assetSets = getInputDirectorySets()
+            List<AssetSet> assetSets = getInputDirectorySets();
 
             if (!merger.checkValidUpdate(assetSets)) {
-                project.logger.info("Changed Asset sets: full task run!")
-                doFullTaskAction()
-                return
+                getLogger().info("Changed Asset sets: full task run!");
+                doFullTaskAction();
+                return;
+
             }
 
             // The incremental process is the following:
             // Loop on all the changed files, find which ResourceSet it belongs to, then ask
             // the resource set to update itself with the new file.
             for (Map.Entry<File, FileStatus> entry : changedInputs.entrySet()) {
-                File changedFile = entry.getKey()
+                File changedFile = entry.getKey();
 
                 // Ignore directories.
                 if (changedFile.isDirectory()) {
                     continue;
                 }
 
-                merger.findDataSetContaining(changedFile, fileValidity)
-                if (fileValidity.status == FileValidity.FileStatus.UNKNOWN_FILE) {
-                    doFullTaskAction()
-                    return
-                } else if (fileValidity.status == FileValidity.FileStatus.VALID_FILE) {
-                    if (!fileValidity.dataSet.updateWith(
-                            fileValidity.sourceFile, changedFile, entry.getValue(), getILogger())) {
-                        project.logger.info(
-                                String.format("Failed to process %s event! Full task run",
-                                        entry.getValue()))
-                        doFullTaskAction()
-                        return
+                merger.findDataSetContaining(changedFile, fileValidity);
+                if (fileValidity.getStatus() == FileValidity.FileStatus.UNKNOWN_FILE) {
+                    doFullTaskAction();
+                    return;
+
+                } else if (fileValidity.getStatus() == FileValidity.FileStatus.VALID_FILE) {
+                    if (!fileValidity.getDataSet().updateWith(
+                            fileValidity.getSourceFile(),
+                            changedFile,
+                            entry.getValue(),
+                            getILogger())) {
+                        getLogger().info(
+                                "Failed to process {} event! Full task run", entry.getValue());
+                        doFullTaskAction();
+                        return;
                     }
                 }
             }
 
-            MergedAssetWriter writer = new MergedAssetWriter(getOutputDir())
+            MergedAssetWriter writer = new MergedAssetWriter(getOutputDir());
 
-            merger.mergeData(writer, false /*doCleanUp*/)
+            merger.mergeData(writer, false /*doCleanUp*/);
 
             // No exception? Write the known state.
-            merger.writeBlobTo(getIncrementalFolder(), writer, false)
+            merger.writeBlobTo(getIncrementalFolder(), writer, false);
         } catch (MergingException e) {
-            println e.getMessage()
-            merger.cleanBlob(getIncrementalFolder())
-            throw new ResourceException(e.getMessage(), e)
+            getLogger().error("Could not merge source set folders: ", e);
+            merger.cleanBlob(getIncrementalFolder());
+            throw new ResourceException(e.getMessage(), e);
         } finally {
             // some clean up after the task to help multi variant/module builds.
             fileValidity.clear();
@@ -157,118 +187,115 @@ public class MergeSourceSetFolders extends IncrementalTask {
     }
 
     protected abstract static class ConfigAction implements TaskConfigAction<MergeSourceSetFolders> {
-
         @NonNull
-        protected VariantScope scope
+        protected final VariantScope scope;
 
         protected ConfigAction(@NonNull VariantScope scope) {
-            this.scope = scope
+            this.scope = scope;
         }
 
         @NonNull
         @Override
-        Class<MergeSourceSetFolders> getType() {
-            return MergeSourceSetFolders
+        public Class<MergeSourceSetFolders> getType() {
+            return MergeSourceSetFolders.class;
         }
 
         @Override
-        void execute(@NonNull MergeSourceSetFolders mergeAssetsTask) {
-            BaseVariantData<? extends BaseVariantOutputData> variantData = scope.variantData
-            VariantConfiguration variantConfig = variantData.variantConfiguration
+        public void execute(@NonNull MergeSourceSetFolders mergeAssetsTask) {
+            BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
+            VariantConfiguration variantConfig = variantData.getVariantConfiguration();
 
-            mergeAssetsTask.androidBuilder = scope.globalScope.androidBuilder
-            mergeAssetsTask.setVariantName(variantConfig.getFullName())
-            mergeAssetsTask.incrementalFolder = scope.getIncrementalDir(getName())
+            mergeAssetsTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+            mergeAssetsTask.setVariantName(variantConfig.getFullName());
+            mergeAssetsTask.setIncrementalFolder(scope.getIncrementalDir(getName()));
         }
     }
 
     public static class MergeAssetConfigAction extends ConfigAction {
 
-        MergeAssetConfigAction(@NonNull VariantScope scope) {
+        public MergeAssetConfigAction(@NonNull VariantScope scope) {
             super(scope);
         }
 
         @NonNull
         @Override
-        String getName() {
+        public String getName() {
             return scope.getTaskName("merge", "Assets");
         }
 
         @Override
-        void execute(@NonNull MergeSourceSetFolders mergeAssetsTask) {
+        public void execute(@NonNull MergeSourceSetFolders mergeAssetsTask) {
             super.execute(mergeAssetsTask);
-            BaseVariantData<? extends BaseVariantOutputData> variantData = scope.variantData
-            VariantConfiguration variantConfig = variantData.variantConfiguration
+            final BaseVariantData<? extends BaseVariantOutputData> variantData =
+                    scope.getVariantData();
+            final GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
 
-            variantData.mergeAssetsTask = mergeAssetsTask
+            variantData.mergeAssetsTask = mergeAssetsTask;
 
-            boolean includeDependencies = variantConfig.type != VariantType.LIBRARY
-            ConventionMappingHelper.map(mergeAssetsTask, "inputDirectorySets") {
-                def generatedAssets = [scope.getShadersOutputDir()]
+            final boolean includeDependencies = !variantConfig.getType()
+                    .equals(VariantType.LIBRARY);
+            ConventionMappingHelper.map(mergeAssetsTask, "inputDirectorySets", () -> {
+                ArrayList<File> generatedAssets = new ArrayList<>();
+                generatedAssets.add(scope.getShadersOutputDir());
                 if (variantData.copyApkTask != null) {
-                    generatedAssets.add(variantData.copyApkTask.destinationDir)
+                    generatedAssets.add(variantData.copyApkTask.getDestinationDir());
                 }
 
-                variantConfig.getAssetSets(generatedAssets, includeDependencies)
-            }
-            ConventionMappingHelper.map(mergeAssetsTask, "outputDir") {
-                scope.getMergeAssetsOutputDir()
-            }
+                return variantConfig.getAssetSets(generatedAssets, includeDependencies);
+            });
+            mergeAssetsTask.setOutputDir(scope.getMergeAssetsOutputDir());
         }
     }
 
     public static class MergeJniLibFoldersConfigAction extends ConfigAction {
 
-        MergeJniLibFoldersConfigAction(@NonNull VariantScope scope) {
+        public MergeJniLibFoldersConfigAction(@NonNull VariantScope scope) {
             super(scope);
         }
 
         @NonNull
         @Override
-        String getName() {
+        public String getName() {
             return scope.getTaskName("merge", "JniLibFolders");
         }
 
         @Override
-        void execute(@NonNull MergeSourceSetFolders mergeAssetsTask) {
+        public void execute(@NonNull MergeSourceSetFolders mergeAssetsTask) {
             super.execute(mergeAssetsTask);
-            BaseVariantData<? extends BaseVariantOutputData> variantData = scope.variantData
-            VariantConfiguration variantConfig = variantData.variantConfiguration
+            BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
+            final GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
 
-            ConventionMappingHelper.map(mergeAssetsTask, "inputDirectorySets") {
-                variantConfig.getJniLibsSets()
-            }
+            ConventionMappingHelper.map(mergeAssetsTask, "inputDirectorySets",
+                    variantConfig::getJniLibsSets);
 
-            ConventionMappingHelper.map(mergeAssetsTask, "outputDir") {
-                scope.getMergeNativeLibsOutputDir()
-            }
+            mergeAssetsTask.setOutputDir(scope.getMergeNativeLibsOutputDir());
         }
+
     }
 
     public static class MergeShaderSourceFoldersConfigAction extends ConfigAction {
 
-        MergeShaderSourceFoldersConfigAction(@NonNull VariantScope scope) {
+        public MergeShaderSourceFoldersConfigAction(@NonNull VariantScope scope) {
             super(scope);
         }
 
         @NonNull
         @Override
-        String getName() {
+        public String getName() {
             return scope.getTaskName("merge", "Shaders");
         }
 
         @Override
-        void execute(@NonNull MergeSourceSetFolders mergeAssetsTask) {
+        public void execute(@NonNull MergeSourceSetFolders mergeAssetsTask) {
             super.execute(mergeAssetsTask);
-            BaseVariantData<? extends BaseVariantOutputData> variantData = scope.variantData
-            VariantConfiguration variantConfig = variantData.variantConfiguration
+            BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
+            final GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
 
-            ConventionMappingHelper.map(mergeAssetsTask, "inputDirectorySets") {
-                variantConfig.getShaderSets()
-            }
+            ConventionMappingHelper.map(mergeAssetsTask, "inputDirectorySets",
+                    (Callable<List<AssetSet>>) variantConfig::getShaderSets);
 
-            mergeAssetsTask.setOutputDir(scope.getMergeShadersOutputDir())
+            mergeAssetsTask.setOutputDir(scope.getMergeShadersOutputDir());
         }
-    }
 
+    }
 }
