@@ -55,6 +55,12 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
     private final NdkOptions ndkConfig;
 
     @NonNull
+    private final ExternalNativeNdkBuildOptions externalNativeNdkBuildOptions;
+
+    @NonNull
+    private final ExternalNativeCmakeOptions externalNativeCmakeOptions;
+
+    @NonNull
     private final ErrorReporter errorReporter;
 
     @NonNull
@@ -74,6 +80,8 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
         this.logger = logger;
         this.errorReporter = errorReporter;
         ndkConfig = instantiator.newInstance(NdkOptions.class);
+        externalNativeNdkBuildOptions = instantiator.newInstance(ExternalNativeNdkBuildOptions.class);
+        externalNativeCmakeOptions = instantiator.newInstance(ExternalNativeCmakeOptions.class);
         jackOptions = instantiator.newInstance(JackOptions.class);
         shaderOptions = instantiator.newInstance(ShaderOptions.class);
     }
@@ -82,6 +90,18 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
     @Nullable
     public CoreNdkOptions getNdkConfig() {
         return ndkConfig;
+    }
+
+    @Nullable
+    @Override
+    public ExternalNativeNdkBuildOptions getExternalNativeNdkBuildOptions() {
+        return externalNativeNdkBuildOptions;
+    }
+
+    @Nullable
+    @Override
+    public ExternalNativeCmakeOptions getExternalNativeCmakeOptions() {
+        return externalNativeCmakeOptions;
     }
 
     public void setMinSdkVersion(int minSdkVersion) {
@@ -412,6 +432,14 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
                             "Set \"" + USE_DEPRECATED_NDK + "=true\" in gradle.properties to " +
                             "continue using the current NDK integration.");
         }
+    }
+
+    public void ndkBuild(Action<ExternalNativeNdkBuildOptions> action) {
+        action.execute(externalNativeNdkBuildOptions);
+    }
+
+    public void cmake(Action<ExternalNativeCmakeOptions> action) {
+        action.execute(externalNativeCmakeOptions);
     }
 
     /**

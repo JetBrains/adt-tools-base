@@ -18,12 +18,13 @@ package com.android.build.gradle.managed.adaptor;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.dsl.CoreExternalNativeCmakeOptions;
+import com.android.build.gradle.internal.dsl.CoreExternalNativeNdkBuildOptions;
 import com.android.build.gradle.internal.dsl.CoreJackOptions;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
 import com.android.build.gradle.internal.dsl.CoreShaderOptions;
 import com.android.build.gradle.managed.ProductFlavor;
-import com.android.build.gradle.managed.ShaderOptions;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.SigningConfig;
@@ -171,6 +172,18 @@ public class ProductFlavorAdaptor extends BaseConfigAdaptor implements CoreProdu
     @Override
     public CoreNdkOptions getNdkConfig() {
         return new NdkOptionsAdaptor(productFlavor.getNdk());
+    }
+
+    @Nullable
+    @Override
+    public CoreExternalNativeNdkBuildOptions getExternalNativeNdkBuildOptions() {
+        return new ExternalNativeNdkBuildOptionsAdaptor(productFlavor.getNdkBuild());
+    }
+
+    @Nullable
+    @Override
+    public CoreExternalNativeCmakeOptions getExternalNativeCmakeOptions() {
+        return new ExternalNativeCmakeOptionsAdaptor(productFlavor.getCmake());
     }
 
     @NonNull
