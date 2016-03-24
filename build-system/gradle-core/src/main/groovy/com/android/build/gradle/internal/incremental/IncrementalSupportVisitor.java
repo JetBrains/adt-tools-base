@@ -108,7 +108,8 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         visitedClassName = name;
         visitedSuperName = superName;
 
-        super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
+        super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC
+                | Opcodes.ACC_VOLATILE | Opcodes.ACC_SYNTHETIC,
             "$change", getRuntimeTypeName(CHANGE_TYPE), null, null);
         access = transformClassAccessForInstantRun(access);
         super.visit(version, access, name, signature, superName, interfaces);
