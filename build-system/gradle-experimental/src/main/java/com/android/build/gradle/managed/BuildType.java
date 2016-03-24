@@ -108,6 +108,10 @@ public interface BuildType extends BaseConfig {
 
     NdkBuildType getNdk();
 
+    ExternalNativeNdkBuildOptions getNdkBuild();
+
+    ExternalNativeCmakeOptions getCmake();
+
     boolean getUseProguard();
     void setUseProguard(boolean useProguard);
 }

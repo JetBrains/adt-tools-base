@@ -16,26 +16,30 @@
 
 package com.android.build.gradle.internal.model;
 
-import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 
 import org.gradle.model.Managed;
+
+import java.io.File;
 
 /**
  * DSL for externalNativeBuild settings. Example,
  *
  * android {
  *     externalNativeBuild {
- *         ndkBuild {
+ *         cmake {
  *             ...
  *         }
  *     }
  * }
  */
 @Managed
-public interface CoreExternalNativeBuild {
-    @NonNull
-    CoreNdkBuildOptions getNdkBuild();
+public interface CoreCmakeOptions {
+    @Nullable
+    File getPath();
+    void setPath(File path);
 
-    @NonNull
-    CoreCmakeOptions getCmake();
+    @Nullable
+    String getcFlags();
+    void setcFlags(String cflags);
 }

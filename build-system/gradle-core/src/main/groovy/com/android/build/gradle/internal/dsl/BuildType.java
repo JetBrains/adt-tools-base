@@ -49,6 +49,12 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
     @Nullable
     private final NdkOptions ndkConfig;
 
+    @Nullable
+    private final ExternalNativeNdkBuildOptions externalNativeNdkBuildOptions;
+
+    @Nullable
+    private final ExternalNativeCmakeOptions externalNativeCmakeOptions;
+
     @NonNull
     private final JackOptions jackOptions;
 
@@ -71,6 +77,8 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
         jackOptions = instantiator.newInstance(JackOptions.class);
         shaderOptions = instantiator.newInstance(ShaderOptions.class);
         ndkConfig = instantiator.newInstance(NdkOptions.class);
+        externalNativeNdkBuildOptions = instantiator.newInstance(ExternalNativeNdkBuildOptions.class);
+        externalNativeCmakeOptions = instantiator.newInstance(ExternalNativeCmakeOptions.class);
     }
 
     @VisibleForTesting
@@ -83,12 +91,26 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
         jackOptions = new JackOptions();
         shaderOptions = new ShaderOptions();
         ndkConfig = null;
+        externalNativeNdkBuildOptions = null;
+        externalNativeCmakeOptions = null;
     }
 
     @Override
     @Nullable
     public CoreNdkOptions getNdkConfig() {
         return ndkConfig;
+    }
+
+    @Override
+    @Nullable
+    public ExternalNativeNdkBuildOptions getExternalNativeNdkBuildOptions() {
+        return externalNativeNdkBuildOptions;
+    }
+
+    @Override
+    @Nullable
+    public ExternalNativeCmakeOptions getExternalNativeCmakeOptions() {
+        return externalNativeCmakeOptions;
     }
 
     @Override
@@ -344,6 +366,14 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
 
     public void ndk(@NonNull Action<NdkOptions> action) {
         action.execute(ndkConfig);
+    }
+
+    public void ndkBuild(@NonNull Action<ExternalNativeNdkBuildOptions> action) {
+        action.execute(externalNativeNdkBuildOptions);
+    }
+
+    public void cmake(@NonNull Action<ExternalNativeCmakeOptions> action) {
+        action.execute(externalNativeCmakeOptions);
     }
 
     /**
