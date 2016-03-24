@@ -11,6 +11,7 @@ import com.android.ide.common.res2.ResourceMerger;
 import com.android.ide.common.res2.ResourceSet;
 import com.android.io.FolderWrapper;
 import com.android.io.IAbstractFolder;
+import com.android.testutils.TestUtils;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 
@@ -61,7 +62,7 @@ public class TestResourceRepository extends ResourceRepository {
     @NonNull
     public static TestResourceRepository create(boolean isFramework, Object[] data)
             throws IOException {
-        File dir = Files.createTempDir();
+        File dir = TestUtils.createTempDirDeletedOnExit();
         File res = new File(dir, FD_RES);
         res.mkdirs();
 
@@ -102,7 +103,7 @@ public class TestResourceRepository extends ResourceRepository {
     public static com.android.ide.common.res2.ResourceRepository createRes2(
             boolean isFramework, Object[] data)
             throws IOException, MergingException {
-        File dir = Files.createTempDir();
+        File dir = TestUtils.createTempDirDeletedOnExit();
         File res = new File(dir, FD_RES);
         res.mkdirs();
 

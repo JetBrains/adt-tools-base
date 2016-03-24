@@ -21,6 +21,7 @@ import static com.android.utils.SdkUtils.fileToUrlString;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.testutils.SdkTestCase;
+import com.android.testutils.TestUtils;
 import com.google.common.base.Charsets;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
@@ -276,7 +277,7 @@ public class ExtractAnnotationsDriverTest extends SdkTestCase {
     }
 
     private File createProject(TestFile... files) throws IOException {
-        File dir = Files.createTempDir();
+        File dir = TestUtils.createTempDirDeletedOnExit();
 
         for (TestFile fp : files) {
             File file = fp.createFile(dir);

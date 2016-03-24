@@ -48,7 +48,9 @@ import com.google.common.io.Files;
 import com.google.common.truth.Truth;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -75,6 +77,9 @@ public class InstantRunTransformTest {
 
     @Mock
     InstantRunBuildContext instantRunBuildContext;
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Before
     public void setUpMock() {
@@ -190,7 +195,7 @@ public class InstantRunTransformTest {
     @Test
     public void fileDeletionTest() throws IOException, TransformException, InterruptedException {
 
-        final File tmpFolder = Files.createTempDir();
+        final File tmpFolder = temporaryFolder.newFolder();
 
         final File inputFolder = new File(tmpFolder, "input");
         FileUtils.mkdirs(inputFolder);

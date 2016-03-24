@@ -43,7 +43,9 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -63,7 +65,7 @@ public class InstantRunVerifierTransformTest {
 
     final Map<File, File> recordedVerification = new HashMap<File, File>();
     final Map<File, File> recordedCopies = new HashMap<File, File>();
-    final File backupDir = Files.createTempDir();
+    private File backupDir;
 
     @Mock
     VariantScope variantScope;
@@ -80,8 +82,12 @@ public class InstantRunVerifierTransformTest {
     @Mock
     InstantRunBuildContext instantRunBuildContext;
 
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     @Before
-    public void setUpMock() {
+    public void setUpMock() throws IOException {
+        backupDir = temporaryFolder.newFolder();
         when(variantScope.getIncrementalVerifierDir()).thenReturn(backupDir);
         when(variantScope.getInstantRunBuildContext()).thenReturn(instantRunBuildContext);
         when(variantScope.getGlobalScope()).thenReturn(globalScope);
@@ -93,7 +99,7 @@ public class InstantRunVerifierTransformTest {
             throws TransformException, InterruptedException, IOException {
 
         InstantRunVerifierTransform transform = getTransform();
-        final File tmpDir = Files.createTempDir();
+        final File tmpDir = temporaryFolder.newFolder();
 
         final File inputClass = new File(tmpDir, "com/foo/bar/InputFile.class");
         Files.createParentDirs(inputClass);
@@ -146,7 +152,7 @@ public class InstantRunVerifierTransformTest {
     public void testIncrementalMode_changedAndAdded() throws TransformException, IOException, InterruptedException {
 
         InstantRunVerifierTransform transform = getTransform();
-        final File tmpDir = Files.createTempDir();
+        final File tmpDir = temporaryFolder.newFolder();
 
         final File addedFile = new File(tmpDir, "com/foo/bar/NewInputFile.class");
         Files.createParentDirs(addedFile);
@@ -213,7 +219,7 @@ public class InstantRunVerifierTransformTest {
     public void testIncrementalMode_changedAndDeleted() throws TransformException, IOException, InterruptedException {
 
         InstantRunVerifierTransform transform = getTransform();
-        final File tmpDir = Files.createTempDir();
+        final File tmpDir = temporaryFolder.newFolder();
 
         final File changedFile = new File(tmpDir, "com/foo/bar/ChangedFile.class");
         Files.createParentDirs(changedFile);
@@ -279,7 +285,7 @@ public class InstantRunVerifierTransformTest {
     public void testSeveralAddedFilesInIncrementalMode()
             throws IOException, TransformException, InterruptedException {
         InstantRunVerifierTransform transform = getTransform();
-        final File tmpDir = Files.createTempDir();
+        final File tmpDir = temporaryFolder.newFolder();
 
         final File[] files = new File[5];
         for (int i = 0; i < 5; i++) {
@@ -341,7 +347,7 @@ public class InstantRunVerifierTransformTest {
     public void testSeveralChangedFilesInIncrementalMode()
             throws IOException, TransformException, InterruptedException {
         InstantRunVerifierTransform transform = getTransform();
-        final File tmpDir = Files.createTempDir();
+        final File tmpDir = temporaryFolder.newFolder();
 
         final File[] files = new File[5];
         final File[] lastIterationFiles = new File[5];

@@ -15,17 +15,27 @@
  */
 package com.android.sdklib.internal.build;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
 import com.google.common.io.Files;
-import junit.framework.TestCase;
+
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.util.List;
 
-@SuppressWarnings({"javadoc", "deprecation"})
-public class SymbolWriterTest extends TestCase {
+@SuppressWarnings("deprecation")
+public class SymbolWriterTest {
+
+    @Rule
+    public TemporaryFolder mTemporaryFolder = new TemporaryFolder();
+
     private void check(String packageName, String rJava, String rValues, String... rTexts)
             throws Exception {
         if (rValues == null) {
@@ -65,8 +75,7 @@ public class SymbolWriterTest extends TestCase {
         }
 
         // Write symbols
-        File outFolder = Files.createTempDir();
-        outFolder.mkdirs();
+        File outFolder = mTemporaryFolder.newFolder();
 
         SymbolWriter writer = new SymbolWriter(outFolder.getPath(), packageName, symbolValues);
         for (SymbolLoader symbolLoader : symbolList) {
@@ -82,6 +91,7 @@ public class SymbolWriterTest extends TestCase {
         assertEquals(rJava, contents.replaceAll("\t", "    "));
     }
 
+    @Test
     public void test1() throws Exception {
         check(
             // Package
@@ -157,6 +167,7 @@ public class SymbolWriterTest extends TestCase {
         );
     }
 
+    @Test
     public void testStyleables1() throws Exception {
         check(
             // Package
@@ -195,6 +206,7 @@ public class SymbolWriterTest extends TestCase {
         );
     }
 
+    @Test
     public void testStyleables2() throws Exception {
         check(
             // Package
@@ -231,6 +243,7 @@ public class SymbolWriterTest extends TestCase {
         );
     }
 
+    @Test
     public void testMerge() throws Exception {
         check(
             // Package

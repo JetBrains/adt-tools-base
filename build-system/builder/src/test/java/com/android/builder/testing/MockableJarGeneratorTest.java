@@ -16,6 +16,9 @@
 
 package com.android.builder.testing;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import com.android.testutils.TestUtils;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -23,19 +26,27 @@ import com.google.common.io.Files;
 
 import junit.framework.TestCase;
 
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
 import java.io.File;
 import java.util.Collections;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-public class MockableJarGeneratorTest extends TestCase {
+public class MockableJarGeneratorTest {
 
+    @Rule
+    public TemporaryFolder mTemporaryFolder = new TemporaryFolder();
+
+    @Test
     public void testJarRewriting() throws Exception {
         MockableJarGenerator generator = new MockableJarGenerator(true);
 
         File inputJar = new File(TestUtils.getRoot("testing"), "non-mockable.jar");
-        File outputJar = new File(Files.createTempDir(), "mockable.jar");
+        File outputJar = new File(mTemporaryFolder.newFolder(),"mockable.jar");
 
         generator.createMockableJar(inputJar, outputJar);
 
