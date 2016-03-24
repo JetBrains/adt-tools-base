@@ -68,7 +68,7 @@ public class JackTest {
         Assume.assumeTrue("Jack tool requires Java 7", JavaVersion.current().isJava7Compatible());
         Files.append(
                 "android {\n"
-                        + "    buildToolsVersion '24.0.0-rc2'"
+                        + "    buildToolsVersion '24.0.0-rc2'\n"
                         + "    defaultConfig {\n"
                         + "        jackOptions {\n"
                         + "            enabled true\n"
