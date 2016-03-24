@@ -74,9 +74,9 @@ public class NinePatchAaptProcessorTestUtils {
      */
     static File getAapt(Revision revision) {
         FakeProgressIndicator progress = new FakeProgressIndicator();
-        BuildToolInfo buildToolInfo = AndroidSdkHandler.getInstance(getSdkDir())
-                .getLatestBuildTool(progress);
-        if (buildToolInfo == null || buildToolInfo.getRevision().compareTo(revision) < 0) {
+        BuildToolInfo buildToolInfo =
+                AndroidSdkHandler.getInstance(getSdkDir()).getBuildToolInfo(revision, progress);
+        if (buildToolInfo == null) {
             throw new RuntimeException("Test requires build-tools " + revision.toShortString());
         }
         return new File(buildToolInfo.getPath(BuildToolInfo.PathId.AAPT));

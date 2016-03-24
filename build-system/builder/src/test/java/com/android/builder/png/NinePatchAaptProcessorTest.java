@@ -90,7 +90,7 @@ public class NinePatchAaptProcessorTest {
         ILogger logger = new StdLogger(StdLogger.Level.VERBOSE);
         ProcessExecutor processExecutor = new DefaultProcessExecutor(logger);
         ProcessOutputHandler processOutputHandler = new LoggedProcessOutputHandler(logger);
-        File aapt = NinePatchAaptProcessorTestUtils.getAapt(Revision.parseRevision("21"));
+        File aapt = NinePatchAaptProcessorTestUtils.getAapt(Revision.parseRevision("22.0.1"));
         return new AaptCruncher(aapt.getAbsolutePath(), processExecutor, processOutputHandler);
     }
 
