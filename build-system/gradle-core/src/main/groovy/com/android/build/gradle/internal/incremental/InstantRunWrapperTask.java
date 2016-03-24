@@ -61,16 +61,18 @@ public class InstantRunWrapperTask extends BaseTask {
 
     @TaskAction
     public void executeAction() {
+
+        InstantRunBuildContext.PersistenceMode persistenceMode = taskType == TaskType.FULL
+                ? InstantRunBuildContext.PersistenceMode.FULL_BUILD
+                : InstantRunBuildContext.PersistenceMode.INCREMENTAL_BUILD;
+
         // done with the instant run context.
-        instantRunBuildContext.close();
+        instantRunBuildContext.close(persistenceMode);
 
         // saves the build information xml file.
         try {
             // only write past builds in incremental mode.
-            String xml = instantRunBuildContext.toXml(
-                    taskType == TaskType.FULL
-                            ? InstantRunBuildContext.PersistenceMode.FULL_BUILD
-                            : InstantRunBuildContext.PersistenceMode.INCREMENTAL_BUILD);
+            String xml = instantRunBuildContext.toXml(persistenceMode);
             if (logger.isEnabled(LogLevel.DEBUG)) {
                 logger.debug("build-id $1$l, build-info.xml : %2$s",
                         instantRunBuildContext.getBuildId(), xml);
