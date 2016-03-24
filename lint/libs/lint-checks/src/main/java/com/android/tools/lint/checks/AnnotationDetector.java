@@ -48,6 +48,7 @@ import static com.android.tools.lint.client.api.JavaParser.TYPE_INT;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_LONG;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_STRING;
 import static com.android.tools.lint.detector.api.LintUtils.findSubstring;
+import static com.android.tools.lint.detector.api.LintUtils.getAutoBoxedType;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -73,8 +74,10 @@ import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiAnnotationMemberValue;
 import com.intellij.psi.PsiAnnotationOwner;
 import com.intellij.psi.PsiArrayInitializerMemberValue;
+import com.intellij.psi.PsiArrayType;
 import com.intellij.psi.PsiAssignmentExpression;
 import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiCodeBlock;
 import com.intellij.psi.PsiConditionalExpression;
 import com.intellij.psi.PsiDeclarationStatement;
@@ -301,13 +304,13 @@ public class AnnotationDetector extends Detector implements JavaPsiScanner {
                     // Also make sure that from <= to.
                     boolean invalid;
                     if (INT_RANGE_ANNOTATION.equals(type)) {
-                        checkTargetType(annotation, TYPE_INT, TYPE_LONG);
+                        checkTargetType(annotation, TYPE_INT, TYPE_LONG, true);
 
                         long from = getLongAttribute(annotation, ATTR_FROM, Long.MIN_VALUE);
                         long to = getLongAttribute(annotation, ATTR_TO, Long.MAX_VALUE);
                         invalid = from > to;
                     } else {
-                        checkTargetType(annotation, TYPE_FLOAT, TYPE_DOUBLE);
+                        checkTargetType(annotation, TYPE_FLOAT, TYPE_DOUBLE, true);
 
                         double from = getDoubleAttribute(annotation, ATTR_FROM,
                                 Double.NEGATIVE_INFINITY);
@@ -343,7 +346,7 @@ public class AnnotationDetector extends Detector implements JavaPsiScanner {
                     }
                 } else if (COLOR_INT_ANNOTATION.equals(type)) {
                     // Check that ColorInt applies to the right type
-                    checkTargetType(annotation, TYPE_INT, TYPE_LONG);
+                    checkTargetType(annotation, TYPE_INT, TYPE_LONG, true);
                 } else if (INT_DEF_ANNOTATION.equals(type)) {
                     // Make sure IntDef constants are unique
                     ensureUniqueValues(annotation);
@@ -386,7 +389,7 @@ public class AnnotationDetector extends Detector implements JavaPsiScanner {
 
                 } else if (type.endsWith(RES_SUFFIX)) {
                     // Check that resource type annotations are on ints
-                    checkTargetType(annotation, TYPE_INT, TYPE_LONG);
+                    checkTargetType(annotation, TYPE_INT, TYPE_LONG, true);
                 }
             } else {
                 // Look for typedefs (and make sure they're specified on the right type)
@@ -400,9 +403,9 @@ public class AnnotationDetector extends Detector implements JavaPsiScanner {
                             for (PsiAnnotation a : cls.getModifierList().getAnnotations()) {
                                 String name = a.getQualifiedName();
                                 if (INT_DEF_ANNOTATION.equals(name)) {
-                                    checkTargetType(annotation, TYPE_INT, TYPE_LONG);
+                                    checkTargetType(annotation, TYPE_INT, TYPE_LONG, true);
                                 } else if (STRING_DEF_ANNOTATION.equals(type)) {
-                                    checkTargetType(annotation, TYPE_STRING, null);
+                                    checkTargetType(annotation, TYPE_STRING, null, true);
                                 }
                             }
                         }
@@ -412,7 +415,7 @@ public class AnnotationDetector extends Detector implements JavaPsiScanner {
         }
 
         private void checkTargetType(@NonNull PsiAnnotation node, @NonNull String type1,
-                @Nullable String type2) {
+                @Nullable String type2, boolean allowCollection) {
             PsiAnnotationOwner owner = node.getOwner();
             if (owner instanceof PsiModifierList) {
                 PsiElement parent = ((PsiModifierList) owner).getParent();
@@ -443,9 +446,34 @@ public class AnnotationDetector extends Detector implements JavaPsiScanner {
                 if (type == null) {
                     return;
                 }
+
+                if (allowCollection) {
+                    if (type instanceof PsiArrayType) {
+                        // For example, int[]
+                        type = type.getDeepComponentType();
+                    } else if (type instanceof PsiClassType) {
+                        // For example, List<Integer>
+                        PsiClassType classType = (PsiClassType)type;
+                        if (classType.getParameters().length == 1) {
+                            PsiClass resolved = classType.resolve();
+                            if (resolved != null &&
+                                mContext.getEvaluator().implementsInterface(resolved,
+                                  "java.util.Collection", false)) {
+                                type = classType.getParameters()[0];
+                            }
+                        }
+                    }
+                }
+
                 String typeName = type.getCanonicalText();
                 if (!typeName.equals(type1)
                         && (type2 == null || !typeName.equals(type2))) {
+                    // Autoboxing? You can put @DrawableRes on a java.lang.Integer for example
+                    if (typeName.equals(getAutoBoxedType(type1))
+                          || type2 != null && typeName.equals(getAutoBoxedType(type2))) {
+                        return;
+                    }
+
                     String expectedTypes = type2 == null ? type1 : type1 + " or " + type2;
                     if (typeName.equals(TYPE_STRING)) {
                         typeName = "String";

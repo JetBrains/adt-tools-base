@@ -967,9 +967,33 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
                 PsiExpressionList argumentList = expression.getArgumentList();
                 PsiExpression[] expressions = argumentList.getExpressions();
                 if (expressions.length > 0) {
-                    return ConstantEvaluator.isArrayLiteral(expressions[0]);
+                    int arg;
+                    if (expressions.length == 1) {
+                        // obtainStyledAttributes(int[] attrs)
+                        arg = 0;
+                    } else if (expressions.length == 2) {
+                        // obtainStyledAttributes(AttributeSet set, int[] attrs)
+                        // obtainStyledAttributes(int resid, int[] attrs)
+                        for (arg = 0; arg < expressions.length; arg++) {
+                            PsiType type = expressions[arg].getType();
+                            if (type instanceof PsiArrayType) {
+                                break;
+                            }
+                        }
+                        if (arg == expressions.length) {
+                            return false;
+                        }
+                    } else if (expressions.length == 4) {
+                        // obtainStyledAttributes(AttributeSet set, int[] attrs, int defStyleAttr, int defStyleRes)
+                        arg = 1;
+                    } else {
+                        return false;
+                    }
+
+                    return ConstantEvaluator.isArrayLiteral(expressions[arg]);
                 }
             }
+            return false;
         } else if (node instanceof PsiReference) {
             PsiElement resolved = ((PsiReference) node).resolve();
             if (resolved instanceof PsiField) {

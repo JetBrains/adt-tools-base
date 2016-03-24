@@ -1680,6 +1680,19 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                                 + "        a.recycle();\n"
                                 + "    }\n"
                                 + "\n"
+                                + "    public void test(Context context, AttributeSet attrs) {\n"
+                                + "        int[] attrsArray = new int[] {\n"
+                                + "                android.R.attr.entries, // 0\n"
+                                + "                android.R.attr.labelFor\n"
+                                + "        };\n"
+                                + "        TypedArray ta = context.obtainStyledAttributes(attrs, attrsArray);\n"
+                                + "        if(null == ta) {\n"
+                                + "            return;\n"
+                                + "        }\n"
+                                + "        CharSequence[] entries = ta.getTextArray(0);\n"
+                                + "        CharSequence label = ta.getText(1);\n"
+                                + "    }\n"
+                                + "\n"
                                 + "    public static class R {\n"
                                 + "        public static class attr {\n"
                                 + "            public static final int setup_wizard_navbar_theme = 0x7f01003b;\n"
@@ -1692,5 +1705,31 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                                 + "        }\n"
                                 + "    }\n"
                                 + "}\n")));
+    }
+
+    public void testAlias() throws Exception {
+        assertEquals("No warnings.",
+                lintProject(
+                        java("src/test/pkg/FlagAlias.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.graphics.Canvas;\n"
+                                + "import android.graphics.RectF;\n"
+                                + "\n"
+                                + "@SuppressWarnings(\"unused\")\n"
+                                + "public class FlagAlias {\n"
+                                + "    private static final int CANVAS_SAVE_FLAGS =\n"
+                                + "            Canvas.CLIP_SAVE_FLAG |\n"
+                                + "                    Canvas.HAS_ALPHA_LAYER_SAVE_FLAG |\n"
+                                + "                    Canvas.FULL_COLOR_LAYER_SAVE_FLAG;\n"
+                                + "    private RectF mBounds;\n"
+                                + "    private int mAlpha;\n"
+                                + "\n"
+                                + "\n"
+                                + "    public void draw(Canvas canvas) {\n"
+                                + "        canvas.saveLayerAlpha(mBounds, mAlpha, CANVAS_SAVE_FLAGS);\n"
+                                + "    }\n"
+                                + "}\n")
+                ));
     }
 }

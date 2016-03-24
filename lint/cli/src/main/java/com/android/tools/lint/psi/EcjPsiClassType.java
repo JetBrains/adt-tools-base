@@ -20,12 +20,17 @@ import static com.android.tools.lint.psi.EcjPsiManager.getInternalName;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.google.common.collect.Lists;
 import com.intellij.pom.java.LanguageLevel;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiType;
 
+import org.eclipse.jdt.internal.compiler.lookup.ParameterizedTypeBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding;
+import org.eclipse.jdt.internal.compiler.lookup.TypeBinding;
+
+import java.util.List;
 
 class EcjPsiClassType extends PsiClassType {
 
@@ -67,6 +72,20 @@ class EcjPsiClassType extends PsiClassType {
     @NonNull
     @Override
     public PsiType[] getParameters() {
+        if (mReferenceBinding instanceof ParameterizedTypeBinding) {
+            ParameterizedTypeBinding binding = (ParameterizedTypeBinding) mReferenceBinding;
+            TypeBinding[] bindings = binding.arguments;
+            if (bindings != null && bindings.length > 0) {
+                List<PsiType> types = Lists.newArrayListWithExpectedSize(bindings.length);
+                for (TypeBinding b : bindings) {
+                    PsiType type = mManager.findType(b);
+                    if (type != null) {
+                        types.add(type);
+                    }
+                }
+                return types.toArray(PsiType.EMPTY_ARRAY);
+            }
+        }
         return PsiType.EMPTY_ARRAY;
     }
 

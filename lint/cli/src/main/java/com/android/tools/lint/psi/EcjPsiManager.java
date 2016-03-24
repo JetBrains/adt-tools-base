@@ -107,7 +107,7 @@ public class EcjPsiManager {
 
     private final LanguageLevel mLanguageLevel;
     private final Map<Binding, PsiElement> mElementMap;
-    private final Map<String,PsiType> mTypeMap;
+    private final Map<ReferenceBinding,PsiType> mTypeMap;
     private final LintClient mClient;
     private final EcjParser.EcjResult mEcjResult;
 
@@ -297,35 +297,10 @@ public class EcjPsiManager {
     @Nullable
     public PsiType findType(@Nullable ReferenceBinding referenceBinding) {
         if (referenceBinding != null) {
-            String typeName;
-            //noinspection VariableNotUsedInsideIf
-            if (referenceBinding.compoundName != null) {
-                typeName = getTypeName(referenceBinding);
-            } else {
-                if (referenceBinding instanceof WildcardBinding) {
-                    WildcardBinding binding = (WildcardBinding) referenceBinding;
-                    // This isn't quite right; we should really construct a
-                    // PsiWildcardType here, but we don't have full PsiWildcardType
-                    return findType(binding.genericType);
-                } else if (referenceBinding instanceof TypeVariableBinding) {
-                    typeName = new String(((TypeVariableBinding) referenceBinding).sourceName);
-                } else if (referenceBinding instanceof IntersectionCastTypeBinding) {
-                    IntersectionCastTypeBinding binding
-                            = (IntersectionCastTypeBinding) referenceBinding;
-                    if (binding.intersectingTypes != null && binding.intersectingTypes.length > 0) {
-                        return findType(binding.intersectingTypes[0]);
-                    } else {
-                        return null;
-                    }
-                } else {
-                    assert false : referenceBinding;
-                    return null;
-                }
-            }
-            PsiType type = mTypeMap.get(typeName);
+            PsiType type = mTypeMap.get(referenceBinding);
             if (type == null) {
                 type = new EcjPsiClassType(this, referenceBinding);
-                mTypeMap.put(typeName, type);
+                mTypeMap.put(referenceBinding, type);
             }
             return type;
         }

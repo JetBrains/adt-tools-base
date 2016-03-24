@@ -208,7 +208,8 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
 
             if (region != null && region.length() == 2) {
                 List<String> relevantRegions = LocaleManager.getRelevantRegions(language);
-                if (!relevantRegions.isEmpty() && !relevantRegions.contains(region)) {
+                if (!relevantRegions.isEmpty() && !relevantRegions.contains(region)
+                        && LocaleManager.isValidRegionCode(region)) {
                     List<String> sortedRegions = sortRegions(language, relevantRegions);
                     List<String> suggestions = Lists.newArrayList();
                     for (String code : sortedRegions) {
