@@ -16,7 +16,7 @@
 
 apply plugin: 'java'
 
-File androidJar = new File(System.env.ANDROID_HOME + '/platforms/android-23/android.jar');
+File androidJar = file('../../../../prebuilts/sdk/23/android.jar');
 if (!androidJar.exists()) {
     throw new RuntimeException("android-23 android.jar not found at " + androidJar.absolutePath)
 }
