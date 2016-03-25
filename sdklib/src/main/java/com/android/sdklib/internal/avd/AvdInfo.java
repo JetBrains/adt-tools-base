@@ -25,8 +25,8 @@ import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.ISystemImage;
 import com.android.sdklib.devices.Abi;
 import com.android.sdklib.devices.Device;
-import com.android.sdklib.repositoryv2.IdDisplay;
-import com.android.sdklib.repositoryv2.targets.SystemImage;
+import com.android.sdklib.repository.IdDisplay;
+import com.android.sdklib.repository.targets.SystemImage;
 import com.google.common.base.Strings;
 
 import java.io.File;
