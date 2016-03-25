@@ -19,8 +19,6 @@
             <tr><td>signingConfig</td></tr>
             <tr><td>testCoverageEnabled</td></tr>
             <tr><td>useJack</td></tr>
-            <tr><td>cmake</td></tr>
-            <tr><td>ndkBuild</td></tr>
             <tr><td>versionNameSuffix</td></tr>
             <tr><td>zipAlignEnabled</td></tr>
         </table>

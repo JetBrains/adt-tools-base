@@ -39,8 +39,4 @@ public interface CoreNdkBuildOptions {
     @Nullable
     File getPath();
     void setPath(File path);
-
-    @Nullable
-    String getcFlags();
-    void setcFlags(String cflags);
 }

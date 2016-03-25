@@ -35,7 +35,4 @@ import org.gradle.model.Managed;
 public interface CoreExternalNativeBuild {
     @NonNull
     CoreNdkBuildOptions getNdkBuild();
-
-    @NonNull
-    CoreCmakeOptions getCmake();
 }

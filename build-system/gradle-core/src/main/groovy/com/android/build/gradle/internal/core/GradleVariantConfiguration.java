@@ -21,8 +21,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
-import com.android.build.gradle.internal.dsl.CoreExternalNativeCmakeOptions;
-import com.android.build.gradle.internal.dsl.CoreExternalNativeNdkBuildOptions;
 import com.android.build.gradle.internal.dsl.CoreJackOptions;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
@@ -51,10 +49,6 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
     private Boolean enableInstantRunOverride = null;
     private final MergedNdkConfig mMergedNdkConfig = new MergedNdkConfig();
     private final MergedJackOptions mMergedJackOptions = new MergedJackOptions();
-    private final MergedCoreExternalNativeNdkBuildOptions mergedExternalNativeNdkBuildOptions
-            = new MergedCoreExternalNativeNdkBuildOptions();
-    private final MergedCoreExternalNativeCmakeOptions mergedExternalNativeCmakeOptions
-            = new MergedCoreExternalNativeCmakeOptions();
 
     private GradleVariantConfiguration(
             @Nullable VariantConfiguration testedConfig,
@@ -68,8 +62,6 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
                 testedConfig, signingConfigOverride);
         computeJackOptions();
         computeNdkConfig();
-        computeNdkBuildConfig();
-        computeCmakeConfig();
     }
 
     /**
@@ -124,24 +116,12 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
         checkNotNull(dimensionName);
         super.addProductFlavor(productFlavor, sourceProvider, dimensionName);
         computeNdkConfig();
-        computeNdkBuildConfig();
-        computeCmakeConfig();
         return this;
     }
 
     @NonNull
     public CoreNdkOptions getNdkConfig() {
         return mMergedNdkConfig;
-    }
-
-    @NonNull
-    public CoreExternalNativeNdkBuildOptions getExternalNativeNdkBuildOptions() {
-        return mergedExternalNativeNdkBuildOptions;
-    }
-
-    @NonNull
-    public CoreExternalNativeCmakeOptions getExternalNativeCmakeOptions() {
-        return mergedExternalNativeCmakeOptions;
     }
 
     /**
@@ -195,42 +175,6 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
 
         if (getBuildType().getNdkConfig() != null && !getType().isForTesting()) {
             mMergedNdkConfig.append(getBuildType().getNdkConfig());
-        }
-    }
-
-    private void computeNdkBuildConfig() {
-        if (getDefaultConfig().getExternalNativeNdkBuildOptions() != null) {
-            mergedExternalNativeNdkBuildOptions.append(getDefaultConfig().getExternalNativeNdkBuildOptions());
-        }
-
-        final List<CoreProductFlavor> flavors = getProductFlavors();
-        for (int i = flavors.size() - 1 ; i >= 0 ; i--) {
-            CoreExternalNativeNdkBuildOptions options = flavors.get(i).getExternalNativeNdkBuildOptions();
-            if (options != null) {
-                mergedExternalNativeNdkBuildOptions.append(options);
-            }
-        }
-
-        if (getBuildType().getNdkConfig() != null && !getType().isForTesting()) {
-            mergedExternalNativeNdkBuildOptions.append(getBuildType().getExternalNativeNdkBuildOptions());
-        }
-    }
-
-    private void computeCmakeConfig() {
-        if (getDefaultConfig().getExternalNativeNdkBuildOptions() != null) {
-            mergedExternalNativeCmakeOptions.append(getDefaultConfig().getExternalNativeCmakeOptions());
-        }
-
-        final List<CoreProductFlavor> flavors = getProductFlavors();
-        for (int i = flavors.size() - 1 ; i >= 0 ; i--) {
-            CoreExternalNativeCmakeOptions options = flavors.get(i).getExternalNativeCmakeOptions();
-            if (options != null) {
-                mergedExternalNativeCmakeOptions.append(options);
-            }
-        }
-
-        if (getBuildType().getNdkConfig() != null && !getType().isForTesting()) {
-            mergedExternalNativeCmakeOptions.append(getBuildType().getExternalNativeCmakeOptions());
         }
     }
 

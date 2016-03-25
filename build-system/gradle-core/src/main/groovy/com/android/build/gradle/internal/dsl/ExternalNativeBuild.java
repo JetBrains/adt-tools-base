@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.dsl;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.internal.model.CoreCmakeOptions;
 import com.android.build.gradle.internal.model.CoreExternalNativeBuild;
 
 import org.gradle.api.Action;
@@ -37,11 +36,9 @@ import org.gradle.internal.reflect.Instantiator;
  */
 public class ExternalNativeBuild implements CoreExternalNativeBuild {
     private NdkBuildOptions ndkBuild;
-    private CmakeOptions cmake;
 
     public ExternalNativeBuild(@NonNull Instantiator instantiator) {
         ndkBuild = instantiator.newInstance(NdkBuildOptions.class);
-        cmake = instantiator.newInstance(CmakeOptions.class);
     }
 
     @NonNull
@@ -53,16 +50,5 @@ public class ExternalNativeBuild implements CoreExternalNativeBuild {
     public NdkBuildOptions ndkBuild(Action<NdkBuildOptions> action) {
         action.execute(ndkBuild);
         return this.ndkBuild;
-    }
-
-    @NonNull
-    @Override
-    public CoreCmakeOptions getCmake() {
-        return cmake;
-    }
-
-    public CmakeOptions cmake(Action<CmakeOptions> action) {
-        action.execute(cmake);
-        return this.cmake;
     }
 }
