@@ -51,6 +51,7 @@ public class NetworkFragment extends Fragment {
     }
 
     private native int getConnectionCount(String uidString);
+    private native long[] getTrafficBytes(String uidString);
 
     private final AtomicInteger myNumDownloadsTotal = new AtomicInteger();
     private final AtomicInteger myNumDownloadsSoFar = new AtomicInteger();
@@ -135,13 +136,16 @@ public class NetworkFragment extends Fragment {
                 while (!Thread.currentThread().isInterrupted()) {
                     statistics.sendBytes = TrafficStats.getUidTxBytes(myUid) - myStartSendBytes;
                     statistics.receiveBytes = TrafficStats.getUidRxBytes(myUid) - myStartReceiveBytes;
+                    long[] bytesFromFile = getTrafficBytes(Integer.toString(myUid));
+                    statistics.sendBytesFromFile = bytesFromFile[0] - myStartSendBytes;
+                    statistics.receiveBytesFromFile = bytesFromFile[1] - myStartReceiveBytes;
                     NetworkInfo networkInfo = myConnectivityManager.getActiveNetworkInfo();
                     statistics.networkName = networkInfo != null && networkInfo.getSubtype() != TelephonyManager.NETWORK_TYPE_UNKNOWN
                             ? networkInfo.getSubtypeName() : networkInfo.getTypeName();
                     statistics.radioStatus = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
                             ? myConnectivityManager.isDefaultNetworkActive()
                             ? "Radio high power" : "Radio not high power" : "Radio status unknown";
-                    statistics.openConnectionCount = getConnectionCount("" + myUid);
+                    statistics.openConnectionCount = getConnectionCount(Integer.toString(myUid));
                     postStatistics(statistics);
                     try {
                         Thread.currentThread().sleep(200);
@@ -158,9 +162,13 @@ public class NetworkFragment extends Fragment {
             @Override
             public void run() {
                 TextView bytesView = (TextView) myFragmentView.findViewById(R.id.bytes);
-                String bytesText = String.format("Sent / Received : %1$d / %2$d bytes",
+                String bytesText = String.format("Sent / Received from API : %1$d / %2$d bytes",
                         statistics.sendBytes, statistics.receiveBytes);
                 bytesView.setText(bytesText);
+                TextView bytesFromFileView = (TextView) myFragmentView.findViewById(R.id.bytesFromFile);
+                bytesText = String.format("Sent / Received from file : %1$d / %2$d bytes",
+                        statistics.sendBytesFromFile, statistics.receiveBytesFromFile);
+                bytesFromFileView.setText(bytesText);
                 TextView networkNameView = (TextView) myFragmentView.findViewById(R.id.networkType);
                 networkNameView.setText("Network type: " + statistics.networkName);
                 TextView radioStatusView = (TextView) myFragmentView.findViewById(R.id.radioStatus);
@@ -207,6 +215,8 @@ public class NetworkFragment extends Fragment {
     private static class Statistics {
         long sendBytes;
         long receiveBytes;
+        long sendBytesFromFile;
+        long receiveBytesFromFile;
         String networkName;
         String radioStatus;
         int openConnectionCount;
