@@ -650,13 +650,42 @@ public class AnnotationDetector extends Detector implements JavaPsiScanner {
                             // the ECJ fields do, which is tied to the ECJ binding hash code.)
                             // So instead, manually check for equals. These lists tend to
                             // be very short anyway.
+                            boolean found = false;
                             ListIterator<PsiElement> iterator = fields.listIterator();
                             while (iterator.hasNext()) {
                                 PsiElement field = iterator.next();
                                 if (field.equals(resolved)) {
                                     iterator.remove();
+                                    found = true;
                                     break;
                                 }
+                            }
+                            if (!found) {
+                                // Look for local alias
+                                PsiExpression initializer = ((PsiField) resolved).getInitializer();
+                                if (initializer instanceof PsiReferenceExpression) {
+                                    resolved = ((PsiReferenceExpression) expression).resolve();
+                                    if (resolved instanceof PsiField) {
+                                        iterator = fields.listIterator();
+                                        while (iterator.hasNext()) {
+                                            PsiElement field = iterator.next();
+                                            if (field.equals(initializer)) {
+                                                iterator.remove();
+                                                found = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (!found) {
+                                List<String> list = computeFieldNames(node, Arrays.asList(allowedValues));
+                                // Keep error message in sync with {@link #getMissingCases}
+                                String message = "Unexpected constant; expected one of: " + Joiner
+                                        .on(", ").join(list);
+                                Location location = mContext.getNameLocation(expression);
+                                mContext.report(SWITCH_TYPE_DEF, expression, location, message);
                             }
                         }
                     }

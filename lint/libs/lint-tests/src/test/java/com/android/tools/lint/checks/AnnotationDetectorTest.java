@@ -385,6 +385,39 @@ public class AnnotationDetectorTest extends AbstractCheckTest {
                                 TextFormat.TEXT));
     }
 
+    public void testUnexpectedSwitchConstant() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=204326
+        // 	The switch check should look for unexpected constants in case statements
+        assertEquals(""
+                + "src/test/pkg/X.java:9: Warning: Switch statement on an int with known associated constant missing case MeasureSpec.EXACTLY [SwitchIntDef]\n"
+                + "        switch (val) {\n"
+                + "        ~~~~~~\n"
+                + "src/test/pkg/X.java:10: Warning: Unexpected constant; expected one of: MeasureSpec.AT_MOST, MeasureSpec.EXACTLY, MeasureSpec.UNSPECIFIED [SwitchIntDef]\n"
+                + "            case MY_CONSTANT: // ERROR\n"
+                + "                 ~~~~~~~~~~~\n"
+                + "0 errors, 2 warnings\n",
+                lintProject(
+                        java("src/test/pkg/X.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.view.View;"
+                                + "\n"
+                                + "public class X {\n"
+                                + "    private static final int MY_CONSTANT = 5;\n"
+                                + "    private static final int MY_CONSTANT_2 = View.MeasureSpec.AT_MOST;\n"
+                                + "    public void measure(int mode) {\n"
+                                + "        int val = View.MeasureSpec.getMode(mode);\n"
+                                + "        switch (val) {\n"
+                                + "            case MY_CONSTANT: // ERROR\n"
+                                + "            case MY_CONSTANT_2: // OK (alias)\n"
+                                + "            case View.MeasureSpec.UNSPECIFIED: // OK\n"
+                                + "                break;\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "}\n"),
+                        copy("bytecode/.classpath", ".classpath")));
+    }
+
     public void testMatchEcjAndExternalFieldNames() throws Exception {
         assertEquals("No warnings.",
                 lintProject(java("src/test/pkg/MissingEnum.java", ""
