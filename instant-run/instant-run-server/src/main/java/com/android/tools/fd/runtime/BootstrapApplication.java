@@ -158,7 +158,7 @@ public class BootstrapApplication extends Application {
 
         if (!dexList.isEmpty()) {
             if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                Log.i(LOG_TAG, "Bootstrapping class loader with dex list " + dexList);
+                Log.i(LOG_TAG, "Bootstrapping class loader with dex list " + join('\n', dexList));
             }
 
             ClassLoader classLoader = BootstrapApplication.class.getClassLoader();
@@ -179,6 +179,15 @@ public class BootstrapApplication extends Application {
                     codeCacheDir,
                     dexList);
         }
+    }
+
+    public static String join(char on, List<String> list) {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (String item : list) {
+            stringBuilder.append(item).append(on);
+        }
+        stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+        return stringBuilder.toString();
     }
 
     private void createRealApplication() {
