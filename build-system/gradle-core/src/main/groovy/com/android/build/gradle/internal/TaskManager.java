@@ -1065,7 +1065,6 @@ public abstract class TaskManager {
     }
 
     public void createShaderTask(@NonNull TaskFactory tasks, @NonNull VariantScope scope) {
-        if (true) return;
         // merge the shader folders together using the proper priority.
         AndroidTask<MergeSourceSetFolders> mergeShadersTask = androidTasks.create(tasks,
                 new MergeSourceSetFolders.MergeShaderSourceFoldersConfigAction(scope));
