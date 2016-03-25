@@ -59,17 +59,6 @@ model {
         externalNativeBuild {
             ndkBuild {
                 path file("Android.mk")
-                cFlags "-DFLAVOR=CHOCOLATE"
-            }
-        }
-        buildTypes {
-            release {
-                minifyEnabled false
-                proguardFiles.add(file("proguard-rules.pro"))
-                ndkBuild {
-                    cFlags "-DCOLOR=RED"
-                    abiFilters = ["x86", "x86_64"]
-                }
             }
         }
         productFlavors {

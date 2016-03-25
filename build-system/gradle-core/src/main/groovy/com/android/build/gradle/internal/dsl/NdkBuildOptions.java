@@ -36,9 +36,6 @@ public class NdkBuildOptions implements CoreNdkBuildOptions {
     @Nullable
     private File path;
 
-    @Nullable
-    private String cflags;
-
     public NdkBuildOptions() {
     }
 
@@ -51,16 +48,5 @@ public class NdkBuildOptions implements CoreNdkBuildOptions {
     @Override
     public void setPath(File path) {
         this.path = path;
-    }
-
-    @Nullable
-    @Override
-    public String getcFlags() {
-        return this.cflags;
-    }
-
-    @Override
-    public void setcFlags(String cflags) {
-        this.cflags = cflags;
     }
 }
