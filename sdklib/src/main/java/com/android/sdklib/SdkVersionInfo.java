@@ -70,6 +70,12 @@ public class SdkVersionInfo {
     public static final int LOWEST_ACTIVE_API_TV = 21;
 
     /**
+     * The lowest api level we can accept for compileSdkVersion for
+     * for a new project. Make sure design and appcompat is supported.
+     */
+    public static final int LOWEST_COMPILE_SDK_VERSION = 22;
+
+    /**
      * Returns the Android version and code name of the given API level
      * The highest number (inclusive) that is supported
      * is {@link SdkVersionInfo#HIGHEST_KNOWN_API}.
