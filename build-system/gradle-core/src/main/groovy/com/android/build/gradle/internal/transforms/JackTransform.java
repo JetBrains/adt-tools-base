@@ -95,7 +95,7 @@ public class JackTransform extends Transform {
 
     private boolean jackInProcess;
 
-    private final List<ConfigurableFileTree> sources = Lists.newArrayList();
+    private final List<ConfigurableFileTree> sourceFileTrees = Lists.newArrayList();
 
     @NonNull
     @Override
@@ -226,8 +226,8 @@ public class JackTransform extends Transform {
     }
 
     private Collection<File> getSourceFiles() {
-        List<File> sourceFiles = Lists.newArrayList();
-        for (ConfigurableFileTree fileTree : sources) {
+        Collection<File> sourceFiles = Lists.newArrayList();
+        for (ConfigurableFileTree fileTree : sourceFileTrees) {
             sourceFiles.addAll(fileTree.getFiles());
         }
         return sourceFiles;
@@ -251,11 +251,11 @@ public class JackTransform extends Transform {
 
         Project project = globalScope.getProject();
         if (compileJavaSources) {
-            sources.addAll(scope.getVariantData().getJavaSources());
+            sourceFileTrees.addAll(scope.getVariantData().getJavaSources());
             if (scope.getVariantData().getExtraGeneratedSourceFolders() != null) {
                 for (File extraSourceFolder : scope.getVariantData()
                         .getExtraGeneratedSourceFolders()) {
-                    sources.add(project.fileTree(extraSourceFolder));
+                    sourceFileTrees.add(project.fileTree(extraSourceFolder));
                 }
             }
         }

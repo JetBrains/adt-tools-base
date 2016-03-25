@@ -126,6 +126,10 @@ public class JackProcessBuilder extends ProcessEnvBuilder<JackProcessBuilder> {
             builder.addArgs("-D", "jack.java.source.version=" + options.getSourceCompatibility());
         }
 
+        if (options.getIncrementalDir() != null && options.getIncrementalDir().exists()) {
+            builder.addArgs("--incremental-folder", options.getIncrementalDir().getAbsolutePath());
+        }
+
         if (options.getMinSdkVersion() > 0) {
             builder.addArgs("-D", "jack.android.min-api-level=" + options.getMinSdkVersion());
         }
