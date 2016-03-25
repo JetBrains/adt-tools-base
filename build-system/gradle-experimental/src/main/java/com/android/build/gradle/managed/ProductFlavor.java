@@ -196,10 +196,6 @@ public interface ProductFlavor extends DimensionAware, BaseConfig {
 
     NdkOptions getNdk();
 
-    ExternalNativeNdkBuildOptions getNdkBuild();
-
-    ExternalNativeCmakeOptions getCmake();
-
     @NonNull
     VectorDrawablesOptions getVectorDrawables();
 }

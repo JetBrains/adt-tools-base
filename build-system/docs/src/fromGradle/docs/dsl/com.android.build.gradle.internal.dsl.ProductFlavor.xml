@@ -11,8 +11,6 @@
             <tr><td>flavorDimension</td></tr>
             <tr><td>generatedDensities</td></tr>
             <tr><td>jackOptions</td></tr>
-            <tr><td>cmake</td></tr>
-            <tr><td>ndkBuild</td></tr>
             <tr><td>multiDexEnabled</td></tr>
             <tr><td>signingConfig</td></tr>
             <tr><td>testApplicationId</td></tr>
@@ -37,8 +35,6 @@
             <tr><td>consumerProguardFile</td></tr>
             <tr><td>consumerProguardFiles</td></tr>
             <tr><td>jackOptions</td></tr>
-            <tr><td>cmake</td></tr>
-            <tr><td>ndkBuild</td></tr>
             <tr><td>maxSdkVersion</td></tr>
             <tr><td>maxSdkVersion</td></tr>
             <tr><td>minSdkVersion</td></tr>

@@ -66,19 +66,9 @@ public interface VariantScope extends BaseScope {
     void setNdkBuildable(@NonNull Collection<Object> ndkBuildable);
 
     @Nullable
-    Collection<Object> getExternalNativeBuildable();
-
-    void setExternalNativeBuildable(@NonNull Collection<Object> ndkBuildable);
-
-    @Nullable
     Collection<File> getNdkSoFolder();
 
     void setNdkSoFolder(@NonNull Collection<File> ndkSoFolder);
-
-    @Nullable
-    Collection<File> getExternalNativeBuildSoFolder();
-
-    void setExternalNativeBuildSoFolder(@NonNull Collection<File> folder);
 
     @Nullable
     File getNdkObjFolder();
@@ -86,20 +76,9 @@ public interface VariantScope extends BaseScope {
     void setNdkObjFolder(@NonNull File ndkObjFolder);
 
     @Nullable
-    File getExternalNativeBuildObjFolder();
-
-    void setExternalNativeBuildObjFolder(@NonNull File folder);
-
-
-    @Nullable
     File getNdkDebuggableLibraryFolders(@NonNull Abi abi);
 
     void addNdkDebuggableLibraryFolders(@NonNull Abi abi, @NonNull File searchPath);
-
-    @Nullable
-    File getExternalNativeBuildDebuggableLibraryFolders(@NonNull Abi abi);
-
-    void addExternalNativeBuildDebuggableLibraryFolders(@NonNull Abi abi, @NonNull File searchPath);
 
     @NonNull
     File getDexOutputFolder();
