@@ -203,6 +203,42 @@ public class AndroidTargetManagerTest extends TestCase {
                         + "</ns2:sdk-repository>\n");
     }
 
+    private static void recordBuildTool24Preview1(MockFileOp fop) {
+        fop.recordExistingFile("/sdk/build-tools/24.0.0-preview/package.xml",
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
+                        + "<ns2:sdk-repository "
+                        + "xmlns:ns2=\"http://schemas.android.com/sdk/android/repo/repository2/01\" "
+                        + "xmlns:ns3=\"http://schemas.android.com/sdk/android/repo/sys-img2/01\" "
+                        + "xmlns:ns4=\"http://schemas.android.com/repository/android/generic/01\" "
+                        + "xmlns:ns5=\"http://schemas.android.com/sdk/android/repo/addon2/01\">"
+                        + "<license id=\"license-19E6313A\" type=\"text\">License text\n"
+                        + "</license><localPackage path=\"build-tools;24.0.0-preview\" obsolete=\"false\">"
+                        + "<type-details xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
+                        + "xsi:type=\"ns4:genericDetailsType\"/>"
+                        + "<revision><major>24</major><minor>0</minor><micro>0</micro><preview>1</preview></revision>"
+                        + "<display-name>Android SDK Build-Tools 23.0.2</display-name>"
+                        + "<uses-license ref=\"license-19E6313A\"/></localPackage>"
+                        + "</ns2:sdk-repository>\n");
+    }
+
+    private static void recordBuildTool24(MockFileOp fop) {
+        fop.recordExistingFile("/sdk/build-tools/24.0.0/package.xml",
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
+                        + "<ns2:sdk-repository "
+                        + "xmlns:ns2=\"http://schemas.android.com/sdk/android/repo/repository2/01\" "
+                        + "xmlns:ns3=\"http://schemas.android.com/sdk/android/repo/sys-img2/01\" "
+                        + "xmlns:ns4=\"http://schemas.android.com/repository/android/generic/01\" "
+                        + "xmlns:ns5=\"http://schemas.android.com/sdk/android/repo/addon2/01\">"
+                        + "<license id=\"license-19E6313A\" type=\"text\">License text\n"
+                        + "</license><localPackage path=\"build-tools;24.0.0\" obsolete=\"false\">"
+                        + "<type-details xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
+                        + "xsi:type=\"ns4:genericDetailsType\"/>"
+                        + "<revision><major>24</major><minor>0</minor><micro>0</micro></revision>"
+                        + "<display-name>Android SDK Build-Tools 23.0.2</display-name>"
+                        + "<uses-license ref=\"license-19E6313A\"/></localPackage>"
+                        + "</ns2:sdk-repository>\n");
+    }
+
     private static void recordPlatform13(MockFileOp fop) {
         fop.recordExistingFile("/sdk/platforms/android-13/images/system.img");
         fop.recordExistingFile("/sdk/platforms/android-13/android.jar");
@@ -583,4 +619,35 @@ public class AndroidTargetManagerTest extends TestCase {
                         + "SystemImage.GpuSupport=true\n");
     }
 
+    @SuppressWarnings("ConstantConditions")
+    public void testBuildTools() throws Exception {
+        MockFileOp fop = new MockFileOp();
+        recordPlatform13(fop);
+        recordPlatform23(fop);
+        recordBuildTool23(fop);
+        recordBuildTool24Preview1(fop);
+
+        AndroidSdkHandler handler = new AndroidSdkHandler(new File("/sdk"), fop);
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+
+        assertEquals("23.0.2", handler.getLatestBuildTool(progress, false).getRevision().toString());
+        assertEquals("24.0.0 rc1", handler.getLatestBuildTool(progress, true).getRevision().toString());
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    public void testBuildToolsWithPreviewOlderThanStable() throws Exception {
+        MockFileOp fop = new MockFileOp();
+        recordPlatform13(fop);
+        recordPlatform23(fop);
+        recordBuildTool23(fop);
+        recordBuildTool24Preview1(fop);
+        // This test like testBuildTools but also adds in a final version of 24
+        recordBuildTool24(fop);
+
+        AndroidSdkHandler handler = new AndroidSdkHandler(new File("/sdk"), fop);
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+
+        assertEquals("24.0.0", handler.getLatestBuildTool(progress, false).getRevision().toString());
+        assertEquals("24.0.0", handler.getLatestBuildTool(progress, true).getRevision().toString());
+    }
 }

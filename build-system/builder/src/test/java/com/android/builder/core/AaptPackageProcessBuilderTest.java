@@ -63,7 +63,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
         MockitoAnnotations.initMocks(this);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         AndroidSdkHandler handler = AndroidSdkHandler.getInstance(getSdkDir());
-        mBuildToolInfo = handler.getLatestBuildTool(progress);
+        mBuildToolInfo = handler.getLatestBuildTool(progress, false);
         if (mBuildToolInfo == null) {
             throw new RuntimeException("Test requires build-tools 21");
         }

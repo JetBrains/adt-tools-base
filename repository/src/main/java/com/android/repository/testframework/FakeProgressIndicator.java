@@ -143,13 +143,19 @@ public class FakeProgressIndicator implements ProgressIndicator {
     /**
      * {@code assert} that no errors or warnings have been logged.
      */
-    public void assertNoErrorsOrWarnings(){
-        if (!getErrors().isEmpty()) {
-            throw new Error(getErrors().toString());
-        }
+    public void assertNoErrorsOrWarnings() {
+        assertNoErrors();
         if (!getWarnings().isEmpty()) {
             throw new Error(getWarnings().toString());
         }
+    }
 
+    /**
+     * {@code assert} that no errors have been logged.
+     */
+    public void assertNoErrors() {
+        if (!getErrors().isEmpty()) {
+            throw new Error(getErrors().toString());
+        }
     }
 }
