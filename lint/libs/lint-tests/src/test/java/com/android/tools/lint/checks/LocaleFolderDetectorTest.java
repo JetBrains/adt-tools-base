@@ -58,6 +58,7 @@ public class LocaleFolderDetectorTest extends AbstractCheckTest {
                         "res/values/strings.xml=>res/values-nb-rSJ/strings.xml",
                         "res/values/strings.xml=>res/values-nb-rSE/strings.xml",
                         "res/values/strings.xml=>res/values-sv-rSV/strings.xml",
+                        "res/values/strings.xml=>res/values-en-rXA/strings.xml",
                         "res/values/strings.xml=>res/values-ff-rNO/strings.xml"
                 )
         );

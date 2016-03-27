@@ -519,6 +519,11 @@ public class JavaPsiVisitor {
         }
 
         private void checkClass(@NonNull PsiClass node) {
+            if (node instanceof PsiTypeParameter) {
+                // Not included: explained in javadoc for JavaPsiScanner#checkClass
+                return;
+            }
+
             PsiClass cls = node;
             int depth = 0;
             while (cls != null) {

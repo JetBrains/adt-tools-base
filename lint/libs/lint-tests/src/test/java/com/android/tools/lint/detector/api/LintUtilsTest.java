@@ -17,11 +17,29 @@
 package com.android.tools.lint.detector.api;
 
 import static com.android.SdkConstants.DOT_JAVA;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_BOOLEAN;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_BOOLEAN_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_BYTE;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_BYTE_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_CHAR;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_CHARACTER_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_DOUBLE;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_DOUBLE_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_FLOAT;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_FLOAT_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_INT;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_INTEGER_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_LONG;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_LONG_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_SHORT;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_SHORT_WRAPPER;
 import static com.android.tools.lint.detector.api.LintUtils.computeResourceName;
 import static com.android.tools.lint.detector.api.LintUtils.convertVersion;
 import static com.android.tools.lint.detector.api.LintUtils.findSubstring;
+import static com.android.tools.lint.detector.api.LintUtils.getAutoBoxedType;
 import static com.android.tools.lint.detector.api.LintUtils.getFormattedParameters;
 import static com.android.tools.lint.detector.api.LintUtils.getLocaleAndRegion;
+import static com.android.tools.lint.detector.api.LintUtils.getPrimitiveType;
 import static com.android.tools.lint.detector.api.LintUtils.isImported;
 import static com.android.tools.lint.detector.api.LintUtils.splitPath;
 import static com.android.utils.SdkUtils.escapePropertyValue;
@@ -557,6 +575,37 @@ public class LintUtilsTest extends TestCase {
         assertEquals(
                 "foofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoo\\#foofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoo",
                 escapePropertyValue("foofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoo#foofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoo"));
+    }
+
+    public void testGetAutoBoxedType() {
+        assertEquals(TYPE_INTEGER_WRAPPER, getAutoBoxedType(TYPE_INT));
+        assertEquals(TYPE_INT, getPrimitiveType(TYPE_INTEGER_WRAPPER));
+
+        String[] pairs = new String[]{
+                TYPE_BOOLEAN,
+                TYPE_BOOLEAN_WRAPPER,
+                TYPE_BYTE,
+                TYPE_BYTE_WRAPPER,
+                TYPE_CHAR,
+                TYPE_CHARACTER_WRAPPER,
+                TYPE_DOUBLE,
+                TYPE_DOUBLE_WRAPPER,
+                TYPE_FLOAT,
+                TYPE_FLOAT_WRAPPER,
+                TYPE_INT,
+                TYPE_INTEGER_WRAPPER,
+                TYPE_LONG,
+                TYPE_LONG_WRAPPER,
+                TYPE_SHORT,
+                TYPE_SHORT_WRAPPER
+        };
+
+        for (int i = 0; i < pairs.length; i += 2) {
+            String primitive = pairs[i];
+            String autoBoxed = pairs[i + 1];
+            assertEquals(autoBoxed, getAutoBoxedType(primitive));
+            assertEquals(primitive, getPrimitiveType(autoBoxed));
+        }
     }
 
     private static class TestContext extends JavaContext {

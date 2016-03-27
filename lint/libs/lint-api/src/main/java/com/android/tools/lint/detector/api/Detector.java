@@ -32,6 +32,7 @@ import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiMethodCallExpression;
 import com.intellij.psi.PsiNewExpression;
 
+import com.intellij.psi.PsiTypeParameter;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodInsnNode;
@@ -637,7 +638,13 @@ public abstract class Detector {
 
         /**
          * Called for each class that extends one of the super classes specified with
-         * {@link #applicableSuperClasses()}
+         * {@link #applicableSuperClasses()}.
+         * <p>
+         * Note: This method will not be called for {@link PsiTypeParameter} classes. These
+         * aren't really classes in the sense most lint detectors think of them, so these
+         * are excluded to avoid having lint checks that don't defensively code for these
+         * accidentally report errors on type parameters. If you really need to check these,
+         * use {@link #getApplicablePsiTypes} with {@code PsiTypeParameter.class} instead.
          *
          * @param context the lint scanning context
          * @param declaration the class declaration node, or null for anonymous classes
