@@ -122,4 +122,23 @@ public class ParcelDetectorTest extends AbstractCheckTest {
                                 + "}")
                 ));
     }
+
+    @SuppressWarnings("all") // sample code
+    public void testTypeParameters() throws Exception {
+        assertEquals("No warnings.",
+                lintProject(
+                        java("src/test/pkg/ParcelTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.os.Bundle;\n"
+                                + "import android.os.Parcelable;\n"
+                                + "\n"
+                                + "@SuppressWarnings(\"unused\")\n"
+                                + "public class ParcelTest {\n"
+                                + "    public static <T extends Parcelable> T getParcelable(Bundle args, String key) {\n"
+                                + "        return args == null ? null : args.<T>getParcelable(key);\n"
+                                + "    }\n"
+                                + "}\n")
+                ));
+    }
 }

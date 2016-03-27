@@ -34,6 +34,22 @@ import static com.android.SdkConstants.TOOLS_URI;
 import static com.android.SdkConstants.UTF_8;
 import static com.android.ide.common.resources.configuration.FolderConfiguration.QUALIFIER_SPLITTER;
 import static com.android.ide.common.resources.configuration.LocaleQualifier.BCP_47_PREFIX;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_BOOLEAN;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_BOOLEAN_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_BYTE;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_BYTE_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_CHAR;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_CHARACTER_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_DOUBLE;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_DOUBLE_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_FLOAT;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_FLOAT_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_INT;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_INTEGER_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_LONG;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_LONG_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_SHORT;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_SHORT_WRAPPER;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -1330,5 +1346,51 @@ public class LintUtils {
             }
         }
         return CommonClassNames.JAVA_LANG_STRING.equals(type.getCanonicalText());
+    }
+
+    @Nullable
+    public static String getAutoBoxedType(@NonNull String primitive) {
+        if (TYPE_INT.equals(primitive)) {
+            return TYPE_INTEGER_WRAPPER;
+        } else if (TYPE_LONG.equals(primitive)) {
+            return TYPE_LONG_WRAPPER;
+        } else if (TYPE_CHAR.equals(primitive)) {
+            return TYPE_CHARACTER_WRAPPER;
+        } else if (TYPE_FLOAT.equals(primitive)) {
+            return TYPE_FLOAT_WRAPPER;
+        } else if (TYPE_DOUBLE.equals(primitive)) {
+            return TYPE_DOUBLE_WRAPPER;
+        } else if (TYPE_BOOLEAN.equals(primitive)) {
+            return TYPE_BOOLEAN_WRAPPER;
+        } else if (TYPE_SHORT.equals(primitive)) {
+            return TYPE_SHORT_WRAPPER;
+        } else if (TYPE_BYTE.equals(primitive)) {
+            return TYPE_BYTE_WRAPPER;
+        }
+
+        return null;
+    }
+
+    @Nullable
+    public static String getPrimitiveType(@NonNull String autoBoxedType) {
+        if (TYPE_INTEGER_WRAPPER.equals(autoBoxedType)) {
+            return TYPE_INT;
+        } else if (TYPE_LONG_WRAPPER.equals(autoBoxedType)) {
+            return TYPE_LONG;
+        } else if (TYPE_CHARACTER_WRAPPER.equals(autoBoxedType)) {
+            return TYPE_CHAR;
+        } else if (TYPE_FLOAT_WRAPPER.equals(autoBoxedType)) {
+            return TYPE_FLOAT;
+        } else if (TYPE_DOUBLE_WRAPPER.equals(autoBoxedType)) {
+            return TYPE_DOUBLE;
+        } else if (TYPE_BOOLEAN_WRAPPER.equals(autoBoxedType)) {
+            return TYPE_BOOLEAN;
+        } else if (TYPE_SHORT_WRAPPER.equals(autoBoxedType)) {
+            return TYPE_SHORT;
+        } else if (TYPE_BYTE_WRAPPER.equals(autoBoxedType)) {
+            return TYPE_BYTE;
+        }
+
+        return null;
     }
 }
