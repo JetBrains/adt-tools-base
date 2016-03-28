@@ -75,25 +75,22 @@ public class FieldOverridingTest {
         assertThat(fieldOverridingGrandChild.getParentCollection()).contains("child");
 
         // use new instances.
+        parent = new FieldOverridingParent();
+        child = new FieldOverridingChild();
+        assertThat(parent.getField()).isEqualTo("modified modified parent");
+        assertThat(child.getField()).isEqualTo("modified modified parent");
+        assertThat(FieldOverridingParent.getStaticField()).isEqualTo("modified static parent");
+        assertThat(parent.getStaticField()).isEqualTo("modified static parent");
+        assertThat(parent.getStaticCollection()).contains("modified static parent");
 
-        // disabled due to constructor use.
+        assertThat(child.field()).isWithin(0.1).of(12d);
+        assertThat(FieldOverridingChild.staticField()).isWithin(0.1).of(13d);
+        assertThat(child.staticField()).isWithin(0.1).of(13d);
+        assertThat(child.getStaticCollection()).contains("modified static child");
+        assertThat(child.getCollection()).contains("modified child");
 
-        //parent = new FieldOverridingParent();
-        //child = new FieldOverridingChild();
-        //assertThat(parent.getField()).isEqualTo("modified modified parent");
-        //assertThat(child.getField()).isEqualTo("modified modified parent");
-        //assertThat(FieldOverridingParent.getStaticField()).isEqualTo("modified static parent");
-        //assertThat(parent.getStaticField()).isEqualTo("modified static parent");
-        //assertThat(parent.getStaticCollection()).contains("modified static parent");
-        //
-        //assertThat(child.field()).isWithin(0.1).of(12d);
-        //assertThat(FieldOverridingChild.staticField()).isWithin(0.1).of(13d);
-        //assertThat(child.staticField()).isWithin(0.1).of(13d);
-        //assertThat(child.getStaticCollection()).contains("modified static child");
-        //assertThat(child.getCollection()).contains("modified child");
-        //
-        //
-        //fieldOverridingGrandChild = new FieldOverridingGrandChild();
-        //assertThat(fieldOverridingGrandChild.getParentCollection()).contains("modified child");
+
+        fieldOverridingGrandChild = new FieldOverridingGrandChild();
+        assertThat(fieldOverridingGrandChild.getParentCollection()).contains("modified child");
     }
 }
