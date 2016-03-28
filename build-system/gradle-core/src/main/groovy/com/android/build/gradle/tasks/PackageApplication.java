@@ -327,6 +327,8 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
         Files.createParentDirs(tmpZipFile);
         ZipOutputStream zipFile = new ZipOutputStream(
                 new BufferedOutputStream(new FileOutputStream(tmpZipFile)));
+        // no need to compress a zip, the APK itself gets compressed.
+        zipFile.setLevel(0);
 
         try {
             for (File dexFolder : dexFolders) {
