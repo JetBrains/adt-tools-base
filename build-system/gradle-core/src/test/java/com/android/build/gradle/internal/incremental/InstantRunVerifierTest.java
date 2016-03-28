@@ -26,9 +26,7 @@ import com.verifier.tests.AddInstanceField;
 import com.verifier.tests.AddInterfaceImplementation;
 import com.verifier.tests.AddMethodAnnotation;
 import com.verifier.tests.AddNotRuntimeClassAnnotation;
-import com.verifier.tests.ChangeConstructorCode;
 import com.verifier.tests.ChangeFieldType;
-import com.verifier.tests.ChangeImplicitConstructorCode;
 import com.verifier.tests.ChangeInstanceFieldToStatic;
 import com.verifier.tests.ChangeInstanceFieldVisibility;
 import com.verifier.tests.ChangeStaticFieldToInstance;
@@ -288,19 +286,5 @@ public class InstantRunVerifierTest {
                         Lists.newArrayList(original),
                         Lists.newArrayList(updated),
                         InstantRunVerifier.ANNOTATION_COMPARATOR));
-    }
-
-    @Test
-    public void testConstructorCode() throws IOException {
-        assertEquals(COMPATIBLE, harness.verify(ChangeConstructorCode.class, null));
-        assertEquals(InstantRunVerifierStatus.CONSTRUCTOR_CHANGED,
-                harness.verify(ChangeConstructorCode.class, "verifier"));
-    }
-
-    @Test
-    public void testImplicitConstructorCode() throws IOException {
-        assertEquals(COMPATIBLE, harness.verify(ChangeImplicitConstructorCode.class, null));
-        assertEquals(InstantRunVerifierStatus.CONSTRUCTOR_CHANGED,
-                harness.verify(ChangeImplicitConstructorCode.class, "verifier"));
     }
 }

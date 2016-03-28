@@ -61,9 +61,7 @@ public class ExceptionsTest {
             assertEquals("patched", e.message);
         }
         assertEquals("before_p:caught_p[patched]:finally_p", exceptions.catchesNamed());
-
-        // disabled due to constructor use.
-        //assertEquals("caught_p: ;protected_p;static_p;ctr_p", exceptions.catchesHiddenNamed());
+        assertEquals("caught_p: ;protected_p;static_p;ctr_p", exceptions.catchesHiddenNamed());
 
         try {
             exceptions.throwsRuntime();
