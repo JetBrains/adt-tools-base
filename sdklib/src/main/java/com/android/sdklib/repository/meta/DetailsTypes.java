@@ -267,7 +267,7 @@ public final class DetailsTypes {
      * Gets the path/unique id for the LLDB of the given {@link Revision}.
      */
     public static String getLldbPath(Revision revision) {
-        return SdkConstants.FD_LLDB + RepoPackage.PATH_SEPARATOR + revision.getMajor() + ""
+        return SdkConstants.FD_LLDB + RepoPackage.PATH_SEPARATOR + revision.getMajor() + "."
                + revision.getMinor();
     }
 
@@ -311,7 +311,7 @@ public final class DetailsTypes {
      * Gets the default path/unique id for the given build tools
      */
     public static String getBuildToolsPath(Revision revision) {
-        String revisionStr = Ints.join("", revision.toIntArray(false)) +
+        String revisionStr = Ints.join(".", revision.toIntArray(false)) +
                              (revision.isPreview() ? "-preview" : "");
         return SdkConstants.FD_BUILD_TOOLS + RepoPackage.PATH_SEPARATOR + revisionStr;
     }
