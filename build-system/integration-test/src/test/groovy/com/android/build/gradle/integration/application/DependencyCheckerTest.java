@@ -14,84 +14,69 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.application
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
-import groovy.transform.CompileStatic
-import org.gradle.tooling.BuildException
-import org.junit.Rule
-import org.junit.Test
-import org.junit.experimental.runners.Enclosed
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
+package com.android.build.gradle.integration.application;
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-import static org.junit.Assert.fail
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+import static org.junit.Assert.fail;
+
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
+import com.android.build.gradle.integration.common.utils.TestFileUtils;
+
+import org.gradle.tooling.BuildException;
+import org.junit.Rule;
+import org.junit.Test;
+
 /**
  * Assemble tests for dependencyChecker.
  */
-@CompileStatic
-@RunWith(Enclosed)
-class DependencyCheckerTest {
+public class DependencyCheckerTest {
 
-    @RunWith(JUnit4)
-    @CompileStatic
-    public static class HttpClient {
-        @Rule
-        public GradleTestProject httpClientProject = GradleTestProject.builder()
-                .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-                .create()
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
+            .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
+            .create();
 
-        @Test
-        public void httpComponents() throws Exception {
-            httpClientProject.buildFile <<
-                    "dependencies.compile 'org.apache.httpcomponents:httpclient:4.1.1'"
+    @Test
+    public void httpComponents() throws Exception {
+        TestFileUtils.appendToFile(project.getBuildFile(), "\n"
+                + "dependencies.compile 'org.apache.httpcomponents:httpclient:4.1.1'\n");
 
-            httpClientProject.execute("clean", "assembleDebug")
-            assertThat(httpClientProject.getStdout())
-                    .contains("Dependency org.apache.httpcomponents:httpclient:4.1.1 is ignored")
-        }
+        project.execute("clean", "assembleDebug");
+        assertThat(project.getStdout())
+                .contains("Dependency org.apache.httpcomponents:httpclient:4.1.1 is ignored");
     }
 
-    @RunWith(JUnit4)
-    @CompileStatic
-    public static class ComGoogleAndroid {
-        @Rule
-        public GradleTestProject minSdkProject = GradleTestProject.builder()
-                .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-                .create()
 
-        /**
-         * See {@link com.android.build.gradle.internal.tasks.PrepareDependenciesTask} for the
-         * expected output.
-         */
-        @Test
-        public void comGoogleAndroid() throws Exception {
-            minSdkProject.buildFile << """
-                // Lower than com.google.android:android:4.1.14
-                android.defaultConfig.minSdkVersion 14
+    /**
+     * See {@link com.android.build.gradle.internal.tasks.PrepareDependenciesTask} for the expected
+     * output.
+     */
+    @Test
+    public void comGoogleAndroid() throws Exception {
+        TestFileUtils.appendToFile(project.getBuildFile(), "\n"
+                + "// Lower than com.google.android:android:4.1.14\n"
+                + "android.defaultConfig.minSdkVersion 14\n"
+                + "\n"
+                + "repositories {\n"
+                + "    mavenCentral()\n"
+                + "}\n"
+                + "\n"
+                + "dependencies {\n"
+                + "    compile 'com.google.android:android:4.1.1.4'\n"
+                + "}");
 
-                repositories {
-                    mavenCentral()
-                }
-
-                dependencies {
-                    compile 'com.google.android:android:4.1.1.4'
-                }
-                """
-
-            try {
-                minSdkProject.execute("clean", "assemble")
-                fail("should throw")
-            } catch (BuildException e) {
-                // expected.
-            }
-
-            String stdOut = minSdkProject.stderr.toString()
-            assertThat(stdOut).contains("corresponds to API level 15")
-            // Picked up from com.google.android
-            assertThat(stdOut).contains("which is 14") // Declared in Gradle.
-            assertThat(stdOut).contains("com.google.android")
+        try {
+            project.execute("clean", "assemble");
+            fail("should throw");
+        } catch (BuildException e) {
+            // expected.
         }
+
+        String stderr = project.getStderr();
+        assertThat(stderr).contains("corresponds to API level 15");
+        // Picked up from com.google.android
+        assertThat(stderr).contains("which is 14"); // Declared in Gradle.
+        assertThat(stderr).contains("com.google.android");
     }
 }
