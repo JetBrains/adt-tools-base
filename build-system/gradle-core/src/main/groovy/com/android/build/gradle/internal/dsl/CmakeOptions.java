@@ -17,29 +17,29 @@
 package com.android.build.gradle.internal.dsl;
 
 import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.model.CoreNdkBuildOptions;
+import com.android.build.gradle.internal.model.CoreCmakeOptions;
 
 import java.io.File;
 
 /**
- * Implementation for ndkBuild subsection of externalNativeBuild.
+ * Implementation for cmake subsection of externalNativeBuild.
  *
  * android {
  *     externalNativeBuild {
- *         ndkBuild {
+ *         cmake {
  *             path '...'
  *         }
  *     }
  * }
  */
-public class NdkBuildOptions implements CoreNdkBuildOptions {
+public class CmakeOptions implements CoreCmakeOptions {
     @Nullable
     private File path;
 
     @Nullable
     private String cflags;
 
-    public NdkBuildOptions() {
+    public CmakeOptions() {
     }
 
     @Nullable

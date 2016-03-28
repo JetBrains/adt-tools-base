@@ -39,6 +39,8 @@
             <tr><td>useJack</td></tr>
             <tr><td>consumerProguardFile</td></tr>
             <tr><td>consumerProguardFiles</td></tr>
+            <tr><td>cmake</td></tr>
+            <tr><td>ndkBuild</td></tr>
         </table>
     </section>
 </section>
