@@ -296,7 +296,7 @@ public class MavenInstallListener implements PackageOperation.StatusChangeListen
             @NonNull ProgressIndicator progress, @NonNull ByteArrayOutputStream metadataOutBytes,
             @NonNull FileOp fop) {
         File md5File = new File(file.getParent(),
-                                MAVEN_METADATA_FILE_NAME + "" + algorithm.toLowerCase());
+                                MAVEN_METADATA_FILE_NAME + "." + algorithm.toLowerCase());
         MessageDigest digest;
         try {
             digest = MessageDigest.getInstance(algorithm);
