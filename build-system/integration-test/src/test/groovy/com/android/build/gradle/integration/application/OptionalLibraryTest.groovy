@@ -21,8 +21,8 @@ import com.android.builder.model.AndroidProject
 import com.android.builder.model.SyncIssue
 import com.android.repository.testframework.FakeProgressIndicator
 import com.android.sdklib.IAndroidTarget
-import com.android.sdklib.repositoryv2.AndroidSdkHandler
-import com.android.sdklib.repositoryv2.targets.AndroidTargetManager
+import com.android.sdklib.repository.AndroidSdkHandler
+import com.android.sdklib.repository.targets.AndroidTargetManager
 import groovy.transform.CompileStatic
 import org.junit.After
 import org.junit.Rule

@@ -25,7 +25,7 @@ import com.android.ide.common.internal.PngException;
 import com.android.repository.Revision;
 import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.sdklib.BuildToolInfo;
-import com.android.sdklib.repositoryv2.AndroidSdkHandler;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.testutils.TestUtils;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;

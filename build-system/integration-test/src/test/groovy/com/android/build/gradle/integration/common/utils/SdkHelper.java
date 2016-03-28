@@ -24,7 +24,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.repository.Revision;
 import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.sdklib.BuildToolInfo;
-import com.android.sdklib.repositoryv2.AndroidSdkHandler;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.utils.FileUtils;
 
 import java.io.File;
