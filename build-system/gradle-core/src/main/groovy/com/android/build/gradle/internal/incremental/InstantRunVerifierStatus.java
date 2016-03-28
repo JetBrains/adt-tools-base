@@ -68,8 +68,6 @@ public enum InstantRunVerifierStatus {
 
     DEPENDENCY_CHANGED,
 
-    CONSTRUCTOR_CHANGED,
-
     // the binary manifest file changed, probably due to references to resources which ID changed
     // since last build.
     BINARY_MANIFEST_FILE_CHANGE
