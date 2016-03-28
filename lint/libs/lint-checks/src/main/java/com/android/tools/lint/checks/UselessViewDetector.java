@@ -206,13 +206,13 @@ public class UselessViewDetector extends LayoutDetector {
 
         // If we define a padding, and the parent provides a background, then
         // this view is not *necessarily* useless.
-        if (parentHasBackground && element.hasAttributeNS(ANDROID_URI, ATTR_PADDING)
+        if (parentHasBackground && (element.hasAttributeNS(ANDROID_URI, ATTR_PADDING)
                 || element.hasAttributeNS(ANDROID_URI, ATTR_PADDING_LEFT)
                 || element.hasAttributeNS(ANDROID_URI, ATTR_PADDING_RIGHT)
                 || element.hasAttributeNS(ANDROID_URI, ATTR_PADDING_TOP)
                 || element.hasAttributeNS(ANDROID_URI, ATTR_PADDING_BOTTOM)
                 || element.hasAttributeNS(ANDROID_URI, ATTR_PADDING_START)
-                || element.hasAttributeNS(ANDROID_URI, ATTR_PADDING_END)) {
+                || element.hasAttributeNS(ANDROID_URI, ATTR_PADDING_END))) {
             return;
         }
 

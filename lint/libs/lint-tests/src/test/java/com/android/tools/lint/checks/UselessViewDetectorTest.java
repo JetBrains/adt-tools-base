@@ -72,4 +72,15 @@ public class UselessViewDetectorTest extends AbstractCheckTest {
 
                 lintFiles("res/layout/useless4.xml"));
     }
+
+    public void testUselessWithPaddingAttrs() throws Exception {
+        // https://code.google.com/p/android/issues/detail?id=205250
+        assertEquals(
+                "res/layout/useless5.xml:7: Warning: This RelativeLayout layout or its FrameLayout parent is useless [UselessParent]\n" +
+                "    <RelativeLayout\n" +
+                "    ^\n" +
+                "0 errors, 1 warnings\n",
+
+                lintFiles("res/layout/useless5.xml"));
+    }
 }
