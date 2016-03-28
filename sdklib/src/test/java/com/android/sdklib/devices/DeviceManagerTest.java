@@ -27,11 +27,11 @@ import com.android.sdklib.devices.Device.Builder;
 import com.android.sdklib.devices.DeviceManager.DeviceFilter;
 import com.android.sdklib.devices.DeviceManager.DeviceStatus;
 import com.android.sdklib.mock.MockLog;
-import com.android.sdklib.repositoryv2.AndroidSdkHandler;
-import com.android.sdklib.repositoryv2.IdDisplay;
-import com.android.sdklib.repositoryv2.meta.AddonFactory;
-import com.android.sdklib.repositoryv2.meta.DetailsTypes;
-import com.android.sdklib.repositoryv2.targets.SystemImage;
+import com.android.sdklib.repository.AndroidSdkHandler;
+import com.android.sdklib.repository.IdDisplay;
+import com.android.sdklib.repository.meta.AddonFactory;
+import com.android.sdklib.repository.meta.DetailsTypes;
+import com.android.sdklib.repository.targets.SystemImage;
 
 import java.io.File;
 import java.util.ArrayList;

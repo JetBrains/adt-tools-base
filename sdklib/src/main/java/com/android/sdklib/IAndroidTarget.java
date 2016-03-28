@@ -16,7 +16,7 @@
 
 package com.android.sdklib;
 
-import static com.android.sdklib.repositoryv2.meta.DetailsTypes.AddonDetailsType;
+import static com.android.sdklib.repository.meta.DetailsTypes.AddonDetailsType;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;

@@ -29,7 +29,7 @@ import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RepoManager;
 import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
-import com.android.sdklib.repositoryv2.AndroidSdkHandler;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.google.common.collect.Lists;
 
 import java.io.File;

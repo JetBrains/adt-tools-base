@@ -19,8 +19,8 @@ package com.android.sdklib;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.api.ProgressIndicator;
-import com.android.sdklib.repositoryv2.IdDisplay;
-import com.android.sdklib.repositoryv2.targets.AndroidTargetManager;
+import com.android.sdklib.repository.IdDisplay;
+import com.android.sdklib.repository.targets.AndroidTargetManager;
 import com.google.common.base.Splitter;
 
 import java.util.List;
