@@ -135,12 +135,10 @@ public class InstantRunDisabledTest {
         assertThat(InstantRunDisabledMethod.nonAlterableStaticMethod()).isEqualTo(
                 "non alterable static original");
 
-        // disabled due to constructor code.
+        assertThat(new InstantRunDisabledMethod("hello").getStringField()).isEqualTo("modified hello");
 
-        //assertThat(new InstantRunDisabledMethod("hello").getStringField()).isEqualTo("modified hello");
-        //
-        //// control that runtime was properly setup.
-        //assertThat(controlClass.getValue()).isEqualTo("modified");
+        // control that runtime was properly setup.
+        assertThat(controlClass.getValue()).isEqualTo("modified");
     }
 }
 
