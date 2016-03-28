@@ -30,6 +30,12 @@ public interface CoreProductFlavor extends ProductFlavor, Named {
     @Nullable
     CoreNdkOptions getNdkConfig();
 
+    @Nullable
+    CoreExternalNativeNdkBuildOptions getExternalNativeNdkBuildOptions();
+
+    @Nullable
+    CoreExternalNativeCmakeOptions getExternalNativeCmakeOptions();
+
     @NonNull
     CoreJackOptions getJackOptions();
 

@@ -14,53 +14,36 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.dsl;
+package com.android.build.gradle.managed.adaptor;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.model.CoreNdkBuildOptions;
+import com.android.build.gradle.internal.dsl.CoreExternalNativeCmakeOptions;
+import com.android.build.gradle.managed.ExternalNativeCmakeOptions;
 
-import java.io.File;
+import java.util.Set;
 
 /**
- * Implementation for ndkBuild subsection of externalNativeBuild.
- *
- * android {
- *     externalNativeBuild {
- *         ndkBuild {
- *             path '...'
- *         }
- *     }
- * }
+ * An adaptor to convert a ExternalNativeCmakeOptions to CoreExternalNativeCmakeOptions.
  */
-public class NdkBuildOptions implements CoreNdkBuildOptions {
-    @Nullable
-    private File path;
+public class ExternalNativeCmakeOptionsAdaptor implements CoreExternalNativeCmakeOptions {
 
-    @Nullable
-    private String cflags;
+    private final ExternalNativeCmakeOptions options;
 
-    public NdkBuildOptions() {
-    }
-
-    @Nullable
-    @Override
-    public File getPath() {
-        return this.path;
-    }
-
-    @Override
-    public void setPath(File path) {
-        this.path = path;
+    public ExternalNativeCmakeOptionsAdaptor(@NonNull ExternalNativeCmakeOptions options) {
+        this.options = options;
     }
 
     @Nullable
     @Override
     public String getcFlags() {
-        return this.cflags;
+        return options.getcFlags();
     }
 
+    @Nullable
     @Override
-    public void setcFlags(String cflags) {
-        this.cflags = cflags;
+    public Set<String> getAbiFilters() {
+        return options.getAbiFilters();
     }
 }
+

@@ -82,9 +82,42 @@ android {
     public void externalNativeBuildNdkBuild() {
         project.getBuildFile() << """
 android {
+    buildTypes {
+        release {
+            ndkBuild {
+                cFlags "-DCOLOR=RED"
+                abiFilters "x86", "x86_64"
+            }
+        }
+    }
     externalNativeBuild {
         ndkBuild {
             path file('.')
+            cFlags "-DFLAVOR=CHOCOLATE"
+        }
+    }
+}
+"""
+        project.execute("tasks")
+    }
+
+
+    @Test
+    public void externalNativeBuildCmake() {
+        project.getBuildFile() << """
+android {
+    buildTypes {
+        release {
+            cmake {
+                cFlags "-DCOLOR=RED"
+                abiFilters "x86", "x86_64"
+            }
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path file('.')
+            cFlags "-DFLAVOR=CHOCOLATE"
         }
     }
 }

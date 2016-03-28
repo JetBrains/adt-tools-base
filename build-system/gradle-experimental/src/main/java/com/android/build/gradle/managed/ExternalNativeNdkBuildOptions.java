@@ -14,28 +14,26 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.model;
-
-import com.android.annotations.NonNull;
+package com.android.build.gradle.managed;
 
 import org.gradle.model.Managed;
 
+import java.util.Set;
+
 /**
- * DSL for externalNativeBuild settings. Example,
- *
- * android {
- *     externalNativeBuild {
- *         ndkBuild {
- *             ...
- *         }
- *     }
- * }
+ * DSL object for variant specific ndk-build settings.
  */
 @Managed
-public interface CoreExternalNativeBuild {
-    @NonNull
-    CoreNdkBuildOptions getNdkBuild();
+public interface ExternalNativeNdkBuildOptions {
+    /**
+     * The ABI Filters.  Leave empty to include all supported ABI.
+     */
+    Set<String> getAbiFilters();
+    void setAbiFilters(Set<String> abiFilters);
 
-    @NonNull
-    CoreCmakeOptions getCmake();
+    /**
+     * The C Flags
+     */
+    String getcFlags();
+    void setcFlags(String flags);
 }
