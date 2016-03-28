@@ -43,6 +43,9 @@ public class AxisLineChartVisualTest extends VisualTest {
     private final Range mXGlobalRange;
 
     @NonNull
+    private final Range mXSelectionRange;
+
+    @NonNull
     private final LineChart mLineChart;
 
     @NonNull
@@ -59,6 +62,9 @@ public class AxisLineChartVisualTest extends VisualTest {
 
     @NonNull
     private GridComponent mGrid;
+
+    @NonNull
+    private SelectionComponent mSelection;
 
     @NonNull
     private final RangeScrollbar mScrollbar;
@@ -110,11 +116,15 @@ public class AxisLineChartVisualTest extends VisualTest {
         mGrid.addAxis(mMemoryAxis1);
         mGrid.addAxis(mMemoryAxis2);
 
+        mXSelectionRange = new Range(0, 0);
+        mSelection = new SelectionComponent(mTimeAxis, mXSelectionRange, mXGlobalRange, mXRange);
+
         choreographer.register(mScrollbar);
         choreographer.register(mLineChart);
         choreographer.register(mTimeAxis);
         choreographer.register(mMemoryAxis1);
         choreographer.register(mMemoryAxis2);
+        choreographer.register(mSelection);
         choreographer.register(mGrid);
     }
 
@@ -228,6 +238,7 @@ public class AxisLineChartVisualTest extends VisualTest {
         timelinePane.add(mMemoryAxis2);
         timelinePane.add(mTimeAxis);
         timelinePane.add(mLineChart);
+        timelinePane.add(mSelection);
         timelinePane.add(mGrid);
         timelinePane.add(mScrollbar);
         timelinePane.addComponentListener(new ComponentAdapter() {

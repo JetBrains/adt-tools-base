@@ -37,7 +37,7 @@ import java.awt.event.*;
  * C. {@link Range#mMax} -> BoundedRangeModel's min + extent
  * D. Range data's global maximum -> BoundedRangeModel's max
  */
-public final class RangeScrollbar extends JScrollBar implements AdjustmentListener, Animatable {
+public final class RangeScrollbar extends JScrollBar implements Animatable {
 
     /**
      * Different states to control the behavior of the scrollbar:
@@ -82,18 +82,17 @@ public final class RangeScrollbar extends JScrollBar implements AdjustmentListen
         mScrollingMode = ScrollingMode.STREAMING;
         mZoomDelta = 0;
 
-        addAdjustmentListener(this);
         addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                mScrollingMode = ScrollingMode.SCROLLING;
+                mZoomDelta = 0;
+            }
+
             @Override
             public void mouseReleased(MouseEvent e) {
                 mScrollingMode = closeToMaxRange() ?
                                  ScrollingMode.STREAMING : ScrollingMode.VIEWING;
-            }
-
-            // TODO This event comes after mouseReleased so the setMode ordering can get messed up.
-            // The toggle to Mode.SCROLLING is set in the adjustmentValueChanged instead.
-            @Override
-            public void mouseClicked(MouseEvent e) {
             }
         });
     }
@@ -193,15 +192,6 @@ public final class RangeScrollbar extends JScrollBar implements AdjustmentListen
                 mRange.setMax(newMin + currentRange);
                 break;
 
-        }
-    }
-
-    @Override
-    public void adjustmentValueChanged(AdjustmentEvent e) {
-        // Toggle mode to SCROLLING if the user is currently adjusting the scrollbar
-        if (getValueIsAdjusting()) {
-            mScrollingMode = ScrollingMode.SCROLLING;
-            mZoomDelta = 0;
         }
     }
 

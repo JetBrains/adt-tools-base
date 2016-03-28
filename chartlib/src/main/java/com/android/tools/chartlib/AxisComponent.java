@@ -205,8 +205,6 @@ public final class AxisComponent extends AnimatedComponent {
 
     /**
      * Returns the position where a value would appear on this axis.
-     * @param value Value.
-     * @return Position of the value corresponding to the value relative to the axis.
      */
     public float getPositionAtValue(double value) {
         float offset = (float)(mScale * (value - mCurrentMinValue) /  mInterval);
@@ -226,11 +224,9 @@ public final class AxisComponent extends AnimatedComponent {
     }
 
     /**
-     * Returns the formatted corresponding to a pixel position on the axis.
-     * @param position Position.
-     * @return Value of the position.
+     * Returns the value corresponding to a pixel position on the axis.
      */
-    public String getFormattedValueAtPosition(int position) {
+    public double getValueAtPosition(int position) {
         int offset = 0;
         switch (mOrientation) {
             case LEFT:
@@ -243,7 +239,18 @@ public final class AxisComponent extends AnimatedComponent {
                 break;
         }
 
-        return formatValue(mCurrentMinValue + mInterval * offset / mScale);
+        return mCurrentMinValue + mInterval * offset / mScale;
+    }
+
+    /**
+     * Returns the formatted value corresponding to a pixel position on the axis.
+     * The formatting depends on the {@link MarkerFormatter} object associated
+     * with this axis.
+     *
+     * e.g. For a value of 1500 in milliseconds, this will return "1.5s".
+     */
+    public @NonNull String getFormattedValueAtPosition(int position) {
+        return formatValue(getValueAtPosition(position));
     }
 
     @Override

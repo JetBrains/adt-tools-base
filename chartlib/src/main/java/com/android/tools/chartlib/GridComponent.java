@@ -34,34 +34,8 @@ public final class GridComponent extends AnimatedComponent {
     @NonNull
     private java.util.List<AxisComponent> mAxes;
 
-    @NonNull
-    private Point mMousePosition;
-
-    private boolean mHovered;
-
     public GridComponent() {
         mAxes = new ArrayList();
-        mMousePosition = new Point();
-
-        addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                mHovered = true;
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                mHovered = false;
-            }
-        });
-
-        addMouseMotionListener(new MouseMotionAdapter() {
-            @Override
-            public void mouseMoved(MouseEvent e) {
-                mMousePosition.x = e.getX();
-                mMousePosition.y = e.getY();
-            }
-        });
     }
 
     public void addAxis(AxisComponent axis) {
@@ -106,29 +80,5 @@ public final class GridComponent extends AnimatedComponent {
             }
         }
         g.draw(path);
-    }
-
-    @Override
-    protected void debugDraw(Graphics2D g) {
-        super.debugDraw(g);
-
-        if (mHovered) {
-            for (int i = 0; i < mAxes.size(); i++) {
-                AxisComponent axis = mAxes.get(i);
-
-                switch (axis.getOrientation()) {
-                    case LEFT:
-                    case RIGHT:
-                        addDebugInfo(axis.getLabel() + ": %s",
-                                     axis.getFormattedValueAtPosition(mMousePosition.x));
-                        break;
-                    case TOP:
-                    case BOTTOM:
-                        addDebugInfo(axis.getLabel() + ": %s",
-                                     axis.getFormattedValueAtPosition(mMousePosition.y));
-                        break;
-                }
-            }
-        }
     }
 }

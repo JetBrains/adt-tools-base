@@ -46,8 +46,8 @@ public class VisualTests extends JDialog {
         JTabbedPane tabs = new JTabbedPane();
 
         final Choreographer choreographer = new Choreographer(40);
-        mTests.add(new StateChartVisualTest(choreographer));
         mTests.add(new AxisLineChartVisualTest(choreographer));
+        mTests.add(new StateChartVisualTest(choreographer));
         mTests.add(new LineChartVisualTest(choreographer));
         mTests.add(new SunburstVisualTest(choreographer));
         mTests.add(new TimelineVisualTest(choreographer));
