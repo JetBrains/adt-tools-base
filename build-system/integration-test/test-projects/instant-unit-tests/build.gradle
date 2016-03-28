@@ -78,7 +78,8 @@ if (!instantRunServer.exists()) {
 }
 
 dependencies {
-    compile 'com.android.tools:common:' + env.project.ext.baseVersion
+    compile 'com.android.tools:annotations:' + env.project.ext.baseVersion
+    compile 'com.google.guava:guava:17.0'
     compile files(instantRunServer)
     compile files("build/incremental-test-classes-jar/instrumentedBaseClasses.jar")
 
