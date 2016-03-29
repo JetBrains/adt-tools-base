@@ -16,8 +16,8 @@
  */
 #include <jni.h>
 #include <string>
-#include "buildType.h"
-#include "productFlavor.h"
+#include "testBuildType.h"
+#include "testProductFlavor.h"
 
 /* This is a JNI example where we use a native method to return a new VM
  * string where the string is different depending on the build type and
