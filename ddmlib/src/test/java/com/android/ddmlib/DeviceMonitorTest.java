@@ -28,10 +28,14 @@ import java.util.Map;
 public class DeviceMonitorTest extends TestCase {
     public void testDeviceListMonitor() {
         Map<String, IDevice.DeviceState> map = DeviceMonitor.DeviceListMonitorTask
-                .parseDeviceListResponse("R32C801BL5K\tdevice\n0079864fd1d150fd\tunauthorized\n");
+                .parseDeviceListResponse(
+                          "R32C801BL5K\tdevice\n"
+                        + "0079864fd1d150fd\tunauthorized\n"
+                        + "002ee7a50f6642d3\tsideload\n");
 
         assertEquals(IDevice.DeviceState.ONLINE, map.get("R32C801BL5K"));
         assertEquals(IDevice.DeviceState.UNAUTHORIZED, map.get("0079864fd1d150fd"));
+        assertEquals(IDevice.DeviceState.SIDELOAD, map.get("002ee7a50f6642d3"));
     }
 
     public void testDeviceListComparator() {
