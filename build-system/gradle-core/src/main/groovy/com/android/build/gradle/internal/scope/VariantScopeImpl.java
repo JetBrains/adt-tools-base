@@ -423,7 +423,7 @@ public class VariantScopeImpl implements VariantScope {
 
     @Override
     @NonNull
-    public Iterable<File> getJavaOuptuts() {
+    public Iterable<File> getJavaOutputs() {
         return Iterables.concat(
                 getJavaClasspath(),
                 ImmutableList.of(

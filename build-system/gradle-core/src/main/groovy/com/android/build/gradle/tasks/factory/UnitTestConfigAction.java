@@ -107,8 +107,8 @@ public class UnitTestConfigAction implements TaskConfigAction<Test> {
                             classpaths.add(testCompileTask.getClasspath());
                             classpaths.add(testCompileTask.getOutputs().getFiles());
                         } else {
-                            classpaths.add(testedVariantData.getScope().getJavaOuptuts());
-                            classpaths.add(scope.getJavaOuptuts());
+                            classpaths.add(testedVariantData.getScope().getJavaOutputs());
+                            classpaths.add(scope.getJavaOutputs());
                         }
 
                         classpaths.add(variantData.getJavaResourcesForUnitTesting());
