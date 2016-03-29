@@ -141,7 +141,7 @@ public interface VariantScope extends BaseScope {
     File getIncrementalVerifierDir();
 
     @NonNull
-    Iterable<File> getJavaOuptuts();
+    Iterable<File> getJavaOutputs();
 
     @NonNull
     File getJavaDependencyCache();
