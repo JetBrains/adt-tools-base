@@ -160,16 +160,16 @@ public abstract class AbstractShrinker<T> {
      * Increments the counter on the given graph node. If the node just became reachable, keeps on
      * walking the graph to find newly reachable nodes.
      *
-     * @param member node to increment
+     * @param node node to increment
      * @param dependencyType type of counter to increment
      * @param counterSet set of counters to work on
      */
     protected void incrementCounter(
-            @NonNull T member,
+            @NonNull T node,
             @NonNull DependencyType dependencyType,
             @NonNull CounterSet counterSet) {
-        if (mGraph.incrementAndCheck(member, dependencyType, counterSet)) {
-            for (Dependency<T> dependency : mGraph.getDependencies(member)) {
+        if (mGraph.incrementAndCheck(node, dependencyType, counterSet)) {
+            for (Dependency<T> dependency : mGraph.getDependencies(node)) {
                 incrementCounter(dependency.target, dependency.type, counterSet);
             }
         }
@@ -187,12 +187,12 @@ public abstract class AbstractShrinker<T> {
                 public Void call() {
                     T target = unresolvedReference.target;
                     T source = unresolvedReference.method;
-                    T startClass = mGraph.getClassForMember(target);
+                    T startClass = mGraph.getOwnerClass(target);
 
                     if (unresolvedReference.invokespecial) {
                         // With invokespecial we disregard the class in target and start walking up
                         // the type hierarchy, starting from the superclass of the caller.
-                        T sourceClass = mGraph.getClassForMember(source);
+                        T sourceClass = mGraph.getOwnerClass(source);
                         try {
                             startClass = mGraph.getSuperclass(sourceClass);
                             checkState(startClass != null);
@@ -205,7 +205,7 @@ public abstract class AbstractShrinker<T> {
 
                     if (!mGraph.isClassKnown(startClass)) {
                         mShrinkerLogger.invalidClassReference(
-                                mGraph.getMemberName(source),
+                                mGraph.getFullMemberName(source),
                                 mGraph.getClassName(startClass));
 
                         return null;
@@ -219,7 +219,7 @@ public abstract class AbstractShrinker<T> {
                                 currentClass,
                                 target);
                         if (matchingMethod != null) {
-                            if (isProgramClass(mGraph.getClassForMember(matchingMethod))) {
+                            if (isProgramClass(mGraph.getOwnerClass(matchingMethod))) {
                                 mGraph.addDependency(
                                         source,
                                         currentClass,
@@ -234,8 +234,8 @@ public abstract class AbstractShrinker<T> {
                     }
 
                     mShrinkerLogger.invalidMemberReference(
-                            mGraph.getMemberName(source),
-                            mGraph.getMemberName(target));
+                            mGraph.getFullMemberName(source),
+                            mGraph.getFullMemberName(target));
 
                     return null;
                 }

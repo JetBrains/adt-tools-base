@@ -181,7 +181,7 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
                     TreeTraverser<T> interfaceTraverser =
                             TypeHierarchyTraverser.interfaces(mGraph, mShrinkerLogger);
 
-                    if ((mGraph.getClassModifiers(klass) & Opcodes.ACC_INTERFACE) != 0) {
+                    if ((mGraph.getModifiers(klass) & Opcodes.ACC_INTERFACE) != 0) {
 
                         // The "children" name is unfortunate: in the type hierarchy tree traverser,
                         // these are the interfaces that klass (which is an interface itself)
@@ -279,19 +279,17 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
 
                         T matchingMethod = mGraph.findMatchingMethod(current, method);
                         if (matchingMethod != null) {
-                            String name = mGraph.getMethodNameAndDesc(method);
-                            String desc = name.substring(name.indexOf(':') + 1);
-                            name = name.substring(0, name.indexOf(':'));
-                            name = name + SHRINKER_FAKE_MARKER;
+                            String name = mGraph.getMemberName(method) + SHRINKER_FAKE_MARKER;
+                            String desc = mGraph.getMemberDescriptor(method);
                             T fakeMethod = mGraph.addMember(
                                     klass, name, desc,
-                                    mGraph.getMemberModifiers(method));
+                                    mGraph.getModifiers(method));
 
                             // Simulate a super call.
                             mGraph.addDependency(fakeMethod, matchingMethod,
                                     DependencyType.REQUIRED_CLASS_STRUCTURE);
 
-                            if (!isProgramClass(mGraph.getClassForMember(method))) {
+                            if (!isProgramClass(mGraph.getOwnerClass(method))) {
                                 mGraph.addDependency(klass, fakeMethod,
                                         DependencyType.REQUIRED_CLASS_STRUCTURE);
                             } else {
@@ -322,20 +320,22 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
             mExecutor.execute(new Callable<Void>() {
                 @Override
                 public Void call() throws Exception {
-                    String methodNameAndDesc = mGraph.getMethodNameAndDesc(method);
-                    if (isJavaLangObjectMethod(methodNameAndDesc)) {
+                    if (isJavaLangObjectMethod(
+                            mGraph.getMemberName(method),
+                            mGraph.getMemberDescriptor(method))) {
                         // If we override an SDK method, it just has to be there at runtime
                         // (if the class itself is kept).
                         mGraph.addDependency(
-                                mGraph.getClassForMember(method),
+                                mGraph.getOwnerClass(method),
                                 method,
                                 DependencyType.REQUIRED_CLASS_STRUCTURE);
                         return null;
                     }
 
                     FluentIterable<T> superTypes =
-                            TypeHierarchyTraverser.superclassesAndInterfaces(mGraph, mShrinkerLogger)
-                                    .preOrderTraversal(mGraph.getClassForMember(method));
+                            TypeHierarchyTraverser
+                                    .superclassesAndInterfaces(mGraph, mShrinkerLogger)
+                                    .preOrderTraversal(mGraph.getOwnerClass(method));
 
                     for (T klass : superTypes) {
                         if (mGraph.getClassName(klass).equals("java/lang/Object")) {
@@ -344,11 +344,11 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
 
                         T superMethod = mGraph.findMatchingMethod(klass, method);
                         if (superMethod != null && !superMethod.equals(method)) {
-                            if (!isProgramClass(mGraph.getClassForMember(superMethod))) {
+                            if (!isProgramClass(mGraph.getOwnerClass(superMethod))) {
                                 // If we override an SDK method, it just has to be there at runtime
                                 // (if the class itself is kept).
                                 mGraph.addDependency(
-                                        mGraph.getClassForMember(method),
+                                        mGraph.getOwnerClass(method),
                                         method,
                                         DependencyType.REQUIRED_CLASS_STRUCTURE);
                                 return null;
@@ -357,7 +357,7 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
                                 // never called and we will get rid of it. Set up the dependencies
                                 // appropriately.
                                 mGraph.addDependency(
-                                        mGraph.getClassForMember(method),
+                                        mGraph.getOwnerClass(method),
                                         method,
                                         DependencyType.CLASS_IS_KEPT);
                                 mGraph.addDependency(
@@ -373,10 +373,12 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
         }
     }
 
-    private static boolean isJavaLangObjectMethod(@NonNull String nameAndDesc) {
-        return nameAndDesc.equals("hashCode:()I")
-                || (nameAndDesc.equals("equals:(Ljava/lang/Object;)Z")
-                || (nameAndDesc.equals("toString:()Ljava/lang/String;")));
+    private static boolean isJavaLangObjectMethod(
+            @NonNull String name,
+            @NonNull String descriptor) {
+        return (name.equals("hashCode") && descriptor.equals("()I"))
+                || (name.equals("equals") && descriptor.equals("(Ljava/lang/Object;)Z"))
+                || (name.equals("toString") && descriptor.equals("()Ljava/lang/String;"));
     }
 
     /**
