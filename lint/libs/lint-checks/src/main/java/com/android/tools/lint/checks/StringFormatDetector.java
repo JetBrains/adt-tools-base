@@ -32,6 +32,7 @@ import static com.android.tools.lint.client.api.JavaParser.TYPE_DOUBLE_WRAPPER;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_FLOAT_WRAPPER;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_INTEGER_WRAPPER;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_LONG_WRAPPER;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_OBJECT;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_SHORT_WRAPPER;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_STRING;
 
@@ -1371,6 +1372,40 @@ public class StringFormatDetector extends ResourceXmlDetector implements JavaPsi
                                 Location secondary = handle.resolve();
                                 secondary.setMessage("Conflicting argument declaration here");
                                 location.setSecondary(secondary);
+                                String suggestion = null;
+                                if (isBooleanType(type)) {
+                                    suggestion = "`b`";
+                                } else if (isCharacterType(type)) {
+                                    suggestion = "'c'";
+                                } else if (PsiType.INT.equals(type)
+                                            || PsiType.LONG.equals(type)
+                                            || PsiType.BYTE.equals(type)
+                                            || PsiType.SHORT.equals(type)) {
+                                    suggestion = "`d`, 'o' or `x`";
+                                } else if (PsiType.FLOAT.equals(type)
+                                        || PsiType.DOUBLE.equals(type)) {
+                                    suggestion = "`e`, 'f', 'g' or `a`";
+                                } else if (type instanceof PsiClassType) {
+                                    String fqn = type.getCanonicalText();
+                                    if (TYPE_INTEGER_WRAPPER.equals(fqn)
+                                            || TYPE_LONG_WRAPPER.equals(fqn)
+                                            || TYPE_BYTE_WRAPPER.equals(fqn)
+                                            || TYPE_SHORT_WRAPPER.equals(fqn)) {
+                                        suggestion = "`d`, 'o' or `x`";
+                                    } else if (TYPE_FLOAT_WRAPPER.equals(fqn)
+                                            || TYPE_DOUBLE_WRAPPER.equals(fqn)) {
+                                        suggestion = "`d`, 'o' or `x`";
+                                    } else if (TYPE_OBJECT.equals(fqn)) {
+                                        suggestion = "'s' or 'h'";
+                                    }
+                                }
+
+                                if (suggestion != null) {
+                                    suggestion = " (Did you mean formatting character "
+                                            + suggestion + "?)";
+                                } else {
+                                    suggestion = "";
+                                }
 
                                 String canonicalText = type.getCanonicalText();
                                 canonicalText = canonicalText.substring(
@@ -1379,9 +1414,9 @@ public class StringFormatDetector extends ResourceXmlDetector implements JavaPsi
                                 String message = String.format(
                                         "Wrong argument type for formatting argument '#%1$d' " +
                                         "in `%2$s`: conversion is '`%3$s`', received `%4$s` " +
-                                        "(argument #%5$d in method call)",
+                                        "(argument #%5$d in method call)%6$s",
                                         i, name, formatType, canonicalText,
-                                        argumentIndex + 1);
+                                        argumentIndex + 1, suggestion);
                                 context.report(ARG_TYPES, call, location, message);
                                 if (reported == null) {
                                     reported = Sets.newHashSet();
