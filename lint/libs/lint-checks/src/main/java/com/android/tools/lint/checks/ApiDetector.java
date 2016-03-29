@@ -499,6 +499,25 @@ public class ApiDetector extends ResourceXmlDetector
             prefix = ANDROID_PREFIX;
         } else if (value.startsWith(ANDROID_THEME_PREFIX)) {
             prefix = ANDROID_THEME_PREFIX;
+            if (context.getResourceFolderType() == ResourceFolderType.DRAWABLE) {
+                int api = 21;
+                int minSdk = getMinSdk(context);
+                if (api > minSdk && api > context.getFolderVersion()
+                        && api > getLocalMinSdk(attribute.getOwnerElement())) {
+                    Location location = context.getLocation(attribute);
+                    String message;
+                    message = String.format(
+                            "Using theme references in XML drawables requires API level %1$d "
+                                    + "(current min is %2$d)", api,
+                            minSdk);
+                    context.report(UNSUPPORTED, attribute, location, message);
+                    // Don't flag individual theme attribute requirements here, e.g. once
+                    // we've told you that you need at least v21 to reference themes, we don't
+                    // need to also tell you that ?android:selectableItemBackground requires
+                    // API level 11
+                    return;
+                }
+            }
         } else if (value.startsWith(PREFIX_ANDROID) && ATTR_NAME.equals(attribute.getName())
             && TAG_ITEM.equals(attribute.getOwnerElement().getTagName())
             && attribute.getOwnerElement().getParentNode() != null
