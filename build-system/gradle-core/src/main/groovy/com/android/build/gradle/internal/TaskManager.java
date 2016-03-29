@@ -150,10 +150,8 @@ import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
 import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.internal.testing.SimpleTestCallable;
-import com.android.builder.model.AndroidProject;
 import com.android.builder.model.DataBindingOptions;
 import com.android.builder.model.SyncIssue;
-import com.android.builder.sdk.SdkLoader;
 import com.android.builder.sdk.TargetInfo;
 import com.android.builder.testing.ConnectedDeviceProvider;
 import com.android.builder.testing.api.DeviceProvider;
@@ -2395,7 +2393,7 @@ public abstract class TaskManager {
                 });
 
         if (jackTask == null) {
-            // Error adding JackTransform.
+            // Error adding JackTransform. A SyncIssue was already emitted at this point.
             getLogger().error("Could not create jack transform.", new Throwable());
             return null;
         }
@@ -2414,8 +2412,7 @@ public abstract class TaskManager {
             androidBuilder.getErrorReporter().handleSyncError(
                     scope.getVariantConfiguration().getFullName(),
                     SyncIssue.TYPE_JACK_IS_NOT_SUPPORTED,
-                    "Data Binding does not support Jack builds yet"
-            );
+                    "Data Binding does not support Jack builds yet");
         }
 
         dataBindingBuilder.setDebugLogEnabled(getLogger().isDebugEnabled());
@@ -2948,8 +2945,11 @@ public abstract class TaskManager {
         }
 
         if (!scope.getVariantConfiguration().getBuildType().isUseProguard()) {
-            throw new IllegalArgumentException(
+            androidBuilder.getErrorReporter().handleSyncError(
+                    null,
+                    SyncIssue.TYPE_GENERIC,
                     "Build-in class shrinker and resource shrinking are not supported yet.");
+            return;
         }
 
         // if resources are shrink, insert a no-op transform per variant output

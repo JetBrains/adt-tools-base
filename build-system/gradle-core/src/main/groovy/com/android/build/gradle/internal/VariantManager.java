@@ -47,6 +47,7 @@ import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.VariantType;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SigningConfig;
+import com.android.builder.model.SyncIssue;
 import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
@@ -808,9 +809,13 @@ public class VariantManager implements VariantModel {
                     variantDataList.add(unitTestVariantData);
 
                     if (buildTypeData == testBuildTypeData) {
-                        if (variantConfig.isMinifyEnabled() && variantConfig.getJackOptions().isEnabled()) {
-                            throw new RuntimeException(
-                                    "Cannot test obfuscated variants when compiling with jack.");
+                        if (variantConfig.isMinifyEnabled()
+                                && variantConfig.getJackOptions().isEnabled()) {
+                            androidBuilder.getErrorReporter().handleSyncError(
+                                    variantConfig.getFullName(),
+                                    SyncIssue.TYPE_JACK_IS_NOT_SUPPORTED,
+                                    "Minifying the variant used for tests is not supported when "
+                                            + "using Jack.");
                         }
                         variantForAndroidTest = variantData;
                     }
