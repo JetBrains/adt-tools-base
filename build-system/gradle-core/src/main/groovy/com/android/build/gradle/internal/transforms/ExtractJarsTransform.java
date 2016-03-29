@@ -192,8 +192,7 @@ public class ExtractJarsTransform extends Transform {
             boolean extractCode) throws IOException {
         mkdirs(outJarFolder);
 
-        Closer closer = Closer.create();
-        try {
+        try (Closer closer = Closer.create()) {
             FileInputStream fis = closer.register(new FileInputStream(jarFile));
             ZipInputStream zis = closer.register(new ZipInputStream(fis));
             // loop on the entries of the intermediary package and put them in the final package.
@@ -213,14 +212,11 @@ public class ExtractJarsTransform extends Transform {
                                 name.replace('/', File.separatorChar));
                         mkdirs(outputFile.getParentFile());
 
-                        Closer closer2 = Closer.create();
-                        try {
+                        try (Closer closer2 = Closer.create()) {
                             java.io.OutputStream outputStream = closer2.register(
                                     new BufferedOutputStream(new FileOutputStream(outputFile)));
                             ByteStreams.copy(zis, outputStream);
                             outputStream.flush();
-                        } finally {
-                            closer2.close();
                         }
                     }
                 } finally {
@@ -228,8 +224,6 @@ public class ExtractJarsTransform extends Transform {
                 }
             }
 
-        } finally {
-            closer.close();
         }
     }
 

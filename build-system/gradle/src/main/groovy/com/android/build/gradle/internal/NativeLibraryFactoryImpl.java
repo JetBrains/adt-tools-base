@@ -26,12 +26,12 @@ import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.model.NativeLibrary;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Implementation of NativeLibraryFactory for gradle plugin.
@@ -53,7 +53,7 @@ public class NativeLibraryFactoryImpl implements NativeLibraryFactory {
             @NonNull String toolchainName, @NonNull Abi abi) {
         BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
         if (!AndroidGradleOptions.useDeprecatedNdk(scope.getGlobalScope().getProject())) {
-            return Optional.absent();
+            return Optional.empty();
         }
 
         CoreNdkOptions ndkConfig = variantData.getVariantConfiguration().getNdkConfig();

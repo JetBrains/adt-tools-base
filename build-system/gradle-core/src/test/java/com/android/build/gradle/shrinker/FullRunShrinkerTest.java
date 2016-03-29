@@ -41,7 +41,7 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
 
     @Before
     public void createShrinker() throws Exception {
-        mShrinker = new FullRunShrinker<String>(
+        mShrinker = new FullRunShrinker<>(
                 WaitableExecutor.<Void>useGlobalSharedThreadPool(),
                 buildGraph(),
                 getPlatformJars(),

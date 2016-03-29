@@ -66,9 +66,9 @@ import java.util.regex.Pattern;
 @ParallelizableTask
 public class SplitZipAlign extends SplitRelatedTask {
 
-    private List<File> densityOrLanguageInputFiles = new ArrayList<File>();
+    private List<File> densityOrLanguageInputFiles = new ArrayList<>();
 
-    private List<File> abiInputFiles = new ArrayList<File>();
+    private List<File> abiInputFiles = new ArrayList<>();
 
     private String outputBaseName;
 

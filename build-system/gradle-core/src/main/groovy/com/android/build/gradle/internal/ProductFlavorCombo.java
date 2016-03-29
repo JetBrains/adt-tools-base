@@ -21,7 +21,6 @@ import com.android.annotations.Nullable;
 import com.android.builder.model.DimensionAware;
 import com.android.builder.model.ProductFlavor;
 import com.android.utils.StringHelper;
-import com.google.common.base.Function;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
@@ -32,6 +31,7 @@ import com.google.common.collect.Lists;
 import org.gradle.api.Named;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * A combination of product flavors for a variant, each belonging to a different flavor dimension.
@@ -82,15 +82,10 @@ public class ProductFlavorCombo<T extends DimensionAware & Named> {
      */
     @NonNull
     public static String getFlavorComboName(List<? extends Named> flavorList) {
-        Iterable<String> flavorNames = Iterables.transform(
-                flavorList,
-                new Function<Named, String>() {
-                    @Override
-                    public String apply(Named namedObject) {
-                        return namedObject.getName();
-                    }
-                });
-        return StringHelper.combineAsCamelCase(flavorNames);
+        return StringHelper.combineAsCamelCase(
+                flavorList.stream()
+                        .map(namedObject -> namedObject.getName())
+                        .collect(Collectors.toList()));
     }
 
     /**
@@ -107,7 +102,7 @@ public class ProductFlavorCombo<T extends DimensionAware & Named> {
         List <ProductFlavorCombo<S>> result = Lists.newArrayList();
         if (flavorDimensions == null || flavorDimensions.isEmpty()) {
             for (S flavor : productFlavors) {
-                result.add(new ProductFlavorCombo<S>(ImmutableList.of(flavor)));
+                result.add(new ProductFlavorCombo<>(ImmutableList.of(flavor)));
             }
         } else {
             // need to group the flavor per dimension.
@@ -156,7 +151,7 @@ public class ProductFlavorCombo<T extends DimensionAware & Named> {
             List<String> flavorDimensionList,
             ListMultimap<String, S> map) {
         if (index == flavorDimensionList.size()) {
-            flavorGroups.add(new ProductFlavorCombo<S>(Iterables.filter(group, Predicates.notNull())));
+            flavorGroups.add(new ProductFlavorCombo<>(Iterables.filter(group, Predicates.notNull())));
             return;
         }
 

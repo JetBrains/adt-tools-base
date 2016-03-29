@@ -33,7 +33,7 @@ public class ExtendedContentTypeTest {
 
     @Test
     public void testValueUniqueness() {
-        Map<Integer, ContentType> allContentTypesValues = new HashMap<Integer, ContentType>();
+        Map<Integer, ContentType> allContentTypesValues = new HashMap<>();
         for (ContentType contentType : ExtendedContentType.getAllContentTypes()) {
             if (allContentTypesValues.containsKey(contentType.getValue())) {
                 fail("Content types " + contentType.name() + " and "

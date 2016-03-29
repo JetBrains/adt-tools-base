@@ -195,8 +195,7 @@ public class AndroidGradleOptions {
 
         String values = getString(project, AndroidProject.OPTIONAL_COMPILATION_STEPS);
         if (values != null) {
-            List<OptionalCompilationStep> optionalCompilationSteps =
-                    new ArrayList<OptionalCompilationStep>();
+            List<OptionalCompilationStep> optionalCompilationSteps = new ArrayList<>();
             StringTokenizer st = new StringTokenizer(values, ",");
             while(st.hasMoreElements()) {
                 optionalCompilationSteps.add(OptionalCompilationStep.valueOf(st.nextToken()));

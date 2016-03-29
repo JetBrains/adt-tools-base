@@ -432,12 +432,8 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
             if (config.isMinifyEnabled()
                     && config.getBuildType().isShrinkResources()
                     && !config.getJackOptions().isEnabled()) {
-                ConventionMappingHelper.map(packageApp, "resourceFile", new Callable<File>() {
-                    @Override
-                    public File call() {
-                        return scope.getCompressedResourceFile();
-                    }
-                });
+                ConventionMappingHelper.map(packageApp, "resourceFile",
+                        (Callable<File>) scope::getCompressedResourceFile);
             } else {
                 ConventionMappingHelper.map(packageApp, "resourceFile", new Callable<File>() {
                     @Override
@@ -529,12 +525,8 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                 }
             });
 
-            ConventionMappingHelper.map(packageApp, "outputFile", new Callable<File>() {
-                @Override
-                public File call() throws Exception {
-                    return scope.getPackageApk();
-                }
-            });
+            ConventionMappingHelper.map(packageApp, "outputFile",
+                    (Callable<File>) scope::getPackageApk);
 
             packageApp.markerFile =
                     PrePackageApplication.ConfigAction.getMarkerFile(variantScope);

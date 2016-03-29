@@ -22,8 +22,6 @@ import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 
-import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 
@@ -34,7 +32,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
@@ -69,34 +66,22 @@ public class FastDeployRuntimeExtractorTask extends DefaultAndroidTask {
         URLConnection urlConnection = fdrJar.openConnection();
         urlConnection.setUseCaches(false);
         Files.createParentDirs(getOutputFile());
-        JarOutputStream jarOutputStream = new JarOutputStream(
-                new BufferedOutputStream(new FileOutputStream(getOutputFile())));
 
-        InputStream inputStream = urlConnection.getInputStream();
-        try {
-            JarInputStream jarInputStream =
-                    new JarInputStream(inputStream);
-            try {
-                ZipEntry entry = jarInputStream.getNextEntry();
-                while (entry != null) {
-                    String name = entry.getName();
-                    // don't extract metadata or classes supposed to be replaced by generated ones.
-                    if (isValidForPackaging(name)) {
-                        jarOutputStream.putNextEntry(new ZipEntry(entry.getName()));
-                        ByteStreams.copy(jarInputStream, jarOutputStream);
-                        jarOutputStream.closeEntry();
-                    }
-                    entry = jarInputStream.getNextEntry();
+        try (InputStream inputStream = urlConnection.getInputStream();
+             JarInputStream jarInputStream = new JarInputStream(inputStream);
+             JarOutputStream jarOutputStream = new JarOutputStream(
+                     new BufferedOutputStream(new FileOutputStream(getOutputFile())))) {
+            ZipEntry entry = jarInputStream.getNextEntry();
+            while (entry != null) {
+                String name = entry.getName();
+                // don't extract metadata or classes supposed to be replaced by generated ones.
+                if (isValidForPackaging(name)) {
+                    jarOutputStream.putNextEntry(new ZipEntry(entry.getName()));
+                    ByteStreams.copy(jarInputStream, jarOutputStream);
+                    jarOutputStream.closeEntry();
                 }
-            } finally {
-                jarInputStream.close();
-                jarOutputStream.close();
+                entry = jarInputStream.getNextEntry();
             }
-        } finally {
-            if (inputStream != null) {
-                inputStream.close();
-            }
-
         }
     }
 

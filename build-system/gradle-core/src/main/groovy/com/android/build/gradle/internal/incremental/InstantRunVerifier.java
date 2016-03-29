@@ -73,18 +73,8 @@ public class InstantRunVerifier {
     @VisibleForTesting
     static final Comparator<AnnotationNode> ANNOTATION_COMPARATOR =
             new AnnotationNodeComparator();
-    private static final Comparator<Object> OBJECT_COMPARATOR = new Comparator<Object>() {
-        @Override
-        public boolean areEqual(Object first, Object second) {
-            return Objects.equal(first, second);
-        }
-    };
-    private static final Comparator<String> STRING_COMPARATOR = new Comparator<String>() {
-        @Override
-        public boolean areEqual(String first, String second) {
-            return Objects.equal(first, second);
-        }
-    };
+    private static final Comparator<Object> OBJECT_COMPARATOR = Objects::equal;
+    private static final Comparator<String> STRING_COMPARATOR = Objects::equal;
 
     public interface ClassBytesProvider {
         byte[] load() throws IOException;
@@ -267,8 +257,7 @@ public class InstantRunVerifier {
             @NonNull ClassNode originalClass, @NonNull ClassNode updatedClass) {
 
         @SuppressWarnings("unchecked") // ASM API.
-        List<MethodNode> nonVisitedMethodsOnUpdatedClass =
-                new ArrayList<MethodNode>(updatedClass.methods);
+        List<MethodNode> nonVisitedMethodsOnUpdatedClass = new ArrayList<>(updatedClass.methods);
 
         //noinspection unchecked
         for(MethodNode methodNode : (List<MethodNode>) originalClass.methods) {
@@ -423,7 +412,7 @@ public class InstantRunVerifier {
             // probably deep compare for values...
             //noinspection unchecked
             return (first == null && second == null) || (first != null && second != null)
-                && (OBJECT_COMPARATOR.areEqual(first.desc, second.desc) &&
+                    && (OBJECT_COMPARATOR.areEqual(first.desc, second.desc) &&
                     diffList(first.values, second.values, OBJECT_COMPARATOR) == Diff.NONE);
         }
     }

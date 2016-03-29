@@ -23,6 +23,7 @@ import com.google.common.collect.Lists;
 import java.io.File;
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of SourceProvider that is serializable. Objects used in the DSL cannot be
@@ -67,12 +68,9 @@ class SourceProviderImpl implements SourceProvider, Serializable {
     @NonNull
     static Collection<SourceProvider> cloneCollection(
             @NonNull Collection<SourceProvider> sourceProviders) {
-        Collection<SourceProvider> results = Lists.newArrayListWithCapacity(sourceProviders.size());
-        for (SourceProvider sourceProvider : sourceProviders) {
-            results.add(SourceProviderImpl.cloneProvider(sourceProvider));
-        }
-
-        return results;
+        return sourceProviders.stream()
+                .map(SourceProviderImpl::cloneProvider)
+                .collect(Collectors.toList());
     }
 
     private SourceProviderImpl() {

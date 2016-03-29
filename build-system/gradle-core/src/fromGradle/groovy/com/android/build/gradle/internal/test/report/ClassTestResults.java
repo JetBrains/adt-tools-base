@@ -29,7 +29,7 @@ class ClassTestResults extends CompositeTestResults {
 
     private final String name;
     private final PackageTestResults packageResults;
-    private final Set<TestResult> results = new TreeSet<TestResult>();
+    private final Set<TestResult> results = new TreeSet<>();
     private final StringBuilder standardOutput = new StringBuilder();
     private final StringBuilder standardError = new StringBuilder();
 

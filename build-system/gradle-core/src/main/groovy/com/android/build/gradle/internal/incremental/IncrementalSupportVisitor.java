@@ -239,9 +239,9 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         public ISMethodVisitor(MethodVisitor mv, int access,  String name, String desc) {
             super(Opcodes.ASM5, mv, access, name, desc);
             this.change = -1;
-            this.redirections = new ArrayList<Redirection>();
-            this.resolvedRedirections = new HashMap<Label, Redirection>();
-            this.args = new ArrayList<Type>(Arrays.asList(Type.getArgumentTypes(desc)));
+            this.redirections = new ArrayList<>();
+            this.resolvedRedirections = new HashMap<>();
+            this.args = new ArrayList<>(Arrays.asList(Type.getArgumentTypes(desc)));
             this.start = new Label();
             boolean isStatic = (access & Opcodes.ACC_STATIC) != 0;
             // if this is not a static, we add a fictional first parameter what will contain the
@@ -378,7 +378,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         // implementation.
         // This will work fine as long as we don't support adding methods to a class.
         final Map<String, MethodReference> uniqueMethods =
-                new HashMap<String, MethodReference>();
+                new HashMap<>();
         if (parentNodes.isEmpty()) {
             // if we cannot determine the parents for this class, let's blindly add all the
             // method of the current class as a gateway to a possible parent version.
@@ -473,7 +473,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         // Gather all methods from itself and its superclasses to generate a giant constructor
         // implementation.
         // This will work fine as long as we don't support adding constructors to classes.
-        final Map<String, MethodNode> uniqueMethods = new HashMap<String, MethodNode>();
+        final Map<String, MethodNode> uniqueMethods = new HashMap<>();
 
         addAllNewConstructors(uniqueMethods, classNode, true /*keepPrivateConstructors*/);
         for (ClassNode parentNode : parentNodes) {

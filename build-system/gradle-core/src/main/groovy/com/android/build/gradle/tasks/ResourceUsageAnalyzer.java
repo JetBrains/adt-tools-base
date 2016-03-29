@@ -829,7 +829,7 @@ public class ResourceUsageAnalyzer {
         }
 
         if (mDebugPrinter != null) {
-            List<String> strings = new ArrayList<String>(mStrings);
+            List<String> strings = new ArrayList<>(mStrings);
             Collections.sort(strings);
             mDebugPrinter.println("android.content.res.Resources#getIdentifier present: "
                     + mFoundGetIdentifier);

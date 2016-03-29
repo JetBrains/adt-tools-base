@@ -26,7 +26,7 @@ import java.util.Map;
  */
 abstract class PageRenderer<T extends CompositeTestResults> extends TabbedPageRenderer<T> {
     private T results;
-    private final TabsRenderer<T> tabsRenderer = new TabsRenderer<T>();
+    private final TabsRenderer<T> tabsRenderer = new TabsRenderer<>();
     protected final ReportType reportType;
 
     PageRenderer(ReportType reportType) {

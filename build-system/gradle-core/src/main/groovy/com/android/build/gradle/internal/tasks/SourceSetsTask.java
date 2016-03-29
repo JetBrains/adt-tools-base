@@ -20,18 +20,15 @@ import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.api.AndroidSourceDirectorySet;
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.builder.core.VariantType;
-import com.google.common.collect.Lists;
 
 import org.gradle.api.Project;
 import org.gradle.api.tasks.diagnostics.AbstractReportTask;
 import org.gradle.api.tasks.diagnostics.internal.ReportRenderer;
 import org.gradle.api.tasks.diagnostics.internal.TextReportRenderer;
 import org.gradle.logging.StyledTextOutput;
-import org.gradle.util.CollectionUtils;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Prints out the DSL names and directory names of available source sets.
@@ -82,7 +79,7 @@ public class SourceSetsTask extends AbstractReportTask {
                 }
 
                 renderDirectorySet("Java-style resources", sourceSet.getResources(), project);
-                
+
                 mRenderer.getTextOutput().println();
             }
         }
@@ -91,12 +88,10 @@ public class SourceSetsTask extends AbstractReportTask {
     }
 
     private void renderDirectorySet(String name, AndroidSourceDirectorySet java, Project project) {
-        List<String> relativePaths = Lists.newArrayList();
-        for (File file : java.getSrcDirs()) {
-            relativePaths.add(project.getRootProject().relativePath(file));
-        }
-        renderKeyValue(name + ": ",
-                String.format("[%s]", CollectionUtils.join(", ", relativePaths)));
+        String relativePaths = java.getSrcDirs().stream()
+                .map(file -> project.getRootProject().relativePath(file))
+                .collect(Collectors.joining(", "));
+        renderKeyValue(name + ": ", String.format("[%s]", relativePaths));
     }
 
     private void renderKeyValue(String o, String o1) {

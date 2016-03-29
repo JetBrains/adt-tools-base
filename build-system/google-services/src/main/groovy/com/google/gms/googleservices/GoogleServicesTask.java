@@ -91,8 +91,8 @@ public class GoogleServicesTask extends DefaultTask {
 
         JsonObject rootObject = root.getAsJsonObject();
 
-        Map<String, String> resValues = new TreeMap<String, String>();
-        Map<String, Map<String, String>> resAttributes = new TreeMap<String, Map<String, String>>();
+        Map<String, String> resValues = new TreeMap<>();
+        Map<String, Map<String, String>> resAttributes = new TreeMap<>();
 
         handleProjectNumber(rootObject, resValues);
 

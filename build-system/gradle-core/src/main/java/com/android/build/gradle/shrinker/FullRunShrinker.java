@@ -105,30 +105,22 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
             @NonNull Iterable<TransformInput> programInputs,
             @NonNull Iterable<TransformInput> libraryInputs) throws IOException {
         Stopwatch stopwatch = Stopwatch.createStarted();
-        final PostProcessingData<T> postProcessingData = new PostProcessingData<T>();
+        final PostProcessingData<T> postProcessingData = new PostProcessingData<>();
 
         readPlatformJars();
 
         for (TransformInput input : libraryInputs) {
             for (File directory : getAllDirectories(input)) {
                 for (final File classFile : getClassFiles(directory)) {
-                    mExecutor.execute(new Callable<Void>() {
-                        @Override
-                        public Void call() throws Exception {
-                            processLibraryClass(Files.toByteArray(classFile));
-                            return null;
-                        }
+                    mExecutor.execute(() -> {
+                        processLibraryClass(Files.toByteArray(classFile));
+                        return null;
                     });
                 }
             }
 
             for (final File jarFile : getAllJars(input)) {
-                processJarFile(jarFile, new ByteCodeConsumer() {
-                    @Override
-                    public void process(byte[] bytes) throws IOException {
-                        processLibraryClass(bytes);
-                    }
-                });
+                processJarFile(jarFile, this::processLibraryClass);
             }
         }
 
@@ -389,7 +381,7 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
     private void processLibraryClass(@NonNull byte[] source) throws IOException {
         ClassReader classReader = new ClassReader(source);
         classReader.accept(
-                new ClassStructureVisitor<T>(mGraph, null, null),
+                new ClassStructureVisitor<>(mGraph, null, null),
                 ClassReader.SKIP_CODE | ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
     }
 
@@ -429,7 +421,7 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
                     }
                 };
         ClassVisitor structureVisitor =
-                new ClassStructureVisitor<T>(mGraph, classFile, depsFinder);
+                new ClassStructureVisitor<>(mGraph, classFile, depsFinder);
         ClassReader classReader = new ClassReader(bytes);
         classReader.accept(structureVisitor, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
     }
@@ -440,26 +432,19 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
 
     private void readPlatformJars() throws IOException {
         for (File platformJar : mPlatformJars) {
-            processJarFile(platformJar, new ByteCodeConsumer() {
-                @Override
-                public void process(byte[] bytes) throws IOException {
-                    processLibraryClass(bytes);
-                }
-            });
+            processJarFile(platformJar, this::processLibraryClass);
         }
     }
 
     private void processJarFile(File platformJar, final ByteCodeConsumer consumer)
             throws IOException {
-        JarFile jarFile = new JarFile(platformJar);
-        try {
-            for (Enumeration<JarEntry> entries = jarFile.entries(); entries.hasMoreElements();) {
+        try (JarFile jarFile = new JarFile(platformJar)) {
+            for (Enumeration<JarEntry> entries = jarFile.entries(); entries.hasMoreElements(); ) {
                 JarEntry entry = entries.nextElement();
                 if (!entry.getName().endsWith(".class")) {
                     continue;
                 }
-                final InputStream inputStream = jarFile.getInputStream(entry);
-                try {
+                try (InputStream inputStream = jarFile.getInputStream(entry)) {
                     final byte[] bytes = ByteStreams.toByteArray(inputStream);
                     mExecutor.execute(new Callable<Void>() {
                         @Override
@@ -468,12 +453,8 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
                             return null;
                         }
                     });
-                } finally {
-                    inputStream.close();
                 }
             }
-        } finally {
-            jarFile.close();
         }
     }
 

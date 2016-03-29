@@ -52,7 +52,6 @@ import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
 import com.android.utils.StringHelper;
-import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -141,7 +140,7 @@ public class VariantManager implements VariantModel {
                             .getByName(UNIT_TEST.getPrefix());
         }
 
-        defaultConfigData = new ProductFlavorData<CoreProductFlavor>(
+        defaultConfigData = new ProductFlavorData<>(
                 extension.getDefaultConfig(), mainSourceSet,
                 androidTestSourceSet, unitTestSourceSet, project);
         signingOverride = createSigningOverride();
@@ -232,7 +231,7 @@ public class VariantManager implements VariantModel {
         }
 
         ProductFlavorData<CoreProductFlavor> productFlavorData =
-                new ProductFlavorData<CoreProductFlavor>(
+                new ProductFlavorData<>(
                         productFlavor,
                         mainSourceSet,
                         androidTestSourceSet,
@@ -490,13 +489,7 @@ public class VariantManager implements VariantModel {
             Iterable<CoreProductFlavor> flavorDsl =
                     Iterables.transform(
                             productFlavors.values(),
-                            new Function<ProductFlavorData<CoreProductFlavor>, CoreProductFlavor>() {
-                                @Override
-                                public CoreProductFlavor apply(
-                                        ProductFlavorData<CoreProductFlavor> data) {
-                                    return data.getProductFlavor();
-                                }
-                            });
+                            ProductFlavorData::getProductFlavor);
 
             // Get a list of all combinations of product flavors.
             List<ProductFlavorCombo<CoreProductFlavor>> flavorComboList =

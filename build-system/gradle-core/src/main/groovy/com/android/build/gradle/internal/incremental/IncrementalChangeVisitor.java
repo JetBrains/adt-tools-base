@@ -91,7 +91,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     private String instanceToStaticDescPrefix;
 
     // List of constructors we encountered and deconstructed.
-    List<MethodNode> addedMethods = new ArrayList<MethodNode>();
+    List<MethodNode> addedMethods = new ArrayList<>();
 
     private enum MachineState {
         NORMAL, AFTER_NEW
@@ -924,7 +924,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             trace(mv, 2);
         }
 
-        List<MethodNode> allMethods = new ArrayList<MethodNode>();
+        List<MethodNode> allMethods = new ArrayList<>();
 
         // if we are disabled, do not generate any dispatch, the method will throw an exception
         // if invoked which should never happen.
@@ -934,7 +934,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             allMethods.addAll(addedMethods);
         }
 
-        final Map<String, MethodNode> methods = new HashMap<String, MethodNode>();
+        final Map<String, MethodNode> methods = new HashMap<>();
         for (MethodNode methodNode : allMethods) {
             if (methodNode.name.equals("<clinit>") || methodNode.name.equals("<init>")) {
                 continue;

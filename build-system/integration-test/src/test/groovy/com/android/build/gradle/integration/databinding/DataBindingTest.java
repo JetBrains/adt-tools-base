@@ -44,7 +44,7 @@ public class DataBindingTest {
 
     @Parameterized.Parameters(name="library={0},forExperimentalPlugin={1},withoutAdapters={2}")
     public static Collection<Object[]> getParameters() {
-        List<Object[]> options = new ArrayList<Object[]>();
+        List<Object[]> options = new ArrayList<>();
         for (int i = 0 ; i < 8; i ++) {
             options.add(new Object[]{
                 (i & 1) != 0, (i & 2) != 0, (i & 4) != 0
@@ -59,7 +59,7 @@ public class DataBindingTest {
         myWithoutAdapters = withoutAdapters;
         myLibrary = library;
 
-        List<String> options = new ArrayList<String>();
+        List<String> options = new ArrayList<>();
         if (library) {
             options.add("library");
         }

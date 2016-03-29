@@ -63,6 +63,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @ParallelizableTask
 public class MergeResources extends IncrementalTask {
@@ -98,7 +99,7 @@ public class MergeResources extends IncrementalTask {
     // actual inputs
     private List<ResourceSet> inputResourceSets;
 
-    private final FileValidity<ResourceSet> fileValidity = new FileValidity<ResourceSet>();
+    private final FileValidity<ResourceSet> fileValidity = new FileValidity<>();
 
     private boolean disableVectorDrawables;
 
@@ -259,17 +260,14 @@ public class MergeResources extends IncrementalTask {
     @NonNull
     private ResourcePreprocessor getPreprocessor() {
         // Only one pre-processor for now. The code will need slight changes when we add more.
-        Collection<String> generatedDensitiesNames = getGeneratedDensities();
 
         if (isDisableVectorDrawables()) {
             // If the user doesn't want any PNGs, leave the XML file alone as well.
             return new NoOpResourcePreprocessor();
         }
 
-        Collection<Density> densities = Lists.newArrayList();
-        for (String density : generatedDensitiesNames) {
-            densities.add(Density.getEnum(density));
-        }
+        Collection<Density> densities =
+                getGeneratedDensities().stream().map(Density::getEnum).collect(Collectors.toList());
 
         return new VectorDrawableRenderer(
                 getMinSdk(),

@@ -36,7 +36,7 @@ public class DefaultAndroidNativeDependencySpecContainer implements
         AndroidNativeDependencySpecContainer {
 
     private final List<AndroidNativeDependencySpec.Builder> builders =
-            new LinkedList<AndroidNativeDependencySpec.Builder>();
+            new LinkedList<>();
 
     @Override
     public AndroidNativeDependencySpec.Builder project(final String value) {
@@ -84,12 +84,7 @@ public class DefaultAndroidNativeDependencySpecContainer implements
             return Collections.emptySet();
         }
         return ImmutableSet.copyOf(Lists.transform(builders,
-                new Function<AndroidNativeDependencySpec.Builder, AndroidNativeDependencySpec>() {
-                    @Override
-                    public AndroidNativeDependencySpec apply(AndroidNativeDependencySpec.Builder builder) {
-                        return builder.build();
-                    }
-                }));
+                AndroidNativeDependencySpec.Builder::build));
     }
 
     private AndroidNativeDependencySpec.Builder doCreate(

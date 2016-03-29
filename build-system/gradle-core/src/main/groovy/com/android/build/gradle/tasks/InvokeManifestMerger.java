@@ -87,11 +87,9 @@ public class InvokeManifestMerger extends DefaultAndroidTask implements Supplier
             mergingReport.log(iLogger);
             throw new BuildException(mergingReport.getReportString());
         }
-        FileWriter fileWriter = new FileWriter(getOutputFile());
-        try {
-            fileWriter.append(mergingReport.getMergedDocument(MergingReport.MergedManifestKind.MERGED));
-        } finally {
-            fileWriter.close();
+        try (FileWriter fileWriter = new FileWriter(getOutputFile())) {
+            fileWriter.append(mergingReport
+                    .getMergedDocument(MergingReport.MergedManifestKind.MERGED));
         }
     }
 

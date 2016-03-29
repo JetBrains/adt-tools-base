@@ -47,13 +47,13 @@ class FlowAnalyzer {
         List<BuildStepInfo> commandSummaries = CommandClassifier.classify(commands, isWin32);
 
         // For each filename, record the last command that created it.
-        Map<String, Integer> outputToCommand = new HashMap<String, Integer>();
+        Map<String, Integer> outputToCommand = new HashMap<>();
 
         // For each command, the set of terminal inputs.
-        ArrayList<Set<BuildStepInfo>> outputToTerminals = new ArrayList<Set<BuildStepInfo>>();
+        ArrayList<Set<BuildStepInfo>> outputToTerminals = new ArrayList<>();
 
         // For each command, the set of outputs that was consumed.
-        SparseArray<Set<String>> commandOutputsConsumed = new SparseArray<Set<String>>();
+        SparseArray<Set<String>> commandOutputsConsumed = new SparseArray<>();
 
         for (int i = 0; i < commandSummaries.size(); ++i) {
             BuildStepInfo current = commandSummaries.get(i);
@@ -67,10 +67,10 @@ class FlowAnalyzer {
                                     Joiner.on("\n").join(current.getInputs())));
                 }
             }
-            commandOutputsConsumed.put(i, new HashSet<String>());
+            commandOutputsConsumed.put(i, new HashSet<>());
 
             // For each input, find the line that created it or null if this is a terminal input.
-            Set<BuildStepInfo> terminals = new HashSet<BuildStepInfo>();
+            Set<BuildStepInfo> terminals = new HashSet<>();
             for (String input : current.getInputs()) {
                 if (outputToCommand.containsKey(input)) {
                     int inputCommandIndex = outputToCommand.get(input);
@@ -100,7 +100,7 @@ class FlowAnalyzer {
             for (String output : current.getOutputs()) {
                 if (!outputsConsumed.contains(output)) {
                     // Sort the inputs
-                    List<BuildStepInfo> ordered = new ArrayList<BuildStepInfo>();
+                    List<BuildStepInfo> ordered = new ArrayList<>();
                     ordered.addAll(outputToTerminals.get(i));
                     Collections.sort(ordered, new Comparator<BuildStepInfo>() {
                         @Override

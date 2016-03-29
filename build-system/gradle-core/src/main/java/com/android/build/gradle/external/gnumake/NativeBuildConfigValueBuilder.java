@@ -37,6 +37,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  The purpose of this class is to take the raw output of an ndk-build -n call and to produce a
@@ -64,10 +65,10 @@ import java.util.Set;
 public class NativeBuildConfigValueBuilder {
     private static final List<String> STRIP_FLAGS = Arrays.asList("-I", "-MF", "-c", "-o");
 
-    private final Map<String, String> toolChainToCCompiler = new HashMap<String, String>();
-    private final Map<String, String> toolChainToCppCompiler = new HashMap<String, String>();
-    private final Set<String> cFileExtensions = new HashSet<String>();
-    private final Set<String> cppFileExtensions = new HashSet<String>();
+    private final Map<String, String> toolChainToCCompiler = new HashMap<>();
+    private final Map<String, String> toolChainToCppCompiler = new HashMap<>();
+    private final Set<String> cFileExtensions = new HashSet<>();
+    private final Set<String> cppFileExtensions = new HashSet<>();
     private final File projectRootPath;
     private final List<Output> outputs;
 
@@ -79,7 +80,7 @@ public class NativeBuildConfigValueBuilder {
      */
     public NativeBuildConfigValueBuilder(File projectRootPath) {
         this.projectRootPath = projectRootPath;
-        this.outputs = new ArrayList<Output>();
+        this.outputs = new ArrayList<>();
     }
 
     /**
@@ -132,7 +133,7 @@ public class NativeBuildConfigValueBuilder {
     }
 
     private boolean areLibraryNamesUnique() {
-        Set<String> uniqueNames = new HashSet<String>();
+        Set<String> uniqueNames = new HashSet<>();
         for (Output output : outputs) {
             if (Strings.isNullOrEmpty(output.libraryName)) {
                 return false;
@@ -180,9 +181,9 @@ public class NativeBuildConfigValueBuilder {
     private void findToolChainCompilers() {
         for (Output output : outputs) {
             String toolchain = output.toolchain;
-            Set<String> cCompilers = new HashSet<String>();
-            Set<String> cppCompilers = new HashSet<String>();
-            Map<String, Set<String>> compilerToWeirdExtensions = new HashMap<String, Set<String>>();
+            Set<String> cCompilers = new HashSet<>();
+            Set<String> cppCompilers = new HashSet<>();
+            Map<String, Set<String>> compilerToWeirdExtensions = new HashMap<>();
             for (BuildStepInfo command : output.commandInputs) {
                 String compilerCommand = command.getCommand().command;
                 int extensionIndex = command.getOnlyInput().lastIndexOf('.');
@@ -202,7 +203,7 @@ public class NativeBuildConfigValueBuilder {
                     // Unrecognized extensions are recorded and added to the relevant compiler
                     Set<String> extensions = compilerToWeirdExtensions.get(compilerCommand);
                     if (extensions == null) {
-                        extensions = new HashSet<String>();
+                        extensions = new HashSet<>();
                         compilerToWeirdExtensions.put(compilerCommand, extensions);
                     }
                     extensions.add(extension);
@@ -260,7 +261,7 @@ public class NativeBuildConfigValueBuilder {
             }
         });
 
-        Map<String, NativeLibraryValue> librariesMap = new HashMap<String, NativeLibraryValue>();
+        Map<String, NativeLibraryValue> librariesMap = new HashMap<>();
 
         for (Output output : outputs) {
             NativeLibraryValue value = new NativeLibraryValue();
@@ -269,13 +270,13 @@ public class NativeBuildConfigValueBuilder {
             value.abi = getParentFolder(output.outputName);
             value.toolchain = output.toolchain;
             value.output = new File(output.outputName);
-            value.files = new ArrayList<NativeSourceFileValue>();
+            value.files = new ArrayList<>();
 
             for (BuildStepInfo input : output.commandInputs) {
                 NativeSourceFileValue file = new NativeSourceFileValue();
                 value.files.add(file);
                 file.src = new File(input.getOnlyInput());
-                List<String> flags = new ArrayList<String>();
+                List<String> flags = new ArrayList<>();
                 for (int i = 0; i < input.getCommand().args.size(); ++i) {
                     String arg = input.getCommand().args.get(i);
                     if (STRIP_FLAGS.contains(arg)) {
@@ -304,14 +305,13 @@ public class NativeBuildConfigValueBuilder {
     }
 
     private Map<String, NativeToolchainValue> generateToolchains() {
-        Set<String> toolchainSet = new HashSet<String>();
-        for (Output output : outputs) {
-            toolchainSet.add(output.toolchain);
-        }
-        List<String> toolchains = new ArrayList<String>(toolchainSet);
+        Set<String> toolchainSet = outputs.stream()
+                .map(output -> output.toolchain)
+                .collect(Collectors.toSet());
+        List<String> toolchains = new ArrayList<>(toolchainSet);
         Collections.sort(toolchains);
 
-        Map<String, NativeToolchainValue> toolchainsMap = new HashMap<String, NativeToolchainValue>();
+        Map<String, NativeToolchainValue> toolchainsMap = new HashMap<>();
 
         for (String toolchain : toolchains) {
             NativeToolchainValue toolchainValue = new NativeToolchainValue();

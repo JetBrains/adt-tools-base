@@ -36,13 +36,13 @@ public class DependencyReportTask extends DefaultTask {
 
     private AndroidAsciiReportRenderer renderer = new AndroidAsciiReportRenderer();
 
-    private Set<BaseVariantData> variants = new HashSet<BaseVariantData>();
+    private Set<BaseVariantData> variants = new HashSet<>();
 
     @TaskAction
     public void generate() throws IOException {
         renderer.setOutput(getServices().get(StyledTextOutputFactory.class).create(getClass()));
 
-        SortedSet<BaseVariantData> sortedConfigurations = new TreeSet<BaseVariantData>(
+        SortedSet<BaseVariantData> sortedConfigurations = new TreeSet<>(
                 new Comparator<BaseVariantData>() {
                     @Override
             public int compare(BaseVariantData conf1, BaseVariantData conf2) {

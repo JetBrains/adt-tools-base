@@ -105,7 +105,7 @@ public class ThreadRecorder implements Recorder {
             new ThreadLocal<Deque<Long>>() {
         @Override
         protected Deque<Long> initialValue() {
-            return  new ArrayDeque<Long>();
+            return new ArrayDeque<>();
         }
     };
 

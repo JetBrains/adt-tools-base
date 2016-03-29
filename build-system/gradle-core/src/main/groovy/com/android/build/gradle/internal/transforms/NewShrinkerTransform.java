@@ -165,7 +165,7 @@ public class NewShrinkerTransform extends ProguardConfigurable {
                 new ShrinkerLogger(config.getFlags().getDontWarnSpecs(), logger);
 
         FullRunShrinker<String> shrinker =
-                new FullRunShrinker<String>(
+                new FullRunShrinker<>(
                         WaitableExecutor.<Void>useGlobalSharedThreadPool(),
                         JavaSerializationShrinkerGraph.empty(incrementalDir),
                         platformJars,
@@ -245,7 +245,7 @@ public class NewShrinkerTransform extends ProguardConfigurable {
                     new ShrinkerLogger(config.getFlags().getDontWarnSpecs(), logger);
 
             IncrementalShrinker<String> shrinker =
-                    new IncrementalShrinker<String>(
+                    new IncrementalShrinker<>(
                             WaitableExecutor.<Void>useGlobalSharedThreadPool(),
                             graph,
                             shrinkerLogger);

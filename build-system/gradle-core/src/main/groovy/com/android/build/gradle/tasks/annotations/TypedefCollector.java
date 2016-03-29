@@ -97,7 +97,7 @@ public class TypedefCollector extends ASTVisitor {
 
                         List<Annotation> list = mMap.get(fqn);
                         if (list == null) {
-                            list = new ArrayList<Annotation>(2);
+                            list = new ArrayList<>(2);
                             mMap.put(fqn, list);
                         }
                         list.add(annotation);

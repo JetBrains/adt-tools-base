@@ -25,7 +25,7 @@ import java.util.TreeMap;
  * Custom test results based on Gradle's AllTestResults
  */
 class AllTestResults extends CompositeTestResults {
-    private final Map<String, PackageTestResults> packages = new TreeMap<String, PackageTestResults>();
+    private final Map<String, PackageTestResults> packages = new TreeMap<>();
 
     public AllTestResults() {
         super(null);

@@ -292,21 +292,15 @@ public class ResourceUsageAnalyzerTest {
     private static String dumpZipContents(File zipFile) throws IOException {
         StringBuilder sb = new StringBuilder();
 
-        FileInputStream fis = new FileInputStream(zipFile);
-        try {
-            ZipInputStream zis = new ZipInputStream(fis);
-            try {
+        try (FileInputStream fis = new FileInputStream(zipFile)) {
+            try (ZipInputStream zis = new ZipInputStream(fis)) {
                 ZipEntry entry = zis.getNextEntry();
                 while (entry != null) {
                     sb.append(entry.getName());
                     sb.append('\n');
                     entry = zis.getNextEntry();
                 }
-            } finally {
-                zis.close();
             }
-        } finally {
-            fis.close();
         }
 
         return sb.toString();
@@ -314,10 +308,8 @@ public class ResourceUsageAnalyzerTest {
 
     @Nullable
     private static byte[] getZipContents(File zipFile, String name) throws IOException {
-        FileInputStream fis = new FileInputStream(zipFile);
-        try {
-            ZipInputStream zis = new ZipInputStream(fis);
-            try {
+        try (FileInputStream fis = new FileInputStream(zipFile)) {
+            try (ZipInputStream zis = new ZipInputStream(fis)) {
                 ZipEntry entry = zis.getNextEntry();
                 while (entry != null) {
                     if (name.equals(entry.getName())) {
@@ -325,11 +317,7 @@ public class ResourceUsageAnalyzerTest {
                     }
                     entry = zis.getNextEntry();
                 }
-            } finally {
-                zis.close();
             }
-        } finally {
-            fis.close();
         }
 
         return null;

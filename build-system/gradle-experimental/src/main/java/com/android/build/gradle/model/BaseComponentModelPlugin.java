@@ -122,6 +122,7 @@ import java.security.KeyStore;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -372,12 +373,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         public static void initDebugBuildTypes(
                 @Path("android.buildTypes") ModelMap<BuildType> buildTypes,
                 @Path("android.signingConfigs") final ModelMap<SigningConfig> signingConfigs) {
-            buildTypes.beforeEach(new Action<BuildType>() {
-                @Override
-                public void execute(BuildType buildType) {
-                    initBuildType(buildType);
-                }
-            });
+            buildTypes.beforeEach(Rules::initBuildType);
 
             buildTypes.named(DEBUG, new Action<BuildType>() {
                 @Override
@@ -406,10 +402,8 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             vectorDrawablesOptions.setUseSupportLibrary(false);
 
             Set<Density> densities = Density.getRecommendedValuesForDevice();
-            Set<String> strings = Sets.newHashSetWithExpectedSize(densities.size());
-            for (Density density : densities) {
-                strings.add(density.getResourceValue());
-            }
+            Set<String> strings =
+                    densities.stream().map(Density::getResourceValue).collect(Collectors.toSet());
 
             vectorDrawablesOptions.setGeneratedDensities(strings);
         }
@@ -541,10 +535,9 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             binaries.afterEach(new Action<AndroidBinaryInternal>() {
                 @Override
                 public void execute(AndroidBinaryInternal binary) {
-                    List<ProductFlavorAdaptor> adaptedFlavors = Lists.newArrayList();
-                    for (ProductFlavor flavor : binary.getProductFlavors()) {
-                        adaptedFlavors.add(new ProductFlavorAdaptor(flavor));
-                    }
+                    List<ProductFlavorAdaptor> adaptedFlavors = binary.getProductFlavors().stream()
+                            .map(ProductFlavorAdaptor::new)
+                            .collect(Collectors.toList());
                     binary.setVariantData(
                             variantManager.createVariantData(
                                     new BuildTypeAdaptor(binary.getBuildType()),

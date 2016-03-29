@@ -85,15 +85,15 @@ public class ProcessRecorder {
     private final WorkQueue<ExecutionRecordWriter> workQueue;
 
     ProcessRecorder(@NonNull ExecutionRecordWriter outWriter, @NonNull ILogger iLogger) {
-        this.singletonJobContext = new JobContext<ExecutionRecordWriter>(outWriter);
-        workQueue = new WorkQueue<ExecutionRecordWriter>(
+        this.singletonJobContext = new JobContext<>(outWriter);
+        workQueue = new WorkQueue<>(
                 iLogger, new WorkQueueContext(), "execRecordWriter", 1);
     }
 
     void writeRecord(@NonNull final ExecutionRecord executionRecord) {
 
         try {
-            workQueue.push(new Job<ExecutionRecordWriter>("recordWriter", new Task<ExecutionRecordWriter>() {
+            workQueue.push(new Job<>("recordWriter", new Task<ExecutionRecordWriter>() {
                 @Override
                 public void run(@NonNull Job<ExecutionRecordWriter> job,
                         @NonNull JobContext<ExecutionRecordWriter> context) throws IOException {

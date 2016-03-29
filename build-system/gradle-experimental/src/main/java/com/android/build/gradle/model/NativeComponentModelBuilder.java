@@ -32,6 +32,7 @@ import com.android.build.gradle.managed.NativeSourceFolder;
 import com.android.builder.Version;
 import com.android.builder.model.NativeAndroidProject;
 import com.android.builder.model.NativeArtifact;
+import com.android.builder.model.NativeFile;
 import com.android.builder.model.NativeFolder;
 import com.android.builder.model.NativeSettings;
 import com.android.builder.model.NativeToolchain;
@@ -52,6 +53,7 @@ import org.gradle.tooling.provider.model.ToolingModelBuilder;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Builder for the {@link NativeAndroidProject} model.
@@ -108,25 +110,18 @@ public class NativeComponentModelBuilder implements ToolingModelBuilder {
         List<NativeArtifact> artifacts = Lists.newArrayList();
 
         for (NativeLibrary lib : config.getLibraries()) {
-            List<NativeFolder> folders = Lists.newArrayList();
-            for (NativeSourceFolder src : lib.getFolders()) {
-                folders.add(
-                        new NativeFolderImpl(
-                                src.getSrc(),
-                                ImmutableMap.of(
-                                        "c", getSettingsName(StringHelper.tokenizeString(
-                                                src.getcFlags())),
-                                        "c++", getSettingsName(StringHelper.tokenizeString(
-                                                src.getCppFlags()))),
-                                src.getWorkingDirectory()));
-            }
-            List<com.android.builder.model.NativeFile> files = Lists.newArrayList();
-            for (NativeSourceFile src : lib.getFiles()) {
-                files.add(new NativeFileImpl(
-                        src.getSrc(),
-                        getSettingsName(StringHelper.tokenizeString(src.getFlags())),
-                        src.getWorkingDirectory()));
-            }
+            List<NativeFolder> folders = lib.getFolders().stream().map(src -> new NativeFolderImpl(
+                    src.getSrc(),
+                    ImmutableMap.of(
+                            "c", getSettingsName(StringHelper.tokenizeString(src.getcFlags())),
+                            "c++", getSettingsName(StringHelper.tokenizeString(src.getCppFlags()))),
+                    src.getWorkingDirectory()))
+                    .collect(Collectors.toList());
+            List<NativeFile> files = lib.getFiles().stream().map(src -> new NativeFileImpl(
+                    src.getSrc(),
+                    getSettingsName(StringHelper.tokenizeString(src.getFlags())),
+                    src.getWorkingDirectory()))
+                    .collect(Collectors.toList());
             Preconditions.checkNotNull(lib.getToolchain());
             Preconditions.checkNotNull(lib.getAssembleTaskName());
             Preconditions.checkNotNull(lib.getOutput());
@@ -157,14 +152,11 @@ public class NativeComponentModelBuilder implements ToolingModelBuilder {
     }
 
     private List<NativeToolchain> createNativeToolchains() {
-        List<NativeToolchain> toolchains = Lists.newArrayList();
-        for (NativeToolchain toolchain : config.getToolchains().values()) {
-            toolchains.add(new NativeToolchainImpl(
-                    toolchain.getName(),
-                    toolchain.getCCompilerExecutable(),
-                    toolchain.getCppCompilerExecutable()));
-        }
-        return toolchains;
+        return config.getToolchains().values().stream()
+                .map(toolchain -> new NativeToolchainImpl(
+                        toolchain.getName(),
+                        toolchain.getCCompilerExecutable(),
+                        toolchain.getCppCompilerExecutable())).collect(Collectors.toList());
     }
 
     private Map<String, String> createFileExtensionMap() {

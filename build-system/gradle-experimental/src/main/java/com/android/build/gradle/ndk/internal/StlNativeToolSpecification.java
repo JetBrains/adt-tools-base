@@ -93,21 +93,26 @@ public class StlNativeToolSpecification extends AbstractNativeToolSpecification 
 
     public File getStlLib(String abi) {
         String stlLib;
-        if (stlName.equals("stlport")) {
-            stlLib = "stlport";
-        } else if (stlName.equals("gnustl")) {
-            String version = stlVersion != null
-                    ? stlVersion
-                    : ndkHandler.getGccToolchainVersion(Abi.getByName(abi));
-            stlLib = "gnu-libstdc++/" + version;
-        } else if (stlName.equals("gabi++")) {
-            stlLib = "gabi++";
-        } else if (stlName.equals("c++")) {
-            stlLib = "llvm-libc++";
-        } else {
-            throw new AssertionError(
-                    "Unreachable.  Either stl is invalid or stl is \"system\", " +
-                    "in which case there is no library file and getStlLib should not be called.");
+        switch (stlName) {
+            case "stlport":
+                stlLib = "stlport";
+                break;
+            case "gnustl":
+                String version = stlVersion != null
+                        ? stlVersion
+                        : ndkHandler.getGccToolchainVersion(Abi.getByName(abi));
+                stlLib = "gnu-libstdc++/" + version;
+                break;
+            case "gabi++":
+                stlLib = "gabi++";
+                break;
+            case "c++":
+                stlLib = "llvm-libc++";
+                break;
+            default:
+                throw new AssertionError(
+                        "Unreachable.  Either stl is invalid or stl is \"system\", " +
+                                "in which case there is no library file and getStlLib should not be called.");
         }
         return new File(
                 StlConfiguration.getStlBaseDirectory(ndkHandler),

@@ -42,6 +42,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -50,15 +51,8 @@ import java.util.zip.ZipFile;
 public class DependenciesImpl implements Dependencies, Serializable {
     private static final long serialVersionUID = 1L;
 
-    private static final CreatingCache<LibraryDependency, AndroidLibrary> sCache
-            = new CreatingCache<LibraryDependency, AndroidLibrary>(
-            new CreatingCache.ValueFactory<LibraryDependency, AndroidLibrary>() {
-                @Override
-                @NonNull
-                public AndroidLibrary create(@NonNull LibraryDependency key) {
-                    return convertAndroidLibrary(key);
-                }
-            });
+    private static final CreatingCache<LibraryDependency, AndroidLibrary> sCache =
+            new CreatingCache<>(DependenciesImpl::convertAndroidLibrary);
 
     @NonNull
     private final List<AndroidLibrary> libraries;
@@ -125,17 +119,14 @@ public class DependenciesImpl implements Dependencies, Serializable {
             }
         }
 
-        for (JarDependency jarDep : localDeps) {
-            // don't include package-only dependencies
-            if (jarDep.isCompiled()) {
-                javaLibraries.add(
-                        new JavaLibraryImpl(
-                                jarDep.getJarFile(),
-                                !jarDep.isPackaged(),
-                                null,
-                                jarDep.getResolvedCoordinates()));
-            }
-        }
+        javaLibraries.addAll(localDeps.stream()
+                .filter(JarDependency::isCompiled) // don't include package-only dependencies
+                .map(jarDep -> new JavaLibraryImpl(
+                        jarDep.getJarFile(),
+                        !jarDep.isPackaged(),
+                        null,
+                        jarDep.getResolvedCoordinates()))
+                .collect(Collectors.toList()));
 
         GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
 

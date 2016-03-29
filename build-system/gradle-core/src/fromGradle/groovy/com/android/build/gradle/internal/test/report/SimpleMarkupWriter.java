@@ -36,7 +36,7 @@ public class SimpleMarkupWriter extends Writer {
     }
 
     private final Writer output;
-    private final LinkedList<String> elements = new LinkedList<String>();
+    private final LinkedList<String> elements = new LinkedList<>();
     private Context context = Context.Outside;
     private int squareBrackets;
     private final String indent;

@@ -32,11 +32,11 @@ import java.util.TreeSet;
 public abstract class CompositeTestResults extends TestResultModel {
     private final CompositeTestResults parent;
     private int tests;
-    private final Set<TestResult> failures = new TreeSet<TestResult>();
+    private final Set<TestResult> failures = new TreeSet<>();
     private long duration;
 
-    private final Map<String, DeviceTestResults> devices = new TreeMap<String, DeviceTestResults>();
-    private final Map<String, VariantTestResults> variants = new TreeMap<String, VariantTestResults>();
+    private final Map<String, DeviceTestResults> devices = new TreeMap<>();
+    private final Map<String, VariantTestResults> variants = new TreeMap<>();
 
 
     protected CompositeTestResults(CompositeTestResults parent) {

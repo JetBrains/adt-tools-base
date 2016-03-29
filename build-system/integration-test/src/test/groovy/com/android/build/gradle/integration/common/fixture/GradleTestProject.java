@@ -78,7 +78,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * JUnit4 test rule for integration test.
@@ -657,11 +659,9 @@ public class GradleTestProject implements TestRule {
         ProjectConnection connection = getProjectConnection();
         try {
             GradleProject project = connection.getModel(GradleProject.class);
-            List<String> tasks = Lists.newArrayList();
-            for (GradleTask gradleTask : project.getTasks()) {
-                tasks.add(gradleTask.getName());
-            }
-            return tasks;
+            return project.getTasks().stream()
+                    .map((Function<GradleTask, String>) GradleTask::getName)
+                    .collect(Collectors.toList());
         } finally {
             connection.close();
         }
@@ -882,7 +882,7 @@ public class GradleTestProject implements TestRule {
 
             return buildModel(
                     connection,
-                    new GetAndroidModelAction<T>(modelClass, isMultithreaded),
+                    new GetAndroidModelAction<>(modelClass, isMultithreaded),
                     emulateStudio_1_0,
                     null,
                     null);
@@ -939,7 +939,7 @@ public class GradleTestProject implements TestRule {
         try {
             Map<String, AndroidProject> modelMap = buildModel(
                     connection,
-                    new GetAndroidModelAction<AndroidProject>(AndroidProject.class),
+                    new GetAndroidModelAction<>(AndroidProject.class),
                     emulateStudio_1_0,
                     null,
                     null);
@@ -979,7 +979,7 @@ public class GradleTestProject implements TestRule {
             @Nullable String benchmarkName,
             @Nullable BenchmarkMode benchmarkMode) {
         Map<String, AndroidProject> allModels = getAllModels(
-                new GetAndroidModelAction<AndroidProject>(AndroidProject.class),
+                new GetAndroidModelAction<>(AndroidProject.class),
                 false,
                 benchmarkName,
                 benchmarkMode);
@@ -1011,7 +1011,7 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     public Map<String, AndroidProject> getAllModelsIgnoringSyncIssues() {
-        return getAllModels(new GetAndroidModelAction<AndroidProject>(AndroidProject.class), false, null, null);
+        return getAllModels(new GetAndroidModelAction<>(AndroidProject.class), false, null, null);
     }
 
     /**
@@ -1064,7 +1064,7 @@ public class GradleTestProject implements TestRule {
             if (returnModel) {
                 Map<String, T> modelMap = this.buildModel(
                         connection,
-                        new GetAndroidModelAction<T>(type),
+                        new GetAndroidModelAction<>(type),
                         emulateStudio_1_0,
                         null,
                         null);
@@ -1129,7 +1129,7 @@ public class GradleTestProject implements TestRule {
     }
 
     private void setJvmArguments(LongRunningOperation launcher) {
-        List<String> jvmArguments = new ArrayList<String>();
+        List<String> jvmArguments = new ArrayList<>();
 
         if (!Strings.isNullOrEmpty(heapSize)) {
             jvmArguments.add("-Xmx" + heapSize);

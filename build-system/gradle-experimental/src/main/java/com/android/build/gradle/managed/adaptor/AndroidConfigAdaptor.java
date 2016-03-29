@@ -61,6 +61,7 @@ import java.io.File;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * An adaptor to convert a managed.AndroidConfig to an model.AndroidConfig.
@@ -159,35 +160,20 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
 
     @Override
     public Collection<CoreBuildType> getBuildTypes() {
-        return ImmutableList.copyOf(Iterables.transform(model.getBuildTypes().values(),
-                new Function<BuildType, CoreBuildType>() {
-                    @Override
-                    public CoreBuildType apply(BuildType buildType) {
-                        return new BuildTypeAdaptor(buildType);
-                    }
-                }));
+        return ImmutableList.copyOf(model.getBuildTypes().values().stream()
+                .map(BuildTypeAdaptor::new).iterator());
     }
 
     @Override
     public Collection<CoreProductFlavor> getProductFlavors() {
-        return ImmutableList.copyOf(Iterables.transform(model.getProductFlavors().values(),
-                new Function<ProductFlavor, CoreProductFlavor>() {
-                    @Override
-                    public CoreProductFlavor apply(ProductFlavor flavor) {
-                        return new ProductFlavorAdaptor(flavor);
-                    }
-                }));
+        return ImmutableList.copyOf(model.getProductFlavors().values().stream()
+                .map(ProductFlavorAdaptor::new).iterator());
     }
 
     @Override
     public Collection<com.android.builder.model.SigningConfig> getSigningConfigs() {
-        return ImmutableList.copyOf(Iterables.transform(model.getSigningConfigs().values(),
-                new Function<SigningConfig, com.android.builder.model.SigningConfig>() {
-                    @Override
-                    public com.android.builder.model.SigningConfig apply(SigningConfig signingConfig) {
-                        return new SigningConfigAdaptor(signingConfig);
-                    }
-                }));
+        return ImmutableList.copyOf(model.getSigningConfigs().values().stream()
+                .map(SigningConfigAdaptor::new).iterator());
     }
 
     @Override
