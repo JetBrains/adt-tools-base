@@ -23,18 +23,6 @@ import android.os.Debug;
 import java.nio.ByteBuffer;
 
 public class MemoryProfiler extends AbstractProfilerComponent {
-    private static final MemoryProfiler ourMemoryMonitor = new MemoryProfiler();
-
-    private Debug.MemoryInfo myMemoryInfo = new Debug.MemoryInfo();
-
-    public static MemoryProfiler getInstance() {
-        return ourMemoryMonitor;
-    }
-
-    public Debug.MemoryInfo getMemoryInfo() {
-        return myMemoryInfo;
-    }
-
     @Override
     public byte getComponentId() {
         return ProfilerRegistry.MEMORY;
