@@ -99,6 +99,8 @@ public interface IDevice extends IShellEnabledDevice {
         OFFLINE("offline"), //$NON-NLS-1$
         ONLINE("device"), //$NON-NLS-1$
         RECOVERY("recovery"), //$NON-NLS-1$
+        /** Device is in "sideload" state either through `adb sideload` or recovery menu */
+        SIDELOAD("sideload"), //$NON-NLS-1$
         UNAUTHORIZED("unauthorized"), //$NON-NLS-1$
         DISCONNECTED("disconnected"), //$NON-NLS-1$
         ;
