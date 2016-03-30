@@ -52,7 +52,7 @@ public class JackJava8Test {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 "android {\n"
-                        + "    buildToolsVersion '24.0.0-rc2'\n"
+                        + "    buildToolsVersion '" + GradleTestProject.UPCOMING_BUILD_TOOL_VERSION + "'\n"
                         + "    compileSdkVersion 'android-N'\n"
                         + "    defaultConfig {\n"
                         + "        jackOptions {\n"

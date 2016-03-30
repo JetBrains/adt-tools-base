@@ -21,6 +21,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.utils.AssumeUtil;
+import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
@@ -46,7 +47,9 @@ public class JackIncrementalTest {
 
     @Before
     public void setUp() throws IOException {
-        AssumeUtil.assumeBuildToolsAtLeast(24, 0, 0, 1);
+        TestFileUtils.appendToFile(project.getBuildFile(), "\n"
+                + "android.buildToolsVersion '" + GradleTestProject.UPCOMING_BUILD_TOOL_VERSION
+                + "'\n");
     }
 
     @Test
@@ -59,7 +62,7 @@ public class JackIncrementalTest {
         // Check pre-dexed library is not updated
         File androidJar =
                 FileUtils.find(
-                        project.file("build/intermediates/transforms/preDexJackRuntimeLibraries"),
+                        project.file("build/intermediates/transforms/jillRuntime"),
                         Pattern.compile("android.*")).get(0);
         long androidJarTimestamp = androidJar.lastModified();
 

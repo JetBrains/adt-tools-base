@@ -36,7 +36,7 @@ public class JackSmokeTest {
 
     private static final List<String> JACK_OPTIONS = ImmutableList
             .of("-Pcom.android.build.gradle.integratonTest.useJack=true",
-                    "-PCUSTOM_BUILDTOOLS=24.0.0-rc1");
+                    "-PCUSTOM_BUILDTOOLS=" + GradleTestProject.UPCOMING_BUILD_TOOL_VERSION);
 
     @Before
     public void assumeJava7() {
