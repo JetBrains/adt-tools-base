@@ -26,7 +26,6 @@
         android:layout_height="wrap_content"
         android:padding="5dp"
         android:orientation="vertical">
-        <TextView style="@style/normalTextStyle" android:id="@+id/bytes"/>
         <TextView style="@style/normalTextStyle" android:id="@+id/bytesFromFile" />
         <TextView style="@style/normalTextStyle" android:id="@+id/networkType"/>
         <TextView style="@style/normalTextStyle" android:id="@+id/radioStatus"/>

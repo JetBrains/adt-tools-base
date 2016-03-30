@@ -23,6 +23,7 @@ import android.net.TrafficStats;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Process;
+import android.os.SystemClock;
 import android.support.v4.app.Fragment;
 import android.telephony.TelephonyManager;
 import android.util.Log;
@@ -121,24 +122,30 @@ public class NetworkFragment extends Fragment {
         return new Thread(new Runnable() {
 
             private Statistics statistics;
-            private long myStartSendBytes;
-            private long myStartReceiveBytes;
+            private long[] myStartBytes;
+            private long[] myBytes;
 
             private void initialize() {
                 statistics = new Statistics();
-                myStartSendBytes = TrafficStats.getUidTxBytes(myUid);
-                myStartReceiveBytes = TrafficStats.getUidRxBytes(myUid);
+                myStartBytes = getTrafficBytes(Integer.toString(myUid));
             }
 
             @Override
             public void run() {
                 initialize();
                 while (!Thread.currentThread().isInterrupted()) {
-                    statistics.sendBytes = TrafficStats.getUidTxBytes(myUid) - myStartSendBytes;
-                    statistics.receiveBytes = TrafficStats.getUidRxBytes(myUid) - myStartReceiveBytes;
-                    long[] bytesFromFile = getTrafficBytes(Integer.toString(myUid));
-                    statistics.sendBytesFromFile = bytesFromFile[0] - myStartSendBytes;
-                    statistics.receiveBytesFromFile = bytesFromFile[1] - myStartReceiveBytes;
+                    myBytes = getTrafficBytes(Integer.toString(myUid));
+                    statistics.sendBytesFromFile = myBytes[0] - myStartBytes[0];
+                    statistics.receiveBytesFromFile = myBytes[1] - myStartBytes[1];
+
+                    // Gets the bytes from API too, because API read is later than file read, API results may be a little larger.
+                    myBytes[0] = TrafficStats.getUidTxBytes(myUid) - myStartBytes[0];
+                    myBytes[1] = TrafficStats.getUidRxBytes(myUid) - myStartBytes[1];
+                    if (statistics.sendBytesFromFile > myBytes[0] || statistics.receiveBytesFromFile > myBytes[1]) {
+                        Log.d(TAG, String.format("Bytes reported not in sync. TrafficStats: %1$d, %2$d, getTrafficBytes: %3$d, %4$d",
+                                myBytes[0], myBytes[1], statistics.sendBytesFromFile, statistics.receiveBytesFromFile));
+                    }
+
                     NetworkInfo networkInfo = myConnectivityManager.getActiveNetworkInfo();
                     statistics.networkName = networkInfo != null && networkInfo.getSubtype() != TelephonyManager.NETWORK_TYPE_UNKNOWN
                             ? networkInfo.getSubtypeName() : networkInfo.getTypeName();
@@ -161,12 +168,8 @@ public class NetworkFragment extends Fragment {
         myFragmentView.post(new Runnable() {
             @Override
             public void run() {
-                TextView bytesView = (TextView) myFragmentView.findViewById(R.id.bytes);
-                String bytesText = String.format("Sent / Received from API : %1$d / %2$d bytes",
-                        statistics.sendBytes, statistics.receiveBytes);
-                bytesView.setText(bytesText);
                 TextView bytesFromFileView = (TextView) myFragmentView.findViewById(R.id.bytesFromFile);
-                bytesText = String.format("Sent / Received from file : %1$d / %2$d bytes",
+                String bytesText = String.format("Bytes from file: sent %1$d, received %2$d",
                         statistics.sendBytesFromFile, statistics.receiveBytesFromFile);
                 bytesFromFileView.setText(bytesText);
                 TextView networkNameView = (TextView) myFragmentView.findViewById(R.id.networkType);
@@ -183,6 +186,7 @@ public class NetworkFragment extends Fragment {
         Thread downloadThread = new Thread(new Runnable() {
             @Override
             public void run() {
+                long timeStart = SystemClock.elapsedRealtime();
                 URL url;
                 try {
                     int next = myNumDownloadsTotal.getAndIncrement() % DownloadUrls.IMAGE_URLS.length;
@@ -195,13 +199,15 @@ public class NetworkFragment extends Fragment {
                 HttpURLConnection connection;
                 try {
                     connection = (HttpURLConnection) url.openConnection();
+                    // Client closes the socket on its end once it receives the server response. We do not need connection reusing.
+                    connection.setRequestProperty("Connection", "Close");
                     String urlString = url.toString();
                     Log.d(TAG, String.format("Connection opened [%d %d]: %s", myUid, Thread.currentThread().getId(),
                         urlString));
                     BufferedInputStream in = new BufferedInputStream(connection.getInputStream());
                     while(in.read() != -1) {}
-                    Log.d(TAG, String.format("Finished %d / %d: %s", myNumDownloadsSoFar.incrementAndGet(),
-                        myNumDownloadsTotal.get(), urlString));
+                    Log.d(TAG, String.format("Finished %d / %d (time %d ms): %s", myNumDownloadsSoFar.incrementAndGet(),
+                            myNumDownloadsTotal.get(), SystemClock.elapsedRealtime() - timeStart, urlString));
                 } catch (IOException e) {
                     e.printStackTrace();
                     return;
@@ -213,8 +219,6 @@ public class NetworkFragment extends Fragment {
     }
 
     private static class Statistics {
-        long sendBytes;
-        long receiveBytes;
         long sendBytesFromFile;
         long receiveBytesFromFile;
         String networkName;
