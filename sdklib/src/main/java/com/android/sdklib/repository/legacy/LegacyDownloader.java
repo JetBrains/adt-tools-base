@@ -71,6 +71,7 @@ public class LegacyDownloader implements Downloader {
     @Override
     public void downloadFully(@NonNull URL url, @NonNull File target,
             @NonNull ProgressIndicator indicator) throws IOException {
+        mFileOp.mkdirs(target.getParentFile());
         OutputStream out = mFileOp.newFileOutputStream(target);
         try {
             Pair<InputStream, Integer> downloadedResult = mDownloadCache
