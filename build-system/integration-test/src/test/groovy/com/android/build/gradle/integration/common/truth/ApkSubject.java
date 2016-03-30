@@ -78,14 +78,11 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
     @NonNull
     public List<String> entries() throws IOException {
         ImmutableList.Builder<String> entryList = ImmutableList.builder();
-        ZipFile zipFile = new ZipFile(getSubject());
-        try {
+        try (ZipFile zipFile = new ZipFile(getSubject())) {
             Enumeration<? extends ZipEntry> entries = zipFile.entries();
             while (entries.hasMoreElements()) {
                 entryList.add(entries.nextElement().getName());
             }
-        } finally {
-            zipFile.close();
         }
         return entryList.build();
     }
@@ -199,8 +196,7 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
                 // multi-dex.
                 // We're going to extract all the classes<N>.dex we find until one of them
                 // contains the class we're searching for.
-                ZipFile zipFile = new ZipFile(getSubject());
-                try {
+                try (ZipFile zipFile = new ZipFile(getSubject())) {
                     int index = 2;
                     String dexFileName = String.format(FN_APK_CLASSES_N_DEX, index);
                     while (zipFile.getEntry(dexFileName) != null) {
@@ -214,8 +210,6 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
                         index++;
                         dexFileName = String.format(FN_APK_CLASSES_N_DEX, index);
                     }
-                } finally {
-                    zipFile.close();
                 }
                 break;
         }
@@ -244,8 +238,7 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
                         new ZipFileSubject(failureStrategy, extractedEntry);
 
                 try {
-                    ZipFile zipFile = new ZipFile(extractedEntry);
-                    try {
+                    try (ZipFile zipFile = new ZipFile(extractedEntry)) {
                         Enumeration<? extends ZipEntry> zipFileEntries = zipFile.entries();
                         while (zipFileEntries.hasMoreElements()) {
                             ZipEntry zipEntry = zipFileEntries.nextElement();
@@ -255,8 +248,6 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
                                 return result;
                             }
                         }
-                    } finally {
-                        zipFile.close();
                     }
                 } catch (IOException e) {
                     throw new ProcessException(e);
@@ -342,8 +333,7 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
                 // multi-dex.
                 // We're going to extract all the classes<N>.dex we find until one of them
                 // contains the class we're searching for.
-                ZipFile zipFile = new ZipFile(getSubject());
-                try {
+                try (ZipFile zipFile = new ZipFile(getSubject())) {
                     int index = 2;
                     String dexFileName = String.format(FN_APK_CLASSES_N_DEX, index);
                     while (zipFile.getEntry(dexFileName) != null) {
@@ -356,8 +346,6 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
                         index++;
                         dexFileName = String.format(FN_APK_CLASSES_N_DEX, index);
                     }
-                } finally {
-                    zipFile.close();
                 }
                 break;
         }
@@ -368,11 +356,8 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
     @Override
     protected boolean checkForJavaResource(@NonNull String resourcePath)
             throws ProcessException, IOException {
-        ZipFile zipFile = new ZipFile(getSubject());
-        try {
+        try (ZipFile zipFile = new ZipFile(getSubject())) {
             return zipFile.getEntry(resourcePath) != null;
-        } finally {
-            zipFile.close();
         }
     }
 

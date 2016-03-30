@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -67,15 +68,12 @@ public class FilteredJarCopyTask extends SingleFileCopyTask {
         }
 
         // create Pattern Objects.
-        List<Pattern> patterns = Lists.newArrayListWithCapacity(excludes.size());
-        for (String exclude : excludes) {
-            patterns.add(Pattern.compile(exclude));
-        }
+        List<Pattern> patterns =
+                excludes.stream().map(Pattern::compile).collect(Collectors.toList());
 
-        Closer closer = Closer.create();
         byte[] buffer = new byte[4096];
 
-        try {
+        try (Closer closer = Closer.create()) {
             FileOutputStream fos = closer.register(new FileOutputStream(outputFile));
             BufferedOutputStream bos = closer.register(new BufferedOutputStream(fos));
             ZipOutputStream zos = closer.register(new ZipOutputStream(bos));
@@ -115,8 +113,6 @@ public class FilteredJarCopyTask extends SingleFileCopyTask {
                 zos.closeEntry();
                 zis.closeEntry();
             }
-        } finally {
-            closer.close();
         }
     }
 

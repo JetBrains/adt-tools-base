@@ -292,7 +292,7 @@ public class ConstructorDelegationDetector {
                 "init$body", newDesc, null, exceptions);
         LabelNode labelAfter = new LabelNode();
         labelAfter.accept(body);
-        Set<LabelNode> bodyLabels = new HashSet<LabelNode>();
+        Set<LabelNode> bodyLabels = new HashSet<>();
 
         insn = delegation.getNext();
         while (insn != null) {

@@ -446,12 +446,7 @@ public abstract class TaskManager {
         transformManager.addStream(OriginalStream.builder()
                 .addContentTypes(fullJar)
                 .addScope(Scope.PROJECT_LOCAL_DEPS)
-                .setJars(new Supplier<Collection<File>>() {
-                    @Override
-                    public Collection<File> get() {
-                        return config.getLocalPackagedJars();
-                    }
-                })
+                .setJars(config::getLocalPackagedJars)
                 .build());
 
         IncrementalMode incrementalMode = getIncrementalMode(config);
@@ -502,12 +497,7 @@ public abstract class TaskManager {
                         return files;
                     }
                 })
-                .setFolders(new Supplier<Collection<File>>() {
-                    @Override
-                    public Collection<File> get() {
-                        return config.getExternalAarJniLibFolders();
-                    }
-                })
+                .setFolders(config::getExternalAarJniLibFolders)
                 .setDependencies(dependencies)
                 .build());
 
@@ -515,13 +505,7 @@ public abstract class TaskManager {
         transformManager.addStream(OriginalStream.builder()
                 .addContentTypes(TransformManager.CONTENT_JARS)
                 .addScope(Scope.SUB_PROJECTS)
-                .setJars(new Supplier<Collection<File>>() {
-                    @Override
-                    public Collection<File> get() {
-                        return config.getSubProjectPackagedJars();
-                    }
-
-                })
+                .setJars(config::getSubProjectPackagedJars)
                 .setDependencies(dependencies)
                 .build());
 
@@ -529,13 +513,7 @@ public abstract class TaskManager {
         transformManager.addStream(OriginalStream.builder()
                 .addContentTypes(TransformManager.CONTENT_CLASS)
                 .addScope(Scope.SUB_PROJECTS_LOCAL_DEPS)
-                .setJars(new Supplier<Collection<File>>() {
-                    @Override
-                    public Collection<File> get() {
-                        return config.getSubProjectLocalPackagedJars();
-                    }
-
-                })
+                .setJars(config::getSubProjectLocalPackagedJars)
                 .setDependencies(dependencies)
                 .build());
 
@@ -543,18 +521,8 @@ public abstract class TaskManager {
         transformManager.addStream(OriginalStream.builder()
                 .addContentTypes(TransformManager.CONTENT_NATIVE_LIBS)
                 .addScope(Scope.SUB_PROJECTS)
-                .setFolders(new Supplier<Collection<File>>() {
-                    @Override
-                    public Collection<File> get() {
-                        return config.getSubProjectJniLibFolders();
-                    }
-                })
-                .setJars(new Supplier<Collection<File>>() {
-                    @Override
-                    public Collection<File> get() {
-                        return config.getSubProjectPackagedJniJars();
-                    }
-                })
+                .setFolders(config::getSubProjectJniLibFolders)
+                .setJars(config::getSubProjectPackagedJniJars)
                 .setDependencies(dependencies)
                 .build());
 
@@ -562,13 +530,7 @@ public abstract class TaskManager {
         transformManager.addStream(OriginalStream.builder()
                 .addContentTypes(fullJar)
                 .addScope(Scope.PROVIDED_ONLY)
-                .setJars(new Supplier<Collection<File>>() {
-                    @Override
-                    public Collection<File> get() {
-                        return config.getProvidedOnlyJars();
-                    }
-
-                })
+                .setJars(config::getProvidedOnlyJars)
                 .build());
 
         if (variantScope.getTestedVariantData() != null) {

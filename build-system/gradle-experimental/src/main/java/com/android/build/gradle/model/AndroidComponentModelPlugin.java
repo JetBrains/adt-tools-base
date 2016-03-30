@@ -64,6 +64,7 @@ import org.gradle.tooling.BuildException;
 import java.io.File;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Plugin to set up infrastructure for other android plugins.
@@ -168,12 +169,9 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         public static List<ProductFlavorCombo<ProductFlavor>> createProductFlavorCombo(
                 @Path("android.productFlavors") ModelMap<ProductFlavor> productFlavors) {
             // TODO: Create custom product flavor container to manually configure flavor dimensions.
-            Set<String> flavorDimensionList = Sets.newHashSet();
-            for (ProductFlavor flavor : productFlavors.values()) {
-                if (flavor.getDimension() != null) {
-                    flavorDimensionList.add(flavor.getDimension());
-                }
-            }
+            Set<String> flavorDimensionList = productFlavors.values().stream()
+                    .filter(flavor -> flavor.getDimension() != null)
+                    .map(ProductFlavor::getDimension).collect(Collectors.toSet());
 
             return ProductFlavorCombo.createCombinations(
                     Lists.newArrayList(flavorDimensionList),
@@ -264,7 +262,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
                 @Path("android.sources") final ModelMap<FunctionalSourceSet> sources,
                 final AndroidComponentSpec spec) {
             if (flavorCombos.isEmpty()) {
-                flavorCombos.add(new ProductFlavorCombo<ProductFlavor>());
+                flavorCombos.add(new ProductFlavorCombo<>());
             }
 
             for (final BuildType buildType : buildTypes.values()) {

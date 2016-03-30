@@ -232,7 +232,7 @@ abstract class DependencyFinderVisitor<T> extends ClassVisitor {
         DependencyFinderMethodVisitor(T method, MethodVisitor mv) {
             super(Opcodes.ASM5, mv);
             this.mMethod = method;
-            mLastLdcs = new ArrayDeque<Object>();
+            mLastLdcs = new ArrayDeque<>();
         }
 
         @Override
@@ -275,7 +275,7 @@ abstract class DependencyFinderVisitor<T> extends ClassVisitor {
                         DependencyType.REQUIRED_CODE_REFERENCE);
                 T target = mGraph.getMemberReference(owner, name, desc);
                 handleUnresolvedReference(
-                        new UnresolvedReference<T>(
+                        new UnresolvedReference<>(
                                 mMethod,
                                 target,
                                 opcode == Opcodes.INVOKESPECIAL));
@@ -327,7 +327,7 @@ abstract class DependencyFinderVisitor<T> extends ClassVisitor {
                     // In all other cases we have to go through resolution stage (including fields,
                     // static methods etc).
                     handleUnresolvedReference(
-                            new UnresolvedReference<T>(
+                            new UnresolvedReference<>(
                                     mMethod,
                                     target,
                                     opcode == Opcodes.INVOKESPECIAL));
@@ -338,7 +338,7 @@ abstract class DependencyFinderVisitor<T> extends ClassVisitor {
                     ReflectionMethod.findBySignature(new Signature(owner, name, desc));
 
             if (reflectionMethod != null) {
-                Deque<Object> stackCopy = new ArrayDeque<Object>(mLastLdcs);
+                Deque<Object> stackCopy = new ArrayDeque<>(mLastLdcs);
                 T target = reflectionMethod.getMember(mGraph, stackCopy);
                 if (target != null) {
                     if (reflectionMethod == ReflectionMethod.CLASS_FOR_NAME) {
@@ -350,7 +350,7 @@ abstract class DependencyFinderVisitor<T> extends ClassVisitor {
                     } else {
                         // Resolve the exact dependency.
                         handleUnresolvedReference(
-                                new UnresolvedReference<T>(
+                                new UnresolvedReference<>(
                                         mMethod,
                                         target,
                                         false,

@@ -95,15 +95,12 @@ public class JarMerger {
                         jarOutputStream.putNextEntry(new JarEntry(entryPath));
 
                         // put the file content
-                        Closer localCloser = Closer.create();
-                        try {
+                        try (Closer localCloser = Closer.create()) {
                             FileInputStream fis = localCloser.register(new FileInputStream(file));
                             int count;
                             while ((count = fis.read(buffer)) != -1) {
                                 jarOutputStream.write(buffer, 0, count);
                             }
-                        } finally {
-                            localCloser.close();
                         }
 
                         // close the entry
@@ -124,8 +121,7 @@ public class JarMerger {
         logger.verbose("addJar(%1$s)", file);
         init();
 
-        Closer localCloser = Closer.create();
-        try {
+        try (Closer localCloser = Closer.create()) {
             FileInputStream fis = localCloser.register(new FileInputStream(file));
             ZipInputStream zis = localCloser.register(new ZipInputStream(fis));
 
@@ -171,8 +167,6 @@ public class JarMerger {
             }
         } catch (ZipAbortException e) {
             throw new IOException(e);
-        } finally {
-            localCloser.close();
         }
     }
 

@@ -117,7 +117,7 @@ public class InstantRunSlicerTest {
 
         final Map<File, Status> changedFiles;
         ImmutableMap.Builder<File, Status> builder = ImmutableMap.builder();
-        List<String> listOfFiles = new ArrayList<String>();
+        List<String> listOfFiles = new ArrayList<>();
         for (int i=0; i<21; i++) {
             listOfFiles.add("file" + i + ".class");
             builder.put(createFile(getInputDir(), "file" + i + ".class"), Status.ADDED);
@@ -412,11 +412,8 @@ public class InstantRunSlicerTest {
     private static File createFile(File directory, String name, String content) throws IOException {
         File newFile = new File(directory, name);
         Files.createParentDirs(newFile);
-        FileWriter writer = new FileWriter(newFile);
-        try {
+        try (FileWriter writer = new FileWriter(newFile)) {
             writer.append(content);
-        } finally {
-            writer.close();
         }
         return newFile;
     }

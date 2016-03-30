@@ -120,7 +120,7 @@ public class NativeDependencyResolver {
 
     private static PrebuiltLibrary getPrebuiltLibrary(
             NamedDomainObjectSet<PrebuiltLibraries> repositories, String libraryName) {
-        List<String> repositoryNames = new ArrayList<String>();
+        List<String> repositoryNames = new ArrayList<>();
         for (PrebuiltLibraries prebuiltLibraries : repositories) {
             repositoryNames.add(prebuiltLibraries.getName());
             PrebuiltLibrary prebuiltLibrary = prebuiltLibraries.resolveLibrary(libraryName);

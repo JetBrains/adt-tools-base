@@ -67,6 +67,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.jar.JarFile;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 
 @ParallelizableTask
@@ -171,15 +172,12 @@ public class ProcessAndroidResources extends IncrementalTask {
                             InstantRunBuildContext.FileType.RESOURCES, resOutBaseNameFile);
 
                     // get the new manifest file CRC
-                    JarFile jarFile = new JarFile(resOutBaseNameFile);
                     String currentIterationCRC = null;
-                    try {
+                    try (JarFile jarFile = new JarFile(resOutBaseNameFile)) {
                         ZipEntry entry = jarFile.getEntry(SdkConstants.ANDROID_MANIFEST_XML);
                         if (entry != null) {
                             currentIterationCRC = String.valueOf(entry.getCrc());
                         }
-                    } finally {
-                        jarFile.close();
                     }
 
                     // check the manifest file binary format.
@@ -262,7 +260,7 @@ public class ProcessAndroidResources extends IncrementalTask {
 
             if (variantData.getSplitHandlingPolicy() ==
                     BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY) {
-                Set<String> allFilters = new HashSet<String>();
+                Set<String> allFilters = new HashSet<>();
                 allFilters.addAll(
                         variantData.getFilters(com.android.build.OutputFile.FilterType.DENSITY));
                 allFilters.addAll(
@@ -288,12 +286,7 @@ public class ProcessAndroidResources extends IncrementalTask {
                             }
                         });
                 ConventionMappingHelper.map(processResources, "packageForR",
-                        new Callable<String>() {
-                            @Override
-                            public String call() throws Exception {
-                                return config.getOriginalApplicationId();
-                            }
-                        });
+                        (Callable<String>) config::getOriginalApplicationId);
 
                 // TODO: unify with generateBuilderConfig, compileAidl, and library packaging somehow?
                 processResources
@@ -406,14 +399,7 @@ public class ProcessAndroidResources extends IncrementalTask {
         @NonNull
         private static List<SymbolFileProviderImpl> getTextSymbolDependencies(
                 List<LibraryDependency> libraries) {
-
-            List<SymbolFileProviderImpl> list = Lists.newArrayListWithCapacity(libraries.size());
-
-            for (LibraryDependency lib : libraries) {
-                list.add(new SymbolFileProviderImpl(lib));
-            }
-
-            return list;
+            return libraries.stream().map(SymbolFileProviderImpl::new).collect(Collectors.toList());
         }
     }
 

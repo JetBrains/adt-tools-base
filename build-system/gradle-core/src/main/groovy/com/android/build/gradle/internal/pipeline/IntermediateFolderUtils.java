@@ -365,12 +365,7 @@ public class IntermediateFolderUtils {
             @NonNull Set<ContentType> requiredTypes,
             @NonNull Set<Scope> requiredScopes,
             @NonNull InputGenerator generator) {
-        File[] files = rootFolder.listFiles(new FileFilter() {
-            @Override
-            public boolean accept(File file) {
-                return file.isDirectory();
-            }
-        });
+        File[] files = rootFolder.listFiles(File::isDirectory);
 
         if (files != null && files.length > 0) {
             for (File file : files) {
@@ -393,12 +388,7 @@ public class IntermediateFolderUtils {
             @NonNull Set<ContentType> types,
             @NonNull Set<Scope> requiredScopes,
             @NonNull InputGenerator generator) {
-        File[] files = rootFolder.listFiles(new FileFilter() {
-            @Override
-            public boolean accept(File file) {
-                return file.isDirectory();
-            }
-        });
+        File[] files = rootFolder.listFiles(File::isDirectory);
 
         if (files != null && files.length > 0) {
             for (File file : files) {
@@ -435,12 +425,7 @@ public class IntermediateFolderUtils {
             @NonNull Set<Scope> scopes,
             @NonNull final InputGenerator generator) {
 
-        File[] files = rootFolder.listFiles(new FileFilter() {
-            @Override
-            public boolean accept(File file) {
-                return generator.accept(file);
-            }
-        });
+        File[] files = rootFolder.listFiles(generator::accept);
 
         if (files != null && files.length > 0) {
             for (File file : files) {

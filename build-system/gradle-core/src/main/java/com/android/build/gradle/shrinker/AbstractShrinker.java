@@ -49,6 +49,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.stream.Collectors;
 
 /**
  * Common code for both types of shrinker runs, {@link FullRunShrinker} and
@@ -134,12 +135,9 @@ public abstract class AbstractShrinker<T> {
      */
     @NonNull
     protected static Collection<File> getAllDirectories(@NonNull TransformInput input) {
-        List<File> files = Lists.newArrayList();
-        for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
-            files.add(directoryInput.getFile());
-        }
-
-        return files;
+        return input.getDirectoryInputs().stream()
+                .map(DirectoryInput::getFile)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -148,12 +146,9 @@ public abstract class AbstractShrinker<T> {
      */
     @NonNull
     protected static Collection<File> getAllJars(@NonNull TransformInput input) {
-        List<File> files = Lists.newArrayList();
-        for (JarInput jarInput : input.getJarInputs()) {
-            files.add(jarInput.getFile());
-        }
-
-        return files;
+        return input.getJarInputs().stream()
+                .map(JarInput::getFile)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -261,12 +256,9 @@ public abstract class AbstractShrinker<T> {
         if (Files.getFileExtension(classFile.getName()).equals("class")) {
             bytes = Files.toByteArray(classFile);
         } else {
-            JarFile jarFile = new JarFile(classFile);
-            try {
+            try (JarFile jarFile = new JarFile(classFile)) {
                 JarEntry jarEntry = jarFile.getJarEntry(className + ".class");
                 bytes = ByteStreams.toByteArray(jarFile.getInputStream(jarEntry));
-            } finally {
-                jarFile.close();
             }
         }
 
@@ -354,9 +346,7 @@ public abstract class AbstractShrinker<T> {
     protected void waitForAllTasks() {
         try {
             mExecutor.waitForTasksWithQuickFail(true);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } catch (LoggedErrorException e) {
+        } catch (InterruptedException | LoggedErrorException e) {
             throw new RuntimeException(e);
         }
     }

@@ -27,6 +27,7 @@ import com.google.common.collect.Maps;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Version of Transform Input to incrementally build the {@link JarInput} and {@link DirectoryInput}

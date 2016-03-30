@@ -393,18 +393,10 @@ public class AidlCompile extends IncrementalTask {
             compileTask.setVariantName(scope.getVariantConfiguration().getFullName());
             compileTask.setIncrementalFolder(scope.getIncrementalDir(getName()));
 
-            ConventionMappingHelper.map(compileTask, "sourceDirs", new Callable<List<File>>() {
-                @Override
-                public List<File> call() throws Exception {
-                    return variantConfiguration.getAidlSourceList();
-                }
-            });
-            ConventionMappingHelper.map(compileTask, "importDirs", new Callable<List<File>>() {
-                @Override
-                public List<File> call() throws Exception {
-                    return variantConfiguration.getAidlImports();
-                }
-            });
+            ConventionMappingHelper.map(compileTask, "sourceDirs",
+                    (Callable<List<File>>) variantConfiguration::getAidlSourceList);
+            ConventionMappingHelper.map(compileTask, "importDirs",
+                    (Callable<List<File>>) variantConfiguration::getAidlImports);
 
             compileTask.setSourceOutputDir(scope.getAidlSourceOutputDir());
 

@@ -165,7 +165,7 @@ public class InstantRunDexTest {
 
         when(instantRunBuildContext.hasPassedVerification()).thenReturn(Boolean.FALSE);
 
-        final List<File> convertedFiles = new ArrayList<File>();
+        final List<File> convertedFiles = new ArrayList<>();
         InstantRunDex instantRunDex = getTestedDex(convertedFiles, InstantRunBuildType.RELOAD);
 
         instantRunDex.transform(new TransformInvocationBuilder(context)
@@ -196,7 +196,7 @@ public class InstantRunDexTest {
             throws TransformException, InterruptedException, IOException {
         when(instantRunBuildContext.hasPassedVerification()).thenReturn(Boolean.TRUE);
 
-        List<File> convertedFiles = new ArrayList<File>();
+        List<File> convertedFiles = new ArrayList<>();
         InstantRunDex instantRunDex = getTestedDex(convertedFiles, InstantRunBuildType.RELOAD);
 
         instantRunDex.transform(new TransformInvocationBuilder(context)

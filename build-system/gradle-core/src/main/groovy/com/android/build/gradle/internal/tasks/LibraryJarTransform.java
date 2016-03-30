@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -155,10 +156,8 @@ public class LibraryJarTransform extends Transform {
         }
 
         // create Pattern Objects.
-        List<Pattern> patterns = Lists.newArrayListWithCapacity(excludes.size());
-        for (String exclude : excludes) {
-            patterns.add(Pattern.compile(exclude));
-        }
+        List<Pattern> patterns =
+                excludes.stream().map(Pattern::compile).collect(Collectors.toList());
 
         // first look for what inputs we have. There shouldn't be that many inputs so it should
         // be quick and it'll allow us to minimize jar merging if we don't have to.
@@ -293,10 +292,9 @@ public class LibraryJarTransform extends Transform {
             @NonNull File from,
             @NonNull File to,
             @Nullable ZipEntryFilter filter) throws IOException {
-        Closer closer = Closer.create();
         byte[] buffer = new byte[4096];
 
-        try {
+        try (Closer closer = Closer.create()) {
             FileOutputStream fos = closer.register(new FileOutputStream(to));
             BufferedOutputStream bos = closer.register(new BufferedOutputStream(fos));
             ZipOutputStream zos = closer.register(new ZipOutputStream(bos));
@@ -338,8 +336,6 @@ public class LibraryJarTransform extends Transform {
             }
         } catch (ZipAbortException e) {
             throw new IOException(e);
-        } finally {
-            closer.close();
         }
     }
 

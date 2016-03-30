@@ -35,6 +35,7 @@ import org.gradle.logging.ConsoleRenderer;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Task doing test report aggregation.
@@ -104,13 +105,7 @@ public class AndroidReportTask extends DefaultTask implements AndroidTestTask {
 
     @InputFiles
     public List<File> getResultInputs() {
-        List<File> list = Lists.newArrayList();
-
-        for (AndroidTestTask task : subTasks) {
-            list.add(task.getResultsDir());
-        }
-
-        return list;
+        return subTasks.stream().map(AndroidTestTask::getResultsDir).collect(Collectors.toList());
     }
 
     /**

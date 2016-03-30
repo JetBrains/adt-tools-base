@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
 
 import com.android.SdkConstants;
@@ -59,6 +60,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Common code for testing shrinker runs.
@@ -200,18 +203,13 @@ public abstract class AbstractShrinkerTest {
     private static Set<String> getMembers(File classFile) throws IOException {
         ClassNode classNode = getClassNode(classFile);
 
-        Set<String> members = Sets.newHashSet();
         //noinspection unchecked - ASM API
-        for (MethodNode methodNode : (List<MethodNode>) classNode.methods) {
-            members.add(methodNode.name + ":" + methodNode.desc);
-        }
-
-        //noinspection unchecked - ASM API
-        for (FieldNode fieldNode : (List<FieldNode>) classNode.fields) {
-            members.add(fieldNode.name + ":" + fieldNode.desc);
-        }
-
-        return members;
+        return Stream.concat(
+                ((List<MethodNode>) classNode.methods).stream()
+                        .map(methodNode -> methodNode.name + ":" + methodNode.desc),
+                ((List<FieldNode>) classNode.fields).stream()
+                        .map(fieldNode -> fieldNode.name + ":" + fieldNode.desc))
+                .collect(Collectors.toSet());
     }
 
     @NonNull

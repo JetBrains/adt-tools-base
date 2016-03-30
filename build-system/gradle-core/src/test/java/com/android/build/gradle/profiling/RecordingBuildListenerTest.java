@@ -71,7 +71,7 @@ public class RecordingBuildListenerTest {
     private static final class TestRecorder implements Recorder {
 
         final AtomicLong recordId = new AtomicLong(0);
-        final List<ExecutionRecord> records = new CopyOnWriteArrayList<ExecutionRecord>();
+        final List<ExecutionRecord> records = new CopyOnWriteArrayList<>();
 
         @Override
         public <T> T record(@NonNull ExecutionType executionType, @NonNull Recorder.Block<T> block,
@@ -98,7 +98,7 @@ public class RecordingBuildListenerTest {
 
     private static final class TestExecutionRecordWriter implements ProcessRecorder.ExecutionRecordWriter {
 
-        final List<ExecutionRecord> records = new CopyOnWriteArrayList<ExecutionRecord>();
+        final List<ExecutionRecord> records = new CopyOnWriteArrayList<>();
 
         @Override
         public void write(@NonNull ExecutionRecord executionRecord) throws IOException {

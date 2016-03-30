@@ -34,14 +34,14 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class HtmlReportRenderer {
-    private final Set<URL> resources = new HashSet<URL>();
+    private final Set<URL> resources = new HashSet<>();
 
     public void requireResource(URL resource) {
         resources.add(resource);
     }
 
     public <T> TextReportRenderer<T> renderer(final ReportRenderer<T, SimpleHtmlWriter> renderer) {
-        return renderer(new TextReportRendererImpl<T>(renderer));
+        return renderer(new TextReportRendererImpl<>(renderer));
     }
 
     public <T> TextReportRenderer<T> renderer(final TextReportRendererImpl<T> renderer) {

@@ -110,6 +110,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -756,7 +757,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
             final BuildType buildType,
             final List<ProductFlavor> productFlavors) {
         final ProductFlavorCombo<ProductFlavor> flavorGroup =
-                new ProductFlavorCombo<ProductFlavor>(productFlavors);
+                new ProductFlavorCombo<>(productFlavors);
         return ImmutableList.copyOf(Iterables.filter(
                 library.getBinaries().withType(NativeLibraryBinarySpec.class).values(),
                 new Predicate<NativeLibraryBinarySpec>() {
@@ -786,13 +787,10 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 new ModelPath("binaries"),
                 ModelTypes.modelMap(ModelType.of(BinarySpec.class)));
 
-        List<AndroidBinary> matches = Lists.newArrayList();
-        for (BinarySpec binary : binaries.values()) {
-            if (binary instanceof AndroidBinary
-                    && binary.getName().equals(variantConfig.getFullName())) {
-                matches.add((AndroidBinary)binary);
-            }
-        }
-        return matches;
+        return binaries.values().stream()
+                .filter(binary -> binary instanceof AndroidBinary &&
+                        binary.getName().equals(variantConfig.getFullName()))
+                .map(binary -> (AndroidBinary) binary)
+                .collect(Collectors.toList());
     }
 }

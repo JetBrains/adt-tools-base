@@ -20,6 +20,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -42,7 +43,7 @@ class CommandClassifier {
     static List<BuildStepInfo> classify(String commands, boolean isWin32) {
         List<CommandLine> commandLines = CommandLineParser.parse(commands, isWin32);
 
-        List<BuildStepInfo> commandSummaries = new ArrayList<BuildStepInfo>();
+        List<BuildStepInfo> commandSummaries = new ArrayList<>();
 
         for (CommandLine expr : commandLines) {
             for (BuildTool classifier : classifiers) {
@@ -105,8 +106,8 @@ class CommandClassifier {
                 return null;
             }
 
-            List<String> inputs = new ArrayList<String>();
-            List<String> outputs = new ArrayList<String>();
+            List<String> inputs = new ArrayList<>();
+            List<String> outputs = new ArrayList<>();
 
             String output = options.get(1);
             checkValidOutput(output);
@@ -191,16 +192,13 @@ class CommandClassifier {
             arr = command.args.toArray(arr);
             OptionSet options = PARSER.parse(arr);
 
-            List<String> inputs = new ArrayList<String>();
-            List<String> outputs = new ArrayList<String>();
+            List<String> outputs = new ArrayList<>();
 
             List<String> nonOptions = (List<String>) options.nonOptionArguments();
-            for (String nonOption : nonOptions) {
-                // Inputs are whatever is left over that doesn't look like a flag.
-                if (!nonOption.startsWith("-")) {
-                    inputs.add(nonOption);
-                }
-            }
+            // Inputs are whatever is left over that doesn't look like a flag.
+            List<String> inputs = nonOptions.stream()
+                    .filter(nonOption -> !nonOption.startsWith("-"))
+                    .collect(Collectors.toList());
 
             // Check -o
             if (options.has("o") && options.hasArgument("o")) {

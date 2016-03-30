@@ -95,7 +95,7 @@ public class ProcessRecorderTest {
 
     @Test
     public void testRecordsOrder() throws InterruptedException {
-        final List<ExecutionRecord> records = new ArrayList<ExecutionRecord>();
+        final List<ExecutionRecord> records = new ArrayList<>();
         ProcessRecorder.ExecutionRecordWriter recorderWriter =
                 new ProcessRecorder.ExecutionRecordWriter() {
 
@@ -135,7 +135,7 @@ public class ProcessRecorderTest {
 
     @Test
     public void testMultipleSpans() throws InterruptedException {
-        final List<ExecutionRecord> records = new ArrayList<ExecutionRecord>();
+        final List<ExecutionRecord> records = new ArrayList<>();
         ProcessRecorder.ExecutionRecordWriter recorderWriter =
                 new ProcessRecorder.ExecutionRecordWriter() {
 

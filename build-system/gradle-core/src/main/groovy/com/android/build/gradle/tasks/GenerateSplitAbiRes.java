@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 /**
  * Generates all metadata (like AndroidManifest.xml) necessary for a ABI dimension split APK.
@@ -71,12 +72,8 @@ public class GenerateSplitAbiRes extends BaseTask {
     @SuppressWarnings("unused") // Synthetic task output
     @OutputFiles
     public List<File> getOutputFiles() {
-        List<File> outputFiles = new ArrayList<File>();
-        for (String split : getSplits()) {
-            outputFiles.add(getOutputFileForSplit(split));
-        }
-
-        return outputFiles;
+        return getSplits().stream()
+                .map(this::getOutputFileForSplit).collect(Collectors.toList());
     }
 
     @TaskAction
@@ -95,8 +92,8 @@ public class GenerateSplitAbiRes extends BaseTask {
                 versionNameToUse = String.valueOf(getVersionCode());
             }
 
-            OutputStreamWriter fileWriter = new OutputStreamWriter(new FileOutputStream(tmpFile), "UTF-8");
-            try {
+            try (OutputStreamWriter fileWriter =
+                         new OutputStreamWriter(new FileOutputStream(tmpFile), "UTF-8")) {
                 // Split name can only contains 0-9, a-z, A-Z, '.' and '_'.  Replace all other
                 // characters with underscore.
                 String splitName = CharMatcher.inRange('0', '9')
@@ -114,8 +111,6 @@ public class GenerateSplitAbiRes extends BaseTask {
                         + "      split=\"lib_" + splitName + "\">\n"
                         + "       <uses-sdk android:minSdkVersion=\"21\"/>\n" + "</manifest> ");
                 fileWriter.flush();
-            } finally {
-                fileWriter.close();
             }
 
             AaptPackageProcessBuilder aaptPackageCommandBuilder =

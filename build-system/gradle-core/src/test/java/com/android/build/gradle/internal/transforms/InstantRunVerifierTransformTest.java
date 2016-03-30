@@ -63,8 +63,8 @@ import java.util.Set;
 @RunWith(MockitoJUnitRunner.class)
 public class InstantRunVerifierTransformTest {
 
-    final Map<File, File> recordedVerification = new HashMap<File, File>();
-    final Map<File, File> recordedCopies = new HashMap<File, File>();
+    final Map<File, File> recordedVerification = new HashMap<>();
+    final Map<File, File> recordedCopies = new HashMap<>();
     private File backupDir;
 
     @Mock

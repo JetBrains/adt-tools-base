@@ -55,7 +55,7 @@ public class RecordingBuildListener implements TaskExecutionListener {
     }
 
     // map of outstanding tasks executing, keyed by their name.
-    final Map<String, TaskRecord> taskRecords = new ConcurrentHashMap<String, TaskRecord>();
+    final Map<String, TaskRecord> taskRecords = new ConcurrentHashMap<>();
 
     @Override
     public void beforeExecute(Task task) {
@@ -80,7 +80,7 @@ public class RecordingBuildListener implements TaskExecutionListener {
             executionType = ExecutionType.GENERIC_TASK_EXECUTION;
         }
 
-        List<Recorder.Property> properties = new ArrayList<Recorder.Property>();
+        List<Recorder.Property> properties = new ArrayList<>();
         properties.add(new Recorder.Property("project", task.getProject().getName()));
         properties.add(new Recorder.Property("task", task.getName()));
 

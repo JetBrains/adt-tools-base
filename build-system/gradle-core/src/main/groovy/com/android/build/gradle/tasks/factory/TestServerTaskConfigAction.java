@@ -81,22 +81,13 @@ public class TestServerTaskConfigAction implements TaskConfigAction<TestServerTa
 
         serverTask.setTestServer(testServer);
 
-        ConventionMappingHelper.map(serverTask, "testApk", new Callable<File>() {
-            @Override
-            public File call() throws Exception {
-                return testVariantOutputData.getOutputFile();
-            }
-        });
+        ConventionMappingHelper.map(serverTask, "testApk",
+                (Callable<File>) testVariantOutputData::getOutputFile);
         if (!(baseVariantData instanceof LibraryVariantData)) {
             ConventionMappingHelper.map(
                     serverTask,
                     "testedApk",
-                    new Callable<File>() {
-                        @Override
-                        public File call() throws Exception {
-                            return variantOutputData.getOutputFile();
-                        }
-                    });
+                    (Callable<File>) variantOutputData::getOutputFile);
         }
 
         if (!testServer.isConfigured()) {

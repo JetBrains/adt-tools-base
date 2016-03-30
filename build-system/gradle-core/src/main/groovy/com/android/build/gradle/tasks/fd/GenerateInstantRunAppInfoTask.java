@@ -146,11 +146,7 @@ public class GenerateInstantRunAppInfoTask extends BaseTask {
                         writeAppInfoClass(applicationId, applicationClass, token);
                     }
                 }
-            } catch (ParserConfigurationException e) {
-                throw new BuildException("Failed to inject bootstrapping application", e);
-            } catch (IOException e) {
-                throw new BuildException("Failed to inject bootstrapping application", e);
-            } catch (SAXException e) {
+            } catch (ParserConfigurationException | IOException | SAXException e) {
                 throw new BuildException("Failed to inject bootstrapping application", e);
             }
         }
@@ -218,14 +214,11 @@ public class GenerateInstantRunAppInfoTask extends BaseTask {
 
         byte[] bytes = cw.toByteArray();
 
-        JarOutputStream outputStream = new JarOutputStream(new BufferedOutputStream(
-                new FileOutputStream(getOutputFile())));
-        try {
+        try (JarOutputStream outputStream = new JarOutputStream(
+                new BufferedOutputStream(new FileOutputStream(getOutputFile())))) {
             outputStream.putNextEntry(new ZipEntry("com/android/tools/fd/runtime/AppInfo.class"));
             outputStream.write(bytes);
             outputStream.closeEntry();
-        } finally {
-            outputStream.close();
         }
     }
 

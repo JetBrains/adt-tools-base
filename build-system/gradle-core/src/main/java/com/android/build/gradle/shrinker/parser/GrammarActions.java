@@ -202,34 +202,48 @@ public class GrammarActions {
         }
 
         // ... matches any number of arguments of any type
-        if (name.equals("...")) {
-            sig.append(".*");
-        } else if (name.equals("***")) {
-            // *** matches any type (primitive or non-primitive, array or non-array)
-            sig.append(".*");
-        } else if (name.equals("%")) {
-            // % matches any primitive type ("boolean", "int", etc, but not "void")
-            sig.append("(Z|B|C|S|I|F|D|L)");
-        } else if (name.equals("boolean")) {
-            sig.append("Z");
-        } else if (name.equals("byte")) {
-            sig.append("B");
-        } else if (name.equals("char")) {
-            sig.append("C");
-        } else if (name.equals("short")) {
-            sig.append("S");
-        } else if (name.equals("int")) {
-            sig.append("I");
-        } else if (name.equals("float")) {
-            sig.append("F");
-        } else if (name.equals("double")) {
-            sig.append("D");
-        } else if (name.equals("long")) {
-            sig.append("J");
-        } else if (name.equals("void")) {
-            sig.append("V");
-        } else {
-            sig.append("L").append(convertNameToPattern(name)).append(";");
+        switch (name) {
+            case "...":
+                sig.append(".*");
+                break;
+            case "***":
+                // *** matches any type (primitive or non-primitive, array or non-array)
+                sig.append(".*");
+                break;
+            case "%":
+                // % matches any primitive type ("boolean", "int", etc, but not "void")
+                sig.append("(Z|B|C|S|I|F|D|L)");
+                break;
+            case "boolean":
+                sig.append("Z");
+                break;
+            case "byte":
+                sig.append("B");
+                break;
+            case "char":
+                sig.append("C");
+                break;
+            case "short":
+                sig.append("S");
+                break;
+            case "int":
+                sig.append("I");
+                break;
+            case "float":
+                sig.append("F");
+                break;
+            case "double":
+                sig.append("D");
+                break;
+            case "long":
+                sig.append("J");
+                break;
+            case "void":
+                sig.append("V");
+                break;
+            default:
+                sig.append("L").append(convertNameToPattern(name)).append(";");
+                break;
         }
 
         return sig.toString();

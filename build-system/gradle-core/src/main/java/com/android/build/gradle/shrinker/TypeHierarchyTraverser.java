@@ -49,17 +49,17 @@ public class TypeHierarchyTraverser<T> extends TreeTraverser<T> {
 
     public static <T> TypeHierarchyTraverser<T> superclassesAndInterfaces(ShrinkerGraph<T> graph,
             ShrinkerLogger shrinkerLogger) {
-        return new TypeHierarchyTraverser<T>(graph, shrinkerLogger, true, true);
+        return new TypeHierarchyTraverser<>(graph, shrinkerLogger, true, true);
     }
 
     public static <T> TypeHierarchyTraverser<T> superclasses(ShrinkerGraph<T> graph,
             ShrinkerLogger shrinkerLogger) {
-        return new TypeHierarchyTraverser<T>(graph, shrinkerLogger, true, false);
+        return new TypeHierarchyTraverser<>(graph, shrinkerLogger, true, false);
     }
 
     public static <T> TypeHierarchyTraverser<T> interfaces(ShrinkerGraph<T> graph,
             ShrinkerLogger shrinkerLogger) {
-        return new TypeHierarchyTraverser<T>(graph, shrinkerLogger, false, true);
+        return new TypeHierarchyTraverser<>(graph, shrinkerLogger, false, true);
     }
 
     @Override

@@ -30,7 +30,7 @@ class TestResult extends TestResultModel implements Comparable<TestResult> {
     private final String project;
     private final String flavor;
     final ClassTestResults classResults;
-    final List<TestFailure> failures = new ArrayList<TestFailure>();
+    final List<TestFailure> failures = new ArrayList<>();
     final String name;
     private boolean ignored;
 

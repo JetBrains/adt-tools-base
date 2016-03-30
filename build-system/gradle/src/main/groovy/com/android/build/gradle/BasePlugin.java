@@ -226,13 +226,13 @@ public abstract class BasePlugin {
             String overrideValue = new BigInteger(1, crypt.digest()).toString(16);
             if (dailyOverride == null) {
                 String message = "Plugin is too old, please update to a more recent version, or " +
-                    "set ANDROID_DAILY_OVERRIDE environment variable to \"" + overrideValue + '"';
+                        "set ANDROID_DAILY_OVERRIDE environment variable to \"" + overrideValue + '"';
                 System.err.println(message);
                 throw new RuntimeException(message);
             } else {
                 if (!dailyOverride.equals(overrideValue)) {
                     String message = "Plugin is too old and ANDROID_DAILY_OVERRIDE value is " +
-                    "also outdated, please use new value :\"" + overrideValue + '"';
+                            "also outdated, please use new value :\"" + overrideValue + '"';
                     System.err.println(message);
                     throw new RuntimeException(message);
                 }
@@ -518,9 +518,9 @@ public abstract class BasePlugin {
         buildTypeContainer.whenObjectAdded(new Action<BuildType>() {
             @Override
             public void execute(BuildType buildType) {
-            SigningConfig signingConfig = signingConfigContainer.findByName(BuilderConstants.DEBUG);
-            buildType.init(signingConfig);
-            variantManager.addBuildType(buildType);
+                SigningConfig signingConfig = signingConfigContainer.findByName(BuilderConstants.DEBUG);
+                buildType.init(signingConfig);
+                variantManager.addBuildType(buildType);
             }
         });
 
@@ -592,11 +592,11 @@ public abstract class BasePlugin {
             File file = new File("gradle" + separator + "wrapper" + separator +
                     "gradle-wrapper.properties");
             String errorMessage = String.format(
-                "Gradle version %s is required. Current version is %s. " +
-                "If using the gradle wrapper, try editing the distributionUrl in %s " +
-                "to gradle-%s-all.zip",
-                GRADLE_MIN_VERSION, project.getGradle().getGradleVersion(), file.getAbsolutePath(),
-                GRADLE_MIN_VERSION);
+                    "Gradle version %s is required. Current version is %s. " +
+                            "If using the gradle wrapper, try editing the distributionUrl in %s " +
+                            "to gradle-%s-all.zip",
+                    GRADLE_MIN_VERSION, project.getGradle().getGradleVersion(), file.getAbsolutePath(),
+                    GRADLE_MIN_VERSION);
             if (allowNonMatching) {
                 getLogger().warning(errorMessage);
                 getLogger().warning("As %s is set, continuing anyways.",
@@ -706,10 +706,10 @@ public abstract class BasePlugin {
             if (subProjectsById.containsKey(id)) {
                 String message = String.format(
                         "Your project contains 2 or more modules with the same " +
-                        "identification %1$s\n" +
-                        "at \"%2$s\" and \"%3$s\".\n" +
-                        "You must use different identification (either name or group) for " +
-                        "each modules.",
+                                "identification %1$s\n" +
+                                "at \"%2$s\" and \"%3$s\".\n" +
+                                "You must use different identification (either name or group) for " +
+                                "each modules.",
                         id,
                         subProjectsById.get(id).getPath(),
                         subProject.getPath() );

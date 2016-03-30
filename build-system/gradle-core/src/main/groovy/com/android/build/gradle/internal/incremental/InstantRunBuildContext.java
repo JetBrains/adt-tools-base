@@ -128,7 +128,7 @@ public class InstantRunBuildContext {
     public static class Build {
         private final long buildId;
         private Optional<InstantRunVerifierStatus> verifierStatus;
-        private final List<Artifact> artifacts = new ArrayList<Artifact>();
+        private final List<Artifact> artifacts = new ArrayList<>();
 
         public Build(long buildId, @NonNull Optional<InstantRunVerifierStatus> verifierStatus) {
             this.buildId = buildId;
@@ -269,7 +269,7 @@ public class InstantRunBuildContext {
     private String abi = null;
     private final Build currentBuild = new Build(
             System.nanoTime(), Optional.<InstantRunVerifierStatus>absent());
-    private final TreeMap<Long, Build> previousBuilds = new TreeMap<Long, Build>();
+    private final TreeMap<Long, Build> previousBuilds = new TreeMap<>();
     private File tmpBuildInfo = null;
     private boolean isInstantRunMode = false;
     private volatile boolean isAborted = false;
@@ -460,12 +460,12 @@ public class InstantRunBuildContext {
      */
     private void purge() {
         boolean foundColdRestart = false;
-        Set<String> splitFilesAlreadyFound = new HashSet<String>();
+        Set<String> splitFilesAlreadyFound = new HashSet<>();
         // the oldest build is by definition the full build.
         Long initialFullBuild = previousBuilds.firstKey();
         // iterate from the most recent to the oldest build, which reflect the most up to date
         // natural order of builds.
-        for (Long aBuildId : new ArrayList<Long>(previousBuilds.descendingKeySet())) {
+        for (Long aBuildId : new ArrayList<>(previousBuilds.descendingKeySet())) {
             Build previousBuild = previousBuilds.get(aBuildId);
             // initial builds are never purged in any way.
             if (previousBuild.buildId == initialFullBuild) {
@@ -497,7 +497,7 @@ public class InstantRunBuildContext {
 
             // remove all DEX, SPLIT and Resources files from older built artifacts if we have
             // already seen a newer version, we only need to most recent one.
-            for (Artifact artifact : new ArrayList<Artifact>(previousBuild.artifacts)) {
+            for (Artifact artifact : new ArrayList<>(previousBuild.artifacts)) {
                 if (artifact.isAccumulative()) {
                     // we don't remove artifacts from the first build.
                     if (splitFilesAlreadyFound.contains(artifact.getLocation().getAbsolutePath())) {
@@ -511,7 +511,7 @@ public class InstantRunBuildContext {
 
         // bunch of builds can be empty, either because we did nothing or all its artifact got
         // rebuilt in a more recent iteration, in such a case, remove it.
-        for (Long aBuildId : new ArrayList<Long>(previousBuilds.descendingKeySet())) {
+        for (Long aBuildId : new ArrayList<>(previousBuilds.descendingKeySet())) {
             Build aBuild = previousBuilds.get(aBuildId);
             // if the build artifacts are empty and it's not the current build.
             if (aBuild.artifacts.isEmpty() && aBuild.buildId != currentBuild.buildId) {

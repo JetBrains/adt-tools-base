@@ -247,42 +247,26 @@ public class RenderscriptCompile extends NdkTask {
             renderscriptTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             renderscriptTask.setVariantName(config.getFullName());
 
-            ConventionMappingHelper.map(renderscriptTask, "targetApi", new Callable<Integer>() {
-                @Override
-                public Integer call() throws Exception {
-                    return config.getRenderscriptTarget();
-                }
-            });
+            ConventionMappingHelper.map(renderscriptTask, "targetApi",
+                    (Callable<Integer>) config::getRenderscriptTarget);
 
             renderscriptTask.supportMode = config.getRenderscriptSupportModeEnabled();
             renderscriptTask.ndkMode = ndkMode;
             renderscriptTask.debugBuild = config.getBuildType().isRenderscriptDebuggable();
             renderscriptTask.optimLevel = config.getBuildType().getRenderscriptOptimLevel();
 
-            ConventionMappingHelper.map(renderscriptTask, "sourceDirs", new Callable<List<File>>() {
-                @Override
-                public List<File> call() throws Exception {
-                    return config.getRenderscriptSourceList();
-                }
-            });
-            ConventionMappingHelper.map(renderscriptTask, "importDirs", new Callable<List<File>>() {
-                @Override
-                public List<File> call() throws Exception {
-                    return config.getRenderscriptImports();
-                }
-            });
+            ConventionMappingHelper.map(renderscriptTask, "sourceDirs",
+                    (Callable<List<File>>) config::getRenderscriptSourceList);
+            ConventionMappingHelper.map(renderscriptTask, "importDirs",
+                    (Callable<List<File>>) config::getRenderscriptImports);
 
             renderscriptTask.setSourceOutputDir(scope.getRenderscriptSourceOutputDir());
             renderscriptTask.setResOutputDir(scope.getRenderscriptResOutputDir());
             renderscriptTask.setObjOutputDir(scope.getRenderscriptObjOutputDir());
             renderscriptTask.setLibOutputDir(scope.getRenderscriptLibOutputDir());
 
-            ConventionMappingHelper.map(renderscriptTask, "ndkConfig", new Callable<CoreNdkOptions>() {
-                @Override
-                public CoreNdkOptions call() throws Exception {
-                    return config.getNdkConfig();
-                }
-            });
+            ConventionMappingHelper.map(renderscriptTask, "ndkConfig",
+                    (Callable<CoreNdkOptions>) config::getNdkConfig);
         }
     }
 }

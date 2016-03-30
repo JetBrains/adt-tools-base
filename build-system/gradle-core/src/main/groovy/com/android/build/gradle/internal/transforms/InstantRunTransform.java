@@ -332,7 +332,7 @@ public class InstantRunTransform extends Transform {
             @NonNull Collection<TransformInput> inputs,
             @NonNull Collection<TransformInput> referencedInputs) throws MalformedURLException {
 
-        List<URL> referencedInputUrls = new ArrayList<URL>();
+        List<URL> referencedInputUrls = new ArrayList<>();
 
         // add the bootstrap classpath for jars like android.jar
         for (File file : variantScope.getGlobalScope().getAndroidBuilder().getBootClasspath(

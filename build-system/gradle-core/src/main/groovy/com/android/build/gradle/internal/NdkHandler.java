@@ -104,13 +104,8 @@ public class NdkHandler {
                 targetVersion = Integer.MAX_VALUE;
             }
 
-            File[] platformFolders = new File(ndkDirectory, "/platforms/").listFiles(
-                    new FileFilter() {
-                        @Override
-                        public boolean accept(File file) {
-                            return file.isDirectory();
-                        }
-                    });
+            File[] platformFolders =
+                    new File(ndkDirectory, "/platforms/").listFiles(File::isDirectory);
             int highestVersion = 0;
             for(File platform :platformFolders) {
                 if (platform.getName().startsWith("android-")) {
@@ -249,13 +244,7 @@ public class NdkHandler {
 
         // There should only be one directory in the prebuilt folder.  If there are more than one
         // attempt to determine the right one based on the operating system.
-        File[] toolchainPaths = prebuiltFolder.listFiles(
-                new FileFilter() {
-                    @Override
-                    public boolean accept(File file) {
-                        return file.isDirectory();
-                    }
-                });
+        File[] toolchainPaths = prebuiltFolder.listFiles(File::isDirectory);
 
         if (toolchainPaths == null) {
             throw new InvalidUserDataException("Unable to find toolchain: " + prebuiltFolder);

@@ -134,12 +134,7 @@ public class GenerateResValues extends BaseTask {
             generateResValuesTask.setVariantName(variantConfiguration.getFullName());
 
             ConventionMappingHelper.map(generateResValuesTask, "items",
-                    new Callable<List<Object>>() {
-                        @Override
-                        public List<Object> call() throws Exception {
-                            return variantConfiguration.getResValues();
-                        }
-                    });
+                    (Callable<List<Object>>) variantConfiguration::getResValues);
 
             generateResValuesTask.setResOutputDir(scope.getGeneratedResOutputDir());
         }

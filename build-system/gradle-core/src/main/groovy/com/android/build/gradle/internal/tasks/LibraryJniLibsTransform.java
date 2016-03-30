@@ -158,8 +158,7 @@ public class LibraryJniLibsTransform extends Transform {
 
     private void copyFromJar(@NonNull File jarFile) throws IOException {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        ZipFile zipFile = new ZipFile(jarFile);
-        try {
+        try (ZipFile zipFile = new ZipFile(jarFile)) {
             Enumeration<? extends ZipEntry> entries = zipFile.entries();
             while (entries.hasMoreElements()) {
                 ZipEntry entry = entries.nextElement();
@@ -177,8 +176,6 @@ public class LibraryJniLibsTransform extends Transform {
                 // get the output file and write to it.
                 Files.write(buffer.toByteArray(), computeFile(jniLibsFolder, entryPath));
             }
-        } finally {
-            zipFile.close();
         }
     }
 

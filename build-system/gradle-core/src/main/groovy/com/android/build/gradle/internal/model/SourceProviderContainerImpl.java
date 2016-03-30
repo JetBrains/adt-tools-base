@@ -24,6 +24,7 @@ import com.google.common.collect.Lists;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of SourceProviderContainer that is serializable and is meant to be used
@@ -64,14 +65,11 @@ class SourceProviderContainerImpl implements SourceProviderContainer, Serializab
     }
 
     @NonNull
-    static List<SourceProviderContainer> cloneCollection(@NonNull Collection<SourceProviderContainer> containers) {
-        List<SourceProviderContainer> clones = Lists.newArrayListWithCapacity(containers.size());
-
-        for (SourceProviderContainer container : containers) {
-            clones.add(clone(container));
-        }
-
-        return clones;
+    static List<SourceProviderContainer> cloneCollection(
+            @NonNull Collection<SourceProviderContainer> containers) {
+        return containers.stream()
+                .map(SourceProviderContainerImpl::clone)
+                .collect(Collectors.toList());
     }
 
     @NonNull

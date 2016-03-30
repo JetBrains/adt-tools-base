@@ -45,8 +45,8 @@ public class AndroidTask<T extends Task> {
     public AndroidTask(@NonNull String name, @NonNull Class<T> taskType) {
         this.name = name;
         this.taskType = taskType;
-        upstreamTasks = new ArrayList<AndroidTask<? extends Task>>();
-        downstreamTasks = new ArrayList<AndroidTask<? extends Task>>();
+        upstreamTasks = new ArrayList<>();
+        downstreamTasks = new ArrayList<>();
     }
 
     /**

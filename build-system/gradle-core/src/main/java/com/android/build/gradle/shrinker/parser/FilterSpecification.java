@@ -42,7 +42,7 @@ public class FilterSpecification implements Matcher<String> {
     }
 
     @NonNull
-    private final List<FilterElement> elements = new ArrayList<FilterElement>();
+    private final List<FilterElement> elements = new ArrayList<>();
 
     public void addElement(@NonNull NameSpecification name, boolean negator) {
         elements.add(new FilterElement(name, negator));
