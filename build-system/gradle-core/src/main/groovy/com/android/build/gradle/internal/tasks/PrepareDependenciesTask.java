@@ -15,7 +15,11 @@
  */
 package com.android.build.gradle.internal.tasks;
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.dependency.DependencyChecker;
+import com.android.build.gradle.internal.dependency.VariantDependencies;
+import com.android.build.gradle.internal.scope.TaskConfigAction;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.SyncIssue;
@@ -93,5 +97,45 @@ public class PrepareDependenciesTask extends BaseTask {
 
     public void setVariant(BaseVariantData variant) {
         this.variant = variant;
+    }
+
+
+    public static final class ConfigAction implements TaskConfigAction<PrepareDependenciesTask> {
+
+        private final VariantScope scope;
+
+        private final VariantDependencies configurationDependencies;
+
+        public ConfigAction(
+                @NonNull VariantScope scope,
+                @NonNull VariantDependencies configurationDependencies) {
+            this.scope = scope;
+            this.configurationDependencies = configurationDependencies;
+        }
+
+        @NonNull
+        @Override
+        public String getName() {
+            return scope.getTaskName("prepare", "Dependencies");
+        }
+
+        @NonNull
+        @Override
+        public Class<PrepareDependenciesTask> getType() {
+            return PrepareDependenciesTask.class;
+        }
+
+        @Override
+        public void execute(@NonNull PrepareDependenciesTask prepareDependenciesTask) {
+            scope.getVariantData().prepareDependenciesTask = prepareDependenciesTask;
+            prepareDependenciesTask.dependsOn(scope.getPreBuildTask().getName());
+
+            prepareDependenciesTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+            prepareDependenciesTask.setVariantName(scope.getVariantConfiguration().getFullName());
+            prepareDependenciesTask.setVariant(scope.getVariantData());
+
+
+            prepareDependenciesTask.addChecker(configurationDependencies.getChecker());
+        }
     }
 }

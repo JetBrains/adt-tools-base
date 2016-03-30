@@ -16,9 +16,12 @@
 
 package com.android.build.gradle.internal.tasks;
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.api.AndroidSourceDirectorySet;
 import com.android.build.gradle.api.AndroidSourceSet;
+import com.android.build.gradle.internal.TaskManager;
+import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.builder.core.VariantType;
 
 import org.gradle.api.Project;
@@ -104,5 +107,35 @@ public class SourceSetsTask extends AbstractReportTask {
                 .text(o1);
 
         mRenderer.getTextOutput().println();
+    }
+
+
+    public static class ConfigAction implements TaskConfigAction<SourceSetsTask> {
+
+        private final AndroidConfig extension;
+
+        public ConfigAction(@NonNull AndroidConfig extension) {
+            this.extension = extension;
+        }
+
+        @NonNull
+        @Override
+        public String getName() {
+            return "sourceSets";
+        }
+
+        @NonNull
+        @Override
+        public Class<SourceSetsTask> getType() {
+            return SourceSetsTask.class;
+        }
+
+        @Override
+        public void execute(@NonNull SourceSetsTask sourceSetsTask) {
+            sourceSetsTask.setConfig(extension);
+            sourceSetsTask.setDescription(
+                    "Prints out all the source sets defined in this project.");
+            sourceSetsTask.setGroup(TaskManager.ANDROID_GROUP);
+        }
     }
 }

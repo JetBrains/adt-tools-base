@@ -17,12 +17,16 @@
 package com.android.build.gradle.internal.tasks;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.scope.TaskConfigAction;
+import com.android.build.gradle.internal.scope.VariantScope;
 
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
+import java.util.concurrent.Callable;
 
 /**
  * Class that checks the presence of the manifest.
@@ -31,8 +35,6 @@ import java.io.File;
 public class CheckManifest extends DefaultAndroidTask {
 
     private File manifest;
-
-    private String variantName;
 
     @InputFile
     public File getManifest() {
@@ -43,22 +45,46 @@ public class CheckManifest extends DefaultAndroidTask {
         this.manifest = manifest;
     }
 
-    public String getVariantName() {
-        return variantName;
-    }
-
-    public void setVariantName(@NonNull String variantName) {
-        this.variantName = variantName;
-    }
-
     @TaskAction
     void check() {
         // use getter to resolve convention mapping
         File f = getManifest();
         if (!f.isFile()) {
             throw new IllegalArgumentException(String.format(
-                    "Main Manifest missing for variant %s. Expected path: ",
+                    "Main Manifest missing for variant %1$s. Expected path: %2$s",
                     getVariantName(), getManifest().getAbsolutePath()));
+        }
+    }
+
+
+    public static class ConfigAction implements TaskConfigAction<CheckManifest> {
+
+        private final VariantScope scope;
+
+        public ConfigAction(@NonNull VariantScope scope) {
+            this.scope = scope;
+        }
+
+        @NonNull
+        @Override
+        public String getName() {
+            return scope.getTaskName("check", "Manifest");
+        }
+
+        @NonNull
+        @Override
+        public Class<CheckManifest> getType() {
+            return CheckManifest.class;
+        }
+
+        @Override
+        public void execute(@NonNull CheckManifest checkManifestTask) {
+            scope.getVariantData().checkManifestTask = checkManifestTask;
+            checkManifestTask.setVariantName(
+                    scope.getVariantData().getVariantConfiguration().getFullName());
+            ConventionMappingHelper.map(checkManifestTask, "manifest", (Callable<File>) () ->
+                    scope.getVariantData().getVariantConfiguration().getDefaultSourceSet()
+                                    .getManifestFile());
         }
     }
 }

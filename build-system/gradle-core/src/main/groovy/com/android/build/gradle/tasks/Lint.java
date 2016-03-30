@@ -16,10 +16,14 @@
 
 package com.android.build.gradle.tasks;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.LintGradleClient;
+import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.dsl.LintOptions;
+import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
@@ -329,6 +333,75 @@ public class Lint extends BaseTask {
             lint.setDescription("Runs lint on the " + StringHelper
                             .capitalize(scope.getVariantConfiguration().getFullName()) + " build.");
             lint.setGroup(JavaBasePlugin.VERIFICATION_GROUP);
+        }
+    }
+
+    public static class VitalConfigAction implements TaskConfigAction<Lint> {
+
+        private final VariantScope scope;
+
+        public VitalConfigAction(@NonNull VariantScope scope) {
+            this.scope = scope;
+        }
+
+        @NonNull
+        @Override
+        public String getName() {
+            return scope.getTaskName("lintVital");
+        }
+
+        @NonNull
+        @Override
+        public Class<Lint> getType() {
+            return Lint.class;
+        }
+
+        @Override
+        public void execute(@NonNull Lint task) {
+            String variantName = scope.getVariantData().getVariantConfiguration().getFullName();
+            task.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+            // TODO: Make this task depend on lintCompile too (resolve initialization order first)
+            task.setLintOptions(scope.getGlobalScope().getExtension().getLintOptions());
+            task.setSdkHome(checkNotNull(
+                    scope.getGlobalScope().getSdkHandler().getSdkFolder(), "SDK not set up."));
+            task.setVariantName(variantName);
+            task.setToolingRegistry(scope.getGlobalScope().getToolingRegistry());
+            task.setFatalOnly(true);
+            task.setDescription(
+                    "Runs lint on just the fatal issues in the " + variantName + " build.");
+
+        }
+    }
+
+    public static class GlobalConfigAction implements TaskConfigAction<Lint> {
+
+        private final GlobalScope globalScope;
+
+        public GlobalConfigAction(GlobalScope globalScope) {
+            this.globalScope = globalScope;
+        }
+
+        @NonNull
+        @Override
+        public String getName() {
+            return TaskManager.LINT;
+        }
+
+        @NonNull
+        @Override
+        public Class<Lint> getType() {
+            return Lint.class;
+        }
+
+        @Override
+        public void execute(@NonNull Lint lintTask) {
+            lintTask.setDescription("Runs lint on all variants.");
+            lintTask.setVariantName("");
+            lintTask.setGroup(JavaBasePlugin.VERIFICATION_GROUP);
+            lintTask.setLintOptions(globalScope.getExtension().getLintOptions());
+            lintTask.setSdkHome(globalScope.getSdkHandler().getSdkFolder());
+            lintTask.setToolingRegistry(globalScope.getToolingRegistry());
+            lintTask.setAndroidBuilder(globalScope.getAndroidBuilder());
         }
     }
 }
