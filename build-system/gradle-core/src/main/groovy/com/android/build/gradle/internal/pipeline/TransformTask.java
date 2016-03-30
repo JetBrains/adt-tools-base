@@ -57,6 +57,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * A task running a transform.
@@ -73,17 +75,11 @@ public class TransformTask extends StreamBasedTask implements Context {
 
     @InputFiles
     public Collection<File> getOtherFileInputs() {
-
-        ImmutableList.Builder<File> otherFileInputs = ImmutableList.builder();
-        otherFileInputs.addAll(Iterables.transform(transform.getSecondaryFiles(),
-                new Function<SecondaryFile, File>() {
-                    @Override
-                    public File apply(SecondaryFile input) {
-                        return input.getFile();
-                    }
-                }));
-        otherFileInputs.addAll(transform.getSecondaryFileInputs());
-        return otherFileInputs.build();
+        //noinspection deprecation: Needed for backward compatibility.
+        return Stream.concat(
+                        transform.getSecondaryFiles().stream().map(SecondaryFile::getFile),
+                        transform.getSecondaryFileInputs().stream())
+                .collect(Collectors.toList());
     }
 
     @OutputFiles
@@ -227,12 +223,9 @@ public class TransformTask extends StreamBasedTask implements Context {
     @NonNull
     private static List<TransformInput> computeNonIncTransformInput(
             @NonNull Collection<TransformStream> streams) {
-        List<TransformInput> inputs = Lists.newArrayListWithCapacity(streams.size());
-        for (TransformStream stream : streams) {
-            inputs.add(stream.asNonIncrementalInput());
-        }
-
-        return inputs;
+        return streams.stream()
+                .map(TransformStream::asNonIncrementalInput)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -241,13 +234,9 @@ public class TransformTask extends StreamBasedTask implements Context {
     @NonNull
     private static List<IncrementalTransformInput> createIncrementalInputs(
             @NonNull Collection<TransformStream> streams) {
-        List<IncrementalTransformInput> list = Lists.newArrayListWithCapacity(streams.size());
-
-        for (TransformStream stream : streams) {
-            list.add(stream.asIncrementalInput());
-        }
-
-        return list;
+        return streams.stream()
+                .map(TransformStream::asIncrementalInput)
+                .collect(Collectors.toList());
     }
 
     private synchronized Collection<SecondaryFile> getAllSecondaryInputs() {
@@ -403,12 +392,9 @@ public class TransformTask extends StreamBasedTask implements Context {
     @NonNull
     private static List<TransformInput> convertToImmutable(
             @NonNull List<IncrementalTransformInput> inputs) {
-        List<TransformInput> immutableInputs = Lists.newArrayListWithCapacity(inputs.size());
-        for (IncrementalTransformInput input : inputs) {
-            immutableInputs.add(input.asImmutable());
-        }
-
-        return immutableInputs;
+        return inputs.stream()
+                .map(IncrementalTransformInput::asImmutable)
+                .collect(Collectors.toList());
     }
 
     public  interface  ConfigActionCallback<T extends Transform> {

@@ -239,78 +239,42 @@ public class ProcessTestManifest extends ManifestProcessorTask {
 
             processTestManifestTask.setTestApplicationId(config.getApplicationId());
             ConventionMappingHelper.map(processTestManifestTask, "minSdkVersion",
-                    new Callable<String>() {
-                        @Override
-                        public String call() throws Exception {
-                            if (scope.getGlobalScope().getAndroidBuilder().isPreviewTarget()) {
-                                return scope.getGlobalScope().getAndroidBuilder()
-                                        .getTargetCodename();
-                            }
-                            return config.getMinSdkVersion().getApiString();
+                    (Callable<String>) () -> {
+                        if (scope.getGlobalScope().getAndroidBuilder().isPreviewTarget()) {
+                            return scope.getGlobalScope().getAndroidBuilder()
+                                    .getTargetCodename();
                         }
+                        return config.getMinSdkVersion().getApiString();
                     });
 
             ConventionMappingHelper.map(processTestManifestTask, "targetSdkVersion",
-                    new Callable<String>() {
-                        @Override
-                        public String call() throws Exception {
-                            if (scope.getGlobalScope().getAndroidBuilder().isPreviewTarget()) {
-                                return scope.getGlobalScope().getAndroidBuilder()
-                                        .getTargetCodename();
-                            }
-
-                            return config.getTargetSdkVersion().getApiString();
+                    (Callable<String>) () -> {
+                        if (scope.getGlobalScope().getAndroidBuilder().isPreviewTarget()) {
+                            return scope.getGlobalScope().getAndroidBuilder()
+                                    .getTargetCodename();
                         }
+
+                        return config.getTargetSdkVersion().getApiString();
                     });
             ConventionMappingHelper.map(processTestManifestTask, "testedApplicationId",
-                    new Callable<String>() {
-                        @Override
-                        public String call() throws Exception {
-                            return config.getTestedApplicationId();
-                        }
-                    });
+                    (Callable<String>) config::getTestedApplicationId);
             ConventionMappingHelper.map(processTestManifestTask, "instrumentationRunner",
-                    new Callable<String>() {
-                        @Override
-                        public String call() throws Exception {
-                            return config.getInstrumentationRunner();
-                        }
-                    });
+                    (Callable<String>) config::getInstrumentationRunner);
 
             ConventionMappingHelper.map(processTestManifestTask, "handleProfiling",
-                    new Callable<Boolean>() {
-                        @Override
-                        public Boolean call() throws Exception {
-                            return config.getHandleProfiling();
-                        }
-                    });
+                    (Callable<Boolean>) config::getHandleProfiling);
             ConventionMappingHelper.map(processTestManifestTask, "functionalTest",
-                    new Callable<Boolean>() {
-                        @Override
-                        public Boolean call() throws Exception {
-                            return config.getFunctionalTest();
-                        }
-                    });
+                    (Callable<Boolean>) config::getFunctionalTest);
 
             ConventionMappingHelper.map(processTestManifestTask, "libraries",
-                    new Callable<List<ManifestDependencyImpl>>() {
-                        @Override
-                        public List<ManifestDependencyImpl> call() throws Exception {
-                            return DependencyManager.getManifestDependencies(
-                                    config.getDirectLibraries());
-                        }
-                    });
+                    (Callable<List<ManifestDependencyImpl>>) () ->
+                            DependencyManager.getManifestDependencies(config.getDirectLibraries()));
 
             processTestManifestTask.setManifestOutputFile(
                     variantOutputData.getScope().getManifestOutputFile());
 
             ConventionMappingHelper.map(processTestManifestTask, "placeholdersValues",
-                    new Callable<Map<String, Object>>() {
-                        @Override
-                        public Map<String, Object> call() throws Exception {
-                            return config.getManifestPlaceholders();
-                        }
-                    });
+                    (Callable<Map<String, Object>>) config::getManifestPlaceholders);
         }
     }
 }

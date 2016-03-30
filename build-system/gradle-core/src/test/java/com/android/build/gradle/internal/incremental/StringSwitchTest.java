@@ -97,7 +97,7 @@ public class StringSwitchTest {
                         mv.visitLdcInsn("No Match Found");
                         mv.visitInsn(Opcodes.ARETURN);
                     }
-                }.visit(ga, new HashSet<String>(Arrays.asList(strings)));
+                }.visit(ga, new HashSet<>(Arrays.asList(strings)));
                 mv.visitMaxs(1, 1);
                 mv.visitEnd();
             }

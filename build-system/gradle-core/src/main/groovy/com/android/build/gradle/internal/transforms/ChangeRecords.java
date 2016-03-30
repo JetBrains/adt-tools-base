@@ -40,7 +40,7 @@ import java.util.StringTokenizer;
 public class ChangeRecords {
 
     // changes records, indexed by file path, and value is the last change made on the file.
-    Map<String, Status> records = new HashMap<String, Status>();
+    Map<String, Status> records = new HashMap<>();
 
     public synchronized void add(@NonNull Status status, @NonNull String filePath) {
         records.put(filePath, status);
@@ -75,14 +75,11 @@ public class ChangeRecords {
      */
     void write(File file) throws IOException {
         Files.createParentDirs(file);
-        FileWriter fileWriter = new FileWriter(file);
-        try {
+        try (FileWriter fileWriter = new FileWriter(file)) {
             for (Map.Entry<String, Status> record : records.entrySet()) {
                 fileWriter.write(String.format("%s,%s", record.getValue(), record.getKey()));
                 fileWriter.write("\n");
             }
-        } finally {
-            fileWriter.close();
         }
     }
 

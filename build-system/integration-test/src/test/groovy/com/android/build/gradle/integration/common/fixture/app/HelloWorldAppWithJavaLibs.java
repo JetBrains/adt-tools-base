@@ -42,7 +42,7 @@ public class HelloWorldAppWithJavaLibs extends MultiModuleTestProject implements
      * @return project
      */
     public static HelloWorldAppWithJavaLibs createWithLibs(int numJavaLibs) {
-        Map<String, TestProject> subProjects = new HashMap<String, TestProject>();
+        Map<String, TestProject> subProjects = new HashMap<>();
         subProjects.put(":app", HelloWorldApp.forPlugin("com.android.application"));
 
         for (int i = 0; i < numJavaLibs; i++) {

@@ -32,7 +32,6 @@ import com.android.build.gradle.internal.VariantManager;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
-import com.android.build.gradle.internal.dsl.CoreProductFlavor;
 import com.android.build.gradle.internal.incremental.InstantRunAnchorTask;
 import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -61,7 +60,6 @@ import com.android.builder.model.SourceProviderContainer;
 import com.android.builder.model.SyncIssue;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -77,6 +75,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Builder for the custom Android model.
@@ -160,8 +161,8 @@ public class ModelBuilder implements ToolingModelBuilder {
 
         List<SyncIssue> syncIssues = Lists.newArrayList(extraModelInfo.getSyncIssues().values());
 
-        List<String> flavorDimensionList = (config.getFlavorDimensionList() != null ?
-                config.getFlavorDimensionList() : Lists.<String>newArrayList());
+        List<String> flavorDimensionList = config.getFlavorDimensionList() != null ?
+                config.getFlavorDimensionList() : Lists.newArrayList();
 
         toolchains = createNativeToolchainModelMap(ndkHandler);
 
@@ -246,13 +247,10 @@ public class ModelBuilder implements ToolingModelBuilder {
         List<AndroidArtifact> extraAndroidArtifacts = Lists.newArrayList(
                 extraModelInfo.getExtraAndroidArtifacts(variantName));
         // Make sure all extra artifacts are serializable.
-        Collection<JavaArtifact> extraJavaArtifacts = extraModelInfo.getExtraJavaArtifacts(
-                variantName);
-        List<JavaArtifact> clonedExtraJavaArtifacts = Lists.newArrayListWithCapacity(
-                extraJavaArtifacts.size());
-        for (JavaArtifact javaArtifact : extraJavaArtifacts) {
-            clonedExtraJavaArtifacts.add(JavaArtifactImpl.clone(javaArtifact));
-        }
+        List<JavaArtifact> clonedExtraJavaArtifacts =
+                extraModelInfo.getExtraJavaArtifacts(variantName).stream()
+                        .map(JavaArtifactImpl::clone)
+                        .collect(Collectors.toList());
 
         if (variantData instanceof TestedVariantData) {
             for (VariantType variantType : VariantType.getTestingTypes()) {
@@ -486,16 +484,9 @@ public class ModelBuilder implements ToolingModelBuilder {
     @NonNull
     private static List<String> getProductFlavorNames(
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
-        List<CoreProductFlavor> productFlavors = variantData.getVariantConfiguration()
-                .getProductFlavors();
-
-        List<String> flavorNames = Lists.newArrayListWithCapacity(productFlavors.size());
-
-        for (ProductFlavor flavor : productFlavors) {
-            flavorNames.add(flavor.getName());
-        }
-
-        return flavorNames;
+        return variantData.getVariantConfiguration().getProductFlavors().stream()
+                .map((Function<ProductFlavor, String>) ProductFlavor::getName)
+                .collect(Collectors.toList());
     }
 
     @NonNull
@@ -559,13 +550,10 @@ public class ModelBuilder implements ToolingModelBuilder {
     @NonNull
     private static Collection<SigningConfig> cloneSigningConfigs(
             @NonNull Collection<? extends SigningConfig> signingConfigs) {
-        Collection<SigningConfig> results = Lists.newArrayListWithCapacity(signingConfigs.size());
-
-        for (SigningConfig signingConfig : signingConfigs) {
-            results.add(SigningConfigImpl.createSigningConfig(signingConfig));
-        }
-
-        return results;
+        return signingConfigs.stream()
+                .map((Function<SigningConfig, SigningConfig>)
+                        SigningConfigImpl::createSigningConfig)
+                .collect(Collectors.toList());
     }
 
     @Nullable
@@ -598,13 +586,8 @@ public class ModelBuilder implements ToolingModelBuilder {
      */
     private static Collection<String> findUnresolvedDependencies(
             @NonNull Collection<SyncIssue> syncIssues) {
-        List<String> unresolvedDependencies = Lists.newArrayList();
-
-        for (SyncIssue issue : syncIssues) {
-            if (issue.getType() == SyncIssue.TYPE_UNRESOLVED_DEPENDENCY) {
-                unresolvedDependencies.add(issue.getData());
-            }
-        }
-        return unresolvedDependencies;
+        return syncIssues.stream()
+                .filter(issue -> issue.getType() == SyncIssue.TYPE_UNRESOLVED_DEPENDENCY)
+                .map(SyncIssue::getData).collect(Collectors.toList());
     }
 }

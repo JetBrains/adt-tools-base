@@ -26,7 +26,7 @@ class PackageTestResults extends CompositeTestResults {
 
     private static final String DEFAULT_PACKAGE = "default-package";
     private final String name;
-    private final Map<String, ClassTestResults> classes = new TreeMap<String, ClassTestResults>();
+    private final Map<String, ClassTestResults> classes = new TreeMap<>();
 
     public PackageTestResults(String name, AllTestResults model) {
         super(model);

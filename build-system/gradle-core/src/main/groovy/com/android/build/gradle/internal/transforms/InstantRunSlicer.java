@@ -221,7 +221,7 @@ public class InstantRunSlicer extends Transform {
     private void combineAllJars(@NonNull Collection<TransformInput> inputs,
             @NonNull TransformOutputProvider outputProvider) throws IOException {
 
-        List<JarInput> jarFilesToProcess = new ArrayList<JarInput>();
+        List<JarInput> jarFilesToProcess = new ArrayList<>();
         for (TransformInput input : inputs) {
             for (JarInput jarInput : input.getJarInputs()) {
                 File jarFile = jarInput.getFile();
@@ -250,17 +250,14 @@ public class InstantRunSlicer extends Transform {
 
         // all the jar files will be combined into a single jar will all other scopes.
         File dependenciesJar = getDependenciesSliceOutputFolder(outputProvider, Format.JAR);
-        Set<String> entries = new HashSet<String>();
+        Set<String> entries = new HashSet<>();
 
         Files.createParentDirs(dependenciesJar);
-        JarOutputStream jarOutputStream = new JarOutputStream(
-                new BufferedOutputStream(new FileOutputStream(dependenciesJar)));
-        try {
+        try (JarOutputStream jarOutputStream = new JarOutputStream(
+                new BufferedOutputStream(new FileOutputStream(dependenciesJar)))) {
             for (JarInput jarInput : jarFilesToProcess) {
                 mergeJarInto(jarInput, entries, jarOutputStream);
             }
-        } finally {
-            jarOutputStream.close();
         }
     }
 
@@ -268,8 +265,7 @@ public class InstantRunSlicer extends Transform {
             @NonNull Set<String> entries, @NonNull JarOutputStream dependenciesJar)
             throws IOException {
 
-        JarFile jarFile = new JarFile(jarInput.getFile());
-        try {
+        try (JarFile jarFile = new JarFile(jarInput.getFile())) {
             Enumeration<JarEntry> jarEntries = jarFile.entries();
             while (jarEntries.hasMoreElements()) {
                 JarEntry jarEntry = jarEntries.nextElement();
@@ -282,18 +278,13 @@ public class InstantRunSlicer extends Transform {
                                     jarEntry.getName(), jarInput.getName()));
                 } else {
                     dependenciesJar.putNextEntry(new JarEntry(jarEntry.getName()));
-                    InputStream inputStream = jarFile.getInputStream(jarEntry);
-                    try {
+                    try (InputStream inputStream = jarFile.getInputStream(jarEntry)) {
                         ByteStreams.copy(inputStream, dependenciesJar);
-                    } finally {
-                        inputStream.close();
                     }
                     dependenciesJar.closeEntry();
                     entries.add(jarEntry.getName());
                 }
             }
-        } finally {
-            jarFile.close();
         }
     }
 
@@ -445,7 +436,7 @@ public class InstantRunSlicer extends Transform {
 
     private static class Slices {
         @NonNull
-        private final List<Slice> slices = new ArrayList<Slice>();
+        private final List<Slice> slices = new ArrayList<>();
 
         private Slices() {
             for (int i=0; i<NUMBER_OF_SLICES_FOR_PROJECT_CLASSES; i++) {
@@ -510,7 +501,7 @@ public class InstantRunSlicer extends Transform {
         private Slice(@NonNull String name, int hashBucket) {
             this.name = name;
             this.hashBucket = hashBucket;
-            slicedElements = new ArrayList<SlicedElement>();
+            slicedElements = new ArrayList<>();
         }
 
         private void add(@NonNull SlicedElement slicedElement) {

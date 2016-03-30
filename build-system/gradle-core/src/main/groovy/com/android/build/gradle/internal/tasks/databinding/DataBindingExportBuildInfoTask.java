@@ -45,6 +45,7 @@ import android.databinding.tool.processing.Scope;
 import java.io.File;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 /**
  * This task creates a class which includes the build environment information, which is needed for
@@ -164,27 +165,15 @@ public class DataBindingExportBuildInfoTask extends DefaultTask {
             task.setSdkDir(variantScope.getGlobalScope().getSdkHandler().getSdkFolder());
             task.setXmlOutFolder(variantScope.getLayoutInfoOutputForDataBinding());
 
-            ConventionMappingHelper.map(task, "compilerClasspath", new Callable<FileCollection>() {
-                @Override
-                public FileCollection call() {
-                    return variantScope.getJavaClasspath();
-                }
-            });
-            ConventionMappingHelper
-                    .map(task, "compilerSources", new Callable<Iterable<ConfigurableFileTree>>() {
-                        @Override
-                        public Iterable<ConfigurableFileTree> call() throws Exception {
-                            return Iterables.filter(variantData.getJavaSources(),
-                                    new Predicate<ConfigurableFileTree>() {
-                                        @Override
-                                        public boolean apply(ConfigurableFileTree input) {
-                                            File dataBindingOut = variantScope
-                                                    .getClassOutputForDataBinding();
-                                            return !dataBindingOut.equals(input.getDir());
-                                        }
-                                    });
-                        }
-                    });
+            ConventionMappingHelper.map(task, "compilerClasspath",
+                    (Callable<FileCollection>) variantScope::getJavaClasspath);
+            ConventionMappingHelper.map(task, "compilerSources",
+                    (Callable<Iterable<ConfigurableFileTree>>) () ->
+                            variantData.getJavaSources().stream()
+                                    .filter(
+                                            input -> !variantScope.getClassOutputForDataBinding()
+                                                    .equals(input.getDir()))
+                                    .collect(Collectors.toList()));
 
             task.setExportClassListTo(variantData.getType().isExportDataBindingClassList() ?
                     variantScope.getGeneratedClassListOutputFileForDataBinding() : null);

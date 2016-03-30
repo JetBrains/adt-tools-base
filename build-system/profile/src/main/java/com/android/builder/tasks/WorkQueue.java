@@ -42,10 +42,10 @@ public class WorkQueue<T> implements Runnable {
     // the user throttling has already happened before so I am using a potentially
     // infinite linked list of request.
     private final LinkedBlockingQueue<QueueTask<T>> mPendingJobs =
-            new LinkedBlockingQueue<QueueTask<T>>();
+            new LinkedBlockingQueue<>();
 
     // List of working threads pumping from this queue.
-    private final List<Thread> mWorkThreads = new ArrayList<Thread>();
+    private final List<Thread> mWorkThreads = new ArrayList<>();
 
     private final float mGrowthTriggerRation;
     private final int mMWorkforceIncrement;
@@ -112,7 +112,7 @@ public class WorkQueue<T> implements Runnable {
     }
 
     public void push(Job<T> job) throws InterruptedException {
-        _push(new QueueTask<T>(QueueTask.ActionType.Normal, job));
+        _push(new QueueTask<>(QueueTask.ActionType.Normal, job));
         checkWorkforce();
     }
 
@@ -145,7 +145,7 @@ public class WorkQueue<T> implements Runnable {
         verbose("Decrementing workforce from " + mWorkThreads.size());
         // push a the right number of kiss of death tasks to shutdown threads.
         for (int i = 0; i < mMWorkforceIncrement; i++) {
-           _push(new QueueTask<T>(QueueTask.ActionType.Death, null));
+           _push(new QueueTask<>(QueueTask.ActionType.Death, null));
         }
     }
 
@@ -159,7 +159,7 @@ public class WorkQueue<T> implements Runnable {
 
         // push as many death pills as necessary
         for (Thread t : mWorkThreads) {
-            _push(new QueueTask<T>(QueueTask.ActionType.Death, null));
+            _push(new QueueTask<>(QueueTask.ActionType.Death, null));
         }
         // we could use a latch.
         for (Thread t : mWorkThreads) {
@@ -243,9 +243,7 @@ public class WorkQueue<T> implements Runnable {
             try {
                 verbose("Thread(%1$s): destruction", threadName);
                 mQueueThreadContext.destruction(Thread.currentThread());
-            } catch (IOException e) {
-                mLogger.error(e, "Thread(%1$s): %2$s", threadName, e.getMessage());
-            } catch (InterruptedException e) {
+            } catch (IOException | InterruptedException e) {
                 mLogger.error(e, "Thread(%1$s): %2$s", threadName, e.getMessage());
             }
         }

@@ -34,8 +34,6 @@ import com.android.build.gradle.managed.NdkOptions;
 import com.android.build.gradle.model.internal.AndroidBinaryInternal;
 import com.android.builder.model.NativeLibrary;
 import com.android.utils.StringHelper;
-import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
@@ -51,7 +49,9 @@ import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of NativeLibraryFactory from in the component model plugin.
@@ -96,18 +96,12 @@ public class ComponentNativeLibraryFactory implements NativeLibraryFactory {
 
         if (androidBinary == null) {
             // Binaries are not created for test variants.
-            return Optional.absent();
+            return Optional.empty();
         }
 
-        @SuppressWarnings("ConstantConditions")
-        Optional<NativeLibraryBinarySpec> nativeBinary =
-                Iterables.tryFind(androidBinary.getNativeBinaries(),
-                        new Predicate<NativeLibraryBinarySpec>() {
-                            @Override
-                            public boolean apply(NativeLibraryBinarySpec binary) {
-                                return binary.getTargetPlatform().getName().equals(abi.getName());
-                            }
-                        });
+        Optional<NativeLibraryBinarySpec> nativeBinary = androidBinary.getNativeBinaries().stream()
+                .filter(binary -> binary.getTargetPlatform().getName().equals(abi.getName()))
+                .findFirst();
 
         if (!nativeBinary.isPresent()) {
             // We don't have native binaries, but the project may be dependent on other native
@@ -183,22 +177,16 @@ public class ComponentNativeLibraryFactory implements NativeLibraryFactory {
             @NonNull AndroidBinaryInternal binary,
             @NonNull final Abi abi,
             @NonNull Multimap<String, NativeDependencyResolveResult> dependencyMap) {
-        NativeLibraryBinarySpec nativeBinary =
-                Iterables.find(
-                        binary.getNativeBinaries(),
-                        new Predicate<NativeLibraryBinarySpec>() {
-                            @Override
-                            public boolean apply(NativeLibraryBinarySpec nativeBinary) {
-                                return nativeBinary.getTargetPlatform().getName().equals(abi.getName());
-                            }
-                        },
-                        null);
-        if (nativeBinary != null) {
+        Optional<NativeLibraryBinarySpec> nativeBinary = binary.getNativeBinaries().stream()
+                .filter(candidateBinary -> candidateBinary.getTargetPlatform().getName()
+                                .equals(abi.getName()))
+                .findFirst();
+        if (nativeBinary.isPresent()) {
             addDebuggableLib(
                     debuggableLibDir,
                     binary,
                     abi,
-                    dependencyMap.get(nativeBinary.getName()));
+                    dependencyMap.get(nativeBinary.get().getName()));
         }
     }
 
@@ -219,9 +207,8 @@ public class ComponentNativeLibraryFactory implements NativeLibraryFactory {
             @NonNull Iterable<NativeDependencyResolveResult> dependencies) {
         for (NativeDependencyResolveResult dependency : dependencies) {
             for (NativeLibraryArtifact artifact : dependency.getNativeArtifacts()) {
-                for (File lib : artifact.getLibraries()) {
-                    debuggableLibDir.add(lib.getParentFile());
-                }
+                debuggableLibDir.addAll(artifact.getLibraries().stream().map(File::getParentFile)
+                        .collect(Collectors.toList()));
             }
             for (final NativeLibraryBinary nativeBinary : dependency.getPrebuiltLibraries()) {
                 if (nativeBinary.getTargetPlatform().getName().equals(abi.getName())) {

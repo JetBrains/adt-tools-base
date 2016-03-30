@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * The extract annotations driver is a command line interface to extracting annotations
@@ -106,21 +107,22 @@ public class ExtractAnnotationsDriver {
         for (int i = 0, n = args.length; i < n; i++) {
             String flag = args[i];
 
-            if (flag.equals("--quiet")) {
-                verbose = false;
-                continue;
-            } else if (flag.equals("--allow-missing-types")) {
-                allowMissingTypes = true;
-                continue;
-            } else if (flag.equals("--allow-errors")) {
-                allowErrors = true;
-                continue;
-            } else if (flag.equals("--hide-filtered")) {
-                listFiltered = false;
-                continue;
-            } else if (flag.equals("--skip-class-retention")) {
-                skipClassRetention = true;
-                continue;
+            switch (flag) {
+                case "--quiet":
+                    verbose = false;
+                    continue;
+                case "--allow-missing-types":
+                    allowMissingTypes = true;
+                    continue;
+                case "--allow-errors":
+                    allowErrors = true;
+                    continue;
+                case "--hide-filtered":
+                    listFiltered = false;
+                    continue;
+                case "--skip-class-retention":
+                    skipClassRetention = true;
+                    continue;
             }
             if (i == n - 1) {
                 usage(System.err);
@@ -128,67 +130,80 @@ public class ExtractAnnotationsDriver {
             String value = args[i + 1];
             i++;
 
-            if (flag.equals("--sources")) {
-                sources = getFiles(value);
-            } else if (flag.equals("--classpath")) {
-                classpath = getPaths(value);
-            } else if (flag.equals("--merge-zips")) {
-                mergePaths = getFiles(value);
-            } else if (flag.equals("--output")) {
-                output = new File(value);
-                if (output.exists()) {
-                    if (output.isDirectory()) {
-                        abort(output + " is a directory");
+            switch (flag) {
+                case "--sources":
+                    sources = getFiles(value);
+                    break;
+                case "--classpath":
+                    classpath = getPaths(value);
+                    break;
+                case "--merge-zips":
+                    mergePaths = getFiles(value);
+                    break;
+                case "--output":
+                    output = new File(value);
+                    if (output.exists()) {
+                        if (output.isDirectory()) {
+                            abort(output + " is a directory");
+                        }
+                        boolean deleted = output.delete();
+                        if (!deleted) {
+                            abort("Could not delete previous version of " + output);
+                        }
+                    } else if (output.getParentFile() != null && !output.getParentFile().exists()) {
+                        abort(output.getParentFile() + " does not exist");
                     }
-                    boolean deleted = output.delete();
-                    if (!deleted) {
-                        abort("Could not delete previous version of " + output);
+                    break;
+                case "--proguard":
+                    proguard = new File(value);
+                    if (proguard.exists()) {
+                        if (proguard.isDirectory()) {
+                            abort(proguard + " is a directory");
+                        }
+                        boolean deleted = proguard.delete();
+                        if (!deleted) {
+                            abort("Could not delete previous version of " + proguard);
+                        }
+                    } else if (proguard.getParentFile() != null && !proguard.getParentFile()
+                            .exists()) {
+                        abort(proguard.getParentFile() + " does not exist");
                     }
-                } else if (output.getParentFile() != null && !output.getParentFile().exists()) {
-                    abort(output.getParentFile() + " does not exist");
-                }
-            } else if (flag.equals("--proguard")) {
-                proguard = new File(value);
-                if (proguard.exists()) {
-                    if (proguard.isDirectory()) {
-                        abort(proguard + " is a directory");
+                    break;
+                case "--encoding":
+                    encoding = value;
+                    break;
+                case "--api-filter":
+                    if (apiFilters == null) {
+                        apiFilters = Lists.newArrayList();
                     }
-                    boolean deleted = proguard.delete();
-                    if (!deleted) {
-                        abort("Could not delete previous version of " + proguard);
+                    for (String path : Splitter.on(",").omitEmptyStrings().split(value)) {
+                        File apiFilter = new File(path);
+                        if (!apiFilter.isFile()) {
+                            String message = apiFilter + " does not exist or is not a file";
+                            abort(message);
+                        }
+                        apiFilters.add(apiFilter);
                     }
-                } else if (proguard.getParentFile() != null && !proguard.getParentFile().exists()) {
-                    abort(proguard.getParentFile() + " does not exist");
-                }
-            } else if (flag.equals("--encoding")) {
-                encoding = value;
-            } else if (flag.equals("--api-filter")) {
-                if (apiFilters == null) {
-                    apiFilters = Lists.newArrayList();
-                }
-                for (String path : Splitter.on(",").omitEmptyStrings().split(value)) {
-                    File apiFilter = new File(path);
-                    if (!apiFilter.isFile()) {
-                        String message = apiFilter + " does not exist or is not a file";
-                        abort(message);
+                    break;
+                case "--language-level":
+                    if ("1.6".equals(value)) {
+                        languageLevel = EcjParser.getLanguageLevel(1, 6);
+                    } else if ("1.7".equals(value)) {
+                        languageLevel = EcjParser.getLanguageLevel(1, 7);
+                    } else {
+                        abort("Unsupported language level " + value);
                     }
-                    apiFilters.add(apiFilter);
-                }
-            } else if (flag.equals("--language-level")) {
-                if ("1.6".equals(value)) {
-                    languageLevel = EcjParser.getLanguageLevel(1, 6);
-                } else if ("1.7".equals(value)) {
-                    languageLevel = EcjParser.getLanguageLevel(1, 7);
-                } else {
-                    abort("Unsupported language level " + value);
-                }
-            } else if (flag.equals("--rmtypedefs")) {
-                rmTypeDefs = new File(value);
-                if (!rmTypeDefs.isDirectory()) {
-                    abort(rmTypeDefs + " is not a directory");
-                }
-            } else {
-                System.err.println("Unknown flag " + flag + ": Use --help for usage information");
+                    break;
+                case "--rmtypedefs":
+                    rmTypeDefs = new File(value);
+                    if (!rmTypeDefs.isDirectory()) {
+                        abort(rmTypeDefs + " is not a directory");
+                    }
+                    break;
+                default:
+                    System.err
+                            .println("Unknown flag " + flag + ": Use --help for usage information");
+                    break;
             }
         }
 
@@ -324,12 +339,7 @@ public class ExtractAnnotationsDriver {
     }
 
     private static List<String> getPaths(String value) {
-        List<File> files = getFiles(value);
-        List<String> paths = Lists.newArrayListWithExpectedSize(files.size());
-        for (File file : files) {
-            paths.add(file.getPath());
-        }
-        return paths;
+        return getFiles(value).stream().map(File::getPath).collect(Collectors.toList());
     }
 
     private static void addJavaSources(List<File> list, File file) {

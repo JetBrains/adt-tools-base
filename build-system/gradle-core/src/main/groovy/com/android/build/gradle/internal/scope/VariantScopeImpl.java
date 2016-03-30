@@ -70,6 +70,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * A scope containing data for a specific variant.
@@ -787,11 +788,9 @@ public class VariantScopeImpl implements VariantScope {
     public List<File> getSplitAbiResOutputFiles() {
         Set<String> filters = AbiSplitOptions.getAbiFilters(
                 globalScope.getExtension().getSplits().getAbiFilters());
-        List<File> outputFiles = new ArrayList<File>();
-        for (String split : filters) {
-            outputFiles.add(getOutputFileForSplit(split));
-        }
-        return outputFiles;
+        return filters.stream()
+                .map(this::getOutputFileForSplit)
+                .collect(Collectors.toList());
     }
 
     private File getOutputFileForSplit(final String split) {

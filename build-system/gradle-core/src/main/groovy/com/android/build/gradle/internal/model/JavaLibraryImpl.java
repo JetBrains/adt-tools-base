@@ -32,7 +32,7 @@ public class JavaLibraryImpl extends LibraryImpl implements JavaLibrary, Seriali
 
     public JavaLibraryImpl(
             @NonNull File jarFile,
-            @NonNull boolean provided,
+            boolean provided,
             @Nullable MavenCoordinates requestedCoordinates,
             @Nullable MavenCoordinates resolvedCoordinates) {
         super(requestedCoordinates, resolvedCoordinates);
@@ -59,7 +59,7 @@ public class JavaLibraryImpl extends LibraryImpl implements JavaLibrary, Seriali
 
     @Override
     public String toString() {
-        final StringBuffer sb = new StringBuffer("JavaLibraryImpl{");
+        final StringBuilder sb = new StringBuilder("JavaLibraryImpl{");
         sb.append("jarFile=").append(jarFile);
         sb.append('}');
         return sb.toString();

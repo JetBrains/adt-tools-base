@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import groovy.lang.Closure;
 
@@ -97,14 +98,12 @@ public class DefaultAndroidSourceDirectorySet implements AndroidSourceDirectoryS
     @Override
     @NonNull
     public List<ConfigurableFileTree> getSourceDirectoryTrees() {
-        List<ConfigurableFileTree> directoryTrees = Lists.newArrayListWithExpectedSize(source.size());
-        for (Object sourceDir: source) {
-            directoryTrees.add(project.fileTree(ImmutableMap.of(
-                    "dir", sourceDir,
-                    "includes", getIncludes(),
-                    "excludes", getExcludes())));
-        }
-        return directoryTrees;
+        return source.stream()
+                .map(sourceDir -> project.fileTree(ImmutableMap.of(
+                        "dir", sourceDir,
+                        "includes", getIncludes(),
+                        "excludes", getExcludes())))
+                .collect(Collectors.toList());
     }
 
     @Override

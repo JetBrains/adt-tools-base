@@ -60,6 +60,7 @@ import java.util.Set;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -306,11 +307,9 @@ public class MergeJavaResourcesTransform extends Transform {
                     } else {
                         // finally if it's not excluded, then this is an error.
                         // collect the sources.
-                        List<File> sources = Lists
-                                .newArrayListWithCapacity(contentSourceList.size());
-                        for (QualifiedContent content : contentSourceList) {
-                            sources.add(content.getFile());
-                        }
+                        List<File> sources = contentSourceList.stream()
+                                .map(QualifiedContent::getFile)
+                                .collect(Collectors.toList());
                         throw new TransformException(new DuplicateFileException(key, sources));
                     }
                 }
@@ -365,12 +364,9 @@ public class MergeJavaResourcesTransform extends Transform {
                             File actualFile = computeFile(sourceFile, validator.keyToFolderPath(key));
                             baos.write(Files.toByteArray(actualFile));
                         } else {
-                            ZipFile zipFile = new ZipFile(sourceFile);
-                            try {
+                            try (ZipFile zipFile = new ZipFile(sourceFile)) {
                                 ByteStreams.copy(
                                         zipFile.getInputStream(zipFile.getEntry(key)), baos);
-                            } finally {
-                                zipFile.close();
                             }
                         }
                         if (isMetaServices(key)){
@@ -494,8 +490,7 @@ public class MergeJavaResourcesTransform extends Transform {
             @NonNull JarInput jarInput,
             @NonNull ListMultimap<String, QualifiedContent> content) throws IOException {
 
-        ZipFile zipFile = new ZipFile(jarInput.getFile());
-        try {
+        try (ZipFile zipFile = new ZipFile(jarInput.getFile())) {
             Enumeration<? extends ZipEntry> entries = zipFile.entries();
             while (entries.hasMoreElements()) {
                 ZipEntry entry = entries.nextElement();
@@ -508,8 +503,6 @@ public class MergeJavaResourcesTransform extends Transform {
                 content.put(path, jarInput);
             }
 
-        } finally {
-            zipFile.close();
         }
     }
 

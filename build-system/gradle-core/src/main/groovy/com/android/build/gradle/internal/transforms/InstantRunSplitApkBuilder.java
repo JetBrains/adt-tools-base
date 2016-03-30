@@ -151,7 +151,7 @@ public class InstantRunSplitApkBuilder extends BaseTask {
                 }
             });
         } else {
-            List<DexFile> allFiles = new ArrayList<DexFile>();
+            List<DexFile> allFiles = new ArrayList<>();
             for (File dexFolder : getDexFolders()) {
                 if (dexFolder.isDirectory()) {
                     File[] files = dexFolder.listFiles();
@@ -209,9 +209,8 @@ public class InstantRunSplitApkBuilder extends BaseTask {
         File sliceSupportDir = new File(supportDir, uniqueName);
         sliceSupportDir.mkdirs();
         File androidManifest = new File(sliceSupportDir, "AndroidManifest.xml");
-        OutputStreamWriter fileWriter = new OutputStreamWriter(
-                new FileOutputStream(androidManifest), "UTF-8");
-        try {
+        try (OutputStreamWriter fileWriter =
+                     new OutputStreamWriter(new FileOutputStream(androidManifest), "UTF-8")) {
             fileWriter.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                     + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                     + "      package=\"" + getApplicationId() + "\"\n"
@@ -221,8 +220,6 @@ public class InstantRunSplitApkBuilder extends BaseTask {
                     //+ "       <uses-sdk android:minSdkVersion=\"21\"/>\n" + "</manifest>\n");
                     + "</manifest>\n");
             fileWriter.flush();
-        } finally {
-            fileWriter.close();
         }
 
         File resFilePackageFile = new File(supportDir, "resources_ap");

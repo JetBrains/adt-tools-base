@@ -136,15 +136,12 @@ public class DexFileSubject extends Subject<DexFileSubject, File> {
         builder.setExecutable(dexDumpExe);
         builder.addArgs("-l", "xml", "-d", file.getAbsolutePath());
 
-        Reader reader = ApkHelper.runAndGetRawOutput(builder.createProcess(), executor);
-        try {
+        try (Reader reader = ApkHelper.runAndGetRawOutput(builder.createProcess(), executor)) {
             return XmlUtils.parseDocument(reader, false).getChildNodes().item(0);
         } catch (ParserConfigurationException e) {
             throw new IOException(e);
         } catch (SAXException e) {
             throw new IOException(e);
-        } finally {
-            reader.close();
         }
     }
 

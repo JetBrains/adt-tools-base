@@ -38,6 +38,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Common code for all split related tasks
@@ -66,25 +67,16 @@ public abstract class SplitRelatedTask extends BaseTask {
         ImmutableList.Builder<SplitFileSupplier> suppliers = ImmutableList.builder();
         for (final FilterData filterData : getSplitsData()) {
 
-            ApkOutputFile outputFile =
-                    Iterables.find(getOutputSplitFiles(), new Predicate<ApkOutputFile>() {
-                        @Override
-                        public boolean apply(ApkOutputFile apkOutputFile) {
-                            return filterData.getIdentifier().equals(
-                                    apkOutputFile.getFilter(filterData.getFilterType()));
-                        }
-                    });
+            Optional<ApkOutputFile> outputFile = getOutputSplitFiles().stream()
+                    .filter(apkOutputFile -> filterData.getIdentifier().equals(
+                            apkOutputFile.getFilter(filterData.getFilterType())))
+                    .findFirst();
 
-            if (outputFile != null) {
-                // make final references to not confused the groovy runtime...
-                final File file = outputFile.getOutputFile();
-                final FilterData data = filterData;
-
+            if (outputFile.isPresent()) {
                 suppliers.add(new SplitFileSupplier() {
-
                     @Override
                     public File get() {
-                        return file;
+                        return outputFile.get().getOutputFile();
                     }
 
                     @NonNull
@@ -96,7 +88,7 @@ public abstract class SplitRelatedTask extends BaseTask {
                     @NonNull
                     @Override
                     public FilterData getFilterData() {
-                        return data;
+                        return filterData;
                     }
                 });
             }

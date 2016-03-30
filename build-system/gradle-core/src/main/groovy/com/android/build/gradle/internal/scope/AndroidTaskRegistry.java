@@ -35,7 +35,7 @@ import groovy.lang.Closure;
 public class AndroidTaskRegistry {
 
     @NonNull
-    private final Map<String, AndroidTask> tasks = new HashMap<String, AndroidTask>();
+    private final Map<String, AndroidTask> tasks = new HashMap<>();
 
     public synchronized < T extends Task> AndroidTask<T> create(
             @NonNull TaskFactory taskFactory,
@@ -44,7 +44,7 @@ public class AndroidTaskRegistry {
             Action<? super T> configAction) {
 
         taskFactory.create(taskName, taskClass, configAction);
-        final AndroidTask<T> newTask = new AndroidTask<T>(taskName, taskClass);
+        final AndroidTask<T> newTask = new AndroidTask<>(taskName, taskClass);
         tasks.put(taskName, newTask);
 
         return newTask;
@@ -56,7 +56,7 @@ public class AndroidTaskRegistry {
             Closure configAction) {
 
         taskFactory.create(taskName, DefaultTask.class, new ClosureBackedAction<Task>(configAction));
-        final AndroidTask<Task> newTask = new AndroidTask<Task>(taskName, Task.class);
+        final AndroidTask<Task> newTask = new AndroidTask<>(taskName, Task.class);
         tasks.put(taskName, newTask);
 
         return newTask;
@@ -76,7 +76,7 @@ public class AndroidTaskRegistry {
             Closure configAction) {
 
         taskFactory.create(taskName, taskClass, new ClosureBackedAction<T>(configAction));
-        final AndroidTask<T> newTask = new AndroidTask<T>(taskName, taskClass);
+        final AndroidTask<T> newTask = new AndroidTask<>(taskName, taskClass);
         tasks.put(taskName, newTask);
 
         return newTask;

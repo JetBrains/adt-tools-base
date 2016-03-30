@@ -167,7 +167,7 @@ public class TestApplicationTestData extends  AbstractTestDataImpl {
 
     @NonNull
     public List<File> getSplitApks() {
-        List<File> testedApkFiles = new ArrayList<File>(testedConfiguration.getFiles());
+        List<File> testedApkFiles = new ArrayList<>(testedConfiguration.getFiles());
         if (testedApkFiles.size() > 1) {
             testedApkFiles.remove(getMainApk());
             return testedApkFiles;
@@ -184,7 +184,7 @@ public class TestApplicationTestData extends  AbstractTestDataImpl {
      */
     @NonNull
     public File getMainApk() {
-        Set<File> testedApkFiles = new HashSet<File>(testedConfiguration.getFiles());
+        Set<File> testedApkFiles = new HashSet<>(testedConfiguration.getFiles());
         if (testedApkFiles.size() > 1) {
             // we have splits in the mix, find the right APK.
             List<FilterDataPersistence.Record> filterDatas = loadMetadata();

@@ -92,7 +92,7 @@ public class JackPreDexTransform extends Transform {
     @Override
     public void transform(@NonNull final TransformInvocation transformInvocation)
             throws TransformException, InterruptedException, IOException {
-        final Job<Void> job = new Job<Void>(getName(), new Task<Void>() {
+        final Job<Void> job = new Job<>(getName(), new Task<Void>() {
             @Override
             public void run(@NonNull Job<Void> job, @NonNull JobContext<Void> context)
                     throws IOException {

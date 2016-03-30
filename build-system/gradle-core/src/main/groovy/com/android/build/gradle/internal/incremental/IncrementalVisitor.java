@@ -400,7 +400,7 @@ public class IncrementalVisitor extends ClassVisitor {
     private static List<ClassNode> parseParents(
             @NonNull File inputFile, @NonNull ClassNode classNode) throws IOException {
         File binaryFolder = getBinaryFolder(inputFile, classNode);
-        List<ClassNode> parentNodes = new ArrayList<ClassNode>();
+        List<ClassNode> parentNodes = new ArrayList<>();
         String currentParentName = classNode.superName;
 
         while (currentParentName != null) {

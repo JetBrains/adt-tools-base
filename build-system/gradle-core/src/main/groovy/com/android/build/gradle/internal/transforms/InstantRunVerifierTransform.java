@@ -245,16 +245,10 @@ public class InstantRunVerifierTransform extends Transform {
                 case CHANGED:
                     // get a Map of the back up jar entries indexed by name.
                     if (resultSoFar != InstantRunVerifierStatus.COMPATIBLE) {
-                        JarFile backupJarFile = new JarFile(backupJar);
-                        try {
-                            JarFile jarFile = new JarFile(jarInput.getFile());
-                            try {
+                        try (JarFile backupJarFile = new JarFile(backupJar)) {
+                            try (JarFile jarFile = new JarFile(jarInput.getFile())) {
                                 resultSoFar = processChangedJar(backupJarFile, jarFile);
-                            } finally {
-                                jarFile.close();
                             }
-                        } finally {
-                            backupJarFile.close();
                         }
                     }
                     copyFile(jarInput.getFile(), backupJar);
@@ -273,7 +267,7 @@ public class InstantRunVerifierTransform extends Transform {
     private InstantRunVerifierStatus processChangedJar(JarFile backupJar, JarFile newJar)
             throws IOException {
 
-        Map<String, JarEntry> backupEntries = new HashMap<String, JarEntry>();
+        Map<String, JarEntry> backupEntries = new HashMap<>();
         Enumeration<JarEntry> backupJarEntries = backupJar.entries();
         while (backupJarEntries.hasMoreElements()) {
             JarEntry jarEntry = backupJarEntries.nextElement();

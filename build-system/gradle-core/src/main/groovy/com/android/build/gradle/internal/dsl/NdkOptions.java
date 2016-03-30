@@ -105,9 +105,7 @@ public class NdkOptions implements CoreNdkOptions, Serializable {
             } else {
                 ldLibs.clear();
             }
-            for (String filter : libs) {
-                ldLibs.add(filter);
-            }
+            ldLibs.addAll(libs);
         } else {
             ldLibs = null;
         }
@@ -147,9 +145,7 @@ public class NdkOptions implements CoreNdkOptions, Serializable {
             } else {
                 abiFilters.clear();
             }
-            for (String filter : filters) {
-                abiFilters.add(filter);
-            }
+            abiFilters.addAll(filters);
         } else {
             abiFilters = null;
         }

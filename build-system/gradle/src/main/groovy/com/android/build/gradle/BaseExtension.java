@@ -659,8 +659,8 @@ public abstract class BaseExtension implements AndroidConfig {
     public abstract void addVariant(BaseVariant variant);
 
     public void registerArtifactType(@NonNull String name,
-                                     boolean isTest,
-                                     int artifactType) {
+            boolean isTest,
+            int artifactType) {
         extraModelInfo.registerArtifactType(name, isTest, artifactType);
     }
 

@@ -90,8 +90,7 @@ public class CreateManifestKeepList extends DefaultAndroidTask {
             throws ParserConfigurationException, SAXException, IOException {
         SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
 
-        Writer out = new BufferedWriter(new FileWriter(getOutputFile()));
-        try {
+        try (Writer out = new BufferedWriter(new FileWriter(getOutputFile()))) {
             parser.parse(getManifest(), new ManifestHandler(out));
 
             // add a couple of rules that cannot be easily parsed from the manifest.
@@ -110,8 +109,6 @@ public class CreateManifestKeepList extends DefaultAndroidTask {
             if (proguardFile != null) {
                 out.write(Files.toString(proguardFile, Charsets.UTF_8));
             }
-        } finally {
-            out.close();
         }
     }
 

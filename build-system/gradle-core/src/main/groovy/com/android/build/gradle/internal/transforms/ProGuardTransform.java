@@ -191,7 +191,7 @@ public class ProGuardTransform extends BaseProguardAction {
     @Override
     public void transform(@NonNull final TransformInvocation invocation) throws TransformException {
         // only run one minification at a time (across projects)
-        final Job<Void> job = new Job<Void>(getName(),
+        final Job<Void> job = new Job<>(getName(),
                 new com.android.builder.tasks.Task<Void>() {
                     @Override
                     public void run(@NonNull Job<Void> job,

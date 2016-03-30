@@ -60,13 +60,9 @@ public abstract class AbstractAndroidTestApp implements AndroidTestApp {
 
     @Override
     public TestSourceFile getFile(String filename, final String path) {
-        Collection<TestSourceFile> files = sourceFiles.get(filename);
-        return Iterables.find(files, new Predicate<TestSourceFile>() {
-            @Override
-            public boolean apply(TestSourceFile testSourceFile) {
-                return path.equals(testSourceFile.getParent());
-            }
-        });
+        return sourceFiles.get(filename).stream()
+                .filter(testSourceFile -> path.equals(testSourceFile.getParent()))
+                .findFirst().get();
     }
 
     @Override

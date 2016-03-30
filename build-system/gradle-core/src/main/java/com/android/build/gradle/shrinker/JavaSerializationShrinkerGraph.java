@@ -135,15 +135,14 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
 
         // For some reason, when invoked from Gradle on a complex project, sometimes shrinker
         // classes cannot be found. This seems to fix the problem.
-        ObjectInputStream stream =
-                new ObjectInputStream(new BufferedInputStream(new FileInputStream(stateFile))) {
-                    @Override
-                    protected Class<?> resolveClass(ObjectStreamClass desc)
-                            throws IOException, ClassNotFoundException {
-                        return Class.forName(desc.getName(), false, classLoader);
-                    }
-                };
-        try {
+        try (ObjectInputStream stream = new ObjectInputStream(
+                new BufferedInputStream(new FileInputStream(stateFile))) {
+            @Override
+            protected Class<?> resolveClass(ObjectStreamClass desc)
+                    throws IOException, ClassNotFoundException {
+                return Class.forName(desc.getName(), false, classLoader);
+            }
+        }) {
             return new JavaSerializationShrinkerGraph(
                     dir,
                     (SetMultimap) stream.readObject(),
@@ -159,8 +158,6 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
             throw new IncrementalRunImpossibleException("Failed to load incremental state.", e);
         } catch (InvalidClassException e) {
             throw new IncrementalRunImpossibleException("Failed to load incremental state.", e);
-        } finally {
-            stream.close();
         }
     }
 
@@ -181,7 +178,7 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
 
     @Override
     public void addDependency(@NonNull String source, @NonNull String target, @NonNull DependencyType type) {
-        Dependency<String> dep = new Dependency<String>(target, type);
+        Dependency<String> dep = new Dependency<>(target, type);
         mDependencies.put(source, dep);
     }
 
@@ -232,9 +229,8 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
         FileUtils.deleteIfExists(stateFile);
         Files.createParentDirs(stateFile);
 
-        ObjectOutputStream stream =
-                new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(stateFile)));
-        try {
+        try (ObjectOutputStream stream = new ObjectOutputStream(
+                new BufferedOutputStream(new FileOutputStream(stateFile)))) {
             stream.writeObject(mAnnotations);
             stream.writeObject(mClasses);
             stream.writeObject(mDependencies);
@@ -244,8 +240,6 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
             stream.writeObject(ImmutableMap.copyOf(mMultidexCounters.mReferenceCounters.asMap()));
             stream.writeObject(mShrinkCounters.mRoots);
             stream.writeObject(ImmutableMap.copyOf(mShrinkCounters.mReferenceCounters.asMap()));
-        } finally {
-            stream.close();
         }
     }
 

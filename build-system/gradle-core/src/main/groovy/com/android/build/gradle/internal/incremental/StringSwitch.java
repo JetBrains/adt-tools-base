@@ -56,12 +56,7 @@ import java.util.Set;
  * In the most common case of no hash collisions, only the hashCode level if switching is needed.
  */
 abstract class StringSwitch {
-    static Function<String, Integer> hashMethod = new Function<String, Integer>() {
-        @Override
-        public Integer apply(String input) {
-            return input.hashCode();
-        }
-    };
+    static final Function<String, Integer> HASH_METHOD = String::hashCode;
 
     // Set this to a small positive number to force has hashcode collisions to exercise the
     // length and character checks.
@@ -88,7 +83,7 @@ abstract class StringSwitch {
     abstract void visitDefault();
 
     // Override this method to provide a different hash generation method. You'll also need
-    // to change hashMethod in this class to correspond
+    // to change HASH_METHOD in this class to correspond
     void visitHashMethod(GeneratorAdapter mv) {
         mv.invokeVirtual(STRING_TYPE, Method.getMethod("int hashCode()"));
     }
@@ -112,8 +107,7 @@ abstract class StringSwitch {
             visitCase(strings.get(0));
             return;
         }
-        for (int i = 0; i < strings.size(); ++i) {
-            String string = strings.get(i);
+        for (String string : strings) {
             Label label = new Label();
             visitString();
             mv.visitLdcInsn(string);
@@ -149,7 +143,7 @@ abstract class StringSwitch {
         visitHashMethod(mv);
 
         // Group strings by hash code.
-        Multimap<Integer, String> buckets = Multimaps.index(strings, hashMethod);
+        Multimap<Integer, String> buckets = Multimaps.index(strings, HASH_METHOD);
         List<Map.Entry<Integer, Collection<String>>> sorted = Ordering.natural()
                 .onResultOf(new Function<Map.Entry<Integer, Collection<String>>, Integer>() {
                     @Override

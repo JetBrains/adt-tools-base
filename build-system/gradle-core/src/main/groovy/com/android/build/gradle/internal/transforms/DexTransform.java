@@ -75,6 +75,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Dexing as a transform.
@@ -243,14 +245,11 @@ public class DexTransform extends Transform {
 
                 // gather the inputs. This mode is always non incremental, so just
                 // gather the top level folders/jars
-                final List<File> inputFiles = Lists.newArrayList();
-                for (JarInput jarInput : jarInputs) {
-                    inputFiles.add(jarInput.getFile());
-                }
-
-                for (DirectoryInput directoryInput : directoryInputs) {
-                    inputFiles.add(directoryInput.getFile());
-                }
+                final List<File> inputFiles =
+                        Stream.concat(
+                                jarInputs.stream().map(JarInput::getFile),
+                                directoryInputs.stream().map(DirectoryInput::getFile))
+                        .collect(Collectors.toList());
 
                 androidBuilder.convertByteCode(
                         inputFiles,
@@ -392,12 +391,7 @@ public class DexTransform extends Transform {
                             outputs = Arrays.asList(files);
                         }
                     } else {
-                        File[] directories = intermediateFolder.listFiles(new FileFilter() {
-                            @Override
-                            public boolean accept(File file) {
-                                return file.isDirectory();
-                            }
-                        });
+                        File[] directories = intermediateFolder.listFiles(File::isDirectory);
                         if (directories != null) {
                             outputs = Arrays.asList(directories);
                         }

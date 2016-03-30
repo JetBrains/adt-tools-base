@@ -36,6 +36,7 @@ import java.io.Reader;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Helper to help read/test the content of generated apk file.
@@ -136,13 +137,9 @@ public class ApkHelper {
             Matcher m = PATTERN_LOCALES.matcher(line.trim());
             if (m.matches()) {
                 List<String> list = Splitter.on(' ').splitToList(m.group(1).trim());
-                List<String> result = Lists.newArrayListWithCapacity(list.size());
-                for (String local: list) {
-                    // remove the '' on each side.
-                    result.add(local.substring(1, local.length() - 1));
-                }
-
-                return result;
+                return list.stream() // remove the '' on each side.
+                        .map(local -> local.substring(1, local.length() - 1))
+                        .collect(Collectors.toList());
             }
         }
 

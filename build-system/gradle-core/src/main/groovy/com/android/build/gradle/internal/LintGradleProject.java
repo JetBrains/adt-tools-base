@@ -38,6 +38,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * An implementation of Lint's {@link Project} class wrapping a Gradle model (project or
@@ -243,7 +245,7 @@ public class LintGradleProject extends Project {
                     }
                 }
 
-                SourceProvider variantProvider =  mainArtifact.getVariantSourceProvider();
+                SourceProvider variantProvider = mainArtifact.getVariantSourceProvider();
                 if (variantProvider != null) {
                     providers.add(variantProvider);
                 }
@@ -318,18 +320,14 @@ public class LintGradleProject extends Project {
         public List<File> getProguardFiles() {
             if (mProguardFiles == null) {
                 ProductFlavor flavor = mProject.getDefaultConfig().getProductFlavor();
-                mProguardFiles = Lists.newArrayList();
-                for (File file : flavor.getProguardFiles()) {
-                    if (file.exists()) {
-                        mProguardFiles.add(file);
-                    }
-                }
+                mProguardFiles = flavor.getProguardFiles().stream()
+                        .filter(File::exists)
+                        .collect(Collectors.toList());
                 try {
-                    for (File file : flavor.getConsumerProguardFiles()) {
-                        if (file.exists()) {
-                            mProguardFiles.add(file);
-                        }
-                    }
+                    mProguardFiles.addAll(
+                            flavor.getConsumerProguardFiles().stream()
+                                    .filter(File::exists)
+                                    .collect(Collectors.toList()));
                 } catch (Throwable t) {
                     // On some models, this threw
                     //   org.gradle.tooling.model.UnsupportedMethodException:
@@ -348,18 +346,16 @@ public class LintGradleProject extends Project {
                 mResourceFolders = Lists.newArrayList();
                 for (SourceProvider provider : getSourceProviders()) {
                     Collection<File> resDirs = provider.getResDirectories();
-                    for (File res : resDirs) {
-                        if (res.exists()) { // model returns path whether or not it exists
-                            mResourceFolders.add(res);
-                        }
-                    }
+                    // model returns path whether or not it exists
+                    mResourceFolders.addAll(resDirs.stream()
+                            .filter(File::exists)
+                            .collect(Collectors.toList()));
                 }
 
-                for (File file : mVariant.getMainArtifact().getGeneratedResourceFolders()) {
-                    if (file.exists()) {
-                        mResourceFolders.add(file);
-                    }
-                }
+                mResourceFolders.addAll(
+                        mVariant.getMainArtifact().getGeneratedResourceFolders().stream()
+                                .filter(File::exists)
+                                .collect(Collectors.toList()));
             }
 
             return mResourceFolders;
@@ -372,11 +368,10 @@ public class LintGradleProject extends Project {
                 mAssetFolders = Lists.newArrayList();
                 for (SourceProvider provider : getSourceProviders()) {
                     Collection<File> dirs = provider.getAssetsDirectories();
-                    for (File dir : dirs) {
-                        if (dir.exists()) { // model returns path whether or not it exists
-                            mAssetFolders.add(dir);
-                        }
-                    }
+                    // model returns path whether or not it exists
+                    mAssetFolders.addAll(dirs.stream()
+                            .filter(File::exists)
+                            .collect(Collectors.toList()));
                 }
             }
 
@@ -390,18 +385,16 @@ public class LintGradleProject extends Project {
                 mJavaSourceFolders = Lists.newArrayList();
                 for (SourceProvider provider : getSourceProviders()) {
                     Collection<File> srcDirs = provider.getJavaDirectories();
-                    for (File srcDir : srcDirs) {
-                        if (srcDir.exists()) { // model returns path whether or not it exists
-                            mJavaSourceFolders.add(srcDir);
-                        }
-                    }
+                    // model returns path whether or not it exists
+                    mJavaSourceFolders.addAll(srcDirs.stream()
+                            .filter(File::exists)
+                            .collect(Collectors.toList()));
                 }
 
-                for (File file : mVariant.getMainArtifact().getGeneratedSourceFolders()) {
-                    if (file.exists()) {
-                        mJavaSourceFolders.add(file);
-                    }
-                }
+                mJavaSourceFolders.addAll(
+                        mVariant.getMainArtifact().getGeneratedSourceFolders().stream()
+                                .filter(File::exists)
+                                .collect(Collectors.toList()));
             }
 
             return mJavaSourceFolders;
@@ -413,12 +406,10 @@ public class LintGradleProject extends Project {
             if (mTestSourceFolders == null) {
                 mTestSourceFolders = Lists.newArrayList();
                 for (SourceProvider provider : getTestSourceProviders()) {
-                    Collection<File> srcDirs = provider.getJavaDirectories();
-                    for (File srcDir : srcDirs) {
-                        if (srcDir.exists()) { // model returns path whether or not it exists
-                            mTestSourceFolders.add(srcDir);
-                        }
-                    }
+                    // model returns path whether or not it exists
+                    mTestSourceFolders.addAll(provider.getJavaDirectories().stream()
+                            .filter(File::exists)
+                            .collect(Collectors.toList()));
                 }
             }
 
@@ -429,7 +420,7 @@ public class LintGradleProject extends Project {
         @Override
         public List<File> getJavaClassFolders() {
             if (mJavaClassFolders == null) {
-                mJavaClassFolders = new ArrayList<File>(1);
+                mJavaClassFolders = new ArrayList<>(1);
                 File outputClassFolder = mVariant.getMainArtifact().getClassesFolder();
                 if (outputClassFolder.exists()) {
                     mJavaClassFolders.add(outputClassFolder);
@@ -494,7 +485,8 @@ public class LintGradleProject extends Project {
             // package. As part of the Gradle work on the Lint API we should make two separate
             // package lookup methods -- one for the manifest package, one for the build package
             if (mPackage == null) { // only used as a fallback in case manifest somehow is null
-                String packageName = mProject.getDefaultConfig().getProductFlavor().getApplicationId();
+                String packageName = mProject.getDefaultConfig().getProductFlavor()
+                        .getApplicationId();
                 if (packageName != null) {
                     return packageName;
                 }
@@ -689,17 +681,12 @@ public class LintGradleProject extends Project {
             }
 
             if (mJavaLibraries == null) {
-                mJavaLibraries = Lists.newArrayList();
-                File jarFile = mLibrary.getJarFile();
-                if (jarFile.exists()) {
-                    mJavaLibraries.add(jarFile);
-                }
-
-                for (File local : mLibrary.getLocalJars()) {
-                    if (local.exists()) {
-                        mJavaLibraries.add(local);
-                    }
-                }
+                mJavaLibraries =
+                        Stream.concat(
+                                Stream.of(mLibrary.getJarFile()),
+                                mLibrary.getLocalJars().stream())
+                        .filter(File::exists)
+                        .collect(Collectors.toList());
             }
 
             return mJavaLibraries;

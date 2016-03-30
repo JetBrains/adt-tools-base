@@ -678,7 +678,7 @@ public class Extractor {
                 if (isNestedAnnotation(fqn)) {
                     List<AnnotationData> list = types.get(typeName);
                     if (list == null) {
-                        list = new ArrayList<AnnotationData>(2);
+                        list = new ArrayList<>(2);
                         types.put(typeName, list);
                     }
                     addAnnotation(typeDef, fqn, list);
@@ -709,15 +709,12 @@ public class Extractor {
     private boolean writeKeepRules(@NonNull File proguardCfg) {
         if (!keepItems.isEmpty()) {
             try {
-                Writer writer = new BufferedWriter(new FileWriter(proguardCfg));
-                try {
+                try (Writer writer = new BufferedWriter(new FileWriter(proguardCfg))) {
                     Collections.sort(keepItems);
                     for (Item item : keepItems) {
                         writer.write(item.getKeepRule());
                         writer.write('\n');
                     }
-                } finally {
-                    writer.close();
                 }
             } catch (IOException ioe) {
                 error(ioe.toString());
@@ -744,7 +741,7 @@ public class Extractor {
 
             try {
                 // TODO: Extract to share with keep rules
-                List<String> sortedPackages = new ArrayList<String>(itemMap.keySet());
+                List<String> sortedPackages = new ArrayList<>(itemMap.keySet());
                 Collections.sort(sortedPackages);
                 for (String pkg : sortedPackages) {
                     // Note: Using / rather than File.separator: jar lib requires it
@@ -754,13 +751,12 @@ public class Extractor {
                     zos.putNextEntry(outEntry);
 
                     StringWriter stringWriter = new StringWriter(1000);
-                    PrintWriter writer = new PrintWriter(stringWriter);
-                    try {
+                    try (PrintWriter writer = new PrintWriter(stringWriter)) {
                         writer.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                                 "<root>");
 
                         Map<String, List<Item>> classMap = itemMap.get(pkg);
-                        List<String> classes = new ArrayList<String>(classMap.keySet());
+                        List<String> classes = new ArrayList<>(classMap.keySet());
                         Collections.sort(classes);
                         for (String cls : classes) {
                             List<Item> items = classMap.get(cls);
@@ -786,8 +782,6 @@ public class Extractor {
                         byte[] bytes = xml.getBytes(Charsets.UTF_8);
                         zos.write(bytes);
                         zos.closeEntry();
-                    } finally {
-                        writer.close();
                     }
                 }
             } finally {
@@ -1132,7 +1126,7 @@ public class Extractor {
     private static List<Element> getChildren(@NonNull Element element) {
         NodeList itemList = element.getChildNodes();
         int length = itemList.getLength();
-        List<Element> result = new ArrayList<Element>(Math.max(5, length / 2 + 1));
+        List<Element> result = new ArrayList<>(Math.max(5, length / 2 + 1));
         for (int i = 0; i < length; i++) {
             Node node = itemList.item(i);
             if (node.getNodeType() != Node.ELEMENT_NODE) {

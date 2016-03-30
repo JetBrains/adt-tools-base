@@ -228,7 +228,7 @@ public class TransformManager extends FilterableStreamCollection {
         // create the task...
         AndroidTask<TransformTask> task = taskRegistry.create(
                 taskFactory,
-                new TransformTask.ConfigAction<T>(
+                new TransformTask.ConfigAction<>(
                         scope.getVariantConfiguration().getFullName(),
                         taskName,
                         transform,

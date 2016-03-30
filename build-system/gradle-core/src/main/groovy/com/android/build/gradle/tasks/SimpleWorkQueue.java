@@ -38,7 +38,7 @@ public class SimpleWorkQueue {
 
         @Override
         public void runTask(@NonNull Job<Void> job) throws Exception {
-            job.runTask(new JobContext<Void>(null /* payload */));
+            job.runTask(new JobContext<>(null /* payload */));
             job.finished();
         }
     }
@@ -47,7 +47,7 @@ public class SimpleWorkQueue {
      * singleton work queue for all proguard invocations.
      */
     private static final WorkQueue<Void> WORK_QUEUE =
-            new WorkQueue<Void>(
+            new WorkQueue<>(
                     new StdLogger(StdLogger.Level.VERBOSE),
                     new EmptyThreadContext(), "Tasks limiter", 4);
 

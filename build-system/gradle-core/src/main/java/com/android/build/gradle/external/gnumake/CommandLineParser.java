@@ -36,7 +36,7 @@ class CommandLineParser {
      */
     static List<CommandLine> parse(String commands, boolean isWin32) {
         String[] lines = commands.split("[\r\n]+");
-        List<CommandLine> commandLines = new ArrayList<CommandLine>();
+        List<CommandLine> commandLines = new ArrayList<>();
         for (String line : lines) {
             List<String> commandList = isWin32
                     ? StringHelperWindows.splitCommandLine(line)
