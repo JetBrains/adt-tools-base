@@ -43,253 +43,279 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
 /**
- * {@link FallbackRemoteRepoLoader} implementation that uses the old {@link SdkSource} mechanism for parsing packages.
+ * {@link FallbackRemoteRepoLoader} implementation that uses the old {@link SdkSource} mechanism for
+ * parsing packages.
  */
 public class LegacyRemoteRepoLoader implements FallbackRemoteRepoLoader {
-  /**
-   * Caching downloader used by {@link SdkSource}s.
-   */
-  private DownloadCache myDownloadCache;
 
-  /**
-   * Settings used when downloading.
-   */
-  private SettingsController mySettingsController;
+    /**
+     * Caching downloader used by {@link SdkSource}s.
+     */
+    private DownloadCache mDownloadCache;
 
-  /**
-   * Create a new loader.
-   *
-   * @param settingsController For download-related settings.
-   * @param handler            The {@link AndroidSdkHandler} that's using this loader.
-   */
-  public LegacyRemoteRepoLoader(@NonNull SettingsController settingsController) {
-    mySettingsController = settingsController;
-  }
+    /**
+     * Settings used when downloading.
+     */
+    private SettingsController mSettingsController;
 
-  /**
-   * Sets the {@link DownloadCache} for us to use, so that a custom one can be used during tests.
-   *
-   * @param cache The {@link DownloadCache} to use. If {@code null} a new {@link DownloadCache} will be created lazily.
-   */
-  @VisibleForTesting
-  public void setDownloadCache(@Nullable DownloadCache cache) {
-    myDownloadCache = cache;
-  }
-
-  /**
-   * Gets or creates a {@link DownloadCache} using the settings from our {@link SettingsController}.
-   */
-  private DownloadCache getDownloadCache() {
-    if (myDownloadCache == null) {
-      myDownloadCache = new DownloadCache(DownloadCache.Strategy.FRESH_CACHE);
+    /**
+     * Create a new loader.
+     *
+     * @param settingsController For download-related settings.
+     */
+    public LegacyRemoteRepoLoader(@NonNull SettingsController settingsController) {
+        mSettingsController = settingsController;
     }
-    return myDownloadCache;
-  }
 
-  /**
-   * Parses xml files using the {@link SdkSource} mechanism into {@link LegacyRemotePackage}s.
-   */
-  @NonNull
-  @Override
-  public Collection<RemotePackage> parseLegacyXml(@NonNull RepositorySource source, @NonNull ProgressIndicator progress) {
-    SdkSource legacySource;
-    RemotePkgInfo[] packages = null;
-    for (SchemaModule module : source.getPermittedModules()) {
-      legacySource = null;
-      if (module.equals(AndroidSdkHandler.getRepositoryModule())) {
-        legacySource = new SdkRepoSource(source.getUrl(), "Legacy Repo Source");
-      }
-      else if (module.equals(AndroidSdkHandler.getAddonModule())) {
-        legacySource = new SdkAddonSource(source.getUrl(), "Legacy Addon Source");
-      }
-      else if (module.equals(AndroidSdkHandler.getSysImgModule())) {
-        legacySource = new SdkSysImgSource(source.getUrl(), "Legacy System Image Source");
-      }
-      if (legacySource != null) {
-        legacySource.load(getDownloadCache(), new TaskMonitorProgressIndicatorAdapter(progress), mySettingsController.getForceHttp());
-        if (legacySource.getFetchError() != null) {
-          progress.logInfo(legacySource.getFetchError());
+    /**
+     * Sets the {@link DownloadCache} for us to use, so that a custom one can be used during tests.
+     *
+     * @param cache The {@link DownloadCache} to use. If {@code null} a new {@link DownloadCache}
+     *              will be created lazily.
+     */
+    @VisibleForTesting
+    public void setDownloadCache(@Nullable DownloadCache cache) {
+        mDownloadCache = cache;
+    }
+
+    /**
+     * Gets or creates a {@link DownloadCache} using the settings from our {@link
+     * SettingsController}.
+     */
+    private DownloadCache getDownloadCache() {
+        if (mDownloadCache == null) {
+            mDownloadCache = new DownloadCache(DownloadCache.Strategy.FRESH_CACHE);
         }
-        packages = legacySource.getPackages();
+        return mDownloadCache;
+    }
+
+    /**
+     * Parses xml files using the {@link SdkSource} mechanism into {@link LegacyRemotePackage}s.
+     */
+    @NonNull
+    @Override
+    public Collection<RemotePackage> parseLegacyXml(@NonNull RepositorySource source,
+            @NonNull ProgressIndicator progress) {
+        SdkSource legacySource;
+        RemotePkgInfo[] packages = null;
+        for (SchemaModule module : source.getPermittedModules()) {
+            legacySource = null;
+            if (module.equals(AndroidSdkHandler.getRepositoryModule())) {
+                legacySource = new SdkRepoSource(source.getUrl(), "Legacy Repo Source");
+            } else if (module.equals(AndroidSdkHandler.getAddonModule())) {
+                legacySource = new SdkAddonSource(source.getUrl(), "Legacy Addon Source");
+            } else if (module.equals(AndroidSdkHandler.getSysImgModule())) {
+                legacySource = new SdkSysImgSource(source.getUrl(), "Legacy System Image Source");
+            }
+            if (legacySource != null) {
+                legacySource
+                        .load(getDownloadCache(), new TaskMonitorProgressIndicatorAdapter(progress),
+                                mSettingsController.getForceHttp());
+                if (legacySource.getFetchError() != null) {
+                    progress.logInfo(legacySource.getFetchError());
+                }
+                packages = legacySource.getPackages();
+                if (packages != null) {
+                    break;
+                }
+            }
+        }
+        List<RemotePackage> result = Lists.newArrayList();
         if (packages != null) {
-          break;
+            for (RemotePkgInfo pkgInfo : packages) {
+                if (pkgInfo.getPkgDesc().getType() == PkgType.PKG_SAMPLE) {
+                    continue;
+                }
+                RemotePackage pkg = new LegacyRemotePackage(pkgInfo, source);
+                result.add(pkg);
+            }
         }
-      }
+        return result;
     }
-    List<RemotePackage> result = Lists.newArrayList();
-    if (packages != null) {
-      for (RemotePkgInfo pkgInfo : packages) {
-        if (pkgInfo.getPkgDesc().getType() == PkgType.PKG_SAMPLE) {
-          continue;
+
+    /**
+     * A {@link RemotePackage} implementation that wraps a {@link RemotePkgInfo}.
+     */
+    private class LegacyRemotePackage implements RemotePackage {
+
+        private final RemotePkgInfo mWrapped;
+
+        private RepositorySource mSource;
+
+        private TypeDetails mDetails;
+
+        LegacyRemotePackage(RemotePkgInfo remote, RepositorySource source) {
+            mWrapped = remote;
+            mSource = source;
         }
-        RemotePackage pkg = new LegacyRemotePackage(pkgInfo, source);
-        result.add(pkg);
-      }
-    }
-    return result;
-  }
 
-  /**
-   * A {@link RemotePackage} implementation that wraps a {@link RemotePkgInfo}.
-   */
-  private class LegacyRemotePackage implements RemotePackage {
-
-    private final RemotePkgInfo myWrapped;
-    private RepositorySource mySource;
-    private TypeDetails myDetails;
-
-    LegacyRemotePackage(RemotePkgInfo remote, RepositorySource source) {
-      myWrapped = remote;
-      mySource = source;
-    }
-
-    @Override
-    @NonNull
-    public TypeDetails getTypeDetails() {
-      if (myDetails == null) {
-        int layoutlibApi = 0;
-        if (myWrapped instanceof RemotePlatformPkgInfo) {
-          LayoutlibVersion layoutlibVersion = ((RemotePlatformPkgInfo)myWrapped).getLayoutLibVersion();
-          if (layoutlibVersion != null) {
-            layoutlibApi = layoutlibVersion.getApi();
-          }
+        @Override
+        @NonNull
+        public TypeDetails getTypeDetails() {
+            if (mDetails == null) {
+                int layoutlibApi = 0;
+                if (mWrapped instanceof RemotePlatformPkgInfo) {
+                    LayoutlibVersion layoutlibVersion = ((RemotePlatformPkgInfo) mWrapped)
+                            .getLayoutLibVersion();
+                    if (layoutlibVersion != null) {
+                        layoutlibApi = layoutlibVersion.getApi();
+                    }
+                }
+                List<IAndroidTarget.OptionalLibrary> libs = Lists.newArrayList();
+                if (mWrapped instanceof RemoteAddonPkgInfo) {
+                    for (RemoteAddonPkgInfo.Lib wrappedLib : ((RemoteAddonPkgInfo) mWrapped)
+                            .getLibs()) {
+                        libs.add(new OptionalLibraryImpl(wrappedLib.getName(), new File(""),
+                                wrappedLib.getDescription(), false));
+                    }
+                }
+                ProgressIndicator progress = new ConsoleProgressIndicator();
+                mDetails = LegacyRepoUtils
+                        .createTypeDetails(mWrapped.getPkgDesc(), layoutlibApi, libs, null,
+                                progress, FileOpUtils.create());
+            }
+            return mDetails;
         }
-        List<IAndroidTarget.OptionalLibrary> libs = Lists.newArrayList();
-        if (myWrapped instanceof RemoteAddonPkgInfo) {
-          for (RemoteAddonPkgInfo.Lib wrappedLib : ((RemoteAddonPkgInfo)myWrapped).getLibs()) {
-            libs.add(new OptionalLibraryImpl(wrappedLib.getName(), new File(""), wrappedLib.getDescription(), false));
-          }
+
+        @NonNull
+        @Override
+        public Revision getVersion() {
+            return mWrapped.getRevision();
         }
-        ProgressIndicator progress = new ConsoleProgressIndicator();
-        myDetails = LegacyRepoUtils.createTypeDetails(myWrapped.getPkgDesc(), layoutlibApi, libs, null, progress, FileOpUtils.create());
-      }
-      return myDetails;
-    }
 
-    @NonNull
-    @Override
-    public Revision getVersion() {
-      return myWrapped.getRevision();
-    }
-
-    @NonNull
-    @Override
-    public String getDisplayName() {
-      return LegacyRepoUtils.getDisplayName(myWrapped.getPkgDesc());
-    }
-
-    @Override
-    public License getLicense() {
-      return myWrapped.getLicense();
-    }
-
-    @NonNull
-    @Override
-    public Collection<Dependency> getAllDependencies() {
-      // TODO: implement (this isn't implemented in the current version either)
-      return ImmutableList.of();
-    }
-
-    @NonNull
-    @Override
-    public String getPath() {
-      return LegacyRepoUtils.getLegacyPath(myWrapped.getPkgDesc(), null);
-    }
-
-    @NonNull
-    @Override
-    public CommonFactory createFactory() {
-      return (CommonFactory)AndroidSdkHandler.getCommonModule().createLatestFactory();
-    }
-
-    @Override
-    public boolean obsolete() {
-      return myWrapped.isObsolete();
-    }
-
-    @Override
-    public int compareTo(RepoPackage o) {
-      int res = ComparisonChain.start()
-        .compare(getPath(), o.getPath())
-        .compare(getVersion(), o.getVersion())
-        .result();
-      if (res != 0) {
-        return res;
-      }
-      if (!(o instanceof RemotePackage)) {
-        return getClass().getName().compareTo(o.getClass().getName());
-      }
-      return 0;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      return obj instanceof RepoPackage && compareTo((RepoPackage)obj) == 0;
-    }
-
-    @Override
-    public int hashCode() {
-      return getPath().hashCode() * 37 + getVersion().hashCode();
-    }
-
-    @NonNull
-    @Override
-    public RepositorySource getSource() {
-      return mySource;
-    }
-
-    @Override
-    public void setSource(@NonNull RepositorySource source) {
-      mySource = source;
-    }
-
-    @Override
-    public Archive getArchive() {
-      for (com.android.sdklib.repository.legacy.remote.internal.archives.Archive archive : myWrapped.getArchives()) {
-        if (archive.isCompatible()) {
-          CommonFactory f = (CommonFactory)RepoManager.getCommonModule().createLatestFactory();
-          Archive arch = f.createArchiveType();
-          Archive.CompleteType complete = f.createCompleteType();
-          complete.setChecksum(archive.getChecksum());
-          complete.setSize(archive.getSize());
-          complete.setUrl(archive.getUrl());
-          arch.setComplete(complete);
-          ArchFilter filter = archive.getArchFilter();
-          if (filter.getHostBits() != null) {
-            arch.setHostBits(filter.getHostBits().getSize());
-          }
-          if (filter.getHostOS() != null) {
-            arch.setHostOs(filter.getHostOS().getXmlName());
-          }
-          if (filter.getJvmBits() != null) {
-            arch.setJvmBits(filter.getJvmBits().getSize());
-          }
-          if (filter.getMinJvmVersion() != null) {
-            arch.setMinJvmVersion(f.createRevisionType(filter.getMinJvmVersion()));
-          }
-          return arch;
+        @NonNull
+        @Override
+        public String getDisplayName() {
+            return LegacyRepoUtils.getDisplayName(mWrapped.getPkgDesc());
         }
-      }
-      return null;
-    }
 
-    @NonNull
-    @Override
-    public Channel getChannel() {
-      if (getVersion().isPreview()) {
-        // We map the old concept of previews to the second-stablest channel.
-        return Channel.create(1);
-      }
-      return Channel.create(0);
-    }
+        @Override
+        public License getLicense() {
+            return mWrapped.getLicense();
+        }
 
-    @Override
-    public String toString() {
-      return "Legacy package: " + myWrapped.toString();
+        @NonNull
+        @Override
+        public Collection<Dependency> getAllDependencies() {
+            // TODO: implement (this isn't implemented in the current version either)
+            return ImmutableList.of();
+        }
+
+        @NonNull
+        @Override
+        public String getPath() {
+            return LegacyRepoUtils.getLegacyPath(mWrapped.getPkgDesc(), null);
+        }
+
+        @NonNull
+        @Override
+        public CommonFactory createFactory() {
+            return (CommonFactory) AndroidSdkHandler.getCommonModule().createLatestFactory();
+        }
+
+        @Override
+        public boolean obsolete() {
+            return mWrapped.isObsolete();
+        }
+
+        @Override
+        public int compareTo(RepoPackage o) {
+            int res = ComparisonChain.start()
+                    .compare(getPath(), o.getPath())
+                    .compare(getVersion(), o.getVersion())
+                    .result();
+            if (res != 0) {
+                return res;
+            }
+            if (!(o instanceof RemotePackage)) {
+                return getClass().getName().compareTo(o.getClass().getName());
+            }
+            return 0;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof RepoPackage && compareTo((RepoPackage) obj) == 0;
+        }
+
+        @Override
+        public int hashCode() {
+            return getPath().hashCode() * 37 + getVersion().hashCode();
+        }
+
+        @NonNull
+        @Override
+        public RepositorySource getSource() {
+            return mSource;
+        }
+
+        @Override
+        public void setSource(@NonNull RepositorySource source) {
+            mSource = source;
+        }
+
+        @Override
+        public Archive getArchive() {
+            for (com.android.sdklib.repository.legacy.remote.internal.archives.Archive archive : mWrapped
+                    .getArchives()) {
+                if (archive.isCompatible()) {
+                    CommonFactory f = (CommonFactory) RepoManager.getCommonModule()
+                            .createLatestFactory();
+                    Archive arch = f.createArchiveType();
+                    Archive.CompleteType complete = f.createCompleteType();
+                    complete.setChecksum(archive.getChecksum());
+                    complete.setSize(archive.getSize());
+                    complete.setUrl(archive.getUrl());
+                    arch.setComplete(complete);
+                    ArchFilter filter = archive.getArchFilter();
+                    if (filter.getHostBits() != null) {
+                        arch.setHostBits(filter.getHostBits().getSize());
+                    }
+                    if (filter.getHostOS() != null) {
+                        arch.setHostOs(filter.getHostOS().getXmlName());
+                    }
+                    if (filter.getJvmBits() != null) {
+                        arch.setJvmBits(filter.getJvmBits().getSize());
+                    }
+                    if (filter.getMinJvmVersion() != null) {
+                        arch.setMinJvmVersion(f.createRevisionType(filter.getMinJvmVersion()));
+                    }
+                    return arch;
+                }
+            }
+            return null;
+        }
+
+        @NonNull
+        @Override
+        public Channel getChannel() {
+            if (getVersion().isPreview()) {
+                // We map the old concept of previews to the second-stablest channel.
+                return Channel.create(1);
+            }
+            return Channel.create(0);
+        }
+
+        @NonNull
+        @Override
+        public File getInstallDir(@NonNull RepoManager manager,
+                @NonNull ProgressIndicator progress)
+                throws IOException {
+            File localPath = manager.getLocalPath();
+            if (localPath == null) {
+                throw new IOException("manager doesn't have a local path specified");
+            }
+            return mWrapped.getPkgDesc().getCanonicalInstallFolder(localPath);
+        }
+
+        @Override
+        public String toString() {
+            return "Legacy package: " + mWrapped.toString();
+        }
     }
-  }
 }
