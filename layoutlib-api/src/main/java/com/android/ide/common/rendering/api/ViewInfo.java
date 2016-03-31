@@ -130,8 +130,8 @@ public class ViewInfo {
     }
 
     /**
-     * Returns the actual android.view.View (or child class) object. This can be used
-     * to query the object properties that are not in the XML and not available through
+     * Returns the actual android.view.View (or child class) object. This can be used to query the
+     * object properties that are not in the XML and not available through
      * {@link RenderSession#getProperty(Object, String)}.
      */
     public Object getViewObject() {
@@ -139,9 +139,9 @@ public class ViewInfo {
     }
 
     /**
-     * Returns the actual  android.view.ViewGroup$LayoutParams (or child class) object.
-     * This can be used to query the object properties that are not in the XML and not available
-     * through {@link RenderSession#getProperty(Object, String)}.
+     * Returns the actual android.view.ViewGroup$LayoutParams (or child class) object. This can be
+     * used to query the object properties that are not in the XML and not available through
+     * {@link RenderSession#getProperty(Object, String)}.
      */
     public Object getLayoutParamsObject() {
         return mLayoutParamsObject;
@@ -184,10 +184,15 @@ public class ViewInfo {
 
     /**
      * Returns the type of View.
+     *
      * @see ViewType
      */
     public ViewType getViewType() {
         return ViewType.USER;
     }
 
+    @Override
+    public String toString() {
+        return String.valueOf(mName);
+    }
 }
