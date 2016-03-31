@@ -26,12 +26,18 @@ import com.android.ddmlib.IDevice;
 import com.android.utils.ILogger;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -162,6 +168,35 @@ public class ConnectedDeviceProvider extends DeviceProvider {
                 throw new DeviceException("No online devices found.");
             }
         }
+        // ensure device names are unique since many reports are keyed off of names.
+        makeDeviceNamesUnique();
+    }
+
+    private boolean hasDevicesWithDuplicateName() {
+        Set<String> deviceNames = new HashSet<String>();
+        for (ConnectedDevice device : localDevices) {
+            if (!deviceNames.add(device.getName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void makeDeviceNamesUnique() {
+        if (hasDevicesWithDuplicateName()) {
+            for (ConnectedDevice device : localDevices) {
+                device.setNameSuffix(device.getSerialNumber());
+            }
+        }
+        if (hasDevicesWithDuplicateName()) {
+            // still have duplicates :/ just use a counter.
+            int counter = 0;
+            for (ConnectedDevice device : localDevices) {
+                device.setNameSuffix(device.getSerialNumber() + "-" + counter);
+                counter ++;
+            }
+        }
+
     }
 
     @Override

@@ -25,6 +25,7 @@ import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 import static com.android.sdklib.BuildToolInfo.PathId.SPLIT_SELECT;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -48,7 +49,10 @@ import com.google.common.collect.ImmutableList;
 
 import org.gradle.api.GradleException;
 import org.gradle.api.Nullable;
+import org.gradle.api.Task;
 import org.gradle.api.plugins.JavaBasePlugin;
+import org.gradle.api.specs.Spec;
+import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.logging.ConsoleRenderer;
 
@@ -81,6 +85,10 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
 
     private boolean ignoreFailures;
     private boolean testFailed;
+    private boolean enableSharding;
+
+    @Nullable
+    private Integer numShards;
 
     @TaskAction
     protected void runTests() throws DeviceException, IOException, InterruptedException,
@@ -104,9 +112,13 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
         } else {
             File testApk = testData.getTestApk();
             String flavor = getFlavorName();
-            TestRunner testRunner = new SimpleTestRunner(
+
+            final TestRunner testRunner;
+            testRunner = new SimpleTestRunner(
                     getSplitSelectExec(),
-                    getProcessExecutor());
+                    getProcessExecutor(),
+                    enableSharding,
+                    numShards);
             deviceProvider.init();
 
             Collection<String> extraArgs = installOptions == null || installOptions.isEmpty()
@@ -152,6 +164,14 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
         testFailed = false;
     }
 
+    public void setEnableSharding(boolean enableSharding) {
+        this.enableSharding = enableSharding;
+    }
+
+    public void setNumShards(Integer numShards) {
+        this.numShards = numShards;
+    }
+
     /**
      * Determines if there are any tests to run.
      *
@@ -185,6 +205,7 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
         return coverageDir;
     }
 
+    @OutputDirectory
     public void setCoverageDir(File coverageDir) {
         this.coverageDir = coverageDir;
     }
@@ -310,9 +331,17 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
             task.setTestData(testData);
             task.setFlavorName(testData.getFlavorName());
             task.setDeviceProvider(deviceProvider);
-            task.setInstallOptions(scope.getGlobalScope().getExtension().getAdbOptions().getInstallOptions());
-            task.setProcessExecutor(scope.getGlobalScope().getAndroidBuilder().getProcessExecutor());
-
+            task.setInstallOptions(
+                    scope.getGlobalScope().getExtension().getAdbOptions().getInstallOptions());
+            task.setProcessExecutor(
+                    scope.getGlobalScope().getAndroidBuilder().getProcessExecutor());
+            boolean shardBetweenDevices = AndroidGradleOptions
+                    .getShardAndroidTestsBetweenDevices(task.getProject());
+            task.setEnableSharding(shardBetweenDevices);
+            if (shardBetweenDevices) {
+                task.setNumShards(AndroidGradleOptions.getInstrumentationShardCount(
+                        task.getProject()));
+            }
             String flavorFolder = testData.getFlavorName();
             if (!flavorFolder.isEmpty()) {
                 flavorFolder = FD_FLAVORS + "/" + flavorFolder;
@@ -331,7 +360,8 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
             ConventionMappingHelper.map(task, "splitSelectExec", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
-                    final TargetInfo info = scope.getGlobalScope().getAndroidBuilder().getTargetInfo();
+                    final TargetInfo info = scope.getGlobalScope().getAndroidBuilder()
+                            .getTargetInfo();
                     String path = info == null ? null : info.getBuildTools().getPath(SPLIT_SELECT);
                     if (path != null) {
                         File splitSelectExe = new File(path);
@@ -345,7 +375,8 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
             ConventionMappingHelper.map(task, "resultsDir", new Callable<File>() {
                 @Override
                 public File call() {
-                    String rootLocation = scope.getGlobalScope().getExtension().getTestOptions().getResultsDir();
+                    String rootLocation = scope.getGlobalScope().getExtension().getTestOptions()
+                            .getResultsDir();
                     if (rootLocation == null) {
                         rootLocation = scope.getGlobalScope().getBuildDir() + "/" +
                                 FD_OUTPUTS + "/" + FD_ANDROID_RESULTS;
@@ -357,7 +388,8 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
             ConventionMappingHelper.map(task, "reportsDir", new Callable<File>() {
                 @Override
                 public File call() {
-                    String rootLocation = scope.getGlobalScope().getExtension().getTestOptions().getReportDir();
+                    String rootLocation = scope.getGlobalScope().getExtension().getTestOptions()
+                            .getReportDir();
                     if (rootLocation == null) {
                         rootLocation = scope.getGlobalScope().getBuildDir() + "/" +
                                 FD_REPORTS + "/" + FD_ANDROID_TESTS;
@@ -366,8 +398,8 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
                 }
             });
 
-            String rootLocation = scope.getGlobalScope().getBuildDir() + "/" +
-                                FD_OUTPUTS + "/code-coverage";
+            String rootLocation = scope.getGlobalScope().getBuildDir() + "/" + FD_OUTPUTS
+                    + "/code-coverage";
             task.setCoverageDir(scope.getGlobalScope().getProject().file(rootLocation + subFolder));
 
             if (scope.getVariantData() instanceof TestVariantData) {
@@ -380,6 +412,14 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
             }
 
             task.setEnabled(deviceProvider.isConfigured());
+
+            // outputs are never up-to-date
+            task.getOutputs().upToDateWhen(new Spec<Task>() {
+                @Override
+                public boolean isSatisfiedBy(Task task) {
+                    return false;
+                }
+            });
         }
     }
 }

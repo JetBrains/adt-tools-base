@@ -59,6 +59,11 @@ public class AndroidGradleOptions {
 
     private static final String ANDROID_ADDITIONAL_PLUGINS = "android.additional.plugins";
 
+    private static final String PROPERTY_SHARD_TESTS_BETWEEN_DEVICES =
+            "android.androidTest.shardBetweenDevices";
+    private static final String PROPERTY_SHARD_COUNT =
+            "android.androidTest.numShards";
+
     @NonNull
     public static Map<String, String> getExtraInstrumentationTestRunnerArgs(@NonNull Project project) {
         Map<String, String> argsMap = Maps.newHashMap();
@@ -72,6 +77,15 @@ public class AndroidGradleOptions {
         }
 
         return argsMap;
+    }
+
+    public static boolean getShardAndroidTestsBetweenDevices(@NonNull Project project) {
+        return getBoolean(project, PROPERTY_SHARD_TESTS_BETWEEN_DEVICES, false);
+    }
+
+    @Nullable
+    public static Integer getInstrumentationShardCount(@NonNull Project project) {
+        return getInteger(project, PROPERTY_SHARD_COUNT);
     }
 
     @Nullable
@@ -221,6 +235,19 @@ public class AndroidGradleOptions {
                 return Integer.parseInt(project.getProperties().get(propertyName).toString());
             } catch (NumberFormatException e) {
                 throw new RuntimeException("Property " + propertyName + " needs to be an integer.");
+            }
+        }
+
+        return null;
+    }
+
+    @Nullable
+    private static Float getFloat(@NonNull Project project, String propertyName) {
+        if (project.hasProperty(propertyName)) {
+            try {
+                return Float.parseFloat(project.getProperties().get(propertyName).toString());
+            } catch (NumberFormatException e) {
+                throw new RuntimeException("Property " + propertyName + " needs to be a float.");
             }
         }
 
