@@ -244,6 +244,7 @@ def groovyApiUrl = "http://groovy.codehaus.org/gapi/"
 def publicGroovyProjects = [
         project(":base:gradle"),
         project(":base:gradle-core"),
+        project(":base:builder-model"),
         project(":base:builder")
 ]
 
@@ -264,11 +265,14 @@ task javadocAll(type: Javadoc) {
     classpath = files(publicGroovyProjects.collect {project -> [project.sourceSets.main.compileClasspath, project.sourceSets.main.output] })
 //    include 'org/gradle/*'
 //    include 'org/gradle/api/**'
+    include 'com/android/builder/model/*.java'
     include 'com/android/build/gradle/*Extension.java'
+    include 'com/android/build/gradle/AndroidConfig.java'
     include 'com/android/build/gradle/internal/CompileOptions.java'
     include 'com/android/build/gradle/internal/coverage/JacocoOptions.java'
     include 'com/android/build/gradle/api/AndroidSource*.java'
     include 'com/android/build/gradle/api/VariantFilter.java'
+    include 'com/android/build/gradle/api/*Variant.java'
     include 'com/android/build/gradle/internal/dsl/**'
     include 'com/android/builder/core/Default*.java'
     include 'com/android/builder/internal/BaseConfigImpl.java'
