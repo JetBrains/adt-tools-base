@@ -16,9 +16,18 @@
 
 package com.android.build.gradle.internal.tasks;
 
+import static com.android.builder.core.BuilderConstants.CONNECTED;
+import static com.android.builder.core.BuilderConstants.DEVICE;
+import static com.android.builder.core.BuilderConstants.FD_ANDROID_RESULTS;
+import static com.android.builder.core.BuilderConstants.FD_ANDROID_TESTS;
+import static com.android.builder.core.BuilderConstants.FD_FLAVORS_ALL;
+import static com.android.builder.core.VariantType.ANDROID_TEST;
 import static com.android.utils.FileUtils.copy;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.scope.GlobalScope;
+import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.test.report.ReportType;
 import com.android.build.gradle.internal.test.report.TestReport;
 import com.android.utils.FileUtils;
@@ -26,6 +35,7 @@ import com.google.common.collect.Lists;
 
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
+import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.ParallelizableTask;
@@ -35,6 +45,7 @@ import org.gradle.logging.ConsoleRenderer;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 /**
@@ -166,5 +177,62 @@ public class AndroidReportTask extends DefaultTask implements AndroidTestTask {
         }
     }
 
+    public static class ConfigAction implements TaskConfigAction<AndroidReportTask> {
 
+        public enum TaskKind { CONNECTED, DEVICE_PROVIDER }
+
+        private final GlobalScope scope;
+
+        private final TaskKind taskKind;
+
+        public ConfigAction(
+                @NonNull GlobalScope scope,
+                @NonNull TaskKind taskKind) {
+            this.scope = scope;
+            this.taskKind = taskKind;
+        }
+
+        @NonNull
+        @Override
+        public String getName() {
+            return (taskKind == TaskKind.CONNECTED ? CONNECTED : DEVICE) + ANDROID_TEST.getSuffix();
+        }
+
+        @NonNull
+        @Override
+        public Class<AndroidReportTask> getType() {
+            return AndroidReportTask.class;
+        }
+
+        @Override
+        public void execute(@NonNull AndroidReportTask task) {
+
+            task.setGroup(JavaBasePlugin.VERIFICATION_GROUP);
+            task.setDescription((taskKind == TaskKind.CONNECTED) ?
+                    "Installs and runs instrumentation tests for all flavors on connected devices.":
+                    "Installs and runs instrumentation tests using all Device Providers.");
+            task.setReportType(ReportType.MULTI_FLAVOR);
+
+
+            final String defaultReportsDir = scope.getReportsDir().getAbsolutePath()
+                    + "/" + FD_ANDROID_TESTS;
+            final String defaultResultsDir = scope.getOutputsDir().getAbsolutePath()
+                    + "/" + FD_ANDROID_RESULTS;
+
+            final String subfolderName =
+                    taskKind == TaskKind.CONNECTED ? "/connected/" : "/devices/";
+
+            ConventionMappingHelper.map(task, "resultsDir", (Callable<File>) () -> {
+                final String dir = scope.getExtension().getTestOptions().getResultsDir();
+                String rootLocation = dir != null && !dir.isEmpty() ? dir : defaultResultsDir;
+                return scope.getProject().file(rootLocation + subfolderName + FD_FLAVORS_ALL);
+            });
+            ConventionMappingHelper.map(task, "reportsDir", (Callable<File>) () -> {
+                final String dir = scope.getExtension().getTestOptions().getReportDir();
+                String rootLocation = dir != null && !dir.isEmpty() ? dir : defaultReportsDir;
+                return scope.getProject().file(rootLocation + subfolderName + FD_FLAVORS_ALL);
+            });
+        }
+    }
 }
+

@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.scope;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.TaskFactory;
 import com.google.common.base.Objects;
+import com.google.common.base.Preconditions;
 
 import org.gradle.api.Action;
 import org.gradle.api.Task;
@@ -105,6 +106,9 @@ public class AndroidTask<T extends Task> {
      * @param dependencies Objects accepted by {@link Task#dependsOn}.
      */
     public void dependsOn(final TaskFactory taskFactory, final Object... dependencies) {
+        for (Object dependency : dependencies) {
+            Preconditions.checkNotNull(dependency);
+        }
         taskFactory.named(name, new Action<Task>() {
             @Override
             public void execute(Task task) {
