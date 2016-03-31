@@ -94,10 +94,10 @@ public abstract class License {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("<License ref:")
-          .append(getId())
-          .append(", text:")
-          .append(getValue())
-          .append(">");
+                .append(getId())
+                .append(", text:")
+                .append(getValue())
+                .append(">");
         return sb.toString();
     }
 
@@ -125,7 +125,7 @@ public abstract class License {
         }
         License other = (License) obj;
         return Objects.equal(getValue(), other.getValue()) &&
-          Objects.equal(getId(), other.getId());
+                Objects.equal(getId(), other.getId());
     }
 
     /**
@@ -143,11 +143,15 @@ public abstract class License {
             return false;
         }
         try {
-            String hash = Files.readFirstLine(licenseFile, Charsets.UTF_8);
-            return hash.equals(getLicenseHash());
+            for (String hash : Files.readLines(licenseFile, Charsets.UTF_8)) {
+                if (hash.equals(getLicenseHash())) {
+                    return true;
+                }
+            }
         } catch (IOException e) {
             return false;
         }
+        return false;
     }
 
     /**
@@ -168,11 +172,14 @@ public abstract class License {
             return false;
         }
         if (!licenseDir.exists()) {
-            licenseDir.mkdir();
+            if (!licenseDir.mkdir()) {
+                return false;
+            }
         }
         File licenseFile = new File(licenseDir, getId() == null ? getLicenseHash(): getId());
         try {
-            Files.write(getLicenseHash(), licenseFile, Charsets.UTF_8);
+            Files.append(String.format("%n"), licenseFile, Charsets.UTF_8);
+            Files.append(getLicenseHash(), licenseFile, Charsets.UTF_8);
         }
         catch (IOException e) {
             return false;
