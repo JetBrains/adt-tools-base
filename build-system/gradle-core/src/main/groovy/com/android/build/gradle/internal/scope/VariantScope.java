@@ -301,9 +301,9 @@ public interface VariantScope extends BaseScope {
 
     void setAssembleTask(@NonNull AndroidTask<DefaultTask> assembleTask);
 
-    AndroidTask<Task> getPreBuildTask();
+    AndroidTask<DefaultTask> getPreBuildTask();
 
-    void setPreBuildTask(AndroidTask<Task> preBuildTask);
+    void setPreBuildTask(AndroidTask<DefaultTask> preBuildTask);
 
     AndroidTask<PrepareDependenciesTask> getPrepareDependenciesTask();
 

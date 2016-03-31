@@ -105,7 +105,7 @@ public class VariantScopeImpl implements VariantScope {
 
     // Tasks
     private AndroidTask<DefaultTask> assembleTask;
-    private AndroidTask<Task> preBuildTask;
+    private AndroidTask<DefaultTask> preBuildTask;
     private AndroidTask<PrepareDependenciesTask> prepareDependenciesTask;
     private AndroidTask<ProcessAndroidResources> generateRClassTask;
 
@@ -854,13 +854,13 @@ public class VariantScopeImpl implements VariantScope {
     }
 
     @Override
-    public AndroidTask<Task> getPreBuildTask() {
+    public AndroidTask<DefaultTask> getPreBuildTask() {
         return preBuildTask;
     }
 
     @Override
     public void setPreBuildTask(
-            AndroidTask<Task> preBuildTask) {
+            AndroidTask<DefaultTask> preBuildTask) {
         this.preBuildTask = preBuildTask;
     }
 

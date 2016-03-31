@@ -32,6 +32,7 @@ import com.android.build.gradle.internal.dependency.LibraryDependencyImpl;
 import com.android.build.gradle.internal.dependency.ManifestDependencyImpl;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.model.MavenCoordinatesImpl;
+import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
 import com.android.build.gradle.internal.tasks.PrepareLibraryTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
@@ -111,17 +112,19 @@ public class DependencyManager {
     }
 
     public void addDependencyToPrepareTask(
+            @NonNull TaskFactory tasks,
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
-            @NonNull PrepareDependenciesTask prepareDependenciesTask,
+            @NonNull AndroidTask<PrepareDependenciesTask> prepareDependenciesTask,
             @NonNull LibraryDependencyImpl lib) {
         PrepareLibraryTask prepareLibTask = prepareTaskMap.get(lib.getNonTransitiveRepresentation());
         if (prepareLibTask != null) {
-            prepareDependenciesTask.dependsOn(prepareLibTask);
-            prepareLibTask.dependsOn(variantData.preBuildTask);
+            prepareDependenciesTask.dependsOn(tasks, prepareLibTask);
+            prepareLibTask.dependsOn(variantData.getScope().getPreBuildTask().getName());
         }
 
         for (LibraryDependency childLib : lib.getDependencies()) {
             addDependencyToPrepareTask(
+                    tasks,
                     variantData,
                     prepareDependenciesTask,
                     (LibraryDependencyImpl) childLib);

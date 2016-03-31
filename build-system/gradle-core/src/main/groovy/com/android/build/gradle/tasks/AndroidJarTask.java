@@ -17,9 +17,15 @@
 package com.android.build.gradle.tasks;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.scope.TaskConfigAction;
+import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.variant.BaseVariantData;
 
 import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.bundling.Jar;
+
+import java.io.File;
 
 /**
  * Decorated {@link Jar} task with android specific behaviors.
@@ -31,5 +37,39 @@ public class AndroidJarTask extends Jar implements BinaryFileProviderTask {
     @NonNull
     public Artifact getArtifact() {
         return new Artifact(BinaryArtifactType.JAR, getArchivePath());
+    }
+
+    public static class JarClassesConfigAction implements TaskConfigAction<AndroidJarTask> {
+
+        private final VariantScope scope;
+
+        public JarClassesConfigAction(@NonNull VariantScope scope) {
+            this.scope = scope;
+        }
+
+        @NonNull
+        @Override
+        public String getName() {
+            return scope.getTaskName("jar", "Classes");
+        }
+
+        @NonNull
+        @Override
+        public Class<AndroidJarTask> getType() {
+            return AndroidJarTask.class;
+        }
+
+        @Override
+        public void execute(@NonNull AndroidJarTask jarTask) {
+            final BaseVariantData variantData = scope.getVariantData();
+            final GradleVariantConfiguration config = variantData.getVariantConfiguration();
+            jarTask.setArchiveName("classes.jar");
+            jarTask.setDestinationDir(new File(
+                    scope.getGlobalScope().getIntermediatesDir(),
+                    "packaged/" + config.getDirName() + "/"));
+            jarTask.from(scope.getJavaOutputDir());
+            jarTask.dependsOn(scope.getJavacTask().getName());
+            variantData.binaryFileProviderTask = jarTask;
+        }
     }
 }
