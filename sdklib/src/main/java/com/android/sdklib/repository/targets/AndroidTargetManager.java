@@ -15,6 +15,7 @@
  */
 package com.android.sdklib.repository.targets;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.api.LocalPackage;
@@ -117,6 +118,15 @@ public class AndroidTargetManager {
                     if (baseTarget != null) {
                         result.put(p, new AddonTarget(p, baseTarget,
                                                       mSdkHandler.getSystemImageManager(progress), progress, mFop));
+                    }
+                }
+            }
+            for (LocalPackage p : manager.getPackages().getLocalPackagesForPrefix(SdkConstants.FD_ANDROID_SOURCES)) {
+                TypeDetails details = p.getTypeDetails();
+                if (details instanceof DetailsTypes.ApiDetailsType) {
+                    PlatformTarget target = platformTargets.get(DetailsTypes.getAndroidVersion((DetailsTypes.ApiDetailsType)details));
+                    if (target != null) {
+                        target.setSources(p.getLocation());
                     }
                 }
             }
