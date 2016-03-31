@@ -535,22 +535,43 @@ public final class AndroidSdkHandler {
 
     /**
      * Gets a {@link BuildToolInfo} corresponding to the newest installed build tool
-     * {@link RepoPackage}, or {@code null} if none are installed.
+     * {@link RepoPackage}, or {@code null} if none are installed (or if the {@code allowPreview}
+     * parameter is false and there was non-preview version available)
+     *
+     * @param progress     a progress indicator
+     * @param allowPreview ignore preview build tools version unless this parameter is true
      */
     @Nullable
-    public BuildToolInfo getLatestBuildTool(@NonNull ProgressIndicator progress) {
+    public BuildToolInfo getLatestBuildTool(@NonNull ProgressIndicator progress,
+                                            boolean allowPreview) {
+        if (allowPreview) {
+            // Not cached
+            return findBuildTool(progress, true);
+        }
+
+        // Usual path: don't include previews, e.g. get latest stable
         if (mLatestBuildTool == null) {
-            RepoManager manager = getSdkManager(progress);
-            BuildToolInfo info = null;
-            for (LocalPackage p : manager.getPackages()
-                    .getLocalPackagesForPrefix(SdkConstants.FD_BUILD_TOOLS)) {
-                if (info == null || info.getRevision().compareTo(p.getVersion()) < 0) {
-                     info = new BuildToolInfo(p.getVersion(), p.getLocation());
-                }
-            }
-            mLatestBuildTool = info;
+            mLatestBuildTool = findBuildTool(progress, false);
         }
         return mLatestBuildTool;
+    }
+
+    @Nullable
+    private BuildToolInfo findBuildTool(@NonNull ProgressIndicator progress,
+            boolean allowPreview) {
+        RepoManager manager = getSdkManager(progress);
+        BuildToolInfo info = null;
+        for (LocalPackage p : manager.getPackages()
+                .getLocalPackagesForPrefix(SdkConstants.FD_BUILD_TOOLS)) {
+            if (!allowPreview && p.getVersion().isPreview()) {
+                continue;
+            }
+            if (info == null || info.getRevision().compareTo(p.getVersion()) < 0) {
+                 info = new BuildToolInfo(p.getVersion(), p.getLocation());
+            }
+        }
+
+        return info;
     }
 
     /**
