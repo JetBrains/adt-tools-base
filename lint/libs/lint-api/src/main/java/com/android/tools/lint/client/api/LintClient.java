@@ -830,7 +830,15 @@ public abstract class LintClient {
         // build tools, regardless of project metadata. In Gradle, this
         // method is overridden to use the actual build tools specified in the
         // project.
-        return sdk != null ? sdk.getLatestBuildTool(getRepositoryLogger()) : null;
+        if (sdk != null) {
+            IAndroidTarget compileTarget = getCompileTarget(project);
+            if (compileTarget != null) {
+                return compileTarget.getBuildToolInfo();
+            }
+            return sdk.getLatestBuildTool(getRepositoryLogger(), false);
+        }
+
+        return null;
     }
 
     /**

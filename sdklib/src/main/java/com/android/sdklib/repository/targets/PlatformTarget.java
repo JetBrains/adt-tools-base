@@ -135,7 +135,7 @@ public class PlatformTarget implements IAndroidTarget {
         if (mBuildProps == null) {
             mBuildProps = Maps.newHashMap();
         }
-        mBuildToolInfo = sdkHandler.getLatestBuildTool(progress);
+        mBuildToolInfo = sdkHandler.getLatestBuildTool(progress, getVersion().isPreview());
 
         mSkins = Sets
           .newTreeSet(PackageParserUtils.parseSkinFolder(getFile(IAndroidTarget.SKINS), fop));
