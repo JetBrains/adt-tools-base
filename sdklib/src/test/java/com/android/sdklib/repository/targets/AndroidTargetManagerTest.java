@@ -108,6 +108,27 @@ public class AndroidTargetManagerTest extends TestCase {
         verifyPlatform23(platform23);
     }
 
+    public void testSources() throws Exception {
+        MockFileOp fop = new MockFileOp();
+        recordPlatform23(fop);
+
+        AndroidSdkHandler handler = new AndroidSdkHandler(new File("/sdk"), fop);
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+        AndroidTargetManager mgr = handler.getAndroidTargetManager(progress);
+        IAndroidTarget target = mgr.getTargets(progress).iterator().next();
+        progress.assertNoErrorsOrWarnings();
+        String sourcesPath = target.getPath(IAndroidTarget.SOURCES);
+        assertEquals("/sdk/platforms/android-23/sources", sourcesPath);
+
+        recordSources23(fop);
+        handler.getSdkManager(progress).loadSynchronously(0, progress, null, null);
+        mgr = handler.getAndroidTargetManager(progress);
+        target = mgr.getTargets(progress).iterator().next();
+        progress.assertNoErrorsOrWarnings();
+        sourcesPath = target.getPath(IAndroidTarget.SOURCES);
+        assertEquals("/sdk/sources/android-23", sourcesPath);
+    }
+
     private static void verifyPlatform13(IAndroidTarget target) {
         assertEquals(new AndroidVersion(13, null), target.getVersion());
         assertEquals("Android Open Source Project", target.getVendor());
@@ -314,6 +335,21 @@ public class AndroidTargetManagerTest extends TestCase {
                         + "<dependency path=\"tools\"><min-revision><major>12</major></min-revision>"
                         + "</dependency></dependencies></localPackage></ns2:sdk-repository>");
     }
+
+    private static void recordSources23(MockFileOp fop) {
+        fop.recordExistingFile("/sdk/sources/android-23/package.xml",
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><ns2:sdk-repository "
+                        + "xmlns:ns2=\"http://schemas.android.com/sdk/android/repo/repository2/01\" "
+                        + "xmlns:ns4=\"http://schemas.android.com/repository/android/common/01\">"
+                        + "<localPackage path=\"sources;android-23\" "
+                        + "obsolete=\"false\"><type-details "
+                        + "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
+                        + "xsi:type=\"ns2:sourceDetailsType\"><api-level>23</api-level>"
+                        + "</type-details><revision><major>1</major>"
+                        + "</revision><display-name>sources 23"
+                        + "</display-name></localPackage>"
+                        + "</ns2:sdk-repository>\n");
+        }
 
     private static void recordPlatform23(MockFileOp fop) {
         fop.recordExistingFile("/sdk/platforms/android-23/package.xml",

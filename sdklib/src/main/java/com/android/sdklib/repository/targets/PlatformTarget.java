@@ -102,6 +102,11 @@ public class PlatformTarget implements IAndroidTarget {
     private BuildToolInfo mBuildToolInfo;
 
     /**
+     * Location of the sources for this package. If {@code null} the legacy path will be used.
+     */
+    private File mSourcesPath = null;
+
+    /**
      * Construct a new {@code PlatformTarget} based on the given package.
      */
     public PlatformTarget(@NonNull LocalPackage p, @NonNull AndroidSdkHandler sdkHandler,
@@ -139,6 +144,10 @@ public class PlatformTarget implements IAndroidTarget {
 
         mSkins = Sets
           .newTreeSet(PackageParserUtils.parseSkinFolder(getFile(IAndroidTarget.SKINS), fop));
+    }
+
+    public void setSources(@Nullable File location) {
+        mSourcesPath = location;
     }
 
     /**
@@ -260,6 +269,11 @@ public class PlatformTarget implements IAndroidTarget {
             case UI_AUTOMATOR_JAR:
                 return getLocation() + SdkConstants.FN_UI_AUTOMATOR_LIBRARY;
             case SOURCES:
+                if (mSourcesPath != null) {
+                    return mSourcesPath.getPath();
+                }
+                // It seems that such a path doesn't usually exist, but this is left here to
+                // preserve the old behavior.
                 return getLocation() + SdkConstants.FD_ANDROID_SOURCES;
             case ANDROID_AIDL:
                 return getLocation() + SdkConstants.FN_FRAMEWORK_AIDL;
