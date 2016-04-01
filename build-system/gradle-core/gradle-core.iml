@@ -2,12 +2,11 @@
 <module relativePaths="true" type="JAVA_MODULE" version="4">
   <component name="NewModuleRootManager" inherit-compiler-output="true">
     <exclude-output />
-    <content url="file://$MODULE_DIR$/../../../../out/build/base/gradle-core/build/generated-src/antlr/main">
-      <sourceFolder url="file://$MODULE_DIR$/../../../../out/build/base/gradle-core/build/generated-src/antlr/main" isTestSource="false" />
+    <content url="file://$MODULE_DIR$/../../../../out/build/base/gradle-core/build/generated-src">
+      <sourceFolder url="file://$MODULE_DIR$/../../../../out/build/base/gradle-core/build/generated-src/antlr/main" isTestSource="false" packagePrefix="com.android.build.gradle.shrinker.parser" generated="true" />
     </content>
     <content url="file://$MODULE_DIR$">
-      <sourceFolder url="file://$MODULE_DIR$/src/fromGradle/groovy" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/src/main/groovy" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/fromGradle/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/test/java" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/src/test/incremental-test-classes/base" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/src/test/resources" type="java-test-resource" />
