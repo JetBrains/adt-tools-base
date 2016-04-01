@@ -243,8 +243,8 @@ public class FileManager {
         if (inbox.isDirectory()) {
             File resources = new File(inbox, RESOURCE_FILE_NAME);
             if (resources.isFile()) {
-                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                    Log.i(LOG_TAG, "Processing resource file from inbox (" + resources + ")");
+                if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                    Log.v(LOG_TAG, "Processing resource file from inbox (" + resources + ")");
                 }
                 byte[] bytes = readRawBytes(resources);
                 if (bytes != null) {
@@ -267,7 +267,9 @@ public class FileManager {
     public static File getExternalResourceFile() {
         File file = getResourceFile(getReadFolder());
         if (!file.exists()) {
-            Log.v(LOG_TAG, "Cannot find external resources, not patching them in");
+            if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                Log.v(LOG_TAG, "Cannot find external resources, not patching them in");
+            }
             return null;
         }
 
@@ -320,7 +322,9 @@ public class FileManager {
             dexFiles = dexFolder.listFiles();
         }
         if (dexFiles == null || dexFiles.length == 0) {
-            Log.v(LOG_TAG, "Cannot find dex classes, not patching them in");
+            if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                Log.v(LOG_TAG, "Cannot find dex classes, not patching them in");
+            }
             return Collections.emptyList();
         }
 
@@ -356,8 +360,8 @@ public class FileManager {
             String message = "Your app does not have the latest code changes because it "
                     + "was restarted manually. Please run from IDE instead.";
 
-            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                Log.i(LOG_TAG, message);
+            if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                Log.v(LOG_TAG, message);
             }
 
             // We now want to show a toast to the user showing that the app is older.
@@ -393,7 +397,9 @@ public class FileManager {
         }
         InputStream stream = BootstrapApplication.class.getResourceAsStream("/instant-run.zip");
         if (stream == null) {
-            Log.v(LOG_TAG, "Could not find slices in APK; aborting.");
+            if (Log.isLoggable(LOG_TAG, Log.ERROR)) {
+                Log.e(LOG_TAG, "Could not find slices in APK; aborting.");
+            }
             return new File[0];
         }
         List<File> slices = new ArrayList<File>(30);
@@ -547,8 +553,8 @@ public class FileManager {
                 CLASSES_DEX_SUFFIX);
         File file = new File(dexFolder, fileName);
 
-        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-            Log.i(LOG_TAG, "Writing new dex file: " + file);
+        if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+            Log.v(LOG_TAG, "Writing new dex file: " + file);
         }
 
         return file;
@@ -661,8 +667,8 @@ public class FileManager {
         if (!folder.isDirectory()) {
             boolean created = folder.mkdirs();
             if (!created) {
-                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                    Log.i(LOG_TAG, "Cannot create local resource file directory " + folder);
+                if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                    Log.v(LOG_TAG, "Cannot create local resource file directory " + folder);
                 }
                 return;
             }
@@ -809,13 +815,13 @@ public class FileManager {
 
     public static byte[] readRawBytes(@NonNull File source) {
         try {
-            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                Log.i(LOG_TAG, "Reading the bytes for file " + source);
+            if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                Log.v(LOG_TAG, "Reading the bytes for file " + source);
             }
             long length = source.length();
             if (length > Integer.MAX_VALUE) {
-                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                    Log.i(LOG_TAG, "File too large (" + length + ")");
+                if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                    Log.v(LOG_TAG, "File too large (" + length + ")");
                 }
                 return null;
             }
@@ -833,8 +839,8 @@ public class FileManager {
                     index += numRead;
                     remaining -= numRead;
                 }
-                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                    Log.i(LOG_TAG, "Returning length " + result.length + " for file " + source);
+                if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                    Log.v(LOG_TAG, "Returning length " + result.length + " for file " + source);
                 }
                 return result;
             } finally {
@@ -845,8 +851,8 @@ public class FileManager {
                 Log.e(LOG_TAG, "Failed to read file " + source, ioe);
             }
         }
-        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-            Log.i(LOG_TAG, "I/O error, no bytes returned for " + source);
+        if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+            Log.v(LOG_TAG, "I/O error, no bytes returned for " + source);
         }
         return null;
     }

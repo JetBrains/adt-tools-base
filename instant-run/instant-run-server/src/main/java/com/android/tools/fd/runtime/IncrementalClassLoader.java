@@ -61,15 +61,15 @@ public class IncrementalClassLoader extends ClassLoader {
         try {
             Class<?> aClass = delegateClassLoader.findClass(className);
             //noinspection PointlessBooleanExpression,ConstantConditions
-            if (DEBUG_CLASS_LOADING && Log.isLoggable(LOG_TAG, Log.INFO)) {
-                Log.i(LOG_TAG, "Incremental class loader: findClass(" + className + ") = " + aClass);
+            if (DEBUG_CLASS_LOADING && Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                Log.v(LOG_TAG, "Incremental class loader: findClass(" + className + ") = " + aClass);
             }
 
             return aClass;
         } catch (ClassNotFoundException e) {
             //noinspection PointlessBooleanExpression,ConstantConditions
-            if (DEBUG_CLASS_LOADING && Log.isLoggable(LOG_TAG, Log.INFO)) {
-                Log.i(LOG_TAG, "Incremental class loader: findClass(" + className + ") : not found");
+            if (DEBUG_CLASS_LOADING && Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                Log.v(LOG_TAG, "Incremental class loader: findClass(" + className + ") : not found");
             }
             throw e;
         }
@@ -89,15 +89,15 @@ public class IncrementalClassLoader extends ClassLoader {
             try {
                 Class<?> aClass = super.findClass(name);
                 //noinspection PointlessBooleanExpression,ConstantConditions
-                if (DEBUG_CLASS_LOADING && Log.isLoggable(LOG_TAG, Log.INFO)) {
-                    Log.i(LOG_TAG, "Delegate class loader: findClass(" + name + ") = " + aClass);
+                if (DEBUG_CLASS_LOADING && Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                    Log.v(LOG_TAG, "Delegate class loader: findClass(" + name + ") = " + aClass);
                 }
 
                 return aClass;
             } catch (ClassNotFoundException e) {
                 //noinspection PointlessBooleanExpression,ConstantConditions
-                if (DEBUG_CLASS_LOADING && Log.isLoggable(LOG_TAG, Log.INFO)) {
-                    Log.i(LOG_TAG, "Delegate class loader: findClass(" + name + ") : not found");
+                if (DEBUG_CLASS_LOADING && Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+                    Log.v(LOG_TAG, "Delegate class loader: findClass(" + name + ") : not found");
                 }
                 throw e;
             }
@@ -126,8 +126,8 @@ public class IncrementalClassLoader extends ClassLoader {
             pathBuilder.append(dex);
         }
 
-        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-            Log.i(LOG_TAG, "Incremental dex path is "
+        if (Log.isLoggable(LOG_TAG, Log.VERBOSE)) {
+            Log.v(LOG_TAG, "Incremental dex path is "
                     + BootstrapApplication.join('\n', dexes));
         }
         return pathBuilder.toString();
