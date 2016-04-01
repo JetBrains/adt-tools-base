@@ -119,7 +119,6 @@ jlongArray Java_com_android_profilerapp_network_NetworkFragment_getTrafficBytes(
         const char* uidChars = env->GetStringUTFChars(uidString, JNI_FALSE);
 
         string line;
-        unsigned int lineIndex = 0;
 
         size_t receiveTokenStart;
         size_t sendTokenStart;
@@ -137,7 +136,6 @@ jlongArray Java_com_android_profilerapp_network_NetworkFragment_getTrafficBytes(
 
                 bytes[0] += strtoll(&line[sendTokenStart], nullptr, 10);
                 bytes[1] += strtoll(&line[receiveTokenStart], nullptr, 10);
-                LOGD("Read /proc/net/xt_qtaguid/stats line %d bytes: %lld sent, %lld received", lineIndex++, bytes[0], bytes[1]);
             }
         }
         inStream.close();
