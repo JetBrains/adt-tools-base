@@ -15,7 +15,7 @@ File baseInstrumentedClasses = new File(classesDir, "baseInstrumented")
 
 sourceSets {
     main {
-        groovy.srcDirs = ['src/main/groovy', 'src/fromGradle/groovy']
+        java.srcDirs += 'src/fromGradle/java'
         resources.srcDirs = ['src/main/resources', 'src/fromGradle/resources']
         compileClasspath += configurations.provided
     }
@@ -207,8 +207,4 @@ test {
 
 artifacts {
     incrementalTestClasses jarIncrementalTests
-}
-
-generateGrammarSource {
-    outputDirectory = new File(outputDirectory,'/com/android/build/gradle/shrinker/parser')
 }
