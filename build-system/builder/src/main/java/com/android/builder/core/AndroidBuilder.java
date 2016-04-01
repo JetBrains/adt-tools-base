@@ -175,7 +175,7 @@ public class AndroidBuilder {
     };
 
     private static final Object LOCK_FOR_DEX = new Object();
-    private static final AtomicInteger DEX_PROCESS_COUNT = new AtomicInteger(2);
+    private static final AtomicInteger DEX_PROCESS_COUNT = new AtomicInteger(4);
 
     /**
      * API level for split APKs.
@@ -1573,9 +1573,11 @@ public class AndroidBuilder {
                 // this module requests, and print a warning if necessary.
                 if (dexOptions.getMaxProcessCount() != null
                         && dexOptions.getMaxProcessCount() != DEX_PROCESS_COUNT.get()) {
-                    getLogger().warning("Module requested a maximum number of %d concurrent"
-                                    + " dx processes but it was initialized earlier with %d,"
-                                    + " setting is ignored",
+                    getLogger().warning(
+                            "dexOptions is specifying a maximum number of %1$d concurrent dx processes,"
+                                    + " but the Gradle daemon was initialized with %2$d.\n"
+                                    + "To initialize with a different maximum value,"
+                                    + " first stop the Gradle daemon by calling ‘gradlew —-stop’.",
                             dexOptions.getMaxProcessCount(),
                             DEX_PROCESS_COUNT.get());
                 }
