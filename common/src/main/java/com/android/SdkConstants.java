@@ -1035,6 +1035,16 @@ public final class SdkConstants {
     public static final String ATTR_OPEN_DRAWER = "openDrawer";        //$NON-NLS-1$
     public static final String ATTR_SHOW_IN = "showIn";                //$NON-NLS-1$
 
+    // TextView attributes
+    public static final String ATTR_TEXT_APPEARANCE = "textAppearance"; //$NON-NLS-1$
+    public static final String ATTR_FONT_FAMILY = "fontFamily";        //$NON-NLS-1$
+    public static final String ATTR_LINE_SPACING_EXTRA = "lineSpacingExtra"; //$NON-NLS-1$
+    public static final String ATTR_TEXT_STYLE = "textStyle";          //$NON-NLS-1$
+    public static final String ATTR_TEXT_ALIGNMENT = "textAlignment";  //$NON-NLS-1$
+    public static final String ATTR_TEXT_COLOR = "textColor";          //$NON-NLS-1$
+    public static final String ATTR_TEXT_COLOR_HINT = "textColorHint"; //$NON-NLS-1$
+    public static final String ATTR_TEXT_ALL_CAPS = "textAllCaps";     //$NON-NLS-1$
+
     // Tools attributes for AdapterView inheritors
     public static final String ATTR_LISTFOOTER = "listfooter";         //$NON-NLS-1$
     public static final String ATTR_LISTHEADER = "listheader";         //$NON-NLS-1$
@@ -1424,6 +1434,23 @@ public final class SdkConstants {
     public static final String GRAVITY_VALUE_CENTER_HORIZONTAL = "center_horizontal"; //$NON-NLS-1$
     public static final String GRAVITY_VALUE_CENTER_VERTICAL = "center_vertical";     //$NON-NLS-1$
     public static final String GRAVITY_VALUE_FILL = "fill";                           //$NON-NLS-1$
+
+    public static class TextStyle {
+        public static final String VALUE_BOLD = "bold";                               //$NON-NLS-1$
+        public static final String VALUE_ITALIC = "italic";                           //$NON-NLS-1$
+    }
+
+    // Text Alignment values.
+    public static class TextAlignment {
+        public static final String NONE = "none";                                     //$NON-NLS-1$
+        public static final String INHERIT = "inherit";                               //$NON-NLS-1$
+        public static final String GRAVITY = "gravity";                               //$NON-NLS-1$
+        public static final String TEXT_START = "textStart";                          //$NON-NLS-1$
+        public static final String TEXT_END = "textEnd";                              //$NON-NLS-1$
+        public static final String CENTER = "center";                                 //$NON-NLS-1$
+        public static final String VIEW_START = "viewStart";                          //$NON-NLS-1$
+        public static final String VIEW_END = "viewEnd";                              //$NON-NLS-1$
+    }
 
     /**
      * The top level android package as a prefix, "android.".
