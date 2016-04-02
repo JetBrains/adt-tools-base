@@ -77,7 +77,6 @@ public class AppWithCompileLibTest {
     @Test
     public void checkCompiledLibraryIsInTheModel() {
         Variant variant = ModelHelper.getVariant(models.get(":app").getVariants(), "debug");
-        Truth.assertThat(variant).isNotNull();
 
         Dependencies deps = variant.getMainArtifact().getDependencies();
         Collection<AndroidLibrary> libraries = deps.getLibraries();

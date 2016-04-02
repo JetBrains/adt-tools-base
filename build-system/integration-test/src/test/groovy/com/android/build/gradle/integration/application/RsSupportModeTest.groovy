@@ -60,7 +60,6 @@ class RsSupportModeTest {
     @Test
     void testRsSupportMode() throws Exception {
         Variant debugVariant = ModelHelper.getVariant(model.getVariants(), "x86Debug")
-        assertNotNull("x86Debug variant null-check", debugVariant)
 
         AndroidArtifact mainArtifact = debugVariant.getMainArtifact()
         Dependencies dependencies = mainArtifact.getDependencies()

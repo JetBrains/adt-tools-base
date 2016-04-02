@@ -83,7 +83,6 @@ public class AppWithCompileIndirectJarTest {
     @Test
     public void checkCompiledJarIsInTheModel() {
         Variant variant = ModelHelper.getVariant(models.get(":app").getVariants(), "debug");
-        Truth.assertThat(variant).isNotNull();
 
         Dependencies deps = variant.getMainArtifact().getDependencies();
         Collection<String> projectDeps = deps.getProjects();

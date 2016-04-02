@@ -75,7 +75,6 @@ class CombinedDensityWithDisabledLanguageTest {
 
         // get the main artifact of the debug artifact
         Variant debugVariant = ModelHelper.getVariant(variants, DEBUG)
-        assertNotNull("debug Variant null-check", debugVariant)
         AndroidArtifact debugMainArtifact = debugVariant.getMainArtifact()
         assertNotNull("Debug main info null-check", debugMainArtifact)
 

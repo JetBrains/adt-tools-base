@@ -84,9 +84,8 @@ applicationVariants.all { variant ->
         assertFileRenaming(RELEASE)
     }
 
-    private assertFileRenaming(String buildType) {
+    private static void assertFileRenaming(String buildType) {
         Variant variant = ModelHelper.getVariant(model.getVariants(), buildType)
-        assertNotNull("Variant null-check", variant)
         AndroidArtifact mainArtifact = variant.getMainArtifact()
         assertNotNull("main info null-check", mainArtifact)
 

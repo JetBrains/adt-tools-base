@@ -73,7 +73,6 @@ public class AppWithProvidedProjectJarTest {
     @Test
     public void checkProvidedJarIsInTheMainArtifactDependency() {
         Variant variant = ModelHelper.getVariant(models.get(":app").getVariants(), "debug");
-        Truth.assertThat(variant).isNotNull();
 
         Dependencies deps = variant.getMainArtifact().getDependencies();
         assertThat(deps.getProjects()).named("project deps").containsExactly(":jar");
