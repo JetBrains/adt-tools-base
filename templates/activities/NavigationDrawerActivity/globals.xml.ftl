@@ -8,5 +8,5 @@
 </#if>
     <global id="menuName" value="${classToResource(activityClass)}" />
     <global id="simpleLayoutName" value="<#if appCompatActivity>${contentLayoutName}<#else>${layoutName}</#if>" />
-    <global id="includeImageDrawables" type="boolean" value="${(minApi?number lt 21)?string}" />
+    <global id="includeImageDrawables" type="boolean" value="${(minApiLevel?number lt 21)?string}" />
 </globals>
