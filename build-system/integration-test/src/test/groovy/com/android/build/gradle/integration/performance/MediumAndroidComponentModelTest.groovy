@@ -43,7 +43,7 @@ class MediumAndroidComponentModelTest {
                 .withDepth(MEDIUM_DEPTH)
                 .withBreadth(MEDIUM_BREADTH)
                 .create())
-            .forExperimentalPlugin(true)
+            .useExperimentalGradleVersion(true)
             .create()
 
     @AfterClass

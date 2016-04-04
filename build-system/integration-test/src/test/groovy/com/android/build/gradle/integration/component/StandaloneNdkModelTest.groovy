@@ -41,7 +41,7 @@ class StandaloneNdkModelTest {
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(new EmptyAndroidTestApp())
-            .forExperimentalPlugin(true)
+            .useExperimentalGradleVersion(true)
             .create()
 
     @Before

@@ -71,7 +71,7 @@ public class DataBindingTest {
         }
         project = GradleTestProject.builder()
                 .fromTestProject("databinding", options.isEmpty() ? null : Joiner.on('-').join(options))
-                .forExperimentalPlugin(forExperimentalPlugin)
+                .useExperimentalGradleVersion(forExperimentalPlugin)
                 .create();
     }
 

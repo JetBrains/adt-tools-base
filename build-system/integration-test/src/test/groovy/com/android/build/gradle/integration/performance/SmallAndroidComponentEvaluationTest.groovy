@@ -40,7 +40,7 @@ class SmallAndroidComponentEvaluationTest {
                 .withDepth(SMALL_DEPTH)
                 .withBreadth(SMALL_BREADTH)
                 .create())
-            .forExperimentalPlugin(true)
+            .useExperimentalGradleVersion(true)
             .create()
 
     @AfterClass

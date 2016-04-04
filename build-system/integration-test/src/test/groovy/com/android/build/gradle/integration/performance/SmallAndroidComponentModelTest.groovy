@@ -40,7 +40,7 @@ class SmallAndroidComponentModelTest {
                 .withDepth(LargeTestProject.SMALL_DEPTH)
                 .withBreadth(LargeTestProject.SMALL_BREADTH)
                 .create())
-            .forExperimentalPlugin(true)
+            .useExperimentalGradleVersion(true)
             .create()
 
     @AfterClass

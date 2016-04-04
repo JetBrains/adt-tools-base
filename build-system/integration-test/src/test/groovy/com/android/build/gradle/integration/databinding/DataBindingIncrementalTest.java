@@ -70,7 +70,7 @@ public class DataBindingIncrementalTest {
         project = GradleTestProject.builder()
                 .fromTestProject("databindingIncremental",
                         experimental ? "forexperimental" : null)
-                .forExperimentalPlugin(experimental)
+                .useExperimentalGradleVersion(experimental)
                 .create();
     }
 

@@ -183,6 +183,6 @@ class ArtifactApiTest {
         // ATTENTION Author and Reviewers - please make sure required changes to the build file
         // are backwards compatible before updating this test.
         assertThat(FileUtils.sha1(project.file("build.gradle")))
-                .isEqualTo("94e60731ba5aab60aed758f2845cccc1c972a977")
+                .isEqualTo("075b7b983ad2d77a378536f181f3cf17a758380c")
     }
 }

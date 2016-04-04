@@ -28,7 +28,7 @@ import org.junit.Test
 class AndroidComponentPluginTest {
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder()
-            .forExperimentalPlugin(true)
+            .useExperimentalGradleVersion(true)
             .create();
 
     @BeforeClass
