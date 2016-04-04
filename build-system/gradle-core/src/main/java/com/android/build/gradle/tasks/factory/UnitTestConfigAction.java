@@ -48,6 +48,14 @@ import java.util.concurrent.Callable;
  */
 public class UnitTestConfigAction implements TaskConfigAction<Test> {
 
+    private static final Predicate<File> NOT_PLATFORM_JAR = new Predicate<File>() {
+        @Override
+        public boolean apply(@Nullable File file) {
+            Preconditions.checkState(file != null);
+            return !FN_FRAMEWORK_LIBRARY.equals(file.getName());
+        }
+    };
+
     final VariantScope scope;
 
     public UnitTestConfigAction(VariantScope scope) {
@@ -91,20 +99,20 @@ public class UnitTestConfigAction implements TaskConfigAction<Test> {
                     public ConfigurableFileCollection call() throws Exception {
                         Iterable<File> filteredBootClasspath = Iterables.filter(
                                 scope.getGlobalScope().getAndroidBuilder().getBootClasspath(false),
-                                new Predicate<File>() {
-                                    @Override
-                                    public boolean apply(@Nullable File file) {
-                                        Preconditions.checkState(file != null);
-                                        return !FN_FRAMEWORK_LIBRARY.equals(file.getName());
-                                    }
-                                });
+                                NOT_PLATFORM_JAR);
 
                         List<Object> classpaths = Lists.newArrayList();
 
                         // Get classpath values from tasks if the tasks are already created.
                         final AbstractCompile testCompileTask = variantData.javacTask;
                         if (testCompileTask != null) {
-                            classpaths.add(testCompileTask.getClasspath());
+                            // When Jack is used for building the APK, the platform jar for javac
+                            // may end up in the class path (as opposed to boot class path), so we
+                            // need to remove it.
+                            classpaths.add(
+                                    Iterables.filter(
+                                            testCompileTask.getClasspath().getFiles(),
+                                            NOT_PLATFORM_JAR));
                             classpaths.add(testCompileTask.getOutputs().getFiles());
                         } else {
                             classpaths.add(testedVariantData.getScope().getJavaOutputs());
