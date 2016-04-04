@@ -36,7 +36,6 @@ import com.android.builder.model.SyncIssue;
 import com.android.builder.model.Version;
 import com.android.ide.common.util.ReferenceHolder;
 import com.android.io.StreamException;
-import com.android.repository.Revision;
 import com.android.sdklib.internal.project.ProjectProperties;
 import com.android.sdklib.internal.project.ProjectPropertiesWorkingCopy;
 import com.android.utils.FileUtils;
@@ -61,7 +60,6 @@ import org.gradle.tooling.ResultHandler;
 import org.gradle.tooling.internal.consumer.DefaultGradleConnector;
 import org.gradle.tooling.model.GradleProject;
 import org.gradle.tooling.model.GradleTask;
-import org.junit.Assume;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -78,7 +76,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -571,7 +568,6 @@ public class GradleTestProject implements TestRule {
      *   - other modifiers (e.g. "unsigned", "aligned")
      */
     public File getApk(String ... dimensions) {
-        // TODO: Add overload for tests and splits.
         List<String> dimensionList = Lists.newArrayListWithExpectedSize(1 + dimensions.length);
         dimensionList.add(getName());
         dimensionList.addAll(Arrays.asList(dimensions));
@@ -596,7 +592,6 @@ public class GradleTestProject implements TestRule {
      *   - other modifiers (e.g. "unsigned", "aligned")
      */
     public File getAar(String ... dimensions) {
-        // TODO: Add overload for tests and splits.
         List<String> dimensionList = Lists.newArrayListWithExpectedSize(1 + dimensions.length);
         dimensionList.add(getName());
         dimensionList.addAll(Arrays.asList(dimensions));
@@ -620,7 +615,7 @@ public class GradleTestProject implements TestRule {
     /**
      * Returns a string that contains the gradle buildscript content
      */
-    public String getGradleBuildscript() {
+    public static String getGradleBuildscript() {
         return "apply from: \"../commonHeader.gradle\"\n" +
                "buildscript { apply from: \"../commonBuildScript.gradle\" }\n" +
                "\n" +
@@ -635,7 +630,7 @@ public class GradleTestProject implements TestRule {
         try {
             GradleProject project = connection.getModel(GradleProject.class);
             return project.getTasks().stream()
-                    .map((Function<GradleTask, String>) GradleTask::getName)
+                    .map(GradleTask::getName)
                     .collect(Collectors.toList());
         } finally {
             connection.close();
@@ -1064,9 +1059,7 @@ public class GradleTestProject implements TestRule {
                     throw new IOException("Failed to sync file system.");
                 }
             }
-        } catch (IOException e) {
-            System.err.println(Throwables.getStackTraceAsString(e));
-        } catch (InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             System.err.println(Throwables.getStackTraceAsString(e));
         }
     }
