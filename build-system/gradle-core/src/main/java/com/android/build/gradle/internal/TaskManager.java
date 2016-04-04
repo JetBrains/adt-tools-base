@@ -780,7 +780,10 @@ public abstract class TaskManager {
             // always depend on merge res,
             variantOutputScope.getProcessResourcesTask().dependsOn(tasks,
                     scope.getMergeResourcesTask());
-
+            if (scope.getDataBindingProcessLayoutsTask() != null) {
+                variantOutputScope.getProcessResourcesTask().dependsOn(tasks,
+                        scope.getDataBindingProcessLayoutsTask().getName());
+            }
             if (getIncrementalMode(scope.getVariantConfiguration()) != IncrementalMode.LOCAL_RES_ONLY) {
                 variantOutputScope.getProcessResourcesTask().dependsOn(tasks,
                         variantOutputScope.getManifestProcessorTask(),
@@ -2091,6 +2094,15 @@ public abstract class TaskManager {
         }
 
         setupCompileTaskDependencies(tasks, scope, exportBuildInfo);
+
+        // support for split apk
+        for (BaseVariantOutputData baseVariantOutputData : scope.getVariantData().getOutputs()) {
+            final ProcessAndroidResources processResTask =
+                    baseVariantOutputData.processResourcesTask;
+            if (processResTask != null) {
+                processResTask.dependsOn(processLayoutsTask.getName());
+            }
+        }
     }
 
     /**
