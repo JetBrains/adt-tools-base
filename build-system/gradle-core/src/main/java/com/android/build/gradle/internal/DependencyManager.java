@@ -78,9 +78,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * A manager to resolve configuration dependencies.
@@ -104,10 +102,14 @@ public class DependencyManager {
      * Returns the list of packaged local jars.
      */
     public static List<File> getPackagedLocalJarFileList(DependencyContainer dependencyContainer) {
-        Set<File> files = dependencyContainer.getLocalDependencies().stream()
-                .filter(JarDependency::isPackaged)
-                .map(JarDependency::getJarFile)
-                .collect(Collectors.toSet());
+        List<JarDependency> jarDependencyList = dependencyContainer.getLocalDependencies();
+        Set<File> files = Sets.newHashSetWithExpectedSize(jarDependencyList.size());
+        for (JarDependency jarDependency : jarDependencyList) {
+            if (jarDependency.isPackaged()) {
+                files.add(jarDependency.getJarFile());
+            }
+        }
+
         return Lists.newArrayList(files);
     }
 
@@ -461,9 +463,9 @@ public class DependencyManager {
             }
         } else {
             // just convert all of them to JarDependency
-            jars.addAll(jarInfoSet.stream()
-                    .map(JarInfo::createJarDependency)
-                    .collect(Collectors.toList()));
+            for (JarInfo jarInfo : jarInfoSet) {
+                jars.add(jarInfo.createJarDependency());
+            }
             librariesToKeep.addAll(libInfoSet);
         }
 
@@ -617,15 +619,20 @@ public class DependencyManager {
             @NonNull List<LibInfo> libInfos,
             Set<LibInfo> librariesToKeep,
             @NonNull Multimap<LibraryDependency, VariantDependencies> reverseMap) {
+        List<LibraryDependencyImpl> list = Lists.newArrayListWithCapacity(libInfos.size());
+
         // since the LibInfos is a graph and the previous "foundLibraries" map ensure we reuse
         // instance where applicable, we'll create a map to keep track of what we have already
         // converted.
         Map<LibInfo, LibraryDependencyImpl> convertedMap = Maps.newIdentityHashMap();
 
-        return libInfos.stream()
-                .filter(librariesToKeep::contains)
-                .map(libInfo -> convertLibInfo(libInfo, librariesToKeep, reverseMap, convertedMap))
-                .collect(Collectors.toList());
+        for (LibInfo libInfo : libInfos) {
+            if (librariesToKeep.contains(libInfo)) {
+                list.add(convertLibInfo(libInfo, librariesToKeep, reverseMap, convertedMap));
+            }
+        }
+
+        return list;
     }
 
     private static LibraryDependencyImpl convertLibInfo(
@@ -638,10 +645,13 @@ public class DependencyManager {
             // first, convert the children.
             @SuppressWarnings("unchecked")
             List<LibInfo> children = (List<LibInfo>) (List<?>) libInfo.getDependencies();
-            List<LibraryDependency> convertedChildren = children.stream()
-                    .filter(librariesToKeep::contains)
-                    .map(child -> convertLibInfo(child, librariesToKeep, reverseMap, convertedMap))
-                    .collect(Collectors.toList());
+            List<LibraryDependency> convertedChildren = Lists.newArrayListWithCapacity(children.size());
+
+            for (LibInfo child : children) {
+                if (librariesToKeep.contains(child)) {
+                    convertedChildren.add(convertLibInfo(child, librariesToKeep, reverseMap, convertedMap));
+                }
+            }
 
             // now convert the libInfo
             convertedLib = new LibraryDependencyImpl(
@@ -922,7 +932,7 @@ public class DependencyManager {
                         }
                         // check this jar does not have a dependency on an library, as this would not work.
                         if (!nestedLibraries.isEmpty()) {
-                            if (Objects.equals(testedProjectPath, gradlePath)) {
+                            if (testedProjectPath != null && testedProjectPath.equals(gradlePath)) {
                                 // TODO: make sure this is a direct dependency and not a transitive one.
                                 // add nested libs as optional somehow...
                                 for (LibInfo lib : nestedLibraries) {
