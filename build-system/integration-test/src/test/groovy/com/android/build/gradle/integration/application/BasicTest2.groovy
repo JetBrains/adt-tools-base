@@ -81,7 +81,6 @@ class BasicTest2 {
 
         // debug variant
         Variant debugVariant = ModelHelper.getVariant(variants, DEBUG)
-        assertNotNull("debug Variant null-check", debugVariant)
         new ProductFlavorHelper(debugVariant.getMergedFlavor(), "Debug Merged Flavor")
                 .setVersionCode(12)
                 .setVersionName("2.0")
@@ -223,7 +222,6 @@ class BasicTest2 {
 
         // release variant, not tested.
         Variant releaseVariant = ModelHelper.getVariant(variants, "release")
-        assertNotNull("release Variant null-check", releaseVariant)
 
         AndroidArtifact relMainInfo = releaseVariant.getMainArtifact()
         assertNotNull("Release main info null-check", relMainInfo)

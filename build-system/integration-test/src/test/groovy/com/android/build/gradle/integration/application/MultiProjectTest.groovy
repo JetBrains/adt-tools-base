@@ -62,7 +62,6 @@ class MultiProjectTest {
         assertEquals("Variant count", 2, variants.size())
 
         Variant variant = ModelHelper.getVariant(variants, "release")
-        assertNotNull("release variant null-check", variant)
 
         AndroidArtifact mainInfo = variant.getMainArtifact()
         assertNotNull("Main Artifact null-check", mainInfo)

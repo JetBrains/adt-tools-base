@@ -62,7 +62,6 @@ public class AppWithClassifierDepTest {
     @Test
     public void checkDebugDepInModel() {
         Variant variant = ModelHelper.getVariant(model.getVariants(), "debug");
-        Truth.assertThat(variant).isNotNull();
         Dependencies dependencies = variant.getMainArtifact().getDependencies();
 
         Collection<JavaLibrary> javaLibs = dependencies.getJavaLibraries();
@@ -78,7 +77,6 @@ public class AppWithClassifierDepTest {
     @Test
     public void checkAndroidTestDepInModel() {
         Variant debugVariant = ModelHelper.getVariant(model.getVariants(), "debug");
-        Truth.assertThat(debugVariant).isNotNull();
 
         AndroidArtifact androidTestArtifact = ModelHelper.getAndroidArtifact(
                 debugVariant.getExtraAndroidArtifacts(), ARTIFACT_ANDROID_TEST);

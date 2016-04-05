@@ -77,7 +77,6 @@ public class TestWithCompileLibTest {
     @Test
     public void checkCompiledLibraryIsInTheTestArtifactModel() {
         Variant variant = ModelHelper.getVariant(models.get(":app").getVariants(), "debug");
-        Truth.assertThat(variant).isNotNull();
 
         Collection<AndroidArtifact> androidArtifacts = variant.getExtraAndroidArtifacts();
         AndroidArtifact testArtifact = getAndroidArtifact(androidArtifacts, ARTIFACT_ANDROID_TEST);

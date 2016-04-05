@@ -105,7 +105,6 @@ public class OptionalAarTest {
 
         // get the main artifact of the debug artifact and its dependencies
         Variant variant = ModelHelper.getVariant(variants, "debug");
-        Truth.assertThat(variant).isNotNull();
 
         AndroidArtifact artifact = variant.getMainArtifact();
         Dependencies dependencies = artifact.getDependencies();
@@ -124,7 +123,6 @@ public class OptionalAarTest {
 
         // get the main artifact of the debug artifact and its dependencies
         Variant variant = ModelHelper.getVariant(variants, "debug");
-        Truth.assertThat(variant).isNotNull();
 
         AndroidArtifact artifact = variant.getMainArtifact();
         Dependencies dependencies = artifact.getDependencies();
