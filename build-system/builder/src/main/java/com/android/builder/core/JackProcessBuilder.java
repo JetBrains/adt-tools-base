@@ -83,7 +83,7 @@ public class JackProcessBuilder extends ProcessEnvBuilder<JackProcessBuilder> {
         }
 
         if (!options.getClasspaths().isEmpty()) {
-            builder.addArgs("--classpath", FileUtils.computeClasspath(options.getClasspaths()));
+            builder.addArgs("--classpath", FileUtils.joinFilePaths(options.getClasspaths()));
         }
 
         for (File lib : options.getImportFiles()) {
@@ -158,7 +158,10 @@ public class JackProcessBuilder extends ProcessEnvBuilder<JackProcessBuilder> {
 
         StringBuilder sb = new StringBuilder();
         for (File sourceFile : options.getInputFiles()) {
-            sb.append('\"').append(sourceFile.getAbsolutePath()).append('\"').append("\n");
+            sb.append('\"')
+                    .append(FileUtils.toSystemIndependentPath(sourceFile.getAbsolutePath()))
+                    .append('\"')
+                    .append("\n");
         }
 
         FileUtils.mkdirs(options.getEcjOptionFile().getParentFile());
