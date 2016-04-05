@@ -15,12 +15,14 @@
  */
 
 package com.android.build.gradle.integration.application
+
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.builder.model.AndroidProject
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.Sets
 import groovy.transform.CompileStatic
+import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -30,12 +32,11 @@ import java.util.regex.Pattern
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.google.common.truth.Truth.assert_
-
-@CompileStatic
 /**
  * Tests to ensure that changing the build tools version in the build.gradle will trigger
  * re-execution of some tasks even if no source file change was detected.
  */
+@CompileStatic
 class BuildToolsTest {
 
     private static final Pattern UP_TO_DATE_PATTERN = ~/:(\S+)\s+UP-TO-DATE/
@@ -87,11 +88,11 @@ android {
 
     @Test
     public void invalidateBuildTools() {
+        // Jack is tied to a build tools version currently, skip this test when testing Jack.
+        Assume.assumeFalse(GradleTestProject.USE_JACK);
+
         project.execute("assemble")
-        // Change our build tools version to 22.0.1 unless it is already the current version,
-        // in that case, downgrade to 21.1.2.
-        // The point is, change the build tools version from what it was when the "assemble" task
-        // was executed right before this comment.
+
         String oldBuildToolsVersion = "22.0.1"
         // Sanity check:
         assertThat(oldBuildToolsVersion).isNotEqualTo(GradleTestProject.DEFAULT_BUILD_TOOL_VERSION)
