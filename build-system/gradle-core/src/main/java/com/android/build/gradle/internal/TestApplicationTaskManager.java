@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.TestAndroidConfig;
 import com.android.build.gradle.internal.scope.AndroidTask;
@@ -37,6 +38,7 @@ import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
+
 import android.databinding.tool.DataBindingBuilder;
 /**
  * TaskManager for standalone test application that lives in a separate module from the tested
@@ -44,6 +46,7 @@ import android.databinding.tool.DataBindingBuilder;
  */
 public class TestApplicationTaskManager extends ApplicationTaskManager {
 
+    private Configuration mTestTargetMapping = null;
 
     public TestApplicationTaskManager(
             @NonNull Project project,
@@ -128,26 +131,43 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
     }
 
     @Override
+    protected boolean isTestedAppMinified(@NonNull VariantScope variantScope){
+        return getTestTargetMapping(variantScope) != null;
+    }
+
+    @Nullable
+    private Configuration getTestTargetMapping(@NonNull VariantScope variantScope){
+        if (mTestTargetMapping == null){
+            DependencyHandler dependencyHandler = project.getDependencies();
+            TestAndroidConfig testExtension = (TestAndroidConfig) extension;
+            Configuration testTargetMapping = project.getConfigurations().maybeCreate("testTargetMapping");
+
+            dependencyHandler.add(testTargetMapping.getName(), dependencyHandler.project(
+                    ImmutableMap.of(
+                            "path", testExtension.getTargetProjectPath(),
+                            "configuration", testExtension.getTargetVariant() + "-mapping"
+                    )));
+
+            mTestTargetMapping = testTargetMapping;
+        }
+
+        if (mTestTargetMapping.getFiles().isEmpty()
+                || variantScope.getVariantConfiguration().getProvidedOnlyJars().isEmpty()){
+            return null;
+        }
+        else {
+            return mTestTargetMapping;
+        }
+    }
+
+    @Override
     protected void createMinifyTransform(
             @NonNull TaskFactory taskFactory,
             @NonNull VariantScope variantScope,
             boolean createJarFile) {
-
-        DependencyHandler dependencyHandler = project.getDependencies();
-        TestAndroidConfig testExtension = (TestAndroidConfig) extension;
-        Configuration testTargetMapping = project.getConfigurations().create("testTargetMapping");
-
-        dependencyHandler.add("testTargetMapping", dependencyHandler.project(
-                ImmutableMap.of(
-                        "path", testExtension.getTargetProjectPath(),
-                        "configuration", testExtension.getTargetVariant() + "-mapping"
-                )));
-
-        if (testTargetMapping.getFiles().isEmpty()
-                || variantScope.getVariantConfiguration().getProvidedOnlyJars().isEmpty()) {
-            return;
+        if (getTestTargetMapping(variantScope) != null) {
+            doCreateMinifyTransform(
+                    taskFactory, variantScope, getTestTargetMapping(variantScope), false);
         }
-
-        doCreateMinifyTransform(taskFactory, variantScope, testTargetMapping, false);
     }
 }

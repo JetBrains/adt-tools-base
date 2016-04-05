@@ -112,7 +112,6 @@ import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.tasks.AidlCompile;
-import com.android.build.gradle.tasks.AndroidJarTask;
 import com.android.build.gradle.tasks.ColdswapArtifactsKickerTask;
 import com.android.build.gradle.tasks.CompatibleScreensManifest;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
@@ -147,7 +146,6 @@ import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
 import com.android.builder.dependency.LibraryDependency;
-import com.android.builder.internal.testing.SimpleTestCallable;
 import com.android.builder.model.DataBindingOptions;
 import com.android.builder.model.SyncIssue;
 import com.android.builder.sdk.TargetInfo;
@@ -1615,7 +1613,7 @@ public abstract class TaskManager {
             createJacocoTransform(tasks, variantScope);
         }
 
-        boolean isMinifyEnabled = config.isMinifyEnabled();
+        boolean isMinifyEnabled = config.isMinifyEnabled() || isTestedAppMinified(variantScope);
         boolean isMultiDexEnabled = config.isMultiDexEnabled();
         // Switch to native multidex if possible when using instant run.
         boolean isLegacyMultiDexMode = config.isLegacyMultiDexMode() &&
@@ -1751,6 +1749,15 @@ public abstract class TaskManager {
                     variantScope.getInstantRunBuildContext().getPatchingPolicy()) {
             incrementalBuildWrapperTask.dependsOn(tasks, dexTask);
         }
+    }
+
+    /**
+     * Default values if {@code false}, only {@link TestApplicationTaskManager}
+     * overrides this, because tested applications might be minified.
+     * @return if the tested application is minified
+     */
+    protected boolean isTestedAppMinified(@NonNull VariantScope variantScope){
+        return false;
     }
 
     /**
@@ -2508,25 +2515,23 @@ public abstract class TaskManager {
         ProGuardTransform transform = new ProGuardTransform(variantScope, createJarFile);
 
         if (testedVariantData != null) {
-            // Don't remove any code in tested app.
-            transform.dontshrink();
-            transform.dontoptimize();
-
-            // We can't call dontobfuscate, since that would make ProGuard ignore the mapping file.
-            transform.keep("class * {*;}");
-            transform.keep("interface * {*;}");
-            transform.keep("enum * {*;}");
-            transform.keepattributes();
-
+            applyProguardDefaultsForTest(transform);
             // All -dontwarn rules for test dependencies should go in here:
             transform.setConfigurationFiles(
                     Suppliers.ofInstance(
-                            (Collection<File>)testedVariantData.getVariantConfiguration().getTestProguardFiles()));
+                            (Collection<File>) testedVariantData.getVariantConfiguration()
+                                    .getTestProguardFiles()));
 
             // register the mapping file which may or may not exists (only exist if obfuscation)
             // is enabled.
             transform.applyTestedMapping(testedVariantData.getMappingFile());
-
+        } else if (isTestedAppMinified(variantScope)){
+            applyProguardDefaultsForTest(transform);
+            // All -dontwarn rules for test dependencies should go in here:
+            transform.setConfigurationFiles(
+                    Suppliers.ofInstance(
+                            (Collection<File>) variantConfig.getTestProguardFiles()));
+            transform.applyTestedMapping(mappingConfiguration);
         } else {
             if (variantConfig.isTestCoverageEnabled()) {
                 addJacocoShrinkerFlags(transform);
@@ -2559,6 +2564,18 @@ public abstract class TaskManager {
             verifyNotNull(task);
             task.dependsOn(taskFactory, mappingConfiguration);
         }
+    }
+
+    private void applyProguardDefaultsForTest(ProGuardTransform transform) {
+        // Don't remove any code in tested app.
+        transform.dontshrink();
+        transform.dontoptimize();
+
+        // We can't call dontobfuscate, since that would make ProGuard ignore the mapping file.
+        transform.keep("class * {*;}");
+        transform.keep("interface * {*;}");
+        transform.keep("enum * {*;}");
+        transform.keepattributes();
     }
 
     private void createShrinkResourcesTransform(
