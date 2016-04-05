@@ -114,11 +114,6 @@ public final class RangeScrollbar extends JScrollBar implements Animatable {
 
     @Override
     public void animate(float frameLength) {
-        // Sticks to the range's global max if we are in STREAMING mode.
-        if (mScrollingMode == ScrollingMode.STREAMING) {
-            mRange.setMax(mGlobalRange.getMax());
-        }
-
         // Perform zooming.
         if (mZoomDelta != 0) {
             double min = mRange.getMin();
@@ -140,6 +135,11 @@ public final class RangeScrollbar extends JScrollBar implements Animatable {
 
             // Update mZoomDelta
             mZoomDelta = max + mZoomDelta - zoomedMax;
+        }
+
+        // Sticks to the range's global max if we are in STREAMING mode.
+        if (mScrollingMode == ScrollingMode.STREAMING) {
+            mRange.setMax(mGlobalRange.getMax());
         }
 
         // Keeps the scrollbar visuals in sync with the global and current data range.
