@@ -35,7 +35,7 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 import com.google.common.truth.Expect;
 
-import org.hamcrest.Factory;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -70,6 +70,12 @@ public class InstantRunAddLibraryTest {
         TestFileUtils.appendToFile(project.getBuildFile(), "\n"
                 + "android.packagingOptions.exclude 'META-INF/maven/com.google.guava/guava/pom.xml'\n"
                 + "android.packagingOptions.exclude 'META-INF/maven/com.google.guava/guava/pom.properties'\n");
+    }
+
+    @Before
+    public void skipOnJack() throws Exception {
+        // Instant Run doesn't work with Jack.
+        Assume.assumeFalse(GradleTestProject.USE_JACK);
     }
 
     @Test
