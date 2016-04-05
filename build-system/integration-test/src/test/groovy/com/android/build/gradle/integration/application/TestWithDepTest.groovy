@@ -60,7 +60,6 @@ class TestWithDepTest {
     void "check there is a dep on the test variant"() throws Exception {
         Collection<Variant> variants = model.getVariants()
         Variant debugVariant = ModelHelper.getVariant(variants, DEBUG)
-        assertNotNull(debugVariant)
 
         Collection<AndroidArtifact> extraAndroidArtifact = debugVariant.getExtraAndroidArtifacts()
         AndroidArtifact testArtifact = ModelHelper.getAndroidArtifact(extraAndroidArtifact,

@@ -73,7 +73,6 @@ public class DepOnLocalJarThroughAModuleTest {
     @Test
     public void checkJarModuleIsInTheTestArtifactModel() {
         Variant variant = ModelHelper.getVariant(models.get(":app").getVariants(), "debug");
-        Truth.assertThat(variant).isNotNull();
 
         Dependencies deps = variant.getMainArtifact().getDependencies();
         TruthHelper.assertThat(deps.getProjects()).containsExactly(":localJarAsModule");

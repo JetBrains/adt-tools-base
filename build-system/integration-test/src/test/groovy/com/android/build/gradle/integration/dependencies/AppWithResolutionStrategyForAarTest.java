@@ -109,7 +109,6 @@ public class AppWithResolutionStrategyForAarTest {
             @NonNull String variantName,
             @NonNull String aarCoodinate) {
         Variant appVariant = ModelHelper.getVariant(appVariants, variantName);
-        Truth.assertThat(appVariant).isNotNull();
 
         AndroidArtifact appArtifact = appVariant.getMainArtifact();
         Dependencies artifactDependencies = appArtifact.getDependencies();

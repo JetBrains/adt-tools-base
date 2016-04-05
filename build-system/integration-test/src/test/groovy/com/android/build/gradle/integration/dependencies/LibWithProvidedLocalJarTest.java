@@ -76,7 +76,6 @@ public class LibWithProvidedLocalJarTest {
     @Test
     public void checkProvidedLocalJarIsInTheMainArtifactDependency() {
         Variant variant = ModelHelper.getVariant(model.getVariants(), "debug");
-        Truth.assertThat(variant).isNotNull();
 
         Dependencies deps = variant.getMainArtifact().getDependencies();
         assertThat(deps.getJavaLibraries()).hasSize(1);

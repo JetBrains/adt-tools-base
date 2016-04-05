@@ -81,7 +81,6 @@ public class AppWithPackageLocalJarTest {
     @Test
     public void checkPackagedLocalJarIsNotIntheModel() {
         Variant variant = ModelHelper.getVariant(model.getVariants(), "debug");
-        Truth.assertThat(variant).isNotNull();
 
         Dependencies deps = variant.getMainArtifact().getDependencies();
         Collection<JavaLibrary> javaLibs = deps.getJavaLibraries();

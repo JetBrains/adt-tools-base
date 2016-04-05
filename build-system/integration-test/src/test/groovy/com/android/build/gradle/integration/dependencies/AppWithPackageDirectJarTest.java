@@ -72,7 +72,6 @@ public class AppWithPackageDirectJarTest {
     @Test
     public void checkPackagedJarIsNotInTheModel() {
         Variant variant = ModelHelper.getVariant(models.get(":app").getVariants(), "debug");
-        Truth.assertThat(variant).isNotNull();
 
         Dependencies deps = variant.getMainArtifact().getDependencies();
         TruthHelper.assertThat(deps.getProjects()).named("Project deps").isEmpty();

@@ -83,7 +83,6 @@ public class LibWithProvidedDirectJarTest {
     @Test
     public void checkProvidedJarIsIntheMainArtifactDeps() {
         Variant variant = ModelHelper.getVariant(models.get(":library").getVariants(), "debug");
-        Truth.assertThat(variant).isNotNull();
 
         Dependencies deps = variant.getMainArtifact().getDependencies();
         TruthHelper.assertThat(deps.getProjects()).containsExactly(":jar");
@@ -92,7 +91,6 @@ public class LibWithProvidedDirectJarTest {
     @Test
     public void checkProvidedJarIsNotInThePublishedDeps() {
         Variant variant = ModelHelper.getVariant(models.get(":app").getVariants(), "debug");
-        Truth.assertThat(variant).isNotNull();
 
         Dependencies deps = variant.getMainArtifact().getDependencies();
         Collection<AndroidLibrary> libraries = deps.getLibraries();

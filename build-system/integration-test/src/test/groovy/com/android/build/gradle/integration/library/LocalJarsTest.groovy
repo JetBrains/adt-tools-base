@@ -64,7 +64,6 @@ class LocalJarsTest {
         Collection<Variant> variants = libModel.getVariants()
 
         Variant releaseVariant = ModelHelper.getVariant(variants, "release")
-        assertNotNull(releaseVariant)
 
         Dependencies dependencies = releaseVariant.getMainArtifact().getDependencies()
         assertNotNull(dependencies)
