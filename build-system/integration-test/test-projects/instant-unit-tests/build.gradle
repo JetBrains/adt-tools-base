@@ -123,8 +123,7 @@ class DexTask extends DefaultTask {
                 false /* incremental */,
                 true /* optimize */,
                 new com.android.ide.common.process.LoggedProcessOutputHandler(
-                        new com.android.build.gradle.internal.LoggerWrapper(getLogger())),
-                false /*instantRunMode*/)
+                        new com.android.build.gradle.internal.LoggerWrapper(getLogger())))
         Iterable<File> files =
                 Files.fileTreeTraverser().preOrderTraversal(classesFolder).filter(Files.isFile());
 

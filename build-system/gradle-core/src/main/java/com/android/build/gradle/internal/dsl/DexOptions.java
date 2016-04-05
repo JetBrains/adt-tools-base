@@ -38,6 +38,8 @@ public class DexOptions implements com.android.builder.core.DexOptions {
 
     private boolean isJumboModeFlag = false;
 
+    private boolean dexInProcess = false;
+
     private Integer threadCount = null;
 
     private String javaMaxHeapSize;
@@ -86,6 +88,20 @@ public class DexOptions implements com.android.builder.core.DexOptions {
     @Input
     public boolean getJumboMode() {
         return isJumboModeFlag;
+    }
+
+    public void setDexInProcess(boolean dexInProcess) {
+        this.dexInProcess = dexInProcess;
+    }
+
+    /**
+     * Whether to run the {@code dx} compiler as a separate process or inside the Gradle daemon JVM.
+     *
+     * <p>Running {@code dx} in-process can greatly improve performance, but is still experimental.
+     */
+    @Override
+    public boolean getDexInProcess() {
+        return dexInProcess;
     }
 
     public void setJavaMaxHeapSize(String theJavaMaxHeapSize) {

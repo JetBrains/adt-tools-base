@@ -131,7 +131,6 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -158,15 +157,13 @@ import java.util.zip.ZipFile;
  * {@link #processTestManifest(String, String, String, String, String, Boolean, Boolean, File, List, Map, File, File)}
  * {@link #processResources(AaptPackageProcessBuilder, boolean, ProcessOutputHandler)}
  * {@link #compileAllAidlFiles(List, File, File, Collection, List, DependencyFileProcessor, ProcessOutputHandler)}
- * {@link #convertByteCode(Collection, File, boolean, File, DexOptions, boolean, boolean, ProcessOutputHandler, boolean)}
+ * {@link #convertByteCode(Collection, File, boolean, File, DexOptions, boolean, boolean, ProcessOutputHandler)}
  * {@link #packageApk(String, Set, Collection, Collection, Set, boolean, SigningConfig, File, int, File)}
  *
  * Java compilation is not handled but the builder provides the boot classpath with
  * {@link #getBootClasspath(boolean)}.
  */
 public class AndroidBuilder {
-
-    private static final String DEX_IN_PROCESS_PROPERTY = "android.dexInProcess";
 
     private static final Revision MIN_BUILD_TOOLS_REV = new Revision(19, 1, 0);
 
@@ -1448,8 +1445,6 @@ public class AndroidBuilder {
      * @param outDexFolder the location of the output folder
      * @param dexOptions dex options
      * @param incremental true if it should attempt incremental dex if applicable
-     * @param instantRunMode true if we are invoking dex to convert classes while creating
-     *                       instant-run related artifacts.
      *
      * @throws IOException
      * @throws InterruptedException
@@ -1463,8 +1458,7 @@ public class AndroidBuilder {
             @NonNull DexOptions dexOptions,
             boolean incremental,
             boolean optimize,
-            @NonNull ProcessOutputHandler processOutputHandler,
-            final boolean instantRunMode)
+            @NonNull ProcessOutputHandler processOutputHandler)
             throws IOException, InterruptedException, ProcessException {
         checkNotNull(inputs, "inputs cannot be null.");
         checkNotNull(outDexFolder, "outDexFolder cannot be null.");
@@ -1489,18 +1483,17 @@ public class AndroidBuilder {
                 .setMainDexList(mainDexList)
                 .addInputs(verifiedInputs.build());
 
-        runDexer(builder, dexOptions, processOutputHandler, instantRunMode);
+        runDexer(builder, dexOptions, processOutputHandler);
     }
 
     private void runDexer(
             @NonNull final DexProcessBuilder builder,
             @NonNull final DexOptions dexOptions,
-            @NonNull final ProcessOutputHandler processOutputHandler,
-            final boolean instantRunMode)
+            @NonNull final ProcessOutputHandler processOutputHandler)
             throws ProcessException, IOException, InterruptedException {
         initDexExecutorService(dexOptions);
 
-        if (shouldDexInProcess(instantRunMode)) {
+        if (shouldDexInProcess(dexOptions)) {
             dexInProcess(builder, dexOptions, processOutputHandler);
         } else {
             dexOutOfProcess(builder, dexOptions, processOutputHandler);
@@ -1592,11 +1585,9 @@ public class AndroidBuilder {
 
     /**
      * Determine whether to dex in process.
-     *
-     * @param instantRunMode Whether the build is for Instant Run.
      */
-    private static boolean shouldDexInProcess(boolean instantRunMode) {
-        return Boolean.getBoolean(DEX_IN_PROCESS_PROPERTY);
+    private static boolean shouldDexInProcess(DexOptions dexOptions) {
+        return dexOptions.getDexInProcess();
     }
 
     public Set<String> createMainDexList(
@@ -1695,7 +1686,7 @@ public class AndroidBuilder {
                 .setMultiDex(multiDex)
                 .addInput(inputFile);
 
-        runDexer(builder, dexOptions, processOutputHandler, false /* instantRunMode */);
+        runDexer(builder, dexOptions, processOutputHandler);
 
         if (multiDex) {
             File[] files = outFile.listFiles(new FilenameFilter() {

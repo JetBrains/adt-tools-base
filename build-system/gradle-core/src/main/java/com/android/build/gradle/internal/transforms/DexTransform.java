@@ -259,8 +259,7 @@ public class DexTransform extends Transform {
                         dexOptions,
                         false,
                         true,
-                        outputHandler,
-                        false /* instantRunMode */);
+                        outputHandler);
 
                 for (File file : Files.fileTreeTraverser().breadthFirstTraversal(outputDir)) {
                     if (file.isFile()) {
@@ -409,8 +408,7 @@ public class DexTransform extends Transform {
                             dexOptions,
                             false,
                             true,
-                            outputHandler,
-                            false /* instantRunMode */);
+                            outputHandler);
                 }
             }
         } catch (LoggedErrorException e) {

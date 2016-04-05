@@ -249,8 +249,7 @@ public class InstantRunDex extends Transform {
                 dexOptions,
                 false /* incremental */,
                 true /* optimize */,
-                new LoggedProcessOutputHandler(logger),
-                true);
+                new LoggedProcessOutputHandler(logger));
     }
 
     @VisibleForTesting
