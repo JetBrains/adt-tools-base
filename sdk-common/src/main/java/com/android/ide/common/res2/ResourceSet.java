@@ -51,10 +51,12 @@ import java.util.Map;
  * the values folder in same or different files).
  */
 public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
+    public static final String ATTR_GENERATED_SET = "generated-set";
+    public static final String ATTR_FROM_DEPENDENCY = "from-dependency";
 
     private ResourceSet mGeneratedSet;
     private ResourcePreprocessor mPreprocessor;
-    private boolean isFromDependency;
+    private boolean mIsFromDependency;
     private boolean mShouldParseResourceIds;
     private boolean mDontNormalizeQualifiers;
     private boolean mTrackSourcePositions = true;
@@ -466,7 +468,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
      * dependencies, since they should have been preprocessed when creating the AAR.
      */
     private boolean needsPreprocessing(@NonNull File file) {
-        return !this.isFromDependency && mPreprocessor.needsPreprocessing(file);
+        return !this.isFromDependency() && mPreprocessor.needsPreprocessing(file);
     }
 
     @NonNull
@@ -505,11 +507,11 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
     }
 
     public boolean isFromDependency() {
-        return isFromDependency;
+        return mIsFromDependency;
     }
 
     public void setFromDependency(boolean fromDependency) {
-        isFromDependency = fromDependency;
+        mIsFromDependency = fromDependency;
     }
 
     /**
@@ -577,9 +579,19 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
                     document,
                     setNode,
                     null,
-                    "generated-set",
+                    ATTR_GENERATED_SET,
                     mGeneratedSet.getConfigName());
         }
+
+        if (mIsFromDependency) {
+            NodeUtils.addAttribute(
+                    document,
+                    setNode,
+                    null,
+                    ATTR_FROM_DEPENDENCY,
+                    SdkConstants.VALUE_TRUE);
+        }
+
         super.appendToXml(setNode, document, consumer, includeTimestamps);
     }
 }

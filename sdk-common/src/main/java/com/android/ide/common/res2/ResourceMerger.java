@@ -135,16 +135,16 @@ public class ResourceMerger extends DataMerger<ResourceItem, ResourceFile, Resou
      */
     @Override
     protected ResourceSet createFromXml(Node node) throws MergingException {
-        String generated = NodeUtils.getAttribute(node, "generated");
+        String generated = NodeUtils.getAttribute(node, GeneratedResourceSet.ATTR_GENERATED);
         ResourceSet set;
-        if ("true".equals(generated)) {
+        if (SdkConstants.VALUE_TRUE.equals(generated)) {
             set = new GeneratedResourceSet("");
         } else {
             set = new ResourceSet("");
         }
         ResourceSet newResourceSet = (ResourceSet) set.createFromXml(node);
 
-        String generatedSetName = NodeUtils.getAttribute(node, "generated-set");
+        String generatedSetName = NodeUtils.getAttribute(node, ResourceSet.ATTR_GENERATED_SET);
         if (generatedSetName != null) {
             for (ResourceSet resourceSet : getDataSets()) {
                 if (resourceSet.getConfigName().equals(generatedSetName)) {
@@ -152,6 +152,11 @@ public class ResourceMerger extends DataMerger<ResourceItem, ResourceFile, Resou
                     break;
                 }
             }
+        }
+
+        String fromDependency = NodeUtils.getAttribute(node, ResourceSet.ATTR_FROM_DEPENDENCY);
+        if (SdkConstants.VALUE_TRUE.equals(fromDependency)) {
+            newResourceSet.setFromDependency(true);
         }
 
         return newResourceSet;

@@ -16,6 +16,7 @@
 
 package com.android.ide.common.res2;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.utils.ILogger;
 
@@ -30,6 +31,8 @@ import java.io.File;
  * set when it encounters a file that needs to be replaced by generated files.
  */
 public class GeneratedResourceSet extends ResourceSet {
+
+    public static final String ATTR_GENERATED = "generated";
 
     public GeneratedResourceSet(ResourceSet originalSet) {
         super(originalSet.getConfigName() + "$Generated", originalSet.getValidateEnabled());
@@ -52,7 +55,7 @@ public class GeneratedResourceSet extends ResourceSet {
                      @NonNull Document document,
                      @NonNull MergeConsumer<ResourceItem> consumer,
                      boolean includeTimestamps) {
-        NodeUtils.addAttribute(document, setNode, null, "generated", "true");
+        NodeUtils.addAttribute(document, setNode, null, ATTR_GENERATED, SdkConstants.VALUE_TRUE);
         super.appendToXml(setNode, document, consumer, includeTimestamps);
     }
 
