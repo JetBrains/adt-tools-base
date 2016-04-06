@@ -143,6 +143,16 @@ final class HandleHello extends ChunkHandler {
             }
         }
 
+        boolean nativeDebuggable = false;
+        if (data.hasRemaining()) {
+            try {
+                byte nativeDebuggableByte = data.get();
+                nativeDebuggable = nativeDebuggableByte == 1;
+            } catch (BufferUnderflowException e) {
+                Log.e("ddm-hello", "Insufficient data in HELO chunk to retrieve nativeDebuggable");
+            }
+        }
+
         Log.d("ddm-hello", "HELO: v=" + version + ", pid=" + pid
             + ", vm='" + vmIdent + "', app='" + appName + "'");
 
@@ -164,6 +174,8 @@ final class HandleHello extends ChunkHandler {
             if (hasJvmFlags) {
                 cd.setJvmFlags(jvmFlags);
             }
+
+            cd.setNativeDebuggable(nativeDebuggable);
         } else {
             Log.e("ddm-hello", "Received pid (" + pid + ") does not match client pid ("
                     + cd.getPid() + ")");
