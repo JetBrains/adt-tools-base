@@ -34,7 +34,6 @@ import com.android.build.gradle.internal.JniLibsLanguageTransform;
 import com.android.build.gradle.internal.LibraryCache;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.NativeDependencyLinkage;
-import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.NdkOptionsHelper;
 import com.android.build.gradle.internal.ProductFlavorCombo;
 import com.android.build.gradle.internal.SdkHandler;
@@ -45,6 +44,7 @@ import com.android.build.gradle.internal.dependency.AndroidNativeDependencySpec;
 import com.android.build.gradle.internal.dependency.NativeDependencyResolveResult;
 import com.android.build.gradle.internal.dependency.NativeDependencyResolver;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
+import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor;
 import com.android.build.gradle.internal.process.GradleProcessExecutor;
@@ -94,7 +94,6 @@ import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ConfigurationContainer;
-import org.gradle.api.artifacts.repositories.MavenArtifactRepository;
 import org.gradle.api.execution.TaskExecutionGraph;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.plugins.JavaBasePlugin;
@@ -280,12 +279,9 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
         // setup SDK repositories.
         for (final File file : sdkHandler.getSdkLoader().getRepositories()) {
-            project.getRepositories().maven(new Action<MavenArtifactRepository>() {
-                @Override
-                public void execute(MavenArtifactRepository repo) {
-                    repo.setUrl(file.toURI());
+            project.getRepositories().maven(repo -> {
+                repo.setUrl(file.toURI());
 
-                }
             });
         }
         return sdkHandler;
@@ -324,24 +320,17 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         @Defaults
         public static void initSigningConfigs(
                 @Path("android.signingConfigs") ModelMap<SigningConfig> signingConfigs) {
-            signingConfigs.beforeEach(new Action<SigningConfig>() {
-                @Override
-                public void execute(SigningConfig signingConfig) {
-                    signingConfig.setStoreType(KeyStore.getDefaultType());
-                }
-            });
-            signingConfigs.create(DEBUG, new Action<SigningConfig>() {
-                @Override
-                public void execute(SigningConfig signingConfig) {
-                    try {
-                        signingConfig.setStoreFile(
-                                new File(KeystoreHelper.defaultDebugKeystoreLocation()));
-                        signingConfig.setStorePassword(DefaultSigningConfig.DEFAULT_PASSWORD);
-                        signingConfig.setKeyAlias(DefaultSigningConfig.DEFAULT_ALIAS);
-                        signingConfig.setKeyPassword(DefaultSigningConfig.DEFAULT_PASSWORD);
-                    } catch (AndroidLocation.AndroidLocationException e) {
-                        throw new RuntimeException(e);
-                    }
+            signingConfigs.beforeEach(
+                    signingConfig -> signingConfig.setStoreType(KeyStore.getDefaultType()));
+            signingConfigs.create(DEBUG, signingConfig -> {
+                try {
+                    signingConfig.setStoreFile(
+                            new File(KeystoreHelper.defaultDebugKeystoreLocation()));
+                    signingConfig.setStorePassword(DefaultSigningConfig.DEFAULT_PASSWORD);
+                    signingConfig.setKeyAlias(DefaultSigningConfig.DEFAULT_ALIAS);
+                    signingConfig.setKeyPassword(DefaultSigningConfig.DEFAULT_PASSWORD);
+                } catch (AndroidLocation.AndroidLocationException e) {
+                    throw new RuntimeException(e);
                 }
             });
         }
@@ -395,11 +384,8 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 @Path("android.signingConfigs") final ModelMap<SigningConfig> signingConfigs) {
             buildTypes.beforeEach(Rules::initBuildType);
 
-            buildTypes.named(DEBUG, new Action<BuildType>() {
-                @Override
-                public void execute(BuildType buildType) {
-                    buildType.setSigningConfig(signingConfigs.get(DEBUG));
-                }
+            buildTypes.named(DEBUG, buildType -> {
+                buildType.setSigningConfig(signingConfigs.get(DEBUG));
             });
         }
 
@@ -431,26 +417,23 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         @Defaults
         public static void addDefaultAndroidSourceSet(
                 @Path("android.sources") ModelMap<FunctionalSourceSet> sources) {
-            sources.all(new Action<FunctionalSourceSet>() {
-                @Override
-                public void execute(FunctionalSourceSet sourceSet) {
-                    sourceSet.create("resources", AndroidLanguageSourceSet.class);
-                    sourceSet.create("java", AndroidLanguageSourceSet.class);
-                    sourceSet.create("manifest", AndroidLanguageSourceSet.class);
-                    sourceSet.create("res", AndroidLanguageSourceSet.class);
-                    sourceSet.create("assets", AndroidLanguageSourceSet.class);
-                    sourceSet.create("aidl", AndroidLanguageSourceSet.class);
-                    sourceSet.create("renderscript", AndroidLanguageSourceSet.class);
-                    sourceSet.create("jniLibs", JniLibsSourceSet.class);
+            sources.all(sourceSet -> {
+                sourceSet.create("resources", AndroidLanguageSourceSet.class);
+                sourceSet.create("java", AndroidLanguageSourceSet.class);
+                sourceSet.create("manifest", AndroidLanguageSourceSet.class);
+                sourceSet.create("res", AndroidLanguageSourceSet.class);
+                sourceSet.create("assets", AndroidLanguageSourceSet.class);
+                sourceSet.create("aidl", AndroidLanguageSourceSet.class);
+                sourceSet.create("renderscript", AndroidLanguageSourceSet.class);
+                sourceSet.create("jniLibs", JniLibsSourceSet.class);
 
-                    sourceSet.named("manifest", new Action<LanguageSourceSet>() {
-                        @Override
-                        public void execute(LanguageSourceSet manifest) {
-                            manifest.getSource().setIncludes(
-                                    ImmutableList.of("AndroidManifest.xml"));
-                        }
-                    });
-                }
+                sourceSet.named("manifest", new Action<LanguageSourceSet>() {
+                    @Override
+                    public void execute(LanguageSourceSet manifest) {
+                        manifest.getSource().setIncludes(
+                                ImmutableList.of("AndroidManifest.xml"));
+                    }
+                });
             });
         }
 
@@ -552,19 +535,16 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 TaskManager taskManager) {
             final VariantManager variantManager =
                     ((AndroidComponentSpecInternal) specs.get(COMPONENT_NAME)).getVariantManager();
-            binaries.afterEach(new Action<AndroidBinaryInternal>() {
-                @Override
-                public void execute(AndroidBinaryInternal binary) {
-                    List<ProductFlavorAdaptor> adaptedFlavors = binary.getProductFlavors().stream()
-                            .map(ProductFlavorAdaptor::new)
-                            .collect(Collectors.toList());
-                    binary.setVariantData(
-                            variantManager.createVariantData(
-                                    new BuildTypeAdaptor(binary.getBuildType()),
-                                    adaptedFlavors));
-                    binary.getVariantData().getVariantConfiguration().setEnableInstantRunOverride(false);
-                    variantManager.getVariantDataList().add(binary.getVariantData());
-                }
+            binaries.afterEach(binary -> {
+                List<ProductFlavorAdaptor> adaptedFlavors = binary.getProductFlavors().stream()
+                        .map(ProductFlavorAdaptor::new)
+                        .collect(Collectors.toList());
+                binary.setVariantData(
+                        variantManager.createVariantData(
+                                new BuildTypeAdaptor(binary.getBuildType()),
+                                adaptedFlavors));
+                binary.getVariantData().getVariantConfiguration().setEnableInstantRunOverride(false);
+                variantManager.getVariantDataList().add(binary.getVariantData());
             });
         }
 
@@ -574,7 +554,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         }
 
         @Mutate
-        public void addDataBindingDependenciesIfNecessary(
+        public static void addDataBindingDependenciesIfNecessary(
                 TaskManager taskManager,
                 @Path("android.dataBinding") DataBindingOptions dataBindingOptions) {
             taskManager.addDataBindingDependenciesIfNecessary(
@@ -591,11 +571,8 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 @Path("android.sources") ModelMap<FunctionalSourceSet> androidSources) {
             // setup SDK repositories.
             for (final File file : sdkHandler.getSdkLoader().getRepositories()) {
-                project.getRepositories().maven(new Action<MavenArtifactRepository>() {
-                    @Override
-                    public void execute(MavenArtifactRepository repo) {
-                        repo.setUrl(file.toURI());
-                    }
+                project.getRepositories().maven(repo -> {
+                    repo.setUrl(file.toURI());
                 });
             }
             // TODO: determine how to provide functionalities of variant API objects.
@@ -640,26 +617,19 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             final VariantManager variantManager = specs.get(COMPONENT_NAME).getVariantManager();
 
             tasks.create("androidDependencies", DependencyReportTask.class,
-                    new Action<DependencyReportTask>() {
-                        @Override
-                        public void execute(DependencyReportTask dependencyReportTask) {
-                            dependencyReportTask.setDescription(
-                                    "Displays the Android dependencies of the project");
-                            dependencyReportTask.setVariants(variantManager.getVariantDataList());
-                            dependencyReportTask.setGroup("Android");
-                        }
+                    dependencyReportTask -> {
+                        dependencyReportTask.setDescription(
+                                "Displays the Android dependencies of the project");
+                        dependencyReportTask.setVariants(variantManager.getVariantDataList());
+                        dependencyReportTask.setGroup("Android");
                     });
 
             tasks.create("signingReport", SigningReportTask.class,
-                    new Action<SigningReportTask>() {
-                        @Override
-                        public void execute(SigningReportTask signingReportTask) {
-                            signingReportTask
-                                    .setDescription("Displays the signing info for each variant");
-                            signingReportTask.setVariants(variantManager.getVariantDataList());
-                            signingReportTask.setGroup("Android");
-
-                        }
+                    signingReportTask -> {
+                        signingReportTask
+                                .setDescription("Displays the signing info for each variant");
+                        signingReportTask.setVariants(variantManager.getVariantDataList());
+                        signingReportTask.setGroup("Android");
                     });
         }
 

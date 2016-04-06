@@ -113,12 +113,8 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
 
         @Model(EXTERNAL_BUILD_CONFIG)
         public static void createNativeBuildModel(NativeBuildConfig config) {
-            config.getLibraries().afterEach(new Action<NativeLibrary>() {
-                @Override
-                public void execute(NativeLibrary nativeLibrary) {
-                    nativeLibrary.setAssembleTaskName(getAssembleTaskName(nativeLibrary.getName()));
-                }
-            });
+            config.getLibraries().afterEach(
+                    nativeLibrary -> nativeLibrary.setAssembleTaskName(getAssembleTaskName(nativeLibrary.getName())));
         }
 
         @Model(ModelConstants.EXTERNAL_CONFIG_FILES)
@@ -178,11 +174,8 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
         public static void createExternalNativeComponent(
                 ModelMap<ExternalNativeComponentSpec> components,
                 final NativeBuildConfig config) {
-            components.create(COMPONENT_NAME, new Action<ExternalNativeComponentSpec>() {
-                @Override
-                public void execute(ExternalNativeComponentSpec component) {
-                    component.setConfig(config);
-                }
+            components.create(COMPONENT_NAME, component -> {
+                component.setConfig(config);
             });
         }
 
@@ -191,11 +184,8 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
                 final ModelMap<ExternalNativeBinarySpec> binaries,
                 final ExternalNativeComponentSpec component) {
             for(final NativeLibrary lib : component.getConfig().getLibraries()) {
-                binaries.create(lib.getName(), new Action<ExternalNativeBinarySpec>() {
-                    @Override
-                    public void execute(ExternalNativeBinarySpec binary) {
-                        binary.setConfig(lib);
-                    }
+                binaries.create(lib.getName(), binary -> {
+                    binary.setConfig(lib);
                 });
             }
         }
@@ -205,13 +195,10 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
             tasks.create(
                     getAssembleTaskName(binary.getName()),
                     Exec.class,
-                    new Action<Exec>() {
-                        @Override
-                        public void execute(Exec exec) {
-                            //noinspection unchecked - Unavoidable due how Exec is implemented.
-                            exec.setCommandLine(StringHelper.tokenizeString(
-                                    binary.getConfig().getBuildCommand()));
-                        }
+                    exec -> {
+                        //noinspection unchecked - Unavoidable due how Exec is implemented.
+                        exec.setCommandLine(StringHelper.tokenizeString(
+                                binary.getConfig().getBuildCommand()));
                     });
         }
 
@@ -230,29 +217,23 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
                 tasks.create(
                         taskName,
                         Exec.class,
-                        new Action<Exec>() {
-                            @Override
-                            public void execute(Exec task) {
-                                //noinspection unchecked - Unavoidable due how Exec is implemented.
-                                task.commandLine(StringHelper.tokenizeString(
-                                        configFile.getCommand()));
-                            }
+                        task -> {
+                            //noinspection unchecked - Unavoidable due how Exec is implemented.
+                            task.commandLine(StringHelper.tokenizeString(
+                                    configFile.getCommand()));
                         });
             }
             tasks.create("generateConfigFiles",
-                    new Action<Task>() {
-                        @Override
-                        public void execute(Task task) {
-                            task.setDescription("Create configuration files for the plugin.");
-                            task.dependsOn(generatorTasks);
-                        }
+                    task -> {
+                        task.setDescription("Create configuration files for the plugin.");
+                        task.dependsOn(generatorTasks);
                     }
             );
         }
 
         @Mutate
         static void createCleanTask(
-                final ModelMap<Task> task,
+                final ModelMap<Task> tasks,
                 final NativeBuildConfig config) {
             if (config.getCleanCommands().isEmpty()) {
                 return;
@@ -262,22 +243,16 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
             for (final String cleanCommand : config.getCleanCommands()) {
                 final String taskName = "cleanNativeBuild" + cleanTaskIndex++;
                 generatorTasks.add(taskName);
-                task.create(
+                tasks.create(
                         taskName,
                         Exec.class,
-                        new Action<Exec>() {
-                            @Override
-                            public void execute(Exec task) {
-                                //noinspection unchecked - Unavoidable due how Exec is implemented.
-                                task.commandLine(StringHelper.tokenizeString(cleanCommand));
-                            }
+                        task -> {
+                            //noinspection unchecked - Unavoidable due how Exec is implemented.
+                            task.commandLine(StringHelper.tokenizeString(cleanCommand));
                         });
             }
-            task.named("clean", new Action<Task>() {
-                @Override
-                public void execute(Task task) {
-                    task.dependsOn(generatorTasks);
-                }
+            tasks.named("clean", task -> {
+                task.dependsOn(generatorTasks);
             });
         }
 
@@ -288,23 +263,20 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
                 final ModelMap<Task> tasks) {
             for(final NativeLibrary lib : config.getLibraries()) {
                 artifactContainer.getNativeArtifacts().create(lib.getName(),
-                        new Action<NativeLibraryArtifact>() {
-                            @Override
-                            public void execute(NativeLibraryArtifact artifacts) {
-                                artifacts.getLibraries().add(lib.getOutput());
-                                artifacts.setAbi(lib.getAbi());
-                                artifacts.setVariantName(lib.getName());
-                                artifacts.setBuildType(lib.getBuildType());
-                                if (lib.getOutput() != null) {
-                                    artifacts.setLinkage(lib.getOutput().getName().endsWith(".so")
-                                            ? NativeDependencyLinkage.SHARED
-                                            : NativeDependencyLinkage.STATIC);
-                                }
-                                artifacts.setBuiltBy(
-                                        Lists.<Object>newArrayList(
-                                                tasks.get("create"
-                                                        + StringHelper.capitalize(lib.getName()))));
+                        artifacts -> {
+                            artifacts.getLibraries().add(lib.getOutput());
+                            artifacts.setAbi(lib.getAbi());
+                            artifacts.setVariantName(lib.getName());
+                            artifacts.setBuildType(lib.getBuildType());
+                            if (lib.getOutput() != null) {
+                                artifacts.setLinkage(lib.getOutput().getName().endsWith(".so")
+                                        ? NativeDependencyLinkage.SHARED
+                                        : NativeDependencyLinkage.STATIC);
                             }
+                            artifacts.setBuiltBy(
+                                    Lists.newArrayList(
+                                            tasks.get("create"
+                                                    + StringHelper.capitalize(lib.getName()))));
                         });
             }
         }

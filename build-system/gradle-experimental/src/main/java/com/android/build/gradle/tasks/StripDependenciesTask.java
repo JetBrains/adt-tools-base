@@ -104,40 +104,34 @@ public class StripDependenciesTask extends DefaultTask {
 
     @TaskAction
     void taskAction(IncrementalTaskInputs inputs) throws IOException {
-        inputs.outOfDate(new Action<InputFileDetails>() {
-            @Override
-            public void execute(InputFileDetails inputFileDetails) {
-                File input = inputFileDetails.getFile();
-                if (inputFiles.containsKey(input)) {
-                    Abi abi = inputFiles.get(input);
-                    File output = FileUtils.join(getOutputFolder(), abi.getName(), input.getName());
-                    stripFile(input, output, abi);
-                } else {
-                    for (Abi abi : stripedFiles.get(input)) {
-                        File output = FileUtils.join(
-                                getOutputFolder(),
-                                abi.getName(),
-                                input.getName());
-                        try {
-                            FileUtils.mkdirs(output.getParentFile());
-                            Files.copy(input, output);
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
+        inputs.outOfDate(inputFileDetails -> {
+            File input = inputFileDetails.getFile();
+            if (inputFiles.containsKey(input)) {
+                Abi abi = inputFiles.get(input);
+                File output = FileUtils.join(getOutputFolder(), abi.getName(), input.getName());
+                stripFile(input, output, abi);
+            } else {
+                for (Abi abi : stripedFiles.get(input)) {
+                    File output = FileUtils.join(
+                            getOutputFolder(),
+                            abi.getName(),
+                            input.getName());
+                    try {
+                        FileUtils.mkdirs(output.getParentFile());
+                        Files.copy(input, output);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
                     }
                 }
             }
         });
-        inputs.removed(new Action<InputFileDetails>() {
-            @Override
-            public void execute(InputFileDetails inputFileDetails) {
-                File input = inputFileDetails.getFile();
-                if (inputFiles.containsKey(input)) {
-                    removeFile(input, inputFiles.get(input));
-                } else {
-                    for (Abi abi : stripedFiles.get(input)) {
-                        removeFile(input, abi);
-                    }
+        inputs.removed(inputFileDetails -> {
+            File input = inputFileDetails.getFile();
+            if (inputFiles.containsKey(input)) {
+                removeFile(input, inputFiles.get(input));
+            } else {
+                for (Abi abi : stripedFiles.get(input)) {
+                    removeFile(input, abi);
                 }
             }
         });

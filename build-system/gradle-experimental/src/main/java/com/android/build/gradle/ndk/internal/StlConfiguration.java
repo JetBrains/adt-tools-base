@@ -56,7 +56,6 @@ public class StlConfiguration {
                 copy.into(new File(buildDir,
                         NdkNamingScheme.getDebugLibraryDirectoryName(binary)));
             });
-
             tasks.named(buildTaskName, task -> {
                 task.dependsOn(copyTaskName);
             });

@@ -81,66 +81,56 @@ public class NdkConfiguration {
         // Setting each native binary to not buildable to prevent the native tasks to be
         // automatically added to the "assemble" task.
         library.getBinaries().beforeEach(
-                new Action<BinarySpec>() {
-                    @Override
-                    public void execute(BinarySpec binary) {
-                        ((BinarySpecInternal) binary).setBuildable(false);
-                    }
-                });
+                binary -> ((BinarySpecInternal) binary).setBuildable(false));
 
         library.getBinaries().withType(
                 NativeLibraryBinarySpec.class,
-                new Action<NativeLibraryBinarySpec>() {
-                    @Override
-                    public void execute(final NativeLibraryBinarySpec binary) {
-                        Map<String, NativeSourceSet> jniSources =
-                                findNativeSourceSets(binary, sources);
-                        for (Map.Entry<String, NativeSourceSet> entry : jniSources.entrySet()) {
-                            addNativeSourceSets(binary, entry.getKey(), entry.getValue());
+                binary -> {
+                    Map<String, NativeSourceSet> jniSources =
+                            findNativeSourceSets(binary, sources);
+                    for (Map.Entry<String, NativeSourceSet> entry : jniSources.entrySet()) {
+                        addNativeSourceSets(binary, entry.getKey(), entry.getValue());
+                    }
+
+                    binary.getcCompiler().define("ANDROID");
+                    binary.getCppCompiler().define("ANDROID");
+                    binary.getcCompiler().define("ANDROID_NDK");
+                    binary.getCppCompiler().define("ANDROID_NDK");
+
+                    // Replace output directory of compile tasks.
+                    binary.getTasks().withType(CCompile.class, new Action<CCompile>() {
+                        @Override
+                        public void execute(CCompile task) {
+                            String sourceSetName = task.getObjectFileDir().getName();
+                            task.setObjectFileDir(
+                                    NdkNamingScheme.getObjectFilesOutputDirectory(
+                                            binary,
+                                            buildDir,
+                                            sourceSetName));
                         }
-
-                        binary.getcCompiler().define("ANDROID");
-                        binary.getCppCompiler().define("ANDROID");
-                        binary.getcCompiler().define("ANDROID_NDK");
-                        binary.getCppCompiler().define("ANDROID_NDK");
-
-                        // Replace output directory of compile tasks.
-                        binary.getTasks().withType(CCompile.class, new Action<CCompile>() {
-                            @Override
-                            public void execute(CCompile task) {
-                                String sourceSetName = task.getObjectFileDir().getName();
-                                task.setObjectFileDir(
-                                        NdkNamingScheme.getObjectFilesOutputDirectory(
-                                                binary,
-                                                buildDir,
-                                                sourceSetName));
-                            }
-                        });
-                        binary.getTasks().withType(CppCompile.class, new Action<CppCompile>() {
-                            @Override
-                            public void execute(CppCompile task) {
-                                String sourceSetName = task.getObjectFileDir().getName();
-                                task.setObjectFileDir(
-                                        NdkNamingScheme.getObjectFilesOutputDirectory(
-                                                binary,
-                                                buildDir,
-                                                sourceSetName));
-                            }
-                        });
-
-                        applyNativeToolSpecification(new DefaultNativeToolSpecification(), binary);
-
-                        binary.getLinker().args("-Wl,--build-id");
-
-                        for (NativeSourceSet jniSource : jniSources.values()) {
-                            handleDependencies(
-                                    binary,
-                                    resolveDependency(serviceRegistry, binary, jniSource));
+                    });
+                    binary.getTasks().withType(CppCompile.class, new Action<CppCompile>() {
+                        @Override
+                        public void execute(CppCompile task) {
+                            String sourceSetName = task.getObjectFileDir().getName();
+                            task.setObjectFileDir(
+                                    NdkNamingScheme.getObjectFilesOutputDirectory(
+                                            binary,
+                                            buildDir,
+                                            sourceSetName));
                         }
+                    });
+
+                    applyNativeToolSpecification(new DefaultNativeToolSpecification(), binary);
+                    binary.getLinker().args("-Wl,--build-id");
+
+                    for (NativeSourceSet jniSource : jniSources.values()) {
+                        handleDependencies(
+                                binary,
+                                resolveDependency(serviceRegistry, binary, jniSource));
                     }
                 });
     }
-
 
     /**
      * Configure output file of a native library binary.
@@ -268,11 +258,8 @@ public class NdkConfiguration {
             final String abi = artifacts.getAbi();
             if (binary.getTargetPlatform().getName().equals(abi)) {
                 binary.getTasks().all(
-                        new Action<Task>() {
-                            @Override
-                            public void execute(Task task) {
-                                task.dependsOn(artifacts.getBuiltBy());
-                            }
+                        task -> {
+                            task.dependsOn(artifacts.getBuiltBy());
                         });
                 binary.lib(new DefaultNativeDependencySet(new NativeLibraryArtifactAdaptor(artifacts)));
             }
@@ -319,35 +306,29 @@ public class NdkConfiguration {
         binary.getSources().create(
                         sourceSetName + "C",
                         CSourceSet.class,
-                        new Action<CSourceSet>() {
-                            @Override
-                            public void execute(CSourceSet source) {
-                                SourceDirectorySet sourceDir = source.getSource();
-                                sourceDir.setSrcDirs(jni.getSource().getSrcDirs());
-                                sourceDir.include(jni.getSource().getIncludes());
-                                sourceDir.exclude(jni.getSource().getExcludes());
-                                sourceDir.getFilter().include(jni.getcFilter().getIncludes());
-                                sourceDir.getFilter().exclude(jni.getcFilter().getExcludes());
-                                source.getExportedHeaders().source(jni.getExportedHeaders());
-                                configurePrebuiltDependency(source, jni);
-                            }
-                        });
+                source -> {
+                    SourceDirectorySet sourceDir = source.getSource();
+                    sourceDir.setSrcDirs(jni.getSource().getSrcDirs());
+                    sourceDir.include(jni.getSource().getIncludes());
+                    sourceDir.exclude(jni.getSource().getExcludes());
+                    sourceDir.getFilter().include(jni.getcFilter().getIncludes());
+                    sourceDir.getFilter().exclude(jni.getcFilter().getExcludes());
+                    source.getExportedHeaders().source(jni.getExportedHeaders());
+                    configurePrebuiltDependency(source, jni);
+                });
         binary.getSources().create(
                         sourceSetName + "Cpp",
                         CppSourceSet.class,
-                        new Action<CppSourceSet>() {
-                            @Override
-                            public void execute(CppSourceSet source) {
-                                SourceDirectorySet sourceDir = source.getSource();
-                                sourceDir.setSrcDirs(jni.getSource().getSrcDirs());
-                                sourceDir.include(jni.getSource().getIncludes());
-                                sourceDir.exclude(jni.getSource().getExcludes());
-                                sourceDir.getFilter().include(jni.getCppFilter().getIncludes());
-                                sourceDir.getFilter().exclude(jni.getCppFilter().getExcludes());
-                                source.getExportedHeaders().source(jni.getExportedHeaders());
-                                configurePrebuiltDependency(source, jni);
-                            }
-                        });
+                source -> {
+                    SourceDirectorySet sourceDir = source.getSource();
+                    sourceDir.setSrcDirs(jni.getSource().getSrcDirs());
+                    sourceDir.include(jni.getSource().getIncludes());
+                    sourceDir.exclude(jni.getSource().getExcludes());
+                    sourceDir.getFilter().include(jni.getCppFilter().getIncludes());
+                    sourceDir.getFilter().exclude(jni.getCppFilter().getExcludes());
+                    source.getExportedHeaders().source(jni.getExportedHeaders());
+                    configurePrebuiltDependency(source, jni);
+                });
     }
 
     private static void configurePrebuiltDependency(
@@ -430,11 +411,8 @@ public class NdkConfiguration {
                         libs,
                         buildDir,
                         handler));
-        tasks.named(buildTaskName, new Action<Task>() {
-            @Override
-            public void execute(Task task) {
-                task.dependsOn(taskName);
-            }
+        tasks.named(buildTaskName, task -> {
+            task.dependsOn(taskName);
         });
     }
 }
