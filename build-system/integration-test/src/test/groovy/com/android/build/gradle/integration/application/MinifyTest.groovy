@@ -24,9 +24,8 @@ import com.android.builder.model.AndroidProject
 import com.google.common.collect.Sets
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
+import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.objectweb.asm.ClassReader
@@ -39,25 +38,23 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 
 import static com.google.common.truth.Truth.assertThat
+import static com.google.common.truth.TruthJUnit.assume
+
 /**
  * Assemble tests for minify.
  */
 @CompileStatic
 class MinifyTest {
-    @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("minify")
             .create()
 
-    @BeforeClass
-    static void setUp() {
+    @Before
+    void setUp() {
+        assume().that(GradleTestProject.USE_JACK).isFalse()
         project.execute("clean", "assembleMinified",
                 "assembleMinifiedAndroidTest", "jarDebugClasses")
-    }
-
-    @AfterClass
-    static void cleanUp() {
-        project = null
     }
 
     @Test
