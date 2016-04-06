@@ -40,7 +40,7 @@ class MediumAndroidComponentEvaluationTest {
                 .withDepth(MEDIUM_DEPTH)
                 .withBreadth(MEDIUM_BREADTH)
                 .create())
-            .forExperimentalPlugin(true)
+            .useExperimentalGradleVersion(true)
             .withHeap("2048m")
             .create()
 

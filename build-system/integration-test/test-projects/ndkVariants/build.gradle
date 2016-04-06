@@ -1,5 +1,5 @@
 apply from: "../commonHeader.gradle"
-buildscript { apply from: "../commonBuildScriptExperimental.gradle", to: buildscript }
+buildscript { apply from: "../commonBuildScript.gradle" }
 
 // This test ensures each variant compiles the correct source set with the appropriate NDK settings.
 

@@ -41,7 +41,7 @@ class NdkSanAngeles2Test {
 
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder()
-            .forExperimentalPlugin(true)
+            .useExperimentalGradleVersion(true)
             .fromTestProject("ndkSanAngeles2")
             .create()
 

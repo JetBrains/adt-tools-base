@@ -90,7 +90,7 @@ include \$(BUILD_SHARED_LIBRARY)
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(base)
-            .forExperimentalPlugin(true)
+            .useExperimentalGradleVersion(true)
             .create()
 
     @AfterClass

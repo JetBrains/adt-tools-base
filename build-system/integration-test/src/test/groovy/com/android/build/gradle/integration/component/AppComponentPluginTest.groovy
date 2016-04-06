@@ -39,7 +39,7 @@ class AppComponentPluginTest {
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(HelloWorldApp.noBuildFile())
-            .forExperimentalPlugin(true)
+            .useExperimentalGradleVersion(true)
             .withoutNdk()
             .create();
 

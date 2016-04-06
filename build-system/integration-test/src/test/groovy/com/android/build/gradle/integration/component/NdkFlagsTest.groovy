@@ -61,7 +61,7 @@ Java_com_example_hellojni_HelloJni_stringFromJNI(JNIEnv* env, jobject thiz)
     public static GradleTestProject cProject = GradleTestProject.builder()
             .withName("c_project")
             .fromTestApp(cApp)
-            .forExperimentalPlugin(true)
+            .useExperimentalGradleVersion(true)
             .create();
 
     static AndroidTestApp cppApp = HelloWorldJniApp.builder().useCppSource().build()
@@ -93,7 +93,7 @@ Java_com_example_hellojni_HelloJni_stringFromJNI(JNIEnv* env, jobject thiz)
     public static GradleTestProject cppProject = GradleTestProject.builder()
             .withName("cpp_project")
             .fromTestApp(cppApp)
-            .forExperimentalPlugin(true)
+            .useExperimentalGradleVersion(true)
             .create();
 
     static AndroidTestApp ldApp = new HelloWorldJniApp()
@@ -114,7 +114,7 @@ void log() {
     public static GradleTestProject ldProject = GradleTestProject.builder()
             .withName("ld_project")
             .fromTestApp(ldApp)
-            .forExperimentalPlugin(true)
+            .useExperimentalGradleVersion(true)
             .create();
 
 

@@ -4,17 +4,14 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp;
-import com.android.build.gradle.integration.common.truth.TruthHelper;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 
-import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.LinkedHashMap;
 
 /**
  * Test STL version.
@@ -26,7 +23,7 @@ public class NdkStlVersionTest {
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(HelloWorldJniApp.builder().useCppSource().build())
-            .forExperimentalPlugin(true).create();
+            .useExperimentalGradleVersion(true).create();
 
     @Before
     public void setUp() throws IOException {

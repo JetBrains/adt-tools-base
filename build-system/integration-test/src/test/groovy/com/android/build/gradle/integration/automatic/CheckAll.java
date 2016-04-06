@@ -80,7 +80,7 @@ public class CheckAll {
         this.projectName = projectName;
         this.project = GradleTestProject.builder()
                 .fromTestProject(projectName)
-                .forExperimentalPlugin(COMPONENT_MODEL_PROJECTS.contains(projectName))
+                .useExperimentalGradleVersion(COMPONENT_MODEL_PROJECTS.contains(projectName))
                 .create();
     }
 
