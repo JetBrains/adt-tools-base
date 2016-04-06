@@ -42,9 +42,6 @@ ext {
             Boolean.valueOf((String) project.properties[
                     "com.android.build.gradle.integratonTest.minifyEnabled"])
 
-    useComponentModel = Boolean.valueOf((String) project.properties[
-            "com.android.build.gradle.integratonTest.useComponentModel"])
-
     def remoteTestProvider = System.env.REMOTE_TEST_PROVIDER
     if (remoteTestProvider != null) {
         plugins.withId('com.android.application') {

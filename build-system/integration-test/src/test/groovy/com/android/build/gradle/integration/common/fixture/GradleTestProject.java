@@ -133,7 +133,7 @@ public class GradleTestProject implements TestRule {
         String envBuildToolVersion = System.getenv("CUSTOM_BUILDTOOLS");
         DEFAULT_BUILD_TOOL_VERSION = !Strings.isNullOrEmpty(envBuildToolVersion) ?
                 envBuildToolVersion : "23.0.2";
-        String envVersion = System.getenv().get("CUSTOM_GRADLE");
+        String envVersion = System.getenv().get("CUSTOM_PLUGIN_VERSION");
         ANDROID_GRADLE_PLUGIN_VERSION = !Strings.isNullOrEmpty(envVersion) ? envVersion
                 : Version.ANDROID_GRADLE_PLUGIN_VERSION;
         String envJack = System.getenv().get("CUSTOM_JACK");
@@ -143,7 +143,6 @@ public class GradleTestProject implements TestRule {
     private static final String COMMON_HEADER = "commonHeader.gradle";
     private static final String COMMON_LOCAL_REPO = "commonLocalRepo.gradle";
     private static final String COMMON_BUILD_SCRIPT = "commonBuildScript.gradle";
-    private static final String COMMON_BUILD_SCRIPT_EXP = "commonBuildScriptExperimental.gradle";
     private static final String COMMON_GRADLE_PLUGIN_VERSION = "commonGradlePluginVersion.gradle";
     private static final String DEFAULT_TEST_PROJECT_NAME = "project";
 
@@ -171,7 +170,6 @@ public class GradleTestProject implements TestRule {
         File sdkDir = SdkHelper.findSdkDir();
         @Nullable
         File ndkDir = findNdkDir();
-        boolean experimentalMode = false;
         @Nullable
         private String targetGradleVersion;
 
@@ -187,13 +185,11 @@ public class GradleTestProject implements TestRule {
          */
         public GradleTestProject create() {
             if (targetGradleVersion == null) {
-                targetGradleVersion =
-                        experimentalMode ? GRADLE_EXP_TEST_VERSION : GRADLE_TEST_VERSION;
+                targetGradleVersion = GRADLE_TEST_VERSION;
             }
             return new GradleTestProject(
                     name,
                     testProject,
-                    experimentalMode,
                     useMinify,
                     useJack,
                     targetGradleVersion,
@@ -210,14 +206,6 @@ public class GradleTestProject implements TestRule {
          */
         public Builder withName(@NonNull String name) {
             this.name = name;
-            return this;
-        }
-
-        /**
-         * Use experimental plugin for the test project.
-         */
-        public Builder forExperimentalPlugin(boolean mode) {
-            this.experimentalMode = mode;
             return this;
         }
 
@@ -275,8 +263,7 @@ public class GradleTestProject implements TestRule {
                 AndroidTestApp app = new EmptyTestApp();
                 name = project;
                 // compute the root folder of the checkout, based on test-projects.
-                File parentDir = null;
-                parentDir = TEST_PROJECT_DIR.getCanonicalFile().getParentFile().getParentFile()
+                File parentDir = TEST_PROJECT_DIR.getCanonicalFile().getParentFile().getParentFile()
                         .getParentFile().getParentFile().getParentFile();
                 parentDir = new File(parentDir, "external");
                 File projectDir = new File(parentDir, project);
@@ -342,7 +329,6 @@ public class GradleTestProject implements TestRule {
     @Nullable
     private final TestProject testProject;
 
-    private final boolean experimentalMode;
     private final String targetGradleVersion;
 
     private final boolean useJack;
@@ -354,7 +340,6 @@ public class GradleTestProject implements TestRule {
     private GradleTestProject(
             @Nullable String name,
             @Nullable TestProject testProject,
-            boolean experimentalMode,
             boolean minifyEnabled,
             boolean useJack,
             String targetGradleVersion,
@@ -367,7 +352,6 @@ public class GradleTestProject implements TestRule {
         testDir = null;
         buildFile = sourceDir = null;
         this.name = (name == null) ? DEFAULT_TEST_PROJECT_NAME : name;
-        this.experimentalMode = experimentalMode;
         this.minifyEnabled = minifyEnabled;
         this.useJack = useJack;
         this.targetGradleVersion = targetGradleVersion;
@@ -398,7 +382,6 @@ public class GradleTestProject implements TestRule {
         sdkDir = rootProject.sdkDir;
         gradleProperties = ImmutableList.of();
         testProject = null;
-        experimentalMode = rootProject.isExperimentalMode();
         targetGradleVersion = rootProject.getTargetGradleVersion();
         minifyEnabled = false;
         useJack = false;
@@ -406,10 +389,6 @@ public class GradleTestProject implements TestRule {
 
     String getTargetGradleVersion() {
         return targetGradleVersion;
-    }
-
-    boolean isExperimentalMode() {
-        return experimentalMode;
     }
 
     public static Builder builder() {
@@ -511,9 +490,6 @@ public class GradleTestProject implements TestRule {
         Files.copy(
                 new File(TEST_PROJECT_DIR, COMMON_BUILD_SCRIPT),
                 new File(testDir.getParent(), COMMON_BUILD_SCRIPT));
-        Files.copy(
-                new File(TEST_PROJECT_DIR, COMMON_BUILD_SCRIPT_EXP),
-                new File(testDir.getParent(), COMMON_BUILD_SCRIPT_EXP));
         Files.copy(
                 new File(TEST_PROJECT_DIR, COMMON_GRADLE_PLUGIN_VERSION),
                 new File(testDir.getParent(), COMMON_GRADLE_PLUGIN_VERSION));
@@ -646,8 +622,7 @@ public class GradleTestProject implements TestRule {
      */
     public String getGradleBuildscript() {
         return "apply from: \"../commonHeader.gradle\"\n" +
-               "buildscript { apply from: \"../commonBuildScript" +
-               (experimentalMode ? "Experimental" : "") + ".gradle\", to: buildscript }\n" +
+               "buildscript { apply from: \"../commonBuildScript.gradle\" }\n" +
                "\n" +
                "apply from: \"../commonLocalRepo.gradle\"\n";
     }
@@ -1108,8 +1083,6 @@ public class GradleTestProject implements TestRule {
         args.add("-Pcom.android.build.gradle.integratonTest.useJack=" + Boolean.toString(useJack));
         args.add("-Pcom.android.build.gradle.integratonTest.minifyEnabled=" +
                 Boolean.toString(minifyEnabled));
-        args.add("-Pcom.android.build.gradle.integratonTest.useComponentModel=" +
-                Boolean.toString(experimentalMode));
         args.addAll(arguments);
 
         System.out.println("[GradleTestProject] Executing tasks: gradle "
