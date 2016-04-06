@@ -21,7 +21,6 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip;
 import static org.junit.Assert.assertTrue;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
@@ -37,7 +36,10 @@ import com.android.builder.model.MavenCoordinates;
 import com.android.builder.model.Variant;
 import com.android.ide.common.process.DefaultProcessExecutor;
 import com.android.ide.common.process.ProcessExecutor;
-import com.android.utils.FileUtils;
+import com.android.repository.Revision;
+import com.android.repository.testframework.FakeProgressIndicator;
+import com.android.sdklib.BuildToolInfo;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.utils.StdLogger;
 import com.google.common.collect.Sets;
 
@@ -102,12 +104,17 @@ public class VariantDependencyTest {
         project.execute("clean", "assemble");
         model = project.getSingleModel();
 
-        File aapt = FileUtils.join(
-                project.getSdkDir(),
-                "build-tools",
-                DEFAULT_BUILD_TOOL_VERSION,
-                SdkConstants.FN_AAPT);
-        assertTrue("Test requires build-tools " + DEFAULT_BUILD_TOOL_VERSION, aapt.isFile());
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+        BuildToolInfo buildToolInfo =
+                AndroidSdkHandler.getInstance(project.getSdkDir()).getBuildToolInfo(
+                        Revision.parseRevision(DEFAULT_BUILD_TOOL_VERSION), progress);
+
+        File aapt = null;
+        if (buildToolInfo != null) {
+             aapt = new File(buildToolInfo.getPath(BuildToolInfo.PathId.AAPT));
+        }
+        assertTrue("Test requires build-tools " + DEFAULT_BUILD_TOOL_VERSION,
+                aapt != null && aapt.isFile());
         ProcessExecutor processExecutor = new DefaultProcessExecutor(
                 new StdLogger(StdLogger.Level.ERROR));
         apkInfoParser = new ApkInfoParser(aapt, processExecutor);
