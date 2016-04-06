@@ -116,7 +116,7 @@ if (project.has("release")) {
 }
 
 // Incremental update test support
-String androidJar = System.env.ANDROID_HOME + '/platforms/android-15/android.jar'
+File androidJar = file('../../../../prebuilts/sdk/23/android.jar');
 
 Task compileIncrementalTestBaseClasses = tasks.create(
         name: "compileIncrementalTestBaseClasses",
@@ -179,7 +179,7 @@ for (File f: new File(project.projectDir, "src/test/incremental-test-classes/pat
 //        jvmArgs = [ '-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005']
         classpath = sourceSets.main.runtimeClasspath + sourceSets.test.compileClasspath
         args incrementalPatchClassFileDir, patchOutDir,
-                androidJar + File.pathSeparator + baseClasses
+                androidJar.absolutePath + File.pathSeparator + baseClasses
         inputs.files sourceSets.main.runtimeClasspath, sourceSets.test.compileClasspath,
                 incrementalPatchClassFileDir, androidJar, baseClasses
         outputs.files patchOutDir
