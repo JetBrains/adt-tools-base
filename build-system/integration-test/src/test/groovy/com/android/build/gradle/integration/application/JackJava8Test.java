@@ -55,6 +55,7 @@ public class JackJava8Test {
                         + "    buildToolsVersion '" + GradleTestProject.UPCOMING_BUILD_TOOL_VERSION + "'\n"
                         + "    compileSdkVersion 'android-N'\n"
                         + "    defaultConfig {\n"
+                        + "        minSdkVersion 24\n"
                         + "        jackOptions {\n"
                         + "            enabled true\n"
                         + "        }\n"
