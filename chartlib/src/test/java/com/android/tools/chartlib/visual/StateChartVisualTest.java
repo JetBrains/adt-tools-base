@@ -78,24 +78,12 @@ public class StateChartVisualTest extends VisualTest {
     @NonNull
     private final StateChartData mRadioData;
 
-    @NonNull
-    private AxisComponent mTimeAxis;
-
     public StateChartVisualTest(Choreographer choreographer) {
         mNetworkData = new StateChartData();
         mRadioData = new StateChartData();
         mStartTimeMs = System.currentTimeMillis();
         mXRange = new Range(0, 10000);
         mAnimatedRange = new AnimatedTimeRange(mXRange, mStartTimeMs);
-
-        // add horizontal time axis
-        mTimeAxis = new AxisComponent(mXRange, "TIME", AxisComponent.AxisOrientation.BOTTOM,
-                                      1000, 1, AXIS_SIZE, AXIS_SIZE, new AxisComponent.MarkerFormatter() {
-            @Override
-            public String getFormattedString(double value) {
-                return String.format("%.2f%s", value / 1000f, "s");
-            }
-        });
 
         mNetworkData.add(new RangedDiscreteSeries(MockFruitState.class, mXRange));
         mRadioData.add(new RangedDiscreteSeries(MockStrengthState.class, mXRange));
@@ -104,14 +92,12 @@ public class StateChartVisualTest extends VisualTest {
         mRadioStateChart = new StateChart(mRadioData, MOCK_COLORS_2);
 
         choreographer.register(mAnimatedRange);
-        choreographer.register(mTimeAxis);
         choreographer.register(mNetworkStatusChart);
         choreographer.register(mRadioStateChart);
     }
 
     @Override
     void registerComponents(List<AnimatedComponent> components) {
-        components.add(mTimeAxis);
         components.add(mNetworkStatusChart);
         components.add(mRadioStateChart);
     }
@@ -263,7 +249,6 @@ public class StateChartVisualTest extends VisualTest {
     private JLayeredPane createMockTimeline() {
         JLayeredPane timelinePane = new JLayeredPane();
 
-        timelinePane.add(mTimeAxis);
         timelinePane.add(mNetworkStatusChart);
         timelinePane.add(mRadioStateChart);
         timelinePane.addComponentListener(new ComponentAdapter() {
