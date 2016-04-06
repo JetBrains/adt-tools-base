@@ -18,13 +18,16 @@ package com.android.tools.chartlib;
 import com.android.annotations.NonNull;
 import com.android.tools.chartlib.model.Range;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
-import java.util.Random;
 
 /**
  * A component for performing/rendering selection and any overlay information (e.g. Tooltip).
@@ -34,7 +37,7 @@ public final class SelectionComponent extends AnimatedComponent {
     private static final Color SELECTION_FORECOLOR = new Color(0x88aae2);
     private static final Color SELECTION_BACKCOLOR = new Color(0x5588aae2, true);
 
-    private double mSelectionStartX, mSelectionEndX;
+    private double mSelectionStartX;
     private boolean mIsSelecting, mIsSelected;
 
     @NonNull
@@ -108,9 +111,9 @@ public final class SelectionComponent extends AnimatedComponent {
 
         // If user is actively selecting, update the selection range based on the last mouse position.
         Dimension dim = getSize();
-        mSelectionEndX = mAxis.getValueAtPosition(mMousePosition.x);
-        double startX = Math.max(mGlobalRange.getMin(), Math.min(mSelectionStartX, mSelectionEndX));
-        double endX = Math.min(mGlobalRange.getMax(), Math.max(mSelectionStartX, mSelectionEndX));
+        double selectionEndX = mAxis.getValueAtPosition(mMousePosition.x);
+        double startX = Math.max(mGlobalRange.getMin(), Math.min(mSelectionStartX, selectionEndX));
+        double endX = Math.min(mGlobalRange.getMax(), Math.max(mSelectionStartX, selectionEndX));
         boolean minChanged = mSelectionRange.getMin() != startX;
         boolean maxChanged = mSelectionRange.getMax() != endX;
         if (minChanged) {

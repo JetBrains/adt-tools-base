@@ -33,7 +33,7 @@ public class RangedContinuousSeries {
     @NonNull
     private final ContinuousSeries mSeries;
 
-    public RangedContinuousSeries(Range xRange, Range yRange) {
+    public RangedContinuousSeries(@NonNull Range xRange, @NonNull Range yRange) {
         mXRange = xRange;
         mYRange = yRange;
         mSeries = new ContinuousSeries();

@@ -59,8 +59,8 @@ public class Choreographer implements ActionListener {
     }
 
   /**
-   * Legacy method to animate components. Each component animates on it's own and have a choreographer
-   * that is bound tho that component's visibility.
+   * Legacy method to animate components. Each component animates on its own and has a choreographer
+   * that is bound to that component's visibility.
    */
   public static void animate(final AnimatedComponent component) {
       final Choreographer choreographer = new Choreographer(30);
