@@ -78,21 +78,16 @@ public class DataBindingTest {
     @Rule
     public final GradleTestProject project;
 
-    private String buildOutput;
-
     @Before
     public void skipOnJack() throws Exception {
         Assume.assumeFalse(GradleTestProject.USE_JACK);
     }
 
-    @Before
-    public void setUp() {
-        project.execute("assembleDebug");
-        buildOutput = project.getStdout();
-    }
-
     @Test
-    public void checkApkContainsDatabindingClasses() throws IOException, ProcessException {
+    public void checkApkContainsDataBindingClasses() throws IOException, ProcessException {
+        project.execute("assembleDebug");
+        String buildOutput = project.getStdout();
+
         assertTrue(buildOutput.contains(":dataBindingProcessLayoutsDebug"));
         if (myLibrary) {
             AarSubject aar = assertThatAar(project.getAar("debug"));
