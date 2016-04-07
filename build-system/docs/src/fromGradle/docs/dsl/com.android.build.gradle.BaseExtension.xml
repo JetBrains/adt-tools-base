@@ -6,6 +6,7 @@
                 <tr><td>Name</td></tr>
             </thead>
             <tr><td>aaptOptions</td></tr>
+            <tr><td>adbExecutable</td></tr>
             <tr><td>adbOptions</td></tr>
             <tr><td>buildToolsVersion</td></tr>
             <tr><td>buildTypes</td></tr>
