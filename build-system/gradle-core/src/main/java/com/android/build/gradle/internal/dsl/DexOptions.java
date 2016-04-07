@@ -16,161 +16,18 @@
 
 package com.android.build.gradle.internal.dsl;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.google.common.collect.Lists;
-
-import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.Optional;
+import com.android.builder.core.DefaultDexOptions;
 
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * DSL object for configuring dx options.
  */
-@SuppressWarnings("unused") // public methods exposed in the DSL
-public class DexOptions implements com.android.builder.core.DexOptions {
-
-    private boolean isIncrementalFlag = false;
-
-    private boolean isPreDexLibrariesFlag = true;
-
-    private boolean isJumboModeFlag = false;
-
-    private boolean dexInProcess = false;
-
-    private Integer threadCount = null;
-
-    private String javaMaxHeapSize;
-
-    private List<String> additionalParameters = Lists.newArrayList();
-
-    private volatile Integer maxProcessCount = null;
-
-    public void setIncremental(boolean isIncremental) {
-        // TODO: Print out a warning, that this is ignored.
-        isIncrementalFlag = isIncremental;
-    }
-
-    /**
-     * Whether to enable the incremental mode for dx. This has many limitations and may not
-     * work. Use carefully.
-     */
-    @Override
-    @Input
-    public boolean getIncremental() {
-        return isIncrementalFlag;
-    }
-
-    public void setPreDexLibraries(boolean flag) {
-        isPreDexLibrariesFlag = flag;
-    }
-
-    /**
-     * Whether to pre-dex libraries. This can improve incremental builds, but clean builds may
-     * be slower.
-     */
-    @Override
-    @Input
-    public boolean getPreDexLibraries() {
-        return isPreDexLibrariesFlag;
-    }
-
-    public void setJumboMode(boolean flag) {
-        isJumboModeFlag = flag;
-    }
-
-    /**
-     * Enable jumbo mode in dx (--force-jumbo).
-     */
-    @Override
-    @Input
-    public boolean getJumboMode() {
-        return isJumboModeFlag;
-    }
-
-    public void setDexInProcess(boolean dexInProcess) {
-        this.dexInProcess = dexInProcess;
-    }
-
-    /**
-     * Whether to run the {@code dx} compiler as a separate process or inside the Gradle daemon JVM.
-     *
-     * <p>Running {@code dx} in-process can greatly improve performance, but is still experimental.
-     */
-    @Override
-    public boolean getDexInProcess() {
-        return dexInProcess;
-    }
-
-    public void setJavaMaxHeapSize(String theJavaMaxHeapSize) {
-        if (theJavaMaxHeapSize.matches("\\d+[kKmMgGtT]?")) {
-            javaMaxHeapSize = theJavaMaxHeapSize;
-        } else {
-            throw new IllegalArgumentException(
-                    "Invalid max heap size DexOption. See `man java` for valid -Xmx arguments.");
-        }
-    }
-
-    /**
-     * Sets the -JXmx* value when calling dx. Format should follow the 1024M pattern.
-     */
-    @Override
-    @Optional @Input
-    @Nullable
-    public String getJavaMaxHeapSize() {
-        return javaMaxHeapSize;
-    }
-
-    public void setThreadCount(int threadCount) {
-        this.threadCount = threadCount;
-    }
-
-    /**
-     * Number of threads to use when running dx. Defaults to 4.
-     */
-    @Override
-    @Nullable
-    public Integer getThreadCount() {
-        return threadCount;
-    }
-
-
-    /**
-     * Returns the maximum number of concurrent processes that can be used to dex. Defaults to 2.
-     *
-     * <p>Be aware that the number of concurrent process times the memory requirement represent the
-     * minimum amount of memory that will be used by the dx processes:
-     * {@code Total Memory = getMaxProcessCount() * getJavaMaxHeapSize()}
-     *
-     * <p>To avoid trashing, keep these two settings appropriate for your configuration.
-     * @return the max number of concurrent dx processes.
-     */
-    @Nullable
-    @Override
-    public Integer getMaxProcessCount() {
-        return maxProcessCount;
-    }
-
-    public void setMaxProcessCount(int maxProcessCount) {
-        this.maxProcessCount = maxProcessCount;
-    }
-
-    /**
-     * List of additional parameters to be passed to {@code dx}.
-     */
-    @NonNull
-    @Override
-    public List<String> getAdditionalParameters() {
-        return additionalParameters;
-    }
-
-    public void setAdditionalParameters(Iterable<String> additionalParameters) {
-        this.additionalParameters = Lists.newArrayList(additionalParameters);
-    }
+@SuppressWarnings("unused") // Exposed in the DSL.
+public class DexOptions extends DefaultDexOptions {
 
     public void additionalParameters(String... parameters) {
-        this.additionalParameters = Arrays.asList(parameters);
+        this.setAdditionalParameters(Arrays.asList(parameters));
     }
+
 }

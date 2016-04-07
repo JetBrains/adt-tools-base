@@ -17,14 +17,12 @@
 package com.android.build.api.transform;
 
 import java.io.File;
-import java.util.Collection;
 
 /**
  * A secondary input file for a {@link Transform}.
  *
  * A secondary input is part of the transform inputs and can be decorated to indicate if a change
- * to the input would trigger a non incremental
- * {@link Transform#transform(Context, Collection, Collection, Collection, TransformOutputProvider, boolean)}
+ * to the input would trigger a non incremental {@link Transform#transform(TransformInvocation)}.
  * call
  */
 public class SecondaryFile {

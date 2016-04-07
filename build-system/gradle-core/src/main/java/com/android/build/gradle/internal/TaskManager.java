@@ -46,7 +46,6 @@ import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.dsl.CoreJackOptions;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
-import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.incremental.BuildInfoLoaderTask;
 import com.android.build.gradle.internal.incremental.InstantRunAnchorTask;
@@ -112,7 +111,6 @@ import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.tasks.AidlCompile;
-import com.android.build.gradle.tasks.AndroidJarTask;
 import com.android.build.gradle.tasks.ColdswapArtifactsKickerTask;
 import com.android.build.gradle.tasks.CompatibleScreensManifest;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
@@ -144,10 +142,11 @@ import com.android.build.gradle.tasks.factory.UnitTestConfigAction;
 import com.android.build.gradle.tasks.fd.FastDeployRuntimeExtractorTask;
 import com.android.build.gradle.tasks.fd.GenerateInstantRunAppInfoTask;
 import com.android.builder.core.AndroidBuilder;
+import com.android.builder.core.DefaultDexOptions;
+import com.android.builder.core.DexOptions;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
 import com.android.builder.dependency.LibraryDependency;
-import com.android.builder.internal.testing.SimpleTestCallable;
 import com.android.builder.model.DataBindingOptions;
 import com.android.builder.model.SyncIssue;
 import com.android.builder.sdk.TargetInfo;
@@ -1729,8 +1728,16 @@ public abstract class TaskManager {
             multiDexClassListTask.dependsOn(tasks, manifestKeepListTask);
         }
         // create dex transform
+        DefaultDexOptions dexOptions = DefaultDexOptions.copyOf(extension.getDexOptions());
+
+        if (variantData.getType().isForTesting()) {
+            // Don't use custom dx flags when compiling the test APK. They can break the test APK,
+            // like --minimal-main-dex.
+             dexOptions.setAdditionalParameters(ImmutableList.of());
+        }
+
         DexTransform dexTransform = new DexTransform(
-                extension.getDexOptions(),
+                dexOptions,
                 config.getBuildType().isDebuggable(),
                 isMultiDexEnabled,
                 isMultiDexEnabled && isLegacyMultiDexMode ? variantScope.getMainDexListFile() : null,
