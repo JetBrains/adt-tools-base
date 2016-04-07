@@ -139,11 +139,6 @@ public final class AxisComponent extends AnimatedComponent {
     private float mMinorScale;
 
     /**
-     * Calculated - Pixel offset of first major marker.
-     */
-    private float mFirstMarkerOffset;
-
-    /**
      * Calculated - Value of first major marker.
      */
     private double mFirstMarkerValue;
@@ -189,15 +184,13 @@ public final class AxisComponent extends AnimatedComponent {
         mMetrics = getFontMetrics(DEFAULT_FONT);
     }
 
-    public String getLabel() {
-        return mLabel;
-    }
-
+    @NonNull
     public AxisOrientation getOrientation() {
         return mOrientation;
     }
 
-    public @NonNull TFloatArrayList getMajorMarkerPositions() {
+    @NonNull
+    public TFloatArrayList getMajorMarkerPositions() {
         return mMajorMarkerPositions;
     }
 
@@ -247,7 +240,8 @@ public final class AxisComponent extends AnimatedComponent {
      *
      * e.g. For a value of 1500 in milliseconds, this will return "1.5s".
      */
-    public @NonNull String getFormattedValueAtPosition(int position) {
+    @NonNull
+    public String getFormattedValueAtPosition(int position) {
         return mDomain.getFormattedString(mGlobalRange.getLength(), getValueAtPosition(position));
     }
 
@@ -286,6 +280,7 @@ public final class AxisComponent extends AnimatedComponent {
         mMinorMarkerPositions.reset();
         mCurrentMinValue = mRange.getMin();
         mCurrentMaxValue = mRange.getMax();
+
         if (mDrawLength > 0) {
             double range = mRange.getLength();
             mMajorInterval = mDomain.getMajorInterval(range, mDrawLength);
@@ -296,13 +291,14 @@ public final class AxisComponent extends AnimatedComponent {
 
             // Calculate the value and offset of the first major marker
             mFirstMarkerValue = Math.floor(mCurrentMinValue / mMajorInterval) * mMajorInterval;
-            mFirstMarkerOffset = (float)(mMinorScale * (mFirstMarkerValue - mCurrentMinValue) / mMinorInterval);
+            // Pixel offset of first major marker.
+            float firstMarkerOffset = (float)(mMinorScale * (mFirstMarkerValue - mCurrentMinValue) / mMinorInterval);
 
             // Calculate marker positions
             int numMarkers = (int)Math.floor((mCurrentMaxValue - mFirstMarkerValue) / mMinorInterval) + 1;
             int numMinorPerMajor = mMajorInterval / mMinorInterval;
             for (int i = 0; i < numMarkers; i++) {
-                float markerOffset = mFirstMarkerOffset + i * mMinorScale;
+                float markerOffset = firstMarkerOffset + i * mMinorScale;
                 if (i % numMinorPerMajor == 0) {    // Major Tick.
                     mMajorMarkerPositions.add(markerOffset);
                 } else {
@@ -315,7 +311,6 @@ public final class AxisComponent extends AnimatedComponent {
             mMajorScale = 0;
             mMinorScale = 0;
             mFirstMarkerValue = 0;
-            mFirstMarkerOffset = 0;
         }
     }
 
@@ -348,14 +343,14 @@ public final class AxisComponent extends AnimatedComponent {
         // Draw minor ticks.
         for (int i = 0; i < mMinorMarkerPositions.size(); i++) {
             if (mMinorMarkerPositions.get(i) >= 0) {
-                drawMarkerLine(g2d, path, mMinorMarkerPositions.get(i), false);
+                drawMarkerLine(path, mMinorMarkerPositions.get(i), false);
             }
         }
 
         // Draw major ticks.
         for (int i = 0; i < mMajorMarkerPositions.size(); i++) {
             if (mMajorMarkerPositions.get(i) >= 0) {
-                drawMarkerLine(g2d, path, mMajorMarkerPositions.get(i), true);
+                drawMarkerLine(path, mMajorMarkerPositions.get(i), true);
 
                 double markerValue = mFirstMarkerValue + i * mMajorInterval;
                 drawMarkerLabel(g2d, mMajorMarkerPositions.get(i), markerValue, !mShowMinMax);
@@ -365,7 +360,7 @@ public final class AxisComponent extends AnimatedComponent {
         g2d.draw(path);
     }
 
-    private void drawMarkerLine(Graphics2D g2d, Path2D.Float path, float markerOffset, boolean isMajor) {
+    private void drawMarkerLine(Path2D.Float path, float markerOffset, boolean isMajor) {
         float markerStartX, markerStartY, markerEndX, markerEndY;
         int markerLength = isMajor ? MAJOR_MARKER_LENGTH : MINOR_MARKER_LENGTH;
         switch (mOrientation) {

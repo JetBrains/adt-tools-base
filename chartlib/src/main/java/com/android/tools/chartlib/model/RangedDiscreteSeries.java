@@ -30,7 +30,7 @@ public class RangedDiscreteSeries {
     @NonNull
     private final DiscreteSeries mSeries;
 
-    public RangedDiscreteSeries(Class<? extends Enum> clazz, Range xRange) {
+    public RangedDiscreteSeries(@NonNull Class<? extends Enum> clazz, @NonNull Range xRange) {
         mXRange = xRange;
         mSeries = new DiscreteSeries(clazz);
     }

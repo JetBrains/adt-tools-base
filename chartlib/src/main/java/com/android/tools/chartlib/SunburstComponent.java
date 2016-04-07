@@ -160,7 +160,7 @@ public final class SunburstComponent extends AnimatedComponent {
         g.fillRect(0, 0, dim.width, dim.height);
 
         mPaths.clear();
-        drawSlice(g, mSlice, 0.0f, 0.0f, 1.0f);
+        drawSlice(mSlice, 0.0f, 0.0f, 1.0f);
         for (Map.Entry<Color, Path2D.Float> entry : mPaths.entrySet()) {
             g.setColor(entry.getKey());
             g.fill(entry.getValue());
@@ -209,8 +209,8 @@ public final class SunburstComponent extends AnimatedComponent {
         if (!myLockSelection) {
             boolean selection = false;
             if (mouse != null) {
-                float value = 0;
-                float depth = 0;
+                float value;
+                float depth;
                 if (mCurrentAngle > 0) {
                     float distance = (float) mouse.distance(mCenterX, mCenterY);
                     depth = (distance - mGap - mDelta) / mSliceWidth;
@@ -352,7 +352,7 @@ public final class SunburstComponent extends AnimatedComponent {
         mMaxSide = mX * mY / (float) Math.sqrt((a * a) + (b * b));
     }
 
-    float getFraction(ValuedTreeNode node) {
+    private float getFraction(ValuedTreeNode node) {
         TreeNode parent = node.getParent();
         assert parent == null || parent instanceof ValuedTreeNode;
         if (myUseCount) {
@@ -364,13 +364,13 @@ public final class SunburstComponent extends AnimatedComponent {
         }
     }
 
-    static ValuedTreeNode getChildAt(ValuedTreeNode node, int i) {
+    private static ValuedTreeNode getChildAt(ValuedTreeNode node, int i) {
         TreeNode child = node.getChildAt(i);
         assert child instanceof ValuedTreeNode;
         return (ValuedTreeNode) child;
     }
 
-    private float getMaxDepth(Slice slice) {
+    private static float getMaxDepth(Slice slice) {
         float depth = 0.0f;
         for (Slice child : slice.getChildren()) {
             depth = Math.max(depth, getMaxDepth(child));
@@ -423,7 +423,7 @@ public final class SunburstComponent extends AnimatedComponent {
         return node != null || (slice.depth > 0.00001f && slice.value > 0.00001f) || last >= 0;
     }
 
-    Path2D.Float getPath(Color color) {
+    private Path2D.Float getPath(Color color) {
         Path2D.Float path = mPaths.get(color);
         if (path == null) {
             path = new Path2D.Float();
@@ -432,7 +432,7 @@ public final class SunburstComponent extends AnimatedComponent {
         return path;
     }
 
-    private void drawSlice(Graphics2D g, Slice slice, float depth, float from, float to) {
+    private void drawSlice(Slice slice, float depth, float from, float to) {
         if (slice.getDepth() > 0.0f) { // Optimization for zero width slices
             Color c = COLORS[slice.color];
             float s = slice.selected;
@@ -515,7 +515,7 @@ public final class SunburstComponent extends AnimatedComponent {
             float childFrom = from + (value / total) * (to - from);
             float childTo = from + ((value + child.getValue()) / total) * (to - from);
 
-            drawSlice(g, child, depth + slice.getDepth(), childFrom, childTo);
+            drawSlice(child, depth + slice.getDepth(), childFrom, childTo);
 
             value += child.getValue();
         }

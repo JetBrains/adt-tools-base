@@ -21,7 +21,7 @@ import java.util.List;
 
 public class EventData {
 
-    int mEventId;
+    private int mEventId;
 
     private List<Event> mEvents = new ArrayList<Event>();
 
@@ -40,14 +40,14 @@ public class EventData {
         return mEvents.get(i);
     }
 
-    public class Event {
+    public static class Event {
 
-        public int type;
-        public int id;
-        public long from;
-        public long to;
+        int type;
+        int id;
+        long from;
+        long to;
 
-        public Event(int type, int id, long from, long to) {
+        private Event(int type, int id, long from, long to) {
             this.type = type;
             this.id = id;
             this.from = from;

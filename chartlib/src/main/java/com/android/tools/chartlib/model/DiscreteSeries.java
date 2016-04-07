@@ -21,9 +21,7 @@ import com.android.annotations.NonNull;
 import gnu.trove.TIntArrayList;
 import gnu.trove.TLongArrayList;
 
-import java.util.EnumSet;
-
-/*
+/**
  * A data series representing changes in an Enum state over time.
  * The series is currently designed to record state changes as follows:
  *
@@ -48,15 +46,15 @@ public class DiscreteSeries<E extends Enum<E>> {
     @NonNull
     private final E[] mEnumValues;
 
-    public DiscreteSeries(Class<E> enumClass) {
+    public DiscreteSeries(@NonNull Class<E> enumClass) {
         mEnumValues = enumClass.getEnumConstants();
     }
 
-    /*
+    /**
      * Add a data point to the series.
      * If the same value y is repeated over a range of x, only the first occurrence will be stored.
      *
-     * Assumption - <code>x</code> should be greater than all existing x values in the data.
+     * Assumption - {@code x} should be greater than all existing x values in the data.
      */
     public void add(long x, E y) {
         int value = y.ordinal();
@@ -79,14 +77,10 @@ public class DiscreteSeries<E extends Enum<E>> {
         return mY.get(index);
     }
 
-    public E getYAsEnum(int index) {
-        return mEnumValues[mY.get(index)];
-    }
-
     /**
-     * Given xValue, find the Enum state Y that corresponds to the same data point.
-     * If xValue does not match any existing data point, the closest x to the left of xValue in the dataset is used,
-     * as that would be the most recent known data from xValue.
+     * Given {@code xValue}, find the Enum state Y that corresponds to the same data point.
+     * If {@code xValue} does not match any existing data point, the closest x to the left of {@code xValue}
+     * in the dataset is used, as that would be the most recent known data from {@code xValue}.
      *
      * @param xValue the xValue value to search for
      * @return The corresponding state y from the same data point as xValue.
@@ -98,7 +92,7 @@ public class DiscreteSeries<E extends Enum<E>> {
         if (index < 0 ) {
             // No exact match, returns position to the left of the insertion point.
             // NOTE: binarySearch returns -(insertion point + 1) if not found.
-            index =  -index - 2;
+            index = -index - 2;
         }
 
         return index >= 0 ? mEnumValues[mY.get(index)] : mEnumValues[0];
