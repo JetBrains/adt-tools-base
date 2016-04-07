@@ -38,7 +38,11 @@ sourceSets {
 task initSdkForTests(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     main = "com.android.sdklib.tool.SdkDownloader"
-    args = [System.getenv("ANDROID_HOME"),
+    def sdk_home = System.getenv("ANDROID_HOME")
+    if (sdk_home == null) {
+       throw new GradleException('Required ANDROID_HOME environment variable not set.')
+    }
+    args = [sdk_home,
             'tools', 'platform-tools', //'platform-tools-preview',
             'build-tools;24.0.0-preview', 'build-tools;23.0.2', 'build-tools;23.0.1',
             'build-tools;23.0.0', 'build-tools;22.0.1', 'build-tools;21.1.2', 'build-tools;21.1.1',
