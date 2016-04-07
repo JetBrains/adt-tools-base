@@ -36,32 +36,44 @@ import javax.swing.event.ChangeListener;
 
 public class VisualTests extends JDialog {
 
-    private List<AnimatedComponent> mComponents = new LinkedList<AnimatedComponent>();
+    private List<AnimatedComponent> mComponents;
 
     private List<VisualTest> mTests = new LinkedList<VisualTest>();
 
-    public VisualTests() {
-        JPanel contentPane = new JPanel(new BorderLayout());
-        JButton close = new JButton("Close");
-        JTabbedPane tabs = new JTabbedPane();
+    private static final int CHOREOGRAPHER_FPS = 40;
 
-        final Choreographer choreographer = new Choreographer(40);
-        mTests.add(new AxisLineChartVisualTest(choreographer));
-        mTests.add(new StateChartVisualTest(choreographer));
-        mTests.add(new LineChartVisualTest(choreographer));
-        mTests.add(new SunburstVisualTest(choreographer));
-        mTests.add(new TimelineVisualTest(choreographer));
+    private Choreographer mChoreographer;
 
-        for (VisualTest test : mTests) {
-            test.registerComponents(mComponents);
-            tabs.addTab(test.getName(), test.create());
-        }
+    private VisualTests() {
+        final JPanel contentPane = new JPanel(new BorderLayout());
+        final JTabbedPane tabs = new JTabbedPane();
+
+        addTests(new Choreographer(CHOREOGRAPHER_FPS));
+        resetTabs(tabs);
 
         contentPane.setPreferredSize(new Dimension(1280, 1024));
         contentPane.add(tabs, BorderLayout.CENTER);
 
+        JButton close = new JButton("Close");
+        close.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                dispose();
+            }
+        });
+        JButton reset = new JButton("Reset");
+        reset.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                resetTests();
+                resetTabs(tabs);
+            }
+        });
         JPanel bottom = new JPanel(new BorderLayout());
-        bottom.add(close, BorderLayout.EAST);
+        Box bottomButtonsBox = Box.createHorizontalBox();
+        bottomButtonsBox.add(reset);
+        bottomButtonsBox.add(close);
+        bottom.add(bottomButtonsBox, BorderLayout.EAST);
         contentPane.add(bottom, BorderLayout.SOUTH);
 
         JPanel controls = new JPanel();
@@ -82,14 +94,14 @@ public class VisualTests extends JDialog {
         step.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                choreographer.step();
+                mChoreographer.step();
             }
         });
         final JCheckBox update = new JCheckBox("Update");
         update.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                choreographer.setUpdate(update.isSelected());
+                mChoreographer.setUpdate(update.isSelected());
                 step.setEnabled(!update.isSelected());
             }
         });
@@ -111,13 +123,35 @@ public class VisualTests extends JDialog {
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(close);
+    }
 
-        close.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                dispose();
-            }
-        });
+    private void addTests(Choreographer choreographer) {
+        mChoreographer = choreographer;
+        mTests.add(new AxisLineChartVisualTest(choreographer));
+        mTests.add(new StateChartVisualTest(choreographer));
+        mTests.add(new LineChartVisualTest(choreographer));
+        mTests.add(new SunburstVisualTest(choreographer));
+        mTests.add(new TimelineVisualTest(choreographer));
+    }
+
+    private void resetTests() {
+        mTests = new LinkedList<VisualTest>();
+        addTests(new Choreographer(CHOREOGRAPHER_FPS));
+    }
+
+    private void resetTabs(JTabbedPane tabs) {
+        int currentTabIndex = tabs.getSelectedIndex();
+        tabs.removeAll();
+        // Make sure to reset the components list
+        mComponents = new LinkedList<AnimatedComponent>();
+        for (VisualTest test : mTests) {
+            test.registerComponents(mComponents);
+            tabs.addTab(test.getName(), test.create());
+        }
+        // Return to previous selected tab if there was one
+        if (currentTabIndex != -1) {
+            tabs.setSelectedIndex(currentTabIndex);
+        }
     }
 
     private void setDarkMode(boolean dark) {
