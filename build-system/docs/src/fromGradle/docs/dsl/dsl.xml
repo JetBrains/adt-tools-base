@@ -6,7 +6,10 @@
     <section>
         <title>Introduction</title>
         <para>This is the DSL reference for Android Gradle Plugin.</para>
-        <para>Start reading by finding the right extension type for the plugin you are using, e.g. <code>AppExtension</code></para>
+        <para>
+            Start reading by finding the right extension type for the plugin you are using, e.g.
+            <code>AppExtension</code>.
+        </para>
     </section>
 
     <!--

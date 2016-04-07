@@ -50,34 +50,34 @@ import java.util.List;
  */
 public interface AndroidConfig {
 
-    /** Build tool version */
+    /** Build tools version. */
     String getBuildToolsVersion();
 
-    /** Compile SDK version */
+    /** Compile SDK version. */
     String getCompileSdkVersion();
 
-    /** Build tool revisions */
+    /** Build tool revisions. */
     Revision getBuildToolsRevision();
 
-    /** Name of the variant to publish */
+    /** Name of the variant to publish. */
     String getDefaultPublishConfig();
 
-    /** Whether to also publish non-default variants */
+    /** Whether to also publish non-default variants. */
     boolean getPublishNonDefault();
 
-    /** Filter to determine which variants to build */
+    /** Filter to determine which variants to build. */
     Action<VariantFilter> getVariantFilter();
 
-    /** Adb options */
+    /** Adb options. */
     AdbOptions getAdbOptions();
 
-    /** A prefix to be used when creating new resources. Used by Studio */
+    /** A prefix to be used when creating new resources. Used by Android Studio. */
     String getResourcePrefix();
 
-    /** List of flavor dimensions */
+    /** List of flavor dimensions. */
     List<String> getFlavorDimensionList();
 
-    /** Whether to generate pure splits or multi apk */
+    /** Whether to generate pure splits or multi apk. */
     boolean getGeneratePureSplits();
 
     @Deprecated
@@ -89,7 +89,7 @@ public interface AndroidConfig {
     /** Options for aapt, tool for packaging resources. */
     AaptOptions getAaptOptions();
 
-    /** Compile options */
+    /** Compile options. */
     CompileOptions getCompileOptions();
 
     /** Dex options. */
@@ -107,7 +107,11 @@ public interface AndroidConfig {
     /** Packaging options. */
     PackagingOptions getPackagingOptions();
 
-    /** APK splits */
+    /**
+     * APK splits options.
+     *
+     * <p>See <a href="http://tools.android.com/tech-docs/new-build-system/user-guide/apk-splits">APK Splits</a>.
+     */
     Splits getSplits();
 
     /** Options for running tests. */
@@ -117,7 +121,7 @@ public interface AndroidConfig {
     @NonNull
     List<DeviceProvider> getDeviceProviders();
 
-    /** List of remote CI servers */
+    /** List of remote CI servers. */
     @NonNull
     List<TestServer> getTestServers();
 
@@ -135,10 +139,10 @@ public interface AndroidConfig {
     /** Signing configs used by this project. */
     Collection<? extends SigningConfig> getSigningConfigs();
 
-    /** Source sets for all variants */
+    /** Source sets for all variants. */
     NamedDomainObjectContainer<AndroidSourceSet> getSourceSets();
 
-    /** Whether to package build config class file */
+    /** Whether to package build config class file. */
     Boolean getPackageBuildConfig();
 
     /** Aidl files to package in the aar. */
@@ -146,6 +150,6 @@ public interface AndroidConfig {
 
     Collection<LibraryRequest> getLibraryRequests();
 
-    /** Data Binding options */
+    /** Data Binding options. */
     DataBindingOptions getDataBinding();
 }

@@ -111,7 +111,7 @@ public interface AndroidConfig {
 
     NdkConfig getNdk();
 
-    /** Adb options */
+    /** Adb options. */
     @Unmanaged
     AdbOptions getAdbOptions();
     void setAdbOptions(AdbOptions adbOptions);
@@ -121,7 +121,7 @@ public interface AndroidConfig {
     AaptOptions getAaptOptions();
     void setAaptOptions(AaptOptions aaptOptions);
 
-    /** Compile options */
+    /** Compile options. */
     @Unmanaged
     CompileOptions getCompileOptions();
     void setCompileOptions(CompileOptions compileOptions);
@@ -154,7 +154,7 @@ public interface AndroidConfig {
     TestOptions getTestOptions();
     void setTestOptions(TestOptions testOptions);
 
-    /** APK splits */
+    /** APK splits. */
     @Unmanaged
     Splits getSplits();
     void setSplits(Splits splits);
