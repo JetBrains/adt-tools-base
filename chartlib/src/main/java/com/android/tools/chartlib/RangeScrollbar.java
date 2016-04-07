@@ -18,8 +18,12 @@ package com.android.tools.chartlib;
 import com.android.annotations.NonNull;
 import com.android.tools.chartlib.model.Range;
 
-import javax.swing.*;
-import java.awt.event.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+
+import javax.swing.BoundedRangeModel;
+import javax.swing.DefaultBoundedRangeModel;
+import javax.swing.JScrollBar;
 
 
 /**
@@ -45,7 +49,7 @@ public final class RangeScrollbar extends JScrollBar implements Animatable {
      * VIEWING - Sticks the scrollbar to a particular data range in the past
      * SCROLLING - User is scrolling. Also see {@link #setStableScrolling(boolean)}.
      */
-    public enum ScrollingMode {
+    private enum ScrollingMode {
         STREAMING,
         VIEWING,
         SCROLLING
@@ -54,12 +58,12 @@ public final class RangeScrollbar extends JScrollBar implements Animatable {
     /**
      * Percentage threshold to switch the scrollbar to STREAMING mode.
      */
-    private static float STREAMING_POSITION_THRESHOLD = 0.1f;
+    private static final float STREAMING_POSITION_THRESHOLD = 0.1f;
 
     /**
      * Percentage threshold to clamp zooming.
      */
-    private static float ZOOMING_THRESHOLD = 0.001f;
+    private static final float ZOOMING_THRESHOLD = 0.001f;
 
     @NonNull
     private ScrollingMode mScrollingMode;
@@ -145,7 +149,6 @@ public final class RangeScrollbar extends JScrollBar implements Animatable {
         // Keeps the scrollbar visuals in sync with the global and current data range.
         // Because the scrollbar's model operates with ints, we map the current data range to the
         // scrollbar's width and scale all the other values needed by the model accordingly.
-        BoundedRangeModel model = getModel();
         double globalRange = mGlobalRange.getLength();
         double currentRange = mRange.getLength();
         int scrollbarExtent = getWidth();

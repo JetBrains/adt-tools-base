@@ -16,13 +16,16 @@
 package com.android.tools.chartlib;
 
 import com.android.annotations.NonNull;
-import gnu.trove.TFloatArrayList;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.geom.AffineTransform;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.geom.Path2D;
 import java.util.ArrayList;
+import java.util.List;
+
+import gnu.trove.TFloatArrayList;
 
 /**
  * A component that draws grid lines within the given dimension.
@@ -33,10 +36,10 @@ public final class GridComponent extends AnimatedComponent {
     private static final Color GRID_COLOR = new Color(224, 224, 224);
 
     @NonNull
-    private java.util.List<AxisComponent> mAxes;
+    private List<AxisComponent> mAxes;
 
     public GridComponent() {
-        mAxes = new ArrayList();
+        mAxes = new ArrayList<AxisComponent>();
     }
 
     public void addAxis(AxisComponent axis) {
@@ -54,8 +57,7 @@ public final class GridComponent extends AnimatedComponent {
 
         Dimension dim = getSize();
         Path2D.Float path = new Path2D.Float();
-        for (int i = 0; i < mAxes.size(); i++) {
-            AxisComponent axis = mAxes.get(i);
+        for (final AxisComponent axis : mAxes) {
             TFloatArrayList markers = axis.getMajorMarkerPositions();
             switch (axis.getOrientation()) {
                 case LEFT:
