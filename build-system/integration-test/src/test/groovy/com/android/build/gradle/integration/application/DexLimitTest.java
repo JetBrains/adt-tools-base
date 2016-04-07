@@ -23,7 +23,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile;
-import com.android.build.gradle.integration.common.utils.TestFileUtils;
+import com.android.build.gradle.integration.common.utils.DexInProcessHelper;
 import com.android.utils.FileUtils;
 
 import org.junit.Before;
@@ -75,11 +75,9 @@ public class DexLimitTest {
 
     @Before
     public void setDexInProcess() throws IOException {
-        TestFileUtils.appendToFile(
-                mProject.getBuildFile(),
-                String.format(
-                        "\nSystem.setProperty('android.dexInProcess', '%s')",
-                        Boolean.toString(mDexInProcess)));
+        if (mDexInProcess) {
+            DexInProcessHelper.enableDexInProcess(mProject.getBuildFile());
+        }
     }
 
     @Test

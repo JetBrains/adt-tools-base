@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,27 +14,15 @@
  * limitations under the License.
  */
 
-package com.android.builder.core;
+package com.android.build.gradle.integration.common.utils;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
+import java.io.File;
+import java.io.IOException;
 
-import java.util.List;
+public class DexInProcessHelper {
+    private DexInProcessHelper() {}
 
-public interface DexOptions {
-
-    boolean getIncremental();
-    boolean getPreDexLibraries();
-    boolean getJumboMode();
-    boolean getDexInProcess();
-
-    @Nullable
-    String getJavaMaxHeapSize();
-    @Nullable
-    Integer getThreadCount();
-    @Nullable
-    Integer getMaxProcessCount();
-
-    @NonNull
-    List<String> getAdditionalParameters();
+    public static void enableDexInProcess(File buildFile) throws IOException {
+        TestFileUtils.appendToFile(buildFile, "\nandroid.dexOptions.dexInProcess = true\n");
+    }
 }

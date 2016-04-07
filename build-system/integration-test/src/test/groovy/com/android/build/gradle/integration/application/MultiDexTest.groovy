@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
+import com.android.build.gradle.integration.common.utils.DexInProcessHelper
 import com.android.utils.FileUtils
 import com.google.common.io.Files
 import groovy.transform.CompileStatic
@@ -37,6 +38,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
+
 /**
  * Assemble tests for multiDex.
  */
@@ -62,7 +64,9 @@ class MultiDexTest {
 
     @Before
     public void setDexInProcess() {
-        project.buildFile << "System.setProperty('android.dexInProcess', '$dexInProcess')"
+        if (dexInProcess) {
+            DexInProcessHelper.enableDexInProcess(project.buildFile)
+        }
     }
 
     @Test
