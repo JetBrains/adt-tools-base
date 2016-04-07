@@ -20,11 +20,7 @@ import com.google.common.annotations.Beta;
 
 /**
  * The format in which content is stored.
- * <p/>
- * <strong>This API is non final and is subject to change. We are looking for feedback, and will
- * attempt to stabilize it in the 1.6 time frame.</strong>
  */
-@Beta
 public enum Format {
 
     /**

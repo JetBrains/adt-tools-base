@@ -28,11 +28,7 @@ import java.util.Set;
  * <p/>
  * There is no direct access to a location to write. Instead, Transforms can ask to get the
  * location for given scopes, content-types and a format.
- * <p/>
- * <strong>This API is non final and is subject to change. We are looking for feedback, and will
- * attempt to stabilize it in the 1.6 time frame.</strong>
  */
-@Beta
 public interface TransformOutputProvider {
 
     /**

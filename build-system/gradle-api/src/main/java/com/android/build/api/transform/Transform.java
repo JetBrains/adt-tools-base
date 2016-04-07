@@ -74,11 +74,7 @@ import java.util.Set;
  * <p>These secondary inputs/outputs allow a transform to read but not process any content. This
  * can be achieved by having {@link #getScopes()} return an empty list and use
  * {@link #getReferencedScopes()} to indicate what to read instead.
- *
- * <p><strong>This API is non final and is subject to change. We are looking for feedback, and will
- * attempt to stabilize it in the 1.6 time frame.</strong>
  */
-@Beta
 @SuppressWarnings("MethodMayBeStatic")
 public abstract class Transform {
 
