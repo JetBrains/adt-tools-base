@@ -13,6 +13,7 @@
             <thead>
                 <tr><td>Name</td></tr>
             </thead>
+            <tr><td>initWith</td></tr>
         </table>
     </section>
 </section>

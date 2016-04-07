@@ -84,92 +84,75 @@ import java.util.Set;
  */
 @SuppressWarnings("UnnecessaryInheritDoc")
 public abstract class BaseExtension implements AndroidConfig {
-
-    private String target;
-    private Revision buildToolsRevision;
-    private List<LibraryRequest> libraryRequests = Lists.newArrayList();
-
-    /** Default config, shared by all flavors. */
-    final ProductFlavor defaultConfig;
-
-    /** Options for aapt, tool for packaging resources. */
-    final AaptOptions aaptOptions;
-
-    /** Lint options. */
-    final LintOptions lintOptions;
-
-    /** External native build. */
-    final ExternalNativeBuild externalNativeBuild;
-
-    /** Dex options. */
-    final DexOptions dexOptions;
-
-    /** Options for running tests. */
-    final TestOptions testOptions;
-
-    /** Compile options */
-    final CompileOptions compileOptions;
-
-    /** Packaging options. */
-    final PackagingOptions packagingOptions;
-
-    /** JaCoCo options. */
-    final JacocoOptions jacoco;
-
-    /**
-     * APK splits options.
-     *
-     * <p>See <a href="http://tools.android.com/tech-docs/new-build-system/user-guide/apk-splits">APK Splits</a>.
-     */
-    final Splits splits;
-
-    /** All product flavors used by this project. */
-    final NamedDomainObjectContainer<ProductFlavor> productFlavors;
-
-    /** Build types used by this project. */
-    final NamedDomainObjectContainer<BuildType> buildTypes;
-
-    /** Signing configs used by this project. */
-    final NamedDomainObjectContainer<SigningConfig> signingConfigs;
-
-    private ExtraModelInfo extraModelInfo;
-
-    protected Project project;
-
-    /** Adb options */
-    final AdbOptions adbOptions;
-
-    /** A prefix to be used when creating new resources. Used by Studio */
-    String resourcePrefix;
-
-    List<String> flavorDimensionList;
-
-    private String defaultPublishConfig = "release";
-    private boolean publishNonDefault = false;
-
-    private Action<VariantFilter> variantFilter;
-
-    private final List<DeviceProvider> deviceProviderList = Lists.newArrayList();
-    private final List<TestServer> testServerList = Lists.newArrayList();
-    private final List<Transform> transforms = Lists.newArrayList();
-    // secondary dependencies for the custom transform.
+    /** Secondary dependencies for the custom transform. */
     private final List<List<Object>> transformDependencies = Lists.newArrayList();
 
     private final AndroidBuilder androidBuilder;
 
     private final SdkHandler sdkHandler;
 
+    private final ProductFlavor defaultConfig;
+
+    private final AaptOptions aaptOptions;
+
+    private final LintOptions lintOptions;
+
+    private final ExternalNativeBuild externalNativeBuild;
+
+    private final DexOptions dexOptions;
+
+    private final TestOptions testOptions;
+
+    private final CompileOptions compileOptions;
+
+    private final PackagingOptions packagingOptions;
+
+    private final JacocoOptions jacoco;
+
+    private final Splits splits;
+
+    private final AdbOptions adbOptions;
+
+    private final NamedDomainObjectContainer<ProductFlavor> productFlavors;
+
+    private final NamedDomainObjectContainer<BuildType> buildTypes;
+
+    private final NamedDomainObjectContainer<SigningConfig> signingConfigs;
+
+    private final List<DeviceProvider> deviceProviderList = Lists.newArrayList();
+
+    private final List<TestServer> testServerList = Lists.newArrayList();
+
+    private final List<Transform> transforms = Lists.newArrayList();
+
+    private final DataBindingOptions dataBinding;
+
+    private final NamedDomainObjectContainer<AndroidSourceSet> sourceSetsContainer;
+
+    private String target;
+
+    private Revision buildToolsRevision;
+
+    private List<LibraryRequest> libraryRequests = Lists.newArrayList();
+
+    private List<String> flavorDimensionList;
+
+    private String resourcePrefix;
+
+    private ExtraModelInfo extraModelInfo;
+
+    private String defaultPublishConfig = "release";
+
+    private boolean publishNonDefault = false;
+
+    private Action<VariantFilter> variantFilter;
+
     protected Logger logger;
 
     private boolean isWritable = true;
 
-    /** Data Binding options */
-    final DataBindingOptions dataBinding;
+    protected Project project;
 
-    /**
-     * The source sets container.
-     */
-    final NamedDomainObjectContainer<AndroidSourceSet> sourceSetsContainer;
 
     BaseExtension(
             @NonNull final ProjectInternal project,
@@ -752,7 +735,10 @@ public abstract class BaseExtension implements AndroidConfig {
         return androidBuilder.getBootClasspath(false);
     }
 
-    public File getAdbExe() {
+    /**
+     * The adb executable from the compile SDK.
+     */
+    public File getAdbExecutable() {
         return sdkHandler.getSdkInfo().getAdb();
     }
 
