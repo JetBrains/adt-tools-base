@@ -78,7 +78,7 @@ public class ShaderProcessor implements SourceSearcher.SourceFileProcessor {
             @NonNull ProcessOutputHandler processOutputHandler) {
         mNdkLocation = ndkLocation;
         mSourceFolder = sourceFolder;
-        mOutputDir = outputDir;
+        mOutputDir = new File(outputDir, "shaders");
         mDefaultArgs = defaultArgs;
         mScopedArgs = scopedArgs;
         mProcessExecutor = processExecutor;
