@@ -153,12 +153,16 @@ class MultiDexTest {
 
         project.buildFile << "\nandroid.dexOptions.additionalParameters = ['--minimal-main-dex']\n"
 
-        project.execute("assembleIcsDebug")
+        project.execute("assembleIcsDebug", "assembleIcsDebugAndroidTest")
 
         assertThatApk(project.getApk("ics", "debug"))
                 .containsClass("Lcom/android/tests/basic/NotUsed;", ALL)
         assertThatApk(project.getApk("ics", "debug"))
                 .doesNotContainClass("Lcom/android/tests/basic/NotUsed;", MAIN)
+
+        // Make sure --minimal-main-dex was not used for the test APK.
+        assertThatApk(project.getTestApk("ics", "debug")).contains("classes.dex")
+        assertThatApk(project.getTestApk("ics", "debug")).doesNotContain("classes2.dex")
 
         project.buildFile << "\nandroid.dexOptions.additionalParameters '--set-max-idx-number=10'\n"
 

@@ -218,11 +218,6 @@ public class PreDexCacheTest {
     private static class FakeDexOptions implements DexOptions {
 
         @Override
-        public boolean getIncremental() {
-            return false;
-        }
-
-        @Override
         public boolean getPreDexLibraries() {
             return false;
         }

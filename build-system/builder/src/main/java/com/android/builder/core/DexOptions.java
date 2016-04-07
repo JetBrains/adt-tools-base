@@ -22,16 +22,18 @@ import com.android.annotations.Nullable;
 import java.util.List;
 
 public interface DexOptions {
-
-    boolean getIncremental();
     boolean getPreDexLibraries();
+
     boolean getJumboMode();
+
     boolean getDexInProcess();
 
     @Nullable
     String getJavaMaxHeapSize();
+
     @Nullable
     Integer getThreadCount();
+
     @Nullable
     Integer getMaxProcessCount();
 

@@ -22,21 +22,22 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.api.transform.TransformInvocation;
-import com.android.build.gradle.internal.LoggerWrapper;
-import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
-import com.android.build.gradle.internal.incremental.InstantRunBuildContext.FileType;
-import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
 import com.android.build.api.transform.JarInput;
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.QualifiedContent.ContentType;
 import com.android.build.api.transform.QualifiedContent.Scope;
+import com.android.build.api.transform.SecondaryFile;
 import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
+import com.android.build.api.transform.TransformInvocation;
 import com.android.build.api.transform.TransformOutputProvider;
+import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext.FileType;
+import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.DexOptions;
 import com.android.builder.sdk.TargetInfo;
@@ -44,9 +45,7 @@ import com.android.ide.common.blame.Message;
 import com.android.ide.common.blame.ParsingProcessOutputHandler;
 import com.android.ide.common.blame.parser.DexParser;
 import com.android.ide.common.blame.parser.ToolOutputParser;
-import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.internal.WaitableExecutor;
-import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.sdklib.BuildToolInfo;
 import com.android.utils.FileUtils;
@@ -66,8 +65,6 @@ import com.google.common.io.Files;
 import org.gradle.api.logging.Logger;
 
 import java.io.File;
-import java.io.FileFilter;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -94,15 +91,18 @@ public class DexTransform extends Transform {
     private final DexOptions dexOptions;
 
     private final boolean debugMode;
+
     private final boolean multiDex;
 
     @NonNull
     private final File intermediateFolder;
+
     @Nullable
     private final File mainDexListFile;
 
     @NonNull
     private final AndroidBuilder androidBuilder;
+
     @NonNull
     private final ILogger logger;
 
@@ -153,9 +153,9 @@ public class DexTransform extends Transform {
 
     @NonNull
     @Override
-    public Collection<File> getSecondaryFileInputs() {
+    public Collection<SecondaryFile> getSecondaryFiles() {
         if (mainDexListFile != null) {
-            return ImmutableList.of(mainDexListFile);
+            return ImmutableList.of(new SecondaryFile(mainDexListFile, false));
         }
 
         return ImmutableList.of();
@@ -182,10 +182,10 @@ public class DexTransform extends Transform {
 
             params.put("debugMode", debugMode);
             params.put("predex", dexOptions.getPreDexLibraries());
-            params.put("incremental", dexOptions.getIncremental());
             params.put("jumbo", dexOptions.getJumboMode());
             params.put("multidex", multiDex);
             params.put("multidex-legacy",  multiDex && mainDexListFile != null);
+            params.put("java-max-heap-size", dexOptions.getJavaMaxHeapSize());
             params.put(
                     "additional-parameters",
                     Iterables.toString(dexOptions.getAdditionalParameters()));
@@ -354,12 +354,9 @@ public class DexTransform extends Transform {
                 }
 
                 for (final File file : deletedFiles) {
-                    executor.execute(new Callable<Void>() {
-                        @Override
-                        public Void call() throws Exception {
-                            FileUtils.deleteFolder(file);
-                            return null;
-                        }
+                    executor.execute(() -> {
+                        FileUtils.deleteFolder(file);
+                        return null;
                     });
                 }
 
@@ -380,11 +377,8 @@ public class DexTransform extends Transform {
                     List<File> outputs = null;
                     if (!multiDex) {
                         // content of the folder is jar files.
-                        File[] files = intermediateFolder.listFiles(new FilenameFilter() {
-                            @Override
-                            public boolean accept(File file, String name) {
-                                return name.endsWith(SdkConstants.DOT_JAR);
-                            }
+                        File[] files = intermediateFolder.listFiles((file, name) -> {
+                            return name.endsWith(SdkConstants.DOT_JAR);
                         });
                         if (files != null) {
                             outputs = Arrays.asList(files);
@@ -411,10 +405,6 @@ public class DexTransform extends Transform {
                             outputHandler);
                 }
             }
-        } catch (LoggedErrorException e) {
-            throw new TransformException(e);
-        } catch (ProcessException e) {
-            throw new TransformException(e);
         } catch (Exception e) {
             throw new TransformException(e);
         }
