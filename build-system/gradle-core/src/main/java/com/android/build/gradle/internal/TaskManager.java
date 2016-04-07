@@ -246,7 +246,7 @@ public abstract class TaskManager {
 
     private static final String DEVICE_CHECK = "deviceCheck";
 
-    private static final String DEVICE_ANDROID_TEST = CONNECTED + ANDROID_TEST.getSuffix();
+    private static final String DEVICE_ANDROID_TEST = DEVICE + ANDROID_TEST.getSuffix();
 
     protected static final String CONNECTED_CHECK = "connectedCheck";
 
@@ -1384,7 +1384,7 @@ public abstract class TaskManager {
             reportTasks.add(connectedAndroidTestTask.getName());
         } else {
             connectedAndroidTestTask = androidTasks.create(tasks,
-                    CONNECTED + ANDROID_TEST.getSuffix(),
+                    CONNECTED_ANDROID_TEST,
                     connectedTask -> {
                         connectedTask.setGroup(JavaBasePlugin.VERIFICATION_GROUP);
                         connectedTask.setDescription("Installs and runs instrumentation tests "
@@ -1405,7 +1405,7 @@ public abstract class TaskManager {
             reportTasks.add(deviceAndroidTestTask.getName());
         } else {
             deviceAndroidTestTask = androidTasks.create(tasks,
-                    DEVICE + ANDROID_TEST.getSuffix(),
+                    DEVICE_ANDROID_TEST,
                     providerTask -> {
                         providerTask.setGroup(JavaBasePlugin.VERIFICATION_GROUP);
                         providerTask.setDescription("Installs and runs instrumentation tests "
