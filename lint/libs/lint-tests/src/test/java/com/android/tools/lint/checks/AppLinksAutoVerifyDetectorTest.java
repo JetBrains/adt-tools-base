@@ -16,12 +16,23 @@
 
 package com.android.tools.lint.checks;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.ProductFlavor;
+import com.android.builder.model.Variant;
+import com.android.builder.model.VectorDrawablesOptions;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Project;
 import com.google.common.collect.Maps;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 
+import java.io.File;
 import java.util.Map;
 
 @SuppressWarnings("javadoc")
@@ -603,5 +614,126 @@ public class AppLinksAutoVerifyDetectorTest extends AbstractCheckTest {
         } finally {
             AppLinksAutoVerifyDetector.sMockData = null;
         }
+    }
+
+    public void testUnknownHostWithManifestPlaceholders() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=205990
+        // Skip hosts that use manifest placeholders
+        try {
+            Map<String, AppLinksAutoVerifyDetector.HttpResult> data = Maps.newHashMap();
+            AppLinksAutoVerifyDetector.sMockData = data;
+            data.put("http://example.com", new AppLinksAutoVerifyDetector.HttpResult(
+                    AppLinksAutoVerifyDetector.STATUS_UNKNOWN_HOST, null));
+
+            assertEquals(
+                    "No warnings.",
+                    lintProject(xml("AndroidManifest.xml", ""
+                            + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                            + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                            + "    package=\"com.example.helloworld\" >\n"
+                            + "\n"
+                            + "    <application\n"
+                            + "        android:allowBackup=\"true\"\n"
+                            + "        android:icon=\"@mipmap/ic_launcher\" >\n"
+                            + "        <activity android:name=\".MainActivity\" >\n"
+                            + "            <intent-filter android:autoVerify=\"true\">\n"
+                            + "                <action android:name=\"android.intent.action.VIEW\" />\n"
+                            + "                <data\n"
+                            + "                    android:host=\"${intentFilterHost}\"\n"
+                            + "                    android:pathPrefix=\"/path/\"\n"
+                            + "                    android:scheme=\"https\" />\n"
+                            + "                <category android:name=\"android.intent.category.DEFAULT\" />\n"
+                            + "                <category android:name=\"android.intent.category.BROWSABLE\" />\n"
+                            + "            </intent-filter>\n"
+                            + "        </activity>\n"
+                            + "    </application>\n"
+                            + "\n"
+                            + "</manifest>\n")));
+        } finally {
+            AppLinksAutoVerifyDetector.sMockData = null;
+        }
+    }
+
+    public void testUnknownHostWithResolvedManifestPlaceholders() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=205990
+        // Skip hosts that use manifest placeholders
+        try {
+            Map<String, AppLinksAutoVerifyDetector.HttpResult> data = Maps.newHashMap();
+            AppLinksAutoVerifyDetector.sMockData = data;
+            data.put("http://example.com", new AppLinksAutoVerifyDetector.HttpResult(
+                    AppLinksAutoVerifyDetector.STATUS_UNKNOWN_HOST, null));
+
+            assertEquals(""
+                    + "AndroidManifest.xml:12: Warning: Unknown host: http://example.com. Check if the host exists, and check your network connection [AppLinksAutoVerifyWarning]\n"
+                    + "                    android:host=\"${intentFilterHost}\"\n"
+                    + "                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                    + "0 errors, 1 warnings\n",
+                    lintProject(xml("AndroidManifest.xml", ""
+                            + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                            + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                            + "    package=\"com.example.helloworld\" >\n"
+                            + "\n"
+                            + "    <application\n"
+                            + "        android:allowBackup=\"true\"\n"
+                            + "        android:icon=\"@mipmap/ic_launcher\" >\n"
+                            + "        <activity android:name=\".MainActivity\" >\n"
+                            + "            <intent-filter android:autoVerify=\"true\">\n"
+                            + "                <action android:name=\"android.intent.action.VIEW\" />\n"
+                            + "                <data\n"
+
+                            + "                    android:host=\"${intentFilterHost}\"\n"
+                            + "                    android:pathPrefix=\"/gizmos/\"\n"
+                            + "                    android:scheme=\"http\" />\n"
+                            + "                <category android:name=\"android.intent.category.DEFAULT\" />\n"
+                            + "                <category android:name=\"android.intent.category.BROWSABLE\" />\n"
+                            + "            </intent-filter>\n"
+                            + "        </activity>\n"
+                            + "    </application>\n"
+                            + "\n"
+                            + "</manifest>\n")));
+        } finally {
+            AppLinksAutoVerifyDetector.sMockData = null;
+        }
+    }
+
+    @Override
+    protected TestLintClient createClient() {
+        // Provide a model for the place holder test
+        if (!"testUnknownHostWithResolvedManifestPlaceholders".equals(getName())) {
+            return super.createClient();
+        }
+        return new TestLintClient() {
+            @NonNull
+            @Override
+            protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
+                return new Project(this, dir, referenceDir) {
+                    @Override
+                    public boolean isGradleProject() {
+                        return true;
+                    }
+
+                    @Nullable
+                    @Override
+                    public Variant getCurrentVariant() {
+                        Variant onlyVariant = mock(Variant.class);
+                        ProductFlavor productFlavor = mock(ProductFlavor.class);
+                        when(onlyVariant.getMergedFlavor()).thenReturn(productFlavor);
+                        Map<String,Object> placeHolders = Maps.newHashMap();
+                        placeHolders.put("intentFilterHost", "example.com");
+                        when(productFlavor.getManifestPlaceholders()).thenReturn(placeHolders);
+
+                        return onlyVariant;
+                    }
+
+                    @Nullable
+                    @Override
+                    public AndroidProject getGradleProjectModel() {
+                        AndroidProject project = mock(AndroidProject.class);
+                        when(project.getModelVersion()).thenReturn("2.0.0");
+                        return project;
+                    }
+                };
+            }
+        };
     }
 }
