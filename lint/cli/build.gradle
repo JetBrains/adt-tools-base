@@ -8,7 +8,7 @@ version = rootProject.ext.baseVersion
 
 dependencies {
     compile project(':base:lint-checks')
-    compile 'org.eclipse.jdt.core.compiler:ecj:4.4.2'
+    compile 'org.eclipse.jdt.core.compiler:ecj:4.5.1'
 }
 
 sourceSets {
