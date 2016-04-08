@@ -17,6 +17,7 @@
 package com.android.build.gradle.ndk.internal;
 
 import com.android.SdkConstants;
+import com.android.build.gradle.internal.ndk.NativeToolSpecification;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Iterables;
@@ -27,7 +28,7 @@ import org.gradle.nativeplatform.platform.NativePlatform;
 /**
  * Flag configuration for GCC toolchain.
  */
-public class GccNativeToolSpecification extends AbstractNativeToolSpecification {
+public class GccNativeToolSpecification implements NativeToolSpecification {
 
     private static final ListMultimap<String, String> RELEASE_CFLAGS =
             ImmutableListMultimap.<String, String>builder()

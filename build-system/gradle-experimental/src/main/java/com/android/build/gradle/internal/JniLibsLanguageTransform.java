@@ -21,6 +21,7 @@ import com.android.build.gradle.internal.dependency.AndroidNativeDependencySpec;
 import com.android.build.gradle.internal.dependency.NativeDependencyResolveResult;
 import com.android.build.gradle.internal.dependency.NativeDependencyResolver;
 import com.android.build.gradle.internal.dependency.NativeLibraryArtifact;
+import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.model.AndroidBinary;
 import com.android.build.gradle.model.JniLibsSourceSet;
 import com.android.build.gradle.model.internal.AndroidBinaryInternal;

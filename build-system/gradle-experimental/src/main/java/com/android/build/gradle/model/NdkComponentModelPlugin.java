@@ -23,12 +23,14 @@ import static com.android.build.gradle.model.ModelConstants.NATIVE_DEPENDENCIES;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.NativeDependencyLinkage;
-import com.android.build.gradle.internal.NdkHandler;
+import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.ProductFlavorCombo;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.dependency.ArtifactContainer;
 import com.android.build.gradle.internal.dependency.NativeDependencyResolveResult;
 import com.android.build.gradle.internal.dependency.NativeLibraryArtifact;
+import com.android.build.gradle.internal.ndk.Stl;
+import com.android.build.gradle.internal.ndk.StlNativeToolSpecification;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.managed.BuildType;
 import com.android.build.gradle.managed.NativeBuildConfig;
@@ -43,7 +45,6 @@ import com.android.build.gradle.model.internal.DefaultNativeSourceSet;
 import com.android.build.gradle.ndk.internal.NdkConfiguration;
 import com.android.build.gradle.ndk.internal.NdkExtensionConvention;
 import com.android.build.gradle.ndk.internal.NdkNamingScheme;
-import com.android.build.gradle.ndk.internal.StlNativeToolSpecification;
 import com.android.build.gradle.ndk.internal.ToolchainConfiguration;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.VariantConfiguration;
@@ -51,13 +52,13 @@ import com.android.builder.model.AndroidProject;
 import com.android.utils.NativeSourceFileExtensions;
 import com.android.utils.StringHelper;
 import com.google.common.base.Joiner;
-import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
@@ -101,7 +102,6 @@ import org.gradle.nativeplatform.NativeLibrarySpec;
 import org.gradle.nativeplatform.SharedLibraryBinary;
 import org.gradle.nativeplatform.SharedLibraryBinarySpec;
 import org.gradle.nativeplatform.StaticLibraryBinarySpec;
-import org.gradle.nativeplatform.platform.NativePlatform;
 import org.gradle.nativeplatform.toolchain.NativeToolChainRegistry;
 import org.gradle.platform.base.BinaryContainer;
 import org.gradle.platform.base.BinarySpec;
@@ -179,14 +179,14 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         public static void checkNdkDir(
                 NdkHandler ndkHandler,
                 @Path("android.ndk") NdkConfig ndkConfig) {
-            if (!ndkConfig.getModuleName().isEmpty() && !ndkHandler.isNdkDirConfigured()) {
+            if (!ndkConfig.getModuleName().isEmpty() && !ndkHandler.isConfigured()) {
                 throw new InvalidUserDataException(
                         "NDK location not found. Define location with ndk.dir in the "
                                 + "local.properties file or with an ANDROID_NDK_HOME environment "
                                 + "variable.");
             }
-            if (ndkHandler.isNdkDirConfigured()) {
-                //noinspection ConstantConditions - isNdkDirConfigured ensures getNdkDirectory is not null
+            if (ndkHandler.isConfigured()) {
+                //noinspection ConstantConditions - isConfigured ensures getNdkDirectory is not null
                 if (!ndkHandler.getNdkDirectory().exists()) {
                     throw new InvalidUserDataException(
                             "Specified NDK location does not exists.  Please ensure ndk.dir in "
@@ -235,11 +235,13 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 projectId = projectId.getParentIdentifier();
             }
 
-            return new NdkHandler(
+            NdkHandler ndkHandler = new NdkHandler(
                     projectId.getProjectDir(),
-                    Objects.firstNonNull(ndkConfig.getPlatformVersion(), compileSdkVersion),
+                    ndkConfig.getPlatformVersion(),
                     ndkConfig.getToolchain(),
                     ndkConfig.getToolchainVersion());
+            ndkHandler.setCompileSdkVersion(compileSdkVersion);
+            return ndkHandler;
         }
 
         @Defaults
@@ -260,7 +262,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         @Mutate
         public static void createAndroidPlatforms(PlatformContainer platforms,
                 NdkHandler ndkHandler) {
-            if (!ndkHandler.isNdkDirConfigured()) {
+            if (!ndkHandler.isConfigured()) {
                 return;
             }
             // Create android platforms.
@@ -286,7 +288,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 @Path("android.abis") ModelMap<NdkAbiOptions> abis,
                 @Path("android.ndk") NdkConfig ndkConfig,
                 NdkHandler ndkHandler) {
-            if (!ndkHandler.isNdkDirConfigured()) {
+            if (!ndkHandler.isConfigured()) {
                 return;
             }
             // Create toolchain for each ABI.
@@ -327,7 +329,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 @Path("android.sources") final ModelMap<FunctionalSourceSet> sources,
                 @Path("buildDir") final File buildDir,
                 final ServiceRegistry serviceRegistry) {
-            if (!ndkHandler.isNdkDirConfigured()) {
+            if (!ndkHandler.isConfigured()) {
                 return;
             }
             if (!ndkConfig.getModuleName().isEmpty()) {
@@ -395,7 +397,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 final NdkHandler ndkHandler,
                 ModelMap<AndroidBinaryInternal> binaries,
                 @Path("buildDir") final File buildDir) {
-            if (!ndkHandler.isNdkDirConfigured()) {
+            if (!ndkHandler.isConfigured()) {
                 return;
             }
             for (AndroidBinaryInternal binary : binaries.values()) {
@@ -679,20 +681,16 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                                 source.getExportedHeaders().getSrcDirs());
                     }
                 }
-                String stl = binary.getMergedNdkConfig().getStl();
-                if (stl.endsWith("_shared")) {
-                    NativePlatform abi = nativeBinary.getTargetPlatform();
-                    final StlNativeToolSpecification stlConfig = new StlNativeToolSpecification(
-                            ndkHandler,
-                            stl,
-                            binary.getMergedNdkConfig().getStlVersion(),
-                            abi);
-                    artifact.getLibraries().add(stlConfig.getStlLib(abi.getName()));
-                }
+                Abi abi = Abi.getByName(nativeBinary.getTargetPlatform().getName());
+                final StlNativeToolSpecification stlConfig =
+                        ndkHandler.getStlNativeToolSpecification(
+                                Stl.getById(binary.getMergedNdkConfig().getStl()),
+                                binary.getMergedNdkConfig().getStlVersion(),
+                                abi);
+                artifact.getLibraries().addAll(stlConfig.getSharedLibs());
 
                 // Include transitive dependencies.
                 // Dynamic objects from dependencies needs to be added to the library list.
-                Abi abi = Abi.getByName(nativeBinary.getTargetPlatform().getName());
                 assert abi != null;
                 for (NativeDependencyResolveResult dependency : dependencies) {
                     for (NativeLibraryBinary lib : dependency.getPrebuiltLibraries()) {
@@ -701,12 +699,13 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                             artifact.getLibraries().add(((SharedLibraryBinary) lib).getSharedLibraryFile());
                         }
                     }
+
                     Collection<NativeLibraryArtifact> artifacts = dependency.getNativeArtifacts();
                     for (NativeLibraryArtifact dep : artifacts) {
                         if (abi.getName().equals(dep.getAbi())) {
-                            Iterables.addAll(
-                                    artifact.getLibraries(),
-                                    Iterables.filter(dep.getLibraries(), SHARED_OBJECT_FILTER));
+                            dep.getLibraries().stream()
+                                    .filter(file -> file.getName().endsWith(".so"))
+                                    .forEach(artifact.getLibraries()::add);
                         }
                     }
                 }
