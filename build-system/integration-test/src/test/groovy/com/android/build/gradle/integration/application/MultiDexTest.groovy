@@ -37,8 +37,6 @@ import static com.android.build.gradle.integration.common.truth.AbstractAndroidS
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
-import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
-
 /**
  * Assemble tests for multiDex.
  */
@@ -53,10 +51,16 @@ class MultiDexTest {
 
     @Parameterized.Parameters(name = "dexInProcess = {0}")
     public static Collection<Object[]> data() {
-        return [
-                [true] as Object[],
-                [false] as Object[],
-        ]
+        if (GradleTestProject.USE_JACK) {
+            return [
+                    [false] as Object[],
+            ]
+        } else {
+            return [
+                    [true] as Object[],
+                    [false] as Object[],
+            ]
+        }
     }
 
     @Parameterized.Parameter(0)
@@ -91,21 +95,21 @@ class MultiDexTest {
 
         assertMainDexListContains("debug", expected)
 
+        String transform = GradleTestProject.USE_JACK ? "jack" : "dex"
+
         // manually inspect the apk to ensure that the classes.dex that was created is the same
         // one in the apk. This tests that the packaging didn't rename the multiple dex files
         // around when we packaged them.
-        File classesDex = GradleTestProject.USE_JACK ?
-                project.file("build/" + FD_INTERMEDIATES + "/dex/ics/debug/classes.dex") :
-                project.file("build/" + FD_INTERMEDIATES + "/transforms/dex/ics/debug/" +
+        File classesDex =
+                project.file("build/intermediates/transforms/$transform/ics/debug/" +
                         "folders/1000/1f/main/classes.dex")
 
         assertThatZip(project.getApk("ics", "debug")).containsFileWithContent(
                 "classes.dex",
                 Files.toByteArray(classesDex))
 
-        File classes2Dex = GradleTestProject.USE_JACK ?
-                project.file("build/" + FD_INTERMEDIATES + "/dex/ics/debug/classes2.dex") :
-                project.file("build/" + FD_INTERMEDIATES + "/transforms/dex/ics/debug/" +
+        File classes2Dex =
+                project.file("build/intermediates/transforms/$transform/ics/debug/" +
                         "folders/1000/1f/main/classes2.dex")
 
         assertThatZip(project.getApk("ics", "debug")).containsFileWithContent(
