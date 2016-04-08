@@ -378,8 +378,12 @@ public final class FileUtils {
         return data;
     }
 
+    /**
+     * Join multiple file paths as String.
+     */
     @NonNull
-    public static String computeClasspath(@NonNull Iterable<File> files) {
-        return Joiner.on(':').join(Iterables.transform(files, GET_ABSOLUTE_PATH));
+    public static String joinFilePaths(@NonNull Iterable<File> files) {
+        return Joiner.on(File.pathSeparatorChar)
+                .join(Iterables.transform(files, GET_ABSOLUTE_PATH));
     }
 }
