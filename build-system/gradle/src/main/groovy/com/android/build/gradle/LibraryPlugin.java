@@ -13,53 +13,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.build.gradle
+package com.android.build.gradle;
 
-import android.databinding.tool.DataBindingBuilder
-import com.android.annotations.NonNull
-import com.android.build.gradle.internal.DependencyManager
-import com.android.build.gradle.internal.LibraryTaskManager
-import com.android.build.gradle.internal.NdkHandler
-import com.android.build.gradle.internal.SdkHandler
-import com.android.build.gradle.internal.TaskManager
-import com.android.build.gradle.internal.variant.LibraryVariantFactory
-import com.android.build.gradle.internal.variant.VariantFactory
-import com.android.builder.core.AndroidBuilder
-import org.gradle.api.Plugin
-import org.gradle.api.Project
-import org.gradle.api.Task
-import org.gradle.internal.reflect.Instantiator
-import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
+import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.DependencyManager;
+import com.android.build.gradle.internal.LibraryTaskManager;
+import com.android.build.gradle.internal.NdkHandler;
+import com.android.build.gradle.internal.SdkHandler;
+import com.android.build.gradle.internal.TaskManager;
+import com.android.build.gradle.internal.variant.LibraryVariantFactory;
+import com.android.build.gradle.internal.variant.VariantFactory;
+import com.android.builder.core.AndroidBuilder;
 
-import javax.inject.Inject
+import org.gradle.api.Plugin;
+import org.gradle.api.Project;
+import org.gradle.internal.reflect.Instantiator;
+import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
+
+import android.databinding.tool.DataBindingBuilder;
+
+import javax.inject.Inject;
 
 /**
  * Gradle plugin class for 'library' projects.
  */
 public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
 
-    /**
-     * Default assemble task for the default-published artifact. this is needed for
-     * the prepare task on the consuming project.
-     */
-    Task assembleDefault
-
     @Inject
     public LibraryPlugin(Instantiator instantiator, ToolingModelBuilderRegistry registry) {
-        super(instantiator, registry)
+        super(instantiator, registry);
     }
 
     @Override
     public Class<? extends BaseExtension> getExtensionClass() {
-        return LibraryExtension.class
+        return LibraryExtension.class;
     }
 
     @Override
     protected VariantFactory createVariantFactory() {
-        return new LibraryVariantFactory(
-                instantiator,
-                androidBuilder,
-                (LibraryExtension) extension);
+        return new LibraryVariantFactory(instantiator, androidBuilder, extension);
     }
 
     @Override
@@ -85,13 +77,14 @@ public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
                 sdkHandler,
                 ndkHandler,
                 dependencyManager,
-                toolingRegistry)
+                toolingRegistry);
     }
 
     @Override
-    void apply(Project project) {
-        super.apply(project)
-
-        assembleDefault = project.tasks.create("assembleDefault")
+    public void apply(@NonNull Project project) {
+        super.apply(project);
+        // Default assemble task for the default-published artifact.
+        // This is needed for the prepare task on the consuming project.
+        project.getTasks().create("assembleDefault");
     }
 }
