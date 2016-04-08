@@ -148,6 +148,9 @@ public class ResourceUrl {
             return null;
         }
         String name = url.substring(nameBegin);
+        if (name.isEmpty()) {
+            return null;
+        }
         return new ResourceUrl(type, name, framework, create, isTheme);
     }
 
