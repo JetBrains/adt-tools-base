@@ -19,6 +19,8 @@ package com.android.tools.lint.checks;
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_HOST;
 import static com.android.SdkConstants.ATTR_SCHEME;
+import static com.android.SdkConstants.MANIFEST_PLACEHOLDER_PREFIX;
+import static com.android.SdkConstants.MANIFEST_PLACEHOLDER_SUFFIX;
 import static com.android.SdkConstants.UTF_8;
 import static com.android.xml.AndroidManifest.ATTRIBUTE_NAME;
 import static com.android.xml.AndroidManifest.NODE_ACTION;
@@ -30,6 +32,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.builder.model.Variant;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;
@@ -60,9 +63,9 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -136,7 +139,7 @@ public class AppLinksAutoVerifyDetector extends Detector implements Detector.Xml
                 if (!actionView || !browsableCategory) {
                     continue;
                 }
-                mJsonHost.putAll(getJsonUrl(intent));
+                mJsonHost.putAll(getJsonUrl(context, intent));
             }
         }
 
@@ -148,6 +151,9 @@ public class AppLinksAutoVerifyDetector extends Detector implements Detector.Xml
                 continue;
             }
             Attr host = mJsonHost.get(result.getKey());
+            if (host == null) {
+                continue;
+            }
             String jsonPath = result.getKey() + JSON_RELATIVE_PATH;
             switch (result.getValue().mStatus) {
                 case STATUS_HTTP_OK:
@@ -260,7 +266,8 @@ public class AppLinksAutoVerifyDetector extends Detector implements Detector.Xml
      * @return List of JSON file urls.
      */
     @NonNull
-    private static Map<String, Attr> getJsonUrl(@NonNull Element intent) {
+    private static Map<String, Attr> getJsonUrl(@NonNull XmlContext context,
+            @NonNull Element intent) {
         List<String> schemes = Lists.newArrayList();
         List<Attr> hosts = Lists.newArrayList();
         NodeList dataTags = intent.getElementsByTagName(NODE_DATA);
@@ -271,16 +278,41 @@ public class AppLinksAutoVerifyDetector extends Detector implements Detector.Xml
                 schemes.add(scheme);
             }
             if (dataTag.hasAttributeNS(ANDROID_URI, ATTR_HOST)) {
-                hosts.add(dataTag.getAttributeNodeNS(ANDROID_URI, ATTR_HOST));
+                Attr host = dataTag.getAttributeNodeNS(ANDROID_URI, ATTR_HOST);
+                hosts.add(host);
             }
         }
         Map<String, Attr> urls = Maps.newHashMap();
         for (String scheme : schemes) {
             for (Attr host : hosts) {
-                urls.put(scheme + "://" + host.getValue(), host);
+                String hostname = host.getValue();
+                if (hostname.startsWith(SdkConstants.MANIFEST_PLACEHOLDER_PREFIX)) {
+                    hostname = resolvePlaceHolder(context, hostname);
+                    if (hostname == null) {
+                        continue;
+                    }
+                }
+                urls.put(scheme + "://" + hostname, host);
             }
         }
         return urls;
+    }
+
+    @Nullable
+    private static String resolvePlaceHolder(@NonNull XmlContext context,
+            @NonNull String hostname) {
+        assert hostname.startsWith(SdkConstants.MANIFEST_PLACEHOLDER_PREFIX);
+        Variant variant = context.getProject().getCurrentVariant();
+        if (variant != null) {
+            Map<String, Object> placeHolders = variant.getMergedFlavor().getManifestPlaceholders();
+            String name = hostname.substring(MANIFEST_PLACEHOLDER_PREFIX.length(),
+                    hostname.length() - MANIFEST_PLACEHOLDER_SUFFIX.length());
+            Object value = placeHolders.get(name);
+            if (value instanceof String) {
+                return value.toString();
+            }
+        }
+        return null;
     }
 
     /* Normally null. Used for testing. */
@@ -300,12 +332,8 @@ public class AppLinksAutoVerifyDetector extends Detector implements Detector.Xml
 
         ExecutorService executorService = Executors.newCachedThreadPool();
         for (final Map.Entry<String, Attr> url : mJsonHost.entrySet()) {
-            Future<HttpResult> future = executorService.submit(new Callable<HttpResult>() {
-                @Override
-                public HttpResult call() {
-                    return getJson(url.getKey() + JSON_RELATIVE_PATH);
-                }
-            });
+            Future<HttpResult> future = executorService.submit(
+                    () -> getJson(url.getKey() + JSON_RELATIVE_PATH));
             mFutures.put(url.getKey(), future);
         }
         executorService.shutdown();
@@ -339,9 +367,8 @@ public class AppLinksAutoVerifyDetector extends Detector implements Detector.Xml
                 if (inputStream == null) {
                     return new HttpResult(connection.getResponseCode(), null);
                 }
-                BufferedReader reader = new BufferedReader(
-                        new InputStreamReader(inputStream, UTF_8));
-                try {
+                try (BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(inputStream, UTF_8))) {
                     String line;
                     StringBuilder response = new StringBuilder();
                     while ((line = reader.readLine()) != null) {
@@ -357,8 +384,6 @@ public class AppLinksAutoVerifyDetector extends Detector implements Detector.Xml
                     } catch (RuntimeException e) {
                         return new HttpResult(STATUS_JSON_PARSE_FAIL, null);
                     }
-                } finally {
-                    reader.close();
                 }
             } finally {
                 connection.disconnect();

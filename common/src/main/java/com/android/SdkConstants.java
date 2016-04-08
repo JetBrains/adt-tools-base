@@ -1301,6 +1301,8 @@ public final class SdkConstants {
     public static final String PREFIX_THEME_REF = "?";                  //$NON-NLS-1$
     public static final String PREFIX_BINDING_EXPR = "@{";              //$NON-NLS-1$
     public static final String PREFIX_TWOWAY_BINDING_EXPR = "@={";      //$NON-NLS-1$
+    public static final String MANIFEST_PLACEHOLDER_PREFIX = "${";      //$NON-NLS-1$
+    public static final String MANIFEST_PLACEHOLDER_SUFFIX = "}";       //$NON-NLS-1$
     public static final String ANDROID_PREFIX = "@android:";            //$NON-NLS-1$
     public static final String ANDROID_THEME_PREFIX = "?android:";      //$NON-NLS-1$
     public static final String LAYOUT_RESOURCE_PREFIX = "@layout/";     //$NON-NLS-1$
