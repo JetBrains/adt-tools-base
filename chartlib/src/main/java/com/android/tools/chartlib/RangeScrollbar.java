@@ -188,7 +188,12 @@ public final class RangeScrollbar extends JScrollBar implements Animatable {
                 float adjustedValue = getValue() /
                                       (float)(getMaximum() - scrollbarExtent) *
                                       (scrollbarRange - scrollbarExtent);
-
+                // If scrollbarExtent is equals to getMaximum() (and/or scrollbarRange) and
+                // getValue() is 0, adjustedValue is going to be 0/0, which is a NaN. In this case,
+                // we want it to be 0.
+                if (Float.isNaN(adjustedValue)) {
+                    adjustedValue = 0f;
+                }
                 // Use the ratio of adjustValue relative to scrollbarRange to get new min
                 double newMin = (globalRange * adjustedValue / scrollbarRange) + mGlobalRange.getMin();
                 mRange.setMin(newMin);
