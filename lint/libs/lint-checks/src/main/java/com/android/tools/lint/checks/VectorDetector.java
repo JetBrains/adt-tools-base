@@ -17,9 +17,11 @@
 package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.ANDROID_URI;
+import static com.android.SdkConstants.TAG_VECTOR;
 
 import com.android.annotations.NonNull;
 import com.android.builder.model.AndroidProject;
+import com.android.builder.model.Variant;
 import com.android.ide.common.repository.GradleVersion;
 import com.android.ide.common.resources.ResourceUrl;
 import com.android.resources.ResourceFolderType;
@@ -40,7 +42,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 /**
- * Checks for unreachable states in an Android state list definition
+ * Looks for issues with vector icon generation
  */
 public class VectorDetector extends ResourceXmlDetector {
     /** The main issue discovered by this detector */
@@ -106,7 +108,7 @@ public class VectorDetector extends ResourceXmlDetector {
 
         Element root = document.getDocumentElement();
         // If this is not actually a vector icon, nothing to do in this detector
-        if (root == null || !root.getTagName().equals("vector")) { //$NON-NLS-1$
+        if (root == null || !root.getTagName().equals(TAG_VECTOR)) {
             return;
         }
 
@@ -118,8 +120,22 @@ public class VectorDetector extends ResourceXmlDetector {
         // TODO: Check to see if there already is a -?dpi version of the file; if so,
         // we also won't be generating a vector image
 
+        if (usingSupportLibVectors(project)) {
+            return;
+        }
 
         checkSupported(context, root);
+    }
+
+    private static boolean usingSupportLibVectors(@NonNull Project project) {
+        GradleVersion version = project.getGradleModelVersion();
+        if (version == null || version.getMajor() < 2) {
+            return false;
+        }
+
+        Variant currentVariant = project.getCurrentVariant();
+        return currentVariant != null && Boolean.TRUE.equals(
+                currentVariant.getMergedFlavor().getVectorDrawables().getUseSupportLibrary());
     }
 
     /** Recursive element check for unsupported attributes and tags */

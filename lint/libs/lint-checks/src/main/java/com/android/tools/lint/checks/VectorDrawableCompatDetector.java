@@ -102,8 +102,8 @@ public class VectorDrawableCompatDetector extends ResourceXmlDetector {
             return;
         }
 
-        GradleVersion version = GradleVersion.parse(model.getModelVersion());
-        if (version.getMajor() < 2) {
+        GradleVersion version = context.getProject().getGradleModelVersion();
+        if (version == null || version.getMajor() < 2) {
             mSkipChecks = true;
             return;
         }
