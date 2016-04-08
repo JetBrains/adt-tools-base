@@ -15,27 +15,20 @@
  */
 
 package com.android.build.gradle.integration.application
-import com.android.annotations.NonNull
+
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.integration.common.truth.ZipFileSubject
+import com.android.build.gradle.integration.common.utils.ZipHelper
 import com.android.builder.model.AndroidProject
-import com.google.common.collect.Sets
-import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import org.objectweb.asm.ClassReader
-import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Type
-import org.objectweb.asm.tree.ClassNode
 import org.objectweb.asm.tree.FieldNode
-
-import java.util.zip.ZipEntry
-import java.util.zip.ZipFile
 
 import static com.google.common.truth.Truth.assertThat
 import static com.google.common.truth.TruthJUnit.assume
@@ -73,7 +66,7 @@ class MinifyTest {
                         "minified/" +
                         "jars/3/1f/main.jar")
 
-        Set<String> minifiedList = getZipEntries(jarFile);
+        Set<String> minifiedList = ZipHelper.getZipEntries(jarFile);
 
         // Ignore JaCoCo stuff.
         minifiedList.removeAll { it =~ /org.jacoco/ }
@@ -97,7 +90,7 @@ class MinifyTest {
                         "androidTest/" +
                         "minified/" +
                         "jars/3/1f/main.jar")
-        Set<String> minifiedList = getZipEntries(jarFile)
+        Set<String> minifiedList = ZipHelper.getZipEntries(jarFile)
 
         def testClassFiles = minifiedList.findAll { !it.startsWith("org/hamcrest") }
 
@@ -108,23 +101,9 @@ class MinifyTest {
                 "com/android/tests/basic/test/BuildConfig.class",
         )
 
-        checkClassFile(jarFile)
-    }
-
-    @NonNull
-    private static Set<String> getZipEntries(@NonNull File file) {
-        Set<String> entries = Sets.newHashSet();
-        ZipFile zipFile = new ZipFile(file);
-        try {
-            Enumeration<? extends ZipEntry> zipFileEntries = zipFile.entries();
-            while (zipFileEntries.hasMoreElements()) {
-                entries.add(zipFileEntries.nextElement().getName());
-            }
-        } finally {
-            zipFile.close();
-        }
-
-        return entries;
+        FieldNode stringProviderField = ZipHelper.checkClassFile(
+                jarFile, "com/android/tests/basic/MainTest.class", "stringProvider");
+        assert Type.getType(stringProviderField.desc).className == "com.android.tests.basic.a"
     }
 
     @Test
@@ -134,24 +113,5 @@ class MinifyTest {
 
         classes.contains("com/android/tests/basic/Main.class")
         classes.doesNotContain("com/android/tests/basic/MainTest.class")
-    }
-
-    @CompileDynamic
-    static def checkClassFile(@NonNull File jarFile) {
-        ZipFile zipFile = new ZipFile(jarFile);
-        try {
-            ZipEntry entry = zipFile.getEntry("com/android/tests/basic/MainTest.class")
-            assertThat(entry).named("MainTest.class entry").isNotNull()
-            def classReader = new ClassReader(zipFile.getInputStream(entry))
-            def mainTestClassNode = new ClassNode(Opcodes.ASM5)
-            classReader.accept(mainTestClassNode, 0)
-
-            // Make sure bytecode got rewritten to point to renamed classes.
-            FieldNode stringProviderField = mainTestClassNode.fields.find { it.name == "stringProvider" }
-            assert Type.getType(stringProviderField.desc).className == "com.android.tests.basic.a"
-
-        } finally {
-            zipFile.close();
-        }
     }
 }

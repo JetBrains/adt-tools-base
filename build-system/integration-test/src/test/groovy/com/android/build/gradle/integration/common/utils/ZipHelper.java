@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.common.utils;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -30,11 +31,17 @@ import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 
 import org.junit.Assert;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldNode;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipEntry;
@@ -233,6 +240,43 @@ public class ZipHelper {
             if (zis != null) {
                 zis.close();
             }
+        }
+    }
+
+    public static Set<String> getZipEntries(@NonNull File file) throws IOException{
+        Set<String> entries = Sets.newHashSet();
+
+        try(ZipFile zipFile = new ZipFile(file)) {
+            Enumeration<? extends ZipEntry> zipFileEntries = zipFile.entries();
+            while (zipFileEntries.hasMoreElements()) {
+                entries.add(zipFileEntries.nextElement().getName());
+            }
+        }
+
+        return entries;
+    }
+
+    public static FieldNode checkClassFile(@NonNull File jarFile, @NonNull String entryName,
+            @NonNull String fieldName) throws IOException {
+
+        try (ZipFile zipFile = new ZipFile(jarFile)) {
+            ZipEntry entry = zipFile.getEntry(entryName);
+            assertThat(entry).named(entryName + " entry").isNotNull();
+            ClassReader classReader = new ClassReader(zipFile.getInputStream(entry));
+            ClassNode mainTestClassNode = new ClassNode(Opcodes.ASM5);
+            classReader.accept(mainTestClassNode, 0);
+
+            FieldNode fieldNode = null;
+            for(Object o: mainTestClassNode.fields){
+                FieldNode fn = (FieldNode) o;
+                if (fn.name.equals(fieldName)){
+                    fieldNode = fn;
+                    break;
+                }
+            }
+
+            assert fieldNode != null;
+            return fieldNode;
         }
     }
 }

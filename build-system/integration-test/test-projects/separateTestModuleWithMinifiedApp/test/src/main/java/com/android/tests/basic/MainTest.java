@@ -25,6 +25,7 @@ public class MainTest extends ActivityInstrumentationTestCase2<Main> {
 
     private TextView mTextView;
     private Main mMain;
+    private Utility mUtility;
 
     /**
      * Creates an {@link ActivityInstrumentationTestCase2} that tests the {@link Main} activity.
@@ -40,7 +41,7 @@ public class MainTest extends ActivityInstrumentationTestCase2<Main> {
         // ensure a valid handle to the activity has been returned
         assertNotNull(mMain);
         mTextView = (TextView) mMain.findViewById(R.id.text);
-
+        mUtility = new Utility();
     }
 
     /**
@@ -53,6 +54,7 @@ public class MainTest extends ActivityInstrumentationTestCase2<Main> {
     public void testPreconditions() {
         assertNotNull(mTextView);
         assertEquals(mMain.getUtility().getValue(), mTextView.getText());
+        assertEquals(mUtility.getValue(), mUtility.getValue());
     }
 }
 
