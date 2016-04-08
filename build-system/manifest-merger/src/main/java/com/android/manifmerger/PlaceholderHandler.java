@@ -16,6 +16,7 @@
 
 package com.android.manifmerger;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.blame.SourcePosition;
@@ -111,9 +112,9 @@ public class PlaceholderHandler {
                                         matcher.group(2)
                                 ));
                         // we add back the placeholder key, since this is not an error for libraries
-                        resultString.append("${");
+                        resultString.append(SdkConstants.MANIFEST_PLACEHOLDER_PREFIX);
                         resultString.append(matcher.group(2));
-                        resultString.append("}");
+                        resultString.append(SdkConstants.MANIFEST_PLACEHOLDER_SUFFIX);
                     } else {
                         // record the attribute set
                         mergingReportBuilder.getActionRecorder().recordAttributeAction(
