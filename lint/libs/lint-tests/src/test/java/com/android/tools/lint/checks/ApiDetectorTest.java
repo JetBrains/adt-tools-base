@@ -2342,6 +2342,36 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    @SuppressWarnings("all") // sample code
+    public void testInlinedConstantConditional() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=205925
+        assertEquals("No warnings.",
+                lintProject(
+                        java("src/test/pkg/MainActivity.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.app.Activity;\n"
+                                + "import android.content.Context;\n"
+                                + "import android.os.Build;\n"
+                                + "import android.os.Bundle;\n"
+                                + "import android.os.UserManager;\n"
+                                + "\n"
+                                + "public class MainActivity extends Activity {\n"
+                                + "\n"
+                                + "    @Override\n"
+                                + "    protected void onCreate(Bundle savedInstanceState) {\n"
+                                + "        super.onCreate(savedInstanceState);\n"
+                                + "        setContentView(R.layout.activity_main);\n"
+                                + "\n"
+                                + "        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {\n"
+                                + "            UserManager userManager = (UserManager) getSystemService(Context.USER_SERVICE);\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "\n"
+                                + "}")
+                ));
+    }
+
     public void testMultiCatch() throws Exception {
         // Regression test for https://code.google.com/p/android/issues/detail?id=198854
         // Check disjointed exception types

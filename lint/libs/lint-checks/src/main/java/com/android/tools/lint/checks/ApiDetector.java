@@ -2023,20 +2023,26 @@ public class ApiDetector extends ResourceXmlDetector
                         }
                     }
 
-                    String message = String.format(
-                            "Field requires API level %1$d (current min is %2$d): `%3$s`",
-                            api, minSdk, fqcn);
-
                     LintDriver driver = mContext.getDriver();
-                    //if (driver.isSuppressed(mContext, INLINED, node)) {
-                    //    return true;
-                    //}
+                    if (driver.isSuppressed(mContext, INLINED, node)) {
+                        return true;
+                    }
 
-                    // Also allow to suppress these issues with NewApi, since some
-                    // fields used to get identified that way
+                    // backwards compatibility: lint used to use this issue type so respect
+                    // older suppress annotations
                     if (driver.isSuppressed(mContext, UNSUPPORTED, node)) {
                         return true;
                     }
+                    if (isWithinVersionCheckConditional(node, api)) {
+                        return true;
+                    }
+                    if (isPrecededByVersionCheckExit(node, api)) {
+                        return true;
+                    }
+
+                    String message = String.format(
+                            "Field requires API level %1$d (current min is %2$d): `%3$s`",
+                            api, minSdk, fqcn);
 
                     Location location = mContext.getLocation(node);
                     mContext.report(INLINED, node, location, message);
