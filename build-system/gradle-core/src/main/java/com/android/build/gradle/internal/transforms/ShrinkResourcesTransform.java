@@ -17,23 +17,21 @@
 package com.android.build.gradle.internal.transforms;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.build.api.transform.SecondaryInput;
 import com.android.build.api.transform.TransformInvocation;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.ResourceUsageAnalyzer;
-import com.android.build.api.transform.Context;
 import com.android.build.api.transform.QualifiedContent.ContentType;
 import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
-import com.android.build.api.transform.TransformOutputProvider;
-import com.android.builder.core.AaptPackageProcessBuilder;
 import com.android.builder.core.AndroidBuilder;
+import com.android.builder.internal.aapt.Aapt;
+import com.android.builder.internal.aapt.AaptPackageConfig;
+import com.android.builder.internal.aapt.v1.AaptV1;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableList;
@@ -210,7 +208,8 @@ public class ShrinkResourcesTransform extends Transform {
             if (ResourceUsageAnalyzer.TWO_PASS_AAPT) {
                 // This is currently not working; we need support from aapt to be able
                 // to assign a stable set of resources that it should use.
-                File destination = new File(resourceDir.getParentFile(), resourceDir.getName() + "-stripped");
+                File destination =
+                        new File(resourceDir.getParentFile(), resourceDir.getName() + "-stripped");
                 analyzer.removeUnused(destination);
 
                 File sourceOutputs = new File(sourceDir.getParentFile(),
@@ -224,26 +223,23 @@ public class ShrinkResourcesTransform extends Transform {
                 String sourceOutputPath = null;
 
                 // Repackage the resources:
-                AaptPackageProcessBuilder aaptPackageCommandBuilder =
-                        new AaptPackageProcessBuilder(
-                                mergedManifest,
-                                processResourcesTask.getAaptOptions())
-                                .setAssetsFolder(processResourcesTask.getAssetsDir())
-                                .setResFolder(destination)
-                                .setLibraries(processResourcesTask.getLibraries())
-                                .setPackageForR(processResourcesTask.getPackageForR())
-                                .setSourceOutputDir(sourceOutputPath)
-                                .setResPackageOutput(compressedResources.getAbsolutePath())
-                                .setType(processResourcesTask.getType())
-                                .setDebuggable(processResourcesTask.getDebuggable())
-                                .setResourceConfigs(processResourcesTask.getResourceConfigs())
-                                .setSplits(processResourcesTask.getSplits());
+                Aapt aapt = new AaptV1(androidBuilder.getProcessExecutor(),
+                        new LoggedProcessOutputHandler(androidBuilder.getLogger()));
+                AaptPackageConfig.Builder aaptPackageConfig = new AaptPackageConfig.Builder()
+                        .setManifestFile(mergedManifest)
+                        .setOptions(processResourcesTask.getAaptOptions())
+                        .setAssetsDir(processResourcesTask.getAssetsDir())
+                        .setResourceOutputApk(destination)
+                        .setLibraries(processResourcesTask.getLibraries())
+                        .setCustomPackageForR(processResourcesTask.getPackageForR())
+                        .setSourceOutputDir(new File(sourceOutputPath))
+                        .setVariantType(processResourcesTask.getType())
+                        .setDebuggable(processResourcesTask.getDebuggable())
+                        .setResourceConfigs(processResourcesTask.getResourceConfigs())
+                        .setSplits(processResourcesTask.getSplits());
 
-                androidBuilder.processResources(
-                        aaptPackageCommandBuilder,
-                        processResourcesTask.getEnforceUniquePackageName(),
-                        new LoggedProcessOutputHandler(androidBuilder.getLogger())
-                );
+                androidBuilder.processResources(aapt, aaptPackageConfig,
+                        processResourcesTask.getEnforceUniquePackageName());
             } else {
                 // Just rewrite the .ap_ file to strip out the res/ files for unused resources
                 analyzer.rewriteResourceZip(uncompressedResources, compressedResources);
@@ -269,11 +265,12 @@ public class ShrinkResourcesTransform extends Transform {
                         append("KB: Removed ").append(percent).append("%");
                 if (!ourWarned) {
                     ourWarned = true;
+                    String name = variantData.getVariantConfiguration().getBuildType().getName();
                     sb.append(
                             "\nNote: If necessary, you can disable resource shrinking by adding\n" +
                                     "android {\n" +
                                     "    buildTypes {\n" +
-                                    "        " + variantData.getVariantConfiguration().getBuildType().getName() + " {\n" +
+                                    "        " + name + " {\n" +
                                     "            shrinkResources false\n" +
                                     "        }\n" +
                                     "    }\n" +

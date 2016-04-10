@@ -52,6 +52,7 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
+import com.google.common.util.concurrent.ListenableFuture;
 
 import org.junit.After;
 import org.junit.Before;
@@ -261,6 +262,13 @@ public class PreDexCacheTest {
         @NonNull
         @Override
         public ProcessResult execute(@NonNull ProcessInfo processInfo,
+                @NonNull ProcessOutputHandler processOutputHandler) {
+            throw new RuntimeException("fake");
+        }
+
+        @NonNull
+        @Override
+        public ListenableFuture<ProcessResult> submit(@NonNull ProcessInfo processInfo,
                 @NonNull ProcessOutputHandler processOutputHandler) {
             throw new RuntimeException("fake");
         }

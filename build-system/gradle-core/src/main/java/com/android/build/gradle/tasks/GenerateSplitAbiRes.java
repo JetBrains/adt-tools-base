@@ -21,16 +21,16 @@ import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
-import com.android.build.gradle.internal.scope.VariantOutputScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
-import com.android.builder.core.AaptPackageProcessBuilder;
 import com.android.builder.core.VariantConfiguration;
+import com.android.builder.internal.aapt.Aapt;
+import com.android.builder.internal.aapt.AaptPackageConfig;
+import com.android.builder.internal.aapt.v1.AaptV1;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessException;
 import com.google.common.base.CharMatcher;
-import com.google.common.collect.Iterables;
 
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Nested;
@@ -43,7 +43,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -113,15 +112,21 @@ public class GenerateSplitAbiRes extends BaseTask {
                 fileWriter.flush();
             }
 
-            AaptPackageProcessBuilder aaptPackageCommandBuilder =
-                    new AaptPackageProcessBuilder(tmpFile, getAaptOptions())
-                        .setDebuggable(isDebuggable())
-                        .setResPackageOutput(resPackageFileName);
+            Aapt aapt = new AaptV1(getBuilder().getProcessExecutor(),
+                    new LoggedProcessOutputHandler(getILogger()));
+            AaptPackageConfig.Builder aaptConfig = new AaptPackageConfig.Builder();
+            aaptConfig
+                    .setManifestFile(tmpFile)
+                    .setOptions(getAaptOptions())
+                    .setDebuggable(isDebuggable())
+                    .setResourceOutputApk(new File(resPackageFileName))
+                    .setVariantType(
+                            variantOutputData.getScope().getVariantConfiguration().getType());
 
             getBuilder().processResources(
-                    aaptPackageCommandBuilder,
-                    false /* enforceUniquePackageName */,
-                    new LoggedProcessOutputHandler(getILogger()));
+                    aapt,
+                    aaptConfig,
+                    false /* enforceUniquePackageName */);
         }
     }
 

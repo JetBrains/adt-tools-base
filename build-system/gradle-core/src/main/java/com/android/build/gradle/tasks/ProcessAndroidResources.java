@@ -32,10 +32,12 @@ import com.android.build.gradle.internal.scope.VariantOutputScope;
 import com.android.build.gradle.internal.tasks.IncrementalTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.builder.core.AaptPackageProcessBuilder;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.VariantType;
 import com.android.builder.dependency.LibraryDependency;
+import com.android.builder.internal.aapt.Aapt;
+import com.android.builder.internal.aapt.AaptPackageConfig;
+import com.android.builder.internal.aapt.v1.AaptV1;
 import com.android.ide.common.blame.MergingLog;
 import com.android.ide.common.blame.MergingLogRewriter;
 import com.android.ide.common.blame.ParsingProcessOutputHandler;
@@ -46,7 +48,6 @@ import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
 import org.gradle.api.logging.Logging;
@@ -135,36 +136,34 @@ public class ProcessAndroidResources extends IncrementalTask {
                     ? instantRunManifest
                     : getManifestFile();
 
-        AaptPackageProcessBuilder aaptPackageCommandBuilder =
-                new AaptPackageProcessBuilder(manifestFileToPackage, getAaptOptions())
-                        .setAssetsFolder(getAssetsDir())
-                        .setResFolder(getResDir())
-                        .setLibraries(getLibraries())
-                        .setPackageForR(getPackageForR())
-                        .setSourceOutputDir(absolutePath(srcOut))
-                        .setSymbolOutputDir(absolutePath(getTextSymbolOutputDir()))
-                        .setResPackageOutput(absolutePath(resOutBaseNameFile))
-                        .setProguardOutput(absolutePath(getProguardOutputFile()))
-                        .setType(getType())
-                        .setDebuggable(getDebuggable())
-                        .setPseudoLocalesEnabled(getPseudoLocalesEnabled())
-                        .setResourceConfigs(getResourceConfigs())
-                        .setSplits(getSplits())
-                        .setPreferredDensity(getPreferredDensity());
-
-        @NonNull
         AndroidBuilder builder = getBuilder();
-
         MergingLog mergingLog = new MergingLog(getMergeBlameLogFolder());
-
         ProcessOutputHandler processOutputHandler = new ParsingProcessOutputHandler(
                 new ToolOutputParser(new AaptOutputParser(), getILogger()),
                 new MergingLogRewriter(mergingLog, builder.getErrorReporter()));
+
+        Aapt aapt = new AaptV1(getBuilder().getProcessExecutor(), processOutputHandler);
+        AaptPackageConfig.Builder config = new AaptPackageConfig.Builder()
+                .setManifestFile(manifestFileToPackage)
+                .setOptions(getAaptOptions())
+                .setAssetsDir(getAssetsDir())
+                .setResourceDir(getResDir())
+                .setLibraries(getLibraries())
+                .setCustomPackageForR(getPackageForR())
+                .setSymbolOutputDir(getTextSymbolOutputDir())
+                .setSourceOutputDir(srcOut)
+                .setResourceOutputApk(resOutBaseNameFile)
+                .setProguardOutputFile(getProguardOutputFile())
+                .setVariantType(getType())
+                .setDebuggable(getDebuggable())
+                .setPseudoLocalize(getPseudoLocalesEnabled())
+                .setResourceConfigs(getResourceConfigs())
+                .setSplits(getSplits())
+                .setPreferredDensity(getPreferredDensity());
+
         try {
-            builder.processResources(
-                    aaptPackageCommandBuilder,
-                    getEnforceUniquePackageName(),
-                    processOutputHandler);
+            builder.processResources(aapt, config, getEnforceUniquePackageName());
+
             if (resOutBaseNameFile != null) {
                 if (instantRunBuildContext.isInInstantRunMode()) {
 

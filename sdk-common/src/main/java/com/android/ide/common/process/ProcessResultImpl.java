@@ -17,26 +17,31 @@
 package com.android.ide.common.process;
 
 import com.android.annotations.NonNull;
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
+
+import java.util.List;
 
 /**
  * Internal implementation of ProcessResult used by DefaultProcessExecutor.
  */
 class ProcessResultImpl implements ProcessResult {
 
-    private final String mCommand;
+    @NonNull
+    private final ImmutableList<String> mCommand;
     private final int mExitValue;
-    private final Exception mFailure;
+    private final Throwable mFailure;
 
-    ProcessResultImpl(String command, int exitValue) {
+    ProcessResultImpl(List<String> command, int exitValue) {
         this(command, exitValue, null);
     }
 
-    ProcessResultImpl(String command, Exception failure) {
+    ProcessResultImpl(List<String> command, Throwable failure) {
         this(command, -1, failure);
     }
 
-    ProcessResultImpl(String command, int exitValue, Exception failure) {
-        mCommand = command;
+    ProcessResultImpl(List<String> command, int exitValue, Throwable failure) {
+        mCommand = ImmutableList.copyOf(command);
         mExitValue = exitValue;
         mFailure = failure;
     }
@@ -46,7 +51,10 @@ class ProcessResultImpl implements ProcessResult {
     public ProcessResult assertNormalExitValue() throws ProcessException {
         if (mExitValue != 0) {
             throw new ProcessException(
-                    String.format("Return code %d for process '%s'", mExitValue, mCommand));
+                    String.format(
+                            "Return code %d for process '%s'",
+                            mExitValue,
+                            Joiner.on(", ").join(mCommand)));
         }
 
         return this;

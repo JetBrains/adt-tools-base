@@ -23,6 +23,8 @@ import com.android.ide.common.process.ProcessInfo;
 import com.android.ide.common.process.ProcessOutput;
 import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.ide.common.process.ProcessResult;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 
 import org.gradle.api.Action;
 import org.gradle.api.Project;
@@ -41,6 +43,26 @@ public class GradleProcessExecutor implements ProcessExecutor {
 
     public GradleProcessExecutor(@NonNull Project project) {
         this.project = project;
+    }
+
+    @NonNull
+    @Override
+    public ListenableFuture<ProcessResult> submit(@NonNull final ProcessInfo processInfo,
+            @NonNull final ProcessOutputHandler processOutputHandler) {
+        final SettableFuture<ProcessResult> res = SettableFuture.create();
+        new Thread() {
+            @Override
+            public void run() {
+                try {
+                    ProcessResult result = execute(processInfo, processOutputHandler);
+                    res.set(result);
+                } catch (Exception e) {
+                    res.setException(e);
+                }
+            }
+        }.start();
+
+        return res;
     }
 
     @NonNull
