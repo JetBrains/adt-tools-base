@@ -366,7 +366,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
     public void testIdSuffix() throws Exception {
         mEnabled = Collections.singleton(PATH);
         assertEquals(""
-                        + "build.gradle:6: Warning: Package suffix should probably start with a \".\" [GradlePath]\n"
+                        + "build.gradle:6: Warning: Application ID suffix should probably start with a \".\" [GradlePath]\n"
                         + "            applicationIdSuffix \"debug\"\n"
                         + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                         + "0 errors, 1 warnings\n",
