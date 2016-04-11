@@ -47,6 +47,20 @@
         <item>-1</item>
     </string-array>
 
+    <string-array name="list_preference_entries">
+      <item>Entry 1</item>
+      <item>Entry 2</item>
+      <item>Entry 3</item>
+    </string-array>
+
+    <string-array name="list_preference_entry_values">
+      <item>1</item>
+      <item>2</item>
+      <item>3</item>
+    </string-array>
+
+    <string-array name="multi_select_list_preference_default_value" />
+
     <string name="pref_title_system_sync_settings">System sync settings</string>
 
     <!-- Example settings for Notifications -->
