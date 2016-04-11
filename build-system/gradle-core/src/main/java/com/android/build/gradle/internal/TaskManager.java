@@ -133,6 +133,7 @@ import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.build.gradle.tasks.ShaderCompile;
 import com.android.build.gradle.tasks.SplitZipAlign;
 import com.android.build.gradle.tasks.ZipAlign;
+import com.android.build.gradle.tasks.factory.IncrementalSafeguard;
 import com.android.build.gradle.tasks.factory.JacocoAgentConfigAction;
 import com.android.build.gradle.tasks.factory.JavaCompileConfigAction;
 import com.android.build.gradle.tasks.factory.PackageJarArtifactConfigAction;
@@ -983,9 +984,13 @@ public abstract class TaskManager {
             @NonNull final TaskFactory tasks,
             @NonNull final VariantScope scope) {
         final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
+        AndroidTask<IncrementalSafeguard> javacIncrementalSafeguard = androidTasks.create(tasks,
+                new IncrementalSafeguard.ConfigAction(scope));
+
         final AndroidTask<? extends JavaCompile> javacTask = androidTasks.create(tasks,
                 new JavaCompileConfigAction(scope));
         scope.setJavacTask(javacTask);
+        javacTask.dependsOn(tasks, javacIncrementalSafeguard);
 
         setupCompileTaskDependencies(tasks, scope, javacTask);
 

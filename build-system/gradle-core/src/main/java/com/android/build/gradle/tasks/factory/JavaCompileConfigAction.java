@@ -25,6 +25,8 @@ import org.gradle.api.file.ConfigurableFileTree;
 import org.gradle.api.file.FileCollection;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
 
 /**
@@ -143,15 +145,38 @@ public class JavaCompileConfigAction implements TaskConfigAction<AndroidJavaComp
 
         if (compileOptions.getIncremental() != null) {
             incremental = compileOptions.getIncremental();
+            LOG.info("Incremental flag set to %1$b in DSL", incremental);
         } else {
-            //if (globalScope.getExtension().getDataBinding().isEnabled()
-            //        || project.getPlugins().hasPlugin("com.neenbedankt.android-apt")
-            //        || project.getPlugins().hasPlugin("me.tatarka.retrolambda")) {
-            //    incremental = false;
-            //} else {
-            // For now, default to false, irrespective of Instant Run.
-            incremental = false;
-            //}
+            if (globalScope.getExtension().getDataBinding().isEnabled()
+                    || project.getPlugins().hasPlugin("com.neenbedankt.android-apt")
+                    || project.getPlugins().hasPlugin("me.tatarka.retrolambda")) {
+                incremental = false;
+                LOG.info("Incremental Java compilation disabled in variant %1$s "
+                                + "as you are using an incompatible plugin",
+                        scope.getVariantConfiguration().getFullName());
+            } else {
+                // For now, default to true, unless the use uses several source folders,
+                // in that case, we cannot guarantee that the incremental java works fine.
+
+                // some source folders may be configured but do not exist, in that case, don't
+                // use as valid source folders to determine whether or not we should turn on
+                // incremental compilation.
+                List<File> sourceFolders = new ArrayList<File>();
+                for (ConfigurableFileTree sourceFolder
+                        : scope.getVariantData().getUserJavaSources()) {
+
+                    if (sourceFolder.getDir().exists()) {
+                        sourceFolders.add(sourceFolder.getDir());
+                    }
+                }
+                incremental = sourceFolders.size() == 1;
+                if (sourceFolders.size() > 1) {
+                    LOG.info("Incremental Java compilation disabled in variant %1$s "
+                            + "as you are using %2$d source folders : %3$s",
+                            scope.getVariantConfiguration().getFullName(),
+                            sourceFolders.size(), Joiner.on(',').join(sourceFolders));
+                }
+            }
         }
 
         if (AndroidGradleOptions.isJavaCompileIncrementalPropertySet(project)) {
