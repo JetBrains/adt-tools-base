@@ -23,6 +23,8 @@ import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.utils.FileUtils;
 import com.google.common.io.Files;
 
+import org.apache.log4j.Level;
+import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
@@ -93,8 +95,8 @@ public class BuildInfoLoaderTask extends BaseTask {
                         return;
                     }
                     File newLocation = new File(backupFolder, oldLocation.getName());
-                    if (logger.isQuietEnabled()) {
-                        logger.quiet(String.format("File moved from %1$s to %2$s",
+                    if (logger.isEnabled(LogLevel.DEBUG)) {
+                        logger.debug(String.format("File moved from %1$s to %2$s",
                                 oldLocation.getPath(), newLocation.getPath()));
                     }
                     Files.copy(oldLocation, newLocation);
