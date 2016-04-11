@@ -43,7 +43,6 @@ public class DefaultDexOptions implements DexOptions {
 
     private volatile Integer maxProcessCount;
 
-
     public static DefaultDexOptions copyOf(DexOptions dexOptions) {
         DefaultDexOptions result = new DefaultDexOptions();
 

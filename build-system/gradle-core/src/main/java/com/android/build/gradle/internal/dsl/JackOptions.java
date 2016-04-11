@@ -46,10 +46,6 @@ public class JackOptions implements CoreJackOptions {
         isEnabledFlag = enabled;
     }
 
-    public void enabled(@Nullable Boolean enabled) {
-        setEnabled(enabled);
-    }
-
     /** {@inheritDoc} */
     @Override
     @Nullable
@@ -59,10 +55,6 @@ public class JackOptions implements CoreJackOptions {
 
     public void setJackInProcess(@Nullable Boolean jackInProcess) {
         isJackInProcessFlag = jackInProcess;
-    }
-
-    public void jackInProcess(@Nullable Boolean jackInProcess) {
-        setJackInProcess(jackInProcess);
     }
 
     @Override

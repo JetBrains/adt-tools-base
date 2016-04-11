@@ -36,6 +36,7 @@ import java.io.Serializable;
 /**
  * DSL object to configure build types.
  */
+@SuppressWarnings("unused") // Exposed in the DSL.
 public class BuildType extends DefaultBuildType implements CoreBuildType, Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -135,9 +136,6 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
 
             assert debugSigningConfig != null;
             setSigningConfig(debugSigningConfig);
-
-        } else if (BuilderConstants.RELEASE.equals(getName())) {
-            // no config needed for now.
         }
     }
 
@@ -165,6 +163,7 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
     }
 
     @Override
+    @SuppressWarnings("RedundantIfStatement")
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof BuildType)) return false;
@@ -415,18 +414,6 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
     }
 
     /**
-     * Whether the experimental Jack toolchain should be used.
-     *
-    * @deprecated use jack.setEnabled instead.
-    */
-    @Deprecated
-    public void useJack(@Nullable Boolean useJack) {
-        LoggingUtil.displayDeprecationWarning(
-                logger, project, "useJack is deprecated.  Use jackOptions.enabled instead.");
-        jackOptions.setEnabled(useJack);
-    }
-
-    /**
      * Configure shader compiler options for this build type.
      */
     public void shaders(@NonNull Action<ShaderOptions> action) {
@@ -443,6 +430,10 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
         return shrinkResources;
     }
 
+    public void setShrinkResources(boolean shrinkResources) {
+        this.shrinkResources = shrinkResources;
+    }
+
     @Override
     public boolean isUseProguard() {
         return useProguard;
@@ -450,23 +441,6 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
 
     public void setUseProguard(boolean useProguard) {
         this.useProguard = useProguard;
-    }
-
-    public void useProguard(boolean useProguard) {
-        setUseProguard(useProguard);
-    }
-
-    public void setShrinkResources(boolean shrinkResources) {
-        this.shrinkResources = shrinkResources;
-    }
-
-    /**
-     * Whether shrinking of unused resources is enabled.
-     *
-     * Default is false;
-     */
-    public void shrinkResources(boolean flag) {
-        this.shrinkResources = flag;
     }
 
     public void jarJarRuleFile(@NonNull Object file) {
