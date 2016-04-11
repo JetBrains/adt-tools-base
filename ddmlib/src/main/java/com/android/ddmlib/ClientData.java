@@ -171,6 +171,9 @@ public class ClientData {
     // jvm flag: currently only indicates whether checkJni is enabled
     private String mJvmFlags;
 
+    // is the app native debuggable?
+    private boolean mNativeDebuggable = false;
+
     // how interested are we in a debugger?
     private DebuggerStatus mDebuggerInterest;
 
@@ -603,6 +606,14 @@ public class ClientData {
 
     void setJvmFlags(String jvmFlags) {
         mJvmFlags = jvmFlags;
+    }
+
+    public boolean isNativeDebuggable() {
+        return mNativeDebuggable;
+    }
+
+    public void setNativeDebuggable(boolean nativeDebuggable) {
+        mNativeDebuggable = nativeDebuggable;
     }
 
     /**
