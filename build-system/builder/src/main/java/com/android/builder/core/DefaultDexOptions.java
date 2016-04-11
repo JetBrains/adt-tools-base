@@ -29,11 +29,18 @@ import java.util.List;
 public class DefaultDexOptions implements DexOptions {
 
     private boolean preDexLibraries = true;
-    private boolean jumboMode;
-    private boolean dexInProcess;
-    private Integer threadCount;
+
+    private boolean jumboMode = false;
+
+    // By default, all dexing will happen in process to get maximum feedback quickly.
+    private boolean dexInProcess = true;
+
+    private Integer threadCount = null;
+
     private String javaMaxHeapSize;
+
     private List<String> additionalParameters = Lists.newArrayList();
+
     private volatile Integer maxProcessCount;
 
 
