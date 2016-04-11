@@ -73,9 +73,9 @@ class MultiDexTest {
     public boolean dexInProcess
 
     @Before
-    public void setDexInProcess() {
+    public void disableDexInProcess() {
         if (dexInProcess) {
-            DexInProcessHelper.enableDexInProcess(project.buildFile)
+            DexInProcessHelper.disableDexInProcess(project.buildFile)
         }
     }
 
