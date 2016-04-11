@@ -109,7 +109,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         visitedSuperName = superName;
 
         super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC
-                | Opcodes.ACC_VOLATILE | Opcodes.ACC_SYNTHETIC,
+                | Opcodes.ACC_VOLATILE | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_TRANSIENT,
             "$change", getRuntimeTypeName(CHANGE_TYPE), null, null);
         access = transformClassAccessForInstantRun(access);
         super.visit(version, access, name, signature, superName, interfaces);
