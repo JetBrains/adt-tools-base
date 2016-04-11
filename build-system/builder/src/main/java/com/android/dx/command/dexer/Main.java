@@ -463,7 +463,7 @@ public class Main {
      * @return the bytes of the merged dex file, or null if both the update
      *     and the base dex do not exist.
      */
-    private static byte[] mergeIncremental(byte[] update, File base) throws IOException {
+    private byte[] mergeIncremental(byte[] update, File base) throws IOException {
         Dex dexA = null;
         Dex dexB = null;
 
@@ -483,7 +483,11 @@ public class Main {
         } else if (dexB == null) {
             result = dexA;
         } else {
-            result = new DexMerger(new Dex[] {dexA, dexB}, CollisionPolicy.KEEP_FIRST).merge();
+            DexMerger dexMerger = new DexMerger(
+                    new Dex[]{dexA, dexB},
+                    CollisionPolicy.KEEP_FIRST,
+                    context);
+            result = dexMerger.merge();
         }
 
         ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
@@ -506,7 +510,11 @@ public class Main {
         if (dexes.isEmpty()) {
             return null;
         }
-        Dex merged = new DexMerger(dexes.toArray(new Dex[dexes.size()]), CollisionPolicy.FAIL).merge();
+        DexMerger dexMerger = new DexMerger(
+                dexes.toArray(new Dex[dexes.size()]),
+                CollisionPolicy.FAIL,
+                context);
+        Dex merged = dexMerger.merge();
         return merged.getBytes();
     }
 
