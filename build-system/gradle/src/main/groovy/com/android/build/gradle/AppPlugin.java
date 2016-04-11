@@ -14,37 +14,39 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle
+package com.android.build.gradle;
 
-import android.databinding.tool.DataBindingBuilder
-import com.android.annotations.NonNull
-import com.android.build.gradle.internal.ApplicationTaskManager
-import com.android.build.gradle.internal.DependencyManager
-import com.android.build.gradle.internal.NdkHandler
-import com.android.build.gradle.internal.SdkHandler
-import com.android.build.gradle.internal.TaskManager
-import com.android.build.gradle.internal.variant.ApplicationVariantFactory
-import com.android.build.gradle.internal.variant.VariantFactory
-import com.android.builder.core.AndroidBuilder
-import org.gradle.api.Plugin
-import org.gradle.api.Project
-import org.gradle.internal.reflect.Instantiator
-import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
+import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.ApplicationTaskManager;
+import com.android.build.gradle.internal.DependencyManager;
+import com.android.build.gradle.internal.NdkHandler;
+import com.android.build.gradle.internal.SdkHandler;
+import com.android.build.gradle.internal.TaskManager;
+import com.android.build.gradle.internal.variant.ApplicationVariantFactory;
+import com.android.build.gradle.internal.variant.VariantFactory;
+import com.android.builder.core.AndroidBuilder;
 
-import javax.inject.Inject
+import org.gradle.api.Plugin;
+import org.gradle.api.Project;
+import org.gradle.internal.reflect.Instantiator;
+import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
+
+import android.databinding.tool.DataBindingBuilder;
+
+import javax.inject.Inject;
 
 /**
  * Gradle plugin class for 'application' projects.
  */
-class AppPlugin extends BasePlugin implements Plugin<Project> {
+public class AppPlugin extends BasePlugin implements Plugin<Project> {
     @Inject
     public AppPlugin(Instantiator instantiator, ToolingModelBuilderRegistry registry) {
-        super(instantiator, registry)
+        super(instantiator, registry);
     }
 
     @Override
     protected Class<? extends BaseExtension> getExtensionClass() {
-        return AppExtension.class
+        return AppExtension.class;
     }
 
     @Override
@@ -65,16 +67,16 @@ class AppPlugin extends BasePlugin implements Plugin<Project> {
                 sdkHandler,
                 ndkHandler,
                 dependencyManager,
-                toolingRegistry)
+                toolingRegistry);
     }
 
     @Override
-    void apply(Project project) {
-        super.apply(project)
+    public void apply(@NonNull Project project) {
+        super.apply(project);
     }
 
     @Override
     protected VariantFactory createVariantFactory() {
-        return new ApplicationVariantFactory(instantiator, androidBuilder, extension)
+        return new ApplicationVariantFactory(instantiator, androidBuilder, extension);
     }
 }

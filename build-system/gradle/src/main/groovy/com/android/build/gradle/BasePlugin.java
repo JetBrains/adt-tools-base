@@ -159,7 +159,7 @@ public abstract class BasePlugin {
 
     private boolean hasCreatedTasks = false;
 
-    protected BasePlugin(Instantiator instantiator, ToolingModelBuilderRegistry registry) {
+    BasePlugin(@NonNull Instantiator instantiator, @NonNull ToolingModelBuilderRegistry registry) {
         this.instantiator = instantiator;
         this.registry = registry;
         creator = "Android Gradle " + Version.ANDROID_GRADLE_PLUGIN_VERSION;
@@ -287,7 +287,7 @@ public abstract class BasePlugin {
     }
 
 
-    protected void apply(Project project) throws IOException {
+    protected void apply(@NonNull Project project) {
         this.project = project;
 
         ExecutionConfigurationUtil.setThreadPoolSize(project);
@@ -308,10 +308,14 @@ public abstract class BasePlugin {
             propertyList.add(new Recorder.Property("benchmark_mode", benchmarkMode));
         }
 
-        ProcessRecorderFactory.initialize(
-                getLogger(),
-                project.getRootProject().file("profiler" + System.currentTimeMillis() + ".json"),
-                propertyList);
+        try {
+            ProcessRecorderFactory.initialize(
+                    getLogger(),
+                    project.getRootProject().file("profiler" + System.currentTimeMillis() + ".json"),
+                    propertyList);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         project.getGradle().addListener(new RecordingBuildListener(ThreadRecorder.get()));
 
 
