@@ -35,10 +35,14 @@ public final class RegisterSpec
     /** {@code non-null;} string to prefix register numbers with */
     public static final String PREFIX = "v";
 
-    /** {@code non-null;} intern table for instances */
+    /**
+     * Intern table for instances.
+     *
+     * <p>The initial capacity is based on a medium-size project.
+     */
     private static final ConcurrentMap<RegisterSpec, RegisterSpec> theInterns = new MapMaker()
             .concurrencyLevel(Main.CONCURRENCY_LEVEL)
-            .initialCapacity(1000)
+            .initialCapacity(100_000)
             .makeMap();
 
     /** {@code >= 0;} register number */
