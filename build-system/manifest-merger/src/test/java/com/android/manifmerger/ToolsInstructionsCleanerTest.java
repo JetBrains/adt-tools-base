@@ -56,7 +56,8 @@ public class ToolsInstructionsCleanerTest extends TestCase {
                 TestUtils.sourceFile(getClass(), "testNodeRemoveOperation"), main);
 
         Element rootElement = mainDocument.getRootNode().getXml();
-        ToolsInstructionsCleaner.cleanToolsReferences(mainDocument, mockLog);
+        ToolsInstructionsCleaner.cleanToolsReferences(
+                ManifestMerger2.MergeType.APPLICATION, mainDocument, mockLog);
 
         Optional<Element> application = getChildElementByName(rootElement, "application");
         assertTrue(application.isPresent());
@@ -185,7 +186,7 @@ public class ToolsInstructionsCleanerTest extends TestCase {
                 TestUtils.sourceFile(getClass(), "testAttributeRemoveOperation"), main);
 
         Element rootElement = mainDocument.getRootNode().getXml();
-        ToolsInstructionsCleaner.cleanToolsReferences(mainDocument, mockLog);
+        ToolsInstructionsCleaner.cleanToolsReferences(ManifestMerger2.MergeType.APPLICATION, mainDocument, mockLog);
 
         Optional<Element> application = getChildElementByName(rootElement, "application");
         assertTrue(application.isPresent());
