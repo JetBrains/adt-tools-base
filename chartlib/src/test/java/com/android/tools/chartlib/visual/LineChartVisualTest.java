@@ -25,12 +25,16 @@ import com.android.tools.chartlib.model.LineChartData;
 import com.android.tools.chartlib.model.Range;
 import com.android.tools.chartlib.model.RangedContinuousSeries;
 
-import javax.swing.*;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.JPanel;
 
 public class LineChartVisualTest extends VisualTest {
 
@@ -72,8 +76,8 @@ public class LineChartVisualTest extends VisualTest {
     }
 
     @Override
-    public JPanel create() {
-        JPanel panel = new JPanel();
+    protected JPanel create() {
+        final JPanel panel = new JPanel();
         JPanel controls = VisualTests.createControlledPane(panel, mLineChart);
         mLineChart.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
 

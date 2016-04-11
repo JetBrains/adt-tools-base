@@ -24,9 +24,22 @@ import javax.swing.JPanel;
 
 public abstract class VisualTest {
 
+    /**
+     * Main panel of the VisualTest, which contains all the other elements.
+     */
+    private JPanel mPanel;
+
     abstract void registerComponents(List<AnimatedComponent> components);
 
     public abstract String getName();
 
-    public abstract JPanel create();
+    protected abstract JPanel create();
+
+    public void initialize() {
+        mPanel = create();
+    }
+
+    public JPanel getPanel() {
+        return mPanel;
+    }
 }

@@ -17,16 +17,36 @@
 package com.android.tools.chartlib.visual;
 
 import com.android.annotations.NonNull;
-import com.android.tools.chartlib.*;
+import com.android.tools.chartlib.AnimatedComponent;
+import com.android.tools.chartlib.AxisComponent;
+import com.android.tools.chartlib.Choreographer;
+import com.android.tools.chartlib.GridComponent;
+import com.android.tools.chartlib.LineChart;
+import com.android.tools.chartlib.MemoryAxisDomain;
+import com.android.tools.chartlib.RangeScrollbar;
+import com.android.tools.chartlib.SelectionComponent;
+import com.android.tools.chartlib.TimeAxisDomain;
 import com.android.tools.chartlib.model.LineChartData;
 import com.android.tools.chartlib.model.Range;
 import com.android.tools.chartlib.model.RangedContinuousSeries;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.LayoutManager;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JLayeredPane;
+import javax.swing.JPanel;
 
 public class AxisLineChartVisualTest extends VisualTest {
 
@@ -127,8 +147,8 @@ public class AxisLineChartVisualTest extends VisualTest {
     }
 
     @Override
-    public JPanel create() {
-        JPanel panel = new JPanel();
+    protected JPanel create() {
+        final JPanel panel = new JPanel();
         panel.setLayout(new BorderLayout());
 
         JLayeredPane mockTimelinePane = createMockTimeline();

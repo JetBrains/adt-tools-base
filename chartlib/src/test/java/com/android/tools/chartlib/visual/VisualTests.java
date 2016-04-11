@@ -107,19 +107,19 @@ public class VisualTests extends JDialog {
         });
         update.setSelected(true);
         step.setEnabled(false);
-        final JCheckBox dark = new JCheckBox("Dark");
-        dark.addActionListener(new ActionListener() {
+        final JCheckBox darcula = new JCheckBox("Darcula");
+        darcula.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                setDarkMode(dark.isSelected());
+                setDarculaMode(darcula.isSelected());
             }
         });
-        controls.add(dark);
+        controls.add(darcula);
         controls.add(update);
         controls.add(step);
         contentPane.add(controls, BorderLayout.WEST);
 
-        setDarkMode(false);
+        setDarculaMode(false);
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(close);
@@ -146,7 +146,8 @@ public class VisualTests extends JDialog {
         mComponents = new LinkedList<AnimatedComponent>();
         for (VisualTest test : mTests) {
             test.registerComponents(mComponents);
-            tabs.addTab(test.getName(), test.create());
+            test.initialize();
+            tabs.addTab(test.getName(), test.getPanel());
         }
         // Return to previous selected tab if there was one
         if (currentTabIndex != -1) {
@@ -154,9 +155,11 @@ public class VisualTests extends JDialog {
         }
     }
 
-    private void setDarkMode(boolean dark) {
-        for (AnimatedComponent c : mComponents) {
-            c.setBackground(dark ? new Color(60, 63, 65) : new Color(244, 244, 244));
+    private void setDarculaMode(boolean dark) {
+        for (VisualTest c : mTests) {
+            if (c.getPanel() != null) {
+                c.getPanel().setBackground(dark ? new Color(60, 63, 65) : new Color(244, 244, 244));
+            }
         }
     }
 
