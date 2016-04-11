@@ -22,7 +22,6 @@
                 <tr><td>Name</td></tr>
             </thead>
             <tr><td>additionalParameters</td></tr>
-            <tr><td>incremental</td></tr>
             <tr><td>javaMaxHeapSize</td></tr>
             <tr><td>jumboMode</td></tr>
             <tr><td>maxProcessCount</td></tr>

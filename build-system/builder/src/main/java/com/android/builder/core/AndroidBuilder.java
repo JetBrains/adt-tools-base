@@ -177,6 +177,12 @@ public class AndroidBuilder {
     };
 
     private static final Object LOCK_FOR_DEX = new Object();
+
+    /**
+     * Default number of dx "instances" running at once.
+     *
+     * <p>Remember to update the DSL javadoc when changing the default value.
+     */
     private static final AtomicInteger DEX_PROCESS_COUNT = new AtomicInteger(4);
 
     /**
