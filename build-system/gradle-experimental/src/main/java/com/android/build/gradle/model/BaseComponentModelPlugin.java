@@ -27,7 +27,6 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 import com.android.annotations.NonNull;
 import com.android.build.api.transform.Transform;
 import com.android.build.gradle.AndroidGradleOptions;
-import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.internal.AndroidConfigHelper;
 import com.android.build.gradle.internal.ExecutionConfigurationUtil;
 import com.android.build.gradle.internal.ExtraModelInfo;
@@ -52,6 +51,7 @@ import com.android.build.gradle.internal.profile.RecordingBuildListener;
 import com.android.build.gradle.internal.tasks.DependencyReportTask;
 import com.android.build.gradle.internal.tasks.SigningReportTask;
 import com.android.build.gradle.internal.transforms.DexTransform;
+import com.android.build.gradle.internal.transforms.JillTransform;
 import com.android.build.gradle.internal.variant.VariantFactory;
 import com.android.build.gradle.managed.AndroidConfig;
 import com.android.build.gradle.managed.BuildType;
@@ -67,7 +67,6 @@ import com.android.build.gradle.managed.adaptor.DataBindingOptionsAdapter;
 import com.android.build.gradle.managed.adaptor.ProductFlavorAdaptor;
 import com.android.build.gradle.model.internal.AndroidBinaryInternal;
 import com.android.build.gradle.model.internal.AndroidComponentSpecInternal;
-import com.android.build.gradle.internal.transforms.JillTransform;
 import com.android.builder.Version;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.internal.compiler.JackConversionCache;
@@ -86,7 +85,6 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
 
 import org.gradle.api.Action;
 import org.gradle.api.Plugin;
@@ -296,9 +294,10 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         @Defaults
         public static void configureAndroidModel(
                 AndroidConfig androidModel,
+                ExtraModelInfo extraModelInfo,
                 ServiceRegistry serviceRegistry) {
             Instantiator instantiator = serviceRegistry.get(Instantiator.class);
-            AndroidConfigHelper.configure(androidModel, instantiator);
+            AndroidConfigHelper.configure(androidModel, extraModelInfo, instantiator);
         }
 
         @Defaults

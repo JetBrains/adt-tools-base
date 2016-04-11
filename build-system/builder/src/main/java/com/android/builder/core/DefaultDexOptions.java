@@ -58,15 +58,6 @@ public class DefaultDexOptions implements DexOptions {
         return result;
     }
 
-    /** @deprecated ignored */
-    @Deprecated
-    public boolean getIncremental() {
-        return false;
-    }
-
-    @SuppressWarnings("UnusedParameters")
-    public void setIncremental(boolean ignored) {}
-
     /**
      * Whether to pre-dex libraries. This can improve incremental builds, but clean builds may
      * be slower.
