@@ -36,6 +36,7 @@ public class ResourceUrlTest extends TestCase {
         assertNull(ResourceUrl.parse("@?"));
         assertNull(ResourceUrl.parse("@android:layout"));
         assertNull(ResourceUrl.parse("@layout"));
+        assertNull(ResourceUrl.parse("@layout/"));
 
         assertEquals("foo", ResourceUrl.parse("@id/foo").name);
         assertEquals(ID, ResourceUrl.parse("@id/foo").type);
@@ -79,7 +80,6 @@ public class ResourceUrlTest extends TestCase {
 
         assertTrue(ResourceUrl.parse("@id/foo").hasValidName());
         assertFalse(ResourceUrl.parse("@id/foo bar").hasValidName());
-        assertFalse(ResourceUrl.parse("@id/").hasValidName());
         assertFalse(ResourceUrl.parse("@id/?").hasValidName());
         assertFalse(ResourceUrl.parse("@id/123").hasValidName());
         assertFalse(ResourceUrl.parse("@id/ab+").hasValidName());
