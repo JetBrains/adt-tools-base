@@ -34,7 +34,6 @@ import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.VariantType;
 import com.android.builder.testing.ConnectedDeviceProvider;
-import com.android.builder.testing.TestData;
 import com.android.manifmerger.ManifestMerger2;
 import com.android.utils.StringHelper;
 import com.google.common.collect.ImmutableMap;
@@ -93,7 +92,7 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
         // and create the configuration for the project's metadata.
         Configuration testTargetMetadata = getTestTargetConfiguration("metadata");
 
-        TestData testData = new TestApplicationTestData(
+        TestApplicationTestData testData = new TestApplicationTestData(
                 variantData, testTarget, testTargetMetadata, androidBuilder);
 
         // create the test connected check task.
@@ -114,13 +113,14 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
                             }
                         });
 
-        // make the test application connectedCheck depends on the configuration added above so
-        // we can retrieve its artifacts
+        AndroidTask manifestProcessorTask =
+                variantData.getOutputs().get(0).getScope().getManifestProcessorTask();
+        manifestProcessorTask.dependsOn(tasks, getTargetManifestConfiguration());
 
-        instrumentTestTask.dependsOn(tasks,
-                testTarget,
-                testTargetMetadata,
-                variantData.getScope().getAssembleTask());
+        // assemble of the test module depends on getting the configurations
+        // i.e. getting the apk and metadata for the tested app
+        variantData.assembleVariantTask.dependsOn(testTarget, testTargetMetadata);
+        instrumentTestTask.dependsOn(tasks, variantData.assembleVariantTask);
 
         Task connectedAndroidTest = tasks.named(BuilderConstants.CONNECTED
                 + VariantType.ANDROID_TEST.getSuffix());
@@ -130,7 +130,7 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
     }
 
     @Override
-    protected boolean isTestedAppMinified(@NonNull VariantScope variantScope){
+    protected boolean isTestedAppMinified(@NonNull VariantScope variantScope) {
         return getTestTargetMapping(variantScope) != null;
     }
 
