@@ -480,7 +480,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         } else if (property.equals("applicationIdSuffix")) {
             String suffix = getStringLiteralValue(value);
             if (suffix != null && !suffix.startsWith(".")) {
-                String message = "Package suffix should probably start with a \".\"";
+                String message = "Application ID suffix should probably start with a \".\"";
                 report(context, valueCookie, PATH, message);
             }
         }
