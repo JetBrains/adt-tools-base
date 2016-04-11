@@ -572,6 +572,25 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
         return providedResFolders;
     }
 
+    /**
+     * Computes the user specified Java sources to use for compilation.
+     *
+     * Every entry is a ConfigurableFileTree instance to enable incremental java compilation.
+     */
+    @NonNull
+    public List<ConfigurableFileTree> getUserJavaSources() {
+        // Build the list of source folders.
+        ImmutableList.Builder<ConfigurableFileTree> sourceSets = ImmutableList.builder();
+
+        // First the actual source folders.
+        List<SourceProvider> providers = variantConfiguration.getSortedSourceProviders();
+        for (SourceProvider provider : providers) {
+            sourceSets.addAll(((AndroidSourceSet) provider).getJava().getSourceDirectoryTrees());
+        }
+
+        return sourceSets.build();
+    }
+
 
     /**
      * Computes the Java sources to use for compilation.
@@ -581,38 +600,14 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     @NonNull
     public List<ConfigurableFileTree> getJavaSources() {
         if (javaSources == null) {
-            Project project = scope.getGlobalScope().getProject();
             // Build the list of source folders.
             ImmutableList.Builder<ConfigurableFileTree> sourceSets = ImmutableList.builder();
 
             // First the actual source folders.
-            List<SourceProvider> providers = variantConfiguration.getSortedSourceProviders();
-            for (SourceProvider provider : providers) {
-                sourceSets.addAll(((AndroidSourceSet) provider).getJava().getSourceDirectoryTrees());
-            }
+            sourceSets.addAll(getUserJavaSources());
 
             // then all the generated src folders.
-            if (getScope().getGenerateRClassTask() != null) {
-                sourceSets.add(project.fileTree(getScope().getRClassSourceOutputDir()));
-            }
-
-            // for the other, there's no duplicate so no issue.
-            if (getScope().getGenerateBuildConfigTask() != null) {
-                sourceSets.add(project.fileTree(scope.getBuildConfigSourceOutputDir()));
-            }
-
-            if (getScope().getAidlCompileTask() != null) {
-                sourceSets.add(project.fileTree(scope.getAidlSourceOutputDir()));
-            }
-
-            if (scope.getGlobalScope().getExtension().getDataBinding().isEnabled()) {
-                sourceSets.add(project.fileTree(scope.getClassOutputForDataBinding()));
-            }
-
-            if (!variantConfiguration.getRenderscriptNdkModeEnabled()
-                    && getScope().getRenderscriptCompileTask() != null) {
-                sourceSets.add(project.fileTree(scope.getRenderscriptSourceOutputDir()));
-            }
+            sourceSets.addAll(getGeneratedJavaSources());
 
             javaSources = sourceSets.build();
         }
@@ -621,10 +616,47 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     }
 
     /**
-     * Returns the Java folders needed for code coverage report.
+     * Computes the generated Java sources to use for compilation.
      *
-     * This includes all the source folders except for the ones containing R and buildConfig.
+     * Every entry is a ConfigurableFileTree instance to enable incremental java compilation.
      */
+    @NonNull
+    public List<ConfigurableFileTree> getGeneratedJavaSources() {
+        Project project = scope.getGlobalScope().getProject();
+        // Build the list of source folders.
+        ImmutableList.Builder<ConfigurableFileTree> sourceSets = ImmutableList.builder();
+
+        // then all the generated src folders.
+        if (scope.getGenerateRClassTask() != null) {
+            sourceSets.add(project.fileTree(scope.getRClassSourceOutputDir()));
+        }
+
+        // for the other, there's no duplicate so no issue.
+        if (scope.getGenerateBuildConfigTask() != null) {
+            sourceSets.add(project.fileTree(scope.getBuildConfigSourceOutputDir()));
+        }
+
+        if (scope.getAidlCompileTask() != null) {
+            sourceSets.add(project.fileTree(scope.getAidlSourceOutputDir()));
+        }
+
+        if (scope.getGlobalScope().getExtension().getDataBinding().isEnabled()) {
+            sourceSets.add(project.fileTree(scope.getClassOutputForDataBinding()));
+        }
+
+        if (!variantConfiguration.getRenderscriptNdkModeEnabled()
+                && scope.getRenderscriptCompileTask() != null) {
+            sourceSets.add(project.fileTree(scope.getRenderscriptSourceOutputDir()));
+        }
+
+        return sourceSets.build();
+    }
+
+        /**
+         * Returns the Java folders needed for code coverage report.
+         *
+         * This includes all the source folders except for the ones containing R and buildConfig.
+         */
     @NonNull
     public List<File> getJavaSourceFoldersForCoverage() {
         // Build the list of source folders.
