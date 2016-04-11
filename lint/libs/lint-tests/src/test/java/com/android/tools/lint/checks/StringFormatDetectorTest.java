@@ -876,4 +876,47 @@ public class StringFormatDetectorTest extends AbstractCheckTest {
                                 + "\n")
                 ));
     }
+
+    public void testStringIndirection() throws Exception {
+        // Regression test for
+        // https://code.google.com/p/android/issues/detail?id=201812
+        // Make sure that we can handle string format with indirect resources.
+        // (The below error message isn't the bug; the bug was that it used to report
+        // an invalid format string; now it correctly identifies this as a scenario
+        // which should be using plurals instead.)
+        assertEquals(""
+                + "res/values/strings.xml:4: Warning: Formatting %d followed by words (\"entries\"): This should probably be a plural rather than a string [PluralsCandidate]\n"
+                + "    <string name=\"Do_you_want_to_delete_X_items\">Do you want to delete %d entries?</string>\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
+
+                lintProject(
+                        java("src/test/pkg/Indirection.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.content.res.Resources;\n"
+                                + "\n"
+                                + "public class Indirection {\n"
+
+                                + "    private static void test(Resources resources, int itemsCount) {\n"
+                                + "        resources.getString(R.string.confirm_delete_message, itemsCount);\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public static final class R {\n"
+                                + "        public static final class string {\n"
+                                + "            public static final int confirm_delete_message = 0x7f0a0000;\n"
+                                + "            public static final int Do_you_want_to_delete_X_items = 0x7f0a0001;\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "}\n"),
+                        xml("res/values/strings.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<resources>\n"
+                                + "    <string name=\"confirm_delete_message\">@string/Do_you_want_to_delete_X_items</string>\n"
+                                + "    <string name=\"Do_you_want_to_delete_X_items\">Do you want to delete %d entries?</string>\n"
+                                + "</resources>\n"
+                                + "\n")
+                ));
+    }
+
 }
