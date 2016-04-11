@@ -197,12 +197,9 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
 
     /**
      * Documentation URL for app backup.
-     * <p>
-     * TODO: Replace with stable API doc reference once this moves out of preview
-     * (tracked in https://code.google.com/p/android/issues/detail?id=182113)
      */
     private static final String BACKUP_DOCUMENTATION_URL
-            = "https://developer.android.com/preview/backup/index.html";
+            = "https://developer.android.com/training/backup/autosyncapi.html";
 
     /** Not explicitly defining allowBackup */
     public static final Issue ALLOW_BACKUP = Issue.create(

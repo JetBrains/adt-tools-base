@@ -680,7 +680,7 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                 + "be automatically backed up and restored on app install. Consider "
                 + "adding the attribute android:fullBackupContent to specify an @xml "
                 + "resource which configures which files to backup. More info: "
-                + "https://developer.android.com/preview/backup/index.html [AllowBackup]\n"
+                + "https://developer.android.com/training/backup/autosyncapi.html [AllowBackup]\n"
                 + "    <application\n"
                 + "    ^\n"
                 + "0 errors, 1 warnings\n",
@@ -745,7 +745,7 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                 + "data will be automatically backed up and restored on app install. "
                 + "Consider adding the attribute android:fullBackupContent to specify "
                 + "an @xml resource which configures which files to backup. "
-                + "More info: https://developer.android.com/preview/backup/index.html [AllowBackup]\n"
+                + "More info: https://developer.android.com/training/backup/autosyncapi.html [AllowBackup]\n"
                 + "    <application\n"
                 + "    ^\n"
                 + "0 errors, 1 warnings\n",
@@ -801,7 +801,7 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                 + "it is excluded from the back-up set. Use the attribute "
                 + "android:fullBackupContent to specify an @xml resource which "
                 + "configures which files to backup. More info: "
-                + "https://developer.android.com/preview/backup/index.html [AllowBackup]\n"
+                + "https://developer.android.com/training/backup/autosyncapi.html [AllowBackup]\n"
                 + "    <application\n"
                 + "    ^\n"
                 + "0 errors, 1 warnings\n",
