@@ -74,7 +74,7 @@ public class LibDependencyTest {
     }
 
     @Test
-    public void buildIncrementallyWithInstantRun() throws IOException, ProcessException {
+    public void buildIncrementallyWithInstantRun() throws Exception {
         project.execute("clean");
         Map<String, AndroidProject> projects = project.getAllModels();
         InstantRun instantRunModel = getInstantRunModel(projects.get(":app"));
@@ -153,22 +153,21 @@ public class LibDependencyTest {
      * Check a hot-swap compatible change works as expected.
      */
     private void checkHotSwapCompatibleChange(@NonNull InstantRun instantRunModel)
-            throws IOException, ProcessException {
+            throws Exception {
         createLibraryClass("Hot swap change");
 
         project.execute(getInstantRunArgs(), instantRunModel.getIncrementalAssembleTaskName());
 
-        // TODO: The instant run model methods are gone -- this test needs to be
-        // updated to use
-        //    instantRunModel.getInfoFile()
-        // (See InstantRunBuildInfo in the IDE)
-        //expect.about(DexFileSubject.FACTORY)
-        //        .that(instantRunModel.getReloadDexFile())
-        //        .hasClass("Lcom/android/tests/libstest/lib/Lib$override;");
-        //
-        //// the restart .dex should not be present.
-        //expect.about(FileSubject.FACTORY).that(instantRunModel.getRestartDexFile()).doesNotExist();
+        InstantRunBuildInfo context = InstantRunTestUtils.loadContext(instantRunModel);
+
+        assertThat(context.getArtifacts()).hasSize(1);
+        InstantRunArtifact artifact = Iterables.getOnlyElement(context.getArtifacts());
+        expect.that(artifact.type).isEqualTo(InstantRunArtifactType.RELOAD_DEX);
+        expect.about(DexFileSubject.FACTORY)
+                .that(artifact.file)
+                .hasClass("Lcom/android/tests/libstest/lib/Lib$override;");
     }
+
 
     private void createLibraryClass(String message)
             throws IOException {
