@@ -24,13 +24,9 @@ import java.io.File;
 
 /**
  * Context for the transform.
- *
- * This gives access to a limited amount of context when the transform is run.
  * <p/>
- * <strong>This API is non final and is subject to change. We are looking for feedback, and will
- * attempt to stabilize it in the 1.6 time frame.</strong>
+ * This gives access to a limited amount of context when the transform is run.
  */
-@Beta
 public interface Context {
 
     /**

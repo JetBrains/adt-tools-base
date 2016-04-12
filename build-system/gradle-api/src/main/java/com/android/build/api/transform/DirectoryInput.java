@@ -48,12 +48,7 @@ import java.util.Map;
  * a {@link DirectoryInput} instance for the removed folder, but {@link QualifiedContent#getFile()}
  * will return a directory that does not exist. In this case, the transform should prcess this
  * as a removed input.
- *
- * <p/>
- * <strong>This API is non final and is subject to change. We are looking for feedback, and will
- * attempt to stabilize it in the 1.6 time frame.</strong>
  */
-@Beta
 public interface DirectoryInput extends QualifiedContent {
 
     /**
