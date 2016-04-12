@@ -123,7 +123,6 @@ dependencies {
     @Test
     @Category(DeviceTests)
     void "connected check"() {
-        AssumeUtil.assumeLocalDevice()
-        project.execute("clean",":test:connectedCheck");
+        project.execute("clean",":test:deviceCheck");
     }
 }

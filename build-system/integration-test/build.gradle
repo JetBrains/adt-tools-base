@@ -1,3 +1,5 @@
+import com.android.tools.internal.testing.DevicePool;
+
 apply plugin: 'groovy'
 apply plugin: 'jacoco'
 
@@ -13,6 +15,7 @@ dependencies {
     testCompile project(':base:sdk-common')
     testCompile project(':base:lint')
     testCompile project(':base:instant-run:instant-run-client')
+    testCompile project(':base:testing-infrastructure:device-pool:device-provider')
 
 
     testCompile 'com.google.truth:truth:0.28'
@@ -126,7 +129,7 @@ configure([connectedIntegrationTest, connectedIntegrationTestPrebuilts]) {
     if (count > 8) {
         count = 8
     }
-    maxParallelForks = System.env.containsKey("REMOTE_TEST_PROVIDER") ? count : 1
+    maxParallelForks = count
 
     useJUnit {
         includeCategories "com.android.build.gradle.integration.common.category.DeviceTests"
@@ -159,11 +162,25 @@ task buildTestDependencies {
               ':base:instant-run:instant-run-server:jar'
 }
 
+DevicePool devicePool = new DevicePool();
+
+task startDevicePool << {
+    // This port number needs to be kept in sync with DevicePoolClient.
+    devicePool.start(3431)
+}
+
+task stopDevicePool << {
+    devicePool.stop()
+}
+
+startDevicePool.finalizedBy stopDevicePool
+stopDevicePool.mustRunAfter connectedIntegrationTestPrebuilts, connectedIntegrationTest
+
 automaticTest.dependsOn ':publishLocal'
 test.dependsOn buildTestDependencies, ':publishLocal'
 testPrebuilts.dependsOn buildTestDependencies
-connectedIntegrationTest.dependsOn buildTestDependencies, ':publishLocal'
-connectedIntegrationTestPrebuilts.dependsOn buildTestDependencies
+connectedIntegrationTest.dependsOn buildTestDependencies, ':publishLocal', startDevicePool
+connectedIntegrationTestPrebuilts.dependsOn buildTestDependencies, startDevicePool
 performanceTest.dependsOn ':publishLocal'
 
 jacocoTestReport {

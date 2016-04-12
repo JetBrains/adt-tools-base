@@ -105,7 +105,7 @@ dependencies {
 
     @Test
     @Category(DeviceTests.class)
-    public void connnectedAndroidTest() {
+    public void connectedAndroidTest() {
         project.executeConnectedCheck();
     }
 }

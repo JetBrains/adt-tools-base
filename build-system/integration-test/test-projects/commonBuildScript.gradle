@@ -32,8 +32,6 @@ project.buildscript { buildscript ->
                 && project.gradle.gradleVersion.startsWith(env.experimentalGradleVersion)) {
             classpath "com.android.tools.build:gradle-experimental:$env.experimentalVersion"
         }
-        if (System.env.TEST_CLASSPATH_DEPENDENCY) {
-            classpath System.env.TEST_CLASSPATH_DEPENDENCY
-        }
+        classpath 'com.android.tools.internal.build.test:devicepool:0.1'
     }
 }

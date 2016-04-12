@@ -23,6 +23,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.integration.common.category.DeviceTests;
+import com.android.build.gradle.integration.common.fixture.Adb;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.Logcat;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
@@ -58,6 +59,9 @@ public class ButterKnifeTest {
 
     @Rule
     public Logcat logcat = Logcat.create();
+
+    @Rule
+    public final Adb adb = new Adb();
 
     @Before
     public void setUp() throws IOException {
@@ -130,6 +134,7 @@ public class ButterKnifeTest {
                 "com.example.bk",
                 "Activ",
                 "butterknife",
+                adb,
                 logcat,
                 new HotSwapTester.Steps() {
                     @Override
@@ -155,10 +160,8 @@ public class ButterKnifeTest {
                         assertThat(logcat).doesNotContainMessageWithText(HOTSWAP_MESSAGE);
 
                         client.restartActivity(device);
-                        Thread.sleep(500); // TODO: blocking logcat assertions with timeouts.
-
+                        logcat.listenForMessage(HOTSWAP_MESSAGE).await();
                         assertThat(logcat).doesNotContainMessageWithText(ORIGINAL_MESSAGE);
-                        assertThat(logcat).containsMessageWithText(HOTSWAP_MESSAGE);
                     }
                 });
     }

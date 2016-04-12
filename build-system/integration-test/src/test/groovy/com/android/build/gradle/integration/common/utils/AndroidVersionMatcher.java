@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.common.utils;
 import com.android.sdklib.AndroidVersion;
 
 import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 
 public class AndroidVersionMatcher {
@@ -40,7 +41,7 @@ public class AndroidVersionMatcher {
             }
 
             @Override
-            public void describeTo(org.hamcrest.Description description) {
+            public void describeTo(Description description) {
                 description.appendText("Android versions ").appendValue(version)
                         .appendText(" and above.");
             }
@@ -56,9 +57,23 @@ public class AndroidVersionMatcher {
             }
 
             @Override
-            public void describeTo(org.hamcrest.Description description) {
+            public void describeTo(Description description) {
                 description.appendText("Android versions ").appendValue(version)
                         .appendText(" and below.");
+            }
+        };
+    }
+
+    public static Matcher<AndroidVersion> anyAndroidVersion() {
+        return new BaseMatcher<AndroidVersion>() {
+            @Override
+            public boolean matches(Object item) {
+                return true;
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("All android versions");
             }
         };
     }

@@ -17,11 +17,14 @@
 package com.android.build.gradle.integration.instant;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+import static com.android.build.gradle.integration.common.utils.AndroidVersionMatcher.thatUsesArt;
 
 import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.integration.common.category.DeviceTests;
+import com.android.build.gradle.integration.common.fixture.Adb;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp;
+import com.android.build.gradle.integration.common.utils.AndroidVersionMatcher;
 import com.android.build.gradle.integration.common.utils.DeviceHelper;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
@@ -51,6 +54,9 @@ import java.io.IOException;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class NativeLibraryInstantRunTest {
+
+    @Rule
+    public Adb adb = new Adb();
 
     @Mock
     UserFeedback userFeedback;
@@ -83,7 +89,7 @@ public class NativeLibraryInstantRunTest {
     @Test
     @Category(DeviceTests.class)
     public void checkRuns() throws Exception {
-        IDevice device = DeviceHelper.getIDevice();
+        IDevice device = adb.getDevice(thatUsesArt());
         AndroidProject model = project.getSingleModel();
         InstantRun instantRunModel = InstantRunTestUtils.getInstantRunModel(model);
         project.execute(
@@ -108,10 +114,7 @@ public class NativeLibraryInstantRunTest {
                 new InstantRunClient("com.example.hellojni", userFeedback, iLogger, token, 8125);
 
         // Give the app a chance to start
-        Thread.sleep(1000); // TODO: Is there a way to determine that the app is ready?
-
-        // Check the app is running
-        assertThat(client.getAppState(device)).isEqualTo(AppState.FOREGROUND);
+        InstantRunTestUtils.waitForAppStart(client, device);
 
         device.uninstallPackage("com.example.hellojni");
     }

@@ -719,12 +719,11 @@ public class GradleTestProject implements TestRule {
     }
 
     public void executeConnectedCheck() {
-        executeConnectedCheck(Collections.<String>emptyList());
+        executeConnectedCheck(Collections.emptyList());
     }
 
     public void executeConnectedCheck(List<String> arguments) {
-        //noinspection VariableNotUsedInsideIf
-        execute(arguments, REMOTE_TEST_PROVIDER == null ? "connectedCheck" : "deviceCheck");
+        execute(arguments, "deviceCheck");
     }
 
     /**
