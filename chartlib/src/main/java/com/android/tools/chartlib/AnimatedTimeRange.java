@@ -16,8 +16,6 @@
 
 package com.android.tools.chartlib;
 
-import com.android.tools.chartlib.model.Range;
-
 /**
  * Animates a time range assuming the data is represented in milliseconds since epoch.
  */
@@ -48,7 +46,7 @@ public class AnimatedTimeRange implements Animatable {
         double max = mRange.getMax();
         mRange.setMax(now);
         if (mShift) {
-            mRange.setMin(min + (mRange.getMax() - max));
+            mRange.setMin(min + (now - max));
         }
     }
 }

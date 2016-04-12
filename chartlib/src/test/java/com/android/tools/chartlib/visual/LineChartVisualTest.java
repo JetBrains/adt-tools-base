@@ -21,8 +21,8 @@ import com.android.tools.chartlib.AnimatedComponent;
 import com.android.tools.chartlib.AnimatedTimeRange;
 import com.android.tools.chartlib.Choreographer;
 import com.android.tools.chartlib.LineChart;
+import com.android.tools.chartlib.Range;
 import com.android.tools.chartlib.model.LineChartData;
-import com.android.tools.chartlib.model.Range;
 import com.android.tools.chartlib.model.RangedContinuousSeries;
 
 import java.awt.Color;
@@ -44,25 +44,31 @@ public class LineChartVisualTest extends VisualTest {
     @NonNull
     private final LineChartData mData;
 
-    private final AnimatedTimeRange mAnimatedRange;
+    @NonNull
+    private final AnimatedTimeRange mAnimatedTimeRange;
 
     public LineChartVisualTest() {
         mData = new LineChartData();
 
         long now = System.currentTimeMillis();
         Range xRange = new Range(now, now + 60000);
-        Range yRange = new Range(0.0, 100.0);
-        for (int i = 0; i < 4; i++) {
-            yRange = i % 2 == 0 ? new Range(0.0, 100.0) : yRange;
-            RangedContinuousSeries ranged = new RangedContinuousSeries(xRange, yRange);
-            mData.add(ranged);
-        }
         mLineChart = new LineChart(mData);
-        mAnimatedRange = new AnimatedTimeRange(xRange, 0);
+        mAnimatedTimeRange = new AnimatedTimeRange(xRange, 0);
 
         // Set up the scene
-        mChoreographer.register(mAnimatedRange);
+        mChoreographer.register(mAnimatedTimeRange);
+        mChoreographer.register(xRange);
         mChoreographer.register(mLineChart);
+
+        Range mYRange = null;
+        for (int i = 0; i < 4; i++) {
+            if (i % 2 == 0) {
+                mYRange = new Range(0.0, 100.0);
+                mChoreographer.register(mYRange);
+            }
+            RangedContinuousSeries ranged = new RangedContinuousSeries(xRange, mYRange);
+            mData.add(ranged);
+        }
     }
 
     @Override
@@ -129,7 +135,7 @@ public class LineChartVisualTest extends VisualTest {
         controls.add(VisualTests.createCheckbox("Shift xRange Min", new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent itemEvent) {
-                mAnimatedRange.setShift(itemEvent.getStateChange() == ItemEvent.SELECTED);
+                mAnimatedTimeRange.setShift(itemEvent.getStateChange() == ItemEvent.SELECTED);
             }
         }));
         controls.add(VisualTests.createCheckbox("Stepped chart", new ItemListener() {

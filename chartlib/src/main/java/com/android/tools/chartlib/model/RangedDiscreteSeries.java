@@ -17,6 +17,7 @@
 package com.android.tools.chartlib.model;
 
 import com.android.annotations.NonNull;
+import com.android.tools.chartlib.Range;
 
 /**
  * Represents a view into a discrete series, where the data in view is only

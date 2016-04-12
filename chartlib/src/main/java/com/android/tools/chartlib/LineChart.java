@@ -19,7 +19,6 @@ package com.android.tools.chartlib;
 import com.android.annotations.NonNull;
 import com.android.tools.chartlib.model.ContinuousSeries;
 import com.android.tools.chartlib.model.LineChartData;
-import com.android.tools.chartlib.model.Range;
 import com.android.tools.chartlib.model.RangedContinuousSeries;
 
 import java.awt.Color;
@@ -51,6 +50,7 @@ public class LineChart extends AnimatedComponent {
     @NonNull
     private final LineChartData mData;
 
+    @NonNull
     private final ArrayList<Path2D.Float> mPaths;
 
     public LineChart(@NonNull LineChartData data) {
@@ -68,15 +68,14 @@ public class LineChart extends AnimatedComponent {
             max.put(ranged.getYRange(), m == null ? maxY : Math.max(maxY, m));
         }
 
-        int count = 0;
         for (Map.Entry<Range, Long> entry : max.entrySet()) {
             Range range = entry.getKey();
-            double currentMax = Choreographer.lerp(range.getMax(), entry.getValue(),
-                                                   .95f, mFrameLength);
-            addDebugInfo("Range%d Max: %.2f", count++, currentMax);
-            range.setMax(currentMax);
+            range.setMaxTarget(entry.getValue());
         }
+    }
 
+    @Override
+    public void postAnimate() {
         int p = 0;
         for (RangedContinuousSeries ranged : mData.series()) {
             Path2D.Float path;
@@ -85,19 +84,21 @@ public class LineChart extends AnimatedComponent {
                 mPaths.add(path);
             } else {
                 path = mPaths.get(p);
+                path.reset();
             }
-            path.reset();
-            double a = ranged.getXRange().getMin();
-            double b = ranged.getXRange().getMax();
 
-            double c = ranged.getYRange().getMin();
-            double d = ranged.getYRange().getMax();
+            double xMin = ranged.getXRange().getMin();
+            double xMax = ranged.getXRange().getMax();
+            double yMin = ranged.getYRange().getMin();
+            double yMax = ranged.getYRange().getMax();
+
+            // TODO optimize to not draw anything before or after min and max.
             int size = ranged.getSeries().size();
             for (int i = 0; i < size; i++) {
                 long x = ranged.getSeries().getX(i);
                 long y = ranged.getSeries().getY(i);
-                double xd = (x - a) / (b - a);
-                double yd = (y - c) / (d - c);
+                double xd = (x - xMin) / (xMax - xMin);
+                double yd = (y - yMin) / (yMax - yMin);
                 if (i == 0) {
                     path.moveTo(xd, 1.0f);
                 }
@@ -108,6 +109,8 @@ public class LineChart extends AnimatedComponent {
                     path.lineTo(xd, 1.0f - yd);
                 }
             }
+
+            addDebugInfo("Range[%d] Max: %.2f", p, xMax);
             p++;
         }
         mPaths.subList(p, mPaths.size()).clear();

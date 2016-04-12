@@ -18,15 +18,16 @@ package com.android.tools.chartlib.visual;
 
 import com.android.annotations.NonNull;
 import com.android.tools.chartlib.AnimatedComponent;
+import com.android.tools.chartlib.AnimatedTimeRange;
 import com.android.tools.chartlib.AxisComponent;
 import com.android.tools.chartlib.GridComponent;
 import com.android.tools.chartlib.LineChart;
 import com.android.tools.chartlib.MemoryAxisDomain;
+import com.android.tools.chartlib.Range;
 import com.android.tools.chartlib.RangeScrollbar;
 import com.android.tools.chartlib.SelectionComponent;
 import com.android.tools.chartlib.TimeAxisDomain;
 import com.android.tools.chartlib.model.LineChartData;
-import com.android.tools.chartlib.model.Range;
 import com.android.tools.chartlib.model.RangedContinuousSeries;
 
 import java.awt.BorderLayout;
@@ -62,6 +63,9 @@ public class AxisLineChartVisualTest extends VisualTest {
     private final Range mXGlobalRange;
 
     @NonNull
+    private final AnimatedTimeRange mAnimatedTimeRange;
+
+    @NonNull
     private final Range mXSelectionRange;
 
     @NonNull
@@ -95,24 +99,44 @@ public class AxisLineChartVisualTest extends VisualTest {
         mStartTimeMs = System.currentTimeMillis();
         mXRange = new Range(0, 0);
         mXGlobalRange = new Range(0, 0);
+        mAnimatedTimeRange = new AnimatedTimeRange(mXGlobalRange, mStartTimeMs);
+
         mScrollbar = new RangeScrollbar(mXGlobalRange, mXRange);
 
         // add horizontal time axis
-        mTimeAxis = new AxisComponent(mXRange, mXGlobalRange, "TIME", AxisComponent.AxisOrientation.BOTTOM,
-                                      AXIS_SIZE, AXIS_SIZE, false, new TimeAxisDomain(10, 50, 5));
+        mTimeAxis = new AxisComponent(mXRange,
+                mXGlobalRange,
+                "TIME",
+                AxisComponent.AxisOrientation.BOTTOM,
+                AXIS_SIZE,
+                AXIS_SIZE,
+                false,
+                new TimeAxisDomain(10, 50, 5));
 
         // left memory data + axis
-        Range yRange1 = new Range(0f, 100f);
-        mMemoryAxis1 = new AxisComponent(yRange1, yRange1, "MEMORY1", AxisComponent.AxisOrientation.LEFT,
-                                         AXIS_SIZE, AXIS_SIZE, true, new MemoryAxisDomain(10, 50, 5));
-        RangedContinuousSeries ranged1 = new RangedContinuousSeries(mXRange, yRange1);
+        Range yRange1Animatable = new Range(0, 100);
+        mMemoryAxis1 = new AxisComponent(yRange1Animatable,
+                yRange1Animatable,
+                "MEMORY1",
+                AxisComponent.AxisOrientation.LEFT,
+                AXIS_SIZE,
+                AXIS_SIZE,
+                true,
+                new MemoryAxisDomain(10, 50, 5));
+        RangedContinuousSeries ranged1 = new RangedContinuousSeries(mXRange, yRange1Animatable);
         mData.add(ranged1);
 
         // right memory data + axis
-        Range yRange2 = new Range(0f, 100f);
-        mMemoryAxis2 = new AxisComponent(yRange2, yRange2, "MEMORY2", AxisComponent.AxisOrientation.RIGHT,
-                                         AXIS_SIZE, AXIS_SIZE, true, new MemoryAxisDomain(10, 50, 5));
-        RangedContinuousSeries ranged2 = new RangedContinuousSeries(mXRange, yRange2);
+        Range yRange2Animatable = new Range(0, 100);
+        mMemoryAxis2 = new AxisComponent(yRange2Animatable,
+                yRange2Animatable,
+                "MEMORY2",
+                AxisComponent.AxisOrientation.RIGHT,
+                AXIS_SIZE,
+                AXIS_SIZE,
+                true,
+                new MemoryAxisDomain(10, 50, 5));
+        RangedContinuousSeries ranged2 = new RangedContinuousSeries(mXRange, yRange2Animatable);
         mData.add(ranged2);
 
         mGrid = new GridComponent();
@@ -122,18 +146,28 @@ public class AxisLineChartVisualTest extends VisualTest {
         mXSelectionRange = new Range(0, 0);
         mSelection = new SelectionComponent(mTimeAxis, mXSelectionRange, mXGlobalRange, mXRange);
 
-        mChoreographer.register(mScrollbar);
-        mChoreographer.register(mLineChart);
-        mChoreographer.register(mTimeAxis);
-        mChoreographer.register(mMemoryAxis1);
-        mChoreographer.register(mMemoryAxis2);
-        mChoreographer.register(mSelection);
-        mChoreographer.register(mGrid);
+        // Note: the order below is important as some components depend on
+        // others to be updated first. e.g. the ranges need to be updated before the axes.
+        // The comment on each line highlights why the component needs to be in that position.
+        mChoreographer.register(mAnimatedTimeRange);     // Update global time range immediate.
+        mChoreographer.register(mSelection);             // Update selection range immediate.
+        mChoreographer.register(mScrollbar);             // Update current range immediate.
+        mChoreographer.register(mLineChart);             // Set y's interpolation values.
+        mChoreographer.register(yRange1Animatable);      // Interpolate y1.
+        mChoreographer.register(yRange2Animatable);      // Interpolate y2.
+        mChoreographer.register(mTimeAxis);              // Read ranges.
+        mChoreographer.register(mMemoryAxis1);           // Read ranges.
+        mChoreographer.register(mMemoryAxis2);           // Read ranges.
+        mChoreographer.register(mGrid);                  // No-op.
+        mChoreographer.register(mXRange);                // Reset flags.
+        mChoreographer.register(mXGlobalRange);          // Reset flags.
+        mChoreographer.register(mXSelectionRange);       // Reset flags.
     }
 
     @Override
     void registerComponents(List<AnimatedComponent> components) {
         components.add(mLineChart);
+        components.add(mSelection);
         components.add(mTimeAxis);
         components.add(mMemoryAxis1);
         components.add(mMemoryAxis2);
@@ -166,11 +200,8 @@ public class AxisLineChartVisualTest extends VisualTest {
                 super.run();
                 try {
                     while (true) {
-                        // Moves time forward by updating global range to now.
-                        long now = System.currentTimeMillis() - mStartTimeMs;
-                        mXGlobalRange.setMax(now);
-
                         //  Insert new data point at now.
+                        long now = System.currentTimeMillis() - mStartTimeMs;
                         int v = variance.get();
                         for (RangedContinuousSeries rangedSeries : mData.series()) {
                             int size = rangedSeries.getSeries().size();
@@ -228,8 +259,8 @@ public class AxisLineChartVisualTest extends VisualTest {
         }));
 
         controls.add(
-          new Box.Filler(new Dimension(0, 0), new Dimension(300, Integer.MAX_VALUE),
-                         new Dimension(300, Integer.MAX_VALUE)));
+                new Box.Filler(new Dimension(0, 0), new Dimension(300, Integer.MAX_VALUE),
+                        new Dimension(300, Integer.MAX_VALUE)));
 
         return panel;
     }
@@ -271,7 +302,8 @@ public class AxisLineChartVisualTest extends VisualTest {
                             int sbHeight = c.getPreferredSize().height;
                             c.setBounds(0, dim.height - sbHeight, dim.width, sbHeight);
                         } else {
-                            c.setBounds(AXIS_SIZE, AXIS_SIZE, dim.width - AXIS_SIZE * 2, dim.height - AXIS_SIZE * 2);
+                            c.setBounds(AXIS_SIZE, AXIS_SIZE, dim.width - AXIS_SIZE * 2,
+                                    dim.height - AXIS_SIZE * 2);
                         }
                     }
                 }

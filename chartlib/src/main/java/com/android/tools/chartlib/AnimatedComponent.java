@@ -30,9 +30,9 @@ import javax.swing.JComponent;
 /**
  * Base class for components that should change their look over time.
  *
- * At a minimum, child classes should override {@link #updateData()} and {@link #draw(Graphics2D)},
- * as well as pay attention to the field {@link #mFrameLength} as it controls the behavior of timed
- * animations.
+ * At a minimum, child classes should override {@link #updateData()} and {@link
+ * #draw(Graphics2D)}, as well as pay attention to the field {@link #mFrameLength} as it controls
+ * the behavior of timed animations.
  */
 public abstract class AnimatedComponent extends JComponent implements Animatable {
 
