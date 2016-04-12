@@ -23,6 +23,7 @@ import java.awt.event.HierarchyListener;
 import java.util.LinkedList;
 import java.util.List;
 
+import javax.swing.JComponent;
 import javax.swing.Timer;
 
 public class Choreographer implements ActionListener {
@@ -35,11 +36,24 @@ public class Choreographer implements ActionListener {
     private boolean mUpdate;
     private long mFrameTime;
 
+    private JComponent mParentContainer;
+
     public Choreographer(int fps) {
         mComponents = new LinkedList<Animatable>();
         mUpdate = true;
         mTimer = new Timer(1000 / fps, this);
         mTimer.start();
+    }
+
+    /**
+     * Sets the parent container to trigger a single repaint on all its children components
+     * at the end of every cycle.
+     * TODO - We should refactor this. Instead of having to call setParentContainer,
+     * we can either make it part of the constructor, or use a listener pattern (e.g. postAnimated)
+     * to trigger the master panel's repaint externally.
+     */
+    public void setParentContainer(JComponent parent) {
+        mParentContainer = parent;
     }
 
     public void register(Animatable animatable) {
@@ -90,6 +104,14 @@ public class Choreographer implements ActionListener {
     private void step(float frameLength) {
         for (Animatable component : mComponents) {
             component.animate(frameLength);
+        }
+
+        if (mParentContainer != null) {
+            // If a parent container is assigned, calling repaint on it
+            // would force repaint on all its descendants in the correct z-order.
+            // This prevent the children components' repaint call to trigger
+            // redundant redraws on overlapping elements.
+            mParentContainer.repaint();
         }
     }
 

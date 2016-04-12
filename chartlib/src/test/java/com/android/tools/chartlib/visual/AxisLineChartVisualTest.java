@@ -19,7 +19,6 @@ package com.android.tools.chartlib.visual;
 import com.android.annotations.NonNull;
 import com.android.tools.chartlib.AnimatedComponent;
 import com.android.tools.chartlib.AxisComponent;
-import com.android.tools.chartlib.Choreographer;
 import com.android.tools.chartlib.GridComponent;
 import com.android.tools.chartlib.LineChart;
 import com.android.tools.chartlib.MemoryAxisDomain;
@@ -89,7 +88,7 @@ public class AxisLineChartVisualTest extends VisualTest {
     @NonNull
     private final RangeScrollbar mScrollbar;
 
-    public AxisLineChartVisualTest(Choreographer choreographer) {
+    public AxisLineChartVisualTest() {
         mData = new LineChartData();
         mLineChart = new LineChart(mData);
 
@@ -123,13 +122,13 @@ public class AxisLineChartVisualTest extends VisualTest {
         mXSelectionRange = new Range(0, 0);
         mSelection = new SelectionComponent(mTimeAxis, mXSelectionRange, mXGlobalRange, mXRange);
 
-        choreographer.register(mScrollbar);
-        choreographer.register(mLineChart);
-        choreographer.register(mTimeAxis);
-        choreographer.register(mMemoryAxis1);
-        choreographer.register(mMemoryAxis2);
-        choreographer.register(mSelection);
-        choreographer.register(mGrid);
+        mChoreographer.register(mScrollbar);
+        mChoreographer.register(mLineChart);
+        mChoreographer.register(mTimeAxis);
+        mChoreographer.register(mMemoryAxis1);
+        mChoreographer.register(mMemoryAxis2);
+        mChoreographer.register(mSelection);
+        mChoreographer.register(mGrid);
     }
 
     @Override

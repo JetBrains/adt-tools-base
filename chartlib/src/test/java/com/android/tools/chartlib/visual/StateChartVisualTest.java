@@ -97,7 +97,7 @@ public class StateChartVisualTest extends VisualTest {
     @NonNull
     private final StateChartData mRadioData;
 
-    public StateChartVisualTest(Choreographer choreographer) {
+    public StateChartVisualTest() {
         mNetworkData = new StateChartData();
         mRadioData = new StateChartData();
         mStartTimeMs = System.currentTimeMillis();
@@ -110,9 +110,9 @@ public class StateChartVisualTest extends VisualTest {
         mNetworkStatusChart = new StateChart(mNetworkData, MOCK_COLORS_1);
         mRadioStateChart = new StateChart(mRadioData, MOCK_COLORS_2);
 
-        choreographer.register(mAnimatedRange);
-        choreographer.register(mNetworkStatusChart);
-        choreographer.register(mRadioStateChart);
+        mChoreographer.register(mAnimatedRange);
+        mChoreographer.register(mNetworkStatusChart);
+        mChoreographer.register(mRadioStateChart);
     }
 
     @Override

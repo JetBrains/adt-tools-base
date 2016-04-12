@@ -17,6 +17,7 @@
 package com.android.tools.chartlib.visual;
 
 import com.android.tools.chartlib.AnimatedComponent;
+import com.android.tools.chartlib.Choreographer;
 
 import java.util.List;
 
@@ -29,6 +30,14 @@ public abstract class VisualTest {
      */
     private JPanel mPanel;
 
+    private static final int CHOREOGRAPHER_FPS = 60;
+
+    protected Choreographer mChoreographer;
+
+    protected VisualTest() {
+        mChoreographer = new Choreographer(CHOREOGRAPHER_FPS);
+    }
+
     abstract void registerComponents(List<AnimatedComponent> components);
 
     public abstract String getName();
@@ -37,9 +46,14 @@ public abstract class VisualTest {
 
     public void initialize() {
         mPanel = create();
+        mChoreographer.setParentContainer(mPanel);
     }
 
     public JPanel getPanel() {
         return mPanel;
+    }
+
+    public final Choreographer getChoreographer() {
+        return mChoreographer;
     }
 }

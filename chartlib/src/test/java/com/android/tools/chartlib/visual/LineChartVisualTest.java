@@ -46,7 +46,7 @@ public class LineChartVisualTest extends VisualTest {
 
     private final AnimatedTimeRange mAnimatedRange;
 
-    public LineChartVisualTest(Choreographer choreographer) {
+    public LineChartVisualTest() {
         mData = new LineChartData();
 
         long now = System.currentTimeMillis();
@@ -61,8 +61,8 @@ public class LineChartVisualTest extends VisualTest {
         mAnimatedRange = new AnimatedTimeRange(xRange, 0);
 
         // Set up the scene
-        choreographer.register(mAnimatedRange);
-        choreographer.register(mLineChart);
+        mChoreographer.register(mAnimatedRange);
+        mChoreographer.register(mLineChart);
     }
 
     @Override

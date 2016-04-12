@@ -42,12 +42,12 @@ public class SunburstVisualTest extends VisualTest {
 
     private final SunburstComponent mSunburst;
 
-    public SunburstVisualTest(Choreographer choreographer) {
+    public SunburstVisualTest() {
 
         final DataNode data = new DataNode();
         data.addDataNode(new DataNode(1, 10));
         mSunburst = new SunburstComponent(data);
-        choreographer.register(mSunburst);
+        mChoreographer.register(mSunburst);
     }
 
     @Override

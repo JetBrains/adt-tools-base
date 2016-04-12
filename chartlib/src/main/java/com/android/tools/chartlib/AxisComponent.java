@@ -20,7 +20,7 @@ import com.android.tools.chartlib.model.Range;
 import gnu.trove.TFloatArrayList;
 
 import java.awt.*;
-import java.awt.geom.Path2D;
+import java.awt.geom.Line2D;
 
 /**
  * A component that draw an axis based on data from a {@link Range} object.
@@ -338,30 +338,28 @@ public final class AxisComponent extends AnimatedComponent {
         }
 
         // TODO fade in/out markers.
-        Path2D.Float path = new Path2D.Float();
+        Line2D.Float line = new Line2D.Float();
 
         // Draw minor ticks.
         for (int i = 0; i < mMinorMarkerPositions.size(); i++) {
             if (mMinorMarkerPositions.get(i) >= 0) {
-                drawMarkerLine(path, mMinorMarkerPositions.get(i), false);
+                drawMarkerLine(g2d, line, mMinorMarkerPositions.get(i), false);
             }
         }
 
         // Draw major ticks.
         for (int i = 0; i < mMajorMarkerPositions.size(); i++) {
             if (mMajorMarkerPositions.get(i) >= 0) {
-                drawMarkerLine(path, mMajorMarkerPositions.get(i), true);
+                drawMarkerLine(g2d, line, mMajorMarkerPositions.get(i), true);
 
                 double markerValue = mFirstMarkerValue + i * mMajorInterval;
                 drawMarkerLabel(g2d, mMajorMarkerPositions.get(i), markerValue, !mShowMinMax);
             }
         }
-
-        g2d.draw(path);
     }
 
-    private void drawMarkerLine(Path2D.Float path, float markerOffset, boolean isMajor) {
-        float markerStartX, markerStartY, markerEndX, markerEndY;
+    private void drawMarkerLine(Graphics2D g2d, Line2D.Float line, float markerOffset, boolean isMajor) {
+        float markerStartX = 0, markerStartY = 0, markerEndX = 0, markerEndY = 0;
         int markerLength = isMajor ? MAJOR_MARKER_LENGTH : MINOR_MARKER_LENGTH;
         switch (mOrientation) {
             case LEFT:
@@ -379,15 +377,15 @@ public final class AxisComponent extends AnimatedComponent {
                 markerStartY = mStartPoint.y - markerLength;
                 markerEndY = mStartPoint.y;
                 break;
-            default: // case BOTTOM
+            case BOTTOM:
                 markerStartX = markerEndX = mStartPoint.x + markerOffset;
                 markerStartY = 0;
                 markerEndY = markerLength;
                 break;
         }
 
-        path.moveTo(markerStartX, markerStartY);
-        path.lineTo(markerEndX, markerEndY);
+        line.setLine(markerStartX, markerStartY, markerEndX, markerEndY);
+        g2d.draw(line);
     }
 
     private void drawMarkerLabel(Graphics2D g2d, float markerOffset, double markerValue, boolean isMinMax) {

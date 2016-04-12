@@ -47,11 +47,11 @@ public class TimelineVisualTest extends VisualTest {
 
     private final TimelineData mData;
 
-    public TimelineVisualTest(Choreographer choreographer) {
+    public TimelineVisualTest() {
         mEvents = new EventData();
         mData = new TimelineData(2, 2000);
         mTimeline = new TimelineComponent(mData, mEvents, 1.0f, 10.0f, 1000.0f, 10.0f);
-        choreographer.register(mTimeline);
+        mChoreographer.register(mTimeline);
     }
 
     @Override
