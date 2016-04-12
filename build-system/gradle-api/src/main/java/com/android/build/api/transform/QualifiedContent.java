@@ -24,11 +24,7 @@ import java.util.Set;
 
 /**
  * Represent content qualified with one or more {@link ContentType} and one or more {@link Scope}.
- * <p/>
- * <strong>This API is non final and is subject to change. We are looking for feedback, and will
- * attempt to stabilize it in the 1.6 time frame.</strong>
  */
-@Beta
 public interface QualifiedContent {
 
     /**

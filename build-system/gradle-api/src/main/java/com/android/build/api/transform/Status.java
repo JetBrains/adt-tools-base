@@ -20,11 +20,7 @@ import com.google.common.annotations.Beta;
 
 /**
  * The file changed status for incremental execution.
- * <p/>
- * <strong>This API is non final and is subject to change. We are looking for feedback, and will
- * attempt to stabilize it in the 1.6 time frame.</strong>
  */
-@Beta
 public enum Status {
     /**
      * The file was not changed since the last build.
