@@ -64,7 +64,7 @@ public class SunburstVisualTest extends VisualTest {
         final JLabel info = new JLabel("<No information yet>");
         panel.add(info, BorderLayout.SOUTH);
 
-        controls.add(VisualTests.createVaribleSlider("Gap", 0, 200, new VisualTests.Value() {
+        controls.add(VisualTests.createVariableSlider("Gap", 0, 200, new VisualTests.Value() {
             @Override
             public void set(int v) {
                 mSunburst.setGap(v);
@@ -75,7 +75,7 @@ public class SunburstVisualTest extends VisualTest {
                 return (int) mSunburst.getGap();
             }
         }));
-        controls.add(VisualTests.createVaribleSlider("Size", 0, 200, new VisualTests.Value() {
+        controls.add(VisualTests.createVariableSlider("Size", 0, 200, new VisualTests.Value() {
             @Override
             public void set(int v) {
                 mSunburst.setSliceWidth(v);
@@ -86,7 +86,7 @@ public class SunburstVisualTest extends VisualTest {
                 return (int) mSunburst.getSliceWidth();
             }
         }));
-        controls.add(VisualTests.createVaribleSlider("Angle", 0, 360, new VisualTests.Value() {
+        controls.add(VisualTests.createVariableSlider("Angle", 0, 360, new VisualTests.Value() {
             @Override
             public void set(int v) {
                 mSunburst.setAngle(v);
@@ -97,7 +97,7 @@ public class SunburstVisualTest extends VisualTest {
                 return (int) mSunburst.getAngle();
             }
         }));
-        controls.add(VisualTests.createVaribleSlider("Start", 0, 360, new VisualTests.Value() {
+        controls.add(VisualTests.createVariableSlider("Start", 0, 360, new VisualTests.Value() {
             @Override
             public void set(int v) {
                 mSunburst.setStart(v);
@@ -108,7 +108,7 @@ public class SunburstVisualTest extends VisualTest {
                 return (int) mSunburst.getStart();
             }
         }));
-        controls.add(VisualTests.createVaribleSlider("Fixed", 1, 100, new VisualTests.Value() {
+        controls.add(VisualTests.createVariableSlider("Fixed", 1, 100, new VisualTests.Value() {
             @Override
             public void set(int v) {
                 mSunburst.setFixed(v);
@@ -119,7 +119,7 @@ public class SunburstVisualTest extends VisualTest {
                 return (int) mSunburst.getFixed();
             }
         }));
-        controls.add(VisualTests.createVaribleSlider("Separator", 0, 100, new VisualTests.Value() {
+        controls.add(VisualTests.createVariableSlider("Separator", 0, 100, new VisualTests.Value() {
             @Override
             public void set(int v) {
                 mSunburst.setSeparator(v);

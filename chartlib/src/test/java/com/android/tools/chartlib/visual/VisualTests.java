@@ -165,7 +165,7 @@ public class VisualTests extends JDialog {
         int get();
     }
 
-    static JPanel createVaribleSlider(String name, final int a, final int b, final Value value) {
+    static JPanel createVariableSlider(String name, final int a, final int b, final Value value) {
         JPanel panel = new JPanel(new BorderLayout());
         final JLabel text = new JLabel();
         final JSlider slider = new JSlider(a, b);
