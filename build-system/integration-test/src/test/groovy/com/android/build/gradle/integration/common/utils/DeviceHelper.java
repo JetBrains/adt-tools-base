@@ -66,33 +66,4 @@ public class DeviceHelper {
         deviceProvider.terminate();
         return abis;
     }
-
-    public static IDevice getIDevice() throws DeviceException {
-        return Iterables.getOnlyElement(getIDevices());
-    }
-    public static List<IDevice> getIDevices() throws DeviceException {
-        AndroidDebugBridge.initIfNeeded(false /*clientSupport*/);
-
-        AndroidDebugBridge bridge = AndroidDebugBridge.createBridge(
-                SdkHelper.getAdb().getAbsolutePath(), false /*forceNewBridge*/);
-
-        assertNotNull("Debug bridge", bridge);
-
-        long timeOut = DEFAULT_ADB_TIMEOUT_MSEC;
-        int sleepTime = 1000;
-        while (!bridge.hasInitialDeviceList() && timeOut > 0) {
-            try {
-                Thread.sleep(sleepTime);
-            } catch (InterruptedException e) {
-                throw new DeviceException(e);
-            }
-            timeOut -= sleepTime;
-        }
-
-        if (timeOut <= 0 && !bridge.hasInitialDeviceList()) {
-            throw new DeviceException("Timeout getting device list.");
-        }
-
-        return ImmutableList.copyOf(bridge.getDevices());
-    }
 }

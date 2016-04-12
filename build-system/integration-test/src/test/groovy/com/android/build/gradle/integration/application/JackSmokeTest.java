@@ -1,10 +1,14 @@
 package com.android.build.gradle.integration.application;
 
+import static com.android.build.gradle.integration.common.utils.AndroidVersionMatcher.thatUsesArt;
 import static org.junit.Assume.assumeTrue;
 
 import com.android.build.gradle.integration.common.category.DeviceTests;
+import com.android.build.gradle.integration.common.fixture.Adb;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.truth.TruthHelper;
+import com.android.build.gradle.integration.common.utils.AndroidVersionMatcher;
+import com.android.ddmlib.IDevice;
 import com.google.common.collect.ImmutableList;
 
 import org.gradle.api.JavaVersion;
@@ -12,15 +16,20 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
  * Simple Jack test for a few test project.
  */
 public class JackSmokeTest {
+
+    @Rule
+    public Adb adb = new Adb();
 
     @ClassRule
     public static GradleTestProject basic = GradleTestProject.builder().withName("basic")
@@ -78,8 +87,12 @@ public class JackSmokeTest {
 
     @Test
     @Category(DeviceTests.class)
-    public void multiDexConnectedCheck() {
-        multiDex.executeConnectedCheck(JACK_OPTIONS);
+    public void multiDexConnectedCheck() throws IOException {
+        multiDex.execute(JACK_OPTIONS, "assembleDebug",
+                "assembleIcsDebugAndroidTest",
+                "assembleLollipopDebugAndroidTest");
+        adb.exclusiveAccess();
+        multiDex.execute(JACK_OPTIONS, "connectedCheck");
     }
 
     @Test

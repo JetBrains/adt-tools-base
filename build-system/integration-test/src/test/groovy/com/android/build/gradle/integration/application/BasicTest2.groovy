@@ -19,6 +19,7 @@
 package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.category.DeviceTests
+import com.android.build.gradle.integration.common.fixture.Adb
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.AssumeUtil
 import com.android.build.gradle.integration.common.utils.ModelHelper
@@ -40,6 +41,7 @@ import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
+import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
@@ -60,6 +62,9 @@ class BasicTest2 {
     static public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("basic")
             .create()
+
+    @Rule
+    public Adb adb = new Adb();
 
     static public AndroidProject model
 
@@ -280,7 +285,8 @@ class BasicTest2 {
     @Test
     @Category(DeviceTests.class)
     void install() {
-        AssumeUtil.assumeLocalDevice();
+        project.execute("assembleDebug")
+        adb.exclusiveAccess()
         project.execute("installDebug", "uninstallAll")
     }
 

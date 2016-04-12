@@ -16,20 +16,18 @@
 
 package com.android.build.gradle.integration.instant;
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+import static com.android.build.gradle.integration.common.utils.AndroidVersionMatcher.thatUsesArt;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.OptionalCompilationStep;
+import com.android.build.gradle.integration.common.fixture.Adb;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.Logcat;
-import com.android.build.gradle.integration.common.utils.DeviceHelper;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.InstantRun;
 import com.android.ddmlib.IDevice;
 import com.android.ide.common.packaging.PackagingUtils;
-import com.android.sdklib.AndroidVersion;
-import com.android.tools.fd.client.AppState;
 import com.android.tools.fd.client.InstantRunArtifact;
 import com.android.tools.fd.client.InstantRunBuildInfo;
 import com.android.tools.fd.client.InstantRunClient;
@@ -39,7 +37,6 @@ import com.android.tools.fd.client.UserFeedback;
 import com.android.utils.ILogger;
 import com.google.common.collect.ImmutableList;
 
-import org.junit.Assume;
 import org.mockito.Mockito;
 
 /**
@@ -53,11 +50,10 @@ class HotSwapTester {
             @NonNull String packageName,
             @NonNull String activityName,
             @NonNull String logTag,
+            @NonNull Adb adb,
             @NonNull Logcat logcat,
             @NonNull Steps steps)  throws Exception {
-        IDevice device = DeviceHelper.getIDevice();
-        // TODO: Generalize apk deployment to any compatible device.
-        Assume.assumeTrue(device.getVersion().equals(new AndroidVersion(23, null)));
+        IDevice device = adb.getDevice(thatUsesArt());
         try {
             logcat.start(device, logTag);
 
@@ -93,10 +89,7 @@ class HotSwapTester {
                     new InstantRunClient(packageName, userFeedback, iLogger, token, 8125);
 
             // Give the app a chance to start
-            Thread.sleep(2000); // TODO: Is there a way to determine that the app is ready?
-
-            // Check the app is running
-            assertThat(client.getAppState(device)).isEqualTo(AppState.FOREGROUND);
+            InstantRunTestUtils.waitForAppStart(client, device);
 
             steps.verifyOriginalCode(client, logcat, device);
 
@@ -124,7 +117,7 @@ class HotSwapTester {
             Mockito.verify(userFeedback).notifyEnd(UpdateMode.HOT_SWAP);
             Mockito.verifyNoMoreInteractions(userFeedback);
 
-            assertThat(client.getAppState(device)).isEqualTo(AppState.FOREGROUND);
+            InstantRunTestUtils.waitForAppStart(client, device);
 
             steps.verifyNewCode(client, logcat, device);
         } finally {
@@ -150,4 +143,5 @@ class HotSwapTester {
                 @NonNull Logcat logcat,
                 @NonNull IDevice device) throws Exception;
     }
+
 }

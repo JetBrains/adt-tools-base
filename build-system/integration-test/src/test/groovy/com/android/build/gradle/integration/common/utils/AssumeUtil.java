@@ -26,12 +26,6 @@ import org.junit.Assume;
  */
 public class AssumeUtil {
 
-    public static void assumeLocalDevice() {
-        Assume.assumeTrue(
-                "Install task not run against device provider",
-                GradleTestProject.REMOTE_TEST_PROVIDER == null);
-    }
-
     public static void assumeBuildToolsAtLeast(int major) {
         assumeBuildToolsAtLeast(new Revision(major));
     }

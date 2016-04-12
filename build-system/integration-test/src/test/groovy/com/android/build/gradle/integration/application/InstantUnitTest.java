@@ -16,15 +16,25 @@
 
 package com.android.build.gradle.integration.application;
 
+import static com.android.build.gradle.integration.common.utils.AndroidVersionMatcher.thatUsesArt;
+
 import com.android.build.gradle.integration.common.category.DeviceTests;
+import com.android.build.gradle.integration.common.fixture.Adb;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.utils.AndroidVersionMatcher;
+import com.android.ddmlib.IDevice;
+import com.google.common.collect.ImmutableList;
 
 import org.junit.ClassRule;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 public class InstantUnitTest {
+
+    @Rule
+    public final Adb adb = new Adb();
 
     @ClassRule
     public static GradleTestProject sProject = GradleTestProject.builder()
@@ -40,6 +50,8 @@ public class InstantUnitTest {
     @Category(DeviceTests.class)
     public void runTestsOnDevice() {
         sProject.execute("clean");
-        sProject.executeConnectedCheck();
+        IDevice device = adb.getDevice(thatUsesArt());
+        sProject.executeConnectedCheck(
+                ImmutableList.of(Adb.getInjectToDeviceProviderProperty(device)));
     }
 }

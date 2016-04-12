@@ -42,20 +42,17 @@ ext {
             Boolean.valueOf((String) project.properties[
                     "com.android.build.gradle.integratonTest.minifyEnabled"])
 
-    def remoteTestProvider = System.env.REMOTE_TEST_PROVIDER
-    if (remoteTestProvider != null) {
-        plugins.withId('com.android.application') {
-            apply plugin: remoteTestProvider
-        }
-        plugins.withId('com.android.library') {
-            apply plugin: remoteTestProvider
-        }
-        plugins.withId('com.android.model.application') {
-            apply plugin: remoteTestProvider
-        }
-        plugins.withId('com.android.model.library') {
-            apply plugin: remoteTestProvider
-        }
+    plugins.withId('com.android.application') {
+        apply plugin: 'devicepool'
+    }
+    plugins.withId('com.android.library') {
+        apply plugin: 'devicepool'
+    }
+    plugins.withId('com.android.model.application') {
+        apply plugin: 'devicepool'
+    }
+    plugins.withId('com.android.model.library') {
+        apply plugin: 'devicepool'
     }
 }
 
