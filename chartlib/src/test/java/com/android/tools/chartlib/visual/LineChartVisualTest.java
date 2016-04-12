@@ -51,7 +51,7 @@ public class LineChartVisualTest extends VisualTest {
 
         long now = System.currentTimeMillis();
         Range xRange = new Range(now, now + 60000);
-        Range yRange = null;
+        Range yRange = new Range(0.0, 100.0);
         for (int i = 0; i < 4; i++) {
             yRange = i % 2 == 0 ? new Range(0.0, 100.0) : yRange;
             RangedContinuousSeries ranged = new RangedContinuousSeries(xRange, yRange);
@@ -135,7 +135,21 @@ public class LineChartVisualTest extends VisualTest {
         controls.add(VisualTests.createCheckbox("Stepped chart", new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent itemEvent) {
-                mLineChart.setStepped(itemEvent.getStateChange() == ItemEvent.SELECTED);
+                boolean isStepped = itemEvent.getStateChange() == ItemEvent.SELECTED;
+                // Make only some lines stepped
+                for (int i = 0; i < mData.series().size(); i += 2) {
+                    mData.series().get(i).setStepped(isStepped);
+                }
+            }
+        }));
+        controls.add(VisualTests.createCheckbox("Dashed lines", new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent itemEvent) {
+                boolean isDashed = itemEvent.getStateChange() == ItemEvent.SELECTED;
+                // Dash only some lines
+                for (int i = 0; i < mData.series().size(); i += 2) {
+                    mData.series().get(i).setDashed(isDashed);
+                }
             }
         }));
 

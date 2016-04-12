@@ -53,21 +53,9 @@ public class LineChart extends AnimatedComponent {
 
     private final ArrayList<Path2D.Float> mPaths;
 
-    /**
-     * Whether the line chart is stepped.
-     * In case it is not, a straight line is drawn between points (e.g. (x0, y0) and (x1, y1)).
-     * Otherwise, a line is drawn from (x0, y0) to (x0, y1) and another one is drawn from (x0, y1)
-     * to (x1, y1).
-     */
-    private boolean mIsStepped = false;
-
     public LineChart(@NonNull LineChartData data) {
         mData = data;
         mPaths = new ArrayList<Path2D.Float>();
-    }
-
-    public void setStepped(boolean isStepped) {
-        mIsStepped = isStepped;
     }
 
     @Override
@@ -113,7 +101,7 @@ public class LineChart extends AnimatedComponent {
                 if (i == 0) {
                     path.moveTo(xd, 1.0f);
                 }
-                if (mIsStepped) {
+                if (ranged.isStepped()) {
                     path.lineTo(path.getCurrentPoint().getX(), 1.0f - yd);
                     path.lineTo(xd, 1.0f - yd);
                 } else {
@@ -131,7 +119,13 @@ public class LineChart extends AnimatedComponent {
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         AffineTransform scale = AffineTransform.getScaleInstance(dim.getWidth(), dim.getHeight());
         for (int i = 0; i < mPaths.size(); i++) {
+            assert i < mData.series().size();
             g2d.setColor(COLORS[i % COLORS.length]);
+            if (mData.series().get(i).isDashed()) {
+                g2d.setStroke(RangedContinuousSeries.DASHED_STROKE);
+            } else {
+                g2d.setStroke(RangedContinuousSeries.BASIC_STROKE);
+            }
             Shape shape = scale.createTransformedShape(mPaths.get(i));
             g2d.draw(shape);
         }
