@@ -27,10 +27,14 @@ import java.util.concurrent.ConcurrentMap;
  * using {@code ==}.
  */
 public final class Prototype implements Comparable<Prototype> {
-    /** {@code non-null;} intern table mapping string descriptors to instances */
+    /**
+     * Intern table for instances.
+     *
+     * <p>The initial capacity is based on a medium-size project.
+     */
     private static final ConcurrentMap<String, Prototype> internTable = new MapMaker()
             .concurrencyLevel(Main.CONCURRENCY_LEVEL)
-            .initialCapacity(500)
+            .initialCapacity(10_000)
             .makeMap();
 
     /** {@code non-null;} method descriptor */
