@@ -158,7 +158,7 @@ import java.util.zip.ZipFile;
  * {@link #processTestManifest(String, String, String, String, String, Boolean, Boolean, File, List, Map, File, File)}
  * {@link #processResources(Aapt, AaptPackageConfig.Builder, boolean)}
  * {@link #compileAllAidlFiles(List, File, File, Collection, List, DependencyFileProcessor, ProcessOutputHandler)}
- * {@link #convertByteCode(Collection, File, boolean, File, DexOptions, boolean, boolean, ProcessOutputHandler)}
+ * {@link #convertByteCode(Collection, File, boolean, File, DexOptions, boolean, ProcessOutputHandler)}
  * {@link #oldPackageApk(String, Set, Collection, Collection, Set, boolean, SigningConfig, File, int, File)}
  *
  * Java compilation is not handled but the builder provides the boot classpath with
@@ -1462,8 +1462,6 @@ public class AndroidBuilder {
      * @param inputs the input files
      * @param outDexFolder the location of the output folder
      * @param dexOptions dex options
-     * @param incremental true if it should attempt incremental dex if applicable
-     *
      * @throws IOException
      * @throws InterruptedException
      * @throws ProcessException
@@ -1474,7 +1472,6 @@ public class AndroidBuilder {
             boolean multidex,
             @Nullable File mainDexList,
             @NonNull DexOptions dexOptions,
-            boolean incremental,
             boolean optimize,
             @NonNull ProcessOutputHandler processOutputHandler)
             throws IOException, InterruptedException, ProcessException {
@@ -1495,7 +1492,6 @@ public class AndroidBuilder {
         DexProcessBuilder builder = new DexProcessBuilder(outDexFolder);
 
         builder.setVerbose(mVerboseExec)
-                .setIncremental(incremental)
                 .setNoOptimize(!optimize)
                 .setMultiDex(multidex)
                 .setMainDexList(mainDexList)
