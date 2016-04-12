@@ -147,6 +147,8 @@ import com.android.builder.core.DefaultDexOptions;
 import com.android.builder.core.DexOptions;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
+import com.android.builder.dependency.LibraryDependency;
+import com.android.builder.internal.testing.SimpleTestCallable;
 import com.android.builder.model.DataBindingOptions;
 import com.android.builder.model.SyncIssue;
 import com.android.builder.sdk.TargetInfo;
@@ -2221,7 +2223,10 @@ public abstract class TaskManager {
                             : PackageAndroidArtifact.DexPackagingPolicy.INSTANT_RUN;
 
             AndroidTask<PackageAndroidArtifact> packageApp = androidTasks.create(tasks,
-                    new PackageAndroidArtifact.ConfigAction(variantOutputScope, dexPackagingPolicy));
+                    new PackageAndroidArtifact.ConfigAction(
+                            variantOutputScope,
+                            dexPackagingPolicy,
+                            incrementalMode != IncrementalMode.NONE));
 
             packageApp.dependsOn(tasks, prePackageApp, variantOutputScope.getProcessResourcesTask());
 
@@ -2529,12 +2534,6 @@ public abstract class TaskManager {
             @Nullable Configuration mappingConfiguration,
             boolean createJarFile) {
         if (variantScope.getVariantData().getVariantConfiguration().getBuildType().isUseProguard()) {
-            if (getIncrementalMode(variantScope.getVariantConfiguration()) != IncrementalMode.NONE) {
-                logger.warn("Instant Run: Proguard is not compatible with instant run. "
-                        + "It has been disabled for {}",
-                        variantScope.getVariantConfiguration().getFullName());
-                return;
-            }
             createProguardTransform(taskFactory, variantScope, mappingConfiguration, createJarFile);
             createShrinkResourcesTransform(taskFactory, variantScope);
         } else {
@@ -2570,6 +2569,13 @@ public abstract class TaskManager {
             @NonNull VariantScope variantScope,
             @Nullable Configuration mappingConfiguration,
             boolean createJarFile) {
+        if (getIncrementalMode(variantScope.getVariantConfiguration()) != IncrementalMode.NONE) {
+            logger.warn("Instant Run: Proguard is not compatible with instant run. "
+                            + "It has been disabled for {}",
+                    variantScope.getVariantConfiguration().getFullName());
+            return;
+        }
+
         final BaseVariantData<? extends BaseVariantOutputData> variantData = variantScope
                 .getVariantData();
         final GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
