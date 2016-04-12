@@ -355,7 +355,14 @@ class CentralDirectory {
         centralDirectoryHeader.setComment(bytes.slice(F_OFFSET.endOffset() + fileNameLength
                 + extraFieldLength, fileCommentLength).read());
 
-        StoredEntry entry = new StoredEntry(centralDirectoryHeader, mFile, null);
+        StoredEntry entry;
+
+        try {
+            entry = new StoredEntry(centralDirectoryHeader, mFile, null);
+        } catch (IOException e) {
+            throw new IOException("Failed to read stored entry '" + fileName + "'.", e);
+        }
+
         if (mEntries.containsKey(fileName)) {
             throw new IOException("File file contains duplicate file '" + fileName + "'.");
         }

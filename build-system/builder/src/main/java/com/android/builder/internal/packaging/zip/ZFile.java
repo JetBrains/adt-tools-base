@@ -524,7 +524,8 @@ public class ZFile implements Closeable {
         IOException errorFindingSignature = null;
         int eocdStart = -1;
 
-        for (int endIdx = last.length - MIN_EOCD_SIZE; endIdx >= 0; endIdx--) {
+        for (int endIdx = last.length - MIN_EOCD_SIZE; endIdx >= 0 && foundEocdSignature == -1;
+                endIdx--) {
             /*
              * Remember: little endian...
              */

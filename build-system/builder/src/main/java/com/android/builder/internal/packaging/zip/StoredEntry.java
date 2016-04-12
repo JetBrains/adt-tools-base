@@ -258,8 +258,8 @@ public class StoredEntry {
         }
 
         /*
-         * By default we assume there is no data descriptor but we may override this later on if
-         * the CRC is marked as deferred in the header's GP Bit.
+         * By default we assume there is no data descriptor unless the CRC is marked as deferred
+         * in the header's GP Bit.
          */
         mDataDescriptorType = DataDescriptorType.NO_DATA_DESCRIPTOR;
         if (header.getGpBit().isDeferredCrc()) {
@@ -269,7 +269,12 @@ public class StoredEntry {
              */
             Verify.verify(header.getOffset() >= 0, "Files that are not on disk cannot have the "
                     + "deferred CRC bit set.");
-            readDataDescriptorRecord();
+
+            try {
+                readDataDescriptorRecord();
+            } catch (IOException e) {
+                throw new IOException("Failed to read data descriptor record.", e);
+            }
         }
     }
 
