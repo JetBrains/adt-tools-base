@@ -185,7 +185,7 @@ public class TimelineVisualTest extends VisualTest {
         final JPanel panel = new JPanel();
         final JPanel controls = VisualTests.createControlledPane(panel, mTimeline);
 
-        controls.add(VisualTests.createVaribleSlider("Delay", 10, 5000, new VisualTests.Value() {
+        controls.add(VisualTests.createVariableSlider("Delay", 10, 5000, new VisualTests.Value() {
             @Override
             public void set(int v) {
                 delay.set(v);
@@ -196,7 +196,7 @@ public class TimelineVisualTest extends VisualTest {
                 return delay.get();
             }
         }));
-        controls.add(VisualTests.createVaribleSlider("Variance", 0, 50, new VisualTests.Value() {
+        controls.add(VisualTests.createVariableSlider("Variance", 0, 50, new VisualTests.Value() {
             @Override
             public void set(int v) {
                 variance.set(v);
@@ -207,7 +207,7 @@ public class TimelineVisualTest extends VisualTest {
                 return variance.get();
             }
         }));
-        controls.add(VisualTests.createVaribleSlider("Type", 0, 2, new VisualTests.Value() {
+        controls.add(VisualTests.createVariableSlider("Type", 0, 2, new VisualTests.Value() {
             @Override
             public void set(int v) {
                 type.set(v);

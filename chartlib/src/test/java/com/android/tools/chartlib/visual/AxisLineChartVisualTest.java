@@ -167,7 +167,7 @@ public class AxisLineChartVisualTest extends VisualTest {
             }
         }.start();
 
-        controls.add(VisualTests.createVaribleSlider("Delay", 10, 5000, new VisualTests.Value() {
+        controls.add(VisualTests.createVariableSlider("Delay", 10, 5000, new VisualTests.Value() {
             @Override
             public void set(int v) {
                 delay.set(v);
@@ -178,7 +178,7 @@ public class AxisLineChartVisualTest extends VisualTest {
                 return delay.get();
             }
         }));
-        controls.add(VisualTests.createVaribleSlider("Variance", 0, 50, new VisualTests.Value() {
+        controls.add(VisualTests.createVariableSlider("Variance", 0, 50, new VisualTests.Value() {
             @Override
             public void set(int v) {
                 variance.set(v);
