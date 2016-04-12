@@ -261,12 +261,7 @@ public class ManifestMerger2 {
             // when a library failed a placeholder substitution, but the element might have
             // been overridden so the problem was transient. However, with the final document
             // ready, all placeholders values must have been provided.
-            KeyBasedValueResolver<String> placeHolderValueResolver =
-                    new MapBasedKeyBasedValueResolver<String>(mPlaceHolderValues);
-            PlaceholderHandler.visit(
-                    mMergeType,
-                    xmlDocumentOptional.get(),
-                    placeHolderValueResolver,
+            performPlaceHolderSubstitution(loadedMainManifestInfo, xmlDocumentOptional.get(),
                     mergingReportBuilder);
             if (mergingReportBuilder.hasErrors()) {
                 return mergingReportBuilder.build();
@@ -499,9 +494,13 @@ public class ManifestMerger2 {
         }
 
         // check for placeholders presence, switch first the packageName and application id if
-        // it is not explicitly set.
+        // it is not explicitly set, unless dealing with a library. In case of library, the
+        // implicit ${applicationId} (when not provided though the build.gradle) cannot be
+        // set during the initial library manifest file parsing but during the final
+        // placeholder substitution once the application's applicationId is known.
         Map<String, Object> finalPlaceHolderValues = mPlaceHolderValues;
-        if (!mPlaceHolderValues.containsKey(PlaceholderHandler.APPLICATION_ID)) {
+        if ((!mPlaceHolderValues.containsKey(PlaceholderHandler.APPLICATION_ID))
+                && manifestInfo.getType() != XmlDocument.Type.LIBRARY) {
             String packageName = manifestInfo.getMainManifestPackageName().isPresent()
                     ? manifestInfo.getMainManifestPackageName().get()
                     : xmlDocument.getPackageName();
