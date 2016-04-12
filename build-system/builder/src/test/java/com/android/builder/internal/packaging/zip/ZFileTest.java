@@ -34,6 +34,9 @@ import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.base.Strings;
+import com.google.common.hash.HashCode;
+import com.google.common.hash.Hasher;
+import com.google.common.hash.Hashing;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closer;
 import com.google.common.io.Files;
@@ -1102,5 +1105,70 @@ public class ZFileTest {
 
         zip.close();
         executor.shutdownNow();
+    }
+
+    @Test
+    public void zipFileWithEocdMarkerInComment() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "x");
+
+        try (Closer closer = Closer.create()) {
+            ZipOutputStream zos = closer.register(
+                    new ZipOutputStream(new FileOutputStream(zipFile)));
+            zos.setComment("\u0065\u4b50");
+            zos.putNextEntry(new ZipEntry("foo"));
+            zos.write(new byte[] { 1, 2, 3, 4 });
+            zos.close();
+
+            ZFile zf = closer.register(new ZFile(zipFile));
+            StoredEntry entry = zf.get("foo");
+            assertNotNull(entry);
+            assertEquals(4, entry.getCentralDirectoryHeader().getUncompressedSize());
+        }
+    }
+
+    @Test
+    public void zipFileWithEocdMarkerInFileName() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "x");
+
+        String fname = "tricky-\u0050\u004b\u0005\u0006";
+        byte[] bytes = new byte[] { 1, 2, 3, 4 };
+
+        try (Closer closer = Closer.create()) {
+            ZipOutputStream zos = closer.register(
+                    new ZipOutputStream(new FileOutputStream(zipFile)));
+            zos.putNextEntry(new ZipEntry(fname));
+            zos.write(bytes);
+            zos.close();
+
+            ZFile zf = closer.register(new ZFile(zipFile));
+            StoredEntry entry = zf.get(fname);
+            assertNotNull(entry);
+            assertEquals(4, entry.getCentralDirectoryHeader().getUncompressedSize());
+        }
+    }
+
+    @Test
+    public void zipFileWithEocdMarkerInFileContents() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "x");
+
+        byte[] bytes = new byte[] { 0x50, 0x4b, 0x05, 0x06 };
+
+        try (Closer closer = Closer.create()) {
+            ZipOutputStream zos = closer.register(
+                    new ZipOutputStream(new FileOutputStream(zipFile)));
+            ZipEntry zipEntry = new ZipEntry("file");
+            zipEntry.setMethod(ZipEntry.STORED);
+            zipEntry.setCompressedSize(4);
+            zipEntry.setSize(4);
+            zipEntry.setCrc(Hashing.crc32().hashBytes(bytes).padToLong());
+            zos.putNextEntry(zipEntry);
+            zos.write(bytes);
+            zos.close();
+
+            ZFile zf = closer.register(new ZFile(zipFile));
+            StoredEntry entry = zf.get("file");
+            assertNotNull(entry);
+            assertEquals(4, entry.getCentralDirectoryHeader().getUncompressedSize());
+        }
     }
 }
