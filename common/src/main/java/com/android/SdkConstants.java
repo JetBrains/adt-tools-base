@@ -1526,6 +1526,7 @@ public final class SdkConstants {
     public static final String MAPS_ARTIFACT = "com.google.android.gms:play-services";
     public static final String ADS_ARTIFACT = "com.google.android.gms:play-services-ads";
     public static final String LEANBACK_V17_ARTIFACT = "com.android.support:leanback-v17";
+    public static final String ANNOTATIONS_LIB_ARTIFACT = "com.android.support:support-annotations";
 
     // Annotations
     public static final String SUPPORT_ANNOTATIONS_PREFIX = "android.support.annotation.";
