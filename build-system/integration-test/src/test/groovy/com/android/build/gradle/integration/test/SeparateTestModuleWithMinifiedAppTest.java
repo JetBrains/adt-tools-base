@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.test;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 
 import com.android.build.gradle.integration.common.category.DeviceTests;
+import com.android.build.gradle.integration.common.fixture.Adb;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.utils.AssumeUtil;
 import com.android.build.gradle.integration.common.utils.ZipHelper;
@@ -32,6 +33,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.FieldNode;
 
 import java.io.File;
+import java.io.IOException;
 
 /**
  * Test for a separate test module run against the minified app.
@@ -42,6 +44,9 @@ public class SeparateTestModuleWithMinifiedAppTest {
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("separateTestModuleWithMinifiedApp")
             .create();
+
+    @Rule
+    public Adb adb = new Adb();
 
     @Before
     public void buildProject() throws Exception {
@@ -67,8 +72,8 @@ public class SeparateTestModuleWithMinifiedAppTest {
 
     @Test
     @Category(DeviceTests.class)
-    public void checkRunOnDevice() {
-        AssumeUtil.assumeLocalDevice();
+    public void checkRunOnDevice() throws IOException {
+        adb.exclusiveAccess();
         project.execute(":test:connectedAndroidTest");
     }
 }
