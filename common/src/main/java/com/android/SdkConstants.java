@@ -646,8 +646,10 @@ public final class SdkConstants {
         return cmd;
     }
 
-    /** Returns the appropriate name for the 'mksdcard' command, which is 'mksdcard.exe' for
-     * Windows and 'mkdsdcard' for all other platforms. */
+    /**
+     * Returns the appropriate name for the 'mksdcard' command, which is 'mksdcard.exe' for Windows
+     * and 'mksdcard' for all other platforms.
+     */
     public static String mkSdCardCmdName() {
         String os = System.getProperty("os.name");          //$NON-NLS-1$
         String cmd = "mksdcard";                            //$NON-NLS-1$
@@ -1437,9 +1439,13 @@ public final class SdkConstants {
     public static final String GRAVITY_VALUE_CENTER_VERTICAL = "center_vertical";     //$NON-NLS-1$
     public static final String GRAVITY_VALUE_FILL = "fill";                           //$NON-NLS-1$
 
-    public static class TextStyle {
-        public static final String VALUE_BOLD = "bold";                               //$NON-NLS-1$
-        public static final String VALUE_ITALIC = "italic";                           //$NON-NLS-1$
+    public static final class PreferenceTags {
+        public static final String CHECK_BOX_PREFERENCE = "CheckBoxPreference";
+        public static final String EDIT_TEXT_PREFERENCE = "EditTextPreference";
+        public static final String LIST_PREFERENCE = "ListPreference";
+        public static final String MULTI_SELECT_LIST_PREFERENCE = "MultiSelectListPreference";
+        public static final String RINGTONE_PREFERENCE = "RingtonePreference";
+        public static final String SWITCH_PREFERENCE = "SwitchPreference";
     }
 
     // Text Alignment values.
@@ -1452,6 +1458,11 @@ public final class SdkConstants {
         public static final String CENTER = "center";                                 //$NON-NLS-1$
         public static final String VIEW_START = "viewStart";                          //$NON-NLS-1$
         public static final String VIEW_END = "viewEnd";                              //$NON-NLS-1$
+    }
+
+    public static class TextStyle {
+        public static final String VALUE_BOLD = "bold";                               //$NON-NLS-1$
+        public static final String VALUE_ITALIC = "italic";                           //$NON-NLS-1$
     }
 
     /**
