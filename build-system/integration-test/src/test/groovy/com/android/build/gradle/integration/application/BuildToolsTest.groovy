@@ -55,9 +55,16 @@ class BuildToolsTest {
             .add("transformClassesWithDexForDebug")
             .add("transformClassesWithDexForRelease")
             .build()
-    private static final List<String> JACK_TASKS = ImmutableList.builder().add(COMMON_TASKS)
-            .add("jillDebugRuntimeLibraries").add("jillDebugPackagedLibraries")
-            .add("jillReleaseRuntimeLibraries").add("jillReleasePackagedLibraries").build()
+    private static final List<String> JACK_TASKS = ImmutableList.builder()
+            .add(COMMON_TASKS)
+            .add(
+                "transformJackWithJackForRelease",
+                "transformClassesWithJillRuntimeForRelease",
+                "transformClassesWithJillPackagedLibsForRelease",
+                "transformJackWithJackForDebug",
+                "transformClassesWithJillRuntimeForDebug",
+                "transformClassesWithJillPackagedLibsForDebug")
+            .build()
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()

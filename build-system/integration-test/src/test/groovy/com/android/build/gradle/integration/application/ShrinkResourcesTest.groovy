@@ -23,9 +23,9 @@ import com.google.common.base.Joiner
 import com.google.common.collect.Lists
 import com.google.common.io.ByteStreams
 import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
+import org.junit.Assume
+import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 
 import java.util.jar.JarInputStream
@@ -40,30 +40,26 @@ import static java.io.File.separator
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertTrue
-
 /**
  * Assemble tests for shrink.
  */
 @CompileStatic
 class ShrinkResourcesTest {
 
-    @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("shrink")
             .create()
 
-    @BeforeClass
-    static void setUp() {
-        project.execute("clean", "assembleRelease", "assembleDebug", "assembleProguardNoShrink")
-    }
-
-    @AfterClass
-    static void cleanUp() {
-        project = null
+    @Before
+    public void skipOnJack() throws Exception {
+        Assume.assumeFalse(GradleTestProject.USE_JACK);
     }
 
     @Test
     void "check shrink resources"() {
+        project.execute("clean", "assembleRelease", "assembleDebug", "assembleProguardNoShrink")
+
         File intermediates = project.file("build/" + AndroidProject.FD_INTERMEDIATES)
 
         // The release target has shrinking enabled.
