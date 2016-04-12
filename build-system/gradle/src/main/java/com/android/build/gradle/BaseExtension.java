@@ -743,11 +743,7 @@ public abstract class BaseExtension implements AndroidConfig {
     }
 
     public File getDefaultProguardFile(String name) {
-        File sdkDir = sdkHandler.getAndCheckSdkFolder();
-        return new File(sdkDir,
-                SdkConstants.FD_TOOLS + File.separatorChar
-                        + SdkConstants.FD_PROGUARD + File.separatorChar
-                        + name);
+        return ProguardFiles.getDefaultProguardFile(name, project);
     }
 
     // ---------------

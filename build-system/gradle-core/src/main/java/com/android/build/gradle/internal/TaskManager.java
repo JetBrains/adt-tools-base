@@ -35,6 +35,7 @@ import com.android.build.api.transform.Transform;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.builder.model.OptionalCompilationStep;
+import com.android.build.gradle.ProguardFiles;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.coverage.JacocoPlugin;
@@ -2655,8 +2656,8 @@ public abstract class TaskManager {
         transform.setConfigurationFiles(() -> {
             Set<File> proguardFiles = variantConfig.getProguardFiles(
                     true,
-                    Collections.singletonList(getDefaultProguardFile(
-                            TaskManager.DEFAULT_PROGUARD_CONFIG_FILE)));
+                    Collections.singletonList(ProguardFiles.getDefaultProguardFile(
+                            TaskManager.DEFAULT_PROGUARD_CONFIG_FILE, project)));
 
             // use the first output when looking for the proguard rule output of
             // the aapt task. The different outputs are not different in a way that
@@ -2807,13 +2808,6 @@ public abstract class TaskManager {
     @NonNull
     public AndroidTaskRegistry getAndroidTasks() {
         return androidTasks;
-    }
-
-    private File getDefaultProguardFile(String name) {
-        File sdkDir = sdkHandler.getAndCheckSdkFolder();
-        return new File(sdkDir,
-                SdkConstants.FD_TOOLS + File.separatorChar + SdkConstants.FD_PROGUARD
-                        + File.separatorChar + name);
     }
 
     public void addDataBindingDependenciesIfNecessary(DataBindingOptions options) {

@@ -1,0 +1,80 @@
+/*
+ * Copyright (C) 2016 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.android.build.gradle;
+
+import com.android.annotations.NonNull;
+import com.android.builder.Version;
+import com.android.builder.model.AndroidProject;
+import com.android.utils.FileUtils;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.io.Files;
+import com.google.common.io.Resources;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+
+import org.gradle.api.Project;
+
+/**
+ * Deals with the default ProGuard files for Gradle.
+ */
+public class ProguardFiles {
+
+    private static final ImmutableSet<String> DEFAULT_PROGUARD_WHITELIST =
+            ImmutableSet.of("proguard-android.txt", "proguard-android-optimize.txt");
+
+    /**
+     * Creates and returns a new {@link File} with the requested default ProGuard file contents.
+     *
+     * <p><b>Note:</b> If the file is already there it just returns it.
+     *
+     * <p>There are 2 default rules files
+     * <ul>
+     *     <li>proguard-android.txt
+     *     <li>proguard-android-optimize.txt
+     * </ul>
+     *
+     * @param name the name of the default ProGuard file.
+     * @param project used to determine the output location.
+     */
+    public static File getDefaultProguardFile(@NonNull String name, @NonNull Project project) {
+        if (DEFAULT_PROGUARD_WHITELIST.contains(name)) {
+            File proguardFile = FileUtils.join(
+                    project.getRootProject().getBuildDir(),
+                    AndroidProject.FD_INTERMEDIATES,
+                    "proguard-files",
+                    name + "-" + Version.ANDROID_GRADLE_PLUGIN_VERSION);
+
+            if (!proguardFile.exists()) {
+                try {
+                    Files.createParentDirs(proguardFile);
+                    URL proguardURL = ProguardFiles.class.getResource(name);
+                    Resources.asByteSource(proguardURL).copyTo(Files.asByteSink(proguardFile));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            return proguardFile;
+        } else {
+            throw new RuntimeException("User supplied default proguard base extension "
+                    + "name is unsupported. Valid values are: "
+                    + DEFAULT_PROGUARD_WHITELIST);
+        }
+    }
+
+}

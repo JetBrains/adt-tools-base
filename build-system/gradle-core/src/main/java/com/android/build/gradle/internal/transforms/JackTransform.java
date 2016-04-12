@@ -27,6 +27,7 @@ import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInvocation;
 import com.android.build.api.transform.TransformOutputProvider;
+import com.android.build.gradle.ProguardFiles;
 import com.android.build.gradle.internal.CompileOptions;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
@@ -275,10 +276,8 @@ public class JackTransform extends Transform {
             // to query for a proguard file.
             File sdkDir = scope.getGlobalScope().getSdkHandler().getAndCheckSdkFolder();
             checkNotNull(sdkDir);
-            File defaultProguardFile = FileUtils.join(sdkDir,
-                    SdkConstants.FD_TOOLS,
-                    SdkConstants.FD_PROGUARD,
-                    TaskManager.DEFAULT_PROGUARD_CONFIG_FILE);
+            File defaultProguardFile = ProguardFiles.getDefaultProguardFile(
+                    TaskManager.DEFAULT_PROGUARD_CONFIG_FILE, project);
 
             Set<File> proguardFiles = config.getProguardFiles(true /*includeLibs*/,
                     ImmutableList.of(defaultProguardFile));

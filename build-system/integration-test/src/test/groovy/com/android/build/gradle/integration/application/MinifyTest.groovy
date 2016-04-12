@@ -21,6 +21,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.integration.common.truth.ZipFileSubject
 import com.android.build.gradle.integration.common.utils.ZipHelper
+import com.android.builder.Version
 import com.android.builder.model.AndroidProject
 import groovy.transform.CompileStatic
 import org.junit.Before
@@ -30,9 +31,8 @@ import org.junit.experimental.categories.Category
 import org.objectweb.asm.Type
 import org.objectweb.asm.tree.FieldNode
 
-import static com.google.common.truth.Truth.assertThat
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.google.common.truth.TruthJUnit.assume
-
 /**
  * Assemble tests for minify.
  */
@@ -114,4 +114,17 @@ class MinifyTest {
         classes.contains("com/android/tests/basic/Main.class")
         classes.doesNotContain("com/android/tests/basic/MainTest.class")
     }
+
+    @Test
+    void 'Default ProGuard file created'() {
+        File defaultProguardFile = project.file(
+                "build/" +
+                        AndroidProject.FD_INTERMEDIATES +
+                        "/proguard-files" +
+                        "/proguard-android.txt" +
+                        "-" +
+                        Version.ANDROID_GRADLE_PLUGIN_VERSION)
+        assertThat(defaultProguardFile).exists();
+    }
+
 }
