@@ -21,7 +21,6 @@ import static com.android.build.gradle.model.ModelConstants.EXTERNAL_BUILD_CONFI
 import static com.android.build.gradle.model.ModelConstants.NATIVE_DEPENDENCIES;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.NativeDependencyLinkage;
 import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.ProductFlavorCombo;
@@ -47,13 +46,11 @@ import com.android.build.gradle.ndk.internal.StlNativeToolSpecification;
 import com.android.build.gradle.ndk.internal.ToolchainConfiguration;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.VariantConfiguration;
-import com.android.builder.model.AndroidProject;
 import com.android.utils.NativeSourceFileExtensions;
 import com.android.utils.StringHelper;
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
-import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -109,7 +106,6 @@ import org.gradle.platform.base.PlatformContainer;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -560,28 +556,14 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
             }
         }
 
-        @Model("androidInjectedBuildAbi")
-        public static String getBuildAbi(Project project) {
-            return Strings.nullToEmpty(AndroidGradleOptions.getBuildTargetAbi(project));
-        }
-
         @Finalize
-        public static void attachNativeTasksToAndroidBinary(
-                ModelMap<AndroidBinaryInternal> binaries,
-                @Path("androidInjectedBuildAbi") final String buildAbi) {
+        public static void attachNativeTasksToAndroidBinary(ModelMap<AndroidBinaryInternal> binaries) {
             binaries.afterEach(new Action<AndroidBinaryInternal>() {
                 @Override
                 public void execute(AndroidBinaryInternal binary) {
-                    // Only build the first supported ABI of the device.
-                    String deviceAbi = buildAbi.isEmpty()
-                            ? null
-                            : Iterables.getFirst(Arrays.asList(buildAbi.split(",")), null);
                     for (NativeLibraryBinarySpec nativeBinary : binary.getNativeBinaries()) {
-                        List<String> targetAbi = binary.getTargetAbi();
-                        if ((deviceAbi == null
-                                || nativeBinary.getTargetPlatform().getName().equals(deviceAbi))
-                                && (targetAbi.isEmpty()
-                                || targetAbi.contains(nativeBinary.getTargetPlatform().getName()))) {
+                        if (binary.getTargetAbi().isEmpty() || binary.getTargetAbi().contains(
+                                nativeBinary.getTargetPlatform().getName())) {
                             binary.getBuildTask().dependsOn(
                                     NdkNamingScheme.getNdkBuildTaskName(nativeBinary));
                         }
