@@ -804,12 +804,10 @@ public class AppPluginDslTest extends BaseTest {
             for (BaseVariantOutput baseVariantOutput : variant.outputs) {
                 ApkVariantOutput apkVariantOutput = (ApkVariantOutput) baseVariantOutput
 
-                // tested variant are never zipAligned.
-                if (!isTestVariant && variant.buildType.zipAlignEnabled) {
-                    assertNotNull(apkVariantOutput.zipAlign)
-                } else {
-                    assertNull(apkVariantOutput.zipAlign)
-                }
+                /*
+                 * We never generate zipAlign tasks by default.
+                 */
+                assertNull(apkVariantOutput.zipAlign)
             }
         } else {
             assertNull(variant.install)

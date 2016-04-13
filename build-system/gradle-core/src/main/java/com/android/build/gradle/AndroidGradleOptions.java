@@ -36,7 +36,7 @@ import java.util.StringTokenizer;
  */
 public class AndroidGradleOptions {
 
-    private static final boolean DEFAULT_USE_OLD_PACKAGING = true;
+    private static final boolean DEFAULT_USE_OLD_PACKAGING = false;
 
     private static final String PROPERTY_TEST_RUNNER_ARGS =
             "android.testInstrumentationRunnerArguments.";
