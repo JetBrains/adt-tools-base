@@ -18,39 +18,34 @@ package com.android.builder.internal.compiler;
 
 import com.android.annotations.NonNull;
 import com.android.builder.core.AndroidBuilder;
-import com.android.builder.core.DexOptions;
-import com.android.ide.common.process.JavaProcessExecutor;
+import com.android.builder.core.JackProcessOptions;
 import com.android.ide.common.process.ProcessException;
-import com.android.ide.common.process.ProcessOutputHandler;
-import com.android.jill.api.ConfigNotSupportedException;
-import com.android.jill.api.v01.ConfigurationException;
-import com.android.jill.api.v01.TranslationException;
-import com.android.sdklib.BuildToolInfo;
-import com.android.repository.Revision;
-import com.android.utils.ILogger;
+import com.android.jack.api.ConfigNotSupportedException;
+import com.android.jack.api.v01.CompilationException;
+import com.android.jack.api.v01.ConfigurationException;
+import com.android.jack.api.v01.UnrecoverableException;
+import com.android.utils.FileUtils;
 import com.android.utils.Pair;
+import com.google.common.base.Preconditions;
 import com.google.common.io.Files;
-
-import org.w3c.dom.NamedNodeMap;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 
 /**
- * Cache for jar -> jack conversion, using the Jill tool.
+ * Cache for jar -> jack conversion, using the Jack --import tool.
  *
- * Since we cannot yet have a single task for each library that needs to be run through Jill
+ * Since we cannot yet have a single task for each library that needs to be run through Jack
  * (because there is no task-level parallelization), this class allows reusing the output of
- * the jill process for a library in a project in other projects.
+ * the Jack process for a library in a project in other projects.
  *
  * Because different project could use different build-tools, both the library to be converted
  * and the version of the build tools are used as keys in the cache.
  *
- * The API is fairly simple, just call {@link #convertLibrary(File, File, DexOptions, BuildToolInfo, boolean, boolean, JavaProcessExecutor, ProcessOutputHandler, ILogger)}
+ * The API is fairly simple, just call {@link #convertLibrary(AndroidBuilder, File, File, JackProcessOptions, boolean)}
  *
- * The call will be blocking until the conversion happened, either through actually running Jill or
- * through copying the output of a previous Jill run.
+ * The call will be blocking until the conversion happened, either through actually running Jack or
+ * through copying the output of a previous Jack run.
  *
  * After a build a call to {@link #clear(java.io.File, com.android.utils.ILogger)} with a file
  * will allow saving the known converted libraries for future reuse.
@@ -66,41 +61,27 @@ public class JackConversionCache extends PreProcessCache<PreProcessCache.Key> {
     @NonNull
     @Override
     protected KeyFactory<Key> getKeyFactory() {
-        return new KeyFactory<Key>() {
-            @Override
-            public Key of(@NonNull File sourceFile, @NonNull Revision revision,
-                    @NonNull NamedNodeMap attrMap) {
-                return Key.of(sourceFile, revision);
-            }
-        };
+        return (sourceFile, revision, attrMap) -> Key.of(sourceFile, revision);
     }
 
     /**
-     * Converts a given library to a given output with Jill, using a specific version of the
+     * Converts a given library to a given output with Jack, using a specific version of the
      * build-tools.
      *
-     * @param inputFile the jar to pre-dex
-     * @param outFile the output file.
-     * @param dexOptions the dex options to run pre-dex
-     * @param buildToolInfo the build tools info
-     * @param verbose verbose flag
-     * @param processExecutor the java process executor.
      * @throws ProcessException
      */
     public void convertLibrary(
+            @NonNull AndroidBuilder androidBuilder,
             @NonNull File inputFile,
             @NonNull File outFile,
-            @NonNull DexOptions dexOptions,
-            @NonNull BuildToolInfo buildToolInfo,
-            boolean isJackInProcess,
-            boolean verbose,
-            @NonNull JavaProcessExecutor processExecutor,
-            @NonNull ProcessOutputHandler processOutputHandler,
-            @NonNull ILogger logger)
-            throws ProcessException, InterruptedException, IOException, ClassNotFoundException,
-            ConfigNotSupportedException, TranslationException, ConfigurationException {
-
-        Key itemKey = Key.of(inputFile, buildToolInfo.getRevision());
+            @NonNull JackProcessOptions options,
+            boolean isJackInProcess)
+            throws ConfigNotSupportedException, ClassNotFoundException, ConfigurationException,
+            CompilationException, UnrecoverableException, ProcessException, InterruptedException,
+            IOException {
+        Preconditions.checkNotNull(androidBuilder.getTargetInfo());
+        Key itemKey =
+                Key.of(inputFile, androidBuilder.getTargetInfo().getBuildTools().getRevision());
 
         Pair<PreProcessCache.Item, Boolean> pair = getItem(itemKey);
         Item item = pair.getFirst();
@@ -109,29 +90,12 @@ public class JackConversionCache extends PreProcessCache<PreProcessCache.Key> {
         if (pair.getSecond()) {
             try {
                 // haven't process this file yet so do it and record it.
-                List<File> files;
-                if (isJackInProcess) {
-                    files = AndroidBuilder.convertLibraryWithJillUsingApis(
-                            inputFile,
-                            outFile,
-                            buildToolInfo,
-                            verbose,
-                            logger);
-                } else {
-                    files = AndroidBuilder.convertLibraryWithJillUsingCli(
-                            inputFile,
-                            outFile,
-                            dexOptions,
-                            buildToolInfo,
-                            verbose,
-                            processExecutor,
-                            processOutputHandler,
-                            logger);
-                }
-                item.getOutputFiles().addAll(files);
+
+                androidBuilder.convertByteCodeUsingJack(options, isJackInProcess);
+                item.getOutputFiles().add(outFile);
 
                 incrementMisses();
-            } catch (ProcessException exception) {
+            } catch (Exception exception) {
                 // in case of error, delete (now obsolete) output file
                 //noinspection ResultOfMethodCallIgnored - we are throwing an error anyway.
                 outFile.delete();
@@ -150,9 +114,11 @@ public class JackConversionCache extends PreProcessCache<PreProcessCache.Key> {
             // while the api allow for 2+ files, there's only ever one in this case.
             File fromFile = item.getOutputFiles().get(0);
 
-            if (fromFile.isFile()) {
+            if (!fromFile.getCanonicalPath().equals(outFile.getCanonicalPath())
+                    && fromFile.isFile()) {
                 // file already pre-dex, just copy the output.
                 // while the api allow for 2+ files, there's only ever one in this case.
+                FileUtils.mkdirs(outFile.getParentFile());
                 Files.copy(fromFile, outFile);
                 incrementHits();
             }

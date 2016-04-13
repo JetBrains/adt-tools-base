@@ -55,15 +55,14 @@ class BuildToolsTest {
             .add("transformClassesWithDexForDebug")
             .add("transformClassesWithDexForRelease")
             .build()
-    private static final List<String> JACK_TASKS = ImmutableList.builder()
-            .add(COMMON_TASKS)
-            .add(
-                "transformJackWithJackForRelease",
-                "transformClassesWithJillRuntimeForRelease",
-                "transformClassesWithJillPackagedLibsForRelease",
-                "transformJackWithJackForDebug",
-                "transformClassesWithJillRuntimeForDebug",
-                "transformClassesWithJillPackagedLibsForDebug")
+
+    private static final List<String> JACK_TASKS = ImmutableList.builder().add(COMMON_TASKS)
+            .add("transformClassesAndResourcesWithPreDexJackRuntimeLibrariesForDebug")
+            .add("transformClassesAndResourcesWithPreDexJackPackagedLibrariesForDebug")
+            .add("transformJackWithJackForRelease")
+            .add("transformClassesAndResourcesWithPreDexJackRuntimeLibrariesForRelease")
+            .add("transformClassesAndResourcesWithPreDexJackPackagedLibrariesForRelease")
+            .add("transformJackWithJackForDebug")
             .build()
 
     @Rule

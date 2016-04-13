@@ -245,15 +245,6 @@ public interface VariantScope extends BaseScope {
     File getJackEcjOptionsFile();
 
     @NonNull
-    File getJillPackagedLibrariesDir();
-
-    @NonNull
-    File getJillRuntimeLibrariesDir();
-
-    @NonNull
-    File getJackDestinationDir();
-
-    @NonNull
     File getJackClassesZip();
 
     @NonNull
