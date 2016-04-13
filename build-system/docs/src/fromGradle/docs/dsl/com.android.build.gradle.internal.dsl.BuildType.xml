@@ -39,8 +39,6 @@
             <tr><td>resValue</td></tr>
             <tr><td>resValue</td></tr>
             <tr><td>setProguardFiles</td></tr>
-            <tr><td>shrinkResources</td></tr>
-            <tr><td>useJack</td></tr>
         </table>
     </section>
 </section>

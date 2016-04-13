@@ -43,6 +43,7 @@ import java.util.Set;
 /**
  * DSL object used to configure product flavors.
  */
+@SuppressWarnings({"WeakerAccess", "unused"}) // Exposed in the DSL.
 public class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
 
     @NonNull
@@ -75,7 +76,7 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
             @NonNull Instantiator instantiator,
             @NonNull Logger logger,
             @NonNull ErrorReporter errorReporter) {
-        super(name, new VectorDrawablesOptions());
+        super(name, instantiator.newInstance(VectorDrawablesOptions.class));
         this.project = project;
         this.logger = logger;
         this.errorReporter = errorReporter;
@@ -92,13 +93,13 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
         return ndkConfig;
     }
 
-    @Nullable
+    @NonNull
     @Override
     public ExternalNativeNdkBuildOptions getExternalNativeNdkBuildOptions() {
         return externalNativeNdkBuildOptions;
     }
 
-    @Nullable
+    @NonNull
     @Override
     public ExternalNativeCmakeOptions getExternalNativeCmakeOptions() {
         return externalNativeCmakeOptions;
@@ -526,20 +527,6 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
      */
     @Deprecated
     public void setUseJack(Boolean useJack) {
-        LoggingUtil.displayDeprecationWarning(
-                logger, project, "useJack is deprecated.  Use jackOptions.enabled instead.");
-        jackOptions.setEnabled(useJack);
-    }
-
-    /**
-     * Whether the experimental Jack toolchain should be used.
-     *
-     * <p>See <a href="http://tools.android.com/tech-docs/jackandjill">Jack and Jill</a>
-     *
-     * @deprecated use getJack.setEnabled instead.
-     */
-    @Deprecated
-    public void useJack(Boolean useJack) {
         LoggingUtil.displayDeprecationWarning(
                 logger, project, "useJack is deprecated.  Use jackOptions.enabled instead.");
         jackOptions.setEnabled(useJack);

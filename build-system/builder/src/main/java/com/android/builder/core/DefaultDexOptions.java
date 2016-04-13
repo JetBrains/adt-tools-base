@@ -43,7 +43,6 @@ public class DefaultDexOptions implements DexOptions {
 
     private volatile Integer maxProcessCount;
 
-
     public static DefaultDexOptions copyOf(DexOptions dexOptions) {
         DefaultDexOptions result = new DefaultDexOptions();
 
@@ -57,15 +56,6 @@ public class DefaultDexOptions implements DexOptions {
 
         return result;
     }
-
-    /** @deprecated ignored */
-    @Deprecated
-    public boolean getIncremental() {
-        return false;
-    }
-
-    @SuppressWarnings("UnusedParameters")
-    public void setIncremental(boolean ignored) {}
 
     /**
      * Whether to pre-dex libraries. This can improve incremental builds, but clean builds may
@@ -81,7 +71,7 @@ public class DefaultDexOptions implements DexOptions {
     }
 
     /**
-     * Enable jumbo mode in dx (--force-jumbo).
+     * Enable jumbo mode in dx ({@code --force-jumbo}).
      */
     @Override
     public boolean getJumboMode() {
@@ -120,7 +110,7 @@ public class DefaultDexOptions implements DexOptions {
     }
 
     /**
-     * Sets the -JXmx* value when calling dx. Format should follow the 1024M pattern.
+     * Specifies the {@code -Xmx} value when calling dx. Example value is {@code "2048m"}.
      */
     @Nullable
     @Override
@@ -146,11 +136,12 @@ public class DefaultDexOptions implements DexOptions {
     }
 
     /**
-     * Returns the maximum number of concurrent processes that can be used to dex. Defaults to 2.
+     * Returns the maximum number of concurrent processes that can be used to dex. Defaults to 4.
      *
      * <p>Be aware that the number of concurrent process times the memory requirement represent the
      * minimum amount of memory that will be used by the dx processes:
-     * {@code Total Memory = getMaxProcessCount() * getJavaMaxHeapSize()}
+     *
+     * <p>{@code Total Memory = maxProcessCount * javaMaxHeapSize}
      *
      * <p>To avoid trashing, keep these two settings appropriate for your configuration.
      * @return the max number of concurrent dx processes.
