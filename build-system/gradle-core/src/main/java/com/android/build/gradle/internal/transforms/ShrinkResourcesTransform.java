@@ -224,7 +224,12 @@ public class ShrinkResourcesTransform extends Transform {
 
                 // Repackage the resources:
                 Aapt aapt = new AaptV1(androidBuilder.getProcessExecutor(),
-                        new LoggedProcessOutputHandler(androidBuilder.getLogger()));
+                        new LoggedProcessOutputHandler(androidBuilder.getLogger()),
+                        variantData.getScope()
+                                .getGlobalScope()
+                                .getAndroidBuilder()
+                                .getTargetInfo()
+                                .getBuildTools());
                 AaptPackageConfig.Builder aaptPackageConfig = new AaptPackageConfig.Builder()
                         .setManifestFile(mergedManifest)
                         .setOptions(processResourcesTask.getAaptOptions())
