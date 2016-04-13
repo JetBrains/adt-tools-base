@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.LoggingUtil;
+import com.android.build.gradle.internal.aapt.AaptGradleFactory;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
@@ -143,8 +144,7 @@ public class ProcessAndroidResources extends IncrementalTask {
                 new ToolOutputParser(new AaptOutputParser(), getILogger()),
                 new MergingLogRewriter(mergingLog, builder.getErrorReporter()));
 
-        Aapt aapt = new AaptV1(getBuilder().getProcessExecutor(), processOutputHandler,
-                getBuildTools());
+        Aapt aapt = AaptGradleFactory.make(getBuilder(), processOutputHandler);
         AaptPackageConfig.Builder config = new AaptPackageConfig.Builder()
                 .setManifestFile(manifestFileToPackage)
                 .setOptions(getAaptOptions())
