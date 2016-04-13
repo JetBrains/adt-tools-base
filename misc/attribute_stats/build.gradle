@@ -1,0 +1,16 @@
+apply plugin: 'application'
+apply plugin: 'java'
+
+mainClassName = "Analyzer"
+applicationDefaultJvmArgs = ["-ea", "-Xms2048m", "-Xmx2048m"]
+
+sourceCompatibility = 1.6
+
+repositories {
+    jcenter()
+}
+
+defaultTasks 'installDist'
+
+// You can now invoke
+//  [tools/base/misc/attribute_stats/] ./build/install/attribute_stats/bin/attribute_stats <dirs>
