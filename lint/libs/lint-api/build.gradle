@@ -11,7 +11,7 @@ dependencies {
     compile project(':base:builder-model')
 
     compile 'com.android.tools.external.lombok:lombok-ast:0.2.3'
-    compile 'com.android.tools.external.com-intellij:psi-subset:143.1821.5'
+    compile 'com.android.tools.external.com-intellij:uast:145.597.3'
     compile 'org.ow2.asm:asm:5.0.4'
     compile 'org.ow2.asm:asm-tree:5.0.4'
 }

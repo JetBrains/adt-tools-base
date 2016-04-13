@@ -45,7 +45,6 @@ services, the parsers, etc). When lint runs on the command line
 (typically from Gradle), it has its own implementation of the PSI APIs
 sitting on top of ECJ data structures.
 
-
 Note that many PSI classes include parts outside of PSI. For example,
 the core PSI class, PsiElement, has methods like getProject() (which
 points to its project model) and getIcon() (for returning icons
@@ -76,6 +75,13 @@ end of that analysis, we write the resulting classes out to a jar file
 installation). The source directory is only used for output: we write
 the artifact into prebuilts, and the signature file into the
 extraction tool source directory.)
+
+PSI vs UAST
+We will soon have an abstraction API on top of PSI called the UAST.
+Lint will switch to this as soon as possible. To make this upcoming
+switch eaier, this library will package PSI as the first version
+of UAST (e.g. the group id and artifact id is what it will be for
+UAST.)
 
 USAGE:
 
