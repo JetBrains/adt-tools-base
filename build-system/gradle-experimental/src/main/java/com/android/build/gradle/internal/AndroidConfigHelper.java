@@ -47,6 +47,7 @@ import org.gradle.internal.reflect.Instantiator;
 public class AndroidConfigHelper {
     public static void configure(
             @NonNull AndroidConfig model,
+            @NonNull ExtraModelInfo extraModelInfo,
             @NonNull Instantiator instantiator) {
         model.setDefaultPublishConfig(BuilderConstants.RELEASE);
         model.setPublishNonDefault(false);
@@ -54,7 +55,7 @@ public class AndroidConfigHelper {
         model.setDeviceProviders(Lists.<DeviceProvider>newArrayList());
         model.setTestServers(Lists.<TestServer>newArrayList());
         model.setAaptOptions(instantiator.newInstance(AaptOptions.class));
-        model.setDexOptions(instantiator.newInstance(DexOptions.class));
+        model.setDexOptions(instantiator.newInstance(DexOptions.class, extraModelInfo));
         model.setLintOptions(instantiator.newInstance(LintOptions.class));
         model.setTestOptions(instantiator.newInstance(TestOptions.class));
         model.setCompileOptions(instantiator.newInstance(CompileOptions.class));

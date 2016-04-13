@@ -709,7 +709,7 @@ public class AppPluginDslTest extends BaseTest {
 
                 f2  {
                     vectorDrawables {
-                        useSupportLibrary = true
+                        useSupportLibrary true
                     }
                 }
 
@@ -728,7 +728,34 @@ public class AppPluginDslTest extends BaseTest {
         assert project.mergeF2DebugResources.disableVectorDrawables == true
         assert project.mergeF3DebugResources.disableVectorDrawables == false
     }
-    
+
+    /**
+     * Make sure DSL objects don't need "=" everywhere.
+     */
+    public void testSetters() throws Exception {
+        Project project = ProjectBuilder.builder().withProjectDir(
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
+
+        project.apply plugin: 'com.android.application'
+
+        project.android {
+            compileSdkVersion COMPILE_SDK_VERSION
+            buildToolsVersion '20.0.0'
+
+            buildTypes {
+                debug {
+                    useProguard false
+                    shrinkResources true
+                    useJack true
+                }
+            }
+        }
+
+        assert project.android.buildTypes.debug.useProguard == false
+        assert project.android.buildTypes.debug.shrinkResources == true
+        assert project.android.buildTypes.debug.useJack == true
+    }
+
     private static void checkTestedVariant(@NonNull String variantName,
                                            @NonNull String testedVariantName,
                                            @NonNull Collection<ApplicationVariant> variants,

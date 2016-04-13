@@ -25,10 +25,6 @@ import java.util.Arrays;
  */
 public class VectorDrawablesOptions extends DefaultVectorDrawablesOptions {
 
-    public void useSupportLibrary(boolean useSupportLibrary) {
-        setUseSupportLibrary(useSupportLibrary);
-    }
-
     public void generatedDensities(String... densities) {
         setGeneratedDensities(Arrays.asList(densities));
     }
