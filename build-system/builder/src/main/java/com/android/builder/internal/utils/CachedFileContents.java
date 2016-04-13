@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.builder.internal.packaging.zip.utils;
+package com.android.builder.internal.utils;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -30,6 +30,7 @@ import java.io.IOException;
  * A cache for file contents. The cache allows closing a file and saving in memory its contents
  * (or some related information). It can then be used to check if the contents are still valid
  * at some later time. Typical usage flow is:
+ *
  * <p>
  * <pre>
  *    Object fileRepresentation = // ...
@@ -147,6 +148,11 @@ public class CachedFileContents<T> {
         return mCache;
     }
 
+    /**
+     * Computes the hashcode of the cached file.
+     *
+     * @return the hash code
+     */
     @Nullable
     private HashCode hashFile() {
         try {
@@ -154,5 +160,16 @@ public class CachedFileContents<T> {
         } catch (IOException e) {
             return null;
         }
+    }
+
+    /**
+     * Obtains the file used for caching.
+     *
+     * @return the file; this file always exists and contains the old (cached) contents of the
+     * file
+     */
+    @NonNull
+    public File getFile() {
+        return mFile;
     }
 }

@@ -22,10 +22,13 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.packaging.ApkCreator;
-import com.android.builder.packaging.ManifestAttributes;
 import com.android.builder.packaging.ApkCreatorFactory;
-import com.android.builder.packaging.ZipEntryFilter;
+import com.android.builder.packaging.ManifestAttributes;
 import com.android.builder.packaging.ZipAbortException;
+import com.android.builder.packaging.ZipEntryFilter;
+import com.google.common.base.Function;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Predicate;
 import com.google.common.io.Closer;
 
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -166,13 +169,13 @@ public class SignedJarApkCreator implements ApkCreator {
     }
 
     @Override
-    public void writeFile(@NonNull File inputFile, @NonNull String jarPath) throws IOException {
+    public void writeFile(@NonNull File inputFile, @NonNull String apkPath) throws IOException {
         // Get an input stream on the file.
         FileInputStream fis = new FileInputStream(inputFile);
         try {
 
             // create the zip entry
-            JarEntry entry = new JarEntry(jarPath);
+            JarEntry entry = new JarEntry(apkPath);
             entry.setTime(inputFile.lastModified());
 
             writeEntry(fis, entry);
@@ -190,12 +193,15 @@ public class SignedJarApkCreator implements ApkCreator {
      *                           must be aborted.
      */
     public void writeZip(@NonNull File zip) throws IOException, ZipAbortException {
-        writeZip(zip, null);
+        writeZip(zip, null, null);
     }
 
     @Override
-    public void writeZip(@NonNull File zip, @Nullable ZipEntryFilter filter)
-            throws IOException, ZipAbortException {
+    public void writeZip(@NonNull File zip, @Nullable Function<String, String> transform,
+            @Nullable Predicate<String> isIgnored) throws IOException {
+        Preconditions.checkArgument(transform == null, "SignedJarApkCreator does not support "
+                + "name transforms");
+
         Closer closer = Closer.create();
         ZipInputStream zis = closer.register(new ZipInputStream(new FileInputStream(zip)));
 
@@ -236,7 +242,7 @@ public class SignedJarApkCreator implements ApkCreator {
                 }
 
                 // if we have a filter, we check the entry against it
-                if (filter != null && !filter.checkEntry(name)) {
+                if (isIgnored != null && isIgnored.apply(name)) {
                     continue;
                 }
 
@@ -255,7 +261,7 @@ public class SignedJarApkCreator implements ApkCreator {
                 zis.closeEntry();
             }
         } catch (Throwable e) {
-            throw closer.rethrow(e, ZipAbortException.class);
+            throw closer.rethrow(e);
         } finally {
             closer.close();
         }
@@ -433,5 +439,11 @@ public class SignedJarApkCreator implements ApkCreator {
             throw new IllegalArgumentException(
                 "Unsupported key algorithm for signing: " + keyAlgorithm);
         }
+    }
+
+    @Override
+    public void deleteFile(@NonNull String apkPath) throws IOException {
+        throw new UnsupportedOperationException("Cannot call deleteFile on a ApkCreator that "
+                + "does not support updates.");
     }
 }

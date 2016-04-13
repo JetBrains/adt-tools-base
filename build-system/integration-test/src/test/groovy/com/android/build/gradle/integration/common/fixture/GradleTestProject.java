@@ -36,7 +36,6 @@ import com.android.builder.model.SyncIssue;
 import com.android.builder.model.Version;
 import com.android.ide.common.util.ReferenceHolder;
 import com.android.io.StreamException;
-import com.android.repository.Revision;
 import com.android.sdklib.internal.project.ProjectProperties;
 import com.android.sdklib.internal.project.ProjectPropertiesWorkingCopy;
 import com.android.utils.FileUtils;
@@ -61,7 +60,6 @@ import org.gradle.tooling.ResultHandler;
 import org.gradle.tooling.internal.consumer.DefaultGradleConnector;
 import org.gradle.tooling.model.GradleProject;
 import org.gradle.tooling.model.GradleTask;
-import org.junit.Assume;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -580,10 +578,21 @@ public class GradleTestProject implements TestRule {
     }
 
     public File getTestApk(String ... dimensions) {
+        return getTestApkOldPackaging(dimensions);
+    }
+
+    private File getTestApkOldPackaging(String ... dimensions) {
         String[] allDimensions = new String[dimensions.length + 2];
         System.arraycopy(dimensions, 0, allDimensions, 0, dimensions.length);
         allDimensions[allDimensions.length - 2] = "androidTest";
         allDimensions[allDimensions.length - 1] = "unaligned";
+        return getApk(allDimensions);
+    }
+
+    private File getTestApkNewPackaging(String ... dimensions) {
+        String[] allDimensions = new String[dimensions.length + 1];
+        System.arraycopy(dimensions, 0, allDimensions, 0, dimensions.length);
+        allDimensions[allDimensions.length - 1] = "androidTest";
         return getApk(allDimensions);
     }
 

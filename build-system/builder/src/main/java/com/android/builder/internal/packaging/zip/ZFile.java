@@ -19,7 +19,7 @@ package com.android.builder.internal.packaging.zip;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.internal.packaging.zip.utils.ByteTracker;
-import com.android.builder.internal.packaging.zip.utils.CachedFileContents;
+import com.android.builder.internal.utils.CachedFileContents;
 import com.android.builder.internal.packaging.zip.utils.CloseableByteSource;
 import com.android.builder.internal.packaging.zip.utils.LittleEndianUtils;
 import com.android.builder.internal.packaging.zip.utils.RandomAccessFileUtils;
@@ -550,9 +550,14 @@ public class ZFile implements Closeable {
                      */
                     if (eocdStart + eocd.getEocdSize() != mRaf.length()) {
                         throw new IOException("EOCD starts at " + eocdStart + " and has "
-                                + eocd.getEocdSize() + " but file ends at " + mRaf.length() + ".");
+                                + eocd.getEocdSize() + " bytes, but file ends at " + mRaf.length()
+                                + ".");
                     }
                 } catch (IOException e) {
+                    if (errorFindingSignature != null) {
+                        e.addSuppressed(errorFindingSignature);
+                    }
+
                     errorFindingSignature = e;
                     foundEocdSignature = -1;
                     eocd = null;
@@ -722,7 +727,7 @@ public class ZFile implements Closeable {
         }
     }
 
-     /**
+    /**
      * Updates the file writing new entries and removing deleted entries. This will force
      * reopening the file as read/write if the file wasn't open in read/write mode.
      * @throws IOException failed to update the file; this exception may have been thrown by
@@ -1245,11 +1250,11 @@ public class ZFile implements Closeable {
             ListenableFuture<CloseableByteSource> compressedByteSourceFuture =
                     Futures.transform(result,
                             new Function<CompressionResult, CloseableByteSource>() {
-                @Override
-                public CloseableByteSource apply(CompressionResult input) {
-                    return input.getSource();
-                }
-            });
+                                @Override
+                                public CloseableByteSource apply(CompressionResult input) {
+                                    return input.getSource();
+                                }
+                            });
 
             LazyDelegateByteSource compressedByteSource = new LazyDelegateByteSource(
                     compressedByteSourceFuture);
@@ -1419,7 +1424,7 @@ public class ZFile implements Closeable {
         int localHeaderSize = entry.getLocalHeaderSize();
         boolean isCompressed =
                 entry.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod() !=
-                CompressionMethod.STORE;
+                        CompressionMethod.STORE;
         int alignment = mAlignmentRules.alignment(entry.getCentralDirectoryHeader().getName(),
                 isCompressed);
 

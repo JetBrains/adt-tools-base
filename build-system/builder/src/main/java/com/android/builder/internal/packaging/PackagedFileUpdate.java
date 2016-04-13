@@ -30,7 +30,8 @@ import com.google.common.base.Objects;
  * -- the source. The source may, however, no longer exist if the update is a delete.
  *
  * <p>The update also contains the file name in the archive, which may differ from the file name
- * in the actual file, or path in zip.
+ * in the actual file, or path in zip. This will happen, for example, for dex files. Dex files
+ * commonly have different names in the file system and inside the apk.
  */
 class PackagedFileUpdate {
 

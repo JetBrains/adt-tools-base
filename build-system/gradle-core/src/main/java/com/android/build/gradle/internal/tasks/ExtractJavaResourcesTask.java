@@ -76,7 +76,7 @@ public class ExtractJavaResourcesTask extends DefaultAndroidTask {
                 File outputFolder = new File(outputDir, folderName);
                 if (outputFolder.exists()) {
                     try {
-                        FileUtils.deleteFolder(outputFolder);
+                        FileUtils.deletePath(outputFolder);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -122,7 +122,7 @@ public class ExtractJavaResourcesTask extends DefaultAndroidTask {
                 File outputFolder = new File(outputDir, folderName);
                 if (outputFolder.exists()) {
                     try {
-                        FileUtils.deleteFolder(outputFolder);
+                        FileUtils.deletePath(outputFolder);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }

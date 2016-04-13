@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle.integration.packaging
-
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
@@ -31,7 +30,6 @@ import org.junit.Test
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
-
 /**
  * test for packaging of java resources.
  */

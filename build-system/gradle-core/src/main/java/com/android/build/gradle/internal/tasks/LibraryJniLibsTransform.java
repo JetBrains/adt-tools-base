@@ -110,7 +110,7 @@ public class LibraryJniLibsTransform extends Transform {
     public void transform(@NonNull TransformInvocation invocation)
             throws IOException, TransformException, InterruptedException {
 
-        FileUtils.emptyFolder(jniLibsFolder);
+        FileUtils.cleanOutputDir(jniLibsFolder);
 
         for (TransformInput input : invocation.getReferencedInputs()) {
             for (JarInput jarInput : input.getJarInputs()) {

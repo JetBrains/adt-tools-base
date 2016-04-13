@@ -127,7 +127,7 @@ public class InstantRunVerifierTransform extends Transform {
             throws IOException, TransformException, InterruptedException {
 
         if (!isIncremental && outputDir.exists()) {
-            FileUtils.emptyFolder(outputDir);
+            FileUtils.cleanOutputDir(outputDir);
         } else {
             FileUtils.mkdirs(outputDir);
         }

@@ -54,15 +54,25 @@ import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
 /**
- * Class making the final app package.
+ * This is the old implementation of the {@link IncrementalPackager} class maintained to allow
+ * using the old packaging code in case the new one is not usable in some scenario that was not
+ * tested. This class will eventually be removed in a future version (along with all other old
+ * packaging code).
+ *
+ * <p>Previous documentation:
+ *
+ * <p>Class making the final app package.
  * The inputs are:
  * - packaged resources (output of aapt)
  * - code file (output of dx)
  * - Java resources coming from the project, its libraries, and its jar files
  * - Native libraries from the project or its library.
  *
+ * @deprecated the {@link IncrementalPackager} should be used from now one that allows both full
+ * and incremental packaging.
  */
-public final class Packager implements IArchiveBuilder, Closeable {
+@Deprecated
+public final class OldPackager implements IArchiveBuilder, Closeable {
 
     /**
      * Filter to detect duplicate entries
@@ -138,7 +148,8 @@ public final class Packager implements IArchiveBuilder, Closeable {
      * @throws PackagerException failed to create the initial APK
      * @throws IOException failed to create the APK
      */
-    public Packager(@NonNull ApkCreatorFactory.CreationData creationData, @Nullable String resLocation,
+    public OldPackager(@NonNull ApkCreatorFactory.CreationData creationData,
+            @Nullable String resLocation,
             @NonNull ILogger logger) throws PackagerException, IOException {
         checkOutputFile(creationData.getApkPath());
 
@@ -257,8 +268,29 @@ public final class Packager implements IArchiveBuilder, Closeable {
         // reset the filter with this input.
         mNoDuplicateFilter.reset(zipFile);
 
-        // ask the builder to add the content of the file.
-        mApkCreator.writeZip(zipFile, mNoDuplicateFilter);
+        /*
+         * Predicate does not allow exceptions so we mask the ZipAbortException inside a
+         * RuntimeException.
+         */
+        try {
+            // ask the builder to add the content of the file.
+            mApkCreator.writeZip(zipFile, null, new Predicate<String>() {
+                @Override
+                public boolean apply(String input) {
+                    try {
+                        return !mNoDuplicateFilter.checkEntry(input);
+                    } catch (ZipAbortException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+        } catch (RuntimeException e) {
+            if (e.getCause() instanceof ZipAbortException) {
+                throw (ZipAbortException) e.getCause();
+            }
+
+            throw e;
+        }
     }
 
     /**
@@ -286,14 +318,14 @@ public final class Packager implements IArchiveBuilder, Closeable {
      *
      * @param file the archive file (zip)
      * @param modificationType the type of file modification
-     * @param filter the filter to apply to the contents of the archive; the filter is applied
+     * @param isIgnored the filter to apply to the contents of the archive; the filter is applied
      * before processing: filtered out files are exactly the same as inexistent files; the filter
      * applies to the path stored in the zip
      * @throws PackagerException failed to update the package
      */
     public void updateResourceArchive(@NonNull File file,
-            @NonNull FileModificationType modificationType, @NonNull final Predicate<String> filter)
-            throws PackagerException {
+            @NonNull FileModificationType modificationType,
+            @NonNull final Predicate<String> isIgnored) throws PackagerException {
         Preconditions.checkNotNull(mApkCreator, "mApkCreator == null");
 
         if (modificationType == FileModificationType.NEW
@@ -301,23 +333,28 @@ public final class Packager implements IArchiveBuilder, Closeable {
             try {
                 Closer closer = Closer.create();
                 try {
-                    ZipEntryFilter zipFilter = new ZipEntryFilter() {
+                    /*
+                     * Note that ZipAbortException has to be masked because it is not allowed in
+                     * the Predicate interface.
+                     */
+                    Predicate<String> newIsIgnored = new Predicate<String>() {
                         @Override
-                        public boolean checkEntry(String archivePath)
-                                throws ZipAbortException {
-                            if (!mNoJavaClassZipFilter.checkEntry(archivePath)) {
-                                return false;
+                        public boolean apply(String input) {
+                            try {
+                                if (!mNoJavaClassZipFilter.checkEntry(input)) {
+                                    return true;
+                                }
+                            } catch (ZipAbortException e) {
+                                throw new RuntimeException(e);
                             }
 
-                            return filter.apply(archivePath);
+                            return isIgnored.apply(input);
                         }
                     };
 
-                    mApkCreator.writeZip(file, zipFilter);
-                } catch (IOException e) {
-                    throw closer.rethrow(e, IOException.class);
+                    mApkCreator.writeZip(file, null, newIsIgnored);
                 } catch (Throwable t) {
-                    throw closer.rethrow(t);
+                    throw closer.rethrow(t, ZipAbortException.class);
                 } finally {
                     closer.close();
                 }
@@ -415,7 +452,7 @@ public final class Packager implements IArchiveBuilder, Closeable {
     }
 
     public static String getLocalVersion() {
-        Class clazz = Packager.class;
+        Class clazz = IncrementalPackager.class;
         String className = clazz.getSimpleName() + ".class";
         String classPath = clazz.getResource(className).toString();
         if (!classPath.startsWith("jar")) {

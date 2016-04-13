@@ -92,7 +92,7 @@ public class GenerateResValues extends BaseTask {
         List<Object> resolvedItems = getItems();
 
         if (resolvedItems.isEmpty()) {
-            FileUtils.emptyFolder(folder);
+            FileUtils.cleanOutputDir(folder);
         } else {
             ResValueGenerator generator = new ResValueGenerator(folder);
             generator.addItems(getItems());

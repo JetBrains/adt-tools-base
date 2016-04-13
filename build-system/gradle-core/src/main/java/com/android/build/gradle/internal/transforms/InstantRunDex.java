@@ -112,7 +112,7 @@ public class InstantRunDex extends Transform {
         switch(buildType) {
             case RELOAD:
                 if (!changesAreCompatible || restartDexRequested) {
-                    FileUtils.emptyFolder(outputFolder);
+                    FileUtils.cleanOutputDir(outputFolder);
                     return;
                 }
                 break;
@@ -184,7 +184,7 @@ public class InstantRunDex extends Transform {
 
         // if no files were added, clean up and return.
         if (jarClassesBuilder.isEmpty()) {
-            FileUtils.emptyFolder(outputFolder);
+            FileUtils.cleanOutputDir(outputFolder);
             if (!classesJar.delete()) {
                 logger.warning("Cannot delete tmp file : " + classesJar.getAbsolutePath());
             }

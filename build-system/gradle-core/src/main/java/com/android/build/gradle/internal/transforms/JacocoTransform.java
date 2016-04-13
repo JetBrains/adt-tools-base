@@ -153,7 +153,7 @@ public class JacocoTransform extends Transform {
             @NonNull Instrumenter instrumenter,
             @NonNull File inputDir,
             @NonNull File outputDir) throws IOException {
-        FileUtils.emptyFolder(outputDir);
+        FileUtils.cleanOutputDir(outputDir);
         Iterable<File> files = FileUtils.getAllFiles(inputDir);
         for (File inputFile : files) {
             if (!inputFile.getName().endsWith(SdkConstants.DOT_CLASS)) {

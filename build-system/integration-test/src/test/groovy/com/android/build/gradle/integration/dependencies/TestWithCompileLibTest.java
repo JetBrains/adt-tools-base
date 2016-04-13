@@ -56,9 +56,9 @@ public class TestWithCompileLibTest {
     public static void setUp() throws IOException {
         appendToFile(project.getSubproject("app").getBuildFile(),
                 "\n" +
-                "dependencies {\n" +
-                "    androidTestCompile project(\":library\")\n" +
-                "}\n");
+                        "dependencies {\n" +
+                        "    androidTestCompile project(\":library\")\n" +
+                        "}\n");
         models = project.executeAndReturnMultiModel("clean", ":app:assembleDebugAndroidTest");
     }
 
@@ -70,7 +70,7 @@ public class TestWithCompileLibTest {
 
     @Test
     public void checkCompiledLibraryIsPackaged() throws IOException, ProcessException {
-        assertThatApk(project.getSubproject("app").getApk("debug", "androidTest", "unaligned"))
+        assertThatApk(project.getSubproject("app").getTestApk("debug"))
                 .containsClass("Lcom/example/android/multiproject/library/PersonView;");
     }
 

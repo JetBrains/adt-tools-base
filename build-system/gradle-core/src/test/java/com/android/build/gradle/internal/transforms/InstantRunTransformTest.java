@@ -305,7 +305,7 @@ public class InstantRunTransformTest {
         assertFalse("Incremental support class file should have been deleted.", outputFile.exists());
         assertFalse("Enhanced class file should have been deleted.", outputEnhancedFile.exists());
 
-        FileUtils.deleteFolder(tmpFolder);
+        FileUtils.deletePath(tmpFolder);
     }
 
     @Test
