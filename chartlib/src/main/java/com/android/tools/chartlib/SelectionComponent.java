@@ -16,7 +16,6 @@
 package com.android.tools.chartlib;
 
 import com.android.annotations.NonNull;
-import com.android.tools.chartlib.model.UnorderedRange;
 
 import java.awt.Color;
 import java.awt.Cursor;
@@ -44,7 +43,7 @@ public final class SelectionComponent extends AnimatedComponent {
      * ADJUST User is adjusting a end of the selection.
      */
     private enum Mode {
-        OBSERVE, CREATE, MOVE, ADJUST
+        OBSERVE, CREATE, MOVE, ADJUST_MIN, ADJUST_MAX
     }
 
     private Mode mode;
@@ -59,7 +58,7 @@ public final class SelectionComponent extends AnimatedComponent {
      * The range being selected.
      */
     @NonNull
-    private final Range mObserverRange;
+    private final Range mSelectionRange;
 
     /**
      * The global range for clamping selection.
@@ -75,16 +74,12 @@ public final class SelectionComponent extends AnimatedComponent {
     private final Range mViewRange;
 
     /**
-     * Store the current selection value (in range space).
-     */
-    private UnorderedRange mSelectionRange;
-
-    /**
      * Value used when moving the selection as a block: The user never click right in the middle of
      * the selection. This allows to move the block relative to the initial point the selection was
      * "grabbed".
      */
     double mSelectionBlockClickOffset = 0;
+
 
     /**
      * Default drawing Dimension for the handles.
@@ -98,13 +93,10 @@ public final class SelectionComponent extends AnimatedComponent {
             @NonNull Range dataRange,
             @NonNull Range viewRange) {
         mAxis = axis;
-        mObserverRange = selectionRange;
         mDataRange = dataRange;
         mViewRange = viewRange;
         mode = Mode.OBSERVE;
-        mSelectionRange = new UnorderedRange(0);
-
-        // TODO mechanism to cancel/undo the selection.
+        mSelectionRange = selectionRange;
         addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
@@ -113,12 +105,13 @@ public final class SelectionComponent extends AnimatedComponent {
                     return;
                 }
 
-                // Start selection
                 Point mMousePosition = getMouseLocation();
-                mode = setupModeForMousePosition(mMousePosition);
+                mode = getModeForMousePosition(mMousePosition);
                 switch (mode) {
                     case CREATE:
-                        mSelectionRange.reset(mAxis.getValueAtPosition(e.getX()));
+                        double value = mAxis.getValueAtPosition(e.getX());
+                        mSelectionRange.setEmptyAt(value);
+                        mode = Mode.ADJUST_MIN;
                         break;
                     default:
                         break;
@@ -130,17 +123,6 @@ public final class SelectionComponent extends AnimatedComponent {
                 // Just capture events of the left mouse button.
                 if (!(e.getButton() == MouseEvent.BUTTON1)) {
                     return;
-                }
-
-                // End Selection.
-                switch (mode) {
-                    case CREATE:
-                        double value =  mAxis.getValueAtPosition(e.getX());
-                        value = viewRange.clamp(value);
-                        mSelectionRange.setEnd(value);
-                        break;
-                    default:
-                        break;
                 }
                 mode = Mode.OBSERVE;
             }
@@ -159,20 +141,15 @@ public final class SelectionComponent extends AnimatedComponent {
         return new Point(x, y);
     }
 
-    private Mode setupModeForMousePosition(Point mMousePosition) {
-
+    private Mode getModeForMousePosition(Point mMousePosition) {
         // Detect when mouse is over a handle.
         if (getHandleAreaForValue(mSelectionRange.getMax()).contains(mMousePosition)) {
-            // Setup the range so subsequent calls to setEnd in updateData() produce the expected result.
-            mSelectionRange.set(mSelectionRange.getMin(), mSelectionRange.getMax());
-            return Mode.ADJUST;
+            return Mode.ADJUST_MAX;
         }
 
         // Detect when mouse is over the other handle.
         if (getHandleAreaForValue(mSelectionRange.getMin()).contains(mMousePosition)) {
-            // Setup the range so subsequent calls to setEnd in updateData() produce the expected result.
-            mSelectionRange.set(mSelectionRange.getMax(), mSelectionRange.getMin());
-            return Mode.ADJUST;
+            return Mode.ADJUST_MIN;
         }
 
         // Detect mouse between handle.
@@ -180,7 +157,6 @@ public final class SelectionComponent extends AnimatedComponent {
             saveMouseBlockOffset(mMousePosition);
             return Mode.MOVE;
         }
-
         return Mode.CREATE;
     }
 
@@ -195,36 +171,48 @@ public final class SelectionComponent extends AnimatedComponent {
         if (!isShowing()) {
             return;
         }
-        Point mMousePosition = getMouseLocation();
 
-        double value = mAxis.getValueAtPosition(mMousePosition.x);
+        Point mMousePosition = getMouseLocation();
+        double valueAtCursor = mAxis.getValueAtPosition(mMousePosition.x);
 
         // Clamp to data range.
-        if (value > mDataRange.getMax()) {
-            value = mDataRange.getMax();
+        if (valueAtCursor > mDataRange.getMax()) {
+            valueAtCursor = mDataRange.getMax();
         }
-        if (value < mDataRange.getMin()) {
-            value = mDataRange.getMin();
+        if (valueAtCursor < mDataRange.getMin()) {
+            valueAtCursor = mDataRange.getMin();
         }
 
         // Extend view range if necessary
-        if (value > mViewRange.getMax()) {
-            mViewRange.setMax(value);
+        if (valueAtCursor > mViewRange.getMax()) {
+            mViewRange.setMax(valueAtCursor);
         }
-        if (value < mViewRange.getMin()) {
-            mViewRange.setMin(value);
+        if (valueAtCursor < mViewRange.getMin()) {
+            mViewRange.setMin(valueAtCursor);
+        }
+
+        // Check if selection was inverted (min > max or max<min)
+        if (mode == Mode.ADJUST_MIN && valueAtCursor > mSelectionRange.getMax()) {
+            mSelectionRange.flip();
+            mode = Mode.ADJUST_MAX;
+        } else if (mode == Mode.ADJUST_MAX && valueAtCursor < mSelectionRange.getMin()) {
+            mSelectionRange.flip();
+            mode = Mode.ADJUST_MIN;
         }
 
         switch (mode) {
             case CREATE:
-            case ADJUST:
-                mSelectionRange.setEnd(value);
-                mSelectionRange.setEnd(value);
+                break;
+            case ADJUST_MIN:
+                mSelectionRange.setMin(valueAtCursor);
+                break;
+            case ADJUST_MAX:
+                mSelectionRange.setMax(valueAtCursor);
                 break;
             case MOVE:
                 double length = mSelectionRange.getLength();
-                mSelectionRange.set(value + mSelectionBlockClickOffset,
-                        value + mSelectionBlockClickOffset + length);
+                mSelectionRange.set(valueAtCursor + mSelectionBlockClickOffset,
+                        valueAtCursor + mSelectionBlockClickOffset + length);
 
                 // Limit the selection block to viewRange Min
                 if (mSelectionRange.getMin() < mViewRange.getMin()) {
@@ -236,11 +224,6 @@ public final class SelectionComponent extends AnimatedComponent {
                 }
                 break;
         }
-
-        // Notify the observer range.
-        mObserverRange.setMax(mSelectionRange.getMax());
-        mObserverRange.setMin(mSelectionRange.getMin());
-        mObserverRange.lockValues();
     }
 
     private void drawCursor() {
@@ -250,7 +233,7 @@ public final class SelectionComponent extends AnimatedComponent {
         if (getHandleAreaForValue(mSelectionRange.getMax()).contains(mMousePosition) ||
                 getHandleAreaForValue(mSelectionRange.getMin()).contains(mMousePosition)) {
             // Detect mouse over the handles.
-            // TODO: Replace for appropriate cursor.
+            // TODO: Replace with appropriate cursor.
             cursor = Cursor.MOVE_CURSOR;
         } else if (getBetweenHandlesArea().contains(mMousePosition)) {
             // Detect mouse between handles
