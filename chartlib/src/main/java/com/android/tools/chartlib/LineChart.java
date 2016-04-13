@@ -53,9 +53,21 @@ public class LineChart extends AnimatedComponent {
 
     private final ArrayList<Path2D.Float> mPaths;
 
+    /**
+     * Whether the line chart is stepped.
+     * In case it is not, a straight line is drawn between points (e.g. (x0, y0) and (x1, y1)).
+     * Otherwise, a line is drawn from (x0, y0) to (x0, y1) and another one is drawn from (x0, y1)
+     * to (x1, y1).
+     */
+    private boolean mIsStepped = false;
+
     public LineChart(@NonNull LineChartData data) {
         mData = data;
         mPaths = new ArrayList<Path2D.Float>();
+    }
+
+    public void setStepped(boolean isStepped) {
+        mIsStepped = isStepped;
     }
 
     @Override
@@ -101,7 +113,12 @@ public class LineChart extends AnimatedComponent {
                 if (i == 0) {
                     path.moveTo(xd, 1.0f);
                 }
-                path.lineTo(xd, 1.0f - yd);
+                if (mIsStepped) {
+                    path.lineTo(path.getCurrentPoint().getX(), 1.0f - yd);
+                    path.lineTo(xd, 1.0f - yd);
+                } else {
+                    path.lineTo(xd, 1.0f - yd);
+                }
             }
             p++;
         }
