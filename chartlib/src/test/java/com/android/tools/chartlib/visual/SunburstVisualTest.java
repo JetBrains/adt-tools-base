@@ -30,9 +30,12 @@ import java.awt.event.ItemListener;
 import java.util.List;
 import java.util.Random;
 
+import javax.accessibility.Accessible;
 import javax.swing.Box;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSlider;
+import javax.swing.SwingUtilities;
 import javax.swing.tree.DefaultMutableTreeNode;
 
 public class SunburstVisualTest extends VisualTest {
@@ -75,7 +78,8 @@ public class SunburstVisualTest extends VisualTest {
                 return (int) mSunburst.getGap();
             }
         }));
-        controls.add(VisualTests.createVariableSlider("Size", 0, 200, new VisualTests.Value() {
+        final JPanel sizeSlider =
+                VisualTests.createVariableSlider("Size", 0, 200, new VisualTests.Value() {
             @Override
             public void set(int v) {
                 mSunburst.setSliceWidth(v);
@@ -85,7 +89,8 @@ public class SunburstVisualTest extends VisualTest {
             public int get() {
                 return (int) mSunburst.getSliceWidth();
             }
-        }));
+        });
+        controls.add(sizeSlider);
         controls.add(VisualTests.createVariableSlider("Angle", 0, 360, new VisualTests.Value() {
             @Override
             public void set(int v) {
@@ -169,7 +174,19 @@ public class SunburstVisualTest extends VisualTest {
         controls.add(VisualTests.createCheckbox("Auto size", new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent itemEvent) {
-                mSunburst.setAutoSize(itemEvent.getStateChange() == ItemEvent.SELECTED);
+                final boolean enableAutoSize = itemEvent.getStateChange() == ItemEvent.SELECTED;
+                mSunburst.setAutoSize(enableAutoSize);
+                // If auto size is enabled, size shouldn't be controlled by slider
+                // sizeSlider is a JPanel and its first child is a JSlider
+                Accessible sliderAccessible = SwingUtilities.getAccessibleChild(sizeSlider, 0);
+                if (sliderAccessible instanceof JSlider) {
+                    JSlider slider = (JSlider) sliderAccessible;
+                    slider.setEnabled(!enableAutoSize);
+                    // If disabling auto size, set slider width to current slice width
+                    if (!enableAutoSize) {
+                        slider.setValue((int) mSunburst.getSliceWidth());
+                    }
+                }
             }
         }));
         controls.add(
