@@ -152,7 +152,7 @@ public class InstantRunDexTest {
 
     @After
     public void takeDown() throws IOException {
-        FileUtils.deleteFolder(directoryInput);
+        FileUtils.deletePath(directoryInput);
         if (incrementalChanges.isFile()) {
             assertThat(incrementalChanges.delete()).isTrue();
         }

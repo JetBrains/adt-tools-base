@@ -38,17 +38,17 @@ import java.util.jar.Manifest;
 /**
  * Extension to {@link ZFile} that will generate a manifest. The extension will register
  * automatically with the {@link ZFile}.
- * <p>
- * Creating this extension will ensure a manifest for the zip exists.
+ *
+ * <p>Creating this extension will ensure a manifest for the zip exists.
  * This extension will generate a manifest if one does not exist and will update an existing
  * manifest, if one does exist. The extension will also provide access to the manifest so that
  * others may update the manifest.
- * <p>
- * Apart from standard manifest elements, this extension does not handle any particular manifest
+ *
+ * <p>Apart from standard manifest elements, this extension does not handle any particular manifest
  * features such as signing or adding custom attributes. It simply generates a plain manifest and
  * provides infrastructure so that other extensions can add data in the manifest.
- * <p>
- * The manifest itself will only be written when the {@link ZFileExtension#beforeUpdate()}
+ *
+ * <p>The manifest itself will only be written when the {@link ZFileExtension#beforeUpdate()}
  * notification is received, meaning all manifest manipulation is done in-memory.
  */
 public class ManifestGenerationExtension {

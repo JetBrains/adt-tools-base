@@ -241,7 +241,7 @@ public class DexTransform extends Transform {
                 FileUtils.mkdirs(outputDir);
 
                 // first delete the output folder where the final dex file(s) will be.
-                FileUtils.emptyFolder(outputDir);
+                FileUtils.cleanOutputDir(outputDir);
 
                 // gather the inputs. This mode is always non incremental, so just
                 // gather the top level folders/jars
@@ -281,7 +281,7 @@ public class DexTransform extends Transform {
                     perStreamDexFolder = intermediateFolder;
 
                     if (!isIncremental) {
-                        FileUtils.deleteFolder(perStreamDexFolder);
+                        FileUtils.deletePath(perStreamDexFolder);
                     }
                 }
 
@@ -355,7 +355,7 @@ public class DexTransform extends Transform {
 
                 for (final File file : deletedFiles) {
                     executor.execute(() -> {
-                        FileUtils.deleteFolder(file);
+                        FileUtils.deletePath(file);
                         return null;
                     });
                 }
@@ -369,7 +369,7 @@ public class DexTransform extends Transform {
                     FileUtils.mkdirs(outputDir);
 
                     // first delete the output folder where the final dex file(s) will be.
-                    FileUtils.emptyFolder(outputDir);
+                    FileUtils.cleanOutputDir(outputDir);
                     mkdirs(outputDir);
 
                     // find the inputs of the dex merge.
@@ -445,7 +445,7 @@ public class DexTransform extends Transform {
             }
 
             if (to.isDirectory()) {
-                FileUtils.emptyFolder(to);
+                FileUtils.cleanOutputDir(to);
             } else if (to.isFile()) {
                 FileUtils.delete(to);
             } else {

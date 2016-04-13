@@ -165,7 +165,7 @@ public class ManifestMergerTestUtil {
                 @Override
                 public void run() {
                     try {
-                        FileUtils.deleteFolder(tempDir);
+                        FileUtils.deletePath(tempDir);
                     } catch (IOException e) {
                         throw new AssertionError(e);
                     }

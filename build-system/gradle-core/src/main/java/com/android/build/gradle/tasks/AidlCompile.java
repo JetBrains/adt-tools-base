@@ -179,9 +179,9 @@ public class AidlCompile extends IncrementalTask {
         // this is full run, clean the previous output
         File destinationDir = getSourceOutputDir();
         File parcelableDir = getPackagedDir();
-        FileUtils.emptyFolder(destinationDir);
+        FileUtils.cleanOutputDir(destinationDir);
         if (parcelableDir != null) {
-            FileUtils.emptyFolder(parcelableDir);
+            FileUtils.cleanOutputDir(parcelableDir);
         }
 
 

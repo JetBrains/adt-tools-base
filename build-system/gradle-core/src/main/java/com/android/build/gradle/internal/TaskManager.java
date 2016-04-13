@@ -20,7 +20,6 @@ import static com.android.build.OutputFile.DENSITY;
 import static com.android.builder.core.BuilderConstants.CONNECTED;
 import static com.android.builder.core.BuilderConstants.DEVICE;
 import static com.android.builder.core.VariantType.ANDROID_TEST;
-import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Verify.verifyNotNull;
@@ -157,6 +156,7 @@ import com.android.builder.testing.api.TestServer;
 import com.android.manifmerger.ManifestMerger2;
 import com.android.repository.Revision;
 import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.BuildToolInfo;
 import com.android.utils.StringHelper;
 import com.google.common.base.Objects;
 import com.google.common.base.Suppliers;
@@ -2212,20 +2212,27 @@ public abstract class TaskManager {
                 packageApp.dependsOn(tasks, stream.getDependencies());
             }
 
-            AndroidTask appTask = packageApp;
+            AndroidTask<?> appTask = packageApp;
 
+            boolean useOldPackaging = AndroidGradleOptions.useOldPackaging(
+                    variantScope.getGlobalScope().getProject());
             if (signedApk) {
-                if (variantData.getZipAlignEnabled()) {
+                if (useOldPackaging && variantData.getZipAlignEnabled()) {
                     AndroidTask<ZipAlign> zipAlignTask = androidTasks.create(
                             tasks, new ZipAlign.ConfigAction(variantOutputScope));
                     zipAlignTask.dependsOn(tasks, packageApp);
-                    if (variantOutputScope.getSplitZipAlignTask() != null) {
-                        zipAlignTask.dependsOn(tasks, variantOutputScope.getSplitZipAlignTask());
-                    }
 
                     appTask = zipAlignTask;
                 }
 
+                /*
+                 * There may be a zip align task in the variant output scope, even if we don't
+                 * need one for this because we're using new packaging.
+                 */
+                if (variantData.getZipAlignEnabled()
+                        && variantOutputScope.getSplitZipAlignTask() != null) {
+                    appTask.dependsOn(tasks, variantOutputScope.getSplitZipAlignTask());
+                }
             }
 
             checkState(variantScope.getAssembleTask() != null);
@@ -2448,7 +2455,7 @@ public abstract class TaskManager {
         ConventionMappingHelper.map(zipAlignTask, "zipAlignExe", (Callable<File>) () -> {
             final TargetInfo info = androidBuilder.getTargetInfo();
             if (info != null) {
-                String path = info.getBuildTools().getPath(ZIP_ALIGN);
+                String path = info.getBuildTools().getPath(BuildToolInfo.PathId.ZIP_ALIGN);
                 if (path != null) {
                     return new File(path);
                 }

@@ -23,7 +23,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-import com.android.builder.internal.packaging.zip.utils.CachedFileContents;
+import com.android.builder.internal.utils.CachedFileContents;
 import com.google.common.base.Charsets;
 import com.google.common.base.Predicates;
 import com.google.common.hash.Hashing;

@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.scope;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.variant.ApkVariantData;
@@ -32,7 +33,6 @@ import org.gradle.api.DefaultTask;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.List;
 
 /**
  * A scope containing data for a specific variant.
@@ -118,10 +118,16 @@ public class VariantOutputScope implements BaseScope {
     public File getPackageApk() {
         ApkVariantData apkVariantData = (ApkVariantData) variantScope.getVariantData();
 
+        boolean useOldPackaging = AndroidGradleOptions.useOldPackaging(
+                getGlobalScope().getProject());
+
+        // New packaging also signs so eventually I will fix this :)
         boolean signedApk = apkVariantData.isSigned();
         String apkName = signedApk ?
-                getGlobalScope().getProjectBaseName() + "-" + variantOutputData.getBaseName() + "-unaligned.apk" :
-                getGlobalScope().getProjectBaseName() + "-" + variantOutputData.getBaseName() + "-unsigned.apk";
+                getGlobalScope().getProjectBaseName() + "-" + variantOutputData.getBaseName()
+                        + (useOldPackaging? "-unaligned.apk" : ".apk"):
+                getGlobalScope().getProjectBaseName() + "-" + variantOutputData.getBaseName()
+                        + "-unsigned.apk";
 
         // if this is the final task then the location is
         // the potentially overridden one.
@@ -130,7 +136,8 @@ public class VariantOutputScope implements BaseScope {
                     getGlobalScope().getApkLocation() + "/" + apkName);
         } else {
             // otherwise default one.
-            return getGlobalScope().getProject().file(getGlobalScope().getDefaultApkLocation() + "/" + apkName);
+            return getGlobalScope().getProject().file(getGlobalScope().getDefaultApkLocation()
+                    + "/" + apkName);
         }
     }
 

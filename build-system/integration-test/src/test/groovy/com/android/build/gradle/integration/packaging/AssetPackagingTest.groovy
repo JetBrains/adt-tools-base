@@ -15,13 +15,11 @@
  */
 
 package com.android.build.gradle.integration.packaging
-
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject
-import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.utils.FileUtils
 import groovy.transform.CompileStatic
 import org.junit.After
@@ -31,7 +29,6 @@ import org.junit.Test
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
-
 /**
  * test for packaging of asset files.
  */

@@ -81,7 +81,7 @@ public class ProcessJavaResConfigAction implements TaskConfigAction<Sync> {
 
         if (processResources.getInputs().getFiles().getFiles().isEmpty()) {
             try {
-                FileUtils.deleteFolder(scope.getSourceFoldersJavaResDestinationDir());
+                FileUtils.deletePath(scope.getSourceFoldersJavaResDestinationDir());
             } catch (IOException e) {
                 throw new RuntimeException("Cannot delete merged source resource folder", e);
             }

@@ -235,7 +235,7 @@ public class IncrementalVisitor extends ClassVisitor {
 
         File srcLocation = new File(args[0]);
         File baseInstrumentedCompileOutputFolder = new File(args[1]);
-        FileUtils.emptyFolder(baseInstrumentedCompileOutputFolder);
+        FileUtils.cleanOutputDir(baseInstrumentedCompileOutputFolder);
 
         Iterable<String> classPathStrings = Splitter.on(File.pathSeparatorChar).split(args[2]);
         List<URL> classPath = Lists.newArrayList();

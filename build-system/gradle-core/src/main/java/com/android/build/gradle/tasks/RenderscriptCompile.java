@@ -182,16 +182,16 @@ public class RenderscriptCompile extends NdkTask {
             throws IOException, InterruptedException, ProcessException, LoggedErrorException {
         // this is full run (always), clean the previous outputs
         File sourceDestDir = getSourceOutputDir();
-        FileUtils.emptyFolder(sourceDestDir);
+        FileUtils.cleanOutputDir(sourceDestDir);
 
         File resDestDir = getResOutputDir();
-        FileUtils.emptyFolder(resDestDir);
+        FileUtils.cleanOutputDir(resDestDir);
 
         File objDestDir = getObjOutputDir();
-        FileUtils.emptyFolder(objDestDir);
+        FileUtils.cleanOutputDir(objDestDir);
 
         File libDestDir = getLibOutputDir();
-        FileUtils.emptyFolder(libDestDir);
+        FileUtils.cleanOutputDir(libDestDir);
 
         // get the import folders. If the .rsh files are not directly under the import folders,
         // we need to get the leaf folders, as this is what llvm-rs-cc expects.

@@ -19,7 +19,6 @@ package com.android.builder.internal.packaging;
 import com.android.annotations.NonNull;
 import com.android.builder.files.RelativeFile;
 import com.android.ide.common.res2.FileStatus;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 
 import java.util.Map;
@@ -39,7 +38,7 @@ final class PackagedFileUpdates {
      */
     @NonNull
     static Set<PackagedFileUpdate> fromIncrementalRelativeFileSet(
-            @NonNull ImmutableMap<RelativeFile, FileStatus> set) {
+            @NonNull Map<RelativeFile, FileStatus> set) {
         Set<PackagedFileUpdate> r = Sets.newHashSet();
         for (Map.Entry<RelativeFile, FileStatus> entry : set.entrySet()) {
             r.add(new PackagedFileUpdate(entry.getKey(),

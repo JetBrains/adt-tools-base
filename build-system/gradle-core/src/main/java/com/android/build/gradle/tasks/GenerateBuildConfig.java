@@ -183,7 +183,7 @@ public class GenerateBuildConfig extends BaseTask {
         // must clear the folder in case the packagename changed, otherwise,
         // there'll be two classes.
         File destinationDir = getSourceOutputDir();
-        FileUtils.emptyFolder(destinationDir);
+        FileUtils.cleanOutputDir(destinationDir);
 
         BuildConfigGenerator generator = new BuildConfigGenerator(
                 getSourceOutputDir(),

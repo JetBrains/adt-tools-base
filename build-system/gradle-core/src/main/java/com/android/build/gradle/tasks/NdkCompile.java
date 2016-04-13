@@ -207,8 +207,8 @@ public class NdkCompile extends NdkTask {
 
         if (sourceFiles.isEmpty()) {
             makefile.delete();
-            FileUtils.emptyFolder(getSoFolder());
-            FileUtils.emptyFolder(getObjFolder());
+            FileUtils.cleanOutputDir(getSoFolder());
+            FileUtils.cleanOutputDir(getObjFolder());
             return;
         }
 
@@ -225,8 +225,8 @@ public class NdkCompile extends NdkTask {
         if (!inputs.isIncremental()) {
             getLogger().info("Unable do incremental execution: full task run");
             generateMakeFile.setValue(true);
-            FileUtils.emptyFolder(getSoFolder());
-            FileUtils.emptyFolder(getObjFolder());
+            FileUtils.cleanOutputDir(getSoFolder());
+            FileUtils.cleanOutputDir(getObjFolder());
         } else {
             // look for added or removed files *only*
 

@@ -40,7 +40,7 @@ class TransformOutputProviderImpl implements TransformOutputProvider {
 
     @Override
     public void deleteAll() throws IOException {
-        FileUtils.emptyFolder(rootLocation);
+        FileUtils.cleanOutputDir(rootLocation);
     }
 
     @NonNull

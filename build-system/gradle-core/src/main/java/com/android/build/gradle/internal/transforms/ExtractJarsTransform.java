@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.transforms;
 
 import static com.android.utils.FileUtils.delete;
-import static com.android.utils.FileUtils.emptyFolder;
 import static com.android.utils.FileUtils.mkdirs;
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -148,7 +147,7 @@ public class ExtractJarsTransform extends Transform {
                                 executor.execute(new Callable<Void>() {
                                     @Override
                                     public Void call() throws Exception {
-                                        emptyFolder(outJarFolder);
+                                        FileUtils.cleanOutputDir(outJarFolder);
                                         extractJar(outJarFolder, jarFile, extractCode);
                                         return null;
                                     }

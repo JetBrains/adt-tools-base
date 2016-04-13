@@ -155,7 +155,8 @@ public class FullApkSignExtension {
     private void doEntriesWritten() throws IOException {
         if (mNeedsSignatureUpdate || !hasValidSignature()) {
             mComputedSignature = generateSignature();
-            Verify.verify(mComputedSignature.length > 0, "mComputedSignature.length == 0");
+            // FIXME: eventually, when the signature code is done, we can uncomment the verify.
+            // Verify.verify(mComputedSignature.length > 0, "mComputedSignature.length == 0");
             mFile.setExtraDirectoryOffset(mComputedSignature.length);
             mNeedsSignatureUpdate = false;
             mFile.directWrite(mFile.getCentralDirectoryOffset() - mFile.getExtraDirectoryOffset(),

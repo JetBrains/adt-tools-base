@@ -37,7 +37,7 @@ class NdkConnectedCheckTest {
     private static AndroidTestApp app = new HelloWorldJniApp();
     static {
         app.addFile(new TestSourceFile("src/androidTest/jni", "hello-jni-test.c",
-"""
+                """
 #include <string.h>
 #include <jni.h>
 
@@ -48,7 +48,7 @@ Java_com_example_hellojni_HelloJniTest_expectedString(JNIEnv* env, jobject thiz)
 }
 """));
         app.addFile(new TestSourceFile("src/androidTest/java/com/example/hellojni", "HelloJniTest.java",
-"""
+                """
 package com.example.hellojni;
 
 import android.test.ActivityInstrumentationTestCase;
@@ -87,7 +87,7 @@ public class HelloJniTest extends ActivityInstrumentationTestCase<HelloJni> {
     @BeforeClass
     static void setUp() {
         project.getBuildFile() <<
-"""
+                """
 apply plugin: 'com.android.application'
 
 android {
@@ -106,7 +106,7 @@ android {
 
     @Test
     void "check test lib is packaged"() {
-        File apk = project.getApk("debug", "androidTest", "unaligned")
+        File apk = project.getTestApk("debug")
         assertThatZip(apk).contains("lib/x86/libhello-jni_test.so")
     }
 

@@ -142,7 +142,7 @@ public class PackageSplitAbi extends SplitRelatedTask {
                 String apkName = getApkName(matcher.group(1));
 
                 File outFile = new File(getOutputDirectory(), apkName);
-                getBuilder().packageApk(
+                getBuilder().oldPackageApk(
                         file.getAbsolutePath(),
                         ImmutableSet.<File>of(), /* dexFolders */
                         ImmutableList.<File>of(), /* getJavaResourceDir */

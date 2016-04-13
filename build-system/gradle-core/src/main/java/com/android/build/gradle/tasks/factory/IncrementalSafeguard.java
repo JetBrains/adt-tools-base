@@ -81,7 +81,7 @@ public class IncrementalSafeguard extends BaseTask {
         Files.write("incremental task execution", outputFile, Charsets.UTF_8);
         // since we execute, force the recompilation of all the user's classes.
         try {
-            FileUtils.deleteFolder(javaOutputDir);
+            FileUtils.deletePath(javaOutputDir);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

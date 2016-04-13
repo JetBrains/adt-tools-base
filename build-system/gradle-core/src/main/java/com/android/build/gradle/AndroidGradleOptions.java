@@ -36,6 +36,8 @@ import java.util.StringTokenizer;
  */
 public class AndroidGradleOptions {
 
+    private static final boolean DEFAULT_USE_OLD_PACKAGING = true;
+
     private static final String PROPERTY_TEST_RUNNER_ARGS =
             "android.testInstrumentationRunnerArguments.";
 
@@ -112,7 +114,7 @@ public class AndroidGradleOptions {
     }
 
     public static boolean useOldPackaging(@NonNull Project project) {
-        return getBoolean(project, PROPERTY_USE_OLD_PACKAGING, true);
+        return getBoolean(project, PROPERTY_USE_OLD_PACKAGING, DEFAULT_USE_OLD_PACKAGING);
     }
 
     public static boolean keepTimestampsInApk(@NonNull Project project) {

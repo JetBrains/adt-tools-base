@@ -54,7 +54,7 @@ import com.android.builder.internal.compiler.RenderScriptProcessor;
 import com.android.builder.internal.compiler.ShaderProcessor;
 import com.android.builder.internal.compiler.SourceSearcher;
 import com.android.builder.internal.incremental.DependencyData;
-import com.android.builder.internal.packaging.Packager;
+import com.android.builder.internal.packaging.OldPackager;
 import com.android.builder.model.ClassField;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.model.SyncIssue;
@@ -111,7 +111,6 @@ import com.google.common.base.Functions;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Strings;
@@ -160,7 +159,7 @@ import java.util.zip.ZipFile;
  * {@link #processResources(Aapt, AaptPackageConfig.Builder, boolean)}
  * {@link #compileAllAidlFiles(List, File, File, Collection, List, DependencyFileProcessor, ProcessOutputHandler)}
  * {@link #convertByteCode(Collection, File, boolean, File, DexOptions, boolean, boolean, ProcessOutputHandler)}
- * {@link #packageApk(String, Set, Collection, Collection, Set, boolean, SigningConfig, File, int, File)}
+ * {@link #oldPackageApk(String, Set, Collection, Collection, Set, boolean, SigningConfig, File, int, File)}
  *
  * Java compilation is not handled but the builder provides the boot classpath with
  * {@link #getBootClasspath(boolean)}.
@@ -2069,7 +2068,7 @@ public class AndroidBuilder {
      * @throws KeytoolException
      * @throws PackagerException
      */
-    public void packageApk(
+    public void oldPackageApk(
             @NonNull String androidResPkgLocation,
             @NonNull Set<File> dexFolders,
             @NonNull Collection<File> javaResourcesLocations,
@@ -2119,47 +2118,6 @@ public class AndroidBuilder {
         }
 
 
-        packageApkIncrementally(androidResPkgLocation, dexFolders, javaResourceMods,
-                javaResourceArchiveMods, jniMods, jniArchiveMods, nativeLibraryPredicate,
-                signingConfig, outApkLocation, minSdkVersion, intermediateDir);
-    }
-
-    /**
-     * Incrementally packages the apk.
-     *
-     * @param androidResPkgLocation the location of the packaged resource file
-     * @param dexFolders the folder(s) with the dex file(s).
-     * @param javaResources the processed Java resources and their modification status
-     * @param javaResourceArchives the processed archived (zipped) java resources and their
-     * modification status
-     * @param jniLibs the updated JNI libraries mapped to their change type
-     * @param jniLibArchives the archives with JNI libraries mapped to their change type
-     * @param jniLibsFilter filter to use when reading the JNI libs
-     * @param signingConfig the signing configuration
-     * @param outApkLocation location of the APK.
-     * @param intermediateDir a directory where to store intermediate files
-     * @throws FileNotFoundException if the store location was not found
-     * @throws KeytoolException
-     * @throws PackagerException
-     * @throws SigningException when the key cannot be read from the keystore
-     *
-     */
-    public void packageApkIncrementally(
-            @NonNull String androidResPkgLocation,
-            @NonNull Set<File> dexFolders,
-            @NonNull Map<RelativeFile, FileModificationType> javaResources,
-            @NonNull Map<File, FileModificationType> javaResourceArchives,
-            @NonNull Map<RelativeFile, FileModificationType> jniLibs,
-            @NonNull Map<File, FileModificationType> jniLibArchives,
-            @NonNull Predicate<String> jniLibsFilter,
-            @Nullable SigningConfig signingConfig,
-            @NonNull File outApkLocation,
-            int minSdkVersion,
-            @NonNull File intermediateDir)
-            throws KeytoolException, PackagerException, SigningException, IOException {
-        checkNotNull(androidResPkgLocation, "androidResPkgLocation cannot be null.");
-        checkNotNull(outApkLocation, "outApkLocation cannot be null.");
-
         Closer closer = Closer.create();
         try {
             PrivateKey key;
@@ -2187,11 +2145,11 @@ public class AndroidBuilder {
                             null,   // BuiltBy
                             mCreatedBy,
                             minSdkVersion);
-            Packager packager = closer.register(
-                    new Packager(
-                        creationData,
-                        androidResPkgLocation,
-                        mLogger));
+            OldPackager packager = closer.register(
+                    new OldPackager(
+                            creationData,
+                            androidResPkgLocation,
+                            mLogger));
 
             // add dex folder to the apk root.
             if (!dexFolders.isEmpty()) {
@@ -2200,24 +2158,24 @@ public class AndroidBuilder {
 
             // add the output of the java resource merger
             for (Map.Entry<RelativeFile, FileModificationType> resourceUpdate :
-                    javaResources.entrySet()) {
+                    javaResourceMods.entrySet()) {
                 packager.updateResource(resourceUpdate.getKey(), resourceUpdate.getValue());
             }
 
             for (Map.Entry<File, FileModificationType> resourceArchiveUpdate :
-                    javaResourceArchives.entrySet()) {
+                    javaResourceArchiveMods.entrySet()) {
                 packager.updateResourceArchive(resourceArchiveUpdate.getKey(),
-                        resourceArchiveUpdate.getValue(), Predicates.<String>alwaysTrue());
+                        resourceArchiveUpdate.getValue(), Predicates.<String>alwaysFalse());
             }
 
-            for (Map.Entry<RelativeFile, FileModificationType> jniLibUpdates : jniLibs.entrySet()) {
+            for (Map.Entry<RelativeFile, FileModificationType> jniLibUpdates : jniMods.entrySet()) {
                 packager.updateResource(jniLibUpdates.getKey(), jniLibUpdates.getValue());
             }
 
             for (Map.Entry<File, FileModificationType> resourceArchiveUpdate :
-                    jniLibArchives.entrySet()) {
+                    jniArchiveMods.entrySet()) {
                 packager.updateResourceArchive(resourceArchiveUpdate.getKey(),
-                        resourceArchiveUpdate.getValue(), jniLibsFilter);
+                        resourceArchiveUpdate.getValue(), Predicates.not(nativeLibraryPredicate));
             }
 
             packager.close();
@@ -2231,6 +2189,7 @@ public class AndroidBuilder {
         } finally {
             closer.close();
         }
+
     }
 
     /**
@@ -2268,8 +2227,8 @@ public class AndroidBuilder {
 
         Closer closer = Closer.create();
         try {
-            Packager packager = closer.register(new Packager(creationData, androidResPkgLocation,
-                    mLogger));
+            OldPackager packager =
+                    closer.register(new OldPackager(creationData, androidResPkgLocation, mLogger));
 
             packager.addFile(dexFile, "classes.dex");
         } catch (SealedPackageException e) {
@@ -2328,5 +2287,15 @@ public class AndroidBuilder {
         signedJarBuilder.writeZip(in);
         signedJarBuilder.close();
 
+    }
+
+    /**
+     * Obtains the "created by" tag for the packaged manifest.
+     *
+     * @return the "created by" tag or {@code null} if no tag was defined
+     */
+    @Nullable
+    public String getCreatedBy() {
+        return mCreatedBy;
     }
 }
