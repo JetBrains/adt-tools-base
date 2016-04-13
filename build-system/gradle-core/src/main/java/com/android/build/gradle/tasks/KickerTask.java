@@ -17,9 +17,7 @@
 package com.android.build.gradle.tasks;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
-import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.IncrementalTask;
@@ -29,8 +27,6 @@ import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputFile;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.Locale;
 
 /**
  * Generic kicker task that will run at each iteration and possibly block or manually kick any

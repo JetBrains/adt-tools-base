@@ -22,7 +22,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.GuardedBy;
 import com.android.build.gradle.AndroidGradleOptions;
-import com.android.build.gradle.OptionalCompilationStep;
+import com.android.builder.model.OptionalCompilationStep;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.LibraryRequest;
 import com.android.builder.sdk.DefaultSdkLoader;
