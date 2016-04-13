@@ -578,7 +578,7 @@ public class GradleTestProject implements TestRule {
     }
 
     public File getTestApk(String ... dimensions) {
-        return getTestApkOldPackaging(dimensions);
+        return getTestApkNewPackaging(dimensions);
     }
 
     private File getTestApkOldPackaging(String ... dimensions) {
