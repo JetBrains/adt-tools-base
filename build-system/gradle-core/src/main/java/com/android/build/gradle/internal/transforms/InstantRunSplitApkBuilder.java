@@ -29,6 +29,7 @@ import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.tasks.PackageApplication;
+import com.android.builder.core.VariantType;
 import com.android.builder.internal.aapt.Aapt;
 import com.android.builder.internal.aapt.AaptPackageConfig;
 import com.android.builder.internal.aapt.v1.AaptV1;
@@ -226,11 +227,11 @@ public class InstantRunSplitApkBuilder extends BaseTask {
 
         Aapt aapt = new AaptV1(getBuilder().getProcessExecutor(),
                 new LoggedProcessOutputHandler(getILogger()));
-        AaptPackageConfig.Builder aaptConfig = new AaptPackageConfig.Builder();
-        aaptConfig
+        AaptPackageConfig.Builder aaptConfig = new AaptPackageConfig.Builder()
                 .setManifestFile(androidManifest)
                 .setOptions(getAaptOptions())
                 .setDebuggable(true)
+                .setVariantType(VariantType.DEFAULT)
                 .setResourceOutputApk(resFilePackageFile);
 
         getBuilder().processResources(
