@@ -17,14 +17,33 @@
 package com.android.tools.chartlib.visual;
 
 import com.android.annotations.NonNull;
-import com.android.tools.chartlib.*;
-import com.android.tools.chartlib.model.*;
+import com.android.tools.chartlib.AnimatedComponent;
+import com.android.tools.chartlib.AnimatedTimeRange;
+import com.android.tools.chartlib.AxisComponent;
+import com.android.tools.chartlib.Choreographer;
+import com.android.tools.chartlib.StateChart;
+import com.android.tools.chartlib.model.Range;
+import com.android.tools.chartlib.model.RangedDiscreteSeries;
+import com.android.tools.chartlib.model.StateChartData;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.LayoutManager;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JLayeredPane;
+import javax.swing.JPanel;
 
 public class StateChartVisualTest extends VisualTest {
 
@@ -108,8 +127,8 @@ public class StateChartVisualTest extends VisualTest {
     }
 
     @Override
-    public JPanel create() {
-        JPanel panel = new JPanel();
+    protected JPanel create() {
+        final JPanel panel = new JPanel();
         panel.setLayout(new BorderLayout());
 
         JLayeredPane timelinePane = createMockTimeline();

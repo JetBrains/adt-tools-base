@@ -76,8 +76,8 @@ public class LineChartVisualTest extends VisualTest {
     }
 
     @Override
-    public JPanel create() {
-        JPanel panel = new JPanel();
+    protected JPanel create() {
+        final JPanel panel = new JPanel();
         JPanel controls = VisualTests.createControlledPane(panel, mLineChart);
         mLineChart.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
 

@@ -108,7 +108,7 @@ public class TimelineVisualTest extends VisualTest {
     }
 
     @Override
-    public JPanel create() {
+    protected JPanel create() {
         final AtomicInteger streamSize = new AtomicInteger(2);
         final AtomicInteger variance = new AtomicInteger(10);
         final AtomicInteger delay = new AtomicInteger(100);
