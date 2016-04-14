@@ -79,6 +79,10 @@ public final class SelectionComponent extends AnimatedComponent {
         addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
+                // Just capture events of the left mouse button.
+                if (!(e.getButton() == MouseEvent.BUTTON1)) {
+                    return;
+                }
                 // Begin Selection - mark the selection start point.
                 mMousePosition.x = e.getX();
                 mMousePosition.y = e.getY();
@@ -89,6 +93,10 @@ public final class SelectionComponent extends AnimatedComponent {
 
             @Override
             public void mouseReleased(MouseEvent e) {
+                // Just capture events of the left mouse button.
+                if (!(e.getButton() == MouseEvent.BUTTON1)) {
+                    return;
+                }
                 // End Selection.
                 mIsSelecting = false;
             }
