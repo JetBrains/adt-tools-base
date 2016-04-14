@@ -34,6 +34,7 @@ class GradleProcessResult implements ProcessResult {
         this.result = result;
     }
 
+    @NonNull
     @Override
     public ProcessResult assertNormalExitValue() throws ProcessException {
         try {
@@ -50,6 +51,7 @@ class GradleProcessResult implements ProcessResult {
         return result.getExitValue();
     }
 
+    @NonNull
     @Override
     public ProcessResult rethrowFailure() throws ProcessException {
         try {

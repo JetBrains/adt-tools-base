@@ -17,14 +17,18 @@ package com.android.tools.rpclib.schema;
 
 import com.android.tools.rpclib.binary.Decoder;
 import com.android.tools.rpclib.binary.Encoder;
-import com.intellij.util.containers.HashMap;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 public final class ConstantSet {
   private Type mType;
   private Constant[] mEntries;
+  private HashMap<Object, List<Constant>> byValue;
+  private HashMap<String, List<Constant>> byStrValue;
 
   private static final HashMap<Type, ConstantSet> mRegistry = new HashMap<Type, ConstantSet>();
 
@@ -55,6 +59,54 @@ public final class ConstantSet {
     return mEntries;
   }
 
+  private HashMap<Object, List<Constant>> byValue() {
+    if (byValue == null) {
+      // build a map from value (as Object) to List of possible constants.
+      byValue = new HashMap<Object, List<Constant>>();
+      for (Constant constant : mEntries) {
+        List<Constant> list;
+        if (!byValue.containsKey(constant.getValue())) {
+          list = new ArrayList<Constant>();
+          byValue.put(constant.getValue(), list);
+        } else {
+          list = byValue.get(constant.getValue());
+        }
+        list.add(constant);
+      }
+    }
+    return byValue;
+  }
+
+  private HashMap<String, List<Constant>> byStrValue() {
+    if (byStrValue == null) {
+      // build a map from value (as String) to List of possible constants.
+      byStrValue = new HashMap<String, List<Constant>>();
+      for (Constant constant : mEntries) {
+        List<Constant> list;
+        String strVal = constant.getValue().toString();
+        if (!byStrValue.containsKey(strVal)) {
+          list = new ArrayList<Constant>();
+          byStrValue.put(strVal, list);
+        } else {
+          list = byStrValue.get(strVal);
+        }
+        list.add(constant);
+      }
+    }
+    return byStrValue;
+  }
+
+  public List<Constant> getByValue(Object value) {
+    if (mEntries.length == 0) {
+      return null;
+    }
+    if (mEntries[0].getClass() == value.getClass()) {
+      // Prefer an exact match, when possible.
+      return byValue().get(value);
+    } else {
+      return byStrValue().get(value.toString());
+    }
+  }
   public void encode(@NotNull Encoder e) throws IOException {
     mType.encode(e);
     for (Constant mEntry : mEntries) {

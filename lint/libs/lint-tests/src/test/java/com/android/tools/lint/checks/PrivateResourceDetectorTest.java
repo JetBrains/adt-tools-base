@@ -241,7 +241,7 @@ public class PrivateResourceDetectorTest extends AbstractCheckTest {
         MavenCoordinates coordinates = mock(MavenCoordinates.class);
         when(coordinates.getGroupId()).thenReturn(c.getGroupId());
         when(coordinates.getArtifactId()).thenReturn(c.getArtifactId());
-        when(coordinates.getVersion()).thenReturn(c.getFullRevision());
+        when(coordinates.getVersion()).thenReturn(c.getRevision());
         when(library.getResolvedCoordinates()).thenReturn(coordinates);
         when(library.getBundle()).thenReturn(new File("intermediates" + File.separator +
                 "exploded-aar" + File.separator + name));

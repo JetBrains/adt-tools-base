@@ -31,18 +31,23 @@ import java.util.concurrent.ExecutorService;
 public class Broadcaster {
   private final Multiplexer mMultiplexer;
   private final int mMtu;
+  private final int mVersion;
 
   public Broadcaster(@NotNull InputStream in, @NotNull OutputStream out, int mtu,
-                     @NotNull ExecutorService executorService) {
+                     @NotNull ExecutorService executorService,
+                     int version) {
     mMultiplexer = new Multiplexer(in, out, mtu, executorService, null);
     mMtu = mtu;
+    mVersion = version;
   }
 
-  private static void writeHeader(@NotNull Encoder encoder) throws IOException {
+  private void writeHeader(@NotNull Encoder encoder) throws IOException {
+    // GAPIS version 2 supports the 'rpc1' protocol.
+    // Earlier versions will not recognise the new RPC header.
     encoder.int8((byte)'r');
     encoder.int8((byte)'p');
     encoder.int8((byte)'c');
-    encoder.int8((byte)'0');
+    encoder.int8((byte)(mVersion < 2 ? '0' : '1'));
   }
 
   public BinaryObject Send(@NotNull BinaryObject call) throws IOException, RpcException {
@@ -66,8 +71,8 @@ public class Broadcaster {
       BinaryObject res = d.object();
 
       // Check to see if the response was an error
-      if (res instanceof RpcError) {
-        throw new RpcException((RpcError)res);
+      if (res instanceof RpcException) {
+        throw (RpcException)res;
       }
 
       return res;

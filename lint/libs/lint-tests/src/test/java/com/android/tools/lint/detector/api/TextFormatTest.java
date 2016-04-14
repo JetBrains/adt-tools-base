@@ -18,6 +18,7 @@ package com.android.tools.lint.detector.api;
 
 import static com.android.SdkConstants.AUTO_URI;
 import static com.android.tools.lint.detector.api.TextFormat.HTML;
+import static com.android.tools.lint.detector.api.TextFormat.HTML_WITH_UNICODE;
 import static com.android.tools.lint.detector.api.TextFormat.RAW;
 import static com.android.tools.lint.detector.api.TextFormat.TEXT;
 
@@ -36,6 +37,14 @@ public class TextFormatTest extends TestCase {
         assertEquals("foo<br/>\nbar", convertMarkup("foo\nbar", HTML));
         assertEquals("foo<br/>\nbar", convertMarkup("foo\nbar", HTML));
         assertEquals("&lt;&amp;>'\"", convertMarkup("<&>'\"", HTML));
+        assertEquals("&lt;&amp;>'\"", convertMarkup("<&>'\"", HTML_WITH_UNICODE));
+        assertEquals("a\u1234\u2345bc", HTML.convertTo("a&#4660;&#9029;bc", HTML_WITH_UNICODE));
+
+        // Unicode
+        assertEquals("abc&#4660;&#9029;def&lt;",
+                convertMarkup("abc\u1234\u2345def<", HTML));
+        assertEquals("abc\u1234\u2345def&lt;",
+                convertMarkup("abc\u1234\u2345def<", HTML_WITH_UNICODE));
 
         // HTML Formatting
         assertEquals("<code>@TargetApi(11)</code>, ", convertMarkup("`@TargetApi(11)`, ",

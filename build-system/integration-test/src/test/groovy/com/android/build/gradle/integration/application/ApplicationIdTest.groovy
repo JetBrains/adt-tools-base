@@ -23,7 +23,7 @@ import org.junit.Rule
 import org.junit.Test
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
-import static com.android.build.gradle.integration.common.utils.FileHelper.searchAndReplace
+import static com.android.build.gradle.integration.common.utils.TestFileUtils.searchAndReplace
 /**
  * Test setting applicationId and applicationIdSuffix.
  */

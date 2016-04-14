@@ -192,7 +192,7 @@ final class HandleHello extends ChunkHandler {
         finishChunkPacket(packet, CHUNK_HELO, buf.position());
         Log.d("ddm-hello", "Sending " + name(CHUNK_HELO)
             + " ID=0x" + Integer.toHexString(packet.getId()));
-        client.sendAndConsume(packet, mInst);
+        client.send(packet, mInst);
     }
 
     /**
@@ -224,7 +224,7 @@ final class HandleHello extends ChunkHandler {
 
         finishChunkPacket(packet, CHUNK_FEAT, buf.position());
         Log.d("ddm-heap", "Sending " + name(CHUNK_FEAT));
-        client.sendAndConsume(packet, mInst);
+        client.send(packet, mInst);
     }
 }
 

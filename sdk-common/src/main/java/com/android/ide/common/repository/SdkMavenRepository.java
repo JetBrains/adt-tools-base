@@ -24,14 +24,12 @@ import static java.io.File.separatorChar;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.sdklib.repository.FullRevision;
-import com.android.sdklib.repository.NoPreviewRevision;
-import com.android.sdklib.repository.descriptors.IPkgDesc;
-import com.android.sdklib.repository.descriptors.IdDisplay;
-import com.android.sdklib.repository.descriptors.PkgDesc;
-import com.android.sdklib.repository.descriptors.PkgType;
-import com.android.sdklib.repository.local.LocalPkgInfo;
-import com.android.sdklib.repository.local.LocalSdk;
+import com.android.repository.api.ConsoleProgressIndicator;
+import com.android.repository.api.ProgressIndicator;
+import com.android.repository.api.RepoManager;
+import com.android.repository.io.FileOp;
+import com.android.repository.io.FileOpUtils;
+import com.android.sdklib.repositoryv2.AndroidSdkHandler;
 import com.google.common.collect.Lists;
 
 import java.io.File;
@@ -59,17 +57,26 @@ public enum SdkMavenRepository {
     }
 
     /**
+     * @deprecated For testability, use {@link #getRepositoryLocation(File, boolean, FileOp)}.
+     */
+    @Deprecated
+    @Nullable
+    public File getRepositoryLocation(@Nullable File sdkHome, boolean requireExists) {
+        return getRepositoryLocation(sdkHome, requireExists, FileOpUtils.create());
+    }
+
+    /**
      * Returns the location of the repository within a given SDK home
      * @param sdkHome the SDK home, or null
      * @param requireExists if true, the location will only be returned if it also exists
      * @return the location of the this repository within a given SDK
      */
-    @Nullable
-    public File getRepositoryLocation(@Nullable File sdkHome, boolean requireExists) {
+    public File getRepositoryLocation(@Nullable File sdkHome, boolean requireExists,
+            @NonNull FileOp fileOp) {
         if (sdkHome != null) {
             File dir = new File(sdkHome, FD_EXTRAS + separator + mDir
                     + separator + FD_M2_REPOSITORY);
-            if (!requireExists || dir.isDirectory()) {
+            if (!requireExists || fileOp.isDirectory(dir)) {
                 return dir;
             }
         }
@@ -83,40 +90,55 @@ public enum SdkMavenRepository {
      * @param sdkHome the SDK installation location
      * @return true if the repository is installed
      */
-    public boolean isInstalled(@Nullable File sdkHome) {
-        return getRepositoryLocation(sdkHome, true) != null;
+    public boolean isInstalled(@Nullable File sdkHome, @NonNull FileOp fileOp) {
+        return getRepositoryLocation(sdkHome, true, fileOp) != null;
     }
 
     /**
      * Returns true if the given SDK repository is installed
      *
-     * @param sdk the SDK to check
+     * @param sdkHandler the SDK to check
      * @return true if the repository is installed
      */
-    public boolean isInstalled(@Nullable LocalSdk sdk) {
-        if (sdk != null) {
-            LocalPkgInfo[] infos = sdk.getPkgsInfos(PkgType.PKG_EXTRA);
-            for (LocalPkgInfo info : infos) {
-                IPkgDesc d = info.getDesc();
-                //noinspection ConstantConditions,ConstantConditions
-                if (d.hasVendor() && mDir.equals(d.getVendor().getId()) &&
-                        d.hasPath() && FD_M2_REPOSITORY.equals(d.getPath())) {
-                    return true;
-                }
-            }
+    public boolean isInstalled(@Nullable AndroidSdkHandler sdkHandler) {
+        if (sdkHandler != null) {
+            ProgressIndicator progress = new ConsoleProgressIndicator();
+            RepoManager mgr = sdkHandler.getSdkManager(progress);
+            return mgr.getPackages().getLocalPackages().containsKey(getPackageId());
         }
 
         return false;
     }
 
+    public String getPackageId() {
+        return String.format("extras;%s;%s", mDir, FD_M2_REPOSITORY);
+    }
+
+    /**
+     * @deprecated For testability use
+     * {@link #getHighestInstalledVersion(File, String, String, String, boolean, FileOp)}
+     */
+    @Deprecated
+    public GradleCoordinate getHighestInstalledVersion(
+            @Nullable File sdkHome,
+            @NonNull String groupId,
+            @NonNull String artifactId,
+            @Nullable String filter,
+            boolean allowPreview) {
+        return getHighestInstalledVersion(sdkHome, groupId, artifactId, filter, allowPreview,
+                FileOpUtils.create());
+    }
+
     /**
      * Find the best matching {@link GradleCoordinate}
      *
-     * @param sdkHome the SDK installation
-     * @param groupId the artifact group id
-     * @param artifactId the artifact id
-     * @param filter an optional filter which the matched coordinate's version name must start with
+     * @param sdkHome      the SDK installation
+     * @param groupId      the artifact group id
+     * @param artifactId   the artifact id
+     * @param filter       an optional filter which the matched coordinate's version name must start
+     *                     with
      * @param allowPreview whether preview versions are allowed to match
+     * @param fileOp       To allow mocking of filesystem operations.
      * @return the best (highest version) matching coordinate, or null if none were found
      */
     @Nullable
@@ -125,14 +147,31 @@ public enum SdkMavenRepository {
             @NonNull String groupId,
             @NonNull String artifactId,
             @Nullable String filter,
-            boolean allowPreview) {
-        File repository = getRepositoryLocation(sdkHome, true);
+            boolean allowPreview,
+            @NonNull FileOp fileOp) {
+        File repository = getRepositoryLocation(sdkHome, true, fileOp);
         if (repository != null) {
             return getHighestInstalledVersion(groupId, artifactId, repository, filter,
-                    allowPreview);
+                    allowPreview, fileOp);
         }
 
         return null;
+    }
+
+    /**
+     * @deprecated For testability, use
+     * {@link #getHighestInstalledVersion(String, String, File, String, boolean, FileOp)}.
+     */
+    @Deprecated
+    @Nullable
+    public static GradleCoordinate getHighestInstalledVersion(
+            @NonNull String groupId,
+            @NonNull String artifactId,
+            @NonNull File repository,
+            @Nullable String filter,
+            boolean allowPreview) {
+        return getHighestInstalledVersion(groupId, artifactId, repository, filter, allowPreview,
+                FileOpUtils.create());
     }
 
     /**
@@ -151,37 +190,36 @@ public enum SdkMavenRepository {
             @NonNull String artifactId,
             @NonNull File repository,
             @Nullable String filter,
-            boolean allowPreview) {
+            boolean allowPreview,
+            @NonNull FileOp fileOp) {
         assert FD_M2_REPOSITORY.equals(repository.getName()) : repository;
 
         File versionDir = new File(repository,
                 groupId.replace('.', separatorChar) + separator + artifactId);
-        File[] versions = versionDir.listFiles();
-        if (versions != null) {
-            List<GradleCoordinate> versionCoordinates = Lists.newArrayList();
-            for (File dir : versions) {
-                if (!dir.isDirectory()) {
-                    continue;
-                }
-                if (filter != null && !dir.getName().startsWith(filter)) {
-                    continue;
-                }
-                GradleCoordinate gc = GradleCoordinate.parseCoordinateString(
-                        groupId + ":" + artifactId + ":" + dir.getName());
+        File[] versions = fileOp.listFiles(versionDir);
+        List<GradleCoordinate> versionCoordinates = Lists.newArrayList();
+        for (File dir : versions) {
+            if (!fileOp.isDirectory(dir)) {
+                continue;
+            }
+            if (filter != null && !dir.getName().startsWith(filter)) {
+                continue;
+            }
+            GradleCoordinate gc = GradleCoordinate.parseCoordinateString(
+                    groupId + ":" + artifactId + ":" + dir.getName());
 
-                if (gc != null && (allowPreview || !gc.isPreview())) {
-                    if (!allowPreview && "5.2.08".equals(gc.getFullRevision()) &&
-                            "play-services".equals(gc.getArtifactId())) {
-                        // This specific version is actually a preview version which should
-                        // not be used (https://code.google.com/p/android/issues/detail?id=75292)
-                        continue;
-                    }
-                    versionCoordinates.add(gc);
+            if (gc != null && (allowPreview || !gc.isPreview())) {
+                if (!allowPreview && "5.2.08".equals(gc.getRevision()) &&
+                    "play-services".equals(gc.getArtifactId())) {
+                    // This specific version is actually a preview version which should
+                    // not be used (https://code.google.com/p/android/issues/detail?id=75292)
+                    continue;
                 }
+                versionCoordinates.add(gc);
             }
-            if (!versionCoordinates.isEmpty()) {
-                return Collections.max(versionCoordinates, COMPARE_PLUS_HIGHER);
-            }
+        }
+        if (!versionCoordinates.isEmpty()) {
+            return Collections.max(versionCoordinates, COMPARE_PLUS_HIGHER);
         }
 
         return null;
@@ -205,13 +243,5 @@ public enum SdkMavenRepository {
     @NonNull
     public String getDirName() {
         return mDir;
-    }
-
-    /**
-     * @return SDK package description for this repository
-     */
-    public IPkgDesc getPackageDescription() {
-        return PkgDesc.Builder.newExtra(new IdDisplay(mDir, ""), FD_M2_REPOSITORY, myDisplayName,
-                                        null, new NoPreviewRevision(1)).create();
     }
 }

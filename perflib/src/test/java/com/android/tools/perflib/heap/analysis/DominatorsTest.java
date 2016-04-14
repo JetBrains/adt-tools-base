@@ -214,23 +214,23 @@ public class DominatorsTest extends TestCase {
 
         Instance instance9 = mSnapshot.findInstance(9);
         assertNotNull(instance9);
-        assertNotNull(instance9.getSoftReferences());
-        assertEquals(1, instance9.getHardReferences().size());
-        assertEquals(1, instance9.getSoftReferences().size());
+        assertNotNull(instance9.getSoftReverseReferences());
+        assertEquals(1, instance9.getHardReverseReferences().size());
+        assertEquals(1, instance9.getSoftReverseReferences().size());
         assertEquals(6, instance9.getDistanceToGcRoot());
 
         Instance instance10 = mSnapshot.findInstance(10);
         assertNotNull(instance10);
-        assertNotNull(instance10.getSoftReferences());
-        assertEquals(1, instance10.getHardReferences().size());
-        assertEquals(1, instance10.getSoftReferences().size());
+        assertNotNull(instance10.getSoftReverseReferences());
+        assertEquals(1, instance10.getHardReverseReferences().size());
+        assertEquals(1, instance10.getSoftReverseReferences().size());
         assertEquals(4, instance10.getDistanceToGcRoot());
 
         Instance instance11 = mSnapshot.findInstance(11);
         assertNotNull(instance11);
-        assertNotNull(instance11.getSoftReferences());
-        assertEquals(0, instance11.getHardReferences().size());
-        assertEquals(1, instance11.getSoftReferences().size());
+        assertNotNull(instance11.getSoftReverseReferences());
+        assertEquals(0, instance11.getHardReverseReferences().size());
+        assertEquals(1, instance11.getSoftReverseReferences().size());
         assertEquals(Integer.MAX_VALUE, instance11.getDistanceToGcRoot());
 
         assertEquals(13, mSnapshot.getReachableInstances().size());
@@ -246,7 +246,7 @@ public class DominatorsTest extends TestCase {
 
         long totalInstanceCount = 0;
         for (Heap heap : mSnapshot.getHeaps()) {
-            totalInstanceCount += heap.getInstances().size();
+            totalInstanceCount += heap.getInstancesCount();
             totalInstanceCount += heap.getClasses().size();
         }
         assertEquals(43687, totalInstanceCount);
@@ -269,6 +269,9 @@ public class DominatorsTest extends TestCase {
         ClassObj activityThread = mSnapshot.findClass("android.app.ActivityThread");
         assertEquals(853, activityThread.getRetainedSize(zygoteIndex));
         assertEquals(576, activityThread.getRetainedSize(appIndex));
+
+        mSnapshot.dispose();
+        mSnapshot = null;
     }
 
     /**

@@ -147,7 +147,7 @@ public final class Log {
     private static ILogOutput sLogOutput;
 
     @NonNull
-    private static final Set<ILogOutput> sOutputLoggers = Sets.newHashSet();
+    private static final Set<ILogOutput> sOutputLoggers = Sets.newCopyOnWriteArraySet();
 
     private static final char[] mSpaceLine = new char[72];
     private static final char[] mHexDigit = new char[]

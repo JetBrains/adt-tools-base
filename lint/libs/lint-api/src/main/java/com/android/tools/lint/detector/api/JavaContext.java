@@ -30,15 +30,21 @@ import com.google.common.collect.Iterators;
 import java.io.File;
 import java.util.Iterator;
 
+import lombok.ast.AnnotationElement;
+import lombok.ast.AnnotationMethodDeclaration;
 import lombok.ast.ClassDeclaration;
 import lombok.ast.ConstructorDeclaration;
 import lombok.ast.ConstructorInvocation;
 import lombok.ast.EnumConstant;
 import lombok.ast.Expression;
+import lombok.ast.LabelledStatement;
 import lombok.ast.MethodDeclaration;
 import lombok.ast.MethodInvocation;
 import lombok.ast.Node;
 import lombok.ast.Position;
+import lombok.ast.TypeDeclaration;
+import lombok.ast.VariableDeclaration;
+import lombok.ast.VariableReference;
 
 /**
  * A {@link Context} used when checking Java files.
@@ -88,6 +94,39 @@ public class JavaContext extends Context {
     @NonNull
     public Location getLocation(@NonNull Node node) {
         return mParser.getLocation(this, node);
+    }
+
+    /**
+     * Returns a location for the given node range (from the starting offset of the first node to
+     * the ending offset of the second node).
+     *
+     * @param from      the AST node to get a starting location from
+     * @param fromDelta Offset delta to apply to the starting offset
+     * @param to        the AST node to get a ending location from
+     * @param toDelta   Offset delta to apply to the ending offset
+     * @return a location for the given node
+     */
+    @NonNull
+    public Location getRangeLocation(
+            @NonNull Node from,
+            int fromDelta,
+            @NonNull Node to,
+            int toDelta) {
+        return mParser.getRangeLocation(this, from, fromDelta, to, toDelta);
+    }
+
+    /**
+     * Returns a {@link Location} for the given node. This attempts to pick a shorter
+     * location range than the entire node; for a class or method for example, it picks
+     * the name node (if found). For statement constructs such as a {@code switch} statement
+     * it will highlight the keyword, etc.
+     *
+     * @param node the AST node to create a location for
+     * @return a location for the given node
+     */
+    @NonNull
+    public Location getNameLocation(@NonNull Node node) {
+        return mParser.getNameLocation(this, node);
     }
 
     @NonNull
@@ -242,6 +281,38 @@ public class JavaContext extends Context {
         } else {
             return null;
         }
+    }
+
+    /**
+     * Searches for a name node corresponding to the given node
+     * @return the name node to use, if applicable
+     */
+    @Nullable
+    public static Node findNameNode(@NonNull Node node) {
+        if (node instanceof TypeDeclaration) {
+            // ClassDeclaration, AnnotationDeclaration, EnumDeclaration, InterfaceDeclaration
+            return ((TypeDeclaration) node).astName();
+        } else if (node instanceof MethodDeclaration) {
+            return ((MethodDeclaration)node).astMethodName();
+        } else if (node instanceof ConstructorDeclaration) {
+            return ((ConstructorDeclaration)node).astTypeName();
+        } else if (node instanceof MethodInvocation) {
+            return ((MethodInvocation)node).astName();
+        } else if (node instanceof ConstructorInvocation) {
+            return ((ConstructorInvocation)node).astTypeReference();
+        } else if (node instanceof EnumConstant) {
+            return ((EnumConstant)node).astName();
+        } else if (node instanceof AnnotationElement) {
+            return ((AnnotationElement)node).astName();
+        } else if (node instanceof AnnotationMethodDeclaration) {
+            return ((AnnotationMethodDeclaration)node).astMethodName();
+        } else if (node instanceof VariableReference) {
+            return ((VariableReference)node).astIdentifier();
+        } else if (node instanceof LabelledStatement) {
+            return ((LabelledStatement)node).astLabel();
+        }
+
+        return null;
     }
 
     @NonNull

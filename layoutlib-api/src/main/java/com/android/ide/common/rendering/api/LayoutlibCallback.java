@@ -21,6 +21,7 @@ import com.android.resources.ResourceType;
 import com.android.util.Pair;
 
 import org.intellij.lang.annotations.MagicConstant;
+import org.xmlpull.v1.XmlPullParser;
 
 /**
  * Intermediary class implementing parts of both the old and new ProjectCallback from the
@@ -98,6 +99,15 @@ public abstract class LayoutlibCallback implements IProjectCallback,
     @NonNull
     public Class<?> findClass(@NonNull String name) throws ClassNotFoundException {
         throw new ClassNotFoundException(name + " not found.");
+    }
+
+  /**
+   * Returns an {@link XmlPullParser} for the psi version of an xml file
+   * @param fileName name of the file to parse
+   */
+    @Nullable
+    public XmlPullParser getXmlFileParser(String fileName) {
+        return null;
     }
 
     // ------ implementation of the old interface using the new interface.

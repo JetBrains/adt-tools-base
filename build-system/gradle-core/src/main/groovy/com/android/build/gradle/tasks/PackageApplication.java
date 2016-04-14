@@ -1,11 +1,14 @@
 package com.android.build.gradle.tasks;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.annotations.ApkFile;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.dsl.CoreSigningConfig;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.FilterableStreamCollection;
 import com.android.build.gradle.internal.pipeline.TransformManager;
@@ -16,16 +19,20 @@ import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.FileSupplier;
 import com.android.build.gradle.internal.tasks.IncrementalTask;
 import com.android.build.gradle.internal.tasks.ValidateSigningTask;
+import com.android.build.gradle.internal.transforms.InstantRunSlicer;
 import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.QualifiedContent.ContentType;
 import com.android.build.api.transform.QualifiedContent.Scope;
+import com.android.builder.model.ApiVersion;
 import com.android.builder.packaging.DuplicateFileException;
 import com.android.utils.StringHelper;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.io.Files;
 
 import org.gradle.api.Task;
 import org.gradle.api.logging.Logger;
@@ -38,14 +45,42 @@ import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.tooling.BuildException;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 @ParallelizableTask
 public class PackageApplication extends IncrementalTask implements FileSupplier {
+
+    public enum DexPackagingPolicy {
+        /**
+         * Standard Dex packaging policy, all dex files will be packaged at the root of the APK.
+         */
+        STANDARD,
+
+        /**
+         * InstantRun specific Dex packaging policy, all dex files with a name containing
+         * {@link InstantRunSlicer#MAIN_SLICE_NAME} will be packaged at the root of the APK while
+         * all other dex files will be packaged in a instant-run.zip itself packaged at the root
+         * of the APK.
+         */
+        INSTANT_RUN
+    }
+
+    public static final String INSTANT_RUN_PACKAGES_PREFIX = "instant-run";
+
+    private boolean useOldPackaging;
 
     public static final FilterableStreamCollection.StreamFilter sDexFilter =
             new TransformManager.StreamFilter() {
@@ -141,6 +176,12 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
 
     private PackagingOptions packagingOptions;
 
+    private ApiVersion minSdkVersion;
+
+    private InstantRunBuildContext instantRunContext;
+
+    private File instantRunSupportDir;
+
     @Input
     public boolean getJniDebugBuild() {
         return jniDebugBuild;
@@ -173,19 +214,75 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
         this.packagingOptions = packagingOptions;
     }
 
+    @Input
+    public int getMinSdkVersion() {
+        return this.minSdkVersion.getApiLevel();
+    }
+
+    public void setMinSdkVersion(ApiVersion version) {
+        this.minSdkVersion = version;
+    }
+
+    @InputFile
+    public File getMarkerFile() {
+        return markerFile;
+    }
+
+    private File markerFile;
+
+    DexPackagingPolicy dexPackagingPolicy;
+
+    @Input
+    String getDexPackagingPolicy() {
+        return dexPackagingPolicy.toString();
+    }
+
     @Override
     protected void doFullTaskAction() {
+
+        // if the blocker file is there, do not run.
+        if (getMarkerFile().exists()) {
+            try {
+                if (MarkerFile.readMarkerFile(getMarkerFile()) == MarkerFile.Command.BLOCK) {
+                    return;
+                }
+            } catch (IOException e) {
+                getLogger().warn("Cannot read marker file, proceed with execution", e);
+            }
+        }
+
         try {
+
+            ImmutableSet.Builder<File> dexFoldersForApk = ImmutableSet.builder();
+            ImmutableList.Builder<File> javaResourcesForApk = ImmutableList.builder();
+
             Collection<File> javaResourceFiles = getJavaResourceFiles();
+            if (javaResourceFiles != null) {
+                javaResourcesForApk.addAll(javaResourceFiles);
+            }
+            switch(dexPackagingPolicy) {
+                case INSTANT_RUN:
+                    File zippedDexes = zipDexesForInstantRun(getDexFolders(), dexFoldersForApk);
+                    javaResourcesForApk.add(zippedDexes);
+                    break;
+                case STANDARD:
+                    dexFoldersForApk.addAll(getDexFolders());
+                    break;
+                default:
+                    throw new RuntimeException(
+                            "Unhandled DexPackagingPolicy : " + getDexPackagingPolicy());
+            }
+
             getBuilder().packageApk(
                     getResourceFile().getAbsolutePath(),
-                    getDexFolders(),
-                    javaResourceFiles == null ? ImmutableList.<File>of() : javaResourceFiles,
+                    dexFoldersForApk.build(),
+                    javaResourcesForApk.build(),
                     getJniFolders(),
                     getAbiFilters(),
                     getJniDebugBuild(),
                     getSigningConfig(),
-                    getOutputFile().getAbsolutePath());
+                    getOutputFile().getAbsolutePath(),
+                    getMinSdkVersion());
         } catch (DuplicateFileException e) {
             Logger logger = getLogger();
             logger.error("Error: duplicate files during packaging of APK " + getOutputFile()
@@ -203,8 +300,78 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
             logger.error("\t}");
             throw new BuildException(e.getMessage(), e);
         } catch (Exception e) {
+            //noinspection ThrowableResultOfMethodCallIgnored
+            Throwable rootCause = Throwables.getRootCause(e);
+            if (rootCause instanceof NoSuchAlgorithmException) {
+                throw new BuildException(
+                        rootCause.getMessage() + ": try using a newer JVM to build your application.",
+                        rootCause);
+            }
             throw new BuildException(e.getMessage(), e);
         }
+        // mark this APK production, this will eventually be saved when instant-run is enabled.
+        // this might get overriden if the apk is signed/aligned.
+        try {
+            instantRunContext.addChangedFile(InstantRunBuildContext.FileType.MAIN,
+                    getOutputFile());
+        } catch (IOException e) {
+            throw new BuildException(e.getMessage(), e);
+        }
+    }
+
+    private File zipDexesForInstantRun(Iterable<File> dexFolders,
+            ImmutableSet.Builder<File> dexFoldersForApk)
+            throws IOException {
+
+        File tmpZipFile = new File(instantRunSupportDir, "classes.zip");
+        Files.createParentDirs(tmpZipFile);
+        ZipOutputStream zipFile = new ZipOutputStream(
+                new BufferedOutputStream(new FileOutputStream(tmpZipFile)));
+        // no need to compress a zip, the APK itself gets compressed.
+        zipFile.setLevel(0);
+
+        try {
+            for (File dexFolder : dexFolders) {
+                if (dexFolder.getName().contains(INSTANT_RUN_PACKAGES_PREFIX)) {
+                    dexFoldersForApk.add(dexFolder);
+                } else {
+                    for (File file : Files.fileTreeTraverser().breadthFirstTraversal(dexFolder)) {
+                        if (file.isFile() && file.getName().endsWith(SdkConstants.DOT_DEX)) {
+                            // There are several pieces of code in the runtime library which depends on
+                            // this exact pattern, so it should not be changed without thorough testing
+                            // (it's basically part of the contract).
+                            String entryName = file.getParentFile().getName() + "-" + file.getName();
+                            zipFile.putNextEntry(new ZipEntry(entryName));
+                            try {
+                                Files.copy(file, zipFile);
+                            } finally {
+                                zipFile.closeEntry();
+                            }
+                        }
+
+                    }
+                }
+            }
+        } finally {
+            zipFile.close();
+        }
+
+        // now package that zip file as a zip since this is what the packager is expecting !
+        File finalResourceFile = new File(instantRunSupportDir, "resources.zip");
+        zipFile = new ZipOutputStream(new BufferedOutputStream(
+                new FileOutputStream(finalResourceFile)));
+        try {
+            zipFile.putNextEntry(new ZipEntry("instant-run.zip"));
+            try {
+                Files.copy(tmpZipFile, zipFile);
+            } finally {
+                zipFile.closeEntry();
+            }
+        } finally {
+            zipFile.close();
+        }
+
+        return finalResourceFile;
     }
 
     // ----- FileSupplierTask -----
@@ -224,10 +391,12 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
 
     public static class ConfigAction implements TaskConfigAction<PackageApplication> {
 
-        private VariantOutputScope scope;
+        private final VariantOutputScope scope;
+        private final DexPackagingPolicy dexPackagingPolicy;
 
-        public ConfigAction(VariantOutputScope scope) {
+        public ConfigAction(VariantOutputScope scope, DexPackagingPolicy dexPackagingPolicy) {
             this.scope = scope;
+            this.dexPackagingPolicy = dexPackagingPolicy;
         }
 
         @NonNull
@@ -243,7 +412,7 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
         }
 
         @Override
-        public void execute(@NonNull PackageApplication packageApp) {
+        public void execute(@NonNull final PackageApplication packageApp) {
             final VariantScope variantScope = scope.getVariantScope();
             final ApkVariantData variantData = (ApkVariantData) variantScope.getVariantData();
             final ApkVariantOutputData variantOutputData = (ApkVariantOutputData) scope
@@ -254,9 +423,14 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
             packageApp.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             packageApp.setVariantName(
                     variantScope.getVariantConfiguration().getFullName());
+            packageApp.setMinSdkVersion(config.getMinSdkVersion());
+            packageApp.instantRunContext = variantScope.getInstantRunBuildContext();
+            packageApp.dexPackagingPolicy = dexPackagingPolicy;
+            packageApp.instantRunSupportDir = variantScope.getInstantRunSupportDir();
 
-            if (config.isMinifyEnabled() && config.getBuildType().isShrinkResources() && !config
-                    .getUseJack()) {
+            if (config.isMinifyEnabled()
+                    && config.getBuildType().isShrinkResources()
+                    && !config.getUseJack()) {
                 ConventionMappingHelper.map(packageApp, "resourceFile", new Callable<File>() {
                     @Override
                     public File call() {
@@ -278,7 +452,6 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                     if (config.getUseJack()) {
                         return ImmutableSet.of(variantScope.getJackDestinationDir());
                     }
-
                     return variantScope.getTransformManager()
                             .getPipelineOutput(sDexFilter).keySet();
                 }
@@ -364,14 +537,11 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                     return scope.getPackageApk();
                 }
             });
-        }
 
-        private static File getOptionalDir(File dir) {
-            if (dir.isDirectory()) {
-                return dir;
-            }
-
-            return null;
+            packageApp.markerFile =
+                    PrePackageApplication.ConfigAction.getMarkerFile(variantScope);
+            packageApp.useOldPackaging = AndroidGradleOptions.useOldPackaging(
+                    variantScope.getGlobalScope().getProject());
         }
     }
 }

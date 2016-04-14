@@ -28,6 +28,7 @@ import com.android.build.api.transform.QualifiedContent.ContentType;
 import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.api.transform.Status;
 import com.android.build.api.transform.TransformInput;
+import com.google.common.base.Charsets;
 import com.google.common.base.Objects;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
@@ -36,6 +37,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.common.hash.Hashing;
 
 import java.io.File;
 import java.util.Arrays;
@@ -184,7 +186,7 @@ public class OriginalStream extends TransformStream {
 
         for (File file : jarFiles.get()) {
             jarInputs.add(new ImmutableJarInput(
-                    file.getName(),
+                    getUniqueInputName(file),
                     file,
                     Status.NOTCHANGED,
                     contentTypes,
@@ -193,7 +195,7 @@ public class OriginalStream extends TransformStream {
 
         for (File file : folders.get()) {
             directoryInputs.add(new ImmutableDirectoryInput(
-                    file.getName(),
+                    getUniqueInputName(file),
                     file,
                     contentTypes,
                     scopes));
@@ -212,7 +214,7 @@ public class OriginalStream extends TransformStream {
 
         for (File file : jarFiles.get()) {
             input.addJarInput(new QualifiedContentImpl(
-                    file.getName(),
+                    getUniqueInputName(file),
                     file,
                     contentTypes,
                     scopes));
@@ -220,13 +222,18 @@ public class OriginalStream extends TransformStream {
 
         for (File file : folders.get()) {
             input.addFolderInput(new MutableDirectoryInput(
-                    file.getName(),
+                    getUniqueInputName(file),
                     file,
                     contentTypes,
                     scopes));
         }
 
         return input;
+    }
+
+    @NonNull
+    private static String getUniqueInputName(@NonNull File file) {
+        return Hashing.sha1().hashString(file.getPath(), Charsets.UTF_16LE).toString();
     }
 
     @Override

@@ -1,0 +1,9 @@
+### User Sources for Android SDK Manager
+#Fri Sep 25 13:49:40 PDT 2015
+disp02=amazon
+disp01=sony
+count=3
+disp00=samsung
+src02=https\://s3.amazonaws.com/android-sdk-manager/redist/addon.xml
+src01=http\://dl.developer.sony.com/wearables/sdks/Sony_Add-on_SDK/Sony-Add-on-SDK.xml
+src00=http\://developer.samsung.com/sdk-manager/repository/Samsung-SDK.xml

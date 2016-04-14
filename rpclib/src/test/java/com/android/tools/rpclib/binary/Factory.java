@@ -22,6 +22,7 @@ public final class Factory {
         //<<<Start:Java.FactoryBody:2>>>
         TypeA.register();
         TypeB.register();
+        TypeC.register();
         //<<<End:Java.FactoryBody:2>>>
     }
 }

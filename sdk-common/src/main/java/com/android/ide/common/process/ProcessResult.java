@@ -16,6 +16,8 @@
 
 package com.android.ide.common.process;
 
+import com.android.annotations.NonNull;
+
 /**
  * The result of executing an external process.
  */
@@ -26,6 +28,7 @@ public interface ProcessResult {
      * @return this
      * @throws ProcessException if the process exited with a non-zero exit value
      */
+    @NonNull
     ProcessResult assertNormalExitValue() throws ProcessException;
 
     /**
@@ -38,5 +41,6 @@ public interface ProcessResult {
      * @return this
      * @throws ProcessException the execution failure wrapped in a ProcessExecution
      */
+    @NonNull
     ProcessResult rethrowFailure() throws ProcessException;
 }

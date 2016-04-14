@@ -16,7 +16,8 @@
 
 package com.android.sdklib.repository.local;
 
-import com.android.sdklib.io.FileOp;
+import com.android.repository.io.FileOp;
+import com.android.repository.io.FileOpUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -28,7 +29,7 @@ import junit.framework.TestCase;
 
 public class LocalDirInfoTest extends TestCase {
 
-    private final FileOp mFOp = new FileOp();
+    private final FileOp mFOp = FileOpUtils.create();
     private File mTempDir;
 
     @Override

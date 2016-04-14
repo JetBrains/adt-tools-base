@@ -29,19 +29,19 @@ android {
 
     productFlavors {
         builds {
-            flavorDimension "buildStatus"
+            dimension "buildStatus"
         }
 
         doesntBuild {
-            flavorDimension "buildStatus"
+            dimension "buildStatus"
         }
 
         passes {
-            flavorDimension "testStatus"
+            dimension "testStatus"
         }
 
         fails {
-            flavorDimension "testStatus"
+            dimension "testStatus"
         }
     }
 }

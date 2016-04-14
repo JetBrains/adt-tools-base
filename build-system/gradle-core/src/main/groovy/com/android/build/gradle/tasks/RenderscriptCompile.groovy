@@ -23,10 +23,7 @@ import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.NdkTask
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
-import com.android.builder.model.ApiVersion
-import com.android.builder.model.ProductFlavor
 import com.android.ide.common.process.LoggedProcessOutputHandler
-import com.android.sdklib.SdkVersionInfo
 import com.android.utils.FileUtils
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
@@ -147,25 +144,12 @@ public class RenderscriptCompile extends NdkTask {
             GradleVariantConfiguration config = variantData.variantConfiguration
 
             variantData.renderscriptCompileTask = renderscriptTask
-            ProductFlavor mergedFlavor = config.mergedFlavor
             boolean ndkMode = config.renderscriptNdkModeEnabled
             renderscriptTask.androidBuilder = scope.globalScope.androidBuilder
             renderscriptTask.setVariantName(config.getFullName())
 
             ConventionMappingHelper.map(renderscriptTask, "targetApi") {
-                int targetApi = mergedFlavor.renderscriptTargetApi != null ?
-                        mergedFlavor.renderscriptTargetApi : -1
-                ApiVersion apiVersion = config.getMinSdkVersion()
-                if (apiVersion != null) {
-                    int minSdk = apiVersion.apiLevel
-                    if (apiVersion.codename != null) {
-                        minSdk = SdkVersionInfo.getApiByBuildCode(apiVersion.codename, true)
-                    }
-
-                    return targetApi > minSdk ? targetApi : minSdk
-                }
-
-                return targetApi
+                config.getRenderscriptTarget()
             }
 
             renderscriptTask.supportMode = config.renderscriptSupportModeEnabled

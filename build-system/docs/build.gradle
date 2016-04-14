@@ -269,7 +269,7 @@ task javadocAll(type: Javadoc) {
     include 'com/android/builder/**'
 //    exclude '**/internal/**'
 
-    exclude 'com/android/builder/shrinker/parser/ProguardLexer*'
+    exclude 'com/android/build/gradle/shrinker/parser/ProguardLexer*'
     options.links(javaApiUrl, groovyApiUrl, "http://maven.apache.org/ref/2.2.1/maven-core/apidocs",
         "http://maven.apache.org/ref/2.2.1/maven-model/apidocs")
     doFirst {

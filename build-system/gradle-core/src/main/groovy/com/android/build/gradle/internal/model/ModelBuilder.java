@@ -26,6 +26,8 @@ import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
+import com.android.build.gradle.internal.incremental.InstantRunAnchorTask;
+import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.*;
 import com.android.builder.Version;
@@ -68,8 +70,8 @@ public class ModelBuilder implements ToolingModelBuilder {
     private Map<Abi, NativeToolchain> toolchains;
     @NonNull
     private NativeLibraryFactory nativeLibFactory;
-
     private final boolean isLibrary;
+    private final int generation;
 
     public ModelBuilder(
             @NonNull AndroidBuilder androidBuilder,
@@ -79,7 +81,8 @@ public class ModelBuilder implements ToolingModelBuilder {
             @NonNull ExtraModelInfo extraModelInfo,
             @NonNull NdkHandler ndkHandler,
             @NonNull NativeLibraryFactory nativeLibraryFactory,
-            boolean isLibrary) {
+            boolean isLibrary,
+            int generation) {
         this.androidBuilder = androidBuilder;
         this.config = config;
         this.extraModelInfo = extraModelInfo;
@@ -88,6 +91,7 @@ public class ModelBuilder implements ToolingModelBuilder {
         this.ndkHandler = ndkHandler;
         this.nativeLibFactory = nativeLibraryFactory;
         this.isLibrary = isLibrary;
+        this.generation = generation;
     }
 
     public static void clearCaches() {
@@ -149,8 +153,10 @@ public class ModelBuilder implements ToolingModelBuilder {
                 project.getBuildDir(),
                 config.getResourcePrefix(),
                 ImmutableList.copyOf(toolchains.values()),
+                config.getBuildToolsVersion(),
                 isLibrary,
-                Version.BUILDER_MODEL_API_VERSION);
+                Version.BUILDER_MODEL_API_VERSION,
+                generation);
 
         androidProject.setDefaultConfig(ProductFlavorContainerImpl.createProductFlavorContainer(
                 variantManager.getDefaultConfig(),
@@ -388,6 +394,12 @@ public class ModelBuilder implements ToolingModelBuilder {
                     intVersionCode));
         }
 
+        InstantRunImpl instantRun = new InstantRunImpl(
+                InstantRunAnchorTask.ConfigAction.getName(scope),
+                // todo : move this to a shared location.
+                InstantRunWrapperTask.ConfigAction.getBuildInfoFile(scope),
+                variantConfiguration.isInstantRunSupported());
+
         return new AndroidArtifactImpl(
                 name,
                 outputs,
@@ -411,13 +423,17 @@ public class ModelBuilder implements ToolingModelBuilder {
                 variantConfiguration.getSupportedAbis(),
                 nativeLibraries,
                 variantConfiguration.getMergedBuildConfigFields(),
-                variantConfiguration.getMergedResValues());
+                variantConfiguration.getMergedResValues(),
+                instantRun);
     }
 
     private static Collection<Abi> createAbiList(Collection<String> abiNames) {
         ImmutableList.Builder<Abi> builder = ImmutableList.builder();
         for (String abiName : abiNames) {
-            builder.add(Abi.getByName(abiName));
+            Abi abi = Abi.getByName(abiName);
+            if (abi != null) {
+                builder.add(abi);
+            }
         }
         return builder.build();
     }

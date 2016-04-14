@@ -101,10 +101,10 @@ public class GoogleServicesTask extends DefaultTask {
         if (clientObject != null) {
             handleAnalytics(clientObject, resValues);
             handleAdsService(clientObject, resValues);
-            handleMapsService(clientObject, resValues, resAttributes);
+            handleMapsService(clientObject, resValues);
             handleGoogleAppId(clientObject, resValues);
         } else {
-            getLogger().warn("No matching client found for package name '" + packageName + "'");
+            throw new GradleException("No matching client found for package name '" + packageName + "'");
         }
 
         // write the values file.
@@ -130,7 +130,7 @@ public class GoogleServicesTask extends DefaultTask {
             if (configuration == null) {
                 continue;
             }
-            DependencySet dependencies = configuration.getAllDependencies();
+            DependencySet dependencies = configuration.getDependencies();
             if (dependencies == null) {
                 continue;
             }
@@ -227,8 +227,7 @@ public class GoogleServicesTask extends DefaultTask {
      * @param clientObject the client Json object.
      * @throws IOException
      */
-    private void handleMapsService(JsonObject clientObject, Map<String, String> resValues,
-        Map<String, Map<String, String>> resAttributes)
+    private void handleMapsService(JsonObject clientObject, Map<String, String> resValues)
             throws IOException {
         JsonObject mapsService = getServiceByName(clientObject, "maps_service");
         if (mapsService == null) return;
@@ -247,9 +246,6 @@ public class GoogleServicesTask extends DefaultTask {
                     continue;
                 }
                 resValues.put("google_maps_key", currentKey.getAsString());
-                Map<String, String> attributes = new TreeMap<String, String>();
-                attributes.put("translatable", "false");
-                resAttributes.put("google_maps_key", attributes);
                 return;
             }
         }
@@ -354,7 +350,7 @@ public class GoogleServicesTask extends DefaultTask {
     private static String getGlobalTrackerContent(String ga_trackingId) {
         return "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
                 "<resources>\n" +
-                "    <string name=\"ga_trackingId\">" + ga_trackingId + "</string>\n" +
+                "    <string name=\"ga_trackingId\" translatable=\"false\">" + ga_trackingId + "</string>\n" +
                 "</resources>\n";
     }
 
@@ -367,7 +363,7 @@ public class GoogleServicesTask extends DefaultTask {
 
         for (Map.Entry<String, String> entry : values.entrySet()) {
             String name = entry.getKey();
-            sb.append("    <string name=\"").append(name).append("\"");
+            sb.append("    <string name=\"").append(name).append("\" translatable=\"false\"");
             if (attributes.containsKey(name)) {
                 for (Map.Entry<String, String> attr : attributes.get(name).entrySet()) {
                     sb.append(" ").append(attr.getKey()).append("=\"")

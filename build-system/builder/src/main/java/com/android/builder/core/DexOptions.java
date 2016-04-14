@@ -23,8 +23,11 @@ public interface DexOptions {
     boolean getIncremental();
     boolean getPreDexLibraries();
     boolean getJumboMode();
+
     @Nullable
     String getJavaMaxHeapSize();
     @Nullable
     Integer getThreadCount();
+    @Nullable
+    Integer getMaxProcessCount();
 }

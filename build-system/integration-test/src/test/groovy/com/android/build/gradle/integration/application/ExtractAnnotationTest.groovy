@@ -15,10 +15,8 @@
  */
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.builder.model.AndroidProject
-import com.google.common.base.Charsets
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
@@ -26,7 +24,6 @@ import org.junit.ClassRule
 import org.junit.Test
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
-
 /**
  * Integration test for extracting annotations.
  * <p>
@@ -126,6 +123,6 @@ class ExtractAnnotationTest {
         // outer class
         assertThatZip(classesJar).containsFileWithoutContent(
                 "com/android/tests/extractannotations/ExtractTest.class",
-                "NonMaskType".getBytes(Charsets.UTF_8));
+                "NonMaskType");
     }
 }

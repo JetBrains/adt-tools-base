@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="ga_trackingId">UA-1923912413</string>
+    <string name="ga_trackingId" translatable="false">UA-1923912413</string>
     <string name="gcm_defaultSenderId" translatable="false">1234567890</string>
-    <string name="google_app_id">mobilesdk-app-id-paid</string>
+    <string name="google_app_id" translatable="false">mobilesdk-app-id-paid</string>
     <string name="google_maps_key" translatable="false">android-api-key-paid</string>
 </resources>

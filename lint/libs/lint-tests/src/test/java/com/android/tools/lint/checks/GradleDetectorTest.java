@@ -24,6 +24,7 @@ import static com.android.tools.lint.checks.GradleDetector.DEPENDENCY;
 import static com.android.tools.lint.checks.GradleDetector.DEPRECATED;
 import static com.android.tools.lint.checks.GradleDetector.GRADLE_GETTER;
 import static com.android.tools.lint.checks.GradleDetector.GRADLE_PLUGIN_COMPATIBILITY;
+import static com.android.tools.lint.checks.GradleDetector.NOT_INTERPOLATED;
 import static com.android.tools.lint.checks.GradleDetector.PATH;
 import static com.android.tools.lint.checks.GradleDetector.PLUS;
 import static com.android.tools.lint.checks.GradleDetector.REMOTE_VERSION;
@@ -259,7 +260,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
     public void testIncompatiblePlugin() throws Exception {
         mEnabled = Collections.singleton(GRADLE_PLUGIN_COMPATIBILITY);
         assertEquals(""
-                + "build.gradle:6: Error: You must use a newer version of the Android Gradle plugin. The minimum supported version is " + GRADLE_PLUGIN_MINIMUM_VERSION + " and the recommended version is " + GRADLE_PLUGIN_RECOMMENDED_VERSION + " [AndroidGradlePluginVersion]\n"
+                + "build.gradle:6: Error: You must use a newer version of the Android Gradle plugin. The minimum supported version is " + GRADLE_PLUGIN_MINIMUM_VERSION + " and the recommended version is " + GRADLE_PLUGIN_RECOMMENDED_VERSION + " [GradlePluginVersion]\n"
                 + "    classpath 'com.android.tools.build:gradle:0.1.0'\n"
                 + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "1 errors, 0 warnings\n",
@@ -572,6 +573,24 @@ public class GradleDetectorTest extends AbstractCheckTest {
                         + "1 errors, 0 warnings\n",
 
                 lintProject("gradle/PlayServices2.gradle=>build.gradle"));
+    }
+
+    public void testWrongQuotes() throws Exception {
+        mEnabled = Collections.singleton(NOT_INTERPOLATED);
+        assertEquals(""
+                        + "build.gradle:5: Error: It looks like you are trying to substitute a version variable, but using single quotes ('). For Groovy string interpolation you must use double quotes (\"). [NotInterpolated]\n"
+                        + "    compile 'com.android.support:design:${supportLibVersion}'\n"
+                        + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                        + "1 errors, 0 warnings\n",
+
+                lintProject(source("build.gradle", ""
+                        + "ext {\n"
+                        + "    supportLibVersion = \"23.1.1\"\n"
+                        + "}\n"
+                        + "dependencies {\n"
+                        + "    compile 'com.android.support:design:${supportLibVersion}'\n"
+                        + "    compile \"com.android.support:appcompat-v7:${supportLibVersion}\"\n"
+                        + "}\n")));
     }
 
     @Override

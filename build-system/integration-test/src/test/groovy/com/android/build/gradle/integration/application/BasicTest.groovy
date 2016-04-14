@@ -30,6 +30,7 @@ import org.junit.ClassRule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
+import static com.google.common.truth.Truth.assertThat
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertNotNull
@@ -112,6 +113,14 @@ class BasicTest {
     @Test
     void "we don't fail on LICENSE.txt when packaging dependencies"() {
         project.execute("assembleAndroidTest")
+    }
+
+    @Test
+    void generationInModel() {
+        AndroidProject model = project.getSingleModel()
+        assertThat(model.getPluginGeneration())
+                .named("Plugin Generation")
+                .isEqualTo(AndroidProject.GENERATION_ORIGINAL)
     }
 
     @Test

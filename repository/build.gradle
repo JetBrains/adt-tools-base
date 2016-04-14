@@ -1,0 +1,35 @@
+apply plugin: 'java'
+apply plugin: 'jacoco'
+apply plugin: 'sdk-java-lib'
+
+group = 'com.android.tools'
+archivesBaseName = 'repository'
+version = rootProject.ext.baseVersion
+
+dependencies {
+    compile project(':base:common')
+    compile 'org.apache.commons:commons-compress:1.8.1'
+
+    testCompile 'junit:junit:4.12'
+}
+
+test {
+  testLogging {
+    showStandardStreams = true
+    showStackTraces = true
+    exceptionFormat = "full"
+  }
+}
+
+sourceSets {
+    main.resources.srcDir 'src/main/java'
+    test.resources.srcDir 'src/test/java'
+}
+
+project.ext.pomName = 'Android Tools repository'
+project.ext.pomDesc = 'A library for downloading and managing package repositories'
+
+apply from: "$rootDir/buildSrc/base/publish.gradle"
+apply from: "$rootDir/buildSrc/base/bintray.gradle"
+apply from: "$rootDir/buildSrc/base/javadoc.gradle"
+

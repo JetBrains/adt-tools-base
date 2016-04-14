@@ -66,6 +66,7 @@ import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.android.utils.Pair;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -226,8 +227,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
     private Map<String, List<Pair<Handle, String>>> mFormatStrings;
 
     /**
-     * Map of strings that contain percents that aren't formatting strings; these
-     * should not be passed to String.format.
+     * Map of strings that do not contain any formatting.
      */
     private final Map<String, Handle> mNotFormatStrings = new HashMap<String, Handle>();
 
@@ -308,7 +308,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
     }
 
     private void checkTextNode(XmlContext context, Element element, String text) {
-        String name = null;
+        String name = element.getAttribute(ATTR_NAME);
         boolean found = false;
         boolean foundPlural = false;
 
@@ -320,10 +320,6 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                 j++;
             }
             if (c == '%') {
-                if (name == null) {
-                    name = element.getAttribute(ATTR_NAME);
-                }
-
                 // Also make sure this String isn't an unformatted String
                 String formatted = element.getAttribute("formatted"); //$NON-NLS-1$
                 if (!formatted.isEmpty() && !Boolean.parseBoolean(formatted)) {
@@ -382,25 +378,29 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
             }
         }
 
-        if (found && name != null) {
-            if (!context.getProject().getReportIssues()) {
-                // If this is a library project not being analyzed, ignore it
-                return;
-            }
+        if (!context.getProject().getReportIssues()) {
+            // If this is a library project not being analyzed, ignore it
+            return;
+        }
 
-            // Record it for analysis when seen in Java code
-            if (mFormatStrings == null) {
-                mFormatStrings = new HashMap<String, List<Pair<Handle,String>>>();
-            }
-
-            List<Pair<Handle, String>> list = mFormatStrings.get(name);
-            if (list == null) {
-                list = new ArrayList<Pair<Handle, String>>();
-                mFormatStrings.put(name, list);
-            }
+        if (name != null) {
             Handle handle = context.createLocationHandle(element);
             handle.setClientData(element);
-            list.add(Pair.of(handle, text));
+            if (found) {
+                // Record it for analysis when seen in Java code
+                if (mFormatStrings == null) {
+                    mFormatStrings = new HashMap<String, List<Pair<Handle, String>>>();
+                }
+
+                List<Pair<Handle, String>> list = mFormatStrings.get(name);
+                if (list == null) {
+                    list = new ArrayList<Pair<Handle, String>>();
+                    mFormatStrings.put(name, list);
+                }
+                list.add(Pair.of(handle, text));
+            } else {
+                mNotFormatStrings.put(name, handle);
+            }
         }
     }
 
@@ -490,6 +490,11 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
 
                 // Check argument counts
                 if (checkCount) {
+                    Handle notFormatted = mNotFormatStrings.get(name);
+                    if (notFormatted != null) {
+                        list = ImmutableList.<Pair<Handle, String>>builder()
+                                .add(Pair.of(notFormatted, name)).addAll(list).build();
+                    }
                     checkArity(context, name, list);
                 }
 
@@ -1072,6 +1077,35 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
     }
 
     /**
+     * Checks a String.format call that is using a string that doesn't contain format placeholders.
+     * @param context the context to report errors to
+     * @param call the AST node for the {@link String#format}
+     * @param name the string name
+     * @param handle the string location
+     */
+    private static void checkNotFormattedHandle(
+            JavaContext context,
+            MethodInvocation call,
+            String name,
+            Handle handle) {
+        Object clientData = handle.getClientData();
+        if (clientData instanceof Node) {
+            if (context.getDriver().isSuppressed(null, INVALID, (Node) clientData)) {
+                return;
+            }
+        }
+        Location location = context.getLocation(call);
+        Location secondary = handle.resolve();
+        secondary.setMessage("This definition does not require arguments");
+        location.setSecondary(secondary);
+        String message = String.format(
+                "Format string '`%1$s`' is not a valid format string so it should not be " +
+                        "passed to `String.format`",
+                name);
+        context.report(INVALID, call, location, message);
+    }
+
+    /**
      * Check the given String.format call (with the given arguments) to see if the string format is
      * being used correctly
      *
@@ -1092,7 +1126,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
             return;
         }
 
-        StringTracker tracker = new StringTracker(context, method, call, 0);
+        StringTracker tracker = new StringTracker(context, method, call, specifiesLocale ? 1 : 0);
         method.accept(tracker);
         String name = tracker.getFormatStringName();
         if (name == null) {
@@ -1103,20 +1137,43 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
             return;
         }
 
-        if (mNotFormatStrings.containsKey(name)) {
-            Handle handle = mNotFormatStrings.get(name);
-            Object clientData = handle.getClientData();
-            if (clientData instanceof Node) {
-                if (context.getDriver().isSuppressed(null, INVALID, (Node) clientData)) {
+        boolean passingVarArgsArray = false;
+        int callCount = args.size() - 1 - (specifiesLocale ? 1 : 0);
+        if (callCount == 1) {
+            // If instead of a varargs call like
+            //    getString(R.string.foo, arg1, arg2, arg3)
+            // the code is calling the varargs method with a packed Object array, as in
+            //    getString(R.string.foo, new Object[] { arg1, arg2, arg3 })
+            // we'll need to handle that such that we don't think this is a single
+            // argument
+            TypeDescriptor type = context.getType(args.last());
+            if (type != null && type.isArray() && !type.isPrimitive()) {
+                boolean knownArity = false;
+                if (args.last() instanceof ArrayCreation) {
+                    ArrayCreation creation = (ArrayCreation) args.last();
+                    ArrayInitializer initializer = creation.astInitializer();
+                    if (initializer != null) {
+                        callCount = initializer.astExpressions().size();
+                        knownArity = true;
+                    } else if (creation.astDimensions() != null
+                            && creation.astDimensions().size() == 1) {
+                        ArrayDimension first = creation.astDimensions().first();
+                        Expression expression = first.astDimension();
+                        if (expression instanceof IntegralLiteral) {
+                            callCount = ((IntegralLiteral) expression).astIntValue();
+                            knownArity = true;
+                        }
+                    }
+                }
+                if (!knownArity) {
                     return;
                 }
+                passingVarArgsArray = true;
             }
-            Location location = handle.resolve();
-            String message = String.format(
-                    "Format string '`%1$s`' is not a valid format string so it should not be " +
-                    "passed to `String.format`",
-                    name);
-            context.report(INVALID, call, location, message);
+        }
+
+        if (callCount > 0 && mNotFormatStrings.containsKey(name)) {
+            checkNotFormattedHandle(context, call, name, mNotFormatStrings.get(name));
             return;
         }
 
@@ -1127,9 +1184,13 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                     !context.getScope().contains(Scope.RESOURCE_FILE)) {
                 AbstractResourceRepository resources = client
                         .getProjectResources(context.getMainProject(), true);
-                assert resources != null; // because supportsProjectResources() returned true
-                List<ResourceItem> items = resources
-                        .getResourceItem(ResourceType.STRING, name);
+                List<ResourceItem> items;
+                if (resources != null) {
+                    items = resources.getResourceItem(ResourceType.STRING, name);
+                } else {
+                    // Must be a non-Android module
+                    items = null;
+                }
                 if (items != null) {
                     for (final ResourceItem item : items) {
                         ResourceValue v = item.getResourceValue(false);
@@ -1164,6 +1225,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                                     // If the user marked the string with
                                 }
 
+                                Handle handle = client.createResourceItemHandle(item);
                                 if (isFormattingString) {
                                     if (list == null) {
                                         list = Lists.newArrayList();
@@ -1172,8 +1234,9 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                                         }
                                         mFormatStrings.put(name, list);
                                     }
-                                    Handle handle = client.createResourceItemHandle(item);
                                     list.add(Pair.of(handle, value));
+                                } else if (callCount > 0) {
+                                    checkNotFormattedHandle(context, call, name, handle);
                                 }
                             }
                         }
@@ -1186,7 +1249,6 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
 
         if (list != null) {
             Set<String> reported = null;
-            boolean passingVarArgsArray = false;
             for (Pair<Handle, String> pair : list) {
                 String s = pair.getSecond();
                 if (reported != null && reported.contains(s)) {
@@ -1194,39 +1256,6 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                 }
                 int count = getFormatArgumentCount(s, null);
                 Handle handle = pair.getFirst();
-                int callCount = args.size() - 1 - (specifiesLocale ? 1 : 0);
-                if (callCount == 1) {
-                    // If instead of a varargs call like
-                    //    getString(R.string.foo, arg1, arg2, arg3)
-                    // the code is calling the varargs method with a packed Object array, as in
-                    //    getString(R.string.foo, new Object[] { arg1, arg2, arg3 })
-                    // we'll need to handle that such that we don't think this is a single
-                    // argument
-                    TypeDescriptor type = context.getType(args.last());
-                    if (type != null && type.isArray() && !type.isPrimitive()) {
-                        boolean knownArity = false;
-                        if (args.last() instanceof ArrayCreation) {
-                            ArrayCreation creation = (ArrayCreation) args.last();
-                            ArrayInitializer initializer = creation.astInitializer();
-                            if (initializer != null) {
-                                callCount = initializer.astExpressions().size();
-                                knownArity = true;
-                            } else if (creation.astDimensions() != null
-                                    && creation.astDimensions().size() == 1) {
-                                ArrayDimension first = creation.astDimensions().first();
-                                Expression expression = first.astDimension();
-                                if (expression instanceof IntegralLiteral) {
-                                    callCount = ((IntegralLiteral) expression).astIntValue();
-                                    knownArity = true;
-                                }
-                            }
-                        }
-                        if (!knownArity) {
-                            return;
-                        }
-                        passingVarArgsArray = true;
-                    }
-                }
                 if (count != callCount) {
                     Location location = context.getLocation(call);
                     Location secondary = handle.resolve();
@@ -1556,13 +1585,45 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                 // See if we're on the right hand side of an assignment
                 lombok.ast.Node current = node.getParent().getParent();
                 String reference = ((Select) current).astIdentifier().astValue();
-
+                lombok.ast.Node prev = current;
                 while (current != mTop && !(current instanceof VariableDefinitionEntry)) {
                     if (current == mTargetNode) {
-                        mName = reference;
-                        mDone = true;
-                        return false;
+                        // Make sure the reference we found was part of the
+                        // target parameter (e.g. for a string format check,
+                        // the actual formatting string, not one of the arguments
+                        // supplied to the formatting string)
+                        boolean isParameterArg = false;
+                        Iterator<Expression> iterator = null;
+                        if (mTargetNode instanceof MethodInvocation) {
+                            MethodInvocation call = (MethodInvocation) mTargetNode;
+                            iterator = call.astArguments().iterator();
+                        } else if (mTargetNode instanceof ConstructorInvocation) {
+                            ConstructorInvocation call = (ConstructorInvocation) mTargetNode;
+                            iterator = call.astArguments().iterator();
+                        }
+                        if (iterator != null) {
+                            Expression arg = null;
+                            for (int i = 0; i <= mArgIndex; i++) {
+                                if (iterator.hasNext()) {
+                                    arg = iterator.next();
+                                } else {
+                                    arg = null;
+                                }
+                            }
+                            if (arg == prev) {
+                                isParameterArg = true;
+                            }
+                        } else {
+                            // Constructor?
+                            isParameterArg = true;
+                        }
+                        if (isParameterArg) {
+                            mName = reference;
+                            mDone = true;
+                            return false;
+                        }
                     }
+                    prev = current;
                     current = current.getParent();
                 }
                 if (current instanceof VariableDefinitionEntry) {

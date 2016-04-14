@@ -19,6 +19,7 @@ package com.android.tools.rpclib.schema;
 import com.android.tools.rpclib.binary.Decoder;
 import com.android.tools.rpclib.binary.Encoder;
 
+import com.google.common.collect.ImmutableMap;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -44,29 +45,27 @@ public abstract class Type {
 
     public static Type decode(@NotNull Decoder d) throws IOException {
         byte v = d.uint8();
-        TypeTag tag = new TypeTag((byte)(v & 0xf));
-        v = (byte)((v >> 4) & 0xf);
-        switch (tag.value) {
-            case TypeTag.PrimitiveTag:
-                return new Primitive(d, new Method(v));
-            case TypeTag.StructTag:
+        switch (v & 0xf) {
+            case TypeTag.PrimitiveTagValue:
+                return new Primitive(d, Method.find((byte)((v >> 4) & 0xf)));
+            case TypeTag.StructTagValue:
                 return new Struct(d);
-            case TypeTag.PointerTag:
+            case TypeTag.PointerTagValue:
                 return new Pointer(d);
-            case TypeTag.InterfaceTag:
+            case TypeTag.InterfaceTagValue:
                 return new Interface(d);
-            case TypeTag.VariantTag:
+            case TypeTag.VariantTagValue:
                 return new Variant(d);
-            case TypeTag.AnyTag:
+            case TypeTag.AnyTagValue:
                 return new AnyType(d);
-            case TypeTag.SliceTag:
+            case TypeTag.SliceTagValue:
                 return new Slice(d);
-            case TypeTag.ArrayTag:
+            case TypeTag.ArrayTagValue:
                 return new Array(d);
-            case TypeTag.MapTag:
+            case TypeTag.MapTagValue:
                 return new Map(d);
             default:
-                throw new IOException("Decode unknown type " + tag);
+                throw new IOException("Decode unknown type " + v);
         }
     }
 

@@ -14,6 +14,5 @@ public class Main extends Activity
         setContentView(R.layout.main);
 
         TextView tv = (TextView) findViewById(R.id.text);
-        tv.setText(com.custom.Foo.getBuildDate());
     }
 }

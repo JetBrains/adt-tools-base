@@ -28,6 +28,7 @@ import com.android.sdklib.IAndroidTarget;
 import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.ClassContext;
+import com.android.tools.lint.detector.api.DefaultPosition;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
@@ -49,7 +50,9 @@ import org.eclipse.jdt.internal.compiler.ast.AbstractMethodDeclaration;
 import org.eclipse.jdt.internal.compiler.ast.AbstractVariableDeclaration;
 import org.eclipse.jdt.internal.compiler.ast.AllocationExpression;
 import org.eclipse.jdt.internal.compiler.ast.Annotation;
+import org.eclipse.jdt.internal.compiler.ast.Argument;
 import org.eclipse.jdt.internal.compiler.ast.ArrayInitializer;
+import org.eclipse.jdt.internal.compiler.ast.Block;
 import org.eclipse.jdt.internal.compiler.ast.CharLiteral;
 import org.eclipse.jdt.internal.compiler.ast.CompilationUnitDeclaration;
 import org.eclipse.jdt.internal.compiler.ast.DoubleLiteral;
@@ -68,10 +71,13 @@ import org.eclipse.jdt.internal.compiler.ast.MessageSend;
 import org.eclipse.jdt.internal.compiler.ast.NameReference;
 import org.eclipse.jdt.internal.compiler.ast.NullLiteral;
 import org.eclipse.jdt.internal.compiler.ast.NumberLiteral;
+import org.eclipse.jdt.internal.compiler.ast.Statement;
 import org.eclipse.jdt.internal.compiler.ast.StringLiteral;
 import org.eclipse.jdt.internal.compiler.ast.TrueLiteral;
+import org.eclipse.jdt.internal.compiler.ast.TryStatement;
 import org.eclipse.jdt.internal.compiler.ast.TypeDeclaration;
 import org.eclipse.jdt.internal.compiler.ast.TypeReference;
+import org.eclipse.jdt.internal.compiler.ast.UnionTypeReference;
 import org.eclipse.jdt.internal.compiler.batch.CompilationUnit;
 import org.eclipse.jdt.internal.compiler.batch.FileSystem;
 import org.eclipse.jdt.internal.compiler.classfmt.ClassFileConstants;
@@ -90,6 +96,7 @@ import org.eclipse.jdt.internal.compiler.impl.ShortConstant;
 import org.eclipse.jdt.internal.compiler.impl.StringConstant;
 import org.eclipse.jdt.internal.compiler.lookup.AnnotationBinding;
 import org.eclipse.jdt.internal.compiler.lookup.Binding;
+import org.eclipse.jdt.internal.compiler.lookup.CatchParameterBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ElementValuePair;
 import org.eclipse.jdt.internal.compiler.lookup.FieldBinding;
 import org.eclipse.jdt.internal.compiler.lookup.LocalVariableBinding;
@@ -105,6 +112,7 @@ import org.eclipse.jdt.internal.compiler.lookup.ProblemReferenceBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding;
 import org.eclipse.jdt.internal.compiler.lookup.TypeBinding;
 import org.eclipse.jdt.internal.compiler.lookup.TypeConstants;
+import org.eclipse.jdt.internal.compiler.lookup.VariableBinding;
 import org.eclipse.jdt.internal.compiler.parser.Parser;
 import org.eclipse.jdt.internal.compiler.problem.AbortCompilation;
 import org.eclipse.jdt.internal.compiler.problem.DefaultProblemFactory;
@@ -120,7 +128,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import lombok.ast.Catch;
+import lombok.ast.Identifier;
+import lombok.ast.MethodDeclaration;
 import lombok.ast.Node;
+import lombok.ast.Position;
+import lombok.ast.StrictListAccessor;
+import lombok.ast.Try;
 import lombok.ast.VariableDeclaration;
 import lombok.ast.VariableDefinition;
 import lombok.ast.VariableDefinitionEntry;
@@ -549,8 +563,56 @@ public class EcjParser extends JavaParser {
     @Override
     public Location getLocation(@NonNull JavaContext context, @NonNull Node node) {
         lombok.ast.Position position = node.getPosition();
+
+        // Not all ECJ nodes have offsets; in particular, VariableDefinitionEntries
+        while (position == Position.UNPLACED) {
+            node = node.getParent();
+            //noinspection ConstantConditions
+            if (node == null) {
+                break;
+            }
+            position = node.getPosition();
+        }
         return Location.create(context.file, context.getContents(),
                 position.getStart(), position.getEnd());
+    }
+
+    @NonNull
+    @Override
+    public Location getRangeLocation(
+            @NonNull JavaContext context,
+            @NonNull Node from,
+            int fromDelta,
+            @NonNull Node to,
+            int toDelta) {
+        String contents = context.getContents();
+        int start = Math.max(0, from.getPosition().getStart() + fromDelta);
+        int end = Math.min(contents == null ? Integer.MAX_VALUE : contents.length(),
+                to.getPosition().getEnd() + toDelta);
+        return Location.create(context.file, contents, start, end);
+    }
+
+    @Override
+    @NonNull
+    public Location getNameLocation(@NonNull JavaContext context, @NonNull Node node) {
+        // The range on method name identifiers is wrong in the ECJ nodes; just take start of
+        // name + length of name
+        if (node instanceof MethodDeclaration) {
+            MethodDeclaration declaration = (MethodDeclaration) node;
+            Identifier identifier = declaration.astMethodName();
+            Location location = getLocation(context, identifier);
+            com.android.tools.lint.detector.api.Position start = location.getStart();
+            com.android.tools.lint.detector.api.Position end = location.getEnd();
+            int methodNameLength = identifier.astValue().length();
+            if (start != null && end != null &&
+                    end.getOffset() - start.getOffset() > methodNameLength) {
+                end = new DefaultPosition(start.getLine(), start.getColumn() + methodNameLength,
+                        start.getOffset() + methodNameLength);
+                return Location.create(location.getFile(), start, end);
+            }
+            return location;
+        }
+        return super.getNameLocation(context, node);
     }
 
     @NonNull
@@ -617,6 +679,73 @@ public class EcjParser extends JavaParser {
             return nativeNode;
         }
 
+        // Special case the handling for variables: these are missing
+        // native nodes in Lombok, but we can generally reconstruct them
+        // by looking at the context and fishing into the ECJ hierarchy.
+        // For example, for a method parameter, we can look at the surrounding
+        // method declaration, which we do have an ECJ node for, and then
+        // iterate through its Argument nodes and match those up with the
+        // variable name.
+        if (node instanceof VariableDeclaration) {
+            node = ((VariableDeclaration)node).astDefinition();
+        }
+        if (node instanceof VariableDefinition) {
+            StrictListAccessor<VariableDefinitionEntry, VariableDefinition>
+                    variables = ((VariableDefinition)node).astVariables();
+            if (variables.size() == 1) {
+                node = variables.first();
+            }
+        }
+        if (node instanceof VariableDefinitionEntry) {
+            VariableDefinitionEntry entry = (VariableDefinitionEntry) node;
+            String name = entry.astName().astValue();
+
+            // Find the nearest surrounding native node
+            Node parent = node.getParent();
+            while (parent != null) {
+                Object parentNativeNode = parent.getNativeNode();
+                if (parentNativeNode != null) {
+                    if (parentNativeNode instanceof AbstractMethodDeclaration) {
+                        // Parameter in a method declaration?
+                        AbstractMethodDeclaration method =
+                                (AbstractMethodDeclaration) parentNativeNode;
+                        for (Argument argument : method.arguments) {
+                            if (sameChars(name, argument.name)) {
+                                return argument;
+                            }
+                        }
+                        for (Statement statement : method.statements) {
+                            if (statement instanceof LocalDeclaration) {
+                                LocalDeclaration declaration = (LocalDeclaration)statement;
+                                if (sameChars(name, declaration.name)) {
+                                    return declaration;
+                                }
+                            }
+                        }
+                    } else if (parentNativeNode instanceof TypeDeclaration) {
+                        TypeDeclaration typeDeclaration = (TypeDeclaration) parentNativeNode;
+                        for (FieldDeclaration fieldDeclaration : typeDeclaration.fields) {
+                            if (sameChars(name, fieldDeclaration.name)) {
+                                return fieldDeclaration;
+                            }
+                        }
+                    } else if (parentNativeNode instanceof Block) {
+                        Block block = (Block)parentNativeNode;
+                        for (Statement statement : block.statements) {
+                            if (statement instanceof LocalDeclaration) {
+                                LocalDeclaration declaration = (LocalDeclaration)statement;
+                                if (sameChars(name, declaration.name)) {
+                                    return declaration;
+                                }
+                            }
+                        }
+                    }
+                    break;
+                }
+                parent = parent.getParent();
+            }
+        }
+
         Node parent = node.getParent();
         // The ECJ native nodes are sometimes spotty; for example, for a
         // MethodInvocation node we can have a null native node, but its
@@ -625,20 +754,6 @@ public class EcjParser extends JavaParser {
             nativeNode = parent.getNativeNode();
             if (nativeNode != null) {
                 return nativeNode;
-            }
-        }
-
-        if (node instanceof VariableDefinitionEntry) {
-            node = node.getParent().getParent();
-        }
-        if (node instanceof VariableDeclaration) {
-            VariableDeclaration declaration = (VariableDeclaration) node;
-            VariableDefinition definition = declaration.astDefinition();
-            if (definition != null) {
-                lombok.ast.TypeReference typeReference = definition.astTypeReference();
-                if (typeReference != null) {
-                    return typeReference.getNativeNode();
-                }
             }
         }
 
@@ -805,6 +920,10 @@ public class EcjParser extends JavaParser {
             nativeNode = ((TypeDeclaration) nativeNode).binding;
         } else if (nativeNode instanceof AbstractMethodDeclaration) {
             nativeNode = ((AbstractMethodDeclaration) nativeNode).binding;
+        } else if (nativeNode instanceof FieldDeclaration) {
+            nativeNode = ((FieldDeclaration) nativeNode).binding;
+        } else if (nativeNode instanceof LocalDeclaration) {
+            nativeNode = ((LocalDeclaration) nativeNode).binding;
         }
 
         if (nativeNode instanceof Binding) {
@@ -860,6 +979,52 @@ public class EcjParser extends JavaParser {
         }
 
         return null;
+    }
+
+    @Override
+    public List<TypeDescriptor> getCatchTypes(@NonNull JavaContext context,
+            @NonNull Catch catchBlock) {
+        Try aTry = catchBlock.upToTry();
+        if (aTry != null) {
+            Object nativeNode = getNativeNode(aTry);
+            if (nativeNode instanceof TryStatement) {
+                TryStatement tryStatement = (TryStatement) nativeNode;
+                Argument[] catchArguments = tryStatement.catchArguments;
+                Argument argument = null;
+                if (catchArguments.length > 1) {
+                    int index = 0;
+                    for (Catch aCatch : aTry.astCatches()) {
+                        if (aCatch == catchBlock) {
+                            if (index < catchArguments.length) {
+                                argument = catchArguments[index];
+                                break;
+                            }
+                        }
+                        index++;
+                    }
+                } else {
+                    argument = catchArguments[0];
+                }
+                if (argument != null) {
+                    if (argument.type instanceof UnionTypeReference) {
+                        UnionTypeReference typeRef = (UnionTypeReference) argument.type;
+                        List<TypeDescriptor> types = Lists.newArrayListWithCapacity(typeRef.typeReferences.length);
+                        for (TypeReference typeReference : typeRef.typeReferences) {
+                            TypeBinding binding = typeReference.resolvedType;
+                            if (binding != null) {
+                                types.add(new EcjTypeDescriptor(binding));
+                            }
+                        }
+                        return types;
+                    } else if (argument.type.resolvedType != null) {
+                        TypeDescriptor t = new EcjTypeDescriptor(argument.type.resolvedType);
+                        return Collections.singletonList(t);
+                    }
+                }
+            }
+        }
+
+        return super.getCatchTypes(context, catchBlock);
     }
 
     @Nullable
@@ -1056,6 +1221,48 @@ public class EcjParser extends JavaParser {
         @Override
         public String getSignature() {
             return getName();
+        }
+
+        @NonNull
+        @Override
+        public String getSimpleName() {
+            if (mBinding instanceof ReferenceBinding) {
+                ReferenceBinding ref = (ReferenceBinding) mBinding;
+                char[][] name = ref.compoundName;
+                char[] lastSegment = name[name.length - 1];
+                StringBuilder sb = new StringBuilder(lastSegment.length);
+                for (char c : lastSegment) {
+                    if (c == '$') {
+                        c = '.';
+                    }
+                    sb.append(c);
+                }
+                return sb.toString();
+            }
+            return super.getSimpleName();
+        }
+
+        @NonNull
+        @Override
+        public String getInternalName() {
+            if (mBinding instanceof ReferenceBinding) {
+                ReferenceBinding ref = (ReferenceBinding) mBinding;
+                StringBuilder sb = new StringBuilder(100);
+                char[][] name = ref.compoundName;
+                if (name == null) {
+                    return super.getInternalName();
+                }
+                for (char[] segment : name) {
+                    if (sb.length() != 0) {
+                        sb.append('/');
+                    }
+                    for (char c : segment) {
+                        sb.append(c);
+                    }
+                }
+                return sb.toString();
+            }
+            return super.getInternalName();
         }
 
         @Override
@@ -1325,17 +1532,15 @@ public class EcjParser extends JavaParser {
         public String getName() {
             String name = new String(mBinding.readableName());
             if (name.indexOf('.') == -1 && mBinding.enclosingType() != null) {
-                return new String(mBinding.enclosingType().readableName()) + '.' +
-                        name;
+                name = new String(mBinding.enclosingType().readableName()) + '.' + name;
             }
-
-            return name;
+            return stripTypeVariables(name);
         }
 
         @NonNull
         @Override
         public String getSimpleName() {
-            return new String(mBinding.shortReadableName());
+            return stripTypeVariables(new String(mBinding.sourceName()));
         }
 
         @Override
@@ -1346,15 +1551,26 @@ public class EcjParser extends JavaParser {
         @Nullable
         @Override
         public ResolvedClass getSuperClass() {
-            if (mBinding instanceof ReferenceBinding) {
-                ReferenceBinding refBinding = (ReferenceBinding) mBinding;
-                ReferenceBinding superClass = refBinding.superclass();
-                if (superClass != null) {
-                    return new EcjResolvedClass(superClass);
-                }
+            ReferenceBinding superClass = mBinding.superclass();
+            if (superClass != null) {
+                return new EcjResolvedClass(superClass);
             }
 
             return null;
+        }
+
+        @Override
+        @NonNull
+        public Iterable<ResolvedClass> getInterfaces() {
+            ReferenceBinding[] interfaces = mBinding.superInterfaces();
+            if (interfaces.length == 0) {
+                return Collections.emptyList();
+            }
+            List<ResolvedClass> classes = Lists.newArrayListWithExpectedSize(interfaces.length);
+            for (ReferenceBinding binding : interfaces) {
+                classes.add(new EcjResolvedClass(binding));
+            }
+            return classes;
         }
 
         @Nullable
@@ -1372,15 +1588,13 @@ public class EcjParser extends JavaParser {
 
         @Override
         public boolean isSubclassOf(@NonNull String name, boolean strict) {
-            if (mBinding instanceof ReferenceBinding) {
-                ReferenceBinding cls = (ReferenceBinding) mBinding;
-                if (strict) {
-                    cls = cls.superclass();
-                }
-                for (; cls != null; cls = cls.superclass()) {
-                    if (equalsCompound(name, cls.compoundName)) {
-                        return true;
-                    }
+            ReferenceBinding cls = (ReferenceBinding) mBinding;
+            if (strict) {
+                cls = cls.superclass();
+            }
+            for (; cls != null; cls = cls.superclass()) {
+                if (equalsCompound(name, cls.compoundName)) {
+                    return true;
                 }
             }
 
@@ -1643,6 +1857,11 @@ public class EcjParser extends JavaParser {
         }
 
         @Override
+        public TypeDescriptor getType() {
+            return new EcjTypeDescriptor(mBinding);
+        }
+
+        @Override
         public String getSignature() {
             return getName();
         }
@@ -1682,6 +1901,32 @@ public class EcjParser extends JavaParser {
         public int hashCode() {
             return mBinding != null ? mBinding.hashCode() : 0;
         }
+    }
+
+    @NonNull
+    private static String stripTypeVariables(String name) {
+        // Strip out type variables; there doesn't seem to be a way to
+        // do it from the ECJ APIs; it unconditionally includes this.
+        // (Converts for example
+        //     android.support.v7.widget.RecyclerView.Adapter<VH>
+        //  to
+        //     android.support.v7.widget.RecyclerView.Adapter
+        if (name.indexOf('<') != -1) {
+            StringBuilder sb = new StringBuilder(name.length());
+            int depth = 0;
+            for (int i = 0, n = name.length(); i < n; i++) {
+                char c = name.charAt(i);
+                if (c == '<') {
+                    depth++;
+                } else if (c == '>') {
+                    depth--;
+                } else if (depth == 0) {
+                    sb.append(c);
+                }
+            }
+            name = sb.toString();
+        }
+        return name;
     }
 
     // "package-info" as a char
@@ -1774,6 +2019,30 @@ public class EcjParser extends JavaParser {
         @Override
         public int getModifiers() {
             return 0;
+        }
+
+        @SuppressWarnings("RedundantIfStatement")
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            EcjResolvedPackage that = (EcjResolvedPackage) o;
+
+            if (mBinding != null ? !mBinding.equals(that.mBinding) : that.mBinding != null) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return mBinding != null ? mBinding.hashCode() : 0;
         }
     }
 
@@ -1885,9 +2154,9 @@ public class EcjParser extends JavaParser {
     }
 
     private class EcjResolvedVariable extends ResolvedVariable {
-        private LocalVariableBinding mBinding;
+        private VariableBinding mBinding;
 
-        private EcjResolvedVariable(LocalVariableBinding binding) {
+        private EcjResolvedVariable(VariableBinding binding) {
             mBinding = binding;
         }
 

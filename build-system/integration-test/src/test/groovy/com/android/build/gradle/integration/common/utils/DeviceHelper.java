@@ -16,15 +16,27 @@
 
 package com.android.build.gradle.integration.common.utils;
 
+import static org.junit.Assert.assertNotNull;
+
 import com.android.annotations.NonNull;
+import com.android.builder.testing.ConnectedDevice;
 import com.android.builder.testing.ConnectedDeviceProvider;
 import com.android.builder.testing.api.DeviceConnector;
 import com.android.builder.testing.api.DeviceException;
+import com.android.builder.testing.api.DeviceProvider;
+import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.DdmPreferences;
+import com.android.ddmlib.IDevice;
+import com.android.sdklib.devices.Device;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
+import org.junit.Assert;
+
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -36,7 +48,7 @@ public class DeviceHelper {
      * This hardcoded timeout only impacts the gradle plugin integration tests, i.e. not anything
      * that is externally published.
      */
-    private static final int DEFAULT_ADB_TIMEOUT_MSEC = DdmPreferences.DEFAULT_TIMEOUT * 3;
+    public static final int DEFAULT_ADB_TIMEOUT_MSEC = DdmPreferences.DEFAULT_TIMEOUT * 3;
 
     /**
      * Return the set of all ABIs supported by any of the connected devices.
@@ -51,6 +63,36 @@ public class DeviceHelper {
         for(DeviceConnector deviceConnector : deviceProvider.getDevices()) {
             abis.addAll(deviceConnector.getAbis());
         }
+        deviceProvider.terminate();
         return abis;
+    }
+
+    public static IDevice getIDevice() throws DeviceException {
+        return Iterables.getOnlyElement(getIDevices());
+    }
+    public static List<IDevice> getIDevices() throws DeviceException {
+        AndroidDebugBridge.initIfNeeded(false /*clientSupport*/);
+
+        AndroidDebugBridge bridge = AndroidDebugBridge.createBridge(
+                SdkHelper.getAdb().getAbsolutePath(), false /*forceNewBridge*/);
+
+        assertNotNull("Debug bridge", bridge);
+
+        long timeOut = DEFAULT_ADB_TIMEOUT_MSEC;
+        int sleepTime = 1000;
+        while (!bridge.hasInitialDeviceList() && timeOut > 0) {
+            try {
+                Thread.sleep(sleepTime);
+            } catch (InterruptedException e) {
+                throw new DeviceException(e);
+            }
+            timeOut -= sleepTime;
+        }
+
+        if (timeOut <= 0 && !bridge.hasInitialDeviceList()) {
+            throw new DeviceException("Timeout getting device list.");
+        }
+
+        return ImmutableList.copyOf(bridge.getDevices());
     }
 }

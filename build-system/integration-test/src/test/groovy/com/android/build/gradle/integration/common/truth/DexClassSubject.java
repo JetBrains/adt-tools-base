@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.common.truth;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.integration.common.utils.XmlHelper;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.Subject;
@@ -24,60 +25,89 @@ import com.google.common.truth.SubjectFactory;
 
 import org.w3c.dom.Node;
 
+@SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
 public class DexClassSubject extends Subject<DexClassSubject, Node> {
 
-    static class Factory extends SubjectFactory<DexClassSubject, Node> {
-        @NonNull
-        public static Factory get() {
-            return new Factory();
-        }
-
-        private Factory() {}
-
+    public static final SubjectFactory<DexClassSubject, Node> FACTORY
+            = new SubjectFactory<DexClassSubject, Node>() {
         @Override
         public DexClassSubject getSubject(
                 @NonNull FailureStrategy failureStrategy,
-                @NonNull Node subject) {
+                @Nullable Node subject) {
             return new DexClassSubject(failureStrategy, subject);
         }
-    }
+    };
 
-
-    public DexClassSubject(FailureStrategy failureStrategy,
-            Node subject) {
+    private DexClassSubject(
+            @NonNull FailureStrategy failureStrategy,
+            @Nullable Node subject) {
         super(failureStrategy, subject);
-        named(subject.getAttributes().getNamedItem("name").getTextContent());
     }
 
-    public void hasMethod(String name) {
-        if (!checkHasMethod(name)) {
+    public void hasMethod(@NonNull String name) {
+        if (assertSubjectIsNonNull() && !checkHasMethod(name)) {
             fail("does not contain method", name);
         }
     }
 
-    public void hasField(String name) {
-        if (!checkHasField(name)) {
+    public void hasMethods(@NonNull String... names) {
+        if (assertSubjectIsNonNull()) {
+            for (String name : names) {
+                hasMethod(name);
+            }
+        }
+    }
+
+    public void hasField(@NonNull String name) {
+        if (assertSubjectIsNonNull() && !checkHasField(name)) {
             fail("does not contain field", name);
         }
     }
 
-    public void doesNotHaveField(String name) {
-        if (checkHasField(name)) {
+    public void doesNotHaveField(@NonNull String name) {
+        if (assertSubjectIsNonNull() && checkHasField(name)) {
             fail("should not contain field", name);
         }
     }
 
-    public void doesNotHaveMethod(String name) {
-        if (checkHasMethod(name)) {
+    public void doesNotHaveMethod(@NonNull String name) {
+        if (assertSubjectIsNonNull() && checkHasMethod(name)) {
             fail("should not contain method", name);
         }
     }
 
-    private boolean checkHasMethod(String name) {
+    /**
+     * Should not be called when the subject is null.
+     */
+    private boolean checkHasMethod(@NonNull String name) {
         return XmlHelper.findChildWithTagAndAttrs(getSubject(), "method", "name", name) != null;
     }
 
-    private boolean checkHasField(String name) {
+    /**
+     * Should not be called when the subject is null.
+     */
+    private boolean checkHasField(@NonNull String name) {
         return XmlHelper.findChildWithTagAndAttrs(getSubject(), "field", "name", name) != null;
+    }
+
+    private boolean assertSubjectIsNonNull() {
+        if (getSubject() == null) {
+            fail("Cannot assert about the contents of a dex class that does not exist.");
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    protected String getDisplaySubject() {
+        String subjectName = null;
+        if (getSubject() != null) {
+            subjectName = getSubject().getAttributes().getNamedItem("name").getTextContent();
+        }
+        if (internalCustomName() != null) {
+            return internalCustomName() + " (<" + subjectName + ">)";
+        } else {
+            return "<" + subjectName + ">";
+        }
     }
 }

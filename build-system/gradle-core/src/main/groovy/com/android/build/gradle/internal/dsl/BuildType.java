@@ -51,7 +51,11 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
     @Nullable
     private Boolean useJack;
 
-    private boolean shrinkResources = false; // opt-in for now until we've validated it in the field
+    /** Opt-in for now until we've validated it in the field. */
+    private boolean shrinkResources = false;
+
+    /** Opt-in for now until we've validated the new shrinker in the field. */
+    private boolean useProguard = true;
 
     public BuildType(@NonNull String name,
                      @NonNull Project project,
@@ -133,7 +137,7 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
     /**
      * Adds a new field to the generated BuildConfig class.
      *
-     * <p>The field is generated as: <code>&lt;type&gt; &lt;name&gt; = &lt;value&gt;;</code>
+     * <p>The field is generated as: {@code <type> <name> = <value>;}
      *
      * <p>This means each of these must have valid Java content. If the type is a String, then the
      * value should include quotes.
@@ -156,6 +160,10 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
 
     /**
      * Adds a new generated resource.
+     *
+     * <p>This is equivalent to specifying a resource in res/values.
+     *
+     * <p>See <a href="http://developer.android.com/guide/topics/resources/available-resources.html">Resource Types</a>.
      *
      * @param type the type of the resource
      * @param name the name of the resource
@@ -194,15 +202,31 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
 
     /**
      * Adds new ProGuard configuration files.
+     *
+     * <p>There are 2 default rules files
+     * <ul>
+     *     <li>proguard-android.txt
+     *     <li>proguard-android-optimize.txt
+     * </ul>
+     * <p>They are located in the SDK. Using <code>getDefaultProguardFile(String filename)</code> will return the
+     * full path to the files. They are identical except for enabling optimizations.
      */
     @NonNull
-    public BuildType proguardFiles(@NonNull Object... proguardFileArray) {
-        getProguardFiles().addAll(project.files(proguardFileArray).getFiles());
+    public BuildType proguardFiles(@NonNull Object... proguardFiles) {
+        getProguardFiles().addAll(project.files(proguardFiles).getFiles());
         return this;
     }
 
     /**
      * Sets the ProGuard configuration files.
+     *
+     * <p>There are 2 default rules files
+     * <ul>
+     *     <li>proguard-android.txt
+     *     <li>proguard-android-optimize.txt
+     * </ul>
+     * <p>They are located in the SDK. Using <code>getDefaultProguardFile(String filename)</code> will return the
+     * full path to the files. They are identical except for enabling optimizations.
      */
     @NonNull
     public BuildType setProguardFiles(@NonNull Iterable<?> proguardFileIterable) {
@@ -214,14 +238,9 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
     }
 
     /**
-     * Specifies a proguard rule file to be included in the published AAR.
+     * Adds a proguard rule file to be used when processing test code.
      *
-     * This proguard rule file will then be used by any application project that consume the AAR
-     * (if proguard is enabled).
-     *
-     * This allows AAR to specify shrinking or obfuscation exclude rules.
-     *
-     * This is only valid for Library project. This is ignored in Application project.
+     * <p>Test code needs to be processed to apply the same obfuscation as was done to main code.
      */
     @NonNull
     public BuildType testProguardFile(@NonNull Object proguardFile) {
@@ -230,18 +249,56 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
     }
 
     /**
-     * Adds new ProGuard configuration files.
+     * Adds proguard rule files to be used when processing test code.
+     *
+     * <p>Test code needs to be processed to apply the same obfuscation as was done to main code.
      */
     @NonNull
-    public BuildType testProguardFiles(@NonNull Object... proguardFileArray) {
-        getTestProguardFiles().addAll(project.files(proguardFileArray).getFiles());
+    public BuildType testProguardFiles(@NonNull Object... proguardFiles) {
+        getTestProguardFiles().addAll(project.files(proguardFiles).getFiles());
         return this;
     }
 
+    /**
+     * Specifies proguard rule files to be used when processing test code.
+     *
+     * <p>Test code needs to be processed to apply the same obfuscation as was done to main code.
+     */
+    public void setTestProguardFiles(@NonNull Iterable<?> files) {
+        getTestProguardFiles().clear();
+        for (Object proguardFile : files) {
+            getTestProguardFiles().add(project.file(proguardFile));
+        }
+    }
+
+    /**
+     * Adds proguard rule files to be included in the published AAR.
+     *
+     * <p>This proguard rule file will then be used by any application project that consume the AAR
+     * (if proguard is enabled).
+     *
+     * <p>This allows AAR to specify shrinking or obfuscation exclude rules.
+     *
+     * <p>This is only valid for Library project. This is ignored in Application project.
+     */
     @NonNull
-    public BuildType consumerProguardFiles(@NonNull Object... proguardFileArray) {
-        getConsumerProguardFiles().addAll(project.files(proguardFileArray).getFiles());
+    public BuildType consumerProguardFiles(@NonNull Object... proguardFiles) {
+        getConsumerProguardFiles().addAll(project.files(proguardFiles).getFiles());
         return this;
+    }
+
+    /**
+     * Adds a proguard rule file to be included in the published AAR.
+     *
+     * <p>This proguard rule file will then be used by any application project that consume the AAR
+     * (if proguard is enabled).
+     *
+     * <p>This allows AAR to specify shrinking or obfuscation exclude rules.
+     *
+     * <p>This is only valid for Library project. This is ignored in Application project.
+     */
+    public void consumerProguardFile(@NonNull Object proguardFile) {
+        getConsumerProguardFiles().add(project.file(proguardFile));
     }
 
     /**
@@ -298,6 +355,19 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
     @Override
     public boolean isShrinkResources() {
         return shrinkResources;
+    }
+
+    @Override
+    public boolean isUseProguard() {
+        return useProguard;
+    }
+
+    public void setUseProguard(boolean useProguard) {
+        this.useProguard = useProguard;
+    }
+
+    public void useProguard(boolean useProguard) {
+        setUseProguard(useProguard);
     }
 
     public void setShrinkResources(boolean shrinkResources) {

@@ -32,6 +32,7 @@ import com.android.annotations.Nullable;
 import com.android.tools.lint.checks.BuiltinIssueRegistry;
 import com.android.tools.lint.client.api.Configuration;
 import com.android.tools.lint.client.api.IssueRegistry;
+import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
@@ -133,7 +134,7 @@ public class Main {
         // When running lint from the command line, warn if the project is a Gradle project
         // since those projects may have custom project configuration that the command line
         // runner won't know about.
-        LintCliClient client = new LintCliClient(mFlags) {
+        LintCliClient client = new LintCliClient(mFlags, LintClient.CLIENT_CLI) {
             @NonNull
             @Override
             protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
@@ -179,8 +180,9 @@ public class Main {
                                @Nullable Location location, @NonNull String message) {
                            // If you've deliberately ignored IssueRegistry.LINT_ERROR
                            // don't flag that one either
-                           if (issue == IssueRegistry.LINT_ERROR && new LintCliClient(mFlags).isSuppressed(
-                                   IssueRegistry.LINT_ERROR)) {
+                           if (issue == IssueRegistry.LINT_ERROR
+                                   && new LintCliClient(mFlags, LintClient.getClientName())
+                                   .isSuppressed(IssueRegistry.LINT_ERROR)) {
                                return true;
                            }
 

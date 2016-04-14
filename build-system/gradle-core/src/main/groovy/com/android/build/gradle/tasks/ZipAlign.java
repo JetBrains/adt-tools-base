@@ -3,7 +3,9 @@ package com.android.build.gradle.tasks;
 import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.annotations.ApkFile;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
@@ -20,10 +22,13 @@ import org.gradle.api.tasks.TaskAction;
 import org.gradle.process.ExecSpec;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.Callable;
 
 @ParallelizableTask
 public class ZipAlign extends DefaultTask implements FileSupplier {
+
+    private boolean useOldPackaging;
 
     // ----- PUBLIC TASK API -----
 
@@ -53,6 +58,12 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
     @ApkFile
     private File zipAlignExe;
 
+    private InstantRunBuildContext instantRunBuildContext;
+
+    public void setInstantRunBuildContext(InstantRunBuildContext instantRunBuildContext) {
+        this.instantRunBuildContext = instantRunBuildContext;
+    }
+
     @InputFile
     public File getZipAlignExe() {
         return zipAlignExe;
@@ -73,6 +84,13 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
                 execSpec.args(getOutputFile());
             }
         });
+        // mark this APK production, this will eventually be saved when instant-run is enabled.
+        try {
+            instantRunBuildContext.addChangedFile(InstantRunBuildContext.FileType.MAIN,
+                    getOutputFile());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     // ----- FileSupplierTask -----
@@ -142,7 +160,9 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
                     return null;
                 }
             });
+            zipAlign.instantRunBuildContext = scope.getVariantScope().getInstantRunBuildContext();
+            zipAlign.useOldPackaging = AndroidGradleOptions.useOldPackaging(
+                    scope.getGlobalScope().getProject());
         }
     }
-
 }

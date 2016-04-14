@@ -85,10 +85,11 @@ public class TaskTestUtils {
 
         @NonNull
         @Override
-        public SyncIssue handleSyncError(@NonNull String data, int type, @NonNull String msg) {
+        public SyncIssue handleSyncIssue(
+                @Nullable String data, int type, int severity, @NonNull String msg) {
             // always create a sync issue, no matter what the mode is. This can be used to validate
             // what error is thrown anyway.
-            syncIssue = new SyncIssueImpl(type, SyncIssue.SEVERITY_ERROR, data, msg);
+            syncIssue = new SyncIssueImpl(type, severity, data, msg);
             return syncIssue;
         }
 

@@ -415,8 +415,8 @@ public abstract class SdkTestCase extends TestCase {
                 stream = new ByteArrayInputStream(contents.getBytes(Charsets.UTF_8));
             } else {
                 stream = getTestResource(sourceRelativePath, true);
+                assertNotNull(sourceRelativePath + " does not exist", stream);
             }
-            assertNotNull(sourceRelativePath + " does not exist", stream);
             int index = targetRelativePath.lastIndexOf('/');
             String relative = null;
             String name = targetRelativePath;

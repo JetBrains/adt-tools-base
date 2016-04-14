@@ -213,7 +213,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
     public void testUpdateWithBasicFiles() throws Exception {
         File root = getIncMergeRoot("basicFiles");
         File fakeRoot = getMergedBlobFolder(root);
-        ResourceMerger resourceMerger = new ResourceMerger();
+        ResourceMerger resourceMerger = new ResourceMerger(0);
         resourceMerger.loadFromBlob(fakeRoot, false /*incrementalState*/);
         checkSourceFolders(resourceMerger);
 
@@ -302,7 +302,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
     public void testUpdateWithBasicValues() throws Exception {
         File root = getIncMergeRoot("basicValues");
         File fakeRoot = getMergedBlobFolder(root);
-        ResourceMerger resourceMerger = new ResourceMerger();
+        ResourceMerger resourceMerger = new ResourceMerger(0);
         resourceMerger.loadFromBlob(fakeRoot, false /*incrementalState*/);
         checkSourceFolders(resourceMerger);
 
@@ -381,7 +381,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
     public void testUpdateWithBasicValues2() throws Exception {
         File root = getIncMergeRoot("basicValues2");
         File fakeRoot = getMergedBlobFolder(root);
-        ResourceMerger resourceMerger = new ResourceMerger();
+        ResourceMerger resourceMerger = new ResourceMerger(0);
         resourceMerger.loadFromBlob(fakeRoot, false /*incrementalState*/);
         checkSourceFolders(resourceMerger);
 
@@ -436,7 +436,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
     public void testUpdateWithFilesVsValues() throws Exception {
         File root = getIncMergeRoot("filesVsValues");
         File fakeRoot = getMergedBlobFolder(root);
-        ResourceMerger resourceMerger = new ResourceMerger();
+        ResourceMerger resourceMerger = new ResourceMerger(0);
         resourceMerger.loadFromBlob(fakeRoot, false /*incrementalState*/);
         checkSourceFolders(resourceMerger);
 
@@ -501,7 +501,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
     public void testUpdateFromOldFile() throws Exception {
         File root = getIncMergeRoot("oldMerge");
         File fakeRoot = getMergedBlobFolder(root);
-        ResourceMerger resourceMerger = new ResourceMerger();
+        ResourceMerger resourceMerger = new ResourceMerger(0);
         assertFalse(resourceMerger.loadFromBlob(fakeRoot, false /*incrementalState*/));
     }
 
@@ -522,7 +522,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
      *
      */
     private static ResourceMerger createMerger(String[][] data) {
-        ResourceMerger merger = new ResourceMerger();
+        ResourceMerger merger = new ResourceMerger(0);
         for (String[] setData : data) {
             ResourceSet set = new ResourceSet(setData[0]);
             merger.addDataSet(set);
@@ -551,7 +551,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
 
         checkLogger(logger);
 
-        ResourceMerger resourceMerger = new ResourceMerger();
+        ResourceMerger resourceMerger = new ResourceMerger(0);
         resourceMerger.addDataSet(res);
         resourceMerger.addDataSet(overlay);
 
@@ -568,7 +568,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         File root = getIncMergeRoot(rootName);
         RecordingLogger logger = new RecordingLogger();
 
-        ResourceMerger resourceMerger = new ResourceMerger();
+        ResourceMerger resourceMerger = new ResourceMerger(0);
 
         for (String setName : sets) {
             ResourceSet resourceSet = new ResourceSet(setName);

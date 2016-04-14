@@ -16,7 +16,10 @@
 
 package com.android.ddmlib;
 
+import com.android.annotations.NonNull;
 import com.android.ddmlib.DebugPortManager.IDebugPortProvider;
+import com.android.ddmlib.jdwp.JdwpAgent;
+import com.android.ddmlib.jdwp.JdwpInterceptor;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -25,12 +28,16 @@ import java.nio.ByteOrder;
 /**
  * Subclass this with a class that handles one or more chunk types.
  */
-abstract class ChunkHandler {
+abstract class ChunkHandler extends JdwpInterceptor {
 
     public static final int CHUNK_HEADER_LEN = 8;   // 4-byte type, 4-byte len
     public static final ByteOrder CHUNK_ORDER = ByteOrder.BIG_ENDIAN;
 
     public static final int CHUNK_FAIL = type("FAIL");
+
+    public static final int DDMS_CMD_SET = 0xc7;       // 'G' + 128
+
+    public static final int DDMS_CMD = 0x01;
 
     ChunkHandler() {}
 
@@ -87,14 +94,14 @@ abstract class ChunkHandler {
         Log.w("ddms", "         client " + client + ", handler " + this);
     }
 
-  /**
-   * Utility function to copy a String out of a ByteBuffer.
-   */
-  public static String getString(ByteBuffer buf, int len) {
-    return ByteBufferUtil.getString(buf, len);
-  }
+    /**
+     * Utility function to copy a String out of a ByteBuffer.
+     */
+    public static String getString(ByteBuffer buf, int len) {
+      return ByteBufferUtil.getString(buf, len);
+    }
 
-  /**
+    /**
      * Convert a 4-character string to a 32-bit type.
      */
     static int type(String typeName) {
@@ -169,14 +176,13 @@ abstract class ChunkHandler {
         buf.putInt(0x00, type);
         buf.putInt(0x04, chunkLen);
 
-        packet.finishPacket(CHUNK_HEADER_LEN + chunkLen);
+        packet.finishPacket(DDMS_CMD_SET, DDMS_CMD, CHUNK_HEADER_LEN + chunkLen);
     }
 
     /**
      * Check that the client is opened with the proper debugger port for the
      * specified application name, and if not, reopen it.
      * @param client
-     * @param uiThread
      * @param appName
      * @return
      */
@@ -201,6 +207,43 @@ abstract class ChunkHandler {
         }
 
         return client;
+    }
+
+    void handlePacket(Client client, JdwpPacket packet) {
+        ByteBuffer buf = packet.getPayload();
+        int type = buf.getInt();
+        int length = buf.getInt();
+        Log.d("ddms", "Calling handler for " + name(type)
+                + " [" + this + "] (len=" + length + ")");
+        ByteBuffer ibuf = buf.slice();
+        ByteBuffer roBuf = ibuf.asReadOnlyBuffer(); // enforce R/O
+        roBuf.order(CHUNK_ORDER);
+
+        handleChunk(client, type, roBuf, packet.isReply(), packet.getId());
+    }
+
+    @Override
+    public JdwpPacket intercept(@NonNull JdwpAgent agent, @NonNull JdwpPacket packet) {
+      // TODO: ChunkHandlers are specific to client only packages. Further refactoring
+      // is needed to properly generalize them to JdwpInterceptors
+      if (agent instanceof Client) {
+        Client client = (Client)agent;
+        // TODO: ChunkHandlers are currently all static objects created in static
+        // initializers. For many different reasons they should not be there and should
+        // be moved to another creation mechanism where they are part of the ddm extension
+        // workflow. For now, access the ddmextension directly.
+        MonitorThread.getInstance().getDdmExtension().ddmSeen(client);
+
+        if (packet.isError()) {
+          client.packetFailed(packet);
+        } else if (packet.isEmpty()) {
+          Log.d("ddms", "Got empty reply for 0x" + Integer.toHexString(packet.getId()));
+        } else {
+          handlePacket(client, packet);
+        }
+        return null;
+      }
+      return packet;
     }
 }
 

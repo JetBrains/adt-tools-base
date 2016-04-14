@@ -16,75 +16,50 @@
 
 package com.android.sdklib;
 
-import com.android.annotations.Nullable;
-import com.android.sdklib.repository.FullRevision;
-import com.android.sdklib.repository.NoPreviewRevision;
-import com.android.utils.ILogger;
+import com.android.repository.Revision;
+import com.android.repository.testframework.FakeProgressIndicator;
+import com.android.repository.testframework.MockFileOp;
+import com.android.sdklib.repositoryv2.AndroidSdkHandler;
 
-import java.util.Properties;
+import junit.framework.TestCase;
 
-public class BuildToolInfoTest extends SdkManagerTestCase {
+import java.io.File;
 
-    /**
-     * Wraps an *existing* build-tool info object to expose some of its internals for testing.
-     */
-    public static class BuildToolInfoWrapper extends BuildToolInfo {
-
-        private final BuildToolInfo mInfo;
-        private NoPreviewRevision mOverrideJvmVersion;
-
-        public BuildToolInfoWrapper(BuildToolInfo info) {
-            super(info.getRevision(), info.getLocation());
-            mInfo = info;
-        }
-
-        @Override
-        public String getPath(PathId pathId) {
-            return mInfo.getPath(pathId);
-        }
-
-        @Override
-        public Properties getRuntimeProps() {
-            return mInfo.getRuntimeProps();
-        }
-
-        @Override
-        public boolean isValid(ILogger log) {
-            return mInfo.isValid(log);
-        }
-
-        @Override
-        public boolean canRunOnJvm() {
-            // This runs canRunOnJvm on *this* instance so that it can
-            // access the overridden getCurrentJvmVersion below rather than
-            // the original that we are wrapping.
-            return super.canRunOnJvm();
-        }
-
-        @Override
-        protected NoPreviewRevision getCurrentJvmVersion() throws NumberFormatException {
-            if (mOverrideJvmVersion != null) {
-                return mOverrideJvmVersion;
-            }
-            return mInfo.getCurrentJvmVersion();
-        }
-
-        public void overrideJvmVersion(@Nullable NoPreviewRevision jvmVersion) {
-            mOverrideJvmVersion = jvmVersion;
-        }
-    }
+public class BuildToolInfoTest extends TestCase {
 
     public void testGetCurrentJvmVersion() {
-        SdkManager sdkman = getSdkManager();
-        BuildToolInfo bt = sdkman.getBuildTool(new FullRevision(18, 3, 4, 5));
+        MockFileOp fop = new MockFileOp();
+        recordBuildTool23(fop);
+        AndroidSdkHandler sdkHandler = new AndroidSdkHandler(new File("/sdk"), fop);
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+        BuildToolInfo bt = sdkHandler.getBuildToolInfo(new Revision(23, 0, 2), progress);
+        progress.assertNoErrorsOrWarnings();
         assertNotNull(bt);
 
         // Check the actual JVM running this test.
-        NoPreviewRevision curr = bt.getCurrentJvmVersion();
+        Revision curr = bt.getCurrentJvmVersion();
         // We can reasonably expect this to at least run with JVM 1.5 or more
-        assertTrue(curr.compareTo(new FullRevision(1, 5, 0)) > 0);
+        assertTrue(curr.compareTo(new Revision(1, 5, 0)) > 0);
         // and we can reasonably expect to not be running with JVM 42.0.0
-        assertTrue(curr.compareTo(new FullRevision(42, 0, 0)) < 0);
+        assertTrue(curr.compareTo(new Revision(42, 0, 0)) < 0);
+    }
+
+    private static void recordBuildTool23(MockFileOp fop) {
+        fop.recordExistingFile("/sdk/build-tools/23.0.2/package.xml",
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
+                        + "<ns2:sdk-repository "
+                        + "xmlns:ns2=\"http://schemas.android.com/sdk/android/repo/repository2/01\" "
+                        + "xmlns:ns3=\"http://schemas.android.com/sdk/android/repo/sys-img2/01\" "
+                        + "xmlns:ns4=\"http://schemas.android.com/repository/android/generic/01\" "
+                        + "xmlns:ns5=\"http://schemas.android.com/sdk/android/repo/addon2/01\">"
+                        + "<license id=\"license-19E6313A\" type=\"text\">License text\n"
+                        + "</license><localPackage path=\"build-tools;23.0.2\" obsolete=\"false\">"
+                        + "<type-details xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
+                        + "xsi:type=\"ns4:genericDetailsType\"/>"
+                        + "<revision><major>23</major><minor>0</minor><micro>2</micro></revision>"
+                        + "<display-name>Android SDK Build-Tools 23.0.2</display-name>"
+                        + "<uses-license ref=\"license-19E6313A\"/></localPackage>"
+                        + "</ns2:sdk-repository>\n");
     }
 
 }

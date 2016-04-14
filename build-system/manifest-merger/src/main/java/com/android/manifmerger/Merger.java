@@ -17,7 +17,6 @@
 package com.android.manifmerger;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
@@ -154,15 +153,17 @@ public class Merger {
         try {
             MergingReport merge = invoker.merge();
             if (merge.getResult().isSuccess()) {
-                XmlDocument xmlDocument = merge.getMergedDocument().get();
-                if (outFile != null) {
-                    try {
-                        Files.write(xmlDocument.prettyPrint(), outFile, Charsets.UTF_8);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
+                String mergedDocument = merge.getMergedDocument(MergingReport.MergedManifestKind.MERGED);
+                if (mergedDocument != null) {
+                    if (outFile != null) {
+                        try {
+                            Files.write(mergedDocument, outFile, Charsets.UTF_8);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    } else {
+                        System.out.println(mergedDocument);
                     }
-                } else {
-                    System.out.println(xmlDocument.prettyPrint());
                 }
             } else {
                 for (MergingReport.Record record : merge.getLoggingRecords()) {

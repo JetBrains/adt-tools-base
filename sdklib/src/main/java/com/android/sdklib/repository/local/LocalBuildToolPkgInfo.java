@@ -18,8 +18,8 @@ package com.android.sdklib.repository.local;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.repository.Revision;
 import com.android.sdklib.BuildToolInfo;
-import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDesc;
 
@@ -35,10 +35,10 @@ public class LocalBuildToolPkgInfo extends LocalPkgInfo {
     private final IPkgDesc mDesc;
 
     public LocalBuildToolPkgInfo(@NonNull LocalSdk localSdk,
-                                 @NonNull File localDir,
-                                 @NonNull Properties sourceProps,
-                                 @NonNull FullRevision revision,
-                                 @Nullable BuildToolInfo btInfo) {
+            @NonNull File localDir,
+            @NonNull Properties sourceProps,
+            @NonNull Revision revision,
+            @Nullable BuildToolInfo btInfo) {
         super(localSdk, localDir, sourceProps);
         mDesc = PkgDesc.Builder.newBuildTool(revision).create();
         mBuildToolInfo = btInfo;

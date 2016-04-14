@@ -22,10 +22,7 @@ import com.android.builder.model.NativeAndroidProject
 import com.android.builder.model.NativeArtifact
 import com.android.builder.model.NativeSettings
 import com.android.builder.model.NativeToolchain
-import org.junit.AfterClass
-import org.junit.Before
-import org.junit.BeforeClass
-import org.junit.ClassRule
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -34,6 +31,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 /**
  * Test the ExternalNativeComponentModelPlugin.
  */
+@Ignore
 class ExternalNativeComponentPluginTest {
 
     @Rule
@@ -49,7 +47,9 @@ apply plugin: 'com.android.model.external'
 
 model {
     nativeBuild {
-        configFile = file("config.json")
+        create {
+            config "config.json"
+        }
     }
 }
 """
@@ -82,11 +82,112 @@ model {
             "cCompilerExecutable" : "clang",
             "cppCompilerExecutable" : "clang++"
         }
-    }
+    },
+    "cFileExtensions" : ["c"],
+    "cppFileExtensions" : ["cpp"]
 }
 """
         NativeAndroidProject model = project.executeAndReturnModel(NativeAndroidProject.class, "assemble")
         checkModel(model);
+    }
+
+    @Test
+    public void "check configurations with multiple JSON data file"() {
+        project.getBuildFile() << """
+apply plugin: 'com.android.model.external'
+
+model {
+    nativeBuild {
+        create {
+            config "config1.json"
+            commandString "./generate_config1.sh"
+        }
+        create {
+            config "config2.json"
+        }
+    }
+}
+"""
+        project.file("generate_config1.sh") << """echo '
+{
+    "buildFiles" : ["CMakeLists.txt"],
+    "libraries" : {
+        "foo" : {
+            "executable" : "touch",
+            "args" : ["foo.txt"],
+            "toolchain" : "toolchain1",
+            "output" : "build/libfoo.so"
+        }
+    },
+    "toolchains" : {
+        "toolchain1" : {
+            "cCompilerExecutable" : "clang",
+            "cppCompilerExecutable" : "clang++"
+        }
+    }
+}' > config1.json
+"""
+        project.file("generate_config1.sh").setExecutable(true)
+
+        project.file("config2.json") << """
+{
+    "buildFiles" : ["CMakeLists.txt"],
+    "libraries" : {
+        "bar" : {
+            "executable" : "touch",
+            "args" : ["bar.txt"],
+            "toolchain" : "toolchain2",
+            "output" : "build/libbar.so"
+        }
+    },
+    "toolchains" : {
+        "toolchain2" : {
+            "cCompilerExecutable" : "gcc",
+            "cppCompilerExecutable" : "g++"
+        }
+    }
+}
+"""
+        assertThat(project.file("config1.json")).doesNotExist()
+        project.execute("generateConfigfile")
+        assertThat(project.file("config1.json")).exists()
+
+        NativeAndroidProject model = project.executeAndReturnModel(NativeAndroidProject.class, "assemble")
+        assertThat(model.getFileExtensions()).containsEntry("c", "c")
+        assertThat(model.getFileExtensions()).containsEntry("C", "c++")
+        assertThat(model.getFileExtensions()).containsEntry("CPP", "c++")
+        assertThat(model.getFileExtensions()).containsEntry("c++", "c++")
+        assertThat(model.getFileExtensions()).containsEntry("cc", "c++")
+        assertThat(model.getFileExtensions()).containsEntry("cp", "c++")
+        assertThat(model.getFileExtensions()).containsEntry("cpp", "c++")
+        assertThat(model.getFileExtensions()).containsEntry("cxx", "c++")
+
+        assertThat(model.artifacts).hasSize(2)
+        for (NativeArtifact artifact : model.artifacts) {
+            if (artifact.getName().equals("foo")) {
+                assertThat(artifact.getName()).isEqualTo("foo")
+                assertThat(artifact.getToolChain()).isEqualTo("toolchain1")
+                assertThat(artifact.getOutputFile()).hasName("libfoo.so")
+            } else {
+                assertThat(artifact.getName()).isEqualTo("bar")
+                assertThat(artifact.getToolChain()).isEqualTo("toolchain2")
+                assertThat(artifact.getOutputFile()).hasName("libbar.so")
+            }
+        }
+
+        assertThat(model.getToolChains()).hasSize(2)
+        for (NativeToolchain toolchain : model.getToolChains()) {
+            if (toolchain.getName().equals("toolchain1")) {
+
+                assertThat(toolchain.getName()).isEqualTo("toolchain1")
+                assertThat(toolchain.getCCompilerExecutable().getName()).isEqualTo("clang")
+                assertThat(toolchain.getCppCompilerExecutable().getName()).isEqualTo("clang++")
+            } else {
+                assertThat(toolchain.getName()).isEqualTo("toolchain2")
+                assertThat(toolchain.getCCompilerExecutable().getName()).isEqualTo("gcc")
+                assertThat(toolchain.getCppCompilerExecutable().getName()).isEqualTo("g++")
+            }
+        }
     }
 
     @Test
@@ -95,36 +196,39 @@ model {
 apply plugin: 'com.android.model.external'
 
 model {
-    nativeBuild {
+    nativeBuildConfig {
         buildFiles.addAll([file("CMakeLists.txt")])
-    }
-    nativeBuild.libraries {
-        create("foo") {
-            executable = "touch"
-            args.addAll(["output.txt"])
-            toolchain = "toolchain1"
-            output = file("build/libfoo.so")
-            folders.with {
-                create() {
-                    src = file("src/main/jni")
-                    CFlags.addAll(["folderCFlag1", "folderCFlag2"])
-                    cppFlags.addAll(["folderCppFlag1", "folderCppFlag2"])
-                }
-            }
-            files.with {
-                create() {
-                    src = file("src/main/jni/hello.c")
-                    flags.addAll(["fileFlag1", "fileFlag2"])
-                }
-            }
+        CFileExtensions.add("c")
+        cppFileExtensions.add("cpp")
 
+        libraries {
+            create("foo") {
+                executable "touch"
+                args.addAll(["output.txt"])
+                toolchain "toolchain1"
+                output file("build/libfoo.so")
+                folders {
+                    create() {
+                        src "src/main/jni"
+                        CFlags.addAll(["folderCFlag1", "folderCFlag2"])
+                        cppFlags.addAll(["folderCppFlag1", "folderCppFlag2"])
+                    }
+                }
+                files {
+                    create() {
+                        src "src/main/jni/hello.c"
+                        flags.addAll(["fileFlag1", "fileFlag2"])
+                    }
+                }
+
+            }
         }
-    }
-    nativeBuild.toolchains {
-        create("toolchain1") {
-            CCompilerExecutable = file("clang")
-            cppCompilerExecutable = file("clang++")
+        toolchains {
+            create("toolchain1") {
+                CCompilerExecutable = "clang"
+                cppCompilerExecutable "clang++"
 
+            }
         }
     }
 }
@@ -138,6 +242,9 @@ model {
         assertThat(project.file("output.txt")).exists()
 
         assertThat(model.artifacts).hasSize(1)
+
+        assertThat(model.getFileExtensions()).containsEntry("c", "c")
+        assertThat(model.getFileExtensions()).containsEntry("cpp", "c++")
 
         NativeArtifact artifact = model.artifacts.first()
         assertThat(artifact.getToolChain()).isEqualTo("toolchain1")

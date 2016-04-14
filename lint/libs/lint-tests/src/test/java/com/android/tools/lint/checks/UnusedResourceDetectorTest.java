@@ -16,13 +16,34 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.tools.lint.detector.api.TextFormat.TEXT;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.BuildType;
+import com.android.builder.model.BuildTypeContainer;
+import com.android.builder.model.ClassField;
+import com.android.builder.model.ProductFlavor;
+import com.android.builder.model.ProductFlavorContainer;
+import com.android.builder.model.SourceProvider;
+import com.android.builder.model.Variant;
+import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.Project;
+import com.android.tools.lint.detector.api.Severity;
+import com.google.common.collect.ImmutableMap;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Map;
 
-@SuppressWarnings("javadoc")
+@SuppressWarnings({"javadoc", "ClassNameDiffersFromFileName"})
 public class UnusedResourceDetectorTest extends AbstractCheckTest {
     private boolean mEnableIds = false;
 
@@ -50,15 +71,20 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
 
     public void testUnused() throws Exception {
         mEnableIds = false;
-        assertEquals(
-           "res/layout/accessibility.xml: Warning: The resource R.layout.accessibility appears to be unused [UnusedResources]\n" +
-           "res/layout/main.xml: Warning: The resource R.layout.main appears to be unused [UnusedResources]\n" +
-           "res/layout/other.xml: Warning: The resource R.layout.other appears to be unused [UnusedResources]\n" +
-           "res/values/strings2.xml:3: Warning: The resource R.string.hello appears to be unused [UnusedResources]\n" +
-           "    <string name=\"hello\">Hello</string>\n" +
-           "            ~~~~~~~~~~~~\n" +
-           "0 errors, 4 warnings\n" +
-           "",
+        assertEquals(""
+                + "res/layout/accessibility.xml:2: Warning: The resource R.layout.accessibility appears to be unused [UnusedResources]\n"
+                + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\" android:id=\"@+id/newlinear\" android:orientation=\"vertical\" android:layout_width=\"match_parent\" android:layout_height=\"match_parent\">\n"
+                + "^\n"
+                + "res/layout/main.xml:2: Warning: The resource R.layout.main appears to be unused [UnusedResources]\n"
+                + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "^\n"
+                + "res/layout/other.xml:2: Warning: The resource R.layout.other appears to be unused [UnusedResources]\n"
+                + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "^\n"
+                + "res/values/strings2.xml:3: Warning: The resource R.string.hello appears to be unused [UnusedResources]\n"
+                + "    <string name=\"hello\">Hello</string>\n"
+                + "            ~~~~~~~~~~~~\n"
+                + "0 errors, 4 warnings\n",
 
             lintProject(
                 "res/values/strings2.xml",
@@ -75,30 +101,25 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
     public void testUnusedIds() throws Exception {
         mEnableIds = true;
 
-        assertEquals(
-           "res/layout/accessibility.xml: Warning: The resource R.layout.accessibility appears to be unused [UnusedResources]\n" +
-           "Warning: The resource R.layout.main appears to be unused [UnusedResources]\n" +
-           "Warning: The resource R.layout.other appears to be unused [UnusedResources]\n" +
-           "Warning: The resource R.string.hello appears to be unused [UnusedResources]\n" +
-           "res/layout/accessibility.xml:2: Warning: The resource R.id.newlinear appears to be unused [UnusedIds]\n" +
-           "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\" android:id=\"@+id/newlinear\" android:orientation=\"vertical\" android:layout_width=\"match_parent\" android:layout_height=\"match_parent\">\n" +
-           "                                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-           "res/layout/accessibility.xml:3: Warning: The resource R.id.button1 appears to be unused [UnusedIds]\n" +
-           "    <Button android:text=\"Button\" android:id=\"@+id/button1\" android:layout_width=\"wrap_content\" android:layout_height=\"wrap_content\"></Button>\n" +
-           "                                  ~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-           "res/layout/accessibility.xml:4: Warning: The resource R.id.android_logo appears to be unused [UnusedIds]\n" +
-           "    <ImageView android:id=\"@+id/android_logo\" android:layout_width=\"wrap_content\" android:layout_height=\"wrap_content\" android:src=\"@drawable/android_button\" android:focusable=\"false\" android:clickable=\"false\" android:layout_weight=\"1.0\" />\n" +
-           "               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-           "res/layout/accessibility.xml:5: Warning: The resource R.id.android_logo2 appears to be unused [UnusedIds]\n" +
-           "    <ImageButton android:importantForAccessibility=\"yes\" android:id=\"@+id/android_logo2\" android:layout_width=\"wrap_content\" android:layout_height=\"wrap_content\" android:src=\"@drawable/android_button\" android:focusable=\"false\" android:clickable=\"false\" android:layout_weight=\"1.0\" />\n" +
-           "                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-           "Warning: The resource R.id.imageView1 appears to be unused [UnusedIds]\n" +
-           "Warning: The resource R.id.include1 appears to be unused [UnusedIds]\n" +
-           "Warning: The resource R.id.linearLayout2 appears to be unused [UnusedIds]\n" +
-           "0 errors, 11 warnings\n",
+        assertEquals(""
+                + "res/layout/accessibility.xml:2: Warning: The resource R.layout.accessibility appears to be unused [UnusedResources]\n"
+                + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\" android:id=\"@+id/newlinear\" android:orientation=\"vertical\" android:layout_width=\"match_parent\" android:layout_height=\"match_parent\">\n"
+                + "^\n"
+                + "res/layout/accessibility.xml:2: Warning: The resource R.id.newlinear appears to be unused [UnusedIds]\n"
+                + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\" android:id=\"@+id/newlinear\" android:orientation=\"vertical\" android:layout_width=\"match_parent\" android:layout_height=\"match_parent\">\n"
+                + "                                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/layout/accessibility.xml:3: Warning: The resource R.id.button1 appears to be unused [UnusedIds]\n"
+                + "    <Button android:text=\"Button\" android:id=\"@+id/button1\" android:layout_width=\"wrap_content\" android:layout_height=\"wrap_content\"></Button>\n"
+                + "                                  ~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/layout/accessibility.xml:4: Warning: The resource R.id.android_logo appears to be unused [UnusedIds]\n"
+                + "    <ImageView android:id=\"@+id/android_logo\" android:layout_width=\"wrap_content\" android:layout_height=\"wrap_content\" android:src=\"@drawable/android_button\" android:focusable=\"false\" android:clickable=\"false\" android:layout_weight=\"1.0\" />\n"
+                + "               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/layout/accessibility.xml:5: Warning: The resource R.id.android_logo2 appears to be unused [UnusedIds]\n"
+                + "    <ImageButton android:importantForAccessibility=\"yes\" android:id=\"@+id/android_logo2\" android:layout_width=\"wrap_content\" android:layout_height=\"wrap_content\" android:src=\"@drawable/android_button\" android:focusable=\"false\" android:clickable=\"false\" android:layout_weight=\"1.0\" />\n"
+                + "                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 5 warnings\n",
 
             lintProject(
-                // Rename .txt files to .java
                 "src/my/pkg/Test.java.txt=>src/my/pkg/Test.java",
                 "gen/my/pkg/R.java.txt=>gen/my/pkg/R.java",
                 "AndroidManifest.xml",
@@ -106,23 +127,48 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
     }
 
     public void testArrayReference() throws Exception {
-        assertEquals(
-           "res/values/arrayusage.xml:3: Warning: The resource R.array.my_array appears to be unused [UnusedResources]\n" +
-           "<string-array name=\"my_array\">\n" +
-           "              ~~~~~~~~~~~~~~~\n" +
-           "0 errors, 1 warnings\n" +
-           "",
+        assertEquals(""
+                // The string is unused, but only because the array referencing it is unused too.
+                + "res/values/arrayusage.xml:2: Warning: The resource R.string.my_item appears to be unused [UnusedResources]\n"
+                + "<string name=\"my_item\">An Item</string>\n"
+                + "        ~~~~~~~~~~~~~~\n"
+                + "res/values/arrayusage.xml:3: Warning: The resource R.array.my_array appears to be unused [UnusedResources]\n"
+                + "<string-array name=\"my_array\">\n"
+                + "              ~~~~~~~~~~~~~~~\n"
+                + "0 errors, 2 warnings\n",
 
             lintProject(
-                "AndroidManifest.xml",
-                "res/values/arrayusage.xml"));
+                xml("res/values/arrayusage.xml", ""
+                        + "<resources>\n"
+                        + "<string name=\"my_item\">An Item</string>\n"
+                        + "<string-array name=\"my_array\">\n"
+                        + "   <item>@string/my_item</item>\n"
+                        + "</string-array>\n"
+                        + "</resources>\n")
+                     ));
+    }
+
+    public void testArrayReferenceIncluded() throws Exception {
+        assertEquals("No warnings.",
+
+                lintProject(
+                        xml("res/values/arrayusage.xml", ""
+                                + "<resources xmlns:tools=\"http://schemas.android.com/tools\""
+                                + "   tools:keep=\"@array/my_array\">\n"
+                                + "<string name=\"my_item\">An Item</string>\n"
+                                + "<string-array name=\"my_array\">\n"
+                                + "   <item>@string/my_item</item>\n"
+                                + "</string-array>\n"
+                                + "</resources>\n")
+                ));
     }
 
     public void testAttrs() throws Exception {
-        assertEquals(
-           "res/layout/customattrlayout.xml: Warning: The resource R.layout.customattrlayout appears to be unused [UnusedResources]\n" +
-           "0 errors, 1 warnings\n" +
-           "",
+        assertEquals(""
+                + "res/layout/customattrlayout.xml:2: Warning: The resource R.layout.customattrlayout appears to be unused [UnusedResources]\n"
+                + "<foo.bar.ContentFrame\n"
+                + "^\n"
+                + "0 errors, 1 warnings\n",
 
             lintProject(
                 "res/values/customattr.xml",
@@ -185,6 +231,7 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
                 "AndroidManifest.xml"));
     }
 
+    /* Not sure about this -- why would we ignore drawable XML?
     public void testIgnoreXmlDrawable() throws Exception {
         assertEquals(
            "No warnings.",
@@ -194,19 +241,23 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
                     "gen/my/pkg/R2.java.txt=>gen/my/pkg/R.java"
             ));
     }
+    */
 
     public void testPlurals() throws Exception {
-        assertEquals(
-           "res/values/plurals.xml:3: Warning: The resource R.plurals.my_plural appears to be unused [UnusedResources]\n" +
-           "    <plurals name=\"my_plural\">\n" +
-           "             ~~~~~~~~~~~~~~~~\n" +
-           "0 errors, 1 warnings\n" +
-           "",
-
+        //noinspection ClassNameDiffersFromFileName
+        assertEquals("No warnings.",
             lintProject(
-                "res/values/strings4.xml",
-                "res/values/plurals.xml",
-                "AndroidManifest.xml"));
+                copy("res/values/strings4.xml"),
+                copy("res/values/plurals.xml"),
+                copy("AndroidManifest.xml"),
+                java("src/test/pkg/Test.java", ""
+                        + "package test.pkg;\n"
+                        + "public class Test {\n"
+                        + "    public void test() {"
+                        + "        int used = R.plurals.my_plural;\n"
+                        + "    }"
+                        + "}")
+            ));
     }
 
     public void testNoMerging() throws Exception {
@@ -352,7 +403,9 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
                         // Add unit test source which references resources which would otherwise
                         // be marked as unused
                         xml("res/layout/db.xml", ""
-                                + "<layout xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
+                                + "<layout xmlns:android=\"http://schemas.android.com/apk/res/android\""
+                                + "    xmlns:tools=\"http://schemas.android.com/tools\" "
+                                + "    tools:keep=\"@layout/db\">\n"
                                 + "   <data>\n"
                                 + "       <variable name=\"user\" type=\"com.example.User\"/>\n"
                                 + "   </data>\n"
@@ -363,9 +416,6 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
                                 // Data binding expressions
                                 + "       android:padding=\"@{large? @dimen/largePadding : @dimen/smallPadding}\"\n"
                                 + "       android:text=\"@{@string/nameFormat(firstName, lastName)}\" />\n"
-                                // bogus recursive include, just here to avoid showing @layout/db
-                                // as unused
-                                + "       <include layout='@layout/db'/>\n"
                                 + "</layout>")
                 ));
     }
@@ -389,5 +439,203 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
                                 + "    <public type='dimen' name='smallPadding' />"
                                 + "</resources>")
                 ));
+    }
+
+    public void testDynamicResources() throws Exception {
+        assertEquals(""
+                        + "UnusedResourceDetectorTest_testDynamicResources: Warning: The resource R.string.cat appears to be unused [UnusedResources]\n"
+                        + "UnusedResourceDetectorTest_testDynamicResources: Warning: The resource R.string.dog appears to be unused [UnusedResources]\n"
+                        + "0 errors, 2 warnings\n",
+
+                lintProject(
+                        "res/layout/layout1.xml=>res/layout/main.xml",
+                        "src/test/pkg/UnusedReferenceDynamic.java.txt=>src/test/pkg/UnusedReferenceDynamic.java",
+                        "AndroidManifest.xml"));
+    }
+
+    public void testStaticImport() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=40293
+        // 40293: Lint reports resource as unused when referenced via "import static"
+        mEnableIds = false;
+        assertEquals(""
+                + "No warnings.",
+
+                lintProject(
+                        xml("res/values/resources.xml", ""
+                                + "<resources>\n"
+                                + "    <item type='dimen' name='largePadding'>20dp</item>\n"
+                                + "    <item type='dimen' name='smallPadding'>15dp</item>\n"
+                                + "    <item type='string' name='nameFormat'>%1$s %2$s</item>\n"
+                                + "</resources>"),
+
+                        // Add unit test source which references resources which would otherwise
+                        // be marked as unused
+                        java("src/test/pkg/TestCode.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import static test.pkg.R.dimen.*;\n"
+                                + "import static test.pkg.R.string.nameFormat;\n"
+                                + "import test.pkg.R.dimen;\n"
+                                + "\n"
+                                + "public class TestCode {\n"
+                                + "    public void test() {\n"
+                                + "        int x = dimen.smallPadding; // Qualified import\n"
+                                + "        int y = largePadding; // Static wildcard import\n"
+                                + "        int z = nameFormat; // Static explicit import\n"
+                                + "    }\n"
+                                + "}\n"),
+                        java("src/test/pkg/R.java", ""
+                                + "package test.pkg;\n"
+                                + "public class R {\n"
+                                + "    public static class dimen {\n"
+                                + "        public static final int largePadding = 1;\n"
+                                + "        public static final int smallPadding = 2;\n"
+                                + "    }\n"
+                                + "    public static class string {\n"
+                                + "        public static final int nameFormat = 3;\n"
+                                + "    }\n"
+                                + "}")
+                ));
+    }
+
+    public void testStyles() throws Exception {
+        mEnableIds = false;
+        assertEquals(""
+                + "res/values/styles.xml:5: Warning: The resource R.style.UnusedStyle appears to be unused [UnusedResources]\n"
+                + "    <style name=\"UnusedStyle\"/>\n"
+                + "           ~~~~~~~~~~~~~~~~~~\n"
+                + "res/values/styles.xml:6: Warning: The resource R.style.UnusedStyle_Sub appears to be unused [UnusedResources]\n"
+                + "    <style name=\"UnusedStyle.Sub\"/>\n"
+                + "           ~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/values/styles.xml:7: Warning: The resource R.style.UnusedStyle_Something_Sub appears to be unused [UnusedResources]\n"
+                + "    <style name=\"UnusedStyle.Something.Sub\" parent=\"UnusedStyle\"/>\n"
+                + "           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 3 warnings\n",
+
+                lintProject(
+                        xml("res/values/styles.xml", ""
+                                + "<resources>\n"
+                                + "    <style name=\"UsedStyle\" parent=\"android:Theme\"/>\n"
+                                + "    <style name=\"UsedStyle.Sub\"/>\n"
+                                + "    <style name=\"UsedStyle.Something.Sub\" parent=\"UsedStyle\"/>\n"
+
+                                + "    <style name=\"UnusedStyle\"/>\n"
+                                + "    <style name=\"UnusedStyle.Sub\"/>\n"
+                                + "    <style name=\"UnusedStyle.Something.Sub\" parent=\"UnusedStyle\"/>\n"
+
+                                + "    <style name=\"ImplicitUsed\" parent=\"android:Widget.ActionBar\"/>\n"
+                                + "</resources>")
+                ));
+    }
+
+    @Override
+    protected TestLintClient createClient() {
+        if (!getName().startsWith("testDynamicResources")) {
+            return super.createClient();
+        }
+
+        // Set up a mock project model for the resource configuration test(s)
+        // where we provide a subset of densities to be included
+
+        return new TestLintClient() {
+            @NonNull
+            @Override
+            protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
+                return new Project(this, dir, referenceDir) {
+                    @Override
+                    public boolean isGradleProject() {
+                        return true;
+                    }
+
+                    @Nullable
+                    @Override
+                    public AndroidProject getGradleProjectModel() {
+                        /*
+                        Simulate dynamic resources in this setup:
+                            defaultConfig {
+                                ...
+                                resValue "string", "cat", "Some Data"
+                            }
+                            buildTypes {
+                                debug {
+                                    ...
+                                    resValue "string", "foo", "Some Data"
+                                }
+                                release {
+                                    ...
+                                    resValue "string", "xyz", "Some Data"
+                                    resValue "string", "dog", "Some Data"
+                                }
+                            }
+                         */
+                        ClassField foo = mock(ClassField.class);
+                        when(foo.getName()).thenReturn("foo");
+                        when(foo.getType()).thenReturn("string");
+                        ClassField xyz = mock(ClassField.class);
+                        when(xyz.getName()).thenReturn("xyz");
+                        when(xyz.getType()).thenReturn("string");
+                        ClassField cat = mock(ClassField.class);
+                        when(cat.getName()).thenReturn("cat");
+                        when(cat.getType()).thenReturn("string");
+                        ClassField dog = mock(ClassField.class);
+                        when(dog.getName()).thenReturn("dog");
+                        when(dog.getType()).thenReturn("string");
+
+                        Map<String, ClassField> debugResValues = ImmutableMap.of("foo", foo);
+                        BuildType type1 = mock(BuildType.class);
+                        when(type1.getName()).thenReturn("debug");
+                        when(type1.getResValues()).thenReturn(debugResValues);
+                        Map<String, ClassField> releaseResValues =
+                                ImmutableMap.of("xyz", xyz, "dog", dog);
+                        BuildType type2 = mock(BuildType.class);
+                        when(type2.getName()).thenReturn("release");
+                        when(type2.getResValues()).thenReturn(releaseResValues);
+
+                        BuildTypeContainer container1 = mock(BuildTypeContainer.class);
+                        when(container1.getBuildType()).thenReturn(type1);
+                        BuildTypeContainer container2 = mock(BuildTypeContainer.class);
+                        when(container2.getBuildType()).thenReturn(type2);
+
+                        SourceProvider debugProvider = mock(SourceProvider.class);
+                        when(debugProvider.getResDirectories()).thenReturn(Collections.<File>emptyList());
+                        when(debugProvider.getJavaDirectories()).thenReturn(Collections.<File>emptyList());
+                        SourceProvider releaseProvider = mock(SourceProvider.class);
+                        when(releaseProvider.getResDirectories()).thenReturn(Collections.<File>emptyList());
+                        when(releaseProvider.getJavaDirectories()).thenReturn(Collections.<File>emptyList());
+
+                        when(container1.getSourceProvider()).thenReturn(debugProvider);
+                        when(container2.getSourceProvider()).thenReturn(releaseProvider);
+
+                        Map<String, ClassField> defaultResValues = ImmutableMap.of("cat", cat);
+                        ProductFlavor defaultFlavor = mock(ProductFlavor.class);
+                        when(defaultFlavor.getResValues()).thenReturn(defaultResValues);
+
+                        ProductFlavorContainer defaultContainer =
+                                mock(ProductFlavorContainer.class);
+                        when(defaultContainer.getProductFlavor()).thenReturn(defaultFlavor);
+
+                        AndroidProject project = mock(AndroidProject.class);
+                        when(project.getDefaultConfig()).thenReturn(defaultContainer);
+                        when(project.getBuildTypes())
+                                .thenReturn(Arrays.asList(container1, container2));
+                        return project;
+                    }
+
+                    @Nullable
+                    @Override
+                    public Variant getCurrentVariant() {
+                        Variant variant = mock(Variant.class);
+                        when(variant.getBuildType()).thenReturn("release");
+                        return variant;
+                    }
+                };
+            }
+        };
+    }
+
+    @Override
+    protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
+            @NonNull Severity severity, @Nullable Location location, @NonNull String message) {
+        assertNotNull(message, UnusedResourceDetector.getUnusedResource(message, TEXT));
     }
 }

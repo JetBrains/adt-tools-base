@@ -70,6 +70,65 @@ public class RequiredAttributeDetectorTest extends AbstractCheckTest {
                     ));
     }
 
+    public void testPercent() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=198432
+        // Don't flag missing layout_width in PercentFrameLayout or PercentRelativeLayout
+        assertEquals(""
+                + "res/layout/test.xml:28: Error: The required layout_width or layout_widthPercent and layout_height or layout_heightPercent attributes are missing [RequiredSize]\n"
+                + "        <View />\n"
+                + "        ~~~~~~~~\n"
+                + "res/layout/test.xml:30: Error: The required layout_width or layout_widthPercent attribute is missing [RequiredSize]\n"
+                + "        <View\n"
+                + "        ^\n"
+                + "res/layout/test.xml:34: Error: The required layout_height or layout_heightPercent attribute is missing [RequiredSize]\n"
+                + "        <View\n"
+                + "        ^\n"
+                + "3 errors, 0 warnings\n",
+                lintProject(xml("res/layout/test.xml", ""
+                        + "<merge xmlns:android=\"http://schemas.android.com/apk/res/android\""
+                        + "     xmlns:app=\"http://schemas.android.com/apk/res-auto\">\n"
+                        + "  <android.support.percent.PercentFrameLayout\n"
+                        + "        android:layout_width=\"match_parent\"\n"
+                        + "        android:layout_height=\"match_parent\"\n"
+                        + "        >\n"
+                        + "        <View\n"
+                        + "            app:layout_widthPercent=\"50%\"\n"
+                        + "            app:layout_heightPercent=\"50%\"/>\n"
+                        + "        <View\n"
+                        + "            android:layout_width=\"wrap_content\"\n"
+                        + "            android:layout_height=\"wrap_content\"\n"
+                        + "            app:layout_marginStartPercent=\"25%\"\n"
+                        + "            app:layout_marginEndPercent=\"25%\"/>\n"
+                        + "        <View\n"
+                        + "            android:id=\"@+id/textview2\"\n"
+                        + "            android:layout_height=\"wrap_content\"\n"
+                        + "            app:layout_widthPercent=\"60%\"/>\n"
+                        + "    </android.support.percent.PercentFrameLayout>"
+                        + "\n"
+                        + "    <android.support.percent.PercentRelativeLayout\n"
+                        + "        android:layout_width=\"match_parent\"\n"
+                        + "        android:layout_height=\"match_parent\">\n"
+                        + "        <View\n"
+                        + "            android:layout_gravity=\"center\"\n"
+                        + "            app:layout_widthPercent=\"50%\"\n"
+                        + "            app:layout_heightPercent=\"50%\"/>\n"
+                        + "        <!-- Errors -->\n"
+                        + "        <!-- Missing both -->\n"
+                        + "        <View />\n"
+                        + "        <!-- Missing width -->\n"
+                        + "        <View\n"
+                        + "            android:layout_gravity=\"center\"\n"
+                        + "            app:layout_heightPercent=\"50%\"/>\n"
+                        + "        <!-- Missing height -->\n"
+                        + "        <View\n"
+                        + "            android:layout_gravity=\"center\"\n"
+                        + "            app:layout_widthPercent=\"50%\"/>\n"
+                        + "\n"
+                        + "    </android.support.percent.PercentRelativeLayout>\n"
+                        + "\n"
+                        + "</merge>")));
+    }
+
     public void testInflaters() throws Exception {
         // Consider java inflation
         assertEquals(

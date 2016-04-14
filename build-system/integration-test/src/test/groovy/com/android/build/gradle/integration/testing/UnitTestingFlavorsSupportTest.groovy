@@ -35,6 +35,8 @@ class UnitTestingFlavorsSupportTest {
 
     @Test
     public void 'Tests for a given flavor are only compiled against the flavor'() throws Exception {
+        flavorsProject.file("src/doesntBuild/java/com/android/tests/Broken.java") << "this is broken"
+
         flavorsProject.execute("clean", "testBuildsPassesDebug")
 
         def results = new JUnitResults(

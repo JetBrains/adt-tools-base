@@ -19,7 +19,7 @@ package com.android.builder.png;
 import com.android.annotations.NonNull;
 import com.android.ide.common.internal.PngCruncher;
 import com.android.ide.common.internal.PngException;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
 import com.google.common.collect.Maps;
@@ -81,7 +81,7 @@ public class NinePatchAsyncAaptProcessTest {
     @NonNull
     private static PngCruncher getCruncher() {
         ILogger logger = new StdLogger(StdLogger.Level.VERBOSE);
-        File aapt = NinePatchAaptProcessorTestUtils.getAapt(FullRevision.parseRevision("22.0.1"));
+        File aapt = NinePatchAaptProcessorTestUtils.getAapt(Revision.parseRevision("22.0.1"));
         return QueuedCruncher.Builder.INSTANCE.newCruncher(aapt.getAbsolutePath(), logger);
     }
 

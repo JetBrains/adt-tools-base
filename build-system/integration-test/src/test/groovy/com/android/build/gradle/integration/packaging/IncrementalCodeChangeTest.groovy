@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.packaging
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.google.common.base.Charsets
 import com.google.common.io.Files
 import groovy.transform.CompileStatic
@@ -66,8 +67,8 @@ dependencies {
 """
         project.execute("clean", ":app:assembleDebug")
 
-        project.replaceLine(
-                "library/src/main/java/com/example/android/multiproject/library/PersonView.java",
+        TestFileUtils.replaceLine(
+                project.file("library/src/main/java/com/example/android/multiproject/library/PersonView.java"),
                 9,
                 "        setTextSize(30);")
 
@@ -98,8 +99,8 @@ dependencies {
 """
         project.execute("clean", ":app:assembleDebug")
 
-        project.replaceLine(
-                "library/src/main/java/com/example/android/multiproject/library/PersonView.java",
+        TestFileUtils.replaceLine(
+                project.file("library/src/main/java/com/example/android/multiproject/library/PersonView.java"),
                 9,
                 "        setTextSize(30);")
 
@@ -135,8 +136,8 @@ dependencies {
 """
         project.execute("clean", ":app:assembleDebug")
 
-        project.replaceLine(
-                "library/src/main/java/com/example/android/multiproject/library/PersonView.java",
+        TestFileUtils.replaceLine(
+                project.file("library/src/main/java/com/example/android/multiproject/library/PersonView.java"),
                 9,
                 "        setTextSize(30);")
 

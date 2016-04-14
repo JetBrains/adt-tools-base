@@ -37,6 +37,7 @@ import static com.android.SdkConstants.TAG_STRING;
 import static com.android.SdkConstants.VALUE_SELECTABLE_ITEM_BACKGROUND;
 import static com.android.SdkConstants.VALUE_TRUE;
 import static com.android.SdkConstants.VALUE_VERTICAL;
+import static com.android.tools.lint.checks.RequiredAttributeDetector.PERCENT_RELATIVE_LAYOUT;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -723,7 +724,7 @@ public class ButtonDetector extends ResourceXmlDetector {
             }
 
             return false;
-        } else if (layout.equals(RELATIVE_LAYOUT)) {
+        } else if (layout.equals(RELATIVE_LAYOUT) || layout.equals(PERCENT_RELATIVE_LAYOUT)) {
             // In RelativeLayouts, look for attachments which look like a clear sign
             // that the OK or Cancel buttons are out of order:
             //   -- a left attachment on a Cancel button (where the left attachment

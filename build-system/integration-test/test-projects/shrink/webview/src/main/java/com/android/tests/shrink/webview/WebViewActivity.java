@@ -23,5 +23,7 @@ public class WebViewActivity extends Activity {
         // Should mark R.drawable.used1 as used
         webview.loadUrl("file:///android_res/raw/used_index.html");
 
+        // Should make R.raw.unknown and dependencies as used
+        System.out.println(R.raw.unknown);
     }
 }

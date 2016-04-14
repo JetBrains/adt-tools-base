@@ -21,7 +21,6 @@ import com.android.tools.rpclib.schema.*;
 import org.jetbrains.annotations.NotNull;
 
 import com.android.tools.rpclib.binary.BinaryClass;
-import com.android.tools.rpclib.binary.BinaryID;
 import com.android.tools.rpclib.binary.BinaryObject;
 import com.android.tools.rpclib.binary.Decoder;
 import com.android.tools.rpclib.binary.Encoder;
@@ -55,11 +54,11 @@ final class Int64Slice extends Box implements BinaryObject {
     public BinaryClass klass() { return Klass.INSTANCE; }
 
 
-    private static final Entity ENTITY = new Entity("any","int64Slice","","");
+    private static final Entity ENTITY = new Entity("any", "int64Slice", "", "");
 
     static {
         ENTITY.setFields(new Field[]{
-            new Field("value", new Slice("", new Primitive("int64", Method.Int64))),
+            new Field("Value", new Slice("", new Primitive("int64", Method.Int64))),
         });
         Namespace.register(Klass.INSTANCE);
     }

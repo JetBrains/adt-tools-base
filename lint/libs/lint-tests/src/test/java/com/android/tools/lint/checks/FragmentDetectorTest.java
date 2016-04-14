@@ -18,7 +18,7 @@ package com.android.tools.lint.checks;
 
 import com.android.tools.lint.detector.api.Detector;
 
-@SuppressWarnings("javadoc")
+@SuppressWarnings({"javadoc", "ClassNameDiffersFromFileName", "MethodMayBeStatic"})
 public class FragmentDetectorTest extends AbstractCheckTest {
     @Override
     protected Detector getDetector() {
@@ -56,5 +56,25 @@ public class FragmentDetectorTest extends AbstractCheckTest {
                 "bytecode/FragmentTest$Fragment6.class.data=>bin/classes/test/pkg/FragmentTest$Fragment6.class",
                 "bytecode/FragmentTest$NotAFragment.class.data=>bin/classes/test/pkg/FragmentTest$NotAFragment.class",
                 "bytecode/FragmentTest.java.txt=>src/test/pkg/FragmentTest.java"));
+    }
+
+    public void testAnonymousInnerClass() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/Parent.java:7: Error: Fragments should be static such that they can be re-instantiated by the system, and anonymous classes are not static [ValidFragment]\n"
+                + "        return new Fragment() {\n"
+                + "                   ~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProject(java("src/test/pkg/Parent.java", ""
+                        + "package test.pkg;\n"
+                        + "\n"
+                        + "import android.app.Fragment;\n"
+                        + "\n"
+                        + "public class Parent {\n"
+                        + "    public Fragment method() {\n"
+                        + "        return new Fragment() {\n"
+                        + "        };\n"
+                        + "    }\n"
+                        + "}\n")));
     }
 }

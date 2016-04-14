@@ -50,16 +50,25 @@ class NdkStandaloneSoTest {
 apply plugin: "com.android.model.application"
 
 model {
-    android {
-        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-        buildToolsVersion = "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+    repositories {
+        libs(PrebuiltLibraries) {
+            prebuilt {
+                binaries.withType(SharedLibraryBinary) {
+                    sharedLibraryFile = file("prebuilt.so")
+                }
+            }
+        }
     }
-    android.sources {
-        main {
-            jniLibs {
-                dependencies {
-                    project ":lib1" buildType "debug"
-                    library file("prebuilt.so") abi "x86"
+    android {
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+        sources {
+            main {
+                jniLibs {
+                    dependencies {
+                        project ":lib1" buildType "debug"
+                        library "prebuilt"
+                    }
                 }
             }
         }
@@ -87,16 +96,16 @@ apply plugin: "com.android.model.native"
 
 model {
     android {
-        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-    }
-    android.ndk {
-        moduleName = "hello-jni"
-    }
-    android.sources {
-        main {
-            jni {
-                dependencies {
-                    project ":lib2"
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        ndk {
+            moduleName "hello-jni"
+        }
+        sources {
+            main {
+                jni {
+                    dependencies {
+                        project ":lib2"
+                    }
                 }
             }
         }
@@ -123,10 +132,19 @@ apply plugin: "com.android.model.native"
 
 model {
     android {
-        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-    }
-    android.ndk {
-        moduleName = "hello-jni"
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        ndk {
+            moduleName "hello-jni"
+        }
+        sources {
+            main {
+                jni {
+                    exportedHeaders {
+                        srcDir "src/main/headers"
+                    }
+                }
+            }
+        }
     }
     android.sources {
         main {
@@ -159,8 +177,6 @@ model {
 
         GradleTestProject lib = project.getSubproject("lib1")
         assertThat(lib.file("build/outputs/native/debug/lib/x86/libhello-jni.so")).exists();
-        assertThat(lib.file("build/outputs/native/debug/lib/x86/gdbserver")).exists();
-        assertThat(lib.file("build/outputs/native/debug/lib/x86/gdb.setup")).exists();
     }
 
     @Test

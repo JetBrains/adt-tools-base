@@ -171,7 +171,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
 
             "The `<uses-library>` element should be defined as a direct child of the " +
             "`<application>` tag, not the `<manifest>` tag or an `<activity>` tag. Similarly, " +
-            "a `<uses-sdk>` tag much be declared at the root level, and so on. This check " +
+            "a `<uses-sdk>` tag must be declared at the root level, and so on. This check " +
             "looks for incorrect declaration locations in the manifest, and complains " +
             "if an element is found in the wrong place.",
 
@@ -1005,6 +1005,13 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             }
 
             // Test source set?
+            for (SourceProviderContainer extra : model.getDefaultConfig().getExtraSourceProviders()) {
+                String artifactName = extra.getArtifactName();
+                if (AndroidProject.ARTIFACT_ANDROID_TEST.equals(artifactName)
+                        && manifestFile.equals(extra.getSourceProvider().getManifestFile())) {
+                    return true;
+                }
+            }
             for (ProductFlavorContainer container : model.getProductFlavors()) {
                 for (SourceProviderContainer extra : container.getExtraSourceProviders()) {
                     String artifactName = extra.getArtifactName();

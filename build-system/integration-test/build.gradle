@@ -11,7 +11,12 @@ dependencies {
     testCompile project(':base:builder-model')
     testCompile project(':base:builder')
     testCompile project(':base:sdk-common')
-    testCompile 'com.google.truth:truth:0.26'
+    testCompile project(':base:lint')
+    testCompile project(':base:instant-run:instant-run-client')
+
+
+    testCompile 'com.google.truth:truth:0.28'
+    testCompile "org.mockito:mockito-core:1.9.5"
     testCompile 'org.jacoco:org.jacoco.agent:0.7.4.201502262128'
 
     // Add dependency on plugin code.  Exclude transitive dependencies to avoid conflict due to
@@ -119,6 +124,7 @@ configure([connectedIntegrationTest, connectedIntegrationTestPrebuilts]) {
         includeCategories "com.android.build.gradle.integration.common.category.DeviceTests"
     }
     exclude "com/android/build/gradle/integration/performance/**"
+    exclude "com/android/build/gradle/integration/automatic/**"
 }
 
 task performanceTest(type: Test) {
@@ -139,9 +145,17 @@ task performanceTest(type: Test) {
     }
 }
 
+task buildTestDependencies {
+    dependsOn ':base:gradle-core:instrumentIncrementalTestPatches',
+              ':base:gradle-core:instrumentIncrementalTestBaseClasses',
+              ':base:instant-run:instant-run-server:jar'
+}
+
 automaticTest.dependsOn ':publishLocal'
-test.dependsOn ':publishLocal'
-connectedIntegrationTest.dependsOn ':publishLocal'
+test.dependsOn buildTestDependencies, ':publishLocal'
+testPrebuilts.dependsOn buildTestDependencies
+connectedIntegrationTest.dependsOn buildTestDependencies, ':publishLocal'
+connectedIntegrationTestPrebuilts.dependsOn buildTestDependencies
 performanceTest.dependsOn ':publishLocal'
 
 jacocoTestReport {

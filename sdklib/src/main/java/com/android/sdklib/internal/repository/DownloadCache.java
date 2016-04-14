@@ -23,8 +23,8 @@ import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.prefs.AndroidLocation;
 import com.android.prefs.AndroidLocation.AndroidLocationException;
-import com.android.sdklib.io.FileOp;
-import com.android.sdklib.io.IFileOp;
+import com.android.repository.io.FileOp;
+import com.android.repository.io.FileOpUtils;
 import com.android.utils.Pair;
 
 import org.apache.http.Header;
@@ -136,7 +136,7 @@ public class DownloadCache {
         HttpHeaders.DATE
     };
 
-    private final IFileOp mFileOp;
+    private final FileOp mFileOp;
     private final File mCacheRoot;
     private final Strategy mStrategy;
 
@@ -169,11 +169,11 @@ public class DownloadCache {
 
     /** Creates a default instance of the URL cache */
     public DownloadCache(@NonNull Strategy strategy) {
-        this(new FileOp(), strategy);
+        this(FileOpUtils.create(), strategy);
     }
 
     /** Creates a default instance of the URL cache */
-    public DownloadCache(@NonNull IFileOp fileOp, @NonNull Strategy strategy) {
+    public DownloadCache(@NonNull FileOp fileOp, @NonNull Strategy strategy) {
         mFileOp = fileOp;
         mCacheRoot = initCacheRoot();
 

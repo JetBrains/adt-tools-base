@@ -34,6 +34,15 @@ public class HprofParserTest extends TestCase {
 
         File file = new File(getClass().getResource("/dialer.android-hprof").getFile());
         mSnapshot = Snapshot.createSnapshot(new MemoryMappedFileBuffer(file));
+        mSnapshot.resolveReferences();
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        super.tearDown();
+
+        mSnapshot.dispose();
+        mSnapshot = null;
     }
 
     public void testHierarchy() {
@@ -156,7 +165,7 @@ public class HprofParserTest extends TestCase {
         assertEquals(1, firstGet.size());
         assertEquals(firstGet.size(), secondGet.size());
         Instance child = mSnapshot.findInstance(2);
-        assertEquals(1, child.getHardReferences().size());
+        assertEquals(1, child.getHardReverseReferences().size());
     }
 
     public void testResolveReferences() {
@@ -172,7 +181,7 @@ public class HprofParserTest extends TestCase {
         mSnapshot.addClass(98, subSoftReferenceClass);
         mSnapshot.addClass(97, subSubSoftReferenceClass);
 
-        mSnapshot.resolveReferences();
+        mSnapshot.identifySoftReferences();
 
         assertTrue(subSoftReferenceClass.getIsSoftReference());
         assertTrue(subSubSoftReferenceClass.getIsSoftReference());

@@ -10,7 +10,8 @@ dependencies {
     compile project(':base:sdklib')
     compile project(':base:builder-test-api')
     compile project(':base:builder-model')
-    compile 'com.google.code.gson:gson:2.2.4'
+    compile 'org.bouncycastle:bcpkix-jdk15on:1.48'
+    compile 'org.bouncycastle:bcprov-jdk15on:1.48'
 
     testCompile 'junit:junit:4.12'
     testCompile project(':base:sdklib').sourceSets.test.output

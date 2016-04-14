@@ -354,7 +354,7 @@ public class HtmlReporter extends Reporter {
                 String adt = "Eclipse/ADT";
                 String studio = "Android Studio/IntelliJ";
                 String tools = adtHasFix && studioHasFix
-                        ? (adt + " & " + studio) : studioHasFix ? studio : adt;
+                        ? (studio + " & " + adt) : studioHasFix ? studio : adt;
                 mWriter.write("Note: This issue has an associated quickfix operation in " + tools);
                 if (mFixUrl != null) {
                     mWriter.write("&nbsp;<img alt=\"Fix\" border=\"0\" align=\"top\" src=\""); //$NON-NLS-1$

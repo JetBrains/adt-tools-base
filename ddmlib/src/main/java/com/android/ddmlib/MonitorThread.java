@@ -19,12 +19,12 @@ package com.android.ddmlib;
 
 import com.android.ddmlib.DebugPortManager.IDebugPortProvider;
 import com.android.ddmlib.Log.LogLevel;
+import com.android.ddmlib.jdwp.JdwpExtension;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.BufferOverflowException;
-import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.NotYetBoundException;
 import java.nio.channels.SelectionKey;
@@ -33,9 +33,9 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -43,12 +43,7 @@ import java.util.Set;
  */
 final class MonitorThread extends Thread {
 
-    // For broadcasts to message handlers
-    //private static final int CLIENT_CONNECTED = 1;
-
-    private static final int CLIENT_READY = 2;
-
-    private static final int CLIENT_DISCONNECTED = 3;
+    private final DdmJdwpExtension mDdmJdwpExtension;
 
     private volatile boolean mQuit = false;
 
@@ -59,9 +54,7 @@ final class MonitorThread extends Thread {
     // The almighty mux
     private Selector mSelector;
 
-    // Map chunk types to handlers
-    // Used for locking so final.
-    final private HashMap<Integer, ChunkHandler> mHandlerMap;
+    private final List<JdwpExtension> mJdwpExtensions;
 
     // port for "debug selected"
     private ServerSocketChannel mDebugSelectedChan;
@@ -84,9 +77,12 @@ final class MonitorThread extends Thread {
     private MonitorThread() {
         super("Monitor");
         mClientList = new ArrayList<Client>();
-        mHandlerMap = new HashMap<Integer, ChunkHandler>();
 
         mNewDebugSelectedPort = DdmPreferences.getSelectedDebugPort();
+
+        mDdmJdwpExtension = new DdmJdwpExtension();
+        mJdwpExtensions = new LinkedList<JdwpExtension>();
+        mJdwpExtensions.add(mDdmJdwpExtension);
     }
 
     /**
@@ -183,12 +179,7 @@ final class MonitorThread extends Thread {
         if (sInstance == null) {
             return;
         }
-
-        synchronized (mHandlerMap) {
-            if (mHandlerMap.get(type) == null) {
-                mHandlerMap.put(type, handler);
-            }
-        }
+        mDdmJdwpExtension.registerHandler(type, handler);
     }
 
     /**
@@ -318,34 +309,9 @@ final class MonitorThread extends Thread {
              */
             JdwpPacket packet = client.getJdwpPacket();
             while (packet != null) {
-                if (packet.isDdmPacket()) {
-                    // unsolicited DDM request - hand it off
-                    assert !packet.isReply();
-                    callHandler(client, packet, null);
-                    packet.consume();
-                } else if (packet.isReply()
-                        && client.isResponseToUs(packet.getId()) != null) {
-                    // reply to earlier DDM request
-                    ChunkHandler handler = client
-                            .isResponseToUs(packet.getId());
-                    if (packet.isError())
-                        client.packetFailed(packet);
-                    else if (packet.isEmpty())
-                        Log.d("ddms", "Got empty reply for 0x"
-                                + Integer.toHexString(packet.getId())
-                                + " from " + client);
-                    else
-                        callHandler(client, packet, handler);
-                    packet.consume();
-                    client.removeRequestId(packet.getId());
-                } else {
-                    Log.v("ddms", "Forwarding client "
-                            + (packet.isReply() ? "reply" : "event") + " 0x"
-                            + Integer.toHexString(packet.getId()) + " to "
-                            + client.getDebugger());
-                    client.forwardPacketToDebugger(packet);
-                }
+                client.incoming(packet, client.getDebugger());
 
+                packet.consume();
                 // find next
                 packet = client.getJdwpPacket();
             }
@@ -373,51 +339,6 @@ final class MonitorThread extends Thread {
         }
     }
 
-    /*
-     * Process an incoming DDM packet. If this is a reply to an earlier request,
-     * "handler" will be set to the handler responsible for the original
-     * request. The spec allows a JDWP message to include multiple DDM chunks.
-     */
-    private void callHandler(Client client, JdwpPacket packet,
-            ChunkHandler handler) {
-
-        // on first DDM packet received, broadcast a "ready" message
-        if (!client.ddmSeen())
-            broadcast(CLIENT_READY, client);
-
-        ByteBuffer buf = packet.getPayload();
-        int type, length;
-        boolean reply = true;
-
-        type = buf.getInt();
-        length = buf.getInt();
-
-        if (handler == null) {
-            // not a reply, figure out who wants it
-            synchronized (mHandlerMap) {
-                handler = mHandlerMap.get(type);
-                reply = false;
-            }
-        }
-
-        if (handler == null) {
-            Log.w("ddms", "Received unsupported chunk type "
-                    + ChunkHandler.name(type) + " (len=" + length + ")");
-        } else {
-            Log.d("ddms", "Calling handler for " + ChunkHandler.name(type)
-                    + " [" + handler + "] (len=" + length + ")");
-            ByteBuffer ibuf = buf.slice();
-            ByteBuffer roBuf = ibuf.asReadOnlyBuffer(); // enforce R/O
-            roBuf.order(ChunkHandler.CHUNK_ORDER);
-            // do the handling of the chunk synchronized on the client list
-            // to be sure there's no concurrency issue when we look for HOME
-            // in hasApp()
-            synchronized (mClientList) {
-                handler.handleChunk(client, type, roBuf, reply, packet.getId());
-            }
-        }
-    }
-
     /**
      * Drops a client from the monitor.
      * <p/>This will lock the {@link Client} list of the {@link Device} running <var>client</var>.
@@ -435,7 +356,7 @@ final class MonitorThread extends Thread {
             }
         }
         client.close(notify);
-        broadcast(CLIENT_DISCONNECTED, client);
+        mDdmJdwpExtension.broadcast(DdmJdwpExtension.Event.CLIENT_DISCONNECTED, client);
 
         /*
          * http://forum.java.sun.com/thread.jspa?threadID=726715&start=0
@@ -539,8 +460,9 @@ final class MonitorThread extends Thread {
                         + Integer.toHexString(packet.getId()) + " to "
                         + dbg.getClient());
 
-                dbg.forwardPacketToClient(packet);
+                dbg.incoming(packet, dbg.getClient());
 
+                packet.consume();
                 packet = dbg.getJdwpPacket();
             }
         } catch (IOException ioe) {
@@ -596,7 +518,7 @@ final class MonitorThread extends Thread {
             synchronized (mClientList) {
                 for (Client c : mClientList) {
                     c.close(false /* notify */);
-                    broadcast(CLIENT_DISCONNECTED, c);
+                    mDdmJdwpExtension.broadcast(DdmJdwpExtension.Event.CLIENT_DISCONNECTED, c);
                 }
                 mClientList.clear();
             }
@@ -633,6 +555,10 @@ final class MonitorThread extends Thread {
         synchronized (mClientList) {
             mClientList.add(client);
 
+            for (JdwpExtension extension : mJdwpExtensions) {
+                extension.intercept(client);
+            }
+
             /*
              * Register the Client's socket channel with the selector. We attach
              * the Client to the SelectionKey. If you try to register a new
@@ -655,53 +581,6 @@ final class MonitorThread extends Thread {
                 ioe.printStackTrace();
             }
         }
-    }
-
-    /*
-     * Broadcast an event to all message handlers.
-     */
-    private void broadcast(int event, Client client) {
-        Log.d("ddms", "broadcast " + event + ": " + client);
-
-        /*
-         * The handler objects appear once in mHandlerMap for each message they
-         * handle. We want to notify them once each, so we convert the HashMap
-         * to a HashSet before we iterate.
-         */
-        HashSet<ChunkHandler> set;
-        synchronized (mHandlerMap) {
-            Collection<ChunkHandler> values = mHandlerMap.values();
-            set = new HashSet<ChunkHandler>(values);
-        }
-
-        Iterator<ChunkHandler> iter = set.iterator();
-        while (iter.hasNext()) {
-            ChunkHandler handler = iter.next();
-            switch (event) {
-                case CLIENT_READY:
-                    try {
-                        handler.clientReady(client);
-                    } catch (IOException ioe) {
-                        // Something failed with the client. It should
-                        // fall out of the list the next time we try to
-                        // do something with it, so we discard the
-                        // exception here and assume cleanup will happen
-                        // later. May need to propagate farther. The
-                        // trouble is that not all values for "event" may
-                        // actually throw an exception.
-                        Log.w("ddms",
-                                "Got exception while broadcasting 'ready'");
-                        return;
-                    }
-                    break;
-                case CLIENT_DISCONNECTED:
-                    handler.clientDisconnected(client);
-                    break;
-                default:
-                    throw new UnsupportedOperationException();
-            }
-        }
-
     }
 
     /**
@@ -788,5 +667,9 @@ final class MonitorThread extends Thread {
                 port);
 
         Log.logAndDisplay(LogLevel.ERROR, "ddms", message);
+    }
+
+    public DdmJdwpExtension getDdmExtension() {
+        return mDdmJdwpExtension;
     }
 }

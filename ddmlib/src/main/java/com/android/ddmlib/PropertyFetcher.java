@@ -187,6 +187,6 @@ class PropertyFetcher {
     }
 
     private static boolean isRoProp(@NonNull String propName) {
-        return propName.startsWith("ro.");
+        return propName.startsWith("ro.") || propName.equals(IDevice.PROP_DEVICE_EMULATOR_DENSITY);
     }
 }

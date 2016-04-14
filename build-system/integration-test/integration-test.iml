@@ -11,8 +11,10 @@
     <orderEntry type="library" name="groovy" level="project" />
     <orderEntry type="module" module-name="builder" scope="TEST" />
     <orderEntry type="module" module-name="gradle" scope="TEST" />
-    <orderEntry type="module" module-name="sdk-common-base" scope="TEST" />
     <orderEntry type="library" scope="TEST" name="jacoco" level="project" />
     <orderEntry type="library" scope="TEST" name="truth" level="project" />
+    <orderEntry type="module" module-name="instant-run-client" scope="TEST" />
+    <orderEntry type="library" scope="TEST" name="mockito" level="project" />
+    <orderEntry type="module" module-name="instant-run-common" scope="TEST" />
   </component>
 </module>

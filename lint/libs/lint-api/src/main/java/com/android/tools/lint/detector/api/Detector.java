@@ -252,6 +252,7 @@ public abstract class Detector {
          * @param node the class declaration node or the anonymous class construction node
          * @param resolvedClass the resolved class
          */
+        // TODO: Change signature to pass in the NormalTypeBody instead of the plain Node?
         void checkClass(@NonNull JavaContext context, @Nullable ClassDeclaration declaration,
                 @NonNull Node node, @NonNull ResolvedClass resolvedClass);
     }
@@ -360,7 +361,10 @@ public abstract class Detector {
                 @NonNull MethodNode method, @NonNull MethodInsnNode call);
     }
 
-    /** Specialized interface for detectors that scan binary resource files */
+    /**
+     * Specialized interface for detectors that scan binary resource files
+     * (typically bitmaps but also files in res/raw)
+     */
     public interface BinaryResourceScanner {
         /**
          * Called for each resource folder

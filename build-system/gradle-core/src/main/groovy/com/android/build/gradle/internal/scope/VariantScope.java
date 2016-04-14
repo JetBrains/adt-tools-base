@@ -19,6 +19,9 @@ package com.android.build.gradle.internal.scope;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.core.Abi;
+import com.android.build.gradle.internal.incremental.InstantRunAnchorTask;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.tasks.CheckManifest;
@@ -31,11 +34,10 @@ import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.JackTask;
-import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.build.gradle.tasks.MergeResources;
+import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
-import com.android.builder.signing.SignedJarBuilder;
 
 import org.gradle.api.Task;
 import org.gradle.api.file.FileCollection;
@@ -45,7 +47,7 @@ import org.gradle.api.tasks.compile.JavaCompile;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.Set;
+import java.util.List;
 
 /**
  * A scope containing data for a specific variant.
@@ -78,14 +80,44 @@ public interface VariantScope extends BaseScope {
 
     void addNdkDebuggableLibraryFolders(@NonNull Abi abi, @NonNull File searchPath);
 
+    @NonNull
+    File getDexOutputFolder();
+
     @Nullable
     BaseVariantData getTestedVariantData();
+
+    @NonNull
+    File getReloadDexOutputFolder();
+
+    @NonNull
+    File getRestartDexOutputFolder();
+
+    @NonNull
+    File getInstantRunSplitApkOutputFolder();
+
+    @NonNull
+    File getInstantRunPastIterationsFolder();
 
     @NonNull
     FileCollection getJavaClasspath();
 
     @NonNull
     File getJavaOutputDir();
+
+    @NonNull
+    File getInstantRunSupportDir();
+
+    @NonNull
+    File getInstantRunSliceSupportDir();
+
+    @NonNull
+    File getIncrementalRuntimeSupportJar();
+
+    @NonNull
+    File getIncrementalApplicationSupportDir();
+
+    @NonNull
+    File getIncrementalVerifierDir();
 
     @NonNull
     Iterable<File> getJavaOuptuts();
@@ -212,7 +244,22 @@ public interface VariantScope extends BaseScope {
     File getMappingFile();
 
     @NonNull
+    File getGenerateSplitAbiResOutputDirectory();
+
+    @NonNull
+    File getSplitOutputDirectory();
+
+    @NonNull
+    List<File> getSplitAbiResOutputFiles();
+
+    @NonNull
+    List<File> getPackageSplitAbiOutputFiles();
+
+    @NonNull
     File getAaptFriendlyManifestOutputFile();
+
+    @NonNull
+    File getInstantRunManifestOutputFile();
 
     @NonNull
     File  getManifestReportFile();
@@ -305,9 +352,9 @@ public interface VariantScope extends BaseScope {
     void setJackTask(@Nullable AndroidTask<JackTask> jackTask);
 
     @Nullable
-    AndroidTask<JavaCompile> getJavacTask();
+    AndroidTask<? extends JavaCompile> getJavacTask();
 
-    void setJavacTask(@Nullable AndroidTask<JavaCompile> javacTask);
+    void setJavacTask(@Nullable AndroidTask<? extends JavaCompile> javacTask);
 
     void setJavaCompilerTask(@NonNull AndroidTask<? extends AbstractCompile> javaCompileTask);
 
@@ -318,4 +365,18 @@ public interface VariantScope extends BaseScope {
     AndroidTask<?> getCoverageReportTask();
 
     void setCoverageReportTask(AndroidTask<?> coverageReportTask);
+
+    @NonNull
+    InstantRunBuildContext getInstantRunBuildContext();
+
+    @NonNull
+    AndroidTask<InstantRunAnchorTask> getInstantRunAnchorTask();
+    void setInstantRunAnchorTask(@NonNull AndroidTask<InstantRunAnchorTask> instantRunTask);
+
+    @NonNull
+    AndroidTask<InstantRunWrapperTask> getInstantRunIncrementalTask();
+    void setInstantRunIncrementalTask(@NonNull AndroidTask<InstantRunWrapperTask> instantRunTask);
+
+    AndroidTask<TransformTask> getInstantRunVerifierTask();
+    void setInstantRunVerifierTask(AndroidTask<TransformTask> verifierTask);
 }

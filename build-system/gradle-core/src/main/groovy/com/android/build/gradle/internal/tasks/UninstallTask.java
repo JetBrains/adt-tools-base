@@ -128,8 +128,9 @@ public class UninstallTask extends BaseTask {
         @NonNull
         @Override
         public String getName() {
-            return "uninstall"
-                    + StringHelper.capitalize(scope.getVariantConfiguration().getFullName());
+            String prefix = "uninstall";
+
+            return prefix + StringHelper.capitalize(scope.getVariantConfiguration().getFullName());
         }
 
         @NonNull

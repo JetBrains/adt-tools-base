@@ -18,12 +18,13 @@ package com.android.build.gradle.tasks;
 
 import static com.android.build.gradle.tasks.ResourceUsageAnalyzer.NO_MATCH;
 import static com.android.build.gradle.tasks.ResourceUsageAnalyzer.REPLACE_DELETED_WITH_EMPTY;
-import static com.android.build.gradle.tasks.ResourceUsageAnalyzer.Resource;
 import static com.android.build.gradle.tasks.ResourceUsageAnalyzer.convertFormatStringToRegexp;
 import static java.io.File.separatorChar;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.resources.ResourceType;
+import com.android.tools.lint.checks.ResourceUsageModel.Resource;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
@@ -31,7 +32,6 @@ import com.google.common.io.Files;
 
 import junit.framework.TestCase;
 
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -43,8 +43,6 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
-
-import javax.imageio.ImageIO;
 
 /** TODO: Test Resources#getIdentifier() handling */
 @SuppressWarnings("SpellCheckingInspection")
@@ -83,7 +81,7 @@ public class ResourceUsageAnalyzerTest extends TestCase {
         File resources = createResourceFolder(dir);
 
         ResourceUsageAnalyzer analyzer = new ResourceUsageAnalyzer(rDir, classes,
-            mergedManifest, mapping, resources);
+            mergedManifest, mapping, resources, null);
         analyzer.analyze();
         checkState(analyzer);
         assertEquals(""
@@ -94,31 +92,36 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                 + "@drawable/ic_launcher : reachable=true\n"
                 + "@drawable/unused : reachable=false\n"
                 + "@id/action_settings : reachable=true\n"
+                + "@id/action_settings2 : reachable=false\n"
                 + "@layout/activity_main : reachable=true\n"
                 + "    @dimen/activity_vertical_margin\n"
                 + "    @dimen/activity_horizontal_margin\n"
                 + "    @string/hello_world\n"
                 + "    @style/MyStyle_Child\n"
                 + "@menu/main : reachable=true\n"
-                + "    @id/action_settings\n"
                 + "    @string/action_settings\n"
+                + "@menu/menu2 : reachable=false\n"
+                + "    @string/action_settings2\n"
                 + "@raw/android_wear_micro_apk : reachable=true\n"
                 + "@raw/index1 : reachable=false\n"
+                + "    @raw/my_used_raw_drawable\n"
                 + "@raw/my_js : reachable=false\n"
-                + "@raw/my_used_raw_drawable : reachable=true\n"
+                + "@raw/my_used_raw_drawable : reachable=false\n"
                 + "@raw/styles2 : reachable=false\n"
                 + "@string/action_settings : reachable=true\n"
+                + "@string/action_settings2 : reachable=false\n"
                 + "@string/alias : reachable=false\n"
                 + "    @string/app_name\n"
                 + "@string/app_name : reachable=true\n"
                 + "@string/hello_world : reachable=true\n"
-                + "@style/AppTheme : reachable=false\n"
+                + "@style/AppTheme : reachable=true\n"
                 + "@style/MyStyle : reachable=true\n"
+                + "    @style/MyStyle_Child\n"
                 + "@style/MyStyle_Child : reachable=true\n"
                 + "    @style/MyStyle\n"
                 + "@xml/android_wear_micro_apk : reachable=true\n"
                 + "    @raw/android_wear_micro_apk\n",
-                analyzer.dumpResourceModel());
+                analyzer.getModel().dumpResourceModel());
 
         File unusedBitmap = new File(resources, "drawable-xxhdpi" + separatorChar + "unused.png");
         assertTrue(unusedBitmap.exists());
@@ -214,6 +217,7 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                     + "res/layout/activity_main.xml\n"
                     + "res/menu\n"
                     + "res/menu/main.xml\n"
+                    + "res/menu/menu2.xml\n"
                     + "res/raw\n"
                     + "res/raw/android_wear_micro_apk.apk\n"
                     + "res/raw/index1.html\n"
@@ -245,6 +249,7 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                     + "res/layout/activity_main.xml\n"
                     + "res/menu\n"
                     + "res/menu/main.xml\n"
+                    + "res/menu/menu2.xml\n"
                     + "res/raw\n"
                     + "res/raw/android_wear_micro_apk.apk\n"
                     + (REPLACE_DELETED_WITH_EMPTY ? "res/raw/index1.html\n" : "")
@@ -260,6 +265,8 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                 assertTrue(Arrays.equals(ResourceUsageAnalyzer.TINY_PNG,
                         getZipContents(compressedFile, "res/drawable-xxhdpi/unused.png")));
             }
+
+            analyzer.dispose();
 
             uncompressedFile.delete();
             compressedFile.delete();
@@ -365,6 +372,16 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                 + "        android:showAsAction=\"never\" />\n"
                 + "</menu>");
 
+        createFile(resources, "menu/menu2.xml", ""
+                + "<menu xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    tools:context=\".MainActivity\" >\n"
+                + "    <item android:id=\"@+id/action_settings2\"\n"
+                + "        android:title=\"@string/action_settings2\"\n"
+                + "        android:orderInCategory=\"100\"\n"
+                + "        android:showAsAction=\"never\" />\n"
+                + "</menu>");
+
         createFile(resources, "values/values.xml", ""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                 + "<resources>\n"
@@ -376,6 +393,7 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                 + "    <dimen name=\"activity_vertical_margin\">16dp</dimen>\n"
                 + "\n"
                 + "    <string name=\"action_settings\">Settings</string>\n"
+                + "    <string name=\"action_settings2\">Settings2</string>\n"
                 + "    <string name=\"alias\"> @string/app_name </string>\n"
                 + "    <string name=\"app_name\">ShrinkUnitTest</string>\n"
                 + "    <string name=\"hello_world\">Hello world!</string>\n"
@@ -580,6 +598,7 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                 + "    }\n"
                 + "    public static final class id {\n"
                 + "        public static final int action_settings=0x7f080000;\n"
+                + "        public static final int action_settings2=0x7f080001;\n"
                 + "    }\n"
                 + "    public static final class layout {\n"
                 + "        public static final int activity_main=0x7f030000;\n"
@@ -596,6 +615,7 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                 + "    }"
                 + "    public static final class string {\n"
                 + "        public static final int action_settings=0x7f050000;\n"
+                + "        public static final int action_settings2=0x7f050004;\n"
                 + "        public static final int alias=0x7f050001;\n"
                 + "        public static final int app_name=0x7f050002;\n"
                 + "        public static final int hello_world=0x7f050003;\n"
@@ -946,7 +966,19 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                 + "com.example.shrinkunittest.app.MainActivity -> com.example.shrinkunittest.app.MainActivity:\n"
                 + "    void onCreate(android.os.Bundle) -> onCreate\n"
                 + "    boolean onCreateOptionsMenu(android.view.Menu) -> onCreateOptionsMenu\n"
-                + "    boolean onOptionsItemSelected(android.view.MenuItem) -> onOptionsItemSelected");
+                + "    boolean onOptionsItemSelected(android.view.MenuItem) -> onOptionsItemSelected\n"
+                + "com.foo.bar.R$layout -> com.foo.bar.t:\n"
+                + "    int checkable_option_view_layout -> a\n"
+                + "    int error_layout -> b\n"
+                + "    int glyph_button_icon_only -> c\n"
+                + "    int glyph_button_icon_with_text_below -> d\n"
+                + "    int glyph_button_icon_with_text_right -> e\n"
+                + "    int structure_status_view -> f\n"
+                + "android.support.annotation.FloatRange -> android.support.annotation.FloatRange:\n"
+                + "    double from() -> from\n"
+                + "    double to() -> to\n"
+                + "    boolean fromInclusive() -> fromInclusive\n"
+                + "    boolean toInclusive() -> toInclusive\n");
     }
 
     public void testFormatStringRegexp() {
@@ -1029,7 +1061,7 @@ public class ResourceUsageAnalyzerTest extends TestCase {
     }
 
     private static void checkState(ResourceUsageAnalyzer analyzer) {
-        List<Resource> resources = analyzer.getAllResources();
+        List<Resource> resources = analyzer.getModel().getResources();
         Collections.sort(resources, new Comparator<Resource>() {
             @Override
             public int compare(Resource resource1, Resource resource2) {
@@ -1051,11 +1083,26 @@ public class ResourceUsageAnalyzerTest extends TestCase {
         }
     }
 
-    public void testIsResourceClass() {
-        assertTrue(ResourceUsageAnalyzer.isResourceClass("android/support/v7/appcompat/R$attr.class"));
-        assertTrue(ResourceUsageAnalyzer.isResourceClass("android/support/v7/appcompat/R$attr.class"));
-        assertTrue(ResourceUsageAnalyzer.isResourceClass("android/support/v7/appcompat/R$bool.class"));
-        assertFalse(ResourceUsageAnalyzer.isResourceClass("android/support/v7/appcompat/R.class"));
-        assertFalse(ResourceUsageAnalyzer.isResourceClass("com/google/samples/apps/iosched/ui/BrowseSessionsActivity.class"));
+    public void testIsResourceClass() throws Exception {
+        File dummy = new File("dummy");
+        File mappingFile = createMappingFile(Files.createTempDir());
+        ResourceUsageAnalyzer analyzer = new ResourceUsageAnalyzer(dummy, dummy, dummy,
+                mappingFile, dummy, null);
+        analyzer.getModel().addDeclaredResource(ResourceType.LAYOUT, "structure_status_view", null, true);
+        analyzer.recordMapping(mappingFile);
+        assertTrue(analyzer.isResourceClass("android/support/v7/appcompat/R$attr.class"));
+        assertTrue(analyzer.isResourceClass("android/support/v7/appcompat/R$attr.class"));
+        assertTrue(analyzer.isResourceClass("android/support/v7/appcompat/R$bool.class"));
+        assertFalse(analyzer.isResourceClass("android/support/v7/appcompat/R.class"));
+        assertFalse(analyzer.isResourceClass("com/google/samples/apps/iosched/ui/BrowseSessionsActivity.class"));
+        assertFalse(analyzer.isResourceClass("android/support/annotation/FloatRange.class"));
+        assertTrue(analyzer.isResourceClass("com/foo/bar/t.class"));
+        assertTrue(analyzer.isResourceClass("com/foo/bar/t"));
+        Resource resource = analyzer.getResourceFromCode("com/foo/bar/t", "f");
+        assertNotNull(resource);
+        assertEquals("structure_status_view", resource.name);
+        assertEquals(ResourceType.LAYOUT, resource.type);
+        assertNull(analyzer.getResourceFromCode("android/support/annotation/FloatRange",
+                "fromInclusive"));
     }
 }

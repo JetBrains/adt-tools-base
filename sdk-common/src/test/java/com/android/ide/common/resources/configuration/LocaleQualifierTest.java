@@ -119,6 +119,8 @@ public class LocaleQualifierTest extends TestCase {
         assertEquals("kok", getQualifier("b+kok+Knda+419").getLanguage());
         assertEquals("419", getQualifier("b+kok+Knda+419").getRegion());
         assertEquals("b+kok+Knda+419", getQualifier("b+KOK+knda+419").getFull());
+
+        assertEquals("es-r419", getQualifier("es-r419").getFull());
     }
 
     public void testSetRegion() {

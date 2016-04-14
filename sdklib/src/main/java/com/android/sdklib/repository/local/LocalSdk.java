@@ -22,25 +22,36 @@ import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.annotations.concurrency.GuardedBy;
-import com.android.sdklib.*;
+import com.android.repository.Revision;
+import com.android.repository.api.RepoManager;
+import com.android.repository.io.FileOp;
+import com.android.repository.io.FileOpUtils;
+import com.android.sdklib.AndroidTargetHash;
+import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.AndroidVersion.AndroidVersionException;
-import com.android.sdklib.internal.androidTarget.MissingTarget;
-import com.android.sdklib.io.FileOp;
-import com.android.sdklib.io.IFileOp;
-import com.android.sdklib.repository.FullRevision;
-import com.android.sdklib.repository.MajorRevision;
-import com.android.sdklib.repository.NoPreviewRevision;
+import com.android.sdklib.AndroidVersionHelper;
+import com.android.sdklib.BuildToolInfo;
+import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
-import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.descriptors.PkgDescExtra;
 import com.android.sdklib.repository.descriptors.PkgType;
-import com.google.common.collect.*;
+import com.android.sdklib.repositoryv2.AndroidSdkHandler;
+import com.android.sdklib.repositoryv2.IdDisplay;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.TreeMultimap;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Properties;
 
 /**
  * This class keeps information on the current locally installed SDK.
@@ -77,10 +88,10 @@ import java.util.*;
  *
  * <tr>
  * <td>Build-Tools</td>
- * <td>{@link FullRevision}</td>
+ * <td>{@link Revision}</td>
  * <td>{@code getLatestBuildTool()} => {@link BuildToolInfo}, <br/>
- *     or {@code getBuildTool(FullRevision)} => {@link BuildToolInfo}, <br/>
- *     or {@code getPkgInfo(PkgType.PKG_BUILD_TOOLS, FullRevision)} => {@link LocalPkgInfo}, <br/>
+ *     or {@code getBuildTool(Revision)} => {@link BuildToolInfo}, <br/>
+ *     or {@code getPkgInfo(PkgType.PKG_BUILD_TOOLS, Revision)} => {@link LocalPkgInfo}, <br/>
  *     or {@code getPkgsInfos(PkgType.PKG_BUILD_TOOLS)} => {@link LocalPkgInfo}[]</td>
  * </tr>
  *
@@ -157,13 +168,15 @@ import java.util.*;
  *      to totally remove it when the SdkManager class goes away.
  * </ul>
  * @version 2 of the {@code SdkManager} class, essentially.
+ * @deprecated in favor of {@link AndroidSdkHandler}/{@link RepoManager}.
  */
+@Deprecated
 public class LocalSdk {
 
     /** Location of the SDK. Maybe null. Can be changed. */
     private File mSdkRoot;
     /** File operation object. (Used for overriding in mock testing.) */
-    private final IFileOp mFileOp;
+    private final FileOp mFileOp;
     /** List of package information loaded so far. Lazily populated. */
     @GuardedBy(value="mLocalPackages")
     private final Multimap<PkgType, LocalPkgInfo> mLocalPackages = TreeMultimap.create();
@@ -172,16 +185,12 @@ public class LocalSdk {
     private final Multimap<PkgType, LocalDirInfo> mVisitedDirs = HashMultimap.create();
     /** A legacy build-tool for older platform-tools < 17. */
     private BuildToolInfo mLegacyBuildTools;
-    /** Cache of targets from local sdk. See {@link #getTargets()}. */
-    @GuardedBy(value="mLocalPackages")
-    private List<IAndroidTarget> mCachedTargets = null;
-    private Set<MissingTarget> mCachedMissingTargets = null;
 
     /**
      * Creates an initial LocalSdk instance with an unknown location.
      */
     public LocalSdk() {
-        mFileOp = new FileOp();
+        mFileOp = FileOpUtils.create();
     }
 
     /**
@@ -201,15 +210,15 @@ public class LocalSdk {
      * @param fileOp The alternate {@link FileOp} to use for all file-based interactions.
      */
     @VisibleForTesting(visibility=Visibility.PRIVATE)
-    public LocalSdk(@NonNull IFileOp fileOp) {
+    public LocalSdk(@NonNull FileOp fileOp) {
         mFileOp = fileOp;
     }
 
     /*
-     * Returns the current IFileOp being used.
+     * Returns the current FileOp being used.
      */
     @NonNull
-    public IFileOp getFileOp() {
+    public FileOp getFileOp() {
         return mFileOp;
     }
 
@@ -259,36 +268,7 @@ public class LocalSdk {
                 mVisitedDirs.removeAll(filter);
                 mLocalPackages.removeAll(filter);
             }
-
-            // Clear the targets if the platforms or addons are being cleared
-            if (filters.contains(PkgType.PKG_PLATFORM) ||  filters.contains(PkgType.PKG_ADDON)) {
-                mCachedMissingTargets = null;
-                mCachedTargets = null;
-            }
         }
-    }
-
-    /**
-     * Check the tracked visited folders to see if anything has changed for the
-     * requested filter types.
-     * This does not refresh or reload any package information.
-     *
-     * @param filters A set of PkgType constants or {@link PkgType#PKG_ALL} to clear everything.
-     */
-    public boolean hasChanged(@NonNull EnumSet<PkgType> filters) {
-        for (PkgType filter : filters) {
-            Collection<LocalDirInfo> dirInfos;
-            synchronized (mLocalPackages) {
-                dirInfos = mVisitedDirs.get(filter);
-                for(LocalDirInfo dirInfo : dirInfos) {
-                    if (dirInfo.hasChanged()) {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
     }
 
     //--------- Generic querying ---------
@@ -341,24 +321,24 @@ public class LocalSdk {
     }
 
     /**
-     * Retrieves information on a package identified by its {@link FullRevision}.
+     * Retrieves information on a package identified by its {@link Revision}.
      * <p/>
      * Note that {@link PkgType#PKG_TOOLS} and {@link PkgType#PKG_PLATFORM_TOOLS}
      * are unique in a local SDK so you'll want to use {@link #getPkgInfo(PkgType)}
      * to retrieve them instead.
      *
      * @param filter {@link PkgType#PKG_BUILD_TOOLS}.
-     * @param revision The {@link FullRevision} uniquely identifying this package.
+     * @param revision The {@link Revision} uniquely identifying this package.
      * @return An existing package information or null if not found.
      */
     @Nullable
-    public LocalPkgInfo getPkgInfo(@NonNull PkgType filter, @NonNull FullRevision revision) {
+    public LocalPkgInfo getPkgInfo(@NonNull PkgType filter, @NonNull Revision revision) {
 
         assert filter == PkgType.PKG_BUILD_TOOLS;
 
         for (LocalPkgInfo pkg : getPkgsInfos(filter)) {
             IPkgDesc d = pkg.getDesc();
-            if (d.hasFullRevision() && d.getFullRevision().equals(revision)) {
+            if (d.getRevision().equals(revision)) {
                 return pkg;
             }
         }
@@ -622,7 +602,7 @@ public class LocalSdk {
      *  not part of the known set returned by {@code getPkgsInfos(PkgType.PKG_BUILD_TOOLS)}.
      */
     @Nullable
-    public BuildToolInfo getBuildTool(@Nullable FullRevision revision) {
+    public BuildToolInfo getBuildTool(@Nullable Revision revision) {
         LocalPkgInfo pkg = getPkgInfo(PkgType.PKG_BUILD_TOOLS, revision);
         if (pkg instanceof LocalBuildToolPkgInfo) {
             return ((LocalBuildToolPkgInfo) pkg).getBuildToolInfo();
@@ -651,7 +631,7 @@ public class LocalSdk {
         if (pkgs.length == 0) {
             LocalPkgInfo ptPkg = getPkgInfo(PkgType.PKG_PLATFORM_TOOLS);
             if (ptPkg instanceof LocalPlatformToolPkgInfo &&
-                    ptPkg.getDesc().getFullRevision().compareTo(new FullRevision(17)) < 0) {
+                    ptPkg.getDesc().getRevision().compareTo(new Revision(17)) < 0) {
                 // older SDK, create a compatible build-tools
                 mLegacyBuildTools = createLegacyBuildTools((LocalPlatformToolPkgInfo) ptPkg);
                 return mLegacyBuildTools;
@@ -665,7 +645,7 @@ public class LocalSdk {
         // Just in case, sort them again.
         Arrays.sort(pkgs);
 
-        // LocalBuildToolPkgInfo's comparator sorts on its FullRevision so we just
+        // LocalBuildToolPkgInfo's comparator sorts on its Revision so we just
         // need to take the latest element.
 
         LocalBuildToolPkgInfo preview = null;
@@ -693,7 +673,7 @@ public class LocalSdk {
         File platformToolsRs = new File(platformTools, SdkConstants.FN_FRAMEWORK_RENDERSCRIPT);
 
         return new BuildToolInfo(
-                ptInfo.getDesc().getFullRevision(),
+                ptInfo.getDesc().getRevision(),
                 platformTools,
                 new File(platformTools, SdkConstants.FN_AAPT),
                 new File(platformTools, SdkConstants.FN_AIDL),
@@ -709,101 +689,6 @@ public class LocalSdk {
                 new File(platformTools, SdkConstants.FN_ZIPALIGN));
     }
 
-    /**
-     * Returns the targets (platforms & addons) that are available in the SDK.
-     * The target list is created on demand the first time then cached.
-     * It will not refreshed unless {@link #clearLocalPkg} is called to clear platforms
-     * and/or add-ons.
-     * <p/>
-     * The array can be empty but not null.
-     */
-    @NonNull
-    public IAndroidTarget[] getTargets() {
-        synchronized (mLocalPackages) {
-            if (mCachedTargets == null) {
-                List<IAndroidTarget> result = Lists.newArrayList();
-                LocalPkgInfo[] pkgsInfos = getPkgsInfos(EnumSet.of(PkgType.PKG_PLATFORM,
-                                                                   PkgType.PKG_ADDON));
-                for (LocalPkgInfo info : pkgsInfos) {
-                    assert info instanceof LocalPlatformPkgInfo;
-                    IAndroidTarget target = ((LocalPlatformPkgInfo) info).getAndroidTarget();
-                    if (target != null) {
-                        result.add(target);
-                    }
-                }
-                mCachedTargets = result;
-            }
-            return mCachedTargets.toArray(new IAndroidTarget[mCachedTargets.size()]);
-        }
-    }
-
-    public IAndroidTarget[] getTargets(boolean includeMissing) {
-        IAndroidTarget[] result = getTargets();
-        if (includeMissing) {
-            result = ObjectArrays.concat(result, getMissingTargets(), IAndroidTarget.class);
-        }
-        return result;
-    }
-
-    @NonNull
-    public IAndroidTarget[] getMissingTargets() {
-        synchronized (mLocalPackages) {
-            if (mCachedMissingTargets == null) {
-                Map<MissingTarget, MissingTarget> result = Maps.newHashMap();
-                Set<ISystemImage> seen = Sets.newHashSet();
-                for (IAndroidTarget target : getTargets()) {
-                    Collections.addAll(seen, target.getSystemImages());
-                }
-                for (LocalPkgInfo local : getPkgsInfos(PkgType.PKG_ADDON_SYS_IMAGE)) {
-                    LocalAddonSysImgPkgInfo info = (LocalAddonSysImgPkgInfo)local;
-                    ISystemImage image = info.getSystemImage();
-                    if (!seen.contains(image)) {
-                        addOrphanedSystemImage(image, info.getDesc(), result);
-                    }
-                }
-                for (LocalPkgInfo local : getPkgsInfos(PkgType.PKG_SYS_IMAGE)) {
-                    LocalSysImgPkgInfo info = (LocalSysImgPkgInfo)local;
-                    ISystemImage image = info.getSystemImage();
-                    if (!seen.contains(image)) {
-                        addOrphanedSystemImage(image, info.getDesc(), result);
-                    }
-                }
-                mCachedMissingTargets = result.keySet();
-            }
-            return mCachedMissingTargets.toArray(new IAndroidTarget[mCachedMissingTargets.size()]);
-        }
-    }
-
-    private static void addOrphanedSystemImage(ISystemImage image, IPkgDesc desc, Map<MissingTarget, MissingTarget> targets) {
-        IdDisplay vendor = desc.getVendor();
-        MissingTarget target = new MissingTarget(vendor == null ? null : vendor.getDisplay(), desc.getTag().getDisplay(), desc.getAndroidVersion());
-        MissingTarget existing = targets.get(target);
-        if (existing == null) {
-            existing = target;
-            targets.put(target, target);
-        }
-        existing.addSystemImage(image);
-    }
-
-    /**
-     * Returns a target from a hash that was generated by {@link IAndroidTarget#hashString()}.
-     *
-     * @param hash the {@link IAndroidTarget} hash string.
-     * @return The matching {@link IAndroidTarget} or null.
-     */
-    @Nullable
-    public IAndroidTarget getTargetFromHashString(@Nullable String hash) {
-        if (hash != null) {
-            IAndroidTarget[] targets = getTargets(true);
-            for (IAndroidTarget target : targets) {
-                if (target != null && hash.equals(AndroidTargetHash.getTargetHashString(target))) {
-                    return target;
-                }
-            }
-        }
-        return null;
-    }
-
     // -------------
 
     /**
@@ -813,15 +698,17 @@ public class LocalSdk {
     private LocalToolPkgInfo scanTools(File toolFolder) {
         // Can we find some properties?
         Properties props = parseProperties(new File(toolFolder, SdkConstants.FN_SOURCE_PROP));
-        FullRevision rev = PackageParserUtils.getPropertyFull(props, PkgProps.PKG_REVISION);
+        Revision rev = PackageParserUtils.getRevisionProperty(props, PkgProps.PKG_REVISION);
         if (rev == null) {
             return null;
         }
+        rev = fullySpecifyRevision(rev);
 
-        FullRevision minPlatToolsRev =
-            PackageParserUtils.getPropertyFull(props, PkgProps.MIN_PLATFORM_TOOLS_REV);
+
+        Revision minPlatToolsRev =
+            PackageParserUtils.getRevisionProperty(props, PkgProps.MIN_PLATFORM_TOOLS_REV);
         if (minPlatToolsRev == null) {
-            minPlatToolsRev = FullRevision.NOT_SPECIFIED;
+            minPlatToolsRev = Revision.NOT_SPECIFIED;
         }
 
         LocalToolPkgInfo info = new LocalToolPkgInfo(this, toolFolder, props, rev, minPlatToolsRev);
@@ -852,6 +739,23 @@ public class LocalSdk {
         return info;
     }
 
+  /**
+   * Creates a new revision with at least three components (major, minor, micro)
+   * based on the given revision. This is important since in the past we would
+   * sometimes write out revisions with only one component when internally we
+   * required that they have more, and would convert using the specific Revision
+   * subclass.
+   * @param rev
+   * @return
+   */
+    private static Revision fullySpecifyRevision(Revision rev) {
+        // Since we used to require a complete revision
+        if (!rev.isPreview()) {
+            rev = new Revision(rev.getMajor(), rev.getMinor(), rev.getMicro());
+        }
+        return rev;
+    }
+
     /**
      * Try to find a platform-tools package at the given location.
      * Returns null if not found.
@@ -859,10 +763,12 @@ public class LocalSdk {
     private LocalPlatformToolPkgInfo scanPlatformTools(File ptFolder) {
         // Can we find some properties?
         Properties props = parseProperties(new File(ptFolder, SdkConstants.FN_SOURCE_PROP));
-        FullRevision rev = PackageParserUtils.getPropertyFull(props, PkgProps.PKG_REVISION);
+        Revision rev = PackageParserUtils.getRevisionProperty(props, PkgProps.PKG_REVISION);
         if (rev == null) {
             return null;
         }
+        // Since we used to require a complete revision
+        rev = fullySpecifyRevision(rev);
 
         LocalPlatformToolPkgInfo info = new LocalPlatformToolPkgInfo(this, ptFolder, props, rev);
         return info;
@@ -875,13 +781,13 @@ public class LocalSdk {
     private LocalDocPkgInfo scanDoc(File docFolder) {
         // Can we find some properties?
         Properties props = parseProperties(new File(docFolder, SdkConstants.FN_SOURCE_PROP));
-        MajorRevision rev = PackageParserUtils.getPropertyMajor(props, PkgProps.PKG_REVISION);
+        Revision rev = PackageParserUtils.getRevisionProperty(props, PkgProps.PKG_REVISION);
         if (rev == null) {
             return null;
         }
 
         try {
-            AndroidVersion vers = new AndroidVersion(props);
+            AndroidVersion vers = AndroidVersionHelper.create(props);
             LocalDocPkgInfo info = new LocalDocPkgInfo(this, docFolder, props, vers, rev);
 
             // To start with, a doc folder should have an "index.html" to be acceptable.
@@ -904,7 +810,7 @@ public class LocalSdk {
     private LocalNdkPkgInfo scanNdk(@NonNull File ndkFolder) {
         // Can we find some properties?
         Properties props = parseProperties(new File(ndkFolder, SdkConstants.FN_SOURCE_PROP));
-        FullRevision rev = PackageParserUtils.getPropertyFull(props, PkgProps.PKG_REVISION);
+        Revision rev = PackageParserUtils.getRevisionProperty(props, PkgProps.PKG_REVISION);
         if (rev == null) {
             return null;
         }
@@ -918,14 +824,15 @@ public class LocalSdk {
      */
     @Nullable
     private LocalLLDBPkgInfo scanLLDB(@NonNull File lldbFolder) {
+        File pinnedLLDBFolder = new File(lldbFolder, LocalLLDBPkgInfo.PINNED_REVISION.toString());
         // Can we find some properties?
-        Properties props = parseProperties(new File(lldbFolder, SdkConstants.FN_SOURCE_PROP));
-        FullRevision rev = PackageParserUtils.getPropertyFull(props, PkgProps.PKG_REVISION);
+        Properties props = parseProperties(new File(pinnedLLDBFolder, SdkConstants.FN_SOURCE_PROP));
+        Revision rev = PackageParserUtils.getRevisionProperty(props, PkgProps.PKG_REVISION);
         if (rev == null) {
             return null;
         }
 
-        return new LocalLLDBPkgInfo(this, lldbFolder, props, rev);
+        return new LocalLLDBPkgInfo(this, pinnedLLDBFolder, props, rev);
     }
 
     /**
@@ -960,10 +867,13 @@ public class LocalSdk {
             }
 
             Properties props = parseProperties(new File(buildToolDir, SdkConstants.FN_SOURCE_PROP));
-            FullRevision rev = PackageParserUtils.getPropertyFull(props, PkgProps.PKG_REVISION);
+            Revision rev = PackageParserUtils.getRevisionProperty(props, PkgProps.PKG_REVISION);
             if (rev == null) {
                 continue; // skip, no revision
             }
+
+            // Since we used to require a complete revision
+            rev = fullySpecifyRevision(rev);
 
             BuildToolInfo btInfo = new BuildToolInfo(rev, buildToolDir);
             LocalBuildToolPkgInfo pkgInfo =
@@ -979,19 +889,19 @@ public class LocalSdk {
             }
 
             Properties props = parseProperties(new File(platformDir, SdkConstants.FN_SOURCE_PROP));
-            MajorRevision rev = PackageParserUtils.getPropertyMajor(props, PkgProps.PKG_REVISION);
+            Revision rev = PackageParserUtils.getRevisionProperty(props, PkgProps.PKG_REVISION);
             if (rev == null) {
                 continue; // skip, no revision
             }
 
-            FullRevision minToolsRev =
-                PackageParserUtils.getPropertyFull(props, PkgProps.MIN_TOOLS_REV);
+            Revision minToolsRev =
+                PackageParserUtils.getRevisionProperty(props, PkgProps.MIN_TOOLS_REV);
             if (minToolsRev == null) {
-                minToolsRev = FullRevision.NOT_SPECIFIED;
+                minToolsRev = Revision.NOT_SPECIFIED;
             }
 
             try {
-                AndroidVersion vers = new AndroidVersion(props);
+                AndroidVersion vers = AndroidVersionHelper.create(props);
 
                 LocalPlatformPkgInfo pkgInfo =
                     new LocalPlatformPkgInfo(this, platformDir, props, vers, rev, minToolsRev);
@@ -1010,13 +920,15 @@ public class LocalSdk {
             }
 
             Properties props = parseProperties(new File(addonDir, SdkConstants.FN_SOURCE_PROP));
-            MajorRevision rev = PackageParserUtils.getPropertyMajor(props, PkgProps.PKG_REVISION);
+            Revision rev = PackageParserUtils.getRevisionProperty(props, PkgProps.PKG_REVISION);
             if (rev == null) {
                 continue; // skip, no revision
             }
+            // Since we used to require a complete revision
+            rev = fullySpecifyRevision(rev);
 
             try {
-                AndroidVersion vers = new AndroidVersion(props);
+                AndroidVersion vers = AndroidVersionHelper.create(props);
 
                 // Starting with addon-4.xsd, we have vendor-id and name-id available
                 // in the add-on source properties so we'll use that directly.
@@ -1048,8 +960,8 @@ public class LocalSdk {
 
                 LocalAddonPkgInfo pkgInfo = new LocalAddonPkgInfo(
                         this, addonDir, props, vers, rev,
-                        new IdDisplay(vendorId, vendorDisp),
-                        new IdDisplay(nameId, nameDisp));
+                        IdDisplay.create(vendorId, vendorDisp),
+                        IdDisplay.create(nameId, nameDisp));
                 outCollection.add(pkgInfo);
 
             } catch (AndroidVersionException e) {
@@ -1108,13 +1020,13 @@ public class LocalSdk {
 
         for (File propFile : propFiles) {
             Properties props = parseProperties(propFile);
-            MajorRevision rev = PackageParserUtils.getPropertyMajor(props, PkgProps.PKG_REVISION);
+            Revision rev = PackageParserUtils.getRevisionProperty(props, PkgProps.PKG_REVISION);
             if (rev == null) {
                 continue; // skip, no revision
             }
 
             try {
-                AndroidVersion vers = new AndroidVersion(props);
+                AndroidVersion vers = AndroidVersionHelper.create(props);
 
                 IdDisplay tag = LocalSysImgPkgInfo.extractTagFromProps(props);
                 String vendorId = props.getProperty(PkgProps.ADDON_VENDOR_ID, null);
@@ -1127,7 +1039,7 @@ public class LocalSdk {
 
                 } else if (vendorId != null && scanAddons) {
                     String vendorDisp = props.getProperty(PkgProps.ADDON_VENDOR_DISPLAY, vendorId);
-                    IdDisplay vendor = new IdDisplay(vendorId, vendorDisp);
+                    IdDisplay vendor = IdDisplay.create(vendorId, vendorDisp);
 
                     LocalAddonSysImgPkgInfo pkgInfo =
                             new LocalAddonSysImgPkgInfo(
@@ -1148,19 +1060,19 @@ public class LocalSdk {
             }
 
             Properties props = parseProperties(new File(platformDir, SdkConstants.FN_SOURCE_PROP));
-            MajorRevision rev = PackageParserUtils.getPropertyMajor(props, PkgProps.PKG_REVISION);
+            Revision rev = PackageParserUtils.getRevisionProperty(props, PkgProps.PKG_REVISION);
             if (rev == null) {
                 continue; // skip, no revision
             }
 
-            FullRevision minToolsRev =
-                PackageParserUtils.getPropertyFull(props, PkgProps.MIN_TOOLS_REV);
+            Revision minToolsRev =
+                PackageParserUtils.getRevisionProperty(props, PkgProps.MIN_TOOLS_REV);
             if (minToolsRev == null) {
-                minToolsRev = FullRevision.NOT_SPECIFIED;
+                minToolsRev = Revision.NOT_SPECIFIED;
             }
 
             try {
-                AndroidVersion vers = new AndroidVersion(props);
+                AndroidVersion vers = AndroidVersionHelper.create(props);
 
                 LocalSamplePkgInfo pkgInfo =
                     new LocalSamplePkgInfo(this, platformDir, props, vers, rev, minToolsRev);
@@ -1179,13 +1091,13 @@ public class LocalSdk {
             }
 
             Properties props = parseProperties(new File(platformDir, SdkConstants.FN_SOURCE_PROP));
-            MajorRevision rev = PackageParserUtils.getPropertyMajor(props, PkgProps.PKG_REVISION);
+            Revision rev = PackageParserUtils.getRevisionProperty(props, PkgProps.PKG_REVISION);
             if (rev == null) {
                 continue; // skip, no revision
             }
 
             try {
-                AndroidVersion vers = new AndroidVersion(props);
+                AndroidVersion vers = AndroidVersionHelper.create(props);
 
                 LocalSourcePkgInfo pkgInfo =
                     new LocalSourcePkgInfo(this, platformDir, props, vers, rev);
@@ -1208,11 +1120,13 @@ public class LocalSdk {
                 }
 
                 Properties props = parseProperties(new File(extraDir, SdkConstants.FN_SOURCE_PROP));
-                NoPreviewRevision rev =
-                    PackageParserUtils.getPropertyNoPreview(props, PkgProps.PKG_REVISION);
+                Revision rev =
+                    PackageParserUtils.getRevisionProperty(props, PkgProps.PKG_REVISION);
                 if (rev == null) {
                     continue; // skip, no revision
                 }
+                // Since we used to require a three-part revision
+                rev = fullySpecifyRevision(rev);
 
                 String oldPaths =
                     PackageParserUtils.getProperty(props, PkgProps.EXTRA_OLD_PATHS, null);
@@ -1229,7 +1143,7 @@ public class LocalSdk {
                         this,
                         extraDir,
                         props,
-                        new IdDisplay(vendorId, vendorDisp),
+                        IdDisplay.create(vendorId, vendorDisp),
                         extraDir.getName(),
                         displayName,
                         PkgDescExtra.convertOldPaths(oldPaths),

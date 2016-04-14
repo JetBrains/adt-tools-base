@@ -22,11 +22,10 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.DexOptions;
-import com.android.ide.common.process.JavaProcessExecutor;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutputHandler;
-import com.android.sdklib.BuildToolInfo;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
+import com.android.utils.FileUtils;
 import com.android.utils.Pair;
 import com.google.common.io.Files;
 
@@ -51,7 +50,7 @@ import java.util.logging.Logger;
  * Because different project could use different build-tools, both the library to pre-dex and the
  * version of the build tools are used as keys in the cache.
  *
- * The API is fairly simple, just call {@link #preDexLibrary(File, File, boolean, DexOptions, BuildToolInfo, boolean, JavaProcessExecutor, ProcessOutputHandler)}
+ * The API is fairly simple, just call {@link #preDexLibrary(AndroidBuilder, File, File, boolean, DexOptions, ProcessOutputHandler)}
  *
  * The call will be blocking until the pre-dexing happened, either through actual pre-dexing or
  * through copying the output of a previous pre-dex run.
@@ -74,7 +73,7 @@ public class PreDexCache extends PreProcessCache<DexKey> {
     protected KeyFactory<DexKey> getKeyFactory() {
         return new KeyFactory<DexKey>() {
             @Override
-            public DexKey of(@NonNull File sourceFile, @NonNull FullRevision revision,
+            public DexKey of(@NonNull File sourceFile, @NonNull Revision revision,
                     @NonNull NamedNodeMap attrMap) {
                 return DexKey.of(sourceFile, revision,
                         Boolean.parseBoolean(attrMap.getNamedItem(ATTR_JUMBO_MODE).getNodeValue()));
@@ -84,32 +83,30 @@ public class PreDexCache extends PreProcessCache<DexKey> {
 
     /**
      * Pre-dex a given library to a given output with a specific version of the build-tools.
+     *
+     * @param builder {@link AndroidBuilder} instance used to dex the library
      * @param inputFile the jar to pre-dex
-     * @param outFile the output file or folder (if multi-dex is enabled). must exist
-     * @param multiDex whether mutli-dex is enabled.
+     * @param outFile the output file or folder (if multi-dex is enabled), must exist
+     * @param multiDex whether mutli-dex is enabled
      * @param dexOptions the dex options to run pre-dex
-     * @param buildToolInfo the build tools info
-     * @param verbose verbose flag
-     * @param processExecutor the process executor
      * @throws IOException
      * @throws ProcessException
      * @throws InterruptedException
      */
     public void preDexLibrary(
+            @NonNull AndroidBuilder builder,
             @NonNull File inputFile,
             @NonNull File outFile,
                      boolean multiDex,
             @NonNull DexOptions dexOptions,
-            @NonNull BuildToolInfo buildToolInfo,
-            boolean verbose,
-            @NonNull JavaProcessExecutor processExecutor,
             @NonNull ProcessOutputHandler processOutputHandler)
             throws IOException, ProcessException, InterruptedException {
         checkState(!multiDex || outFile.isDirectory());
+        checkState(builder.getTargetInfo() != null);
 
         DexKey itemKey = DexKey.of(
                 inputFile,
-                buildToolInfo.getRevision(),
+                builder.getTargetInfo().getBuildTools().getRevision(),
                 dexOptions.getJumboMode());
 
         Pair<Item, Boolean> pair = getItem(itemKey);
@@ -119,14 +116,11 @@ public class PreDexCache extends PreProcessCache<DexKey> {
         if (pair.getSecond()) {
             try {
                 // haven't process this file yet so do it and record it.
-                List<File> files = AndroidBuilder.preDexLibrary(
+                List<File> files = builder.preDexLibraryNoCache(
                         inputFile,
                         outFile,
                         multiDex,
                         dexOptions,
-                        buildToolInfo,
-                        verbose,
-                        processExecutor,
                         processOutputHandler);
 
                 item.getOutputFiles().clear();
@@ -135,7 +129,7 @@ public class PreDexCache extends PreProcessCache<DexKey> {
                 incrementMisses();
             } catch (ProcessException exception) {
                 // in case of error, delete (now obsolete) output file
-                outFile.delete();
+                FileUtils.deleteIfExists(outFile);
                 // and rethrow the error
                 throw exception;
             } finally {

@@ -62,7 +62,7 @@ public enum Scope {
     BINARY_RESOURCE_FILE,
 
     /**
-     * The analysis considers the resource folders
+     * The analysis considers the resource folders (which also includes asset folders)
      */
     RESOURCE_FOLDER,
 

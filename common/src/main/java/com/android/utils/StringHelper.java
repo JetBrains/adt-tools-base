@@ -18,6 +18,7 @@ package com.android.utils;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
@@ -94,4 +95,64 @@ public class StringHelper {
         }
     }
 
+    /**
+     * Tokenize a command line string.
+     */
+    @NonNull
+    public static List<String> tokenizeCommand(@NonNull String commandLine) {
+        Iterable<String> split =
+                Splitter.on(' ').trimResults().split(commandLine);
+        List<String> command = Lists.newArrayList();
+        char quote = '\0';
+        StringBuilder quotedText = new StringBuilder();
+        for (String arg : split) {
+            if (quote == '\0') {
+                quote = findFirstQuoteChar(arg, "'\"");
+            }
+
+            if (quote != '\0') {
+                if (quotedText.length() > 0) {
+                    quotedText.append(" ");
+                }
+                quotedText.append(arg);
+                if (!arg.isEmpty() && arg.charAt(arg.length() - 1) == quote) {
+                    if (arg.length() == 1 || arg.charAt(arg.length() - 2) != '\\') {
+                        quote = '\0';
+                        command.add(quotedText.toString());
+                        quotedText = new StringBuilder();
+                    }
+                }
+            } else {
+                if (!arg.isEmpty()) {
+                    command.add(arg);
+                }
+            }
+        }
+        if (quote != '\0') {
+            throw new RuntimeException(
+                    "Unable to parse command string: " + commandLine + "\n"
+                    + "Missing " + quote + ".");
+        }
+        return command;
+    }
+
+    /**
+     * Find the first quote character that appear in 'str'.
+     *
+     * Return '\0' if 'str' does not contain any character in 'quote'.
+     */
+    private static char findFirstQuoteChar(@NonNull String str, @NonNull CharSequence quote) {
+        int firstIndex = -1;
+        char firstQuote = '\0';
+        for (int i = 0; i < quote.length(); i++) {
+            int index = str.indexOf(quote.charAt(i));
+            if (index != -1) {
+                if (firstIndex == -1 || index < firstIndex) {
+                    firstIndex = index;
+                    firstQuote = quote.charAt(i);
+                }
+            }
+        }
+        return firstQuote;
+    }
 }

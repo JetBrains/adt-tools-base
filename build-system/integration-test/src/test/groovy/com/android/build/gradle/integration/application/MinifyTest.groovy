@@ -157,37 +157,4 @@ class MinifyTest {
             zipFile.close();
         }
     }
-
-    public Set<String> gatherContentAsRelativePath(@NonNull File rootFolder) {
-        Set<String> results = Sets.newHashSet();
-
-        File[] children = rootFolder.listFiles()
-        if (children != null) {
-            for (File child : children) {
-                processFile(results, "", child);
-            }
-        }
-
-        return results;
-    }
-
-    private void processFile(Set<String> results, String root, File file) {
-        if (root.isEmpty()) {
-            root = file.getName();
-        } else {
-            root = root + File.separator + file.getName();
-        }
-
-        if (file.isFile()) {
-            // all tests use the *nix way of specifying file paths.
-            results.add(root.replace(File.separator, "/"))
-        } else if (file.isDirectory()) {
-            File[] children = file.listFiles()
-            if (children != null) {
-                for (File child : children) {
-                    processFile(results, root, child);
-                }
-            }
-        }
-    }
 }

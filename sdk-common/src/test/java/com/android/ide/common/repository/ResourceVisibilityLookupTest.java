@@ -15,20 +15,7 @@
  */
 package com.android.ide.common.repository;
 
-import static com.android.SdkConstants.FN_PUBLIC_TXT;
-import static com.android.SdkConstants.FN_RESOURCE_TEXT;
-import static org.easymock.EasyMock.createNiceMock;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.replay;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import com.android.builder.model.AndroidArtifact;
-import com.android.builder.model.AndroidLibrary;
-import com.android.builder.model.AndroidProject;
-import com.android.builder.model.Dependencies;
-import com.android.builder.model.MavenCoordinates;
-import com.android.builder.model.Variant;
+import com.android.builder.model.*;
 import com.android.ide.common.repository.ResourceVisibilityLookup.SymbolProvider;
 import com.android.ide.common.resources.ResourceUrl;
 import com.android.resources.ResourceType;
@@ -36,9 +23,7 @@ import com.android.testutils.TestUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Multimap;
 import com.google.common.io.Files;
-
 import junit.framework.TestCase;
-
 import org.mockito.stubbing.OngoingStubbing;
 
 import java.io.File;
@@ -46,6 +31,12 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+import static com.android.SdkConstants.FN_PUBLIC_TXT;
+import static com.android.SdkConstants.FN_RESOURCE_TEXT;
+import static org.easymock.EasyMock.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class ResourceVisibilityLookupTest extends TestCase {
     public void test() throws IOException {
@@ -410,7 +401,7 @@ public class ResourceVisibilityLookupTest extends TestCase {
         MavenCoordinates coordinates = mock(MavenCoordinates.class);
         when(coordinates.getGroupId()).thenReturn(c.getGroupId());
         when(coordinates.getArtifactId()).thenReturn(c.getArtifactId());
-        when(coordinates.getVersion()).thenReturn(c.getFullRevision());
+        when(coordinates.getVersion()).thenReturn(c.getRevision());
         when(library.getResolvedCoordinates()).thenReturn(coordinates);
         when(library.getBundle()).thenReturn(new File("intermediates" + File.separator +
                 "exploded-aar" + File.separator + name));

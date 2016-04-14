@@ -24,7 +24,6 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 
 public final class Pointer extends Type {
-
     Type mType;
 
     public Pointer(Type type) {
@@ -52,7 +51,7 @@ public final class Pointer extends Type {
 
     @Override
     public void encode(@NotNull Encoder e) throws IOException {
-        TypeTag.pointerTag().encode(e);
+        TypeTag.PointerTag.encode(e);
         mType.encode(e);
     }
 

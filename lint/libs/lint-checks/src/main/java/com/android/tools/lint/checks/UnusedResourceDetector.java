@@ -16,86 +16,85 @@
 
 package com.android.tools.lint.checks;
 
-import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_NAME;
-import static com.android.SdkConstants.ATTR_REF_PREFIX;
-import static com.android.SdkConstants.ATTR_TYPE;
+import static com.android.SdkConstants.DOT_JAVA;
 import static com.android.SdkConstants.DOT_XML;
-import static com.android.SdkConstants.RESOURCE_CLR_STYLEABLE;
-import static com.android.SdkConstants.RESOURCE_CLZ_ARRAY;
-import static com.android.SdkConstants.RESOURCE_CLZ_ID;
-import static com.android.SdkConstants.R_ATTR_PREFIX;
 import static com.android.SdkConstants.R_CLASS;
-import static com.android.SdkConstants.R_ID_PREFIX;
-import static com.android.SdkConstants.R_PREFIX;
-import static com.android.SdkConstants.TAG_ARRAY;
-import static com.android.SdkConstants.TAG_INTEGER_ARRAY;
-import static com.android.SdkConstants.TAG_ITEM;
-import static com.android.SdkConstants.TAG_PLURALS;
-import static com.android.SdkConstants.TAG_RESOURCES;
-import static com.android.SdkConstants.TAG_STRING_ARRAY;
-import static com.android.SdkConstants.TAG_STYLE;
-import static com.android.utils.SdkUtils.getResourceFieldName;
+import static com.android.tools.lint.detector.api.LintUtils.findSubstring;
+import static com.android.utils.SdkUtils.endsWithIgnoreCase;
+import static com.google.common.base.Charsets.UTF_8;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.ide.common.resources.ResourceUrl;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.BuildTypeContainer;
+import com.android.builder.model.ClassField;
+import com.android.builder.model.ProductFlavor;
+import com.android.builder.model.ProductFlavorContainer;
+import com.android.builder.model.SourceProvider;
+import com.android.builder.model.Variant;
+import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
+import com.android.tools.lint.checks.ResourceUsageModel.Resource;
+import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
+import com.android.tools.lint.client.api.JavaParser.ResolvedField;
+import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
-import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Detector.BinaryResourceScanner;
+import com.android.tools.lint.detector.api.Detector.JavaScanner;
+import com.android.tools.lint.detector.api.Detector.XmlScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
+import com.android.tools.lint.detector.api.ResourceContext;
 import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.XmlContext;
+import com.android.utils.XmlUtils;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import com.google.common.io.Files;
 
-import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import java.io.File;
-import java.util.ArrayList;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import lombok.ast.AstVisitor;
 import lombok.ast.ClassDeclaration;
+import lombok.ast.CompilationUnit;
 import lombok.ast.ForwardingAstVisitor;
-import lombok.ast.NormalTypeBody;
-import lombok.ast.VariableDeclaration;
-import lombok.ast.VariableDefinition;
+import lombok.ast.Identifier;
+import lombok.ast.ImportDeclaration;
+import lombok.ast.VariableReference;
 
 /**
  * Finds unused resources.
- * <p>
- * Note: This detector currently performs *string* analysis to check Java files.
- * The Lint API needs an official Java AST API (or map to an existing one like
- * BCEL for bytecode analysis etc) and once it does this should be updated to
- * use it.
  */
-public class UnusedResourceDetector extends ResourceXmlDetector implements Detector.JavaScanner {
+public class UnusedResourceDetector extends ResourceXmlDetector implements JavaScanner,
+        BinaryResourceScanner, XmlScanner {
 
     private static final Implementation IMPLEMENTATION = new Implementation(
             UnusedResourceDetector.class,
             EnumSet.of(Scope.MANIFEST, Scope.ALL_RESOURCE_FILES, Scope.ALL_JAVA_FILES,
-                    Scope.TEST_SOURCES));
+                    Scope.BINARY_RESOURCE_FILE, Scope.TEST_SOURCES));
 
     /** Unused resources (other than ids). */
     public static final Issue ISSUE = Issue.create(
@@ -121,9 +120,12 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
             IMPLEMENTATION)
             .setEnabledByDefault(false);
 
-    private Set<String> mDeclarations;
-    private Set<String> mReferences;
-    private Map<String, Location> mUnused;
+    private final UnusedResourceDetectorUsageModel mModel =
+            new UnusedResourceDetectorUsageModel();
+
+    /** Whether the resource detector will look for inactive resources (e.g. resource and code references
+     * in source sets that are not the primary/active variant) */
+    public static boolean sIncludeInactiveReferences = true;
 
     /**
      * Constructs a new {@link UnusedResourceDetector}
@@ -131,70 +133,41 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
     public UnusedResourceDetector() {
     }
 
-    @Override
-    public void run(@NonNull Context context) {
-        assert false;
-    }
-
-    @Override
-    public boolean appliesTo(@NonNull Context context, @NonNull File file) {
-        return true;
-    }
-
-    @Override
-    public void beforeCheckProject(@NonNull Context context) {
-        if (context.getPhase() == 1) {
-            mDeclarations = new HashSet<String>(300);
-            mReferences = new HashSet<String>(300);
+    private void addDynamicResources(
+            @NonNull Context context) {
+        Project project = context.getProject();
+        AndroidProject model = project.getGradleProjectModel();
+        if (model != null) {
+            Variant selectedVariant = project.getCurrentVariant();
+            if (selectedVariant != null) {
+                for (BuildTypeContainer container : model.getBuildTypes()) {
+                    if (selectedVariant.getBuildType().equals(container.getBuildType().getName())) {
+                        addDynamicResources(project, container.getBuildType().getResValues());
+                    }
+                }
+            }
+            ProductFlavor flavor = model.getDefaultConfig().getProductFlavor();
+            addDynamicResources(project, flavor.getResValues());
         }
     }
 
-    // ---- Implements JavaScanner ----
-
-    @Override
-    public void beforeCheckFile(@NonNull Context context) {
-        File file = context.file;
-
-        boolean isXmlFile = LintUtils.isXmlFile(file);
-        if (isXmlFile || LintUtils.isBitmapFile(file)) {
-            String fileName = file.getName();
-            String parentName = file.getParentFile().getName();
-            int dash = parentName.indexOf('-');
-            String typeName = parentName.substring(0, dash == -1 ? parentName.length() : dash);
-            ResourceType type = ResourceType.getEnum(typeName);
-            if (type != null && LintUtils.isFileBasedResourceType(type)) {
-                String baseName = fileName.substring(0, fileName.length() - DOT_XML.length());
-                String resource = R_PREFIX + typeName + '.' + baseName;
-                if (context.getPhase() == 1) {
-                    mDeclarations.add(resource);
-                } else {
-                    assert context.getPhase() == 2;
-                    if (mUnused.containsKey(resource)) {
-                        // Check whether this is an XML document that has a tools:ignore attribute
-                        // on the document element: if so don't record it as a declaration.
-                        if (isXmlFile && context instanceof XmlContext) {
-                            XmlContext xmlContext = (XmlContext) context;
-                            if (xmlContext.document != null
-                                    && xmlContext.document.getDocumentElement() != null) {
-                                Element root = xmlContext.document.getDocumentElement();
-                                if (xmlContext.getDriver().isSuppressed(xmlContext, ISSUE, root)) {
-                                    //  Also remove it from consideration such that even the
-                                    // presence of this field in the R file is ignored.
-                                    mUnused.remove(resource);
-                                    return;
-                                }
-                            }
-                        }
-
-                        if (!context.getProject().getReportIssues()) {
-                            // If this is a library project not being analyzed, ignore it
-                            mUnused.remove(resource);
-                            return;
-                        }
-
-                        recordLocation(resource, Location.create(file));
-                    }
+    private void addDynamicResources(@NonNull Project project,
+            @NonNull Map<String, ClassField> resValues) {
+        Set<String> keys = resValues.keySet();
+        if (!keys.isEmpty()) {
+            Location location = LintUtils.guessGradleLocation(project);
+            for (String name : keys) {
+                ClassField field = resValues.get(name);
+                ResourceType type = ResourceType.getEnum(field.getType());
+                if (type == null) {
+                    // Highly unlikely. This would happen if in the future we add
+                    // some new ResourceType, that the Gradle plugin (and the user's
+                    // Gradle file is creating) and it's an older version of Studio which
+                    // doesn't yet have this ResourceType in its enum.
+                    continue;
                 }
+                Resource resource = mModel.declareResource(type, name, null);
+                resource.recordLocation(location);
             }
         }
     }
@@ -202,28 +175,39 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
     @Override
     public void afterCheckProject(@NonNull Context context) {
         if (context.getPhase() == 1) {
-            mDeclarations.removeAll(mReferences);
-            Set<String> unused = mDeclarations;
-            mReferences = null;
-            mDeclarations = null;
+            Project project = context.getProject();
 
-            // Remove styles and attributes: they may be used, analysis isn't complete for these
-            List<String> styles = new ArrayList<String>();
-            for (String resource : unused) {
-                // R.style.x, R.styleable.x, R.attr
-                if (resource.startsWith("R.style")          //$NON-NLS-1$
-                        || resource.startsWith("R.attr")) { //$NON-NLS-1$
-                    styles.add(resource);
+            // Look for source sets that aren't part of the active variant;
+            // we need to make sure we find references in those source sets as well
+            // such that we don't incorrectly remove resources that are
+            // used by some other source set.
+            if (sIncludeInactiveReferences && project.isGradleProject() && !project.isLibrary()) {
+                AndroidProject model = project.getGradleProjectModel();
+                Variant variant = project.getCurrentVariant();
+                if (model != null && variant != null) {
+                    addInactiveReferences(model, variant);
                 }
             }
-            unused.removeAll(styles);
+
+            addDynamicResources(context);
+            mModel.processToolsAttributes();
+
+            List<Resource> unusedResources = mModel.findUnused();
+            Set<Resource> unused = Sets.newHashSetWithExpectedSize(unusedResources.size());
+            for (Resource resource : unusedResources) {
+                if (resource.isDeclared()
+                        && !resource.isPublic()
+                        && resource.type != ResourceType.PUBLIC) {
+                    unused.add(resource);
+                }
+            }
 
             // Remove id's if the user has disabled reporting issue ids
             if (!unused.isEmpty() && !context.isEnabled(ISSUE_IDS)) {
                 // Remove all R.id references
-                List<String> ids = new ArrayList<String>();
-                for (String resource : unused) {
-                    if (resource.startsWith(R_ID_PREFIX)) {
+                List<Resource> ids = Lists.newArrayList();
+                for (Resource resource : unused) {
+                    if (resource.type == ResourceType.ID) {
                         ids.add(resource);
                     }
                 }
@@ -231,10 +215,7 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
             }
 
             if (!unused.isEmpty() && !context.getDriver().hasParserErrors()) {
-                mUnused = new HashMap<String, Location>(unused.size());
-                for (String resource : unused) {
-                    mUnused.put(resource, null);
-                }
+                mModel.unused = unused;
 
                 // Request another pass, and in the second pass we'll gather location
                 // information for all declaration locations we've found
@@ -245,11 +226,21 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
 
             // Report any resources that we (for some reason) could not find a declaration
             // location for
-            if (!mUnused.isEmpty()) {
+            Collection<Resource> unused = mModel.unused;
+            if (!unused.isEmpty()) {
+                // Final pass: we may have marked a few resource declarations with
+                // tools:ignore; we don't check that on every single element, only those
+                // first thought to be unused. We don't just remove the elements explicitly
+                // marked as unused, we revisit everything transitively such that resources
+                // referenced from the ignored/kept resource are also kept.
+                unused = mModel.findUnused(Lists.newArrayList(unused));
+                if (unused.isEmpty()) {
+                    return;
+                }
+
                 // Fill in locations for files that we didn't encounter in other ways
-                for (Map.Entry<String, Location> entry : mUnused.entrySet()) {
-                    String resource = entry.getKey();
-                    Location location = entry.getValue();
+                for (Resource resource : unused) {
+                    Location location = resource.locations;
                     //noinspection VariableNotUsedInsideIf
                     if (location != null) {
                         continue;
@@ -259,11 +250,9 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
                     // in that case we can figure out the filename since it has a simple mapping
                     // from the resource name (though the presence of qualifiers like -land etc
                     // makes it a little tricky if there's no base file provided)
-                    int secondDot = resource.indexOf('.', 2);
-                    String typeName = resource.substring(2, secondDot); // 2: Skip R.
-                    ResourceType type = ResourceType.getEnum(typeName);
+                    ResourceType type = resource.type;
                     if (type != null && LintUtils.isFileBasedResourceType(type)) {
-                        String name = resource.substring(secondDot + 1);
+                        String name = resource.name;
 
                         List<File> folders = Lists.newArrayList();
                         List<File> resourceFolders = context.getProject().getResourceFolders();
@@ -273,7 +262,7 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
                                 folders.addAll(Arrays.asList(f));
                             }
                         }
-                        if (folders != null) {
+                        if (!folders.isEmpty()) {
                             // Process folders in alphabetical order such that we process
                             // based folders first: we want the locations in base folder
                             // order
@@ -284,7 +273,7 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
                                 }
                             });
                             for (File folder : folders) {
-                                if (folder.getName().startsWith(typeName)) {
+                                if (folder.getName().startsWith(type.getName())) {
                                     File[] files = folder.listFiles();
                                     if (files != null) {
                                         Arrays.sort(files);
@@ -293,7 +282,7 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
                                             if (fileName.startsWith(name)
                                                     && fileName.startsWith(".", //$NON-NLS-1$
                                                             name.length())) {
-                                                recordLocation(resource, Location.create(file));
+                                                resource.recordLocation(Location.create(file));
                                             }
                                         }
                                     }
@@ -303,13 +292,13 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
                     }
                 }
 
-                List<String> sorted = new ArrayList<String>(mUnused.keySet());
+                List<Resource> sorted = Lists.newArrayList(unused);
                 Collections.sort(sorted);
 
                 Boolean skippedLibraries = null;
 
-                for (String resource : sorted) {
-                    Location location = mUnused.get(resource);
+                for (Resource resource : sorted) {
+                    Location location = resource.locations;
                     if (location != null) {
                         // We were prepending locations, but we want to prefer the base folders
                         location = Location.reverse(location);
@@ -334,237 +323,198 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
                         }
                     }
 
+                    // Keep in sync with getUnusedResource() below
                     String message = String.format("The resource `%1$s` appears to be unused",
-                            resource);
-                    Issue issue = getIssue(resource);
-                    // TODO: Compute applicable node scope
-                    context.report(issue, location, message);
+                            resource.getField());
+                    context.report(getIssue(resource), location, message);
                 }
             }
         }
     }
 
-    private static Issue getIssue(String resource) {
-        return resource.startsWith(R_ID_PREFIX) ? ISSUE_IDS : ISSUE;
-    }
+    /** Returns source providers that are <b>not</b> part of the given variant */
+    @NonNull
+    private static List<SourceProvider> getInactiveSourceProviders(
+            @NonNull AndroidProject project,
+            @NonNull Variant variant) {
+        Collection<Variant> variants = project.getVariants();
+        List<SourceProvider> providers = Lists.newArrayList();
 
-    private void recordLocation(String resource, Location location) {
-        Location oldLocation = mUnused.get(resource);
-        if (oldLocation != null) {
-            location.setSecondary(oldLocation);
+        // Add other flavors
+        Collection<ProductFlavorContainer> flavors = project.getProductFlavors();
+        for (ProductFlavorContainer pfc : flavors) {
+            if (variant.getProductFlavors().contains(pfc.getProductFlavor().getName())) {
+                continue;
+            }
+            providers.add(pfc.getSourceProvider());
         }
-        mUnused.put(resource, location);
+
+        // Add other multi-flavor source providers
+        for (Variant v : variants) {
+            if (variant.getName().equals(v.getName())) {
+                continue;
+            }
+            SourceProvider provider = v.getMainArtifact().getMultiFlavorSourceProvider();
+            if (provider != null) {
+                providers.add(provider);
+            }
+        }
+
+        // Add other the build types
+        Collection<BuildTypeContainer> buildTypes = project.getBuildTypes();
+        for (BuildTypeContainer btc : buildTypes) {
+            if (variant.getBuildType().equals(btc.getBuildType().getName())) {
+                continue;
+            }
+            providers.add(btc.getSourceProvider());
+        }
+
+        // Add other the other variant source providers
+        for (Variant v : variants) {
+            if (variant.getName().equals(v.getName())) {
+                continue;
+            }
+            SourceProvider provider = v.getMainArtifact().getVariantSourceProvider();
+            if (provider != null) {
+                providers.add(provider);
+            }
+        }
+
+        return providers;
     }
 
-    @Override
-    public Collection<String> getApplicableAttributes() {
-        return ALL;
-    }
-
-    @Override
-    public Collection<String> getApplicableElements() {
-        return Arrays.asList(
-                TAG_STYLE,
-                TAG_RESOURCES,
-                TAG_ARRAY,
-                TAG_STRING_ARRAY,
-                TAG_INTEGER_ARRAY,
-                TAG_PLURALS
-        );
-    }
-
-    @Override
-    public void visitElement(@NonNull XmlContext context, @NonNull Element element) {
-        if (TAG_RESOURCES.equals(element.getTagName())) {
-            for (Element item : LintUtils.getChildren(element)) {
-                Attr nameAttribute = item.getAttributeNode(ATTR_NAME);
-                if (nameAttribute != null) {
-                    String name = getResourceFieldName(nameAttribute.getValue());
-                    String type = item.getTagName();
-                    if (type.equals(TAG_ITEM)) {
-                        type = item.getAttribute(ATTR_TYPE);
-                        if (type == null || type.isEmpty()) {
-                            type = RESOURCE_CLZ_ID;
-                        }
-                    } else if (type.equals("declare-styleable")) {   //$NON-NLS-1$
-                        type = RESOURCE_CLR_STYLEABLE;
-                    } else if (type.contains("array")) {             //$NON-NLS-1$
-                        // <string-array> etc
-                        type = RESOURCE_CLZ_ARRAY;
-                    } else if (type.equals("public")) {
-                        // Public resources (and the public definition itself) should
-                        // never be shown as unused: these are deliberately exposed to
-                        // usage outside of this project
-                        if (mReferences != null && context.getPhase() == 1) {
-                            String referencedType = item.getAttribute(ATTR_TYPE);
-                            if (referencedType != null && !referencedType.isEmpty()) {
-                                mReferences.add(R_PREFIX + referencedType + '.' + name);
-                            }
-                            mReferences.add(R_PREFIX + type + '.' + name);
-                        }
-                        continue;
+    private void recordInactiveJavaReferences(@NonNull File resDir) {
+        File[] files = resDir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    recordInactiveJavaReferences(file);
+                } else if (file.getName().endsWith(DOT_JAVA)) {
+                    try {
+                        String java = Files.toString(file, UTF_8);
+                        mModel.tokenizeJavaCode(java);
+                    } catch (Throwable ignore) {
+                        // Tolerate parsing errors etc in these files; they're user
+                        // sources, and this is even for inactive source sets.
                     }
-                    String resource = R_PREFIX + type + '.' + name;
+                }
+            }
+        }
+    }
 
-                    if (context.getPhase() == 1) {
-                        mDeclarations.add(resource);
-                        checkChildRefs(item);
+    private void recordInactiveXmlResources(@NonNull File resDir) {
+        File[] resourceFolders = resDir.listFiles();
+        if (resourceFolders != null) {
+            for (File folder : resourceFolders) {
+                ResourceFolderType folderType = ResourceFolderType.getFolderType(folder.getName());
+                if (folderType != null) {
+                    recordInactiveXmlResources(folderType, folder);
+                }
+            }
+        }
+    }
+
+    // Used for traversing resource folders *outside* of the normal Gradle variant
+    // folders: these are not necessarily on the project path, so we don't have PSI files
+    // for them
+    private void recordInactiveXmlResources(@NonNull ResourceFolderType folderType,
+      @NonNull File folder) {
+        File[] files = folder.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                String path = file.getPath();
+                boolean isXml = endsWithIgnoreCase(path, DOT_XML);
+                try {
+                    if (isXml) {
+                        String xml = Files.toString(file, UTF_8);
+                        Document document = XmlUtils.parseDocument(xml, true);
+                        mModel.visitXmlDocument(file, folderType, document);
                     } else {
-                        assert context.getPhase() == 2;
-                        if (mUnused.containsKey(resource)) {
-                            if (context.getDriver().isSuppressed(context, getIssue(resource),
-                                    item)) {
-                                mUnused.remove(resource);
-                                continue;
-                            }
-                            if (!context.getProject().getReportIssues()) {
-                                mUnused.remove(resource);
-                                continue;
-                            }
-                            if (isAnalyticsFile(context)) {
-                                mUnused.remove(resource);
-                                continue;
-                            }
-
-                            recordLocation(resource, context.getLocation(nameAttribute));
-                        }
+                        mModel.visitBinaryResource(folderType, file);
                     }
+                } catch (Throwable ignore) {
+                    // Tolerate parsing errors etc in these files; they're user
+                    // sources, and this is even for inactive source sets.
                 }
-            }
-        } else //noinspection VariableNotUsedInsideIf
-            if (mReferences != null) {
-            assert TAG_STYLE.equals(element.getTagName())
-                || TAG_ARRAY.equals(element.getTagName())
-                || TAG_PLURALS.equals(element.getTagName())
-                || TAG_INTEGER_ARRAY.equals(element.getTagName())
-                || TAG_STRING_ARRAY.equals(element.getTagName());
-            for (Element item : LintUtils.getChildren(element)) {
-                checkChildRefs(item);
             }
         }
     }
 
-    private static final String ANALYTICS_FILE = "analytics.xml"; //$NON-NLS-1$
+    private void addInactiveReferences(@NonNull AndroidProject model,
+                              @NonNull Variant variant) {
+        for (SourceProvider provider : getInactiveSourceProviders(model, variant)) {
+            for (File res : provider.getResDirectories()) {
+                // Scan resource directory
+                if (res.isDirectory()) {
+                    recordInactiveXmlResources(res);
+                }
+            }
+            for (File file : provider.getJavaDirectories()) {
+                // Scan Java directory
+                if (file.isDirectory()) {
+                    recordInactiveJavaReferences(file);
+                }
+            }
+        }
+    }
 
     /**
-     * Returns true if this XML file corresponds to an Analytics configuration file;
-     * these contain some attributes read by the library which won't be flagged as
-     * used by the application
+     * Given an error message created by this lint check, return the corresponding
+     * resource field name for the resource that is described as unused.
+     * (Intended to support quickfix implementations for this lint check.)
      *
-     * @param context the context used for scanning
-     * @return true if the file represents an analytics file
+     * @param errorMessage the error message originally produced by this detector
+     * @param format the format of the error message
+     * @return the corresponding resource field name, e.g. {@code R.string.foo}
      */
-    public static boolean isAnalyticsFile(Context context) {
-        File file = context.file;
-        return file.getPath().endsWith(ANALYTICS_FILE) && file.getName().equals(ANALYTICS_FILE);
+    @Nullable
+    public static String getUnusedResource(@NonNull String errorMessage, @NonNull TextFormat format) {
+        errorMessage = format.toText(errorMessage);
+        return findSubstring(errorMessage, "The resource ", " appears ");
     }
 
-    private void checkChildRefs(Element item) {
-        // Look for ?attr/ and @dimen/foo etc references in the item children
-        NodeList childNodes = item.getChildNodes();
-        for (int i = 0, n = childNodes.getLength(); i < n; i++) {
-            Node child = childNodes.item(i);
-            if (child.getNodeType() == Node.TEXT_NODE) {
-                String text = child.getNodeValue();
-
-                int index = text.indexOf(ATTR_REF_PREFIX);
-                if (index != -1) {
-                    String name = text.substring(index + ATTR_REF_PREFIX.length()).trim();
-                    mReferences.add(R_ATTR_PREFIX + name);
-                } else {
-                    index = text.indexOf('@');
-                    if (index != -1 && text.indexOf('/', index) != -1
-                            && !text.startsWith("@android:", index)) {  //$NON-NLS-1$
-                        // Compute R-string, e.g. @string/foo => R.string.foo
-                        String token = text.substring(index + 1).trim().replace('/', '.');
-                        String r = R_PREFIX + token;
-                        mReferences.add(r);
-                    }
-                }
-            }
-        }
+    private static Issue getIssue(@NonNull Resource resource) {
+        return resource.type != ResourceType.ID ? ISSUE : ISSUE_IDS;
     }
 
     @Override
-    public void visitAttribute(@NonNull XmlContext context, @NonNull Attr attribute) {
-        String value = attribute.getValue();
-
-        if (value.startsWith("@+") && !value.startsWith("@+android")) { //$NON-NLS-1$ //$NON-NLS-2$
-            String resource = R_PREFIX + value.substring(2).replace('/', '.');
-            // We already have the declarations when we scan the R file, but we're tracking
-            // these here to get attributes for position info
-
-            if (context.getPhase() == 1) {
-                mDeclarations.add(resource);
-            } else if (mUnused.containsKey(resource)) {
-                if (context.getDriver().isSuppressed(context, getIssue(resource), attribute)) {
-                    mUnused.remove(resource);
-                    return;
-                }
-                if (!context.getProject().getReportIssues()) {
-                    mUnused.remove(resource);
-                    return;
-                }
-                recordLocation(resource, context.getLocation(attribute));
-                return;
-            }
-        } else if (mReferences != null) {
-            if (value.startsWith("@")              //$NON-NLS-1$
-                    && !value.startsWith("@android:")) {  //$NON-NLS-1$
-                if (!value.startsWith("@{")) {
-                    // Compute R-string, e.g. @string/foo => R.string.foo
-                    String r = R_PREFIX + value.substring(1).replace('/', '.');
-                    mReferences.add(r);
-                } else {
-                    // Data binding expression: there could be multiple references here
-                    int length = value.length();
-                    int index = 2; // skip @{
-                    while (true) {
-                        index = value.indexOf('@', index);
-                        if (index == -1) {
-                            break;
-                        }
-                        // Find end of (potential) resource URL: first non resource URL character
-                        int end = index + 1;
-                        while (end < length) {
-                            char c = value.charAt(end);
-                            if (!(Character.isJavaIdentifierPart(c) ||
-                                    c == '_' ||
-                                    c == '.' ||
-                                    c == '/' ||
-                                    c == '+')) {
-                                break;
-                            }
-                            end++;
-                        }
-                        ResourceUrl url = ResourceUrl.parse(value.substring(index, end));
-                        if (url != null && !url.framework) {
-                            mReferences.add(R_PREFIX + url.type.getName() + '.' + url.name);
-                        }
-
-                        index = end;
-                    }
-                }
-            } else if (value.startsWith(ATTR_REF_PREFIX)) {
-                mReferences.add(R_ATTR_PREFIX + value.substring(ATTR_REF_PREFIX.length()));
-            }
-        }
-
-        if (attribute.getNamespaceURI() != null
-                && !ANDROID_URI.equals(attribute.getNamespaceURI()) && mReferences != null) {
-            mReferences.add(R_ATTR_PREFIX + attribute.getLocalName());
-        }
+    public boolean appliesTo(@NonNull ResourceFolderType folderType) {
+        return true;
     }
 
-    @NonNull
+    // ---- Implements BinaryResourceScanner ----
+
     @Override
-    public Speed getSpeed() {
-        return Speed.SLOW;
+    public void checkBinaryResource(@NonNull ResourceContext context) {
+        mModel.context = context;
+        try {
+            mModel.visitBinaryResource(context.getResourceFolderType(), context.file);
+        } finally {
+            mModel.context = null;
+        }
     }
+
+    // ---- Implements XmlScanner ----
+
+    @Override
+    public void visitDocument(@NonNull XmlContext context, @NonNull Document document) {
+        mModel.context = mModel.xmlContext = context;
+        try {
+            mModel.visitXmlDocument(context.file, context.getResourceFolderType(),
+                    document);
+        } finally {
+            mModel.context = mModel.xmlContext = null;
+        }
+    }
+
+    // ---- Implements JavaScanner ----
 
     @Override
     public List<Class<? extends lombok.ast.Node>> getApplicableNodeTypes() {
-        return Collections.<Class<? extends lombok.ast.Node>>singletonList(ClassDeclaration.class);
+        //noinspection unchecked
+        return Arrays.<Class<? extends lombok.ast.Node>>asList(
+                ClassDeclaration.class,
+                ImportDeclaration.class);
     }
 
     @Override
@@ -576,16 +526,17 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
     public void visitResourceReference(@NonNull JavaContext context, @Nullable AstVisitor visitor,
             @NonNull lombok.ast.Node node, @NonNull String type, @NonNull String name,
             boolean isFramework) {
-        if (mReferences != null && !isFramework) {
-            String reference = R_PREFIX + type + '.' + name;
-            mReferences.add(reference);
+        if (!isFramework) {
+            ResourceType t = ResourceType.getEnum(type);
+            assert t != null : type;
+            ResourceUsageModel.markReachable(mModel.addResource(t, name, null));
         }
     }
 
     @Override
     public AstVisitor createJavaVisitor(@NonNull JavaContext context) {
-        if (mReferences != null) {
-            return new UnusedResourceVisitor();
+        if (context.getDriver().getPhase() == 1) {
+            return new UnusedResourceVisitor(context);
         } else {
             // Second pass, computing resource declaration locations: No need to look at Java
             return null;
@@ -594,53 +545,167 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
 
     // Look for references and declarations
     private class UnusedResourceVisitor extends ForwardingAstVisitor {
+        private final JavaContext mContext;
+
+        public UnusedResourceVisitor(JavaContext context) {
+            mContext = context;
+        }
+
         @Override
         public boolean visitClassDeclaration(ClassDeclaration node) {
-            // Look for declarations of R class fields and store them in
-            // mDeclarations
+            // Look for declarations of R class fields and record them as declarations
             String description = node.astName().astValue();
             if (description.equals(R_CLASS)) {
-                // This is an R class. We can process this class very deliberately.
-                // The R class has a very specific AST format:
-                // ClassDeclaration ("R")
-                //    NormalTypeBody
-                //        ClassDeclaration (e.g. "drawable")
-                //             NormalTypeBody
-                //                 VariableDeclaration
-                //                     VariableDefinition (e.g. "ic_launcher")
-                for (lombok.ast.Node body : node.getChildren()) {
-                    if (body instanceof NormalTypeBody) {
-                        for (lombok.ast.Node subclass : body.getChildren()) {
-                            if (subclass instanceof ClassDeclaration) {
-                                String className = ((ClassDeclaration) subclass).astName().astValue();
-                                for (lombok.ast.Node innerBody : subclass.getChildren()) {
-                                    if (innerBody instanceof NormalTypeBody) {
-                                        for (lombok.ast.Node field : innerBody.getChildren()) {
-                                            if (field instanceof VariableDeclaration) {
-                                                for (lombok.ast.Node child : field.getChildren()) {
-                                                    if (child instanceof VariableDefinition) {
-                                                        VariableDefinition def =
-                                                                (VariableDefinition) child;
-                                                        String name = def.astVariables().first()
-                                                                .astName().astValue();
-                                                        String resource = R_PREFIX + className
-                                                                + '.' + name;
-                                                        mDeclarations.add(resource);
-                                                    } // Else: It could be a comment node
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
+                // Don't visit R class declarations; we don't need to look at R declarations
+                // since we now look for all the same resource declarations that the R
+                // class itself was derived from.
                 return true;
             }
 
             return false;
+        }
+
+        @Override
+        public boolean visitImportDeclaration(ImportDeclaration node) {
+            if (node.astStaticImport()) {
+                // import static pkg.R.type.name;
+                //   or
+                // import static pkg.R.type.*;
+                Iterator<Identifier> iterator = node.astParts().iterator();
+                while (iterator.hasNext()) {
+                    String identifier = iterator.next().astValue();
+                    if (identifier.equals(R_CLASS)) {
+                        if (iterator.hasNext()) {
+                            String typeString = iterator.next().astValue();
+                            ResourceType type = ResourceType.getEnum(typeString);
+                            if (type != null) {
+                                if (iterator.hasNext()) {
+                                    // import static pkg.R.type.name;
+                                    String name = iterator.next().astValue();
+                                    Resource resource = mModel.addResource(type, name, null);
+                                    ResourceUsageModel.markReachable(resource);
+                                } else if (!mScannedForStaticImports) {
+                                    // wildcard import of whole type:
+                                    // import static pkg.R.type.*;
+                                    // We have to do a more expensive analysis here to
+                                    // for example recognize "x" as a reference to R.string.x
+                                    mScannedForStaticImports = true;
+                                    CompilationUnit unit = node.upToCompilationUnit();
+                                    scanForStaticImportReferences(unit);
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+            } else if (!mScannedForStaticImports) {
+                String last = node.astParts().last().astValue();
+                if (Character.isLowerCase(last.charAt(0))) {
+                    Iterator<Identifier> iterator = node.astParts().iterator();
+                    while (iterator.hasNext()) {
+                        String identifier = iterator.next().astValue();
+                        if (identifier.equals(R_CLASS)) {
+                            if (iterator.hasNext()) {
+                                String typeString = iterator.next().astValue();
+                                ResourceType type = ResourceType.getEnum(typeString);
+                                if (type != null && !iterator.hasNext()) {
+                                    // Import a type as a class:
+                                    // import pkg.R.type;
+                                    // We have to do a more expensive analysis here to
+                                    // for example recognize "string.x" as a reference to R.string.x
+                                    mScannedForStaticImports = true;
+                                    CompilationUnit unit = node.upToCompilationUnit();
+                                    scanForStaticImportReferences(unit);
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private void scanForStaticImportReferences(@Nullable CompilationUnit unit) {
+            if (unit == null) {
+                return;
+            }
+            unit.accept(new ForwardingAstVisitor() {
+                @Override
+                public boolean visitVariableReference(
+                        VariableReference node) {
+                    ResolvedNode resolved = mContext.resolve(node);
+                    if (resolved instanceof ResolvedField) {
+                        ResolvedField field = (ResolvedField) resolved;
+                        ResolvedClass typeClass = field.getContainingClass();
+                        if (typeClass != null) {
+                            ResolvedClass rClass = typeClass.getContainingClass();
+                            if (rClass != null && R_CLASS.equals(rClass.getSimpleName())) {
+                                ResourceType type = ResourceType.getEnum(typeClass.getSimpleName());
+                                if (type != null) {
+                                    Resource resource = mModel.addResource(type, field.getName(),
+                                            null);
+                                    ResourceUsageModel.markReachable(resource);
+                                }
+                            }
+                        }
+
+                    }
+                    return super.visitVariableReference(node);
+                }
+            });
+        }
+
+        private boolean mScannedForStaticImports;
+    }
+
+    private static class UnusedResourceDetectorUsageModel extends ResourceUsageModel {
+        public XmlContext xmlContext;
+        public Context context;
+        public Set<Resource> unused = Sets.newHashSet();
+
+        @NonNull
+        @Override
+        protected String readText(@NonNull File file) {
+            if (context != null) {
+                return context.getClient().readFile(file);
+            }
+            try {
+                return Files.toString(file, UTF_8);
+            } catch (IOException e) {
+                return ""; // Lint API
+            }
+        }
+
+        @Override
+        protected Resource declareResource(ResourceType type, String name, Node node) {
+            Resource resource = super.declareResource(type, name, node);
+            if (context != null) {
+                resource.setDeclared(context.getProject().getReportIssues());
+                if (context.getPhase() == 2 && unused.contains(resource)) {
+                    if (xmlContext != null && xmlContext.getDriver().isSuppressed(xmlContext,
+                            getIssue(resource), node)) {
+                        resource.setKeep(true);
+                    } else {
+                        // For positions we try to use the name node rather than the
+                        // whole declaration element
+                        if (node == null || xmlContext == null) {
+                            resource.recordLocation(Location.create(context.file));
+                        } else {
+                            if (node instanceof Element) {
+                                Node attribute = ((Element) node).getAttributeNode(ATTR_NAME);
+                                if (attribute != null) {
+                                    node = attribute;
+                                }
+                            }
+                            resource.recordLocation(xmlContext.getLocation(node));
+                        }
+                    }
+                }
+            }
+
+            return resource;
         }
     }
 }

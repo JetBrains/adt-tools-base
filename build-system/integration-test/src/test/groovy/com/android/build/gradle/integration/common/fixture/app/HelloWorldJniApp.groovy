@@ -15,6 +15,9 @@
  */
 
 package com.android.build.gradle.integration.common.fixture.app
+
+import com.android.annotations.NonNull
+
 /**
  * Simple test application that uses JNI to print a "hello world!".
  *
@@ -166,5 +169,28 @@ public class HelloJniTest extends ActivityInstrumentationTestCase<HelloJni> {
                 resSource,
                 manifest,
                 androidTestSource);
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private String jniDir = "jni";
+        private boolean useCppSource = false;
+
+        public Builder withJniDir(@NonNull String jniDir) {
+            this.jniDir = jniDir;
+            return this;
+        }
+
+        public Builder useCppSource(boolean useCppSource) {
+            this.useCppSource = useCppSource
+            return this;
+        }
+
+        public HelloWorldJniApp build() {
+            return new HelloWorldJniApp(jniDir: jniDir, useCppSource: useCppSource);
+        }
     }
 }

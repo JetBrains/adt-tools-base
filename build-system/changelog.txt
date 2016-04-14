@@ -1,5 +1,6 @@
-1.5
+1.6
 
+- Added support for using UN M.49 area codes in resource directories allowing locale definitions such as es-r419 alongside es-rES.
 - Warnings from libpng about unrecognized sRGB profiles are now reported with info level.
 
 1.4.0-beta1

@@ -74,6 +74,7 @@ public class VisitorsTest extends TestCase {
         mSnapshot.setToDefaultHeap();
         RootObj root = new RootObj(RootType.SYSTEM_CLASS, 13);
         mSnapshot.addRoot(root);
+        mSnapshot.resolveReferences();
 
         // Size of root is 2 x sizeof(mDummyClass) + sizeof(clazz)
         assertEquals(50, root.getCompositeSize());
@@ -98,6 +99,7 @@ public class VisitorsTest extends TestCase {
         mSnapshot.setToDefaultHeap();
         RootObj root = new RootObj(RootType.JAVA_LOCAL, 2);
         mSnapshot.addRoot(root);
+        mSnapshot.resolveReferences();
 
         // Size of root is sizeof(object) + 3 x sizeof(pointer to object)
         assertEquals(32, root.getCompositeSize());
@@ -110,6 +112,7 @@ public class VisitorsTest extends TestCase {
                 .addReferences(3, 4)
                 .addRoot(1)
                 .build();
+        snapshot.resolveReferences();
 
         assertEquals(10, snapshot.findInstance(1).getCompositeSize());
         assertEquals(6, snapshot.findInstance(2).getCompositeSize());
@@ -124,6 +127,7 @@ public class VisitorsTest extends TestCase {
                 .addReferences(3, 1)
                 .addRoot(1)
                 .build();
+        snapshot.resolveReferences();
 
         // The composite size is a sum over all nodes participating in the cycle.
         assertEquals(6, snapshot.findInstance(1).getCompositeSize());
@@ -139,6 +143,7 @@ public class VisitorsTest extends TestCase {
                 .addReferences(4, 6)
                 .addRoot(1)
                 .build();
+        snapshot.resolveReferences();
 
         List<Instance> topSort = TopologicalSort.compute(snapshot.getGCRoots());
         assertEquals(6, topSort.size());

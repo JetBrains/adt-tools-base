@@ -184,4 +184,37 @@ public class WrongIdDetectorTest extends AbstractCheckTest {
 
                 lintFiles("wrongid/layout3.xml=>res/layout/layout3.xml"));
     }
+
+    public void testPercent() throws Exception {
+        assertEquals(""
+                + "res/layout/test.xml:18: Error: The id \"textView1\" is not defined anywhere. Did you mean textview1 ? [UnknownId]\n"
+                + "            android:layout_below=\"@id/textView1\"\n"
+                + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProject(xml("res/layout/test.xml", ""
+                        + "<android.support.percent.PercentRelativeLayout "
+                        + "     xmlns:android=\"http://schemas.android.com/apk/res/android\""
+                        + "     xmlns:app=\"http://schemas.android.com/apk/res-auto\"\n"
+                        + "     android:layout_width=\"match_parent\"\n"
+                        + "     android:layout_height=\"match_parent\">\n"
+                        + "        <View\n"
+                        + "            android:id=\"@+id/textview1\"\n"
+                        + "            android:layout_gravity=\"center\"\n"
+                        + "            app:layout_widthPercent=\"50%\"\n"
+                        + "            app:layout_heightPercent=\"50%\"/>\n"
+                        + "        <View\n"
+                        + "            android:id=\"@+id/textview2\"\n"
+                        + "            android:layout_below=\"@id/textview1\"\n" // OK
+                        + "            android:layout_width=\"wrap_content\"\n"
+                        + "            android:layout_height=\"wrap_content\"\n"
+                        + "            app:layout_marginStartPercent=\"25%\"\n"
+                        + "            app:layout_marginEndPercent=\"25%\"/>\n"
+                        + "        <View\n"
+                        + "            android:layout_height=\"wrap_content\"\n"
+                        + "            android:layout_below=\"@id/textView1\"\n" // WRONG (case)
+                        + "            app:layout_widthPercent=\"60%\"/>\n"
+                        + "\n"
+                        + "</android.support.percent.PercentRelativeLayout>\n")));
+    }
 }

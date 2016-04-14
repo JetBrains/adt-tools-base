@@ -175,17 +175,22 @@ public class HtmlBuilder {
         return this;
     }
 
+    private HtmlBuilder appendStyle(@Nullable String cssStyle) {
+        if (cssStyle != null) {
+            mStringBuilder.append(" style=\"");
+            mStringBuilder.append(cssStyle);
+            mStringBuilder.append("\"");
+        }
+        return this;
+    }
+
     public HtmlBuilder beginDiv() {
         return beginDiv(null);
     }
 
     public HtmlBuilder beginDiv(@Nullable String cssStyle) {
         mStringBuilder.append("<div");
-        if (cssStyle != null) {
-            mStringBuilder.append(" style=\"");
-            mStringBuilder.append(cssStyle);
-            mStringBuilder.append("\"");
-        }
+        appendStyle(cssStyle);
         mStringBuilder.append('>');
         return this;
     }
@@ -195,12 +200,29 @@ public class HtmlBuilder {
         return this;
     }
 
+
+    public HtmlBuilder beginSpan() {
+        return beginSpan(null);
+    }
+
+    public HtmlBuilder beginSpan(@Nullable String cssStyle) {
+        mStringBuilder.append("<span");
+        appendStyle(cssStyle);
+        mStringBuilder.append('>');
+        return this;
+    }
+
+    public HtmlBuilder endSpan() {
+        mStringBuilder.append("</span>");
+        return this;
+    }
+
     public HtmlBuilder addHeading(@NonNull String text, @NonNull String fontColor) {
-        mStringBuilder.append("<font style=\"font-weight:bold; color:").append(fontColor)
-                .append(";\">");
+        mStringBuilder.append("<font");
+        appendStyle("font-weight:bold; color:" + fontColor + ";");
+        mStringBuilder.append(">");
         add(text);
         mStringBuilder.append("</font>");
-
         return this;
     }
 

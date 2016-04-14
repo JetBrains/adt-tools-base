@@ -148,7 +148,7 @@ final class HandleHeap extends ChunkHandler {
 
         finishChunkPacket(packet, CHUNK_HPIF, buf.position());
         Log.d("ddm-heap", "Sending " + name(CHUNK_HPIF) + ": when=" + when);
-        client.sendAndConsume(packet, mInst);
+        client.send(packet, mInst);
     }
 
     /*
@@ -202,7 +202,7 @@ final class HandleHeap extends ChunkHandler {
         finishChunkPacket(packet, CHUNK_HPSG, buf.position());
         Log.d("ddm-heap", "Sending " + name(CHUNK_HPSG) + ": when="
             + when + ", what=" + what);
-        client.sendAndConsume(packet, mInst);
+        client.send(packet, mInst);
     }
 
     /**
@@ -218,7 +218,7 @@ final class HandleHeap extends ChunkHandler {
 
         finishChunkPacket(packet, CHUNK_HPGC, buf.position());
         Log.d("ddm-heap", "Sending " + name(CHUNK_HPGC));
-        client.sendAndConsume(packet, mInst);
+        client.send(packet, mInst);
     }
 
     /**
@@ -240,7 +240,7 @@ final class HandleHeap extends ChunkHandler {
 
         finishChunkPacket(packet, CHUNK_HPDU, buf.position());
         Log.d("ddm-heap", "Sending " + name(CHUNK_HPDU) + " '" + fileName +"'");
-        client.sendAndConsume(packet, mInst);
+        client.send(packet, mInst);
         client.getClientData().setPendingHprofDump(fileName);
     }
 
@@ -264,7 +264,7 @@ final class HandleHeap extends ChunkHandler {
 
         finishChunkPacket(packet, CHUNK_HPDS, buf.position());
         Log.d("ddm-heap", "Sending " + name(CHUNK_HPDS));
-        client.sendAndConsume(packet, mInst);
+        client.send(packet, mInst);
     }
 
     /*
@@ -330,7 +330,7 @@ final class HandleHeap extends ChunkHandler {
 
         finishChunkPacket(packet, CHUNK_REAE, buf.position());
         Log.d("ddm-heap", "Sending " + name(CHUNK_REAE) + ": " + enable);
-        client.sendAndConsume(packet, mInst);
+        client.send(packet, mInst);
     }
 
     /**
@@ -346,7 +346,7 @@ final class HandleHeap extends ChunkHandler {
 
         finishChunkPacket(packet, CHUNK_REAQ, buf.position());
         Log.d("ddm-heap", "Sending " + name(CHUNK_REAQ));
-        client.sendAndConsume(packet, mInst);
+        client.send(packet, mInst);
     }
 
     /**
@@ -362,7 +362,7 @@ final class HandleHeap extends ChunkHandler {
 
         finishChunkPacket(packet, CHUNK_REAL, buf.position());
         Log.d("ddm-heap", "Sending " + name(CHUNK_REAL));
-        client.sendAndConsume(packet, mInst);
+        client.send(packet, mInst);
     }
 
     /*

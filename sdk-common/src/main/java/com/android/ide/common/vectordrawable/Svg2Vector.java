@@ -180,13 +180,17 @@ public class Svg2Vector {
                 currentGroup.addChild(childGroup);
                 traverseSVGAndExtract(svgTree, childGroup, currentNode);
             } else {
-                // For other fancy tags, like <refs>, they can contain children too.
+                // For other fancy tags, like <switch>, they can contain children too.
                 // Report the unsupported nodes.
                 if (unsupportedSvgNodes.contains(nodeName)) {
                     svgTree.logErrorLine("<" + nodeName + "> is not supported", currentNode,
                                          SvgTree.SvgLogLevel.ERROR);
                 }
-                traverseSVGAndExtract(svgTree, currentGroup, currentNode);
+                // This is a workaround for the cases using defs to define a full icon size clip
+                // path, which is redundant information anyway.
+                if (!"defs".equals(nodeName)) {
+                    traverseSVGAndExtract(svgTree, currentGroup, currentNode);
+                }
             }
         }
 

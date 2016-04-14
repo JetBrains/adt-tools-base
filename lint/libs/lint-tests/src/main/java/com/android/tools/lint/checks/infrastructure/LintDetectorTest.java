@@ -18,7 +18,10 @@ package com.android.tools.lint.checks.infrastructure;
 
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_ID;
+import static com.android.SdkConstants.DOT_JAVA;
+import static com.android.SdkConstants.FN_ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.NEW_ID_PREFIX;
+import static com.android.utils.SdkUtils.escapePropertyValue;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -46,6 +49,7 @@ import com.android.tools.lint.client.api.Configuration;
 import com.android.tools.lint.client.api.DefaultConfiguration;
 import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.client.api.JavaParser;
+import com.android.tools.lint.client.api.JavaVisitor;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.client.api.LintRequest;
@@ -66,17 +70,21 @@ import com.android.utils.StdLogger;
 import com.android.utils.XmlUtils;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Charsets;
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 
 import org.eclipse.jdt.core.compiler.CategorizedProblem;
 import org.eclipse.jdt.core.compiler.IProblem;
 import org.eclipse.jdt.internal.compiler.ast.CompilationUnitDeclaration;
 import org.intellij.lang.annotations.Language;
+import org.objectweb.asm.Opcodes;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -84,7 +92,10 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -93,12 +104,21 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.CodeSource;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.jar.Attributes;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+
+import javax.xml.bind.DatatypeConverter;
 
 /**
  * Test case for lint detectors.
@@ -109,10 +129,32 @@ import java.util.Set;
 @Beta
 @SuppressWarnings("javadoc")
 public abstract class LintDetectorTest extends SdkTestCase {
+
     @Override
     protected void setUp() throws Exception {
         super.setUp();
         BuiltinIssueRegistry.reset();
+        JavaVisitor.clearCrashCount();
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        super.tearDown();
+        List<Issue> issues;
+        try {
+            // Some detectors extend LintDetectorTest but don't actually
+            // provide issues and assert instead; gracefully ignore those
+            // here
+            issues = getIssues();
+        } catch (Throwable t) {
+            issues = Collections.emptyList();
+        }
+        for (Issue issue : issues) {
+            if (issue.getImplementation().getScope().contains(Scope.JAVA_FILE)) {
+                assertEquals(0, JavaVisitor.getCrashCount());
+                break;
+            }
+        }
     }
 
     protected abstract Detector getDetector();
@@ -219,8 +261,9 @@ public abstract class LintDetectorTest extends SdkTestCase {
 
     /**
      * Run lint on the given files when constructed as a separate project
-     * @return The output of the lint check. On Windows, this transforms all directory
-     *   separators to the unix-style forward slash.
+     *
+     * @return The output of the lint check. On Windows, this transforms all directory separators to
+     * the unix-style forward slash.
      */
     protected String lintProject(String... relativePaths) throws Exception {
         File projectDir = getProjectDir(null, relativePaths);
@@ -279,6 +322,24 @@ public abstract class LintDetectorTest extends SdkTestCase {
         return file().to(to).withSource(source);
     }
 
+    private static final Pattern PACKAGE_PATTERN = Pattern.compile("package\\s+(.*)\\s*;");
+    private static final Pattern CLASS_PATTERN = Pattern
+            .compile("\\s*(\\S+)\\s*(extends.*)?(implements.*)?\\{");
+
+    @NonNull
+    public TestFile java(@NonNull @Language("JAVA") String source) {
+        // Figure out the "to" path: the package plus class name + java in the src/ folder
+        Matcher matcher = PACKAGE_PATTERN.matcher(source);
+        assertTrue("Couldn't find package declaration in source", matcher.find());
+        String pkg = matcher.group(1).trim();
+        matcher = CLASS_PATTERN.matcher(source);
+        assertTrue("Couldn't find class declaration in source", matcher.find());
+        String cls = matcher.group(1).trim();
+        String to = "src/" + pkg.replace('.', '/') + '/' + cls + DOT_JAVA;
+
+        return file().to(to).withSource(source);
+    }
+
     @NonNull
     public TestFile xml(@NonNull String to, @NonNull @Language("XML") String source) {
         return file().to(to).withSource(source);
@@ -287,6 +348,366 @@ public abstract class LintDetectorTest extends SdkTestCase {
     @NonNull
     public TestFile copy(@NonNull String from, @NonNull String to) {
         return file().from(from).to(to);
+    }
+
+    @NonNull
+    public ManifestTestFile manifest() {
+        return new ManifestTestFile();
+    }
+
+    public class ManifestTestFile extends TestFile {
+        public String pkg = "test.pkg";
+        public int minSdk;
+        public int targetSdk;
+        public String[] permissions;
+
+        public ManifestTestFile() {
+            to(FN_ANDROID_MANIFEST_XML);
+        }
+
+        public ManifestTestFile minSdk(int min) {
+            minSdk = min;
+            return this;
+        }
+
+        public ManifestTestFile targetSdk(int target) {
+            targetSdk = target;
+            return this;
+        }
+
+        public ManifestTestFile permissions(String... permissions) {
+            this.permissions = permissions;
+            return this;
+        }
+
+        @Override
+        @NonNull
+        public String getContents() {
+            if (contents == null) {
+                StringBuilder sb = new StringBuilder();
+                sb.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+                sb.append("<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n");
+                sb.append("    package=\"").append(pkg).append("\"\n");
+                sb.append("    android:versionCode=\"1\"\n");
+                sb.append("    android:versionName=\"1.0\" >\n");
+                if (minSdk > 0 || targetSdk > 0) {
+                    sb.append("    <uses-sdk ");
+                    if (minSdk > 0) {
+                        sb.append(" android:minSdkVersion=\"").append(Integer.toString(minSdk))
+                                .append("\"");
+                    }
+                    if (targetSdk > 0) {
+                        sb.append(" android:targetSdkVersion=\"")
+                                .append(Integer.toString(targetSdk))
+                                .append("\"");
+                    }
+                    sb.append(" />\n");
+                }
+                if (permissions != null && permissions.length > 0) {
+                    StringBuilder permissionBlock = new StringBuilder();
+                    for (String permission : permissions) {
+                        permissionBlock
+                                .append("    <uses-permission android:name=\"")
+                                .append(permission)
+                                .append("\" />\n");
+                    }
+                    sb.append(permissionBlock);
+                    sb.append("\n");
+                }
+
+                sb.append(""
+                        + "\n"
+                        + "    <application\n"
+                        + "        android:icon=\"@drawable/ic_launcher\"\n"
+                        + "        android:label=\"@string/app_name\" >\n"
+                        + "    </application>\n"
+                        + "\n"
+                        + "</manifest>");
+                contents = sb.toString();
+            }
+
+            return contents;
+        }
+
+        @NonNull
+        @Override
+        public File createFile(@NonNull File targetDir) throws IOException {
+            getContents(); // lazy init
+            return super.createFile(targetDir);
+        }
+    }
+
+    @NonNull
+    public PropertyTestFile projectProperties() {
+        return new PropertyTestFile();
+    }
+
+    public class PropertyTestFile extends TestFile {
+        @SuppressWarnings("StringBufferField")
+        private StringBuilder mStringBuilder = new StringBuilder();
+
+        private int mNextLibraryIndex = 1;
+
+        public PropertyTestFile() {
+            to("project.properties");
+        }
+
+        public PropertyTestFile property(String key, String value) {
+            String escapedValue = escapePropertyValue(value);
+            mStringBuilder.append(key).append('=').append(escapedValue).append('\n');
+            return this;
+        }
+
+        public PropertyTestFile compileSdk(int target) {
+            mStringBuilder.append("target=android-").append(Integer.toString(target)).append('\n');
+            return this;
+        }
+
+        public PropertyTestFile library(boolean isLibrary) {
+            mStringBuilder.append("android.library=").append(Boolean.toString(isLibrary))
+                    .append('\n');
+            return this;
+        }
+
+        public PropertyTestFile dependsOn(String relative) {
+            assertTrue(relative.startsWith("../"));
+            mStringBuilder.append("android.library.reference.")
+                    .append(Integer.toString(mNextLibraryIndex++))
+                    .append("=").append(escapePropertyValue(relative))
+                    .append('\n');
+            return this;
+        }
+
+        @Override
+        public TestFile withSource(@NonNull String source) {
+            fail("Don't call withSource on " + this.getClass());
+            return this;
+        }
+
+        @Override
+        @NonNull
+        public String getContents() {
+            contents = mStringBuilder.toString();
+            return contents;
+        }
+
+        @NonNull
+        @Override
+        public File createFile(@NonNull File targetDir) throws IOException {
+            getContents(); // lazy init
+            return super.createFile(targetDir);
+        }
+    }
+
+    /** Produces byte arrays, for use with {@link BinaryTestFile} */
+    public static class ByteProducer {
+        @SuppressWarnings("MethodMayBeStatic") // intended for override
+        @NonNull
+        public byte[] produce() {
+            return new byte[0];
+        }
+    }
+
+    public static class BytecodeProducer extends ByteProducer implements Opcodes {
+        /**
+         *  Typically generated by first getting asm output like this:
+         * <pre>
+         *     assertEquals("", asmify(new File("/full/path/to/my/file.class")));
+         * </pre>
+         * ...and when the test fails, the actual test output is the necessary assembly
+         *
+         */
+        @Override
+        @SuppressWarnings("MethodMayBeStatic") // intended for override
+        @NonNull
+        public byte[] produce() {
+            return new byte[0];
+        }
+    }
+
+    @NonNull
+    public BinaryTestFile bytecode(@NonNull String to, @NonNull BytecodeProducer producer) {
+        return new BinaryTestFile(to, producer);
+    }
+
+    public static String toBase64(@NonNull byte[] bytes) {
+        String base64 = DatatypeConverter.printBase64Binary(bytes);
+        return Joiner.on("").join(Splitter.fixedLength(60).split(base64));
+    }
+
+    public static String toBase64(@NonNull File file) throws IOException {
+        return toBase64(Files.toByteArray(file));
+    }
+
+    /**
+     * Creates a test file from the given base64 data. To create this data, use {@link
+     * #toBase64(File)} or {@link #toBase64(byte[])}, for example via {@code assertEquals("",
+     * uuencode(new File("path/to/your.class")));} </pre>
+     *
+     * @param to      the file to write as
+     * @param encoded the encoded data
+     * @return the new test file
+     */
+    public BinaryTestFile base64(@NonNull String to, @NonNull String encoded) {
+        encoded = encoded.replaceAll("\n", "");
+        final byte[] bytes = DatatypeConverter.parseBase64Binary(encoded);
+        return new BinaryTestFile(to, new BytecodeProducer() {
+            @NonNull
+            @Override
+            public byte[] produce() {
+                return bytes;
+            }
+        });
+    }
+
+    public class BinaryTestFile extends TestFile {
+        private final BytecodeProducer mProducer;
+
+        public BinaryTestFile(@NonNull String to, @NonNull BytecodeProducer producer) {
+            to(to);
+            mProducer = producer;
+        }
+
+        @Override
+        public TestFile withSource(@NonNull String source) {
+            fail("Don't call withSource on " + this.getClass());
+            return this;
+        }
+
+        @Override
+        @NonNull
+        public String getContents() {
+            fail("Don't call getContents on binary " + this.getClass());
+            return null;
+        }
+
+        public byte[] getBinaryContents() {
+            return mProducer.produce();
+        }
+
+        @NonNull
+        @Override
+        public File createFile(@NonNull File targetDir) throws IOException {
+            int index = targetRelativePath.lastIndexOf('/');
+            String relative = null;
+            String name = targetRelativePath;
+            if (index != -1) {
+                name = targetRelativePath.substring(index + 1);
+                relative = targetRelativePath.substring(0, index);
+            }
+            InputStream stream = new ByteArrayInputStream(getBinaryContents());
+            return makeTestFile(targetDir, name, relative, stream);
+        }
+    }
+
+    @NonNull
+    public JarTestFile jar(@NonNull String to) {
+        return new JarTestFile(to);
+    }
+
+    @NonNull
+    public JarTestFile jar(@NonNull String to, @NonNull TestFile... files) {
+        JarTestFile jar = new JarTestFile(to);
+        jar.files(files);
+        return jar;
+    }
+
+    public class JarTestFile extends TestFile {
+        private List<TestFile> mFiles = Lists.newArrayList();
+        private Map<TestFile, String> mPath = Maps.newHashMap();
+
+        public JarTestFile(@NonNull String to) {
+            to(to);
+        }
+
+        public JarTestFile files(@NonNull TestFile... files) {
+            mFiles.addAll(Arrays.asList(files));
+            return this;
+        }
+
+        public JarTestFile add(@NonNull TestFile file, @NonNull String path) {
+            add(file);
+            mPath.put(file, path);
+            return this;
+        }
+
+        public JarTestFile add(@NonNull TestFile file) {
+            mFiles.add(file);
+            mPath.put(file, null);
+            return this;
+        }
+
+        @Override
+        public TestFile withSource(@NonNull String source) {
+            fail("Don't call withSource on " + this.getClass());
+            return this;
+        }
+
+        @Override
+        @NonNull
+        public String getContents() {
+            fail("Don't call getContents on binary " + this.getClass());
+            return null;
+        }
+
+        @NonNull
+        @Override
+        public File createFile(@NonNull File targetDir) throws IOException {
+            int index = targetRelativePath.lastIndexOf('/');
+            String relative = null;
+            String name = targetRelativePath;
+            if (index != -1) {
+                name = targetRelativePath.substring(index + 1);
+                relative = targetRelativePath.substring(0, index);
+            }
+
+            File dir = targetDir;
+            if (relative != null) {
+                dir = new File(dir, relative);
+                if (!dir.exists()) {
+                    boolean mkdir = dir.mkdirs();
+                    assertTrue(dir.getPath(), mkdir);
+                }
+            } else if (!dir.exists()) {
+                boolean mkdir = dir.mkdirs();
+                assertTrue(dir.getPath(), mkdir);
+            }
+            File tempFile = new File(dir, name);
+            if (tempFile.exists()) {
+                boolean deleted = tempFile.delete();
+                assertTrue(tempFile.getPath(), deleted);
+            }
+
+            Manifest manifest = new Manifest();
+            manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
+            JarOutputStream jarOutputStream = new JarOutputStream(
+                    new BufferedOutputStream(new FileOutputStream(tempFile)), manifest);
+
+            try {
+                for (TestFile file : mFiles) {
+                    String path = mPath.get(file);
+                    if (path == null) {
+                        path = file.targetRelativePath;
+                    }
+                    jarOutputStream.putNextEntry(new ZipEntry(path));
+                    if (file instanceof BinaryTestFile) {
+                        byte[] bytes = ((BinaryTestFile)file).getBinaryContents();
+                        assertNotNull(file.targetRelativePath, bytes);
+                        ByteStreams.copy(new ByteArrayInputStream(bytes), jarOutputStream);
+                    } else {
+                        String contents = file.getContents();
+                        assertNotNull(file.targetRelativePath, contents);
+                        byte[] bytes = contents.getBytes(Charsets.UTF_8);
+                        ByteStreams.copy(new ByteArrayInputStream(bytes), jarOutputStream);
+                    }
+                    jarOutputStream.closeEntry();
+                }
+            } finally {
+                jarOutputStream.close();
+            }
+
+            return tempFile;
+        }
     }
 
     @NonNull
@@ -362,8 +783,10 @@ public abstract class LintDetectorTest extends SdkTestCase {
             return true;
         }
 
-        if (issue == IssueRegistry.LINT_ERROR || issue == IssueRegistry.PARSER_ERROR) {
+        if (issue == IssueRegistry.LINT_ERROR) {
             return !ignoreSystemErrors();
+        } else if (issue == IssueRegistry.PARSER_ERROR) {
+            return !allowCompilationErrors();
         }
 
         return false;
@@ -390,7 +813,7 @@ public abstract class LintDetectorTest extends SdkTestCase {
         private File mIncrementalCheck;
 
         public TestLintClient() {
-            super(new LintCliFlags());
+            super(new LintCliFlags(), "test");
             mFlags.getReporters().add(new TextReporter(this, mFlags, mWriter, false));
         }
 
@@ -682,7 +1105,7 @@ public abstract class LintDetectorTest extends SdkTestCase {
 
             ResourceRepository repository = new ResourceRepository(false);
             ILogger logger = new StdLogger(StdLogger.Level.INFO);
-            ResourceMerger merger = new ResourceMerger();
+            ResourceMerger merger = new ResourceMerger(0);
 
             ResourceSet resourceSet = new ResourceSet(getName()) {
                 @Override
@@ -775,7 +1198,10 @@ public abstract class LintDetectorTest extends SdkTestCase {
                                     } else if (qualifiers.equals("layout")) {
                                         qualifiers = "";
                                     }
-                                    idItem.setSource(new ResourceFile(file, item, qualifiers));
+
+                                    // Creating the resource file will set the source of
+                                    // idItem.
+                                    new ResourceFile(file, idItem, qualifiers);
                                     idMap.put(id, idItem);
                                 }
                             }

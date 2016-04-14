@@ -17,7 +17,7 @@
 package com.android.sdklib.repository.local;
 
 import com.android.annotations.NonNull;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDesc;
 
@@ -28,20 +28,22 @@ import java.util.Properties;
  * Local package representing the Android NDK
  */
 public class LocalNdkPkgInfo extends LocalPkgInfo {
-  @NonNull
-  private final IPkgDesc mDesc;
 
-  protected LocalNdkPkgInfo(@NonNull LocalSdk localSdk,
-                            @NonNull File localDir,
-                            @NonNull Properties sourceProps,
-                            @NonNull FullRevision revision) {
-    super(localSdk, localDir, sourceProps);
-    mDesc = PkgDesc.Builder.newNdk(revision).setDescriptionShort("Android NDK").setListDisplay("Android NDK").create();
-  }
+    @NonNull
+    private final IPkgDesc mDesc;
 
-  @NonNull
-  @Override
-  public IPkgDesc getDesc() {
-    return mDesc;
-  }
+    protected LocalNdkPkgInfo(@NonNull LocalSdk localSdk,
+            @NonNull File localDir,
+            @NonNull Properties sourceProps,
+            @NonNull Revision revision) {
+        super(localSdk, localDir, sourceProps);
+        mDesc = PkgDesc.Builder.newNdk(revision).setDescriptionShort("Android NDK")
+                .setListDisplay("Android NDK").create();
+    }
+
+    @NonNull
+    @Override
+    public IPkgDesc getDesc() {
+        return mDesc;
+    }
 }

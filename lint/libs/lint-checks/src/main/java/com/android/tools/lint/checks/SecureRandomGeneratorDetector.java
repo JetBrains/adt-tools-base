@@ -17,7 +17,6 @@
 package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.CONSTRUCTOR_NAME;
-import static com.android.tools.lint.checks.SecureRandomDetector.OWNER_SECURE_RANDOM;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -49,6 +48,7 @@ import java.util.List;
  * Checks for pseudo random number generator initialization issues
  */
 public class SecureRandomGeneratorDetector extends Detector implements ClassScanner {
+    private static final String OWNER_SECURE_RANDOM = "java/security/SecureRandom"; //$NON-NLS-1$
 
     @SuppressWarnings("SpellCheckingInspection")
     private static final String BLOG_URL

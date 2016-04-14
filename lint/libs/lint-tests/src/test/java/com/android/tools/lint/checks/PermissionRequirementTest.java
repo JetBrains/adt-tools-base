@@ -150,6 +150,14 @@ public class PermissionRequirementTest extends TestCase {
         assertSame(BinaryOperator.LOGICAL_AND, req.getOperator());
     }
 
+    public void testSingleAsArray() {
+        // Annotations let you supply a single string to an array method
+        ResolvedAnnotation.Value values = new ResolvedAnnotation.Value("allOf",
+                "android.permission.ACCESS_FINE_LOCATION");
+        ResolvedAnnotation annotation = createAnnotation(PERMISSION_ANNOTATION, values);
+        assertTrue(PermissionRequirement.create(null, annotation).isSingle());
+    }
+
     public void testRevocable() {
         assertTrue(isRevocableSystemPermission("android.permission.ACCESS_FINE_LOCATION"));
         assertTrue(isRevocableSystemPermission("android.permission.ACCESS_COARSE_LOCATION"));
@@ -219,7 +227,7 @@ public class PermissionRequirementTest extends TestCase {
         }
         List<String> actual = Arrays.asList(REVOCABLE_PERMISSION_NAMES);
         if (!expected.equals(actual)) {
-            System.out.println("Correct list of exceptions:");
+            System.out.println("Correct list of permissions:");
             for (String name : expected) {
                 System.out.println("            \"" + name + "\",");
             }
@@ -242,7 +250,7 @@ public class PermissionRequirementTest extends TestCase {
         // TODO: We should ship this file with the SDK!
         File file = new File(top, "frameworks/base/core/res/AndroidManifest.xml");
         if (!file.exists()) {
-            System.out.println("Set $ANDROID_BUILD_TOP to point to the git repository to check permissions");
+            System.out.println("Set $ANDROID_BUILD_TOP to point to the git repository");
             return null;
         }
         boolean passedRuntimeHeader = false;

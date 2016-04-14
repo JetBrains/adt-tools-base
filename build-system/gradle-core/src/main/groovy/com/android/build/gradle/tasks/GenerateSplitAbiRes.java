@@ -16,11 +16,21 @@
 
 package com.android.build.gradle.tasks;
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.dsl.AaptOptions;
+import com.android.build.gradle.internal.dsl.AbiSplitOptions;
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.scope.TaskConfigAction;
+import com.android.build.gradle.internal.scope.VariantOutputScope;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.builder.core.AaptPackageProcessBuilder;
+import com.android.builder.core.VariantConfiguration;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessException;
+import com.google.common.base.CharMatcher;
+import com.google.common.collect.Iterables;
 
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Nested;
@@ -36,6 +46,7 @@ import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 /**
  * Generates all metadata (like AndroidManifest.xml) necessary for a ABI dimension split APK.
@@ -44,10 +55,6 @@ import java.util.Set;
 public class GenerateSplitAbiRes extends BaseTask {
 
     private String applicationId;
-
-    private int versionCode;
-
-    private String versionName;
 
     private String outputBaseName;
 
@@ -59,6 +66,9 @@ public class GenerateSplitAbiRes extends BaseTask {
 
     private AaptOptions aaptOptions;
 
+    private ApkVariantOutputData variantOutputData;
+
+    @SuppressWarnings("unused") // Synthetic task output
     @OutputFiles
     public List<File> getOutputFiles() {
         List<File> outputFiles = new ArrayList<File>();
@@ -87,12 +97,21 @@ public class GenerateSplitAbiRes extends BaseTask {
 
             OutputStreamWriter fileWriter = new OutputStreamWriter(new FileOutputStream(tmpFile), "UTF-8");
             try {
+                // Split name can only contains 0-9, a-z, A-Z, '.' and '_'.  Replace all other
+                // characters with underscore.
+                String splitName = CharMatcher.inRange('0', '9')
+                        .or(CharMatcher.inRange('A', 'Z'))
+                        .or(CharMatcher.inRange('a', 'z'))
+                        .or(CharMatcher.is('_'))
+                        .or(CharMatcher.is('.'))
+                        .negate()
+                        .replaceFrom(split + "_" + getOutputBaseName(), '_');
                 fileWriter.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                         + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "      package=\"" + getApplicationId() + "\"\n"
                         + "      android:versionCode=\"" + getVersionCode() + "\"\n"
                         + "      android:versionName=\"" + versionNameToUse + "\"\n"
-                        + "      split=\"lib_" + getOutputBaseName() + "\">\n"
+                        + "      split=\"lib_" + splitName + "\">\n"
                         + "       <uses-sdk android:minSdkVersion=\"21\"/>\n" + "</manifest> ");
                 fileWriter.flush();
             } finally {
@@ -127,21 +146,13 @@ public class GenerateSplitAbiRes extends BaseTask {
 
     @Input
     public int getVersionCode() {
-        return versionCode;
-    }
-
-    public void setVersionCode(int versionCode) {
-        this.versionCode = versionCode;
+        return variantOutputData.getVersionCode();
     }
 
     @Input
     @Optional
     public String getVersionName() {
-        return versionName;
-    }
-
-    public void setVersionName(String versionName) {
-        this.versionName = versionName;
+        return variantOutputData.getVersionName();
     }
 
     @Input
@@ -186,5 +197,58 @@ public class GenerateSplitAbiRes extends BaseTask {
 
     public void setAaptOptions(AaptOptions aaptOptions) {
         this.aaptOptions = aaptOptions;
+    }
+
+    // ----- ConfigAction -----
+
+    public static class ConfigAction implements TaskConfigAction<GenerateSplitAbiRes> {
+
+        private VariantScope scope;
+
+        public ConfigAction(VariantScope scope) {
+            this.scope = scope;
+        }
+
+        @Override
+        @NonNull
+        public String getName() {
+            return scope.getTaskName("generate", "SplitAbiRes");
+        }
+
+        @Override
+        @NonNull
+        public Class<GenerateSplitAbiRes> getType() {
+            return GenerateSplitAbiRes.class;
+        }
+
+        @Override
+        public void execute(@NonNull GenerateSplitAbiRes generateSplitAbiRes) {
+            final VariantConfiguration config = scope.getVariantConfiguration();
+            Set<String> filters = AbiSplitOptions.getAbiFilters(
+                    scope.getGlobalScope().getExtension().getSplits().getAbiFilters());
+
+            generateSplitAbiRes.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+            generateSplitAbiRes.setVariantName(config.getFullName());
+
+            generateSplitAbiRes.setOutputDirectory(scope.getGenerateSplitAbiResOutputDirectory());
+            generateSplitAbiRes.setSplits(filters);
+            generateSplitAbiRes.setOutputBaseName(config.getBaseName());
+            generateSplitAbiRes.setApplicationId(config.getApplicationId());
+            generateSplitAbiRes.variantOutputData =
+                    (ApkVariantOutputData) scope.getVariantData().getOutputs().get(0);
+            ConventionMappingHelper.map(generateSplitAbiRes, "debuggable", new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    return config.getBuildType().isDebuggable();
+                }
+            });
+            ConventionMappingHelper.map(generateSplitAbiRes, "aaptOptions",
+                    new Callable<AaptOptions>() {
+                        @Override
+                        public AaptOptions call() throws Exception {
+                            return scope.getGlobalScope().getExtension().getAaptOptions();
+                        }
+                    });
+        }
     }
 }

@@ -17,6 +17,7 @@
 package com.android.builder.core;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.builder.model.SyncIssue;
 import com.android.ide.common.blame.MessageReceiver;
 
@@ -55,7 +56,7 @@ public abstract class ErrorReporter implements MessageReceiver {
     /**
      * Reports an error.
      *
-     * The behavior of this method depends on whether the project is being evaluated by
+     * <p>The behavior of this method depends on whether the project is being evaluated by
      * an IDE or from the command line. If it's the former, the error will simply be recorder
      * and displayed after the sync properly finishes. If it's the latter, then the evaluation
      * is aborted right away.
@@ -71,5 +72,27 @@ public abstract class ErrorReporter implements MessageReceiver {
      * @see SyncIssue
      */
     @NonNull
-    public abstract SyncIssue handleSyncError(@NonNull String data, int type, @NonNull String msg);
+    public final SyncIssue handleSyncError(@Nullable String data, int type, @NonNull String msg) {
+        return handleSyncIssue(data, type, SyncIssue.SEVERITY_ERROR, msg);
+    }
+
+    /**
+     * Reports a warning.
+     *
+     * <p>Behaves similar to {@link #handleSyncError(String, int, String)} but does not abort the
+     * build.
+     *
+     * @see #handleSyncError(String, int, String)
+     */
+    @NonNull
+    public final SyncIssue handleSyncWarning(@Nullable String data, int type, @NonNull String msg) {
+        return handleSyncIssue(data, type, SyncIssue.SEVERITY_WARNING, msg);
+    }
+
+    @NonNull
+    protected abstract SyncIssue handleSyncIssue(
+            @Nullable String data,
+            int type,
+            int severity,
+            @NonNull String msg);
 }

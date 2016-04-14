@@ -18,27 +18,29 @@ package com.android.tools.lint.checks;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
+import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.detector.api.Category;
-import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.JavaContext;
+import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
-
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.MethodNode;
 
 import java.util.Arrays;
 import java.util.List;
+
+import lombok.ast.AstVisitor;
+import lombok.ast.Expression;
+import lombok.ast.MethodInvocation;
 
 /**
  * Looks for usages of {@link java.lang.Math} methods which can be replaced with
  * {@code android.util.FloatMath} methods to avoid casting.
  */
-public class MathDetector extends Detector implements Detector.ClassScanner {
+public class MathDetector extends Detector implements Detector.JavaScanner {
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "FloatMath", //$NON-NLS-1$
@@ -56,7 +58,7 @@ public class MathDetector extends Detector implements Detector.ClassScanner {
             Severity.WARNING,
             new Implementation(
                     MathDetector.class,
-                    Scope.CLASS_FILE_SCOPE))
+                    Scope.JAVA_FILE_SCOPE))
             .addMoreInfo(
             "http://developer.android.com/guide/practices/design/performance.html#avoidfloat"); //$NON-NLS-1$
 
@@ -64,17 +66,11 @@ public class MathDetector extends Detector implements Detector.ClassScanner {
     public MathDetector() {
     }
 
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.FAST;
-    }
+    // ---- Implements JavaScanner ----
 
-    // ---- Implements ClassScanner ----
-
-    @Override
     @Nullable
-    public List<String> getApplicableCallNames() {
+    @Override
+    public List<String> getApplicableMethodNames() {
         return Arrays.asList(
                 "sin",   //$NON-NLS-1$
                 "cos",   //$NON-NLS-1$
@@ -85,16 +81,22 @@ public class MathDetector extends Detector implements Detector.ClassScanner {
     }
 
     @Override
-    public void checkCall(@NonNull ClassContext context, @NonNull ClassNode classNode,
-            @NonNull MethodNode method, @NonNull MethodInsnNode call) {
-        String owner = call.owner;
-
-        if (owner.equals("android/util/FloatMath")  //$NON-NLS-1$
-                && context.getProject().getMinSdk() >= 8) {
-            String message = String.format(
-                    "Use `java.lang.Math#%1$s` instead of `android.util.FloatMath#%1$s()` " +
-                    "since it is faster as of API 8", call.name);
-            context.report(ISSUE, method, call, context.getLocation(call), message  /*data*/);
+    public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor,
+            @NonNull MethodInvocation call) {
+        Expression operand = call.astOperand();
+        if (operand == null || !operand.toString().equals("Math")) {
+            ResolvedNode resolved = context.resolve(call);
+            if (resolved instanceof ResolvedMethod &&
+                    ((ResolvedMethod)resolved).getContainingClass().matches("android.util.FloatMath")
+                    && context.getProject().getMinSdk() >= 8) {
+                String message = String.format(
+                        "Use `java.lang.Math#%1$s` instead of `android.util.FloatMath#%1$s()` " +
+                                "since it is faster as of API 8", call.astName().astValue());
+                Location location = operand != null
+                        ? context.getRangeLocation(operand, 0, call.astName(), 0)
+                        : context.getLocation(call);
+                context.report(ISSUE, call, location, message);
+            }
         }
     }
 }

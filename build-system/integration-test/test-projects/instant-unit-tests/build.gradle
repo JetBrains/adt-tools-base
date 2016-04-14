@@ -1,0 +1,154 @@
+/*
+ * Copyright (C) 2015 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+apply from: "../commonHeader.gradle"
+buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
+apply from: "../commonLocalRepo.gradle"
+
+def env = new Object() {
+    Object project = new Object() {
+        Object ext = new Object() {
+            String buildVersion
+            String baseVersion
+            String apiVersion
+            String nativeApiVersion
+            String experimentalVersion
+        }
+    }
+}
+apply from: "$System.env.CUSTOM_REPO/../../tools/buildSrc/base/version.gradle", to: env
+
+
+import com.android.utils.FileUtils
+import com.google.common.base.Charsets
+import com.google.common.collect.ImmutableList
+import com.google.common.io.CharSink
+import com.google.common.io.Files
+
+def PROJECT_ROOT = new File(System.getenv("CUSTOM_REPO")).getParentFile().getParentFile()
+
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 15
+    buildToolsVersion rootProject.buildToolsVersion
+
+    defaultConfig {
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        minSdkVersion 15
+        targetSdkVersion 15
+        versionCode 1
+        versionName "1.0"
+    }
+
+    sourceSets {
+
+        main.java.srcDir("src/androidTest/java")
+
+        androidTest {
+            java {
+                setSrcDirs(["${PROJECT_ROOT}/tools/base/build-system/gradle-core/src/test/java"])
+                filter.setIncludes(["com/android/build/gradle/internal/incremental/hotswap/*.java"])
+            }
+            assets {
+                srcDir(file("build/generatedAssets/"))
+            }
+        }
+    }
+}
+
+File instantRunServer = new File(
+        PROJECT_ROOT,
+        "out/build/base/instant-run/instant-run-server/build/libs/instant-run-server.jar")
+if (!instantRunServer.exists()) {
+    throw new RuntimeException("Instant run server library not found: " + instantRunServer)
+}
+
+dependencies {
+    compile 'com.android.tools:common:' + env.project.ext.baseVersion
+    compile files(instantRunServer)
+    compile files("build/incremental-test-classes-jar/instrumentedBaseClasses.jar")
+
+    compile 'com.android.support:support-v4:23.0.1'
+    //provided gradleApi() // TODO: remove
+    //androidTestCompile 'junit:junit:4.12'
+    androidTestCompile 'com.google.code.findbugs:jsr305:1.3.9'
+    androidTestCompile 'com.google.truth:truth:0.28'
+    //androidTestCompile 'org.mockito:mockito-core:1.9.5'
+    androidTestCompile 'com.google.guava:guava:17.0'
+    compile 'com.android.support.test:runner:0.3'
+    androidTestCompile 'com.android.support.test:rules:0.3'
+}
+
+
+def jarInstrumentedBaseClasses = task("jarInstrumentedBaseClasses", type: Jar) {
+    from (files(new File(PROJECT_ROOT,
+            "out/build/base/gradle-core/build/classes/incremental-test/baseInstrumented")))
+    destinationDir = file("build/incremental-test-classes-jar/")
+    archiveName = "instrumentedBaseClasses.jar"
+}
+
+class DexTask extends DefaultTask {
+
+    @InputDirectory
+    File classesFolder
+
+    @OutputDirectory
+    File outputFolder
+
+    @TaskAction
+    public void compileDexFiles() {
+        File classesFolder = getClassesFolder()
+        File outputFolder = getOutputFolder()
+        def builder = project.getPlugins().findPlugin("com.android.library").androidBuilder
+        builder.convertByteCode(ImmutableList.of(classesFolder),
+                outputFolder,
+                false /* multiDexEnabled */,
+                null /*getMainDexListFile */,
+                new com.android.build.gradle.internal.dsl.DexOptions(),
+                ImmutableList.<String>of() /* getAdditionalParameters */,
+                false /* incremental */,
+                true /* optimize */,
+                new com.android.ide.common.process.LoggedProcessOutputHandler(
+                        new com.android.build.gradle.internal.LoggerWrapper(getLogger())),
+                false /*instantRunMode*/)
+        Iterable<File> files =
+                Files.fileTreeTraverser().preOrderTraversal(classesFolder).filter(Files.isFile());
+
+        CharSink filesList = Files.asCharSink(new File(outputFolder, "classes.txt"), Charsets.UTF_8)
+        Writer filesListWriter = filesList.openBufferedStream()
+        for (File classFile : files) {
+            filesListWriter.append(FileUtils.relativePath(classFile, classesFolder)).append('\n');
+        }
+        filesListWriter.close()
+    }
+
+}
+
+def dexInstrumentedPatches = task("dexInstrumentedPatches")
+
+for (File f: new File(PROJECT_ROOT, "out/build/base/gradle-core/build/classes/incremental-test/instrumentedPatches").listFiles()) {
+    String patchName = f.getName()
+    Task dexInstrumentedPatch = task("dexInstrumentedPatch" + patchName.capitalize(), type:DexTask) {
+        classesFolder = f
+        outputFolder = file("build/generatedAssets/incremental-test-classes-dex/" + patchName)
+    }
+    dexInstrumentedPatches.dependsOn dexInstrumentedPatch
+
+}
+project.afterEvaluate {
+    tasks.getByPath(":preDebugBuild").dependsOn(dexInstrumentedPatches, jarInstrumentedBaseClasses)
+}

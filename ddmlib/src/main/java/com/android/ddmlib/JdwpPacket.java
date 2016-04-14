@@ -34,32 +34,18 @@ import java.nio.channels.SocketChannel;
  * Use the constructor to create an empty packet, or "findPacket()" to
  * wrap a JdwpPacket around existing data.
  */
-final class JdwpPacket {
-    // header len
+public final class JdwpPacket {
     public static final int JDWP_HEADER_LEN = 11;
 
-    // results from findHandshake
-    public static final int HANDSHAKE_GOOD = 1;
-    public static final int HANDSHAKE_NOTYET = 2;
-    public static final int HANDSHAKE_BAD = 3;
-
-    // our cmdSet/cmd
-    private static final int DDMS_CMD_SET = 0xc7;       // 'G' + 128
-    private static final int DDMS_CMD = 0x01;
-
-    // "flags" field
     private static final int REPLY_PACKET = 0x80;
 
-    // this is sent and expected at the start of a JDWP connection
-    private static final byte[] mHandshake = {
-        'J', 'D', 'W', 'P', '-', 'H', 'a', 'n', 'd', 's', 'h', 'a', 'k', 'e'
-    };
-
-    public static final int HANDSHAKE_LEN = mHandshake.length;
-
     private ByteBuffer mBuffer;
-    private int mLength, mId, mFlags, mCmdSet, mCmd, mErrCode;
-    private boolean mIsNew;
+    private int mLength;
+    private int mId;
+    private int mFlags;
+    private int mCmdSet;
+    private int mCmd;
+    private int mErrCode;
 
     private static int sSerialId = 0x40000000;
 
@@ -69,7 +55,6 @@ final class JdwpPacket {
      */
     JdwpPacket(ByteBuffer buf) {
         mBuffer = buf;
-        mIsNew = true;
     }
 
     /**
@@ -85,8 +70,7 @@ final class JdwpPacket {
      *
      * On exit, "position" points to the end of the data.
      */
-    void finishPacket(int payloadLength) {
-        assert mIsNew;
+    void finishPacket(int cmdSet, int cmd, int payloadLength) {
 
         ByteOrder oldOrder = mBuffer.order();
         mBuffer.order(ChunkHandler.CHUNK_ORDER);
@@ -94,8 +78,8 @@ final class JdwpPacket {
         mLength = JDWP_HEADER_LEN + payloadLength;
         mId = getNextSerial();
         mFlags = 0;
-        mCmdSet = DDMS_CMD_SET;
-        mCmd = DDMS_CMD;
+        mCmdSet = cmdSet;
+        mCmd = cmd;
 
         mBuffer.putInt(0x00, mLength);
         mBuffer.putInt(0x04, mId);
@@ -127,7 +111,7 @@ final class JdwpPacket {
      *
      * Doesn't examine the packet at all -- works on empty buffers.
      */
-    ByteBuffer getPayload() {
+    public ByteBuffer getPayload() {
         ByteBuffer buf;
         int oldPosn = mBuffer.position();
 
@@ -137,27 +121,14 @@ final class JdwpPacket {
 
         if (mLength > 0)
             buf.limit(mLength - JDWP_HEADER_LEN);
-        else
-            assert mIsNew;
         buf.order(ChunkHandler.CHUNK_ORDER);
         return buf;
     }
 
     /**
-     * Returns "true" if this JDWP packet has a JDWP command type.
-     *
-     * This never returns "true" for reply packets.
-     */
-    boolean isDdmPacket() {
-        return (mFlags & REPLY_PACKET) == 0 &&
-               mCmdSet == DDMS_CMD_SET &&
-               mCmd == DDMS_CMD;
-    }
-
-    /**
      * Returns "true" if this JDWP packet is tagged as a reply.
      */
-    boolean isReply() {
+    public boolean isReply() {
         return (mFlags & REPLY_PACKET) != 0;
     }
 
@@ -180,7 +151,7 @@ final class JdwpPacket {
      * Return the packet's ID.  For a reply packet, this allows us to
      * match the reply with the original request.
      */
-    int getId() {
+    public int getId() {
         return mId;
     }
 
@@ -193,62 +164,49 @@ final class JdwpPacket {
     }
 
     /**
-     * Write our packet to "chan".  Consumes the packet as part of the
-     * write.
+     * Write our packet to "chan".
      *
      * The JDWP packet starts at offset 0 and ends at mBuffer.position().
      */
-    void writeAndConsume(SocketChannel chan) throws IOException {
-        int oldLimit;
-
-        //Log.i("ddms", "writeAndConsume: pos=" + mBuffer.position()
-        //    + ", limit=" + mBuffer.limit());
-
+    void write(SocketChannel chan) throws IOException {
         assert mLength > 0;
 
-        mBuffer.flip();         // limit<-posn, posn<-0
-        oldLimit = mBuffer.limit();
+        int oldPosn = mBuffer.position();
+        mBuffer.position(0);
         mBuffer.limit(mLength);
+
         while (mBuffer.position() != mBuffer.limit()) {
             chan.write(mBuffer);
         }
         // position should now be at end of packet
         assert mBuffer.position() == mLength;
 
-        mBuffer.limit(oldLimit);
-        mBuffer.compact();      // shift posn...limit, posn<-pending data
-
-        //Log.i("ddms", "               : pos=" + mBuffer.position()
-        //    + ", limit=" + mBuffer.limit());
+        mBuffer.limit(mBuffer.capacity());
+        mBuffer.position(oldPosn);
     }
 
     /**
      * "Move" the packet data out of the buffer we're sitting on and into
      * buf at the current position.
      */
-    void movePacket(ByteBuffer buf) {
-        Log.v("ddms", "moving " + mLength + " bytes");
+    void move(ByteBuffer buf) {
         int oldPosn = mBuffer.position();
 
         mBuffer.position(0);
         mBuffer.limit(mLength);
         buf.put(mBuffer);
-        mBuffer.position(mLength);
-        mBuffer.limit(oldPosn);
-        mBuffer.compact();      // shift posn...limit, posn<-pending data
+
+        mBuffer.limit(mBuffer.capacity());
+        mBuffer.position(oldPosn);
     }
 
     /**
      * Consume the JDWP packet.
      *
-     * On entry and exit, "position" is the #of bytes in the buffer.
+     * On entry and exit, "position" is at the end of data in buffer.
      */
     void consume()
     {
-        //Log.d("ddms", "consuming " + mLength + " bytes");
-        //Log.d("ddms", "  posn=" + mBuffer.position()
-        //    + ", limit=" + mBuffer.limit());
-
         /*
          * The "flip" call sets "limit" equal to the position (usually the
          * end of data) and "position" equal to zero.
@@ -262,12 +220,10 @@ final class JdwpPacket {
          * so that position..limit spans our data, advance "position" past
          * the current packet, then compact.
          */
-        mBuffer.flip();         // limit<-posn, posn<-0
+        mBuffer.flip();
         mBuffer.position(mLength);
-        mBuffer.compact();      // shift posn...limit, posn<-pending data
+        mBuffer.compact();
         mLength = 0;
-        //Log.d("ddms", "  after compact, posn=" + mBuffer.position()
-        //    + ", limit=" + mBuffer.limit());
     }
 
     /**
@@ -324,48 +280,13 @@ final class JdwpPacket {
         return pkt;
     }
 
-    /**
-     * Like findPacket(), but when we're expecting the JDWP handshake.
-     *
-     * Returns one of:
-     *   HANDSHAKE_GOOD   - found handshake, looks good
-     *   HANDSHAKE_BAD    - found enough data, but it's wrong
-     *   HANDSHAKE_NOTYET - not enough data has been read yet
-     */
-    static int findHandshake(ByteBuffer buf) {
-        int count = buf.position();
-        int i;
-
-        if (count < mHandshake.length)
-            return HANDSHAKE_NOTYET;
-
-        for (i = mHandshake.length -1; i >= 0; --i) {
-            if (buf.get(i) != mHandshake[i])
-                return HANDSHAKE_BAD;
-        }
-
-        return HANDSHAKE_GOOD;
+    @Override
+    public String toString() {
+        return isReply() ? " < # " + mId : " > " + mCmdSet + "." + mCmd + " # " + mId;
     }
 
-    /**
-     * Remove the handshake string from the buffer.
-     *
-     * On entry and exit, "position" is the #of bytes in the buffer.
-     */
-    static void consumeHandshake(ByteBuffer buf) {
-        // in theory, nothing else can have arrived, so this is overkill
-        buf.flip();         // limit<-posn, posn<-0
-        buf.position(mHandshake.length);
-        buf.compact();      // shift posn...limit, posn<-pending data
-    }
-
-    /**
-     * Copy the handshake string into the output buffer.
-     *
-     * On exit, "buf"s position will be advanced.
-     */
-    static void putHandshake(ByteBuffer buf) {
-        buf.put(mHandshake);
+    public boolean is(int cmdSet, int cmd) {
+        return cmdSet == mCmdSet && cmd == mCmd;
     }
 }
 

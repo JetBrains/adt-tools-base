@@ -30,10 +30,11 @@ import java.util.List;
  * Represents a file in a resource folders.
  *
  * It contains a link to the {@link File}, the qualifier string (which is the name of the folder
- * after the first '-' character), a list of {@link ResourceItem} and a type.
+ * after the first '-' character), a list of {@link ResourceItem}s and a type.
  *
- * The type of the file is based on whether the file is located in a values folder (FileType.MULTI)
- * or in another folder (FileType.SINGLE).
+ * The type of the file is based on whether the file is located in a values folder
+ * ({@link FileType#XML_VALUES}) or in another folder ({@link FileType#SINGLE_FILE} or
+ * {@link FileType#GENERATED_FILES}).
  */
 public class ResourceFile extends DataFile<ResourceItem> {
 

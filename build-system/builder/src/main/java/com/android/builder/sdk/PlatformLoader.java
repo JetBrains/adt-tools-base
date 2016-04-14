@@ -27,7 +27,7 @@ import com.android.annotations.NonNull;
 import com.android.builder.internal.FakeAndroidTarget;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.utils.ILogger;
 import com.google.common.collect.ImmutableList;
 
@@ -69,7 +69,7 @@ public class PlatformLoader implements SdkLoader {
     @NonNull
     @Override
     public TargetInfo getTargetInfo(@NonNull String targetHash,
-            @NonNull FullRevision buildToolRevision, @NonNull ILogger logger) {
+            @NonNull Revision buildToolRevision, @NonNull ILogger logger) {
         init(logger);
 
         IAndroidTarget androidTarget = new FakeAndroidTarget(mTreeLocation.getPath(), targetHash);

@@ -56,7 +56,7 @@ public final class Struct extends Type {
 
     @Override
     public void encode(@NotNull Encoder e) throws IOException {
-        TypeTag.structTag().encode(e);
+        TypeTag.StructTag.encode(e);
         e.entity(mEntity);
         e.nonCompactString("");
     }

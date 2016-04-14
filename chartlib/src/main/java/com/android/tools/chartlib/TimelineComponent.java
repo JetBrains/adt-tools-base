@@ -31,10 +31,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Arc2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import javax.swing.Icon;
 
@@ -79,9 +76,7 @@ public final class TimelineComponent extends AnimatedComponent
 
     private final float mInitialMarkerSeparation;
 
-    private String[] mStreamNames;
-
-    private Color[] mStreamColors;
+    private final List<StreamInfo> mStreams = new ArrayList<StreamInfo>();
 
     private Map<Integer, Style> mStyles;
 
@@ -241,14 +236,11 @@ public final class TimelineComponent extends AnimatedComponent
         mInitialMarkerSeparation = initialMarkerSeparation;
         int streams = mData.getStreamCount();
         addHierarchyListener(this);
-        mStreamNames = new String[streams];
-        mStreamColors = new Color[streams];
         mValues = new float[streams][];
         mCurrent = new float[streams];
         mSize = 0;
         for (int i = 0; i < streams; i++) {
-            mStreamNames[i] = "Stream " + i;
-            mStreamColors[i] = Color.BLACK;
+            mStreams.add(new StreamInfo("Stream " + i, Color.BLACK));
         }
         mStyles = new HashMap<Integer, Style>();
         mUnits = "";
@@ -262,8 +254,16 @@ public final class TimelineComponent extends AnimatedComponent
     }
 
     public void configureStream(int stream, String name, Color color) {
-        mStreamNames[stream] = name;
-        mStreamColors[stream] = color;
+        configureStream(stream, name, color, false);
+    }
+
+    public void configureStream(int stream, String name, Color color, boolean isMirrored) {
+        assert stream < mStreams.size() : String
+            .format("Attempting to configure out of bounds stream: Stream: %1$d, Size %2$d", stream, mStreams.size());
+        StreamInfo data = mStreams.get(stream);
+        data.name = name;
+        data.color = color;
+        data.isMirrored = isMirrored;
     }
 
     public void configureEvent(int type, int stream, Icon icon, Color color,
@@ -358,7 +358,7 @@ public final class TimelineComponent extends AnimatedComponent
                     path.lineTo(timeToX(mTimes[i]), valueToY(Math.min(val, mAbsoluteMax)));
                 }
                 path.lineTo(timeToX(mTimes[to]), valueToY(0.0f));
-                g2d.setColor(mStreamColors[j]);
+                g2d.setColor(mStreams.get(j).color);
                 g2d.fill(path);
 
                 if (!mStyles.isEmpty()) {
@@ -367,7 +367,7 @@ public final class TimelineComponent extends AnimatedComponent
                     float step = 3.0f;
                     float x0 = timeToX(mTimes[from]);
                     float y0 = valueToY(mValues[j][from]);
-                    g2d.setColor(mStreamColors[j].darker());
+                    g2d.setColor(mStreams.get(j).color.darker());
                     Stroke stroke = null;
                     float strokeScale = Float.NaN;
                     for (int i = from + 1; i <= to; i++) {
@@ -512,12 +512,13 @@ public final class TimelineComponent extends AnimatedComponent
     private void drawLabels(Graphics2D g2d) {
         g2d.setFont(DEFAULT_FONT);
         FontMetrics metrics = g2d.getFontMetrics();
-        for (int i = 0; i < mStreamNames.length && mSize > 0; i++) {
-            g2d.setColor(mStreamColors[i]);
-            int y = TOP_MARGIN + 15 + (mStreamNames.length - i - 1) * 20;
+        for (int i = 0; i < mStreams.size() && mSize > 0; i++) {
+            StreamInfo stream = mStreams.get(i);
+            g2d.setColor(stream.color);
+            int y = TOP_MARGIN + 15 + (mStreams.size() - i - 1) * 20;
             g2d.fillRect(mRight + 20, y, 15, 15);
             g2d.setColor(TEXT_COLOR);
-            g2d.drawString(String.format("%s [%.2f %s]", mStreamNames[i], mCurrent[i], mUnits), mRight + 40,
+            g2d.drawString(String.format("%s [%.2f %s]", stream.name, mCurrent[i], mUnits), mRight + 40,
                            y + 7 + metrics.getAscent() * .5f);
         }
     }
@@ -534,8 +535,7 @@ public final class TimelineComponent extends AnimatedComponent
             boolean big = sec % 5 == 0;
             if (big) {
                 String text = formatTime(sec);
-                g2d.drawString(text, x - metrics.stringWidth(text) + offset,
-                        zeroY + metrics.getAscent() + 5);
+                g2d.drawString(text, x - metrics.stringWidth(text) + offset, zeroY + metrics.getAscent() + 5);
             }
             lines.moveTo(x, zeroY);
             lines.lineTo(x, zeroY + (big ? 5 : 2));
@@ -568,6 +568,14 @@ public final class TimelineComponent extends AnimatedComponent
     private void drawMarkers(Graphics2D g2d) {
         drawMarkers(g2d, 1.0f, mCurrentMax);
         drawMarkers(g2d, -1.0f, mCurrentMin);
+        if (mCurrentMin < 0) {
+            int zeroY = (int)valueToY(0);
+            int minimumGap = getFontMetrics(DEFAULT_FONT).getAscent();
+            // Draw the zero marker if it is not overlapped by other markers.
+            if (mBottom - zeroY > minimumGap && zeroY - TOP_MARGIN > minimumGap) {
+                drawValueMarker(0, zeroY, g2d);
+            }
+        }
     }
 
     private void drawMarkers(Graphics2D g2d, float direction, float max) {
@@ -575,8 +583,8 @@ public final class TimelineComponent extends AnimatedComponent
             return;
         }
 
+        boolean drawNegativeMarkersAsPositive = hasMirroredStream();
         int markers = (int) (max / mMarkerSeparation * direction);
-        float markerPosition = LEFT_MARGIN - 10;
         for (int i = 0; i < markers + 1; i++) {
             float markerValue = (i + 1) * mMarkerSeparation * direction;
             int y = (int) valueToY(markerValue);
@@ -595,12 +603,23 @@ public final class TimelineComponent extends AnimatedComponent
                 g2d.setColor(TEXT_COLOR);
             }
             g2d.drawLine(LEFT_MARGIN - 2, y, LEFT_MARGIN, y);
-
-            FontMetrics metrics = getFontMetrics(DEFAULT_FONT);
-            String marker = String.format("%.2f %s", markerValue, mUnits);
-            g2d.drawString(marker, markerPosition - metrics.stringWidth(marker),
-                    y + metrics.getAscent() * 0.5f);
+            drawValueMarker(drawNegativeMarkersAsPositive ? Math.abs(markerValue) : markerValue, y, g2d);
         }
+    }
+
+    private void drawValueMarker(float value, int y, Graphics2D g2d) {
+        FontMetrics metrics = getFontMetrics(DEFAULT_FONT);
+        String marker = String.format("%.2f %s", value, mUnits);
+        g2d.drawString(marker, LEFT_MARGIN - 10 - metrics.stringWidth(marker), y + metrics.getAscent() * 0.5f);
+    }
+
+    private boolean hasMirroredStream() {
+        for (int i = 0; i < mStreams.size(); i++) {
+            if (mStreams.get(i).isMirrored) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void drawReferenceLines(Graphics2D g2d) {
@@ -634,6 +653,7 @@ public final class TimelineComponent extends AnimatedComponent
             start = mData.getStartTime();
             mSize = mData.size();
             assert mData.getStreamCount() == mValues.length;
+            float lastUpdatedTime = mTimes != null ? mTimes[mTimes.length - 1] : 0;
             if (mTimes == null || mTimes.length < mSize) {
                 int alloc = Math.max(mSize, mTimes == null ? 64 : mTimes.length * 2);
                 mTimes = new float[alloc];
@@ -642,13 +662,24 @@ public final class TimelineComponent extends AnimatedComponent
                     mValues[j] = new float[alloc];
                 }
             }
+            float cappedMax = 0;
+            float cappedMin = 0;
             for (int i = 0; i < mSize; ++i) {
                 TimelineData.Sample sample = mData.get(i);
                 mTimes[i] = sample.time;
                 mTypes[i] = sample.type;
                 float value = 0.0f;
+                float mirroredValue = 0.0f;
                 for (int j = 0; j < mData.getStreamCount(); ++j) {
-                    mValues[j][i] = mStackStreams ? (value += sample.values[j]) : sample.values[j];
+                    if (mStackStreams) {
+                        mValues[j][i] = mStreams.get(j).isMirrored ? (mirroredValue -= sample.values[j]) : (value += sample.values[j]);
+                    } else {
+                        mValues[j][i] = mStreams.get(j).isMirrored ? -sample.values[j] : sample.values[j];
+                    }
+                    if (mTimes[i] > lastUpdatedTime) {
+                        cappedMax = Math.max(cappedMax, mValues[j][i]);
+                        cappedMin = Math.min(cappedMin, mValues[j][i]);
+                    }
                 }
             }
             for (int j = 0; j < mData.getStreamCount(); ++j) {
@@ -659,13 +690,11 @@ public final class TimelineComponent extends AnimatedComponent
             mEndTime = mData.getEndTime() - mBufferTime;
             mBeginTime = mEndTime - (mRight - LEFT_MARGIN) / X_SCALE;
             // Animate the current maximum towards the real one.
-            float cappedMax = mStackStreams ? mData.getMaxTotal() : mData.getStreamMax();
-            cappedMax = Math.min(cappedMax, mAbsoluteMax);
+            cappedMax = Math.min(mAbsoluteMax, Math.max(mCurrentMax, cappedMax));
+            cappedMin = Math.max(-mAbsoluteMax, Math.min(mCurrentMin, cappedMin));
             if (cappedMax > mCurrentMax) {
                 mCurrentMax = lerp(mCurrentMax, cappedMax, mFirstFrame ? 1.f : .95f);
             }
-            float cappedMin = mStackStreams ? mData.getMinTotal() : mData.getStreamMin();
-            cappedMin = Math.max(cappedMin, -mAbsoluteMax);
             if (cappedMin == 0.0f || cappedMin < mCurrentMin) {
                 mCurrentMin = lerp(mCurrentMin, cappedMin, mFirstFrame ? 1.f : .95f);
             }
@@ -713,6 +742,25 @@ public final class TimelineComponent extends AnimatedComponent
             }
             mEventProgressStart = (mEventProgressStart + mFrameLength * 200.0f) % 360.0f;
             mEventProgress = lerp(mEventProgress, 1.0f, .99f);
+        }
+    }
+
+    private static class StreamInfo {
+
+        public String name;
+
+        public Color color;
+
+        public boolean isMirrored;
+
+        public StreamInfo(@NonNull String name, @NonNull Color color) {
+            this(name, color, false);
+        }
+
+        public StreamInfo(@NonNull String name, @NonNull Color color, boolean isMirrored) {
+            this.name = name;
+            this.color = color;
+            this.isMirrored = isMirrored;
         }
     }
 

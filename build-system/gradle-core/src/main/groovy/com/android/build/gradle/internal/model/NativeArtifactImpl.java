@@ -36,22 +36,30 @@ public class NativeArtifactImpl implements NativeArtifact, Serializable {
     @NonNull
     private final String toolChain;
     @NonNull
+    private final String groupName;
+    @NonNull
     private final Collection<NativeFolder> sourceFolders;
     @NonNull
     private final Collection<NativeFile> sourceFiles;
+    @NonNull
+    private final Collection<File> exportedHeaders;
     @NonNull
     private final File getOutputFile;
 
     public NativeArtifactImpl(
             @NonNull String name,
             @NonNull String toolChain,
+            @NonNull String groupName,
             @NonNull Collection<NativeFolder> sourceFolders,
             @NonNull Collection<NativeFile> sourceFiles,
+            @NonNull Collection<File> exportedHeaders,
             @NonNull File getOutputFile) {
         this.name = name;
         this.toolChain = toolChain;
+        this.groupName = groupName;
         this.sourceFolders = sourceFolders;
         this.sourceFiles = sourceFiles;
+        this.exportedHeaders = exportedHeaders;
         this.getOutputFile = getOutputFile;
     }
 
@@ -69,6 +77,12 @@ public class NativeArtifactImpl implements NativeArtifact, Serializable {
 
     @Override
     @NonNull
+    public String getGroupName() {
+        return groupName;
+    }
+
+    @Override
+    @NonNull
     public Collection<NativeFolder> getSourceFolders() {
         return sourceFolders;
     }
@@ -77,6 +91,12 @@ public class NativeArtifactImpl implements NativeArtifact, Serializable {
     @NonNull
     public Collection<NativeFile> getSourceFiles() {
         return sourceFiles;
+    }
+
+    @Override
+    @NonNull
+    public Collection<File> getExportedHeaders() {
+        return exportedHeaders;
     }
 
     @Override

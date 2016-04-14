@@ -20,7 +20,6 @@ import static com.android.tools.lint.client.api.JavaParser.ResolvedField;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;
@@ -29,18 +28,14 @@ import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
 
 import org.objectweb.asm.Opcodes;
 
 import java.util.Collections;
 import java.util.List;
 
-import lombok.ast.AstVisitor;
 import lombok.ast.ClassDeclaration;
-import lombok.ast.ForwardingAstVisitor;
 import lombok.ast.Node;
-import lombok.ast.TypeReference;
 
 /**
  * Looks for Parcelable classes that are missing a CREATOR field
@@ -57,7 +52,7 @@ public class ParcelDetector extends Detector implements Detector.JavaScanner {
             "static field called `CREATOR`, which is an object implementing the " +
             "`Parcelable.Creator` interface.\"",
 
-            Category.USABILITY,
+            Category.CORRECTNESS,
             3,
             Severity.ERROR,
             new Implementation(
@@ -69,57 +64,36 @@ public class ParcelDetector extends Detector implements Detector.JavaScanner {
     public ParcelDetector() {
     }
 
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.FAST;
-    }
-
     // ---- Implements JavaScanner ----
 
     @Nullable
     @Override
-    public List<Class<? extends Node>> getApplicableNodeTypes() {
-        return Collections.<Class<? extends Node>>singletonList(ClassDeclaration.class);
+    public List<String> applicableSuperClasses() {
+        return Collections.singletonList("android.os.Parcelable");
     }
 
-    @Nullable
     @Override
-    public AstVisitor createJavaVisitor(@NonNull final JavaContext context) {
-        return new ParcelVisitor(context);
-    }
-
-    private static class ParcelVisitor extends ForwardingAstVisitor {
-        private final JavaContext mContext;
-
-        public ParcelVisitor(JavaContext context) {
-            mContext = context;
+    public void checkClass(@NonNull JavaContext context, @Nullable ClassDeclaration node,
+            @NonNull Node declarationOrAnonymous, @NonNull ResolvedClass cls) {
+        if (node == null) {
+            // Anonymous classes aren't parcelable
+            return;
+        }
+        // Only applies to concrete classes
+        int flags = node.astModifiers().getExplicitModifierFlags();
+        if ((flags & (Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT)) != 0) {
+            return;
         }
 
-        @Override
-        public boolean visitClassDeclaration(ClassDeclaration node) {
-            // Only applies to concrete classes
-            int flags = node.astModifiers().getExplicitModifierFlags();
-            if ((flags & (Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT)) != 0) {
-                return true;
+        // Parceling spans is handled in TextUtils#CHAR_SEQUENCE_CREATOR
+        if (!cls.isImplementing("android.text.ParcelableSpan", false)) {
+            ResolvedField field = cls.getField("CREATOR", false);
+            if (field == null) {
+                Location location = context.getLocation(node.astName());
+                context.report(ISSUE, node, location,
+                        "This class implements `Parcelable` but does not "
+                                + "provide a `CREATOR` field");
             }
-
-            JavaParser.ResolvedNode resolved = mContext.resolve(node);
-            if (resolved instanceof ResolvedClass) {
-                ResolvedClass cls = (ResolvedClass) resolved;
-                if (cls.isImplementing("android.os.Parcelable", false) &&
-                        // Parceling spans is handled in TextUtils#CHAR_SEQUENCE_CREATOR
-                        !cls.isImplementing("android.text.ParcelableSpan", false)) {
-                    ResolvedField field = cls.getField("CREATOR", false);
-                    if (field == null) {
-                        Location location = mContext.getLocation(node.astName());
-                        mContext.report(ISSUE, node, location,
-                                "This class implements `Parcelable` but does not "
-                                        + "provide a `CREATOR` field");
-                    }
-                }
-            }
-            return true;
         }
     }
 }

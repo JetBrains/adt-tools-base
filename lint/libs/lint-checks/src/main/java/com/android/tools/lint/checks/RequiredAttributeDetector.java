@@ -25,6 +25,7 @@ import static com.android.SdkConstants.ATTR_LAYOUT_WIDTH;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_PARENT;
 import static com.android.SdkConstants.ATTR_STYLE;
+import static com.android.SdkConstants.AUTO_URI;
 import static com.android.SdkConstants.FD_RES_LAYOUT;
 import static com.android.SdkConstants.FN_RESOURCE_BASE;
 import static com.android.SdkConstants.FQCN_GRID_LAYOUT_V7;
@@ -101,6 +102,11 @@ public class RequiredAttributeDetector extends LayoutDetector implements Detecto
             new Implementation(
                     RequiredAttributeDetector.class,
                     EnumSet.of(Scope.JAVA_FILE, Scope.ALL_RESOURCE_FILES)));
+
+    public static final String PERCENT_RELATIVE_LAYOUT
+            = "android.support.percent.PercentRelativeLayout";
+    public static final String ATTR_LAYOUT_WIDTH_PERCENT = "layout_widthPercent";
+    public static final String ATTR_LAYOUT_HEIGHT_PERCENT = "layout_heightPercent";
 
     /** Map from each style name to parent style */
     @Nullable private Map<String, String> mStyleParents;
@@ -432,6 +438,16 @@ public class RequiredAttributeDetector extends LayoutDetector implements Detecto
                     return;
                 }
 
+                // PercentRelativeLayout or PercentFrameLayout?
+                boolean isPercent = parentTag.startsWith("android.support.percent.Percent");
+                if (isPercent) {
+                    hasWidth |= element.hasAttributeNS(AUTO_URI, ATTR_LAYOUT_WIDTH_PERCENT);
+                    hasHeight |= element.hasAttributeNS(AUTO_URI, ATTR_LAYOUT_HEIGHT_PERCENT);
+                    if (hasWidth && hasHeight) {
+                        return;
+                    }
+                }
+
                 if (!context.getProject().getReportIssues()) {
                     // If this is a library project not being analyzed, ignore it
                     return;
@@ -501,6 +517,15 @@ public class RequiredAttributeDetector extends LayoutDetector implements Detecto
                         message = String.format("The required `%1$s` attribute *may* be missing",
                                 attribute);
                     }
+                }
+                if (isPercent) {
+                    String escapedLayoutWidth = '`' + ATTR_LAYOUT_WIDTH + '`';
+                    String escapedLayoutHeight = '`' + ATTR_LAYOUT_HEIGHT + '`';
+                    String escapedLayoutWidthPercent = '`' + ATTR_LAYOUT_WIDTH_PERCENT + '`';
+                    String escapedLayoutHeightPercent = '`' + ATTR_LAYOUT_HEIGHT_PERCENT + '`';
+                    message = message.replace(escapedLayoutWidth, escapedLayoutWidth + " or "
+                            + escapedLayoutWidthPercent).replace(escapedLayoutHeight,
+                            escapedLayoutHeight + " or " + escapedLayoutHeightPercent);
                 }
                 context.report(ISSUE, element, context.getLocation(element),
                         message);

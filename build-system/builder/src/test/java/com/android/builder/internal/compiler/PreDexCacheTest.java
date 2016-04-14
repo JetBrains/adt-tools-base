@@ -23,19 +23,33 @@ import static com.android.SdkConstants.FN_DX;
 import static com.android.SdkConstants.FN_DX_JAR;
 import static com.android.SdkConstants.FN_RENDERSCRIPT;
 import static com.android.SdkConstants.FN_ZIPALIGN;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.DexOptions;
+import com.android.builder.core.ErrorReporter;
+import com.android.builder.core.LibraryRequest;
+import com.android.builder.model.SyncIssue;
+import com.android.builder.sdk.SdkInfo;
+import com.android.builder.sdk.TargetInfo;
+import com.android.ide.common.blame.Message;
 import com.android.ide.common.process.JavaProcessExecutor;
 import com.android.ide.common.process.JavaProcessInfo;
 import com.android.ide.common.process.ProcessException;
+import com.android.ide.common.process.ProcessExecutor;
+import com.android.ide.common.process.ProcessInfo;
 import com.android.ide.common.process.ProcessOutput;
 import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.ide.common.process.ProcessResult;
+import com.android.repository.Revision;
 import com.android.sdklib.BuildToolInfo;
-import com.android.sdklib.repository.FullRevision;
+import com.android.utils.FileUtils;
+import com.android.utils.NullLogger;
 import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
 
 import junit.framework.TestCase;
@@ -55,6 +69,8 @@ import java.util.zip.ZipEntry;
 public class PreDexCacheTest extends TestCase {
 
     private static final String DEX_DATA = "**";
+
+    private AndroidBuilder mAndroidBuilder;
 
     /**
      * implement a fake java process executor to intercept the call to dex and replace it
@@ -116,6 +132,7 @@ public class PreDexCacheTest extends TestCase {
 
             final ProcessException rethrow = processException;
             return new ProcessResult() {
+                @NonNull
                 @Override
                 public ProcessResult assertNormalExitValue() throws ProcessException {
                     return this;
@@ -126,6 +143,7 @@ public class PreDexCacheTest extends TestCase {
                     return 0;
                 }
 
+                @NonNull
                 @Override
                 public ProcessResult rethrowFailure() throws ProcessException {
                     if (rethrow != null) {
@@ -151,6 +169,7 @@ public class PreDexCacheTest extends TestCase {
                 throw new IOException("foo");
             } catch (final Exception e) {
                 return new ProcessResult() {
+                    @NonNull
                     @Override
                     public ProcessResult assertNormalExitValue() throws ProcessException {
                         return this;
@@ -161,6 +180,7 @@ public class PreDexCacheTest extends TestCase {
                         return 0;
                     }
 
+                    @NonNull
                     @Override
                     public ProcessResult rethrowFailure() throws ProcessException {
                         throw new ProcessException(null, e);
@@ -212,22 +232,67 @@ public class PreDexCacheTest extends TestCase {
         public Integer getThreadCount() {
             return null;
         }
+
+        @Nullable
+        @Override
+        public Integer getMaxProcessCount() {
+            return null;
+        }
     }
 
-    private BuildToolInfo mBuildToolInfo;
+    private static class FakeProcessExecutor implements ProcessExecutor {
+        @NonNull
+        @Override
+        public ProcessResult execute(@NonNull ProcessInfo processInfo,
+                @NonNull ProcessOutputHandler processOutputHandler) {
+            throw new RuntimeException("fake");
+        }
+    }
 
+    private static class FakeErrorReporter extends ErrorReporter {
+        protected FakeErrorReporter(@NonNull EvaluationMode mode) {
+            super(mode);
+        }
+
+        @NonNull
+        @Override
+        public SyncIssue handleSyncIssue(
+                @Nullable String data, int type, int severity, @NonNull String msg) {
+            throw new RuntimeException("fake");
+        }
+
+        @Override
+        public void receiveMessage(@NonNull Message message) {
+            throw new RuntimeException("fake");
+        }
+    }
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
 
-        mBuildToolInfo = getBuildToolInfo();
+        mAndroidBuilder = new AndroidBuilder(
+                "testProject",
+                getClass().getName(),
+                new FakeProcessExecutor(),
+                new FakeJavaProcessExecutor(),
+                new FakeErrorReporter(ErrorReporter.EvaluationMode.STANDARD),
+                new NullLogger(),
+                true);
+
+        TargetInfo targetInfo = mock(TargetInfo.class);
+        when(targetInfo.getBuildTools()).thenReturn(getBuildToolInfo());
+
+        mAndroidBuilder.setTargetInfo(
+                mock(SdkInfo.class),
+                targetInfo,
+                ImmutableList.<LibraryRequest>of());
     }
 
     @Override
     protected void tearDown() throws Exception {
-        File toolFolder = mBuildToolInfo.getLocation();
-        deleteFolder(toolFolder);
+        File toolFolder = mAndroidBuilder.getTargetInfo().getBuildTools().getLocation();
+        FileUtils.deleteFolder(toolFolder);
 
         PreDexCache.getCache().clear(null, null);
 
@@ -242,10 +307,12 @@ public class PreDexCacheTest extends TestCase {
         output.deleteOnExit();
 
         PreDexCache.getCache().preDexLibrary(
-                input, output,
+                mAndroidBuilder,
+                input,
+                output,
                 false /*multidex*/,
-                new FakeDexOptions(), mBuildToolInfo,
-                false /*verbose*/, new FakeJavaProcessExecutor(), new FakeProcessOutputHandler());
+                new FakeDexOptions(),
+                new FakeProcessOutputHandler());
 
         checkOutputFile(content, output);
     }
@@ -272,13 +339,11 @@ public class PreDexCacheTest extends TestCase {
                         outputFiles[ii] = output;
 
                         PreDexCache.getCache().preDexLibrary(
+                                mAndroidBuilder,
                                 input,
                                 output,
                                 false /*multidex*/,
                                 dexOptions,
-                                mBuildToolInfo,
-                                false /*verbose*/,
-                                javaProcessExecutor,
                                 new FakeProcessOutputHandler());
                     } catch (Exception ignored) {
 
@@ -329,14 +394,21 @@ public class PreDexCacheTest extends TestCase {
                         output.deleteOnExit();
                         outputFiles[ii] = output;
 
+                        AndroidBuilder builder = new AndroidBuilder(
+                                "testProject",
+                                getClass().getName(),
+                                new FakeProcessExecutor(),
+                                ii == 0 ? javaProcessExecutorWithError : javaProcessExecutor,
+                                new FakeErrorReporter(ErrorReporter.EvaluationMode.STANDARD),
+                                new NullLogger(),
+                                true);
+
                         PreDexCache.getCache().preDexLibrary(
+                                builder,
                                 input,
                                 output,
                                 false /*multidex*/,
                                 dexOptions,
-                                mBuildToolInfo,
-                                false /*verbose*/,
-                                ii == 0 ? javaProcessExecutorWithError : javaProcessExecutor,
                                 new FakeProcessOutputHandler());
                     } catch (Exception ignored) {
 
@@ -370,13 +442,11 @@ public class PreDexCacheTest extends TestCase {
         output.deleteOnExit();
 
         PreDexCache.getCache().preDexLibrary(
+                mAndroidBuilder,
                 input,
                 output,
                 false /*multidex*/,
                 dexOptions,
-                mBuildToolInfo,
-                false /*verbose*/,
-                javaProcessExecutor,
                 new FakeProcessOutputHandler());
 
         checkOutputFile(content, output);
@@ -394,13 +464,11 @@ public class PreDexCacheTest extends TestCase {
         output2.deleteOnExit();
 
         PreDexCache.getCache().preDexLibrary(
+                mAndroidBuilder,
                 input,
                 output2,
                 false /*multidex*/,
                 dexOptions,
-                mBuildToolInfo,
-                false /*verbose*/,
-                javaProcessExecutor,
                 new FakeProcessOutputHandler());
 
         // check the output
@@ -446,7 +514,7 @@ public class PreDexCacheTest extends TestCase {
         Files.write("dx!", dx, Charsets.UTF_8);
 
         return new BuildToolInfo(
-                new FullRevision(1),
+                new Revision(21, 0, 1),
                 toolDir,
                 new File(toolDir, FN_AAPT),
                 new File(toolDir, FN_AIDL),
@@ -460,20 +528,5 @@ public class PreDexCacheTest extends TestCase {
                 new File(toolDir, "i686-linux-android-ld"),
                 new File(toolDir, "mipsel-linux-android-ld"),
                 new File(toolDir, FN_ZIPALIGN));
-    }
-
-    private static void deleteFolder(File folder) {
-        File[] files = folder.listFiles();
-        if (files != null) {
-            for (File file : files) {
-                if (file.isDirectory()) {
-                    deleteFolder(file);
-                } else {
-                    file.delete();
-                }
-            }
-        }
-
-        folder.delete();
     }
 }

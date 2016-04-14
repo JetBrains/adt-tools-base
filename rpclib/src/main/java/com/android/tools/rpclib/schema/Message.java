@@ -17,11 +17,14 @@
 package com.android.tools.rpclib.schema;
 
 import com.android.tools.rpclib.binary.*;
-import com.intellij.util.containers.HashMap;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
+/**
+ * This class is used to transmit schema data to a client.
+ * It is not a normal binary object because it requires custom encoding for the Entity objects.
+ */
 public final class Message implements BinaryObject {
     public Entity[] entities;
     public ConstantSet[] constants;

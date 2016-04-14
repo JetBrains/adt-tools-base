@@ -14,13 +14,10 @@
  * limitations under the License.
  */
 package com.android.build.gradle.internal.tasks;
-import com.android.annotations.NonNull;
 import com.android.ide.common.res2.FileStatus;
 import com.android.ide.common.res2.SourceSet;
-import com.android.utils.FileUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.io.Files;
 
 import org.gradle.api.Action;
 import org.gradle.api.tasks.Optional;
@@ -47,19 +44,6 @@ public abstract class IncrementalTask extends BaseTask {
     @OutputDirectory @Optional
     public File getIncrementalFolder() {
         return incrementalFolder;
-    }
-
-    public void setIncrementalMarker() throws IOException {
-        Files.touch(getIncrementalMarkerFile());
-    }
-
-    public void clearIncrementalMarker() throws IOException {
-        FileUtils.deleteIfExists(getIncrementalMarkerFile());
-    }
-
-    @NonNull
-    private File getIncrementalMarkerFile() {
-        return new File(getIncrementalFolder(), MARKER_NAME);
     }
 
     /**

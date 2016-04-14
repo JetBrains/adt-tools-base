@@ -1,0 +1,23 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion "23.1.0"
+
+    defaultConfig {
+        resValue "string", "cat", "Some Data"
+        minSdkVersion 15
+        targetSdkVersion 23
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        debug {
+            resValue "string", "foo", "Some Data"
+        }
+        release {
+            resValue "string", "xyz", "Some Data"
+            resValue "string", "dog", "Some Data"
+        }
+    }
+}

@@ -20,6 +20,7 @@ import com.android.ide.common.res2.MergingException;
 import com.android.utils.ILogger;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.Logger;
+import org.gradle.api.logging.Logging;
 
 /**
  * Implementation of Android's {@link ILogger} over Gradle's {@link Logger}.
@@ -29,6 +30,10 @@ public class LoggerWrapper implements ILogger {
     private final Logger logger;
 
     private final LogLevel infoLogLevel;
+
+    public static LoggerWrapper getLogger(Class<?> klass) {
+        return new LoggerWrapper(Logging.getLogger(klass));
+    }
 
     public LoggerWrapper(@NonNull Logger logger) {
         this(logger, LogLevel.INFO);

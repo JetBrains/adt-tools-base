@@ -46,7 +46,7 @@ public class FilterDataPersistence {
         }
     }
 
-    public void persist(List<FileSupplier> fileSuppliers, Writer writer) throws IOException {
+    public void persist(List<? extends FileSupplier> fileSuppliers, Writer writer) throws IOException {
         Gson gson = new Gson();
         ImmutableList.Builder<Record> records = ImmutableList.builder();
         for (FileSupplier fileSupplier : fileSuppliers) {

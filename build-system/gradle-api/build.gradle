@@ -1,0 +1,49 @@
+apply plugin: 'java'
+apply plugin: 'jacoco'
+apply plugin: 'clone-artifacts'
+
+configurations {
+    provided
+}
+
+dependencies {
+    compile project(':base:annotations')
+    compile 'com.google.guava:guava:17.0'
+
+    provided gradleApi()
+
+    testCompile 'junit:junit:4.12'
+}
+
+sourceSets {
+    main {
+        compileClasspath += configurations.provided
+    }
+}
+
+javadoc {
+  classpath += configurations.provided
+  options.links("http://docs.oracle.com/javase/7/docs/api/", "https://docs.gradle.org/current/javadoc/")
+
+  if (JavaVersion.current().isJava8Compatible()) {
+      options.addStringOption 'Xdoclint:none', '-quiet'
+  }
+}
+
+task javadocZip(type: Zip) {
+  dependsOn javadoc
+  from javadoc.destinationDir
+  baseName 'javadoc'
+}
+
+group = 'com.android.tools.build'
+archivesBaseName = 'gradle-api'
+version = rootProject.ext.buildVersion
+
+project.ext.pomName = 'Android Gradle API'
+project.ext.pomDesc = 'APIs to customize Android Gradle Builds'
+
+apply from: "$rootDir/buildSrc/base/publish.gradle"
+apply from: "$rootDir/buildSrc/base/bintray.gradle"
+apply from: "$rootDir/buildSrc/base/javadoc.gradle"
+

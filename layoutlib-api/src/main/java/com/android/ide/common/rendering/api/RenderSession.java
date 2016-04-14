@@ -302,6 +302,34 @@ public class RenderSession {
     }
 
     /**
+     * Sets the current system time in nanos.
+     * <p/>Calls to this method must check that layoutlib supports {@link Features#SYSTEM_TIME}
+     */
+    public void setSystemTimeNanos(long nanos) {
+        throw new UnsupportedOperationException(
+                "Current layoutlib version doesn't support Features.SYSTEM_TIME");
+    }
+
+    /**
+     * Sets the system boot time in nanos.
+     * <p/>Calls to this method must check that layoutlib supports {@link Features#SYSTEM_TIME}
+     */
+    public void setSystemBootTimeNanos(long nanos) {
+        throw new UnsupportedOperationException(
+                "Current layoutlib version doesn't support Features.SYSTEM_TIME");
+    }
+
+    /**
+     * Sets the time for which the next frame will be selected. The time is the elapsed time from
+     * the current system nanos time.
+     * <p/>Calls to this method must check that layoutlib supports {@link Features#SYSTEM_TIME}
+     */
+    public void setElapsedFrameTimeNanos(long nanos) {
+        throw new UnsupportedOperationException(
+                "Current layoutlib version doesn't support Features.SYSTEM_TIME");
+    }
+
+    /**
      * Discards the layout. No more actions can be called on this object.
      */
     public void dispose() {

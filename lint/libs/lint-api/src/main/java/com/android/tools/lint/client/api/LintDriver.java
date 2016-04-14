@@ -41,7 +41,7 @@ import com.android.ide.common.res2.ResourceItem;
 import com.android.resources.ResourceFolderType;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
-import com.android.sdklib.repository.local.LocalSdk;
+import com.android.sdklib.repositoryv2.AndroidSdkHandler;
 import com.android.tools.lint.client.api.LintListener.EventType;
 import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Context;
@@ -103,6 +103,7 @@ import java.util.regex.Pattern;
 
 import lombok.ast.Annotation;
 import lombok.ast.AnnotationElement;
+import lombok.ast.AnnotationMethodDeclaration;
 import lombok.ast.AnnotationValue;
 import lombok.ast.ArrayInitializer;
 import lombok.ast.ConstructorDeclaration;
@@ -643,6 +644,7 @@ public class LintDriver {
             List<Detector> resourceFileDetectors = mScopeDetectors.get(Scope.RESOURCE_FILE);
             if (resourceFileDetectors != null) {
                 for (Detector detector : resourceFileDetectors) {
+                    // This is wrong; it should allow XmlScanner instead of ResourceXmlScanner!
                     assert detector instanceof ResourceXmlDetector : detector;
                 }
             }
@@ -1719,7 +1721,8 @@ public class LintDriver {
                             visitor.getParser());
                     fireEvent(EventType.SCANNING_FILE, context);
                     visitor.visitFile(context, file);
-                } else if (binaryChecks != null && LintUtils.isBitmapFile(file)) {
+                } else if (binaryChecks != null && (LintUtils.isBitmapFile(file) ||
+                            type == ResourceFolderType.RAW)) {
                     ResourceContext context = new ResourceContext(this, project, main, file, type);
                     fireEvent(EventType.SCANNING_FILE, context);
                     visitor.visitBinaryResource(context);
@@ -1832,6 +1835,7 @@ public class LintDriver {
         private final LintClient mDelegate;
 
         public LintClientWrapper(@NonNull LintClient delegate) {
+            super(getClientName());
             mDelegate = delegate;
         }
 
@@ -2016,7 +2020,7 @@ public class LintDriver {
 
         @Nullable
         @Override
-        public LocalSdk getSdk() {
+        public AndroidSdkHandler getSdk() {
             return mDelegate.getSdk();
         }
 
@@ -2087,6 +2091,17 @@ public class LintDriver {
         @Override
         public IssueRegistry addCustomLintRules(@NonNull IssueRegistry registry) {
             return mDelegate.addCustomLintRules(registry);
+        }
+
+        @NonNull
+        @Override
+        public List<File> getAssetFolders(@NonNull Project project) {
+            return mDelegate.getAssetFolders(project);
+        }
+
+        @Override
+        public ClassLoader createUrlClassLoader(@NonNull URL[] urls, @NonNull ClassLoader parent) {
+            return mDelegate.createUrlClassLoader(urls, parent);
         }
 
         @Override
@@ -2430,6 +2445,12 @@ public class LintDriver {
             } else if (TypeDeclaration.class.isAssignableFrom(type)) {
                 // Class, annotation, enum, interface
                 TypeDeclaration declaration = (TypeDeclaration) scope;
+                if (isSuppressed(issue, declaration.astModifiers())) {
+                    return true;
+                }
+            } else if (type == AnnotationMethodDeclaration.class) {
+                // Look for annotations on the method
+                AnnotationMethodDeclaration declaration = (AnnotationMethodDeclaration) scope;
                 if (isSuppressed(issue, declaration.astModifiers())) {
                     return true;
                 }

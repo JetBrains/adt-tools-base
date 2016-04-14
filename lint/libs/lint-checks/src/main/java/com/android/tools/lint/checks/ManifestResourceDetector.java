@@ -178,15 +178,11 @@ public class ManifestResourceDetector extends ResourceXmlDetector {
         if (ATTR_LABEL.equals(name)
                 || ATTR_ICON.equals(name)
                 || ATTR_THEME.equals(name)
+                || "description".equals(name)
                 || "logo".equals(name)
                 || "banner".equals(name)
                 || "sharedUserLabel".equals(name)) {
             return ANDROID_URI.equals(attribute.getNamespaceURI());
-        }
-
-        if ("description".equals(name)) {
-            String tagName = attribute.getOwnerElement().getTagName();
-            return AndroidManifest.NODE_PERMISSION_GROUP.equals(tagName);
         }
 
         return false;

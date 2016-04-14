@@ -37,7 +37,7 @@ public class Value {
         mValue = value;
 
         if (value instanceof Instance) {
-            ((Instance) value).addReference(null, instance);
+            ((Instance) value).addReverseReference(null, instance);
         }
     }
 }

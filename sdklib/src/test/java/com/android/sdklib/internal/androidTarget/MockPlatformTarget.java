@@ -16,17 +16,12 @@
 
 package com.android.sdklib.internal.androidTarget;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
+import com.android.repository.io.FileOp;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
-import com.android.sdklib.ISystemImage.LocationType;
-import com.android.sdklib.SystemImage;
-import com.android.sdklib.io.FileOp;
-import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.google.common.collect.ImmutableList;
 
 import java.io.File;
@@ -71,29 +66,6 @@ public class MockPlatformTarget implements IAndroidTarget {
     @Override
     public String getFullName() {
         return getName();
-    }
-
-    @Override
-    public ISystemImage[] getSystemImages() {
-        if (mSystemImages == null) {
-            SystemImage si = new SystemImage(
-                    FileOp.append(getLocation(), SdkConstants.OS_IMAGES_FOLDER),
-                    LocationType.IN_LEGACY_FOLDER,
-                    SystemImage.DEFAULT_TAG,
-                    SdkConstants.ABI_ARMEABI,
-                    FileOp.EMPTY_FILE_ARRAY);
-            mSystemImages = new SystemImage[] { si };
-        }
-        return mSystemImages;
-    }
-
-    @Override
-    @Nullable
-    public ISystemImage getSystemImage(@NonNull IdDisplay tag, @NonNull String abiType) {
-        if (SystemImage.DEFAULT_TAG.equals(tag) && SdkConstants.ABI_ARMEABI.equals(abiType)) {
-            return getSystemImages()[0];
-        }
-        return null;
     }
 
     @Override
@@ -149,16 +121,6 @@ public class MockPlatformTarget implements IAndroidTarget {
     }
 
     @Override
-    public Integer getProperty(String name, Integer defaultValue) {
-        return defaultValue;
-    }
-
-    @Override
-    public Boolean getProperty(String name, Boolean defaultValue) {
-        return defaultValue;
-    }
-
-    @Override
     public Map<String, String> getProperties() {
         return null;
     }
@@ -172,11 +134,6 @@ public class MockPlatformTarget implements IAndroidTarget {
     @Override
     public File[] getSkins() {
         return FileOp.EMPTY_FILE_ARRAY;
-    }
-
-    @Override
-    public int getUsbVendorId() {
-        return 0;
     }
 
     /**

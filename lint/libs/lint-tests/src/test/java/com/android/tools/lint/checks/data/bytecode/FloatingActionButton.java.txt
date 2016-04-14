@@ -1,0 +1,20 @@
+package android.support.design.widget;
+
+import android.annotation.SuppressLint;
+import android.content.Context;
+import android.content.res.ColorStateList;
+import android.util.AttributeSet;
+import android.widget.ImageButton;
+
+// JUST A UNIT TESTING STUB!
+public abstract class FloatingActionButton extends ImageButton {
+    @SuppressLint("NewApi")
+    public FloatingActionButton(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+        super(context, attrs, defStyleAttr, defStyleRes);
+    }
+
+    @Override
+    public void setBackgroundTintList(ColorStateList tint) {
+        super.setBackgroundTintList(tint);
+    }
+}

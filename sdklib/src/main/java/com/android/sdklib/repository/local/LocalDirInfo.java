@@ -18,8 +18,7 @@ package com.android.sdklib.repository.local;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
-import com.android.sdklib.io.FileOp;
-import com.android.sdklib.io.IFileOp;
+import com.android.repository.io.FileOp;
 
 import java.io.File;
 import java.io.InputStream;
@@ -48,7 +47,7 @@ import java.util.zip.Adler32;
  */
 class LocalDirInfo {
     @NonNull
-    private final IFileOp mFileOp;
+    private final FileOp mFileOp;
     @NonNull
     private final File mDir;
     private final long mDirModifiedTS;
@@ -62,7 +61,7 @@ class LocalDirInfo {
      * @param fileOp The {@link FileOp} to use for all file-based interactions.
      * @param dir The platform/addon directory of the target. It should be a directory.
      */
-    public LocalDirInfo(@NonNull IFileOp fileOp, @NonNull File dir) {
+    public LocalDirInfo(@NonNull FileOp fileOp, @NonNull File dir) {
         mFileOp = fileOp;
         mDir = dir;
         mDirModifiedTS = mFileOp.lastModified(dir);

@@ -140,16 +140,18 @@ public class VectorDetector extends ResourceXmlDetector {
     private static void checkSupported(@NonNull XmlContext context, @NonNull Element element) {
         // Unsupported tags
         String tag = element.getTagName();
-        if ("clip-path".equals(tag) || "group".equals(tag)) {
+        if ("clip-path".equals(tag)) {
             String message = "This tag is not supported in images generated from this "
                     + "vector icon for API < 21; check generated icon to make sure it looks "
                     + "acceptable";
             context.report(ISSUE, element, context.getLocation(element), message);
         } else if ("group".equals(tag)) {
-            String message = "This tag is not fully supported in images generated from this "
-                    + "vector icon for API < 21; check generated icon to make sure it looks "
-                    + "acceptable";
-            context.report(ISSUE, element, context.getLocation(element), message);
+            AndroidProject model = context.getMainProject().getGradleProjectModel();
+            if (model != null && model.getModelVersion().startsWith("1.4.")) {
+                String message = "Update Gradle plugin version to 1.5+ to correctly handle "
+                        + "`<group>` tags in generated bitmaps";
+                context.report(ISSUE, element, context.getLocation(element), message);
+            }
         }
 
         NamedNodeMap attributes = element.getAttributes();

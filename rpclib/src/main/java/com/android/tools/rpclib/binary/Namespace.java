@@ -19,15 +19,15 @@ import com.android.tools.rpclib.schema.Entity;
 import com.intellij.openapi.diagnostic.Logger;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  *
  */
 public class Namespace {
-  private static Map<String, BinaryClass> registry = new HashMap<String, BinaryClass>();
+  private static Map<String, BinaryClass> registry = new ConcurrentHashMap<String, BinaryClass>(300);
 
   @NotNull private static final Logger LOG = Logger.getInstance(Namespace.class);
   public static void register(BinaryClass creator) {

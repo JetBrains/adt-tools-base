@@ -204,6 +204,10 @@ public final class SdkConstants {
     public static final String FN_EMULATOR =
         "emulator" + ext(".exe", "");                     //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 
+    /** emulator-check executable for the current OS */
+    public static final String FN_EMULATOR_CHECK =
+      "emulator-check" + ext(".exe", "");                 //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+
     /** zipalign executable (with extension for the current OS) */
     public static final String FN_ZIPALIGN =
         "zipalign" + ext(".exe", "");                     //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
@@ -972,6 +976,14 @@ public final class SdkConstants {
     public static final String ATTR_LIST_PREFERRED_ITEM_PADDING_END =
             "listPreferredItemPaddingEnd";                             //$NON-NLS-1$
     public static final String ATTR_INDEX = "index";                   //$NON-NLS-1$
+    public static final String ATTR_ACTION_BAR_NAV_MODE = "actionBarNavMode"; //$NON-NLS-1$
+    public static final String ATTR_MENU = "menu";                     //$NON-NLS-1$
+    public static final String ATTR_SHOW_IN = "showIn";                //$NON-NLS-1$
+
+    // Tools attributes for AdapterView inheritors
+    public static final String ATTR_LISTFOOTER = "listfooter";         //$NON-NLS-1$
+    public static final String ATTR_LISTHEADER = "listheader";         //$NON-NLS-1$
+    public static final String ATTR_LISTITEM = "listitem";             //$NON-NLS-1$
 
     // AbsoluteLayout layout params
     public static final String ATTR_LAYOUT_Y = "layout_y";             //$NON-NLS-1$
@@ -1196,6 +1208,7 @@ public final class SdkConstants {
     public static final String PREFIX_RESOURCE_REF = "@";               //$NON-NLS-1$
     public static final String PREFIX_THEME_REF = "?";                  //$NON-NLS-1$
     public static final String PREFIX_BINDING_EXPR = "@{";              //$NON-NLS-1$
+    public static final String PREFIX_TWOWAY_BINDING_EXPR = "@={";      //$NON-NLS-1$
     public static final String ANDROID_PREFIX = "@android:";            //$NON-NLS-1$
     public static final String ANDROID_THEME_PREFIX = "?android:";      //$NON-NLS-1$
     public static final String LAYOUT_RESOURCE_PREFIX = "@layout/";     //$NON-NLS-1$
@@ -1265,21 +1278,11 @@ public final class SdkConstants {
     // Class Names
     public static final String CONSTRUCTOR_NAME = "<init>";                          //$NON-NLS-1$
     public static final String CLASS_CONSTRUCTOR = "<clinit>";                       //$NON-NLS-1$
-    public static final String FRAGMENT = "android/app/Fragment";                    //$NON-NLS-1$
-    public static final String FRAGMENT_V4 = "android/support/v4/app/Fragment";      //$NON-NLS-1$
-    public static final String ANDROID_APP_ACTIVITY = "android/app/Activity";        //$NON-NLS-1$
-    public static final String ANDROID_APP_SERVICE = "android/app/Service";          //$NON-NLS-1$
-    public static final String ANDROID_CONTENT_CONTENT_PROVIDER =
-            "android/content/ContentProvider";                                       //$NON-NLS-1$
-    public static final String ANDROID_CONTENT_BROADCAST_RECEIVER =
-            "android/content/BroadcastReceiver";                                     //$NON-NLS-1$
     public static final String ANDROID_VIEW_VIEW = "android/view/View";              //$NON-NLS-1$
 
     // Method Names
     public static final String FORMAT_METHOD = "format";                             //$NON-NLS-1$
     public static final String GET_STRING_METHOD = "getString";                      //$NON-NLS-1$
-
-
 
 
     public static final String ATTR_TAG = "tag";                        //$NON-NLS-1$
@@ -1439,9 +1442,9 @@ public final class SdkConstants {
 
     public static final String GRADLE_PLUGIN_NAME = "com.android.tools.build:gradle:";
     public static final String GRADLE_MINIMUM_VERSION = "2.2.1";
-    public static final String GRADLE_LATEST_VERSION = "2.8";
+    public static final String GRADLE_LATEST_VERSION = "2.10";
     public static final String GRADLE_PLUGIN_MINIMUM_VERSION = "1.0.0";
-    public static final String GRADLE_PLUGIN_RECOMMENDED_VERSION = "1.5.0";
+    public static final String GRADLE_PLUGIN_RECOMMENDED_VERSION = "2.0.0-rc1";
     public static final String GRADLE_PLUGIN_LATEST_VERSION = GRADLE_PLUGIN_RECOMMENDED_VERSION;
     public static final String MIN_BUILD_TOOLS_VERSION = "19.1.0";
     public static final String SUPPORT_LIB_ARTIFACT = "com.android.support:support-v4";
@@ -1467,4 +1470,15 @@ public final class SdkConstants {
         TAG_IMPORT, TAG_LAYOUT, TAG_DATA};
     public static final String[] ATTRS_DATA_BINDING = new String[]{ATTR_NAME,
         ATTR_TYPE, ATTR_CLASS, ATTR_ALIAS};
+
+    /** Name of keep attribute in XML */
+    public static final String ATTR_KEEP = "keep";
+    /** Name of discard attribute in XML (to mark resources as not referenced, despite guesses) */
+    public static final String ATTR_DISCARD = "discard";
+    /** Name of attribute in XML to control whether we should guess resources to keep */
+    public static final String ATTR_SHRINK_MODE = "shrinkMode";
+    /** {@linkplain #ATTR_SHRINK_MODE} value to only shrink explicitly encountered resources */
+    public static final String VALUE_STRICT = "strict";
+    /** {@linkplain #ATTR_SHRINK_MODE} value to keep possibly referenced resources */
+    public static final String VALUE_SAFE = "safe";
 }

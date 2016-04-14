@@ -22,6 +22,10 @@ public final class Factory {
         com.android.tools.rpclib.any.Factory.register();
         com.android.tools.rpclib.schema.Factory.register();
         //<<<Start:Java.FactoryBody:2>>>
+        ErrDecodingCall.register();
+        ErrInvalidHeader.register();
+        ErrPanic.register();
+        ErrUnknownFunction.register();
         RpcError.register();
         //<<<End:Java.FactoryBody:2>>>
     }

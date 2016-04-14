@@ -18,6 +18,8 @@ package com.android.build.gradle.internal.transforms;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.api.transform.SecondaryInput;
+import com.android.build.api.transform.TransformInvocation;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
@@ -52,12 +54,17 @@ import java.util.Set;
  * Since this transform only reads the data from the stream but does not output anything
  * back into the stream, it is a no-op transform, asking only for referenced scopes, and not
  * "consumed" scopes.
+ * <p>
+ * To run the tests specifically related to resource shrinking:
+ * <pre>
+ * ./gradlew :base:int:test -Dtest.single=ShrinkResourcesTest
+ * </pre>
  */
 public class ShrinkResourcesTransform extends Transform {
 
     /** Whether we've already warned about how to turn off shrinking. Used to avoid
      * repeating the same multi-line message for every repeated abi split. */
-    private static boolean ourWarned;
+    private static boolean ourWarned = true; // Logging disabled until shrinking is on by default.
 
     /**
      * Associated variant data that the strip task will be run against. Used to locate
@@ -168,29 +175,34 @@ public class ShrinkResourcesTransform extends Transform {
     }
 
     @Override
-    public void transform(
-            @NonNull Context context,
-            @NonNull Collection<TransformInput> inputs,
-            @NonNull Collection<TransformInput> referencedInputs,
-            @Nullable TransformOutputProvider outputProvider,
-            boolean isIncremental) throws IOException, TransformException, InterruptedException {
+    public void transform(TransformInvocation invocation)
+            throws IOException, TransformException, InterruptedException {
 
         // there should be only one input since this transform is always applied after
         // proguard.
-        TransformInput input = Iterables.getOnlyElement(referencedInputs);
+        TransformInput input = Iterables.getOnlyElement(invocation.getReferencedInputs());
         File minifiedOutJar = Iterables.getOnlyElement(input.getJarInputs()).getFile();
 
         BaseVariantData<?> variantData = variantOutputData.variantData;
         ProcessAndroidResources processResourcesTask = variantData.generateRClassTask;
-        try {
 
-            // Analyze resources and usages and strip out unused
-            ResourceUsageAnalyzer analyzer = new ResourceUsageAnalyzer(
-                    sourceDir,
-                    minifiedOutJar,
-                    mergedManifest,
-                    mappingFile,
-                    resourceDir);
+        File reportFile = null;
+        if (mappingFile != null) {
+            File logDir = mappingFile.getParentFile();
+            if (logDir != null) {
+                reportFile = new File(logDir, "resources.txt");
+            }
+        }
+
+        // Analyze resources and usages and strip out unused
+        ResourceUsageAnalyzer analyzer = new ResourceUsageAnalyzer(
+                sourceDir,
+                minifiedOutJar,
+                mergedManifest,
+                mappingFile,
+                resourceDir,
+                reportFile);
+        try {
             analyzer.setVerbose(logger.isEnabled(LogLevel.INFO));
             analyzer.setDebug(logger.isEnabled(LogLevel.DEBUG));
             analyzer.analyze();
@@ -270,10 +282,11 @@ public class ShrinkResourcesTransform extends Transform {
 
                 System.out.println(sb.toString());
             }
-
         } catch (Exception e) {
             System.out.println("Failed to shrink resources: " + e.toString() + "; ignoring");
             logger.quiet("Failed to shrink resources: ignoring", e);
+        } finally {
+            analyzer.dispose();
         }
     }
 

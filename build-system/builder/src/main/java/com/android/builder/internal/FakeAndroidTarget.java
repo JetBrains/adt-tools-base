@@ -21,8 +21,6 @@ import com.android.annotations.NonNull;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
-import com.android.sdklib.ISystemImage;
-import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.utils.SparseArray;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -205,32 +203,7 @@ public class FakeAndroidTarget implements IAndroidTarget {
     }
 
     @Override
-    public Integer getProperty(String name, Integer defaultValue) {
-        return null;
-    }
-
-    @Override
-    public Boolean getProperty(String name, Boolean defaultValue) {
-        return null;
-    }
-
-    @Override
     public Map<String, String> getProperties() {
-        return null;
-    }
-
-    @Override
-    public int getUsbVendorId() {
-        return 0;
-    }
-
-    @Override
-    public ISystemImage[] getSystemImages() {
-        return new ISystemImage[0];
-    }
-
-    @Override
-    public ISystemImage getSystemImage(IdDisplay tag, String abiType) {
         return null;
     }
 

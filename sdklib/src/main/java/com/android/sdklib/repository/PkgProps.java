@@ -34,8 +34,6 @@ public class PkgProps {
     public static final String PKG_LICENSE_REF          = "Pkg.LicenseRef";         //$NON-NLS-1$
     public static final String PKG_DESC                 = "Pkg.Desc";               //$NON-NLS-1$
     public static final String PKG_DESC_URL             = "Pkg.DescUrl";            //$NON-NLS-1$
-    public static final String PKG_RELEASE_NOTE         = "Pkg.RelNote";            //$NON-NLS-1$
-    public static final String PKG_RELEASE_URL          = "Pkg.RelNoteUrl";         //$NON-NLS-1$
     public static final String PKG_SOURCE_URL           = "Pkg.SourceUrl";          //$NON-NLS-1$
     public static final String PKG_OBSOLETE             = "Pkg.Obsolete";           //$NON-NLS-1$
     public static final String PKG_LIST_DISPLAY         = "Pkg.ListDisplay";        //$NON-NLS-1$
@@ -65,7 +63,6 @@ public class PkgProps {
     public static final String EXTRA_OLD_PATHS          = "Extra.OldPaths";         //$NON-NLS-1$
     public static final String EXTRA_MIN_API_LEVEL      = "Extra.MinApiLevel";      //$NON-NLS-1$
     public static final String EXTRA_PROJECT_FILES      = "Extra.ProjectFiles";     //$NON-NLS-1$
-    public static final String EXTRA_VENDOR             = "Extra.Vendor";           //$NON-NLS-1$
     public static final String EXTRA_VENDOR_ID          = "Extra.VendorId";         //$NON-NLS-1$
     public static final String EXTRA_VENDOR_DISPLAY     = "Extra.VendorDisplay";    //$NON-NLS-1$
     public static final String EXTRA_NAME_DISPLAY       = "Extra.NameDisplay";      //$NON-NLS-1$
@@ -82,14 +79,10 @@ public class PkgProps {
     // PlatformPackage
 
     public static final String PLATFORM_VERSION         = "Platform.Version";       //$NON-NLS-1$
-    /** Code name of the platform. This has no bearing on the package being a preview or not. */
-    public static final String PLATFORM_CODENAME        = "Platform.CodeName";      //$NON-NLS-1$
-    public static final String PLATFORM_INCLUDED_ABI    = "Platform.Included.Abi";  //$NON-NLS-1$
 
     // ToolPackage
 
     public static final String MIN_PLATFORM_TOOLS_REV = "Platform.MinPlatformToolsRev";//$NON-NLS-1$
-    public static final String MIN_BUILD_TOOLS_REV      = "Platform.MinBuildToolsRev"; //$NON-NLS-1$
 
 
     // SamplePackage

@@ -149,7 +149,7 @@ final class HandleNativeHeap extends ChunkHandler {
 
         finishChunkPacket(packet, CHUNK_NHGT, buf.position());
         Log.d("ddm-nativeheap", "Sending " + name(CHUNK_NHGT));
-        client.sendAndConsume(packet, mInst);
+        client.send(packet, mInst);
 
         rawBuf = allocBuffer(2);
         packet = new JdwpPacket(rawBuf);
@@ -160,7 +160,7 @@ final class HandleNativeHeap extends ChunkHandler {
 
         finishChunkPacket(packet, CHUNK_NHSG, buf.position());
         Log.d("ddm-nativeheap", "Sending " + name(CHUNK_NHSG));
-        client.sendAndConsume(packet, mInst);
+        client.send(packet, mInst);
     }
 
     /*

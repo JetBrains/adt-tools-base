@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.transforms;
 
+import com.android.annotations.NonNull;
 import com.android.build.api.transform.Transform;
 import com.google.common.base.Supplier;
 import com.google.common.collect.Lists;
@@ -42,4 +43,8 @@ public abstract class ProguardConfigurable extends Transform {
         }
         return files;
     }
+
+    public abstract void keep(@NonNull String keep);
+
+    public abstract void dontwarn(@NonNull String dontwarn);
 }

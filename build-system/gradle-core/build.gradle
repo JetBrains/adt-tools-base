@@ -1,16 +1,28 @@
 apply plugin: 'groovy'
 apply plugin: 'jacoco'
 apply plugin: 'clone-artifacts'
+apply plugin: 'antlr'
 
 configurations {
     provided
+    includeInJar
 }
+
+// Incremental update test support
+File classesDir = new File(project.buildDir, "classes/incremental-test")
+File baseClasses = new File(classesDir, "base")
+File baseInstrumentedClasses = new File(classesDir, "baseInstrumented")
 
 sourceSets {
     main {
         groovy.srcDirs = ['src/main/groovy', 'src/fromGradle/groovy']
         resources.srcDirs = ['src/main/resources', 'src/fromGradle/resources']
         compileClasspath += configurations.provided
+    }
+
+    test {
+        compileClasspath += files(baseClasses)
+        runtimeClasspath += files(baseInstrumentedClasses)
     }
 }
 
@@ -19,21 +31,37 @@ ext.proguardVersion = "5.2.1"
 dependencies {
     compile project(':base:builder')
     compile project(':base:lint')
-    compile project(':base:transform-api')
+    compile project(':base:gradle-api')
     compile project(':dataBinding:compilerCommon')
+    compile 'org.ow2.asm:asm:5.0.3'
+    compile 'org.ow2.asm:asm-commons:5.0.3'
     compile "net.sf.proguard:proguard-gradle:${project.ext.proguardVersion}"
     compile "org.jacoco:org.jacoco.core:0.7.4.201502262128"
+    testCompile project(':base:instant-run:instant-run-annotations')
+    testCompile project(':base:instant-run:instant-run-runtime')
+
 
     // Add gradleApi to classpath for compilation, but use provided configuration so that groovy is
     // not exposed as a runtime dependency.
     provided gradleApi()
     testCompile gradleApi()
 
+    includeInJar project(':base:instant-run:instant-run-server')
+
+    antlr 'org.antlr:antlr:3.5.2'
+
     testCompile 'junit:junit:4.12'
-    testCompile 'com.google.truth:truth:0.26'
+    testCompile 'com.google.truth:truth:0.28'
     testCompile 'org.mockito:mockito-all:1.9.5'
+    testCompile 'com.google.guava:guava:17.0'
     testCompile project(':base:project-test-lib')
     testCompile project(':base:testutils')
+}
+
+jar {
+    into('instant-run') {
+        from configurations.includeInJar
+    }
 }
 
 tasks.compileJava.dependsOn ":setupGradleInIde"
@@ -75,9 +103,98 @@ task javadocJar(type: Jar, dependsOn:groovydoc) {
     from        groovydoc.destinationDir
 }
 
+
+
 // Only package JavaDoc if using --init-script=buildSrc/base/release.gradle
 if (project.has("release")) {
-  artifacts {
-    archives javadocJar
-  }
+    artifacts {
+        archives javadocJar
+    }
+}
+
+// Incremental update test support
+String androidJar = System.env.ANDROID_HOME + '/platforms/android-15/android.jar'
+
+Task compileIncrementalTestBaseClasses = tasks.create(
+        name: "compileIncrementalTestBaseClasses",
+        type: org.gradle.api.tasks.compile.JavaCompile) {
+    source = new File(project.getProjectDir(), "src/test/incremental-test-classes/base")
+    classpath = sourceSets.test.compileClasspath
+    destinationDir = baseClasses
+    sourceCompatibility '1.6'
+    targetCompatibility '1.6'
+    options.bootClasspath = androidJar
+}
+
+compileTestJava.dependsOn compileIncrementalTestBaseClasses
+
+
+Task instrumentIncrementalTestBaseClasses = tasks.create(
+        name: "instrumentIncrementalTestBaseClasses",
+        type: org.gradle.api.tasks.JavaExec) {
+    main = 'com.android.build.gradle.internal.incremental.IncrementalSupportVisitor'
+//    jvmArgs = [ '-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005']
+    classpath = sourceSets.main.runtimeClasspath + sourceSets.test.compileClasspath
+    args baseClasses, baseInstrumentedClasses, androidJar
+}
+
+instrumentIncrementalTestBaseClasses.dependsOn compileIncrementalTestBaseClasses
+
+// Compile other changesets. They have the default changset on their classpath.
+Task instrumentIncrementalTestPatches = tasks.create("instrumentIncrementalTestPatches")
+
+compileTestJava.dependsOn(
+        instrumentIncrementalTestPatches,
+        instrumentIncrementalTestBaseClasses)
+
+File incrementalTestOutDir = new File(classesDir, "patches")
+File instrumentedIncrementalTestOutDir = new File(classesDir, "instrumentedPatches")
+
+for (File f: new File(project.projectDir, "src/test/incremental-test-classes/patches").listFiles()) {
+    File incrementalPatchClassFileDir = new File(incrementalTestOutDir, f.getName())
+    Task compilePatch = tasks.create(
+            name: "compileIncrementalTestPatch${f.getName().capitalize()}",
+            type: org.gradle.api.tasks.compile.JavaCompile) {
+        source = project.files(f)
+        classpath = sourceSets.test.compileClasspath
+        destinationDir = incrementalPatchClassFileDir
+        sourceCompatibility '1.6'
+        targetCompatibility '1.6'
+        options.bootClasspath = androidJar
+    }
+
+    compilePatch.dependsOn compileIncrementalTestBaseClasses
+
+    Task instrumentPatch = tasks.create(
+            name: "instrumentIncrementalTestPatch${f.getName().capitalize()}",
+            type: org.gradle.api.tasks.JavaExec) {
+        main = 'com.android.build.gradle.internal.incremental.IncrementalChangeVisitor'
+//        jvmArgs = [ '-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005']
+        classpath = sourceSets.main.runtimeClasspath + sourceSets.test.compileClasspath
+        args incrementalPatchClassFileDir, new File(instrumentedIncrementalTestOutDir, f.getName()),
+                androidJar + File.pathSeparator + baseClasses
+    }
+
+    instrumentPatch.dependsOn(compilePatch)
+
+    instrumentIncrementalTestPatches.dependsOn instrumentPatch
+}
+
+Task jarIncrementalTests = tasks.create(name: "jarIncrementalTests", type: Jar) {
+    from sourceSets.test,outputs
+    into 'build/incrementalTests.jar'
+    include "com/android/build/gradle/internal/incremental/**"
+    exclude "com/android/build/gradle/internal/incremental/fixture/**"
+}
+
+configurations {
+    incrementalTestClasses
+}
+
+artifacts {
+    incrementalTestClasses jarIncrementalTests
+}
+
+generateGrammarSource {
+    outputDirectory = new File(outputDirectory,'/com/android/build/gradle/shrinker/parser')
 }

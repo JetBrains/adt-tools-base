@@ -102,6 +102,19 @@ public class HtmlBuilderTest extends TestCase {
                        .getHtml());
     }
 
+    public void testAddSpan() {
+        HtmlBuilder builder = new HtmlBuilder();
+        assertEquals("<span>Hello</span>", builder.beginSpan().add("Hello").endSpan().getHtml());
+    }
+
+    public void testAddSpanWithPadding() {
+        HtmlBuilder builder = new HtmlBuilder();
+        assertEquals("<span style=\"padding: 10px; text-color: gray\">Hello</span>",
+                     builder.beginSpan("padding: 10px; text-color: gray").add("Hello").endSpan()
+                       .getHtml());
+    }
+
+
     public void testAddImage() throws IOException {
         File f = File.createTempFile("img", "png");
         f.deleteOnExit();
@@ -135,5 +148,13 @@ public class HtmlBuilderTest extends TestCase {
         builder.newlineIfNecessary();
         builder.newlineIfNecessary();
         assertEquals("<BR/>a<BR/><BR/>", builder.getHtml());
+    }
+
+    public void testAddHeading() {
+        HtmlBuilder builder = new HtmlBuilder();
+        builder.addHeading("Welcome to Android Studio!", "black");
+        assertEquals(
+          "<font style=\"font-weight:bold; color:black;\">Welcome to Android Studio!</font>",
+          builder.getHtml());
     }
 }

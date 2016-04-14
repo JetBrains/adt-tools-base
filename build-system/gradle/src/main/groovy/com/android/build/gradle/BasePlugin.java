@@ -56,7 +56,8 @@ import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.internal.compiler.JackConversionCache;
 import com.android.builder.internal.compiler.PreDexCache;
-import com.android.builder.model.DataBindingOptions;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.SyncIssue;
 import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.ProcessRecorderFactory;
 import com.android.builder.profile.Recorder;
@@ -64,13 +65,10 @@ import com.android.builder.profile.ThreadRecorder;
 import com.android.builder.sdk.TargetInfo;
 import com.android.ide.common.internal.ExecutorSingleton;
 import com.android.utils.ILogger;
-import com.google.common.base.Objects;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import android.databinding.tool.DataBindingBuilder;
-import com.android.SdkConstants;
 
 import org.gradle.BuildListener;
 import org.gradle.BuildResult;
@@ -89,8 +87,9 @@ import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.tasks.StopExecutionException;
 import org.gradle.internal.reflect.Instantiator;
-import org.gradle.tooling.BuildException;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
+
+import android.databinding.tool.DataBindingBuilder;
 
 import java.io.File;
 import java.io.IOException;
@@ -114,8 +113,8 @@ import java.util.regex.Pattern;
  */
 public abstract class BasePlugin {
 
-    private static final String GRADLE_MIN_VERSION = "2.2";
-    public static final Pattern GRADLE_ACCEPTABLE_VERSIONS = Pattern.compile("2\\.([2-9]|\\d{2,}).*");
+    private static final String GRADLE_MIN_VERSION = "2.10";
+    public static final Pattern GRADLE_ACCEPTABLE_VERSIONS = Pattern.compile("2\\.\\d{2,}.*");
     private static final String GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY =
             "com.android.build.gradle.overrideVersionCheck";
     private static final String SKIP_PATH_CHECK_PROPERTY =
@@ -320,7 +319,7 @@ public abstract class BasePlugin {
                     }
                 }, new Recorder.Property("project", project.getName()));
 
-        ThreadRecorder.get().record(ExecutionType.BASE_PLUGIN_PROJECT_BASE_EXTENSTION_CREATION,
+        ThreadRecorder.get().record(ExecutionType.BASE_PLUGIN_PROJECT_BASE_EXTENSION_CREATION,
                 new Recorder.Block<Void>() {
                     @Override
                     public Void call() throws Exception {
@@ -340,8 +339,8 @@ public abstract class BasePlugin {
     }
 
     protected void configureProject() {
-        checkGradleVersion();
         extraModelInfo = new ExtraModelInfo(project, isLibrary());
+        checkGradleVersion();
         sdkHandler = new SdkHandler(project, getLogger());
         androidBuilder = new AndroidBuilder(
                 project == project.getRootProject() ? project.getName() : project.getPath(),
@@ -439,7 +438,7 @@ public abstract class BasePlugin {
                 new BuildTypeFactory(instantiator, project, project.getLogger()));
         final NamedDomainObjectContainer<ProductFlavor> productFlavorContainer = project.container(
                 ProductFlavor.class,
-                new ProductFlavorFactory(instantiator, project, project.getLogger()));
+                new ProductFlavorFactory(instantiator, project, project.getLogger(), extraModelInfo));
         final NamedDomainObjectContainer<SigningConfig>  signingConfigContainer = project.container(
                 SigningConfig.class,
                 new SigningConfigFactory(instantiator));
@@ -489,7 +488,8 @@ public abstract class BasePlugin {
                 extraModelInfo,
                 ndkHandler,
                 new NativeLibraryFactoryImpl(ndkHandler),
-                isLibrary());
+                isLibrary(),
+                AndroidProject.GENERATION_ORIGINAL);
         registry.register(modelBuilder);
 
         // map the whenObjectAdded callbacks on the containers.
@@ -588,7 +588,8 @@ public abstract class BasePlugin {
                 getLogger().warning("As %s is set, continuing anyways.",
                         GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY);
             } else {
-                throw new BuildException(errorMessage, null);
+                extraModelInfo.handleSyncError(
+                        GRADLE_MIN_VERSION, SyncIssue.TYPE_GRADLE_TOO_OLD, errorMessage);
             }
         }
     }
@@ -674,7 +675,8 @@ public abstract class BasePlugin {
                     extension.getCompileSdkVersion(),
                     extension.getBuildToolsRevision(),
                     extension.getLibraryRequests(),
-                    androidBuilder);
+                    androidBuilder,
+                    SdkHandler.useCachedSdk(project));
         }
     }
 

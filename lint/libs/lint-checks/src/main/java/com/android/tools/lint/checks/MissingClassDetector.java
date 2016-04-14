@@ -120,12 +120,9 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
             "InnerclassSeparator", //$NON-NLS-1$
             "Inner classes should use `$` rather than `.`",
 
-            "When you reference an inner class in a manifest file, you must use '$' instead of '.' " +
-            "as the separator character, i.e. Outer$Inner instead of Outer.Inner.\n" +
+            "When you reference an inner class in a manifest file, you must use '$' instead of '.' as the separator character, i.e. Outer$Inner instead of Outer.Inner.\n" +
             "\n" +
-            "(If you get this warning for a class which is not actually an inner class, it's " +
-            "because you are using uppercase characters in your package name, which is not " +
-            "conventional.)",
+            "(If you get this warning for a class which is not actually an inner class, it's because you are using uppercase characters in your package name, which is not conventional.)",
 
             Category.CORRECTNESS,
             3,
@@ -320,8 +317,7 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
             }
             if (!haveUpperCase) {
                 String fixed = className.charAt(0) + className.substring(1).replace('.','$');
-                String message = "Use '$' instead of '.' for inner classes " +
-                        "(or use only lowercase letters in package names); replace \"" +
+                String message = "Use '$' instead of '.' for inner classes (or use only lowercase letters in package names); replace \"" +
                         className + "\" with \"" + fixed + "\"";
                 Location location = context.getLocation(classNameNode);
                 context.report(INNERCLASS, element, location, message);
@@ -331,7 +327,7 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
 
     @Override
     public void afterCheckProject(@NonNull Context context) {
-        if (!context.getProject().isLibrary() && mHaveClasses
+        if (context.getProject() == context.getMainProject() && mHaveClasses
                 && mReferencedClasses != null && !mReferencedClasses.isEmpty()
                 && context.getDriver().getScope().contains(Scope.CLASS_FILE)) {
             List<String> classes = new ArrayList<String>(mReferencedClasses.keySet());
@@ -359,8 +355,8 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
                 }
 
                 String message = String.format(
-                        "Class referenced in the manifest, `%1$s`, was not found in the " +
-                                "project or the libraries", fqcn);
+                        "Class referenced in the manifest, `%1$s`, was not found in the project or the libraries",
+                                fqcn);
                 Location location = handle.resolve();
                 File parentFile = location.getFile().getParentFile();
                 if (parentFile != null) {
@@ -368,17 +364,17 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
                     ResourceFolderType type = ResourceFolderType.getFolderType(parent);
                     if (type == LAYOUT) {
                         message = String.format(
-                            "Class referenced in the layout file, `%1$s`, was not found in "
-                                + "the project or the libraries", fqcn);
+                            "Class referenced in the layout file, `%1$s`, was not found in the project or the libraries",
+                                    fqcn);
                     } else if (type == XML) {
                         message = String.format(
-                                "Class referenced in the preference header file, `%1$s`, was not "
-                                        + "found in the project or the libraries", fqcn);
+                                "Class referenced in the preference header file, `%1$s`, was not found in the project or the libraries",
+                                        fqcn);
 
                     } else if (type == VALUES) {
                         message = String.format(
-                                "Class referenced in the analytics file, `%1$s`, was not "
-                                        + "found in the project or the libraries", fqcn);
+                                "Class referenced in the analytics file, `%1$s`, was not found in the project or the libraries",
+                                        fqcn);
                     }
                 }
 
@@ -441,8 +437,7 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
             if (!hasDefaultConstructor && !isCustomView && !context.isFromClassLibrary()
                     && context.getProject().getReportIssues()) {
                 context.report(INSTANTIATABLE, context.getLocation(classNode), String.format(
-                        "This class should provide a default constructor (a public " +
-                        "constructor with no arguments) (%1$s)",
+                        "This class should provide a default constructor (a public constructor with no arguments) (%1$s)",
                             ClassContext.createSignature(classNode.name, null, null)));
             }
         }

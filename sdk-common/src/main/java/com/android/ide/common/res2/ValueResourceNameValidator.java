@@ -59,7 +59,8 @@ public final class ValueResourceNameValidator {
      * @return null if no error, otherwise a string describing the error.
      */
     @Nullable
-    public static String getErrorText(@NonNull String fullResourceName, ResourceType resourceType) {
+    public static String getErrorText(@NonNull String fullResourceName,
+            @Nullable ResourceType resourceType) {
 
         if (resourceType == ResourceType.ATTR) {
             if (fullResourceName.startsWith("android:")) {
@@ -71,7 +72,9 @@ public final class ValueResourceNameValidator {
         // Resource names must be valid Java identifiers, since they will
         // be represented as Java identifiers in the R file:
         if (!SourceVersion.isIdentifier(resourceName)) {
-            if (!Character.isJavaIdentifierStart(resourceName.charAt(0))) {
+            if (resourceName.isEmpty()) {
+                return "The resource name shouldn't be empty";
+            } else if (!Character.isJavaIdentifierStart(resourceName.charAt(0))) {
                 return "The resource name must start with a letter";
             } else {
                 for (int i = 1, n = resourceName.length(); i < n; i++) {

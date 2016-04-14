@@ -18,9 +18,7 @@ package com.android.sdklib.repository.local;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.sdklib.repository.IDescription;
-import com.android.sdklib.repository.IListDescription;
-import com.android.sdklib.io.FileOp;
+import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 
 import java.io.File;
@@ -35,7 +33,7 @@ import java.util.Properties;
  * <p/>
  */
 public abstract class LocalPkgInfo
-        implements IDescription, IListDescription, Comparable<LocalPkgInfo> {
+        implements Comparable<LocalPkgInfo> {
 
     private final LocalSdk mLocalSdk;
     private final File mLocalDir;
@@ -166,19 +164,6 @@ public abstract class LocalPkgInfo
 
     //---- Package Management ----
 
-    /**
-     * A "broken" package is installed but is not fully operational.
-     * <p/>
-     * For example an addon that lacks its underlying platform or a tool package
-     * that lacks some of its binaries or essentially files.
-     * <p/>
-     * Operational code should generally ignore broken packages.
-     * Only the SDK Updater cares about displaying them so that they can be fixed.
-     */
-    public boolean hasLoadError() {
-        return mLoadError != null;
-    }
-
     void appendLoadError(@NonNull String format, Object... params) {
         String loadError = String.format(format, params);
         if (mLoadError == null) {
@@ -190,50 +175,15 @@ public abstract class LocalPkgInfo
     }
 
     @NonNull
-    @Override
     public String getListDescription() {
         return getDesc().getListDescription();
-    }
-
-    @Override
-    public String getShortDescription() {
-        // TODO revisit to differentiate from list-description depending
-        // on how we'll use it in the sdkman UI.
-        return getListDescription();
-    }
-
-    @Override
-    public String getLongDescription() {
-        StringBuilder sb = new StringBuilder();
-        IPkgDesc desc = getDesc();
-
-        sb.append(desc.getListDescription()).append('\n');
-
-        if (desc.hasVendor()) {
-            assert desc.getVendor() != null;
-            sb.append("By ").append(desc.getVendor().getDisplay()).append('\n');
-        }
-
-        if (desc.hasMinPlatformToolsRev()) {
-            assert desc.getMinPlatformToolsRev() != null;
-            sb.append("Requires Platform-Tools revision ").append(desc.getMinPlatformToolsRev().toShortString()).append('\n');
-        }
-
-        if (desc.hasMinToolsRev()) {
-            assert desc.getMinToolsRev() != null;
-            sb.append("Requires Tools revision ").append(desc.getMinToolsRev().toShortString()).append('\n');
-        }
-
-        sb.append("Location: ").append(mLocalDir.getAbsolutePath());
-
-        return sb.toString();
     }
 
     /**
      * Deletes the files in the SDK corresponding to this package.
      */
     public void delete() {
-        new FileOp().deleteFileOrFolder(getLocalDir());
+        FileOpUtils.create().deleteFileOrFolder(getLocalDir());
     }
 
 }

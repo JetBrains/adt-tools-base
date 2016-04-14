@@ -20,16 +20,22 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.tools.perflib.analyzer.Capture;
-import com.android.tools.perflib.heap.analysis.Dominators;
+import com.android.tools.perflib.captures.DataBuffer;
+import com.android.tools.perflib.heap.analysis.ComputationProgress;
+import com.android.tools.perflib.heap.analysis.DominatorsBase;
+import com.android.tools.perflib.heap.analysis.LinkEvalDominators;
 import com.android.tools.perflib.heap.analysis.ShortestDistanceVisitor;
 import com.android.tools.perflib.heap.analysis.TopologicalSort;
-import com.android.tools.perflib.captures.DataBuffer;
-import com.google.common.collect.ImmutableList;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+
 import gnu.trove.THashSet;
 import gnu.trove.TIntObjectHashMap;
 import gnu.trove.TLongObjectHashMap;
-
-import java.util.*;
+import gnu.trove.TObjectProcedure;
 
 /*
  * A snapshot of all of the heaps, and related meta-data, for the runtime at a given instant.
@@ -39,6 +45,40 @@ import java.util.*;
  * During parsing of the HPROF file HEAP_DUMP_INFO chunks change which heap is being referenced.
  */
 public class Snapshot extends Capture {
+    public enum DominatorComputationStage {
+        INITIALIZING(new ComputationProgress("Preparing for dominator calculation...", 0), 0.1, 0.0),
+        RESOLVING_REFERENCES(new ComputationProgress("Resolving references...", 0), 0.1, 0.2),
+        COMPUTING_SHORTEST_DISTANCE(new ComputationProgress("Computing depth to nodes...", 0), 0.3,
+                0.03),
+        COMPUTING_TOPOLOGICAL_SORT(new ComputationProgress("Performing topological sorting...", 0),
+                0.33, 0.30),
+        COMPUTING_DOMINATORS(new ComputationProgress("Calculating dominators...", 0), 0.63, 0.35),
+        COMPUTING_RETAINED_SIZES(new ComputationProgress("Calculating retained sizes...", 0), 0.98,
+                0.02);
+
+        private final ComputationProgress mInitialProgress;
+
+        private final double mOffset;
+
+        private final double mScale;
+
+        DominatorComputationStage(@NonNull ComputationProgress initialProgress, double offset,
+                double scale) {
+            mInitialProgress = initialProgress;
+            mOffset = offset;
+            mScale = scale;
+        }
+
+        public ComputationProgress getInitialProgress() {
+            return mInitialProgress;
+        }
+
+        public static double toAbsoluteProgressPercentage(@NonNull DominatorComputationStage baseStage,
+                                                          @NonNull ComputationProgress computationProgress) {
+            return computationProgress.getProgress() * baseStage.mScale + baseStage.mOffset;
+        }
+    }
+
     public static final String TYPE_NAME = "hprof";
 
     private static final String JAVA_LANG_CLASS = "java.lang.Class";
@@ -65,9 +105,12 @@ public class Snapshot extends Capture {
     @NonNull
     TLongObjectHashMap<StackFrame> mFrames = new TLongObjectHashMap<StackFrame>();
 
-    private ImmutableList<Instance> mTopSort;
+    private List<Instance> mTopSort;
 
-    private Dominators mDominators;
+    private DominatorsBase mDominators;
+
+    private volatile DominatorComputationStage mDominatorComputationStage
+            = DominatorComputationStage.INITIALIZING;
 
     //  The set of all classes that are (sub)class(es) of java.lang.ref.Reference.
     private THashSet<ClassObj> mReferenceClasses = new THashSet<ClassObj>();
@@ -78,9 +121,14 @@ public class Snapshot extends Capture {
 
     @NonNull
     public static Snapshot createSnapshot(@NonNull DataBuffer buffer) {
-        Snapshot snapshot = new Snapshot(buffer);
-        HprofParser.parseBuffer(snapshot, buffer);
-        return snapshot;
+        try {
+            Snapshot snapshot = new Snapshot(buffer);
+            HprofParser.parseBuffer(snapshot, buffer);
+            return snapshot;
+        } catch (RuntimeException e) {
+            buffer.dispose();
+            throw e;
+        }
     }
 
     @VisibleForTesting
@@ -199,7 +247,8 @@ public class Snapshot extends Capture {
         for (int i = 0; i < Type.values().length; ++i) {
             maxId = Math.max(Type.values()[i].getTypeId(), maxId);
         }
-        assert (maxId > 0) && (maxId <= Type.LONG.getTypeId()); // Update this if hprof format ever changes its supported types.
+        assert (maxId > 0) && (maxId <= Type.LONG
+                .getTypeId()); // Update this if hprof format ever changes its supported types.
         mTypeSizes = new int[maxId + 1];
         Arrays.fill(mTypeSizes, -1);
 
@@ -314,20 +363,54 @@ public class Snapshot extends Capture {
                 }
                 classObj.setSize(classSize);
             }
-            for (Instance instance : heap.getInstances()) {
-                ClassObj classObj = instance.getClassObj();
-                if (classObj != null) {
-                    classObj.addInstance(heap.getId(), instance);
+
+            final int heapId = heap.getId();
+            heap.forEachInstance(new TObjectProcedure<Instance>() {
+                @Override
+                public boolean execute(Instance instance) {
+                    ClassObj classObj = instance.getClassObj();
+                    if (classObj != null) {
+                        classObj.addInstance(heapId, instance);
+                    }
+                    return true;
                 }
-            }
+            });
+        }
+    }
+
+    public void identifySoftReferences() {
+        List<ClassObj> referenceDescendants = findAllDescendantClasses(
+                ClassObj.getReferenceClassName());
+        for (ClassObj classObj : referenceDescendants) {
+            classObj.setIsSoftReference();
+            mReferenceClasses.add(classObj);
         }
     }
 
     public void resolveReferences() {
-        List<ClassObj> referenceDescendants = findAllDescendantClasses(ClassObj.getReferenceClassName());
-        for (ClassObj classObj : referenceDescendants) {
-            classObj.setIsSoftReference();
-            mReferenceClasses.add(classObj);
+        for (Heap heap : getHeaps()) {
+            for (ClassObj clazz : heap.getClasses()) {
+                clazz.resolveReferences();
+            }
+            heap.forEachInstance(new TObjectProcedure<Instance>() {
+                @Override
+                public boolean execute(Instance instance) {
+                    instance.resolveReferences();
+                    return true;
+                }
+            });
+        }
+    }
+
+    public void compactMemory() {
+        for (Heap heap : getHeaps()) {
+            heap.forEachInstance(new TObjectProcedure<Instance>() {
+                @Override
+                public boolean execute(Instance instance) {
+                    instance.compactMemory();
+                    return true;
+                }
+            });
         }
     }
 
@@ -341,16 +424,57 @@ public class Snapshot extends Capture {
         return descendants;
     }
 
-    // TODO: Break dominator computation into fixed chunks, because it can be unbounded/expensive.
     public void computeDominators() {
-        if (mDominators == null) {
-            mTopSort = TopologicalSort.compute(getGCRoots());
-            mDominators = new Dominators(this, mTopSort);
-            mDominators.computeRetainedSizes();
+        prepareDominatorComputation();
+        doComputeDominators(new LinkEvalDominators(this));
+    }
 
-            ShortestDistanceVisitor shortestDistanceVisitor = new ShortestDistanceVisitor();
-            shortestDistanceVisitor.doVisit(getGCRoots());
+    @VisibleForTesting
+    public void prepareDominatorComputation() {
+        if (mDominators != null) {
+            return;
         }
+
+        mDominatorComputationStage = DominatorComputationStage.RESOLVING_REFERENCES;
+        resolveReferences();
+        compactMemory();
+
+        mDominatorComputationStage = DominatorComputationStage.COMPUTING_SHORTEST_DISTANCE;
+        ShortestDistanceVisitor shortestDistanceVisitor = new ShortestDistanceVisitor();
+        shortestDistanceVisitor.doVisit(getGCRoots());
+
+        mDominatorComputationStage = DominatorComputationStage.COMPUTING_TOPOLOGICAL_SORT;
+        mTopSort = TopologicalSort.compute(getGCRoots());
+        for (Instance instance : mTopSort) {
+            instance.dedupeReferences();
+        }
+    }
+
+    @VisibleForTesting
+    public void doComputeDominators(@NonNull DominatorsBase computable) {
+        if (mDominators != null) {
+            return;
+        }
+
+        mDominators = computable;
+        mDominatorComputationStage = DominatorComputationStage.COMPUTING_DOMINATORS;
+        mDominators.computeDominators();
+
+        mDominatorComputationStage = DominatorComputationStage.COMPUTING_RETAINED_SIZES;
+        mDominators.computeRetainedSizes();
+    }
+
+    @NonNull
+    public ComputationProgress getComputationProgress() {
+        if (mDominatorComputationStage == DominatorComputationStage.COMPUTING_DOMINATORS) {
+            return mDominators.getComputationProgress();
+        } else {
+            return mDominatorComputationStage.getInitialProgress();
+        }
+    }
+
+    public DominatorComputationStage getDominatorComputationStage() {
+        return mDominatorComputationStage;
     }
 
     @NonNull
@@ -364,30 +488,27 @@ public class Snapshot extends Capture {
         return result;
     }
 
-    public ImmutableList<Instance> getTopologicalOrdering() {
+    public List<Instance> getTopologicalOrdering() {
         return mTopSort;
     }
 
     public final void dumpInstanceCounts() {
         for (Heap heap : mHeaps) {
-            System.out.println(
-                    "+------------------ instance counts for heap: " + heap.getName());
+            System.out.println("+------------------ instance counts for heap: " + heap.getName());
             heap.dumpInstanceCounts();
         }
     }
 
     public final void dumpSizes() {
         for (Heap heap : mHeaps) {
-            System.out.println(
-                    "+------------------ sizes for heap: " + heap.getName());
+            System.out.println("+------------------ sizes for heap: " + heap.getName());
             heap.dumpSizes();
         }
     }
 
     public final void dumpSubclasses() {
         for (Heap heap : mHeaps) {
-            System.out.println(
-                    "+------------------ subclasses for heap: " + heap.getName());
+            System.out.println("+------------------ subclasses for heap: " + heap.getName());
             heap.dumpSubclasses();
         }
     }

@@ -15,19 +15,35 @@
  */
 package com.android.tools.lint.detector.api;
 
+import static com.android.tools.lint.client.api.JavaParser.TYPE_BOOLEAN;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_BYTE;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_CHAR;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_DOUBLE;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_FLOAT;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_INT;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_LONG;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_OBJECT;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_SHORT;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_STRING;
 import static com.android.tools.lint.detector.api.JavaContext.getParentOfType;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.client.api.JavaParser.ResolvedField;
 import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
+import com.google.common.collect.Lists;
 
+import java.lang.reflect.Array;
+import java.util.List;
 import java.util.ListIterator;
 
+import lombok.ast.ArrayCreation;
+import lombok.ast.ArrayInitializer;
 import lombok.ast.BinaryExpression;
 import lombok.ast.BinaryOperator;
 import lombok.ast.BooleanLiteral;
 import lombok.ast.Cast;
+import lombok.ast.CharLiteral;
 import lombok.ast.Expression;
 import lombok.ast.ExpressionStatement;
 import lombok.ast.FloatingPointLiteral;
@@ -37,7 +53,9 @@ import lombok.ast.Node;
 import lombok.ast.NullLiteral;
 import lombok.ast.Select;
 import lombok.ast.Statement;
+import lombok.ast.StrictListAccessor;
 import lombok.ast.StringLiteral;
+import lombok.ast.TypeReference;
 import lombok.ast.UnaryExpression;
 import lombok.ast.UnaryOperator;
 import lombok.ast.VariableDeclaration;
@@ -85,6 +103,8 @@ public class ConstantEvaluator {
         } else if (node instanceof StringLiteral) {
             StringLiteral string = (StringLiteral) node;
             return string.astValue();
+        } else if (node instanceof CharLiteral) {
+            return ((CharLiteral)node).astValue();
         } else if (node instanceof IntegralLiteral) {
             IntegralLiteral literal = (IntegralLiteral) node;
             // Don't combine to ?: since that will promote astIntValue to a long
@@ -375,7 +395,26 @@ public class ConstantEvaluator {
             ResolvedNode resolved = mContext.resolve(node);
             if (resolved instanceof ResolvedField) {
                 ResolvedField field = (ResolvedField) resolved;
-                return field.getValue();
+                Object value = field.getValue();
+                if (value != null) {
+                    return value;
+                }
+                Node astNode = field.findAstNode();
+                if (astNode instanceof VariableDeclaration) {
+                    VariableDeclaration declaration = (VariableDeclaration) astNode;
+                    VariableDefinition definition = declaration.astDefinition();
+                    if (definition != null && definition.astModifiers().isFinal()) {
+                        StrictListAccessor<VariableDefinitionEntry, VariableDefinition> variables =
+                                definition.astVariables();
+                        if (variables.size() == 1) {
+                            VariableDefinitionEntry first = variables.first();
+                            if (first.astInitializer() != null) {
+                                return evaluate(first.astInitializer());
+                            }
+                        }
+                    }
+                }
+                return null;
             } else if (node instanceof VariableReference) {
                 Statement statement = getParentOfType(node, Statement.class, false);
                 if (statement != null) {
@@ -415,6 +454,79 @@ public class ConstantEvaluator {
                             }
                         }
                     }
+                }
+            }
+        } else if (node instanceof ArrayCreation) {
+            ArrayCreation creation = (ArrayCreation) node;
+            ArrayInitializer initializer = creation.astInitializer();
+            if (initializer != null) {
+                TypeReference typeReference = creation.astComponentTypeReference();
+                StrictListAccessor<Expression, ArrayInitializer> expressions = initializer
+                        .astExpressions();
+                List<Object> values = Lists.newArrayListWithExpectedSize(expressions.size());
+                Class<?> commonType = null;
+                for (Expression expression : expressions) {
+                    Object value = evaluate(expression);
+                    if (value != null) {
+                        values.add(value);
+                        if (commonType == null) {
+                            commonType = value.getClass();
+                        } else {
+                            while (!commonType.isAssignableFrom(value.getClass())) {
+                                commonType = commonType.getSuperclass();
+                            }
+                        }
+                    } else if (!mAllowUnknown) {
+                        // Inconclusive
+                        return null;
+                    }
+                }
+                if (!values.isEmpty()) {
+                    Object o = Array.newInstance(commonType, values.size());
+                    return values.toArray((Object[]) o);
+                } else {
+                    ResolvedNode type = mContext.resolve(typeReference);
+                    System.out.println(type);
+                    // TODO: return new array of this type
+                }
+            } else {
+                // something like "new byte[3]" but with no initializer.
+                String type = creation.astComponentTypeReference().toString();
+                // TODO: Look up the size and only if small, use it. E.g. if it was byte[3]
+                // we could return a byte[3] array, but if it's say byte[1024*1024] we don't
+                // want to do that.
+                int size = 0;
+                if (TYPE_BYTE.equals(type)) {
+                    return new byte[size];
+                }
+                if (TYPE_BOOLEAN.equals(type)) {
+                    return new boolean[size];
+                }
+                if (TYPE_INT.equals(type)) {
+                    return new int[size];
+                }
+                if (TYPE_LONG.equals(type)) {
+                    return new long[size];
+                }
+                if (TYPE_CHAR.equals(type)) {
+                    return new char[size];
+                }
+                if (TYPE_FLOAT.equals(type)) {
+                    return new float[size];
+                }
+                if (TYPE_DOUBLE.equals(type)) {
+                    return new double[size];
+                }
+                if (TYPE_STRING.equals(type)) {
+                    //noinspection SSBasedInspection
+                    return new String[size];
+                }
+                if (TYPE_SHORT.equals(type)) {
+                    return new short[size];
+                }
+                if (TYPE_OBJECT.equals(type)) {
+                    //noinspection SSBasedInspection
+                    return new Object[size];
                 }
             }
         }

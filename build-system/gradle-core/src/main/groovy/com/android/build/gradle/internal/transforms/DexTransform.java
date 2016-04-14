@@ -22,9 +22,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.api.transform.TransformInvocation;
 import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext.FileType;
 import com.android.build.gradle.internal.pipeline.TransformManager;
-import com.android.build.api.transform.Context;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
 import com.android.build.api.transform.JarInput;
@@ -38,16 +40,18 @@ import com.android.build.api.transform.TransformOutputProvider;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.DexOptions;
 import com.android.builder.sdk.TargetInfo;
+import com.android.ide.common.blame.Message;
+import com.android.ide.common.blame.ParsingProcessOutputHandler;
+import com.android.ide.common.blame.parser.DexParser;
+import com.android.ide.common.blame.parser.ToolOutputParser;
 import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.internal.WaitableExecutor;
-import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.sdklib.BuildToolInfo;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.base.Charsets;
-import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -74,8 +78,8 @@ import java.util.concurrent.Callable;
 /**
  * Dexing as a transform.
  *
- * This consumes all the available {@link ContentType#CLASSES} streams and create a dex file
- * (or more in the case of multi-dex)
+ * This consumes all the available classes streams and creates a dex file (or more in the case of
+ * multi-dex)
  *
  * This handles pre-dexing as well. If there are more than one stream, then only streams with
  * changed files will be re-dexed before a single merge phase is done at the end.
@@ -99,6 +103,8 @@ public class DexTransform extends Transform {
     @NonNull
     private final ILogger logger;
 
+    private final InstantRunBuildContext instantRunBuildContext;
+
     public DexTransform(
             @NonNull DexOptions dexOptions,
             boolean debugMode,
@@ -106,7 +112,8 @@ public class DexTransform extends Transform {
             @Nullable File mainDexListFile,
             @NonNull File intermediateFolder,
             @NonNull AndroidBuilder androidBuilder,
-            @NonNull Logger logger) {
+            @NonNull Logger logger,
+            @NonNull InstantRunBuildContext instantRunBuildContext) {
         this.dexOptions = dexOptions;
         this.debugMode = debugMode;
         this.multiDex = multiDex;
@@ -114,6 +121,7 @@ public class DexTransform extends Transform {
         this.intermediateFolder = intermediateFolder;
         this.androidBuilder = androidBuilder;
         this.logger = new LoggerWrapper(logger);
+        this.instantRunBuildContext = instantRunBuildContext;
     }
 
     @NonNull
@@ -195,22 +203,28 @@ public class DexTransform extends Transform {
     }
 
     @Override
-    public void transform(
-            @NonNull Context context,
-            @NonNull Collection<TransformInput> inputs,
-            @NonNull Collection<TransformInput> referencedInputs,
-            @Nullable TransformOutputProvider outputProvider,
-            boolean isIncremental) throws TransformException, IOException, InterruptedException {
+    public void transform(TransformInvocation transformInvocation)
+            throws TransformException, IOException, InterruptedException {
+        TransformOutputProvider outputProvider = transformInvocation.getOutputProvider();
+        boolean isIncremental = transformInvocation.isIncremental();
         checkNotNull(outputProvider, "Missing output object for transform " + getName());
 
         // Gather a full list of all inputs.
         List<JarInput> jarInputs = Lists.newArrayList();
         List<DirectoryInput> directoryInputs = Lists.newArrayList();
-        for (TransformInput input : inputs) {
+        for (TransformInput input : transformInvocation.getInputs()) {
             jarInputs.addAll(input.getJarInputs());
             directoryInputs.addAll(input.getDirectoryInputs());
         }
 
+        ProcessOutputHandler outputHandler = new ParsingProcessOutputHandler(
+                new ToolOutputParser(new DexParser(), Message.Kind.ERROR, logger),
+                new ToolOutputParser(new DexParser(), logger),
+                androidBuilder.getErrorReporter());
+
+        if (!isIncremental) {
+            outputProvider.deleteAll();
+        }
         try {
             // if only one scope or no per-scope dexing, just do a single pass that
             // runs dx on everything.
@@ -243,7 +257,14 @@ public class DexTransform extends Transform {
                         null,
                         false,
                         true,
-                        new LoggedProcessOutputHandler(logger));
+                        outputHandler,
+                        false /* instantRunMode */);
+
+                for (File file : Files.fileTreeTraverser().breadthFirstTraversal(outputDir)) {
+                    if (file.isFile()) {
+                        instantRunBuildContext.addChangedFile(FileType.DEX, file);
+                    }
+                }
             } else {
                 // Figure out if we need to do a dx merge.
                 // The ony case we don't need it is in native multi-dex mode when doing debug
@@ -261,10 +282,6 @@ public class DexTransform extends Transform {
                     if (!isIncremental) {
                         FileUtils.deleteFolder(perStreamDexFolder);
                     }
-                } else if (!isIncremental) {
-                    // in this mode there's no merge and we dex it all separately into different
-                    // output location so we have to delete everything.
-                    outputProvider.deleteAll();
                 }
 
                 // dex all the different streams separately, then merge later (maybe)
@@ -325,7 +342,6 @@ public class DexTransform extends Transform {
                 }
 
                 WaitableExecutor<Void> executor = new WaitableExecutor<Void>();
-                ProcessOutputHandler outputHandler = new LoggedProcessOutputHandler(logger);
 
                 for (Map.Entry<File, File> entry : inputFiles.entrySet()) {
                     Callable<Void> action = new PreDexTask(
@@ -397,12 +413,15 @@ public class DexTransform extends Transform {
                             null,
                             false,
                             true,
-                            new LoggedProcessOutputHandler(logger));
+                            outputHandler,
+                            false /* instantRunMode */);
                 }
             }
         } catch (LoggedErrorException e) {
             throw new TransformException(e);
         } catch (ProcessException e) {
+            throw new TransformException(e);
+        } catch (Exception e) {
             throw new TransformException(e);
         }
     }
@@ -456,6 +475,12 @@ public class DexTransform extends Transform {
             androidBuilder.preDexLibrary(
                     from, to, multiDex, dexOptions, mOutputHandler);
 
+            for (File file : Files.fileTreeTraverser().breadthFirstTraversal(to)) {
+                if (file.isFile()) {
+                    instantRunBuildContext.addChangedFile(FileType.DEX, file);
+                }
+            }
+
             return null;
         }
     }
@@ -501,7 +526,15 @@ public class DexTransform extends Transform {
             @NonNull TransformOutputProvider output,
             @NonNull QualifiedContent qualifiedContent,
             @NonNull File file) {
-        File contentLocation = output.getContentLocation(getFilename(file),
+        // In InstantRun mode, all files are guaranteed to have a unique name due to the slicer
+        // transform. adding sha1 to the name can lead to cleaning issues in device, it's much
+        // easier if the slices always have the same names, irrespective of the current vairiant,
+        // last version wins.
+        String name = instantRunBuildContext.isInInstantRunMode()
+                && (qualifiedContent.getScopes().contains(Scope.PROJECT)
+                    || qualifiedContent.getScopes().contains(Scope.SUB_PROJECTS))
+                ? file.getName() : getFilename(file);
+        File contentLocation = output.getContentLocation(name,
                 TransformManager.CONTENT_DEX, qualifiedContent.getScopes(),
                 multiDex ? Format.DIRECTORY : Format.JAR);
         if (multiDex) {
@@ -514,27 +547,11 @@ public class DexTransform extends Transform {
 
     @NonNull
     private String getFilename(@NonNull File inputFile) {
-        String name = Files.getNameWithoutExtension(inputFile.getName());
-
-        // add a hash of the original file path.
-        String input = inputFile.getAbsolutePath();
-        HashFunction hashFunction = Hashing.sha1();
-        HashCode hashCode = hashFunction.hashString(input, Charsets.UTF_16LE);
-
         // If multidex is enabled, this name will be used for a folder and classes*.dex files will
         // inside of it.
         String suffix = multiDex ? "" : SdkConstants.DOT_JAR;
 
-        if (name.equals("classes") && inputFile.getAbsolutePath().contains("exploded-aar")) {
-            // This naming scheme is coming from DependencyManager#computeArtifactPath.
-            File versionDir = inputFile.getParentFile().getParentFile();
-            File artifactDir = versionDir.getParentFile();
-            File groupDir = artifactDir.getParentFile();
-
-            name = Joiner.on('-').join(
-                    groupDir.getName(), artifactDir.getName(), versionDir.getName());
-        }
-
-        return name + "_" + hashCode.toString() + suffix;
+        return FileUtils.getDirectoryNameForJar(inputFile) + suffix;
     }
+
 }

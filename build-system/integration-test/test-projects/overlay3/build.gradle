@@ -22,19 +22,19 @@ android {
     productFlavors {
 
         beta {
-            flavorDimension "releaseType"
+            dimension "releaseType"
         }
 
         normal {
-            flavorDimension "releaseType"
+            dimension "releaseType"
         }
 
         free {
-            flavorDimension "pricing"
+            dimension "pricing"
         }
 
         paid {
-            flavorDimension "pricing"
+            dimension "pricing"
         }
     }
 }

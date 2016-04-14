@@ -41,6 +41,12 @@ public interface NativeArtifact {
     String getToolChain();
 
     /**
+     * Return the group this artifact is associated with.
+     */
+    @NonNull
+    String getGroupName();
+
+    /**
      * Returns thes source folders for the artifact.
      *
      * All files in the folders are assumed to be used for compilation of the artifact.
@@ -53,6 +59,12 @@ public interface NativeArtifact {
      */
     @NonNull
     Collection<NativeFile> getSourceFiles();
+
+    /**
+     * Return the folders container headers exported for the library.
+     */
+    @NonNull
+    Collection<File> getExportedHeaders();
 
     /**
      * Returns the output file.

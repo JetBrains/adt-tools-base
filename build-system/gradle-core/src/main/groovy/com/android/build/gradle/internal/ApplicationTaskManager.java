@@ -17,14 +17,20 @@
 package com.android.build.gradle.internal;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.gradle.AndroidConfig;
+import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
+import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.android.build.gradle.internal.pipeline.TransformStream;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.transforms.InstantRunSplitApkBuilder;
 import com.android.build.gradle.internal.variant.ApplicationVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.build.api.transform.QualifiedContent.Scope;
+import com.android.build.gradle.tasks.PackageApplication;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.Recorder;
@@ -63,7 +69,6 @@ public class ApplicationTaskManager extends TaskManager {
             @NonNull final TaskFactory tasks,
             @NonNull final BaseVariantData<? extends BaseVariantOutputData> variantData) {
         assert variantData instanceof ApplicationVariantData;
-        final ApplicationVariantData appVariantData = (ApplicationVariantData) variantData;
 
         final VariantScope variantScope = variantData.getScope();
 
@@ -140,7 +145,7 @@ public class ApplicationTaskManager extends TaskManager {
                     @Override
                     public Void call() {
                         // Add a task to process the Android Resources and generate source files
-                        createProcessResTask(tasks, variantScope, true /*generateResourcePackage*/);
+                        createApkProcessResTask(tasks, variantScope);
 
                         // Add a task to process the java resources
                         createProcessJavaResTasks(tasks, variantScope);
@@ -157,31 +162,8 @@ public class ApplicationTaskManager extends TaskManager {
                     }
                 });
 
-        // Add a compile task
-        ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_COMPILE_TASK,
-                new Recorder.Block<Void>() {
-                    @Override
-                    public Void call() {
-                        AndroidTask<JavaCompile> javacTask = createJavacTask(tasks, variantScope);
-
-                        if (variantData.getVariantConfiguration().getUseJack()) {
-                            createJackTask(tasks, variantScope);
-                        } else {
-                            setJavaCompilerTask(javacTask, tasks, variantScope);
-                            createJarTask(tasks, variantScope);
-                            createPostCompilationTasks(tasks, variantScope);
-                        }
-                        return null;
-                    }
-                });
-
-        // Add data binding tasks if enabled
-        if (extension.getDataBinding().isEnabled()) {
-            createDataBindingTasks(tasks, variantScope);
-        }
-
         // Add NDK tasks
-        if (isNdkTaskNeeded) {
+        if (!isComponentModelPlugin) {
             ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_NDK_TASK,
                     new Recorder.Block<Void>() {
                         @Override
@@ -209,6 +191,30 @@ public class ApplicationTaskManager extends TaskManager {
                     }
                 });
 
+        // Add a compile task
+        ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_COMPILE_TASK,
+                new Recorder.Block<Void>() {
+                    @Override
+                    public Void call() {
+                        AndroidTask<? extends JavaCompile> javacTask =
+                                createJavacTask(tasks, variantScope);
+
+                        if (variantData.getVariantConfiguration().getUseJack()) {
+                            createJackTask(tasks, variantScope);
+                        } else {
+                            setJavaCompilerTask(javacTask, tasks, variantScope);
+                            createJarTasks(tasks, variantScope);
+                            createPostCompilationTasks(tasks, variantScope);
+                        }
+                        return null;
+                    }
+                });
+
+        // Add data binding tasks if enabled
+        if (extension.getDataBinding().isEnabled()) {
+            createDataBindingTasks(tasks, variantScope);
+        }
+
         if (variantData.getSplitHandlingPolicy().equals(
                 BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY)) {
             if (getExtension().getBuildToolsRevision().getMajor() < 21) {
@@ -219,8 +225,7 @@ public class ApplicationTaskManager extends TaskManager {
                     new Recorder.Block<Void>() {
                         @Override
                         public Void call() {
-                            createSplitResourcesTasks(variantScope);
-                            createSplitAbiTasks(variantScope);
+                            createSplitTasks(tasks, variantScope);
                             return null;
                         }
                     });
@@ -230,7 +235,11 @@ public class ApplicationTaskManager extends TaskManager {
                 new Recorder.Block<Void>() {
                     @Override
                     public Void call() {
-                        createPackagingTask(tasks, variantScope, true /*publishApk*/);
+                        @Nullable
+                        AndroidTask<InstantRunWrapperTask> fullBuildInfoGeneratorTask
+                                = createInstantRunPackagingTasks(tasks, variantScope);
+                        createPackagingTask(tasks, variantScope, true /*publishApk*/,
+                                fullBuildInfoGeneratorTask);
                         return null;
                     }
                 });
@@ -244,6 +253,53 @@ public class ApplicationTaskManager extends TaskManager {
                         return null;
                     }
                 });
+    }
+
+    /**
+     * Create tasks related to creating pure split APKs containing sharded dex files.
+     */
+    @Nullable
+    protected AndroidTask<InstantRunWrapperTask> createInstantRunPackagingTasks(
+            @NonNull TaskFactory tasks, @NonNull VariantScope variantScope) {
+
+        if (getIncrementalMode(variantScope.getVariantConfiguration()) == IncrementalMode.NONE) {
+            return null;
+        }
+
+        // create a buildInfoGeneratorTask that will only be invoked if a assembleVARIANT is called.
+        AndroidTask<InstantRunWrapperTask> fullBuildInfoGeneratorTask = getAndroidTasks()
+                .create(tasks, new InstantRunWrapperTask.ConfigAction(
+                    variantScope, InstantRunWrapperTask.TaskType.FULL, getLogger()));
+
+        InstantRunPatchingPolicy patchingPolicy =
+                variantScope.getInstantRunBuildContext().getPatchingPolicy();
+
+        if (patchingPolicy == InstantRunPatchingPolicy.MULTI_APK) {
+
+            AndroidTask<InstantRunSplitApkBuilder> splitApk =
+                    getAndroidTasks().create(tasks,
+                            new InstantRunSplitApkBuilder.ConfigAction(
+                                    variantScope));
+
+            TransformManager transformManager = variantScope.getTransformManager();
+            for (TransformStream stream : transformManager.getStreams(
+                    PackageApplication.sDexFilter)) {
+                // TODO Optimize to avoid creating too many actions
+                splitApk.dependsOn(tasks, stream.getDependencies());
+            }
+            variantScope.getVariantData().assembleVariantTask.dependsOn(
+                    splitApk.get(tasks));
+
+            // if the assembleVariant task run, make sure it also runs the task to generate
+            // the build-info.xml.
+            variantScope.getVariantData().assembleVariantTask.dependsOn(
+                    fullBuildInfoGeneratorTask.get(tasks));
+
+            // make sure the split APK task is run before we generate the build-info.xml
+            variantScope.getInstantRunAnchorTask().dependsOn(tasks, splitApk);
+            variantScope.getInstantRunIncrementalTask().dependsOn(tasks, splitApk);
+        }
+        return fullBuildInfoGeneratorTask;
     }
 
     @NonNull

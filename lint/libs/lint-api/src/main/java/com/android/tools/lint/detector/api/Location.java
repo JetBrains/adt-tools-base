@@ -355,7 +355,14 @@ public class Location {
                     index = findNextMatch(contents, offset, patternStart, hints);
                     line = adjustLine(contents, line, offset, index);
                 } else {
-                    assert direction == SearchDirection.NEAREST;
+                    assert direction == SearchDirection.NEAREST ||
+                            direction == SearchDirection.EOL_NEAREST;
+
+                    int lineEnd = contents.indexOf('\n', offset);
+                    if (lineEnd == -1) {
+                        lineEnd = contents.length();
+                    }
+                    offset = lineEnd;
 
                     int before = findPreviousMatch(contents, offset, patternStart, hints);
                     int after = findNextMatch(contents, offset, patternStart, hints);
@@ -366,12 +373,27 @@ public class Location {
                     } else if (after == -1) {
                         index = before;
                         line = adjustLine(contents, line, offset, index);
-                    } else if (offset - before < after - offset) {
-                        index = before;
-                        line = adjustLine(contents, line, offset, index);
                     } else {
-                        index = after;
-                        line = adjustLine(contents, line, offset, index);
+                        int newLinesBefore = 0;
+                        for (int i = before; i < offset; i++) {
+                            if (contents.charAt(i) == '\n') {
+                                newLinesBefore++;
+                            }
+                        }
+                        int newLinesAfter = 0;
+                        for (int i = offset; i < after; i++) {
+                            if (contents.charAt(i) == '\n') {
+                                newLinesAfter++;
+                            }
+                        }
+                        if (newLinesBefore < newLinesAfter || newLinesBefore == newLinesAfter
+                                && offset - before < after - offset) {
+                            index = before;
+                            line = adjustLine(contents, line, offset, index);
+                        } else {
+                            index = after;
+                            line = adjustLine(contents, line, offset, index);
+                        }
                     }
                 }
 
@@ -674,6 +696,12 @@ public class Location {
          * the match that is closest
          */
         NEAREST,
+
+        /**
+         * Search both forwards and backwards from the end of the given line, and prefer
+         * the match that is closest
+         */
+        EOL_NEAREST,
     }
 
     /**

@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.integration.common.runner;
 
-import com.android.build.gradle.integration.common.utils.FileHelper;
+import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.google.common.collect.Lists;
 
 import org.junit.Test;
@@ -63,7 +63,7 @@ public class AllTests extends Suite {
      * Find all test classes in a directory.
      */
     private static void findTestClassesInDirectory(List<Class<?>> classes,File base) {
-        for (String filename : FileHelper.listFiles(base)) {
+        for (String filename : TestFileUtils.listFiles(base)) {
             if (!filename.endsWith(".class")) {
                 continue;
             }

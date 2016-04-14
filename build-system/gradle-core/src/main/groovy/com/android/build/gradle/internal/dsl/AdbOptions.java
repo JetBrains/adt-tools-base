@@ -31,7 +31,7 @@ public class AdbOptions implements com.android.builder.model.AdbOptions {
     List<String> installOptions;
 
     /**
-     * Returns the list of APK installation options.
+     * Returns the time out used for all adb operations.
      */
     @Override
     public int getTimeOutInMs() {
@@ -47,7 +47,7 @@ public class AdbOptions implements com.android.builder.model.AdbOptions {
     }
 
     /**
-     * Returns the time out used for all adb operations.
+     * Returns the list of APK installation options.
      */
     @Override
     public Collection<String> getInstallOptions() {

@@ -18,6 +18,7 @@ package com.android.ide.common.res2;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.google.common.base.Objects;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -25,19 +26,36 @@ import org.w3c.dom.Node;
 import java.io.File;
 
 /**
- * Base item.
+ * A data item is the most elementary merge unit in the data merging process. Data items will
+ * generally belong to a {@link DataFile} although, temporarily during the merge process data
+ * items may not be associated to any data file. This will happen when data items are moved from
+ * one file to another.
  *
- * This includes its name and source file as a {@link DataFile}.
+ * <p>Data items can represent entire files, <em>e.g.</em>, a PNG file, or they can represent
+ * individual entries in a file, <em>e.g.</em>, a string in a strings file.</p>
  *
+ * <p>Data items have three markers that represent its "state": touched, removed and written.
+ * A touched data is a data item that needs to be examined in the merge process. A removed data
+ * item is a data item that has been removed from its file. A written data item is a data item
+ * that has been changed or added.</p>
+ *
+ * @param <F> the type of data file the item belongs to
  */
 abstract class DataItem<F extends DataFile> {
-
+    /** Bit flag marking {@link #mStatus} as touched. */
     private static final int MASK_TOUCHED = 0x01;
+
+    /** Bit flag marking {@link #mStatus} as removed. */
     private static final int MASK_REMOVED = 0x02;
+
+    /** Bit flag marking {@link #mStatus} as written. */
     private static final int MASK_WRITTEN = 0x10;
 
-    private final String mName;
-    private F mSource;
+    /** Name of the data item. */
+    @NonNull private final String mName;
+
+    /** File the data item comes from. */
+    @Nullable private F mSource;
 
     /**
      * The status of the Item. It's a bit mask as opposed to an enum
@@ -47,9 +65,7 @@ abstract class DataItem<F extends DataFile> {
 
     /**
      * Constructs the object with a name, type and optional value.
-     *
      * Note that the object is not fully usable as-is. It must be added to a DataFile first.
-     *
      * @param name the name of the item
      */
     DataItem(@NonNull String name) {
@@ -58,7 +74,6 @@ abstract class DataItem<F extends DataFile> {
 
     /**
      * Returns the name of the item.
-     * @return the name.
      */
     @NonNull
     public String getName() {
@@ -66,8 +81,7 @@ abstract class DataItem<F extends DataFile> {
     }
 
     /**
-     * Returns the DataFile the item is coming from. Can be null.
-     * @return the data file.
+     * Returns the DataFile the item is coming from.
      */
     @Nullable
     public F getSource() {
@@ -75,23 +89,19 @@ abstract class DataItem<F extends DataFile> {
     }
 
     /**
-     * Sets the DataFile
-     * @param sourceFile the DataFile
+     * Sets the DataFile. The item must not belong to a data file.
+     * @param sourceFile the data file, if null then the item is marked as being removed from the
+     *                   data file
      */
-    public void setSource(F sourceFile) {
+    public void setSource(@NonNull F sourceFile) {
         mSource = sourceFile;
-    }
-
-    public File getFile() {
-        return getSource().getFile();
     }
 
     /**
      * Resets the state of the item be nothing.
      * @return this
-     *
      */
-    DataItem resetStatus() {
+    DataItem<F> resetStatus() {
         mStatus = 0;
         return this;
     }
@@ -99,10 +109,9 @@ abstract class DataItem<F extends DataFile> {
     /**
      * Resets the state of the item be WRITTEN. All other states are removed.
      * @return this
-     *
      * @see #isWritten()
      */
-    DataItem resetStatusToWritten() {
+    DataItem<F> resetStatusToWritten() {
         mStatus = MASK_WRITTEN;
         return this;
     }
@@ -110,94 +119,108 @@ abstract class DataItem<F extends DataFile> {
     /**
      * Resets the state of the item be TOUCHED. All other states are removed.
      * @return this
-     *
      * @see #isWritten()
      */
-    DataItem resetStatusToTouched() {
+    DataItem<F> resetStatusToTouched() {
+        boolean wasNotTouched = !isTouched();
         mStatus = MASK_TOUCHED;
+
+        if (!wasNotTouched) {
+            wasTouched();
+        }
+
         return this;
     }
 
     /**
-     * Sets the item status to be WRITTEN. Other states are kept.
+     * Sets the item status to contain WRITTEN. Other states are kept.
      * @return this
-     *
      * @see #isWritten()
      */
-    DataItem setWritten() {
+    DataItem<F> setWritten() {
         mStatus |= MASK_WRITTEN;
         return this;
     }
 
     /**
-     * Sets the item status to be REMOVED. Other states are kept.
+     * Sets the item status to contain REMOVED. Other states are kept.
      * @return this
-     *
      * @see #isRemoved()
      */
-    DataItem setRemoved() {
+    DataItem<F> setRemoved() {
         mStatus |= MASK_REMOVED;
         return this;
     }
 
     /**
-     * Sets the item status to be TOUCHED. Other states are kept.
+     * Sets the item status to contain TOUCHED. Other states are kept.
      * @return this
-     *
      * @see #isTouched()
      */
-    DataItem setTouched() {
-        mStatus |= MASK_TOUCHED;
-        wasTouched();
+    DataItem<F> setTouched() {
+        if (!isTouched()) {
+            mStatus |= MASK_TOUCHED;
+            wasTouched();
+        }
+
         return this;
     }
 
     /**
-     * Returns whether the item status is REMOVED
-     * @return true if removed
+     * Returns whether the item status contains REMOVED.
+     * @return <code>true</code> if removed
      */
     boolean isRemoved() {
         return (mStatus & MASK_REMOVED) != 0;
     }
 
     /**
-     * Returns whether the item status is TOUCHED
-     * @return true if touched
+     * Returns whether the item status contains TOUCHED
+     * @return <code>true</code> if touched
      */
     boolean isTouched() {
         return (mStatus & MASK_TOUCHED) != 0;
     }
 
     /**
-     * Returns whether the item status is WRITTEN
-     * @return true if written
+     * Returns whether the item status contains WRITTEN
+     * @return <code>true</code> if written
      */
     boolean isWritten() {
         return (mStatus & MASK_WRITTEN) != 0;
     }
 
+
+    /**
+     * Obtains the full status of the data item; should not generally be used except
+     * for debug purposes.
+     * @return the internal representation
+     */
     protected int getStatus() {
         return mStatus;
     }
 
     /**
-     * Returns a key for this item. They key uniquely identifies this item. This is the name.
-     *
-     * @return the key for this item.
-     *
+     * Returns the key for this item. They key uniquely identifies this item.
      */
     public String getKey() {
         return mName;
     }
 
+    /**
+     * Overridden in ResourceItem, which adds the type attribute.
+     */
     void addExtraAttributes(Document document, Node node, String namespaceUri) {
         // nothing
     }
 
     /**
-     * Returns a node that describes additional properties of this {@link DataItem}. If not null, it
-     * will be persisted in the merger XML blob and can be used used to restore the exact state of
-     * this item.
+     * Returns a node that describes additional properties of this {@link DataItem}.
+     * If not <code>null</code>, it will be persisted in the merger XML blob and can be used
+     * used to restore the exact state of this item. If <code>null</code> then the state of this
+     * item will not be persisted.
+     *
+     * <p>The default implementation returns <code>null</code>.</p>
      */
     Node getDetailsXml(Document document) {
         return null;
@@ -214,21 +237,25 @@ abstract class DataItem<F extends DataFile> {
 
         DataItem dataItem = (DataItem) o;
 
-        if (!mName.equals(dataItem.mName)) {
-            return false;
-        }
-
-        return !(mSource != null ? !mSource.equals(dataItem.mSource) : dataItem.mSource != null);
+        return Objects.equal(mName, dataItem.mName)
+                && Objects.equal(mSource, dataItem.mSource);
     }
 
     @Override
     public int hashCode() {
-        int result = mName.hashCode();
-        result = 31 * result + (mSource != null ? mSource.hashCode() : 0);
-        return result;
+        return Objects.hashCode(mName, mSource);
     }
 
-    protected void wasTouched() {
+    /**
+     * Hook invoked when the data item has been touched. The default implementation does nothing.
+     */
+    protected void wasTouched() {}
 
+    /**
+     * For non-values resources, this is the original source file.
+     * This method is here as {@link GeneratedResourceItem} overrides it.
+     */
+    public File getFile() {
+        return getSource().getFile();
     }
 }

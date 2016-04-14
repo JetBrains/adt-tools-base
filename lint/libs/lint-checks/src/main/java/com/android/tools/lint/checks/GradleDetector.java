@@ -16,12 +16,12 @@
 package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.FD_BUILD_TOOLS;
-import static com.android.SdkConstants.FN_BUILD_GRADLE;
 import static com.android.SdkConstants.GRADLE_PLUGIN_MINIMUM_VERSION;
 import static com.android.SdkConstants.GRADLE_PLUGIN_RECOMMENDED_VERSION;
 import static com.android.ide.common.repository.GradleCoordinate.COMPARE_PLUS_HIGHER;
 import static com.android.tools.lint.checks.ManifestDetector.TARGET_NEWER;
 import static com.android.tools.lint.detector.api.LintUtils.findSubstring;
+import static com.android.tools.lint.detector.api.LintUtils.guessGradleLocation;
 import static com.google.common.base.Charsets.UTF_8;
 
 import com.android.SdkConstants;
@@ -36,7 +36,7 @@ import com.android.builder.model.Variant;
 import com.android.ide.common.repository.GradleCoordinate;
 import com.android.ide.common.repository.GradleCoordinate.RevisionComponent;
 import com.android.ide.common.repository.SdkMavenRepository;
-import com.android.sdklib.repository.PreciseRevision;
+import com.android.repository.Revision;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
@@ -107,7 +107,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
 
     /** Incompatible Android Gradle plugin */
     public static final Issue GRADLE_PLUGIN_COMPATIBILITY = Issue.create(
-            "AndroidGradlePluginVersion", //$NON-NLS-1$
+            "GradlePluginVersion", //$NON-NLS-1$
             "Incompatible Android Gradle Plugin",
             "Not all versions of the Android Gradle plugin are compatible with all versions " +
             "of the SDK. If you update your tools, or if you are trying to open a project that " +
@@ -209,6 +209,20 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             8,
             Severity.ERROR,
             IMPLEMENTATION);
+
+    /** Attempting to use substitution with single quotes */
+    public static final Issue NOT_INTERPOLATED = Issue.create(
+          "NotInterpolated", //$NON-NLS-1$
+          "Incorrect Interpolation",
+
+          "To insert the value of a variable, you can use `${variable}` inside " +
+          "a string literal, but *only* if you are using double quotes!",
+
+          Category.CORRECTNESS,
+          8,
+          Severity.ERROR,
+          IMPLEMENTATION)
+          .addMoreInfo("http://www.groovy-lang.org/syntax.html#_string_interpolation");
 
     /** A newer version is available on a remote server */
     public static final Issue REMOTE_VERSION = Issue.create(
@@ -398,9 +412,9 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         } else if (property.equals("buildToolsVersion") && parent.equals("android")) {
             String versionString = getStringLiteralValue(value);
             if (versionString != null) {
-                PreciseRevision version = parseRevisionSilently(versionString);
+                Revision version = parseRevisionSilently(versionString);
                 if (version != null) {
-                    PreciseRevision recommended = getLatestBuildTools(context.getClient(),
+                    Revision recommended = getLatestBuildTools(context.getClient(),
                             version.getMajor());
                     if (recommended != null && version.compareTo(recommended) < 0) {
                         // Keep in sync with {@link #getOldValue} and {@link #getNewValue}
@@ -432,6 +446,14 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                 if (dependency != null) {
                     GradleCoordinate gc = GradleCoordinate.parseCoordinateString(dependency);
                     if (gc != null && dependency.contains("$")) {
+                        if (value.startsWith("'") && value.endsWith("'") &&
+                            context.isEnabled(NOT_INTERPOLATED)) {
+                            String message = "It looks like you are trying to substitute a "
+                                             + "version variable, but using single quotes ('). For Groovy "
+                                             + "string interpolation you must use double quotes (\").";
+                            report(context, statementCookie, NOT_INTERPOLATED, message);
+                        }
+
                         gc = resolveCoordinate(context, gc);
                     }
                     if (gc != null) {
@@ -465,7 +487,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     @Nullable
     private static GradleCoordinate resolveCoordinate(@NonNull Context context,
             @NonNull GradleCoordinate gc) {
-        assert gc.getFullRevision().contains("$") : gc.getFullRevision();
+        assert gc.getRevision().contains("$") : gc.getRevision();
         Variant variant = context.getProject().getCurrentVariant();
         if (variant != null) {
             Dependencies dependencies = variant.getMainArtifact().getDependencies();
@@ -687,9 +709,9 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     }
 
     @Nullable
-    private static PreciseRevision parseRevisionSilently(String versionString) {
+    private static Revision parseRevisionSilently(String versionString) {
         try {
-            return PreciseRevision.parseRevision(versionString);
+            return Revision.parseRevision(versionString);
         } catch (Throwable t) {
             return null;
         }
@@ -700,7 +722,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     }
 
     private static int sMajorBuildTools;
-    private static PreciseRevision sLatestBuildTools;
+    private static Revision sLatestBuildTools;
 
     /** Returns the latest build tools installed for the given major version.
      * We just cache this once; we don't need to be accurate in the sense that if the
@@ -712,23 +734,23 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
      * @return the corresponding highest known revision
      */
     @Nullable
-    private static PreciseRevision getLatestBuildTools(@NonNull LintClient client, int major) {
+    private static Revision getLatestBuildTools(@NonNull LintClient client, int major) {
         if (major != sMajorBuildTools) {
             sMajorBuildTools = major;
 
-            List<PreciseRevision> revisions = Lists.newArrayList();
+            List<Revision> revisions = Lists.newArrayList();
             if (major == 23) {
-                revisions.add(new PreciseRevision(23, 0, 1));
+                revisions.add(new Revision(23, 0, 1));
             } else if (major == 22) {
-                revisions.add(new PreciseRevision(22, 0, 1));
+                revisions.add(new Revision(22, 0, 1));
             } else if (major == 21) {
-                revisions.add(new PreciseRevision(21, 1, 2));
+                revisions.add(new Revision(21, 1, 2));
             } else if (major == 20) {
-                revisions.add(new PreciseRevision(20));
+                revisions.add(new Revision(20));
             } else if (major == 19) {
-                revisions.add(new PreciseRevision(19, 1));
+                revisions.add(new Revision(19, 1));
             } else if (major == 18) {
-                revisions.add(new PreciseRevision(18, 1, 1));
+                revisions.add(new Revision(18, 1, 1));
             }
             // The above versions can go stale.
             // Check if a more recent one is installed. (The above are still useful for
@@ -742,7 +764,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                         if (!dir.isDirectory() || !Character.isDigit(name.charAt(0))) {
                             continue;
                         }
-                        PreciseRevision v = parseRevisionSilently(name);
+                        Revision v = parseRevisionSilently(name);
                         if (v != null && v.getMajor() == major) {
                             revisions.add(v);
                         }
@@ -813,7 +835,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                 && dependency.getArtifactId() != null) {
 
             // 5.2.08 is not supported; special case and warn about this
-            if ("5.2.08".equals(dependency.getFullRevision()) && context.isEnabled(COMPATIBILITY)) {
+            if ("5.2.08".equals(dependency.getRevision()) && context.isEnabled(COMPATIBILITY)) {
                 // This specific version is actually a preview version which should
                 // not be used (https://code.google.com/p/android/issues/detail?id=75292)
                 String version = "6.1.11";
@@ -826,7 +848,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                             null, false);
                     if (max != null) {
                         if (COMPARE_PLUS_HIGHER.compare(dependency, max) < 0) {
-                            version = max.getFullRevision();
+                            version = max.getRevision();
                         }
                     }
                 }
@@ -840,13 +862,13 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             return;
         }
 
-        PreciseRevision version = null;
+        Revision version = null;
         Issue issue = DEPENDENCY;
         if ("com.android.tools.build".equals(dependency.getGroupId()) &&
                 "gradle".equals(dependency.getArtifactId())) {
             try {
-                PreciseRevision v =
-                        PreciseRevision.parseRevision(GRADLE_PLUGIN_RECOMMENDED_VERSION);
+                Revision v =
+                        Revision.parseRevision(GRADLE_PLUGIN_RECOMMENDED_VERSION);
                 if (!v.isPreview()) {
                     version = getNewerRevision(dependency, v);
                 }
@@ -855,18 +877,18 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             }
         } else if ("com.google.guava".equals(dependency.getGroupId()) &&
                 "guava".equals(dependency.getArtifactId())) {
-            version = getNewerRevision(dependency, new PreciseRevision(18, 0));
+            version = getNewerRevision(dependency, new Revision(18, 0));
         } else if ("com.google.code.gson".equals(dependency.getGroupId()) &&
                 "gson".equals(dependency.getArtifactId())) {
-            version = getNewerRevision(dependency, new PreciseRevision(2, 4));
+            version = getNewerRevision(dependency, new Revision(2, 4));
         } else if ("org.apache.httpcomponents".equals(dependency.getGroupId()) &&
                 "httpclient".equals(dependency.getArtifactId())) {
-            version = getNewerRevision(dependency, new PreciseRevision(4, 3, 5));
+            version = getNewerRevision(dependency, new Revision(4, 3, 5));
         }
 
         // Network check for really up to date libraries? Only done in batch mode
         if (context.getScope().size() > 1 && context.isEnabled(REMOTE_VERSION)) {
-            PreciseRevision latest = getLatestVersionFromRemoteRepo(context.getClient(), dependency,
+            Revision latest = getLatestVersionFromRemoteRepo(context.getClient(), dependency,
                     dependency.isPreview());
             if (latest != null && isOlderThan(dependency, latest.getMajor(), latest.getMinor(),
                     latest.getMicro())) {
@@ -882,7 +904,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     }
 
     private static String getNewerVersionAvailableMessage(GradleCoordinate dependency,
-            PreciseRevision version) {
+            Revision version) {
         return getNewerVersionAvailableMessage(dependency, version.toString());
     }
 
@@ -890,19 +912,19 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             String version) {
         // NOTE: Keep this in sync with {@link #getOldValue} and {@link #getNewValue}
         return "A newer version of " + dependency.getGroupId() + ":" +
-                dependency.getArtifactId() + " than " + dependency.getFullRevision() +
+                dependency.getArtifactId() + " than " + dependency.getRevision() +
                 " is available: " + version;
     }
 
     /** TODO: Cache these results somewhere! */
     @Nullable
-    public static PreciseRevision getLatestVersionFromRemoteRepo(@NonNull LintClient client,
+    public static Revision getLatestVersionFromRemoteRepo(@NonNull LintClient client,
             @NonNull GradleCoordinate dependency, boolean allowPreview) {
         return getLatestVersionFromRemoteRepo(client, dependency, true, allowPreview);
     }
 
     @Nullable
-    private static PreciseRevision getLatestVersionFromRemoteRepo(@NonNull LintClient client,
+    private static Revision getLatestVersionFromRemoteRepo(@NonNull LintClient client,
             @NonNull GradleCoordinate dependency, boolean firstRowOnly, boolean allowPreview) {
         String groupId = dependency.getGroupId();
         String artifactId = dependency.getArtifactId();
@@ -972,7 +994,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                 int start = response.indexOf('"', index) + 1;
                 int end = response.indexOf('"', start + 1);
                 if (end > start && start >= 0) {
-                    PreciseRevision revision = parseRevisionSilently(response.substring(start, end));
+                    Revision revision = parseRevisionSilently(response.substring(start, end));
                     if (revision != null) {
                         foundPreview = revision.isPreview();
                         if (allowPreview || !foundPreview) {
@@ -1171,19 +1193,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             if (cookie != null) {
                 report(context, cookie, COMPATIBILITY, message);
             } else {
-                // Associate the error with the top level build.gradle file, if found
-                // (if not, fall back to the project directory). This is necessary because
-                // we're doing this analysis based on the Gradle interpreted model, not from
-                // parsing Gradle files - and the model doesn't provide source positions.
-                File dir = context.getProject().getDir();
-                Location location;
-                File topLevel = new File(dir, FN_BUILD_GRADLE);
-                if (topLevel.exists()) {
-                    location = Location.create(topLevel);
-                } else {
-                    location = Location.create(dir);
-                }
-                context.report(COMPATIBILITY, location, message);
+                context.report(COMPATIBILITY, guessGradleLocation(context.getProject()), message);
             }
         }
     }
@@ -1216,14 +1226,14 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         if (max != null) {
             if (COMPARE_PLUS_HIGHER.compare(dependency, max) < 0
                     && context.isEnabled(DEPENDENCY)) {
-                String message = getNewerVersionAvailableMessage(dependency, max.getFullRevision());
+                String message = getNewerVersionAvailableMessage(dependency, max.getRevision());
                 report(context, cookie, DEPENDENCY, message);
             }
         }
     }
 
-    private static PreciseRevision getNewerRevision(@NonNull GradleCoordinate dependency,
-            @NonNull PreciseRevision revision) {
+    private static Revision getNewerRevision(@NonNull GradleCoordinate dependency,
+            @NonNull Revision revision) {
         assert dependency.getGroupId() != null;
         assert dependency.getArtifactId() != null;
         GradleCoordinate coordinate;

@@ -32,11 +32,16 @@ public class DexOptions implements com.android.builder.core.DexOptions {
 
     private boolean isJumboModeFlag = false;
 
+    private Boolean isDexInProcess = null;
+
     private Integer threadCount = null;
 
     private String javaMaxHeapSize;
 
+    private Integer maxProcessCount = null;
+
     public void setIncremental(boolean isIncremental) {
+        // TODO: Print out a warning, that this is ignored.
         isIncrementalFlag = isIncremental;
     }
 
@@ -50,6 +55,10 @@ public class DexOptions implements com.android.builder.core.DexOptions {
         return isIncrementalFlag;
     }
 
+    public void setPreDexLibraries(boolean flag) {
+        isPreDexLibrariesFlag = flag;
+    }
+
     /**
      * Whether to pre-dex libraries. This can improve incremental builds, but clean builds may
      * be slower.
@@ -58,10 +67,6 @@ public class DexOptions implements com.android.builder.core.DexOptions {
     @Input
     public boolean getPreDexLibraries() {
         return isPreDexLibrariesFlag;
-    }
-
-    void setPreDexLibraries(boolean flag) {
-        isPreDexLibrariesFlag = flag;
     }
 
     public void setJumboMode(boolean flag) {
@@ -101,11 +106,33 @@ public class DexOptions implements com.android.builder.core.DexOptions {
     }
 
     /**
-     * Number of threads to use when running dx.
+     * Number of threads to use when running dx. Defaults to 4.
      */
     @Override
     @Nullable
     public Integer getThreadCount() {
         return threadCount;
     }
+
+
+    /**
+     * Returns the maximum number of concurrent processes that can be used to dex. Defaults to 2.
+     *
+     * <p>Be aware that the number of concurrent process times the memory requirement represent the
+     * minimum amount of memory that will be used by the dx processes:
+     * {@code Total Memory = getMaxProcessCount() * getJavaMaxHeapSize()}
+     *
+     * To avoid trashing, keep these two settings appropriate for your configuration.
+     * @return the max number of concurrent dx processes.
+     */
+    @Nullable
+    @Override
+    public Integer getMaxProcessCount() {
+        return maxProcessCount;
+    }
+
+    public void setMaxProcessCount(int maxProcessCount) {
+        this.maxProcessCount = maxProcessCount;
+    }
+
 }

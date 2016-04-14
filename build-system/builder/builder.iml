@@ -28,9 +28,7 @@
     <orderEntry type="module" module-name="assetstudio-base" />
     <orderEntry type="module" module-name="jack-api" exported="" />
     <orderEntry type="module" module-name="jill-api" exported="" />
-    <orderEntry type="module" module-name="transform-api" exported="" />
     <orderEntry type="library" exported="" name="guava-tools" level="project" />
-    <orderEntry type="library" name="antlr" level="project" />
     <orderEntry type="library" name="truth" level="project" />
   </component>
 </module>

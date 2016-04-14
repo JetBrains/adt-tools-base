@@ -176,44 +176,44 @@ public class PluralsDatabase {
 
     /** Set of language codes relevant to plurals data */
     private static final String[] LANGUAGE_CODES = new String[] {
-            "af", "ak", "am", "ar", "az", "be", "bg", "bh", "bm", "bn",
-            "bo", "br", "bs", "ca", "cs", "cy", "da", "de", "dv", "dz",
-            "ee", "el", "en", "eo", "es", "et", "eu", "fa", "ff", "fi",
-            "fo", "fr", "fy", "ga", "gd", "gl", "gu", "gv", "ha", "he",
-            "hi", "hr", "hu", "hy", "id", "ig", "ii", "in", "is", "it",
-            "iu", "iw", "ja", "ji", "jv", "ka", "kk", "kl", "km", "kn",
-            "ko", "ks", "ku", "kw", "ky", "lb", "lg", "ln", "lo", "lt",
-            "lv", "mg", "mk", "ml", "mn", "mr", "ms", "mt", "my", "nb",
-            "nd", "ne", "nl", "nn", "no", "nr", "ny", "om", "or", "os",
-            "pa", "pl", "ps", "pt", "rm", "ro", "ru", "se", "sg", "si",
-            "sk", "sl", "sn", "so", "sq", "sr", "ss", "st", "sv", "sw",
-            "ta", "te", "th", "ti", "tk", "tl", "tn", "to", "tr", "ts",
-            "ug", "uk", "ur", "uz", "ve", "vi", "vo", "wa", "wo", "xh",
-            "yi", "yo", "zh", "zu"
+            "af", "ak", "am", "ar", "as", "az", "be", "bg", "bh", "bm",
+            "bn", "bo", "br", "bs", "ca", "ce", "cs", "cy", "da", "de",
+            "dv", "dz", "ee", "el", "en", "eo", "es", "et", "eu", "fa",
+            "ff", "fi", "fo", "fr", "fy", "ga", "gd", "gl", "gu", "gv",
+            "ha", "he", "hi", "hr", "hu", "hy", "id", "ig", "ii", "in",
+            "is", "it", "iu", "iw", "ja", "ji", "jv", "ka", "kk", "kl",
+            "km", "kn", "ko", "ks", "ku", "kw", "ky", "lb", "lg", "ln",
+            "lo", "lt", "lv", "mg", "mk", "ml", "mn", "mr", "ms", "mt",
+            "my", "nb", "nd", "ne", "nl", "nn", "no", "nr", "ny", "om",
+            "or", "os", "pa", "pl", "ps", "pt", "rm", "ro", "ru", "se",
+            "sg", "si", "sk", "sl", "sn", "so", "sq", "sr", "ss", "st",
+            "sv", "sw", "ta", "te", "th", "ti", "tk", "tl", "tn", "to",
+            "tr", "ts", "ug", "uk", "ur", "uz", "ve", "vi", "vo", "wa",
+            "wo", "xh", "yi", "yo", "zh", "zu"
     };
 
     /**
      * Relevant flags for each language (corresponding to each language listed
-     * in the same position in {@link #LANGUAGE_CODES}).
+     * in the same position in {@link #LANGUAGE_CODES})
      */
     private static final int[] FLAGS = new int[] {
-            0x0002, 0x0042, 0x0042, 0x001f, 0x0002, 0x005a, 0x0002, 0x0042,
-            0x0000, 0x0042, 0x0000, 0x00de, 0x004a, 0x0002, 0x000a, 0x001f,
-            0x0002, 0x0002, 0x0002, 0x0000, 0x0002, 0x0002, 0x0002, 0x0002,
-            0x0002, 0x0002, 0x0002, 0x0042, 0x0042, 0x0002, 0x0002, 0x0042,
-            0x0002, 0x001e, 0x00ce, 0x0002, 0x0042, 0x00ce, 0x0002, 0x0016,
-            0x0042, 0x004a, 0x0002, 0x0042, 0x0000, 0x0000, 0x0000, 0x0000,
-            0x0042, 0x0002, 0x0006, 0x0016, 0x0000, 0x0002, 0x0000, 0x0002,
-            0x0002, 0x0002, 0x0000, 0x0042, 0x0000, 0x0002, 0x0002, 0x0006,
-            0x0002, 0x0002, 0x0002, 0x0042, 0x0000, 0x004a, 0x0063, 0x0042,
-            0x0042, 0x0002, 0x0002, 0x0042, 0x0000, 0x001a, 0x0000, 0x0002,
-            0x0002, 0x0002, 0x0002, 0x0002, 0x0002, 0x0002, 0x0002, 0x0002,
-            0x0002, 0x0002, 0x0042, 0x001a, 0x0002, 0x0002, 0x0002, 0x000a,
-            0x005a, 0x0006, 0x0000, 0x0042, 0x000a, 0x00ce, 0x0002, 0x0002,
-            0x0002, 0x004a, 0x0002, 0x0002, 0x0002, 0x0002, 0x0002, 0x0002,
-            0x0000, 0x0042, 0x0002, 0x0042, 0x0002, 0x0000, 0x0002, 0x0002,
-            0x0002, 0x005a, 0x0002, 0x0002, 0x0002, 0x0000, 0x0002, 0x0042,
-            0x0000, 0x0002, 0x0002, 0x0000, 0x0000, 0x0042
+            0x0002, 0x0042, 0x0042, 0x001f, 0x0042, 0x0002, 0x005a, 0x0002,
+            0x0042, 0x0000, 0x0042, 0x0000, 0x00de, 0x004a, 0x0002, 0x0002,
+            0x000a, 0x001f, 0x0002, 0x0002, 0x0002, 0x0000, 0x0002, 0x0002,
+            0x0002, 0x0002, 0x0002, 0x0002, 0x0002, 0x0042, 0x0042, 0x0002,
+            0x0002, 0x0042, 0x0002, 0x001e, 0x00ce, 0x0002, 0x0042, 0x00ce,
+            0x0002, 0x0016, 0x0042, 0x004a, 0x0002, 0x0042, 0x0000, 0x0000,
+            0x0000, 0x0000, 0x0042, 0x0002, 0x0006, 0x0016, 0x0000, 0x0002,
+            0x0000, 0x0002, 0x0002, 0x0002, 0x0000, 0x0042, 0x0000, 0x0002,
+            0x0002, 0x0006, 0x0002, 0x0002, 0x0002, 0x0042, 0x0000, 0x004a,
+            0x0063, 0x0042, 0x0042, 0x0002, 0x0002, 0x0042, 0x0000, 0x001a,
+            0x0000, 0x0002, 0x0002, 0x0002, 0x0002, 0x0002, 0x0002, 0x0002,
+            0x0002, 0x0002, 0x0002, 0x0002, 0x0042, 0x001a, 0x0002, 0x0042,
+            0x0002, 0x000a, 0x005a, 0x0006, 0x0000, 0x0042, 0x000a, 0x00ce,
+            0x0002, 0x0002, 0x0002, 0x004a, 0x0002, 0x0002, 0x0002, 0x0002,
+            0x0002, 0x0002, 0x0000, 0x0042, 0x0002, 0x0042, 0x0002, 0x0000,
+            0x0002, 0x0002, 0x0002, 0x005a, 0x0002, 0x0002, 0x0002, 0x0000,
+            0x0002, 0x0042, 0x0000, 0x0002, 0x0002, 0x0000, 0x0000, 0x0042
     };
 
     @Nullable
@@ -221,7 +221,7 @@ public class PluralsDatabase {
         int index = getLanguageIndex(language);
         switch (index) {
             // set14
-            case 70: // lv
+            case 72: // lv
                 return "0, 10~20, 30, 40, 50, 60, 100, 1000, 10000, 100000, 1000000, \u2026";
             case -1:
             default:
@@ -235,69 +235,73 @@ public class PluralsDatabase {
         switch (index) {
             // set1
             case 2: // am
-            case 9: // bn
-            case 27: // fa
-            case 36: // gu
-            case 40: // hi
-            case 59: // kn
-            case 75: // mr
-            case 133: // zu
+            case 4: // as
+            case 10: // bn
+            case 29: // fa
+            case 38: // gu
+            case 42: // hi
+            case 61: // kn
+            case 77: // mr
+            case 135: // zu
                 return "0, 1";
             // set11
-            case 48: // is
+            case 50: // is
                 return "1, 21, 31, 41, 51, 61, 71, 81, 101, 1001, \u2026";
             // set12
-            case 72: // mk
+            case 74: // mk
                 return "1, 11, 21, 31, 41, 51, 61, 71, 101, 1001, \u2026";
             // set13
-            case 115: // tl
+            case 117: // tl
                 return "0~3, 5, 7, 8, 10~13, 15, 17, 18, 20, 21, 100, 1000, 10000, 100000, 1000000, \u2026";
             // set14
-            case 70: // lv
+            case 72: // lv
                 return "1, 21, 31, 41, 51, 61, 71, 81, 101, 1001, \u2026";
             // set2
-            case 28: // ff
-            case 31: // fr
-            case 43: // hy
+            case 30: // ff
+            case 33: // fr
+            case 45: // hy
                 return "0, 1";
             // set20
-            case 12: // bs
-            case 41: // hr
-            case 105: // sr
+            case 13: // bs
+            case 43: // hr
+            case 107: // sr
                 return "1, 21, 31, 41, 51, 61, 71, 81, 101, 1001, \u2026";
             // set21
-            case 34: // gd
+            case 36: // gd
                 return "1, 11";
             // set22
-            case 101: // sl
+            case 103: // sl
                 return "1, 101, 201, 301, 401, 501, 601, 701, 1001, \u2026";
-            // set26
-            case 5: // be
-                return "1, 21, 31, 41, 51, 61, 71, 81, 101, 1001, \u2026";
             // set27
-            case 69: // lt
+            case 6: // be
                 return "1, 21, 31, 41, 51, 61, 71, 81, 101, 1001, \u2026";
-            // set29
-            case 96: // ru
-            case 121: // uk
+            // set28
+            case 71: // lt
                 return "1, 21, 31, 41, 51, 61, 71, 81, 101, 1001, \u2026";
             // set30
-            case 11: // br
+            case 98: // ru
+            case 123: // uk
+                return "1, 21, 31, 41, 51, 61, 71, 81, 101, 1001, \u2026";
+            // set31
+            case 12: // br
                 return "1, 21, 31, 41, 51, 61, 81, 101, 1001, \u2026";
-            // set32
-            case 37: // gv
+            // set33
+            case 39: // gv
                 return "1, 11, 21, 31, 41, 51, 61, 71, 101, 1001, \u2026";
-            // set5
-            case 99: // si
+            // set4
+            case 101: // si
                 return "0, 1";
-            // set6
+            // set5
             case 1: // ak
-            case 7: // bh
-            case 67: // ln
-            case 71: // mg
-            case 90: // pa
-            case 113: // ti
-            case 127: // wa
+            case 8: // bh
+            case 69: // ln
+            case 73: // mg
+            case 92: // pa
+            case 115: // ti
+            case 129: // wa
+                return "0, 1";
+            // set7
+            case 95: // pt
                 return "0, 1";
             case -1:
             default:
@@ -310,16 +314,16 @@ public class PluralsDatabase {
         int index = getLanguageIndex(language);
         switch (index) {
             // set21
-            case 34: // gd
+            case 36: // gd
                 return "2, 12";
             // set22
-            case 101: // sl
+            case 103: // sl
                 return "2, 102, 202, 302, 402, 502, 602, 702, 1002, \u2026";
-            // set30
-            case 11: // br
+            // set31
+            case 12: // br
                 return "2, 22, 32, 42, 52, 62, 82, 102, 1002, \u2026";
-            // set32
-            case 37: // gv
+            // set33
+            case 39: // gv
                 return "2, 12, 22, 32, 42, 52, 62, 72, 102, 1002, \u2026";
             case -1:
             default:

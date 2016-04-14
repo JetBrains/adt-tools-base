@@ -24,6 +24,7 @@ import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestPr
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
 import org.junit.AfterClass
 import org.junit.ClassRule
+import org.junit.Ignore
 import org.junit.Test
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
@@ -31,6 +32,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 /**
  * Tests for native dependencies
  */
+@Ignore
 class ExternalBuildDependencyTest {
     static MultiModuleTestProject base = new MultiModuleTestProject(
             app: new HelloWorldJniApp(),
@@ -44,14 +46,15 @@ apply plugin: "com.android.model.application"
 
 model {
     android {
-        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-        buildToolsVersion = "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-    }
-    android.sources {
-        main {
-            jniLibs {
-                dependencies {
-                    project ":lib"
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+
+        sources {
+            main {
+                jniLibs {
+                    dependencies {
+                        project ":lib"
+                    }
                 }
             }
         }
@@ -107,30 +110,31 @@ include \$(BUILD_SHARED_LIBRARY)
 apply plugin: "com.android.model.external"
 
 model {
-    nativeBuild.libraries {
-        create("foo") {
-            executable = "${compiler.getPath()}"
-            args.addAll([
-                "APP_BUILD_SCRIPT=Android.mk",
-                "NDK_PROJECT_PATH=null",
-                "NDK_OUT=build/intermediate",
-                "NDK_LIBS_OUT=build/output",
-                "APP_ABI=x86"])
-            toolchain = "gcc"
-            abi = "x86"
-            output = file("build/output/x86/libhello-jni.so")
-            files.with {
-                create() {
-                    src = file("src/main/jni/hello-jni.c")
+    nativeBuildConfig {
+        libraries {
+            create("foo") {
+                executable "${compiler.getPath()}"
+                args.addAll([
+                    "APP_BUILD_SCRIPT=Android.mk",
+                    "NDK_PROJECT_PATH=null",
+                    "NDK_OUT=build/intermediate",
+                    "NDK_LIBS_OUT=build/output",
+                    "APP_ABI=x86"])
+                toolchain "gcc"
+                abi "x86"
+                output file("build/output/x86/libhello-jni.so")
+                files {
+                    create() {
+                        src "src/main/jni/hello-jni.c"
+                    }
                 }
+
             }
-
         }
-    }
-    nativeBuild.toolchains {
-        create("gcc") {
-            CCompilerExecutable = file("${compiler.getPath()}")
-
+        toolchains {
+            create("gcc") {
+                CCompilerExecutable = "${compiler.getPath()}"
+            }
         }
     }
 }

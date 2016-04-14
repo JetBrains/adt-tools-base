@@ -18,25 +18,20 @@ package com.android.sdklib.repository.descriptors;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.repository.Revision;
 import com.android.sdklib.AndroidVersion;
-import com.android.sdklib.internal.repository.LocalSdkParser;
-import com.android.sdklib.repository.FullRevision;
-import com.android.sdklib.repository.MajorRevision;
-import com.android.sdklib.repository.local.LocalSdk;
 
 import java.util.EnumSet;
 
 /**
- * Package types handled by the {@link LocalSdk}.
+ * Package types handled by the legacy SDK.
  * <p/>
- * Integer bit values are provided via {@link #getIntValue()} for backward
- * compatibility with the older {@link LocalSdkParser} class.
- * The integer bit values also indicate the natural ordering of the packages.
+ * Integer bit values indicate the natural ordering of the packages.
  */
-public enum PkgType implements IPkgCapabilities {
+public enum PkgType {
 
     // Boolean attributes below, in that order:
-    //      maj-r, full-r, api, path, tag, vend, min-t-r, min-pt-r
+    //      api, path, tag, vend, min-t-r, min-pt-r, name
     //
     // Corresponding flags for list description pattern string:
     //      $MAJ  $FULL  $API  $PATH  $TAG  $VEND  $NAME (for extras & add-ons)
@@ -44,86 +39,85 @@ public enum PkgType implements IPkgCapabilities {
     //
 
     /** Filter the SDK/tools folder.
-     *  Has {@link FullRevision}. */
+     *  Has {@link Revision}. */
     PKG_TOOLS(0x0001, SdkConstants.FD_TOOLS,
             "Android SDK Tools $FULL",
-            false, true /*full-r*/, false, false, false, false, false, true /*min-pt-r*/),
+            false, false, false, false, false, true, false),
 
     /** Filter the SDK/platform-tools folder.
-     *  Has {@link FullRevision}. */
+     *  Has {@link Revision}. */
     PKG_PLATFORM_TOOLS(0x0002, SdkConstants.FD_PLATFORM_TOOLS,
             "Android SDK Platform-Tools $FULL",
-            false, true /*full-r*/, false, false, false, false, false, false),
+            false, false, false, false, false, false, false),
 
     /** Filter the SDK/build-tools folder.
-     *  Has {@link FullRevision}. */
+     *  Has {@link Revision}. */
     PKG_BUILD_TOOLS(0x0004, SdkConstants.FD_BUILD_TOOLS,
             "Android SDK Build-Tools $FULL",
-            false, true /*full-r*/, false, false, false, false, false, false),
+            false, false, false, false, false, false, false),
 
     /** Filter the SDK/docs folder.
-     *  Has {@link MajorRevision}. */
+     *  Has {@link Revision}. */
     PKG_DOC(0x0010, SdkConstants.FD_DOCS,
             "Documentation for Android SDK",
-            true /*maj-r*/, false, true /*api*/, false, false, false, false, false),
+            true, false, false, false, false, false, false),
 
     /** Filter the SDK/platforms.
-     *  Has {@link AndroidVersion}. Has {@link MajorRevision}.
+     *  Has {@link AndroidVersion}. Has {@link Revision}.
      *  Path returns the platform's target hash. */
     PKG_PLATFORM(0x0100, SdkConstants.FD_PLATFORMS,
             "Android SDK Platform $API{?$MAJ>1:, rev $MAJ}",
-            true /*maj-r*/, false, true /*api*/, true /*path*/, false, false, true /*min-t-r*/, false),
+            true, true, false, false, true, false, false),
 
     /** Filter the SDK/system-images/android.
-     * Has {@link AndroidVersion}. Has {@link MajorRevision}. Has tag.
+     * Has {@link AndroidVersion}. Has {@link Revision}. Has tag.
      * Path returns the system image ABI. */
     PKG_SYS_IMAGE(0x0200, SdkConstants.FD_SYSTEM_IMAGES,
             "$PATH System Image, Android $API{?$MAJ>1:, rev $MAJ}",
-            true /*maj-r*/, false, true /*api*/, true /*path*/, true /*tag*/, false /*vend*/, false, false),
+            true, true, true, false, false, false, false),
 
     /** Filter the SDK/addons.
-     *  Has {@link AndroidVersion}. Has {@link MajorRevision}.
+     *  Has {@link AndroidVersion}. Has {@link Revision}.
      *  Path returns the add-on's target hash. */
     PKG_ADDON(0x0400, SdkConstants.FD_ADDONS,
             "{|$NAME|$VEND $PATH|}, Android $API{?$MAJ>1:, rev $MAJ}",
-            true /*maj-r*/, false, true /*api*/, true /*path*/, false, true /*vend*/, false, false),
+            true, true, false, true, false, false, true),
 
     /** Filter the SDK/system-images/addons.
-     * Has {@link AndroidVersion}. Has {@link MajorRevision}. Has tag.
+     * Has {@link AndroidVersion}. Has {@link Revision}. Has tag.
      * Path returns the system image ABI. */
     PKG_ADDON_SYS_IMAGE(0x0800, SdkConstants.FD_SYSTEM_IMAGES,
             "{|$NAME|$VEND $PATH|} System Image, Android $API{?$MAJ>1:, rev $MAJ}",
-            true /*maj-r*/, false, true /*api*/, true /*path*/, true /*tag*/, true /*vend*/, false, false),
+            true, true, true, true, false, false, false),
 
     /** Filter the SDK/samples folder.
      *  Note: this will not detect samples located in the SDK/extras packages.
-     *  Has {@link AndroidVersion}. Has {@link MajorRevision}. */
+     *  Has {@link AndroidVersion}. Has {@link Revision}. */
     PKG_SAMPLE(0x1000, SdkConstants.FD_SAMPLES,
             "Samples for Android $API{?$MAJ>1:, rev $MAJ}",
-            true /*maj-r*/, false, true /*api*/, false, false, false, true /*min-t-r*/, false),
+            true, false, false, false, true, false, false),
 
     /** Filter the SDK/sources folder.
-     *  Has {@link AndroidVersion}. Has {@link MajorRevision}. */
+     *  Has {@link AndroidVersion}. Has {@link Revision}. */
     PKG_SOURCE(0x2000, SdkConstants.FD_ANDROID_SOURCES,
             "Sources for Android $API{?$MAJ>1:, rev $MAJ}",
-            true /*maj-r*/, false, true /*api*/, false, false, false, false, false),
+            true, false, false, false, false, false, false),
 
     /** Filter the SDK/extras folder.
-     *  Has {@code Path}. Has {@link MajorRevision}.
+     *  Has {@code Path}. Has {@link Revision}.
      *  Path returns the combined vendor id + extra path.
      *  Cast the descriptor to {@link IPkgDescExtra} to get extra's specific attributes. */
     PKG_EXTRA(0x4000, SdkConstants.FD_EXTRAS,
             "{|$NAME|$VEND $PATH|}{?$FULL>1:, rev $FULL}",
-            false, true /*full-r*/, false, true /*path*/, false, true /*vend*/, false, false),
+            false, true, false, true, false, false, true),
 
     /** The SDK/ndk folder. */
     PKG_NDK(0x8000, SdkConstants.FD_NDK, "",
-                    false, true, false, false, false, false, false, false),
+                    false, true, false, false, false, false, false),
 
     /** The SDK/lldb folder. */
     PKG_LLDB(0xA000, SdkConstants.FD_LLDB, "",
-             false, true, false, false, false, false, false, false);
-
+             false, true, false, false, false, false, false);
 
     /** A collection of all the known PkgTypes. */
     public static final EnumSet<PkgType> PKG_ALL = EnumSet.allOf(PkgType.class);
@@ -134,8 +128,6 @@ public enum PkgType implements IPkgCapabilities {
     private int mIntValue;
     private String mFolderName;
 
-    private final boolean mHasMajorRevision;
-    private final boolean mHasFullRevision;
     private final boolean mHasAndroidVersion;
     private final boolean mHasPath;
     private final boolean mHasTag;
@@ -143,29 +135,28 @@ public enum PkgType implements IPkgCapabilities {
     private final boolean mHasMinToolsRev;
     private final boolean mHasMinPlatformToolsRev;
     private final String mListDisplayPattern;
+    private final boolean mHasName;
 
     PkgType(int intValue,
             @NonNull String folderName,
             @NonNull String listDisplayPattern,
-            boolean hasMajorRevision,
-            boolean hasFullRevision,
             boolean hasAndroidVersion,
             boolean hasPath,
             boolean hasTag,
             boolean hasVendor,
             boolean hasMinToolsRev,
-            boolean hasMinPlatformToolsRev) {
+            boolean hasMinPlatformToolsRev,
+            boolean hasName) {
         mIntValue = intValue;
         mFolderName = folderName;
         mListDisplayPattern = listDisplayPattern;
-        mHasMajorRevision = hasMajorRevision;
-        mHasFullRevision = hasFullRevision;
         mHasAndroidVersion = hasAndroidVersion;
         mHasPath = hasPath;
         mHasTag = hasTag;
         mHasVendor = hasVendor;
         mHasMinToolsRev = hasMinToolsRev;
         mHasMinPlatformToolsRev = hasMinPlatformToolsRev;
+        mHasName = hasName;
     }
 
     /** Returns the integer value matching the type, compatible with the old LocalSdkParer. */
@@ -179,42 +170,30 @@ public enum PkgType implements IPkgCapabilities {
         return mFolderName;
     }
 
-    @Override
-    public boolean hasMajorRevision() {
-        return mHasMajorRevision;
-    }
-
-    @Override
-    public boolean hasFullRevision() {
-        return mHasFullRevision;
-    }
-
-    @Override
     public boolean hasAndroidVersion() {
         return mHasAndroidVersion;
     }
 
-    @Override
     public boolean hasPath() {
         return mHasPath;
     }
 
-    @Override
     public boolean hasTag() {
         return mHasTag;
     }
 
-    @Override
     public boolean hasVendor() {
         return mHasVendor;
     }
 
-    @Override
+    public boolean hasName() {
+        return mHasName;
+    }
+
     public boolean hasMinToolsRev() {
         return mHasMinToolsRev;
     }
 
-    @Override
     public boolean hasMinPlatformToolsRev() {
         return mHasMinPlatformToolsRev;
     }

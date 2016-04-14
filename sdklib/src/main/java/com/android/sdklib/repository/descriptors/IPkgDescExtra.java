@@ -17,7 +17,8 @@
 package com.android.sdklib.repository.descriptors;
 
 import com.android.annotations.NonNull;
-import com.android.sdklib.repository.NoPreviewRevision;
+import com.android.repository.Revision;
+import com.android.sdklib.repositoryv2.IdDisplay;
 
 /**
  * {@link IPkgDescExtra} keeps information on individual extra SDK packages
@@ -26,10 +27,10 @@ import com.android.sdklib.repository.NoPreviewRevision;
  * adds methods specific to extras.
  * <p/>
  * To create a new {@link IPkgDescExtra},
- * use {@link PkgDesc.Builder#newExtra(IdDisplay, String, String, String[], NoPreviewRevision)}.
+ * use {@link PkgDesc.Builder#newExtra(IdDisplay, String, String, String[], Revision)} )}.
  * <p/>
- * The extra's revision is a {@link NoPreviewRevision}; the attribute is however
- * accessed via {@link IPkgDesc#getFullRevision()} instead of introducing a new
+ * The extra's revision is a {@link Revision}; the attribute is however
+ * accessed via {@link IPkgDesc#getRevision()} instead of introducing a new
  * custom method.
  * <p/>
  * To query generic packages capabilities, rely on {@link #getType()} and the

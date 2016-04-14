@@ -16,11 +16,12 @@
     <orderEntry type="module" module-name="builder-model" exported="" />
     <orderEntry type="library" name="ecj" level="project" />
     <orderEntry type="library" scope="TEST" name="groovy" level="project" />
-    <orderEntry type="module" module-name="sdk-common-base" />
     <orderEntry type="module" module-name="lint-checks-base" />
     <orderEntry type="module" module-name="lint-api-base" />
     <orderEntry type="library" scope="TEST" name="intellij-annotations" level="project" />
     <orderEntry type="module" module-name="lint-tests" scope="TEST" />
     <orderEntry type="library" scope="TEST" name="mockito" level="project" />
+    <orderEntry type="module" module-name="common" />
+    <orderEntry type="module" module-name="sdklib-base" />
   </component>
 </module>

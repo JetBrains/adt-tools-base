@@ -23,8 +23,8 @@ import org.junit.Rule
 import org.junit.Test
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
-import static com.android.build.gradle.integration.common.utils.FileHelper.createFile
-import static com.android.build.gradle.integration.common.utils.FileHelper.searchAndReplace
+import static com.android.utils.FileUtils.createFile
+import static com.android.build.gradle.integration.common.utils.TestFileUtils.searchAndReplace
 /**
  * General Model tests
  */

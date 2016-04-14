@@ -129,6 +129,15 @@ public class ScreenSizeQualifierTest extends TestCase {
         assertFalse(smallQ.isBetterMatchThan(normalQ, xlargeQ));
         assertFalse(smallQ.isBetterMatchThan(largeQ, xlargeQ));
         assertFalse(normalQ.isBetterMatchThan(largeQ, xlargeQ));
+
+        // test that null (i.e. no qualifier) is a better match than small for screens normal or above
+        assertTrue(smallQ.isBetterMatchThan(null, smallQ));
+        assertFalse(smallQ.isBetterMatchThan(null, normalQ));
+        assertFalse(smallQ.isBetterMatchThan(null, xlargeQ));
+
+        assertTrue(normalQ.isBetterMatchThan(null, normalQ));
+        assertTrue(normalQ.isBetterMatchThan(null, xlargeQ));
+        assertTrue(largeQ.isBetterMatchThan(null, xlargeQ));
     }
 
 }

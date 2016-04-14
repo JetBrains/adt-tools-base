@@ -20,6 +20,7 @@ import static com.google.common.truth.Truth.assert_;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.integration.common.fixture.Logcat;
 import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
@@ -46,7 +47,7 @@ import com.google.common.truth.MapSubject;
 import com.google.common.truth.MultimapSubject;
 import com.google.common.truth.MultisetSubject;
 import com.google.common.truth.ObjectArraySubject;
-import com.google.common.truth.OptionalSubject;
+import com.google.common.truth.GuavaOptionalSubject;
 import com.google.common.truth.PrimitiveBooleanArraySubject;
 import com.google.common.truth.PrimitiveByteArraySubject;
 import com.google.common.truth.PrimitiveCharArraySubject;
@@ -61,65 +62,69 @@ import com.google.common.truth.TableSubject;
 import com.google.common.truth.TestVerb;
 import com.google.common.truth.ThrowableSubject;
 
-import org.w3c.dom.Node;
-
 import java.io.File;
 import java.math.BigDecimal;
 import java.util.Map;
 
 /**
  * Helper for custom Truth factories.
+ *
+ * TODO: Remove methods that should be imported directly by statically importing Truth.assertThat
  */
 public class TruthHelper {
     @NonNull
-    public static FileSubject assertThat(@NonNull File file) {
+    public static FileSubject assertThat(@Nullable File file) {
         return assert_().about(FileSubjectFactory.factory()).that(file);
     }
 
     @NonNull
-    public static DexClassSubject assertThatDexClass(@NonNull Node node) {
-        return assert_().about(DexClassSubject.Factory.get()).that(node);
+    public static ApkSubject assertThatApk(@Nullable File apk) {
+        return assert_().about(ApkSubject.FACTORY).that(apk);
     }
 
     @NonNull
-    public static ApkSubject assertThatApk(@NonNull File apk) {
-        return assert_().about(ApkSubject.Factory.get()).that(apk);
+    public static DexFileSubject assertThatDex(@Nullable File dex) {
+        return assert_().about(DexFileSubject.FACTORY).that(dex);
     }
 
     @NonNull
-    public static AarSubject assertThatAar(@NonNull File aar) {
+    public static AarSubject assertThatAar(@Nullable File aar) {
         return assert_().about(AarSubject.Factory.get()).that(aar);
     }
 
     @NonNull
-    public static ZipFileSubject assertThatZip(@NonNull File file) {
+    public static ZipFileSubject assertThatZip(@Nullable File file) {
         return assert_().about(ZipFileSubject.Factory.get()).that(file);
     }
 
     @NonNull
-    public static ModelSubject assertThat(@NonNull AndroidProject androidProject) {
+    public static ModelSubject assertThat(@Nullable AndroidProject androidProject) {
         return assert_().about(ModelSubject.Factory.get()).that(androidProject);
     }
 
     @NonNull
-    public static IssueSubject assertThat(@NonNull SyncIssue issue) {
+    public static IssueSubject assertThat(@Nullable SyncIssue issue) {
         return assert_().about(IssueSubject.Factory.get()).that(issue);
     }
 
     @NonNull
-    public static VariantSubject assertThat(@NonNull Variant variant) {
+    public static VariantSubject assertThat(@Nullable Variant variant) {
         return assert_().about(VariantSubject.Factory.get()).that(variant);
     }
 
     @NonNull
-    public static ArtifactSubject assertThat(@NonNull AndroidArtifact artifact) {
+    public static ArtifactSubject assertThat(@Nullable AndroidArtifact artifact) {
         return assert_().about(ArtifactSubject.Factory.get()).that(artifact);
     }
 
     @NonNull
-    public static DependenciesSubject assertThat(@NonNull Dependencies dependencies) {
+    public static DependenciesSubject assertThat(@Nullable Dependencies dependencies) {
         return assert_().about(DependenciesSubject.Factory.get()).that(
                 dependencies);
+    }
+
+    public static LogCatMessagesSubject assertThat(Logcat logcat) {
+        return assert_().about(LogCatMessagesSubject.FACTORY).that(logcat);
     }
 
     // ---- helper method from com.google.common.truth.Truth
@@ -211,7 +216,7 @@ public class TruthHelper {
         return assert_().that(target);
     }
 
-    public static <T> OptionalSubject<T> assertThat(@Nullable Optional<T> target) {
+    public static <T> GuavaOptionalSubject assertThat(@Nullable Optional<T> target) {
         return assert_().that(target);
     }
 

@@ -17,7 +17,7 @@
 package com.android.build.gradle.integration.library
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.FileHelper
+import com.android.build.gradle.integration.common.utils.TestFileUtils
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
@@ -52,7 +52,7 @@ class LibProguardConsumerFilesTest {
         File debugFileOutput = project.file("build/" + FD_INTERMEDIATES + "/bundles/debug/proguard.txt")
         File releaseFileOutput = project.file("build/" + FD_INTERMEDIATES + "/bundles/release/proguard.txt")
 
-        FileHelper.checkContent(debugFileOutput, "A")
-        FileHelper.checkContent(releaseFileOutput, ["A", "B", "C"])
+        TestFileUtils.checkContent(debugFileOutput, "A")
+        TestFileUtils.checkContent(releaseFileOutput, ["A", "B", "C"])
     }
 }

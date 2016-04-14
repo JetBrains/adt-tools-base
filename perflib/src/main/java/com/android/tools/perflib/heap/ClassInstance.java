@@ -60,17 +60,27 @@ public class ClassInstance extends Instance {
     }
 
     @Override
-    public final void accept(@NonNull Visitor visitor) {
-        visitor.visitClassInstance(this);
-        for (FieldValue field : getValues()) {
-            if (field.getValue() instanceof Instance) {
-                if (!mReferencesAdded) {
-                    ((Instance) field.getValue()).addReference(field.getField(), this);
+    public final void resolveReferences() {
+        for (FieldValue fieldValue : getValues()) {
+            if (fieldValue.getValue() instanceof Instance) {
+                Instance referencedInstance = (Instance)fieldValue.getValue();
+                referencedInstance.addReverseReference(fieldValue.getField(), this);
+                if (getIsSoftReference() && fieldValue.getField().getName().equals("referent")) {
+                    mSoftForwardReference = referencedInstance;
+                } else {
+                    mHardForwardReferences.add(referencedInstance);
                 }
-                visitor.visitLater(this, (Instance) field.getValue());
             }
         }
-        mReferencesAdded = true;
+        mHardForwardReferences.trimToSize(); // Don't wait until the compactMemory stage to trim.
+    }
+
+    @Override
+    public final void accept(@NonNull Visitor visitor) {
+        visitor.visitClassInstance(this);
+        for (Instance instance : mHardForwardReferences) {
+            visitor.visitLater(this, instance);
+        }
     }
 
     @Override

@@ -24,7 +24,6 @@ import com.android.annotations.NonNull;
 import com.android.sdklib.mock.MockLog;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 
 import junit.framework.TestCase;
@@ -254,8 +253,8 @@ public class MergerTest extends TestCase {
                 try {
                     XmlDocument xmlDocument = Mockito.mock(XmlDocument.class);
                     when(mMergingReport.getResult()).thenReturn(MergingReport.Result.SUCCESS);
-                    when(mMergingReport.getMergedDocument()).thenReturn(Optional.of(xmlDocument));
-                    when(xmlDocument.prettyPrint()).thenReturn("Pretty combined");
+                    when(mMergingReport.getMergedDocument(MergingReport.MergedManifestKind.MERGED))
+                            .thenReturn("Pretty combined");
                     when(mInvoker.merge()).thenReturn(mMergingReport);
                 } catch (ManifestMerger2.MergeFailureException e) {
                     fail(e.getMessage());

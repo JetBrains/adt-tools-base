@@ -60,31 +60,32 @@ apply plugin: "com.android.model.application"
 
 model {
     android {
-        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-        buildToolsVersion = "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-    }
-    android.buildTypes {
-        debug {
-            buildConfigFields.with {
-                create() {
-                    type = "int"
-                    name = "VALUE"
-                    value = "1"
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+
+        buildTypes {
+            debug {
+                buildConfigFields.with {
+                    create() {
+                        type "int"
+                        name "VALUE"
+                        value "1"
+                    }
                 }
             }
-        }
-        release {
-            signingConfig = \$("android.signingConfigs.myConfig")
+            release {
+                signingConfig = \$("android.signingConfigs.myConfig")
+            }
         }
     }
 
     android.signingConfigs {
         create("myConfig") {
 """ + storeFile + """
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
-            storeType = "jks"
+            storePassword "android"
+            keyAlias "androiddebugkey"
+            keyPassword "android"
+            storeType "jks"
         }
     }
 }
@@ -98,7 +99,7 @@ model {
 
     @Test
     public void assembleRelease() {
-        project.execute(["-Dorg.gradle.model.dsl=true"], "clean", "assembleRelease")
+        project.execute("clean", "assembleRelease")
         assertThatZip(project.getApk("release")).contains("META-INF/CERT.RSA")
     }
 

@@ -58,7 +58,9 @@ import static com.android.SdkConstants.TAG_APPLICATION;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
-import com.android.tools.lint.client.api.JavaParser;
+import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
+import com.android.tools.lint.client.api.JavaParser.ResolvedField;
+import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
@@ -605,13 +607,14 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                 return false;
             }
 
-            JavaParser.ResolvedNode resolved = mContext.resolve(node);
+            ResolvedNode resolved = mContext.resolve(node);
             if (resolved != null) {
-                if (!(resolved instanceof JavaParser.ResolvedField)) {
+                if (!(resolved instanceof ResolvedField)) {
                     return false;
                 } else {
-                    JavaParser.ResolvedField field = (JavaParser.ResolvedField) resolved;
-                    if (!field.getContainingClass().matches(FQCN_GRAVITY)) {
+                    ResolvedField field = (ResolvedField) resolved;
+                    ResolvedClass containingClass = field.getContainingClass();
+                    if (containingClass == null || !containingClass.matches(FQCN_GRAVITY)) {
                         return false;
                     }
                 }

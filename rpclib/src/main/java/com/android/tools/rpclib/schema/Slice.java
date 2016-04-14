@@ -23,7 +23,6 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 
 public final class Slice extends Type {
-
     String mAlias;
 
     Type mValueType;
@@ -48,26 +47,39 @@ public final class Slice extends Type {
 
     @Override
     public void encodeValue(@NotNull Encoder e, Object value) throws IOException {
-        assert (value instanceof Object[]);
-        Object[] array = (Object[]) value;
-        e.uint32(array.length);
-        for (Object v : array) {
-            mValueType.encodeValue(e, v);
+        if (Primitive.isMethod(mValueType, Method.Uint8)) {
+            assert (value instanceof byte[]);
+            byte[] array = (byte[])value;
+            e.uint32(array.length);
+            e.write(array, array.length);
+        } else {
+            assert (value instanceof Object[]);
+            Object[] array = (Object[])value;
+            e.uint32(array.length);
+            for (Object v : array) {
+                mValueType.encodeValue(e, v);
+            }
         }
     }
 
     @Override
     public Object decodeValue(@NotNull Decoder d) throws IOException {
-        Object[] array = new Object[d.uint32()];
-        for (int i = 0; i < array.length; i++) {
-            array[i] = mValueType.decodeValue(d);
+        if (Primitive.isMethod(mValueType, Method.Uint8)) {
+            byte[] array = new byte[d.uint32()];
+            d.read(array, array.length);
+            return array;
+        } else {
+            Object[] array = new Object[d.uint32()];
+            for (int i = 0; i < array.length; i++) {
+                array[i] = mValueType.decodeValue(d);
+            }
+            return array;
         }
-        return array;
     }
 
     @Override
     public void encode(@NotNull Encoder e) throws IOException {
-        TypeTag.sliceTag().encode(e);
+        TypeTag.SliceTag.encode(e);
         mValueType.encode(e);
         e.nonCompactString(mAlias);
     }

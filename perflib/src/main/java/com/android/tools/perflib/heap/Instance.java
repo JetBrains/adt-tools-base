@@ -24,10 +24,11 @@ import com.google.common.primitives.UnsignedBytes;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public abstract class Instance {
-
     protected final long mId;
 
     //  The stack in which this object was allocated
@@ -48,8 +49,6 @@ public abstract class Instance {
 
     int mDistanceToGcRoot = Integer.MAX_VALUE;
 
-    boolean mReferencesAdded = false;
-
     Instance mNextInstanceToGcRoot = null;
 
     //  The immediate dominator of this instance, or null if not reachable from any GC roots.
@@ -62,16 +61,38 @@ public abstract class Instance {
     //  To save space, we only keep a primitive array here following the order in mSnapshot.mHeaps.
     private long[] mRetainedSizes;
 
+    protected final ArrayList<Instance> mHardForwardReferences = new ArrayList<Instance>();
+
+    protected Instance mSoftForwardReference = null;
+
     //  List of all objects that hold a live reference to this object
-    private final ArrayList<Instance> mHardReferences = new ArrayList<Instance>();
+    protected final ArrayList<Instance> mHardReverseReferences = new ArrayList<Instance>();
 
     //  List of all objects that hold a soft/weak/phantom reference to this object.
     //  Don't create an actual list until we need to.
-    private ArrayList<Instance> mSoftReferences = null;
+    protected ArrayList<Instance> mSoftReverseReferences = null;
 
     Instance(long id, @NonNull StackTrace stackTrace) {
         mId = id;
         mStack = stackTrace;
+    }
+
+    /**
+     * Resolves all forward/reverse + hard/soft references for this instance.
+     */
+    public abstract void resolveReferences();
+
+    public abstract void accept(Visitor visitor);
+
+    /**
+     * Trims the variable size data to their minimal size to reduce memory usage.
+     */
+    public void compactMemory() {
+        // mHardForwardReferences trimmed in resolveReferences();
+        mHardReverseReferences.trimToSize();
+        if (mSoftReverseReferences != null) {
+            mSoftReverseReferences.trimToSize();
+        }
     }
 
     public long getId() {
@@ -81,8 +102,6 @@ public abstract class Instance {
     public long getUniqueId() {
         return getId() & mHeap.mSnapshot.getIdSizeMask();
     }
-
-    public abstract void accept(Visitor visitor);
 
     public void setClassId(long classId) {
         mClassId = classId;
@@ -141,12 +160,20 @@ public abstract class Instance {
     }
 
     public void setDistanceToGcRoot(int newDistance) {
-        assert(newDistance < mDistanceToGcRoot);
+        assert (newDistance < mDistanceToGcRoot);
         mDistanceToGcRoot = newDistance;
     }
 
     public void setNextInstanceToGcRoot(Instance instance) {
         mNextInstanceToGcRoot = instance;
+    }
+
+    /**
+     * Determines if this instance is reachable via hard references from any GC root.
+     * The results are only valid after ShortestDistanceVisitor has been run.
+     */
+    public boolean isReachable() {
+        return mDistanceToGcRoot != Integer.MAX_VALUE;
     }
 
     public void resetRetainedSize() {
@@ -182,34 +209,66 @@ public abstract class Instance {
     /**
      * Add to the list of objects that references this Instance.
      *
-     * @param field the named variable in #reference pointing to this instance. If the name of the field is "referent", and #reference is a
-     *              soft reference type, then reference is counted as a soft reference instead of the usual hard reference.
+     * @param field     the named variable in #reference pointing to this instance. If the name of
+     *                  the field is "referent", and #reference is a soft reference type, then
+     *                  reference is counted as a soft reference instead of the usual hard
+     *                  reference.
      * @param reference another instance that references this instance
      */
-    public void addReference(@Nullable Field field, @NonNull Instance reference) {
+    public void addReverseReference(@Nullable Field field, @NonNull Instance reference) {
         if (reference.getIsSoftReference() && field != null && field.getName().equals("referent")) {
-            if (mSoftReferences == null) {
-                mSoftReferences = new ArrayList<Instance>();
+            if (mSoftReverseReferences == null) {
+                mSoftReverseReferences = new ArrayList<Instance>();
             }
-            mSoftReferences.add(reference);
-        }
-        else {
-            mHardReferences.add(reference);
+            mSoftReverseReferences.add(reference);
+        } else {
+            mHardReverseReferences.add(reference);
         }
     }
 
     @NonNull
-    public ArrayList<Instance> getHardReferences() {
-        return mHardReferences;
+    public ArrayList<Instance> getHardForwardReferences() {
+        return mHardForwardReferences;
+    }
+
+    @NonNull
+    public Instance getSoftForwardReference() {
+        return mSoftForwardReference;
+    }
+
+    @NonNull
+    public ArrayList<Instance> getHardReverseReferences() {
+        return mHardReverseReferences;
     }
 
     @Nullable
-    public ArrayList<Instance> getSoftReferences() {
-        return mSoftReferences;
+    public ArrayList<Instance> getSoftReverseReferences() {
+        return mSoftReverseReferences;
     }
 
     /**
-     * There is an underlying assumption that a class that is a soft reference will only have one referent.
+     * Removes all duplicate references AND references to itself.
+     */
+    public void dedupeReferences() {
+        Set<Instance> dedupeSet = new HashSet<Instance>(mHardReverseReferences.size());
+        dedupeSet.addAll(mHardReverseReferences);
+        dedupeSet.remove(this);
+        mHardReverseReferences.clear();
+        mHardReverseReferences.addAll(dedupeSet);
+        mHardReverseReferences.trimToSize();
+
+        if (getSoftReverseReferences() != null) {
+            dedupeSet.clear();
+            dedupeSet.addAll(getSoftReverseReferences());
+            mSoftReverseReferences.clear();
+            mSoftReverseReferences.addAll(dedupeSet);
+            mSoftReverseReferences.trimToSize();
+        }
+    }
+
+    /**
+     * There is an underlying assumption that a class that is a soft reference will only have one
+     * referent.
      *
      * @return true if the instance is a soft reference type, or false otherwise
      */
@@ -258,7 +317,7 @@ public abstract class Instance {
         return 0;
     }
 
-    protected int readUnsignedByte(){
+    protected int readUnsignedByte() {
         return UnsignedBytes.toInt(getBuffer().readByte());
     }
 
@@ -272,7 +331,6 @@ public abstract class Instance {
 
 
     public static class CompositeSizeVisitor extends NonRecursiveVisitor {
-
         int mSize = 0;
 
         @Override

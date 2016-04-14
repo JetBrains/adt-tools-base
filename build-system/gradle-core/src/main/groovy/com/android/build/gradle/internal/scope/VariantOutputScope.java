@@ -25,6 +25,7 @@ import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.CompatibleScreensManifest;
 import com.android.build.gradle.tasks.ManifestProcessorTask;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
+import com.android.build.gradle.tasks.SplitZipAlign;
 import com.android.utils.StringHelper;
 
 import java.io.File;
@@ -49,6 +50,8 @@ public class VariantOutputScope implements BaseScope {
     private AndroidTask<ProcessAndroidResources> processResourcesTask;
 
     private AndroidTask<?> shrinkResourcesTask;
+
+    private AndroidTask<SplitZipAlign> splitZipAlignTask;
 
     public VariantOutputScope(
             @NonNull VariantScope variantScope,
@@ -204,5 +207,14 @@ public class VariantOutputScope implements BaseScope {
     public void setShrinkResourcesTask(
             AndroidTask<?> shrinkResourcesTask) {
         this.shrinkResourcesTask = shrinkResourcesTask;
+    }
+
+    public AndroidTask<SplitZipAlign> getSplitZipAlignTask() {
+        return splitZipAlignTask;
+    }
+
+    public void setSplitZipAlignTask(
+            AndroidTask<SplitZipAlign> splitZipAlignTask) {
+        this.splitZipAlignTask = splitZipAlignTask;
     }
 }

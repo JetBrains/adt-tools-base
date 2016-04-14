@@ -16,7 +16,9 @@
 
 package com.android.ddmlib;
 
+import com.android.annotations.NonNull;
 import com.android.ddmlib.ClientData.DebuggerStatus;
+import com.android.ddmlib.jdwp.JdwpAgent;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -31,7 +33,7 @@ import java.nio.channels.SocketChannel;
 /**
  * This represents a pending or established connection with a JDWP debugger.
  */
-class Debugger {
+public class Debugger extends JdwpAgent {
 
     /*
      * Messages from the debugger should be pretty small; may not even
@@ -63,7 +65,7 @@ class Debugger {
      * on a specific port.
      */
     Debugger(Client client, int listenPort) throws IOException {
-
+        super(client.getJdwpProtocol());
         mClient = client;
         mListenPort = listenPort;
 
@@ -241,12 +243,12 @@ class Debugger {
         if (mConnState == ST_AWAIT_SHAKE) {
             int result;
 
-            result = JdwpPacket.findHandshake(mReadBuffer);
+            result = JdwpHandshake.findHandshake(mReadBuffer);
             //Log.v("ddms", "findHand: " + result);
             switch (result) {
-                case JdwpPacket.HANDSHAKE_GOOD:
+                case JdwpHandshake.HANDSHAKE_GOOD:
                     Log.d("ddms", "Good handshake from debugger");
-                    JdwpPacket.consumeHandshake(mReadBuffer);
+                    JdwpHandshake.consumeHandshake(mReadBuffer);
                     sendHandshake();
                     mConnState = ST_READY;
 
@@ -256,11 +258,11 @@ class Debugger {
 
                     // see if we have another packet in the buffer
                     return getJdwpPacket();
-                case JdwpPacket.HANDSHAKE_BAD:
+                case JdwpHandshake.HANDSHAKE_BAD:
                     // not a debugger, throw an exception so we drop the line
                     Log.d("ddms", "Bad handshake from debugger");
                     throw new IOException("bad handshake");
-                case JdwpPacket.HANDSHAKE_NOTYET:
+                case JdwpHandshake.HANDSHAKE_NOTYET:
                     break;
                 default:
                     Log.e("ddms", "Unknown packet while waiting for client handshake");
@@ -279,25 +281,13 @@ class Debugger {
     }
 
     /**
-     * Forward a packet to the client.
-     *
-     * "mClient" will never be null, though it's possible that the channel
-     * in the client has closed and our send attempt will fail.
-     *
-     * Consumes the packet.
-     */
-    void forwardPacketToClient(JdwpPacket packet) throws IOException {
-        mClient.sendAndConsume(packet);
-    }
-
-    /**
      * Send the handshake to the debugger.  We also send along any packets
      * we already received from the client (usually just a VM_START event,
      * if anything at all).
      */
     private synchronized void sendHandshake() throws IOException {
-        ByteBuffer tempBuffer = ByteBuffer.allocate(JdwpPacket.HANDSHAKE_LEN);
-        JdwpPacket.putHandshake(tempBuffer);
+        ByteBuffer tempBuffer = ByteBuffer.allocate(JdwpHandshake.HANDSHAKE_LEN);
+        JdwpHandshake.putHandshake(tempBuffer);
         int expectedLength = tempBuffer.position();
         tempBuffer.flip();
         if (mChannel.write(tempBuffer) != expectedLength) {
@@ -330,23 +320,24 @@ class Debugger {
      * coordinate the buffered data with mChannel creation, so this whole
      * method is synchronized.
      */
-    synchronized void sendAndConsume(JdwpPacket packet)
-        throws IOException {
-
-        if (mChannel == null) {
-            /*
-             * Buffer this up so we can send it to the debugger when it
-             * finally does connect.  This is essential because the VM_START
-             * message might be telling the debugger that the VM is
-             * suspended.  The alternative approach would be for us to
-             * capture and interpret VM_START and send it later if we
-             * didn't choose to un-suspend the VM for our own purposes.
-             */
-            Log.d("ddms", "Saving packet 0x"
-                    + Integer.toHexString(packet.getId()));
-            packet.movePacket(mPreDataBuffer);
-        } else {
-            packet.writeAndConsume(mChannel);
+    @Override
+    protected void send(@NonNull JdwpPacket packet) throws IOException {
+        synchronized (this) {
+            if (mChannel == null) {
+                /*
+                 * Buffer this up so we can send it to the debugger when it
+                 * finally does connect.  This is essential because the VM_START
+                 * message might be telling the debugger that the VM is
+                 * suspended.  The alternative approach would be for us to
+                 * capture and interpret VM_START and send it later if we
+                 * didn't choose to un-suspend the VM for our own purposes.
+                 */
+                Log.d("ddms", "Saving packet 0x"
+                        + Integer.toHexString(packet.getId()));
+                packet.move(mPreDataBuffer);
+            } else {
+                packet.write(mChannel);
+            }
         }
     }
 }

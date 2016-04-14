@@ -75,7 +75,7 @@ public class VectorDetectorTest extends AbstractCheckTest {
                 + "res/drawable/foo.xml:9: Warning: This tag is not supported in images generated from this vector icon for API < 21; check generated icon to make sure it looks acceptable [VectorRaster]\n"
                 + "    <clip-path />\n"
                 + "    ~~~~~~~~~~~~~\n"
-                + "res/drawable/foo.xml:11: Warning: This tag is not supported in images generated from this vector icon for API < 21; check generated icon to make sure it looks acceptable [VectorRaster]\n"
+                + "res/drawable/foo.xml:11: Warning: Update Gradle plugin version to 1.5+ to correctly handle <group> tags in generated bitmaps [VectorRaster]\n"
                 + "    <group\n"
                 + "    ^\n"
                 + "res/drawable/foo.xml:19: Warning: Resource references will not work correctly in images generated for this vector icon for API < 21; check generated icon to make sure it looks acceptable [VectorRaster]\n"
@@ -113,6 +113,24 @@ public class VectorDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testNoGroupWarningWithPlugin15() throws Exception {
+        assertEquals("No warnings.",
+                lintProject(
+                        xml("res/drawable/foo.xml", ""
+                                + "<vector xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "        android:height=\"76dp\"\n"
+                                + "        android:width=\"76dp\"\n"
+                                + "        android:viewportHeight=\"48\"\n"
+                                + "        android:viewportWidth=\"48\">\n"
+                                + "\n"
+                                + "    <group />"
+                                + "\n"
+                                + "</vector>"
+                                + ""),
+                        copy("apicheck/minsdk14.xml", "AndroidManifest.xml")
+                ));
+    }
+
     @Override
     protected TestLintClient createClient() {
         return new TestLintClient() {
@@ -128,7 +146,11 @@ public class VectorDetectorTest extends AbstractCheckTest {
                     @Nullable
                     @Override
                     public AndroidProject getGradleProjectModel() {
-                        return PrivateResourceDetectorTest.createMockProject("1.4.0-alpha2", 3);
+                        String modelVersion = "1.4.0-alpha2";
+                        if (getName().equals("VectorDetectorTest_testNoGroupWarningWithPlugin15")) {
+                            modelVersion = "1.5.0-alpha1";
+                        }
+                        return PrivateResourceDetectorTest.createMockProject(modelVersion, 3);
                     }
                 };
             }

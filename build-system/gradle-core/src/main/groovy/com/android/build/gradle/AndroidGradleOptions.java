@@ -19,11 +19,16 @@ package com.android.build.gradle;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidProject;
+import com.android.sdklib.AndroidVersion;
 import com.google.common.collect.Maps;
 
 import org.gradle.api.Project;
 
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
+import java.util.StringTokenizer;
 
 /**
  * Determines if various options, triggered from the command line or environment, are set.
@@ -36,13 +41,19 @@ public class AndroidGradleOptions {
     private static final String PROPERTY_THREAD_POOL_SIZE = "android.threadPoolSize";
     private static final String PROPERTY_THREAD_POOL_SIZE_OLD = "com.android.build.threadPoolSize";
 
-    private static final String PROPERTY_NEW_SHRINKER = "android.newShrinker";
+    public static final String USE_DEPRECATED_NDK = "android.useDeprecatedNdk";
+
     private static final String PROPERTY_DISABLE_RESOURCE_VALIDATION =
             "android.disableResourceValidation";
 
     // TODO: Drop the "com." prefix, for consistency.
     private static final String PROPERTY_BENCHMARK_NAME = "com.android.benchmark.name";
     private static final String PROPERTY_BENCHMARK_MODE = "com.android.benchmark.mode";
+
+    public static final String PROPERTY_INCREMENTAL_JAVA_COMPILE =
+            "android.incrementalJavaCompile";
+
+    private static final String PROPERTY_USE_OLD_PACKAGING = "android.useOldPackaging";
 
     @NonNull
     public static Map<String, String> getExtraInstrumentationTestRunnerArgs(@NonNull Project project) {
@@ -81,13 +92,54 @@ public class AndroidGradleOptions {
         return getBoolean(project, AndroidProject.PROPERTY_BUILD_MODEL_ONLY_ADVANCED);
     }
 
+    public static boolean useOldPackaging(@NonNull Project project) {
+        return getBoolean(project, PROPERTY_USE_OLD_PACKAGING, true);
+    }
+
     @Nullable
     public static String getApkLocation(@NonNull Project project) {
         return getString(project, AndroidProject.PROPERTY_APK_LOCATION);
     }
 
-    public static boolean isIntegrationTest() {
-        return Boolean.parseBoolean(System.getenv("INTEGRATION_TEST"));
+    @Nullable
+    public static String getBuildTargetDensity(@NonNull Project project) {
+        return getString(project, AndroidProject.PROPERTY_BUILD_DENSITY);
+    }
+
+    @Nullable
+    public static String getBuildTargetAbi(@NonNull Project project) {
+        return getString(project, AndroidProject.PROPERTY_BUILD_ABI);
+    }
+
+    /**
+     * Returns the {@link AndroidVersion} for the target device.
+     *
+     * @param project the project being built
+     * @return a {@link AndroidVersion} for the targeted device, following the
+     *         {@link AndroidProject#PROPERTY_BUILD_API} value passed by Android Studio.
+     */
+    @NonNull
+    public static AndroidVersion getTargetApiLevel(@NonNull Project project) {
+        String apiVersion = getString(project, AndroidProject.PROPERTY_BUILD_API);
+        AndroidVersion version = AndroidVersion.DEFAULT;
+        if (apiVersion != null) {
+            try {
+                version = new AndroidVersion(apiVersion);
+            } catch (AndroidVersion.AndroidVersionException e) {
+                project.getLogger().warn("Wrong build target version passed ", e);
+            }
+        }
+        return version;
+    }
+
+
+    @Nullable
+    public static String getColdswapMode(@NonNull Project project) {
+        return getString(project, AndroidProject.PROPERTY_SIGNING_COLDSWAP_MODE);
+    }
+
+    public static boolean useDeprecatedNdk(@NonNull Project project) {
+        return getBoolean(project, USE_DEPRECATED_NDK);
     }
 
     @Nullable
@@ -129,8 +181,21 @@ public class AndroidGradleOptions {
         return null;
     }
 
-    public static boolean useNewShrinker(@NonNull Project project) {
-        return getBoolean(project, PROPERTY_NEW_SHRINKER);
+    @NonNull
+    public static EnumSet<OptionalCompilationStep> getOptionalCompilationSteps(
+            @NonNull Project project) {
+
+        String values = getString(project, AndroidProject.OPTIONAL_COMPILATION_STEPS);
+        if (values != null) {
+            List<OptionalCompilationStep> optionalCompilationSteps =
+                    new ArrayList<OptionalCompilationStep>();
+            StringTokenizer st = new StringTokenizer(values, ",");
+            while(st.hasMoreElements()) {
+                optionalCompilationSteps.add(OptionalCompilationStep.valueOf(st.nextToken()));
+            }
+            return EnumSet.copyOf(optionalCompilationSteps);
+        }
+        return EnumSet.noneOf(OptionalCompilationStep.class);
     }
 
     public static boolean isResourceValidationEnabled(@NonNull Project project) {
@@ -158,6 +223,13 @@ public class AndroidGradleOptions {
     private static boolean getBoolean(
             @NonNull Project project,
             @NonNull String propertyName) {
+        return getBoolean(project, propertyName, false /*defaultValue*/);
+    }
+
+    private static boolean getBoolean(
+            @NonNull Project project,
+            @NonNull String propertyName,
+            boolean defaultValue) {
         if (project.hasProperty(propertyName)) {
             Object value = project.getProperties().get(propertyName);
             if (value instanceof String) {
@@ -167,7 +239,11 @@ public class AndroidGradleOptions {
             }
         }
 
-        return false;
+        return defaultValue;
+    }
+
+    public static boolean isJavaCompileIncrementalPropertySet(@NonNull Project project) {
+        return project.hasProperty(PROPERTY_INCREMENTAL_JAVA_COMPILE);
     }
 
     public static class SigningOptions {
@@ -177,7 +253,7 @@ public class AndroidGradleOptions {
         @NonNull public final String keyPassword;
         @Nullable public final String storeType;
 
-        public SigningOptions(
+        SigningOptions(
                 @NonNull String storeFile,
                 @NonNull String storePassword,
                 @NonNull String keyAlias,

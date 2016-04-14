@@ -20,6 +20,8 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.api.transform.SecondaryInput;
+import com.android.build.api.transform.TransformInvocation;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.api.transform.Context;
@@ -133,15 +135,11 @@ public class MultiDexTransform extends BaseProguardAction {
     }
 
     @Override
-    public void transform(
-            @NonNull Context context,
-            @NonNull Collection<TransformInput> inputs,
-            @NonNull Collection<TransformInput> referencedInputs,
-            @Nullable TransformOutputProvider outputProvider,
-            boolean isIncremental) throws IOException, TransformException, InterruptedException {
+    public void transform(TransformInvocation invocation)
+            throws IOException, TransformException, InterruptedException {
 
         try {
-            File input = verifyInputs(referencedInputs);
+            File input = verifyInputs(invocation.getReferencedInputs());
             shrinkWithProguard(input);
             computeList(input);
         } catch (ParseException e) {
@@ -173,6 +171,7 @@ public class MultiDexTransform extends BaseProguardAction {
         dontoptimize();
         dontpreverify();
         dontwarn();
+        dontnote();
         forceprocessing();
         applyConfigurationFile(manifestKeepListFile);
 

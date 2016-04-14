@@ -11,17 +11,17 @@ android {
 
     productFlavors {
         f1 {
-            flavorDimension   "group1"
+            dimension   "group1"
         }
         f2 {
-            flavorDimension   "group1"
+            dimension   "group1"
         }
 
         fa {
-            flavorDimension   "group2"
+            dimension   "group2"
         }
         fb {
-            flavorDimension   "group2"
+            dimension   "group2"
         }
     }
 }

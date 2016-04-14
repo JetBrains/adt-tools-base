@@ -80,8 +80,8 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     private SigningConfig mSigningConfig;
     @Nullable
     private Set<String> mResourceConfiguration;
-    @Nullable
-    private Set<String> mGeneratedDensities;
+    @NonNull
+    private DefaultVectorDrawablesOptions mVectorDrawablesOptions = new DefaultVectorDrawablesOptions();
 
     /**
      * Creates a ProductFlavor with a given name.
@@ -231,7 +231,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     }
 
     /** Sets the renderscript target API to the given value. */
-    public void setRenderscriptTargetApi(Integer renderscriptTargetApi) {
+    public void setRenderscriptTargetApi(@Nullable Integer renderscriptTargetApi) {
         mRenderscriptTargetApi = renderscriptTargetApi;
     }
 
@@ -381,29 +381,11 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return this;
     }
 
-    /**
-     * Densities used when generating PNGs from vector drawables at build time. For the PNGs to be
-     * generated, minimum SDK has to be below 21.
-     *
-     * <p>If set to an empty collection, all special handling of vector drawables will be
-     * disabled.
-     *
-     * <p>See <a href="http://developer.android.com/guide/practices/screens_support.html">Supporting Multiple Screens</a>.
-     */
-    @Nullable
+    @NonNull
     @Override
-    public Set<String> getGeneratedDensities() {
-        return mGeneratedDensities;
+    public DefaultVectorDrawablesOptions getVectorDrawables() {
+        return mVectorDrawablesOptions;
     }
-
-    public void setGeneratedDensities(@Nullable Iterable<String> densities) {
-        if (densities == null) {
-            mGeneratedDensities = null;
-        } else {
-            mGeneratedDensities = Sets.newHashSet(densities);
-        }
-    }
-
 
     /**
      * Adds a res config filter (for instance 'hdpi')
@@ -550,8 +532,15 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
                 .addAll(base.getJarJarRuleFiles())
                 .build());
 
-        flavor.setGeneratedDensities(
-                chooseNotNull(overlay.getGeneratedDensities(), base.getGeneratedDensities()));
+        flavor.getVectorDrawables().setGeneratedDensities(
+                chooseNotNull(
+                        overlay.getVectorDrawables().getGeneratedDensities(),
+                        base.getVectorDrawables().getGeneratedDensities()));
+
+        flavor.getVectorDrawables().setUseSupportLibrary(
+                chooseNotNull(
+                        overlay.getVectorDrawables().getUseSupportLibrary(),
+                        base.getVectorDrawables().getUseSupportLibrary()));
 
         return flavor;
     }
@@ -588,6 +577,9 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
 
         flavor.mSigningConfig = productFlavor.getSigningConfig();
 
+        flavor.mVectorDrawablesOptions =
+                DefaultVectorDrawablesOptions.copyOf(productFlavor.getVectorDrawables());
+
         flavor.addResourceConfigurations(productFlavor.getResourceConfigurations());
         flavor.addManifestPlaceholders(productFlavor.getManifestPlaceholders());
 
@@ -599,11 +591,6 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         flavor.setMultiDexKeepFile(productFlavor.getMultiDexKeepFile());
         flavor.setMultiDexKeepProguard(productFlavor.getMultiDexKeepProguard());
         flavor.setJarJarRuleFiles(ImmutableList.copyOf(productFlavor.getJarJarRuleFiles()));
-
-        flavor.setGeneratedDensities(
-                productFlavor.getGeneratedDensities() == null
-                        ? null
-                        : Sets.newHashSet(productFlavor.getGeneratedDensities()));
 
         return flavor;
     }

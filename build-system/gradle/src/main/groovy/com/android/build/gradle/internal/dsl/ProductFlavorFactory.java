@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.dsl;
 
 import com.android.annotations.NonNull;
+import com.android.builder.core.ErrorReporter;
 
 import org.gradle.api.NamedDomainObjectFactory;
 import org.gradle.api.Project;
@@ -35,18 +36,23 @@ public class ProductFlavorFactory implements NamedDomainObjectFactory<ProductFla
     private final Project project;
     @NonNull
     private final Logger logger;
+    @NonNull
+    private final ErrorReporter errorReporter;
 
-    public ProductFlavorFactory(@NonNull Instantiator instantiator,
+    public ProductFlavorFactory(
+            @NonNull Instantiator instantiator,
             @NonNull Project project,
-            @NonNull Logger logger) {
+            @NonNull Logger logger,
+            @NonNull ErrorReporter errorReporter) {
         this.instantiator = instantiator;
         this.project = project;
         this.logger = logger;
+        this.errorReporter = errorReporter;
     }
 
     @Override
     public ProductFlavor create(String name) {
         return instantiator.newInstance(ProductFlavor.class,
-                name, project, instantiator, logger);
+                name, project, instantiator, logger, errorReporter);
     }
 }

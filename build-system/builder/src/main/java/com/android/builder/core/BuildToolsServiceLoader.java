@@ -20,7 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.jack.api.JackProvider;
 import com.android.jill.api.JillProvider;
 import com.android.sdklib.BuildToolInfo;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.utils.ILogger;
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
@@ -54,10 +54,10 @@ public enum BuildToolsServiceLoader {
      * private cache data for a particular build-tool version.
      */
     private static final class LoadedBuildTool {
-        private final FullRevision version;
+        private final Revision version;
         private final BuildToolServiceLoader serviceLoader;
 
-        private LoadedBuildTool(FullRevision version,
+        private LoadedBuildTool(Revision version,
                 BuildToolServiceLoader serviceLoader) {
             this.version = version;
             this.serviceLoader = serviceLoader;
@@ -89,7 +89,7 @@ public enum BuildToolsServiceLoader {
     }
 
     @NonNull
-    private Optional<LoadedBuildTool> findVersion(FullRevision version) {
+    private Optional<LoadedBuildTool> findVersion(Revision version) {
         for (LoadedBuildTool loadedBuildTool : loadedBuildTools) {
             if (loadedBuildTool.version.equals(version)) {
                 return Optional.of(loadedBuildTool);

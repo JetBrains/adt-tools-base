@@ -16,46 +16,54 @@
 
 package com.android.tools.lint.checks;
 
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Collection;
-import java.util.Set;
-
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.InsnList;
-import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.MethodNode;
-import org.objectweb.asm.tree.VarInsnNode;
-import org.objectweb.asm.Opcodes;
+import static com.android.SdkConstants.ANDROID_URI;
+import static com.android.SdkConstants.ATTR_NAME;
+import static com.android.SdkConstants.ATTR_PERMISSION;
+import static com.android.SdkConstants.CLASS_BROADCASTRECEIVER;
+import static com.android.SdkConstants.CLASS_CONTEXT;
+import static com.android.SdkConstants.CLASS_INTENT;
+import static com.android.SdkConstants.TAG_INTENT_FILTER;
+import static com.android.SdkConstants.TAG_RECEIVER;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
+import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
+import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
+import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
+import com.android.tools.lint.client.api.JavaParser.ResolvedVariable;
 import com.android.tools.lint.detector.api.Category;
-import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Detector.JavaScanner;
+import com.android.tools.lint.detector.api.Detector.XmlScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
-import com.android.tools.lint.detector.api.Detector.ClassScanner;
-import com.android.tools.lint.detector.api.Detector.XmlScanner;
 import com.android.tools.lint.detector.api.XmlContext;
+import com.google.common.collect.Sets;
 
 import org.w3c.dom.Element;
 
-import static com.android.SdkConstants.TAG_RECEIVER;
-import static com.android.SdkConstants.ANDROID_URI;
-import static com.android.SdkConstants.ATTR_NAME;
-import static com.android.SdkConstants.ATTR_PERMISSION;
-import static com.android.SdkConstants.TAG_INTENT_FILTER;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import lombok.ast.ClassDeclaration;
+import lombok.ast.ForwardingAstVisitor;
+import lombok.ast.MethodDeclaration;
+import lombok.ast.MethodInvocation;
+import lombok.ast.Node;
+import lombok.ast.VariableReference;
 
 public class UnsafeBroadcastReceiverDetector extends Detector
-        implements ClassScanner, XmlScanner {
+        implements JavaScanner, XmlScanner {
 
     /* Description of check implementations:
      *
@@ -105,7 +113,7 @@ public class UnsafeBroadcastReceiverDetector extends Detector
             6,
             Severity.WARNING,
             new Implementation(UnsafeBroadcastReceiverDetector.class,
-                    EnumSet.of(Scope.MANIFEST, Scope.ALL_CLASS_FILES)));
+                    EnumSet.of(Scope.MANIFEST, Scope.JAVA_FILE)));
 
     public static final Issue BROADCAST_SMS = Issue.create(
             "UnprotectedSMSBroadcastReceiver",
@@ -128,12 +136,15 @@ public class UnsafeBroadcastReceiverDetector extends Detector
      * protected-broadcast entries can be defined elsewhere, but should address
      * most situations.
      */
-    private static final String[] PROTECTED_BROADCASTS = new String[] {
+    @VisibleForTesting
+    static final String[] PROTECTED_BROADCASTS = new String[] {
+            "android.app.action.DEVICE_OWNER_CHANGED",
             "android.app.action.ENTER_CAR_MODE",
             "android.app.action.ENTER_DESK_MODE",
             "android.app.action.EXIT_CAR_MODE",
             "android.app.action.EXIT_DESK_MODE",
             "android.app.action.NEXT_ALARM_CLOCK_CHANGED",
+            "android.app.action.SYSTEM_UPDATE_POLICY_CHANGED",
             "android.appwidget.action.APPWIDGET_DELETED",
             "android.appwidget.action.APPWIDGET_DISABLED",
             "android.appwidget.action.APPWIDGET_ENABLED",
@@ -200,9 +211,10 @@ public class UnsafeBroadcastReceiverDetector extends Detector
             "android.btopp.intent.action.USER_CONFIRMATION_TIMEOUT",
             "android.hardware.display.action.WIFI_DISPLAY_STATUS_CHANGED",
             "android.hardware.usb.action.USB_ACCESSORY_ATTACHED",
-            "android.hardware.usb.action.USB_ACCESSORY_ATTACHED",
+            "android.hardware.usb.action.USB_ACCESSORY_DETACHED",
             "android.hardware.usb.action.USB_DEVICE_ATTACHED",
             "android.hardware.usb.action.USB_DEVICE_DETACHED",
+            "android.hardware.usb.action.USB_PORT_CHANGED",
             "android.hardware.usb.action.USB_STATE",
             "android.intent.action.ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED",
             "android.intent.action.ACTION_DEFAULT_SMS_SUBSCRIPTION_CHANGED",
@@ -210,12 +222,10 @@ public class UnsafeBroadcastReceiverDetector extends Detector
             "android.intent.action.ACTION_DEFAULT_VOICE_SUBSCRIPTION_CHANGED",
             "android.intent.action.ACTION_IDLE_MAINTENANCE_END",
             "android.intent.action.ACTION_IDLE_MAINTENANCE_START",
-            "android.intent.action.ACTION_MDN_STATE_CHANGED",
             "android.intent.action.ACTION_POWER_CONNECTED",
             "android.intent.action.ACTION_POWER_DISCONNECTED",
             "android.intent.action.ACTION_SET_RADIO_CAPABILITY_DONE",
             "android.intent.action.ACTION_SET_RADIO_CAPABILITY_FAILED",
-            "android.intent.action.ACTION_SHOW_NOTICE_ECM_BLOCK_OTHERS",
             "android.intent.action.ACTION_SHUTDOWN",
             "android.intent.action.ACTION_SUBINFO_CONTENT_CHANGE",
             "android.intent.action.ACTION_SUBINFO_RECORD_UPDATED",
@@ -228,23 +238,23 @@ public class UnsafeBroadcastReceiverDetector extends Detector
             "android.intent.action.BATTERY_OKAY",
             "android.intent.action.BOOT_COMPLETED",
             "android.intent.action.BUGREPORT_FINISHED",
+            "android.intent.action.CHARGING",
             "android.intent.action.CLEAR_DNS_CACHE",
             "android.intent.action.CONFIGURATION_CHANGED",
-            "android.intent.action.DATA_CONNECTION_CONNECTED_TO_PROVISIONING_APN",
-            "android.intent.action.DATA_CONNECTION_FAILED",
             "android.intent.action.DATE_CHANGED",
             "android.intent.action.DEVICE_STORAGE_FULL",
             "android.intent.action.DEVICE_STORAGE_LOW",
             "android.intent.action.DEVICE_STORAGE_NOT_FULL",
             "android.intent.action.DEVICE_STORAGE_OK",
+            "android.intent.action.DISCHARGING",
             "android.intent.action.DOCK_EVENT",
             "android.intent.action.DREAMING_STARTED",
             "android.intent.action.DREAMING_STOPPED",
-            "android.intent.action.EMERGENCY_CALLBACK_MODE_CHANGED",
             "android.intent.action.EXTERNAL_APPLICATIONS_AVAILABLE",
             "android.intent.action.EXTERNAL_APPLICATIONS_UNAVAILABLE",
             "android.intent.action.HDMI_PLUGGED",
             "android.intent.action.HEADSET_PLUG",
+            "android.intent.action.INTENT_FILTER_NEEDS_VERIFICATION",
             "android.intent.action.LOCALE_CHANGED",
             "android.intent.action.MASTER_CLEAR_NOTIFICATION",
             "android.intent.action.MEDIA_BAD_REMOVAL",
@@ -258,8 +268,6 @@ public class UnsafeBroadcastReceiverDetector extends Detector
             "android.intent.action.MEDIA_UNMOUNTED",
             "android.intent.action.MEDIA_UNSHARED",
             "android.intent.action.MY_PACKAGE_REPLACED",
-            "android.intent.action.NETWORK_SET_TIME",
-            "android.intent.action.NETWORK_SET_TIMEZONE",
             "android.intent.action.NEW_OUTGOING_CALL",
             "android.intent.action.PACKAGE_ADDED",
             "android.intent.action.PACKAGE_CHANGED",
@@ -276,15 +284,12 @@ public class UnsafeBroadcastReceiverDetector extends Detector
             "android.intent.action.PHONE_STATE",
             "android.intent.action.PROXY_CHANGE",
             "android.intent.action.QUERY_PACKAGE_RESTART",
-            "android.intent.action.RADIO_TECHNOLOGY",
             "android.intent.action.REBOOT",
             "android.intent.action.REQUEST_PERMISSION",
             "android.intent.action.SCREEN_OFF",
             "android.intent.action.SCREEN_ON",
-            "android.intent.action.SERVICE_STATE",
-            "android.intent.action.SIG_STR",
-            "android.intent.action.SIM_STATE_CHANGED",
             "android.intent.action.SUB_DEFAULT_CHANGED",
+            "android.intent.action.THERMAL_EVENT",
             "android.intent.action.TIMEZONE_CHANGED",
             "android.intent.action.TIME_SET",
             "android.intent.action.TIME_TICK",
@@ -299,6 +304,7 @@ public class UnsafeBroadcastReceiverDetector extends Detector
             "android.intent.action.USER_STOPPED",
             "android.intent.action.USER_STOPPING",
             "android.intent.action.USER_SWITCHED",
+            "android.internal.policy.action.BURN_IN_PROTECTION",
             "android.location.GPS_ENABLED_CHANGE",
             "android.location.GPS_FIX_CHANGE",
             "android.location.MODE_CHANGED",
@@ -311,13 +317,10 @@ public class UnsafeBroadcastReceiverDetector extends Detector
             "android.media.SCO_AUDIO_STATE_CHANGED",
             "android.media.VIBRATE_SETTING_CHANGED",
             "android.media.VOLUME_CHANGED_ACTION",
-            "android.media.action.ANALOG_AUDIO_DOCK_PLUG",
-            "android.media.action.DIGITAL_AUDIO_DOCK_PLUG",
             "android.media.action.HDMI_AUDIO_PLUG",
-            "android.media.action.USB_AUDIO_ACCESSORY_PLUG",
-            "android.media.action.USB_AUDIO_DEVICE_PLUG",
             "android.net.ConnectivityService.action.PKT_CNT_SAMPLE_INTERVAL_ELAPSED",
             "android.net.conn.BACKGROUND_DATA_SETTING_CHANGED",
+            "android.net.conn.CAPTIVE_PORTAL",
             "android.net.conn.CAPTIVE_PORTAL_TEST_COMPLETED",
             "android.net.conn.CONNECTIVITY_CHANGE",
             "android.net.conn.CONNECTIVITY_CHANGE_IMMEDIATE",
@@ -335,6 +338,7 @@ public class UnsafeBroadcastReceiverDetector extends Detector
             "android.net.wifi.SCAN_RESULTS",
             "android.net.wifi.STATE_CHANGE",
             "android.net.wifi.WIFI_AP_STATE_CHANGED",
+            "android.net.wifi.WIFI_CREDENTIAL_CHANGED",
             "android.net.wifi.WIFI_SCAN_AVAILABLE",
             "android.net.wifi.WIFI_STATE_CHANGED",
             "android.net.wifi.p2p.CONNECTION_STATE_CHANGE",
@@ -349,128 +353,42 @@ public class UnsafeBroadcastReceiverDetector extends Detector
             "android.nfc.action.TRANSACTION_DETECTED",
             "android.nfc.handover.intent.action.HANDOVER_STARTED",
             "android.nfc.handover.intent.action.TRANSFER_DONE",
-            "android.nfc.handover.intent.action.TRANSFER_DONE",
             "android.nfc.handover.intent.action.TRANSFER_PROGRESS",
             "android.os.UpdateLock.UPDATE_LOCK_CHANGED",
+            "android.os.action.DEVICE_IDLE_MODE_CHANGED",
             "android.os.action.POWER_SAVE_MODE_CHANGED",
             "android.os.action.POWER_SAVE_MODE_CHANGING",
-            "android.provider.Telephony.SIM_FULL",
-            "android.provider.Telephony.SPN_STRINGS_UPDATED",
+            "android.os.action.POWER_SAVE_TEMP_WHITELIST_CHANGED",
+            "android.os.action.POWER_SAVE_WHITELIST_CHANGED",
+            "android.os.action.SCREEN_BRIGHTNESS_BOOST_CHANGED",
+            "android.os.action.SETTING_RESTORED",
+            "android.telecom.action.DEFAULT_DIALER_CHANGED",
             "com.android.bluetooth.pbap.authcancelled",
             "com.android.bluetooth.pbap.authchall",
             "com.android.bluetooth.pbap.authresponse",
             "com.android.bluetooth.pbap.userconfirmtimeout",
-            "com.android.internal.telephony.data-restart-trysetup",
-            "com.android.internal.telephony.data-stall",
             "com.android.nfc_extras.action.AID_SELECTED",
             "com.android.nfc_extras.action.RF_FIELD_OFF_DETECTED",
             "com.android.nfc_extras.action.RF_FIELD_ON_DETECTED",
             "com.android.server.WifiManager.action.DELAYED_DRIVER_STOP",
+            "com.android.server.WifiManager.action.START_PNO",
             "com.android.server.WifiManager.action.START_SCAN",
-            "com.android.server.connectivityservice.CONNECTED_TO_PROVISIONING_NETWORK_ACTION"
+            "com.android.server.connectivityservice.CONNECTED_TO_PROVISIONING_NETWORK_ACTION",
     };
 
     private static final Set<String> PROTECTED_BROADCAST_SET =
-            new HashSet<String>(Arrays.asList(PROTECTED_BROADCASTS));
+            Sets.newHashSet(PROTECTED_BROADCASTS);
+
+    private Set<String> mReceiversWithProtectedBroadcastIntentFilter = new HashSet<String>();
 
     public UnsafeBroadcastReceiverDetector() {
     }
 
-    private Set<String> mReceiversWithProtectedBroadcastIntentFilter = new HashSet<String>();
+    // ---- Implements XmlScanner ----
 
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.SLOW;
-    }
-
-    @SuppressWarnings("rawtypes")
-    public void checkClass(@NonNull final ClassContext context,
-            @NonNull ClassNode classNode) {
-        // If class isn't in mReceiversWithIntentFilter (set below by
-        // XmlScanner), skip it.
-        if (!mReceiversWithProtectedBroadcastIntentFilter.contains(classNode.name)) {
-            return;
-        }
-
-        // Search for "void onReceive(android.content.Context, android.content.Intent)" method
-        List methodList = classNode.methods;
-
-        for (Object m : methodList) {
-            MethodNode method = (MethodNode) m;
-            if (!"onReceive".equals(method.name) ||
-                    !"(Landroid/content/Context;Landroid/content/Intent;)V".equals(method.desc)) {
-                continue;
-            }
-            // Search for call to getAction but also search for references to aload_2,
-            // which indicates that the method is making use of the received intent in
-            // some way.
-            //
-            // If the onReceive method doesn't call getAction but does make use of
-            // the received intent, it is possible that it is passing it to another
-            // method that might be performing the getAction check, so we warn that the
-            // finding may be a false positive. (An alternative option would be to not
-            // report a finding at all in this case.)
-            boolean getActionEncountered = false;
-            boolean intentParameterEncountered = false;
-            InsnList nodes = method.instructions;
-            for (int i = 0, n = nodes.size(); i < n; i++) {
-                AbstractInsnNode instruction = nodes.get(i);
-                int type = instruction.getType();
-                if (type == AbstractInsnNode.VAR_INSN) {
-                    VarInsnNode node = (VarInsnNode) instruction;
-                    if (node.getOpcode() == Opcodes.ALOAD) {
-                        if (node.var == 2) {
-                            intentParameterEncountered = true;
-                        }
-                    }
-                }
-                else if (type == AbstractInsnNode.METHOD_INSN) {
-                    MethodInsnNode node = (MethodInsnNode) instruction;
-                    if ("android/content/Intent".equals(node.owner) &&
-                            "getAction".equals(node.name)) {
-                        getActionEncountered = true;
-                        break;
-                    }
-                }
-            }
-            if (!getActionEncountered) {
-                Location location = context.getLocation(method, classNode);
-                String report;
-                if (!intentParameterEncountered) {
-                    report = "This broadcast receiver declares an intent-filter for a protected " +
-                             "broadcast action string, which can only be sent by the system, " +
-                             "not third-party applications. However, the receiver's onReceive " +
-                             "method does not appear to call getAction to ensure that the " +
-                             "received Intent's action string matches the expected value, " +
-                             "potentially making it possible for another actor to send a " +
-                             "spoofed intent with no action string or a different action " +
-                             "string and cause undesired behavior.";
-                } else {
-                    // An alternative implementation option is to not report a finding at all in
-                    // this case, if we are worried about false positives causing confusion or
-                    // resulting in developers ignoring other lint warnings.
-                    report = "This broadcast receiver declares an intent-filter for a protected " +
-                             "broadcast action string, which can only be sent by the system, " +
-                             "not third-party applications. However, the receiver's onReceive " +
-                             "method does not appear to call getAction to ensure that the " +
-                             "received Intent's action string matches the expected value, " +
-                             "potentially making it possible for another actor to send a " +
-                             "spoofed intent with no action string or a different action " +
-                             "string and cause undesired behavior. In this case, it is " +
-                             "possible that the onReceive method passed the received Intent " +
-                             "to another method that checked the action string. If so, this " +
-                             "finding can safely be ignored.";
-                }
-                context.report(ACTION_STRING, method, null, location, report);
-            }
-        }
-    }
-
-    // Implements Detector.XmlScanner
     @Override
     public Collection<String> getApplicableElements() {
-        return Arrays.asList(TAG_RECEIVER);
+        return Collections.singletonList(TAG_RECEIVER);
     }
 
     @Override
@@ -493,7 +411,7 @@ public class UnsafeBroadcastReceiverDetector extends Detector
                     if (name.startsWith(".")) {
                         name = context.getProject().getPackage() + name;
                     }
-                    name = name.replace('.', '/');
+                    name = name.replace('$', '.');
                     List<Element> children2 = LintUtils.getChildren(child);
                     for (Element child2 : children2) {
                         if ("action".equals(child2.getTagName())) {
@@ -520,6 +438,146 @@ public class UnsafeBroadcastReceiverDetector extends Detector
                     break;
                 }
             }
+        }
+    }
+
+    // ---- Implements JavaScanner ----
+
+    @Nullable
+    @Override
+    public List<String> applicableSuperClasses() {
+        return mReceiversWithProtectedBroadcastIntentFilter.isEmpty()
+                ? null : Collections.singletonList(CLASS_BROADCASTRECEIVER);
+    }
+
+    @Override
+    public void checkClass(@NonNull JavaContext context, @Nullable ClassDeclaration node,
+            @NonNull Node declarationOrAnonymous, @NonNull ResolvedClass cls) {
+        if (node == null) { // anonymous classes can't be the ones referenced in the manifest
+            return;
+        }
+        String name = cls.getName();
+        if (!mReceiversWithProtectedBroadcastIntentFilter.contains(name)) {
+            return;
+        }
+        for (Node member : node.astBody().astMembers()) {
+            if (member instanceof MethodDeclaration) {
+                MethodDeclaration declaration = (MethodDeclaration)member;
+                if ("onReceive".equals(declaration.astMethodName().astValue())
+                        && declaration.astParameters().size() == 2) {
+                    ResolvedNode resolved = context.resolve(declaration);
+                    if (resolved instanceof ResolvedMethod) {
+                        ResolvedMethod method = (ResolvedMethod) resolved;
+                        if (method.getArgumentCount() == 2
+                                && method.getArgumentType(0).matchesName(CLASS_CONTEXT)
+                                && method.getArgumentType(1).matchesName(CLASS_INTENT)) {
+                            checkOnReceive(context, declaration, method);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static void checkOnReceive(@NonNull JavaContext context,
+            @NonNull MethodDeclaration declaration,
+            @NonNull ResolvedMethod method) {
+        // Search for call to getAction but also search for references to aload_2,
+        // which indicates that the method is making use of the received intent in
+        // some way.
+        //
+        // If the onReceive method doesn't call getAction but does make use of
+        // the received intent, it is possible that it is passing it to another
+        // method that might be performing the getAction check, so we warn that the
+        // finding may be a false positive. (An alternative option would be to not
+        // report a finding at all in this case.)
+        assert method.getArgumentCount() == 2;
+        ResolvedVariable parameter = null;
+        if (declaration.astParameters().size() == 2) {
+            ResolvedNode resolved = context.resolve(declaration.astParameters().last());
+            if (resolved instanceof ResolvedVariable) {
+                parameter = (ResolvedVariable) resolved;
+            }
+        }
+        OnReceiveVisitor visitor = new OnReceiveVisitor(context, parameter);
+        declaration.accept(visitor);
+        if (!visitor.getCallsGetAction()) {
+            String report;
+            if (!visitor.getUsesIntent()) {
+                report = "This broadcast receiver declares an intent-filter for a protected " +
+                        "broadcast action string, which can only be sent by the system, " +
+                        "not third-party applications. However, the receiver's onReceive " +
+                        "method does not appear to call getAction to ensure that the " +
+                        "received Intent's action string matches the expected value, " +
+                        "potentially making it possible for another actor to send a " +
+                        "spoofed intent with no action string or a different action " +
+                        "string and cause undesired behavior.";
+            } else {
+                // An alternative implementation option is to not report a finding at all in
+                // this case, if we are worried about false positives causing confusion or
+                // resulting in developers ignoring other lint warnings.
+                report = "This broadcast receiver declares an intent-filter for a protected " +
+                        "broadcast action string, which can only be sent by the system, " +
+                        "not third-party applications. However, the receiver's onReceive " +
+                        "method does not appear to call getAction to ensure that the " +
+                        "received Intent's action string matches the expected value, " +
+                        "potentially making it possible for another actor to send a " +
+                        "spoofed intent with no action string or a different action " +
+                        "string and cause undesired behavior. In this case, it is " +
+                        "possible that the onReceive method passed the received Intent " +
+                        "to another method that checked the action string. If so, this " +
+                        "finding can safely be ignored.";
+            }
+            Location location = context.getNameLocation(declaration);
+            context.report(ACTION_STRING, declaration, location, report);
+        }
+    }
+
+    private static class OnReceiveVisitor extends ForwardingAstVisitor {
+        @NonNull private final JavaContext mContext;
+        @Nullable private final ResolvedVariable mParameter;
+        private boolean mCallsGetAction;
+        private boolean mUsesIntent;
+
+        public OnReceiveVisitor(@NonNull JavaContext context, @Nullable ResolvedVariable parameter) {
+            mContext = context;
+            mParameter = parameter;
+        }
+
+        public boolean getCallsGetAction() {
+            return mCallsGetAction;
+        }
+
+        public boolean getUsesIntent() {
+            return mUsesIntent;
+        }
+
+        @Override
+        public boolean visitMethodInvocation(@NonNull MethodInvocation node) {
+            if (!mCallsGetAction) {
+                ResolvedNode resolved = mContext.resolve(node);
+                if (resolved instanceof ResolvedMethod) {
+                    ResolvedMethod method = (ResolvedMethod) resolved;
+                    if (method.getName().equals("getAction") &&
+                            method.getContainingClass().isSubclassOf(CLASS_INTENT, false)) {
+                        mCallsGetAction = true;
+                    }
+                }
+            }
+            return super.visitMethodInvocation(node);
+        }
+
+        @Override
+        public boolean visitVariableReference(@NonNull VariableReference node) {
+            if (!mUsesIntent && mParameter != null) {
+                ResolvedNode resolved = mContext.resolve(node);
+                if (mParameter.equals(resolved)) {
+                    mUsesIntent = true;
+                }
+            }
+
+            return super.visitVariableReference(node);
         }
     }
 }

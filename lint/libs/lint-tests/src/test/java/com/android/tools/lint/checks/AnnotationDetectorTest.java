@@ -16,12 +16,26 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.tools.lint.checks.AnnotationDetector.SWITCH_TYPE_DEF;
+import static com.android.tools.lint.checks.AnnotationDetector.getMissingCases;
+import static com.android.tools.lint.detector.api.TextFormat.TEXT;
+
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.Severity;
+import com.android.tools.lint.detector.api.TextFormat;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
-@SuppressWarnings("javadoc")
+@SuppressWarnings({"javadoc", "ClassNameDiffersFromFileName", "UnnecessaryLocalVariable",
+        "ConstantConditionalExpression", "StatementWithEmptyBody", "RedundantCast",
+        "MethodMayBeStatic"})
 public class AnnotationDetectorTest extends AbstractCheckTest {
     public void test() throws Exception {
         assertEquals(
@@ -162,6 +176,244 @@ public class AnnotationDetectorTest extends AbstractCheckTest {
                                 + "}"),
                         copy("src/android/support/annotation/IntDef.java.txt",
                                 "src/android/support/annotation/IntDef.java")));
+    }
+
+    public void testMissingIntDefSwitchConstants() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/X.java:40: Warning: Don't use a constant here; expected one of: LENGTH_INDEFINITE, LENGTH_LONG, LENGTH_SHORT [SwitchIntDef]\n"
+                + "            case 5:\n"
+                + "                 ~\n"
+                + "src/test/pkg/X.java:47: Warning: Switch statement on an int with known associated constant missing case LENGTH_LONG [SwitchIntDef]\n"
+                + "        switch (duration) {\n"
+                + "        ~~~~~~\n"
+                + "src/test/pkg/X.java:56: Warning: Switch statement on an int with known associated constant missing case LENGTH_INDEFINITE, LENGTH_LONG, LENGTH_SHORT [SwitchIntDef]\n"
+                + "        switch (duration) {\n"
+                + "        ~~~~~~\n"
+                + "src/test/pkg/X.java:66: Warning: Switch statement on an int with known associated constant missing case LENGTH_SHORT [SwitchIntDef]\n"
+                + "        switch (duration) {\n"
+                + "        ~~~~~~\n"
+                + "src/test/pkg/X.java:75: Warning: Switch statement on an int with known associated constant missing case LENGTH_SHORT [SwitchIntDef]\n"
+                + "        switch ((int)getDuration()) {\n"
+                + "        ~~~~~~\n"
+                + "src/test/pkg/X.java:85: Warning: Switch statement on an int with known associated constant missing case LENGTH_SHORT [SwitchIntDef]\n"
+                + "        switch (true ? getDuration() : 0) {\n"
+                + "        ~~~~~~\n"
+                + "src/test/pkg/X.java:95: Warning: Switch statement on an int with known associated constant missing case X.LENGTH_SHORT [SwitchIntDef]\n"
+                + "            switch (X.getDuration()) {\n"
+                + "            ~~~~~~\n"
+                + "src/test/pkg/X.java:104: Warning: Switch statement on an int with known associated constant missing case LENGTH_INDEFINITE [SwitchIntDef]\n"
+                + "        switch (duration) {\n"
+                + "        ~~~~~~\n"
+                + "0 errors, 8 warnings\n",
+
+                lintProject(
+                        java("src/test/pkg/X.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.annotation.SuppressLint;\n"
+                                + "import android.support.annotation.IntDef;\n"
+                                + "\n"
+                                + "import java.lang.annotation.Retention;\n"
+                                + "import java.lang.annotation.RetentionPolicy;\n"
+                                + "\n"
+                                + "@SuppressWarnings({\"UnusedParameters\", \"unused\", \"SpellCheckingInspection\", \"RedundantCast\"})\n"
+                                + "public class X {\n"
+                                + "    @IntDef({LENGTH_INDEFINITE, LENGTH_SHORT, LENGTH_LONG})\n"
+                                + "    @Retention(RetentionPolicy.SOURCE)\n"
+                                + "    public @interface Duration {\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public static final int LENGTH_INDEFINITE = -2;\n"
+                                + "    public static final int LENGTH_SHORT = -1;\n"
+                                + "    public static final int LENGTH_LONG = 0;\n"
+                                + "\n"
+                                + "    public void setDuration(@Duration int duration) {\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    @Duration\n"
+                                + "    public static int getDuration() {\n"
+                                + "        return LENGTH_INDEFINITE;\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public static void testOk(@Duration int duration) {\n"
+                                + "        switch (duration) {\n"
+                                + "            case LENGTH_SHORT:\n"
+                                + "            case LENGTH_LONG:\n"
+                                + "            case LENGTH_INDEFINITE:\n"
+                                + "                break;\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public static void testLiteral(@Duration int duration) {\n"
+                                + "        switch (duration) {\n"
+                                + "            case LENGTH_SHORT:\n"
+                                + "            case 5:\n"
+                                + "            case LENGTH_INDEFINITE:\n"
+                                + "                break;\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public static void testParameter(@Duration int duration) {\n"
+                                + "        switch (duration) {\n"
+                                + "            case LENGTH_SHORT:\n"
+                                + "            case LENGTH_INDEFINITE:\n"
+                                + "                break;\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public static void testMissingAll(@Duration int duration) {\n"
+                                + "        // We don't flag these; let the IDE's normal \"empty switch\" check flag it\n"
+                                + "        switch (duration) {\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    @SuppressWarnings(\"UnnecessaryLocalVariable\")\n"
+                                + "    public static void testLocalVariableFlow() {\n"
+                                + "        int intermediate = getDuration();\n"
+                                + "        int duration = intermediate;\n"
+                                + "\n"
+                                + "        // Missing LENGTH_SHORT\n"
+                                + "        switch (duration) {\n"
+                                + "            case LENGTH_LONG:\n"
+                                + "            case LENGTH_INDEFINITE:\n"
+                                + "                break;\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public static void testMethodCall() {\n"
+                                + "        // Missing LENGTH_SHORT\n"
+                                + "        switch ((int)getDuration()) {\n"
+                                + "            case LENGTH_LONG:\n"
+                                + "            case LENGTH_INDEFINITE:\n"
+                                + "                break;\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    @SuppressWarnings(\"ConstantConditionalExpression\")\n"
+                                + "    public static void testInline() {\n"
+                                + "        // Missing LENGTH_SHORT\n"
+                                + "        switch (true ? getDuration() : 0) {\n"
+                                + "            case LENGTH_LONG:\n"
+                                + "            case LENGTH_INDEFINITE:\n"
+                                + "                break;\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    private static class SomeOtherClass {\n"
+                                + "        private void method() {\n"
+                                + "            // Missing LENGTH_SHORT\n"
+                                + "            switch (X.getDuration()) {\n"
+                                + "                case LENGTH_LONG:\n"
+                                + "                case LENGTH_INDEFINITE:\n"
+                                + "                    break;\n"
+                                + "            }\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public static void testMissingWithDefault(@Duration int duration) {\n"
+                                + "        switch (duration) {\n"
+                                + "            case LENGTH_SHORT:\n"
+                                + "            case LENGTH_LONG:\n"
+                                + "            default:\n"
+                                + "                break;\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    @SuppressLint(\"SwitchIntDef\")\n"
+                                + "    public static void testSuppressAnnotation(@Duration int duration) {\n"
+                                + "        switch (duration) {\n"
+                                + "            case LENGTH_SHORT:\n"
+                                + "            case LENGTH_INDEFINITE:\n"
+                                + "                break;\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public static void testSuppressComment(@Duration int duration) {\n"
+                                + "        //noinspection AndroidLintSwitchIntDef\n"
+                                + "        switch (duration) {\n"
+                                + "            case LENGTH_SHORT:\n"
+                                + "            case LENGTH_INDEFINITE:\n"
+                                + "                break;\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "}\n"),
+                        copy("src/android/support/annotation/IntDef.java.txt",
+                                "src/android/support/annotation/IntDef.java")
+        ));
+    }
+
+
+    public void testMissingSwitchFailingIntDef() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/X.java:8: Warning: Switch statement on an int with known associated constant missing case EXACTLY, UNSPECIFIED [SwitchIntDef]\n"
+                + "        switch (val) {\n"
+                + "        ~~~~~~\n"
+                + "0 errors, 1 warnings\n",
+                lintProject(
+                        java("src/test/pkg/X.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.view.View;"
+                                + "\n"
+                                + "public class X {\n"
+                                + "\n"
+                                + "    public void measure(int mode) {\n"
+                                + "        int val = View.MeasureSpec.getMode(mode);\n"
+                                + "        switch (val) {\n"
+                                + "            case View.MeasureSpec.AT_MOST:\n"
+                                + "                break;\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "}\n"),
+                        copy("bytecode/.classpath", ".classpath")));
+    }
+
+    public void testGetEnumCases() {
+        assertEquals(
+                Arrays.asList("LENGTH_INDEFINITE", "LENGTH_SHORT", "LENGTH_LONG"),
+                getMissingCases("Don't use a constant here; expected one of: LENGTH_INDEFINITE, LENGTH_SHORT, LENGTH_LONG",
+                        TextFormat.TEXT));
+        assertEquals(
+                Collections.singletonList("LENGTH_SHORT"),
+                getMissingCases("Switch statement on an int with known associated constant missing case LENGTH_SHORT",
+                                TextFormat.TEXT));
+    }
+
+    public void testMatchEcjAndExternalFieldNames() throws Exception {
+        assertEquals("No warnings.",
+                lintProject(java("src/test/pkg/MissingEnum.java", ""
+                        + "package test.pkg;\n"
+                        + "\n"
+                        + "import android.net.wifi.WifiManager;\n"
+                        + "\n"
+                        + "public class MissingEnum {\n"
+                        + "    private WifiManager mWifiManager;\n"
+                        + "\n"
+                        + "    private void updateAccessPoints() {\n"
+                        + "        final int wifiState = mWifiManager.getWifiState();\n"
+                        + "        switch (wifiState) {\n"
+                        + "            case WifiManager.WIFI_STATE_ENABLING:\n"
+                        + "                break;\n"
+                        + "            case WifiManager.WIFI_STATE_ENABLED:\n"
+                        + "                break;\n"
+                        + "            case WifiManager.WIFI_STATE_DISABLING:\n"
+                        + "                break;\n"
+                        + "            case WifiManager.WIFI_STATE_DISABLED:\n"
+                        + "                break;\n"
+                        + "            case WifiManager.WIFI_STATE_UNKNOWN:\n"
+                        + "                break;\n"
+                        + "        }\n"
+                        + "    }\n"
+                        + "}\n")));
+    }
+
+    @Override
+    protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
+            @NonNull Severity severity, @Nullable Location location, @NonNull String message) {
+        if (issue == SWITCH_TYPE_DEF) {
+            assertNotNull("Could not extract message tokens from " + message,
+                    getMissingCases(message, TEXT));
+        }
     }
 
     @Override

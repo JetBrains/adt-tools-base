@@ -43,6 +43,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
@@ -183,7 +184,7 @@ final class DeviceMonitor {
         DeviceListComparisonResult result = DeviceListComparisonResult.compare(mDevices, newList);
         for (IDevice device : result.removed) {
             removeDevice((Device) device);
-            mServer.deviceDisconnected(device);
+            AndroidDebugBridge.deviceDisconnected(device);
         }
 
         List<Device> newlyOnline = Lists.newArrayListWithExpectedSize(mDevices.size());
@@ -200,7 +201,7 @@ final class DeviceMonitor {
 
         for (IDevice device : result.added) {
             mDevices.add((Device) device);
-            mServer.deviceConnected(device);
+            AndroidDebugBridge.deviceConnected(device);
             if (device.isOnline()) {
                 newlyOnline.add((Device) device);
             }
@@ -507,7 +508,7 @@ final class DeviceMonitor {
             }
 
             if (!pidsToAdd.isEmpty() || !clientsToRemove.isEmpty()) {
-                mServer.deviceChanged(device, Device.CHANGE_CLIENT_LIST);
+                AndroidDebugBridge.deviceChanged(device, Device.CHANGE_CLIENT_LIST);
             }
         }
     }
@@ -559,6 +560,9 @@ final class DeviceMonitor {
             try {
                 if (AndroidDebugBridge.getClientSupport()) {
                     client.listenForDebugger(debuggerPort);
+                    String msg = String.format(Locale.US, "Opening a debugger listener at port %1$d for client with pid %2$d",
+                                               debuggerPort, pid);
+                    Log.i("ddms", msg);
                 }
             } catch (IOException ioe) {
                 client.getClientData().setDebuggerConnectionStatus(DebuggerStatus.ERROR);
@@ -644,7 +648,7 @@ final class DeviceMonitor {
         public void connectionError(@NonNull Exception e) {
             for (Device device : mDevices) {
                 removeDevice(device);
-                mServer.deviceDisconnected(device);
+                AndroidDebugBridge.deviceDisconnected(device);
             }
         }
 

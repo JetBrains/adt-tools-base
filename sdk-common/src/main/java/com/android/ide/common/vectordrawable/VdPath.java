@@ -25,6 +25,7 @@ import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -115,10 +116,10 @@ class VdPath extends VdElement{
         }
 
         public static String NodeListToString(Node[] nodes, String decimalPlaceString) {
-            String s = "";
+            StringBuilder stringBuilder = new StringBuilder();
             for (int i = 0; i < nodes.length; i++) {
                 Node n = nodes[i];
-                s += n.mType;
+                stringBuilder.append(n.mType);
                 int len = n.mParams.length;
                 boolean implicitLineTo = false;
                 char lineToType = ' ';
@@ -128,24 +129,27 @@ class VdPath extends VdElement{
                 }
                 for (int j = 0; j < len; j++) {
                     if (j > 0) {
-                        s += ((j & 1) == 1) ? "," : " ";
+                        stringBuilder.append(((j & 1) == 1) ? "," : " ");
                     }
                     if (implicitLineTo && j == 2) {
-                        s += lineToType;
+                        stringBuilder.append(lineToType);
                     }
                     // To avoid trailing zeros like 17.0, use this trick
                     float value = n.mParams[j];
                     if (value == (long) value) {
-                        s += String.valueOf((long) value);
+                        stringBuilder.append(String.valueOf((long) value));
                     } else {
-                        DecimalFormat df = new DecimalFormat(decimalPlaceString);
+                        DecimalFormatSymbols fractionSeparator = new DecimalFormatSymbols();
+                        fractionSeparator.setDecimalSeparator('.');
+                        DecimalFormat df = new DecimalFormat(decimalPlaceString, fractionSeparator);
                         df.setRoundingMode(RoundingMode.HALF_UP);
-                        s += df.format(value);
+                        stringBuilder.append(df.format(value));
                     }
 
                 }
             }
-            return s;
+
+            return stringBuilder.toString();
         }
 
         private static final char INIT_TYPE = ' ';

@@ -60,7 +60,7 @@ public class Multiplexer {
     return channel;
   }
 
-  private Channel newChannel(final long id) throws IOException {
+  private Channel newChannel(final long id) {
     Long key = Long.valueOf(id);
     Channel channel = new Channel(id, mChannelEventHandler);
 

@@ -20,6 +20,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.api.transform.SecondaryInput;
+import com.android.build.api.transform.TransformInvocation;
 import com.android.build.gradle.internal.coverage.JacocoPlugin;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.api.transform.Context;
@@ -99,26 +101,23 @@ public class JacocoTransform extends Transform {
     }
 
     @Override
-    public void transform(
-            @NonNull Context context,
-            @NonNull Collection<TransformInput> inputs,
-            @NonNull Collection<TransformInput> referencedInputs,
-            @Nullable TransformOutputProvider outputProvider,
-            boolean isIncremental) throws IOException, TransformException, InterruptedException {
+    public void transform(TransformInvocation invocation)
+            throws IOException, TransformException, InterruptedException {
 
-        checkNotNull(outputProvider, "Missing output object for transform " + getName());
-        File outputDir = outputProvider.getContentLocation("main", getOutputTypes(), getScopes(),
-                Format.DIRECTORY);
+        checkNotNull(invocation.getOutputProvider(),
+                "Missing output object for transform " + getName());
+        File outputDir = invocation.getOutputProvider().getContentLocation(
+                "main", getOutputTypes(), getScopes(), Format.DIRECTORY);
         FileUtils.mkdirs(outputDir);
 
-        TransformInput input = Iterables.getOnlyElement(inputs);
+        TransformInput input = Iterables.getOnlyElement(invocation.getInputs());
         // we don't want jar inputs.
         Preconditions.checkState(input.getJarInputs().isEmpty());
         DirectoryInput directoryInput = Iterables.getOnlyElement(input.getDirectoryInputs());
         File inputDir = directoryInput.getFile();
 
         Instrumenter instrumenter = new Instrumenter(new OfflineInstrumentationAccessGenerator());
-        if (isIncremental) {
+        if (invocation.isIncremental()) {
             instrumentFilesIncremental(instrumenter, inputDir, outputDir, directoryInput.getChangedFiles());
         } else {
             instrumentFilesFullRun(instrumenter, inputDir, outputDir);

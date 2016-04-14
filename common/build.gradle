@@ -7,6 +7,7 @@ dependencies {
     compile 'com.google.guava:guava:17.0'
 
     testCompile 'junit:junit:4.12'
+    testCompile 'com.google.truth:truth:0.28'
 }
 
 group = 'com.android.tools'

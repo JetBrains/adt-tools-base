@@ -174,7 +174,7 @@ public class TranslationDetector extends ResourceXmlDetector {
 
         // Convention seen in various projects
         mIgnoreFile = context.file.getName().startsWith("donottranslate") //$NON-NLS-1$
-                        || UnusedResourceDetector.isAnalyticsFile(context);
+                        || ResourceUsageModel.isAnalyticsFile(context.file);
 
         if (!context.getProject().getReportIssues()) {
             mIgnoreFile = true;
@@ -601,10 +601,11 @@ public class TranslationDetector extends ResourceXmlDetector {
                     mNonTranslatable.add(name);
                 }
                 return;
-            } else if (name.equals("google_maps_key")                  //$NON-NLS-1$
+            } else if (isServiceKey(name)
+                    // Older versions of the templates shipped with these not marked as
+                    // non-translatable; don't flag them
+                    || name.equals("google_maps_key")                  //$NON-NLS-1$
                     || name.equals("google_maps_key_instructions")) {  //$NON-NLS-1$
-                // Older versions of the templates shipped with these not marked as
-                // non-translatable; don't flag them
                 if (mNonTranslatable == null) {
                     mNonTranslatable = new HashSet<String>();
                 }
@@ -649,6 +650,19 @@ public class TranslationDetector extends ResourceXmlDetector {
 
             // TBD: Also make sure that the strings are not empty or placeholders?
         }
+    }
+
+    public static boolean isServiceKey(@NonNull String name) {
+        // These are keys used by misc developer services.
+        // Configuration files provided by for example
+        //   https://developers.google.com/cloud-messaging/android/client
+        // in earlier versions would omit translatable="false", which meant users
+        // would run into fatal translation errors at build time.
+        // See for example
+        //    https://code.google.com/p/android/issues/detail?id=195824
+        return name.equals("gcm_defaultSenderId")
+                || name.equals("google_app_id")
+                || name.equals("ga_trackingID");
     }
 
     private static boolean allItemsAreReferences(Element element) {

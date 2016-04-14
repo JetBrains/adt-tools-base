@@ -14,6 +14,10 @@ dependencies {
 android {
     compileSdkVersion rootProject.latestCompileSdk
     buildToolsVersion = rootProject.buildToolsVersion
+
+    defaultConfig {
+      minSdkVersion 8
+    }
 }
 
 defaultTasks 'extractDebugAnnotations'

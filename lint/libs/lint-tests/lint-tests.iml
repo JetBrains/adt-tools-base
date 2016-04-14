@@ -17,13 +17,12 @@
     <orderEntry type="module" module-name="lint-cli" exported="" />
     <orderEntry type="module" module-name="testutils" exported="" />
     <orderEntry type="module" module-name="lint-api-base" exported="" />
-    <orderEntry type="module" module-name="sdk-common-base" exported="" />
     <orderEntry type="library" exported="" name="JUnit4" level="project" />
     <orderEntry type="module" module-name="layoutlib-api-base" exported="" />
-    <orderEntry type="module" module-name="sdklib-base" exported="" />
     <orderEntry type="library" exported="" name="intellij-annotations" level="project" />
     <orderEntry type="library" scope="TEST" name="groovy" level="project" />
     <orderEntry type="library" scope="TEST" name="mockito" level="project" />
     <orderEntry type="library" name="ecj" level="project" />
+    <orderEntry type="module" module-name="sdk-common-base" />
   </component>
 </module>

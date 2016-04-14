@@ -21,23 +21,17 @@ import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.concurrency.GuardedBy;
 import com.android.ddmlib.log.LogReceiver;
-import com.google.common.base.CharMatcher;
-import com.google.common.base.Function;
+import com.android.sdklib.AndroidVersion;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Atomics;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -90,8 +84,8 @@ final class Device implements IDevice {
     private static final char SEPARATOR = '-';
     private static final String UNKNOWN_PACKAGE = "";   //$NON-NLS-1$
 
-    private static final long GET_PROP_TIMEOUT_MS = 100;
-    private static final long INITIAL_GET_PROP_TIMEOUT_MS = 250;
+    private static final long GET_PROP_TIMEOUT_MS = 250;
+    private static final long INITIAL_GET_PROP_TIMEOUT_MS = 2000;
     private static final int QUERY_IS_ROOT_TIMEOUT_MS = 1000;
 
     private static final long INSTALL_TIMEOUT_MINUTES;
@@ -128,12 +122,13 @@ final class Device implements IDevice {
     private Set<String> mHardwareCharacteristics;
 
     private int mApiLevel;
+    @Nullable private AndroidVersion mVersion;
     private String mName;
 
     /**
      * Output receiver for "pm install package.apk" command line.
      */
-    private static final class InstallReceiver extends MultiLineReceiver {
+    static final class InstallReceiver extends MultiLineReceiver {
 
         private static final String SUCCESS_OUTPUT = "Success"; //$NON-NLS-1$
         private static final Pattern FAILURE_PATTERN = Pattern.compile("Failure\\s+\\[(.*)\\]"); //$NON-NLS-1$
@@ -356,7 +351,7 @@ final class Device implements IDevice {
     public boolean supportsFeature(@NonNull Feature feature) {
         switch (feature) {
             case SCREEN_RECORD:
-                if (getApiLevel() < 19) {
+                if (!getVersion().isGreaterOrEqualThan(19)) {
                     return false;
                 }
                 if (mHasScreenRecorder == null) {
@@ -364,7 +359,7 @@ final class Device implements IDevice {
                 }
                 return mHasScreenRecorder;
             case PROCSTATS:
-                return getApiLevel() >= 19;
+                return getVersion().isGreaterOrEqualThan(19);
             default:
                 return false;
         }
@@ -391,18 +386,25 @@ final class Device implements IDevice {
         return mHardwareCharacteristics.contains(feature.getCharacteristic());
     }
 
+    @NonNull
     @Override
-    public int getApiLevel() {
-        if (mApiLevel > 0) {
-            return mApiLevel;
+    public AndroidVersion getVersion() {
+        if (mVersion != null) {
+            return mVersion;
         }
 
         try {
             String buildApi = getProperty(PROP_BUILD_API_LEVEL);
-            mApiLevel = buildApi == null ? -1 : Integer.parseInt(buildApi);
-            return mApiLevel;
+            if (buildApi == null) {
+                return AndroidVersion.DEFAULT;
+            }
+
+            int api = Integer.parseInt(buildApi);
+            String codeName = getProperty(PROP_BUILD_CODENAME);
+            mVersion = new AndroidVersion(api, codeName);
+            return mVersion;
         } catch (Exception e) {
-            return -1;
+            return AndroidVersion.DEFAULT;
         }
     }
 
@@ -728,7 +730,7 @@ final class Device implements IDevice {
             mClients.remove(client);
         }
         if (notify) {
-            mMonitor.getServer().deviceChanged(this, CHANGE_CLIENT_LIST);
+            AndroidDebugBridge.deviceChanged(this, CHANGE_CLIENT_LIST);
         }
 
         removeClientInfo(client);
@@ -750,11 +752,11 @@ final class Device implements IDevice {
     }
 
     void update(int changeMask) {
-        mMonitor.getServer().deviceChanged(this, changeMask);
+        AndroidDebugBridge.deviceChanged(this, changeMask);
     }
 
-    void update(Client client, int changeMask) {
-        mMonitor.getServer().clientChanged(client, changeMask);
+    void update(@NonNull Client client, int changeMask) {
+        AndroidDebugBridge.clientChanged(client, changeMask);
         updateClientInfo(client, changeMask);
     }
 
@@ -892,202 +894,16 @@ final class Device implements IDevice {
     }
 
     @Override
-    public void installPackages(List<String> apkFilePaths, int timeOutInMs, boolean reinstall,
-            String... extraArgs) throws InstallException {
-
-        assert(!apkFilePaths.isEmpty());
-
-        if (getApiLevel() < 21) {
-            Log.w("Internal error : installPackages invoked with device < 21 for %s",
-                    Joiner.on(",").join(apkFilePaths));
-
-            if (apkFilePaths.size() == 1) {
-                installPackage(apkFilePaths.get(0), reinstall, extraArgs);
-                return;
-            }
-            Log.e("Internal error : installPackages invoked with device < 21 for multiple APK : %s",
-                    Joiner.on(",").join(apkFilePaths));
-            throw new InstallException(
-                    "Internal error : installPackages invoked with device < 21 for multiple APK : "
-                            + Joiner.on(",").join(apkFilePaths));
-        }
-        String mainPackageFilePath = apkFilePaths.get(0);
-        Log.d(mainPackageFilePath,
-                String.format("Uploading main %1$s and %2$s split APKs onto device '%3$s'",
-                        mainPackageFilePath, Joiner.on(',').join(apkFilePaths),
-                        getSerialNumber()));
-
+    public void installPackages(@NonNull List<File> apks, boolean reinstall,
+            @NonNull List<String> installOptions, long timeout, @NonNull TimeUnit timeoutUnit)
+            throws InstallException {
         try {
-            // create a installation session.
-
-            List<String> extraArgsList = extraArgs != null
-                    ? ImmutableList.copyOf(extraArgs)
-                    : ImmutableList.<String>of();
-
-            String sessionId = createMultiInstallSession(apkFilePaths, extraArgsList, reinstall);
-            if (sessionId == null) {
-                Log.d(mainPackageFilePath, "Failed to establish session, quit installation");
-                throw new InstallException("Failed to establish session");
-            }
-            Log.d(mainPackageFilePath, String.format("Established session id=%1$s", sessionId));
-
-            // now upload each APK in turn.
-            int index = 0;
-            boolean allUploadSucceeded = true;
-            while (allUploadSucceeded && index < apkFilePaths.size()) {
-                allUploadSucceeded = uploadAPK(sessionId, apkFilePaths.get(index), index++, timeOutInMs);
-            }
-
-            // if all files were upload successfully, commit otherwise abandon the installation.
-            String command = allUploadSucceeded
-                    ? "pm install-commit " + sessionId
-                    : "pm install-abandon " + sessionId;
-            InstallReceiver receiver = new InstallReceiver();
-            executeShellCommand(command, receiver, timeOutInMs, TimeUnit.MILLISECONDS);
-            String errorMessage = receiver.getErrorMessage();
-            if (errorMessage != null) {
-                String message = String.format("Failed to finalize session : %1$s", errorMessage);
-                Log.e(mainPackageFilePath, message);
-                throw new InstallException(message);
-            }
-            // in case not all files were upload and we abandoned the install, make sure to
-            // notifier callers.
-            if (!allUploadSucceeded) {
-                throw new InstallException("Unable to upload some APKs");
-            }
-        } catch (TimeoutException e) {
-            Log.e(LOG_TAG, "Error during Sync: timeout.");
-            throw new InstallException(e);
-
-        } catch (IOException e) {
-            Log.e(LOG_TAG, String.format("Error during Sync: %1$s", e.getMessage()));
-            throw new InstallException(e);
-
-        } catch (AdbCommandRejectedException e) {
-            throw new InstallException(e);
-        } catch (ShellCommandUnresponsiveException e) {
-            Log.e(LOG_TAG, String.format("Error during shell execution: %1$s", e.getMessage()));
-            throw new InstallException(e);
-        }
-    }
-
-    /**
-     * Implementation of {@link com.android.ddmlib.MultiLineReceiver} that can receive a
-     * Success message from ADB followed by a session ID.
-     */
-    private static class MultiInstallReceiver extends MultiLineReceiver {
-
-        private static final Pattern successPattern = Pattern.compile("Success: .*\\[(\\d*)\\]");
-
-        @Nullable String sessionId = null;
-
-        @Override
-        public boolean isCancelled() {
-            return false;
-        }
-
-        @Override
-        public void processNewLines(String[] lines) {
-            for (String line : lines) {
-                Matcher matcher = successPattern.matcher(line);
-                if (matcher.matches()) {
-                    sessionId = matcher.group(1);
-                }
-            }
-
-        }
-
-        @Nullable
-        public String getSessionId() {
-            return sessionId;
-        }
-    }
-
-    @Nullable
-    private String createMultiInstallSession(List<String> apkFileNames,
-            @NonNull Collection<String> extraArgs, boolean reinstall)
-            throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
-            IOException {
-
-        List<File> apkFiles = Lists.transform(apkFileNames, new Function<String, File>() {
-            @Override
-            public File apply(String input) {
-                return new File(input);
-            }
-        });
-
-        long totalFileSize = 0L;
-        for (File apkFile : apkFiles) {
-            if (apkFile.exists() && apkFile.isFile()) {
-                totalFileSize += apkFile.length();
-            } else {
-                throw new IllegalArgumentException(apkFile.getAbsolutePath() + " is not a file");
-            }
-        }
-        StringBuilder parameters = new StringBuilder();
-        if (reinstall) {
-            parameters.append(("-r "));
-        }
-        parameters.append(Joiner.on(' ').join(extraArgs));
-        MultiInstallReceiver receiver = new MultiInstallReceiver();
-        String cmd = String.format("pm install-create %1$s -S %2$d",
-                parameters.toString(),
-                totalFileSize);
-        executeShellCommand(cmd, receiver, DdmPreferences.getTimeOut());
-        return receiver.getSessionId();
-    }
-
-    private static final CharMatcher UNSAFE_PM_INSTALL_SESSION_SPLIT_NAME_CHARS =
-            CharMatcher.inRange('a','z').or(CharMatcher.inRange('A','Z'))
-                    .or(CharMatcher.anyOf("_-")).negate();
-
-    private boolean uploadAPK(final String sessionId, String apkFilePath, int uniqueId, int timeOutInMs) {
-        Log.d(sessionId, String.format("Uploading APK %1$s ", apkFilePath));
-        File fileToUpload = new File(apkFilePath);
-        if (!fileToUpload.exists()) {
-            Log.e(sessionId, String.format("File not found: %1$s", apkFilePath));
-            return false;
-        }
-        if (fileToUpload.isDirectory()) {
-            Log.e(sessionId, String.format("Directory upload not supported: %1$s", apkFilePath));
-            return false;
-        }
-        String baseName = fileToUpload.getName().lastIndexOf('.') != -1
-                ? fileToUpload.getName().substring(0, fileToUpload.getName().lastIndexOf('.'))
-                : fileToUpload.getName();
-
-        baseName = UNSAFE_PM_INSTALL_SESSION_SPLIT_NAME_CHARS.replaceFrom(baseName, '_');
-
-        String command = String.format("pm install-write -S %d %s %d_%s -",
-                fileToUpload.length(), sessionId, uniqueId, baseName);
-
-        Log.d(sessionId, String.format("Executing : %1$s", command));
-        InputStream inputStream = null;
-        try {
-            inputStream = new BufferedInputStream(new FileInputStream(fileToUpload));
-            InstallReceiver receiver = new InstallReceiver();
-            AdbHelper.executeRemoteCommand(AndroidDebugBridge.getSocketAddress(),
-                    AdbHelper.AdbService.EXEC, command, this,
-                    receiver, timeOutInMs, TimeUnit.MILLISECONDS, inputStream);
-            if (receiver.getErrorMessage() != null) {
-                Log.e(sessionId, String.format("Error while uploading %1$s : %2$s", fileToUpload.getName(),
-                        receiver.getErrorMessage()));
-            } else {
-                Log.d(sessionId, String.format("Successfully uploaded %1$s", fileToUpload.getName()));
-            }
-            return receiver.getErrorMessage() == null;
+            SplitApkInstaller.create(this, apks, reinstall, installOptions)
+                    .install(timeout, timeoutUnit);
+        } catch (InstallException e) {
+            throw e;
         } catch (Exception e) {
-            Log.e(sessionId, e);
-            return false;
-        } finally {
-            if (inputStream != null) {
-                try {
-                    inputStream.close();
-                } catch (IOException e) {
-                    Log.e(sessionId, e);
-                }
-            }
-
+            throw new InstallException(e);
         }
     }
 
@@ -1292,6 +1108,9 @@ final class Device implements IDevice {
     @Override
     public int getDensity() {
         String densityValue = getProperty(IDevice.PROP_DEVICE_DENSITY);
+        if (densityValue == null) {
+            densityValue = getProperty(IDevice.PROP_DEVICE_EMULATOR_DENSITY);
+        }
         if (densityValue != null) {
             try {
                 return Integer.parseInt(densityValue);

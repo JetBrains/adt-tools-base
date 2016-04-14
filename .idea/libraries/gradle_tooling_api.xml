@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="gradle-tooling-api">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/org/gradle/gradle-tooling-api/2.10/gradle-tooling-api-2.10.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/org/gradle/gradle-tooling-api/2.10/gradle-tooling-api-2.10-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

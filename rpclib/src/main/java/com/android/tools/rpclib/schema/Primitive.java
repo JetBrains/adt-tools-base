@@ -15,7 +15,6 @@
  */
 package com.android.tools.rpclib.schema;
 
-import com.android.tools.rpclib.binary.BinaryID;
 import com.android.tools.rpclib.binary.Decoder;
 import com.android.tools.rpclib.binary.Encoder;
 
@@ -29,9 +28,9 @@ public final class Primitive extends Type {
 
     Method mMethod;
 
-    public Primitive(String name, byte method) {
+    public Primitive(String name, Method method) {
         mName = name;
-        mMethod = new Method(method);
+        mMethod = method;
     }
 
     public Primitive(@NotNull Decoder d, Method method) throws IOException {
@@ -50,42 +49,42 @@ public final class Primitive extends Type {
 
     @Override
     public void encodeValue(@NotNull Encoder e, Object value) throws IOException {
-        switch (mMethod.value) {
-            case Method.Bool:
+        switch (mMethod.getValue()) {
+            case Method.BoolValue:
                 e.bool((Boolean) value);
                 break;
-            case Method.Int8:
-                e.int8((Byte) value);
+            case Method.Int8Value:
+                e.int8(((Number)value).byteValue());
                 break;
-            case Method.Uint8:
-                e.uint8((Short) value);
+            case Method.Uint8Value:
+                e.uint8(((Number)value).shortValue());
                 break;
-            case Method.Int16:
-                e.int16((Short) value);
+            case Method.Int16Value:
+                e.int16(((Number)value).shortValue());
                 break;
-            case Method.Uint16:
-                e.uint16((Integer) value);
+            case Method.Uint16Value:
+                e.uint16(((Number)value).intValue());
                 break;
-            case Method.Int32:
-                e.int32((Integer) value);
+            case Method.Int32Value:
+                e.int32(((Number)value).intValue());
                 break;
-            case Method.Uint32:
-                e.uint32((Long) value);
+            case Method.Uint32Value:
+                e.uint32(((Number)value).longValue());
                 break;
-            case Method.Int64:
-                e.int64((Long) value);
+            case Method.Int64Value:
+                e.int64(((Number)value).longValue());
                 break;
-            case Method.Uint64:
-                e.uint64((Long) value);
+            case Method.Uint64Value:
+                e.uint64(((Number)value).longValue());
                 break;
-            case Method.Float32:
-                e.float32((Float) value);
+            case Method.Float32Value:
+                e.float32(((Number)value).floatValue());
                 break;
-            case Method.Float64:
-                e.float64((Double) value);
+            case Method.Float64Value:
+                e.float64(((Number)value).doubleValue());
                 break;
-            case Method.String:
-                e.string((String) value);
+            case Method.StringValue:
+                e.string((value == null) ? null : value.toString());
                 break;
             default:
                 throw new IOException("Invalid primitive method in encode");
@@ -94,30 +93,30 @@ public final class Primitive extends Type {
 
     @Override
     public Object decodeValue(@NotNull Decoder d) throws IOException {
-        switch (mMethod.value) {
-            case Method.Bool:
+        switch (mMethod.getValue()) {
+            case Method.BoolValue:
                 return d.bool();
-            case Method.Int8:
+            case Method.Int8Value:
                 return d.int8();
-            case Method.Uint8:
+            case Method.Uint8Value:
                 return d.uint8();
-            case Method.Int16:
+            case Method.Int16Value:
                 return d.int16();
-            case Method.Uint16:
+            case Method.Uint16Value:
                 return d.uint16();
-            case Method.Int32:
+            case Method.Int32Value:
                 return d.int32();
-            case Method.Uint32:
+            case Method.Uint32Value:
                 return d.uint32();
-            case Method.Int64:
+            case Method.Int64Value:
                 return d.int64();
-            case Method.Uint64:
+            case Method.Uint64Value:
                 return d.uint64();
-            case Method.Float32:
+            case Method.Float32Value:
                 return d.float32();
-            case Method.Float64:
+            case Method.Float64Value:
                 return d.float64();
-            case Method.String:
+            case Method.StringValue:
                 return d.string();
             default:
                 throw new IOException("Invalid primitive method in decode");
@@ -127,7 +126,7 @@ public final class Primitive extends Type {
     @Override
     public void encode(@NotNull Encoder e) throws IOException {
         //noinspection PointlessBitwiseExpression
-        e.uint8((short)(TypeTag.PrimitiveTag | ( mMethod.value << 4)));
+        e.uint8((short)(TypeTag.PrimitiveTagValue | ( mMethod.getValue() << 4)));
         e.nonCompactString(mName);
     }
 
@@ -139,5 +138,15 @@ public final class Primitive extends Type {
     @Override
     public void signature(StringBuilder out) {
         out.append(mMethod);
+    }
+
+    /**
+     * @return true if ty is a primitive of base type method.
+     */
+    public static boolean isMethod(Type ty, Method method) {
+        if (!(ty instanceof Primitive)) {
+            return false;
+        }
+        return ((Primitive)(ty)).mMethod.equals(method);
     }
 }

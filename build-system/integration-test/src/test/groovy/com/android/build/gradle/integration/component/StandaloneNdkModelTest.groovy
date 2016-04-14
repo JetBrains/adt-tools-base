@@ -18,11 +18,11 @@ package com.android.build.gradle.integration.component
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.EmptyAndroidTestApp
-import com.android.build.gradle.integration.common.utils.FileHelper
 import com.android.builder.model.NativeAndroidProject
 import com.android.builder.model.NativeArtifact
 import com.android.builder.model.NativeFolder
 import com.android.builder.model.NativeSettings
+import com.android.utils.FileUtils
 import com.google.common.collect.ImmutableSet
 import com.google.common.collect.Sets
 import groovy.transform.CompileStatic
@@ -46,7 +46,7 @@ class StandaloneNdkModelTest {
 
     @Before
     public void setUp() {
-        FileHelper.createFile(project.file("src/main/jni/empty.c"), "")
+        FileUtils.createFile(project.file("src/main/jni/empty.c"), "")
     }
 
     private final Set<String> ABIS = ImmutableSet.of(
@@ -65,10 +65,17 @@ apply plugin: "com.android.model.native"
 
 model {
     android {
-        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-    }
-    android.ndk {
-        moduleName = "hello-jni"
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        ndk {
+            moduleName "hello-jni"
+        }
+        sources {
+            main {
+                jni {
+                    exportedHeaders.srcDir("src/main/headers")
+                }
+            }
+        }
     }
 }
 """
@@ -85,42 +92,49 @@ apply plugin: "com.android.model.native"
 
 model {
     android {
-        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-    }
-    android.ndk {
-        moduleName = "hello-jni"
-    }
-    android.buildTypes {
-        debug {
-            ndk.with {
-                CFlags.add("-DDEBUG_C")
-                cppFlags.add("-DDEBUG_CPP")
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        ndk {
+            moduleName "hello-jni"
+        }
+        buildTypes {
+            debug {
+                ndk {
+                    CFlags.add("-DDEBUG_C")
+                    cppFlags.add("-DDEBUG_CPP")
+                }
+            }
+            release {
+                ndk {
+                    CFlags.add("-DRELEASE_C")
+                    cppFlags.add("-DRELEASE_CPP")
+                }
+            }
+            create("optimized") {
+                ndk {
+                    CFlags.add("-DOPTIMIZED_C")
+                    cppFlags.add("-DOPTIMIZED_CPP")
+                }
             }
         }
-        release {
-            ndk.with {
-                CFlags.add("-DRELEASE_C")
-                cppFlags.add("-DRELEASE_CPP")
+        productFlavors {
+            create("free") {
+                ndk {
+                    CFlags.add("-DFREE_C")
+                    cppFlags.add("-DFREE_CPP")
+                }
+            }
+            create("premium") {
+                ndk {
+                    CFlags.add("-DPREMIUM_C")
+                    cppFlags.add("-DPREMIUM_CPP")
+                }
             }
         }
-        create("optimized") {
-            ndk.with {
-                CFlags.add("-DOPTIMIZED_C")
-                cppFlags.add("-DOPTIMIZED_CPP")
-            }
-        }
-    }
-    android.productFlavors {
-        create("free") {
-            ndk.with {
-                CFlags.add("-DFREE_C")
-                cppFlags.add("-DFREE_CPP")
-            }
-        }
-        create("premium") {
-            ndk.with {
-                CFlags.add("-DPREMIUM_C")
-                cppFlags.add("-DPREMIUM_CPP")
+        sources {
+            main {
+                jni {
+                    exportedHeaders.srcDir("src/main/headers")
+                }
             }
         }
     }
@@ -158,6 +172,8 @@ model {
                         assertThat(cppSettings.compilerFlags).doesNotContain(expectedCppFlag)
                     }
                 }
+                assertThat(cSettings.compilerFlags).contains("-I" + project.file("src/main/headers"))
+                assertThat(cppSettings.compilerFlags).contains("-I" + project.file("src/main/headers"))
             }
         }
     }
@@ -167,6 +183,16 @@ model {
             Set<String> buildTypes,
             Set<String> productFlavors) {
         Collection<NativeArtifact> artifacts = model.getArtifacts()
+
+        assertThat(model.getFileExtensions()).containsEntry("c", "c")
+        assertThat(model.getFileExtensions()).containsEntry("C", "c++")
+        assertThat(model.getFileExtensions()).containsEntry("CPP", "c++")
+        assertThat(model.getFileExtensions()).containsEntry("c++", "c++")
+        assertThat(model.getFileExtensions()).containsEntry("cc", "c++")
+        assertThat(model.getFileExtensions()).containsEntry("cp", "c++")
+        assertThat(model.getFileExtensions()).containsEntry("cpp", "c++")
+        assertThat(model.getFileExtensions()).containsEntry("cxx", "c++")
+
         productFlavors = productFlavors.isEmpty() ? ImmutableSet.of("") : productFlavors
         for(List<String> combo : Sets.cartesianProduct(buildTypes, productFlavors, ABIS)) {
             String buildType = combo.get(0)
@@ -184,6 +210,7 @@ model {
                 }
             }
 
+            assertThat(artifact.groupName).isEqualTo(variant)
             assertThat(artifact.outputFile).hasName("libhello-jni.so")
             assertThat(artifact.sourceFiles).isEmpty()
             assertThat(artifact.toolChain).endsWith(abi)
@@ -195,6 +222,7 @@ model {
                             .collect { project.file("src/" + it + "/jni") }
 
             assertThat(artifact.sourceFolders.collect { it.getFolderPath() }).containsAllIn(expectedSrc)
+            assertThat(artifact.exportedHeaders).containsExactly(project.file("src/main/headers"))
         }
     }
 }

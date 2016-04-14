@@ -19,6 +19,8 @@ package com.android.ddmlib;
 import com.android.annotations.NonNull;
 import com.android.ddmlib.DebugPortManager.IDebugPortProvider;
 import com.android.ddmlib.AndroidDebugBridge.IClientChangeListener;
+import com.android.ddmlib.jdwp.JdwpAgent;
+import com.android.ddmlib.jdwp.JdwpProtocol;
 
 import java.io.IOException;
 import java.nio.BufferOverflowException;
@@ -26,7 +28,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -37,7 +38,7 @@ import java.util.concurrent.TimeUnit;
  * {@link ClientData} class. Each <code>Client</code> object has its own <code>ClientData</code>
  * accessed through {@link #getClientData()}.
  */
-public class Client {
+public class Client extends JdwpAgent {
 
     private static final int SERVER_PROTOCOL_VERSION = 1;
 
@@ -79,10 +80,6 @@ public class Client {
     private Debugger mDebugger;
     private int mDebuggerListenPort;
 
-    // list of IDs for requests we have sent to the client
-    // Used for locking so final.
-    final private HashMap<Integer,ChunkHandler> mOutstandingReqs;
-
     // chunk handlers stash state data in here
     private ClientData mClientData;
 
@@ -104,9 +101,6 @@ public class Client {
     private static final int INITIAL_BUF_SIZE = 2*1024;
     private static final int MAX_BUF_SIZE = 800*1024*1024;
     private ByteBuffer mReadBuffer;
-
-    private static final int WRITE_BUF_SIZE = 256;
-    private ByteBuffer mWriteBuffer;
 
     private Device mDevice;
 
@@ -130,13 +124,11 @@ public class Client {
      * @param pid the client pid.
      */
     Client(Device device, SocketChannel chan, int pid) {
+        super(new JdwpProtocol());
         mDevice = device;
         mChan = chan;
 
         mReadBuffer = ByteBuffer.allocate(INITIAL_BUF_SIZE);
-        mWriteBuffer = ByteBuffer.allocate(WRITE_BUF_SIZE);
-
-        mOutstandingReqs = new HashMap<Integer,ChunkHandler>();
 
         mConnState = ST_INIT;
 
@@ -209,7 +201,7 @@ public class Client {
     /**
      * Return the Debugger object associated with this client.
      */
-    Debugger getDebugger() {
+    public Debugger getDebugger() {
         return mDebugger;
     }
 
@@ -611,14 +603,13 @@ public class Client {
      * On failure, closes the socket and returns false.
      */
     boolean sendHandshake() {
-        assert mWriteBuffer.position() == 0;
-
+        ByteBuffer tempBuffer = ByteBuffer.allocate(JdwpHandshake.HANDSHAKE_LEN);
         try {
             // assume write buffer can hold 14 bytes
-            JdwpPacket.putHandshake(mWriteBuffer);
-            int expectedLen = mWriteBuffer.position();
-            mWriteBuffer.flip();
-            if (mChan.write(mWriteBuffer) != expectedLen)
+            JdwpHandshake.putHandshake(tempBuffer);
+            int expectedLen = tempBuffer.position();
+            tempBuffer.flip();
+            if (mChan.write(tempBuffer) != expectedLen)
                 throw new IOException("partial handshake write");
         }
         catch (IOException ioe) {
@@ -627,23 +618,10 @@ public class Client {
             close(true /* notify */);
             return false;
         }
-        finally {
-            mWriteBuffer.clear();
-        }
 
         mConnState = ST_AWAIT_SHAKE;
 
         return true;
-    }
-
-
-    /**
-     * Send a non-DDM packet to the client.
-     *
-     * Equivalent to sendAndConsume(packet, null).
-     */
-    void sendAndConsume(JdwpPacket packet) throws IOException {
-        sendAndConsume(packet, null);
     }
 
     /**
@@ -656,9 +634,8 @@ public class Client {
      * Another goal is to avoid unnecessary buffer copies, so we write
      * directly out of the JdwpPacket's ByteBuffer.
      */
-    void sendAndConsume(JdwpPacket packet, ChunkHandler replyHandler)
-        throws IOException {
-
+    @Override
+    protected void send(@NonNull JdwpPacket packet) throws IOException {
         // Fix to avoid a race condition on mChan. This should be better synchronized
         // but just capturing the channel here, avoids a NPE.
         SocketChannel chan = mChan;
@@ -668,45 +645,18 @@ public class Client {
             return;
         }
 
-        if (replyHandler != null) {
-            /*
-             * Add the ID to the list of outstanding requests.  We have to do
-             * this before sending the packet, in case the response comes back
-             * before our thread returns from the packet-send function.
-             */
-            addRequestId(packet.getId(), replyHandler);
-        }
-
         // Synchronizing on this variable is still useful as we do not want to threads
         // reading at the same time from the same channel, and the only change that
         // can happen to this channel is to be closed and mChan become null.
         //noinspection SynchronizationOnLocalVariableOrMethodParameter
         synchronized (chan) {
             try {
-                packet.writeAndConsume(chan);
+                packet.write(chan);
             }
             catch (IOException ioe) {
-                removeRequestId(packet.getId());
+                removeReplyInterceptor(packet.getId());
                 throw ioe;
             }
-        }
-    }
-
-    /**
-     * Forward the packet to the debugger (if still connected to one).
-     *
-     * Consumes the packet.
-     */
-    void forwardPacketToDebugger(JdwpPacket packet)
-        throws IOException {
-
-        Debugger dbg = mDebugger;
-
-        if (dbg == null) {
-            Log.d("ddms", "Discarding packet");
-            packet.consume();
-        } else {
-            dbg.sendAndConsume(packet);
         }
     }
 
@@ -772,18 +722,18 @@ public class Client {
              */
             int result;
 
-            result = JdwpPacket.findHandshake(mReadBuffer);
+            result = JdwpHandshake.findHandshake(mReadBuffer);
             //Log.v("ddms", "findHand: " + result);
             switch (result) {
-                case JdwpPacket.HANDSHAKE_GOOD:
+                case JdwpHandshake.HANDSHAKE_GOOD:
                     Log.d("ddms",
                         "Good handshake from client, sending HELO to " + mClientData.getPid());
-                    JdwpPacket.consumeHandshake(mReadBuffer);
+                    JdwpHandshake.consumeHandshake(mReadBuffer);
                     mConnState = ST_NEED_DDM_PKT;
                     HandleHello.sendHelloCommands(this, SERVER_PROTOCOL_VERSION);
                     // see if we have another packet in the buffer
                     return getJdwpPacket();
-                case JdwpPacket.HANDSHAKE_BAD:
+                case JdwpHandshake.HANDSHAKE_BAD:
                     Log.d("ddms", "Bad handshake from client");
                     if (MonitorThread.getInstance().getRetryOnBadHandshake()) {
                         // we should drop the client, but also attempt to reopen it.
@@ -796,7 +746,7 @@ public class Client {
                         close(true /* notify */);
                     }
                     break;
-                case JdwpPacket.HANDSHAKE_NOTYET:
+                case JdwpHandshake.HANDSHAKE_NOTYET:
                     Log.d("ddms", "No handshake from client yet.");
                     break;
                 default:
@@ -819,51 +769,6 @@ public class Client {
              * Not expecting data when in this state.
              */
             Log.e("ddms", "Receiving data in state = " + mConnState);
-        }
-
-        return null;
-    }
-
-    /*
-     * Add the specified ID to the list of request IDs for which we await
-     * a response.
-     */
-    private void addRequestId(int id, ChunkHandler handler) {
-        synchronized (mOutstandingReqs) {
-            if (Log.Config.LOGV) Log.v("ddms",
-                "Adding req 0x" + Integer.toHexString(id) +" to set");
-            mOutstandingReqs.put(id, handler);
-        }
-    }
-
-    /*
-     * Remove the specified ID from the list, if present.
-     */
-    void removeRequestId(int id) {
-        synchronized (mOutstandingReqs) {
-            if (Log.Config.LOGV) Log.v("ddms",
-                "Removing req 0x" + Integer.toHexString(id) + " from set");
-            mOutstandingReqs.remove(id);
-        }
-
-        //Log.w("ddms", "Request " + Integer.toHexString(id)
-        //    + " could not be removed from " + this);
-    }
-
-    /**
-     * Determine whether this is a response to a request we sent earlier.
-     * If so, return the ChunkHandler responsible.
-     */
-    ChunkHandler isResponseToUs(int id) {
-
-        synchronized (mOutstandingReqs) {
-            ChunkHandler handler = mOutstandingReqs.get(id);
-            if (handler != null) {
-                if (Log.Config.LOGV) Log.v("ddms",
-                    "Found 0x" + Integer.toHexString(id)
-                    + " in request set - " + handler);
-                return handler;
-            }
         }
 
         return null;
@@ -915,8 +820,7 @@ public class Client {
     void close(boolean notify) {
         Log.d("ddms", "Closing " + this.toString());
 
-        mOutstandingReqs.clear();
-
+        clear();
         try {
             if (mChan != null) {
                 mChan.close();
@@ -946,5 +850,6 @@ public class Client {
     void update(int changeMask) {
         mDevice.update(this, changeMask);
     }
+
 }
 

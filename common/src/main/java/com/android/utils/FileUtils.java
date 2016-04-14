@@ -22,16 +22,24 @@ import com.android.annotations.NonNull;
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Iterables;
+import com.google.common.hash.HashCode;
+import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
+import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
+import java.io.RandomAccessFile;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public final class FileUtils {
 
@@ -45,6 +53,13 @@ public final class FileUtils {
         @Override
         public String apply(File file) {
             return file.getName();
+        }
+    };
+
+    public static final Function<File, String> GET_PATH = new Function<File, String>() {
+        @Override
+        public String apply(File file) {
+            return file.getPath();
         }
     };
 
@@ -160,6 +175,7 @@ public final class FileUtils {
     /**
      * Joins a set of segment into a string, separating each segments with a host-specific
      * path separator.
+     *
      * @param paths the segments.
      * @return a string with the segments.
      */
@@ -171,6 +187,7 @@ public final class FileUtils {
     /**
      * Joins a set of segment into a string, separating each segments with a host-specific
      * path separator.
+     *
      * @param paths the segments.
      * @return a string with the segments.
      */
@@ -188,23 +205,62 @@ public final class FileUtils {
         return UNIX_NEW_LINE_JOINER.join(Files.readLines(file, Charsets.UTF_8));
     }
 
+    /**
+     * Computes the relative of a file or directory with respect to a directory.
+     *
+     * @param file the file or directory, which must exist in the filesystem
+     * @param dir the directory to compute the path relative to
+     * @return the relative path from {@code dir} to {@code file}; if {@code file} is a directory
+     * the path comes appended with the file separator (see documentation on {@code relativize}
+     * on java's {@code URI} class)
+     */
     @NonNull
     public static String relativePath(@NonNull File file, @NonNull File dir) {
-        checkArgument(file.isFile(), "%s is not a file.", file.getPath());
+        checkArgument(file.isFile() || file.isDirectory(), "%s is not a file nor a directory.",
+                file.getPath());
         checkArgument(dir.isDirectory(), "%s is not a directory.", dir.getPath());
         return relativePossiblyNonExistingPath(file, dir);
     }
 
+    /**
+     * Computes the relative of a file or directory with respect to a directory.
+     * For example, if the file's absolute path is {@code /a/b/c} and the directory
+     * is {@code /a}, this method returns {@code b/c}.
+     *
+     * @param file the path that may not correspond to any existing path in the filesystem
+     * @param dir the directory to compute the path relative to
+     * @return the relative path from {@code dir} to {@code file}; if {@code file} is a directory
+     * the path comes appended with the file separator (see documentation on {@code relativize}
+     * on java's {@code URI} class)
+     */
     @NonNull
     public static String relativePossiblyNonExistingPath(@NonNull File file, @NonNull File dir) {
         String path = dir.toURI().relativize(file.toURI()).getPath();
         return toSystemDependentPath(path);
     }
 
+    /**
+     * Converts a /-based path into a path using the system dependent separator.
+     * @param path the system independent path to convert
+     * @return the system dependent path
+     */
     @NonNull
     public static String toSystemDependentPath(@NonNull String path) {
         if (File.separatorChar != '/') {
             path = path.replace('/', File.separatorChar);
+        }
+        return path;
+    }
+
+    /**
+     * Converts a system-dependent path into a /-based path.
+     * @param path the system dependent path
+     * @return the system independent path
+     */
+    @NonNull
+    public static String toSystemIndependentPath(@NonNull String path) {
+        if (File.separatorChar != '/') {
+            path = path.replace(File.separatorChar, '/');
         }
         return path;
     }
@@ -224,4 +280,94 @@ public final class FileUtils {
         return COMMA_SEPARATED_JOINER.join(Iterables.transform(files, GET_NAME));
     }
 
+    /**
+     * Chooses a directory name, based on a JAR file name, considering exploded-aar and classes.jar.
+     */
+    @NonNull
+    public static String getDirectoryNameForJar(@NonNull File inputFile) {
+        // add a hash of the original file path.
+        HashFunction hashFunction = Hashing.sha1();
+        HashCode hashCode = hashFunction.hashString(inputFile.getAbsolutePath(), Charsets.UTF_16LE);
+
+        String name = Files.getNameWithoutExtension(inputFile.getName());
+        if (name.equals("classes") && inputFile.getAbsolutePath().contains("exploded-aar")) {
+            // This naming scheme is coming from DependencyManager#computeArtifactPath.
+            File versionDir = inputFile.getParentFile().getParentFile();
+            File artifactDir = versionDir.getParentFile();
+            File groupDir = artifactDir.getParentFile();
+
+            name = Joiner.on('-').join(
+                    groupDir.getName(), artifactDir.getName(), versionDir.getName());
+        }
+        name = name + "_" + hashCode.toString();
+        return name;
+    }
+
+    public static void createFile(@NonNull File file, @NonNull String content) throws IOException {
+        checkArgument(!file.exists(), "%s exists already.", file);
+
+        Files.createParentDirs(file);
+        Files.write(content, file, Charsets.UTF_8);
+    }
+
+    /**
+     * Find a list of files in a directory, using a specified path pattern.
+     */
+    public static List<File> find(@NonNull File base, @NonNull final Pattern pattern) {
+        checkArgument(base.isDirectory(), "'base' must be a directory.");
+        return Files.fileTreeTraverser()
+                .preOrderTraversal(base)
+                .filter(Predicates.compose(Predicates.contains(pattern), GET_PATH))
+                .toList();
+    }
+
+    /**
+     * Find a file with the specified name in a given directory .
+     */
+    public static Optional<File> find(@NonNull File base, @NonNull final String name) {
+        checkArgument(base.isDirectory(), "'base' must be a directory.");
+        return Files.fileTreeTraverser()
+                .preOrderTraversal(base)
+                .filter(Predicates.compose(Predicates.equalTo(name), GET_NAME))
+                .last();
+    }
+
+    /**
+     * Reads a portion of a file to memory.
+     *
+     * @param file the file to read data from
+     * @param start the offset in the file to start reading
+     * @param length the number of bytes to read
+     * @return the bytes read
+     * @throws Exception failed to read the file
+     */
+    @NonNull
+    public static byte[] readSegment(@NonNull File file, long start, int length) throws Exception {
+        Preconditions.checkArgument(start >= 0, "start < 0");
+        Preconditions.checkArgument(length >= 0, "length < 0");
+
+        byte data[];
+        boolean threw = true;
+        RandomAccessFile raf = new RandomAccessFile(file, "r");
+        try {
+            raf.seek(start);
+
+            data = new byte[length];
+            int tot = 0;
+            while (tot < length) {
+                int r = raf.read(data, tot, length - tot);
+                if (r < 0) {
+                    throw new EOFException();
+                }
+
+                tot += r;
+            }
+
+            threw = false;
+        } finally {
+            Closeables.close(raf, threw);
+        }
+
+        return data;
+    }
 }

@@ -38,8 +38,8 @@ import com.android.build.gradle.tasks.BinaryFileProviderTask;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.JackTask;
-import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.build.gradle.tasks.MergeResources;
+import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
@@ -51,21 +51,30 @@ import com.android.ide.common.blame.SourceFile;
 import com.android.ide.common.res2.ResourceSet;
 import com.android.utils.StringHelper;
 import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
+import org.gradle.api.Project;
 import org.gradle.api.Task;
+import org.gradle.api.file.ConfigurableFileTree;
+import org.gradle.api.file.DirectoryTree;
+import org.gradle.api.file.SourceDirectorySet;
+import org.gradle.api.internal.file.DefaultSourceDirectorySet;
+import org.gradle.api.internal.file.FileResolver;
+import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.Copy;
 import org.gradle.api.tasks.Sync;
 import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.JavaCompile;
+import org.gradle.api.tasks.util.PatternSet;
 
 import android.databinding.tool.LayoutXmlProcessor;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -143,7 +152,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     // Task to assemble the variant and all its output.
     public Task assembleVariantTask;
 
-    private Object[] javaSources;
+    private List<ConfigurableFileTree> javaSources;
 
     private List<File> extraGeneratedSourceFolders;
     private List<File> extraGeneratedResFolders;
@@ -582,41 +591,47 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
 
 
     /**
-     * Computes the Java sources to use for compilation. This Object[] contains
-     * {@link org.gradle.api.file.FileCollection} and {@link File} instances
+     * Computes the Java sources to use for compilation.
+     *
+     * Every entry is a ConfigurableFileTree instance to enable incremental java compilation.
      */
     @NonNull
-    public Object[] getJavaSources() {
+    public List<ConfigurableFileTree> getJavaSources() {
         if (javaSources == null) {
+            Project project = scope.getGlobalScope().getProject();
             // Build the list of source folders.
-            List<Object> sourceList = Lists.newArrayList();
+            ImmutableList.Builder<ConfigurableFileTree> sourceSets = ImmutableList.builder();
 
             // First the actual source folders.
             List<SourceProvider> providers = variantConfiguration.getSortedSourceProviders();
             for (SourceProvider provider : providers) {
-                sourceList.add(((AndroidSourceSet) provider).getJava().getSourceFiles());
+                sourceSets.addAll(((AndroidSourceSet) provider).getJava().getSourceDirectoryTrees());
             }
 
             // then all the generated src folders.
             if (getScope().getGenerateRClassTask() != null) {
-                sourceList.add(getScope().getRClassSourceOutputDir());
+                sourceSets.add(project.fileTree(getScope().getRClassSourceOutputDir()));
             }
 
             // for the other, there's no duplicate so no issue.
             if (getScope().getGenerateBuildConfigTask() != null) {
-                sourceList.add(scope.getBuildConfigSourceOutputDir());
+                sourceSets.add(project.fileTree(scope.getBuildConfigSourceOutputDir()));
             }
 
             if (getScope().getAidlCompileTask() != null) {
-                sourceList.add(scope.getAidlSourceOutputDir());
+                sourceSets.add(project.fileTree(scope.getAidlSourceOutputDir()));
+            }
+
+            if (scope.getGlobalScope().getExtension().getDataBinding().isEnabled()) {
+                sourceSets.add(project.fileTree(scope.getClassOutputForDataBinding()));
             }
 
             if (!variantConfiguration.getRenderscriptNdkModeEnabled()
                     && getScope().getRenderscriptCompileTask() != null) {
-                sourceList.add(scope.getRenderscriptSourceOutputDir());
+                sourceSets.add(project.fileTree(scope.getRenderscriptSourceOutputDir()));
             }
 
-            javaSources = sourceList.toArray();
+            javaSources = sourceSets.build();
         }
 
         return javaSources;

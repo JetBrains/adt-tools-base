@@ -1,20 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="JAVA_MODULE" version="4">
-  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_6" inherit-compiler-output="true">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/src/main/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/test/java" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/src/test/resources" type="java-test-resource" />
+      <excludeFolder url="file://$MODULE_DIR$/.settings" />
+      <excludeFolder url="file://$MODULE_DIR$/build" />
     </content>
-    <orderEntry type="jdk" jdkName="IDEA jdk" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="android-annotations" />
-    <orderEntry type="module" module-name="common" />
-    <orderEntry type="module" module-name="layoutlib-api" />
-    <orderEntry type="module" module-name="sdklib" />
-    <orderEntry type="module" module-name="builder-model" />
-    <orderEntry type="module" module-name="builder-test-api" />
-    <orderEntry type="library" scope="TEST" name="Mocks" level="project" />
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="module" module-name="layoutlib-api" exported="" />
+    <orderEntry type="module" module-name="common" exported="" />
+    <orderEntry type="module" module-name="sdklib" exported="" />
+    <orderEntry type="library" exported="" name="kxml2" level="project" />
+    <orderEntry type="library" scope="TEST" name="JUnit4" level="project" />
     <orderEntry type="module" module-name="testutils" scope="TEST" />
+    <orderEntry type="library" exported="" name="builder-model" level="project" />
     <orderEntry type="library" scope="TEST" name="mockito" level="project" />
+    <orderEntry type="library" exported="" name="gson" level="project" />
+    <orderEntry type="module" module-name="builder-test-api" />
+    <orderEntry type="library" name="bouncy-castle" level="project" />
+    <orderEntry type="library" name="Mocks" level="project" />
   </component>
 </module>

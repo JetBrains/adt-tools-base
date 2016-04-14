@@ -34,7 +34,7 @@ import com.android.resources.ResourceType;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
-import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Detector.JavaScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
@@ -87,7 +87,7 @@ import lombok.ast.StrictListAccessor;
  * check its name or class attributes to make sure the cast is compatible with
  * the named fragment class!
  */
-public class ViewTypeDetector extends ResourceXmlDetector implements Detector.JavaScanner {
+public class ViewTypeDetector extends ResourceXmlDetector implements JavaScanner {
     /** Mismatched view types */
     @SuppressWarnings("unchecked")
     public static final Issue ISSUE = Issue.create(

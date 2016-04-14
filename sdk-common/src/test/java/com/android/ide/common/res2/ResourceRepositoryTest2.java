@@ -126,7 +126,7 @@ public class ResourceRepositoryTest2 extends TestCase {
                     + "</resources>", new File(valuesEsUs, "refs.xml"), Charsets.UTF_8);
         }
 
-        mResourceMerger = new ResourceMerger();
+        mResourceMerger = new ResourceMerger(0);
         ResourceSet resourceSet = new ResourceSet("main");
         resourceSet.addSource(mRes);
         resourceSet.loadFromFiles(mLogger = new RecordingLogger());

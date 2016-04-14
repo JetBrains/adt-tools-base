@@ -27,22 +27,22 @@ public class CallSuperDetectorTest extends AbstractCheckTest {
         assertEquals(""
                 + "src/test/pkg/CallSuperTest.java:11: Error: Overriding method should call super.test1 [MissingSuperCall]\n"
                 + "        protected void test1() { // ERROR\n"
-                + "                       ~~~~~~~\n"
+                + "                       ~~~~~\n"
                 + "src/test/pkg/CallSuperTest.java:14: Error: Overriding method should call super.test2 [MissingSuperCall]\n"
                 + "        protected void test2() { // ERROR\n"
-                + "                       ~~~~~~~\n"
+                + "                       ~~~~~\n"
                 + "src/test/pkg/CallSuperTest.java:17: Error: Overriding method should call super.test3 [MissingSuperCall]\n"
                 + "        protected void test3() { // ERROR\n"
-                + "                       ~~~~~~~\n"
+                + "                       ~~~~~\n"
                 + "src/test/pkg/CallSuperTest.java:20: Error: Overriding method should call super.test4 [MissingSuperCall]\n"
                 + "        protected void test4(int arg) { // ERROR\n"
-                + "                       ~~~~~~~~~~~~~~\n"
+                + "                       ~~~~~\n"
                 + "src/test/pkg/CallSuperTest.java:26: Error: Overriding method should call super.test5 [MissingSuperCall]\n"
                 + "        protected void test5(int arg1, boolean arg2, Map<List<String>,?> arg3,  // ERROR\n"
-                + "                       ^\n"
+                + "                       ~~~~~\n"
                 + "src/test/pkg/CallSuperTest.java:30: Error: Overriding method should call super.test5 [MissingSuperCall]\n"
                 + "        protected void test5() { // ERROR\n"
-                + "                       ~~~~~~~\n"
+                + "                       ~~~~~\n"
                 + "6 errors, 0 warnings\n",
 
                 lintProject("src/test/pkg/CallSuperTest.java.txt=>src/test/pkg/CallSuperTest.java",
@@ -100,10 +100,10 @@ public class CallSuperDetectorTest extends AbstractCheckTest {
         assertEquals(""
                 + "src/test/pkg/DetachedFromWindow.java:7: Error: Overriding method should call super.onDetachedFromWindow [MissingSuperCall]\n"
                 + "        protected void onDetachedFromWindow() {\n"
-                + "                       ~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "                       ~~~~~~~~~~~~~~~~~~~~\n"
                 + "src/test/pkg/DetachedFromWindow.java:26: Error: Overriding method should call super.onDetachedFromWindow [MissingSuperCall]\n"
                 + "        protected void onDetachedFromWindow() {\n"
-                + "                       ~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "                       ~~~~~~~~~~~~~~~~~~~~\n"
                 + "2 errors, 0 warnings\n",
 
                 lintProject("src/test/pkg/DetachedFromWindow.java.txt=>" +
@@ -114,7 +114,7 @@ public class CallSuperDetectorTest extends AbstractCheckTest {
         assertEquals(""
                 + "src/test/pkg/WatchFaceTest.java:9: Error: Overriding method should call super.onVisibilityChanged [MissingSuperCall]\n"
                 + "        public void onVisibilityChanged(boolean visible) { // ERROR: Missing super call\n"
-                + "                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "                    ~~~~~~~~~~~~~~~~~~~\n"
                 + "1 errors, 0 warnings\n",
 
                 lintProject(

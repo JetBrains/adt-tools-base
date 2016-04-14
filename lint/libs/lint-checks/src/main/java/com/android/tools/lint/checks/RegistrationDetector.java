@@ -16,48 +16,58 @@
 
 package com.android.tools.lint.checks;
 
-import static com.android.SdkConstants.ANDROID_APP_ACTIVITY;
-import static com.android.SdkConstants.ANDROID_APP_SERVICE;
-import static com.android.SdkConstants.ANDROID_CONTENT_BROADCAST_RECEIVER;
-import static com.android.SdkConstants.ANDROID_CONTENT_CONTENT_PROVIDER;
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_NAME;
+import static com.android.SdkConstants.CLASS_ACTIVITY;
+import static com.android.SdkConstants.CLASS_APPLICATION;
+import static com.android.SdkConstants.CLASS_BROADCASTRECEIVER;
+import static com.android.SdkConstants.CLASS_CONTENTPROVIDER;
+import static com.android.SdkConstants.CLASS_SERVICE;
 import static com.android.SdkConstants.TAG_ACTIVITY;
+import static com.android.SdkConstants.TAG_APPLICATION;
 import static com.android.SdkConstants.TAG_PROVIDER;
 import static com.android.SdkConstants.TAG_RECEIVER;
 import static com.android.SdkConstants.TAG_SERVICE;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.BuildTypeContainer;
+import com.android.builder.model.ProductFlavorContainer;
+import com.android.builder.model.SourceProviderContainer;
+import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
 import com.android.tools.lint.detector.api.Category;
-import com.android.tools.lint.detector.api.ClassContext;
-import com.android.tools.lint.detector.api.Detector.ClassScanner;
+import com.android.tools.lint.detector.api.Detector.JavaScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LayoutDetector;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
+import com.android.utils.SdkUtils;
+import com.google.common.collect.Maps;
 
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.ClassNode;
 import org.w3c.dom.Element;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
-import java.util.Map.Entry;
+import java.util.List;
+import java.util.Map;
+
+import lombok.ast.ClassDeclaration;
+import lombok.ast.Modifiers;
+import lombok.ast.Node;
 
 /**
  * Checks for missing manifest registrations for activities, services etc
  * and also makes sure that they are registered with the correct tag
- * <p>
- * TODO: Rewrite as Java visitor!
  */
-public class RegistrationDetector extends LayoutDetector implements ClassScanner {
+public class RegistrationDetector extends LayoutDetector implements JavaScanner {
     /** Unregistered activities and services */
     public static final Issue ISSUE = Issue.create(
             "Registered", //$NON-NLS-1$
@@ -74,11 +84,11 @@ public class RegistrationDetector extends LayoutDetector implements ClassScanner
             Severity.WARNING,
             new Implementation(
                     RegistrationDetector.class,
-                    EnumSet.of(Scope.MANIFEST, Scope.CLASS_FILE)))
+                    EnumSet.of(Scope.MANIFEST, Scope.JAVA_FILE)))
             .addMoreInfo(
             "http://developer.android.com/guide/topics/manifest/manifest-intro.html"); //$NON-NLS-1$
 
-    protected Multimap<String, String> mManifestRegistrations;
+    protected Map<String, String> mManifestRegistrations;
 
     /** Constructs a new {@link RegistrationDetector} */
     public RegistrationDetector() {
@@ -99,25 +109,22 @@ public class RegistrationDetector extends LayoutDetector implements ClassScanner
 
     @Override
     public void visitElement(@NonNull XmlContext context, @NonNull Element element) {
+        if (!element.hasAttributeNS(ANDROID_URI, ATTR_NAME)) {
+            // For example, application appears in manifest and doesn't always have a name
+            return;
+        }
         String fqcn = getFqcn(context, element);
         String tag = element.getTagName();
         String frameworkClass = tagToClass(tag);
         if (frameworkClass != null) {
-            String signature = ClassContext.getInternalName(fqcn);
+            String signature = fqcn;
             if (mManifestRegistrations == null) {
-                mManifestRegistrations = ArrayListMultimap.create(4, 8);
+                mManifestRegistrations = Maps.newHashMap();
             }
-            mManifestRegistrations.put(frameworkClass, signature);
+            mManifestRegistrations.put(signature, frameworkClass);
             if (signature.indexOf('$') != -1) {
-                // The internal name contains a $ which means it's an inner class.
-                // The conversion from fqcn to internal name is a bit ambiguous:
-                // "a.b.C.D" usually means "inner class D in class C in package a.b".
-                // However, it can (see issue 31592) also mean class D in package "a.b.C".
-                // Place *both* of these possibilities in the registered map, since this
-                // is only used to check that an activity is registered, not the other way
-                // (so it's okay to have entries there that do not correspond to real classes).
-                signature = signature.replace('$', '/');
-                mManifestRegistrations.put(frameworkClass, signature);
+                signature = signature.replace('$', '.');
+                mManifestRegistrations.put(signature, frameworkClass);
             }
         }
     }
@@ -134,91 +141,148 @@ public class RegistrationDetector extends LayoutDetector implements ClassScanner
     private static String getFqcn(@NonNull XmlContext context, @NonNull Element element) {
         String className = element.getAttributeNS(ANDROID_URI, ATTR_NAME);
         if (className.startsWith(".")) { //$NON-NLS-1$
-            return context.getMainProject().getPackage() + className;
+            return context.getProject().getPackage() + className;
         } else if (className.indexOf('.') == -1) {
             // According to the <activity> manifest element documentation, this is not
             // valid ( http://developer.android.com/guide/topics/manifest/activity-element.html )
             // but it appears in manifest files and appears to be supported by the runtime
             // so handle this in code as well:
-            return context.getMainProject().getPackage() + '.' + className;
+            return context.getProject().getPackage() + '.' + className;
         } // else: the class name is already a fully qualified class name
 
         return className;
     }
 
-    // ---- Implements ClassScanner ----
+    // ---- Implements JavaScanner ----
+
+    @Nullable
+    @Override
+    public List<String> applicableSuperClasses() {
+        return Arrays.asList(
+                // Common super class for Activity, ContentProvider, Service, Application
+                // (as well as some other classes not registered in the manifest, such as
+                // Fragment and VoiceInteractionSession)
+                "android.content.ComponentCallbacks2",
+                CLASS_BROADCASTRECEIVER);
+    }
 
     @Override
-    public void checkClass(@NonNull ClassContext context, @NonNull ClassNode classNode) {
-        // Abstract classes do not need to be registered
-        if ((classNode.access & Opcodes.ACC_ABSTRACT) != 0) {
+    public void checkClass(@NonNull JavaContext context, @Nullable ClassDeclaration node,
+            @NonNull Node declarationOrAnonymous, @NonNull ResolvedClass cls) {
+        if (node == null) {
+            // anonymous class; can't be registered
             return;
         }
-        String curr = classNode.name;
 
-        int lastIndex = curr.lastIndexOf('$');
-        if (lastIndex != -1 && lastIndex < curr.length() - 1) {
-            if (Character.isDigit(curr.charAt(lastIndex+1))) {
-                // Anonymous inner class, doesn't need to be registered
-                return;
-            }
+        Modifiers modifiers = node.astModifiers();
+        if (modifiers.isAbstract()) {
+            // Abstract classes do not need to be registered
+            return;
         }
 
-        while (curr != null) {
-            for (String s : sClasses) {
-                if (curr.equals(s)) {
-                    Collection<String> registered = mManifestRegistrations != null ?
-                            mManifestRegistrations.get(curr) : null;
-                    if (registered == null || !registered.contains(classNode.name)) {
-                        report(context, classNode, curr);
-                    }
+        if (modifiers.isPrivate()) {
+            // Private classes are clearly not intended to be registered
+            return;
+        }
 
-                }
+        String rightTag = getTag(cls);
+        if (rightTag == null) {
+            // some non-registered Context, such as a BackupAgent
+            return;
+        }
+        String className = cls.getName();
+        if (mManifestRegistrations != null) {
+            String framework = mManifestRegistrations.get(className);
+            if (framework == null) {
+                reportMissing(context, node, className, rightTag);
+            } else if (!cls.isSubclassOf(framework, false)) {
+                reportWrongTag(context, node, rightTag, className, framework);
             }
-
-            curr = context.getDriver().getSuperClass(curr);
+        } else {
+            reportMissing(context, node, className, rightTag);
         }
     }
 
-    private void report(ClassContext context, ClassNode classNode, String curr) {
-        String tag = classToTag(curr);
-        String className = ClassContext.createSignature(classNode.name, null, null);
+    private static void reportWrongTag(
+            @NonNull JavaContext context,
+            @NonNull ClassDeclaration node,
+            @NonNull String rightTag,
+            @NonNull String className,
+            @NonNull String framework) {
+        String wrongTag = classToTag(framework);
+        if (wrongTag == null) {
+            return;
+        }
+        Location location = context.getNameLocation(node);
+        String message = String.format("`%1$s` is %2$s but is registered "
+                        + "in the manifest as %3$s", className, describeTag(rightTag),
+                describeTag(wrongTag));
+        context.report(ISSUE, location, message);
+    }
 
-        String wrongClass = null; // The framework class this class actually extends
-        if (mManifestRegistrations != null) {
-            Collection<Entry<String,String>> entries =
-                    mManifestRegistrations.entries();
-            for (Entry<String,String> entry : entries) {
-                if (entry.getValue().equals(classNode.name)) {
-                    wrongClass = entry.getKey();
-                    break;
+    private static String describeTag(@NonNull String tag) {
+        String article = tag.startsWith("a") ? "an" : "a"; // an for activity and application
+        return String.format("%1$s `<%2$s>`", article, tag);
+    }
+
+    private static void reportMissing(
+            @NonNull JavaContext context,
+            @NonNull ClassDeclaration node,
+            @NonNull String className,
+            @NonNull String tag) {
+        if (tag.equals(TAG_RECEIVER)) {
+            // Receivers can be registered in code; don't flag these.
+            return;
+        }
+
+        // Don't flag activities registered in test source sets
+        if (context.getProject().isGradleProject()) {
+            AndroidProject model = context.getProject().getGradleProjectModel();
+            if (model != null) {
+                String javaSource = context.file.getPath();
+                // Test source set?
+
+                for (SourceProviderContainer extra : model.getDefaultConfig().getExtraSourceProviders()) {
+                    String artifactName = extra.getArtifactName();
+                    if (AndroidProject.ARTIFACT_ANDROID_TEST.equals(artifactName)) {
+                        for (File file : extra.getSourceProvider().getJavaDirectories()) {
+                            if (SdkUtils.startsWithIgnoreCase(javaSource, file.getPath())) {
+                                return;
+                            }
+                        }
+                    }
+                }
+
+                for (ProductFlavorContainer container : model.getProductFlavors()) {
+                    for (SourceProviderContainer extra : container.getExtraSourceProviders()) {
+                        String artifactName = extra.getArtifactName();
+                        if (AndroidProject.ARTIFACT_ANDROID_TEST.equals(artifactName)) {
+                            for (File file : extra.getSourceProvider().getJavaDirectories()) {
+                                if (SdkUtils.startsWithIgnoreCase(javaSource, file.getPath())) {
+                                    return;
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
-        if (wrongClass != null) {
-            Location location = context.getLocation(classNode);
-            context.report(
-                    ISSUE,
-                    location,
-                    String.format(
-                            "`%1$s` is a `<%2$s>` but is registered in the manifest as a `<%3$s>`",
-                            className, tag, classToTag(wrongClass)));
-        } else if (!TAG_RECEIVER.equals(tag)) { // don't need to be registered
-            if (context.getMainProject().isGradleProject()) {
-                // Disabled for now; we need to formalize the difference between
-                // the *manifest* package and the variant package, since in some contexts
-                // (such as manifest registrations) we should be using the manifest package,
-                // not the gradle package
-                return;
+
+        Location location = context.getNameLocation(node);
+        String message = String.format("The `<%1$s> %2$s` is not registered in the manifest",
+                tag, className);
+        context.report(ISSUE, location, message);
+    }
+
+    private static String getTag(@NonNull ResolvedClass cls) {
+        String tag = null;
+        for (String s : sClasses) {
+            if (cls.isSubclassOf(s, false)) {
+                tag = classToTag(s);
+                break;
             }
-            Location location = context.getLocation(classNode);
-            context.report(
-                    ISSUE,
-                    location,
-                    String.format(
-                            "The `<%1$s> %2$s` is not registered in the manifest",
-                            tag, className));
         }
+        return tag;
     }
 
     /** The manifest tags we care about */
@@ -227,15 +291,17 @@ public class RegistrationDetector extends LayoutDetector implements ClassScanner
         TAG_SERVICE,
         TAG_RECEIVER,
         TAG_PROVIDER,
+        TAG_APPLICATION
         // Keep synchronized with {@link #sClasses}
     };
 
     /** The corresponding framework classes that the tags in {@link #sTags} should extend */
     private static final String[] sClasses = new String[] {
-            ANDROID_APP_ACTIVITY,
-            ANDROID_APP_SERVICE,
-            ANDROID_CONTENT_BROADCAST_RECEIVER,
-            ANDROID_CONTENT_CONTENT_PROVIDER,
+            CLASS_ACTIVITY,
+            CLASS_SERVICE,
+            CLASS_BROADCASTRECEIVER,
+            CLASS_CONTENTPROVIDER,
+            CLASS_APPLICATION
             // Keep synchronized with {@link #sTags}
     };
 

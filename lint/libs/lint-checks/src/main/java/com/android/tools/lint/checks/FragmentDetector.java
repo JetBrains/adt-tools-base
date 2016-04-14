@@ -39,6 +39,7 @@ import java.util.List;
 
 import lombok.ast.ClassDeclaration;
 import lombok.ast.ConstructorDeclaration;
+import lombok.ast.ConstructorInvocation;
 import lombok.ast.Node;
 import lombok.ast.NormalTypeBody;
 import lombok.ast.TypeMember;
@@ -98,6 +99,16 @@ public class FragmentDetector extends Detector implements JavaScanner {
     public void checkClass(@NonNull JavaContext context, @Nullable ClassDeclaration node,
             @NonNull Node declarationOrAnonymous, @NonNull ResolvedClass cls) {
         if (node == null) {
+            String message = "Fragments should be static such that they can be re-instantiated by " +
+                             "the system, and anonymous classes are not static";
+            Node locationNode = declarationOrAnonymous;
+            if (locationNode.getParent() instanceof ConstructorInvocation) {
+                ConstructorInvocation constructor = (ConstructorInvocation)locationNode.getParent();
+                if (constructor.astTypeReference() != null) {
+                    locationNode = constructor.astTypeReference();
+                }
+            }
+            context.report(ISSUE, declarationOrAnonymous, context.getLocation(locationNode), message);
             return;
         }
 

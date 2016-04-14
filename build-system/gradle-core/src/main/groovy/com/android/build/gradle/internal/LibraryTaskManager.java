@@ -244,7 +244,8 @@ public class LibraryTaskManager extends TaskManager {
                 new Recorder.Block<Void>() {
                     @Override
                     public Void call() throws Exception {
-                        AndroidTask<JavaCompile> javacTask = createJavacTask(tasks, variantScope);
+                        AndroidTask<? extends JavaCompile> javacTask =
+                                createJavacTask(tasks, variantScope);
                         TaskManager.setJavaCompilerTask(javacTask, tasks, variantScope);
                         return null;
                     }
@@ -256,7 +257,7 @@ public class LibraryTaskManager extends TaskManager {
         }
 
         // Add dependencies on NDK tasks if NDK plugin is applied.
-        if (isNdkTaskNeeded) {
+        if (!isComponentModelPlugin) {
             // Add NDK tasks
             ThreadRecorder.get().record(ExecutionType.LIB_TASK_MANAGER_CREATE_NDK_TASK,
                     new Recorder.Block<Void>() {
@@ -364,9 +365,16 @@ public class LibraryTaskManager extends TaskManager {
 
                             AndroidTask<TransformTask> task = transformManager
                                     .addTransform(tasks, variantScope, transform);
-                            List<Object> deps = customTransformsDependencies.get(i);
-                            if (!deps.isEmpty()) {
-                                task.dependsOn(tasks, deps);
+                            if (task != null) {
+                                List<Object> deps = customTransformsDependencies.get(i);
+                                if (!deps.isEmpty()) {
+                                    task.dependsOn(tasks, deps);
+                                }
+
+                                // if the task is a no-op then we make assemble task depend on it.
+                                if (transform.getScopes().isEmpty()) {
+                                    variantData.assembleVariantTask.dependsOn(tasks, task);
+                                }
                             }
                         }
 

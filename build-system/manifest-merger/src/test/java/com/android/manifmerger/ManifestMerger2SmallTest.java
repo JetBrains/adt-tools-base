@@ -17,33 +17,35 @@
 package com.android.manifmerger;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.manifmerger.MergingReport.MergedManifestKind;
 import com.android.sdklib.mock.MockLog;
+import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
@@ -61,9 +63,7 @@ public class ManifestMerger2SmallTest {
     private ActionRecorder mActionRecorder;
 
     @Test
-    public void testValidationFailure()
-            throws ParserConfigurationException, SAXException, IOException,
-            ManifestMerger2.MergeFailureException {
+    public void testValidationFailure() throws Exception {
 
         MockLog mockLog = new MockLog();
         String input = ""
@@ -88,16 +88,14 @@ public class ManifestMerger2SmallTest {
             assertEquals(MergingReport.Result.ERROR, mergingReport.getResult());
             // check the log complains about the incorrect "tools:replace"
             assertStringPresenceInLogRecords(mergingReport, "tools:replace");
-            assertFalse(mergingReport.getMergedDocument().isPresent());
+            assertNull(mergingReport.getMergedDocument(MergedManifestKind.MERGED));
         } finally {
             assertTrue(tmpFile.delete());
         }
     }
 
     @Test
-    public void testToolsAnnotationRemoval()
-            throws ParserConfigurationException, SAXException, IOException,
-            ManifestMerger2.MergeFailureException {
+    public void testToolsAnnotationRemoval() throws Exception {
 
         MockLog mockLog = new MockLog();
         String input = ""
@@ -121,24 +119,19 @@ public class ManifestMerger2SmallTest {
                     .merge();
             assertEquals(MergingReport.Result.WARNING, mergingReport.getResult());
             // ensure tools annotation removal.
-            XmlDocument mergedDocument = mergingReport.getMergedDocument().get();
-            Optional<XmlElement> applicationNode = mergedDocument
-                    .getByTypeAndKey(ManifestModel.NodeTypes.APPLICATION, null);
-            assertTrue(applicationNode.isPresent());
-            String replaceAttribute = applicationNode.get().getXml().getAttributeNS(
-                    SdkConstants.TOOLS_URI, "replace");
-            assertTrue(Strings.isNullOrEmpty(replaceAttribute));
-            System.out.println(mergedDocument.prettyPrint());
-            mergedDocument.prettyPrint();
+            Document xmlDocument = parse(mergingReport.getMergedDocument(MergedManifestKind.MERGED));
+            NodeList applications = xmlDocument.getElementsByTagName(SdkConstants.TAG_APPLICATION);
+            assertTrue(applications.getLength() == 1);
+            Node replace = applications.item(0).getAttributes()
+                    .getNamedItemNS(SdkConstants.TOOLS_URI, "replace");
+            assertNull(replace);
         } finally {
             assertTrue(tmpFile.delete());
         }
     }
 
     @Test
-    public void testToolsAnnotationPresence()
-            throws ParserConfigurationException, SAXException, IOException,
-            ManifestMerger2.MergeFailureException {
+    public void testToolsAnnotationPresence() throws Exception {
 
         MockLog mockLog = new MockLog();
         String input = ""
@@ -161,14 +154,13 @@ public class ManifestMerger2SmallTest {
                     .merge();
             assertEquals(MergingReport.Result.WARNING, mergingReport.getResult());
             // ensure tools annotation removal.
-            XmlDocument mergedDocument = mergingReport.getMergedDocument().get();
-            Optional<XmlElement> applicationNode = mergedDocument
-                    .getByTypeAndKey(ManifestModel.NodeTypes.APPLICATION, null);
-            assertTrue(applicationNode.isPresent());
-            String replaceAttribute = applicationNode.get().getXml().getAttributeNS(
-                    SdkConstants.TOOLS_URI, "replace");
-            assertEquals("label", replaceAttribute);
-            System.out.println(mergedDocument.prettyPrint());
+            Document xmlDocument = parse(mergingReport.getMergedDocument(MergedManifestKind.MERGED));
+            NodeList applications = xmlDocument.getElementsByTagName(SdkConstants.TAG_APPLICATION);
+            assertTrue(applications.getLength() == 1);
+            Node replace = applications.item(0).getAttributes()
+                    .getNamedItemNS(SdkConstants.TOOLS_URI, "replace");
+            assertNotNull(replace);
+            assertEquals("tools:replace value not correct", "label", replace.getNodeValue());
         } finally {
             assertTrue(tmpFile.delete());
         }
@@ -176,8 +168,7 @@ public class ManifestMerger2SmallTest {
 
 
     @Test
-    public void testPackageOverride()
-            throws ParserConfigurationException, SAXException, IOException {
+    public void testPackageOverride() throws Exception {
         String xml = ""
                 + "<manifest\n"
                 + "    xmlns:android=\"http://schemas.android.com/apk/res/android\""
@@ -194,8 +185,7 @@ public class ManifestMerger2SmallTest {
     }
 
     @Test
-    public void testMissingPackageOverride()
-            throws ParserConfigurationException, SAXException, IOException {
+    public void testMissingPackageOverride() throws Exception {
         String xml = ""
                 + "<manifest\n"
                 + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
@@ -211,8 +201,7 @@ public class ManifestMerger2SmallTest {
     }
 
     @Test
-    public void testAddingSystemProperties()
-            throws ParserConfigurationException, SAXException, IOException {
+    public void testAddingSystemProperties() throws Exception {
         String xml = ""
                 + "<manifest\n"
                 + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
@@ -248,8 +237,7 @@ public class ManifestMerger2SmallTest {
     }
 
     @Test
-    public void testAddingSystemProperties_withDifferentPrefix()
-            throws ParserConfigurationException, SAXException, IOException {
+    public void testAddingSystemProperties_withDifferentPrefix() throws Exception {
         String xml = ""
                 + "<manifest\n"
                 + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
@@ -268,8 +256,7 @@ public class ManifestMerger2SmallTest {
     }
 
     @Test
-    public void testOverridingSystemProperties()
-            throws ParserConfigurationException, SAXException, IOException {
+    public void testOverridingSystemProperties() throws Exception {
         String xml = ""
                 + "<manifest versionCode=\"34\" versionName=\"3.4\"\n"
                 + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
@@ -309,9 +296,7 @@ public class ManifestMerger2SmallTest {
     }
 
     @Test
-    public void testPlaceholderSubstitution()
-            throws ParserConfigurationException, SAXException, IOException,
-            ManifestMerger2.MergeFailureException {
+    public void testPlaceholderSubstitution() throws Exception {
         String xml = ""
                 + "<manifest package=\"foo\" versionCode=\"34\" versionName=\"3.4\"\n"
                 + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
@@ -328,15 +313,14 @@ public class ManifestMerger2SmallTest {
                     .merge();
 
             assertTrue(mergingReport.getResult().isSuccess());
-            assertTrue(mergingReport.getMergedDocument().isPresent());
-            XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
-            Optional<XmlElement> activityOne = xmlDocument
-                    .getByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY, "foo.activityOne");
+            Document document = parse(mergingReport.getMergedDocument(MergedManifestKind.MERGED));
+            assertNotNull(document);
+            Optional<Element> activityOne = getElementByTypeAndKey(
+                    document, "activity", "foo.activityOne");
             assertTrue(activityOne.isPresent());
-            Optional<XmlAttribute> attribute = activityOne.get()
-                    .getAttribute(XmlNode.fromXmlName("android:label"));
-            assertTrue(attribute.isPresent());
-            assertEquals("injectedLabelName", attribute.get().getValue());
+            Attr label = activityOne.get().getAttributeNodeNS(SdkConstants.ANDROID_URI, "label");
+            assertNotNull(label);
+            assertEquals("injectedLabelName", label.getValue());
         } finally {
             //noinspection ResultOfMethodCallIgnored
             inputFile.delete();
@@ -344,8 +328,7 @@ public class ManifestMerger2SmallTest {
     }
 
     @Test
-    public void testApplicationIdSubstitution()
-            throws ManifestMerger2.MergeFailureException, IOException {
+    public void testApplicationIdSubstitution() throws Exception {
         String xml = ""
                 + "<manifest package=\"foo\" versionCode=\"34\" versionName=\"3.4\"\n"
                 + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
@@ -361,11 +344,11 @@ public class ManifestMerger2SmallTest {
                     .merge();
 
             assertTrue(mergingReport.getResult().isSuccess());
-            assertTrue(mergingReport.getMergedDocument().isPresent());
-            XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
-            assertEquals("bar", xmlDocument.getPackageName());
-            Optional<XmlElement> activityOne = xmlDocument
-                    .getByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY, "bar.activityOne");
+            Document document = parse(mergingReport.getMergedDocument(MergedManifestKind.MERGED));
+            assertEquals("bar", document.getElementsByTagName("manifest")
+                    .item(0).getAttributes().getNamedItem("package").getNodeValue());
+            Optional<Element> activityOne = getElementByTypeAndKey(document, "activity",
+                    "bar.activityOne");
             assertTrue(activityOne.isPresent());
         } finally {
             //noinspection ResultOfMethodCallIgnored
@@ -374,8 +357,7 @@ public class ManifestMerger2SmallTest {
     }
 
     @Test
-    public void testNoApplicationIdValueProvided()
-            throws IOException, ManifestMerger2.MergeFailureException {
+    public void testNoApplicationIdValueProvided() throws Exception {
         String xml = ""
                 + "<manifest package=\"foo\" versionCode=\"34\" versionName=\"3.4\"\n"
                 + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
@@ -390,11 +372,12 @@ public class ManifestMerger2SmallTest {
                     .merge();
 
             assertTrue(mergingReport.getResult().isSuccess());
-            assertTrue(mergingReport.getMergedDocument().isPresent());
-            XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
-            assertEquals("foo", xmlDocument.getPackageName());
-            Optional<XmlElement> activityOne = xmlDocument
-                    .getByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY, "foo.activityOne");
+            assertNotNull(mergingReport.getMergedDocument(MergedManifestKind.MERGED));
+            Document document = parse(mergingReport.getMergedDocument(MergedManifestKind.MERGED));
+            assertEquals("foo", document.getElementsByTagName("manifest")
+                    .item(0).getAttributes().getNamedItem("package").getNodeValue());
+            Optional<Element> activityOne = getElementByTypeAndKey(document, "activity",
+                    "foo.activityOne");
             assertTrue(activityOne.isPresent());
         } finally {
             //noinspection ResultOfMethodCallIgnored
@@ -403,9 +386,7 @@ public class ManifestMerger2SmallTest {
     }
 
     @Test
-    public void testNoFqcnsExtraction()
-            throws ParserConfigurationException, SAXException, IOException,
-            ManifestMerger2.MergeFailureException {
+    public void testNoFqcnsExtraction() throws Exception {
         String xml = ""
                 + "<manifest\n"
                 + "    package=\"com.foo.example\""
@@ -425,30 +406,28 @@ public class ManifestMerger2SmallTest {
                 .merge();
 
         assertTrue(mergingReport.getResult().isSuccess());
-        XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
+        Document xmlDocument = parse(mergingReport.getMergedDocument(MergedManifestKind.MERGED));
         assertEquals("com.foo.example.activityOne",
-                xmlDocument.getXml().getElementsByTagName("activity").item(0).getAttributes()
+                xmlDocument.getElementsByTagName("activity").item(0).getAttributes()
                         .item(0).getNodeValue());
         assertEquals("com.foo.bar.example.activityTwo",
-                xmlDocument.getXml().getElementsByTagName("activity").item(1).getAttributes()
+                xmlDocument.getElementsByTagName("activity").item(1).getAttributes()
                         .item(0).getNodeValue());
         assertEquals("com.foo.example.activityThree",
-                xmlDocument.getXml().getElementsByTagName("activity").item(2).getAttributes()
+                xmlDocument.getElementsByTagName("activity").item(2).getAttributes()
                         .item(0).getNodeValue());
         assertEquals("com.foo.example.applicationOne",
-                xmlDocument.getXml().getElementsByTagName("application").item(0).getAttributes()
+                xmlDocument.getElementsByTagName("application").item(0).getAttributes()
                         .getNamedItemNS("http://schemas.android.com/apk/res/android", "name")
                         .getNodeValue());
         assertEquals("com.foo.example.myBackupAgent",
-                xmlDocument.getXml().getElementsByTagName("application").item(0).getAttributes()
+                xmlDocument.getElementsByTagName("application").item(0).getAttributes()
                         .getNamedItemNS("http://schemas.android.com/apk/res/android", "backupAgent")
                         .getNodeValue());
     }
 
     @Test
-    public void testFqcnsExtraction()
-            throws ParserConfigurationException, SAXException, IOException,
-            ManifestMerger2.MergeFailureException {
+    public void testFqcnsExtraction() throws Exception {
         String xml = ""
                 + "<manifest\n"
                 + "    package=\"com.foo.example\""
@@ -469,29 +448,28 @@ public class ManifestMerger2SmallTest {
                 .merge();
 
         assertTrue(mergingReport.getResult().isSuccess());
-        XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
+        Document xmlDocument = parse(mergingReport.getMergedDocument(MergedManifestKind.MERGED));
         assertEquals(".activityOne",
-                xmlDocument.getXml().getElementsByTagName("activity").item(0).getAttributes()
+                xmlDocument.getElementsByTagName("activity").item(0).getAttributes()
                         .item(0).getNodeValue());
         assertEquals("com.foo.bar.example.activityTwo",
-                xmlDocument.getXml().getElementsByTagName("activity").item(1).getAttributes()
+                xmlDocument.getElementsByTagName("activity").item(1).getAttributes()
                         .item(0).getNodeValue());
         assertEquals(".activityThree",
-                xmlDocument.getXml().getElementsByTagName("activity").item(2).getAttributes()
+                xmlDocument.getElementsByTagName("activity").item(2).getAttributes()
                         .item(0).getNodeValue());
         assertEquals(".applicationOne",
-                xmlDocument.getXml().getElementsByTagName("application").item(0).getAttributes()
+                xmlDocument.getElementsByTagName("application").item(0).getAttributes()
                         .getNamedItemNS("http://schemas.android.com/apk/res/android", "name")
                         .getNodeValue());
         assertEquals(".myBackupAgent",
-                xmlDocument.getXml().getElementsByTagName("application").item(0).getAttributes()
+                xmlDocument.getElementsByTagName("application").item(0).getAttributes()
                         .getNamedItemNS("http://schemas.android.com/apk/res/android", "backupAgent")
                         .getNodeValue());
     }
 
     @Test
-    public void testNoPlaceholderReplacement()
-            throws IOException, ManifestMerger2.MergeFailureException {
+    public void testNoPlaceholderReplacement() throws Exception {
         String xml = ""
                 + "<manifest\n"
                 + "    package=\"${applicationId}\""
@@ -510,15 +488,14 @@ public class ManifestMerger2SmallTest {
                 .merge();
 
         assertTrue(mergingReport.getResult().isSuccess());
-        XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
+        Document xmlDocument = parse(mergingReport.getMergedDocument(MergedManifestKind.MERGED));
         assertEquals("${applicationId}",
-                xmlDocument.getXml().getElementsByTagName("manifest")
+                xmlDocument.getElementsByTagName("manifest")
                         .item(0).getAttributes().getNamedItem("package").getNodeValue());
     }
 
     @Test
-    public void testReplaceInputStream()
-            throws IOException, ManifestMerger2.MergeFailureException {
+    public void testReplaceInputStream() throws Exception {
         // This test is identical to testNoPlaceholderReplacement but instead
         // of reading from a string, we test the ManifestMerger's ability to
         // supply a custom input stream
@@ -549,10 +526,79 @@ public class ManifestMerger2SmallTest {
                 .merge();
 
         assertTrue(mergingReport.getResult().isSuccess());
-        XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
+        Document xmlDocument = parse(mergingReport.getMergedDocument(MergedManifestKind.MERGED));
         assertEquals("${applicationId}",
-                xmlDocument.getXml().getElementsByTagName("manifest")
+                xmlDocument.getElementsByTagName("manifest")
                         .item(0).getAttributes().getNamedItem("package").getNodeValue());
+    }
+
+    @Test
+    public void testInstantRunReplacement() throws Exception {
+        String xml = ""
+                + "<manifest\n"
+                + "    package=\"com.foo.bar\""
+                + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
+                + "    <activity t:name=\"activityOne\"/>\n"
+                + "    <application t:name=\".applicationOne\" "
+                + "         t:backupAgent=\"com.foo.example.myBackupAgent\"/>\n"
+                + "</manifest>";
+
+        File inputFile = inputAsFile("testNoPlaceHolderReplacement", xml);
+
+        MockLog mockLog = new MockLog();
+        MergingReport mergingReport = ManifestMerger2
+                .newMerger(inputFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                .withFeatures(ManifestMerger2.Invoker.Feature.INSTANT_RUN_REPLACEMENT)
+                .merge();
+
+        assertTrue(mergingReport.getResult().isSuccess());
+        Document xmlDocument = parse(mergingReport.getMergedDocument(MergedManifestKind.INSTANT_RUN));
+        assertEquals("com.foo.bar.applicationOne",
+                xmlDocument.getElementsByTagName(SdkConstants.TAG_APPLICATION)
+                        .item(0).getAttributes().getNamedItem(
+                            SdkConstants.ATTR_NAME).getNodeValue());
+        assertEquals(ManifestMerger2.BOOTSTRAP_APPLICATION,
+                xmlDocument.getElementsByTagName(SdkConstants.TAG_APPLICATION)
+                        .item(0).getAttributes().getNamedItemNS(SdkConstants.ANDROID_URI,
+                            SdkConstants.ATTR_NAME).getNodeValue());
+    }
+
+    @Test
+    public void testInstantRunReplacementWithNoAppName() throws Exception {
+        String xml = ""
+                + "<manifest\n"
+                + "    package=\"com.foo.bar\""
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
+                + "    <activity android:name=\"activityOne\"/>\n"
+                + "    <application android:backupAgent=\"com.foo.example.myBackupAgent\"/>\n"
+                + "</manifest>";
+
+        File inputFile = inputAsFile("testNoPlaceHolderReplacement", xml);
+
+        MockLog mockLog = new MockLog();
+        MergingReport mergingReport = ManifestMerger2
+                .newMerger(inputFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                .withFeatures(ManifestMerger2.Invoker.Feature.INSTANT_RUN_REPLACEMENT)
+                .merge();
+
+        assertTrue(mergingReport.getResult().isSuccess());
+        Document xmlDocument = parse(mergingReport.getMergedDocument(MergedManifestKind.INSTANT_RUN));
+        assertEquals(ManifestMerger2.BOOTSTRAP_APPLICATION,
+                xmlDocument.getElementsByTagName(SdkConstants.TAG_APPLICATION)
+                        .item(0).getAttributes().getNamedItemNS(SdkConstants.ANDROID_URI,
+                        SdkConstants.ATTR_NAME).getNodeValue());
+    }
+
+    public static Optional<Element> getElementByTypeAndKey(Document xmlDocument, String nodeType, String key) {
+        NodeList elementsByTagName = xmlDocument.getElementsByTagName(nodeType);
+        for (int i = 0; i < elementsByTagName.getLength(); i++) {
+            Node item = elementsByTagName.item(i);
+            Node name = item.getAttributes().getNamedItemNS(SdkConstants.ANDROID_URI, "name");
+            if ((name == null && key == null) || (name != null && key.equals(name.getNodeValue()))) {
+                return Optional.of((Element) item);
+            }
+        }
+        return Optional.absent();
     }
 
     /**
@@ -576,5 +622,10 @@ public class ManifestMerger2SmallTest {
             Logger.getAnonymousLogger().info(record.toString());
         }
         fail("could not find " + s + " in logging records");
+    }
+
+    private static Document parse(String xml)
+            throws IOException, SAXException, ParserConfigurationException {
+        return XmlUtils.parseDocument(xml, true /* namespaceAware */);
     }
 }

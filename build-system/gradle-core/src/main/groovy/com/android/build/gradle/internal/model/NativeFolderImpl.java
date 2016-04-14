@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.model;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.builder.model.NativeFolder;
 
 import java.io.File;
@@ -33,12 +34,17 @@ public class NativeFolderImpl implements NativeFolder, Serializable {
     private final File folderPath;
     @NonNull
     private final Map<String, String> perLanguageSettings;
+    @Nullable
+    private final File workingDirectory;
+
 
     public NativeFolderImpl(
             @NonNull File folderPath,
-            @NonNull Map<String, String> perLanguageSettings) {
+            @NonNull Map<String, String> perLanguageSettings,
+            @Nullable File workingDirectory) {
         this.folderPath = folderPath;
         this.perLanguageSettings = perLanguageSettings;
+        this.workingDirectory = workingDirectory;
     }
 
     @Override
@@ -51,5 +57,11 @@ public class NativeFolderImpl implements NativeFolder, Serializable {
     @NonNull
     public Map<String, String> getPerLanguageSettings() {
         return perLanguageSettings;
+    }
+
+    @Override
+    @Nullable
+    public File getWorkingDirectory() {
+        return workingDirectory;
     }
 }

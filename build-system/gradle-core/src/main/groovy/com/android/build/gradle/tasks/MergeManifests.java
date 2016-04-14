@@ -29,6 +29,7 @@ import com.android.builder.core.VariantConfiguration;
 import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.model.ApiVersion;
 import com.android.manifmerger.ManifestMerger2;
+import com.android.manifmerger.ManifestMerger2.Invoker.Feature;
 import com.google.common.collect.Lists;
 
 import org.gradle.api.tasks.Input;
@@ -57,6 +58,7 @@ public class MergeManifests extends ManifestProcessorTask {
             variantConfiguration;
     private ApkVariantOutputData variantOutputData;
     private List<ManifestDependencyImpl> libraries;
+    private List<Feature> optionalFeatures;
 
     @Override
     protected void doFullTaskAction() {
@@ -71,10 +73,12 @@ public class MergeManifests extends ManifestProcessorTask {
                 getTargetSdkVersion(),
                 getMaxSdkVersion(),
                 getManifestOutputFile().getAbsolutePath(),
-                // no appt friendly merged manifest file necessary for applications.
+                // no aapt friendly merged manifest file necessary for applications.
                 null /* aaptFriendlyManifestOutputFile */,
+                getInstantRunManifestOutputFile().getAbsolutePath(),
                 ManifestMerger2.MergeType.APPLICATION,
                 variantConfiguration.getManifestPlaceholders(),
+                getOptionalFeatures(),
                 getReportFile());
     }
 
@@ -187,6 +191,11 @@ public class MergeManifests extends ManifestProcessorTask {
         this.reportFile = reportFile;
     }
 
+    @Input
+    public List<Feature> getOptionalFeatures() {
+        return optionalFeatures;
+    }
+
     public VariantConfiguration getVariantConfiguration() {
         return variantConfiguration;
     }
@@ -214,10 +223,12 @@ public class MergeManifests extends ManifestProcessorTask {
 
     public static class ConfigAction implements TaskConfigAction<MergeManifests> {
 
-        VariantOutputScope scope;
+        private final VariantOutputScope scope;
+        private final List<Feature> optionalFeatures;
 
-        public ConfigAction(VariantOutputScope scope) {
+        public ConfigAction(VariantOutputScope scope, List<Feature> optionalFeatures) {
             this.scope = scope;
+            this.optionalFeatures = optionalFeatures;
         }
 
         @NonNull
@@ -233,7 +244,7 @@ public class MergeManifests extends ManifestProcessorTask {
         }
 
         @Override
-        public void execute(MergeManifests processManifestTask) {
+        public void execute(@NonNull MergeManifests processManifestTask) {
             BaseVariantOutputData variantOutputData = scope.getVariantOutputData();
 
             final BaseVariantData<? extends BaseVariantOutputData> variantData =
@@ -324,8 +335,11 @@ public class MergeManifests extends ManifestProcessorTask {
                     });
 
             processManifestTask.setManifestOutputFile(scope.getManifestOutputFile());
+            processManifestTask.setInstantRunManifestOutputFile(
+                    scope.getVariantScope().getInstantRunManifestOutputFile());
 
             processManifestTask.setReportFile(scope.getVariantScope().getManifestReportFile());
+            processManifestTask.optionalFeatures = optionalFeatures;
 
         }
 

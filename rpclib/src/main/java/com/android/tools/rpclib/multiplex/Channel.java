@@ -30,7 +30,7 @@ public class Channel implements Closeable {
   private final EventHandler mEventHandler;
   private boolean mIsClosed;
 
-  public Channel(long id, @NotNull EventHandler events) throws IOException {
+  public Channel(long id, @NotNull EventHandler events) {
     PipeInputStream in = new PipeInputStream();
 
     mId = id;

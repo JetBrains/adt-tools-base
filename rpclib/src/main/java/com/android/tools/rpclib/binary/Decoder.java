@@ -18,15 +18,12 @@ package com.android.tools.rpclib.binary;
 import com.android.tools.rpclib.schema.Dynamic;
 import com.android.tools.rpclib.schema.Entity;
 import gnu.trove.TIntObjectHashMap;
-import gnu.trove.TObjectIntHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * A decoder of various RPC primitive types.

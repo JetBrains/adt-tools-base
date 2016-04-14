@@ -55,7 +55,7 @@ public class AppCompatResourceDetector extends ResourceXmlDetector implements Ja
             "Similarly, when *not* using the appcompat library, you should be using " +
             "the `android:showAsAction` attribute.",
 
-            Category.USABILITY,
+            Category.CORRECTNESS,
             5,
             Severity.ERROR,
             new Implementation(

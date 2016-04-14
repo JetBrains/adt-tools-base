@@ -18,7 +18,7 @@ package com.android.sdklib.repository.local;
 
 import com.android.annotations.NonNull;
 import com.android.sdklib.AndroidVersion;
-import com.android.sdklib.repository.MajorRevision;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDesc;
 
@@ -34,7 +34,7 @@ public class LocalDocPkgInfo extends LocalPkgInfo {
                            @NonNull File localDir,
                            @NonNull Properties sourceProps,
                            @NonNull AndroidVersion version,
-                           @NonNull MajorRevision revision) {
+                           @NonNull Revision revision) {
         super(localSdk, localDir, sourceProps);
         mDesc = PkgDesc.Builder.newDoc(version, revision).create();
     }

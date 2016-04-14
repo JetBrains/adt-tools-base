@@ -25,13 +25,6 @@ public class CleanupDetectorTest extends AbstractCheckTest {
         return new CleanupDetector();
     }
 
-    @Override
-    protected boolean allowCompilationErrors() {
-        // Some of these unit tests are still relying on source code that references
-        // unresolved symbols etc.
-        return true;
-    }
-
     public void testRecycle() throws Exception {
         assertEquals(
             "src/test/pkg/RecycleTest.java:56: Warning: This TypedArray should be recycled after use with #recycle() [Recycle]\n" +
@@ -81,20 +74,20 @@ public class CleanupDetectorTest extends AbstractCheckTest {
     }
 
     public void testCommit() throws Exception {
-        assertEquals("" +
-            "src/test/pkg/CommitTest.java:25: Warning: This transaction should be completed with a commit() call [CommitTransaction]\n" +
-            "        getFragmentManager().beginTransaction(); // Missing commit\n" +
-            "                             ~~~~~~~~~~~~~~~~\n" +
-            "src/test/pkg/CommitTest.java:30: Warning: This transaction should be completed with a commit() call [CommitTransaction]\n" +
-            "        FragmentTransaction transaction2 = getFragmentManager().beginTransaction(); // Missing commit\n" +
-            "                                                                ~~~~~~~~~~~~~~~~\n" +
-            "src/test/pkg/CommitTest.java:39: Warning: This transaction should be completed with a commit() call [CommitTransaction]\n" +
-            "        getFragmentManager().beginTransaction(); // Missing commit\n" +
-            "                             ~~~~~~~~~~~~~~~~\n" +
-            "src/test/pkg/CommitTest.java:65: Warning: This transaction should be completed with a commit() call [CommitTransaction]\n" +
-            "        getSupportFragmentManager().beginTransaction();\n" +
-            "                                    ~~~~~~~~~~~~~~~~\n" +
-            "0 errors, 4 warnings\n",
+        assertEquals(""
+                + "src/test/pkg/CommitTest.java:25: Warning: This transaction should be completed with a commit() call [CommitTransaction]\n"
+                + "        getFragmentManager().beginTransaction(); // Missing commit\n"
+                + "                             ~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/CommitTest.java:30: Warning: This transaction should be completed with a commit() call [CommitTransaction]\n"
+                + "        FragmentTransaction transaction2 = getFragmentManager().beginTransaction(); // Missing commit\n"
+                + "                                                                ~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/CommitTest.java:39: Warning: This transaction should be completed with a commit() call [CommitTransaction]\n"
+                + "        getFragmentManager().beginTransaction(); // Missing commit\n"
+                + "                             ~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/CommitTest.java:65: Warning: This transaction should be completed with a commit() call [CommitTransaction]\n"
+                + "        getSupportFragmentManager().beginTransaction();\n"
+                + "                                    ~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 4 warnings\n",
 
             lintProject(
                     "apicheck/classpath=>.classpath",
@@ -251,5 +244,33 @@ public class CleanupDetectorTest extends AbstractCheckTest {
                         "project.properties19=>project.properties",
                         "src/test/pkg/CursorTest.java.txt=>src/test/pkg/CursorTest.java"
                 ));
+    }
+
+    public void testDatabaseCursorReassignment() throws Exception {
+        //noinspection ClassNameDiffersFromFileName,SpellCheckingInspection
+        assertEquals("No warnings.",
+                lintProject(java("src/test/pkg/CursorTest.java", ""
+                        + "package test.pkg;\n"
+                        + "\n"
+                        + "import android.app.Activity;\n"
+                        + "import android.database.Cursor;\n"
+                        + "import android.database.sqlite.SQLiteException;\n"
+                        + "import android.net.Uri;\n"
+                        + "\n"
+                        + "public class CursorTest extends Activity {\n"
+                        + "    public void testSimple() {\n"
+                        + "        Cursor cursor;\n"
+                        + "        try {\n"
+                        + "            cursor = getContentResolver().query(Uri.parse(\"blahblah\"),\n"
+                        + "                    new String[]{\"_id\", \"display_name\"}, null, null, null);\n"
+                        + "        } catch (SQLiteException e) {\n"
+                        + "            // Fallback\n"
+                        + "            cursor = getContentResolver().query(Uri.parse(\"blahblah\"),\n"
+                        + "                    new String[]{\"_id2\", \"display_name\"}, null, null, null);\n"
+                        + "        }\n"
+                        + "        assert cursor != null;\n"
+                        + "        cursor.close();\n"
+                        + "    }\n"
+                        + "}\n")));
     }
 }

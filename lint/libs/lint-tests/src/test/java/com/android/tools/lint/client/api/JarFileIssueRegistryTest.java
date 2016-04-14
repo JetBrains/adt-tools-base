@@ -20,10 +20,12 @@ import com.android.annotations.Nullable;
 import com.android.tools.lint.checks.AbstractCheckTest;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Severity;
+import com.android.tools.lint.detector.api.Speed;
 import com.google.common.io.Files;
 
 import java.io.File;
 import java.io.StringWriter;
+import java.util.List;
 
 @SuppressWarnings("SpellCheckingInspection")
 public class JarFileIssueRegistryTest extends AbstractCheckTest {
@@ -60,6 +62,16 @@ public class JarFileIssueRegistryTest extends AbstractCheckTest {
 
         assertEquals(1, registry1.getIssues().size());
         assertEquals("AppCompatMethod", registry1.getIssues().get(0).getId());
+
+        // Access detector state. On Java 7/8 this will access the detector class after
+        // the jar loader has been closed; this tests that we still have valid classes.
+        Detector detector =
+                registry1.getIssues().get(0).getImplementation().getDetectorClass().newInstance();
+        detector.getApplicableAsmNodeTypes();
+        assertSame(Speed.NORMAL, detector.getSpeed());
+        List<String> applicableCallNames = detector.getApplicableCallNames();
+        assertNotNull(applicableCallNames);
+        assertTrue(applicableCallNames.contains("getActionBar"));
 
         assertEquals(
                 "Custom lint rule jar " + file2.getPath() + " does not contain a valid "

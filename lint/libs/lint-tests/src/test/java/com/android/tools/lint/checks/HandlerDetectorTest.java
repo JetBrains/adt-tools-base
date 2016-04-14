@@ -26,23 +26,59 @@ public class HandlerDetectorTest extends AbstractCheckTest {
     }
 
     public void testRegistered() throws Exception {
-        assertEquals(
-            "src/test/pkg/HandlerTest.java:12: Warning: This Handler class should be static or leaks might occur (test.pkg.HandlerTest.Inner) [HandlerLeak]\n" +
-            "    public class Inner extends Handler { // ERROR\n" +
-            "                 ~~~~~\n" +
-            "src/test/pkg/HandlerTest.java:18: Warning: This Handler class should be static or leaks might occur (new android.os.Handler(){}) [HandlerLeak]\n" +
-            "        Handler anonymous = new Handler() { // ERROR\n" +
-            "                                          ^\n" +
-            "0 errors, 2 warnings\n",
+        assertEquals(""
+                + "src/test/pkg/HandlerTest.java:12: Warning: This Handler class should be static or leaks might occur (test.pkg.HandlerTest.Inner) [HandlerLeak]\n"
+                + "    public class Inner extends Handler { // ERROR\n"
+                + "                 ~~~~~\n"
+                + "src/test/pkg/HandlerTest.java:18: Warning: This Handler class should be static or leaks might occur (anonymous android.os.Handler) [HandlerLeak]\n"
+                + "        Handler anonymous = new Handler() { // ERROR\n"
+                + "                            ~~~~~~~~~~~\n"
+                + "0 errors, 2 warnings\n",
 
             lintProject(
-                "bytecode/HandlerTest.java.txt=>src/test/pkg/HandlerTest.java",
-                "bytecode/HandlerTest.class.data=>bin/classes/test/pkg/HandlerTest.class",
-                "bytecode/HandlerTest$Inner.class.data=>bin/classes/test/pkg/HandlerTest$Inner.class",
-                "bytecode/HandlerTest$StaticInner.class.data=>bin/classes/test/pkg/HandlerTest$StaticInner.class",
-                "bytecode/HandlerTest$WithArbitraryLooper.class.data=>bin/classes/test/pkg/HandlerTest$WithArbitraryLooper.class",
-                "bytecode/HandlerTest$1.class.data=>bin/classes/test/pkg/HandlerTest$1.class",
-                "bytecode/HandlerTest$2.class.data=>bin/classes/test/pkg/HandlerTest$2.class"));
+                    java("src/test/pkg/HandlerTest.java", ""
+                            + "package test.pkg;\n"
+                            + "import android.os.Looper;\n"
+                            + "import android.os.Handler;\n"
+                            + "import android.os.Message;\n"
+                            + "\n"
+                            + "public class HandlerTest extends Handler { // OK\n"
+                            + "    public static class StaticInner extends Handler { // OK\n"
+                            + "        public void dispatchMessage(Message msg) {\n"
+                            + "            super.dispatchMessage(msg);\n"
+                            + "        };\n"
+                            + "    }\n"
+                            + "    public class Inner extends Handler { // ERROR\n"
+                            + "        public void dispatchMessage(Message msg) {\n"
+                            + "            super.dispatchMessage(msg);\n"
+                            + "        };\n"
+                            + "    }\n"
+                            + "    void method() {\n"
+                            + "        Handler anonymous = new Handler() { // ERROR\n"
+                            + "            public void dispatchMessage(Message msg) {\n"
+                            + "                super.dispatchMessage(msg);\n"
+                            + "            };\n"
+                            + "        };\n"
+                            + "\n"
+                            + "        Looper looper = null;\n"
+                            + "        Handler anonymous2 = new Handler(looper) { // OK\n"
+                            + "            public void dispatchMessage(Message msg) {\n"
+                            + "                super.dispatchMessage(msg);\n"
+                            + "            };\n"
+                            + "        };\n"
+                            + "    }\n"
+                            + "\n"
+                            + "    public class WithArbitraryLooper extends Handler {\n"
+                            + "        public WithArbitraryLooper(String unused, Looper looper) { // OK\n"
+                            + "            super(looper, null);\n"
+                            + "        }\n"
+                            + "\n"
+                            + "        public void dispatchMessage(Message msg) {\n"
+                            + "            super.dispatchMessage(msg);\n"
+                            + "        };\n"
+                            + "    }\n"
+                            + "}\n")
+            ));
     }
 
     public void testSuppress() throws Exception {

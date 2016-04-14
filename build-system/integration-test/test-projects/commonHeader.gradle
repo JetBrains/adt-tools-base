@@ -15,7 +15,7 @@
  */
 
 ext {
-    buildToolsVersion = [System.env.CUSTOM_BUILDTOOLS, project.properties["CUSTOM_BUILDTOOLS"], '23.0.1'].find()
+    buildToolsVersion = [System.env.CUSTOM_BUILDTOOLS, project.properties["CUSTOM_BUILDTOOLS"], '23.0.2'].find()
     latestCompileSdk = [System.env.COMPILE_SDK, project.properties["CUSTOM_COMPILE_SDK"], 23].find() as int
 
     // Last SDK that contained java 6 bytecode.

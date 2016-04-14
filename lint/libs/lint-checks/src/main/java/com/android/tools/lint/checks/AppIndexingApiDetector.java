@@ -83,7 +83,7 @@ import lombok.ast.MethodInvocation;
 public class AppIndexingApiDetector extends Detector
         implements Detector.XmlScanner, Detector.JavaScanner {
 
-    private static final Implementation DEEP_LINK_IMPLEMENTATION = new Implementation(
+    private static final Implementation URL_IMPLEMENTATION = new Implementation(
             AppIndexingApiDetector.class, Scope.MANIFEST_SCOPE);
 
     private static final Implementation APP_INDEXING_API_IMPLEMENTATION =
@@ -92,28 +92,28 @@ public class AppIndexingApiDetector extends Detector
                     EnumSet.of(Scope.JAVA_FILE, Scope.MANIFEST),
                     Scope.JAVA_FILE_SCOPE, Scope.MANIFEST_SCOPE);
 
-    public static final Issue ISSUE_DEEP_LINK_ERROR = Issue.create(
-            "GoogleAppIndexingDeepLinkError", //$NON-NLS-1$
-            "Deep link not supported by app for Google App Indexing",
-            "Ensure the deep link is supported by your app, to get installs and traffic to your"
-                    + "app from Google Search.",
-            Category.USABILITY, 5, Severity.ERROR, DEEP_LINK_IMPLEMENTATION)
+    public static final Issue ISSUE_URL_ERROR = Issue.create(
+            "GoogleAppIndexingUrlError", //$NON-NLS-1$
+            "URL not supported by app for Google App Indexing",
+            "Ensure the URL is supported by your app, to get installs and traffic to your"
+                    + " app from Google Search.",
+            Category.USABILITY, 5, Severity.ERROR, URL_IMPLEMENTATION)
             .addMoreInfo("https://g.co/AppIndexing/AndroidStudio");
 
     public static final Issue ISSUE_APP_INDEXING =
       Issue.create(
         "GoogleAppIndexingWarning", //$NON-NLS-1$
         "Missing support for Google App Indexing",
-        "Adds deep links to get your app into the Google index, to get installs"
+        "Adds URLs to get your app into the Google index, to get installs"
           + " and traffic to your app from Google Search.",
-        Category.USABILITY, 5, Severity.WARNING, DEEP_LINK_IMPLEMENTATION)
+        Category.USABILITY, 5, Severity.WARNING, URL_IMPLEMENTATION)
         .addMoreInfo("https://g.co/AppIndexing/AndroidStudio");
 
     public static final Issue ISSUE_APP_INDEXING_API =
             Issue.create(
                     "GoogleAppIndexingApiWarning", //$NON-NLS-1$
                     "Missing support for Google App Indexing Api",
-                    "Adds deep links to get your app into the Google index, to get installs"
+                    "Adds URLs to get your app into the Google index, to get installs"
                             + " and traffic to your app from Google Search.",
                     Category.USABILITY, 5, Severity.WARNING, APP_INDEXING_API_IMPLEMENTATION)
                     .addMoreInfo("https://g.co/AppIndexing/AndroidStudio")
@@ -198,14 +198,14 @@ public class AppIndexingApiDetector extends Detector
                     Attr exported = activity.getAttributeNodeNS(ANDROID_URI, ATTR_EXPORTED);
                     if (!exported.getValue().equals("true")) {
                         // Report error if the activity supporting action view is not exported.
-                        context.report(ISSUE_DEEP_LINK_ERROR, activity,
+                        context.report(ISSUE_URL_ERROR, activity,
                                        context.getLocation(activity),
                                        "Activity supporting ACTION_VIEW is not exported");
                     }
                 }
             }
         }
-        if (!applicationHasActionView) {
+        if (!applicationHasActionView && !context.getProject().isLibrary()) {
             // Report warning if there is no activity that supports action view.
             context.report(ISSUE_APP_INDEXING, application, context.getLocation(application),
                            // This error message is more verbose than the other app indexing lint warnings, because it
@@ -294,7 +294,8 @@ public class AppIndexingApiDetector extends Detector
                             .resolve(node.astArguments().first());
                     if (arg0 instanceof JavaParser.ResolvedField) {
                         JavaParser.ResolvedField resolvedArg0 = (JavaParser.ResolvedField) arg0;
-                        if (resolvedArg0.getContainingClass().getName().equals(API_CLASS)) {
+                        JavaParser.ResolvedClass cls = resolvedArg0.getContainingClass();
+                        if (cls != null && cls.getName().equals(API_CLASS)) {
                             mHasAddAppIndexApi = true;
                         }
                     }
@@ -510,12 +511,12 @@ public class AppIndexingApiDetector extends Detector
         // <scheme>://<host>:<port>[<path>|<pathPrefix>|<pathPattern>]
         // Each part of the URL should not have illegal character.
         if ((hasPath || hasHost || hasPort) && !hasScheme) {
-            context.report(ISSUE_DEEP_LINK_ERROR, firstData, context.getLocation(firstData),
+            context.report(ISSUE_URL_ERROR, firstData, context.getLocation(firstData),
                     SCHEME_MISSING);
         }
 
         if ((hasPath || hasPort) && !hasHost) {
-            context.report(ISSUE_DEEP_LINK_ERROR, firstData, context.getLocation(firstData),
+            context.report(ISSUE_URL_ERROR, firstData, context.getLocation(firstData),
                     HOST_MISSING);
         }
 
@@ -523,12 +524,12 @@ public class AppIndexingApiDetector extends Detector
             if (firstData == null) {
                 // If this activity is an ACTION_VIEW action with category BROWSABLE, but doesn't
                 // have data node, it may be a mistake and we will report error.
-                context.report(ISSUE_DEEP_LINK_ERROR, intent, context.getLocation(intent),
+                context.report(ISSUE_URL_ERROR, intent, context.getLocation(intent),
                         DATA_MISSING);
             } else if (!hasScheme && !hasMimeType) {
                 // If this activity is an action view, is browsable, but has neither a
                 // URL nor mimeType, it may be a mistake and we will report error.
-                context.report(ISSUE_DEEP_LINK_ERROR, firstData, context.getLocation(firstData),
+                context.report(ISSUE_URL_ERROR, firstData, context.getLocation(firstData),
                         URL_MISSING);
             }
         }
@@ -542,7 +543,7 @@ public class AppIndexingApiDetector extends Detector
 
         if (actionView && !hasScheme) {
             context.report(ISSUE_APP_INDEXING, intent, context.getLocation(intent),
-                    "Missing deep link");
+                    "Missing URL");
         }
     }
 
@@ -607,7 +608,7 @@ public class AppIndexingApiDetector extends Detector
                 Attr attr = data.getAttributeNodeNS(ANDROID_URI, name);
                 String path = replaceUrlWithValue(context, attr.getValue());
                 if (!path.startsWith("/") && !path.startsWith(SdkConstants.PREFIX_RESOURCE_REF)) {
-                    context.report(ISSUE_DEEP_LINK_ERROR, attr, context.getLocation(attr),
+                    context.report(ISSUE_URL_ERROR, attr, context.getLocation(attr),
                             "android:" + name + " attribute should start with '/', but it is : "
                                     + path);
                 }
@@ -621,7 +622,7 @@ public class AppIndexingApiDetector extends Detector
                 String port = replaceUrlWithValue(context, attr.getValue());
                 Integer.parseInt(port);
             } catch (NumberFormatException e) {
-                context.report(ISSUE_DEEP_LINK_ERROR, attr, context.getLocation(attr),
+                context.report(ISSUE_URL_ERROR, attr, context.getLocation(attr),
                         ILLEGAL_NUMBER);
             }
         }
@@ -633,7 +634,7 @@ public class AppIndexingApiDetector extends Detector
             if (item.getNodeType() == Node.ATTRIBUTE_NODE) {
                 Attr attr = (Attr) attrs.item(i);
                 if (attr.getValue().isEmpty()) {
-                    context.report(ISSUE_DEEP_LINK_ERROR, attr, context.getLocation(attr),
+                    context.report(ISSUE_URL_ERROR, attr, context.getLocation(attr),
                             attr.getName() + " cannot be empty");
                 }
             }

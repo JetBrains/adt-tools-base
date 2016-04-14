@@ -8,7 +8,6 @@ evaluationDependsOn(':base:builder-test-api')
 dependencies {
     compile project(':base:builder-model')
     compile project(':base:builder-test-api')
-    compile project(':base:transform-api')
 
     compile project(':base:sdklib')
     compile project(':base:sdk-common')
@@ -27,7 +26,7 @@ dependencies {
 
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-all:1.9.5'
-    testCompile 'com.google.truth:truth:0.26'
+    testCompile 'com.google.truth:truth:0.28'
     testCompile project(':base:testutils')
     testCompile project(':base:sdklib').sourceSets.test.output
 }
@@ -107,25 +106,3 @@ tasks.jar {
 tasks.sourcesJar {
     from({zipTree(configurations.sourcesProvided.singleFile)})
 }
-
-// Manual Antlr setup, remove once we switch to Gradle 2.3+:
-
-configurations {
-    antlr3
-    compile.extendsFrom antlr3
-}
-
-dependencies {
-    antlr3 'org.antlr:antlr:3.5.2'
-    compile 'org.antlr:antlr-runtime:3.5.2'
-}
-
-
-task generateProguardParser(type:Exec) {
-  commandLine = ['java', '-cp',  configurations.antlr3.getAsPath(),
-                 'org.antlr.Tool',
-                 '-o', new File(generated, "com/android/builder/shrinker/parser"),
-                 file('src/main/java/com/android/builder/shrinker/parser/Proguard.g')]
-}
-
-tasks.compileJava.dependsOn generateProguardParser

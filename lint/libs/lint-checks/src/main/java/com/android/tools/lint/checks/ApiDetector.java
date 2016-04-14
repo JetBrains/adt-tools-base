@@ -48,6 +48,7 @@ import static com.android.tools.lint.detector.api.ClassContext.getFqcn;
 import static com.android.tools.lint.detector.api.ClassContext.getInternalName;
 import static com.android.tools.lint.detector.api.LintUtils.getNextInstruction;
 import static com.android.tools.lint.detector.api.Location.SearchDirection.BACKWARD;
+import static com.android.tools.lint.detector.api.Location.SearchDirection.EOL_NEAREST;
 import static com.android.tools.lint.detector.api.Location.SearchDirection.FORWARD;
 import static com.android.tools.lint.detector.api.Location.SearchDirection.NEAREST;
 import static com.android.utils.SdkUtils.getResourceFieldName;
@@ -56,17 +57,18 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidProject;
+import com.android.repository.Revision;
+import com.android.repository.api.LocalPackage;
 import com.android.resources.ResourceFolderType;
+import com.android.resources.ResourceType;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.SdkVersionInfo;
-import com.android.sdklib.repository.FullRevision;
-import com.android.sdklib.repository.descriptors.IPkgDesc;
-import com.android.sdklib.repository.descriptors.PkgType;
-import com.android.sdklib.repository.local.LocalPkgInfo;
-import com.android.sdklib.repository.local.LocalSdk;
+import com.android.sdklib.repositoryv2.AndroidSdkHandler;
 import com.android.tools.lint.client.api.IssueRegistry;
-import com.android.tools.lint.client.api.JavaParser;
+import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
+import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
+import com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
 import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ClassContext;
@@ -101,11 +103,13 @@ import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.IntInsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
+import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.LocalVariableNode;
 import org.objectweb.asm.tree.LookupSwitchInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.TryCatchBlockNode;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
@@ -125,12 +129,13 @@ import java.util.regex.Pattern;
 
 import lombok.ast.Annotation;
 import lombok.ast.AnnotationElement;
+import lombok.ast.AnnotationMethodDeclaration;
 import lombok.ast.AnnotationValue;
 import lombok.ast.AstVisitor;
 import lombok.ast.BinaryExpression;
+import lombok.ast.BinaryOperator;
 import lombok.ast.Case;
-import lombok.ast.Catch;
-import lombok.ast.ClassDeclaration;
+import lombok.ast.Cast;
 import lombok.ast.ConstructorDeclaration;
 import lombok.ast.ConstructorInvocation;
 import lombok.ast.Expression;
@@ -148,6 +153,7 @@ import lombok.ast.StringLiteral;
 import lombok.ast.SuperConstructorInvocation;
 import lombok.ast.Switch;
 import lombok.ast.Try;
+import lombok.ast.TypeDeclaration;
 import lombok.ast.TypeReference;
 import lombok.ast.VariableDefinition;
 import lombok.ast.VariableDefinitionEntry;
@@ -336,19 +342,17 @@ public class ApiDetector extends ResourceXmlDetector
                         "Can't find API database; API check not performed");
             } else {
                 // See if you don't have at least version 23.0.1 of platform tools installed
-                LocalSdk sdk = context.getClient().getSdk();
+                AndroidSdkHandler sdk = context.getClient().getSdk();
                 if (sdk == null) {
                     return;
                 }
-                LocalPkgInfo pkgInfo = sdk.getPkgInfo(PkgType.PKG_PLATFORM_TOOLS);
+                LocalPackage pkgInfo = sdk.getLocalPackage(SdkConstants.FD_PLATFORM_TOOLS,
+                        context.getClient().getRepositoryLogger());
                 if (pkgInfo == null) {
                     return;
                 }
-                IPkgDesc desc = pkgInfo.getDesc();
-                FullRevision revision = desc.getFullRevision();
-                if (revision == null) {
-                    return;
-                }
+                Revision revision = pkgInfo.getVersion();
+
                 // The platform tools must be at at least the same revision
                 // as the compileSdkVersion!
                 // And as a special case, for 23, they must be at 23.0.1
@@ -382,7 +386,7 @@ public class ApiDetector extends ResourceXmlDetector
                 }
                 context.report(UNSUPPORTED,
                         location,
-                        String.format("The SDK platform-tools version ((%1$s)) is too old "
+                        String.format("The SDK platform-tools version (%1$s) is too old "
                                         + " to check APIs compiled with API %2$d; please update",
                                 revision.toShortString(),
                                 compileSdkVersion));
@@ -440,7 +444,7 @@ public class ApiDetector extends ResourceXmlDetector
                         // the resources differently.
 
                         BuildToolInfo buildToolInfo = context.getProject().getBuildTools();
-                        FullRevision buildTools = buildToolInfo != null
+                        Revision buildTools = buildToolInfo != null
                                 ? buildToolInfo.getRevision() : null;
                         boolean isOldBuildTools = buildTools != null &&
                                 (buildTools.getMajor() < 23 || buildTools.getMajor() == 23
@@ -565,7 +569,7 @@ public class ApiDetector extends ResourceXmlDetector
      */
     private static boolean viewMayExtendTextView(@NonNull Element element) {
         String tag = element.getTagName();
-        if (tag.equals(SdkConstants.VIEW_TAG)) {
+        if (tag.equals(VIEW_TAG)) {
             tag = element.getAttribute(ATTR_CLASS);
             if (tag == null || tag.isEmpty()) {
                 return false;
@@ -652,18 +656,20 @@ public class ApiDetector extends ResourceXmlDetector
                         // Convert @android:type/foo into android/R$type and "foo"
                         int index = text.indexOf('/', ANDROID_PREFIX.length());
                         if (index != -1) {
-                            String owner = "android/R$"    //$NON-NLS-1$
-                                    + text.substring(ANDROID_PREFIX.length(), index);
-                            String name = getResourceFieldName(text.substring(index + 1));
-                            int api = mApiDatabase.getFieldVersion(owner, name);
-                            int minSdk = getMinSdk(context);
-                            if (api > minSdk && api > context.getFolderVersion()
-                                    && api > getLocalMinSdk(element)) {
-                                Location location = context.getLocation(textNode);
-                                String message = String.format(
-                                        "`%1$s` requires API level %2$d (current min is %3$d)",
-                                        text, api, minSdk);
-                                context.report(UNSUPPORTED, element, location, message);
+                            String typeString = text.substring(ANDROID_PREFIX.length(), index);
+                            if (ResourceType.getEnum(typeString) != null) {
+                                String owner = "android/R$" + typeString;
+                                String name = getResourceFieldName(text.substring(index + 1));
+                                int api = mApiDatabase.getFieldVersion(owner, name);
+                                int minSdk = getMinSdk(context);
+                                if (api > minSdk && api > context.getFolderVersion()
+                                        && api > getLocalMinSdk(element)) {
+                                    Location location = context.getLocation(textNode);
+                                    String message = String.format(
+                                            "`%1$s` requires API level %2$d (current min is %3$d)",
+                                            text, api, minSdk);
+                                    context.report(UNSUPPORTED, element, location, message);
+                                }
                             }
                         }
                     }
@@ -830,9 +836,9 @@ public class ApiDetector extends ResourceXmlDetector
                     String fqcn;
                     String owner = classNode.name;
                     if (CONSTRUCTOR_NAME.equals(name)) {
-                        fqcn = "new " + ClassContext.getFqcn(owner); //$NON-NLS-1$
+                        fqcn = "new " + getFqcn(owner); //$NON-NLS-1$
                     } else {
-                        fqcn = ClassContext.getFqcn(owner) + '#' + name;
+                        fqcn = getFqcn(owner) + '#' + name;
                     }
                     String message = String.format(
                             "This method is not overriding anything with the current build " +
@@ -848,6 +854,32 @@ public class ApiDetector extends ResourceXmlDetector
                 continue;
             }
 
+            List tryCatchBlocks = method.tryCatchBlocks;
+            if (!tryCatchBlocks.isEmpty()) {
+                List<String> checked = Lists.newArrayList();
+                for (Object o : tryCatchBlocks) {
+                    TryCatchBlockNode tryCatchBlock = (TryCatchBlockNode) o;
+                    String className = tryCatchBlock.type;
+                    if (className == null || checked.contains(className)) {
+                        continue;
+                    }
+
+                    int api = mApiDatabase.getClassVersion(className);
+                    if (api > minSdk) {
+                        // Find instruction node
+                        LabelNode label = tryCatchBlock.handler;
+                        String fqcn = getFqcn(className);
+                        String message = String.format(
+                                "Class requires API level %1$d (current min is %2$d): `%3$s`",
+                                api, minSdk, fqcn);
+                        report(context, message, label, method,
+                                className.substring(className.lastIndexOf('/') + 1), null,
+                                SearchHints.create(EOL_NEAREST).matchJavaSymbol());
+                    }
+                }
+            }
+
+
             if (CHECK_DECLARATIONS) {
                 // Check types in parameter list and types of local variables
                 List localVariables = method.localVariables;
@@ -860,7 +892,7 @@ public class ApiDetector extends ResourceXmlDetector
                             String className = desc.substring(1, desc.length() - 1);
                             int api = mApiDatabase.getClassVersion(className);
                             if (api > minSdk) {
-                                String fqcn = ClassContext.getFqcn(className);
+                                String fqcn = getFqcn(className);
                                 String message = String.format(
                                     "Class requires API level %1$d (current min is %2$d): `%3$s`",
                                     api, minSdk, fqcn);
@@ -883,7 +915,7 @@ public class ApiDetector extends ResourceXmlDetector
                         String type = signature.substring(args + 2, signature.length() - 1);
                         int api = mApiDatabase.getClassVersion(type);
                         if (api > minSdk) {
-                            String fqcn = ClassContext.getFqcn(type);
+                            String fqcn = getFqcn(type);
                             String message = String.format(
                                 "Class requires API level %1$d (current min is %2$d): `%3$s`",
                                 api, minSdk, fqcn);
@@ -933,9 +965,9 @@ public class ApiDetector extends ResourceXmlDetector
 
                             String fqcn;
                             if (CONSTRUCTOR_NAME.equals(name)) {
-                                fqcn = "new " + ClassContext.getFqcn(owner); //$NON-NLS-1$
+                                fqcn = "new " + getFqcn(owner); //$NON-NLS-1$
                             } else {
-                                fqcn = ClassContext.getFqcn(owner) + '#' + name;
+                                fqcn = getFqcn(owner) + '#' + name;
                             }
                             String message = String.format(
                                     "Call requires API level %1$d (current min is %2$d): `%3$s`",
@@ -950,7 +982,7 @@ public class ApiDetector extends ResourceXmlDetector
                                 message = String.format(
                                     "Enum for switch requires API level %1$d " +
                                     "(current min is %2$d): `%3$s`",
-                                    api, minSdk, ClassContext.getFqcn(owner));
+                                    api, minSdk, getFqcn(owner));
                             }
 
                             // If you're simply calling super.X from method X, even if method X
@@ -974,6 +1006,27 @@ public class ApiDetector extends ResourceXmlDetector
                                 break;
                             }
 
+                            if (api == 19
+                                    && owner.equals("java/lang/ReflectiveOperationException")
+                                    && !method.tryCatchBlocks.isEmpty()) {
+                                boolean direct = false;
+                                for (Object o : method.tryCatchBlocks) {
+                                    if (((TryCatchBlockNode)o).type.equals("java/lang/ReflectiveOperationException")) {
+                                        direct = true;
+                                        break;
+                                    }
+                                }
+                                if (!direct) {
+                                    message = String.format("Multi-catch with these reflection "
+                                            + "exceptions requires API level 19 (current min is"
+                                            + " %2$d) because they get compiled to the common but "
+                                            + "new super type `ReflectiveOperationException`. "
+                                            + "As a workaround either create individual catch "
+                                            + "statements, or catch `Exception`.",
+                                            api, minSdk);
+                                }
+                            }
+
                             report(context, message, node, method, name, null,
                                     SearchHints.create(FORWARD).matchJavaSymbol());
                             break;
@@ -987,13 +1040,13 @@ public class ApiDetector extends ResourceXmlDetector
                             // so no need to keep checking up the chain
                             // -- unless it's the support library which is also in
                             // the android/ namespace:
-                            if (owner.startsWith("android/support/")) { //$NON-NLS-1$
+                            if (owner.startsWith("android/support/") && api == -1) { //$NON-NLS-1$
                                 owner = context.getDriver().getSuperClass(owner);
                             } else {
                                 owner = null;
                             }
                         } else if (owner.startsWith("java/")) {    //$NON-NLS-1$
-                            if (owner.equals(LocaleDetector.DATE_FORMAT_OWNER)) {
+                            if (owner.equals("java/text/SimpleDateFormat")) {
                                 checkSimpleDateFormat(context, method, node, minSdk);
                             }
                             // Already inlined; see comment above
@@ -1029,7 +1082,7 @@ public class ApiDetector extends ResourceXmlDetector
                             continue;
                         }
 
-                        String fqcn = ClassContext.getFqcn(owner) + '#' + name;
+                        String fqcn = getFqcn(owner) + '#' + name;
                         if (mPendingFields != null) {
                             mPendingFields.remove(fqcn);
                         }
@@ -1047,7 +1100,7 @@ public class ApiDetector extends ResourceXmlDetector
 
                         int api = mApiDatabase.getClassVersion(className);
                         if (api > minSdk) {
-                            String fqcn = ClassContext.getFqcn(className);
+                            String fqcn = getFqcn(className);
                             String message = String.format(
                                     "Class requires API level %1$d (current min is %2$d): `%3$s`",
                                     api, minSdk, fqcn);
@@ -1065,7 +1118,7 @@ public class ApiDetector extends ResourceXmlDetector
             String signature) {
         int api = mApiDatabase.getClassVersion(signature);
         if (api > classMinSdk) {
-            String fqcn = ClassContext.getFqcn(signature);
+            String fqcn = getFqcn(signature);
             String message = String.format(
                     "Class requires API level %1$d (current min is %2$d): `%3$s`",
                     api, classMinSdk, fqcn);
@@ -1232,7 +1285,7 @@ public class ApiDetector extends ResourceXmlDetector
                             @SuppressWarnings("unchecked") // ASM API
                             List<Integer> keys = lookup.keys;
                             if (keys != null && keys.contains(ordinal)) {
-                                String fqcn = ClassContext.getFqcn(owner) + '#' + name;
+                                String fqcn = getFqcn(owner) + '#' + name;
                                 String message = String.format(
                                         "Enum value requires API level %1$d " +
                                         "(current min is %2$d): `%3$s`",
@@ -1407,13 +1460,14 @@ public class ApiDetector extends ResourceXmlDetector
      * @return the API level to use for this element, or -1
      */
     private static int getLocalMinSdk(@NonNull Element element) {
+        //noinspection ConstantConditions
         while (element != null) {
             String targetApi = element.getAttributeNS(TOOLS_URI, ATTR_TARGET_API);
             if (targetApi != null && !targetApi.isEmpty()) {
                 if (Character.isDigit(targetApi.charAt(0))) {
                     try {
                         return Integer.parseInt(targetApi);
-                    } catch (NumberFormatException nufe) {
+                    } catch (NumberFormatException e) {
                         break;
                     }
                 } else {
@@ -1448,11 +1502,11 @@ public class ApiDetector extends ResourceXmlDetector
 
         AndroidProject gradleModel = context.getProject().getGradleProjectModel();
         if (gradleModel != null) {
-            FullRevision gradleModelVersion =
-                    FullRevision.parseRevision(gradleModel.getModelVersion());
+            Revision gradleModelVersion =
+                    Revision.parseRevision(gradleModel.getModelVersion());
             if (gradleModelVersion.compareTo(
-                    FullRevision.parseRevision(minGradleVersion),
-                    FullRevision.PreviewComparison.IGNORE) >= 0) {
+                    Revision.parseRevision(minGradleVersion),
+                    Revision.PreviewComparison.IGNORE) >= 0) {
                 return true;
             }
         }
@@ -1520,7 +1574,7 @@ public class ApiDetector extends ResourceXmlDetector
     @Override
     public List<Class<? extends lombok.ast.Node>> getApplicableNodeTypes() {
         List<Class<? extends lombok.ast.Node>> types =
-                new ArrayList<Class<? extends lombok.ast.Node>>(2);
+                new ArrayList<Class<? extends lombok.ast.Node>>(10);
         types.add(ImportDeclaration.class);
         types.add(Select.class);
         types.add(MethodDeclaration.class);
@@ -1528,6 +1582,9 @@ public class ApiDetector extends ResourceXmlDetector
         types.add(VariableDefinitionEntry.class);
         types.add(VariableReference.class);
         types.add(Try.class);
+        types.add(Cast.class);
+        types.add(BinaryExpression.class);
+        types.add(MethodInvocation.class);
         return types;
     }
 
@@ -1696,6 +1753,7 @@ public class ApiDetector extends ResourceXmlDetector
             if (!isField) {
                 // See if there's an R class
                 Select current = node;
+                //noinspection ConstantConditions
                 while (current != null) {
                     Expression operand = current.astOperand();
                     if (operand instanceof Select) {
@@ -1827,6 +1885,7 @@ public class ApiDetector extends ResourceXmlDetector
 
         @Override
         public boolean visitVariableDefinitionEntry(VariableDefinitionEntry node) {
+            //noinspection VariableNotUsedInsideIf
             if (mCurrentMethod != null) {
                 if (mLocalVars == null) {
                     mLocalVars = Sets.newHashSet();
@@ -1838,6 +1897,23 @@ public class ApiDetector extends ResourceXmlDetector
                 }
                 mFields.add(node.astName().astValue());
             }
+
+            Expression initializer = node.astInitializer();
+            if (initializer != null
+                    // Checking cast expressions is handled already; prevent duplicate errors
+                    && !(initializer instanceof Cast)) {
+                TypeDescriptor classType = mContext.getType(initializer);
+                if (classType != null && !classType.isPrimitive()) {
+                    String classOwner = classType.getInternalName();
+                    if (mApiDatabase.isKnownClass(classOwner)) {
+                        TypeDescriptor interfaceType = mContext.getType(node);
+                        if (interfaceType != null) {
+                            checkCast(initializer, classOwner, classType, interfaceType);
+                        }
+                    }
+                }
+            }
+
             return super.visitVariableDefinitionEntry(node);
         }
 
@@ -1853,6 +1929,94 @@ public class ApiDetector extends ResourceXmlDetector
             mLocalVars = null;
             mCurrentMethod = node;
             return super.visitConstructorDeclaration(node);
+        }
+
+        @Override
+        public boolean visitCast(Cast node) {
+            TypeDescriptor classType = mContext.getType(node.astOperand());
+            if (classType != null && !classType.isPrimitive()) {
+                TypeDescriptor interfaceType = mContext.getType(node);
+                checkCast(node, classType.getInternalName(), classType, interfaceType);
+            }
+
+            return super.visitCast(node);
+        }
+
+        @Override
+        public boolean visitBinaryExpression(BinaryExpression node) {
+            if (node.astOperator() == BinaryOperator.ASSIGN &&
+                    // Checking cast expressions is handled already; prevent duplicate errors
+                    !(node.astRight() instanceof Cast)) {
+                TypeDescriptor classType = mContext.getType(node.astRight());
+                if (classType != null && !classType.isPrimitive()) {
+                    String classOwner = classType.getInternalName();
+                    if (mApiDatabase.isKnownClass(classOwner)) {
+                        TypeDescriptor interfaceType = mContext.getType(node.astLeft());
+                        if (interfaceType != null && !interfaceType.isPrimitive()) {
+                            checkCast(node, classOwner, classType, interfaceType);
+                        }
+                    }
+                }
+            }
+            return super.visitBinaryExpression(node);
+        }
+
+        @Override
+        public boolean visitMethodInvocation(MethodInvocation node) {
+            ResolvedMethod method = null;
+            int parameterIndex = 0;
+            for (Expression argument : node.astArguments()) {
+                TypeDescriptor argumentType = mContext.getType(argument);
+                if (argumentType != null && !argumentType.isPrimitive()) {
+                    if (method == null) {
+                        ResolvedNode resolved = mContext.resolve(node);
+                        if (resolved instanceof ResolvedMethod) {
+                            method = (ResolvedMethod) resolved;
+                        } else {
+                            break;
+                        }
+                    }
+                    if (parameterIndex >= method.getArgumentCount()) {
+                        // We can end up with more arguments than parameters when
+                        // there is a varargs call.
+                        break;
+                    }
+                    TypeDescriptor parameterType = method.getArgumentType(parameterIndex);
+                    String argumentOwner = argumentType.getInternalName();
+                    if (mApiDatabase.isKnownClass(argumentOwner)) {
+                        checkCast(argument, argumentOwner, argumentType,
+                                parameterType);
+                    }
+                }
+                parameterIndex++;
+            }
+
+            return super.visitMethodInvocation(node);
+        }
+
+        private void checkCast(
+                @NonNull lombok.ast.Node node,
+                @NonNull String classOwner,
+                @NonNull TypeDescriptor classType,
+                @Nullable TypeDescriptor interfaceType) {
+            if (interfaceType != null && !interfaceType.equals(classType)) {
+                String interfaceInternalName = interfaceType.getInternalName();
+                int api = mApiDatabase.getValidCastVersion(classOwner, interfaceInternalName);
+                if (api != -1 && !"java/lang/Object".equals(interfaceInternalName)) {
+                    int minSdk = getMinSdk(mContext);
+                    if (api > minSdk && api > getLocalMinSdk(node)) {
+                        LintDriver driver = mContext.getDriver();
+                        if (!driver.isSuppressed(mContext, UNSUPPORTED, node)) {
+                            Location location = mContext.getLocation(node);
+                            String message = String.format(
+                                    "Cast from %1$s to %2$s requires API level %3$d (current min is %4$d)",
+                                    classType.getSimpleName(), interfaceType.getSimpleName(),
+                                    api, minSdk);
+                            mContext.report(UNSUPPORTED, node, location, message);
+                        }
+                    }
+                }
+            }
         }
 
         @Override
@@ -1883,36 +2047,6 @@ public class ApiDetector extends ResourceXmlDetector
                         LintDriver driver = mContext.getDriver();
                         if (!driver.isSuppressed(mContext, UNSUPPORTED, node)) {
                             mContext.report(UNSUPPORTED, node, location, message);
-                        }
-                    }
-                } else {
-                    // Special case: check types of catch block variables; these apparently
-                    // need to be available at runtime even if there are no explicit calls
-                    for (Catch c : node.astCatches()) {
-                        VariableDefinition variableDefinition = c.astExceptionDeclaration();
-                        TypeReference typeReference = variableDefinition.astTypeReference();
-                        String fqcn = null;
-                        JavaParser.ResolvedNode resolved = mContext.resolve(typeReference);
-                        if (resolved != null) {
-                            fqcn = resolved.getSignature();
-                        } else if (typeReference.getTypeName().equals(
-                                "ReflectiveOperationException")) {
-                            fqcn = "java.lang.ReflectiveOperationException";
-                        }
-                        if (fqcn != null) {
-                            String owner = getInternalName(fqcn);
-                            int api = mApiDatabase.getClassVersion(owner);
-                            int minSdk = getMinSdk(mContext);
-                            if (api > minSdk && api > getLocalMinSdk(typeReference)) {
-                                Location location = mContext.getLocation(typeReference);
-                                String message = String.format(
-                                    "Class requires API level %1$d (current min is %2$d): `%3$s`",
-                                    api, minSdk, fqcn);
-                                LintDriver driver = mContext.getDriver();
-                                if (!driver.isSuppressed(mContext, UNSUPPORTED, typeReference)) {
-                                    mContext.report(UNSUPPORTED, typeReference, location, message);
-                                }
-                            }
                         }
                     }
                 }
@@ -1955,6 +2089,7 @@ public class ApiDetector extends ResourceXmlDetector
                         ImportDeclaration d = (ImportDeclaration) node;
                         int startOffset = d.astParts().first().getPosition().getStart();
                         Position start = location.getStart();
+                        assert start != null : location;
                         int startColumn = start.getColumn();
                         int startLine = start.getLine();
                         start = new DefaultPosition(startLine,
@@ -2001,6 +2136,7 @@ public class ApiDetector extends ResourceXmlDetector
                         // so they end up being identical errors.
                         for (Pair<String, Location> pair : list) {
                             Location existingLocation = pair.getSecond();
+                            //noinspection FileEqualsUsage
                             if (location.getFile().equals(existingLocation.getFile())) {
                                 Position start = location.getStart();
                                 Position existingStart = existingLocation.getStart();
@@ -2054,9 +2190,16 @@ public class ApiDetector extends ResourceXmlDetector
                     if (targetApi != -1) {
                         return targetApi;
                     }
-                } else if (type == ClassDeclaration.class) {
-                    // Class
-                    ClassDeclaration declaration = (ClassDeclaration) scope;
+                } else if (TypeDeclaration.class.isAssignableFrom(type)) {
+                    // Class, annotation, enum, interface
+                    TypeDeclaration declaration = (TypeDeclaration) scope;
+                    int targetApi = getTargetApi(declaration.astModifiers());
+                    if (targetApi != -1) {
+                        return targetApi;
+                    }
+                } else if (type == AnnotationMethodDeclaration.class) {
+                    // Look for annotations on the method
+                    AnnotationMethodDeclaration declaration = (AnnotationMethodDeclaration) scope;
                     int targetApi = getTargetApi(declaration.astModifiers());
                     if (targetApi != -1) {
                         return targetApi;

@@ -16,15 +16,12 @@
 
 package com.android.build.gradle.integration.common.truth;
 
-import com.google.common.base.Charsets;
-import com.google.common.io.Files;
 import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
-import com.google.common.base.Joiner;
 import com.google.common.io.Files;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.Subject;
-import com.google.common.truth.TestVerb;
+import com.google.common.truth.SubjectFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,6 +31,15 @@ import java.io.IOException;
  */
 @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")  // Functions do not return.
 public class FileSubject extends Subject<FileSubject, File> {
+
+    public static final SubjectFactory<FileSubject, File> FACTORY =
+            new SubjectFactory<FileSubject, File>() {
+                @Override
+                public FileSubject getSubject(FailureStrategy fs, File that) {
+                    return new FileSubject(fs, that);
+                }
+            };
+
     public FileSubject(FailureStrategy failureStrategy, File subject) {
         super(failureStrategy, subject);
     }
@@ -95,18 +101,12 @@ public class FileSubject extends Subject<FileSubject, File> {
         }
     }
 
-    public void isOlderThan(long timestamp) {
-        long lastModified = getSubject().lastModified();
-        if (getSubject().lastModified() >= timestamp) {
-            failWithBadResults("is older than", timestamp, "was modified at", lastModified);
-        }
+    public void isNewerThan(File other) {
+        isNewerThan(other.lastModified());
     }
 
-    public FileSubject subFile(String path) {
-        if (!getSubject().isDirectory()) {
-            fail("is a directory");
-        }
-        return new FileSubject(failureStrategy, new File(getSubject(), path));
+    public void isSameAgeAs(File other) {
+        wasModifiedAt(other.lastModified());
     }
 
     public void contentWithUnixLineSeparatorsIsExactly(String expected) {

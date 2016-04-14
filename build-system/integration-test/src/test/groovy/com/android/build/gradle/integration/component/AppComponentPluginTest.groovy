@@ -50,8 +50,8 @@ apply plugin: "com.android.model.application"
 
 model {
     android {
-        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-        buildToolsVersion = "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
     }
 }
 """
@@ -71,12 +71,14 @@ model {
     public void flavors() {
         project.buildFile << """
 model {
-    android.buildTypes {
-        create("b1")
-    }
-    android.productFlavors {
-        create("f1")
-        create("f2")
+    android {
+        buildTypes {
+            create("b1")
+        }
+        productFlavors {
+            create("f1")
+            create("f2")
+        }
     }
 }
 """
@@ -105,6 +107,14 @@ model {
         assertThat(model.getBuildTypes()).hasSize(3)
         assertThat(model.getProductFlavors()).hasSize(2)
         assertThat(model.getVariants()).hasSize(6)
+    }
+
+    @Test
+    void generationInModel() {
+        AndroidProject model = project.getSingleModel()
+        assertThat(model.getPluginGeneration())
+                .named("Plugin Generation")
+                .isEqualTo(AndroidProject.GENERATION_COMPONENT)
     }
 
     @Test

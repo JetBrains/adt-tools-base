@@ -18,14 +18,14 @@ package com.android.build.gradle.integration.databinding;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
+import static org.junit.Assert.assertTrue;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.runner.FilterableParameterized;
 import com.android.build.gradle.integration.common.truth.AarSubject;
 import com.android.build.gradle.integration.common.truth.ApkSubject;
 import com.android.ide.common.process.ProcessException;
 import com.google.common.base.Joiner;
-
-import static org.junit.Assert.assertTrue;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -38,7 +38,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-@RunWith(Parameterized.class)
+@RunWith(FilterableParameterized.class)
 public class DataBindingTest {
 
     @Parameterized.Parameters(name="library={0},forExperimentalPlugin={1},withoutAdapters={2}")
@@ -93,14 +93,14 @@ public class DataBindingTest {
         if (myLibrary) {
             AarSubject aar = assertThatAar(project.getAar("debug"));
             aar.doesNotContainClass("Landroid/g/testapp/databinding/ActivityMainBinding;");
-            aar.doesNotContain("Landroid/databinding/adapters/Converters;");
+            aar.doesNotContainClass("Landroid/databinding/adapters/Converters;");
             aar.doesNotContainClass("Landroid/databinding/DataBindingComponent;");
         } else {
             ApkSubject apk = assertThatApk(project.getApk("debug"));
             apk.containsClass("Landroid/databinding/testapp/databinding/ActivityMainBinding;");
             apk.containsClass("Landroid/databinding/DataBindingComponent;");
             if (myWithoutAdapters) {
-                apk.doesNotContain("Landroid/databinding/adapters/Converters;");
+                apk.doesNotContainClass("Landroid/databinding/adapters/Converters;");
             } else {
                 apk.containsClass("Landroid/databinding/adapters/Converters;");
             }

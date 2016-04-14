@@ -17,6 +17,7 @@
 package com.android.builder.model;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 
 /**
  * Class representing a sync issue.
@@ -66,7 +67,10 @@ public interface SyncIssue {
     // data is the component that does not support Jack. Data is variant name.
     int TYPE_JACK_IS_NOT_SUPPORTED    = 11;
 
-    int TYPE_MAX                      = 11; // increment when adding new types.
+    // data is the min version of Gradle
+    int TYPE_GRADLE_TOO_OLD           = 12;
+
+    int TYPE_MAX                      = 12; // increment when adding new types.
 
     /**
      * Returns the severity of the issue.
@@ -83,7 +87,7 @@ public interface SyncIssue {
      *
      * This is a machine-readable string used by the IDE for known issue types.
      */
-    @NonNull
+    @Nullable
     String getData();
 
     /**

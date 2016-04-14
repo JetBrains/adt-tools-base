@@ -15,12 +15,17 @@
  */
 package com.android.build.gradle.tasks;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.LoggingUtil;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dependency.SymbolFileProviderImpl;
 import com.android.build.gradle.internal.dsl.AaptOptions;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
+import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
@@ -39,8 +44,10 @@ import com.android.ide.common.blame.parser.aapt.AaptOutputParser;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.utils.FileUtils;
+import com.google.common.base.Charsets;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
+import com.google.common.io.Files;
 
 import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.Input;
@@ -59,11 +66,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.jar.JarFile;
+import java.util.zip.ZipEntry;
 
 @ParallelizableTask
 public class ProcessAndroidResources extends IncrementalTask {
 
     private File manifestFile;
+
+    private File instantRunManifestFile;
 
     private File resDir;
 
@@ -99,6 +110,12 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     private File mergeBlameLogFolder;
 
+    private InstantRunBuildContext instantRunBuildContext;
+
+    private File instantRunSupportDir;
+
+    private File buildInfoFile;
+
     @Override
     protected void doFullTaskAction() throws IOException {
         // we have to clean the source folder output in case the package name changed.
@@ -107,10 +124,18 @@ public class ProcessAndroidResources extends IncrementalTask {
             FileUtils.emptyFolder(srcOut);
         }
 
+        @Nullable
         File resOutBaseNameFile = getPackageOutputFile();
 
+        // If are in instant run mode and we have an instant run enabled manifest
+        File instantRunManifest = getInstantRunManifestFile();
+        File manifestFileToPackage = instantRunBuildContext.isInInstantRunMode() &&
+                instantRunManifest != null && instantRunManifest.exists()
+                    ? instantRunManifest
+                    : getManifestFile();
+
         AaptPackageProcessBuilder aaptPackageCommandBuilder =
-                new AaptPackageProcessBuilder(getManifestFile(), getAaptOptions())
+                new AaptPackageProcessBuilder(manifestFileToPackage, getAaptOptions())
                         .setAssetsFolder(getAssetsDir())
                         .setResFolder(getResDir())
                         .setLibraries(getLibraries())
@@ -139,6 +164,41 @@ public class ProcessAndroidResources extends IncrementalTask {
                     aaptPackageCommandBuilder,
                     getEnforceUniquePackageName(),
                     processOutputHandler);
+            if (resOutBaseNameFile != null) {
+                if (instantRunBuildContext.isInInstantRunMode()) {
+
+                    instantRunBuildContext.addChangedFile(
+                            InstantRunBuildContext.FileType.RESOURCES, resOutBaseNameFile);
+
+                    // get the new manifest file CRC
+                    JarFile jarFile = new JarFile(resOutBaseNameFile);
+                    String currentIterationCRC = null;
+                    try {
+                        ZipEntry entry = jarFile.getEntry(SdkConstants.ANDROID_MANIFEST_XML);
+                        if (entry != null) {
+                            currentIterationCRC = String.valueOf(entry.getCrc());
+                        }
+                    } finally {
+                        jarFile.close();
+                    }
+
+                    // check the manifest file binary format.
+                    File crcFile = new File(instantRunSupportDir, "manifest.crc");
+                    if (crcFile.exists() && currentIterationCRC != null) {
+                        // compare its content with the new binary file crc.
+                        String previousIterationCRC = Files.readFirstLine(crcFile, Charsets.UTF_8);
+                        if (!currentIterationCRC.equals(previousIterationCRC)) {
+                            instantRunBuildContext.abort();
+                            instantRunBuildContext.setVerifierResult(
+                                    InstantRunVerifierStatus.BINARY_MANIFEST_FILE_CHANGE);
+                        }
+                    }
+
+                    // write the new manifest file CRC.
+                    Files.createParentDirs(crcFile);
+                    Files.write(currentIterationCRC, crcFile, Charsets.UTF_8);
+                }
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         } catch (InterruptedException e) {
@@ -263,6 +323,14 @@ public class ProcessAndroidResources extends IncrementalTask {
                 }
             });
 
+            ConventionMappingHelper.map(processResources, "instantRunManifestFile",
+                    new Callable<File>() {
+                @Override
+                public File call() throws Exception {
+                    return variantOutputData.manifestProcessorTask.getInstantRunManifestOutputFile();
+                }
+            });
+
             ConventionMappingHelper.map(processResources, "resDir", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
@@ -310,15 +378,29 @@ public class ProcessAndroidResources extends IncrementalTask {
             ConventionMappingHelper.map(processResources, "preferredDensity",
                     new Callable<String>() {
                         @Override
+                        @Nullable
                         public String call() throws Exception {
-                            return variantOutputData.getMainOutputFile()
+                            String variantFilter = variantOutputData.getMainOutputFile()
                                     .getFilter(com.android.build.OutputFile.DENSITY);
+                            if (variantFilter != null) {
+                                return variantFilter;
+                            }
+                            return AndroidGradleOptions.getBuildTargetDensity(
+                                    scope.getGlobalScope().getProject());
                         }
                     });
 
 
             processResources.setMergeBlameLogFolder(
                     scope.getVariantScope().getResourceBlameLogDir());
+
+            processResources.instantRunSupportDir =
+                    scope.getVariantScope().getInstantRunSupportDir();
+
+            processResources.instantRunBuildContext =
+                    scope.getVariantScope().getInstantRunBuildContext();
+            processResources.buildInfoFile =
+                    InstantRunWrapperTask.ConfigAction.getTmpBuildInfoFile(scope.getVariantScope());
         }
 
         @NonNull
@@ -344,6 +426,15 @@ public class ProcessAndroidResources extends IncrementalTask {
         this.manifestFile = manifestFile;
     }
 
+    // not an input, it's optional and should never changes independently of the main manifest file.
+    public File getInstantRunManifestFile() {
+        return instantRunManifestFile;
+    }
+
+    public void setInstantRunManifestFile(File manifestFile) {
+        this.instantRunManifestFile = manifestFile;
+    }
+
     @NonNull
     @InputDirectory
     public File getResDir() {
@@ -356,6 +447,7 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     @InputDirectory
     @Optional
+    @Nullable
     public File getAssetsDir() {
         return assetsDir;
     }
@@ -366,6 +458,7 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     @OutputDirectory
     @Optional
+    @Nullable
     public File getSourceOutputDir() {
         return sourceOutputDir;
     }
@@ -376,6 +469,7 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     @OutputDirectory
     @Optional
+    @Nullable
     public File getTextSymbolOutputDir() {
         return textSymbolOutputDir;
     }
@@ -386,6 +480,7 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     @OutputFile
     @Optional
+    @Nullable
     public File getPackageOutputFile() {
         return packageOutputFile;
     }
@@ -396,6 +491,7 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     @OutputFile
     @Optional
+    @Nullable
     public File getProguardOutputFile() {
         return proguardOutputFile;
     }
@@ -415,6 +511,7 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     @Input
     @Optional
+    @Nullable
     public String getPreferredDensity() {
         return preferredDensity;
     }
@@ -430,6 +527,7 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     @Nested
     @Optional
+    @Nullable
     public List<SymbolFileProviderImpl> getLibraries() {
         return libraries;
     }
@@ -441,6 +539,7 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     @Input
     @Optional
+    @Nullable
     public String getPackageForR() {
         return packageForR;
     }
@@ -451,6 +550,7 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     @Input
     @Optional
+    @Nullable
     public Collection<String> getSplits() {
         return splits;
     }

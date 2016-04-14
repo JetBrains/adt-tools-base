@@ -21,7 +21,6 @@ import com.android.tools.rpclib.schema.*;
 import org.jetbrains.annotations.NotNull;
 
 import com.android.tools.rpclib.binary.BinaryClass;
-import com.android.tools.rpclib.binary.BinaryID;
 import com.android.tools.rpclib.binary.BinaryObject;
 import com.android.tools.rpclib.binary.Decoder;
 import com.android.tools.rpclib.binary.Encoder;
@@ -29,20 +28,20 @@ import com.android.tools.rpclib.binary.Namespace;
 
 import java.io.IOException;
 
-public final class RpcError implements BinaryObject {
+public final class RpcError extends RpcException implements BinaryObject {
     //<<<Start:Java.ClassBody:1>>>
-    private String mMessage;
+    private String mMsg;
 
     // Constructs a default-initialized {@link RpcError}.
     public RpcError() {}
 
 
-    public String getMessage() {
-        return mMessage;
+    public String getMsg() {
+        return mMsg;
     }
 
-    public RpcError setMessage(String v) {
-        mMessage = v;
+    public RpcError setMsg(String v) {
+        mMsg = v;
         return this;
     }
 
@@ -50,16 +49,22 @@ public final class RpcError implements BinaryObject {
     public BinaryClass klass() { return Klass.INSTANCE; }
 
 
-    private static final Entity ENTITY = new Entity("rpc","Error","","");
+    private static final Entity ENTITY = new Entity("rpc", "Error", "", "");
 
     static {
         ENTITY.setFields(new Field[]{
-            new Field("message", new Primitive("string", Method.String)),
+            new Field("Msg", new Primitive("string", Method.String)),
         });
         Namespace.register(Klass.INSTANCE);
     }
     public static void register() {}
     //<<<End:Java.ClassBody:1>>>
+
+    @Override
+    public String getMessage() {
+        return "RPC error: " + mMsg;
+    }
+
     public enum Klass implements BinaryClass {
         //<<<Start:Java.KlassBody:2>>>
         INSTANCE;
@@ -73,13 +78,13 @@ public final class RpcError implements BinaryObject {
         @Override
         public void encode(@NotNull Encoder e, BinaryObject obj) throws IOException {
             RpcError o = (RpcError)obj;
-            e.string(o.mMessage);
+            e.string(o.mMsg);
         }
 
         @Override
         public void decode(@NotNull Decoder d, BinaryObject obj) throws IOException {
             RpcError o = (RpcError)obj;
-            o.mMessage = d.string();
+            o.mMsg = d.string();
         }
         //<<<End:Java.KlassBody:2>>>
     }

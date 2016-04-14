@@ -23,22 +23,25 @@ import java.util.Comparator;
 import java.util.PriorityQueue;
 
 public class ShortestDistanceVisitor extends NonRecursiveVisitor {
-    private PriorityQueue<Instance> mPriorityQueue = new PriorityQueue<Instance>(1024, new Comparator<Instance>() {
-        @Override
-        public int compare(Instance o1, Instance o2) {
-            return o1.getDistanceToGcRoot() - o2.getDistanceToGcRoot();
-        }
-    });
+    private PriorityQueue<Instance> mPriorityQueue = new PriorityQueue<Instance>(1024,
+            new Comparator<Instance>() {
+                @Override
+                public int compare(Instance o1, Instance o2) {
+                    return o1.getDistanceToGcRoot() - o2.getDistanceToGcRoot();
+                }
+            });
+
     private Instance mPreviousInstance = null;
+
     private int mVisitDistance = 0;
 
     @Override
     public void visitLater(Instance parent, @NonNull Instance child) {
         if (mVisitDistance < child.getDistanceToGcRoot() &&
                 (parent == null ||
-                     child.getSoftReferences() == null ||
-                     !child.getSoftReferences().contains(parent) ||
-                     child.getIsSoftReference())) {
+                        child.getSoftReverseReferences() == null ||
+                        !child.getSoftReverseReferences().contains(parent) ||
+                        child.getIsSoftReference())) {
             child.setDistanceToGcRoot(mVisitDistance);
             child.setNextInstanceToGcRoot(mPreviousInstance);
             mPriorityQueue.add(child);

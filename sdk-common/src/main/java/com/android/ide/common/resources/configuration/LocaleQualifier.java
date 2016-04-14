@@ -19,6 +19,7 @@ package com.android.ide.common.resources.configuration;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 
 import java.util.Iterator;
@@ -41,6 +42,12 @@ public final class LocaleQualifier extends ResourceQualifier {
     public static final String NAME = "Locale";
     // TODO: Case insensitive check!
     public static final String BCP_47_PREFIX = "b+"; //$NON-NLS-1$
+
+    /**
+     * Old historical value for car dock mode that conflicts with the Carib language. The latter is
+     * therefore, excluded from Android.
+     */
+    private static final String CAR_DOCK_MODE = "car";
 
     @NonNull private String mFull;
     @NonNull private String mLanguage;
@@ -90,6 +97,34 @@ public final class LocaleQualifier extends ResourceQualifier {
     }
 
     /**
+     * Checks whether a string is a valid 2 letter language code in ISO 639-1 style.
+     * @param str the string to check
+     * @return is it valid?
+     */
+    private static boolean isValidAlpha2Code(@NonNull String str) {
+        return str.length() == 2 && CharMatcher.JAVA_LETTER.matchesAllOf(str);
+    }
+
+    /**
+     * Checks whether a string is a valid 3 letter language code in ISO 639-2 / ISO 639-5 style.
+     * @param str the string to check
+     * @return is it valid?
+     */
+    private static boolean isValidAlpha3Code(@NonNull String str) {
+        return str.length() == 3 && CharMatcher.JAVA_LETTER.matchesAllOf(str);
+    }
+
+    /**
+     * Checks whether a string is a valid 3 digit in the UN M.49 style.
+     * @param str the string to check
+     * @return is it valid?
+     */
+    private static boolean isValidM49Code(@NonNull String str) {
+        return str.length() == 3 && Character.isDigit(str.charAt(0))
+                && Character.isDigit(str.charAt(1))&& Character.isDigit(str.charAt(2));
+    }
+
+    /**
      * Creates and returns a qualifier from the given folder segment. If the segment is incorrect,
      * <code>null</code> is returned.
      * @param segment the folder segment from which to create a qualifier.
@@ -97,62 +132,69 @@ public final class LocaleQualifier extends ResourceQualifier {
      */
     @Nullable
     public static LocaleQualifier getQualifier(@NonNull String segment) {
-        int length = segment.length();
-        if (length == 2
-                && Character.isLetter(segment.charAt(0))
-                && Character.isLetter(segment.charAt(1))) { // to make sure we don't match e.g. "v4"
-            segment = segment.toLowerCase(Locale.US);
-            return new LocaleQualifier(segment, segment, null, null);
-        } else if (length == 3
-                && Character.isLetter(segment.charAt(0))
-                && Character.isLetter(segment.charAt(1))
-                && Character.isLetter(segment.charAt(2))) {
-            segment = segment.toLowerCase(Locale.US);
-            if ("car".equals(segment)) {
-                // Special case: "car" is a valid 3 letter language code, but
-                // it conflicts with the (much older) UI mode constant for
-                // car dock mode, so this specific language string should not be recognized
-                // as a 3 letter language string; it should match car dock mode instead.
+        /*
+         * Compute lower case version of the segment.
+         */
+        String segmentLc = segment.toLowerCase(Locale.US);
+
+        /*
+         * Special case: "car" is a valid 3 letter language code (Carib language), but
+         * it conflicts with the (much older) UI mode constant for
+         * car dock mode, so this specific language string should not be recognized
+         * as a 3 letter language string; it should match car dock mode instead.
+         */
+        if (CAR_DOCK_MODE.equals(segment.toLowerCase(Locale.US))) {
+            return null;
+        }
+
+        /*
+         * If segment starts with "b+" then it is a BCP-47 locale.
+         */
+        if (segment.startsWith(BCP_47_PREFIX)) {
+            return parseBcp47(segment);
+        }
+
+        String[] components = segment.split("-");
+        if (components.length > 2) {
+            /*
+             * More than 2 components is not supported. If complex stuff is needed, BCP-47 should
+             * be used instead.
+             */
+            return null;
+        }
+
+        /*
+         * First component: language. Has to be lower case, either 2 character ISO 639-1
+         * or three character ISO 639-2 / ISO 639-5, e.g., en, pt or eng, por...
+         */
+        String language = components[0].toLowerCase(Locale.US);
+        if (!isValidAlpha2Code(language) && !isValidAlpha3Code(language)) {
+            return null;
+        }
+
+        /*
+         * Second component (optional): region. Can be any 2 letters from ISO 3166-1, or 3 digits
+         * from UN M.49. E.g., UK, PT, or 013, 151. The second component must be prefixed with
+         * either lowercase or uppercase "r", so the code would be en-rUK or pt-RPT.
+         */
+        String region = null;
+        if (components.length > 1) {
+            if (components[1].length() < 1
+                    || Character.toLowerCase(components[1].charAt(0)) != 'r') {
                 return null;
             }
-            return new LocaleQualifier(segment, segment, null, null);
-        } else if (segment.startsWith(BCP_47_PREFIX)) {
-            return parseBcp47(segment);
-        } else if (length == 6 && segment.charAt(2) == '-'
-                && Character.toLowerCase(segment.charAt(3)) == 'r'
-                && Character.isLetter(segment.charAt(0))
-                && Character.isLetter(segment.charAt(1))
-                && Character.isLetter(segment.charAt(4))
-                && Character.isLetter(segment.charAt(5))) {
-            String language = new String(new char[] {
-                    Character.toLowerCase(segment.charAt(0)),
-                    Character.toLowerCase(segment.charAt(1))
-            });
-            String region = new String(new char[] {
-                    Character.toUpperCase(segment.charAt(4)),
-                    Character.toUpperCase(segment.charAt(5))
-            });
 
-            return new LocaleQualifier(language + "-r" + region, language, region, null);
-        } else if (length == 7 && segment.charAt(3) == '-'
-                && Character.toLowerCase(segment.charAt(4)) == 'r'
-                && Character.isLetter(segment.charAt(0))
-                && Character.isLetter(segment.charAt(1))
-                && Character.isLetter(segment.charAt(2))
-                && Character.isLetter(segment.charAt(5))
-                && Character.isLetter(segment.charAt(6))) {
-            String language = new String(new char[] {
-                    Character.toLowerCase(segment.charAt(0)),
-                    Character.toLowerCase(segment.charAt(1)),
-                    Character.toLowerCase(segment.charAt(2))
-            });
-            String region = new String(new char[] {
-                    Character.toUpperCase(segment.charAt(5)),
-                    Character.toUpperCase(segment.charAt(6))
-            });
+            region = components[1].substring(1);
+            if (!isValidAlpha2Code(region) && !isValidM49Code(region)) {
+                return null;
+            }
+        }
+
+        if (region == null) {
+            return new LocaleQualifier(language, language, null, null);
+        } else {
             return new LocaleQualifier(language + "-r" + region, language, region, null);
         }
-        return null;
     }
 
     /** Given a BCP-47 string, normalizes the case to the recommended casing */

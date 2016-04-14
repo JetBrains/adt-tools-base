@@ -22,6 +22,7 @@ import static com.android.SdkConstants.EXT_JAR;
 import static com.android.builder.core.BuilderConstants.EXT_LIB_ARCHIVE;
 import static com.android.builder.core.ErrorReporter.EvaluationMode.STANDARD;
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
+import static com.google.common.base.Preconditions.checkState;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -374,6 +375,7 @@ public class DependencyManager {
         // Identity set (ie both compiledJars and packagedJars will contain the same instance
         // if it's both compiled and packaged)
         Set<JarInfo> jarInfoSet = Sets.newIdentityHashSet();
+        Set<LibInfo> libInfoSet = Sets.newIdentityHashSet();
 
         // go through the graphs of dependencies (jars and libs) and gather all the transitive
         // jar dependencies.
@@ -384,8 +386,11 @@ public class DependencyManager {
         // be in both compiled and packaged scope.
         gatherJarDependenciesFromLibraries(jarInfoSet, compiledAndroidLibraries);
 
+        gatherAndroidDependencies(libInfoSet, compiledAndroidLibraries);
+
         // the final list of JarDependency, created from the list of JarInfo.
         List<JarDependency> jars = Lists.newArrayListWithCapacity(jarInfoSet.size());
+        Set<LibInfo> librariesToKeep = Sets.newHashSetWithExpectedSize(compiledAndroidLibraries.size());
 
         // if this is a test dependencies (ie tested dependencies is non null), override
         // packaged attributes for jars that are already in the tested dependencies in order to
@@ -395,13 +400,13 @@ public class DependencyManager {
             List<JarDependency> jarDependencies = testedVariantDeps.getJarDependencies();
 
             // gather the tested dependencies
-            Map<String, String> testedDeps = Maps.newHashMapWithExpectedSize(jarDependencies.size());
+            Map<String, String> testedJarDeps = Maps.newHashMapWithExpectedSize(jarDependencies.size());
 
             for (JarDependency jar : jarDependencies) {
                 if (jar.isPackaged()) {
                     MavenCoordinates coordinates = jar.getResolvedCoordinates();
-                    //noinspection ConstantConditions
-                    testedDeps.put(
+                    checkState(coordinates != null);
+                    testedJarDeps.put(
                             computeVersionLessCoordinateKey(coordinates),
                             coordinates.getVersion());
                 }
@@ -414,38 +419,43 @@ public class DependencyManager {
                 if (jar.isPackaged()) {
                     MavenCoordinates coordinates = jar.getResolvedCoordinates();
 
-                    String testedVersion = testedDeps.get(
+                    String testedVersion = testedJarDeps.get(
                             computeVersionLessCoordinateKey(coordinates));
                     if (testedVersion != null) {
-                        // same artifact, skip packaging of the dependency in the test app,
-                        // whether the version is a match or not.
-
-                        // if the dependency is present in both tested and test artifact,
-                        // verify that they are the same version
-                        if (!testedVersion.equals(coordinates.getVersion())) {
-                            String artifactInfo =  coordinates.getGroupId() + ":" + coordinates.getArtifactId();
-                            variantDeps.getChecker().addSyncIssue(extraModelInfo.handleSyncError(
-                                    artifactInfo,
-                                    SyncIssue.TYPE_MISMATCH_DEP,
-                                    String.format(
-                                            "Conflict with dependency '%s'. Resolved versions for"
-                                                    + " app (%s) and test app (%s) differ. See"
-                                                    + " http://g.co/androidstudio/app-test-app-conflict"
-                                                    + " for details.",
-                                            artifactInfo,
-                                            testedVersion,
-                                            coordinates.getVersion())));
-
-                        } else {
-                            logger.info(String.format(
-                                    "Removed '%s' from packaging of %s: Already in tested package.",
-                                    coordinates,
-                                    variantDeps.getName()));
-                        }
+                        skipTestDependency(variantDeps, coordinates, testedVersion);
                     } else {
                         // new artifact, convert it.
                         jars.add(jar.createJarDependency());
                     }
+                }
+            }
+
+            List<? extends LibraryDependency> androidDependencies =
+                    testedVariantDeps.getAndroidDependencies();
+
+            Map<String, String> testedAndroidDeps = Maps.newHashMapWithExpectedSize(jarDependencies.size());
+            for (LibraryDependency androidDependency : androidDependencies) {
+                MavenCoordinates coordinates = androidDependency.getResolvedCoordinates();
+                checkState(coordinates != null);
+
+                testedAndroidDeps.put(
+                        computeVersionLessCoordinateKey(coordinates),
+                        coordinates.getVersion());
+
+            }
+
+
+            for (LibInfo androidLibrary : libInfoSet) {
+                MavenCoordinates coordinates = androidLibrary.getResolvedCoordinates();
+                checkState(coordinates != null);
+
+                String testedVersion =
+                        testedAndroidDeps.get(computeVersionLessCoordinateKey(coordinates));
+
+                if (testedVersion != null) {
+                    skipTestDependency(variantDeps, coordinates, testedVersion);
+                } else {
+                    librariesToKeep.add(androidLibrary);
                 }
             }
         } else {
@@ -453,6 +463,7 @@ public class DependencyManager {
             for (JarInfo jarInfo : jarInfoSet) {
                 jars.add(jarInfo.createJarDependency());
             }
+            librariesToKeep.addAll(libInfoSet);
         }
 
         // --- Handle the local jar dependencies ---
@@ -545,7 +556,7 @@ public class DependencyManager {
         // convert the LibInfo in LibraryDependencyImpl and update the reverseMap
         // with the converted keys
         List<LibraryDependencyImpl> libList = convertLibraryInfoIntoDependency(
-                compiledAndroidLibraries, reverseMap);
+                compiledAndroidLibraries, librariesToKeep, reverseMap);
 
         if (DEBUG_DEPENDENCY) {
             for (LibraryDependency lib : libList) {
@@ -572,8 +583,38 @@ public class DependencyManager {
 
     }
 
+    private void skipTestDependency(@NonNull VariantDependencies variantDeps,
+            MavenCoordinates coordinates, String testedVersion) {
+        // same artifact, skip packaging of the dependency in the test app,
+        // whether the version is a match or not.
+
+        // if the dependency is present in both tested and test artifact,
+        // verify that they are the same version
+        if (!testedVersion.equals(coordinates.getVersion())) {
+            String artifactInfo =  coordinates.getGroupId() + ":" + coordinates.getArtifactId();
+            variantDeps.getChecker().addSyncIssue(extraModelInfo.handleSyncError(
+                    artifactInfo,
+                    SyncIssue.TYPE_MISMATCH_DEP,
+                    String.format(
+                            "Conflict with dependency '%s'. Resolved versions for"
+                                    + " app (%s) and test app (%s) differ. See"
+                                    + " http://g.co/androidstudio/app-test-app-conflict"
+                                    + " for details.",
+                            artifactInfo,
+                            testedVersion,
+                            coordinates.getVersion())));
+
+        } else {
+            logger.info(String.format(
+                    "Removed '%s' from packaging of %s: Already in tested package.",
+                    coordinates,
+                    variantDeps.getName()));
+        }
+    }
+
     private static List<LibraryDependencyImpl> convertLibraryInfoIntoDependency(
             @NonNull List<LibInfo> libInfos,
+            Set<LibInfo> librariesToKeep,
             @NonNull Multimap<LibraryDependency, VariantDependencies> reverseMap) {
         List<LibraryDependencyImpl> list = Lists.newArrayListWithCapacity(libInfos.size());
 
@@ -583,7 +624,9 @@ public class DependencyManager {
         Map<LibInfo, LibraryDependencyImpl> convertedMap = Maps.newIdentityHashMap();
 
         for (LibInfo libInfo : libInfos) {
-            list.add(convertLibInfo(libInfo, reverseMap, convertedMap));
+            if (librariesToKeep.contains(libInfo)) {
+                list.add(convertLibInfo(libInfo, librariesToKeep, reverseMap, convertedMap));
+            }
         }
 
         return list;
@@ -591,6 +634,7 @@ public class DependencyManager {
 
     private static LibraryDependencyImpl convertLibInfo(
             @NonNull LibInfo libInfo,
+            Set<LibInfo> librariesToKeep,
             @NonNull Multimap<LibraryDependency, VariantDependencies> reverseMap,
             @NonNull Map<LibInfo, LibraryDependencyImpl> convertedMap) {
         LibraryDependencyImpl convertedLib = convertedMap.get(libInfo);
@@ -601,7 +645,9 @@ public class DependencyManager {
             List<LibraryDependency> convertedChildren = Lists.newArrayListWithCapacity(children.size());
 
             for (LibInfo child : children) {
-                convertedChildren.add(convertLibInfo(child, reverseMap, convertedMap));
+                if (librariesToKeep.contains(child)) {
+                    convertedChildren.add(convertLibInfo(child, librariesToKeep, reverseMap, convertedMap));
+                }
             }
 
             // now convert the libInfo
@@ -636,9 +682,7 @@ public class DependencyManager {
             boolean compiled,
             boolean packaged) {
         for (JarInfo jarInfo : inJarInfos) {
-            if (!outJarInfos.contains(jarInfo)) {
-                outJarInfos.add(jarInfo);
-            }
+            outJarInfos.add(jarInfo);
 
             if (compiled) {
                 jarInfo.setCompiled(true);
@@ -648,6 +692,15 @@ public class DependencyManager {
             }
 
             gatherJarDependencies(outJarInfos, jarInfo.getDependencies(), compiled, packaged);
+        }
+    }
+
+    private static void gatherAndroidDependencies(
+            Set<LibInfo> outLibInfos,
+            Collection<LibInfo> inLibInfos) {
+        for (LibInfo libInfo : inLibInfos) {
+            outLibInfos.add(libInfo);
+            gatherAndroidDependencies(outLibInfos, libInfo.getLibInfoDependencies());
         }
     }
 

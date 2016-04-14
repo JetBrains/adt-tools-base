@@ -20,6 +20,8 @@ import static com.android.SdkConstants.ANDROID_PKG;
 import static com.android.SdkConstants.R_CLASS;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
 import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
 import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
 import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
@@ -289,6 +291,10 @@ public class JavaVisitor {
                 // Attempting to access PSI during startup before indices are ready; ignore these.
                 // See http://b.android.com/176644 for an example.
                 return;
+            } else if (e.getClass().getSimpleName().equals("ProcessCanceledException")) {
+                // Cancelling inspections in the IDE
+                context.getDriver().cancel();
+                return;
             }
 
             // Work around ECJ bugs; see https://code.google.com/p/android/issues/detail?id=172268
@@ -303,7 +309,7 @@ public class JavaVisitor {
             int count = 0;
             for (StackTraceElement frame : stackTrace) {
                 if (count > 0) {
-                    sb.append("->");
+                    sb.append("<-");
                 }
 
                 String className = frame.getClassName();
@@ -328,12 +334,53 @@ public class JavaVisitor {
         }
     }
 
+    /**
+     * For testing only: returns the number of exceptions thrown during Java AST analysis
+     *
+     * @return the number of internal errors found
+     */
+    @VisibleForTesting
+    public static int getCrashCount() {
+        return sExceptionCount;
+    }
+
+    /**
+     * For testing only: clears the crash counter
+     */
+    @VisibleForTesting
+    public static void clearCrashCount() {
+        sExceptionCount = 0;
+    }
+
     public void prepare(@NonNull List<JavaContext> contexts) {
         mParser.prepareJavaParse(contexts);
     }
 
     public void dispose() {
         mParser.dispose();
+    }
+
+    @Nullable
+    private static Set<String> getInterfaceNames(
+            @Nullable Set<String> addTo,
+            @NonNull ResolvedClass cls) {
+        Iterable<ResolvedClass> interfaces = cls.getInterfaces();
+        for (ResolvedClass resolvedInterface : interfaces) {
+            String name = resolvedInterface.getName();
+            if (addTo == null) {
+                addTo = Sets.newHashSet();
+            } else if (addTo.contains(name)) {
+                // Superclasses can explicitly implement the same interface,
+                // so keep track of visited interfaces as we traverse up the
+                // super class chain to avoid checking the same interface
+                // more than once.
+                continue;
+            }
+            addTo.add(name);
+            getInterfaceNames(addTo, resolvedInterface);
+        }
+
+        return addTo;
     }
 
     private static class VisitingDetector {
@@ -394,6 +441,7 @@ public class JavaVisitor {
 
             ResolvedClass resolvedClass = (ResolvedClass) resolved;
             ResolvedClass cls = resolvedClass;
+            int depth = 0;
             while (cls != null) {
                 List<VisitingDetector> list = mSuperClassDetectors.get(cls.getName());
                 if (list != null) {
@@ -402,7 +450,28 @@ public class JavaVisitor {
                     }
                 }
 
+                // Check interfaces too
+                Set<String> interfaceNames = getInterfaceNames(null, cls);
+                if (interfaceNames != null) {
+                    for (String name : interfaceNames) {
+                        list = mSuperClassDetectors.get(name);
+                        if (list != null) {
+                            for (VisitingDetector v : list) {
+                                v.getJavaScanner().checkClass(mContext, node, node,
+                                        resolvedClass);
+                            }
+                        }
+                    }
+                }
+
                 cls = cls.getSuperClass();
+                depth++;
+                if (depth == 500) {
+                    // Shouldn't happen in practice; this prevents the IDE from
+                    // hanging if the user has accidentally typed in an incorrect
+                    // super class which creates a cycle.
+                    break;
+                }
             }
 
             return false;
@@ -412,10 +481,7 @@ public class JavaVisitor {
         public boolean visitConstructorInvocation(ConstructorInvocation node) {
             NormalTypeBody anonymous = node.astAnonymousClassBody();
             if (anonymous != null) {
-                ResolvedNode resolved = mContext.resolve(anonymous);
-                if (resolved instanceof ResolvedMethod) {
-                    resolved = ((ResolvedMethod) resolved).getContainingClass();
-                }
+                ResolvedNode resolved = mContext.resolve(node.astTypeReference());
                 if (!(resolved instanceof ResolvedClass)) {
                     return true;
                 }
@@ -428,6 +494,20 @@ public class JavaVisitor {
                         for (VisitingDetector v : list) {
                             v.getJavaScanner().checkClass(mContext, null, anonymous,
                                     resolvedClass);
+                        }
+                    }
+
+                    // Check interfaces too
+                    Set<String> interfaceNames = getInterfaceNames(null, cls);
+                    if (interfaceNames != null) {
+                        for (String name : interfaceNames) {
+                            list = mSuperClassDetectors.get(name);
+                            if (list != null) {
+                                for (VisitingDetector v : list) {
+                                    v.getJavaScanner().checkClass(mContext, null, anonymous,
+                                            resolvedClass);
+                                }
+                            }
                         }
                     }
 

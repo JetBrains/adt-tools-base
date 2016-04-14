@@ -47,7 +47,7 @@ public final class Interface extends Type {
 
     @Override
     public void encode(@NotNull Encoder e) throws IOException {
-        TypeTag.interfaceTag().encode(e);
+        TypeTag.InterfaceTag.encode(e);
         e.nonCompactString(name);
     }
 

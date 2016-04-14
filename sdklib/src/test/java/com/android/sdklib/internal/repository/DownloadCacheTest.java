@@ -18,11 +18,11 @@ package com.android.sdklib.internal.repository;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.repository.io.FileOp;
+import com.android.repository.io.FileOpUtils;
+import com.android.repository.testframework.MockFileOp;
 import com.android.sdklib.AndroidLocationTestCase;
 import com.android.sdklib.internal.repository.DownloadCache.Strategy;
-import com.android.sdklib.io.FileOp;
-import com.android.sdklib.io.IFileOp;
-import com.android.sdklib.io.MockFileOp;
 import com.android.utils.Pair;
 import com.google.common.base.Charsets;
 
@@ -60,7 +60,7 @@ public class DownloadCacheTest extends AndroidLocationTestCase {
             super(strategy);
         }
 
-        public NoDownloadCache(@NonNull IFileOp fileOp, @NonNull Strategy strategy) {
+        public NoDownloadCache(@NonNull FileOp fileOp, @NonNull Strategy strategy) {
             super(fileOp, strategy);
         }
 
@@ -220,11 +220,12 @@ public class DownloadCacheTest extends AndroidLocationTestCase {
         NoDownloadCache d1 = new NoDownloadCache(mFileOp, Strategy.ONLY_CACHE);
         d1.registerResponse("http://www.example.com/download1.xml", 200, "This is the new content");
         mFileOp.recordExistingFile(
-                mFileOp.getAgnosticAbsPath(FileOp.append(d1.getCacheRoot(), "sdkbin-1_9b8dc757-download1_xml")),
+                mFileOp.getAgnosticAbsPath(
+                        FileOpUtils.append(d1.getCacheRoot(), "sdkbin-1_9b8dc757-download1_xml")),
                 123456L,
                 "This is the cached content");
         mFileOp.recordExistingFile(
-                mFileOp.getAgnosticAbsPath(FileOp.append(d1.getCacheRoot(), "sdkinf-1_9b8dc757-download1_xml")),
+                mFileOp.getAgnosticAbsPath(FileOpUtils.append(d1.getCacheRoot(), "sdkinf-1_9b8dc757-download1_xml")),
                 123456L,
                 "URL=http\\://www.example.com/download1.xml\n" +
                 "Status-Code=200\n");
@@ -241,11 +242,11 @@ public class DownloadCacheTest extends AndroidLocationTestCase {
         NoDownloadCache d2 = new NoDownloadCache(mFileOp, Strategy.DIRECT);
         d2.registerResponse("http://www.example.com/download1.xml", 200, "This is the new content");
         mFileOp.recordExistingFile(
-                mFileOp.getAgnosticAbsPath(FileOp.append(d2.getCacheRoot(), "sdkbin-1_9b8dc757-download1_xml")),
+                mFileOp.getAgnosticAbsPath(FileOpUtils.append(d2.getCacheRoot(), "sdkbin-1_9b8dc757-download1_xml")),
                 123456L,
                 "This is the cached content");
         mFileOp.recordExistingFile(
-                mFileOp.getAgnosticAbsPath(FileOp.append(d2.getCacheRoot(), "sdkinf-1_9b8dc757-download1_xml")),
+                mFileOp.getAgnosticAbsPath(FileOpUtils.append(d2.getCacheRoot(), "sdkinf-1_9b8dc757-download1_xml")),
                 123456L,
                 "URL=http\\://www.example.com/download1.xml\n" +
                 "Status-Code=200\n");
@@ -263,11 +264,11 @@ public class DownloadCacheTest extends AndroidLocationTestCase {
         NoDownloadCache d3 = new NoDownloadCache(mFileOp, Strategy.SERVE_CACHE);
         d3.registerResponse("http://www.example.com/download1.xml", 200, "This is the new content");
         mFileOp.recordExistingFile(
-                mFileOp.getAgnosticAbsPath(FileOp.append(d3.getCacheRoot(), "sdkbin-1_9b8dc757-download1_xml")),
+                mFileOp.getAgnosticAbsPath(FileOpUtils.append(d3.getCacheRoot(), "sdkbin-1_9b8dc757-download1_xml")),
                 123456L,
                 "This is the cached content");
         mFileOp.recordExistingFile(
-                mFileOp.getAgnosticAbsPath(FileOp.append(d3.getCacheRoot(), "sdkinf-1_9b8dc757-download1_xml")),
+                mFileOp.getAgnosticAbsPath(FileOpUtils.append(d3.getCacheRoot(), "sdkinf-1_9b8dc757-download1_xml")),
                 123456L,
                 "URL=http\\://www.example.com/download1.xml\n" +
                 "Status-Code=200\n");
@@ -286,11 +287,11 @@ public class DownloadCacheTest extends AndroidLocationTestCase {
         NoDownloadCache d4 = new NoDownloadCache(mFileOp, Strategy.FRESH_CACHE);
         d4.registerResponse("http://www.example.com/download1.xml", 200, "This is the new content");
         mFileOp.recordExistingFile(
-                mFileOp.getAgnosticAbsPath(FileOp.append(d4.getCacheRoot(), "sdkbin-1_9b8dc757-download1_xml")),
+                mFileOp.getAgnosticAbsPath(FileOpUtils.append(d4.getCacheRoot(), "sdkbin-1_9b8dc757-download1_xml")),
                 123456L,
                 "This is the cached content");
         mFileOp.recordExistingFile(
-                mFileOp.getAgnosticAbsPath(FileOp.append(d4.getCacheRoot(), "sdkinf-1_9b8dc757-download1_xml")),
+                mFileOp.getAgnosticAbsPath(FileOpUtils.append(d4.getCacheRoot(), "sdkinf-1_9b8dc757-download1_xml")),
                 123456L,
                 "URL=http\\://www.example.com/download1.xml\n" +
                 "Status-Code=200\n");
@@ -315,11 +316,11 @@ public class DownloadCacheTest extends AndroidLocationTestCase {
         NoDownloadCache d5 = new NoDownloadCache(mFileOp, Strategy.FRESH_CACHE);
         d5.registerResponse("http://www.example.com/download1.xml", 200, "This is the new content");
         mFileOp.recordExistingFile(
-                mFileOp.getAgnosticAbsPath(FileOp.append(d5.getCacheRoot(), "sdkbin-1_9b8dc757-download1_xml")),
+                mFileOp.getAgnosticAbsPath(FileOpUtils.append(d5.getCacheRoot(), "sdkbin-1_9b8dc757-download1_xml")),
                 System.currentTimeMillis() - 1000,
                 "This is the cached content");
         mFileOp.recordExistingFile(
-                mFileOp.getAgnosticAbsPath(FileOp.append(d5.getCacheRoot(), "sdkinf-1_9b8dc757-download1_xml")),
+                mFileOp.getAgnosticAbsPath(FileOpUtils.append(d5.getCacheRoot(), "sdkinf-1_9b8dc757-download1_xml")),
                 System.currentTimeMillis() - 1000,
                 "URL=http\\://www.example.com/download1.xml\n" +
                 "Status-Code=200\n");

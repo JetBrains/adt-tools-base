@@ -99,6 +99,7 @@ public class Project {
     protected List<File> mJavaLibraries;
     protected List<File> mTestSourceFolders;
     protected List<File> mResourceFolders;
+    protected List<File> mAssetFolders;
     protected List<Project> mDirectLibraries;
     protected List<Project> mAllLibraries;
     protected boolean mReportIssues = true;
@@ -449,10 +450,10 @@ public class Project {
     }
 
     /**
-     * Returns the resource folder.
+     * Returns the resource folders.
      *
-     * @return a file pointing to the resource folder, or null if the project
-     *         does not contain any resources
+     * @return a list of files pointing to the resource folders, which might be empty if the project
+     * does not provide any resources.
      */
     @NonNull
     public List<File> getResourceFolders() {
@@ -472,7 +473,21 @@ public class Project {
         }
 
         return mResourceFolders;
+    }
 
+    /**
+     * Returns the asset folders.
+     *
+     * @return a list of files pointing to the asset folders, which might be empty if the project
+     * does not provide any resources.
+     */
+    @NonNull
+    public List<File> getAssetFolders() {
+        if (mAssetFolders == null) {
+            mAssetFolders = mClient.getAssetFolders(this);
+        }
+
+        return mAssetFolders;
     }
 
     /**
@@ -566,9 +581,6 @@ public class Project {
      */
     @Nullable
     public String getPackage() {
-        //assert !mLibrary; // Should call getPackage on the master project, not the library
-        // Assertion disabled because you might be running lint on a standalone library project.
-
         return mPackage;
     }
 

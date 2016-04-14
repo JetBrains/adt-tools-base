@@ -27,10 +27,12 @@ import com.android.sdklib.BuildToolInfo;
 import com.android.tools.lint.LintCliClient;
 import com.android.tools.lint.LintCliFlags;
 import com.android.tools.lint.Warning;
+import com.android.tools.lint.checks.UnusedResourceDetector;
 import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.client.api.LintRequest;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Project;
+import com.android.utils.Pair;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -43,7 +45,12 @@ import java.util.Map;
 
 public class LintGradleClient extends LintCliClient {
     private final AndroidProject mModelProject;
-    private final String mVariantName;
+
+    /**
+     * Variant to run the client on.
+     */
+    @NonNull private Variant mVariant;
+
     private final org.gradle.api.Project mGradleProject;
     private List<File> mCustomRules = Lists.newArrayList();
     private File mSdkHome;
@@ -55,15 +62,15 @@ public class LintGradleClient extends LintCliClient {
             @NonNull org.gradle.api.Project gradleProject,
             @NonNull AndroidProject modelProject,
             @Nullable File sdkHome,
-            @Nullable String variantName,
+            @NonNull Variant variant,
             @Nullable BuildToolInfo buildToolInfo) {
-        super(flags);
+        super(flags, CLIENT_GRADLE);
         mGradleProject = gradleProject;
         mModelProject = modelProject;
-        mVariantName = variantName;
         mSdkHome = sdkHome;
         mRegistry = registry;
         mBuildToolInfo = buildToolInfo;
+        mVariant = variant;
     }
 
     public void setCustomRules(List<File> customRules) {
@@ -107,7 +114,17 @@ public class LintGradleClient extends LintCliClient {
     @Override
     @NonNull
     protected LintRequest createLintRequest(@NonNull List<File> files) {
-        return new LintGradleRequest(this, mModelProject, mGradleProject, mVariantName, files);
+        LintRequest lintRequest = new LintRequest(this, files);
+        if (mVariant == null) {
+            lintRequest.setProjects(Lists.<Project>newArrayList());
+        } else {
+            Pair<LintGradleProject,List<File>> result = LintGradleProject.create(
+                    this, mModelProject, mVariant, mGradleProject);
+            lintRequest.setProjects(Collections.<Project>singletonList(result.getFirst()));
+            setCustomRules(result.getSecond());
+        }
+
+        return lintRequest;
     }
 
     /** Run lint with the given registry and return the resulting warnings */

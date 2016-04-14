@@ -15,26 +15,27 @@
  */
 
 package com.android.build.gradle.integration.packaging
-
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject
 import com.android.utils.FileUtils
+import com.google.common.io.Files
 import groovy.transform.CompileStatic
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
+import java.nio.charset.Charset
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 /**
  * test for packaging of android asset files.
  *
  * This only uses raw files. This is not about running aapt tests, this is only about
- * everythink around it, so raw files are easier to test in isolation.
+ * everything around it, so raw files are easier to test in isolation.
  */
 @CompileStatic
 class ResPackagingTest {
@@ -276,6 +277,232 @@ android {
         }
     }
 
+    @Test
+    void "test app resources are filtered by min sdk full"() {
+        // Here are which files go into where:
+        //  (none)  v14     v16
+        //  f1
+        //  f2      f2
+        //  f3      f3      f3
+        //          f4      f4
+        //                  f5
+        //
+        // If we build without minSdk defined, we should get everything exactly as shown.
+        //
+        // If we build with minSdkVersion = 14 we should end up with:
+        // (none)   v14     v16
+        //  f1
+        //          f2
+        //          f3      f3
+        //          f4      f4
+        //                  f5
+        //
+        // If we build with minSdkVersion = 16 we should end up with:
+        // (none)   v14     v16
+        //  f1
+        //          f2
+        //                  f3
+        //                  f4
+        //                  f5
+
+        File raw = appProject.file("src/main/res/raw")
+        raw.mkdirs()
+
+        File raw14 = appProject.file("src/main/res/raw-v14")
+        raw14.mkdirs()
+
+        File raw16 = appProject.file("src/main/res/raw-v16")
+        raw16.mkdirs()
+
+        byte[] f1NoneC = [ 0 ] as byte[]
+        byte[] f2NoneC = [ 1 ] as byte[]
+        byte[] f2v14C = [ 2 ] as byte[]
+        byte[] f3NoneC = [ 3 ] as byte[]
+        byte[] f3v14C = [ 4 ] as byte[]
+        byte[] f3v16C = [ 5 ] as byte[]
+        byte[] f4v14C = [ 6 ] as byte[]
+        byte[] f4v16C = [ 7 ] as byte[]
+        byte[] f5v16C = [ 8 ] as byte[]
+
+        File f1None = new File(raw, "f1")
+        Files.write(f1NoneC, f1None)
+
+        File f2None = new File(raw, "f2")
+        Files.write(f2NoneC, f2None)
+
+        File f2v14 = new File(raw14, "f2")
+        Files.write(f2v14C, f2v14);
+
+        File f3None = new File(raw, "f3")
+        Files.write(f3NoneC, f3None)
+
+        File f3v14 = new File(raw14, "f3")
+        Files.write(f3v14C, f3v14)
+
+        File f3v16 = new File(raw16, "f3")
+        Files.write(f3v16C, f3v16)
+
+        File f4v14 = new File(raw14, "f4")
+        Files.write(f4v14C, f4v14)
+
+        File f4v16 = new File(raw16, "f4")
+        Files.write(f4v16C, f4v16)
+
+        File f5v16 = new File(raw16, "f5")
+        Files.write(f5v16C, f5v16)
+
+
+        File appGradleFile = appProject.file("build.gradle")
+        String appGradleFileContents = Files.toString(appGradleFile, Charset.defaultCharset())
+
+        // Set no min SDK version and generate the APK.
+        String newBuild = appGradleFileContents.replaceAll("minSdkVersion 8", "")
+        Files.write(newBuild, appGradleFile, Charset.defaultCharset())
+        project.execute("clean", ":app:assembleDebug")
+
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw/f1", f1NoneC)
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw/f2", f2NoneC)
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw/f3", f3NoneC)
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v14/f2", f2v14C)
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v14/f3", f3v14C)
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v14/f4", f4v14C)
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v16/f3", f3v16C)
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v16/f4", f4v16C)
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v16/f5", f5v16C)
+
+        // Set min SDK version 14 and generate the APK.
+        newBuild = appGradleFileContents.replaceAll("minSdkVersion 8", "minSdkVersion 14")
+        Files.write(newBuild, appGradleFile, Charset.defaultCharset())
+        project.execute("clean", ":app:assembleDebug")
+
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw/f1", f1NoneC)
+        assertThatApk(appProject.getApk("debug")).doesNotContain("res/raw/f2")
+        assertThatApk(appProject.getApk("debug")).doesNotContain("res/raw/f3")
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v14/f2", f2v14C)
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v14/f3", f3v14C)
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v14/f4", f4v14C)
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v16/f3", f3v16C)
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v16/f4", f4v16C)
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v16/f5", f5v16C)
+
+        // Set min SDK version 16 and generate the APK.
+        newBuild = appGradleFileContents.replaceAll("minSdkVersion 8", "minSdkVersion 16")
+        Files.write(newBuild, appGradleFile, Charset.defaultCharset())
+        project.execute("clean", ":app:assembleDebug")
+
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw/f1", f1NoneC)
+        assertThatApk(appProject.getApk("debug")).doesNotContain("res/raw/f2")
+        assertThatApk(appProject.getApk("debug")).doesNotContain("res/raw/f3")
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v14/f2", f2v14C)
+        assertThatApk(appProject.getApk("debug")).doesNotContain("res/raw-v14/f3")
+        assertThatApk(appProject.getApk("debug")).doesNotContain("res/raw-v14/f4")
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v16/f3", f3v16C)
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v16/f4", f4v16C)
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v16/f5", f5v16C)
+    }
+
+    @Test
+    void "test app resources are filtered by min sdk incremental"() {
+        // Note: this test is very similar to the previous one but, instead of trying all 3
+        // versions independently, we start with min SDK 14, then change to no min SDK and set
+        // min SDK to 16. The outputs should be the same as in the previous test.
+
+        File raw = appProject.file("src/main/res/raw")
+        raw.mkdirs()
+
+        File raw14 = appProject.file("src/main/res/raw-v14")
+        raw14.mkdirs()
+
+        File raw16 = appProject.file("src/main/res/raw-v16")
+        raw16.mkdirs()
+
+        byte[] f1NoneC = [ 0 ] as byte[]
+        byte[] f2NoneC = [ 1 ] as byte[]
+        byte[] f2v14C = [ 2 ] as byte[]
+        byte[] f3NoneC = [ 3 ] as byte[]
+        byte[] f3v14C = [ 4 ] as byte[]
+        byte[] f3v16C = [ 5 ] as byte[]
+        byte[] f4v14C = [ 6 ] as byte[]
+        byte[] f4v16C = [ 7 ] as byte[]
+        byte[] f5v16C = [ 8 ] as byte[]
+
+        File f1None = new File(raw, "f1")
+        Files.write(f1NoneC, f1None)
+
+        File f2None = new File(raw, "f2")
+        Files.write(f2NoneC, f2None)
+
+        File f2v14 = new File(raw14, "f2")
+        Files.write(f2v14C, f2v14);
+
+        File f3None = new File(raw, "f3")
+        Files.write(f3NoneC, f3None)
+
+        File f3v14 = new File(raw14, "f3")
+        Files.write(f3v14C, f3v14)
+
+        File f3v16 = new File(raw16, "f3")
+        Files.write(f3v16C, f3v16)
+
+        File f4v14 = new File(raw14, "f4")
+        Files.write(f4v14C, f4v14)
+
+        File f4v16 = new File(raw16, "f4")
+        Files.write(f4v16C, f4v16)
+
+        File f5v16 = new File(raw16, "f5")
+        Files.write(f5v16C, f5v16)
+
+
+        File appGradleFile = appProject.file("build.gradle")
+        String appGradleFileContents = Files.toString(appGradleFile, Charset.defaultCharset())
+
+        // Set min SDK version 14 and generate the APK.
+        String newBuild = appGradleFileContents.replaceAll("minSdkVersion 8", "minSdkVersion 14")
+        Files.write(newBuild, appGradleFile, Charset.defaultCharset())
+        project.execute("clean", ":app:assembleDebug")
+
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw/f1", f1NoneC)
+        assertThatApk(appProject.getApk("debug")).doesNotContain("res/raw/f2")
+        assertThatApk(appProject.getApk("debug")).doesNotContain("res/raw/f3")
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v14/f2", f2v14C)
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v14/f3", f3v14C)
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v14/f4", f4v14C)
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v16/f3", f3v16C)
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v16/f4", f4v16C)
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v16/f5", f5v16C)
+
+        // Set no min SDK version and generate the APK. Incremental update!
+        newBuild = appGradleFileContents.replaceAll("minSdkVersion 8", "")
+        Files.write(newBuild, appGradleFile, Charset.defaultCharset())
+        project.execute(":app:assembleDebug")
+
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw/f1", f1NoneC)
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw/f2", f2NoneC)
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw/f3", f3NoneC)
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v14/f2", f2v14C)
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v14/f3", f3v14C)
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v14/f4", f4v14C)
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v16/f3", f3v16C)
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v16/f4", f4v16C)
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v16/f5", f5v16C)
+
+        // Set min SDK version 16 and generate the APK. Incremental update!
+        newBuild = appGradleFileContents.replaceAll("minSdkVersion 8", "minSdkVersion 16")
+        Files.write(newBuild, appGradleFile, Charset.defaultCharset())
+        project.execute(":app:assembleDebug")
+
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw/f1", f1NoneC)
+        assertThatApk(appProject.getApk("debug")).doesNotContain("res/raw/f2")
+        assertThatApk(appProject.getApk("debug")).doesNotContain("res/raw/f3")
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v14/f2", f2v14C)
+        assertThatApk(appProject.getApk("debug")).doesNotContain("res/raw-v14/f3")
+        assertThatApk(appProject.getApk("debug")).doesNotContain("res/raw-v14/f4")
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v16/f3", f3v16C)
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v16/f4", f4v16C)
+        assertThatApk(appProject.getApk("debug")).containsFileWithContent("res/raw-v16/f5", f5v16C)
+    }
+
     // ---- APP TEST ---
 
     @Test
@@ -417,7 +644,7 @@ android {
             checkTestApk(libProject, "filelib.txt", "new content")
         }
 
-        // file's been removed, checking in the other direction.
+        // files been removed, checking in the other direction.
         project.execute("library:assembleAT")
         checkTestApk(libProject, "filelib.txt", "library:abcd")
 

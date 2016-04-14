@@ -278,7 +278,7 @@ final class HandleThread extends ChunkHandler {
 
         finishChunkPacket(packet, CHUNK_THEN, buf.position());
         Log.d("ddm-thread", "Sending " + name(CHUNK_THEN) + ": " + enable);
-        client.sendAndConsume(packet, mInst);
+        client.send(packet, mInst);
     }
 
 
@@ -303,7 +303,7 @@ final class HandleThread extends ChunkHandler {
 
         finishChunkPacket(packet, CHUNK_STKL, buf.position());
         Log.d("ddm-thread", "Sending " + name(CHUNK_STKL) + ": " + threadId);
-        client.sendAndConsume(packet, mInst);
+        client.send(packet, mInst);
     }
 
 
@@ -373,7 +373,7 @@ final class HandleThread extends ChunkHandler {
 
         finishChunkPacket(packet, CHUNK_THST, buf.position());
         Log.d("ddm-thread", "Sending " + name(CHUNK_THST));
-        client.sendAndConsume(packet, mInst);
+        client.send(packet, mInst);
     }
 }
 

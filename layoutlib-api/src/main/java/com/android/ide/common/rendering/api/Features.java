@@ -97,10 +97,25 @@ public class Features {
      */
     public static final int RECYCLER_VIEW_ADAPTER = 16;
     /**
+     * Ability to set system time.
+     * {@link RenderSession#setElapsedFrameTimeNanos(long)}
+     * {@link RenderSession#setSystemBootTimeNanos(long)}
+     * {@link RenderSession#setSystemTimeNanos(long)}
+     */
+    public static final int SYSTEM_TIME = 17;
+    /**
+     * Ability to use choreographer animations.
+     */
+    public static final int CHOREOGRAPHER = 18;
+    /**
+     * Ability to use a layout specific to the Theme Editor Preview for the navigation bar.
+     */
+    public static final int THEME_PREVIEW_NAVIGATION_BAR = 19;
+    /**
      * Last known feature.
      * <p/>
      * This should be avoided on the LayoutLib since, since using this makes updating the API used
      * by the LayoutLib without implementing any newly added features.
      */
-    public static final int LAST_FEATURE = RECYCLER_VIEW_ADAPTER;
+    public static final int LAST_FEATURE = THEME_PREVIEW_NAVIGATION_BAR;
 }

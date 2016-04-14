@@ -18,7 +18,6 @@ package com.android.ide.common.blame;
 
 import static com.android.SdkConstants.DOT_JSON;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Maps;
@@ -115,28 +114,30 @@ public class MergingLogPersistUtil {
             throws IOException {
         File file = getMultiFile(folder, shard);
         file.getParentFile().mkdir();
-        JsonWriter out =
-                new JsonWriter(Files.newWriter(file, Charsets.UTF_8));
-        out.setIndent(INDENT_STRING);
-        out.beginArray();
-        for (Map.Entry<SourceFile, Map<SourcePosition, SourceFilePosition>> entry : map.entrySet()) {
-            out.beginObject().name(KEY_OUTPUT_FILE);
-            mSourceFileJsonTypeAdapter.write(out, entry.getKey());
-            out.name(KEY_MAP);
+        JsonWriter out = new JsonWriter(Files.newWriter(file, Charsets.UTF_8));
+        try {
+            out.setIndent(INDENT_STRING);
             out.beginArray();
-            for (Map.Entry<SourcePosition, SourceFilePosition> innerEntry: entry.getValue().entrySet()) {
-                out.beginObject();
-                out.name(KEY_TO);
-                mSourcePositionJsonTypeAdapter.write(out, innerEntry.getKey());
-                out.name(KEY_FROM);
-                mSourceFilePositionJsonTypeAdapter.write(out, innerEntry.getValue());
+            for (Map.Entry<SourceFile, Map<SourcePosition, SourceFilePosition>> entry : map.entrySet()) {
+                out.beginObject().name(KEY_OUTPUT_FILE);
+                mSourceFileJsonTypeAdapter.write(out, entry.getKey());
+                out.name(KEY_MAP);
+                out.beginArray();
+                for (Map.Entry<SourcePosition, SourceFilePosition> innerEntry : entry.getValue().entrySet()) {
+                    out.beginObject();
+                    out.name(KEY_TO);
+                    mSourcePositionJsonTypeAdapter.write(out, innerEntry.getKey());
+                    out.name(KEY_FROM);
+                    mSourceFilePositionJsonTypeAdapter.write(out, innerEntry.getValue());
+                    out.endObject();
+                }
+                out.endArray();
                 out.endObject();
             }
             out.endArray();
-            out.endObject();
+        } finally {
+            out.close();
         }
-        out.endArray();
-        out.close();
     }
 
     @NonNull
@@ -144,7 +145,7 @@ public class MergingLogPersistUtil {
             @NonNull File folder,
             @NonNull String shard) {
         Map<SourceFile, Map<SourcePosition, SourceFilePosition>> map = Maps.newConcurrentMap();
-        JsonReader reader = null;
+        JsonReader reader;
         File file = getMultiFile(folder, shard);
         if (!file.exists()) {
             return map;
@@ -197,16 +198,16 @@ public class MergingLogPersistUtil {
                 reader.endObject();
             }
             reader.endArray();
-            reader.close();
             return map;
         } catch (IOException e) {
-            try {
-                reader.close();
-            } catch (IOException e2) {
-                // well, we tried.
-            }
             // TODO: trigger a non-incremental merge if this happens.
             throw new RuntimeException(e);
+        } finally {
+            try {
+                reader.close();
+            } catch (Throwable e2) {
+                // well, we tried.
+            }
         }
     }
 
@@ -232,18 +233,21 @@ public class MergingLogPersistUtil {
         File file = getSingleFile(folder, shard);
         file.getParentFile().mkdir();
         JsonWriter out = new JsonWriter(Files.newWriter(file, Charsets.UTF_8));
-        out.setIndent(INDENT_STRING);
-        out.beginArray();
-        for (Map.Entry<SourceFile, SourceFile> entry : map.entrySet()) {
-            out.beginObject();
-            out.name(KEY_MERGED);
-            mSourceFileJsonTypeAdapter.write(out, entry.getKey());
-            out.name(KEY_SOURCE);
-            mSourceFileJsonTypeAdapter.write(out, entry.getValue());
-            out.endObject();
+        try {
+            out.setIndent(INDENT_STRING);
+            out.beginArray();
+            for (Map.Entry<SourceFile, SourceFile> entry : map.entrySet()) {
+                out.beginObject();
+                out.name(KEY_MERGED);
+                mSourceFileJsonTypeAdapter.write(out, entry.getKey());
+                out.name(KEY_SOURCE);
+                mSourceFileJsonTypeAdapter.write(out, entry.getValue());
+                out.endObject();
+            }
+            out.endArray();
+        } finally {
+            out.close();
         }
-        out.endArray();
-        out.close();
     }
 
     @NonNull
@@ -251,7 +255,7 @@ public class MergingLogPersistUtil {
             @NonNull File folder,
             @NonNull String shard) {
         Map<SourceFile, SourceFile> fileMap = Maps.newConcurrentMap();
-        JsonReader reader = null;
+        JsonReader reader;
         File file = getSingleFile(folder, shard);
         if (!file.exists()) {
             return fileMap;
@@ -284,13 +288,14 @@ public class MergingLogPersistUtil {
             reader.endArray();
             return fileMap;
         } catch (IOException e) {
-            try {
-                reader.close();
-            } catch (IOException e2) {
-                // well, we tried.
-            }
             // TODO: trigger a non-incremental merge if this happens.
             throw new RuntimeException(e);
+        } finally {
+            try {
+                reader.close();
+            } catch (Throwable e) {
+                // well, we tried.
+            }
         }
     }
 }

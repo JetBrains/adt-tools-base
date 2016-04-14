@@ -35,7 +35,7 @@ import com.android.builder.tasks.Task;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessException;
 import com.android.sdklib.BuildToolInfo;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
@@ -68,7 +68,7 @@ import java.util.concurrent.Callable;
 public class JackTask extends AbstractAndroidCompile
         implements FileSupplier, BinaryFileProviderTask {
 
-    public static final FullRevision JACK_MIN_REV = new FullRevision(21, 1, 0);
+    public static final Revision JACK_MIN_REV = new Revision(21, 1, 0);
 
     private AndroidBuilder androidBuilder;
 

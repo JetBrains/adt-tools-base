@@ -213,4 +213,45 @@ public class ManifestResourceDetectorTest extends AbstractCheckTest {
                                 + "</full-backup-content>")
                 ));
     }
+
+    public void testAllowPermissionNameLocalizations() throws Exception {
+        assertEquals("No warnings.",
+                lintProjectIncrementally(
+                        "AndroidManifest.xml",
+                        xml("AndroidManifest.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    package=\"foo.bar2\"\n"
+                                + "    android:versionCode=\"1\"\n"
+                                + "    android:versionName=\"1.0\" >\n"
+                                + "\n"
+                                + "    <permission-group android:name=\"android.permission-group.CONTACTS\"\n"
+                                + "        android:icon=\"@drawable/perm_group_contacts\"\n"
+                                + "        android:label=\"@string/permgrouplab_contacts\"\n"
+                                + "        android:description=\"@string/permgroupdesc_contacts\"\n"
+                                + "        android:priority=\"100\" />\n"
+                                + "\n"
+                                + "    <permission android:name=\"android.permission.READ_CONTACTS\"\n"
+                                + "        android:permissionGroup=\"android.permission-group.CONTACTS\"\n"
+                                + "        android:label=\"@string/permlab_readContacts\"\n"
+                                + "        android:description=\"@string/permdesc_readContacts\"\n"
+                                + "        android:protectionLevel=\"dangerous\" />"
+                                + "</manifest>"),
+                        xml("res/values/values.xml", ""
+                                + "<resources>\n"
+                                + "    <string name=\"permgrouplab_contacts\">Contacts</string>\n"
+                                + "    <string name=\"permgroupdesc_contacts\">access your contacts</string>\n"
+                                + "    <string name=\"permlab_readContacts\">read your contacts</string>\n"
+                                + "    <string name=\"permdesc_readContacts\">Allows the app to...</string>"
+                                + "</resources>"),
+                        xml("res/values-nb/values.xml", ""
+                                + "<resources>\n"
+                                + "    <string name=\"permgrouplab_contacts\">\"Kontakter\"</string>\n"
+                                + "    <string name=\"permgroupdesc_contacts\">\"se kontaktene dine\"</string>\n"
+                                + "    <string name=\"permlab_readContacts\">\"lese kontaktene dine\"</string>\n"
+                                + "    <string name=\"permdesc_readContacts\">\"Lar appen lese...</string>"
+                                + "</resources>")
+                ));
+
+    }
 }

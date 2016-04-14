@@ -773,7 +773,11 @@ public class ExternalAnnotationRepository {
 
         @Nullable
         private FieldInfo findField(@NonNull ResolvedField field) {
-            ClassInfo c = findClass(field.getContainingClass());
+            ResolvedClass containingClass = field.getContainingClass();
+            if (containingClass == null) {
+                return null;
+            }
+            ClassInfo c = findClass(containingClass);
             if (c == null) {
                 return null;
             }
@@ -1081,8 +1085,10 @@ public class ExternalAnnotationRepository {
             } else if (obj instanceof ResolvedField) {
                 ResolvedField field = (ResolvedField)obj;
                 if (mSignature.endsWith(field.getName())) {
-                    String signature = field.getContainingClass().getSignature() +
-                            "." + field.getName();
+                    ResolvedClass containingClass = field.getContainingClass();
+                    String signature = containingClass != null
+                            ? containingClass.getSignature() + "." + field.getName()
+                            : field.getName();
                     return mSignature.equals(signature);
                 }
                 return false;
@@ -1112,10 +1118,10 @@ public class ExternalAnnotationRepository {
             return new DefaultTypeDescriptor(mSignature);
         }
 
-        @NonNull
+        @Nullable
         @Override
         public ResolvedClass getContainingClass() {
-            throw new UnsupportedOperationException();
+            return null;
         }
 
         @Override

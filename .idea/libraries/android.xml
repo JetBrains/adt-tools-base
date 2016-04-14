@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="android">
+    <CLASSES>
+      <root url="jar://$ANDROID_HOME$/platforms/android-23/android.jar!/" />
+      <root url="jar://$ANDROID_HOME$/extras/android/support/annotations/android-support-annotations.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

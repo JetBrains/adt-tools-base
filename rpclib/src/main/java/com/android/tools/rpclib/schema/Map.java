@@ -17,19 +17,23 @@ package com.android.tools.rpclib.schema;
 
 import com.android.tools.rpclib.binary.Decoder;
 import com.android.tools.rpclib.binary.Encoder;
-import com.intellij.util.containers.HashMap;
-
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
 
 public final class Map extends Type {
-
     String mAlias;
 
     Type mKeyType;
 
     Type mValueType;
+
+    public Map(String alias, Type keyType, Type valueType) {
+        mAlias = alias;
+        mKeyType = keyType;
+        mValueType = valueType;
+    }
 
     public Map(@NotNull Decoder d) throws IOException {
         mKeyType = decode(d);
@@ -48,9 +52,9 @@ public final class Map extends Type {
     @Override
     public void encodeValue(@NotNull Encoder e, Object value) throws IOException {
         assert (value instanceof java.util.Map);
-        java.util.Map<?, ?> map = (java.util.Map) value;
+        java.util.Map<?, ?> map = (java.util.Map<?, ?>) value;
         e.uint32(map.size());
-        for (java.util.Map.Entry entry : map.entrySet()) {
+        for (java.util.Map.Entry<?, ?> entry : map.entrySet()) {
             mKeyType.encodeValue(e, entry.getKey());
             mValueType.encodeValue(e, entry.getValue());
         }
@@ -58,8 +62,8 @@ public final class Map extends Type {
 
     @Override
     public Object decodeValue(@NotNull Decoder d) throws IOException {
-        int size = (int) d.uint32();
-        HashMap<Object, Object> map = new HashMap<Object, Object>();
+        int size = d.uint32();
+        LinkedHashMap<Object, Object> map = new LinkedHashMap<Object, Object>();
         for (int i = 0; i < size; i++) {
             map.put(mKeyType.decodeValue(d), mValueType.decodeValue(d));
         }
@@ -72,7 +76,7 @@ public final class Map extends Type {
 
     @Override
     public void encode(@NotNull Encoder e) throws IOException {
-        TypeTag.mapTag().encode(e);
+        TypeTag.MapTag.encode(e);
         mKeyType.encode(e);
         mValueType.encode(e);
         e.nonCompactString(mAlias);

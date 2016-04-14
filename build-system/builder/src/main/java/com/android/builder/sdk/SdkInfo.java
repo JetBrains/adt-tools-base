@@ -43,17 +43,7 @@ public class SdkInfo {
     public File getAnnotationsJar() {
         return mAnnotationJar;
     }
-
-    /**
-     * Returns the revision of the installed platform tools component.
-     *
-     * @return the FullRevision or null if the revision couldn't not be found
-     */
-//    @Nullable
-//    public FullRevision getPlatformToolsRevision() {
-//
-//    }
-
+    
     /**
      * Returns the location of the adb tool.
      */

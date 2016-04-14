@@ -6,6 +6,35 @@
   "name": "My Awesome App"
 },
 
-"client": []
+"client": [{
+  "client_info": {
+    "client_type": 1,
+    "android_client_info": {
+      "package_name": "com.example.app.free"
+    },
+    "mobilesdk_app_id": "mobilesdk-app-id-free"
+  },
+
+  "oauth_client": [{
+    "client_type": 1,
+    "android_info": {
+      "package_name": "com.example.app.free",
+      "certificate_hash": "IUW99pi4cVA5vQ6D8gab7UNawhw="
+    }
+  },
+  {
+    "client_type": 1,
+    "android_info": {
+      "package_name": "com.example.app.free",
+      "certificate_hash": "AFDD9pi4klj5vQ6D8gab7UNawhw="
+    }
+  }],
+
+  "api_key": [{
+    "current_key": "android-api-key-free"
+  }],
+
+  "services": {}
+},]
 
 }

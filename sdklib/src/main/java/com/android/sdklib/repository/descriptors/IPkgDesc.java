@@ -18,12 +18,10 @@ package com.android.sdklib.repository.descriptors;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.repository.Revision;
 import com.android.sdklib.AndroidVersion;
-import com.android.sdklib.repository.IListDescription;
-import com.android.sdklib.repository.License;
-import com.android.sdklib.repository.FullRevision;
-import com.android.sdklib.repository.MajorRevision;
-import com.android.sdklib.repository.PreciseRevision;
+import com.android.repository.api.License;
+import com.android.sdklib.repositoryv2.IdDisplay;
 
 import java.io.File;
 
@@ -39,7 +37,7 @@ import java.io.File;
  * To query packages capabilities, rely on {@link #getType()} and the {@code IPkgDesc.hasXxx()}
  * methods provided by {@link IPkgDesc}.
  */
-public interface IPkgDesc extends Comparable<IPkgDesc>, IPkgCapabilities, IListDescription {
+public interface IPkgDesc extends Comparable<IPkgDesc> {
 
     /**
      * Returns the type of the package.
@@ -56,6 +54,9 @@ public interface IPkgDesc extends Comparable<IPkgDesc>, IPkgCapabilities, IListD
     String getListDisplay();
 
     @Nullable
+    IdDisplay getName();
+
+    @Nullable
     String getDescriptionShort();
 
     @Nullable
@@ -67,27 +68,10 @@ public interface IPkgDesc extends Comparable<IPkgDesc>, IPkgCapabilities, IListD
     boolean isObsolete();
 
     /**
-     * Returns the package's {@link FullRevision} or null.
-     * @return A non-null value if {@link #hasFullRevision()} is true; otherwise a null value.
-     */
-    @Nullable
-    FullRevision getFullRevision();
-
-    /**
-     * Returns the package's {@link MajorRevision} or null.
-     * @return A non-null value if {@link #hasMajorRevision()} is true; otherwise a null value.
-     */
-    @Nullable
-    MajorRevision getMajorRevision();
-
-    /**
-     * Returns the package's revision or null. This will come from the {@link FullRevision} or
-     * {@link MajorRevision}, with the precision set as appropriate.
-     * @return A representation of {@link #getMajorRevision()} or {@link #getFullRevision()},
-     * depending on which one exists.
+     * Returns the package's {@link Revision}.
      */
     @NonNull
-    PreciseRevision getPreciseRevision();
+    Revision getRevision();
 
   /**
      * Returns the package's {@link AndroidVersion} or null.
@@ -129,14 +113,14 @@ public interface IPkgDesc extends Comparable<IPkgDesc>, IPkgCapabilities, IListD
      * @return A non-null value if {@link #hasMinToolsRev()} is true; otherwise a null value.
      */
     @Nullable
-    FullRevision getMinToolsRev();
+    Revision getMinToolsRev();
 
     /**
      * Returns the package's {@code min-platform-tools-rev} or null.
      * @return A non-null value if {@link #hasMinPlatformToolsRev()} is true; otherwise null.
      */
     @Nullable
-    FullRevision getMinPlatformToolsRev();
+    Revision getMinPlatformToolsRev();
 
     /**
      * Indicates whether <em>this</em> package descriptor is an update for the given
@@ -153,12 +137,12 @@ public interface IPkgDesc extends Comparable<IPkgDesc>, IPkgCapabilities, IListD
    * existing descriptor, using the given comparison method.
    *
    * @param existingDesc A non-null existing descriptor.
-   * @param previewComparison The {@link FullRevision.PreviewComparison} method to use
+   * @param previewComparison The {@link Revision.PreviewComparison} method to use
    *                          when comparing the packages.
    * @return True if this package is an update for the given one.
    */
     boolean isUpdateFor(@NonNull IPkgDesc existingDesc,
-                        @NonNull FullRevision.PreviewComparison previewComparison);
+                        @NonNull Revision.PreviewComparison previewComparison);
 
     /**
      * Returns a stable string id that can be used to reference this package, including
@@ -185,5 +169,19 @@ public interface IPkgDesc extends Comparable<IPkgDesc>, IPkgCapabilities, IListD
      * @return True if the revision of this package is a preview.
      */
     boolean isPreview();
+
+    String getListDescription();
+
+    boolean hasVendor();
+
+    boolean hasAndroidVersion();
+
+    boolean hasPath();
+
+    boolean hasTag();
+
+    boolean hasMinToolsRev();
+
+    boolean hasMinPlatformToolsRev();
 }
 

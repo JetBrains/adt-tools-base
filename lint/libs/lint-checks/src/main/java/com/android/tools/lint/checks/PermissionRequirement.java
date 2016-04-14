@@ -27,6 +27,7 @@ import com.android.annotations.VisibleForTesting;
 import com.android.sdklib.AndroidVersion;
 import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.JavaParser.ResolvedAnnotation;
+import com.android.tools.lint.client.api.JavaParser.ResolvedField;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.google.common.collect.Lists;
@@ -130,32 +131,52 @@ public abstract class PermissionRequirement {
         }
 
         Object v = annotation.getValue(ATTR_ANY_OF);
-        if (v != null) {
-            if (v instanceof String[]) {
-                String[] anyOf = (String[])v;
-                if (anyOf.length > 0) {
-                    return new Many(annotation, BinaryOperator.LOGICAL_OR, anyOf);
-                }
-            } else if (v instanceof String) {
-                String[] anyOf = new String[] { (String)v };
+        String[] anyOf = getAnnotationStrings(v);
+        if (anyOf != null) {
+            if (anyOf.length > 1) {
                 return new Many(annotation, BinaryOperator.LOGICAL_OR, anyOf);
+            } else if (anyOf.length == 1) {
+                return new Single(annotation, anyOf[0]);
             }
         }
 
         v = annotation.getValue(ATTR_ALL_OF);
-        if (v != null) {
-            if (v instanceof String[]) {
-                String[] allOf = (String[])v;
-                if (allOf.length > 0) {
-                    return new Many(annotation, BinaryOperator.LOGICAL_AND, allOf);
-                }
-            } else if (v instanceof String) {
-                String[] allOf = new String[] { (String)v };
+        String[] allOf = getAnnotationStrings(v);
+        if (allOf != null) {
+            if (allOf.length > 1) {
                 return new Many(annotation, BinaryOperator.LOGICAL_AND, allOf);
+            } else if (allOf.length == 1) {
+                return new Single(annotation, allOf[0]);
             }
         }
 
         return NONE;
+    }
+
+    @Nullable
+    private static String[] getAnnotationStrings(@Nullable Object v) {
+        if (v != null) {
+            if (v instanceof String[]) {
+                return (String[])v;
+            } else if (v instanceof String) {
+                return new String[] { (String)v };
+            } else if (v instanceof Object[]) {
+                List<String> strings = Lists.newArrayList();
+                for (Object o : (Object[])v) {
+                    if (o instanceof ResolvedField) {
+                        Object vs = ((ResolvedField)o).getValue();
+                        if (vs instanceof String) {
+                            strings.add((String)vs);
+                        }
+                    } else if (o instanceof String) {
+                        strings.add((String)o);
+                    }
+                }
+                return strings.toArray(new String[strings.size()]);
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -237,6 +258,11 @@ public abstract class PermissionRequirement {
         Object o = annotation.getValue(ATTR_CONDITIONAL);
         if (o instanceof Boolean) {
             return (Boolean)o;
+        } else if (o instanceof ResolvedField) {
+            o = ((ResolvedField)o).getValue();
+            if (o instanceof Boolean) {
+                return (Boolean)o;
+            }
         }
         return false;
     }

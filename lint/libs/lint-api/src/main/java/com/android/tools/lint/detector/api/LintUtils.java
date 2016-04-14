@@ -27,6 +27,7 @@ import static com.android.SdkConstants.DOT_JPG;
 import static com.android.SdkConstants.DOT_PNG;
 import static com.android.SdkConstants.DOT_WEBP;
 import static com.android.SdkConstants.DOT_XML;
+import static com.android.SdkConstants.FN_BUILD_GRADLE;
 import static com.android.SdkConstants.ID_PREFIX;
 import static com.android.SdkConstants.NEW_ID_PREFIX;
 import static com.android.SdkConstants.TOOLS_URI;
@@ -52,7 +53,7 @@ import com.android.resources.ResourceType;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.SdkVersionInfo;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.utils.PositionXmlParser;
 import com.android.utils.SdkUtils;
@@ -257,6 +258,22 @@ public class LintUtils {
      */
     public static boolean isRootElement(Element element) {
         return element == element.getOwnerDocument().getDocumentElement();
+    }
+
+    /**
+     * Returns the corresponding R field name for the given XML resource name
+     * @param styleName the XML name
+     * @return the corresponding R field name
+     */
+    public static String getFieldName(@NonNull String styleName) {
+        for (int i = 0, n = styleName.length(); i < n; i++) {
+            char c = styleName.charAt(i);
+            if (c == '.' || c == '-' || c == ':') {
+                return styleName.replace('.', '_').replace('-', '_').replace(':', '_');
+            }
+        }
+
+        return styleName;
     }
 
     /**
@@ -1074,7 +1091,7 @@ public class LintUtils {
         if (project != null) {
             String modelVersion = project.getModelVersion();
             try {
-                FullRevision version = FullRevision.parseRevision(modelVersion);
+                Revision version = Revision.parseRevision(modelVersion);
                 if (version.getMajor() != major) {
                     return version.getMajor() < major;
                 }
@@ -1225,5 +1242,25 @@ public class LintUtils {
         } else {
             return "en".equals(locale.getLanguage());  //$NON-NLS-1$
         }
+    }
+
+    /**
+     * Create a {@link Location} for an error in the top level build.gradle file.
+     * This is necessary when we're doing an analysis based on the Gradle interpreted model,
+     * not from parsing Gradle files - and the model doesn't provide source positions.
+     * @param project the project containing the gradle file being analyzed
+     * @return location for the top level gradle file if it exists, otherwise fall back to
+     *     the project directory.
+     */
+    public static Location guessGradleLocation(@NonNull Project project) {
+        File dir = project.getDir();
+        Location location;
+        File topLevel = new File(dir, FN_BUILD_GRADLE);
+        if (topLevel.exists()) {
+            location = Location.create(topLevel);
+        } else {
+            location = Location.create(dir);
+        }
+        return location;
     }
 }

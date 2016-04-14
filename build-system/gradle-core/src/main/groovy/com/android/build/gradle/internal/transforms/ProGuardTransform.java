@@ -24,12 +24,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.pipeline.TransformManager;
-import com.android.build.gradle.internal.scope.GlobalScope;
-import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.gradle.internal.variant.LibraryVariantData;
-import com.android.build.gradle.tasks.SimpleWorkQueue;
-import com.android.build.api.transform.Context;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
 import com.android.build.api.transform.JarInput;
@@ -39,7 +33,13 @@ import com.android.build.api.transform.QualifiedContent.DefaultContentType;
 import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
+import com.android.build.api.transform.TransformInvocation;
 import com.android.build.api.transform.TransformOutputProvider;
+import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.android.build.gradle.internal.scope.GlobalScope;
+import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.variant.LibraryVariantData;
+import com.android.build.gradle.tasks.SimpleWorkQueue;
 import com.android.builder.tasks.Job;
 import com.android.builder.tasks.JobContext;
 import com.google.common.base.Joiner;
@@ -189,19 +189,17 @@ public class ProGuardTransform extends BaseProguardAction {
     }
 
     @Override
-    public void transform(
-            @NonNull Context context,
-            @NonNull final Collection<TransformInput> inputs,
-            @NonNull final Collection<TransformInput> referencedInputs,
-            @Nullable final TransformOutputProvider outputProvider,
-            boolean isIncremental) throws TransformException {
+    public void transform(final TransformInvocation invocation) throws TransformException {
         // only run one minification at a time (across projects)
         final Job<Void> job = new Job<Void>(getName(),
                 new com.android.builder.tasks.Task<Void>() {
                     @Override
                     public void run(@NonNull Job<Void> job,
                             @NonNull JobContext<Void> context) throws IOException {
-                        doMinification(inputs, referencedInputs, outputProvider);
+                        doMinification(
+                                invocation.getInputs(),
+                                invocation.getReferencedInputs(),
+                                invocation.getOutputProvider());
                     }
                 });
         try {
@@ -234,6 +232,11 @@ public class ProGuardTransform extends BaseProguardAction {
 
         try {
             GlobalScope globalScope = variantScope.getGlobalScope();
+
+            if (isLibrary) {
+                keep("class **.R");
+                keep("class **.R$*");
+            }
 
             // set the mapping file if there is one.
             File testedMappingFile = computeMappingFile();

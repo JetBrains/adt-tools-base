@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.component
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
+import com.android.utils.FileUtils
 import groovy.transform.CompileStatic
 import org.gradle.tooling.BuildException
 import org.junit.Before
@@ -27,6 +28,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
+import static com.google.common.truth.TruthJUnit.assume
 import static org.junit.Assert.fail
 
 /**
@@ -38,7 +40,7 @@ import static org.junit.Assert.fail
 @CompileStatic
 public class NdkStlTest {
 
-    @Parameterized.Parameters
+    @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> data() {
         return [
                 ["system"].toArray(),
@@ -73,11 +75,12 @@ apply plugin: 'com.android.model.application'
 
 model {
     android {
-        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-        buildToolsVersion = "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-    }
-    android.ndk {
-        moduleName = "hello-jni"
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+        ndk {
+            moduleName "hello-jni"
+            stl "$stl"
+        }
     }
 }
 """
@@ -85,13 +88,6 @@ model {
 
     @Test
     public void buildAppWithStl() {
-        project.getBuildFile() << """
-model {
-    android.ndk {
-        stl = "$stl"
-    }
-}
-"""
         if (!stl.equals("invalid")) {
             project.execute("assembleDebug");
 
@@ -115,6 +111,43 @@ model {
             } catch (BuildException ignored) {
             }
         }
+    }
+
+    @Test
+    public void "check with code that uses the STL"() {
+        assume().that(stl).isNotEqualTo("invalid")
+        assume().that(stl).isNotEqualTo("system")
+        assume().that(stl).isNotEqualTo("gabi++_shared")
+        assume().that(stl).isNotEqualTo("gabi++_static")
+
+        File src = FileUtils.find(project.testDir, "hello-jni.cpp").get()
+        src.delete()
+        src << """
+#include <jni.h>
+#include <string>
+
+extern "C"
+jstring
+Java_com_example_hellojni_HelloJni_stringFromJNI(JNIEnv* env, jobject thiz) {
+    std::string greeting = "hello world!";
+    return env->NewStringUTF(greeting.c_str());
+}
+
+"""
+        project.execute("assembleDebug");
+        File apk = project.getApk("debug");
+        assertThatZip(apk).contains("lib/x86/libhello-jni.so");
+        assertThatZip(apk).contains("lib/mips/libhello-jni.so");
+        assertThatZip(apk).contains("lib/armeabi/libhello-jni.so");
+        assertThatZip(apk).contains("lib/armeabi-v7a/libhello-jni.so");
+
+        if (stl.endsWith("shared")) {
+            assertThatZip(apk).contains("lib/x86/lib" + stl + ".so");
+            assertThatZip(apk).contains("lib/mips/lib" + stl + ".so");
+            assertThatZip(apk).contains("lib/armeabi/lib" + stl + ".so");
+            assertThatZip(apk).contains("lib/armeabi-v7a/lib" + stl + ".so");
+        }
+
     }
 }
 

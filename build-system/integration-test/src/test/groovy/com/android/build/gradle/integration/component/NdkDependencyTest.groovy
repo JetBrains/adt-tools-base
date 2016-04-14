@@ -25,7 +25,9 @@ import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
+import com.android.builder.model.NativeAndroidProject
 import com.android.builder.model.NativeLibrary
+import com.android.builder.model.NativeSettings
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.Rule
@@ -39,6 +41,9 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
  */
 @CompileStatic
 class NdkDependencyTest {
+    private static final String[] ABIS =
+            ["armeabi", "armeabi-v7a", "arm64-v8a", "x86", "x86_64", "mips", "mips64"];
+
     static MultiModuleTestProject base = new MultiModuleTestProject(
             app: new HelloWorldJniApp(),
             lib1: new EmptyAndroidTestApp(),
@@ -54,12 +59,13 @@ class NdkDependencyTest {
 #include <jni.h>
 #include "lib1.h"
 
+extern "C"
 jstring
 Java_com_example_hellojni_HelloJni_stringFromJNI(JNIEnv* env, jobject thiz)
 {
-    return (*env)->NewStringUTF(env, getLib1String());
+    return env->NewStringUTF(getLib1String());
 }
-"""));
+"""))
 
         app.addFile(new TestSourceFile("", "build.gradle", """
 apply plugin: "com.android.model.application"
@@ -69,9 +75,12 @@ model {
         compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
         buildToolsVersion = "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
     }
+    android.ndk {
+        moduleName = "hello-jni"
+    }
     android.sources {
         main {
-            jniLibs {
+            jni {
                 dependencies {
                     project ":lib1"
                 }
@@ -106,7 +115,7 @@ model {
         compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
     }
     android.ndk {
-        moduleName = "hello-jni"
+        moduleName = "getstring1"
     }
     android.sources {
         main {
@@ -151,17 +160,17 @@ apply plugin: "com.android.model.native"
 
 model {
     android {
-        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-    }
-    android.ndk {
-        moduleName = "get-string"
-        stl = "stlport_shared"
-    }
-    android.sources {
-        main {
-            jni {
-                exportedHeaders {
-                    srcDir "src/main/headers"
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        ndk {
+            moduleName "getstring2"
+            stl "stlport_shared"
+        }
+        sources {
+            main {
+                jni {
+                    exportedHeaders {
+                        srcDir "src/main/headers"
+                    }
                 }
             }
         }
@@ -174,6 +183,7 @@ model {
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(base)
             .forExperimentalPlugin(true)
+            .captureStdOut(true)
             .create()
 
     @AfterClass
@@ -184,26 +194,30 @@ model {
     @Test
     void "check app contains compiled .so"() {
         Map<String, AndroidProject> models =
-                project.executeAndReturnMultiModel("clean", ":app:assembleDebug");
-        GradleTestProject app = project.getSubproject("app");
-        GradleTestProject lib1 = project.getSubproject("lib1");
-        GradleTestProject lib2 = project.getSubproject("lib2");
+                project.executeAndReturnMultiModel("clean", ":app:assembleDebug")
+        GradleTestProject app = project.getSubproject("app")
+        GradleTestProject lib1 = project.getSubproject("lib1")
+        GradleTestProject lib2 = project.getSubproject("lib2")
 
         assertThat(models).containsKey(":app")
 
         AndroidProject model = models.get(":app")
 
-        File apk = project.getSubproject("app").getApk("debug")
-        assertThatZip(apk).contains("lib/x86/libhello-jni.so")
-        assertThatZip(apk).contains("lib/x86/libstlport_shared.so")
-        assertThatZip(apk).contains("lib/x86/libget-string.so")
+        final File apk = project.getSubproject("app").getApk("debug")
+        for (String abi : ABIS) {
+            assertThatZip(apk).contains("lib/$abi/libhello-jni.so")
+            assertThatZip(apk).contains("lib/$abi/libstlport_shared.so")
+            assertThatZip(apk).contains("lib/$abi/libgetstring1.so")
+            assertThatZip(apk).contains("lib/$abi/libgetstring2.so")
 
-        NativeLibrary libModel = findNativeLibraryByAbi(model, "debug", "x86");
-        assertThat(libModel.getDebuggableLibraryFolders()).containsAllOf(
-                app.file("build/intermediates/binaries/debug/obj/x86"),
-                lib1.file("build/intermediates/binaries/debug/obj/x86"),
-                lib2.file("build/intermediates/binaries/debug/obj/x86"),
-        )
+            NativeLibrary libModel = findNativeLibraryByAbi(model, "debug", abi)
+            assertThat(libModel).isNotNull();
+            assertThat(libModel.getDebuggableLibraryFolders()).containsAllOf(
+                    app.file("build/intermediates/binaries/debug/obj/$abi"),
+                    lib1.file("build/intermediates/binaries/debug/obj/$abi"),
+                    lib2.file("build/intermediates/binaries/debug/obj/$abi"),
+            )
+        }
     }
 
     @Test
@@ -215,35 +229,74 @@ apply plugin: "com.android.model.native"
 
 model {
     android {
-        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-    }
-    android.ndk {
-        moduleName = "hello-jni"
-    }
-    android.sources {
-        main {
-            jni {
-                dependencies {
-                    project ":lib2" linkage "static"
-                }
-                exportedHeaders {
-                    srcDir "src/main/headers"
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        ndk {
+            moduleName "hello-jni"
+        }
+        sources {
+            main {
+                jni {
+                    dependencies {
+                        project ":lib2" linkage "static"
+                    }
+                    exportedHeaders {
+                        srcDir "src/main/headers"
+                    }
                 }
             }
         }
     }
 }
 """
+        Map<String, NativeAndroidProject> models =
+                project.executeAndReturnMultiModel(
+                        NativeAndroidProject.class,
+                        "clean",
+                        ":app:assembleDebug")
+        NativeAndroidProject model = models.get(":app")
+        File apk = project.getSubproject("app").getApk("debug")
+        for (String abi : ABIS) {
+            assertThatZip(apk).contains("lib/$abi/libhello-jni.so")
+            assertThatZip(apk).contains("lib/$abi/libstlport_shared.so")
+            assertThatZip(apk).doesNotContain("lib/$abi/libget-string.so")
+
+            // Check that the static library is compiled, but not the shared library.
+            GradleTestProject lib2 = project.getSubproject("lib2")
+            assertThat(lib2.file("build/intermediates/binaries/debug/obj/$abi/libgetstring2.a")).exists()
+            assertThat(lib2.file("build/intermediates/binaries/debug/obj/$abi/libgetstring2.so")).doesNotExist()
+        }
+        for (NativeSettings settings : model.getSettings()) {
+            assertThat(settings.getCompilerFlags()).contains("-I" + lib1.file("src/main/headers"))
+        }
+    }
+
+    @Test
+    void "check update in lib triggers rebuild"() {
         project.execute("clean", ":app:assembleDebug")
+        GradleTestProject app = project.getSubproject("app")
+        GradleTestProject lib1 = project.getSubproject("lib1")
+        GradleTestProject lib2 = project.getSubproject("lib2")
+
         File apk = project.getSubproject("app").getApk("debug")
         assertThatZip(apk).contains("lib/x86/libhello-jni.so")
         assertThatZip(apk).contains("lib/x86/libstlport_shared.so")
-        assertThatZip(apk).doesNotContain("lib/x86/libget-string.so")
 
-        // Check that the static library is compiled, but not the shared library.
-        GradleTestProject lib2 = project.getSubproject("lib2")
-        assertThat(lib2.file("build/intermediates/binaries/debug/obj/x86/libget-string.a")).exists()
-        assertThat(lib2.file("build/intermediates/binaries/debug/obj/x86/libget-string.so")).doesNotExist()
+        lib2.file("src/main/jni/lib2.cpp") << "void foo() {}"
+
+        File appSo = app.file("build/intermediates/binaries/debug/obj/x86/libhello-jni.so")
+        File lib1So = lib1.file("build/intermediates/binaries/debug/obj/x86/libgetstring1.so")
+        File lib2So = lib2.file("build/intermediates/binaries/debug/obj/x86/libgetstring2.so")
+
+        long appModifiedTime = appSo.lastModified()
+        long lib1ModifiedTime = lib1So.lastModified()
+        long lib2ModifiedTime = lib2So.lastModified()
+
+        project.stdout.reset()
+        project.execute(":app:assembleDebug")
+
+        assertThat(lib2So).isNewerThan(lib2ModifiedTime)
+        assertThat(lib1So).isNewerThan(lib1ModifiedTime)
+        assertThat(appSo).isNewerThan(appModifiedTime)
     }
 
     private static NativeLibrary findNativeLibraryByAbi(

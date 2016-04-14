@@ -194,7 +194,10 @@ public class GradleCoordinate {
 
         @Override
         public boolean isPreview() {
-            return mString.startsWith(PREVIEW_ID) || mString.equals("SNAPSHOT");
+            return mString.startsWith(PREVIEW_ID)
+                   || mString.startsWith("alpha")
+                   || mString.startsWith("beta")
+                   || mString.equals("SNAPSHOT");
         }
 
         @Override
@@ -467,7 +470,7 @@ public class GradleCoordinate {
 
     @Override
     public String toString() {
-        String s = String.format(Locale.US, "%s:%s:%s", mGroupId, mArtifactId, getFullRevision());
+        String s = String.format(Locale.US, "%s:%s:%s", mGroupId, mArtifactId, getRevision());
         if (mArtifactType != null) {
             s += "@" + mArtifactType.toString();
         }
@@ -507,7 +510,8 @@ public class GradleCoordinate {
         return mRevisions.get(mRevisions.size() - 1) == PLUS_REV;
     }
 
-    public String getFullRevision() {
+    @NonNull
+    public String getRevision() {
         StringBuilder revision = new StringBuilder();
         for (RevisionComponent component : mRevisions) {
             if (revision.length() > 0) {

@@ -36,9 +36,6 @@ import proguard.ProGuard;
 import proguard.classfile.util.ClassUtil;
 import proguard.util.ListUtil;
 
-/**
- *
- */
 public abstract class BaseProguardAction extends ProguardConfigurable {
 
     protected static final List<String> JAR_FILTER = ImmutableList.of("!META-INF/MANIFEST.MF");
@@ -55,23 +52,21 @@ public abstract class BaseProguardAction extends ProguardConfigurable {
         new ProGuard(configuration).execute();
     }
 
-    @NonNull
-    public BaseProguardAction keep(@NonNull String keep) throws ParseException {
+    @Override
+    public void keep(@NonNull String keep) {
         if (configuration.keep == null) {
             configuration.keep = Lists.newArrayList();
         }
 
         ClassSpecification classSpecification;
         try {
-            ConfigurationParser parser = new ConfigurationParser(new String[] { keep }, null);
-
-            try {
-                classSpecification = parser.parseClassSpecificationArguments();
-            } finally {
-                parser.close();
-            }
+            ConfigurationParser parser = new ConfigurationParser(new String[]{keep}, null);
+            classSpecification = parser.parseClassSpecificationArguments();
         } catch (IOException e) {
-            throw new ParseException(e.getMessage());
+            // No IO happens when parsing in-memory strings.
+            throw new AssertionError(e);
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
         }
 
         //noinspection unchecked
@@ -83,7 +78,6 @@ public abstract class BaseProguardAction extends ProguardConfigurable {
                 false /*allowoptimization*/,
                 false /*allowobfuscation*/,
                 classSpecification));
-        return this;
     }
 
     public void dontshrink() {
@@ -106,6 +100,7 @@ public abstract class BaseProguardAction extends ProguardConfigurable {
         configuration.keepAttributes = Lists.newArrayListWithExpectedSize(0);
     }
 
+    @Override
     public void dontwarn(@NonNull String dontwarn) {
         if (configuration.warn == null) {
             configuration.warn = Lists.newArrayList();
@@ -118,7 +113,11 @@ public abstract class BaseProguardAction extends ProguardConfigurable {
     }
 
     public void dontwarn() {
-        configuration.warn = ImmutableList.of();
+        configuration.warn = Lists.newArrayList("**");
+    }
+
+    public void dontnote() {
+        configuration.note = Lists.newArrayList("**");
     }
 
     public void forceprocessing() {
@@ -147,10 +146,6 @@ public abstract class BaseProguardAction extends ProguardConfigurable {
         inputJar(configuration.programJars, jarFile, null);
     }
 
-    protected void inJar(@NonNull File jarFile, @Nullable List<String> filter) {
-        inputJar(configuration.programJars, jarFile, filter);
-    }
-
     protected void outJar(@NonNull File file) {
         ClassPathEntry classPathEntry = new ClassPathEntry(file, true /*output*/);
         configuration.programJars.add(classPathEntry);
@@ -158,10 +153,6 @@ public abstract class BaseProguardAction extends ProguardConfigurable {
 
     protected void libraryJar(@NonNull File jarFile) {
         inputJar(configuration.libraryJars, jarFile, null);
-    }
-
-    protected void libraryJar(@NonNull File jarFile, @Nullable List<String> filter) {
-        inputJar(configuration.libraryJars, jarFile, filter);
     }
 
     protected static void inputJar(

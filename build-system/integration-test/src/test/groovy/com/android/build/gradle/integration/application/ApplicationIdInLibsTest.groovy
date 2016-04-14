@@ -17,7 +17,7 @@
 package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ApkHelper
-import com.android.build.gradle.integration.common.utils.FileHelper
+import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidArtifactOutput
@@ -53,7 +53,7 @@ class ApplicationIdInLibsTest {
                 models,
                 "'com.example.manifest_merger_example.flavor.permission.C2D_MESSAGE'"))
 
-        FileHelper.searchAndReplace(
+        TestFileUtils.searchAndReplace(
                 project.file('app/build.gradle'),
                 "manifest_merger_example.flavor",
                 "manifest_merger_example.change")

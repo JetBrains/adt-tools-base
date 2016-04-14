@@ -21,8 +21,6 @@ import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * An ID is a codeable unique identifier.

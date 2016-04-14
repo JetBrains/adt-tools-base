@@ -17,24 +17,36 @@
 package com.android.sdklib.repository.local;
 
 import com.android.annotations.NonNull;
-import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDesc;
+import com.android.repository.Revision;
 
 import java.io.File;
 import java.util.Properties;
 
 /**
  * Local package representing the Android LLDB.
+ *
+ * @deprecated in favor of new sdk system
  */
+@Deprecated
 public class LocalLLDBPkgInfo extends LocalPkgInfo {
+  /**
+   * The LLDB SDK package revision's major and minor numbers are pinned in Android Studio.
+   *
+   * @deprecated in favor of LLDBSdkPackageInstaller#PINNED_REVISION.
+   */
+
+  @Deprecated
+  public static final Revision PINNED_REVISION = new Revision(2, 0);
+
   @NonNull
   private final IPkgDesc mDesc;
 
   protected LocalLLDBPkgInfo(@NonNull LocalSdk localSdk,
-                            @NonNull File localDir,
-                            @NonNull Properties sourceProps,
-                            @NonNull FullRevision revision) {
+                             @NonNull File localDir,
+                             @NonNull Properties sourceProps,
+                             @NonNull Revision revision) {
     super(localSdk, localDir, sourceProps);
     mDesc = PkgDesc.Builder.newLLDB(revision).setDescriptionShort("LLDB").setListDisplay("LLDB").create();
   }

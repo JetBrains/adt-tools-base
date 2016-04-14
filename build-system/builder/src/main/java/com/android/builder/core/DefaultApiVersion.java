@@ -101,7 +101,7 @@ public class DefaultApiVersion implements ApiVersion {
 
     @Override
     public String toString() {
-        return "ApiVersionImpl{" +
+        return "DefaultApiVersion{" +
                 "mApiLevel=" + mApiLevel +
                 ", mCodename='" + mCodename + '\'' +
                 '}';

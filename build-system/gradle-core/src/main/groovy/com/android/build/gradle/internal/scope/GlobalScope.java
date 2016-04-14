@@ -26,6 +26,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.AndroidGradleOptions;
+import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.internal.SdkHandler;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.model.AndroidProject;
@@ -34,35 +35,49 @@ import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 
 import org.gradle.api.Project;
+import org.gradle.api.internal.tasks.options.Option;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import java.io.File;
+import java.util.EnumSet;
 
 /**
  * A scope containing data for the Android plugin.
  */
 public class GlobalScope {
+
     @NonNull
     private Project project;
+
     @NonNull
     private AndroidBuilder androidBuilder;
+
     @NonNull
     private AndroidConfig extension;
+
     @NonNull
     private SdkHandler sdkHandler;
+
     @NonNull
     private ToolingModelBuilderRegistry toolingRegistry;
 
     @NonNull
     private final File intermediatesDir;
+
     @NonNull
     private final File generatedDir;
+
     @NonNull
     private final File reportsDir;
+
     @NonNull
     private final File outputsDir;
+
     @Nullable
     private File mockableAndroidJarFile;
+
+    @NonNull
+    private final EnumSet<OptionalCompilationStep> optionalCompilationSteps;
 
     public GlobalScope(
             @NonNull Project project,
@@ -79,6 +94,7 @@ public class GlobalScope {
         generatedDir = new File(getBuildDir(), FD_GENERATED);
         reportsDir = new File(getBuildDir(), FD_REPORTS);
         outputsDir = new File(getBuildDir(), FD_OUTPUTS);
+        optionalCompilationSteps = AndroidGradleOptions.getOptionalCompilationSteps(project);
     }
 
     @NonNull
@@ -187,5 +203,14 @@ public class GlobalScope {
         return Objects.firstNonNull(
                 AndroidGradleOptions.getApkLocation(project),
                 getDefaultApkLocation());
+    }
+
+    public boolean isActive(OptionalCompilationStep step) {
+        return optionalCompilationSteps.contains(step);
+    }
+
+    @NonNull
+    public String getArchivesBaseName() {
+        return (String)getProject().getProperties().get("archivesBaseName");
     }
 }

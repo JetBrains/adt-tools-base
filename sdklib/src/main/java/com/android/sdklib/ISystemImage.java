@@ -19,8 +19,9 @@ package com.android.sdklib;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.repository.Revision;
 import com.android.sdklib.devices.Abi;
-import com.android.sdklib.repository.descriptors.IdDisplay;
+import com.android.sdklib.repositoryv2.IdDisplay;
 
 import java.io.File;
 
@@ -64,10 +65,6 @@ public interface ISystemImage extends Comparable<ISystemImage> {
     @NonNull
     File getLocation();
 
-    /** Indicates the location strategy for this system image in the SDK. */
-    @NonNull
-    LocationType getLocationType();
-
     /** Returns the tag of the system image. */
     @NonNull
     IdDisplay getTag();
@@ -92,4 +89,16 @@ public interface ISystemImage extends Comparable<ISystemImage> {
      */
     @NonNull
     File[] getSkins();
+
+    /**
+     * Returns the revision of this system image.
+     */
+    @NonNull
+    Revision getRevision();
+
+    /**
+     * Returns the {@link AndroidVersion} of this system image.
+     */
+    @NonNull
+    AndroidVersion getAndroidVersion();
 }

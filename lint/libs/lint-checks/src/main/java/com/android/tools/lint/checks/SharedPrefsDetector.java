@@ -22,7 +22,7 @@ import static com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser;
+import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
@@ -164,7 +164,7 @@ public class SharedPrefsDetector extends Detector implements Detector.JavaScanne
                 }
                 allowCommitBeforeTarget = true;
             } else {
-                return;
+                allowCommitBeforeTarget = false;
             }
         } else {
             if (!verifiedType) {
@@ -250,6 +250,24 @@ public class SharedPrefsDetector extends Detector implements Detector.JavaScanne
         public boolean visitMethodInvocation(MethodInvocation node) {
             if (node == mTarget) {
                 mSeenTarget = true;
+
+                // Look for chained calls on the target node
+                Node parent = node.getParent();
+                while (parent instanceof MethodInvocation) {
+                    MethodInvocation methodInvocation = (MethodInvocation) parent;
+                    String name = methodInvocation.astName().astValue();
+                    boolean isCommit = "commit".equals(name);
+                    if (isCommit || "apply".equals(name)) {
+                        mFound = true;
+                        if (isCommit) {
+                            suggestApplyIfApplicable(node);
+                        }
+                        break;
+                    }
+
+                    parent = parent.getParent();
+                }
+
             } else if (mAllowCommitBeforeTarget || mSeenTarget || node.astOperand() == mTarget) {
                 String name = node.astName().astValue();
                 boolean isCommit = "commit".equals(name);
@@ -258,55 +276,61 @@ public class SharedPrefsDetector extends Detector implements Detector.JavaScanne
                     // on the right type of object?
                     mFound = true;
 
-                    ResolvedNode resolved = mContext.resolve(node);
-                    if (resolved instanceof JavaParser.ResolvedMethod) {
-                        ResolvedMethod method = (ResolvedMethod) resolved;
-                        JavaParser.ResolvedClass clz = method.getContainingClass();
-                        if (clz.isSubclassOf("android.content.SharedPreferences.Editor", false)
-                                && mContext.getProject().getMinSdkVersion().getApiLevel() >= 9) {
-                            // See if the return value is read: can only replace commit with
-                            // apply if the return value is not considered
-                            Node parent = node.getParent();
-                            boolean returnValueIgnored = false;
-                            if (parent instanceof MethodDeclaration ||
-                                    parent instanceof ConstructorDeclaration ||
-                                    parent instanceof ClassDeclaration ||
-                                    parent instanceof Block ||
-                                    parent instanceof ExpressionStatement) {
-                                returnValueIgnored = true;
-                            } else if (parent instanceof Statement) {
-                                if (parent instanceof If) {
-                                    returnValueIgnored = ((If) parent).astCondition() != node;
-                                } else if (parent instanceof Return) {
-                                    returnValueIgnored = false;
-                                } else if (parent instanceof VariableDeclaration) {
-                                    returnValueIgnored = false;
-                                } else if (parent instanceof For) {
-                                    returnValueIgnored = ((For) parent).astCondition() != node;
-                                } else if (parent instanceof While) {
-                                    returnValueIgnored = ((While) parent).astCondition() != node;
-                                } else if (parent instanceof DoWhile) {
-                                    returnValueIgnored = ((DoWhile) parent).astCondition() != node;
-                                } else if (parent instanceof Case) {
-                                    returnValueIgnored = ((Case) parent).astCondition() != node;
-                                } else if (parent instanceof Assert) {
-                                    returnValueIgnored = ((Assert) parent).astAssertion() != node;
-                                } else {
-                                    returnValueIgnored = true;
-                                }
-                            }
-                            if (returnValueIgnored && isCommit) {
-                                String message = "Consider using `apply()` instead; `commit` writes "
-                                        + "its data to persistent storage immediately, whereas "
-                                        + "`apply` will handle it in the background";
-                                mContext.report(ISSUE, node, mContext.getLocation(node), message);
-                            }
-                        }
+                    if (isCommit) {
+                        suggestApplyIfApplicable(node);
                     }
                 }
             }
 
             return super.visitMethodInvocation(node);
+        }
+
+        private void suggestApplyIfApplicable(MethodInvocation node) {
+            ResolvedNode resolved = mContext.resolve(node);
+            if (resolved instanceof ResolvedMethod) {
+                ResolvedMethod method = (ResolvedMethod) resolved;
+                ResolvedClass clz = method.getContainingClass();
+                if (clz.isSubclassOf("android.content.SharedPreferences.Editor", false)
+                        && mContext.getProject().getMinSdkVersion().getApiLevel() >= 9) {
+                    // See if the return value is read: can only replace commit with
+                    // apply if the return value is not considered
+                    Node parent = node.getParent();
+                    boolean returnValueIgnored = false;
+                    if (parent instanceof MethodDeclaration ||
+                            parent instanceof ConstructorDeclaration ||
+                            parent instanceof ClassDeclaration ||
+                            parent instanceof Block ||
+                            parent instanceof ExpressionStatement) {
+                        returnValueIgnored = true;
+                    } else if (parent instanceof Statement) {
+                        if (parent instanceof If) {
+                            returnValueIgnored = ((If) parent).astCondition() != node;
+                        } else if (parent instanceof Return) {
+                            returnValueIgnored = false;
+                        } else if (parent instanceof VariableDeclaration) {
+                            returnValueIgnored = false;
+                        } else if (parent instanceof For) {
+                            returnValueIgnored = ((For) parent).astCondition() != node;
+                        } else if (parent instanceof While) {
+                            returnValueIgnored = ((While) parent).astCondition() != node;
+                        } else if (parent instanceof DoWhile) {
+                            returnValueIgnored = ((DoWhile) parent).astCondition() != node;
+                        } else if (parent instanceof Case) {
+                            returnValueIgnored = ((Case) parent).astCondition() != node;
+                        } else if (parent instanceof Assert) {
+                            returnValueIgnored = ((Assert) parent).astAssertion() != node;
+                        } else {
+                            returnValueIgnored = true;
+                        }
+                    }
+                    if (returnValueIgnored) {
+                        String message = "Consider using `apply()` instead; `commit` writes "
+                                + "its data to persistent storage immediately, whereas "
+                                + "`apply` will handle it in the background";
+                        mContext.report(ISSUE, node, mContext.getLocation(node), message);
+                    }
+                }
+            }
         }
 
         @Override

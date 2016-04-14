@@ -168,7 +168,6 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
      * @param consumer the consumer of the merge.
      * @param doCleanUp clean up the state to be able to do further incremental merges. If this
      *                  is a one-shot merge, this can be false to improve performance.
-
      * @throws MergingException such as a DuplicateDataException or a
      *      MergeConsumer.ConsumerException if something goes wrong
      */
@@ -259,6 +258,11 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
                 // done searching, we should at least have something, unless we only
                 // found items that are not meant to be written (attr inside declare styleable)
                 assert foundIgnoredItem || previouslyWritten != null || toWrite != null;
+
+                if (toWrite != null && !filterAccept(toWrite)) {
+                    toWrite = null;
+                }
+
 
                 //noinspection ConstantConditions
                 if (previouslyWritten == null && toWrite == null) {
@@ -466,8 +470,8 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
      * If the load mode is set to incrementalState then we want the items that are in the current
      * merge result to have their state be WRITTEN.
      *
-     * This will allow further updates with {@link #mergeData(MergeConsumer, boolean)} to ignore the
-     * state at load time and only apply the new changes.
+     * This will allow further updates with {@link #mergeData(MergeConsumer, boolean)} to
+     * ignore the state at load time and only apply the new changes.
      *
      * @see #loadFromBlob(java.io.File, boolean)
      * @see DataItem#isWritten()
@@ -690,5 +694,15 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
     @Override
     public String toString() {
         return Arrays.toString(mDataSets.toArray());
+    }
+
+    /**
+     * Method that implements data filters. A data filter will accept or reject a data item.
+     * The default implementation will accept all items but subclasses may override this.
+     * @param dataItem the data item to filter
+     * @return should this data item be accepted?
+     */
+    protected boolean filterAccept(@NonNull I dataItem) {
+        return true;
     }
 }

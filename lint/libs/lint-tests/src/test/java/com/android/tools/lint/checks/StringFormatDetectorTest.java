@@ -23,7 +23,7 @@ import com.android.tools.lint.detector.api.Detector;
 import java.util.HashSet;
 import java.util.Set;
 
-@SuppressWarnings("javadoc")
+@SuppressWarnings({"javadoc", "ClassNameDiffersFromFileName"})
 public class StringFormatDetectorTest extends AbstractCheckTest {
     @Override
     protected Detector getDetector() {
@@ -146,6 +146,7 @@ public class StringFormatDetectorTest extends AbstractCheckTest {
     }
 
     public void testSuppressed() throws Exception {
+        //noinspection ClassNameDiffersFromFileName,ConstantConditions
         assertEquals(
             "No warnings.",
 
@@ -463,6 +464,14 @@ public class StringFormatDetectorTest extends AbstractCheckTest {
         //   183643: Lint format detector should apply to Context#getString
         // It also checks that we handle Object[] properly
         assertEquals(""
+                + "src/test/pkg/FormatCheck.java:11: Error: Format string 'zero_args' is not a valid format string so it should not be passed to String.format [StringFormatInvalid]\n"
+                + "        context.getString(R.string.zero_args, \"first\"); // ERROR\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "    res/values/strings.xml:4: This definition does not require arguments\n"
+                + "src/test/pkg/FormatCheck.java:13: Error: Format string 'zero_args' is not a valid format string so it should not be passed to String.format [StringFormatInvalid]\n"
+                + "        context.getString(R.string.zero_args, new Object[] { \"first\" }); // ERROR\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "    res/values/strings.xml:4: This definition does not require arguments\n"
                 + "src/test/pkg/FormatCheck.java:17: Error: Wrong argument count, format string one_arg requires 1 but format call supplies 2 [StringFormatMatches]\n"
                 + "        context.getString(R.string.one_arg, \"too\", \"many\"); // ERROR: too many arguments\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
@@ -491,7 +500,7 @@ public class StringFormatDetectorTest extends AbstractCheckTest {
                 + "        fragment.getString(R.string.one_arg, \"too\", \"many\", \"args\"); // ERROR: not enough arguments\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "    res/values/strings.xml:5: This definition requires 1 arguments\n"
-                + "7 errors, 0 warnings\n",
+                + "9 errors, 0 warnings\n",
 
                 lintProject(
                         java("src/test/pkg/FormatCheck.java", ""
@@ -554,6 +563,152 @@ public class StringFormatDetectorTest extends AbstractCheckTest {
                                 + "    <string name=\"zero_args\">Hello</string>\n"
                                 + "    <string name=\"one_arg\">Hello %1$s</string>\n"
                                 + "    <string name=\"two_args\">Hello %1$s %2$s</string>\n"
+                                + "</resources>\n"
+                                + "\n")
+                ));
+    }
+
+    /**
+     * This test checks the same behaviour as {@link #testAdditionalGetStringMethods()} when lint
+     * is running incrementally.
+     */
+    @SuppressWarnings("ClassNameDiffersFromFileName")
+    public void testAdditionalGetStringMethodsIncrementally() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/FormatCheck.java:11: Error: Format string 'zero_args' is not a valid format string so it should not be passed to String.format [StringFormatInvalid]\n"
+                + "        context.getString(R.string.zero_args, \"first\"); // ERROR\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "    res/values/strings.xml: This definition does not require arguments\n"
+                + "src/test/pkg/FormatCheck.java:13: Error: Format string 'zero_args' is not a valid format string so it should not be passed to String.format [StringFormatInvalid]\n"
+                + "        context.getString(R.string.zero_args, new Object[] { \"first\" }); // ERROR\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "    res/values/strings.xml: This definition does not require arguments\n"
+                + "src/test/pkg/FormatCheck.java:17: Error: Wrong argument count, format string one_arg requires 1 but format call supplies 2 [StringFormatMatches]\n"
+                + "        context.getString(R.string.one_arg, \"too\", \"many\"); // ERROR: too many arguments\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "    res/values/strings.xml: This definition requires 1 arguments\n"
+                + "src/test/pkg/FormatCheck.java:18: Error: Wrong argument count, format string one_arg requires 1 but format call supplies 0 [StringFormatMatches]\n"
+                + "        context.getString(R.string.one_arg, new Object[0]); // ERROR: not enough arguments\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "    res/values/strings.xml: This definition requires 1 arguments\n"
+                + "src/test/pkg/FormatCheck.java:20: Error: Wrong argument count, format string one_arg requires 1 but format call supplies 2 [StringFormatMatches]\n"
+                + "        context.getString(R.string.one_arg, new Object[] { \"first\", \"second\" }); // ERROR\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "    res/values/strings.xml: This definition requires 1 arguments\n"
+                + "src/test/pkg/FormatCheck.java:22: Error: Wrong argument count, format string two_args requires 2 but format call supplies 1 [StringFormatMatches]\n"
+                + "        context.getString(R.string.two_args, \"first\"); // ERROR: too few\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "    res/values/strings.xml: This definition requires 2 arguments\n"
+                + "src/test/pkg/FormatCheck.java:24: Error: Wrong argument count, format string two_args requires 2 but format call supplies 0 [StringFormatMatches]\n"
+                + "        context.getString(R.string.two_args, new Object[0]); // ERROR: not enough arguments\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "    res/values/strings.xml: This definition requires 2 arguments\n"
+                + "src/test/pkg/FormatCheck.java:26: Error: Wrong argument count, format string two_args requires 2 but format call supplies 3 [StringFormatMatches]\n"
+                + "        context.getString(R.string.two_args, new Object[] { \"first\", \"second\", \"third\" }); // ERROR\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "    res/values/strings.xml: This definition requires 2 arguments\n"
+                + "src/test/pkg/FormatCheck.java:36: Error: Wrong argument count, format string one_arg requires 1 but format call supplies 3 [StringFormatMatches]\n"
+                + "        fragment.getString(R.string.one_arg, \"too\", \"many\", \"args\"); // ERROR: not enough arguments\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "    res/values/strings.xml: This definition requires 1 arguments\n"
+                + "9 errors, 0 warnings\n",
+
+                lintProjectIncrementally(
+                        "src/test/pkg/FormatCheck.java",
+                        java("src/test/pkg/FormatCheck.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.app.Fragment;\n"
+                                + "import android.content.Context;\n"
+                                + "\n"
+                                + "\n"
+                                + "\n"
+                                + "public class FormatCheck {\n"
+                                + "    public static void testContext(Context context) {\n"
+                                + "        context.getString(R.string.zero_args); // OK: Just looking up the string (includes %1$s)\n"
+                                + "        context.getString(R.string.zero_args, \"first\"); // ERROR\n"
+                                + "        context.getString(R.string.zero_args, new Object[0]); // OK\n"
+                                + "        context.getString(R.string.zero_args, new Object[] { \"first\" }); // ERROR\n"
+                                + "\n"
+                                + "        context.getString(R.string.one_arg); // OK: Just looking up the string (includes %1$s)\n"
+                                + "        context.getString(R.string.one_arg, \"first\"); // OK\n"
+                                + "        context.getString(R.string.one_arg, \"too\", \"many\"); // ERROR: too many arguments\n"
+                                + "        context.getString(R.string.one_arg, new Object[0]); // ERROR: not enough arguments\n"
+                                + "        context.getString(R.string.one_arg, new Object[] { \"first\" }); // OK\n"
+                                + "        context.getString(R.string.one_arg, new Object[] { \"first\", \"second\" }); // ERROR\n"
+                                + "        \n"
+                                + "        context.getString(R.string.two_args, \"first\"); // ERROR: too few\n"
+                                + "        context.getString(R.string.two_args, \"first\", \"second\"); // OK\n"
+                                + "        context.getString(R.string.two_args, new Object[0]); // ERROR: not enough arguments\n"
+                                + "        context.getString(R.string.two_args, new Object[] { \"first\", \"second\" }); // OK\n"
+                                + "        context.getString(R.string.two_args, new Object[] { \"first\", \"second\", \"third\" }); // ERROR\n"
+                                + "        String[] args2 = new String[] { \"first\", \"second\" };\n"
+                                + "        context.getString(R.string.two_args, args2); // OK\n"
+                                + "        String[] args3 = new String[] { \"first\", \"second\", \"third\" };\n"
+                                + "        context.getString(R.string.two_args, args3); // ERROR\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public static void testFragment(Fragment fragment) {\n"
+                                + "        fragment.getString(R.string.one_arg); // OK: Just looking up the string\n"
+                                + "        fragment.getString(R.string.one_arg, \"\"); // OK: Not checking non-varargs version\n"
+                                + "        fragment.getString(R.string.one_arg, \"too\", \"many\", \"args\"); // ERROR: not enough arguments\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public static void testArrayTypeConversions(Context context) {\n"
+                                + "        context.getString(R.string.one_arg, new Object[] { 5 }); // ERROR: Wrong type\n"
+                                + "        context.getString(R.string.two_args, new Object[] { 5, 5.0f }); // ERROR: Wrong type\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public static final class R {\n"
+                                + "        public static final class string {\n"
+                                + "            public static final int hello = 0x7f0a0000;\n"
+                                + "            public static final int zero_args = 0x7f0a0001;\n"
+                                + "            public static final int one_arg = 0x7f0a0002;\n"
+                                + "            public static final int two_args = 0x7f0a0003;\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "}\n"),
+                        xml("res/values/strings.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<resources>\n"
+                                + "    <string name=\"hello\">Hello %1$s</string>\n"
+                                + "    <string name=\"zero_args\">Hello</string>\n"
+                                + "    <string name=\"one_arg\">Hello %1$s</string>\n"
+                                + "    <string name=\"two_args\">Hello %1$s %2$s</string>\n"
+                                + "</resources>\n"
+                                + "\n")
+                ));
+    }
+
+    public void testIssue197940() throws Exception {
+        // Regression test for
+        //   https://code.google.com/p/android/issues/detail?id=197940
+        //    197940: The linter alerts about a wrong String.format format, but it's ok
+        assertEquals("No warnings.",
+
+                lintProject(
+                        java("src/test/pkg/FormatCheck.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.content.res.Resources;\n"
+                                + "\n"
+                                + "public class FormatCheck {\n"
+
+                                + "    private static String test(Resources resources) {\n"
+                                + "        return String.format(\"%s\", resources.getString(R.string.a_b_c));\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public static final class R {\n"
+                                + "        public static final class string {\n"
+                                + "            public static final int a_b_c = 0x7f0a0000;\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "}\n"),
+                        xml("res/values/strings.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<resources>\n"
+                                + "    <string name=\"a_b_c\">A b c </string>\n\n"
+                                + "    <string name=\"a_b_c_2\">A %1$s c </string>\n\n"
                                 + "</resources>\n"
                                 + "\n")
                 ));

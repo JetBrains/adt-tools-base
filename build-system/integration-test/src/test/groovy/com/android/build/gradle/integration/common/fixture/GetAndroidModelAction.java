@@ -35,10 +35,18 @@ public class GetAndroidModelAction<T> implements BuildAction<Map<String, T>> {
 
     private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
 
-    private Class<T> type;
+    private final Class<T> type;
+
+    // Determines whether models are fetched with multiple threads.
+    private final boolean isMultiThreaded;
 
     public GetAndroidModelAction(Class<T> type) {
+        this(type, true);
+    }
+
+    public GetAndroidModelAction(Class<T> type, boolean isMultiThreaded) {
         this.type = type;
+        this.isMultiThreaded = isMultiThreaded;
     }
 
     @Override
@@ -55,24 +63,33 @@ public class GetAndroidModelAction<T> implements BuildAction<Map<String, T>> {
         List<Thread> threads = Lists.newArrayListWithCapacity(CPU_COUNT);
         List<ModelQuery> queries = Lists.newArrayListWithCapacity(CPU_COUNT);
 
-        for (int i = 0 ; i < CPU_COUNT ; i++) {
+
+        if (isMultiThreaded) {
+            for (int i = 0; i < CPU_COUNT; i++) {
+                ModelQuery modelQuery = new ModelQuery(
+                        projectList,
+                        buildController);
+                queries.add(modelQuery);
+                Thread t = new Thread(modelQuery);
+                threads.add(t);
+                t.start();
+            }
+
+            for (int i = 0; i < CPU_COUNT; i++) {
+                try {
+                    threads.get(i).join();
+                    ModelQuery modelQuery = queries.get(i);
+                    modelMap.putAll(modelQuery.getModels());
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        } else {
             ModelQuery modelQuery = new ModelQuery(
                     projectList,
                     buildController);
-            queries.add(modelQuery);
-            Thread t = new Thread(modelQuery);
-            threads.add(t);
-            t.start();
-        }
-
-        for (int i = 0 ; i < CPU_COUNT ; i++) {
-            try {
-                threads.get(i).join();
-                ModelQuery modelQuery = queries.get(i);
-                modelMap.putAll(modelQuery.getModels());
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
+            modelQuery.run();
+            modelMap.putAll(modelQuery.getModels());
         }
 
         long t2 = System.currentTimeMillis();

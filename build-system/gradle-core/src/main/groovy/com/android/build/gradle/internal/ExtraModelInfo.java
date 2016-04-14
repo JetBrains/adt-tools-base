@@ -39,7 +39,11 @@ import com.android.builder.model.SyncIssue;
 import com.android.ide.common.blame.Message;
 import com.android.ide.common.blame.MessageJsonSerializer;
 import com.android.ide.common.blame.SourceFilePosition;
+import com.android.utils.SdkUtils;
+import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
@@ -51,6 +55,7 @@ import org.gradle.api.artifacts.Configuration;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -102,29 +107,34 @@ public class ExtraModelInfo extends ErrorReporter {
 
     @Override
     @NonNull
-    public SyncIssue handleSyncError(@NonNull String data, int type, @NonNull String msg) {
+    protected SyncIssue handleSyncIssue(
+            @Nullable String data,
+            int type,
+            int severity,
+            @NonNull String msg) {
         SyncIssue issue;
         switch (getMode()) {
             case STANDARD:
-                if (!isDependencyIssue(type)) {
+                if (severity != SyncIssue.SEVERITY_WARNING && !isDependencyIssue(type)) {
                     throw new GradleException(msg);
                 }
                 // if it's a dependency issue we don't throw right away. we'll
                 // throw during build instead.
                 // but we do log.
                 project.getLogger().warn("WARNING: " + msg);
-                issue = new SyncIssueImpl(type, SyncIssue.SEVERITY_ERROR, data, msg);
+                issue = new SyncIssueImpl(type, severity, data, msg);
                 break;
             case IDE_LEGACY:
                 // compat mode for the only issue supported before the addition of SyncIssue
                 // in the model.
-                if (type != SyncIssue.TYPE_UNRESOLVED_DEPENDENCY) {
+                if (severity != SyncIssue.SEVERITY_WARNING
+                        && type != SyncIssue.TYPE_UNRESOLVED_DEPENDENCY) {
                     throw new GradleException(msg);
                 }
                 // intended fall-through
             case IDE:
                 // new IDE, able to support SyncIssue.
-                issue = new SyncIssueImpl(type, SyncIssue.SEVERITY_ERROR, data, msg);
+                issue = new SyncIssueImpl(type, severity, data, msg);
                 syncIssues.put(SyncIssueKey.from(issue), issue);
                 break;
             default:
@@ -153,51 +163,69 @@ public class ExtraModelInfo extends ErrorReporter {
 
     @Override
     public void receiveMessage(@NonNull Message message) {
-        StringBuilder errorStringBuilder = new StringBuilder();
-        if (errorFormatMode == ErrorFormatMode.HUMAN_READABLE) {
-            for (SourceFilePosition pos : message.getSourceFilePositions()) {
-                errorStringBuilder.append(pos.toString());
-                errorStringBuilder.append(' ');
-            }
-            if (errorStringBuilder.length() > 0) {
-                errorStringBuilder.append(": ");
-            }
-            if (message.getToolName().isPresent()) {
-                errorStringBuilder.append(message.getToolName().get()).append(": ");
-            }
-            errorStringBuilder.append(message.getText()).append("\n");
-
-        } else {
-            //noinspection ConstantConditions mGson != null when errorFormatMode == MACHINE_PARSABLE
-            errorStringBuilder.append(STDOUT_ERROR_TAG)
-                    .append(mGson.toJson(message)).append("\n");
-        }
-
-        String messageString = errorStringBuilder.toString();
-
         switch (message.getKind()) {
             case ERROR:
-                project.getLogger().error(messageString);
+                if (errorFormatMode == ErrorFormatMode.MACHINE_PARSABLE) {
+                    project.getLogger().error(machineReadableMessage(message));
+                } else {
+                    project.getLogger().error(humanReadableMessage(message));
+                }
                 break;
             case WARNING:
-                project.getLogger().warn(messageString);
+                if (errorFormatMode == ErrorFormatMode.MACHINE_PARSABLE) {
+                    project.getLogger().warn(machineReadableMessage(message));
+                } else {
+                    project.getLogger().warn(humanReadableMessage(message));
+                }
                 break;
             case INFO:
-                project.getLogger().info(messageString);
+                project.getLogger().info(humanReadableMessage(message));
                 break;
             case STATISTICS:
-                project.getLogger().trace(messageString);
+                project.getLogger().trace(humanReadableMessage(message));
                 break;
             case UNKNOWN:
-                project.getLogger().debug(messageString);
+                project.getLogger().debug(humanReadableMessage(message));
                 break;
             case SIMPLE:
-                project.getLogger().info(messageString);
+                project.getLogger().info(humanReadableMessage(message));
                 break;
         }
     }
 
-        public Collection<ArtifactMetaData> getExtraArtifacts() {
+    private static String humanReadableMessage(@NonNull Message message) {
+        StringBuilder errorStringBuilder = new StringBuilder();
+        List<SourceFilePosition> positions = message.getSourceFilePositions();
+        if (positions.size() != 1 ||
+                !SourceFilePosition.UNKNOWN.equals(Iterables.getOnlyElement(positions))) {
+            errorStringBuilder.append(Joiner.on(' ').join(positions));
+        }
+        if (errorStringBuilder.length() > 0) {
+            errorStringBuilder.append(": ");
+        }
+        if (message.getToolName().isPresent()) {
+            errorStringBuilder.append(message.getToolName().get()).append(": ");
+        }
+        errorStringBuilder.append(message.getText());
+
+        String rawMessage = message.getRawMessage();
+        if (!message.getText().equals(message.getRawMessage())) {
+            String separator = SdkUtils.getLineSeparator();
+            errorStringBuilder.append("\n    ")
+                    .append(rawMessage.replace(separator, separator + "    "));
+        }
+        return errorStringBuilder.toString();
+    }
+
+    /**
+     * Only call if errorFormatMode == {@link ErrorFormatMode#MACHINE_PARSABLE}
+     */
+    private String machineReadableMessage(@NonNull Message message) {
+        Preconditions.checkNotNull(mGson);
+        return STDOUT_ERROR_TAG + mGson.toJson(message);
+    }
+
+    public Collection<ArtifactMetaData> getExtraArtifacts() {
         return extraArtifactMap.values();
     }
 
@@ -295,8 +323,8 @@ public class ExtraModelInfo extends ErrorReporter {
         }
 
         JavaArtifact artifact = new JavaArtifactImpl(
-                name, assembleTaskName, javaCompileTaskName, ideSetupTaskNames,
-                generatedSourceFolders, classesFolder, javaResourcesFolder, null,
+                name, assembleTaskName, javaCompileTaskName,
+                ideSetupTaskNames, generatedSourceFolders, classesFolder, javaResourcesFolder, null,
                 new ConfigurationDependencies(configuration), sourceProvider, null);
 
         extraJavaArtifacts.put(variant.getName(), artifact);

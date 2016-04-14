@@ -36,4 +36,9 @@ public interface NativeFolder {
      * {@link NativeSettings}.
      */
     Map<String, String> getPerLanguageSettings();
+
+    /**
+     * The working directory for the compiler.
+     */
+    File getWorkingDirectory();
 }

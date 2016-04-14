@@ -16,6 +16,8 @@
 
 package com.android.ide.common.process;
 
+import com.android.annotations.NonNull;
+
 /**
  * Internal implementation of ProcessResult used by DefaultProcessExecutor.
  */
@@ -39,6 +41,7 @@ class ProcessResultImpl implements ProcessResult {
         mFailure = failure;
     }
 
+    @NonNull
     @Override
     public ProcessResult assertNormalExitValue() throws ProcessException {
         if (mExitValue != 0) {
@@ -54,6 +57,7 @@ class ProcessResultImpl implements ProcessResult {
         return mExitValue;
     }
 
+    @NonNull
     @Override
     public ProcessResult rethrowFailure() throws ProcessException {
         if (mFailure != null) {

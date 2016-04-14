@@ -26,7 +26,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-import static com.android.build.gradle.integration.common.utils.FileHelper.searchAndReplace
+import static com.android.build.gradle.integration.common.utils.TestFileUtils.searchAndReplace
 /**
  * Ensures that archivesBaseName setting on android project is used when choosing the apk file
  * names

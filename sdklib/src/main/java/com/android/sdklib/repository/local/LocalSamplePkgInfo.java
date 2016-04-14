@@ -18,8 +18,7 @@ package com.android.sdklib.repository.local;
 
 import com.android.annotations.NonNull;
 import com.android.sdklib.AndroidVersion;
-import com.android.sdklib.repository.FullRevision;
-import com.android.sdklib.repository.MajorRevision;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDesc;
 
@@ -40,8 +39,8 @@ public class LocalSamplePkgInfo extends LocalPkgInfo {
                               @NonNull File localDir,
                               @NonNull Properties sourceProps,
                               @NonNull AndroidVersion version,
-                              @NonNull MajorRevision revision,
-                              @NonNull FullRevision minToolsRev) {
+                              @NonNull Revision revision,
+                              @NonNull Revision minToolsRev) {
         super(localSdk, localDir, sourceProps);
         mDesc = PkgDesc.Builder.newSample(version, revision, minToolsRev).create();
     }

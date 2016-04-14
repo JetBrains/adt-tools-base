@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.model;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.builder.model.SyncIssue;
 
 import java.io.Serializable;
@@ -30,10 +31,11 @@ public class SyncIssueImpl implements SyncIssue, Serializable {
 
     private final int type;
     private final int severity;
+    @Nullable
     private final String data;
     private final String message;
 
-    public SyncIssueImpl(int type, int severity, @NonNull String data, @NonNull String message) {
+    public SyncIssueImpl(int type, int severity, @Nullable String data, @NonNull String message) {
         this.type = type;
         this.severity = severity;
         this.data = data;
@@ -50,7 +52,7 @@ public class SyncIssueImpl implements SyncIssue, Serializable {
         return type;
     }
 
-    @NonNull
+    @Nullable
     @Override
     public String getData() {
         return data;

@@ -15,14 +15,12 @@
  */
 
 package com.android.build.gradle.integration.component
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
-
 /**
  * Test AndroidComponentModelPlugin.
  */
@@ -41,12 +39,14 @@ import com.android.build.gradle.model.AndroidComponentModelPlugin
 apply plugin: AndroidComponentModelPlugin
 
 model {
-    android.buildTypes {
-        create("custom")
-    }
-    android.productFlavors {
-        create("flavor1")
-        create("flavor2")
+    android {
+        buildTypes {
+            create("custom")
+        }
+        productFlavors {
+            create("flavor1")
+            create("flavor2")
+        }
     }
 }
 """

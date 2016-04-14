@@ -413,6 +413,30 @@ public class TranslationDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testConfigKeys() throws Exception {
+        // Some developer services create config files merged with your project, but in some
+        // versions they were missing a translatable="false" entry. Since we know these aren't
+        // keys you normally want to translate, let's filter them for users.
+        TranslationDetector.sCompleteRegions = false;
+        assertEquals("No warnings.",
+                lintProject(
+                        xml("res/values/config.xml", ""
+                                + "<resources>\n"
+                                + "    <string name=\"gcm_defaultSenderId\">SENDER_ID</string>\n"
+                                + "    <string name=\"google_app_id\">App Id</string>\n"
+                                + "    <string name=\"ga_trackingID\">Analytics</string>\n"
+                                + "</resources>\n"),
+                        xml("res/values/strings.xml", ""
+                                + "<resources>\n"
+                                + "    <string name=\"app_name\">My Application</string>\n"
+                                + "</resources>\n"),
+                        xml("res/values-nb/strings.xml", ""
+                                + "<resources>\n"
+                                + "    <string name=\"app_name\">Min Applikasjon</string>\n"
+                                + "</resources>\n")
+                ));
+    }
+
     @Override
     protected TestLintClient createClient() {
         if (!getName().startsWith("testResConfigs")) {

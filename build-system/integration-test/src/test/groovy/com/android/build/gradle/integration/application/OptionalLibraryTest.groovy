@@ -19,9 +19,10 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.SyncIssue
+import com.android.repository.testframework.FakeProgressIndicator
 import com.android.sdklib.IAndroidTarget
-import com.android.sdklib.SdkManager
-import com.android.utils.NullLogger
+import com.android.sdklib.repositoryv2.AndroidSdkHandler
+import com.android.sdklib.repositoryv2.targets.AndroidTargetManager
 import groovy.transform.CompileStatic
 import org.junit.After
 import org.junit.Rule
@@ -84,10 +85,10 @@ class OptionalLibraryTest {
 
         // get the SDK folder
         File sdkLocation = new File(System.getenv("ANDROID_HOME"))
-        SdkManager sdkManager = SdkManager.createManager(
-                sdkLocation.getAbsolutePath(),
-                new NullLogger())
-        IAndroidTarget target = sdkManager.getTargetFromHashString('android-23')
+        FakeProgressIndicator progress = new FakeProgressIndicator()
+        AndroidTargetManager targetMgr = AndroidSdkHandler.getInstance(sdkLocation).
+                getAndroidTargetManager(progress)
+        IAndroidTarget target = targetMgr.getTargetFromHashString('android-23', progress)
 
         File targetLocation = new File(target.getLocation())
 
@@ -118,10 +119,10 @@ class OptionalLibraryTest {
 
         // get the SDK folder
         File sdkLocation = new File(System.getenv("ANDROID_HOME"))
-        SdkManager sdkManager = SdkManager.createManager(
-                sdkLocation.getAbsolutePath(),
-                new NullLogger())
-        IAndroidTarget target = sdkManager.getTargetFromHashString('android-23')
+        FakeProgressIndicator progress = new FakeProgressIndicator()
+        AndroidTargetManager targetMgr = AndroidSdkHandler.getInstance(sdkLocation).
+                getAndroidTargetManager(progress)
+        IAndroidTarget target = targetMgr.getTargetFromHashString('android-23', progress)
 
         File targetLocation = new File(target.getLocation())
 

@@ -244,7 +244,11 @@ public class CleanupDetector extends Detector implements JavaScanner {
 
     private static void checkRecycled(@NonNull final JavaContext context, @NonNull Node node,
             @NonNull final String recycleType, @NonNull final String recycleName) {
-        ResolvedVariable boundVariable = getVariable(context, node);
+        Node variableNode = getVariableNode(node);
+        if (variableNode == null) {
+            return;
+        }
+        ResolvedVariable boundVariable = getResolvedVariable(context, variableNode);
         if (boundVariable == null) {
             return;
         }
@@ -253,8 +257,7 @@ public class CleanupDetector extends Detector implements JavaScanner {
         if (method == null) {
             return;
         }
-
-        FinishVisitor visitor = new FinishVisitor(context, boundVariable) {
+        FinishVisitor visitor = new FinishVisitor(context, variableNode, boundVariable) {
             @Override
             protected boolean isCleanupCall(@NonNull MethodInvocation call) {
                 String methodName = call.astName().astValue();
@@ -305,7 +308,9 @@ public class CleanupDetector extends Detector implements JavaScanner {
     private static boolean checkTransactionCommits(@NonNull JavaContext context,
             @NonNull MethodInvocation node) {
         if (isBeginTransaction(context, node)) {
-            ResolvedVariable boundVariable = getVariable(context, node);
+            Node variableNode = getVariableNode(node);
+            ResolvedVariable boundVariable = variableNode != null
+                    ? getResolvedVariable(context, variableNode) : null;
             if (boundVariable == null && isCommittedInChainedCalls(context, node)) {
                 return true;
             }
@@ -316,7 +321,8 @@ public class CleanupDetector extends Detector implements JavaScanner {
                     return true;
                 }
 
-                FinishVisitor commitVisitor = new FinishVisitor(context, boundVariable) {
+                FinishVisitor commitVisitor = new FinishVisitor(context, variableNode,
+                        boundVariable) {
                     @Override
                     protected boolean isCleanupCall(@NonNull MethodInvocation call) {
                         if (isTransactionCommitMethodCall(mContext, call)) {
@@ -400,7 +406,8 @@ public class CleanupDetector extends Detector implements JavaScanner {
         return (COMMIT.equals(methodName) || COMMIT_ALLOWING_LOSS.equals(methodName)) &&
                 isMethodOnFragmentClass(context, call,
                         FRAGMENT_TRANSACTION_CLS,
-                        FRAGMENT_TRANSACTION_V4_CLS);
+                        FRAGMENT_TRANSACTION_V4_CLS,
+                        true);
     }
 
     private static boolean isShowFragmentMethodCall(@NonNull JavaContext context,
@@ -408,42 +415,50 @@ public class CleanupDetector extends Detector implements JavaScanner {
         String methodName = call.astName().astValue();
         return SHOW.equals(methodName)
                 && isMethodOnFragmentClass(context, call,
-                DIALOG_FRAGMENT, DIALOG_V4_FRAGMENT);
+                DIALOG_FRAGMENT, DIALOG_V4_FRAGMENT, true);
     }
 
     private static boolean isMethodOnFragmentClass(
             @NonNull JavaContext context,
             @NonNull MethodInvocation call,
             @NonNull String fragmentClass,
-            @NonNull String v4FragmentClass) {
+            @NonNull String v4FragmentClass,
+            boolean returnForUnresolved) {
         ResolvedNode resolved = context.resolve(call);
         if (resolved instanceof ResolvedMethod) {
             ResolvedClass containingClass = ((ResolvedMethod) resolved).getContainingClass();
             return containingClass.isSubclassOf(fragmentClass, false) ||
                     containingClass.isSubclassOf(v4FragmentClass, false);
+        } else if (resolved == null) {
+            // If we *can't* resolve the method call, caller can decide
+            // whether to consider the method called or not
+            return returnForUnresolved;
         }
 
         return false;
     }
 
     @Nullable
-    public static ResolvedVariable getVariable(@NonNull JavaContext context,
-            @NonNull Node expression) {
+    public static Node getVariableNode(@NonNull Node expression) {
         Node parent = expression.getParent();
         if (parent instanceof BinaryExpression) {
             BinaryExpression binaryExpression = (BinaryExpression) parent;
             if (binaryExpression.astOperator() == BinaryOperator.ASSIGN) {
-                Expression lhs = binaryExpression.astLeft();
-                ResolvedNode resolved = context.resolve(lhs);
-                if (resolved instanceof ResolvedVariable) {
-                    return (ResolvedVariable) resolved;
-                }
+                return binaryExpression.astLeft();
             }
         } else if (parent instanceof VariableDefinitionEntry) {
-            ResolvedNode resolved = context.resolve(parent);
-            if (resolved instanceof ResolvedVariable) {
-                return (ResolvedVariable) resolved;
-            }
+            return parent;
+        }
+
+        return null;
+    }
+
+    @Nullable
+    public static ResolvedVariable getResolvedVariable(@NonNull JavaContext context,
+            @NonNull Node variable) {
+        ResolvedNode resolved = context.resolve(variable);
+        if (resolved instanceof ResolvedVariable) {
+            return (ResolvedVariable) resolved;
         }
 
         return null;
@@ -478,11 +493,15 @@ public class CleanupDetector extends Detector implements JavaScanner {
     private abstract static class FinishVisitor extends ForwardingAstVisitor {
         protected final JavaContext mContext;
         protected final List<ResolvedVariable> mVariables;
+        private final Node mOriginalVariableNode;
+
         private boolean mContainsCleanup;
         private boolean mEscapes;
 
-        public FinishVisitor(JavaContext context, @NonNull ResolvedVariable variable) {
+        public FinishVisitor(JavaContext context, @NonNull Node variableNode,
+                @NonNull ResolvedVariable variable) {
             mContext = context;
+            mOriginalVariableNode = variableNode;
             mVariables = Lists.newArrayList(variable);
         }
 
@@ -567,10 +586,15 @@ public class CleanupDetector extends Detector implements JavaScanner {
         public boolean visitBinaryExpression(BinaryExpression node) {
             if (node.astOperator() == BinaryOperator.ASSIGN) {
                 Expression rhs = node.astRight();
+                // TEMPORARILY DISABLED; see testDatabaseCursorReassignment
+                // This can result in some false positives right now. Play it
+                // safe instead.
+                boolean clearLhs = false;
                 if (rhs instanceof VariableReference) {
                     ResolvedNode resolved = mContext.resolve(rhs);
                     //noinspection SuspiciousMethodCalls
                     if (resolved != null && mVariables.contains(resolved)) {
+                        clearLhs = false;
                         ResolvedNode resolvedLhs = mContext.resolve(node.astLeft());
                         if (resolvedLhs instanceof ResolvedVariable) {
                             ResolvedVariable variable = (ResolvedVariable) resolvedLhs;
@@ -578,6 +602,18 @@ public class CleanupDetector extends Detector implements JavaScanner {
                         } else if (resolvedLhs instanceof ResolvedField) {
                             mEscapes = true;
                         }
+                    }
+                }
+
+                if (clearLhs) {
+                    // If we reassign one of the variables, clear it out
+                    Expression lhs = node.astLeft();
+                    ResolvedNode resolved = mContext.resolve(lhs);
+                    //noinspection SuspiciousMethodCalls
+                    if (resolved != null && !lhs.equals(mOriginalVariableNode)
+                            && mVariables.contains(resolved)) {
+                        //noinspection SuspiciousMethodCalls
+                        mVariables.remove(resolved);
                     }
                 }
             }

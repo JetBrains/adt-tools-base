@@ -45,11 +45,6 @@ class DependenciesTest {
         project = null
     }
 
-    @AfterClass
-    static void cleanUp() {
-        project = null
-    }
-
     @Test
     @Category(DeviceTests.class)
     void connectedCheck() {

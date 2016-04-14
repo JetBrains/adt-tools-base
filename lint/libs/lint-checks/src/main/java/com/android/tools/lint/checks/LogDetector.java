@@ -103,7 +103,7 @@ public class LogDetector extends Detector implements Detector.JavaScanner {
 
     @SuppressWarnings("SpellCheckingInspection")
     private static final String IS_LOGGABLE = "isLoggable";       //$NON-NLS-1$
-    private static final String LOG_CLS = "android.util.Log";     //$NON-NLS-1$
+    public static final String LOG_CLS = "android.util.Log";     //$NON-NLS-1$
     private static final String PRINTLN = "println";              //$NON-NLS-1$
 
     // ---- Implements Detector.JavaScanner ----

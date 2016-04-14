@@ -31,7 +31,7 @@ import java.util.List;
 public class BuiltinIssueRegistry extends IssueRegistry {
     private static final List<Issue> sIssues;
 
-    static final int INITIAL_CAPACITY = 244;
+    static final int INITIAL_CAPACITY = 253;
 
     static {
         List<Issue> issues = new ArrayList<Issue>(INITIAL_CAPACITY);
@@ -47,6 +47,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(AndroidAutoDetector.MISSING_ON_PLAY_FROM_SEARCH);
         issues.add(AnnotationDetector.FLAG_STYLE);
         issues.add(AnnotationDetector.INSIDE_METHOD);
+        issues.add(AnnotationDetector.SWITCH_TYPE_DEF);
         issues.add(AnnotationDetector.UNIQUE);
         issues.add(ApiDetector.INLINED);
         issues.add(ApiDetector.OVERRIDE);
@@ -55,10 +56,13 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(AppCompatCallDetector.ISSUE);
         issues.add(AppCompatResourceDetector.ISSUE);
         issues.add(AppIndexingApiDetector.ISSUE_APP_INDEXING_API);
-        issues.add(AppIndexingApiDetector.ISSUE_DEEP_LINK_ERROR);
+        issues.add(AppIndexingApiDetector.ISSUE_URL_ERROR);
         issues.add(AppIndexingApiDetector.ISSUE_APP_INDEXING);
+        issues.add(AppLinksAutoVerifyDetector.ISSUE_ERROR);
+        issues.add(AppLinksAutoVerifyDetector.ISSUE_WARNING);
         issues.add(ArraySizeDetector.INCONSISTENT);
         issues.add(AssertDetector.ISSUE);
+        issues.add(BadHostnameVerifierDetector.ISSUE);
         issues.add(ButtonDetector.BACK_BUTTON);
         issues.add(ButtonDetector.CASE);
         issues.add(ButtonDetector.ORDER);
@@ -84,6 +88,8 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(DuplicateIdDetector.WITHIN_LAYOUT);
         issues.add(DuplicateResourceDetector.ISSUE);
         issues.add(DuplicateResourceDetector.TYPE_MISMATCH);
+        issues.add(UnsafeNativeCodeDetector.LOAD);
+        issues.add(UnsafeNativeCodeDetector.UNSAFE_NATIVE_CODE_LOCATION);
         issues.add(ExtraTextDetector.ISSUE);
         issues.add(FieldGetterDetector.ISSUE);
         issues.add(FullBackupContentDetector.ISSUE);
@@ -95,6 +101,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(GradleDetector.DEPRECATED);
         issues.add(GradleDetector.GRADLE_GETTER);
         issues.add(GradleDetector.IDE_SUPPORT);
+        issues.add(GradleDetector.NOT_INTERPOLATED);
         issues.add(GradleDetector.PATH);
         issues.add(GradleDetector.PLUS);
         issues.add(GradleDetector.STRING_INTEGER);
@@ -193,6 +200,8 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(PxUsageDetector.IN_MM_ISSUE);
         issues.add(PxUsageDetector.PX_ISSUE);
         issues.add(PxUsageDetector.SMALL_SP_ISSUE);
+        issues.add(ReadParcelableDetector.ISSUE);
+        issues.add(RecyclerViewDetector.ISSUE);
         issues.add(RegistrationDetector.ISSUE);
         issues.add(RelativeOverlapDetector.ISSUE);
         issues.add(RequiredAttributeDetector.ISSUE);
@@ -309,7 +318,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
             }
 
             if (scope.contains(Scope.JAVA_FILE)) {
-                initialSize += 60;
+                initialSize += 72;
             } else if (scope.contains(Scope.CLASS_FILE)) {
                 initialSize += 15;
             } else if (scope.contains(Scope.MANIFEST)) {

@@ -16,25 +16,33 @@
 
 package com.android.build.gradle.integration.testing
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import org.junit.AfterClass
-import org.junit.ClassRule
+import com.android.build.gradle.integration.common.utils.TestFileUtils
+import groovy.transform.CompileStatic
+import org.junit.Rule
 import org.junit.Test
 /**
  * Runs tests in a big, complicated project.
  */
+@CompileStatic
 class UnitTestingComplexProjectTest {
-    @ClassRule
-    public static GradleTestProject project = GradleTestProject.builder()
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("unitTestingComplexProject")
             .create()
 
-    @AfterClass
-    public static void freeResources() throws Exception {
-        project = null
+    @Test
+    public void appProject() throws Exception {
+        project.execute("clean", "test")
     }
 
     @Test
-    public void appProject() throws Exception {
+    public void libProject() throws Exception {
+        // Make the top-level project a library. Libraries depending on libraries are an edge case
+        // when it comes to generating and using R classes.
+        TestFileUtils.searchAndReplace(
+                project.getSubproject("app").buildFile,
+                "com.android.application",
+                "com.android.library")
         project.execute("clean", "test")
     }
 }

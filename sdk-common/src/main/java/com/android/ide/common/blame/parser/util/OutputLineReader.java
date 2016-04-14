@@ -82,7 +82,7 @@ public class OutputLineReader {
     myPosition++;
   }
 
-  public void pushBack(@NonNull String text) {
+  public void pushBack() {
     myPosition--;
   }
 }

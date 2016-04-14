@@ -19,7 +19,9 @@ package com.android.ddmlib;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ddmlib.log.LogReceiver;
+import com.android.sdklib.AndroidVersion;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +46,7 @@ public interface IDevice extends IShellEnabledDevice {
     String PROP_DEVICE_CPU_ABI2 = "ro.product.cpu.abi2";
     String PROP_BUILD_CHARACTERISTICS = "ro.build.characteristics";
     String PROP_DEVICE_DENSITY = "ro.sf.lcd_density";
+    String PROP_DEVICE_EMULATOR_DENSITY = "qemu.sf.lcd_density";
     String PROP_DEVICE_LANGUAGE = "persist.sys.language";
     String PROP_DEVICE_REGION = "persist.sys.country";
 
@@ -491,18 +494,20 @@ public interface IDevice extends IShellEnabledDevice {
             throws InstallException;
 
     /**
-     * Installs an Android application made of serveral APK files (one main and 0..n split packages)
+     * Installs an Android application made of several APK files (one main and 0..n split packages)
      *
-     * @param apkFilePaths list of absolute file system path to files on local host to install
-     * @param timeOutInMs
+     * @param apks list of apks to install (1 main APK + 0..n split apks)
      * @param reinstall set to <code>true</code> if re-install of app should be performed
-     * @param extraArgs optional extra arguments to pass. See 'adb shell pm install --help' for
+     * @param installOptions optional extra arguments to pass. See 'adb shell pm install --help' for
      *            available options.
+     * @param timeout installation timeout
+     * @param timeoutUnit {@link TimeUnit} corresponding to the timeout parameter
      * @throws InstallException if the installation fails.
      */
+    void installPackages(@NonNull List<File> apks, boolean reinstall,
+            @NonNull List<String> installOptions, long timeout, @NonNull TimeUnit timeoutUnit)
+            throws InstallException;
 
-    void installPackages(List<String> apkFilePaths, int timeOutInMs,
-            boolean reinstall, String... extraArgs) throws InstallException;
     /**
      * Pushes a file to device
      *
@@ -655,6 +660,7 @@ public interface IDevice extends IShellEnabledDevice {
      *
      * @return the user's language, or null if it's unknown
      */
+    @Nullable
     String getLanguage();
 
     /**
@@ -662,12 +668,14 @@ public interface IDevice extends IShellEnabledDevice {
      *
      * @return the user's region, or null if it's unknown
      */
+    @Nullable
     String getRegion();
 
     /**
      * Returns the API level of the device.
      *
-     * @return the API level of the device, or -1 if it cannot be determined ().
+     * @return the API level if it can be determined, {@link AndroidVersion#DEFAULT} otherwise.
      */
-    int getApiLevel();
+    @NonNull
+    AndroidVersion getVersion();
 }

@@ -36,7 +36,7 @@ import com.android.builder.model.DataBindingOptions;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 
 import org.gradle.api.Action;
 import org.gradle.api.NamedDomainObjectContainer;
@@ -56,7 +56,7 @@ public interface AndroidConfig {
     String getCompileSdkVersion();
 
     /** Build tool revisions */
-    FullRevision getBuildToolsRevision();
+    Revision getBuildToolsRevision();
 
     /** Name of the variant to publish */
     String getDefaultPublishConfig();

@@ -1,0 +1,7 @@
+<root>
+  <item name='com.google.common.base.Verify T verifyNotNull(T)'>
+    <annotation name='org.jetbrains.annotations.Contract'>
+      <val val="&quot;null -&gt; fail&quot;"/>
+    </annotation>
+  </item>
+</root>

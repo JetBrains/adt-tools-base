@@ -16,6 +16,9 @@
 
 package com.android.build.gradle.integration.common.utils;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -25,8 +28,9 @@ import org.w3c.dom.NodeList;
  */
 public class XmlHelper {
 
-    public static Node findChildWithTagAndAttrs(Node node, String childElementTag,
-            String... attributeKeyValue) {
+    @Nullable
+    public static Node findChildWithTagAndAttrs(@NonNull Node node, @NonNull String childElementTag,
+            @NonNull String... attributeKeyValue) {
         if (attributeKeyValue.length % 2 != 0) {
             throw new IllegalArgumentException("attribute parameters should be a key value list");
         }

@@ -17,7 +17,7 @@
 package com.android.builder.sdk;
 
 import com.android.annotations.NonNull;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.utils.ILogger;
 import com.google.common.collect.ImmutableList;
 
@@ -27,7 +27,7 @@ import java.io.File;
  * A loader for the SDK. It's able to provide general SDK information
  * ({@link #getSdkInfo(com.android.utils.ILogger)}, or {@link #getRepositories()}), or
  * target-specific information
- * ({@link #getTargetInfo(String, com.android.sdklib.repository.FullRevision, com.android.utils.ILogger)}).
+ * ({@link #getTargetInfo(String, Revision, com.android.utils.ILogger)}).
  */
 public interface SdkLoader {
 
@@ -44,7 +44,7 @@ public interface SdkLoader {
     @NonNull
     TargetInfo getTargetInfo(
             @NonNull String targetHash,
-            @NonNull FullRevision buildToolRevision,
+            @NonNull Revision buildToolRevision,
             @NonNull ILogger logger);
 
     /**

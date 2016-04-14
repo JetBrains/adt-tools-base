@@ -285,10 +285,10 @@ public class GradleCoordinateTest extends BaseTestCase {
     public void testParseVersionOnly() {
         String revision = "15.32.64";
         GradleCoordinate a = GradleCoordinate.parseVersionOnly(revision);
-        assertEquals(revision, a.getFullRevision());
+        assertEquals(revision, a.getRevision());
         String revisionB = "16.12.0-rc1";
         GradleCoordinate b = GradleCoordinate.parseVersionOnly(revisionB);
-        assertEquals(revisionB, b.getFullRevision());
+        assertEquals(revisionB, b.getRevision());
         assertTrue(b.isPreview());
     }
 
@@ -310,12 +310,12 @@ public class GradleCoordinateTest extends BaseTestCase {
                 "com.google.android.gms:play-services:5.0.89");
         assertNotNull(v5_0_89);
         assertEquals("com.google.android.gms:play-services:5.0.89", v5_0_89.toString());
-        assertEquals("5.0.89", v5_0_89.getFullRevision());
+        assertEquals("5.0.89", v5_0_89.getRevision());
 
         GradleCoordinate v5_2_08 = GradleCoordinate.parseCoordinateString(
                 "com.google.android.gms:play-services:5.2.08");
         assertNotNull(v5_2_08);
-        assertEquals("5.2.08", v5_2_08.getFullRevision());
+        assertEquals("5.2.08", v5_2_08.getRevision());
 
         assertEquals("com.google.android.gms:play-services:5.2.08", v5_2_08.toString());
 
@@ -330,5 +330,17 @@ public class GradleCoordinateTest extends BaseTestCase {
                 GradleCoordinate.parseCoordinateString(
                         "com.google.android.gms:play-services:5.2.08"));
 
+    }
+
+    public void testAlphaBeta() throws Exception {
+        GradleCoordinate actual = GradleCoordinate.parseCoordinateString("com.android.support:appcompat-v7:24.0.0-alpha1");
+        assertNotNull(actual);
+        assertEquals(24, actual.getMajorVersion());
+        assertTrue(actual.isPreview());
+
+        actual = GradleCoordinate.parseCoordinateString("com.android.support:appcompat-v7:24.0.0-beta7");
+        assertNotNull(actual);
+        assertEquals(24, actual.getMajorVersion());
+        assertTrue(actual.isPreview());
     }
 }

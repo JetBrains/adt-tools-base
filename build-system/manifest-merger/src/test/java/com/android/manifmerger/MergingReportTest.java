@@ -17,11 +17,9 @@
 package com.android.manifmerger;
 
 import static com.android.manifmerger.MergingReport.Record.Severity;
-import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
 
 import com.android.ide.common.blame.SourceFile;
 import com.android.utils.ILogger;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 
 import junit.framework.TestCase;
@@ -29,7 +27,6 @@ import junit.framework.TestCase;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.w3c.dom.Element;
 
 /**
  * Tests for the {@link com.android.manifmerger.MergingReport} class
@@ -37,10 +34,7 @@ import org.w3c.dom.Element;
 public class MergingReportTest extends TestCase {
 
     @Mock ILogger mLoggerMock;
-    @Mock Element mElement;
     SourceFile mSourceLocation = new SourceFile("location");
-    @Mock KeyResolver<String> mKeyResolver;
-    @Mock KeyBasedValueResolver<ManifestMerger2.SystemProperty> mPropertyResolver;
 
     @Override
     protected void setUp() throws Exception {
@@ -142,20 +136,12 @@ public class MergingReportTest extends TestCase {
     }
 
     public void testGetMergedDocument() {
-        XmlDocument xmlDocument =
-                new XmlDocument(
-                        mSourceLocation,
-                        mKeyResolver,
-                        mPropertyResolver,
-                        mElement,
-                        XmlDocument.Type.MAIN,
-                        Optional.<String>absent() /* mainManifestPackageName */);
-
         MergingReport mergingReport = new MergingReport.Builder(mLoggerMock)
-                .setMergedDocument(xmlDocument)
+                .setMergedDocument(MergingReport.MergedManifestKind.MERGED, "Some String")
                 .build();
 
-        assertTrue(mergingReport.getMergedDocument().isPresent());
-        assertEquals(xmlDocument, mergingReport.getMergedDocument().get());
+        assertNotNull(mergingReport.getMergedDocument(MergingReport.MergedManifestKind.MERGED));
+        assertEquals("Some String",
+                mergingReport.getMergedDocument(MergingReport.MergedManifestKind.MERGED));
     }
 }

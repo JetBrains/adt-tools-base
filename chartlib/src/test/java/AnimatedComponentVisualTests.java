@@ -21,32 +21,17 @@ import com.android.tools.chartlib.TimelineComponent;
 import com.android.tools.chartlib.TimelineData;
 import com.android.tools.chartlib.ValuedTreeNode;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.LayoutManager;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JSlider;
-import javax.swing.JTabbedPane;
-import javax.swing.UIManager;
+import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -170,7 +155,6 @@ public class AnimatedComponentVisualTests extends JDialog {
         JPanel controls = new JPanel();
         LayoutManager manager = new BoxLayout(controls, BoxLayout.Y_AXIS);
         controls.setLayout(manager);
-        controls.setPreferredSize(new Dimension(300, 800));
         panel.add(controls, BorderLayout.WEST);
         return controls;
     }
@@ -396,35 +380,88 @@ public class AnimatedComponentVisualTests extends JDialog {
         }
     }
 
+    private enum TimelineBehavior {
+        POSITIVE("Positive values only"),
+        NEGATIVE("Negative and positive values"),
+        MIRRORED("Mirrored streams");
+
+        public final String description;
+
+        TimelineBehavior(String description) {
+            this.description = description;
+        }
+
+        @Override
+        public String toString() {
+            return description;
+        }
+    }
+
     private JPanel getTimelineExample() {
-        final TimelineData data = new TimelineData(2, 2000);
+
+        // Actually, there are three timelines, but we show one at a time.
+        // Use the pulldown to switch.
+
+        JPanel topPanel = new JPanel(new BorderLayout());
+        final CardLayout cardLayout = new CardLayout();
+        final JPanel timelinePanels = new JPanel(cardLayout);
+
+        final JComboBox choices = new JComboBox(TimelineBehavior.values());
+        for (TimelineBehavior timelineBehavior : TimelineBehavior.values()) {
+            timelinePanels.add(createTimelinePanel(timelineBehavior), timelineBehavior.name());
+        }
+
+        choices.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                TimelineBehavior selectedMode = (TimelineBehavior)choices.getSelectedItem();
+                cardLayout.show(timelinePanels, selectedMode.name());
+            }
+        });
+
+        JPanel wrapPanel = new JPanel();
+        wrapPanel.add(choices); // Wrap the combobox so it shows up centered instead of stretched
+        topPanel.add(wrapPanel, BorderLayout.NORTH);
+        topPanel.add(timelinePanels, BorderLayout.CENTER);
+        return topPanel;
+    }
+
+    private JPanel createTimelinePanel(final TimelineBehavior timelineBehavior) {
+        final int numStreams = 2;
+
         final EventData events = new EventData();
-        final int streams = 2;
+        final TimelineData data = new TimelineData(numStreams, 2000);
         final AtomicInteger variance = new AtomicInteger(10);
         final AtomicInteger delay = new AtomicInteger(100);
         final AtomicInteger type = new AtomicInteger(0);
-        final AtomicBoolean alwaysShowPositive = new AtomicBoolean(true);
         new Thread() {
             @Override
             public void run() {
                 super.run();
                 try {
-                    float[] values = new float[streams];
+                    float[] values = new float[numStreams];
                     while (true) {
                         int v = variance.get();
-                        for (int i = 0; i < streams; i++) {
+
+                        for (int i = 0; i < numStreams; i++) {
                             float delta = (float) Math.random() * variance.get() - v * 0.5f;
                             values[i] = delta + values[i];
                         }
-                        synchronized (data) {
-                            boolean forcePositive = alwaysShowPositive.get();
-                            float[] valuesCopy = Arrays.copyOf(values, streams);
-                            if (forcePositive) {
-                                for (int i = 0; i < valuesCopy.length; i++) {
-                                    valuesCopy[i] = Math.abs(valuesCopy[i]);
-                                }
+                        float[] valuesCopy = new float[numStreams];
+                        System.arraycopy(values, 0, valuesCopy, 0, numStreams);
+                        if (timelineBehavior != TimelineBehavior.NEGATIVE) {
+                            for (int i = 0; i < numStreams; i++) {
+                                valuesCopy[i] = Math.abs(valuesCopy[i]);
                             }
-
+                        }
+                        else {
+                            // In the "negative" example, always make stream 2 negative so you
+                            // can definitely see at least one negative stream at all times.
+                            if (valuesCopy[1] > 0) {
+                                valuesCopy[1] = -valuesCopy[1];
+                            }
+                        }
+                        synchronized (data) {
                             data.add(System.currentTimeMillis(), type.get() + (v == 0 ? 1 : 0), valuesCopy);
                         }
                         Thread.sleep(delay.get());
@@ -433,23 +470,20 @@ public class AnimatedComponentVisualTests extends JDialog {
                 }
             }
         }.start();
-        final TimelineComponent timeline = new TimelineComponent(data, events, 1.0f, 10.0f, 1000.0f,
-                10.0f);
+
+        final TimelineComponent timeline = new TimelineComponent(data, events, 1.0f, 10.0f, 1000.0f, 10.0f);
         timeline.configureStream(0, "Data 0", new Color(0x78abd9));
-        timeline.configureStream(1, "Data 1", new Color(0xbaccdc));
+        timeline.configureStream(1, "Data 1", new Color(0xbaccdc), timelineBehavior == TimelineBehavior.MIRRORED);
 
         timeline.configureUnits("@");
-        timeline.configureEvent(1, 0, UIManager.getIcon("Tree.leafIcon"),
-                new Color(0x92ADC6),
-                new Color(0x2B4E8C), false);
-        timeline.configureEvent(2, 1, UIManager.getIcon("Tree.leafIcon"),
-                new Color(255, 191, 176),
-                new Color(76, 14, 29), true);
+        timeline.configureEvent(1, 0, UIManager.getIcon("Tree.leafIcon"), new Color(0x92ADC6), new Color(0x2B4E8C), false);
+        timeline.configureEvent(2, 1, UIManager.getIcon("Tree.leafIcon"), new Color(255, 191, 176), new Color(76, 14, 29), true);
         timeline.configureType(1, TimelineComponent.Style.SOLID);
         timeline.configureType(2, TimelineComponent.Style.DASHED);
 
         final JPanel panel = new JPanel();
         final JPanel controls = createControlledPane(panel, timeline);
+
         controls.add(createVaribleSlider("Delay", 10, 5000, new Value() {
             @Override
             public void set(int v) {
@@ -492,13 +526,6 @@ public class AnimatedComponentVisualTests extends JDialog {
                 timeline.setStackStreams(e.getStateChange() == ItemEvent.SELECTED);
             }
         }, true));
-        controls.add(createCheckbox("Show only positive values", new ItemListener() {
-            @Override
-            public void itemStateChanged(ItemEvent itemEvent) {
-                boolean showPositive = itemEvent.getStateChange() == ItemEvent.SELECTED;
-                alwaysShowPositive.set(showPositive);
-            }
-        }, alwaysShowPositive.get()));
 
         controls.add(new Box.Filler(new Dimension(0, 0), new Dimension(300, Integer.MAX_VALUE), new Dimension(300, Integer.MAX_VALUE)));
         panel.add(timeline, BorderLayout.CENTER);

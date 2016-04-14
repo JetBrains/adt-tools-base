@@ -495,4 +495,14 @@ public class FolderConfigurationTest extends TestCase {
         assertEquals(21, copy.getVersionQualifier().getVersion());
         assertNull(blankFolder.getVersionQualifier());
     }
+
+    public void testScreenSizeMatching() {
+        runConfigMatchTest("normal-v21", 2, "", "v21", "normal", "large");
+        runConfigMatchTest("normal-v21", 1, "", "v21", "small", "large");
+        runConfigMatchTest("normal-v21", 0, "", "v23", "small", "large");
+        runConfigMatchTest("large-v21", 3, "", "v21", "small", "large");
+        runConfigMatchTest("large-v21", 1, "", "v21", "small", "xlarge");
+        runConfigMatchTest("small-v21", 2, "", "v21", "small", "xlarge");
+        runConfigMatchTest("small-v21", 1, "", "v21", "normal", "xlarge");
+    }
 }

@@ -6,46 +6,45 @@ apply plugin: 'com.android.model.application'
 
 model {
     android {
-        compileSdkVersion = rootProject.latestCompileSdk
-        buildToolsVersion = rootProject.buildToolsVersion
+        compileSdkVersion rootProject.latestCompileSdk
+        buildToolsVersion rootProject.buildToolsVersion
 
-        defaultConfig.with {
+        defaultConfig {
             // This actual the app version code. Giving ourselves 1,000,000 values
-            versionCode = 123
+            versionCode 123
+        }
+
+        ndk {
+            moduleName "sanangeles"
+            CFlags.add("-DDISABLE_IMPORTGL")
+            ldLibs.add("GLESv1_CM")
+            ldLibs.add("dl")
+            ldLibs.add("log")
+            stl "stlport_static"
+            toolchain "clang"
+        }
+
+        productFlavors {
+            create("x86") {
+                ndk.abiFilters.add("x86")
+                // this is the flavor part of the version code.
+                // It must be higher than the arm one for devices supporting
+                // both, as x86 is preferred.
+                versionCode 3
+            }
+            create("arm") {
+                ndk.abiFilters.add("armeabi-v7a")
+                versionCode 2
+            }
+            create("mips") {
+                ndk.abiFilters.add("mips")
+                versionCode 1
+            }
+            create("fat") {
+                // fat binary, lowest version code to be
+                // the last option
+                versionCode 0
+            }
         }
     }
-
-    android.ndk {
-        moduleName = "sanangeles"
-        CFlags.add("-DDISABLE_IMPORTGL")
-        ldLibs.add("GLESv1_CM")
-        ldLibs.add("dl")
-        ldLibs.add("log")
-        stl = "stlport_static"
-        toolchain = "clang"
-    }
-
-    android.productFlavors {
-        create("x86") {
-            ndk.abiFilters.add("x86")
-            // this is the flavor part of the version code.
-            // It must be higher than the arm one for devices supporting
-            // both, as x86 is preferred.
-            versionCode = 3
-        }
-        create("arm") {
-            ndk.abiFilters.add("armeabi-v7a")
-            versionCode = 2
-        }
-        create("mips") {
-            ndk.abiFilters.add("mips")
-            versionCode = 1
-        }
-        create("fat") {
-            // fat binary, lowest version code to be
-            // the last option
-            versionCode = 0
-        }
-    }
-
 }

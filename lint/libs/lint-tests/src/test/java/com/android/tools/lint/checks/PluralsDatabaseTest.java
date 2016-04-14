@@ -43,6 +43,9 @@ import com.google.common.io.ByteStreams;
 
 import junit.framework.TestCase;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -121,11 +124,11 @@ public class PluralsDatabaseTest extends TestCase {
                 continue;
             }
             for (Quantity q : Quantity.values()) {
-                boolean mv1 = pdb.hasMultipleValuesForQuantity(language, q);
-                boolean mv2 = db.hasMultipleValuesForQuantity(language, q);
+                boolean mv1 = pdb.hasMultipleValuesForQuantity(language, q); // binary database
+                boolean mv2 = db.hasMultipleValuesForQuantity(language, q); // text database
                 if (mv1 != mv2) {
                     dumpDatabaseTables();
-                    assertEquals(language, mv1, mv2);
+                    assertEquals(language + " with quantity " + q, mv1, mv2);
                 }
                 if (mv2) {
                     String e1 = pdb.findIntegerExamples(language, q);
@@ -245,6 +248,7 @@ public class PluralsDatabaseTest extends TestCase {
             assertEquals((int)languageIndices.get(language), index);
             index++;
         }
+        stripLastComma(sb);
         sb.append("\n};\n");
         System.out.println(sb);
 
@@ -304,6 +308,7 @@ public class PluralsDatabaseTest extends TestCase {
 
             index++;
         }
+        stripLastComma(sb);
         sb.append("\n};\n");
         System.out.println(sb);
 
@@ -312,6 +317,24 @@ public class PluralsDatabaseTest extends TestCase {
         printSwitch(db, Quantity.one, languages, languageIndices, indices, one);
         printSwitch(db, Quantity.two, languages, languageIndices, indices, two);
 
+    }
+
+    private static String stripLastComma(String s) {
+        StringBuilder stringBuilder = new StringBuilder(s);
+        stripLastComma(stringBuilder);
+        return stringBuilder.toString();
+    }
+
+    private static void stripLastComma(@NonNull StringBuilder sb) {
+        for (int i = sb.length() - 1; i >= 1; i--) {
+            char c = sb.charAt(i);
+            if (!Character.isWhitespace(c)) {
+                if (c == ',') {
+                    sb.setLength(i);
+                }
+                break;
+            }
+        }
     }
 
     private static Map<String, String> computeExamples(PluralsTextDatabase db, Quantity quantity,
@@ -541,21 +564,23 @@ public class PluralsDatabaseTest extends TestCase {
             //        one{"i = 0,1 and n != 0 @integer 1 @decimal 0.1~1.6"}
             //    }
             // since it looks to me like this only differs from 1 in the fractional part.
-            //
-            // This is encoded by looking at the rules; this is done by the unit test
-            // testDeriveMultiValueSetNames() (which ensures that the set is correct and if
-            // not computes the correct set of set names to use for the current plurals.txt
-            // database.
-
-            mMultiValueSetNames = Maps.newEnumMap(Quantity.class);
-            mMultiValueSetNames.put(Quantity.two, Sets.newHashSet("set21", "set22", "set30", "set32"));
-            mMultiValueSetNames.put(Quantity.one, Sets.newHashSet(
-                    "set1", "set11", "set12", "set13", "set14", "set2", "set20",
-                    "set21", "set22", "set26", "set27", "set29", "set30", "set32", "set5",
-                    "set6"));
-            mMultiValueSetNames.put(Quantity.zero, Sets.newHashSet("set14"));
-
             mSetNamePerLanguage = Maps.newHashMapWithExpectedSize(20);
+            mMultiValueSetNames = Maps.newEnumMap(Quantity.class);
+            Quantity[] quantities = new Quantity[] { Quantity.zero, Quantity.one, Quantity.two };
+            for (Quantity quantity : quantities) {
+                mMultiValueSetNames.put(quantity, Sets.<String>newHashSet());
+                for (String language : LocaleManager.getLanguageCodes()) {
+                    String examples = findIntegerExamples(language, quantity);
+                    if (examples != null && examples.indexOf(',') != -1) {
+                        String setName = getSetName(language);
+                        assertNotNull(setName);
+                        Set<String> set = mMultiValueSetNames.get(quantity);
+                        assertNotNull(set);
+                        set.add(setName);
+                    }
+                }
+            }
+
             mPlurals = Maps.newHashMapWithExpectedSize(20);
         }
 
@@ -577,7 +602,6 @@ public class PluralsDatabaseTest extends TestCase {
 
             return null;
         }
-
 
         @NonNull
         private String getPluralsDescriptions() {

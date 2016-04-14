@@ -59,6 +59,11 @@ public class RootObj extends Instance {
     }
 
     @Override
+    public void resolveReferences() {
+        // Do nothing.
+    }
+
+    @Override
     public final void accept(Visitor visitor) {
         visitor.visitRootObj(this);
         Instance instance = getReferredInstance();

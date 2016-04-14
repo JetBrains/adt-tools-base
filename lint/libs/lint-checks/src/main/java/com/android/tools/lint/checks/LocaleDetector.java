@@ -17,43 +17,41 @@
 package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.FORMAT_METHOD;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_STRING;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.tools.lint.client.api.JavaParser;
+import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
+import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
+import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Category;
-import com.android.tools.lint.detector.api.ClassContext;
+import com.android.tools.lint.detector.api.ConstantEvaluator;
 import com.android.tools.lint.detector.api.Detector;
-import com.android.tools.lint.detector.api.Detector.ClassScanner;
+import com.android.tools.lint.detector.api.Detector.JavaScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
-
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.InsnList;
-import org.objectweb.asm.tree.LdcInsnNode;
-import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.MethodNode;
-import org.objectweb.asm.tree.analysis.Analyzer;
-import org.objectweb.asm.tree.analysis.AnalyzerException;
-import org.objectweb.asm.tree.analysis.Frame;
-import org.objectweb.asm.tree.analysis.SourceInterpreter;
-import org.objectweb.asm.tree.analysis.SourceValue;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+
+import lombok.ast.AstVisitor;
+import lombok.ast.Expression;
+import lombok.ast.MethodInvocation;
+import lombok.ast.Node;
 
 /**
  * Checks for errors related to locale handling
  */
-public class LocaleDetector extends Detector implements ClassScanner {
+public class LocaleDetector extends Detector implements JavaScanner {
     private static final Implementation IMPLEMENTATION = new Implementation(
             LocaleDetector.class,
-            Scope.CLASS_FILE_SCOPE);
+            Scope.JAVA_FILE_SCOPE);
 
     /** Calling risky convenience methods */
     public static final Issue STRING_LOCALE = Issue.create(
@@ -78,107 +76,100 @@ public class LocaleDetector extends Detector implements ClassScanner {
             .addMoreInfo(
             "http://developer.android.com/reference/java/util/Locale.html#default_locale"); //$NON-NLS-1$
 
-    static final String DATE_FORMAT_OWNER = "java/text/SimpleDateFormat"; //$NON-NLS-1$
-    private static final String STRING_OWNER = "java/lang/String";                //$NON-NLS-1$
-
     /** Constructs a new {@link LocaleDetector} */
     public LocaleDetector() {
     }
 
-    @NonNull
+    // ---- Implements JavaScanner ----
+
     @Override
-    public Speed getSpeed() {
-        return Speed.FAST;
+    public List<String> getApplicableMethodNames() {
+        if (LintClient.isStudio()) {
+            // In the IDE, don't flag toUpperCase/toLowerCase; these
+            // are already flagged by built-in IDE inspections, so we don't
+            // want duplicate warnings.
+            return Collections.singletonList(FORMAT_METHOD);
+        } else {
+            return Arrays.asList(
+                    // Only when not running in the IDE
+                    "toLowerCase", //$NON-NLS-1$
+                    "toUpperCase", //$NON-NLS-1$
+                    FORMAT_METHOD
+            );
+        }
     }
 
-    // ---- Implements ClassScanner ----
-
     @Override
-    @Nullable
-    public List<String> getApplicableCallNames() {
-        return Arrays.asList(
-                "toLowerCase", //$NON-NLS-1$
-                "toUpperCase", //$NON-NLS-1$
-                FORMAT_METHOD
-        );
+    public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor,
+            @NonNull MethodInvocation call) {
+        ResolvedNode resolved = context.resolve(call);
+        if (resolved instanceof ResolvedMethod) {
+            ResolvedMethod method = (ResolvedMethod) resolved;
+            if (method.getContainingClass().matches(TYPE_STRING)) {
+                String name = method.getName();
+                if (name.equals(FORMAT_METHOD)) {
+                    checkFormat(context, method, call);
+                } else if (method.getArgumentCount() == 0) {
+                    Location location = context.getNameLocation(call);
+                    String message = String.format(
+                            "Implicitly using the default locale is a common source of bugs: " +
+                                    "Use `%1$s(Locale)` instead", name);
+                    context.report(STRING_LOCALE, call, location, message);
+                }
+            }
+        }
     }
 
-    @Override
-    public void checkCall(@NonNull ClassContext context, @NonNull ClassNode classNode,
-            @NonNull MethodNode method, @NonNull MethodInsnNode call) {
-        String owner = call.owner;
-        if (!owner.equals(STRING_OWNER)) {
+    /** Returns true if the given node is a parameter to a Logging call */
+    private static boolean isLoggingParameter(
+            @NonNull JavaContext context,
+            @NonNull MethodInvocation node) {
+        Node parent = node.getParent();
+        if (parent instanceof MethodInvocation) {
+            MethodInvocation call = (MethodInvocation)parent;
+            String name = call.astName().astValue();
+            if (name.length() == 1) { // "d", "i", "e" etc in Log
+                ResolvedNode resolved = context.resolve(call);
+                if (resolved instanceof ResolvedMethod) {
+                    ResolvedMethod method = (ResolvedMethod) resolved;
+                    if (method.getContainingClass().matches(LogDetector.LOG_CLS)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static void checkFormat(
+            @NonNull JavaContext context,
+            @NonNull ResolvedMethod method,
+            @NonNull MethodInvocation call) {
+        // Only check the non-locale version of String.format
+        if (method.getArgumentCount() == 0
+                || !method.getArgumentType(0).matchesName(TYPE_STRING)
+                || call.astArguments().isEmpty()) {
             return;
         }
 
-        String desc = call.desc;
-        String name = call.name;
+        // Find the formatting string
+        Expression first = call.astArguments().first();
+        Object value = ConstantEvaluator.evaluate(context, first);
+        if (!(value instanceof String)) {
+            return;
+        }
 
-        if (name.equals(FORMAT_METHOD)) {
-            // Only check the non-locale version of String.format
-            if (!desc.equals("(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;")) { //$NON-NLS-1$
+        String format = (String) value;
+        if (StringFormatDetector.isLocaleSpecific(format)) {
+            if (isLoggingParameter(context, call)) {
                 return;
             }
-            // Find the formatting string
-            Analyzer analyzer = new Analyzer(new SourceInterpreter() {
-                @Override
-                public SourceValue newOperation(AbstractInsnNode insn) {
-                    if (insn.getOpcode() == Opcodes.LDC) {
-                        Object cst = ((LdcInsnNode) insn).cst;
-                        if (cst instanceof String) {
-                            return new StringValue(1, (String) cst);
-                        }
-                    }
-                    return super.newOperation(insn);
-                }
-            });
-            try {
-                Frame[] frames = analyzer.analyze(classNode.name, method);
-                InsnList instructions = method.instructions;
-                Frame frame = frames[instructions.indexOf(call)];
-                if (frame.getStackSize() == 0) {
-                    return;
-                }
-                SourceValue stackValue = (SourceValue) frame.getStack(0);
-                if (stackValue instanceof StringValue) {
-                    String format = ((StringValue) stackValue).getString();
-                    if (format != null && StringFormatDetector.isLocaleSpecific(format)) {
-                        Location location = context.getLocation(call);
-                        String message =
-                            "Implicitly using the default locale is a common source of bugs: " +
-                            "Use `String.format(Locale, ...)` instead";
-                        context.report(STRING_LOCALE, method, call, location, message);
-                    }
-                }
-            } catch (AnalyzerException e) {
-                context.log(e, null);
-            }
-        } else {
-            if (desc.equals("()Ljava/lang/String;")) {   //$NON-NLS-1$
-                Location location = context.getLocation(call);
-                String message = String.format(
+            Location location = context.getLocation(call);
+            String message =
                     "Implicitly using the default locale is a common source of bugs: " +
-                    "Use `%1$s(Locale)` instead", name);
-                context.report(STRING_LOCALE, method, call, location, message);
-            }
-        }
-    }
-
-    private static class StringValue extends SourceValue {
-        private final String mString;
-
-        StringValue(int size, String string) {
-            super(size);
-            mString = string;
-        }
-
-        String getString() {
-            return mString;
-        }
-
-        @Override
-        public int getSize() {
-            return 1;
+                            "Use `String.format(Locale, ...)` instead";
+            context.report(STRING_LOCALE, call, location, message);
         }
     }
 }

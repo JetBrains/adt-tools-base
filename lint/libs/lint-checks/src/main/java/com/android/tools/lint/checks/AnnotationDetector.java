@@ -21,14 +21,20 @@ import static com.android.SdkConstants.FQCN_SUPPRESS_LINT;
 import static com.android.SdkConstants.INT_DEF_ANNOTATION;
 import static com.android.SdkConstants.SUPPRESS_LINT;
 import static com.android.SdkConstants.TYPE_DEF_FLAG_ATTRIBUTE;
+import static com.android.tools.lint.checks.SupportAnnotationDetector.filterRelevantAnnotations;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_INT;
 import static com.android.tools.lint.detector.api.JavaContext.findSurroundingClass;
 import static com.android.tools.lint.detector.api.JavaContext.getParentOfType;
+import static com.android.tools.lint.detector.api.LintUtils.findSubstring;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.client.api.JavaParser.ResolvedAnnotation;
+import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
+import com.android.tools.lint.client.api.JavaParser.ResolvedField;
 import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
+import com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
@@ -39,13 +45,21 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
+import com.android.tools.lint.detector.api.TextFormat;
+import com.google.common.base.Joiner;
+import com.google.common.base.Objects;
+import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
+import java.util.Set;
 
 import lombok.ast.Annotation;
 import lombok.ast.AnnotationDeclaration;
@@ -53,18 +67,27 @@ import lombok.ast.AnnotationElement;
 import lombok.ast.AnnotationValue;
 import lombok.ast.ArrayInitializer;
 import lombok.ast.AstVisitor;
+import lombok.ast.BinaryExpression;
+import lombok.ast.BinaryOperator;
 import lombok.ast.Block;
+import lombok.ast.Case;
+import lombok.ast.Cast;
 import lombok.ast.ClassDeclaration;
 import lombok.ast.ConstructorDeclaration;
 import lombok.ast.Expression;
+import lombok.ast.ExpressionStatement;
 import lombok.ast.ForwardingAstVisitor;
+import lombok.ast.InlineIfExpression;
 import lombok.ast.IntegralLiteral;
 import lombok.ast.MethodDeclaration;
+import lombok.ast.MethodInvocation;
 import lombok.ast.Modifiers;
 import lombok.ast.Node;
 import lombok.ast.Select;
+import lombok.ast.Statement;
 import lombok.ast.StrictListAccessor;
 import lombok.ast.StringLiteral;
+import lombok.ast.Switch;
 import lombok.ast.TypeBody;
 import lombok.ast.TypeMember;
 import lombok.ast.VariableDeclaration;
@@ -134,6 +157,19 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
             Severity.WARNING,
             IMPLEMENTATION);
 
+    /** All IntDef constants should be included in switch */
+    public static final Issue SWITCH_TYPE_DEF = Issue.create(
+            "SwitchIntDef", //$NON-NLS-1$
+            "Missing @IntDef in Switch",
+
+            "This check warns if a `switch` statement does not explicitly include all " +
+            "the values declared by the typedef `@IntDef` declaration.",
+
+            Category.CORRECTNESS,
+            3,
+            Severity.WARNING,
+            IMPLEMENTATION);
+
     /** Constructs a new {@link AnnotationDetector} check */
     public AnnotationDetector() {
     }
@@ -153,7 +189,8 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
 
     @Override
     public List<Class<? extends Node>> getApplicableNodeTypes() {
-        return Collections.<Class<? extends Node>>singletonList(Annotation.class);
+        //noinspection unchecked
+        return Arrays.<Class<? extends Node>>asList(Annotation.class, Switch.class);
     }
 
     @Override
@@ -217,8 +254,192 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
             return super.visitAnnotation(node);
         }
 
+        @Override
+        public boolean visitSwitch(Switch node) {
+            Expression condition = node.astCondition();
+            TypeDescriptor type = mContext.getType(condition);
+            if (type != null && type.matchesName(TYPE_INT)) {
+                ResolvedAnnotation annotation = findIntDef(condition);
+                if (annotation != null) {
+                    checkSwitch(node, annotation);
+                }
+            }
+
+            return super.visitSwitch(node);
+        }
+
+        /**
+         * Searches for the corresponding @IntDef annotation definition associated
+         * with a given node
+         */
+        @Nullable
+        private ResolvedAnnotation findIntDef(@NonNull Node node) {
+            if ((node instanceof VariableReference || node instanceof Select)) {
+                ResolvedNode resolved = mContext.resolve(node);
+                if (resolved == null) {
+                    return null;
+                }
+
+                ResolvedAnnotation annotation = SupportAnnotationDetector.findIntDef(
+                        filterRelevantAnnotations(resolved.getAnnotations()));
+                if (annotation != null) {
+                    return annotation;
+                }
+
+                if (node instanceof VariableReference) {
+                    Statement statement = getParentOfType(node, Statement.class, false);
+                    if (statement != null) {
+                        ListIterator<Node> iterator =
+                                statement.getParent().getChildren().listIterator();
+                        while (iterator.hasNext()) {
+                            if (iterator.next() == statement) {
+                                if (iterator.hasPrevious()) { // should always be true
+                                    iterator.previous();
+                                }
+                                break;
+                            }
+                        }
+
+                        String targetName = ((VariableReference) node).astIdentifier().astValue();
+                        while (iterator.hasPrevious()) {
+                            Node previous = iterator.previous();
+                            if (previous instanceof VariableDeclaration) {
+                                VariableDeclaration declaration = (VariableDeclaration) previous;
+                                VariableDefinition definition = declaration.astDefinition();
+                                for (VariableDefinitionEntry entry : definition
+                                        .astVariables()) {
+                                    if (entry.astInitializer() != null
+                                            && entry.astName().astValue().equals(targetName)) {
+                                        return findIntDef(entry.astInitializer());
+                                    }
+                                }
+                            } else if (previous instanceof ExpressionStatement) {
+                                ExpressionStatement expressionStatement =
+                                        (ExpressionStatement) previous;
+                                Expression expression = expressionStatement.astExpression();
+                                if (expression instanceof BinaryExpression &&
+                                        ((BinaryExpression) expression).astOperator()
+                                                == BinaryOperator.ASSIGN) {
+                                    BinaryExpression binaryExpression
+                                            = (BinaryExpression) expression;
+                                    if (targetName.equals(binaryExpression.astLeft().toString())) {
+                                        return findIntDef(binaryExpression.astRight());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } else if (node instanceof MethodInvocation) {
+                ResolvedNode resolved = mContext.resolve(node);
+                if (resolved != null) {
+                    ResolvedAnnotation annotation = SupportAnnotationDetector
+                            .findIntDef(filterRelevantAnnotations(resolved.getAnnotations()));
+                    if (annotation != null) {
+                        return annotation;
+                    }
+                }
+            } else if (node instanceof InlineIfExpression) {
+                InlineIfExpression expression = (InlineIfExpression) node;
+                if (expression.astIfTrue() != null) {
+                    ResolvedAnnotation result = findIntDef(expression.astIfTrue());
+                    if (result != null) {
+                        return result;
+                    }
+                }
+                if (expression.astIfFalse() != null) {
+                    ResolvedAnnotation result = findIntDef(expression.astIfFalse());
+                    if (result != null) {
+                        return result;
+                    }
+                }
+            } else if (node instanceof Cast) {
+                Cast cast = (Cast) node;
+                return findIntDef(cast.astOperand());
+            }
+
+            return null;
+        }
+
+        private void checkSwitch(@NonNull Switch node, @NonNull ResolvedAnnotation annotation) {
+            Block block = node.astBody();
+            if (block == null) {
+                return;
+            }
+
+            Object allowed = annotation.getValue();
+            if (!(allowed instanceof Object[])) {
+                return;
+            }
+            Object[] allowedValues = (Object[]) allowed;
+            List<ResolvedField> fields = Lists.newArrayListWithCapacity(allowedValues.length);
+            for (Object o : allowedValues) {
+                if (o instanceof ResolvedField) {
+                    fields.add((ResolvedField) o);
+                }
+            }
+
+            // Empty switch: arguably we could skip these (since the IDE already warns about
+            // empty switches) but it's useful since the quickfix will kick in and offer all
+            // the missing ones when you're editing.
+            //   if (block.astContents().isEmpty()) { return; }
+
+            for (Statement statement : block.astContents()) {
+                if (statement instanceof Case) {
+                    Case caseStatement = (Case) statement;
+                    Expression expression = caseStatement.astCondition();
+                    if (expression instanceof IntegralLiteral) {
+                        // Report warnings if you specify hardcoded constants.
+                        // It's the wrong thing to do.
+                        List<String> list = computeFieldNames(node, Arrays.asList(allowedValues));
+                        // Keep error message in sync with {@link #getMissingCases}
+                        String message = "Don't use a constant here; expected one of: " + Joiner
+                                .on(", ").join(list);
+                        mContext.report(SWITCH_TYPE_DEF, expression,
+                                mContext.getLocation(expression), message);
+                        return; // Don't look for other missing typedef constants since you might
+                        // have aliased with value
+                    } else if (expression != null) { // default case can have null expression
+                        ResolvedNode resolved = mContext.resolve(expression);
+                        if (resolved == null) {
+                            // If there are compilation issues (e.g. user is editing code) we
+                            // can't be certain, so don't flag anything.
+                            return;
+                        }
+                        if (resolved instanceof ResolvedField) {
+                            // We can't just do
+                            //    fields.remove(resolved);
+                            // since the fields list contains instances of potentially
+                            // different types with different hash codes. The
+                            // equals method on ResolvedExternalField deliberately handles
+                            // this (but it can't make its hash code match what
+                            // the ECJ fields do, which is tied to the ECJ binding hash code.)
+                            // So instead, manually check for equals. These lists tend to
+                            // be very short anyway.
+                            ListIterator<ResolvedField> iterator = fields.listIterator();
+                            while (iterator.hasNext()) {
+                                ResolvedField field = iterator.next();
+                                if (field.equals(resolved)) {
+                                    iterator.remove();
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if (!fields.isEmpty()) {
+                List<String> list = computeFieldNames(node, fields);
+                // Keep error message in sync with {@link #getMissingCases}
+                String message = "Switch statement on an `int` with known associated constant "
+                        + "missing case " + Joiner.on(", ").join(list);
+                Location location = mContext.getNameLocation(node);
+                mContext.report(SWITCH_TYPE_DEF, node, location, message);
+            }
+        }
+
         private void ensureUniqueValues(@NonNull ResolvedAnnotation annotation,
-                @NonNull Annotation node) {
+                                        @NonNull Annotation node) {
             Object allowed = annotation.getValue();
             if (allowed instanceof Object[]) {
                 Object[] allowedValues = (Object[]) allowed;
@@ -410,6 +631,59 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
 
             return true;
         }
+
+        @NonNull
+        private List<String> computeFieldNames(@NonNull Switch node, Iterable allowedValues) {
+            List<String> list = Lists.newArrayList();
+            for (Object o : allowedValues) {
+                if (o instanceof ResolvedField) {
+                    ResolvedField field = (ResolvedField) o;
+                    // Only include class name if necessary
+                    String name = field.getName();
+                    ClassDeclaration clz = findSurroundingClass(node);
+                    if (clz != null) {
+                        ResolvedNode resolved = mContext.resolve(clz);
+                        ResolvedClass containingClass = field.getContainingClass();
+                        if (containingClass != null && !containingClass.equals(resolved)
+                                && resolved instanceof ResolvedClass) {
+                            if (Objects.equal(containingClass.getPackage(),
+                                    ((ResolvedClass) resolved).getPackage())) {
+                                name = containingClass.getSimpleName() + '.' + field.getName();
+                            } else {
+                                name = containingClass.getName() + '.' + field.getName();
+                            }
+                        }
+                    }
+                    list.add('`' + name + '`');
+                }
+            }
+            Collections.sort(list);
+            return list;
+        }
+    }
+
+    /**
+     * Given an error message produced by this lint detector for the {@link #SWITCH_TYPE_DEF} issue
+     * type, returns the list of missing enum cases. <p> Intended for IDE quickfix implementations.
+     *
+     * @param errorMessage the error message associated with the error
+     * @param format       the format of the error message
+     * @return the list of enum cases, or null if not recognized
+     */
+    @Nullable
+    public static List<String> getMissingCases(@NonNull String errorMessage,
+            @NonNull TextFormat format) {
+        errorMessage = format.toText(errorMessage);
+
+        String substring = findSubstring(errorMessage, " missing case ", null);
+        if (substring == null) {
+            substring = findSubstring(errorMessage, "expected one of: ", null);
+        }
+        if (substring != null) {
+            return Splitter.on(",").trimResults().splitToList(substring);
+        }
+
+        return null;
     }
 
     /**
@@ -420,7 +694,6 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
      */
     @NonNull
     private static Node getAnnotationScope(@NonNull Annotation node) {
-        //
         Node scope = getParentOfType(node,
               AnnotationDeclaration.class, true);
         if (scope == null) {

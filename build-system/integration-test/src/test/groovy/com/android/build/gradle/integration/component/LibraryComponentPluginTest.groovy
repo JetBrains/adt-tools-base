@@ -18,16 +18,13 @@ package com.android.build.gradle.integration.component
 
 import com.android.build.gradle.integration.common.category.SmokeTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldLibraryApp
-import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
 import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
+import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar
 
 /**
@@ -36,12 +33,17 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 @Category(SmokeTests.class)
 @CompileStatic
 class LibraryComponentPluginTest {
-    private static HelloWorldLibraryApp testApp = new HelloWorldLibraryApp()
 
-    static {
-        AndroidTestApp app = (AndroidTestApp) testApp.getSubproject(":app")
-        app.addFile(new TestSourceFile("", "build.gradle",
-"""
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
+            .fromTestApp(new HelloWorldLibraryApp())
+            .forExperimentalPlugin(true)
+            .create();
+
+
+    @Test
+    void "check build config file is included"() {
+        project.getSubproject("app").buildFile << """
 apply plugin: "com.android.model.application"
 
 dependencies {
@@ -50,15 +52,13 @@ dependencies {
 
 model {
     android {
-        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-        buildToolsVersion = "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
     }
 }
-"""))
-
-        AndroidTestApp lib = (AndroidTestApp) testApp.getSubproject(":lib")
-        lib.addFile(new TestSourceFile("", "build.gradle",
 """
+
+        project.getSubproject("lib").buildFile << """
 apply plugin: "com.android.model.library"
 
 dependencies {
@@ -68,33 +68,54 @@ dependencies {
 
 model {
     android {
-        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-        buildToolsVersion = "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
     }
 }
-"""))
-    }
-
-    @ClassRule
-    public static GradleTestProject project = GradleTestProject.builder()
-            .fromTestApp(testApp)
-            .forExperimentalPlugin(true)
-            .create();
-
-    @BeforeClass
-    public static void assemble() {
+"""
         project.execute("assemble")
-    }
-
-    @AfterClass
-    static void cleanUp() {
-        project = null
-        testApp = null
+        File releaseAar = project.getSubproject("lib").getAar("release");
+        assertThatAar(releaseAar).containsClass("Lcom/example/helloworld/BuildConfig;");
     }
 
     @Test
-    void "check build config file is included"() {
-        File releaseAar = project.getSubproject("lib").getAar("release");
-        assertThatAar(releaseAar).containsClass("Lcom/example/helloworld/BuildConfig;");
+    void "check multi flavor dependencies"() {
+        project.getSubproject("app").buildFile << """
+apply plugin: "com.android.model.application"
+
+dependencies {
+    compile project(path: ":lib", configuration: "freeDebug")
+}
+
+model {
+    android {
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+    }
+}
+"""
+
+        project.getSubproject("lib").buildFile << """
+apply plugin: "com.android.model.library"
+
+configurations {
+    freeDebug
+}
+
+model {
+    android {
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+        publishNonDefault true
+
+        productFlavors {
+            create("free")
+            create("premium")
+        }
+    }
+}
+"""
+        project.execute(":app:assembleDebug")
+        assertThat(project.getSubproject("app").file("build/intermediates/exploded-aar/project/lib/unspecified/freeDebug")).isDirectory()
     }
 }

@@ -18,6 +18,8 @@ package com.android.tools.lint.detector.api;
 
 import junit.framework.TestCase;
 
+import org.intellij.lang.annotations.Language;
+
 import java.io.File;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -26,8 +28,10 @@ import lombok.ast.Expression;
 import lombok.ast.ForwardingAstVisitor;
 import lombok.ast.VariableDefinitionEntry;
 
+@SuppressWarnings("ClassNameDiffersFromFileName")
 public class ConstantEvaluatorTest extends TestCase {
-    private static void check(Object expected, String source, final String targetVariable) {
+    private static void check(Object expected, @Language("JAVA") String source,
+            final String targetVariable) {
         JavaContext context = LintUtilsTest.parse(source, new File("src/test/pkg/Test.java"));
         assertNotNull(context);
         CompilationUnit unit = (CompilationUnit) context.getCompilationUnit();
@@ -63,6 +67,7 @@ public class ConstantEvaluatorTest extends TestCase {
 
     private static void checkStatements(Object expected, String statementsSource,
             final String targetVariable) {
+        @Language("JAVA")
         String source = ""
                 + "package test.pkg;\n"
                 + "public class Test {\n"
@@ -78,6 +83,7 @@ public class ConstantEvaluatorTest extends TestCase {
     }
 
     private static void checkExpression(Object expected, String expressionSource) {
+        @Language("JAVA")
         String source = ""
                 + "package test.pkg;\n"
                 + "public class Test {\n"
@@ -104,6 +110,11 @@ public class ConstantEvaluatorTest extends TestCase {
         checkExpression(false, "false && true");
         checkExpression(true, "false || true");
         checkExpression(true, "!false");
+    }
+
+    public void testChars() throws Exception {
+        checkExpression('a', "'a'");
+        checkExpression('\007', "'\007'");
     }
 
     public void testCasts() throws Exception {

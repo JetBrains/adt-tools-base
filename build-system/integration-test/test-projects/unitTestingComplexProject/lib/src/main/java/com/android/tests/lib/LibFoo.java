@@ -18,6 +18,12 @@ package com.android.tests.lib;
 
 public class LibFoo {
   public String foo() {
+    useRClass();
     return "library code";
+  }
+
+  public int useRClass() {
+    // Make sure R class is in the classpath.
+    return R.string.app_name;
   }
 }

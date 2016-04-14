@@ -36,7 +36,11 @@ import java.util.Collections;
 import java.util.List;
 
 import lombok.ast.ClassDeclaration;
+import lombok.ast.ConstructorInvocation;
+import lombok.ast.Expression;
+import lombok.ast.MethodDeclaration;
 import lombok.ast.Node;
+import lombok.ast.NormalTypeBody;
 
 /**
  * Checks that Handler implementations are top level classes or static.
@@ -98,16 +102,51 @@ public class HandlerDetector extends Detector implements Detector.JavaScanner {
         }
 
         // Only flag handlers using the default looper
-        if (hasLooperConstructorParameter(cls)) {
+        ConstructorInvocation invocation = null;
+        Node current = node;
+        while (current != null) {
+            if (current instanceof ConstructorInvocation) {
+                invocation = (ConstructorInvocation) current;
+                break;
+            } else if (current instanceof MethodDeclaration ||
+                    current instanceof ClassDeclaration) {
+                break;
+            }
+            current = current.getParent();
+        }
+
+        if (invocation != null) {
+            for (Expression expression : invocation.astArguments()) {
+                TypeDescriptor type = context.getType(expression);
+                if (type != null && type.matchesName(LOOPER_CLS)) {
+                    return;
+                }
+            }
+        } else if (hasLooperConstructorParameter(cls)) {
+            // This is an inner class which takes a Looper parameter:
+            // possibly used correctly from elsewhere
             return;
         }
 
-        Node locationNode = node instanceof ClassDeclaration
-                ? ((ClassDeclaration) node).astName() : node;
-        Location location = context.getLocation(locationNode);
+        Location location;
+        Node locationNode;
+        if (node instanceof ClassDeclaration) {
+            locationNode = node;
+            location = context.getLocation(((ClassDeclaration) node).astName());
+        } else if (node instanceof NormalTypeBody
+                && node.getParent() instanceof ConstructorInvocation) {
+            ConstructorInvocation parent = (ConstructorInvocation)node.getParent();
+            locationNode = parent;
+            location = context.getRangeLocation(parent, 0, parent.astTypeReference(), 0);
+        } else {
+            locationNode = node;
+            location = context.getLocation(node);;
+        }
+
+        //noinspection VariableNotUsedInsideIf
         context.report(ISSUE, locationNode, location, String.format(
                 "This Handler class should be static or leaks might occur (%1$s)",
-                cls.getName()));
+                declaration == null ? "anonymous " + cls.getName() : cls.getName()));
     }
 
     private static boolean isInnerClass(@Nullable ClassDeclaration node) {

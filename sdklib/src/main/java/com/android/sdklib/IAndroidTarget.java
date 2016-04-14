@@ -16,9 +16,11 @@
 
 package com.android.sdklib;
 
+import static com.android.sdklib.repositoryv2.meta.DetailsTypes.AddonDetailsType;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.sdklib.repository.descriptors.IdDisplay;
+import com.android.repository.api.LocalPackage;
 
 import java.io.File;
 import java.util.List;
@@ -73,25 +75,31 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
     int UI_AUTOMATOR_JAR    = 27;
 
 
-    /**
-     * Return value for {@link #getUsbVendorId()} meaning no USB vendor IDs are defined by the
-     * Android target.
-     */
-    int NO_USB_ID = 0;
-
     /** An optional library provided by an Android Target */
     interface OptionalLibrary {
         /** The name of the library, as used in the manifest (&lt;uses-library&gt;). */
         @NonNull
         String getName();
-        /** Location of the jar file. */
-        @NonNull
+
+        /**
+         * Location of the jar file. Should never be {@code null} when retrieved from a target,
+         * but may be in some cases when retrieved from an {@link AddonDetailsType}.
+         */
+        @Nullable
         File getJar();
         /** Description of the library. */
         @NonNull
         String getDescription();
         /** Whether the library requires a manifest entry */
         boolean isManifestEntryRequired();
+
+        /**
+         * Path to the library jar file relative to the {@code libs} directory in the package.
+         * Can be {@code null} when retrieved from a {@link LocalPackage} that was installed from
+         * a legacy source.
+         */
+        @Nullable
+        String getLocalJarPath();
     }
 
     /**
@@ -257,57 +265,10 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
     String getProperty(String name);
 
     /**
-     * Returns the value of a given property for this target as an Integer value.
-     * <p/> If the value is missing or is not an integer, the method will return the given default
-     * value.
-     * @param name the name of the property to return
-     * @param defaultValue the default value to return.
-     *
-     * @see Integer#decode(String)
-     */
-    Integer getProperty(String name, Integer defaultValue);
-
-    /**
-     * Returns the value of a given property for this target as a Boolean value.
-     * <p/> If the value is missing or is not an boolean, the method will return the given default
-     * value.
-     *
-     * @param name the name of the property to return
-     * @param defaultValue the default value to return.
-     *
-     * @see Boolean#valueOf(String)
-     */
-
-    Boolean getProperty(String name, Boolean defaultValue);
-
-    /**
      * Returns all the properties associated with this target. This can be null if the target has
      * no properties.
      */
     Map<String, String> getProperties();
-
-    /**
-     * Returns the USB Vendor ID for the vendor of this target.
-     * <p/>If the target defines no USB Vendor ID, then the method return 0.
-     */
-    int getUsbVendorId();
-
-    /**
-     * Returns an array of system images for this target.
-     * The array can be empty but not null.
-     */
-    ISystemImage[] getSystemImages();
-
-    /**
-     * Returns the system image information for the given {@code tag} and {@code abiType}.
-     *
-     * @param tag A tag id-display.
-     * @param abiType An ABI type string.
-     * @return An existing {@link ISystemImage} for the requested {@code abiType}
-     *         or null if none exists for this type.
-     */
-    @Nullable
-    ISystemImage getSystemImage(@NonNull IdDisplay tag, @NonNull String abiType);
 
     /**
      * Returns whether the given target is compatible with the receiver.

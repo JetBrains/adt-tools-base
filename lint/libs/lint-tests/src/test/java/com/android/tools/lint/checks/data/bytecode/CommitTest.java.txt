@@ -7,7 +7,7 @@ import android.app.FragmentTransaction;
 
 @SuppressWarnings("unused")
 public class CommitTest extends Activity {
-        public void ok1() {
+    public void ok1() {
         getFragmentManager().beginTransaction().commit();
     }
 
@@ -115,5 +115,23 @@ public class CommitTest extends Activity {
         FragmentTransaction transaction = getFragmentManager().beginTransaction();
         FragmentTransaction temp = transaction;
         temp.commitAllowingStateLoss();
+    }
+
+    public void error5(FragmentTransaction unrelated) {
+        FragmentTransaction transaction;
+        // Comment in between variable declaration and assignment
+        transaction = getFragmentManager().beginTransaction();
+        transaction = unrelated;
+        transaction.commit();
+    }
+
+    public void error6(FragmentTransaction unrelated) {
+        FragmentTransaction transaction;
+        FragmentTransaction transaction2;
+        // Comment in between variable declaration and assignment
+        transaction = getFragmentManager().beginTransaction();
+        transaction2 = transaction;
+        transaction2 = unrelated;
+        transaction2.commit();
     }
 }
