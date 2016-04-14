@@ -1065,6 +1065,14 @@ public final class SdkConstants {
     // ConstraintLayout layout params
     public static final String ATTR_LAYOUT_EDITOR_ABSOLUTE_X = "layout_editor_absoluteX";
     public static final String ATTR_LAYOUT_EDITOR_ABSOLUTE_Y = "layout_editor_absoluteY";
+    public static final String ATTR_LAYOUT_LEFT_CREATOR = "layout_constraintLeft_creator";
+    public static final String ATTR_LAYOUT_RIGHT_CREATOR = "layout_constrainRight_creator";
+    public static final String ATTR_LAYOUT_TOP_CREATOR = "layout_constraintTop_creator";
+    public static final String ATTR_LAYOUT_BOTTOM_CREATOR = "layout_constraintBottom_creator";
+    public static final String ATTR_LAYOUT_BASELINE_CREATOR = "layout_constraintBaseline_creator";
+    public static final String ATTR_LAYOUT_CENTER_CREATOR = "layout_constraintCenter_creator";
+    public static final String ATTR_LAYOUT_CENTER_X_CREATOR = "layout_constraintCenterX_creator";
+    public static final String ATTR_LAYOUT_CENTER_Y_CREATOR = "layout_constraintCenterY_creator";
     public static final String ATTR_LAYOUT_LEFT_MARGIN = "layout_constraintLeft_margin";
     public static final String ATTR_LAYOUT_RIGHT_MARGIN = "layout_constraintRight_margin";
     public static final String ATTR_LAYOUT_TOP_MARGIN = "layout_constraintTop_margin";
