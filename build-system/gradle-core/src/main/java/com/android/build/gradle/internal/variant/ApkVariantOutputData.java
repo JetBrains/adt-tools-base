@@ -42,7 +42,6 @@ import java.util.List;
  */
 public class ApkVariantOutputData extends BaseVariantOutputData {
 
-    public PackageAndroidArtifact packageAndroidArtifactTask;
     public ZipAlign zipAlignTask;
     public SplitZipAlign splitZipAlign;
 

@@ -123,6 +123,7 @@ import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.PackageAndroidArtifact;
+import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.PackageSplitAbi;
 import com.android.build.gradle.tasks.PackageSplitRes;
 import com.android.build.gradle.tasks.PrePackageApplication;
@@ -1650,7 +1651,7 @@ public abstract class TaskManager {
 
         checkNotNull(variantScope.getJavacTask());
 
-        final ApkVariantData variantData = (ApkVariantData) variantScope.getVariantData();
+        final BaseVariantData<? extends BaseVariantOutputData> variantData = variantScope.getVariantData();
         final GradleVariantConfiguration config = variantData.getVariantConfiguration();
 
         TransformManager transformManager = variantScope.getTransformManager();
@@ -2222,8 +2223,8 @@ public abstract class TaskManager {
                             ? PackageAndroidArtifact.DexPackagingPolicy.STANDARD
                             : PackageAndroidArtifact.DexPackagingPolicy.INSTANT_RUN;
 
-            AndroidTask<PackageAndroidArtifact> packageApp = androidTasks.create(tasks,
-                    new PackageAndroidArtifact.ConfigAction(
+            AndroidTask<PackageApplication> packageApp = androidTasks.create(tasks,
+                    new PackageApplication.ConfigAction(
                             variantOutputScope,
                             dexPackagingPolicy,
                             incrementalMode != IncrementalMode.NONE));
