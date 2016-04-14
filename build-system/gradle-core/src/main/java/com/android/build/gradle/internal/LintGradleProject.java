@@ -538,7 +538,7 @@ public class LintGradleProject extends Project {
             String compileTarget = mProject.getCompileTarget();
             AndroidVersion version = AndroidTargetHash.getPlatformVersion(compileTarget);
             if (version != null) {
-                return version.getApiLevel();
+                return version.getFeatureLevel();
             }
 
             return super.getBuildSdk();
