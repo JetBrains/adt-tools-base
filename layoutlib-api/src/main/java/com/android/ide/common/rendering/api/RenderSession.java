@@ -19,6 +19,7 @@ package com.android.ide.common.rendering.api;
 import static com.android.ide.common.rendering.api.Result.Status.NOT_IMPLEMENTED;
 
 import com.android.ide.common.rendering.api.Result.Status;
+import com.android.util.PropertiesMap;
 
 import java.awt.image.BufferedImage;
 import java.util.List;
@@ -107,8 +108,18 @@ public class RenderSession {
      * values, for the given view Object.
      * @param viewObject the view object.
      * @return a map of the default property values or null.
+     * @deprecated use {@link #getDefaultProperties()}
      */
+    @Deprecated
     public Map<String, String> getDefaultProperties(Object viewObject) {
+        return null;
+    }
+
+    /**
+     * Returns the map of View Cookie -> properties (attribute name, attribute value) for all the
+     * views that have a view cookie.
+     */
+    public Map<Object, PropertiesMap> getDefaultProperties() {
         return null;
     }
 
