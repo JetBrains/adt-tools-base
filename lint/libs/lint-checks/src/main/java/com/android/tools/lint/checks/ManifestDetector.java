@@ -42,18 +42,23 @@ import static com.android.SdkConstants.TAG_USES_PERMISSION;
 import static com.android.SdkConstants.TAG_USES_SDK;
 import static com.android.SdkConstants.TOOLS_URI;
 import static com.android.SdkConstants.VALUE_FALSE;
+import static com.android.ide.common.repository.GradleCoordinate.COMPARE_PLUS_HIGHER;
 import static com.android.xml.AndroidManifest.NODE_ACTION;
 import static com.android.xml.AndroidManifest.NODE_DATA;
 import static com.android.xml.AndroidManifest.NODE_METADATA;
 
 import com.android.annotations.NonNull;
+import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.BuildTypeContainer;
+import com.android.builder.model.Dependencies;
+import com.android.builder.model.MavenCoordinates;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.ProductFlavorContainer;
 import com.android.builder.model.SourceProviderContainer;
 import com.android.builder.model.Variant;
+import com.android.ide.common.repository.GradleCoordinate;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.resources.ResourceUrl;
 import com.android.tools.lint.detector.api.Category;
@@ -393,11 +398,30 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             Severity.WARNING,
             IMPLEMENTATION);
 
+    /** Uses Wear Bind Listener which is deprecated */
+    public static final Issue WEARABLE_BIND_LISTENER = Issue.create(
+            "WearableBindListener", //$NON-NLS-1$
+            "Usage of Android Wear BIND_LISTENER is deprecated",
+            "BIND_LISTENER receives all Android Wear events whether the application needs " +
+            "them or not. This can be inefficient and cause applications to wake up " +
+            "unnecessarily. With Google Play Services 8.2 and above it is recommended to use " +
+            "a more efficient combination of manifest listeners and api-based live " +
+            "listeners filtered by action, path and/or path prefix. ",
+
+            Category.PERFORMANCE,
+            6,
+            Severity.FATAL,
+            IMPLEMENTATION).addMoreInfo(
+            "http://developer.android.com/training/wearables/data-layer/events.html");
+
     /** Permission name of mock location permission */
     public static final String MOCK_LOCATION_PERMISSION =
             "android.permission.ACCESS_MOCK_LOCATION";   //$NON-NLS-1$
     // Error message used by quick fix
     public static final String MISSING_FULL_BACKUP_CONTENT_RESOURCE = "Missing `<full-backup-content>` resource";
+
+    private static final GradleCoordinate MIN_WEARABLE_GMS_VERSION =
+      GradleCoordinate.parseVersionOnly("8.2.0");
 
     /** Constructs a new {@link ManifestDetector} check */
     public ManifestDetector() {
@@ -651,6 +675,41 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 }
 
                 checkMipmapIcon(context, element);
+            } else if (tag.equals(TAG_SERVICE)
+                       && context.getMainProject().isGradleProject()) {
+                Attr bindListenerAttr = null;
+                for (Element child : LintUtils.getChildren(element)) {
+                    if (child.getTagName().equals(TAG_INTENT_FILTER)) {
+                        for (Element innerChild : LintUtils.getChildren(child)) {
+                            if (innerChild.getTagName().equals(NODE_ACTION)) {
+                                Attr nodeNS = innerChild.getAttributeNodeNS(ANDROID_URI, ATTR_NAME);
+                                if (nodeNS != null
+                                    && "com.google.android.gms.wearable.BIND_LISTENER"
+                                        .equals(nodeNS.getValue())) {
+                                    bindListenerAttr = nodeNS;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (bindListenerAttr == null) {
+                    return;
+                }
+                // Ensure that the play-services-wearable version dependency is >= 8.2.0
+                Variant variant = context.getMainProject().getCurrentVariant();
+                if (variant != null) {
+                    Dependencies dependencies = variant.getMainArtifact().getDependencies();
+                    for (AndroidLibrary library : dependencies.getLibraries()) {
+                        if (hasWearableGmsDependency(library)) {
+                            context.report(WEARABLE_BIND_LISTENER,
+                                    element, context.getLocation(bindListenerAttr),
+                                    "The `com.google.android.gms.wearable.BIND_LISTENER`" +
+                                            " action is deprecated.");
+                            break;
+                        }
+                    }
+                }
             }
 
             return;
@@ -890,6 +949,26 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 }
             }
         }
+    }
+
+    // Method to check if the app has a gms wearable dependency that
+    // matches the specific criteria i.e >= MIN_WEARABLE_GMS_VERSION
+    private boolean hasWearableGmsDependency(AndroidLibrary library) {
+        MavenCoordinates mc = library.getResolvedCoordinates();
+        if (mc != null
+            && mc.getArtifactId().equals("play-services-wearable") //$NON-NLS-1$
+            && mc.getGroupId().equals("com.google.android.gms")) { //$NON-NLS-1$
+            GradleCoordinate gc = GradleCoordinate.parseVersionOnly(mc.getVersion());
+            if (COMPARE_PLUS_HIGHER.compare(gc, MIN_WEARABLE_GMS_VERSION) >= 0) {
+                return true;
+            }
+        }
+        for (AndroidLibrary dependency : library.getLibraryDependencies()) {
+            if (hasWearableGmsDependency(dependency)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
