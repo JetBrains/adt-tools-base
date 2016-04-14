@@ -36,6 +36,28 @@ public class MessageHeader {
     public byte type; // The ID of the target component.
     public short subType; // A target component-dependent ID.
 
+    public MessageHeader() {
+        length = -1;
+        id = -1;
+        remainingChunks = -1;
+        flags = -1;
+        type = -1;
+        subType = -1;
+    }
+
+    public MessageHeader(int length, short id, short remainingChunks, byte flags, byte type, short subType) {
+        this.length = length;
+        this.id = id;
+        this.remainingChunks = remainingChunks;
+        this.flags = flags;
+        this.type = type;
+        this.subType = subType;
+    }
+
+    public MessageHeader(ByteBuffer input) {
+        parseFromBuffer(input);
+    }
+
     public void parseFromBuffer(ByteBuffer input) {
         length = input.getInt();
         id = input.getShort();
@@ -72,5 +94,19 @@ public class MessageHeader {
         flags = source.flags;
         type = source.type;
         subType = source.subType;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof MessageHeader) {
+            MessageHeader header = (MessageHeader)o;
+            return length == header.length &&
+                   id == header.id &&
+                   remainingChunks == header.remainingChunks &&
+                   flags == header.flags &&
+                   type == header.type &&
+                   subType == header.subType;
+        }
+        return false;
     }
 }
