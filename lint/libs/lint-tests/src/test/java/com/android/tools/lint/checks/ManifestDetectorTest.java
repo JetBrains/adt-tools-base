@@ -22,10 +22,14 @@ import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidArtifact;
+import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.BuildType;
 import com.android.builder.model.BuildTypeContainer;
+import com.android.builder.model.Dependencies;
+import com.android.builder.model.MavenCoordinates;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.ProductFlavorContainer;
 import com.android.builder.model.SourceProvider;
@@ -36,6 +40,9 @@ import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Project;
 import com.google.common.collect.Lists;
+
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import java.io.File;
 import java.util.Arrays;
@@ -858,6 +865,60 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                                 + "</manifest>\n")));
     }
 
+    public void testWearableBindListener() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.WEARABLE_BIND_LISTENER);
+        assertEquals("AndroidManifest.xml:11: Error: The com.google.android.gms.wearable.BIND_LISTENER action is deprecated. [WearableBindListener]\n"
+                        + "                  <action android:name=\"com.google.android.gms.wearable.BIND_LISTENER\" />\n"
+                        + "                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                        + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        xml("AndroidManifest.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    package=\"com.example.helloworld\" >\n"
+                                + "    <uses-sdk android:targetSdkVersion=\"22\" />"
+                                + "\n"
+                                + "    <application\n"
+                                + "        android:label=\"@string/app_name\"\n"
+                                + "        android:allowBackup=\"false\"\n"
+                                + "        android:theme=\"@style/AppTheme\" >\n"
+                                + "        <service android:name=\".WearMessageListenerService\">\n"
+                                + "              <intent-filter>\n"
+                                + "                  <action android:name=\"com.google.android.gms.wearable.BIND_LISTENER\" />\n"
+                                + "              </intent-filter>\n"
+                                + "        </service>\n"
+                                + "    </application>\n"
+                                + "\n"
+                                + "</manifest>\n")));
+    }
+
+    // No warnings here because the variant points to a gms dependency version 8.1.0
+    public void testWearableBindListenerNoWarn() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.WEARABLE_BIND_LISTENER);
+        assertEquals("No warnings.",
+
+                lintProject(
+                        xml("AndroidManifest.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    package=\"com.example.helloworld\" >\n"
+                                + "    <uses-sdk android:targetSdkVersion=\"22\" />"
+                                + "\n"
+                                + "    <application\n"
+                                + "        android:label=\"@string/app_name\"\n"
+                                + "        android:allowBackup=\"false\"\n"
+                                + "        android:theme=\"@style/AppTheme\" >\n"
+                                + "        <service android:name=\".WearMessageListenerService\">\n"
+                                + "              <intent-filter>\n"
+                                + "                  <action android:name=\"com.google.android.gms.wearable.BIND_LISTENER\" />\n"
+                                + "              </intent-filter>\n"
+                                + "        </service>\n"
+                                + "    </application>\n"
+                                + "\n"
+                                + "</manifest>\n")));
+    }
+
     // Custom project which locates all manifest files in the project rather than just
     // being hardcoded to the root level
 
@@ -1091,6 +1152,65 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                 }
             };
 
+        } else if (mEnabled.contains(ManifestDetector.WEARABLE_BIND_LISTENER)) {
+            return new TestLintClient() {
+                @NonNull
+                @Override
+                protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
+                    return new Project(this, dir, referenceDir) {
+
+                        @Override
+                        public boolean isGradleProject() {
+                            return true;
+                        }
+
+                        @Nullable
+                        @Override
+                        public Variant getCurrentVariant() {
+                            // testWearableBindListener or testWearableBindListenerNoWarn
+                            String version =
+                                    getName().endsWith("testWearableBindListener")
+                                            ? "8.4.0" : "8.1.+";
+                            AndroidLibrary library = mock(AndroidLibrary.class);
+                            when(library.getResolvedCoordinates()).then(
+                                    (Answer<MavenCoordinates>) invocation -> {
+                                        MavenCoordinates mc = mock(MavenCoordinates.class);
+                                        when(mc.getArtifactId())
+                                                .thenReturn("play-services-wearable");
+                                        when(mc.getGroupId())
+                                                .thenReturn("com.google.android.gms");
+                                        when(mc.getVersion()).thenReturn(version);
+                                        return mc;
+                                    });
+                            AndroidLibrary mainLibrary = mock(AndroidLibrary.class);
+                            when(mainLibrary.getResolvedCoordinates()).then(
+                                    (Answer<MavenCoordinates>) invocation -> {
+                                        MavenCoordinates mc = mock(MavenCoordinates.class);
+                                        when(mc.getArtifactId())
+                                                .thenReturn("test-intermediate-dep");
+                                        when(mc.getGroupId())
+                                                .thenReturn("com.sample.useful");
+                                        when(mc.getVersion()).thenReturn(version);
+                                        return mc;
+                                    });
+
+                            when(mainLibrary.getLibraryDependencies())
+                                    .thenAnswer(
+                                            (Answer<List<? extends AndroidLibrary>>)
+                                                    invocation -> Collections.singletonList(library)
+                                    );
+                            Dependencies dependencies = mock(Dependencies.class);
+                            when(dependencies.getLibraries())
+                                    .thenReturn(Collections.singleton(library));
+                            AndroidArtifact artifact = mock(AndroidArtifact.class);
+                            when(artifact.getDependencies()).thenReturn(dependencies);
+                            Variant mockVariant = mock(Variant.class);
+                            when(mockVariant.getMainArtifact()).thenReturn(artifact);
+                            return mockVariant;
+                        }
+                    };
+                }
+            };
         }
         return super.createClient();
     }
