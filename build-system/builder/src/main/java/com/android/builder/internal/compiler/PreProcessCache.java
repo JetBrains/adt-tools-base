@@ -23,6 +23,7 @@ import com.android.annotations.concurrency.GuardedBy;
 import com.android.annotations.concurrency.Immutable;
 import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.repository.Revision;
+import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
 import com.android.utils.XmlUtils;
@@ -53,9 +54,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-/**
- */
-public abstract class PreProcessCache<T extends PreProcessCache.Key> {
+abstract class PreProcessCache<T extends PreProcessCache.Key> {
 
     private static final String NODE_ITEMS = "items";
     private static final String NODE_ITEM = "item";
@@ -68,7 +67,7 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
 
     private static final String XML_VERSION = "2";
 
-    protected interface BaseItem {
+    interface BaseItem {
         @NonNull
         File getSourceFile();
 
@@ -130,7 +129,7 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
         }
 
         @NonNull
-        protected CountDownLatch getLatch() {
+        CountDownLatch getLatch() {
             return mLatch;
         }
 
@@ -157,7 +156,7 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
      * stored in a cache file and then reloaded during the current build.
      */
     @Immutable
-    protected static class StoredItem implements BaseItem {
+    private static class StoredItem implements BaseItem {
         @NonNull
         private final File mSourceFile;
         @NonNull
@@ -229,7 +228,7 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
             return new Key(sourceFile, buildToolsRevision);
         }
 
-        protected Key(@NonNull File sourceFile, @NonNull Revision buildToolsRevision) {
+        Key(@NonNull File sourceFile, @NonNull Revision buildToolsRevision) {
             mSourceFile = sourceFile;
             mBuildToolsRevision = buildToolsRevision;
         }
@@ -244,6 +243,7 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
             return mSourceFile;
         }
 
+        @SuppressWarnings("RedundantIfStatement")
         @Override
         public boolean equals(Object o) {
             if (this == o) {
@@ -271,7 +271,7 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
         }
     }
 
-    protected interface KeyFactory<T> {
+    interface KeyFactory<T> {
         T of(@NonNull File sourceFile, @NonNull Revision revision, @NonNull NamedNodeMap attrMap);
     }
 
@@ -312,7 +312,7 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
      * @param itemKey the key of the item
      * @return a pair of item, boolean
      */
-    protected synchronized Pair<Item, Boolean> getItem(@NonNull T itemKey) {
+    synchronized Pair<Item, Boolean> getItem(@NonNull T itemKey) {
 
         // get the item
         Item item = mMap.get(itemKey);
@@ -385,6 +385,7 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
         mStoredItems.clear();
         mHits = 0;
         mMisses = 0;
+        mLoaded = false;
     }
 
     private synchronized void loadItems(@NonNull File itemStorage) {
@@ -454,7 +455,7 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
         }
     }
 
-    protected synchronized void saveItems(@NonNull File itemStorage) throws IOException {
+    private synchronized void saveItems(@NonNull File itemStorage) throws IOException {
         // write "compact" blob
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
@@ -509,9 +510,9 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
 
             String content = XmlPrettyPrinter.prettyPrint(document, true);
 
-            itemStorage.getParentFile().mkdirs();
+            FileUtils.mkdirs(itemStorage.getParentFile());
             Files.write(content, itemStorage, Charsets.UTF_8);
-        } catch (ParserConfigurationException e) {
+        } catch (ParserConfigurationException ignored) {
         }
     }
 
@@ -560,11 +561,11 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
         return itemNode;
     }
 
-    protected synchronized void incrementMisses() {
+    synchronized void incrementMisses() {
         mMisses++;
     }
 
-    protected synchronized void incrementHits() {
+    synchronized void incrementHits() {
         mHits++;
     }
 

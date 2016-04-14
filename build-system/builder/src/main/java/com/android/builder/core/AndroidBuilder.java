@@ -1755,9 +1755,11 @@ public class AndroidBuilder {
      * Converts the bytecode to Dalvik format, using the {@link PreDexCache} layer.
      *
      * @param inputFile the input file
-     * @param outFile the output file or folder if multi-dex is enabled.
-     * @param multiDex whether multidex is enabled.
+     * @param outFile the output file or folder if multi-dex is enabled
+     * @param multiDex whether multidex is enabled
      * @param dexOptions dex options
+     * @param optimize whether to run dx with {@code --no-optimize} or not
+     * @param processOutputHandler output handler to use
      *
      * @throws IOException
      * @throws InterruptedException
@@ -1766,8 +1768,9 @@ public class AndroidBuilder {
     public void preDexLibrary(
             @NonNull File inputFile,
             @NonNull File outFile,
-                     boolean multiDex,
+            boolean multiDex,
             @NonNull DexOptions dexOptions,
+            boolean optimize,
             @NonNull ProcessOutputHandler processOutputHandler)
             throws IOException, InterruptedException, ProcessException {
         checkState(mTargetInfo != null,
@@ -1779,6 +1782,7 @@ public class AndroidBuilder {
                 outFile,
                 multiDex,
                 dexOptions,
+                optimize,
                 processOutputHandler);
     }
 

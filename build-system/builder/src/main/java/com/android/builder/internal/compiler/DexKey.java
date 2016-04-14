@@ -19,8 +19,18 @@ package com.android.builder.internal.compiler;
 import com.android.annotations.NonNull;
 import com.android.annotations.concurrency.Immutable;
 import com.android.repository.Revision;
+import com.google.common.base.Joiner;
+import com.google.common.base.Objects;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSortedSet;
+
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 
 import java.io.File;
+import java.util.List;
 
 /**
  * Key to store Item/StoredItem in maps.
@@ -28,24 +38,93 @@ import java.io.File;
  * - source file
  * - build tools revision
  * - jumbo mode
+ * - optimization on/off
+ * - additional parameters/flags
  */
 @Immutable
-class DexKey extends PreProcessCache.Key {
+final class DexKey extends PreProcessCache.Key {
+
+    private static final char ADDITIONAL_PARAMETERS_SEPARATOR = ',';
+
+    private static final String ATTR_JUMBO_MODE = "jumboMode";
+
+    private static final String ATTR_OPTIMIZE = "optimize";
+
+    private static final String ATTR_ADDITIONAL_PARAMETERS = "custom-flags";
+
+    static final PreProcessCache.KeyFactory<DexKey> FACTORY = (sourceFile, revision, attrMap) -> {
+        boolean jumboMode =
+                Boolean.parseBoolean(attrMap.getNamedItem(ATTR_JUMBO_MODE).getNodeValue());
+
+        boolean optimize;
+        Node optimizeAttribute = attrMap.getNamedItem(ATTR_OPTIMIZE);
+
+        //noinspection SimplifiableIfStatement
+        if (optimizeAttribute != null) {
+            optimize = Boolean.parseBoolean(optimizeAttribute.getNodeValue());
+        } else {
+            // Old code didn't set this attribute and always used optimizations.
+            optimize = true;
+        }
+
+        List<String> additionalParameters = ImmutableList.of();
+        Node additionalParametersAttribute = attrMap.getNamedItem(ATTR_ADDITIONAL_PARAMETERS);
+        if (additionalParametersAttribute != null) {
+            additionalParameters =
+                    Splitter.on(ADDITIONAL_PARAMETERS_SEPARATOR)
+                            .omitEmptyStrings()
+                            .splitToList(additionalParametersAttribute.getNodeValue());
+        }
+
+        return DexKey.of(sourceFile, revision, jumboMode, optimize, additionalParameters);
+    };
+
     private final boolean mJumboMode;
 
-    static DexKey of(@NonNull File sourceFile, @NonNull Revision buildToolsRevision,
-            boolean jumboMode) {
-        return new DexKey(sourceFile, buildToolsRevision, jumboMode);
+    private final boolean mOptimize;
+
+    @NonNull
+    private final ImmutableSortedSet<String> mAdditionalParameters;
+
+    static DexKey of(
+            @NonNull File sourceFile,
+            @NonNull Revision buildToolsRevision,
+            boolean jumboMode,
+            boolean optimize,
+            @NonNull Iterable<String> additionalParameters) {
+        return new DexKey(
+                sourceFile, buildToolsRevision, jumboMode, optimize, additionalParameters);
     }
 
-    private DexKey(@NonNull File sourceFile, @NonNull Revision buildToolsRevision,
-            boolean jumboMode) {
+    private DexKey(
+            @NonNull File sourceFile,
+            @NonNull Revision buildToolsRevision,
+            boolean jumboMode,
+            boolean optimize,
+            @NonNull Iterable<String> additionalParameters) {
         super(sourceFile, buildToolsRevision);
         mJumboMode = jumboMode;
+        mOptimize = optimize;
+        mAdditionalParameters = ImmutableSortedSet.copyOf(additionalParameters);
     }
 
-    boolean isJumboMode() {
-        return mJumboMode;
+    void writeFieldsToXml(@NonNull Node itemNode) {
+        Document document = itemNode.getOwnerDocument();
+
+        Attr jumboMode = document.createAttribute(ATTR_JUMBO_MODE);
+        jumboMode.setValue(Boolean.toString(this.mJumboMode));
+        itemNode.getAttributes().setNamedItem(jumboMode);
+
+        Attr optimize = document.createAttribute(ATTR_OPTIMIZE);
+        optimize.setValue(Boolean.toString(this.mOptimize));
+        itemNode.getAttributes().setNamedItem(optimize);
+
+        if (!mAdditionalParameters.isEmpty()) {
+            Attr additionalParameters = document.createAttribute(ATTR_ADDITIONAL_PARAMETERS);
+            additionalParameters.setValue(
+                    Joiner.on(ADDITIONAL_PARAMETERS_SEPARATOR).join(mAdditionalParameters));
+            itemNode.getAttributes().setNamedItem(additionalParameters);
+        }
     }
 
     @Override
@@ -53,7 +132,7 @@ class DexKey extends PreProcessCache.Key {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof DexKey)) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
         if (!super.equals(o)) {
@@ -61,18 +140,24 @@ class DexKey extends PreProcessCache.Key {
         }
 
         DexKey dexKey = (DexKey) o;
-
-        if (mJumboMode != dexKey.mJumboMode) {
-            return false;
-        }
-
-        return true;
+        return mJumboMode == dexKey.mJumboMode
+                && mOptimize == dexKey.mOptimize
+                && Objects.equal(mAdditionalParameters, dexKey.mAdditionalParameters);
     }
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (mJumboMode ? 1 : 0);
-        return result;
+        return Objects.hashCode(super.hashCode(), mJumboMode, mOptimize, mAdditionalParameters);
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this)
+                .add("buildTools", getBuildToolsRevision())
+                .add("sourceFile", getSourceFile())
+                .add("mJumboMode", mJumboMode)
+                .add("mOptimize", mOptimize)
+                .add("mAdditionalParameters", mAdditionalParameters)
+                .toString();
     }
 }
