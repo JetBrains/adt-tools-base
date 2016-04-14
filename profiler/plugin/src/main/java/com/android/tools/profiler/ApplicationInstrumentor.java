@@ -105,14 +105,94 @@ public final class ApplicationInstrumentor {
             super(ASM5, mv);
         }
 
+        /**
+         * A few simple transformations to intercept calls to key java.net.URL methods
+         *
+         * @return true if we instrumented the instruction
+         */
+        private boolean httpInstrumentation(int opcode, String owner, String name, String desc,
+                boolean itf) {
+
+            final String URL_CLASS = "java/net/URL";
+            final String WRAPPER_CLASS = "com/android/tools/profiler/support/network/HttpWrapper";
+
+            if (opcode == INVOKEVIRTUAL && owner.equals(URL_CLASS)) {
+                assert !itf;
+
+                if (name.equals("openConnection") && desc.equals("()Ljava/net/URLConnection;")) {
+
+                    // url.openConnection()
+                    //      ==>
+                    // HttpWrapper.wrapURLConnection(url.openConnection())
+                    //
+                    super.visitMethodInsn(opcode, owner, name, desc, itf);
+                    super.visitMethodInsn(INVOKESTATIC, WRAPPER_CLASS,
+                            "wrapURLConnection",
+                            "(Ljava/net/URLConnection;)Ljava/net/URLConnection;", false);
+                    return true;
+
+                } else if (name.equals("openConnection") && desc
+                        .equals("(Ljava/net/Proxy;)Ljava/net/URLConnection;")) {
+
+                    // url.openConnection(proxy)
+                    //      ==>
+                    // HttpWrapper.wrapURLConnection(url.openConnection(proxy))
+                    //
+                    super.visitMethodInsn(opcode, owner, name, desc, itf);
+                    super.visitMethodInsn(INVOKESTATIC, WRAPPER_CLASS,
+                            "wrapURLConnection",
+                            "(Ljava/net/URLConnection;)Ljava/net/URLConnection;", false);
+                    return true;
+
+                } else if (name.equals("openStream") && desc.equals("()Ljava/io/InputStream;")) {
+
+                    // url.openStream()
+                    //      ==>
+                    // HttpWrapper.wrapOpenStream(url)
+                    //
+                    super.visitMethodInsn(INVOKESTATIC, WRAPPER_CLASS,
+                            "wrapOpenStream", "(Ljava/net/URL;)Ljava/io/InputStream;", false);
+                    return true;
+
+                } else if (name.equals("getContent") && desc.equals("()Ljava/lang/Object;")) {
+
+                    // url.getContent()
+                    //      ==>
+                    // HttpWrapper.wrapGetContent(url)
+                    //
+                    super.visitMethodInsn(INVOKESTATIC, WRAPPER_CLASS,
+                            "wrapGetContent", "(Ljava/net/URL;)Ljava/lang/Object;", false);
+                    return true;
+
+                } else if (name.equals("getContent") && desc
+                        .equals("([Ljava/lang/Class;)Ljava/lang/Object;")) {
+
+                    // url.getContent(types)
+                    //      ==>
+                    // HttpWrapper.wrapGetContent(url, types)
+                    //
+                    super.visitMethodInsn(INVOKESTATIC, WRAPPER_CLASS,
+                            "wrapGetContent",
+                            "(Ljava/net/URL;[Ljava/lang/Class;)Ljava/lang/Object;", false);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         @Override
         public void visitMethodInsn(int opcode, String owner, String name, String desc,
                 boolean itf) {
+
             if (owner.equals(ANDROID_APPLICATION_CLASSNAME)) {
                 owner = PROFILER_APPLICATION_CLASSNAME;
             }
 
-            super.visitMethodInsn(opcode, owner, name, desc, itf);
+            if (!httpInstrumentation(opcode, owner, name, desc, itf)) {
+                super.visitMethodInsn(opcode, owner, name, desc, itf);
+            }
         }
     }
 }
+
