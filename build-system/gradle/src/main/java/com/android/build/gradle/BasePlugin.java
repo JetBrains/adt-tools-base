@@ -64,9 +64,12 @@ import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.ProcessRecorderFactory;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
+import com.android.builder.sdk.DefaultSdkLoader;
 import com.android.builder.sdk.TargetInfo;
 import com.android.dx.command.dexer.Main;
 import com.android.ide.common.internal.ExecutorSingleton;
+import com.android.sdklib.repository.AndroidSdkHandler;
+import com.android.sdklib.repository.legacy.LegacyRemoteRepoLoader;
 import com.android.utils.ILogger;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
@@ -355,6 +358,7 @@ public abstract class BasePlugin {
     protected void configureProject() {
         extraModelInfo = new ExtraModelInfo(project, isLibrary());
         checkGradleVersion();
+        AndroidSdkHandler.setRemoteFallback(new LegacyRemoteRepoLoader(DefaultSdkLoader.SETTINGS));
         sdkHandler = new SdkHandler(project, getLogger());
         androidBuilder = new AndroidBuilder(
                 project == project.getRootProject() ? project.getName() : project.getPath(),
