@@ -6,19 +6,15 @@ version = '1.0'// TODO: Pass in as an argument
 
 configurations {
     support
-    gradle_api
 }
 
 dependencies {
     compile gradleApi()
     compile 'org.ow2.asm:asm:5.0.3'
     compile 'com.google.guava:guava:17.0'
-    compile('com.android.tools.build:gradle-api:2.0.0-beta2') { transitive = false }
-    compile project(':base:common')
+    compile('com.android.tools.build:gradle-api:2.0.0-beta2')
 
     support project(':base:profiler-supportlib')
-
-    gradle_api gradleApi();
 }
 
 project.ext.pomName = 'Android Studio profiler gradle plugin'
@@ -28,14 +24,31 @@ jar {
     from configurations.support
 }
 
-task gradleApiFullJar(type: Jar) {
-    from configurations.gradle_api.collect { it.isDirectory() ? it : zipTree(it) }
-    archiveName "gradle-api-full-${gradle.gradleVersion}.jar"
+
+// We have a small set of dependencies, so copy them manually
+def deps = [
+        "org/ow2/asm/asm/5.0.3",
+        "com/google/guava/guava/17.0",
+        "com/android/tools/build/gradle-api/2.0.0-beta2",
+        "com/android/tools/annotations/25.0.0-beta2",
+]
+deps.each { name ->
+    // create a task that copies some additional data in the library bundle
+    def copyTask = tasks.create(name: "copy$name", type: Copy) {
+        from           file("../../../../prebuilts/tools/common/m2/repository/" + name)
+        destinationDir file("$rootProject.ext.androidHostOut/studio/" + name)
+    }
+    publishLocal.dependsOn copyTask
 }
 
-// This task generates in prebuilts a fat jar with what is needed to build
-// a gradle plugin from outside gradle.
-task prebuildGradleApiFullJar(type: Copy, dependsOn: gradleApiFullJar) {
-    from gradleApiFullJar.archivePath
-    into "$projectDir/../../../../prebuilts/tools/common/gradle-api-full"
+// Publishing this library goes directly to a directory seen by studio at development time,
+// and forms part of the components bundled with studio at build time.
+afterEvaluate {
+    publishLocal {
+        repositories {
+            mavenDeployer {
+                repository(url: uri("$rootProject.ext.androidHostOut/studio"))
+            }
+        }
+    }
 }
