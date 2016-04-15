@@ -13,6 +13,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src/fromGradle/resources" type="java-resource" />
       <sourceFolder url="file://$MODULE_DIR$/src/main/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/main/resources" type="java-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/src/main/generated" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/.gradle" />
     </content>
     <orderEntry type="library" name="asm-tools" level="project" />
@@ -1045,5 +1046,6 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="library" name="protobuf-java-2.6.1" level="project" />
   </component>
 </module>

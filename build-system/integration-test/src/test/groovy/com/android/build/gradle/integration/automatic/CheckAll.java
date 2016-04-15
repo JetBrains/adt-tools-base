@@ -101,7 +101,8 @@ public class CheckAll {
             "filteredOutBuildType", // assembleDebug does not exist as debug build type is removed.
             "instant-unit-tests", // Specific to testing instant run, not a "real" project.
             "projectWithLocalDeps", // Doesn't have a build.gradle, not much to check anyway.
-            "simpleManifestMergingTask" // Not an Android project.
+            "simpleManifestMergingTask", // Not an Android project.
+            "externalBuildPlugin" // Not an Android Project.
     );
 
     private static final ImmutableSet<String> COMPONENT_MODEL_PROJECTS = ImmutableSet.of(
