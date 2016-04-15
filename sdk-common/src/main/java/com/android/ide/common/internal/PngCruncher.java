@@ -36,9 +36,9 @@ public interface PngCruncher {
 
     /**
      * Crunch a given file into another given file. This may be implemented synchronously or
-     * asynchronously. Therefore the output file may not be present until {@link #end()} is called
-     * and returned. When implemented asynchronously, this act like queueing a crunching request.
-     * So this can be called multiple times and when
+     * asynchronously. Therefore the output file may not be present until {@link #end(int)} is
+     * called and returned. When implemented asynchronously, this act like queueing a crunching
+     * request. So this can be called multiple times and when
      * {@link #end(int)} is called and returned, all output files will be present.
      *
      * @param key obtained from the {@link #start()}

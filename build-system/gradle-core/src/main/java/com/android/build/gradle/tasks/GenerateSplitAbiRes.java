@@ -113,7 +113,7 @@ public class GenerateSplitAbiRes extends BaseTask {
             }
 
             Aapt aapt = new AaptV1(getBuilder().getProcessExecutor(),
-                    new LoggedProcessOutputHandler(getILogger()));
+                    new LoggedProcessOutputHandler(getILogger()), getBuildTools());
             AaptPackageConfig.Builder aaptConfig = new AaptPackageConfig.Builder();
             aaptConfig
                     .setManifestFile(tmpFile)

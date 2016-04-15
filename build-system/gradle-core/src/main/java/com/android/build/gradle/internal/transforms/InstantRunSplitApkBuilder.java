@@ -226,7 +226,7 @@ public class InstantRunSplitApkBuilder extends BaseTask {
         File resFilePackageFile = new File(supportDir, "resources_ap");
 
         Aapt aapt = new AaptV1(getBuilder().getProcessExecutor(),
-                new LoggedProcessOutputHandler(getILogger()));
+                new LoggedProcessOutputHandler(getILogger()), getBuildTools());
         AaptPackageConfig.Builder aaptConfig = new AaptPackageConfig.Builder()
                 .setManifestFile(androidManifest)
                 .setOptions(getAaptOptions())
