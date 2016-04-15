@@ -158,7 +158,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
      *   <li>We ignore the class constructor as we don't support it right now</li>
      *   <li>We skip abstract methods.</li>
      *   <li>For constructors split the method body into super arguments and the rest of
-     *   the method body, see {@link ConstructorDelegationDetector}</li>
+     *   the method body, see {@link ConstructorBuilder}</li>
      * </ul>
      */
     @Override
@@ -194,8 +194,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         access = Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC;
         MethodNode method = getMethodByNameInClass(name, desc, classNode);
         if (name.equals("<init>")) {
-            ConstructorDelegationDetector.Constructor constructor =
-                    ConstructorDelegationDetector.deconstruct(visitedClassName, method);
+            Constructor constructor = ConstructorBuilder.build(visitedClassName, method);
 
             MethodVisitor original = super.visitMethod(access, constructor.args.name, constructor.args.desc, constructor.args.signature, exceptions);
             ISVisitor mv = new ISVisitor(original, access, constructor.args.name, constructor.args.desc, isStatic, true /* isConstructor */);
@@ -1065,7 +1064,9 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
      */
     @NonNull
     private String computeOverrideMethodName(@NonNull String name, @NonNull String desc) {
-        if (desc.startsWith(instanceToStaticDescPrefix) && !name.equals("init$body")) {
+        if (desc.startsWith(instanceToStaticDescPrefix)
+                && !name.equals("init$args")
+                && !name.equals("init$body")) {
             return METHOD_MANGLE_PREFIX + name;
         }
         return name;

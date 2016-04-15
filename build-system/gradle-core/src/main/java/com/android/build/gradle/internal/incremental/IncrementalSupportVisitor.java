@@ -133,8 +133,8 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
     }
 
     /**
-     * Insert Constructor specific logic({@link ConstructorArgsRedirection} and
-     * {@link ConstructorDelegationDetector}) for constructor redirecting or
+     * Insert Constructor specific logic({@link ConstructorRedirection} and
+     * {@link ConstructorBuilder}) for constructor redirecting or
      * normal method redirecting ({@link MethodRedirection}) for other methods.
      */
     @Override
@@ -154,13 +154,17 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
                 || name.equals(AsmUtils.CLASS_INITIALIZER)) {
             return defaultVisitor;
         } else {
+            ArrayList<Type> args = new ArrayList<Type>(Arrays.asList(Type.getArgumentTypes(desc)));
+            boolean isStatic = (access & Opcodes.ACC_STATIC) != 0;
+            if (!isStatic) {
+                args.add(0, Type.getType(Object.class));
+            }
+
+
             ISMethodVisitor mv = new ISMethodVisitor(defaultVisitor, access, name, desc);
             if (name.equals(AsmUtils.CONSTRUCTOR)) {
-
-                ConstructorDelegationDetector.Constructor constructor =
-                        ConstructorDelegationDetector.deconstruct(visitedClassName, method);
+                Constructor constructor = ConstructorBuilder.build(visitedClassName, method);
                 LabelNode start = new LabelNode();
-                LabelNode after = new LabelNode();
                 method.instructions.insert(constructor.loadThis, start);
                 if (constructor.lineForLoad != -1) {
                     // Record the line number from the start of LOAD_0 for uninitialized 'this'.
@@ -169,21 +173,12 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
                     method.instructions.insert(constructor.loadThis,
                         new LineNumberNode(constructor.lineForLoad, start));
                 }
-                method.instructions.insert(constructor.delegation, after);
-                mv.addRedirection(
-                        new ConstructorArgsRedirection(
-                            start,
-                            visitedClassName,
-                            constructor.args.name + "." + constructor.args.desc,
-                            after,
-                            Type.getArgumentTypes(constructor.delegation.desc)));
-
-                mv.addRedirection(new MethodRedirection(after, constructor.body.name + "."
-                        + constructor.body.desc, Type.getReturnType(desc)));
+                mv.addRedirection(new ConstructorRedirection(start, constructor, args));
             } else {
                 mv.addRedirection(new MethodRedirection(
                         new LabelNode(mv.getStartLabel()),
                         name + "." + desc,
+                        args,
                         Type.getReturnType(desc)));
             }
             method.accept(mv);
@@ -300,7 +295,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
             if (redirection != null) {
                 // A special line number to mark this area of code.
                 super.visitLineNumber(0, label);
-                redirection.redirect(this, change, args);
+                redirection.redirect(this, change);
             }
         }
 
@@ -483,7 +478,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         int access = Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC;
 
         Method m = new Method(AsmUtils.CONSTRUCTOR,
-                ConstructorArgsRedirection.DISPATCHING_THIS_SIGNATURE);
+                ConstructorRedirection.DISPATCHING_THIS_SIGNATURE);
         MethodVisitor visitor = super.visitMethod(0, m.getName(), m.getDescriptor(), null, null);
         final GeneratorAdapter mv = new GeneratorAdapter(access, m, visitor);
 
@@ -494,7 +489,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
 
         // Get and store the constructor canonical name.
         mv.visitVarInsn(Opcodes.ALOAD, 1);
-        mv.push(0);
+        mv.push(1);
         mv.visitInsn(Opcodes.AALOAD);
         mv.unbox(Type.getType("Ljava/lang/String;"));
         final int constructorCanonicalName = mv.newLocal(Type.getType("Ljava/lang/String;"));
@@ -515,7 +510,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
                 // Parse method arguments and
                 mv.visitVarInsn(Opcodes.ALOAD, 0);
                 Type[] args = Type.getArgumentTypes(methodNode.desc);
-                int argc = 0;
+                int argc = 1;
                 for (Type t : args) {
                     mv.visitVarInsn(Opcodes.ALOAD, 1);
                     mv.push(argc + 1);
