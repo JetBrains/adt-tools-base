@@ -919,6 +919,34 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                                 + "</manifest>\n")));
     }
 
+    public void testWearableBindListenerCompileSdk24() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.WEARABLE_BIND_LISTENER);
+        assertEquals("AndroidManifest.xml:11: Error: The com.google.android.gms.wearable.BIND_LISTENER action is deprecated. Please upgrade to the latest available version of play-services-wearable: 8.4.0 [WearableBindListener]\n"
+                        + "                  <action android:name=\"com.google.android.gms.wearable.BIND_LISTENER\" />\n"
+                        + "                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                        + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        xml("AndroidManifest.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    package=\"com.example.helloworld\" >\n"
+                                + "    <uses-sdk android:targetSdkVersion=\"22\" />"
+                                + "\n"
+                                + "    <application\n"
+                                + "        android:label=\"@string/app_name\"\n"
+                                + "        android:allowBackup=\"false\"\n"
+                                + "        android:theme=\"@style/AppTheme\" >\n"
+                                + "        <service android:name=\".WearMessageListenerService\">\n"
+                                + "              <intent-filter>\n"
+                                + "                  <action android:name=\"com.google.android.gms.wearable.BIND_LISTENER\" />\n"
+                                + "              </intent-filter>\n"
+                                + "        </service>\n"
+                                + "    </application>\n"
+                                + "\n"
+                                + "</manifest>\n")));
+    }
+
     // Custom project which locates all manifest files in the project rather than just
     // being hardcoded to the root level
 
@@ -1162,6 +1190,15 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                         @Override
                         public boolean isGradleProject() {
                             return true;
+                        }
+
+                        @Override
+                        public int getBuildSdk() {
+                            if (getName().equals(
+                                    "ManifestDetectorTest_testWearableBindListenerCompileSdk24")) {
+                                return 24;
+                            }
+                            return super.getBuildSdk();
                         }
 
                         @Nullable
