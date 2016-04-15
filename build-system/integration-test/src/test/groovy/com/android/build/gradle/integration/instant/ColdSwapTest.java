@@ -26,6 +26,7 @@ import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject;
 import com.android.build.gradle.integration.common.truth.ApkSubject;
 import com.android.build.gradle.integration.common.truth.DexClassSubject;
 import com.android.build.gradle.integration.common.truth.DexFileSubject;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
 import com.android.tools.fd.client.InstantRunArtifact;
 import com.android.tools.fd.client.InstantRunArtifactType;
@@ -90,7 +91,7 @@ public class ColdSwapTest {
             }
 
             @Override
-            public void checkArtifacts(List<InstantRunArtifact> artifacts) {
+            public void checkArtifacts(List<InstantRunBuildContext.Artifact> artifacts) {
                 assertThat(artifacts).isEmpty();
             }
         });
@@ -123,24 +124,22 @@ public class ColdSwapTest {
             }
 
             @Override
-            public void checkArtifacts(List<InstantRunArtifact> artifacts) throws Exception {
+            public void checkArtifacts(List<InstantRunBuildContext.Artifact> artifacts) throws Exception {
                 assertThat(artifacts).hasSize(1);
-                InstantRunArtifact artifact = Iterables.getOnlyElement(artifacts);
+                InstantRunBuildContext.Artifact artifact = Iterables.getOnlyElement(artifacts);
 
-                expect.that(artifact.type).isEqualTo(InstantRunArtifactType.DEX);
+                expect.that(artifact.getType()).isEqualTo(InstantRunBuildContext.FileType.DEX);
 
-                checkUpdatedClassPresence(artifact.file);
+                checkUpdatedClassPresence(artifact.getLocation());
             }
         });
     }
 
-    @Ignore
     @Test
-    public void withMarshmallow() throws Exception {
+    public void withMultiApk() throws Exception {
         ColdSwapTester.testMultiApk(project, new ColdSwapTester.Steps() {
             @Override
             public void checkApk(File apk) throws Exception {
-                assertThatApk(apk).doesNotContain("classes.dex");
             }
 
             @Override
@@ -154,12 +153,16 @@ public class ColdSwapTest {
             }
 
             @Override
-            public void checkArtifacts(List<InstantRunArtifact> artifacts) throws Exception {
+            public void checkArtifacts(List<InstantRunBuildContext.Artifact> artifacts) throws Exception {
                 assertThat(artifacts).hasSize(2);
-                InstantRunArtifact artifact = Iterables.getLast(artifacts);
-                expect.that(artifact.type).named("artifact type")
-                        .isEqualTo(InstantRunArtifactType.SPLIT);
-                checkUpdatedClassPresence(artifact.file);
+                for (InstantRunBuildContext.Artifact artifact : artifacts) {
+                    expect.that(artifact.getType()).isAnyOf(
+                            InstantRunBuildContext.FileType.SPLIT,
+                            InstantRunBuildContext.FileType.SPLIT_MAIN);
+                    if (artifact.getType().equals(InstantRunBuildContext.FileType.SPLIT)) {
+                        checkUpdatedClassPresence(artifact.getLocation());
+                    }
+                }
             }
         });
     }

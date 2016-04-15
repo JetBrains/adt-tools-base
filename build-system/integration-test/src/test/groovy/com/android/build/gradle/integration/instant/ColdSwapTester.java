@@ -20,6 +20,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
 import com.android.builder.model.InstantRun;
 import com.android.tools.fd.client.InstantRunArtifact;
@@ -53,12 +54,6 @@ class ColdSwapTester {
         tester.doTest(21, ColdswapMode.MULTIDEX);
     }
 
-    /** @deprecated Multi-apk is disable for now. */
-    static void testMultiApk(GradleTestProject project, Steps steps) throws Exception {
-        ColdSwapTester tester = new ColdSwapTester(project, steps);
-        tester.doTest(23, ColdswapMode.MULTIAPK);
-    }
-
     private void doTest(int apiLevel, ColdswapMode coldswapMode) throws Exception {
         InstantRun instantRunModel =
                 InstantRunTestUtils.doInitialBuild(mProject, apiLevel, coldswapMode);
@@ -74,14 +69,20 @@ class ColdSwapTester {
                 InstantRunTestUtils.getInstantRunArgs(apiLevel, coldswapMode),
                 instantRunModel.getIncrementalAssembleTaskName());
 
-        InstantRunBuildInfo coldSwapContext = InstantRunTestUtils.loadContext(instantRunModel);
+        InstantRunBuildContext buildContext = InstantRunTestUtils.loadBuildContext(instantRunModel);
 
-        assertThat(coldSwapContext.getTimeStamp()).named("build id").isNotEqualTo(startBuildId);
 
-        mSteps.checkVerifierStatus(
-                InstantRunVerifierStatus.valueOf(coldSwapContext.getVerifierStatus()));
+        assertThat(buildContext.getLastBuild().getBuildId()).isNotEqualTo(startBuildId);
 
-        mSteps.checkArtifacts(coldSwapContext.getArtifacts());
+        assertThat(buildContext.getLastBuild().getVerifierStatus()).isPresent();
+        mSteps.checkVerifierStatus(buildContext.getLastBuild().getVerifierStatus().get());
+        mSteps.checkArtifacts(buildContext.getLastBuild().getArtifacts());
+
+    }
+
+    static void testMultiApk(GradleTestProject project, Steps steps) throws Exception {
+        ColdSwapTester tester = new ColdSwapTester(project, steps);
+        tester.doTest(24, ColdswapMode.AUTO);
     }
 
     interface Steps {
@@ -91,6 +92,6 @@ class ColdSwapTester {
 
         void checkVerifierStatus(InstantRunVerifierStatus status) throws Exception;
 
-        void checkArtifacts(List<InstantRunArtifact> artifacts) throws Exception;
+        void checkArtifacts(List<InstantRunBuildContext.Artifact> artifacts) throws Exception;
     }
 }

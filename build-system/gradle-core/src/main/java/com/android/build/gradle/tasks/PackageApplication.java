@@ -18,8 +18,10 @@ package com.android.build.gradle.tasks;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -105,9 +107,16 @@ public class PackageApplication extends PackageAndroidArtifact {
                 javaResourcesForApk.addAll(javaResourceFiles);
             }
             switch(dexPackagingPolicy) {
-                case INSTANT_RUN:
+                case INSTANT_RUN_SHARDS_IN_SINGLE_APK:
                     File zippedDexes = zipDexesForInstantRun(getDexFolders(), dexFoldersForApk);
                     javaResourcesForApk.add(zippedDexes);
+                    break;
+                case INSTANT_RUN_MULTI_APK:
+                    for (File dexFolder : getDexFolders()) {
+                        if (dexFolder.getName().contains(INSTANT_RUN_PACKAGES_PREFIX)) {
+                            dexFoldersForApk.add(dexFolder);
+                        }
+                    }
                     break;
                 case STANDARD:
                     dexFoldersForApk.addAll(getDexFolders());
@@ -224,9 +233,8 @@ public class PackageApplication extends PackageAndroidArtifact {
 
         public ConfigAction(
                 @NonNull VariantOutputScope scope,
-                @NonNull DexPackagingPolicy dexPackagingPolicy,
-                boolean instantRunEnabled) {
-            super(scope, dexPackagingPolicy, instantRunEnabled);
+                @Nullable InstantRunPatchingPolicy patchingPolicy) {
+            super(scope, patchingPolicy);
         }
 
         @NonNull

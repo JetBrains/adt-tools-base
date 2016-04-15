@@ -217,7 +217,7 @@ public class InstantRunSplitApkBuilder extends BaseTask {
                     + "      package=\"" + getApplicationId() + "\"\n"
                     + "      android:versionCode=\"" + getVersionCode() + "\"\n"
                     + "      android:versionName=\"" + versionNameToUse + "\"\n"
-                    + "      split=\"lib_" + uniqueName + "\">\n"
+                    + "      split=\"lib_" + uniqueName + "_apk\">\n"
                     //+ "       <uses-sdk android:minSdkVersion=\"21\"/>\n" + "</manifest>\n");
                     + "</manifest>\n");
             fileWriter.flush();
