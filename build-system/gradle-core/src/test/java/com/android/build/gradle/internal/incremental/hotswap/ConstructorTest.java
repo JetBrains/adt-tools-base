@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.incremental.hotswap;
 import com.android.build.gradle.internal.incremental.fixture.ClassEnhancement;
 import com.example.basic.Constructors;
 import com.google.common.collect.ImmutableList;
+import com.jasmin.VariableBeforeSuper;
 
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -242,5 +243,18 @@ public class ConstructorTest {
         harness.applyPatch("changeBaseClass");
         p = new Constructors.PrivateConstructor();
         assertEquals("Public constructor calls private constructor.", "Patched", p.getString());
+    }
+
+    @Test
+    public void variablesBeforeSuperCall() throws Exception {
+        harness.reset();
+        // Jasmin class is compiled from VariableBeforeSuper.j
+        VariableBeforeSuper object = new VariableBeforeSuper(1, 2.0);
+        assertEquals(6, object.x);
+        assertEquals(2.0, object.y, 0.01);
+        harness.applyPatch("changeBaseClass");
+        object = new VariableBeforeSuper(1, 2.0);
+        assertEquals(53, object.x);
+        assertEquals(2.0, object.y, 0.01);
     }
 }

@@ -22,7 +22,6 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
-import org.objectweb.asm.commons.Method;
 import org.objectweb.asm.tree.LabelNode;
 
 import java.util.List;
@@ -31,11 +30,6 @@ import java.util.List;
  * A redirection is the part of an instrumented method that calls out to a different implementation.
  */
 public abstract class Redirection {
-    /**
-     * The name of the method we redirect to.
-     */
-    @NonNull
-    private final String name;
 
     /**
      * The position where this redirection should happen.
@@ -43,10 +37,21 @@ public abstract class Redirection {
     @NonNull
     private final LabelNode label;
 
+    /**
+     * The types to redirect.
+     */
+    @NonNull
+    protected final List<Type> types;
 
-    Redirection(@NonNull LabelNode label, @NonNull String name) {
-        this.name = name;
+    /**
+     * The return type.
+     */
+    public final Type type;
+
+    Redirection(@NonNull LabelNode label, @NonNull List<Type> types, @NonNull Type type) {
         this.label = label;
+        this.types = types;
+        this.type = type;
     }
 
     /**
@@ -63,68 +68,29 @@ public abstract class Redirection {
      *</code>
      * @param mv the method visitor to add the instructions to.
      * @param change the local variable containing the alternate implementation.
-     * @param args the type of the local variable that need to be forwarded.
      */
-    void redirect(GeneratorAdapter mv, int change, List<Type> args) {
+    void redirect(GeneratorAdapter mv, int change) {
         // code to check if a new implementation of the current class is available.
         Label l0 = new Label();
         mv.loadLocal(change);
         mv.visitJumpInsn(Opcodes.IFNULL, l0);
-        mv.loadLocal(change);
-        mv.push(name);
 
-        // create an array of objects capable of containing all the parameters and optionally the "this"
-        createLocals(mv, args);
+        doRedirect(mv, change);
 
-        // we need to maintain the stack index when loading parameters from, as for long and double
-        // values, it uses 2 stack elements, all others use only 1 stack element.
-        int stackIndex = 0;
-        for (int arrayIndex = 0; arrayIndex < args.size(); arrayIndex++) {
-            Type arg = args.get(arrayIndex);
-            // duplicate the array of objects reference, it will be used to store the value in.
-            mv.dup();
-            // index in the array of objects to store the boxed parameter.
-            mv.push(arrayIndex);
-            // Pushes the appropriate local variable on the stack
-            redirectLocal(mv, stackIndex, arg);
-            // potentially box up intrinsic types.
-            mv.box(arg);
-            mv.arrayStore(Type.getType(Object.class));
-            // stack index must progress according to the parameter type we just processed.
-            stackIndex += arg.getSize();
+        // Return
+        if (type == Type.VOID_TYPE) {
+            mv.pop();
+        } else {
+            ByteCodeUtils.unbox(mv, type);
         }
+        mv.returnValue();
 
-        // now invoke the generic dispatch method.
-        mv.invokeInterface(IncrementalVisitor.CHANGE_TYPE,Method.getMethod("Object access$dispatch(String, Object[])"));
-
-        // Restore the state after the redirection
-        restore(mv, args);
         // jump label for classes without any new implementation, just invoke the original
         // method implementation.
         mv.visitLabel(l0);
     }
 
-    /**
-     * Creates and pushes to the stack the array to hold all the parameters to redirect, and
-     * optionally this.
-     */
-    protected void createLocals(GeneratorAdapter mv, List<Type> args) {
-        mv.push(args.size());
-        mv.newArray(Type.getType(Object.class));
-    }
-
-    /**
-     * After the redirection is called, this methods handles restoring the state given
-     * the return values of the redirection.
-     */
-    protected abstract void restore(GeneratorAdapter mv, List<Type> args);
-
-    /**
-     * Pushes in the stack the value that should be redirected for the given local.
-     */
-    protected void redirectLocal(GeneratorAdapter mv, int local, Type arg) {
-        mv.visitVarInsn(arg.getOpcode(Opcodes.ILOAD), local);
-    }
+    abstract void doRedirect(GeneratorAdapter mv, int change);
 
     public LabelNode getPosition() {
         return label;
