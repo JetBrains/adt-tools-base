@@ -20,6 +20,10 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.SyncIssue;
 import com.android.ide.common.blame.MessageReceiver;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+
+import java.util.List;
 
 /**
  * An error reporter for project evaluation and execution.
@@ -28,7 +32,7 @@ import com.android.ide.common.blame.MessageReceiver;
  * ({@link ErrorReporter.EvaluationMode}), indicating whether
  * the IDE is querying the project or not.
  */
-public abstract class ErrorReporter implements MessageReceiver {
+public abstract class ErrorReporter implements SyncIssueHandler, MessageReceiver {
 
     public enum EvaluationMode {
         /** Standard mode, errors should be breaking */
@@ -73,7 +77,7 @@ public abstract class ErrorReporter implements MessageReceiver {
      */
     @NonNull
     public final SyncIssue handleSyncError(@Nullable String data, int type, @NonNull String msg) {
-        return handleSyncIssue(data, type, SyncIssue.SEVERITY_ERROR, msg);
+        return handleIssue(data, type, SyncIssue.SEVERITY_ERROR, msg);
     }
 
     /**
@@ -86,13 +90,6 @@ public abstract class ErrorReporter implements MessageReceiver {
      */
     @NonNull
     public final SyncIssue handleSyncWarning(@Nullable String data, int type, @NonNull String msg) {
-        return handleSyncIssue(data, type, SyncIssue.SEVERITY_WARNING, msg);
+        return handleIssue(data, type, SyncIssue.SEVERITY_WARNING, msg);
     }
-
-    @NonNull
-    protected abstract SyncIssue handleSyncIssue(
-            @Nullable String data,
-            int type,
-            int severity,
-            @NonNull String msg);
 }

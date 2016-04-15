@@ -172,7 +172,7 @@ class ArtifactApiTest {
             assertNotNull(variantSourceProvider)
             assertEquals("provider:" + name, variantSourceProvider.getManifestFile().getPath())
 
-            Dependencies deps = javaArtifact.getDependencies()
+            Dependencies deps = javaArtifact.getCompileDependencies()
             assertNotNull("java artifact deps null-check", deps)
             assertFalse(deps.getJavaLibraries().isEmpty())
         }

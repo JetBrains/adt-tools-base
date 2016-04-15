@@ -107,7 +107,7 @@ public class ExtraModelInfo extends ErrorReporter {
 
     @Override
     @NonNull
-    protected SyncIssue handleSyncIssue(
+    public SyncIssue handleIssue(
             @Nullable String data,
             int type,
             int severity,
@@ -322,10 +322,12 @@ public class ExtraModelInfo extends ErrorReporter {
                     String.format("Artifact with name %1$s is not of type JAVA", name));
         }
 
+        ConfigurationDependencies compileDependencies = new ConfigurationDependencies(
+                configuration);
         JavaArtifact artifact = new JavaArtifactImpl(
                 name, assembleTaskName, javaCompileTaskName,
                 ideSetupTaskNames, generatedSourceFolders, classesFolder, javaResourcesFolder, null,
-                new ConfigurationDependencies(configuration), sourceProvider, null);
+                compileDependencies, compileDependencies, sourceProvider, null);
 
         extraJavaArtifacts.put(variant.getName(), artifact);
     }

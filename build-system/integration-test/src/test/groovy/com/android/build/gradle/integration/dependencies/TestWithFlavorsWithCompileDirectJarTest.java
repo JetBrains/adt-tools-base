@@ -28,8 +28,12 @@ import com.android.build.gradle.integration.common.utils.ModelHelper;
 import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
+import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.Variant;
 import com.android.ide.common.process.ProcessException;
+import com.google.common.base.Charsets;
+import com.google.common.collect.Iterables;
+import com.google.common.io.Files;
 import com.google.common.truth.Truth;
 
 import org.junit.AfterClass;
@@ -54,6 +58,8 @@ public class TestWithFlavorsWithCompileDirectJarTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
+        Files.write("include 'app', 'jar'", project.getSettingsFile(), Charsets.UTF_8);
+
         appendToFile(project.getSubproject("app").getBuildFile(),
                 "\n" +
                         "android {\n" +
@@ -89,7 +95,11 @@ public class TestWithFlavorsWithCompileDirectJarTest {
         AndroidArtifact testArtifact = getAndroidArtifact(androidArtifacts, ARTIFACT_ANDROID_TEST);
         assertNotNull(testArtifact);
 
-        Dependencies deps = testArtifact.getDependencies();
-        assertThat(deps.getProjects()).containsExactly(":jar");
+        Dependencies deps = testArtifact.getCompileDependencies();
+
+        Collection<JavaLibrary> javaLibraries = deps.getJavaLibraries();
+        assertThat(javaLibraries).hasSize(1);
+        JavaLibrary javaLibrary = Iterables.getOnlyElement(javaLibraries);
+        assertThat(javaLibrary.getProject()).isEqualTo(":jar");
     }
 }

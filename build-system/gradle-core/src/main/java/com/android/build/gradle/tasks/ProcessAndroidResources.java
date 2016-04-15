@@ -21,7 +21,6 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.LoggingUtil;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
-import com.android.build.gradle.internal.dependency.SymbolFileProviderImpl;
 import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
@@ -34,10 +33,10 @@ import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.VariantType;
-import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.internal.aapt.Aapt;
 import com.android.builder.internal.aapt.AaptPackageConfig;
 import com.android.builder.internal.aapt.v1.AaptV1;
+import com.android.builder.model.AndroidLibrary;
 import com.android.ide.common.blame.MergingLog;
 import com.android.ide.common.blame.MergingLogRewriter;
 import com.android.ide.common.blame.ParsingProcessOutputHandler;
@@ -47,13 +46,16 @@ import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
 import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputDirectory;
 import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputDirectory;
@@ -68,7 +70,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.jar.JarFile;
-import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 
 @ParallelizableTask
@@ -94,7 +95,7 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     private String preferredDensity;
 
-    private List<SymbolFileProviderImpl> libraries;
+    private List<AndroidLibrary> libraries;
 
     private String packageForR;
 
@@ -278,14 +279,19 @@ public class ProcessAndroidResources extends IncrementalTask {
                         .getEnforceUniquePackageName();
 
                 ConventionMappingHelper.map(processResources, "libraries",
-                        new Callable<List<SymbolFileProviderImpl>>() {
+                        new Callable<List<AndroidLibrary>>() {
                             @Override
-                            public List<SymbolFileProviderImpl> call() throws Exception {
-                                return getTextSymbolDependencies(config.getAllLibraries());
+                            public List<AndroidLibrary> call() throws Exception {
+                                return config.getFlatPackageAndroidLibraries();
                             }
                         });
                 ConventionMappingHelper.map(processResources, "packageForR",
-                        (Callable<String>) config::getOriginalApplicationId);
+                        new Callable<String>() {
+                            @Override
+                            public String call() throws Exception {
+                                return config.getOriginalApplicationId();
+                            }
+                        });
 
                 // TODO: unify with generateBuilderConfig, compileAidl, and library packaging somehow?
                 processResources
@@ -393,12 +399,6 @@ public class ProcessAndroidResources extends IncrementalTask {
                     scope.getVariantScope().getInstantRunBuildContext();
             processResources.buildInfoFile =
                     InstantRunWrapperTask.ConfigAction.getTmpBuildInfoFile(scope.getVariantScope());
-        }
-
-        @NonNull
-        private static List<SymbolFileProviderImpl> getTextSymbolDependencies(
-                List<LibraryDependency> libraries) {
-            return libraries.stream().map(SymbolFileProviderImpl::new).collect(Collectors.toList());
         }
     }
 
@@ -510,16 +510,24 @@ public class ProcessAndroidResources extends IncrementalTask {
         return getBuildTools().getRevision().toString();
     }
 
-    @Nested
+    @InputFiles
     @Optional
     @Nullable
-    public List<SymbolFileProviderImpl> getLibraries() {
-        return libraries;
+    public List<File> getInputFilesFromLibraries() {
+        List<AndroidLibrary> libs = getLibraries();
+        if (libs == null) {
+            return ImmutableList.of();
+        }
+        List<File> files = Lists.newArrayListWithCapacity(libs.size() * 2);
+        for (AndroidLibrary androidLibrary : libs) {
+            files.add(androidLibrary.getManifest());
+            files.add(androidLibrary.getSymbolFile());
+        }
+        return files;
     }
 
-    public void setLibraries(
-            List<SymbolFileProviderImpl> libraries) {
-        this.libraries = libraries;
+    public List<AndroidLibrary> getLibraries() {
+        return libraries;
     }
 
     @Input

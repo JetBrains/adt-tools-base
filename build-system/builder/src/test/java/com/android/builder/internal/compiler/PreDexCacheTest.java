@@ -281,7 +281,7 @@ public class PreDexCacheTest {
 
         @NonNull
         @Override
-        public SyncIssue handleSyncIssue(
+        public SyncIssue handleIssue(
                 @Nullable String data, int type, int severity, @NonNull String msg) {
             throw new RuntimeException("fake");
         }

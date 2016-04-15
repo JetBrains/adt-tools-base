@@ -116,12 +116,11 @@ class BasicTest2 {
         assertEquals(12, debugMainOutput.getVersionCode())
 
         // check debug dependencies
-        Dependencies debugDependencies = debugMainInfo.getDependencies()
+        Dependencies debugDependencies = debugMainInfo.getCompileDependencies()
         assertNotNull(debugDependencies)
         Collection<AndroidLibrary> debugLibraries = debugDependencies.getLibraries()
         assertNotNull(debugLibraries)
         assertEquals(1, debugLibraries.size())
-        assertTrue(debugDependencies.getProjects().isEmpty())
 
         AndroidLibrary androidLibrary = debugLibraries.iterator().next()
         assertNotNull(androidLibrary)
@@ -252,7 +251,7 @@ class BasicTest2 {
         assertNull("Release test info null-check", relTestInfo)
 
         // check release dependencies
-        Dependencies releaseDependencies = relMainInfo.getDependencies()
+        Dependencies releaseDependencies = relMainInfo.getCompileDependencies()
         assertNotNull(releaseDependencies)
         Collection<AndroidLibrary> releaseLibraries = releaseDependencies.getLibraries()
         assertNotNull(releaseLibraries)

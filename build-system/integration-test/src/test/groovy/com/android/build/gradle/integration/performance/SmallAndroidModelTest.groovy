@@ -48,6 +48,7 @@ class SmallAndroidModelTest {
 
     @Test
     void "model query for 30 projects"() {
-        Map<String, AndroidProject> models = project.getAllModelsWithBenchmark("SmallAndroid", SYNC)
+        Map<String, AndroidProject> models = project.getAllModelsWithBenchmark(
+                AndroidProject.MODEL_LEVEL_LATEST, "SmallAndroid", SYNC)
     }
 }

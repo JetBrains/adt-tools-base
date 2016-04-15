@@ -39,7 +39,7 @@ import groovy.lang.Closure;
 /**
  * Cache to library prepareTask.
  *
- * Each project creates its own version of LibraryDependencyImpl, but they all represent the
+ * Each project creates its own version of LibraryDependency, but they all represent the
  * same library. This creates a single task that will unarchive the aar so that this is done only
  * once even for multi-module projects where 2+ modules depend on the same library.
  *

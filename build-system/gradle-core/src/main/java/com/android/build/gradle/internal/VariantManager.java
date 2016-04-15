@@ -398,6 +398,7 @@ public class VariantManager implements VariantModel {
             final GradleVariantConfiguration testVariantConfig = variantData.getVariantConfiguration();
             final BaseVariantData testedVariantData = (BaseVariantData) ((TestVariantData) variantData)
                     .getTestedVariantData();
+            final VariantType testedVariantType = testedVariantData.getVariantConfiguration().getType();
 
             // Add the container of dependencies, the order of the libraries is important.
             // In descending order: build type (only for unit test), flavors, defaultConfig.
@@ -430,9 +431,12 @@ public class VariantManager implements VariantModel {
             // computed after the tasks for the tested variant is created.  Therefore, the
             // VariantDependencies is computed here instead of when the VariantData was created.
             final VariantDependencies variantDep = VariantDependencies.compute(
-                    project, testVariantConfig.getFullName(),
+                    project,
+                    androidBuilder.getErrorReporter(),
+                    testVariantConfig.getFullName(),
                     false /*publishVariant*/,
                     variantType,
+                    testedVariantType,
                     parentVariant,
                     testVariantProviders.toArray(
                             new ConfigurationProvider[testVariantProviders.size()]));
@@ -460,7 +464,9 @@ public class VariantManager implements VariantModel {
                         }
                     },
                     new Recorder.Property(SpanRecorders.VARIANT, testVariantConfig.getFullName()));
-            testVariantConfig.setDependencies(variantDep);
+            testVariantConfig.setDependencies(
+                    variantDep.getCompileDependencies(),
+                    variantDep.getPackageDependencies());
             switch (variantType) {
                 case ANDROID_TEST:
                     taskManager.createAndroidTestVariantTasks(tasks, (TestVariantData) variantData);
@@ -591,10 +597,13 @@ public class VariantManager implements VariantModel {
                 variantFactory.createVariantData(variantConfig, taskManager);
 
         final VariantDependencies variantDep = VariantDependencies.compute(
-                project, variantConfig.getFullName(),
+                project,
+                androidBuilder.getErrorReporter(),
+                variantConfig.getFullName(),
                 isVariantPublished(),
                 variantData.getType(),
-                null,
+                null /*testedVariantType*/,
+                null /*parentVariant*/,
                 variantProviders.toArray(new ConfigurationProvider[variantProviders.size()]));
         variantData.setVariantDependency(variantDep);
 
@@ -621,7 +630,9 @@ public class VariantManager implements VariantModel {
                     }
                 }, new Recorder.Property(SpanRecorders.VARIANT, variantConfig.getFullName()));
 
-        variantConfig.setDependencies(variantDep);
+        variantConfig.setDependencies(
+                variantDep.getCompileDependencies(),
+                variantDep.getPackageDependencies());
 
         return variantData;
     }

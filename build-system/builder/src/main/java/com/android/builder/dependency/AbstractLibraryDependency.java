@@ -31,6 +31,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.Immutable;
+import com.android.builder.model.AndroidLibrary;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 
@@ -38,11 +39,11 @@ import java.io.File;
 import java.util.List;
 
 /**
- * Default implementation of the LibraryDependency interface that handles a default bundle project
+ * Default implementation of the AndroidLibrary interface that handles a default bundle project
  * structure.
  */
 @Immutable
-public abstract class LibraryBundle implements LibraryDependency {
+public abstract class AbstractLibraryDependency implements AndroidLibrary {
 
     public static final String FN_PROGUARD_TXT = "proguard.txt";
 
@@ -50,6 +51,7 @@ public abstract class LibraryBundle implements LibraryDependency {
     private final File mBundleFolder;
     private final String mName;
     private final String mProjectPath;
+    private final boolean mIsProvided;
 
     /**
      * Creates the bundle dependency with an optional name
@@ -59,15 +61,17 @@ public abstract class LibraryBundle implements LibraryDependency {
      * @param name an optional name
      * @param projectPath an optional project path.
      */
-    protected LibraryBundle(
+    protected AbstractLibraryDependency(
             @NonNull File bundle,
             @NonNull File bundleFolder,
             @Nullable String name,
-            @Nullable String projectPath) {
+            @Nullable String projectPath,
+            boolean isProvided) {
         mBundle = bundle;
         mBundleFolder = bundleFolder;
         mName = name;
         mProjectPath = projectPath;
+        mIsProvided = isProvided;
     }
 
     @Override
@@ -119,15 +123,14 @@ public abstract class LibraryBundle implements LibraryDependency {
     }
 
     @Override
-    @NonNull
-    public List<JarDependency> getLocalDependencies() {
-        List<File> jars = getLocalJars();
-        List<JarDependency> localDependencies = Lists.newArrayListWithCapacity(jars.size());
-        for (File jar : jars) {
-            localDependencies.add(new JarDependency(jar, true, true, null, null));
-        }
+    public boolean isProvided() {
+        return mIsProvided;
+    }
 
-        return localDependencies;
+    @Override
+    @Deprecated
+    public boolean isOptional() {
+        return isProvided();
     }
 
     @NonNull
@@ -218,14 +221,17 @@ public abstract class LibraryBundle implements LibraryDependency {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        LibraryBundle that = (LibraryBundle) o;
-        return Objects.equal(mName, that.mName) &&
+        AbstractLibraryDependency that = (AbstractLibraryDependency) o;
+        return mIsProvided == that.mIsProvided &&
+                Objects.equal(mBundle, that.mBundle) &&
+                Objects.equal(mBundleFolder, that.mBundleFolder) &&
+                Objects.equal(mName, that.mName) &&
                 Objects.equal(mProjectPath, that.mProjectPath);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(mName, mProjectPath);
+        return Objects.hashCode(mBundle, mBundleFolder, mName, mProjectPath, mIsProvided);
     }
 
     @Override
@@ -233,6 +239,7 @@ public abstract class LibraryBundle implements LibraryDependency {
         return Objects.toStringHelper(this)
                 .add("mBundle", mBundle)
                 .add("mBundleFolder", mBundleFolder)
+                .add("mIsProvided", mIsProvided)
                 .add("mName", mName)
                 .add("mProjectPath", mProjectPath)
                 .toString();

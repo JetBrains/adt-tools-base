@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,20 @@
 
 package com.android.builder.dependency;
 
-import com.android.annotations.NonNull;
-
-import java.io.File;
+import com.android.builder.model.Library;
 
 /**
- * Provides a path to the Android Manifest
+ * A library that can be skipped.
+ *
+ * This can happen in testing artifacts when the same dependency is present in
+ * both the tested artifact and the test artifact.
+ *
+ * @see Library#isSkipped()
  */
-public interface ManifestProvider {
+public interface SkippableLibrary extends Library {
 
     /**
-     * Returns the location of the manifest.
+     * Skips the library.
      */
-    @NonNull
-    File getManifest();
+    void skip();
 }

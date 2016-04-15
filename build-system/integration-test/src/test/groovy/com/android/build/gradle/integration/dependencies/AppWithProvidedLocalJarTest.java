@@ -22,6 +22,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.utils.ModelHelper;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
+import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.JavaLibrary;
@@ -83,23 +84,17 @@ public class AppWithProvidedLocalJarTest {
     public void checkProvidedLocalJarIsInTheMainArtifactDependency() {
         Variant variant = ModelHelper.getVariant(model.getVariants(), "debug");
 
-        Dependencies deps = variant.getMainArtifact().getDependencies();
-        Collection<JavaLibrary> javaLibs = deps.getJavaLibraries();
+        Dependencies compileDeps = variant.getMainArtifact().getCompileDependencies();
 
+        Collection<JavaLibrary> javaLibs = compileDeps.getJavaLibraries();
         assertThat(javaLibs).named("Java libs").hasSize(1);
-        assertThat(Iterables.getOnlyElement(javaLibs).isProvided())
+        JavaLibrary javaLibrary = Iterables.getOnlyElement(javaLibs);
+        assertThat(javaLibrary.isProvided())
                 .named("single java lib provided property")
                 .isTrue();
+        assertThat(javaLibrary.getProject()).isNull();
 
-    }
-
-    @Test
-    public void checkProvidedLocalJarIsInTheAndroidTestDeps() {
-        // TODO
-    }
-
-    @Test
-    public void checkProvidedLocalJarIsIntheUnitTestDeps() {
-        // TODO
+        Dependencies packageDeps = variant.getMainArtifact().getPackageDependencies();
+        assertThat(packageDeps.getJavaLibraries()).isEmpty();
     }
 }

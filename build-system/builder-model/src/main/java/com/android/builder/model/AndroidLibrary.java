@@ -29,15 +29,6 @@ import java.util.List;
 public interface AndroidLibrary extends Library {
 
     /**
-     * Returns an optional project identifier if the library is output
-     * by a module.
-     *
-     * @return the project identifier
-     */
-    @Nullable
-    String getProject();
-
-    /**
      * Returns an optional configuration name if the library is output by a module
      * that publishes more than one variant.
      */
@@ -63,6 +54,21 @@ public interface AndroidLibrary extends Library {
     List<? extends AndroidLibrary> getLibraryDependencies();
 
     /**
+     * Returns the list of local Jar files that are included in the dependency.
+     *
+     * @return a list of File. May be empty but not null.
+     */
+    @NonNull
+    Collection<File> getLocalJars();
+
+    /**
+     * Returns the collection of external Jar files that are included in the dependency.
+     * @return a list of JavaDependency. May be empty but not null.
+     */
+    @NonNull
+    Collection<? extends JavaLibrary> getJavaDependencies();
+
+    /**
      * Returns the location of the manifest.
      */
     @NonNull
@@ -76,13 +82,6 @@ public interface AndroidLibrary extends Library {
     @NonNull
     File getJarFile();
 
-    /**
-     * Returns the list of local Jar files that are included in the dependency.
-     *
-     * @return a list of File. May be empty but not null.
-     */
-    @NonNull
-    Collection<File> getLocalJars();
 
     /**
      * Returns the location of the res folder.
@@ -158,6 +157,12 @@ public interface AndroidLibrary extends Library {
     File getPublicResources();
 
     /**
+     * Returns the location of the text symbol file
+     */
+    @NonNull
+    File getSymbolFile();
+
+    /**
      * Returns whether the library is considered optional, meaning that it may or may not
      * be present in the final APK.
      *
@@ -166,5 +171,12 @@ public interface AndroidLibrary extends Library {
      *   in the consumer R.txt
      * - if the consumer is a separate test project, all the resources gets skipped from merging.
      */
+    @Override
+    boolean isProvided();
+
+    /**
+     * @deprecated Use {@link #isProvided()} instead
+     */
+    @Deprecated
     boolean isOptional();
 }

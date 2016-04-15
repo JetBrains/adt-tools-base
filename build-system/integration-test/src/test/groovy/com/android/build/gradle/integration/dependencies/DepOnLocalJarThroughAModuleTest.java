@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.dependencies;
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static com.android.build.gradle.integration.common.utils.TestFileUtils.appendToFile;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
 
@@ -24,8 +25,10 @@ import com.android.build.gradle.integration.common.truth.TruthHelper;
 import com.android.build.gradle.integration.common.utils.ModelHelper;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
+import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.Variant;
 import com.android.ide.common.process.ProcessException;
+import com.google.common.collect.Iterables;
 import com.google.common.truth.Truth;
 
 import org.junit.AfterClass;
@@ -74,7 +77,10 @@ public class DepOnLocalJarThroughAModuleTest {
     public void checkJarModuleIsInTheTestArtifactModel() {
         Variant variant = ModelHelper.getVariant(models.get(":app").getVariants(), "debug");
 
-        Dependencies deps = variant.getMainArtifact().getDependencies();
-        TruthHelper.assertThat(deps.getProjects()).containsExactly(":localJarAsModule");
+        Dependencies deps = variant.getMainArtifact().getCompileDependencies();
+        assertThat(deps.getProjects()).isEmpty();
+        assertThat(deps.getJavaLibraries()).hasSize(1);
+        JavaLibrary javaLibrary = Iterables.getOnlyElement(deps.getJavaLibraries());
+        assertThat(javaLibrary.getProject()).isEqualTo(":localJarAsModule");
     }
 }

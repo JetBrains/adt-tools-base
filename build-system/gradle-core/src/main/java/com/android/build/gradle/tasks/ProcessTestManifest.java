@@ -17,7 +17,6 @@ package com.android.build.gradle.tasks;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.DependencyManager;
-import com.android.build.gradle.internal.dependency.ManifestDependencyImpl;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
@@ -25,6 +24,7 @@ import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.core.VariantConfiguration;
+import com.android.builder.model.AndroidLibrary;
 import com.google.common.collect.Lists;
 
 import org.gradle.api.tasks.Input;
@@ -56,7 +56,7 @@ public class ProcessTestManifest extends ManifestProcessorTask {
     private Boolean handleProfiling;
     private Boolean functionalTest;
     private Map<String, Object> placeholdersValues;
-    private List<ManifestDependencyImpl> libraries;
+    private List<AndroidLibrary> libraries;
 
     @Override
     protected void doFullTaskAction() throws IOException {
@@ -166,32 +166,33 @@ public class ProcessTestManifest extends ManifestProcessorTask {
         this.placeholdersValues = placeholdersValues;
     }
 
-    public List<ManifestDependencyImpl> getLibraries() {
+    public List<AndroidLibrary> getLibraries() {
         return libraries;
     }
 
     public void setLibraries(
-            List<ManifestDependencyImpl> libraries) {
+            List<AndroidLibrary> libraries) {
         this.libraries = libraries;
     }
 
     /**
      * A synthetic input to allow gradle up-to-date checks to work.
      *
-     * Since List<ManifestDependencyImpl> can't be used directly, as @Nested doesn't work on lists,
+     * Since List<AndroidLibrary> can't be used directly, as @Nested doesn't work on lists,
      * this method gathers and returns the underlying manifest files.
      */
     @SuppressWarnings("unused")
     @InputFiles
-    public List<File> getLibraryManifests() {
-        List<ManifestDependencyImpl> libs = getLibraries();
+    List<File> getLibraryManifests() {
+        List<AndroidLibrary> libs = getLibraries();
         if (libs == null || libs.isEmpty()) {
             return Collections.emptyList();
         }
 
+        // this is a graph of Android Library so need to get them recursively.
         List<File> files = Lists.newArrayListWithCapacity(libs.size() * 2);
-        for (ManifestDependencyImpl mdi : libs) {
-            files.addAll(mdi.getAllManifests());
+        for (AndroidLibrary androidLibrary : libs) {
+            fillManifestList(androidLibrary, files);
         }
 
         return files;
@@ -218,7 +219,7 @@ public class ProcessTestManifest extends ManifestProcessorTask {
         }
 
         @Override
-        public void execute(final ProcessTestManifest processTestManifestTask) {
+        public void execute(@NonNull final ProcessTestManifest processTestManifestTask) {
 
             final VariantConfiguration<CoreBuildType, CoreProductFlavor, CoreProductFlavor> config =
                     scope.getVariantConfiguration();
@@ -239,42 +240,77 @@ public class ProcessTestManifest extends ManifestProcessorTask {
 
             processTestManifestTask.setTestApplicationId(config.getApplicationId());
             ConventionMappingHelper.map(processTestManifestTask, "minSdkVersion",
-                    (Callable<String>) () -> {
-                        if (scope.getGlobalScope().getAndroidBuilder().isPreviewTarget()) {
-                            return scope.getGlobalScope().getAndroidBuilder()
-                                    .getTargetCodename();
+                    new Callable<String>() {
+                        @Override
+                        public String call() throws Exception {
+                            if (scope.getGlobalScope().getAndroidBuilder().isPreviewTarget()) {
+                                return scope.getGlobalScope().getAndroidBuilder()
+                                        .getTargetCodename();
+                            }
+                            return config.getMinSdkVersion().getApiString();
                         }
-                        return config.getMinSdkVersion().getApiString();
                     });
 
             ConventionMappingHelper.map(processTestManifestTask, "targetSdkVersion",
-                    (Callable<String>) () -> {
-                        if (scope.getGlobalScope().getAndroidBuilder().isPreviewTarget()) {
-                            return scope.getGlobalScope().getAndroidBuilder()
-                                    .getTargetCodename();
-                        }
+                    new Callable<String>() {
+                        @Override
+                        public String call() throws Exception {
+                            if (scope.getGlobalScope().getAndroidBuilder().isPreviewTarget()) {
+                                return scope.getGlobalScope().getAndroidBuilder()
+                                        .getTargetCodename();
+                            }
 
-                        return config.getTargetSdkVersion().getApiString();
+                            return config.getTargetSdkVersion().getApiString();
+                        }
                     });
             ConventionMappingHelper.map(processTestManifestTask, "testedApplicationId",
-                    (Callable<String>) config::getTestedApplicationId);
+                    new Callable<String>() {
+                        @Override
+                        public String call() throws Exception {
+                            return config.getTestedApplicationId();
+                        }
+                    });
             ConventionMappingHelper.map(processTestManifestTask, "instrumentationRunner",
-                    (Callable<String>) config::getInstrumentationRunner);
+                    new Callable<String>() {
+                        @Override
+                        public String call() throws Exception {
+                            return config.getInstrumentationRunner();
+                        }
+                    });
 
             ConventionMappingHelper.map(processTestManifestTask, "handleProfiling",
-                    (Callable<Boolean>) config::getHandleProfiling);
+                    new Callable<Boolean>() {
+                        @Override
+                        public Boolean call() throws Exception {
+                            return config.getHandleProfiling();
+                        }
+                    });
             ConventionMappingHelper.map(processTestManifestTask, "functionalTest",
-                    (Callable<Boolean>) config::getFunctionalTest);
+                    new Callable<Boolean>() {
+                        @Override
+                        public Boolean call() throws Exception {
+                            return config.getFunctionalTest();
+                        }
+                    });
 
             ConventionMappingHelper.map(processTestManifestTask, "libraries",
-                    (Callable<List<ManifestDependencyImpl>>) () ->
-                            DependencyManager.getManifestDependencies(config.getDirectLibraries()));
+                    new Callable<List<AndroidLibrary>>() {
+                        @Override
+                        public List<AndroidLibrary> call() throws Exception {
+                            return config.getCompileAndroidLibraries();
+                        }
+                    });
 
             processTestManifestTask.setManifestOutputFile(
                     variantOutputData.getScope().getManifestOutputFile());
 
             ConventionMappingHelper.map(processTestManifestTask, "placeholdersValues",
-                    (Callable<Map<String, Object>>) config::getManifestPlaceholders);
+                    new Callable<Map<String, Object>>() {
+                        @Override
+                        public Map<String, Object> call() throws Exception {
+                            return config.getManifestPlaceholders();
+                        }
+                    });
         }
     }
 }
