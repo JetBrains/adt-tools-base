@@ -40,7 +40,7 @@ import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.build.gradle.tasks.PackageApplication;
+import com.android.build.gradle.tasks.PackageAndroidArtifact;
 import com.android.ide.common.packaging.PackagingUtils;
 import com.android.utils.XmlUtils;
 
@@ -53,7 +53,6 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -246,7 +245,7 @@ public class GenerateInstantRunAppInfoTask extends BaseTask {
             task.setVariantName(variantScope.getVariantConfiguration().getFullName());
             task.outputFile =
                     new File(variantScope.getIncrementalApplicationSupportDir(),
-                            PackageApplication.INSTANT_RUN_PACKAGES_PREFIX + "-bootstrap.jar");
+                            PackageAndroidArtifact.INSTANT_RUN_PACKAGES_PREFIX + "-bootstrap.jar");
 
             BaseVariantOutputData variantOutput = variantScope.getVariantData()
                     .getOutputs().get(0);
