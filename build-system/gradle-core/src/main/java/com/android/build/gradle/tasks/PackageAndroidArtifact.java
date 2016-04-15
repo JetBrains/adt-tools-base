@@ -90,7 +90,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 @ParallelizableTask
-public class PackageApplication extends IncrementalTask implements FileSupplier {
+public class PackageAndroidArtifact extends IncrementalTask implements FileSupplier {
 
     /**
      * If {@code true}, the tasks works with the old code.
@@ -1134,7 +1134,7 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
 
     // ----- ConfigAction -----
 
-    public static class ConfigAction implements TaskConfigAction<PackageApplication> {
+    public static class ConfigAction implements TaskConfigAction<PackageAndroidArtifact> {
 
         private final VariantOutputScope scope;
         private final DexPackagingPolicy dexPackagingPolicy;
@@ -1152,19 +1152,19 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
 
         @NonNull
         @Override
-        public Class<PackageApplication> getType() {
-            return PackageApplication.class;
+        public Class<PackageAndroidArtifact> getType() {
+            return PackageAndroidArtifact.class;
         }
 
         @Override
-        public void execute(@NonNull final PackageApplication packageApp) {
+        public void execute(@NonNull final PackageAndroidArtifact packageApp) {
             final VariantScope variantScope = scope.getVariantScope();
             final ApkVariantData variantData = (ApkVariantData) variantScope.getVariantData();
             final ApkVariantOutputData variantOutputData = (ApkVariantOutputData) scope
                     .getVariantOutputData();
             final GradleVariantConfiguration config = variantScope.getVariantConfiguration();
 
-            variantOutputData.packageApplicationTask = packageApp;
+            variantOutputData.packageAndroidArtifactTask = packageApp;
             packageApp.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             packageApp.setVariantName(
                     variantScope.getVariantConfiguration().getFullName());

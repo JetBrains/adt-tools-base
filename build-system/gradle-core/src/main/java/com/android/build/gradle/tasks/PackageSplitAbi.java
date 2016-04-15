@@ -302,7 +302,7 @@ public class PackageSplitAbi extends SplitRelatedTask {
                         @Override
                         public Set<File> call() throws Exception {
                             return scope.getTransformManager().getPipelineOutput(
-                                    PackageApplication.sNativeLibsFilter).keySet();
+                                    PackageAndroidArtifact.sNativeLibsFilter).keySet();
                         }
                     });
 

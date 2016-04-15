@@ -33,7 +33,7 @@ import com.android.build.gradle.internal.variant.ApplicationVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.AndroidJarTask;
-import com.android.build.gradle.tasks.PackageApplication;
+import com.android.build.gradle.tasks.PackageAndroidArtifact;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.Recorder;
@@ -309,7 +309,7 @@ public class ApplicationTaskManager extends TaskManager {
 
             TransformManager transformManager = variantScope.getTransformManager();
             for (TransformStream stream : transformManager.getStreams(
-                    PackageApplication.sDexFilter)) {
+                    PackageAndroidArtifact.sDexFilter)) {
                 // TODO Optimize to avoid creating too many actions
                 splitApk.dependsOn(tasks, stream.getDependencies());
             }

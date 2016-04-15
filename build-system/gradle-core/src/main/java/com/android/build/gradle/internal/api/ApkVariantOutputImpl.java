@@ -22,7 +22,7 @@ import com.android.build.OutputFile;
 import com.android.build.gradle.api.ApkVariantOutput;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.build.gradle.tasks.PackageApplication;
+import com.android.build.gradle.tasks.PackageAndroidArtifact;
 import com.android.build.gradle.tasks.ZipAlign;
 
 import java.io.File;
@@ -49,8 +49,8 @@ public class ApkVariantOutputImpl extends BaseVariantOutputImpl implements ApkVa
 
     @Nullable
     @Override
-    public PackageApplication getPackageApplication() {
-        return variantOutputData.packageApplicationTask;
+    public PackageAndroidArtifact getPackageApplication() {
+        return variantOutputData.packageAndroidArtifactTask;
     }
 
     @Nullable

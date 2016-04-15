@@ -19,7 +19,7 @@ package com.android.build.gradle.api;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.OutputFile;
-import com.android.build.gradle.tasks.PackageApplication;
+import com.android.build.gradle.tasks.PackageAndroidArtifact;
 import com.android.build.gradle.tasks.ZipAlign;
 
 import java.io.File;
@@ -33,7 +33,7 @@ public interface ApkVariantOutput extends BaseVariantOutput {
      * Returns the packaging task
      */
     @Nullable
-    PackageApplication getPackageApplication();
+    PackageAndroidArtifact getPackageApplication();
 
     /**
      * Returns the Zip align task.

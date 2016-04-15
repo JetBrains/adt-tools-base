@@ -16,7 +16,6 @@ import org.gradle.api.Action;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Task;
 import org.gradle.api.tasks.InputFile;
-import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.process.ExecSpec;
@@ -165,11 +164,11 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
                 @Override
                 public File call() throws Exception {
                     // wire to the output of the package task.
-                    PackageApplication packageApplicationTask = ((ApkVariantOutputData) scope
-                            .getVariantOutputData()).packageApplicationTask;
-                    return packageApplicationTask == null
+                    PackageAndroidArtifact packageAndroidArtifactTask = ((ApkVariantOutputData) scope
+                            .getVariantOutputData()).packageAndroidArtifactTask;
+                    return packageAndroidArtifactTask == null
                             ? scope.getPackageApk()
-                            : packageApplicationTask.getOutputFile();
+                            : packageAndroidArtifactTask.getOutputFile();
                 }
             });
             ConventionMappingHelper.map(zipAlign, "outputFile", new Callable<File>() {
