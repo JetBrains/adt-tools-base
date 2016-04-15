@@ -16,6 +16,7 @@
 
 package com.android.builder.internal.aapt.v1;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.core.VariantType;
@@ -31,10 +32,12 @@ import com.android.resources.Density;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.utils.ILogger;
+import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.hash.Hashing;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -48,14 +51,24 @@ import java.util.List;
 public class AaptV1 extends AbstractProcessExecutionAapt {
 
     /**
+     * Build tools.
+     */
+    @NonNull
+    private final BuildToolInfo mBuildToolInfo;
+
+    /**
      * Creates a new entry point to the original {@code aapt}.
      *
      * @param processExecutor the executor for external processes
      * @param processOutputHandler the handler to process the executed process' output
+     * @param buildToolInfo the build tools to use
      */
     public AaptV1(@NonNull ProcessExecutor processExecutor,
-            @NonNull ProcessOutputHandler processOutputHandler) {
+            @NonNull ProcessOutputHandler processOutputHandler,
+            @NonNull BuildToolInfo buildToolInfo) {
         super(processExecutor, processOutputHandler);
+
+        mBuildToolInfo = buildToolInfo;
     }
 
     @Override
@@ -70,15 +83,7 @@ public class AaptV1 extends AbstractProcessExecutionAapt {
          */
         //builder.addEnvironments(mEnvironment);
 
-        BuildToolInfo buildToolInfo = config.getBuildToolInfo();
-        Preconditions.checkNotNull(buildToolInfo);
-
-        String aapt = buildToolInfo.getPath(BuildToolInfo.PathId.AAPT);
-        if (aapt == null || !new File(aapt).isFile()) {
-            throw new IllegalStateException("aapt is missing");
-        }
-
-        builder.setExecutable(aapt);
+        builder.setExecutable(getAaptExecutablePath());
         builder.addArgs("package");
 
         if (config.isVerbose()) {
@@ -140,7 +145,7 @@ public class AaptV1 extends AbstractProcessExecutionAapt {
         }
 
         if (config.isPseudoLocalize()) {
-            Preconditions.checkState(buildToolInfo.getRevision().getMajor() >= 21);
+            Preconditions.checkState(mBuildToolInfo.getRevision().getMajor() >= 21);
             builder.addArgs("--pseudo-localize");
         }
 
@@ -158,7 +163,7 @@ public class AaptV1 extends AbstractProcessExecutionAapt {
         }
 
         if (config.getOptions().getFailOnMissingConfigEntry()) {
-            Preconditions.checkState(buildToolInfo.getRevision().getMajor() > 20);
+            Preconditions.checkState(mBuildToolInfo.getRevision().getMajor() > 20);
             builder.addArgs("--error-on-missing-config-entry");
         }
 
@@ -184,7 +189,7 @@ public class AaptV1 extends AbstractProcessExecutionAapt {
         List<String> resourceConfigs = new ArrayList<String>();
         resourceConfigs.addAll(config.getResourceConfigs());
 
-        if (buildToolInfo.getRevision().getMajor() < 21 && config.getPreferredDensity() != null) {
+        if (mBuildToolInfo.getRevision().getMajor() < 21 && config.getPreferredDensity() != null) {
             resourceConfigs.add(config.getPreferredDensity());
 
             /*
@@ -201,7 +206,7 @@ public class AaptV1 extends AbstractProcessExecutionAapt {
          */
         Collection<String> otherResourceConfigs;
         String preferredDensity = null;
-        if (buildToolInfo.getRevision().getMajor() >= 21) {
+        if (mBuildToolInfo.getRevision().getMajor() >= 21) {
             Collection<String> densityResourceConfigs = Lists.newArrayList(
                     AaptUtils.getDensityResConfigs(resourceConfigs));
             otherResourceConfigs = Lists.newArrayList(AaptUtils.getNonDensityResConfigs(
@@ -209,9 +214,11 @@ public class AaptV1 extends AbstractProcessExecutionAapt {
             preferredDensity = config.getPreferredDensity();
 
             if (preferredDensity != null && !densityResourceConfigs.isEmpty()) {
-                throw new AaptException(String.format("When using splits in tools 21 and above, "
-                                + "resConfigs should not contain any densities. Right now, it contains "
-                                + "\"%1$s\"\nSuggestion: remove these from resConfigs from build.gradle",
+                throw new AaptException(
+                        String.format("When using splits in tools 21 and above, "
+                                + "resConfigs should not contain any densities. Right now, it "
+                                + "contains \"%1$s\"\nSuggestion: remove these from resConfigs "
+                                + "from build.gradle",
                         Joiner.on("\",\"").join(densityResourceConfigs)));
             }
 
@@ -247,10 +254,62 @@ public class AaptV1 extends AbstractProcessExecutionAapt {
 
         // All the vector XML files that are outside of an "-anydpi-v21" directory were left there
         // intentionally, for the support library to consume. Leave them alone.
-        if (buildToolInfo.getRevision().getMajor() >= 23) {
+        if (mBuildToolInfo.getRevision().getMajor() >= 23) {
             builder.addArgs("--no-version-vectors");
         }
 
         return builder;
+    }
+
+    @Nullable
+    @Override
+    protected CompileInvocation makeCompileProcessBuilder(@NonNull File file, @NonNull File output)
+            throws AaptException {
+        Preconditions.checkArgument(file.isFile(), "!file.isFile()");
+        Preconditions.checkArgument(output.isDirectory(), "!directory.isDirectory()");
+
+        if (!file.getName().endsWith(SdkConstants.DOT_PNG)) {
+            return null;
+        }
+
+        File outputFile = compileOutputFor(file, output);
+
+        ProcessInfoBuilder builder = new ProcessInfoBuilder();
+        builder.setExecutable(getAaptExecutablePath());
+        builder.addArgs("singleCrunch");
+        builder.addArgs("-i", file.getAbsolutePath());
+        builder.addArgs("-o", outputFile.getAbsolutePath());
+        return new CompileInvocation(builder, outputFile);
+    }
+
+    /**
+     * Obtains the file that will receive the compilation output of a given file. This method
+     * will return a unique file in the output directory for each input file.
+     *
+     * @param file the file
+     * @param output the output directory
+     * @return the output file
+     */
+    @NonNull
+    private static File compileOutputFor(@NonNull File file, @NonNull File output) {
+        String path = file.getAbsolutePath();
+        String pathHash = Hashing.sha1().hashString(path, Charsets.UTF_8).toString()
+                + "_" + file.getName() + ".compiled";
+        return new File(output, pathHash);
+    }
+
+    /**
+     * Obtains the path for the {@code aapt} executable.
+     *
+     * @return the path
+     */
+    @NonNull
+    private String getAaptExecutablePath() {
+        String aapt = mBuildToolInfo.getPath(BuildToolInfo.PathId.AAPT);
+        if (aapt == null || !new File(aapt).isFile()) {
+            throw new IllegalStateException("aapt is missing on '" + aapt + "'");
+        }
+
+        return aapt;
     }
 }

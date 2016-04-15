@@ -143,7 +143,8 @@ public class ProcessAndroidResources extends IncrementalTask {
                 new ToolOutputParser(new AaptOutputParser(), getILogger()),
                 new MergingLogRewriter(mergingLog, builder.getErrorReporter()));
 
-        Aapt aapt = new AaptV1(getBuilder().getProcessExecutor(), processOutputHandler);
+        Aapt aapt = new AaptV1(getBuilder().getProcessExecutor(), processOutputHandler,
+                getBuildTools());
         AaptPackageConfig.Builder config = new AaptPackageConfig.Builder()
                 .setManifestFile(manifestFileToPackage)
                 .setOptions(getAaptOptions())

@@ -75,7 +75,8 @@ public class NinePatchAaptProcessorTestUtils {
     static File getAapt(Revision revision) {
         FakeProgressIndicator progress = new FakeProgressIndicator();
         BuildToolInfo buildToolInfo =
-                AndroidSdkHandler.getInstance(getSdkDir()).getBuildToolInfo(revision, progress);
+                AndroidSdkHandler.getInstance(TestUtils.getSdkDir()).getBuildToolInfo(
+                        revision, progress);
         if (buildToolInfo == null) {
             throw new RuntimeException("Test requires build-tools " + revision.toShortString());
         }
@@ -286,24 +287,6 @@ public class NinePatchAaptProcessorTestUtils {
         }
 
         return chunks;
-    }
-
-    /**
-     * Returns the SDK folder as built from the Android source tree.
-     *
-     * @return the SDK
-     */
-    @NonNull
-    protected static File getSdkDir() {
-        String androidHome = System.getenv("ANDROID_HOME");
-        if (androidHome != null) {
-            File f = new File(androidHome);
-            if (f.isDirectory()) {
-                return f;
-            }
-        }
-
-        throw new IllegalStateException("SDK not defined with ANDROID_HOME");
     }
 
     @NonNull

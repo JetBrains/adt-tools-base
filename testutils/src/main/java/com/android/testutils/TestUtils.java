@@ -18,6 +18,7 @@ package com.android.testutils;
 
 import static org.junit.Assert.assertTrue;
 
+import com.android.annotations.NonNull;
 import com.google.common.io.Files;
 
 import junit.framework.TestCase;
@@ -33,25 +34,23 @@ public class TestUtils {
     /**
      * returns a File for the subfolder of the test resource data.
      *
-     * This is basically "src/test/resources/testData/$name".
+     * <p>This is basically {@code src/test/resources/testData/$name"}.
      *
-     * Note that this folder is relative to the root project which is where gradle
+     * <p>Note that this folder is relative to the root project which is where gradle
      * sets the current working dir when running the tests.
      *
-     * If you need a full folder path, use {@link #getCanonicalRoot(String...)}.
+     * <p>If you need a full folder path, use {@link #getCanonicalRoot(String...)}.
      *
      * @param names the names of the subfolders.
      *
      * @return a File
      */
+    @NonNull
     public static File getRoot(String... names) {
-        File root = null;
+        File root = new File("src/test/resources/testData/");
+
         for (String name : names) {
-            if (root == null) {
-                root = new File("src/test/resources/testData/" + name);
-            } else {
-                root = new File(root, name);
-            }
+            root = new File(root, name);
 
             // Hack: The sdk-common tests are not configured properly; running tests
             // works correctly from Gradle but not from within the IDE. The following
@@ -110,5 +109,23 @@ public class TestUtils {
         });
 
         return tempDir;
+    }
+
+    /**
+     * Returns the SDK directory as built from the Android source tree.
+     *
+     * @return the SDK directory
+     */
+    @NonNull
+    public static File getSdkDir() {
+        String androidHome = System.getenv("ANDROID_HOME");
+        if (androidHome != null) {
+            File f = new File(androidHome);
+            if (f.isDirectory()) {
+                return f;
+            }
+        }
+
+        throw new IllegalStateException("SDK directory not defined with ANDROID_HOME");
     }
 }

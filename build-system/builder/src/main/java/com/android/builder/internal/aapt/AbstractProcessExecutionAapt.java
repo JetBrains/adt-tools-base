@@ -17,15 +17,19 @@
 package com.android.builder.internal.aapt;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.ide.common.process.ProcessExecutor;
 import com.android.ide.common.process.ProcessInfo;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.ide.common.process.ProcessResult;
+import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
+
+import java.io.File;
 
 /**
  * {@link Aapt} implementation that relies on external execution of an {@code aapt} command.
@@ -100,4 +104,85 @@ public abstract class AbstractProcessExecutionAapt extends AbstractAapt {
     protected abstract ProcessInfoBuilder makePackageProcessBuilder(
             @NonNull AaptPackageConfig config) throws AaptException;
 
+    @NonNull
+    @Override
+    public ListenableFuture<File> compile(@NonNull File file, @NonNull File output)
+            throws AaptException {
+        Preconditions.checkArgument(file.isFile(), "!file.isFile()");
+        Preconditions.checkArgument(output.isDirectory(), "!output.isDirectory()");
+
+        SettableFuture<File> result = SettableFuture.create();
+
+        CompileInvocation compileInvocation = makeCompileProcessBuilder(file, output);
+        if (compileInvocation == null) {
+            result.set(null);
+            return result;
+        }
+
+        ProcessInfo processInfo = compileInvocation.builder.createProcess();
+        ListenableFuture<ProcessResult> execResult =
+                mProcessExecutor.submit(processInfo, mProcessOutputHandler);
+
+        Futures.addCallback(execResult, new FutureCallback<ProcessResult>() {
+            @Override
+            public void onSuccess(ProcessResult processResult) {
+                try {
+                    processResult.rethrowFailure().assertNormalExitValue();
+                    result.set(compileInvocation.outputFile);
+                } catch (Exception e) {
+                    result.setException(e);
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Throwable t) {
+                result.setException(t);
+            }
+        });
+
+        return result;
+    }
+
+    /**
+     * See {@link #compile(File, File)}.
+     *
+     * @param file see {@link #compile(File, File)}
+     * @param output see {@link #compile(File, File)}
+     * @return the compilation information to invoke {@code aapt}; returns {@code null} if the
+     * file is not compilable and {@code aapt} should not be invoked
+     * @throws AaptException failed to configure the compilation
+     */
+    @Nullable
+    protected abstract CompileInvocation makeCompileProcessBuilder(@NonNull File file,
+            @NonNull File output) throws AaptException;
+
+    /**
+     * Build information for a compilation.
+     */
+    protected static final class CompileInvocation {
+
+        /**
+         * Builder used to generate the compiled output file. {@code null} if the file is not
+         * compilable
+         */
+        @NonNull
+        final ProcessInfoBuilder builder;
+
+        /**
+         * Generated compiled output file.
+         */
+        @NonNull
+        final File outputFile;
+
+        /**
+         * Creates new information for compilation.
+         *
+         * @param builder see {@link #builder}
+         * @param outputFile see {@link #outputFile}
+         */
+        public CompileInvocation(@NonNull ProcessInfoBuilder builder, @NonNull File outputFile) {
+            this.builder = builder;
+            this.outputFile = outputFile;
+        }
+    }
 }
