@@ -59,6 +59,7 @@ import com.android.builder.model.ProductFlavorContainer;
 import com.android.builder.model.SourceProviderContainer;
 import com.android.builder.model.Variant;
 import com.android.ide.common.repository.GradleCoordinate;
+import com.android.ide.common.repository.SdkMavenRepository;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.resources.ResourceUrl;
 import com.android.tools.lint.detector.api.Category;
@@ -404,7 +405,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             "Usage of Android Wear BIND_LISTENER is deprecated",
             "BIND_LISTENER receives all Android Wear events whether the application needs " +
             "them or not. This can be inefficient and cause applications to wake up " +
-            "unnecessarily. With Google Play Services 8.2 and above it is recommended to use " +
+            "unnecessarily. With Google Play Services 8.2.0 or later it is recommended to use " +
             "a more efficient combination of manifest listeners and api-based live " +
             "listeners filtered by action, path and/or path prefix. ",
 
@@ -703,12 +704,39 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                     for (AndroidLibrary library : dependencies.getLibraries()) {
                         if (hasWearableGmsDependency(library)) {
                             context.report(WEARABLE_BIND_LISTENER,
-                                    element, context.getLocation(bindListenerAttr),
+                                    bindListenerAttr, context.getLocation(bindListenerAttr),
                                     "The `com.google.android.gms.wearable.BIND_LISTENER`" +
                                             " action is deprecated.");
-                            break;
+                            return;
                         }
                     }
+                }
+                // It's possible they are using an older version of play services so
+                // check the build version and report an error if compileSdkVersion >= 24
+                if (context.getMainProject().getBuildSdk() >= 24) {
+                    File sdkHome = context.getClient().getSdkHome();
+                    File repository =
+                            SdkMavenRepository.GOOGLE.getRepositoryLocation(sdkHome, true);
+                    String message = "The `com.google.android.gms.wearable.BIND_LISTENER`" +
+                            " action is deprecated. Please upgrade to the latest version" +
+                            " of play-services-wearable 8.2.0 or later";
+                    if (repository != null) {
+                        GradleCoordinate max = SdkMavenRepository
+                                .getHighestInstalledVersion("com.google.android.gms", //$NON-NLS-1$
+                                        "play-services-wearable", //$NON-NLS-1$
+                                        repository, null, false);
+                        if (max != null
+                                && COMPARE_PLUS_HIGHER.compare(max, MIN_WEARABLE_GMS_VERSION) > 0) {
+                            message = String.format(
+                                    "The `com.google.android.gms.wearable.BIND_LISTENER` " +
+                                    "action is deprecated. Please upgrade to the latest available" +
+                                    " version of play-services-wearable: `%1$s`",
+                                    max.getRevision());
+                        }
+                    }
+
+                    context.report(WEARABLE_BIND_LISTENER,
+                            bindListenerAttr, context.getLocation(bindListenerAttr), message);
                 }
             }
 
