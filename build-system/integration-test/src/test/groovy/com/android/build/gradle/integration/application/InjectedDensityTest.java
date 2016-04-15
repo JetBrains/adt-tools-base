@@ -52,7 +52,7 @@ public class InjectedDensityTest {
     @BeforeClass
     public static void setup() throws IOException {
 
-        String buildScript = sProject.getGradleBuildscript() + "\n"
+        String buildScript = GradleTestProject.getGradleBuildscript() + "\n"
                 + "apply plugin: 'com.android.application'\n"
                 + "android {\n"
                 + "    compileSdkVersion rootProject.latestCompileSdk\n"
