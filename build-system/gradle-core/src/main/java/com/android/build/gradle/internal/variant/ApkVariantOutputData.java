@@ -24,7 +24,7 @@ import com.android.build.gradle.api.ApkOutputFile;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.tasks.FileSupplier;
-import com.android.build.gradle.tasks.PackageApplication;
+import com.android.build.gradle.tasks.PackageAndroidArtifact;
 import com.android.build.gradle.tasks.SplitZipAlign;
 import com.android.build.gradle.tasks.ZipAlign;
 import com.google.common.base.Supplier;
@@ -42,7 +42,7 @@ import java.util.List;
  */
 public class ApkVariantOutputData extends BaseVariantOutputData {
 
-    public PackageApplication packageApplicationTask;
+    public PackageAndroidArtifact packageAndroidArtifactTask;
     public ZipAlign zipAlignTask;
     public SplitZipAlign splitZipAlign;
 
@@ -64,7 +64,7 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
         if (zipAlignTask != null) {
             zipAlignTask.setOutputFile(file);
         } else {
-            packageApplicationTask.setOutputFile(file);
+            packageAndroidArtifactTask.setOutputFile(file);
         }
     }
 
@@ -75,7 +75,7 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
             return zipAlignTask.getOutputFile();
         }
 
-        return packageApplicationTask == null ? null : packageApplicationTask.getOutputFile();
+        return packageAndroidArtifactTask == null ? null : packageAndroidArtifactTask.getOutputFile();
     }
 
     @NonNull

@@ -120,7 +120,7 @@ import com.android.build.gradle.tasks.MergeManifests;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.build.gradle.tasks.NdkCompile;
-import com.android.build.gradle.tasks.PackageApplication;
+import com.android.build.gradle.tasks.PackageAndroidArtifact;
 import com.android.build.gradle.tasks.PackageSplitAbi;
 import com.android.build.gradle.tasks.PackageSplitRes;
 import com.android.build.gradle.tasks.PrePackageApplication;
@@ -869,7 +869,7 @@ public abstract class TaskManager {
 
         // set up dependency on the jni merger.
         for (TransformStream stream : scope.getTransformManager().getStreams(
-                PackageApplication.sNativeLibsFilter)) {
+                PackageAndroidArtifact.sNativeLibsFilter)) {
             packageSplitAbiTask.dependsOn(tasks, stream.getDependencies());
         }
         return packageSplitAbiTask;
@@ -2169,15 +2169,15 @@ public abstract class TaskManager {
                     variantScope.getInstantRunBuildContext().getPatchingPolicy();
 
             // when building for instant run, never puts the user's code in the APK directly.
-            PackageApplication.DexPackagingPolicy dexPackagingPolicy =
+            PackageAndroidArtifact.DexPackagingPolicy dexPackagingPolicy =
                      incrementalMode == IncrementalMode.NONE
                             || variantScope.getInstantRunBuildContext().getPatchingPolicy()
                                     == InstantRunPatchingPolicy.PRE_LOLLIPOP
-                            ? PackageApplication.DexPackagingPolicy.STANDARD
-                            : PackageApplication.DexPackagingPolicy.INSTANT_RUN;
+                            ? PackageAndroidArtifact.DexPackagingPolicy.STANDARD
+                            : PackageAndroidArtifact.DexPackagingPolicy.INSTANT_RUN;
 
-            AndroidTask<PackageApplication> packageApp = androidTasks.create(tasks,
-                    new PackageApplication.ConfigAction(variantOutputScope, dexPackagingPolicy));
+            AndroidTask<PackageAndroidArtifact> packageApp = androidTasks.create(tasks,
+                    new PackageAndroidArtifact.ConfigAction(variantOutputScope, dexPackagingPolicy));
 
             packageApp.dependsOn(tasks, prePackageApp, variantOutputScope.getProcessResourcesTask());
 
@@ -2194,18 +2194,18 @@ public abstract class TaskManager {
             TransformManager transformManager = variantScope.getTransformManager();
 
             for (TransformStream stream : transformManager
-                    .getStreams(PackageApplication.sDexFilter)) {
+                    .getStreams(PackageAndroidArtifact.sDexFilter)) {
                 // TODO Optimize to avoid creating too many actions
                 packageApp.dependsOn(tasks, stream.getDependencies());
             }
 
             for (TransformStream stream : transformManager.getStreams(
-                    PackageApplication.sResFilter)) {
+                    PackageAndroidArtifact.sResFilter)) {
                 // TODO Optimize to avoid creating too many actions
                 packageApp.dependsOn(tasks, stream.getDependencies());
             }
             for (TransformStream stream : transformManager.getStreams(
-                    PackageApplication.sNativeLibsFilter)) {
+                    PackageAndroidArtifact.sNativeLibsFilter)) {
                 // TODO Optimize to avoid creating too many actions
                 packageApp.dependsOn(tasks, stream.getDependencies());
             }
@@ -2242,7 +2242,7 @@ public abstract class TaskManager {
             // when dealing with 23 and above, we should make sure the packaging task is running
             // as part of the incremental build in case resources have changed and need to be
             // repackaged in the main APK.
-            if (dexPackagingPolicy == PackageApplication.DexPackagingPolicy.INSTANT_RUN
+            if (dexPackagingPolicy == PackageAndroidArtifact.DexPackagingPolicy.INSTANT_RUN
                     && instantRunPatchingPolicy == InstantRunPatchingPolicy.MULTI_APK) {
                 variantScope.getInstantRunIncrementalTask().dependsOn(tasks, appTask);
             }

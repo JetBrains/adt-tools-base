@@ -28,7 +28,7 @@ import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
-import com.android.build.gradle.tasks.PackageApplication;
+import com.android.build.gradle.tasks.PackageAndroidArtifact;
 import com.android.builder.core.VariantType;
 import com.android.builder.internal.aapt.Aapt;
 import com.android.builder.internal.aapt.AaptPackageConfig;
@@ -323,7 +323,7 @@ public class InstantRunSplitApkBuilder extends BaseTask {
                             }
 
                             return variantScope.getTransformManager()
-                                    .getPipelineOutput(PackageApplication.sDexFilter).keySet();
+                                    .getPipelineOutput(PackageAndroidArtifact.sDexFilter).keySet();
                         }
                     });
             ConventionMappingHelper.map(task, "aaptOptions",
