@@ -413,7 +413,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             6,
             Severity.FATAL,
             IMPLEMENTATION).addMoreInfo(
-            "http://developer.android.com/training/wearables/data-layer/events.html");
+            "http://tools.android.com/tech-docs/bind-listener");
 
     /** Permission name of mock location permission */
     public static final String MOCK_LOCATION_PERMISSION =
