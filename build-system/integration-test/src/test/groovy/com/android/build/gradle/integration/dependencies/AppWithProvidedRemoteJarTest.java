@@ -87,24 +87,16 @@ public class AppWithProvidedRemoteJarTest {
     public void checkProvidedRemoteJarIsInTheMainArtifactDependency() {
         Variant variant = ModelHelper.getVariant(model.getVariants(), "debug");
 
-        Dependencies deps = variant.getMainArtifact().getDependencies();
+        Dependencies deps = variant.getMainArtifact().getCompileDependencies();
         Collection<JavaLibrary> javaLibs = deps.getJavaLibraries();
 
         assertThat(javaLibs).named("java libs").hasSize(1);
         JavaLibrary onlyElement = Iterables.getOnlyElement(javaLibs);
         assertThat(onlyElement.isProvided()).named("lib provided prop").isTrue();
-        assertThat(onlyElement.getResolvedCoordinates().toString())
-                .isEqualTo("com.google.guava:guava:jar:17.0");
-    }
+        assertThat(onlyElement.getResolvedCoordinates())
+                .isEqualTo("com.google.guava", "guava", "17.0");
 
-    @Test
-    public void checkProvidedRemoteJarIsInTheAndroidTestDeps() {
-        // TODO
+        Dependencies packageDeps = variant.getMainArtifact().getPackageDependencies();
+        assertThat(packageDeps.getJavaLibraries()).isEmpty();
     }
-
-    @Test
-    public void checkProvidedRemoteJarIsIntheUnitTestDeps() {
-        // TODO
-    }
-
 }

@@ -18,21 +18,25 @@ package com.android.build.gradle.internal.model;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.dependency.LibraryDependency;
+import com.android.annotations.concurrency.Immutable;
 import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.MavenCoordinates;
-import com.google.common.collect.Lists;
+import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableList;
 
 import java.io.File;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * Serializable implementation of AndroidLibrary for use in the model.
+ */
+@Immutable
 public class AndroidLibraryImpl extends LibraryImpl implements AndroidLibrary, Serializable {
     private static final long serialVersionUID = 1L;
 
-    @Nullable
-    private final String project;
     @Nullable
     private final String variant;
     @NonNull
@@ -43,8 +47,6 @@ public class AndroidLibraryImpl extends LibraryImpl implements AndroidLibrary, S
     private final File manifest;
     @NonNull
     private final File jarFile;
-    @NonNull
-    private final Collection<File> localJars;
     @NonNull
     private final File resFolder;
     @NonNull
@@ -64,43 +66,38 @@ public class AndroidLibraryImpl extends LibraryImpl implements AndroidLibrary, S
     @NonNull
     private final File publicResources;
     @NonNull
-    private final List<AndroidLibrary> dependencies;
-    private final boolean isOptional;
+    private final File symbolFile;
+    @NonNull
+    private final List<AndroidLibrary> androidLibraries;
+    @NonNull
+    private final Collection<JavaLibrary> javaLibraries;
+    @NonNull
+    private final Collection<File> localJars;
 
     AndroidLibraryImpl(
-            @NonNull LibraryDependency libraryDependency,
-            @NonNull List<AndroidLibrary> dependencies,
-            @NonNull Collection<File> localJarOverride,
-            @Nullable String project,
-            @Nullable String variant,
-            @Nullable MavenCoordinates requestedCoordinates,
-            @Nullable MavenCoordinates resolvedCoordinates) {
-        super(requestedCoordinates, resolvedCoordinates);
-        this.dependencies = dependencies;
-        bundle = libraryDependency.getBundle();
-        folder = libraryDependency.getFolder();
-        manifest = libraryDependency.getManifest();
-        jarFile = libraryDependency.getJarFile();
-        localJars = Lists.newArrayList(localJarOverride);
-        resFolder = libraryDependency.getResFolder();
-        assetsFolder = libraryDependency.getAssetsFolder();
-        jniFolder = libraryDependency.getJniFolder();
-        aidlFolder = libraryDependency.getAidlFolder();
-        renderscriptFolder = libraryDependency.getRenderscriptFolder();
-        proguardRules = libraryDependency.getProguardRules();
-        lintJar = libraryDependency.getLintJar();
-        annotations = libraryDependency.getExternalAnnotations();
-        publicResources = libraryDependency.getPublicResources();
-        isOptional = libraryDependency.isOptional();
-
-        this.project = project;
-        this.variant = variant;
-    }
-
-    @Nullable
-    @Override
-    public String getProject() {
-        return project;
+            @NonNull AndroidLibrary clonedLibrary,
+            @NonNull List<AndroidLibrary> androidLibraries,
+            @NonNull Collection<JavaLibrary> javaLibraries,
+            @NonNull Collection<File> localJavaLibraries) {
+        super(clonedLibrary);
+        this.androidLibraries = ImmutableList.copyOf(androidLibraries);
+        this.javaLibraries = ImmutableList.copyOf(javaLibraries);
+        this.localJars = ImmutableList.copyOf(localJavaLibraries);
+        variant = clonedLibrary.getProjectVariant();
+        bundle = clonedLibrary.getBundle();
+        folder = clonedLibrary.getFolder();
+        manifest = clonedLibrary.getManifest();
+        jarFile = clonedLibrary.getJarFile();
+        resFolder = clonedLibrary.getResFolder();
+        assetsFolder = clonedLibrary.getAssetsFolder();
+        jniFolder = clonedLibrary.getJniFolder();
+        aidlFolder = clonedLibrary.getAidlFolder();
+        renderscriptFolder = clonedLibrary.getRenderscriptFolder();
+        proguardRules = clonedLibrary.getProguardRules();
+        lintJar = clonedLibrary.getLintJar();
+        annotations = clonedLibrary.getExternalAnnotations();
+        publicResources = clonedLibrary.getPublicResources();
+        symbolFile = clonedLibrary.getSymbolFile();
     }
 
     @Nullable
@@ -124,7 +121,19 @@ public class AndroidLibraryImpl extends LibraryImpl implements AndroidLibrary, S
     @NonNull
     @Override
     public List<? extends AndroidLibrary> getLibraryDependencies() {
-        return dependencies;
+        return androidLibraries;
+    }
+
+    @NonNull
+    @Override
+    public Collection<? extends JavaLibrary> getJavaDependencies() {
+        return javaLibraries;
+    }
+
+    @NonNull
+    @Override
+    public Collection<File> getLocalJars() {
+        return localJars;
     }
 
     @NonNull
@@ -137,12 +146,6 @@ public class AndroidLibraryImpl extends LibraryImpl implements AndroidLibrary, S
     @Override
     public File getJarFile() {
         return jarFile;
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getLocalJars() {
-        return localJars;
     }
 
     @NonNull
@@ -200,7 +203,85 @@ public class AndroidLibraryImpl extends LibraryImpl implements AndroidLibrary, S
     }
 
     @Override
+    @Deprecated
     public boolean isOptional() {
-        return isOptional;
+        return isProvided();
+    }
+
+    @NonNull
+    @Override
+    public File getSymbolFile() {
+        return symbolFile;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        AndroidLibraryImpl that = (AndroidLibraryImpl) o;
+        return Objects.equal(variant, that.variant) &&
+                Objects.equal(bundle, that.bundle) &&
+                Objects.equal(folder, that.folder) &&
+                Objects.equal(manifest, that.manifest) &&
+                Objects.equal(jarFile, that.jarFile) &&
+                Objects.equal(resFolder, that.resFolder) &&
+                Objects.equal(assetsFolder, that.assetsFolder) &&
+                Objects.equal(jniFolder, that.jniFolder) &&
+                Objects.equal(aidlFolder, that.aidlFolder) &&
+                Objects.equal(renderscriptFolder, that.renderscriptFolder) &&
+                Objects.equal(proguardRules, that.proguardRules) &&
+                Objects.equal(lintJar, that.lintJar) &&
+                Objects.equal(annotations, that.annotations) &&
+                Objects.equal(publicResources, that.publicResources) &&
+                Objects.equal(symbolFile, that.symbolFile) &&
+                Objects.equal(androidLibraries, that.androidLibraries) &&
+                Objects.equal(javaLibraries, that.javaLibraries) &&
+                Objects.equal(localJars, that.localJars);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects
+                .hashCode(super.hashCode(), variant, bundle, folder, manifest, jarFile, resFolder,
+                        assetsFolder, jniFolder, aidlFolder, renderscriptFolder, proguardRules,
+                        lintJar,
+                        annotations, publicResources, symbolFile, androidLibraries, javaLibraries,
+                        localJars);
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this)
+                .add("name", getName())
+                .add("project", getProject())
+                .add("variant", variant)
+                .add("requestedCoordinates", getRequestedCoordinates())
+                .add("resolvedCoordinates", getResolvedCoordinates())
+                .add("bundle", bundle)
+                .add("folder", folder)
+                .add("manifest", manifest)
+                .add("jarFile", jarFile)
+                .add("resFolder", resFolder)
+                .add("assetsFolder", assetsFolder)
+                .add("jniFolder", jniFolder)
+                .add("aidlFolder", aidlFolder)
+                .add("renderscriptFolder", renderscriptFolder)
+                .add("proguardRules", proguardRules)
+                .add("lintJar", lintJar)
+                .add("annotations", annotations)
+                .add("publicResources", publicResources)
+                .add("symbolFile", symbolFile)
+                .add("androidLibraries", androidLibraries)
+                .add("javaLibraries", javaLibraries)
+                .add("localJars", localJars)
+                .add("super", super.toString())
+                .toString();
     }
 }

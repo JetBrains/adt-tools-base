@@ -16,7 +16,7 @@
 package com.android.build.gradle.tasks;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.internal.dependency.ManifestDependencyImpl;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
@@ -26,10 +26,13 @@ import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.core.VariantConfiguration;
-import com.android.builder.dependency.LibraryDependency;
+import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.ApiVersion;
+import com.android.builder.model.JavaLibrary;
+import com.android.builder.model.MavenCoordinates;
 import com.android.manifmerger.ManifestMerger2;
 import com.android.manifmerger.ManifestMerger2.Invoker.Feature;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 import org.gradle.api.tasks.Input;
@@ -40,6 +43,7 @@ import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.ParallelizableTask;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -57,7 +61,7 @@ public class MergeManifests extends ManifestProcessorTask {
     private VariantConfiguration<CoreBuildType, CoreProductFlavor, CoreProductFlavor>
             variantConfiguration;
     private ApkVariantOutputData variantOutputData;
-    private List<ManifestDependencyImpl> libraries;
+    private List<AndroidLibrary> libraries;
     private List<Feature> optionalFeatures;
 
     @Override
@@ -131,25 +135,25 @@ public class MergeManifests extends ManifestProcessorTask {
     /**
      * A synthetic input to allow gradle up-to-date checks to work.
      *
-     * Since List<ManifestDependencyImpl> can't be used directly, as @Nested doesn't work on lists,
+     * Since List<AndroidLibrary> can't be used directly, as @Nested doesn't work on lists,
      * this method gathers and returns the underlying manifest files.
      */
     @SuppressWarnings("unused")
     @InputFiles
     List<File> getLibraryManifests() {
-        List<ManifestDependencyImpl> libs = getLibraries();
+        List<AndroidLibrary> libs = getLibraries();
         if (libs == null || libs.isEmpty()) {
             return Collections.emptyList();
         }
 
+        // this is a graph of Android Library so need to get them recursively.
         List<File> files = Lists.newArrayListWithCapacity(libs.size() * 2);
-        for (ManifestDependencyImpl mdi : libs) {
-            files.addAll(mdi.getAllManifests());
+        for (AndroidLibrary androidLibrary : libs) {
+            fillManifestList(androidLibrary, files);
         }
 
         return files;
     }
-
 
     @Input
     @Optional
@@ -213,11 +217,11 @@ public class MergeManifests extends ManifestProcessorTask {
         this.variantOutputData = variantOutputData;
     }
 
-    public List<ManifestDependencyImpl> getLibraries() {
+    public List<AndroidLibrary> getLibraries() {
         return libraries;
     }
 
-    public void setLibraries(List<ManifestDependencyImpl> libraries) {
+    public void setLibraries(List<AndroidLibrary> libraries) {
         this.libraries = libraries;
     }
 
@@ -272,24 +276,24 @@ public class MergeManifests extends ManifestProcessorTask {
             }
 
             ConventionMappingHelper.map(processManifestTask, "libraries",
-                    new Callable<List<ManifestDependencyImpl>>() {
+                    new Callable<List<AndroidLibrary>>() {
                         @Override
-                        public List<ManifestDependencyImpl> call() throws Exception {
-                            List<ManifestDependencyImpl> manifests =
-                                    getManifestDependencies(config.getDirectLibraries());
+                        public List<AndroidLibrary> call() throws Exception {
+                            List<AndroidLibrary> manifests = Lists.newArrayList(
+                                    config.getCompileAndroidLibraries());
 
                             if (variantData.generateApkDataTask != null &&
                                     variantData.getVariantConfiguration().getBuildType().
                                             isEmbedMicroApp()) {
-                                manifests.add(new ManifestDependencyImpl(
+                                manifests.add(new ManifestOnlyLibrary(
                                         variantData.generateApkDataTask.getManifestFile(),
-                                        Collections.<ManifestDependencyImpl>emptyList()));
+                                        "Wear App sub-manifest"));
                             }
 
                             if (scope.getCompatibleScreensManifestTask() != null) {
-                                manifests.add(new ManifestDependencyImpl(
+                                manifests.add(new ManifestOnlyLibrary(
                                         scope.getCompatibleScreensManifestFile(),
-                                        Collections.<ManifestDependencyImpl>emptyList()));
+                                        "Compatible-Screens sub-manifest"));
                             }
 
                             return manifests;
@@ -343,22 +347,173 @@ public class MergeManifests extends ManifestProcessorTask {
 
         }
 
-        @NonNull
-        private static List<ManifestDependencyImpl> getManifestDependencies(
-                List<LibraryDependency> libraries) {
+        /**
+         * Implementation of AndroidLibrary that only contains a manifest.
+         *
+         * This is used to pass to the merger manifest snippet that needs to be added during
+         * merge.
+         */
+        private static class ManifestOnlyLibrary implements AndroidLibrary {
 
-            List<ManifestDependencyImpl> list = Lists.newArrayListWithCapacity(libraries.size());
+            @NonNull
+            private final File manifest;
 
-            for (LibraryDependency lib : libraries) {
-                if (!lib.isOptional()) {
-                    // get the dependencies
-                    List<ManifestDependencyImpl> children =
-                            getManifestDependencies(lib.getDependencies());
-                    list.add(new ManifestDependencyImpl(lib.getName(), lib.getManifest(), children));
-                }
+            @NonNull
+            private final String name;
+
+            public ManifestOnlyLibrary(@NonNull File manifest, @NonNull String name) {
+                this.manifest = manifest;
+                this.name = name;
             }
 
-            return list;
+            @NonNull
+            @Override
+            public File getManifest() {
+                return manifest;
+            }
+
+            @NonNull
+            @Override
+            public String getName() {
+                return name;
+            }
+
+            @NonNull
+            @Override
+            public List<? extends AndroidLibrary> getLibraryDependencies() {
+                return ImmutableList.of();
+            }
+
+            @Override
+            public boolean isOptional() {
+                return false;
+            }
+
+            @Override
+            public boolean isProvided() {
+                return false;
+            }
+
+            @Override
+            public boolean isSkipped() {
+                return false;
+            }
+
+            // --------
+
+            @Nullable
+            @Override
+            public String getProject() {
+                throw new UnsupportedOperationException("ManifestOnlyLibrary can only be queried for the Manifest file.");
+            }
+
+            @Nullable
+            @Override
+            public String getProjectVariant() {
+                throw new UnsupportedOperationException("ManifestOnlyLibrary can only be queried for the Manifest file.");
+            }
+
+            @NonNull
+            @Override
+            public File getBundle() {
+                throw new UnsupportedOperationException("ManifestOnlyLibrary can only be queried for the Manifest file.");
+            }
+
+            @NonNull
+            @Override
+            public File getFolder() {
+                throw new UnsupportedOperationException("ManifestOnlyLibrary can only be queried for the Manifest file.");
+            }
+
+            @NonNull
+            @Override
+            public Collection<File> getLocalJars() {
+                throw new UnsupportedOperationException("ManifestOnlyLibrary can only be queried for the Manifest file.");
+            }
+
+            @NonNull
+            @Override
+            public Collection<? extends JavaLibrary> getJavaDependencies() {
+                throw new UnsupportedOperationException("ManifestOnlyLibrary can only be queried for the Manifest file.");
+            }
+
+            @NonNull
+            @Override
+            public File getJarFile() {
+                throw new UnsupportedOperationException("ManifestOnlyLibrary can only be queried for the Manifest file.");
+            }
+
+            @NonNull
+            @Override
+            public File getResFolder() {
+                throw new UnsupportedOperationException("ManifestOnlyLibrary can only be queried for the Manifest file.");
+            }
+
+            @NonNull
+            @Override
+            public File getAssetsFolder() {
+                throw new UnsupportedOperationException("ManifestOnlyLibrary can only be queried for the Manifest file.");
+            }
+
+            @NonNull
+            @Override
+            public File getJniFolder() {
+                throw new UnsupportedOperationException("ManifestOnlyLibrary can only be queried for the Manifest file.");
+            }
+
+            @NonNull
+            @Override
+            public File getAidlFolder() {
+                throw new UnsupportedOperationException("ManifestOnlyLibrary can only be queried for the Manifest file.");
+            }
+
+            @NonNull
+            @Override
+            public File getRenderscriptFolder() {
+                throw new UnsupportedOperationException("ManifestOnlyLibrary can only be queried for the Manifest file.");
+            }
+
+            @NonNull
+            @Override
+            public File getProguardRules() {
+                throw new UnsupportedOperationException("ManifestOnlyLibrary can only be queried for the Manifest file.");
+            }
+
+            @NonNull
+            @Override
+            public File getLintJar() {
+                throw new UnsupportedOperationException("ManifestOnlyLibrary can only be queried for the Manifest file.");
+            }
+
+            @NonNull
+            @Override
+            public File getExternalAnnotations() {
+                throw new UnsupportedOperationException("ManifestOnlyLibrary can only be queried for the Manifest file.");
+            }
+
+            @NonNull
+            @Override
+            public File getPublicResources() {
+                throw new UnsupportedOperationException("ManifestOnlyLibrary can only be queried for the Manifest file.");
+            }
+
+            @NonNull
+            @Override
+            public File getSymbolFile() {
+                throw new UnsupportedOperationException("ManifestOnlyLibrary can only be queried for the Manifest file.");
+            }
+
+            @Nullable
+            @Override
+            public MavenCoordinates getRequestedCoordinates() {
+                throw new UnsupportedOperationException("ManifestOnlyLibrary can only be queried for the Manifest file.");
+            }
+
+            @NonNull
+            @Override
+            public MavenCoordinates getResolvedCoordinates() {
+                throw new UnsupportedOperationException("ManifestOnlyLibrary can only be queried for the Manifest file.");
+            }
         }
     }
 }

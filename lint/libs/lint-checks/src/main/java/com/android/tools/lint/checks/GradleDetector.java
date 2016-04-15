@@ -492,7 +492,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         assert gc.getRevision().contains("$") : gc.getRevision();
         Variant variant = context.getProject().getCurrentVariant();
         if (variant != null) {
-            Dependencies dependencies = variant.getMainArtifact().getDependencies();
+            Dependencies dependencies = variant.getMainArtifact().getCompileDependencies();
             for (AndroidLibrary library : dependencies.getLibraries()) {
                 MavenCoordinates mc = library.getResolvedCoordinates();
                 if (mc != null
@@ -1175,7 +1175,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             return;
         }
         AndroidArtifact artifact = variant.getMainArtifact();
-        Collection<AndroidLibrary> libraries = artifact.getDependencies().getLibraries();
+        Collection<AndroidLibrary> libraries = artifact.getCompileDependencies().getLibraries();
         Multimap<String, MavenCoordinates> versionToCoordinate = ArrayListMultimap.create();
         for (AndroidLibrary library : libraries) {
             addGmsLibraryVersions(versionToCoordinate, library);

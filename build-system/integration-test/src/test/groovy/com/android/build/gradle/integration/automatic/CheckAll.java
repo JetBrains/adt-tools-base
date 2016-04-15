@@ -37,7 +37,7 @@ import java.util.List;
  * Test case that executes "standard" gradle tasks in all our tests projects.
  *
  * <p>You can run only one test like this:
- * <p>{@code gw :b:i-t:automaticTest --tests=*.CheckAll.lint[abiPureSplits]}
+ * <p>{@code gw :b:i-t:automaticTest --tests=*.CheckAll.assembleAndLint[abiPureSplits]}
  */
 @RunWith(ParallelParameterized.class)
 public class CheckAll {

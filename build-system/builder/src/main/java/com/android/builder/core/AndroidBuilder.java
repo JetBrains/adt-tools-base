@@ -33,8 +33,6 @@ import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.GuardedBy;
 import com.android.builder.compiling.DependencyFileProcessor;
 import com.android.builder.core.BuildToolsServiceLoader.BuildToolServiceLoader;
-import com.android.builder.dependency.ManifestDependency;
-import com.android.builder.dependency.SymbolFileProvider;
 import com.android.builder.files.FileModificationType;
 import com.android.builder.files.NativeLibraryAbiPredicate;
 import com.android.builder.files.RelativeFile;
@@ -55,6 +53,7 @@ import com.android.builder.internal.compiler.ShaderProcessor;
 import com.android.builder.internal.compiler.SourceSearcher;
 import com.android.builder.internal.incremental.DependencyData;
 import com.android.builder.internal.packaging.OldPackager;
+import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.ClassField;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.model.SyncIssue;
@@ -628,7 +627,7 @@ public class AndroidBuilder {
     public void mergeManifests(
             @NonNull File mainManifest,
             @NonNull List<File> manifestOverlays,
-            @NonNull List<? extends ManifestDependency> libraries,
+            @NonNull List<? extends AndroidLibrary> libraries,
             String packageOverride,
             int versionCode,
             String versionName,
@@ -765,7 +764,7 @@ public class AndroidBuilder {
      * @return a list of files and names for the libraries' manifest files.
      */
     private static ImmutableList<Pair<String, File>> collectLibraries(
-            List<? extends ManifestDependency> libraries) {
+            List<? extends AndroidLibrary> libraries) {
 
         ImmutableList.Builder<Pair<String, File>> manifestFiles = ImmutableList.builder();
         if (libraries != null) {
@@ -779,15 +778,17 @@ public class AndroidBuilder {
      * @param libraries the dependencies
      * @param manifestFiles list of files and names identifiers for the libraries' manifest files.
      */
-    private static void collectLibraries(List<? extends ManifestDependency> libraries,
+    private static void collectLibraries(List<? extends AndroidLibrary> libraries,
             ImmutableList.Builder<Pair<String, File>> manifestFiles) {
 
-        for (ManifestDependency library : libraries) {
-            manifestFiles.add(Pair.of(library.getName(), library.getManifest()));
-            List<? extends ManifestDependency> manifestDependencies = library
-                    .getManifestDependencies();
-            if (!manifestDependencies.isEmpty()) {
-                collectLibraries(manifestDependencies, manifestFiles);
+        for (AndroidLibrary library : libraries) {
+            if (!library.isOptional()) {
+                manifestFiles.add(Pair.of(library.getName(), library.getManifest()));
+                List<? extends AndroidLibrary> manifestDependencies = library
+                        .getLibraryDependencies();
+                if (!manifestDependencies.isEmpty()) {
+                    collectLibraries(manifestDependencies, manifestFiles);
+                }
             }
         }
     }
@@ -824,7 +825,7 @@ public class AndroidBuilder {
             @NonNull Boolean handleProfiling,
             @NonNull Boolean functionalTest,
             @Nullable File testManifestFile,
-            @NonNull List<? extends ManifestDependency> libraries,
+            @NonNull List<? extends AndroidLibrary> libraries,
             @NonNull Map<String, Object> manifestPlaceholders,
             @NonNull File outManifest,
             @NonNull File tmpDir) throws IOException {
@@ -1023,7 +1024,7 @@ public class AndroidBuilder {
             // list of all the symbol loaders per package names.
             Multimap<String, SymbolLoader> libMap = ArrayListMultimap.create();
 
-            for (SymbolFileProvider lib : aaptConfig.getLibraries()) {
+            for (AndroidLibrary lib : aaptConfig.getLibraries()) {
                 if (lib.isOptional()) {
                     continue;
                 }

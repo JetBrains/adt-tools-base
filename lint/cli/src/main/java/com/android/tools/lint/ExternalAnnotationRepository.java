@@ -135,7 +135,7 @@ public class ExternalAnnotationRepository {
                     Variant variant = project.getCurrentVariant();
                     AndroidProject model = project.getGradleProjectModel();
                     if (model != null && variant != null) {
-                        Dependencies dependencies = variant.getMainArtifact().getDependencies();
+                        Dependencies dependencies = variant.getMainArtifact().getCompileDependencies();
                         for (AndroidLibrary library : dependencies.getLibraries()) {
                             addLibraries(files, library, seen);
                         }

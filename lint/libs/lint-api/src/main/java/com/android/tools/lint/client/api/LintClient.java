@@ -29,7 +29,9 @@ import static com.android.tools.lint.detector.api.LintUtils.endsWith;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.Dependencies;
 import com.android.builder.model.Variant;
 import com.android.ide.common.repository.ResourceVisibilityLookup;
 import com.android.ide.common.res2.AbstractResourceRepository;
@@ -1005,7 +1007,7 @@ public abstract class LintClient {
                 final Variant variant = project.getCurrentVariant();
                 if (variant != null) {
                     Collection<AndroidLibrary> libraries = variant.getMainArtifact()
-                      .getDependencies().getLibraries();
+                        .getDependencies().getLibraries();
                     for (AndroidLibrary library : libraries) {
                         File lintJar = library.getLintJar();
                         if (lintJar.exists()) {

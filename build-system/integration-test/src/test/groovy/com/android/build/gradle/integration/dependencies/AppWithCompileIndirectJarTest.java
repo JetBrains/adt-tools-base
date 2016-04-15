@@ -17,15 +17,19 @@
 package com.android.build.gradle.integration.dependencies;
 
 import static com.android.build.gradle.integration.common.utils.TestFileUtils.appendToFile;
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import com.android.build.gradle.integration.common.truth.TruthHelper;
 import com.android.build.gradle.integration.common.utils.ModelHelper;
+import com.android.builder.model.AndroidArtifact;
+import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
+import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.Variant;
-import com.android.ide.common.process.ProcessException;
+import com.google.common.base.Charsets;
+import com.google.common.collect.Iterables;
+import com.google.common.io.Files;
 import com.google.common.truth.Truth;
 
 import org.junit.AfterClass;
@@ -33,7 +37,6 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
@@ -47,56 +50,112 @@ public class AppWithCompileIndirectJarTest {
     public static GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("projectWithModules")
             .create();
-    static Map<String, AndroidProject> models;
 
     @BeforeClass
     public static void setUp() throws IOException {
+        Files.write("include 'app', 'library'", project.getSettingsFile(), Charsets.UTF_8);
+
+        appendToFile(project.getBuildFile(),
+"\nsubprojects {\n" +
+"    apply from: \"$rootDir/../commonLocalRepo.gradle\"\n" +
+"}\n");
+
         appendToFile(project.getSubproject("app").getBuildFile(),
-                "\n" +
-                "dependencies {\n" +
-                "    compile project(\":library\")\n" +
-                "}\n");
+"\ndependencies {\n" +
+"    compile project(':library')\n" +
+"}\n");
 
         appendToFile(project.getSubproject("library").getBuildFile(),
-                "\n" +
-                "dependencies {\n" +
-                "    compile project(\":jar\")\n" +
-                "}\n");
+"\ndependencies {\n" +
+"    compile 'com.google.guava:guava:18.0'\n" +
+"}\n");
 
-        models = project.executeAndReturnMultiModel("clean", ":app:assembleDebug");
     }
 
     @AfterClass
     public static void cleanUp() {
         project = null;
-        models = null;
     }
 
     @Test
-    public void checkCompiledJarIsPackaged() throws IOException, ProcessException {
-        File apk = project.getSubproject("app").getApk("debug");
+    public void checkLevel1Model() {
+        Map<String, AndroidProject> models = project.getAllModels(AndroidProject.MODEL_LEVEL_1_SYNC_ISSUE);
 
-        assertThatApk(apk).containsClass("Lcom/example/android/multiproject/person/People;");
-        assertThatApk(apk).containsClass("Lcom/example/android/multiproject/library/PersonView;");
+        Variant appDebug = ModelHelper.getVariant(models.get(":app").getVariants(), "debug");
+
+        Dependencies deps = appDebug.getMainArtifact().getCompileDependencies();
+
+        Collection<AndroidLibrary> libs = deps.getLibraries();
+        assertThat(libs).named("app androidlibrary deps count").hasSize(1);
+        AndroidLibrary androidLibrary = Iterables.getOnlyElement(libs);
+        assertThat(androidLibrary.getProject()).named("app androidlib deps path").isEqualTo(":library");
+        assertThat(androidLibrary.getJavaDependencies()).named("app androidlib java libs count").isEmpty();
+
+        assertThat(deps.getProjects()).named("app module dependency count").isEmpty();
+
+        Collection<JavaLibrary> javaLibraries = deps.getJavaLibraries();
+        assertThat(javaLibraries).named("app java dependency count").hasSize(1);
+        JavaLibrary javaLib = Iterables.getOnlyElement(javaLibraries);
+        assertThat(javaLib.getResolvedCoordinates())
+                .named("app java lib resolved coordinates")
+                .isEqualTo("com.google.guava", "guava", "18.0");
+
+        // ---
+
+        Variant libDebug = ModelHelper.getVariant(models.get(":library").getVariants(), "debug");
+        Truth.assertThat(libDebug).isNotNull();
+
+        deps = libDebug.getMainArtifact().getCompileDependencies();
+
+        assertThat(deps.getLibraries()).named("lib androidlibrary deps count").isEmpty();
+
+        javaLibraries = deps.getJavaLibraries();
+        assertThat(javaLibraries).named("lib java dependency count").hasSize(1);
+        javaLib = Iterables.getOnlyElement(javaLibraries);
+        assertThat(javaLib.getResolvedCoordinates())
+                .named("lib java lib resolved coordinates")
+                .isEqualTo("com.google.guava", "guava", "18.0");
     }
 
     @Test
-    public void checkCompiledJarIsInTheModel() {
-        Variant variant = ModelHelper.getVariant(models.get(":app").getVariants(), "debug");
+    public void checkLevel2Model() {
+        Map<String, AndroidProject> models = project.getAllModels(AndroidProject.MODEL_LEVEL_LATEST);
 
-        Dependencies deps = variant.getMainArtifact().getDependencies();
-        Collection<String> projectDeps = deps.getProjects();
+        Variant appDebug = ModelHelper.getVariant(models.get(":app").getVariants(), "debug");
 
-        TruthHelper.assertThat(projectDeps).named("project deps").hasSize(1);
+        Dependencies deps = appDebug.getMainArtifact().getCompileDependencies();
+
+        Collection<AndroidLibrary> libs = deps.getLibraries();
+        assertThat(libs).named("app androidlibrary deps count").hasSize(1);
+
+        AndroidLibrary androidLibrary = Iterables.getOnlyElement(libs);
+        assertThat(androidLibrary.getProject()).named("app androidlib deps path").isEqualTo(":library");
+
+        Collection<? extends JavaLibrary> javaLibraries = androidLibrary.getJavaDependencies();
+        assertThat(javaLibraries).named("androidlib java dependency count").hasSize(1);
+        JavaLibrary javaLib = Iterables.getOnlyElement(javaLibraries);
+        assertThat(javaLib.getResolvedCoordinates())
+                .named("androidlib java lib resolved coordinates")
+                .isEqualTo("com.google.guava", "guava", "18.0");
+
+        assertThat(deps.getProjects()).named("app module dependency count").isEmpty();
+        assertThat(deps.getJavaLibraries()).named("app java dependency count").isEmpty();
+
+        // ---
+
+        Variant libDebug = ModelHelper.getVariant(models.get(":library").getVariants(), "debug");
+        Truth.assertThat(libDebug).isNotNull();
+
+        deps = libDebug.getMainArtifact().getCompileDependencies();
+
+        assertThat(deps.getLibraries()).named("lib androidlibrary deps count").isEmpty();
+
+        javaLibraries = deps.getJavaLibraries();
+        assertThat(javaLibraries).named("lib java dependency count").hasSize(1);
+        javaLib = Iterables.getOnlyElement(javaLibraries);
+        assertThat(javaLib.getResolvedCoordinates())
+                .named("lib java lib resolved coordinates")
+                .isEqualTo("com.google.guava", "guava", "18.0");
     }
 
-    @Test
-    public void checkPackageJarIsInTheAndroidTestDeps() {
-        // TODO
-    }
-
-    @Test
-    public void checkPackageJarIsInTheUnitTestDeps() {
-        // TODO
-    }
 }

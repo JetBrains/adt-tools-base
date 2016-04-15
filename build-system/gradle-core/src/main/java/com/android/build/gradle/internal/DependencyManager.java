@@ -19,38 +19,39 @@ package com.android.build.gradle.internal;
 import static com.android.SdkConstants.DOT_JAR;
 import static com.android.SdkConstants.EXT_ANDROID_PACKAGE;
 import static com.android.SdkConstants.EXT_JAR;
+import static com.android.build.gradle.internal.dependency.DependencyChecker.computeVersionLessCoordinateKey;
 import static com.android.builder.core.BuilderConstants.EXT_LIB_ARCHIVE;
 import static com.android.builder.core.ErrorReporter.EvaluationMode.STANDARD;
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
-import static com.google.common.base.Preconditions.checkState;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.dependency.JarInfo;
-import com.android.build.gradle.internal.dependency.LibInfo;
-import com.android.build.gradle.internal.dependency.LibraryDependencyImpl;
-import com.android.build.gradle.internal.dependency.ManifestDependencyImpl;
-import com.android.build.gradle.internal.dependency.VariantDependencies;
-import com.android.build.gradle.internal.model.MavenCoordinatesImpl;
 import com.android.build.gradle.internal.scope.AndroidTask;
+import com.android.builder.dependency.DependencyContainerImpl;
+import com.android.builder.dependency.LibraryDependency;
+import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
 import com.android.build.gradle.internal.tasks.PrepareLibraryTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.dependency.DependencyContainer;
 import com.android.builder.dependency.JarDependency;
-import com.android.builder.dependency.LibraryDependency;
+import com.android.builder.dependency.MavenCoordinatesImpl;
+import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.MavenCoordinates;
 import com.android.builder.model.SyncIssue;
 import com.android.utils.ILogger;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import org.gradle.api.CircularReferenceException;
+import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.UnknownProjectException;
@@ -84,52 +85,49 @@ import java.util.Set;
  * A manager to resolve configuration dependencies.
  */
 public class DependencyManager {
-    protected static final boolean DEBUG_DEPENDENCY = false;
+    private static final boolean DEBUG_DEPENDENCY = false;
 
-    private Project project;
-    private ExtraModelInfo extraModelInfo;
-    private ILogger logger;
+    private final Project project;
+    private final ExtraModelInfo extraModelInfo;
+    private final ILogger logger;
 
-    final Map<LibraryDependencyImpl, PrepareLibraryTask> prepareTaskMap = Maps.newHashMap();
+    final Map<String, PrepareLibraryTask> prepareTaskMap = Maps.newHashMap();
 
-    public DependencyManager(Project project, ExtraModelInfo extraModelInfo) {
+    public DependencyManager(@NonNull Project project, @NonNull ExtraModelInfo extraModelInfo) {
         this.project = project;
         this.extraModelInfo = extraModelInfo;
         logger = new LoggerWrapper(Logging.getLogger(DependencyManager.class));
     }
 
-    /**
-     * Returns the list of packaged local jars.
-     */
-    public static List<File> getPackagedLocalJarFileList(DependencyContainer dependencyContainer) {
-        List<JarDependency> jarDependencyList = dependencyContainer.getLocalDependencies();
-        Set<File> files = Sets.newHashSetWithExpectedSize(jarDependencyList.size());
-        for (JarDependency jarDependency : jarDependencyList) {
-            if (jarDependency.isPackaged()) {
-                files.add(jarDependency.getJarFile());
-            }
-        }
-
-        return Lists.newArrayList(files);
-    }
-
-    public void addDependencyToPrepareTask(
+    public void addDependenciesToPrepareTask(
             @NonNull TaskFactory tasks,
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
-            @NonNull AndroidTask<PrepareDependenciesTask> prepareDependenciesTask,
-            @NonNull LibraryDependencyImpl lib) {
-        PrepareLibraryTask prepareLibTask = prepareTaskMap.get(lib.getNonTransitiveRepresentation());
-        if (prepareLibTask != null) {
-            prepareDependenciesTask.dependsOn(tasks, prepareLibTask);
-            prepareLibTask.dependsOn(variantData.getScope().getPreBuildTask().getName());
+            @NonNull AndroidTask<PrepareDependenciesTask> prepareDependenciesTask) {
+        VariantDependencies variantDeps = variantData.getVariantDependency();
+        for (AndroidLibrary androidLibrary : variantDeps.getCompileDependencies().getAndroidDependencies()) {
+            addDependencyToPrepareTask(tasks, androidLibrary, prepareDependenciesTask,
+                    variantData.getScope().getPreBuildTask());
         }
 
-        for (LibraryDependency childLib : lib.getDependencies()) {
-            addDependencyToPrepareTask(
-                    tasks,
-                    variantData,
-                    prepareDependenciesTask,
-                    (LibraryDependencyImpl) childLib);
+        for (AndroidLibrary androidLibrary : variantDeps.getPackageDependencies().getAndroidDependencies()) {
+            addDependencyToPrepareTask(tasks, androidLibrary, prepareDependenciesTask,
+                    variantData.getScope().getPreBuildTask());
+        }
+    }
+
+    private void addDependencyToPrepareTask(
+            @NonNull TaskFactory tasks,
+            @NonNull AndroidLibrary lib,
+            @NonNull AndroidTask<PrepareDependenciesTask> prepareDependenciesTask,
+            @NonNull AndroidTask<DefaultTask> preBuildTask) {
+        PrepareLibraryTask prepareLibTask = prepareTaskMap.get(lib.getResolvedCoordinates().toString());
+        if (prepareLibTask != null) {
+            prepareDependenciesTask.dependsOn(tasks, prepareLibTask);
+            prepareLibTask.dependsOn(preBuildTask.getName());
+        }
+
+        for (AndroidLibrary childLib : lib.getLibraryDependencies()) {
+            addDependencyToPrepareTask(tasks, childLib, prepareDependenciesTask, preBuildTask);
         }
     }
 
@@ -137,36 +135,30 @@ public class DependencyManager {
             @NonNull VariantDependencies variantDeps,
             @Nullable VariantDependencies testedVariantDeps,
             @Nullable String testedProjectPath) {
-        Multimap<LibraryDependency, VariantDependencies> reverseMap = ArrayListMultimap.create();
+        Multimap<AndroidLibrary, Configuration> reverseMap = ArrayListMultimap.create();
 
         resolveDependencyForConfig(variantDeps, testedVariantDeps, testedProjectPath, reverseMap);
-        processLibraries(variantDeps.getLibraries(), reverseMap);
+
+        processLibraries(reverseMap);
     }
 
-    private void processLibraries(
-            @NonNull Collection<LibraryDependencyImpl> libraries,
-            @NonNull Multimap<LibraryDependency, VariantDependencies> reverseMap) {
-        for (LibraryDependencyImpl lib : libraries) {
-            setupPrepareLibraryTask(lib, reverseMap);
-            //noinspection unchecked
-            processLibraries(
-                    (Collection<LibraryDependencyImpl>) (List<?>) lib.getDependencies(),
-                    reverseMap);
+    private void processLibraries(@NonNull Multimap<AndroidLibrary, Configuration> reverseMap) {
+        for (AndroidLibrary lib : reverseMap.keySet()) {
+            setupPrepareLibraryTask(lib, reverseMap.get(lib));
         }
     }
 
     private void setupPrepareLibraryTask(
-            @NonNull LibraryDependencyImpl libDependency,
-            @NonNull Multimap<LibraryDependency, VariantDependencies> reverseMap) {
-        Task task = maybeCreatePrepareLibraryTask(libDependency, project);
+            @NonNull AndroidLibrary androidLibrary,
+            @Nullable Collection<Configuration> configurationList) {
+        Task task = maybeCreatePrepareLibraryTask(androidLibrary, project);
 
         // Use the reverse map to find all the configurations that included this android
         // library so that we can make sure they are built.
         // TODO fix, this is not optimum as we bring in more dependencies than we should.
-        Collection<VariantDependencies> configDepList = reverseMap.get(libDependency);
-        if (configDepList != null && !configDepList.isEmpty()) {
-            for (VariantDependencies configDependencies: configDepList) {
-                task.dependsOn(configDependencies.getCompileConfiguration().getBuildDependencies());
+        if (configurationList != null && !configurationList.isEmpty()) {
+            for (Configuration configuration: configurationList) {
+                task.dependsOn(configuration.getBuildDependencies());
             }
         }
 
@@ -198,8 +190,9 @@ public class DependencyManager {
      * @return the prepare task.
      */
     private PrepareLibraryTask maybeCreatePrepareLibraryTask(
-            @NonNull LibraryDependencyImpl library,
+            @NonNull AndroidLibrary library,
             @NonNull Project project) {
+        LibraryDependency lib = (LibraryDependency) library;
 
         // create proper key for the map. library here contains all the dependencies which
         // are not relevant for the task (since the task only extract the aar which does not
@@ -207,21 +200,21 @@ public class DependencyManager {
         // However there is a possible case of a rewritten dependencies (with resolution strategy)
         // where the aar here could have different dependencies, in which case we would still
         // need the same task.
-        // So we extract a LibraryBundle (no dependencies) from the LibraryDependencyImpl to
+        // So we extract a AbstractLibraryDependency (no dependencies) from the LibraryDependency to
         // make the map key that doesn't take into account the dependencies.
-        LibraryDependencyImpl key = library.getNonTransitiveRepresentation();
+        String key = library.getResolvedCoordinates().toString();
 
         PrepareLibraryTask prepareLibraryTask = prepareTaskMap.get(key);
 
         if (prepareLibraryTask == null) {
-            String bundleName = GUtil.toCamelCase(library.getName().replaceAll("\\:", " "));
+            String bundleName = GUtil.toCamelCase(lib.getName().replaceAll("\\:", " "));
 
             prepareLibraryTask = project.getTasks().create(
                     "prepare" + bundleName + "Library", PrepareLibraryTask.class);
 
-            prepareLibraryTask.setDescription("Prepare " + library.getName());
-            prepareLibraryTask.setBundle(library.getBundle());
-            prepareLibraryTask.setExplodedDir(library.getBundleFolder());
+            prepareLibraryTask.setDescription("Prepare " + lib.getName());
+            prepareLibraryTask.setBundle(lib.getBundle());
+            prepareLibraryTask.setExplodedDir(lib.getBundleFolder());
             prepareLibraryTask.setVariantName("");
 
             prepareTaskMap.put(key, prepareLibraryTask);
@@ -231,10 +224,10 @@ public class DependencyManager {
     }
 
     private void resolveDependencyForConfig(
-            @NonNull VariantDependencies variantDeps,
+            @NonNull final VariantDependencies variantDeps,
             @Nullable VariantDependencies testedVariantDeps,
             @Nullable String testedProjectPath,
-            @NonNull Multimap<LibraryDependency, VariantDependencies> reverseMap) {
+            @NonNull Multimap<AndroidLibrary, Configuration> reverseMap) {
 
         Configuration compileClasspath = variantDeps.getCompileConfiguration();
         Configuration packageClasspath = variantDeps.getPackageConfiguration();
@@ -253,296 +246,29 @@ public class DependencyManager {
 
         Set<String> currentUnresolvedDependencies = Sets.newHashSet();
 
-        // TODO - defer downloading until required -- This is hard to do as we need the info to build the variant config.
-        Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts = Maps.newHashMap();
-        collectArtifacts(compileClasspath, artifacts);
-        collectArtifacts(packageClasspath, artifacts);
+        // records the artifact we find during package, to detect provided only dependencies.
+        Set<String> artifactSet = Sets.newHashSet();
 
-        // --- Handle the external/module dependencies ---
-        // keep a map of modules already processed so that we don't go through sections of the
-        // graph that have been seen elsewhere.
-        Map<ModuleVersionIdentifier, List<LibInfo>> foundLibraries = Maps.newHashMap();
-        Map<ModuleVersionIdentifier, List<JarInfo>> foundJars = Maps.newHashMap();
+        // start with package dependencies, record the artifacts
+        DependencyContainer packagedDependencies = gatherDependencies(
+                packageClasspath,
+                variantDeps,
+                reverseMap,
+                currentUnresolvedDependencies,
+                testedProjectPath,
+                artifactSet,
+                true /*recordArtifactSet*/);
 
-        // first get the compile dependencies. Note that in both case the libraries and the
-        // jars are a graph. The list only contains the first level of dependencies, and
-        // they themselves contain transitive dependencies (libraries can contain both, jars only
-        // contains jars)
-        List<LibInfo> compiledAndroidLibraries = Lists.newArrayList();
-        List<JarInfo> compiledJars = Lists.newArrayList();
-
-        Set<? extends DependencyResult> dependencyResultSet = compileClasspath.getIncoming()
-                .getResolutionResult().getRoot().getDependencies();
-
-        for (DependencyResult dependencyResult : dependencyResultSet) {
-            if (dependencyResult instanceof ResolvedDependencyResult) {
-                addDependency(
-                        ((ResolvedDependencyResult) dependencyResult).getSelected(),
-                        variantDeps,
-                        compiledAndroidLibraries,
-                        compiledJars,
-                        foundLibraries,
-                        foundJars,
-                        artifacts,
-                        reverseMap,
-                        currentUnresolvedDependencies,
-                        testedProjectPath,
-                        Collections.<String>emptyList(),
-                        0);
-            } else if (dependencyResult instanceof UnresolvedDependencyResult) {
-                ComponentSelector attempted = ((UnresolvedDependencyResult) dependencyResult).getAttempted();
-                if (attempted != null) {
-                    currentUnresolvedDependencies.add(attempted.toString());
-                }
-            }
-        }
-
-        // then the packaged ones.
-        List<LibInfo> packagedAndroidLibraries = Lists.newArrayList();
-        List<JarInfo> packagedJars = Lists.newArrayList();
-
-        dependencyResultSet = packageClasspath.getIncoming()
-                .getResolutionResult().getRoot().getDependencies();
-
-        for (DependencyResult dependencyResult : dependencyResultSet) {
-            if (dependencyResult instanceof ResolvedDependencyResult) {
-                addDependency(
-                        ((ResolvedDependencyResult) dependencyResult).getSelected(),
-                        variantDeps,
-                        packagedAndroidLibraries,
-                        packagedJars,
-                        foundLibraries,
-                        foundJars,
-                        artifacts,
-                        reverseMap,
-                        currentUnresolvedDependencies,
-                        testedProjectPath,
-                        Collections.<String>emptyList(),
-                        0);
-            } else if (dependencyResult instanceof UnresolvedDependencyResult) {
-                ComponentSelector attempted = ((UnresolvedDependencyResult) dependencyResult)
-                        .getAttempted();
-                if (attempted != null) {
-                    currentUnresolvedDependencies.add(attempted.toString());
-                }
-            }
-        }
-
-        // now look through both results.
-        // 1. Handle the compile and package list of Libraries.
-        // For Libraries:
-        // Only library projects can support provided aar.
-        // However, package(publish)-only are still not supported (they don't make sense).
-        // For now, provided only dependencies will be kept normally in the compile-graph.
-        // However we'll want to not include them in the resource merging.
-        // For Applications:
-        // All Android libraries must be in both lists.
-        // ---
-        // Since we reuse the same instance of LibInfo for identical modules
-        // we can simply run through each list and look for libs that are in only one.
-        // While the list of library is actually a graph, it's fine to look only at the
-        // top level ones since the transitive ones are in the same scope as the direct libraries.
-        List<LibInfo> copyOfPackagedLibs = Lists.newArrayList(packagedAndroidLibraries);
-        boolean isLibrary = extraModelInfo.isLibrary();
-
-        for (LibInfo lib : compiledAndroidLibraries) {
-            if (!copyOfPackagedLibs.contains(lib)) {
-                if (isLibrary || lib.isOptional()) {
-                    lib.setIsOptional(true);
-                } else {
-                    //noinspection ConstantConditions
-                    variantDeps.getChecker().addSyncIssue(extraModelInfo.handleSyncError(
-                            lib.getResolvedCoordinates().toString(),
-                            SyncIssue.TYPE_NON_JAR_PROVIDED_DEP,
-                            String.format(
-                                    "Project %s: provided dependencies can only be jars. %s is an Android Library.",
-                                    project.getName(), lib.getResolvedCoordinates())));
-                }
-            } else {
-                copyOfPackagedLibs.remove(lib);
-            }
-        }
-        // at this stage copyOfPackagedLibs should be empty, if not, error.
-        for (LibInfo lib : copyOfPackagedLibs) {
-            //noinspection ConstantConditions
-            variantDeps.getChecker().addSyncIssue(extraModelInfo.handleSyncError(
-                    lib.getResolvedCoordinates().toString(),
-                    SyncIssue.TYPE_NON_JAR_PACKAGE_DEP,
-                    String.format(
-                            "Project %s: apk dependencies can only be jars. %s is an Android Library.",
-                            project.getName(), lib.getResolvedCoordinates())));
-        }
-
-        // 2. merge jar dependencies with a single list where items have packaged/compiled properties.
-        // since we reuse the same instance of a JarInfo for identical modules, we can use an
-        // Identity set (ie both compiledJars and packagedJars will contain the same instance
-        // if it's both compiled and packaged)
-        Set<JarInfo> jarInfoSet = Sets.newIdentityHashSet();
-        Set<LibInfo> libInfoSet = Sets.newIdentityHashSet();
-
-        // go through the graphs of dependencies (jars and libs) and gather all the transitive
-        // jar dependencies.
-        // At the same this we set the compiled/packaged properties.
-        gatherJarDependencies(jarInfoSet, compiledJars, true /*compiled*/, false /*packaged*/);
-        gatherJarDependencies(jarInfoSet, packagedJars, false /*compiled*/, true /*packaged*/);
-        // at this step, we know that libraries have been checked and libraries can only
-        // be in both compiled and packaged scope.
-        gatherJarDependenciesFromLibraries(jarInfoSet, compiledAndroidLibraries);
-
-        gatherAndroidDependencies(libInfoSet, compiledAndroidLibraries);
-
-        // the final list of JarDependency, created from the list of JarInfo.
-        List<JarDependency> jars = Lists.newArrayListWithCapacity(jarInfoSet.size());
-        Set<LibInfo> librariesToKeep = Sets.newHashSetWithExpectedSize(compiledAndroidLibraries.size());
-
-        // if this is a test dependencies (ie tested dependencies is non null), override
-        // packaged attributes for jars that are already in the tested dependencies in order to
-        // not package them twice (since the VM loads the classes of both APKs in the same
-        // classpath and refuses to load the same class twice)
-        if (testedVariantDeps != null) {
-            List<JarDependency> jarDependencies = testedVariantDeps.getJarDependencies();
-
-            // gather the tested dependencies
-            Map<String, String> testedJarDeps = Maps.newHashMapWithExpectedSize(jarDependencies.size());
-
-            for (JarDependency jar : jarDependencies) {
-                if (jar.isPackaged()) {
-                    MavenCoordinates coordinates = jar.getResolvedCoordinates();
-                    checkState(coordinates != null);
-                    testedJarDeps.put(
-                            computeVersionLessCoordinateKey(coordinates),
-                            coordinates.getVersion());
-                }
-            }
-
-            // now go through all the test dependencies and check we don't have the same thing.
-            // Skip the ones that are already in the tested variant, and convert the rest
-            // to the final immutable instance
-            for (JarInfo jar : jarInfoSet) {
-                if (jar.isPackaged()) {
-                    MavenCoordinates coordinates = jar.getResolvedCoordinates();
-
-                    String testedVersion = testedJarDeps.get(
-                            computeVersionLessCoordinateKey(coordinates));
-                    if (testedVersion != null) {
-                        skipTestDependency(variantDeps, coordinates, testedVersion);
-                    } else {
-                        // new artifact, convert it.
-                        jars.add(jar.createJarDependency());
-                    }
-                }
-            }
-
-            List<? extends LibraryDependency> androidDependencies =
-                    testedVariantDeps.getAndroidDependencies();
-
-            Map<String, String> testedAndroidDeps = Maps.newHashMapWithExpectedSize(jarDependencies.size());
-            for (LibraryDependency androidDependency : androidDependencies) {
-                MavenCoordinates coordinates = androidDependency.getResolvedCoordinates();
-                checkState(coordinates != null);
-
-                testedAndroidDeps.put(
-                        computeVersionLessCoordinateKey(coordinates),
-                        coordinates.getVersion());
-
-            }
-
-
-            for (LibInfo androidLibrary : libInfoSet) {
-                MavenCoordinates coordinates = androidLibrary.getResolvedCoordinates();
-                checkState(coordinates != null);
-
-                String testedVersion =
-                        testedAndroidDeps.get(computeVersionLessCoordinateKey(coordinates));
-
-                if (testedVersion != null) {
-                    skipTestDependency(variantDeps, coordinates, testedVersion);
-                } else {
-                    librariesToKeep.add(androidLibrary);
-                }
-            }
-        } else {
-            // just convert all of them to JarDependency
-            for (JarInfo jarInfo : jarInfoSet) {
-                jars.add(jarInfo.createJarDependency());
-            }
-            librariesToKeep.addAll(libInfoSet);
-        }
-
-        // --- Handle the local jar dependencies ---
-
-        // also need to process local jar files, as they are not processed by the
-        // resolvedConfiguration result. This only includes the local jar files for this project.
-        Set<File> localCompiledJars = Sets.newHashSet();
-        for (Dependency dependency : compileClasspath.getAllDependencies()) {
-            if (dependency instanceof SelfResolvingDependency &&
-                    !(dependency instanceof ProjectDependency)) {
-                Set<File> files = ((SelfResolvingDependency) dependency).resolve();
-                for (File f : files) {
-                    if (DEBUG_DEPENDENCY) {
-                        System.out.println("LOCAL compile: " + f.getName());
-                    }
-                    // only accept local jar, no other types.
-                    if (!f.getName().toLowerCase(Locale.getDefault()).endsWith(DOT_JAR)) {
-                        variantDeps.getChecker().addSyncIssue(extraModelInfo.handleSyncError(
-                                f.getAbsolutePath(),
-                                SyncIssue.TYPE_NON_JAR_LOCAL_DEP,
-                                String.format(
-                                        "Project %s: Only Jar-type local dependencies are supported. Cannot handle: %s",
-                                        project.getName(), f.getAbsolutePath())));
-                    } else {
-                        localCompiledJars.add(f);
-                    }
-                }
-            }
-        }
-
-        Set<File> localPackagedJars = Sets.newHashSet();
-        for (Dependency dependency : packageClasspath.getAllDependencies()) {
-            if (dependency instanceof SelfResolvingDependency &&
-                    !(dependency instanceof ProjectDependency)) {
-                Set<File> files = ((SelfResolvingDependency) dependency).resolve();
-                for (File f : files) {
-                    if (DEBUG_DEPENDENCY) {
-                        System.out.println("LOCAL package: " + f.getName());
-                    }
-                    // only accept local jar, no other types.
-                    if (!f.getName().toLowerCase(Locale.getDefault()).endsWith(DOT_JAR)) {
-                        variantDeps.getChecker().addSyncIssue(extraModelInfo.handleSyncError(
-                                f.getAbsolutePath(),
-                                SyncIssue.TYPE_NON_JAR_LOCAL_DEP,
-                                String.format(
-                                        "Project %s: Only Jar-type local dependencies are supported. Cannot handle: %s",
-                                        project.getName(), f.getAbsolutePath())));
-                    } else {
-                        localPackagedJars.add(f);
-                    }
-                }
-            }
-        }
-
-        // loop through both the compiled and packaged jar to compute the list
-        // of jars that are: compile-only, package-only, or both.
-        Map<File, JarDependency> localJars = Maps.newHashMap();
-        for (File file : localCompiledJars) {
-            localJars.put(file, new JarDependency(
-                    file,
-                    true /*compiled*/,
-                    localPackagedJars.contains(file) /*packaged*/,
-                    null /*resolvedCoordinates*/,
-                    null /*projectPath*/));
-        }
-
-        for (File file : localPackagedJars) {
-            if (!localCompiledJars.contains(file)) {
-                localJars.put(file, new JarDependency(
-                        file,
-                        false /*compiled*/,
-                        true /*packaged*/,
-                        null /*resolvedCoordinates*/,
-                        null /*projectPath*/));
-            }
-        }
+        // then the compile dependencies, comparing against the record package dependencies
+        // to set the provided flag.
+        DependencyContainer compileDependencies = gatherDependencies(
+                compileClasspath,
+                variantDeps,
+                reverseMap,
+                currentUnresolvedDependencies,
+                testedProjectPath,
+                artifactSet,
+                false /*recordArtifactSet*/);
 
         if (extraModelInfo.getMode() != STANDARD &&
                 compileClasspath.getResolvedConfiguration().hasError()) {
@@ -556,26 +282,34 @@ public class DependencyManager {
             }
         }
 
-        // convert the LibInfo in LibraryDependencyImpl and update the reverseMap
-        // with the converted keys
-        List<LibraryDependencyImpl> libList = convertLibraryInfoIntoDependency(
-                compiledAndroidLibraries, librariesToKeep, reverseMap);
+        // validate the dependencies.
+        variantDeps.getChecker().validate(compileDependencies, packagedDependencies, testedVariantDeps);
 
         if (DEBUG_DEPENDENCY) {
-            for (LibraryDependency lib : libList) {
+            System.out.println("*** COMPILE DEPS ***");
+            for (AndroidLibrary lib : compileDependencies.getAndroidDependencies()) {
                 System.out.println("LIB: " + lib);
             }
-            for (JarDependency jar : jars) {
+            for (JavaLibrary jar : compileDependencies.getJarDependencies()) {
                 System.out.println("JAR: " + jar);
             }
-            for (JarDependency jar : localJars.values()) {
+            for (JavaLibrary jar : compileDependencies.getLocalDependencies()) {
                 System.out.println("LOCAL-JAR: " + jar);
             }
+            System.out.println("*** PACKAGE DEPS ***");
+            for (AndroidLibrary lib : packagedDependencies.getAndroidDependencies()) {
+                System.out.println("LIB: " + lib);
+            }
+            for (JavaLibrary jar : packagedDependencies.getJarDependencies()) {
+                System.out.println("JAR: " + jar);
+            }
+            for (JavaLibrary jar : packagedDependencies.getLocalDependencies()) {
+                System.out.println("LOCAL-JAR: " + jar);
+            }
+            System.out.println("***");
         }
 
-        variantDeps.addLibraries(libList);
-        variantDeps.addJars(jars);
-        variantDeps.addLocalJars(localJars.values());
+        variantDeps.setDependencies(compileDependencies, packagedDependencies);
 
         configureBuild(variantDeps);
 
@@ -583,141 +317,107 @@ public class DependencyManager {
             System.out.println(project.getName() + ":" + compileClasspath.getName() + "/" +packageClasspath.getName());
             System.out.println("<<<<<<<<<<");
         }
-
     }
 
-    private void skipTestDependency(@NonNull VariantDependencies variantDeps,
-            MavenCoordinates coordinates, String testedVersion) {
-        // same artifact, skip packaging of the dependency in the test app,
-        // whether the version is a match or not.
+    @NonNull
+    private DependencyContainer gatherDependencies(
+            @NonNull Configuration configuration,
+            @NonNull final VariantDependencies variantDeps,
+            @NonNull Multimap<AndroidLibrary, Configuration> reverseMap,
+            @NonNull Set<String> currentUnresolvedDependencies,
+            @Nullable String testedProjectPath,
+            @NonNull Set<String> artifactSet,
+            boolean recordArtifactSet) {
 
-        // if the dependency is present in both tested and test artifact,
-        // verify that they are the same version
-        if (!testedVersion.equals(coordinates.getVersion())) {
-            String artifactInfo =  coordinates.getGroupId() + ":" + coordinates.getArtifactId();
-            variantDeps.getChecker().addSyncIssue(extraModelInfo.handleSyncError(
-                    artifactInfo,
-                    SyncIssue.TYPE_MISMATCH_DEP,
-                    String.format(
-                            "Conflict with dependency '%s'. Resolved versions for"
-                                    + " app (%s) and test app (%s) differ. See"
-                                    + " http://g.co/androidstudio/app-test-app-conflict"
-                                    + " for details.",
-                            artifactInfo,
-                            testedVersion,
-                            coordinates.getVersion())));
+        // collect the artifacts first.
+        Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts = Maps.newHashMap();
+        collectArtifacts(configuration, artifacts);
 
-        } else {
-            logger.info(String.format(
-                    "Removed '%s' from packaging of %s: Already in tested package.",
-                    coordinates,
-                    variantDeps.getName()));
-        }
-    }
+        // keep a map of modules already processed so that we don't go through sections of the
+        // graph that have been seen elsewhere.
+        Map<ModuleVersionIdentifier, List<LibraryDependency>> foundLibraries = Maps.newHashMap();
+        Map<ModuleVersionIdentifier, List<JarDependency>> foundJars = Maps.newHashMap();
 
-    private static List<LibraryDependencyImpl> convertLibraryInfoIntoDependency(
-            @NonNull List<LibInfo> libInfos,
-            Set<LibInfo> librariesToKeep,
-            @NonNull Multimap<LibraryDependency, VariantDependencies> reverseMap) {
-        List<LibraryDependencyImpl> list = Lists.newArrayListWithCapacity(libInfos.size());
+        // get the graph for the Android and Jar dependencies. This does not include
+        // local jars.
+        List<LibraryDependency> androidDependencies = Lists.newArrayList();
+        List<JarDependency> jarDependencies = Lists.newArrayList();
 
-        // since the LibInfos is a graph and the previous "foundLibraries" map ensure we reuse
-        // instance where applicable, we'll create a map to keep track of what we have already
-        // converted.
-        Map<LibInfo, LibraryDependencyImpl> convertedMap = Maps.newIdentityHashMap();
+        Set<? extends DependencyResult> dependencyResultSet = configuration.getIncoming()
+                .getResolutionResult().getRoot().getDependencies();
 
-        for (LibInfo libInfo : libInfos) {
-            if (librariesToKeep.contains(libInfo)) {
-                list.add(convertLibInfo(libInfo, librariesToKeep, reverseMap, convertedMap));
-            }
-        }
-
-        return list;
-    }
-
-    private static LibraryDependencyImpl convertLibInfo(
-            @NonNull LibInfo libInfo,
-            Set<LibInfo> librariesToKeep,
-            @NonNull Multimap<LibraryDependency, VariantDependencies> reverseMap,
-            @NonNull Map<LibInfo, LibraryDependencyImpl> convertedMap) {
-        LibraryDependencyImpl convertedLib = convertedMap.get(libInfo);
-        if (convertedLib == null) {
-            // first, convert the children.
-            @SuppressWarnings("unchecked")
-            List<LibInfo> children = (List<LibInfo>) (List<?>) libInfo.getDependencies();
-            List<LibraryDependency> convertedChildren = Lists.newArrayListWithCapacity(children.size());
-
-            for (LibInfo child : children) {
-                if (librariesToKeep.contains(child)) {
-                    convertedChildren.add(convertLibInfo(child, librariesToKeep, reverseMap, convertedMap));
+        for (DependencyResult dependencyResult : dependencyResultSet) {
+            if (dependencyResult instanceof ResolvedDependencyResult) {
+                addDependency(
+                        ((ResolvedDependencyResult) dependencyResult).getSelected(),
+                        variantDeps,
+                        configuration,
+                        androidDependencies,
+                        jarDependencies,
+                        foundLibraries,
+                        foundJars,
+                        artifacts,
+                        reverseMap,
+                        currentUnresolvedDependencies,
+                        testedProjectPath,
+                        Collections.emptyList(),
+                        artifactSet,
+                        recordArtifactSet,
+                        false, /*forceProvided*/
+                        0);
+            } else if (dependencyResult instanceof UnresolvedDependencyResult) {
+                ComponentSelector attempted = ((UnresolvedDependencyResult) dependencyResult).getAttempted();
+                if (attempted != null) {
+                    currentUnresolvedDependencies.add(attempted.toString());
                 }
             }
-
-            // now convert the libInfo
-            convertedLib = new LibraryDependencyImpl(
-                    libInfo.getBundle(),
-                    libInfo.getFolder(),
-                    convertedChildren,
-                    libInfo.getName(),
-                    libInfo.getProjectVariant(),
-                    libInfo.getProject(),
-                    libInfo.getRequestedCoordinates(),
-                    libInfo.getResolvedCoordinates(),
-                    libInfo.isOptional());
-
-            // add it to the map
-            convertedMap.put(libInfo, convertedLib);
-
-            // and update the reversemap
-            // get the items associated with the libInfo. Put in a fresh list as the returned
-            // collection is backed by the content of the map.
-            Collection<VariantDependencies> values = Lists.newArrayList(reverseMap.get(libInfo));
-            reverseMap.removeAll(libInfo);
-            reverseMap.putAll(convertedLib, values);
         }
 
-        return convertedLib;
-    }
+        // also need to process local jar files, as they are not processed by the
+        // resolvedConfiguration result. This only includes the local jar files for this project.
+        List<JarDependency> localJars = Lists.newArrayList();
+        for (Dependency dependency : configuration.getAllDependencies()) {
+            if (dependency instanceof SelfResolvingDependency &&
+                    !(dependency instanceof ProjectDependency)) {
+                Set<File> files = ((SelfResolvingDependency) dependency).resolve();
+                for (File localJarFile : files) {
+                    if (DEBUG_DEPENDENCY) {
+                        System.out.println("LOCAL " + configuration.getName() + ": " + localJarFile.getName());
+                    }
+                    // only accept local jar, no other types.
+                    if (!localJarFile.getName().toLowerCase(Locale.getDefault()).endsWith(DOT_JAR)) {
+                        variantDeps.getChecker().handleIssue(
+                                localJarFile.getAbsolutePath(),
+                                SyncIssue.TYPE_NON_JAR_LOCAL_DEP,
+                                SyncIssue.SEVERITY_ERROR,
+                                String.format(
+                                        "Project %s: Only Jar-type local dependencies are supported. Cannot handle: %s",
+                                        project.getName(), localJarFile.getAbsolutePath()));
+                    } else {
+                        JarDependency localJar;
+                        if (recordArtifactSet) {
+                            localJar = new JarDependency(localJarFile);
+                            artifactSet.add(
+                                    computeVersionLessCoordinateKey(localJar.getResolvedCoordinates()));
+                        } else {
+                            MavenCoordinates coord = JarDependency.getCoordForLocalJar(localJarFile);
+                            boolean provided = !artifactSet
+                                    .contains(computeVersionLessCoordinateKey(coord));
 
-    private static void gatherJarDependencies(
-            Set<JarInfo> outJarInfos,
-            Collection<JarInfo> inJarInfos,
-            boolean compiled,
-            boolean packaged) {
-        for (JarInfo jarInfo : inJarInfos) {
-            outJarInfos.add(jarInfo);
-
-            if (compiled) {
-                jarInfo.setCompiled(true);
+                            localJar = new JarDependency(
+                                    localJarFile,
+                                    ImmutableList.of(),
+                                    coord,
+                                    null,
+                                    provided);
+                        }
+                        localJars.add(localJar);
+                    }
+                }
             }
-            if (packaged) {
-                jarInfo.setPackaged(true);
-            }
-
-            gatherJarDependencies(outJarInfos, jarInfo.getDependencies(), compiled, packaged);
         }
-    }
 
-    private static void gatherAndroidDependencies(
-            Set<LibInfo> outLibInfos,
-            Collection<LibInfo> inLibInfos) {
-        for (LibInfo libInfo : inLibInfos) {
-            outLibInfos.add(libInfo);
-            gatherAndroidDependencies(outLibInfos, libInfo.getLibInfoDependencies());
-        }
-    }
-
-    private static void gatherJarDependenciesFromLibraries(
-            Set<JarInfo> outJarInfos,
-            Collection<LibInfo> inLibraryDependencies) {
-        for (LibInfo libInfo : inLibraryDependencies) {
-            gatherJarDependencies(outJarInfos, libInfo.getJarDependencies(),
-                    true, !libInfo.isOptional());
-
-            gatherJarDependenciesFromLibraries(
-                    outJarInfos,
-                    libInfo.getLibInfoDependencies());
-        }
+        return new DependencyContainerImpl(androidDependencies, jarDependencies, localJars);
     }
 
     private void ensureConfigured(Configuration config) {
@@ -776,19 +476,23 @@ public class DependencyManager {
     private void addDependency(
             @NonNull ResolvedComponentResult resolvedComponentResult,
             @NonNull VariantDependencies configDependencies,
-            @NonNull Collection<LibInfo> outLibraries,
-            @NonNull List<JarInfo> outJars,
-            @NonNull Map<ModuleVersionIdentifier, List<LibInfo>> alreadyFoundLibraries,
-            @NonNull Map<ModuleVersionIdentifier, List<JarInfo>> alreadyFoundJars,
+            @NonNull Configuration configuration,
+            @NonNull Collection<LibraryDependency> outLibraries,
+            @NonNull List<JarDependency> outJars,
+            @NonNull Map<ModuleVersionIdentifier, List<LibraryDependency>> alreadyFoundLibraries,
+            @NonNull Map<ModuleVersionIdentifier, List<JarDependency>> alreadyFoundJars,
             @NonNull Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts,
-            @NonNull Multimap<LibraryDependency, VariantDependencies> reverseMap,
+            @NonNull Multimap<AndroidLibrary, Configuration> reverseMap,
             @NonNull Set<String> currentUnresolvedDependencies,
             @Nullable String testedProjectPath,
             @NonNull List<String> projectChain,
+            @NonNull Set<String> artifactSet,
+            boolean recordArtifactSet,
+            boolean forceProvided,
             int indent) {
 
         ModuleVersionIdentifier moduleVersion = resolvedComponentResult.getModuleVersion();
-        if (configDependencies.getChecker().excluded(moduleVersion)) {
+        if (configDependencies.getChecker().checkForExclusion(moduleVersion)) {
             return;
         }
 
@@ -797,8 +501,8 @@ public class DependencyManager {
             configDependencies.setAnnotationsPresent(true);
         }
 
-        List<LibInfo> libsForThisModule = alreadyFoundLibraries.get(moduleVersion);
-        List<JarInfo> jarsForThisModule = alreadyFoundJars.get(moduleVersion);
+        List<LibraryDependency> libsForThisModule = alreadyFoundLibraries.get(moduleVersion);
+        List<JarDependency> jarsForThisModule = alreadyFoundJars.get(moduleVersion);
 
         if (libsForThisModule != null) {
             if (DEBUG_DEPENDENCY) {
@@ -806,8 +510,8 @@ public class DependencyManager {
             }
             outLibraries.addAll(libsForThisModule);
 
-            for (LibInfo lib : libsForThisModule) {
-                reverseMap.put(lib, configDependencies);
+            for (AndroidLibrary lib : libsForThisModule) {
+                reverseMap.put(lib, configuration);
             }
 
         } else if (jarsForThisModule != null) {
@@ -815,16 +519,27 @@ public class DependencyManager {
                 printIndent(indent, "FOUND JAR: " + moduleVersion.getName());
             }
             outJars.addAll(jarsForThisModule);
-        }
-        else {
+        } else {
             if (DEBUG_DEPENDENCY) {
                 printIndent(indent, "NOT FOUND: " + moduleVersion.getName());
             }
             // new module! Might be a jar or a library
 
+            // get the associated gradlepath
+            ComponentIdentifier id = resolvedComponentResult.getId();
+            String gradlePath = (id instanceof ProjectComponentIdentifier) ?
+                    ((ProjectComponentIdentifier) id).getProjectPath() : null;
+
+            // check if this is a tested app project (via a separate test module).
+            // In which case, all the dependencies must become provided.
+            boolean childForceProvided = forceProvided;
+            if (!recordArtifactSet && testedProjectPath != null && testedProjectPath.equals(gradlePath)) {
+                childForceProvided = true;
+            }
+
             // get the nested components first.
-            List<LibInfo> nestedLibraries = Lists.newArrayList();
-            List<JarInfo> nestedJars = Lists.newArrayList();
+            List<LibraryDependency> nestedLibraries = Lists.newArrayList();
+            List<JarDependency> nestedJars = Lists.newArrayList();
 
             Set<? extends DependencyResult> dependencies = resolvedComponentResult.getDependencies();
             for (DependencyResult dependencyResult : dependencies) {
@@ -858,6 +573,7 @@ public class DependencyManager {
                     addDependency(
                             selected,
                             configDependencies,
+                            configuration,
                             nestedLibraries,
                             nestedJars,
                             alreadyFoundLibraries,
@@ -867,6 +583,9 @@ public class DependencyManager {
                             currentUnresolvedDependencies,
                             testedProjectPath,
                             newProjectChain,
+                            artifactSet,
+                            recordArtifactSet,
+                            childForceProvided,
                             indent + 1);
                 } else if (dependencyResult instanceof UnresolvedDependencyResult) {
                     ComponentSelector attempted = ((UnresolvedDependencyResult) dependencyResult).getAttempted();
@@ -885,12 +604,17 @@ public class DependencyManager {
             // now loop on all the artifact for this modules.
             List<ResolvedArtifact> moduleArtifacts = artifacts.get(moduleVersion);
 
-            ComponentIdentifier id = resolvedComponentResult.getId();
-            String gradlePath = (id instanceof ProjectComponentIdentifier) ?
-                    ((ProjectComponentIdentifier) id).getProjectPath() : null;
-
             if (moduleArtifacts != null) {
                 for (ResolvedArtifact artifact : moduleArtifacts) {
+                    MavenCoordinates mavenCoordinates = createMavenCoordinates(artifact);
+                    boolean provided = forceProvided;
+                    String coordKey = computeVersionLessCoordinateKey(mavenCoordinates);
+                    if (recordArtifactSet) {
+                        artifactSet.add(coordKey);
+                    } else {
+                        provided |= !artifactSet.contains(coordKey);
+                    }
+
                     if (EXT_LIB_ARCHIVE.equals(artifact.getExtension())) {
                         if (DEBUG_DEPENDENCY) {
                             printIndent(indent, "TYPE: AAR");
@@ -910,21 +634,23 @@ public class DependencyManager {
 
                         //def explodedDir = project.file("$project.rootProject.buildDir/${FD_INTERMEDIATES}/exploded-aar/$path")
                         File explodedDir = project.file(project.getBuildDir() + "/" + FD_INTERMEDIATES + "/exploded-aar/" + path);
+
                         @SuppressWarnings("unchecked")
-                        LibInfo libInfo = new LibInfo(
+                        LibraryDependency LibraryDependency = new LibraryDependency(
                                 artifact.getFile(),
                                 explodedDir,
-                                (List<LibraryDependency>) (List<?>) nestedLibraries,
+                                nestedLibraries,
                                 nestedJars,
                                 name,
                                 artifact.getClassifier(),
                                 gradlePath,
                                 null /*requestedCoordinates*/,
-                                new MavenCoordinatesImpl(artifact));
+                                mavenCoordinates,
+                                provided);
 
-                        libsForThisModule.add(libInfo);
-                        outLibraries.add(libInfo);
-                        reverseMap.put(libInfo, configDependencies);
+                        libsForThisModule.add(LibraryDependency);
+                        outLibraries.add(LibraryDependency);
+                        reverseMap.put(LibraryDependency, configuration);
 
                     } else if (EXT_JAR.equals(artifact.getExtension())) {
                         if (DEBUG_DEPENDENCY) {
@@ -932,22 +658,39 @@ public class DependencyManager {
                         }
                         // check this jar does not have a dependency on an library, as this would not work.
                         if (!nestedLibraries.isEmpty()) {
+                            // there is one case where it's ok to have a jar depend on aars:
+                            // when a test project tests a separate app project, the code of the
+                            // app is published as a jar, but it brings in the dependencies
+                            // of the app (which can be aars).
+                            // we know we're in that case if testedProjectPath is non null, so we
+                            // can detect this an accept it.
                             if (testedProjectPath != null && testedProjectPath.equals(gradlePath)) {
-                                // TODO: make sure this is a direct dependency and not a transitive one.
-                                // add nested libs as optional somehow...
-                                for (LibInfo lib : nestedLibraries) {
-                                    lib.setIsOptional(true);
+                                // for now we can only add them as out libraries for the current
+                                // artifact (rather than the actual jar that is the tested code).
+                                // But we nee to mark them as skipped since we don't want to
+                                // include them.
+                                // TODO: find a way to add them as children of the jar instead.
+                                // TODO: we should take the jar only (of the aars). The rest doesn't matter.
+
+                                // if this is a package scope, then skip the dependencies.
+                                if (recordArtifactSet) {
+                                    recursiveLibSkip(nestedLibraries);
+                                } else {
+                                    // if it's compile scope, make it optional.
+                                    provided = true;
                                 }
+
                                 outLibraries.addAll(nestedLibraries);
 
                             } else {
                                 configDependencies.getChecker()
-                                        .addSyncIssue(extraModelInfo.handleSyncError(
-                                                new MavenCoordinatesImpl(artifact).toString(),
+                                        .handleIssue(
+                                                createMavenCoordinates(artifact).toString(),
                                                 SyncIssue.TYPE_JAR_DEPEND_ON_AAR,
+                                                SyncIssue.SEVERITY_ERROR,
                                                 String.format(
                                                         "Module '%s' depends on one or more Android Libraries but is a jar",
-                                                        moduleVersion)));
+                                                        moduleVersion));
                             }
                         }
 
@@ -956,37 +699,50 @@ public class DependencyManager {
                             alreadyFoundJars.put(moduleVersion, jarsForThisModule);
                         }
 
-                        JarInfo jarInfo = new JarInfo(
+                        JarDependency jarDependency = new JarDependency(
                                 artifact.getFile(),
-                                new MavenCoordinatesImpl(artifact),
+                                nestedJars,
+                                mavenCoordinates,
                                 gradlePath,
-                                nestedJars);
-                        if (DEBUG_DEPENDENCY) {
-                            printIndent(indent, "JAR-INFO: " + jarInfo.toString());
+                                provided);
+
+                        // if package scope and the jar (and its dependencies) is from a tested
+                        // app module then skip it.
+                        if (recordArtifactSet && testedProjectPath != null && testedProjectPath.equals(gradlePath)) {
+                            jarDependency.skip();
+
+                            //noinspection unchecked
+                            recursiveJavaSkip((List<JarDependency>) jarDependency.getDependencies());
                         }
 
-                        jarsForThisModule.add(jarInfo);
-                        outJars.add(jarInfo);
+                        if (DEBUG_DEPENDENCY) {
+                            printIndent(indent, "JAR-INFO: " + jarDependency.toString());
+                        }
+
+                        jarsForThisModule.add(jarDependency);
+                        outJars.add(jarDependency);
 
                     } else if (EXT_ANDROID_PACKAGE.equals(artifact.getExtension())) {
                         String name = computeArtifactName(moduleVersion, artifact);
 
-                        configDependencies.getChecker().addSyncIssue(extraModelInfo.handleSyncError(
+                        configDependencies.getChecker().handleIssue(
                                 name,
                                 SyncIssue.TYPE_DEPENDENCY_IS_APK,
+                                SyncIssue.SEVERITY_ERROR,
                                 String.format(
                                         "Dependency %s on project %s resolves to an APK archive " +
                                         "which is not supported as a compilation dependency. File: %s",
-                                        name, project.getName(), artifact.getFile())));
+                                        name, project.getName(), artifact.getFile()));
                     } else if ("apklib".equals(artifact.getExtension())) {
                         String name = computeArtifactName(moduleVersion, artifact);
 
-                        configDependencies.getChecker().addSyncIssue(extraModelInfo.handleSyncError(
+                        configDependencies.getChecker().handleIssue(
                                 name,
                                 SyncIssue.TYPE_DEPENDENCY_IS_APKLIB,
+                                SyncIssue.SEVERITY_ERROR,
                                 String.format(
                                         "Packaging for dependency %s is 'apklib' and is not supported. " +
-                                        "Only 'aar' libraries are supported.", name)));
+                                        "Only 'aar' libraries are supported.", name));
                     } else {
                         String name = computeArtifactName(moduleVersion, artifact);
 
@@ -1000,6 +756,37 @@ public class DependencyManager {
             if (DEBUG_DEPENDENCY) {
                 printIndent(indent, "DONE: " + moduleVersion.getName());
             }
+        }
+    }
+
+    @NonNull
+    private static MavenCoordinates createMavenCoordinates(
+            @NonNull ResolvedArtifact resolvedArtifact) {
+        return new MavenCoordinatesImpl(
+                resolvedArtifact.getModuleVersion().getId().getGroup(),
+                resolvedArtifact.getModuleVersion().getId().getName(),
+                resolvedArtifact.getModuleVersion().getId().getVersion(),
+                resolvedArtifact.getExtension(),
+                resolvedArtifact.getClassifier());
+    }
+
+    private static void recursiveLibSkip(@NonNull List<LibraryDependency> libs) {
+        for (LibraryDependency lib : libs) {
+            lib.skip();
+
+            //noinspection unchecked
+            recursiveLibSkip((List<LibraryDependency>) lib.getLibraryDependencies());
+            //noinspection unchecked
+            recursiveJavaSkip((List<JarDependency>) lib.getJavaDependencies());
+        }
+    }
+
+    private static void recursiveJavaSkip(@NonNull List<JarDependency> libs) {
+        for (JarDependency lib : libs) {
+            lib.skip();
+
+            //noinspection unchecked
+            recursiveJavaSkip((List<JarDependency>) lib.getDependencies());
         }
     }
 
@@ -1101,21 +888,6 @@ public class DependencyManager {
                 JavaBasePlugin.BUILD_DEPENDENTS_TASK_NAME, "compile");
     }
 
-    @NonNull
-    public static List<ManifestDependencyImpl> getManifestDependencies(
-            List<LibraryDependency> libraries) {
-
-        List<ManifestDependencyImpl> list = Lists.newArrayListWithCapacity(libraries.size());
-
-        for (LibraryDependency lib : libraries) {
-            // get the dependencies
-            List<ManifestDependencyImpl> children = getManifestDependencies(lib.getDependencies());
-            list.add(new ManifestDependencyImpl(lib.getName(), lib.getManifest(), children));
-        }
-
-        return list;
-    }
-
     /**
      * Adds a dependency on tasks with the specified name in other projects.  The other projects
      * are determined from project lib dependencies using the specified configuration name.
@@ -1136,20 +908,5 @@ public class DependencyManager {
                 configurationName);
         task.dependsOn(configuration.getTaskDependencyFromProjectDependency(
                 useDependedOn, otherProjectTaskName));
-    }
-
-    /**
-     * Compute a version-less key representing the given coordinates.
-     * @param coordinates the coordinate
-     * @return the key.
-     */
-    @NonNull
-    private static String computeVersionLessCoordinateKey(@NonNull MavenCoordinates coordinates) {
-        StringBuilder sb = new StringBuilder(coordinates.getGroupId());
-        sb.append(':').append(coordinates.getArtifactId());
-        if (coordinates.getClassifier() != null) {
-            sb.append(':').append(coordinates.getClassifier());
-        }
-        return sb.toString();
     }
 }

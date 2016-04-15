@@ -17,29 +17,60 @@
 package com.android.builder.dependency;
 
 import com.android.annotations.NonNull;
-
-import java.util.List;
+import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.JavaLibrary;
+import com.google.common.collect.ImmutableList;
 
 /**
  * An object able to provide the three types of dependencies an Android project can have:
  * - local jar dependencies
- * - artifact jar dependencies
- * - android library dependencies
+ * - java library (jar) dependencies
+ * - android library (aar) dependencies
  */
 public interface DependencyContainer {
 
     /**
-     * Returns a list top level dependency. Each library object should contain
-     * its own dependencies. This is actually a dependency graph.
+     * Returns a list of top level android library dependencies.
+     *
+     * Each library object should contain its own dependencies (as android libs, java libs,
+     * and local jars). This is actually a dependency graph.
      *
      * @return a non null (but possibly empty) list.
      */
     @NonNull
-    List<? extends LibraryDependency> getAndroidDependencies();
+    ImmutableList<AndroidLibrary> getAndroidDependencies();
 
+    /**
+     * Returns a list of top level java library dependencies.
+     *
+     * Each library object should contain its own dependencies (as java libs only).
+     * This is actually a dependency graph.
+     *
+     * @return a non null (but possibly empty) list.
+     */
     @NonNull
-    List<JarDependency> getJarDependencies();
+    ImmutableList<JavaLibrary> getJarDependencies();
 
+    /**
+     * Returns a list of local jar dependencies.
+     *
+     * @return a non null (but possibly empty) list.
+     */
     @NonNull
-    List<JarDependency> getLocalDependencies();
+    ImmutableList<JavaLibrary> getLocalDependencies();
+
+    /**
+     * Returns a version of this container where the graph is flattened into direct dependencies.
+     *
+     * This also adds (if applicable) the tested library and its transitive dependencies.
+
+     * @param testedLibrary the tested aar
+     * @param testedDependencyContainer the container of the tested aar
+     * @return the flattened container.
+     */
+    @NonNull
+    DependencyContainer flatten(
+            @Nullable AndroidLibrary testedLibrary,
+            @Nullable DependencyContainer testedDependencyContainer);
 }

@@ -733,6 +733,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
 
                         AndroidArtifact artifact = mock(AndroidArtifact.class);
                         when(artifact.getDependencies()).thenReturn(dependencies);
+                        when(artifact.getCompileDependencies()).thenReturn(dependencies);
 
                         Variant variant = mock(Variant.class);
                         when(variant.getMainArtifact()).thenReturn(artifact);
@@ -787,6 +788,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
 
                             AndroidArtifact artifact = mock(AndroidArtifact.class);
                             when(artifact.getDependencies()).thenReturn(dependencies);
+                            when(artifact.getCompileDependencies()).thenReturn(dependencies);
 
                             Variant variant = mock(Variant.class);
                             when(variant.getMainArtifact()).thenReturn(artifact);

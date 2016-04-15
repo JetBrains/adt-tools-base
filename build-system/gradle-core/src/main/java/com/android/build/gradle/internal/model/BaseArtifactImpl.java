@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.builder.model.BaseArtifact;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.SourceProvider;
+import com.google.common.base.Preconditions;
 
 import java.io.File;
 import java.io.Serializable;
@@ -45,7 +46,9 @@ abstract class BaseArtifactImpl implements BaseArtifact, Serializable {
     @NonNull
     private final File javaResourcesFolder;
     @NonNull
-    private final Dependencies dependencies;
+    private final Dependencies compileDependencies;
+    @NonNull
+    private final Dependencies packageDependencies;
     @Nullable
     private final SourceProvider variantSourceProvider;
     @Nullable
@@ -57,7 +60,8 @@ abstract class BaseArtifactImpl implements BaseArtifact, Serializable {
             @NonNull String compileTaskName,
             @NonNull File classesFolder,
             @NonNull File javaResourcesFolder,
-            @NonNull Dependencies dependencies,
+            @NonNull Dependencies compileDependencies,
+            @NonNull Dependencies packageDependencies,
             @Nullable SourceProvider variantSourceProvider,
             @Nullable SourceProvider multiFlavorSourceProviders,
             @NonNull Collection<File> generatedSourceFolders) {
@@ -66,7 +70,8 @@ abstract class BaseArtifactImpl implements BaseArtifact, Serializable {
         this.compileTaskName = compileTaskName;
         this.classesFolder = classesFolder;
         this.javaResourcesFolder = javaResourcesFolder;
-        this.dependencies = dependencies;
+        this.compileDependencies = compileDependencies;
+        this.packageDependencies = packageDependencies;
         this.variantSourceProvider = variantSourceProvider;
         this.multiFlavorSourceProviders = multiFlavorSourceProviders;
         this.generatedSourceFolders = generatedSourceFolders;
@@ -104,8 +109,21 @@ abstract class BaseArtifactImpl implements BaseArtifact, Serializable {
 
     @NonNull
     @Override
+    @Deprecated
     public Dependencies getDependencies() {
-        return dependencies;
+        return compileDependencies;
+    }
+
+    @NonNull
+    @Override
+    public Dependencies getCompileDependencies() {
+        return compileDependencies;
+    }
+
+    @NonNull
+    @Override
+    public Dependencies getPackageDependencies() {
+        return packageDependencies;
     }
 
     @Nullable

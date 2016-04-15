@@ -201,7 +201,7 @@ public class VariantDependencyTest {
                 .named("main artifact for " + variantName)
                 .isNotNull();
 
-        Dependencies dependencies = artifact.getDependencies();
+        Dependencies dependencies = artifact.getCompileDependencies();
         assertThat(dependencies)
                 .named("dependencies for main artifact of " + variantName)
                 .isNotNull();

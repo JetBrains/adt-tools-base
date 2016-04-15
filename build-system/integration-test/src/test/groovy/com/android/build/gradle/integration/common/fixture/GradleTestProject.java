@@ -658,7 +658,7 @@ public class GradleTestProject implements TestRule {
         execute(AndroidProject.class,
                 Collections.<String>emptyList(),
                 false,
-                false,
+                AndroidProject.MODEL_LEVEL_LATEST,
                 EXPECT_SUCCESS,
                 tasks);
     }
@@ -667,7 +667,7 @@ public class GradleTestProject implements TestRule {
         execute(AndroidProject.class,
                 arguments,
                 false,
-                false,
+                AndroidProject.MODEL_LEVEL_LATEST,
                 EXPECT_SUCCESS,
                 tasks);
     }
@@ -683,7 +683,7 @@ public class GradleTestProject implements TestRule {
         execute(AndroidProject.class,
                 arguments,
                 false,
-                false,
+                AndroidProject.MODEL_LEVEL_LATEST,
                 EXPECT_SUCCESS,
                 tasks);
     }
@@ -700,7 +700,7 @@ public class GradleTestProject implements TestRule {
         execute(AndroidProject.class,
                 arguments,
                 false /*returnModel*/,
-                false /*emulateStudio_1_0*/,
+                AndroidProject.MODEL_LEVEL_LATEST,
                 new ResultHandler<Void>() {
                     @Override
                     public void onComplete(Void aVoid) {
@@ -741,7 +741,7 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     public AndroidProject executeAndReturnModel(String ... tasks) {
-        return executeAndReturnModel(false, tasks);
+        return executeAndReturnModel(AndroidProject.MODEL_LEVEL_LATEST, tasks);
     }
 
     /**
@@ -755,21 +755,21 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     public <T> T executeAndReturnModel(Class<T> modelClass, String ... tasks) {
-        return this.executeAndReturnModel(modelClass, false, tasks);
+        return this.executeAndReturnModel(modelClass, AndroidProject.MODEL_LEVEL_LATEST, tasks);
     }
 
     /**
      * Runs gradle on the project, and returns the project model.  Throws exception on failure.
      *
-     * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
+     * @param modelLevel whether to emulate an older IDE (studio 1.0) querying the model.
      * @param tasks Variadic list of tasks to execute.
      *
      * @return the AndroidProject model for the project.
      */
     @NonNull
-    public AndroidProject executeAndReturnModel(boolean emulateStudio_1_0, String ... tasks) {
+    public AndroidProject executeAndReturnModel(int modelLevel, String ... tasks) {
         //noinspection ConstantConditions
-        return execute(AndroidProject.class, Collections.<String>emptyList(), true, emulateStudio_1_0,
+        return execute(AndroidProject.class, Collections.<String>emptyList(), true, modelLevel,
                 EXPECT_SUCCESS, tasks);
     }
 
@@ -777,7 +777,7 @@ public class GradleTestProject implements TestRule {
      * Runs gradle on the project, and returns the project model.  Throws exception on failure.
      *
      * @param modelClass Class of the model to return
-     * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
+     * @param modelLevel whether to emulate an older IDE (studio 1.0) querying the model.
      * @param tasks Variadic list of tasks to execute.
      *
      * @return the AndroidProject model for the project.
@@ -785,10 +785,10 @@ public class GradleTestProject implements TestRule {
     @NonNull
     public <T> T executeAndReturnModel(
             Class<T> modelClass,
-            boolean emulateStudio_1_0,
+            int modelLevel,
             String ... tasks) {
         //noinspection ConstantConditions
-        return execute(modelClass, Collections.<String>emptyList(), true, emulateStudio_1_0,
+        return execute(modelClass, Collections.<String>emptyList(), true, modelLevel,
                 EXPECT_SUCCESS, tasks);
     }
 
@@ -802,7 +802,7 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     public Map<String, AndroidProject> executeAndReturnMultiModel(String ... tasks) {
-        return executeAndReturnMultiModel(false, tasks);
+        return executeAndReturnMultiModel(AndroidProject.MODEL_LEVEL_LATEST, tasks);
     }
 
     /**
@@ -815,23 +815,23 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     public <T> Map<String, T> executeAndReturnMultiModel(Class<T> modelClass, String ... tasks) {
-        return executeAndReturnMultiModel(modelClass, false, tasks);
+        return executeAndReturnMultiModel(modelClass, AndroidProject.MODEL_LEVEL_LATEST, tasks);
     }
 
     /**
      * Runs gradle on the project, and returns a AndroidProject model for each sub-project.
      * Throws exception on failure.
      *
-     * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
+     * @param modelLevel whether to emulate an older IDE (studio 1.0) querying the model.
      * @param tasks Variadic list of tasks to execute.
      *
      * @return the AndroidProject model for the project.
      */
     @NonNull
     public Map<String, AndroidProject> executeAndReturnMultiModel(
-            boolean emulateStudio_1_0,
+            int modelLevel,
             String ... tasks) {
-        return executeAndReturnMultiModel(AndroidProject.class, emulateStudio_1_0, tasks);
+        return executeAndReturnMultiModel(AndroidProject.class, modelLevel, tasks);
     }
 
     /**
@@ -839,7 +839,7 @@ public class GradleTestProject implements TestRule {
      * Throws exception on failure.
      *
      * @param modelClass Class of the model to return
-     * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
+     * @param modelLevel whether to emulate an older IDE (studio 1.0) querying the model.
      * @param tasks Variadic list of tasks to execute.
      *
      * @return the AndroidProject model for the project.
@@ -847,7 +847,7 @@ public class GradleTestProject implements TestRule {
     @NonNull
     public <T> Map<String, T> executeAndReturnMultiModel(
             Class<T> modelClass,
-            boolean emulateStudio_1_0,
+            int modelLevel,
             String ... tasks) {
         ProjectConnection connection = getProjectConnection();
         try {
@@ -863,7 +863,7 @@ public class GradleTestProject implements TestRule {
             return buildModel(
                     connection,
                     new GetAndroidModelAction<>(modelClass, isMultithreaded),
-                    emulateStudio_1_0,
+                    modelLevel,
                     null,
                     null);
 
@@ -880,7 +880,7 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     public AndroidProject getSingleModel() {
-        return getSingleModel(false /* emulateStudio_1_0 */, true /*assertNodSyncIssues */);
+        return getSingleModel(AndroidProject.MODEL_LEVEL_LATEST, true /*assertNodSyncIssues */);
     }
 
     /**
@@ -891,7 +891,7 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     public AndroidProject getSingleModelAsStudio1() {
-        return getSingleModel(true /* emulateStudio_1_0 */, true /*assertNodSyncIssues */);
+        return getSingleModel(AndroidProject.MODEL_LEVEL_0_ORIGNAL, true /*assertNodSyncIssues */);
     }
 
     /**
@@ -901,7 +901,7 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     public AndroidProject getSingleModelIgnoringSyncIssues() {
-        return getSingleModel(false /* emulateStudio_1_0 */, false /*assertNodSyncIssues */);
+        return getSingleModel(AndroidProject.MODEL_LEVEL_LATEST, false /*assertNodSyncIssues */);
     }
 
     /**
@@ -909,18 +909,18 @@ public class GradleTestProject implements TestRule {
      *
      * This will fail if the project is a multi-project setup.
      *
-     * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
+     * @param modelLevel the level of the model we want.
      * @param assertNoSyncIssues true if the presence of sync issues during the model evaluation
      *                           should raise a {@link AssertionError}s
      */
     @NonNull
-    private AndroidProject getSingleModel(boolean emulateStudio_1_0, boolean assertNoSyncIssues) {
+    private AndroidProject getSingleModel(int modelLevel, boolean assertNoSyncIssues) {
         ProjectConnection connection = getProjectConnection();
         try {
             Map<String, AndroidProject> modelMap = buildModel(
                     connection,
                     new GetAndroidModelAction<>(AndroidProject.class),
-                    emulateStudio_1_0,
+                    modelLevel,
                     null,
                     null);
 
@@ -944,11 +944,23 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     public Map<String, AndroidProject> getAllModels() {
-        return getAllModelsWithBenchmark(null, null);
+        return getAllModelsWithBenchmark(AndroidProject.MODEL_LEVEL_LATEST, null, null);
     }
 
     /**
      * Returns a project model for each sub-project without building generating a
+     * {@link AssertionError} if any sync issue is raised during the model loading.
+     *
+     * @param modelLevel the level of the model we want.
+     */
+    @NonNull
+    public Map<String, AndroidProject> getAllModels(int modelLevel) {
+        return getAllModelsWithBenchmark(modelLevel, null, null);
+    }
+
+    /**
+     * Returns a project model for each sub-project without building generating a
+     * @param modelLevel the level of the model we want.
      * @param benchmarkName optional benchmark name to pass to Gradle
      * @param benchmarkMode optional benchmark mode to pass to gradle.
 
@@ -956,11 +968,12 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     public Map<String, AndroidProject> getAllModelsWithBenchmark(
+            int modelLevel,
             @Nullable String benchmarkName,
             @Nullable BenchmarkMode benchmarkMode) {
         Map<String, AndroidProject> allModels = getAllModels(
                 new GetAndroidModelAction<>(AndroidProject.class),
-                false,
+                modelLevel,
                 benchmarkName,
                 benchmarkMode);
         for (AndroidProject project : allModels.values()) {
@@ -991,26 +1004,30 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     public Map<String, AndroidProject> getAllModelsIgnoringSyncIssues() {
-        return getAllModels(new GetAndroidModelAction<>(AndroidProject.class), false, null, null);
+        return getAllModels(
+                new GetAndroidModelAction<AndroidProject>(AndroidProject.class),
+                AndroidProject.MODEL_LEVEL_LATEST,
+                null,
+                null);
     }
 
     /**
      * Returns a project model for each sub-project without building.
      *
      * @param action the build action to gather the model
-     * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
+     * @param modelLevel the level of the model we want.
      * @param benchmarkName optional benchmark name to pass to Gradle
      * @param benchmarkMode optional benchmark mode to pass to gradle.
      */
     @NonNull
     public <K, V> Map<K, V> getAllModels(
             @NonNull BuildAction<Map<K, V>> action,
-            boolean emulateStudio_1_0,
+            int modelLevel,
             @Nullable String benchmarkName,
             @Nullable BenchmarkMode benchmarkMode) {
         ProjectConnection connection = getProjectConnection();
         try {
-            return buildModel(connection, action, emulateStudio_1_0, benchmarkName, benchmarkMode);
+            return buildModel(connection, action, modelLevel, benchmarkName, benchmarkMode);
 
         } finally {
             connection.close();
@@ -1022,7 +1039,7 @@ public class GradleTestProject implements TestRule {
      *
      * @param arguments List of arguments for the gradle command.
      * @param returnModel whether the model should be queried and returned.
-     * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
+     * @param modelLevel the level of the model we want.
      * @param resultHandler Result handler that should verify the result (either success or failure
      *                      is what the caller expects.
      * @param tasks Variadic list of tasks to execute.
@@ -1034,7 +1051,7 @@ public class GradleTestProject implements TestRule {
             Class<T> type,
             @NonNull List<String> arguments,
             boolean returnModel,
-            boolean emulateStudio_1_0,
+            int modelLevel,
             ResultHandler<Void> resultHandler,
             @NonNull String ... tasks) {
         ProjectConnection connection = getProjectConnection();
@@ -1045,7 +1062,7 @@ public class GradleTestProject implements TestRule {
                 Map<String, T> modelMap = this.buildModel(
                         connection,
                         new GetAndroidModelAction<>(type),
-                        emulateStudio_1_0,
+                        modelLevel,
                         null,
                         null);
 
@@ -1129,7 +1146,7 @@ public class GradleTestProject implements TestRule {
      * Returns a project model for each sub-project without building.
      * @param connection the opened ProjectConnection
      * @param action the build action to gather the model
-     * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
+     * @param modelLevel whether to emulate an older IDE (studio 1.0) querying the model.
      * @param benchmarkName optional benchmark name to pass to Gradle
      * @param benchmarkMode optional benchmark mode to pass to gradle.
      */
@@ -1137,7 +1154,7 @@ public class GradleTestProject implements TestRule {
     private <K,V> Map<K, V> buildModel(
             @NonNull ProjectConnection connection,
             @NonNull BuildAction<Map<K, V>> action,
-            boolean emulateStudio_1_0,
+            int modelLevel,
             @Nullable String benchmarkName,
             @Nullable BenchmarkMode benchmarkMode) {
 
@@ -1146,9 +1163,21 @@ public class GradleTestProject implements TestRule {
         List<String> arguments = Lists.newArrayListWithCapacity(5);
         arguments.add("-P" + AndroidProject.PROPERTY_BUILD_MODEL_ONLY + "=true");
         arguments.add("-P" + AndroidProject.PROPERTY_INVOKED_FROM_IDE + "=true");
-        if (!emulateStudio_1_0) {
-            arguments.add("-P" + AndroidProject.PROPERTY_BUILD_MODEL_ONLY_ADVANCED + "=true");
+
+        switch (modelLevel) {
+            case AndroidProject.MODEL_LEVEL_0_ORIGNAL:
+                // nothing.
+                break;
+            case AndroidProject.MODEL_LEVEL_2_DEP_GRAPH:
+                arguments.add("-P" + AndroidProject.PROPERTY_BUILD_MODEL_ONLY_VERSIONED + "=" + modelLevel);
+                // intended fall-through
+            case AndroidProject.MODEL_LEVEL_1_SYNC_ISSUE:
+                arguments.add("-P" + AndroidProject.PROPERTY_BUILD_MODEL_ONLY_ADVANCED + "=true");
+                break;
+            default:
+                throw new RuntimeException("Unsupported ModelLevel");
         }
+
         if (benchmarkName != null) {
             arguments.add("-P" + RECORD_BENCHMARK_NAME + "=" + benchmarkName);
             if (benchmarkMode != null) {

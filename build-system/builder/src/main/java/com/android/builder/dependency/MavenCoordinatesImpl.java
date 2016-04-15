@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.model;
+package com.android.builder.dependency;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -26,8 +26,6 @@ import com.google.common.base.Objects;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 
-import org.gradle.api.artifacts.ResolvedArtifact;
-
 import java.io.Serializable;
 import java.util.List;
 
@@ -36,27 +34,30 @@ import java.util.List;
  */
 @Immutable
 public class MavenCoordinatesImpl implements MavenCoordinates, Serializable {
+    @NonNull
     private final String groupId;
+    @NonNull
     private final String artifactId;
+    @NonNull
     private final String version;
+    @NonNull
     private final String packaging;
+    @Nullable
     private final String classifier;
 
-    public MavenCoordinatesImpl(@NonNull ResolvedArtifact resolvedArtifact) {
-        this(
-                resolvedArtifact.getModuleVersion().getId().getGroup(),
-                resolvedArtifact.getModuleVersion().getId().getName(),
-                resolvedArtifact.getModuleVersion().getId().getVersion(),
-                resolvedArtifact.getExtension(),
-                resolvedArtifact.getClassifier());
+    public MavenCoordinatesImpl(
+            @NonNull String groupId,
+            @NonNull String artifactId,
+            @NonNull String version) {
+        this(groupId, artifactId, version, null /*packaging*/, null /*classifier*/);
     }
 
-    MavenCoordinatesImpl(String groupId, String artifactId, String version) {
-        this(groupId, artifactId, version, null, null);
-    }
-
-    MavenCoordinatesImpl(String groupId, String artifactId, String version, String packaging,
-            String classifier) {
+    public MavenCoordinatesImpl(
+            @NonNull String groupId,
+            @NonNull String artifactId,
+            @NonNull String version,
+            @Nullable String packaging,
+            @Nullable String classifier) {
         this.groupId = groupId;
         this.artifactId = artifactId;
         this.version = version;
@@ -94,6 +95,14 @@ public class MavenCoordinatesImpl implements MavenCoordinates, Serializable {
         return classifier;
     }
 
+    public boolean compareWithoutVersion(@NonNull MavenCoordinates coordinates) {
+        return this == coordinates ||
+                Objects.equal(groupId, coordinates.getGroupId()) &&
+                        Objects.equal(artifactId, coordinates.getArtifactId()) &&
+                        Objects.equal(packaging, coordinates.getPackaging()) &&
+                        Objects.equal(classifier, coordinates.getClassifier());
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -114,7 +123,6 @@ public class MavenCoordinatesImpl implements MavenCoordinates, Serializable {
     public int hashCode() {
         return Objects.hashCode(groupId, artifactId, version, packaging, classifier);
     }
-
     @Override
     public String toString() {
         List<String> segments = Lists.newArrayList(groupId, artifactId, packaging);

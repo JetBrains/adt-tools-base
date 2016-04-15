@@ -60,24 +60,26 @@ public class PrepareDependenciesTask extends BaseTask {
                 int api = entry.getValue();
                 if (api > minSdk) {
                     foundError = true;
-                    String configurationName = checker.getConfigurationDependencies().getName();
-                    getLogger().error(
-                            "Variant {} has a dependency on version {} of the legacy {} Maven " +
-                                    "artifact, which corresponds to API level {}. This is not " +
-                                    "compatible with min SDK of this module, which is {}. " +
+                    String variantName = checker.getVariantName();
+                    getLogger().error(String.format(
+                            "Variant %s has a dependency on version %s of the legacy %s Maven " +
+                                    "artifact, which corresponds to API level %s. This is not " +
+                                    "compatible with min SDK of this module, which is %s. " +
                                     "Please use the 'gradle dependencies' task to debug your " +
                                     "dependencies graph.",
-                            StringHelper.capitalize(configurationName),
+                            StringHelper.capitalize(variantName),
                             mavenVersion.getVersion(),
                             mavenVersion.getGroup(),
                             api,
-                            minSdk);
+                            minSdk));
                 }
             }
 
             for (SyncIssue syncIssue : checker.getSyncIssues()) {
-                foundError = true;
-                getLogger().error(syncIssue.getMessage());
+                if (syncIssue.getSeverity() == SyncIssue.SEVERITY_ERROR) {
+                    foundError = true;
+                    getLogger().error(syncIssue.getMessage());
+                }
             }
         }
 

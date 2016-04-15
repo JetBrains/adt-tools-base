@@ -25,6 +25,7 @@ import com.android.builder.model.Dependencies;
 import com.android.builder.model.InstantRun;
 import com.android.builder.model.NativeLibrary;
 import com.android.builder.model.SourceProvider;
+import com.google.common.base.Objects;
 import com.google.common.collect.Sets;
 
 import java.io.File;
@@ -76,7 +77,8 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
             @NonNull List<File> generatedResourceFolders,
             @NonNull File classesFolder,
             @NonNull File javaResourcesFolder,
-            @NonNull Dependencies dependencies,
+            @NonNull Dependencies compileDependencies,
+            @NonNull Dependencies packageDependencies,
             @Nullable SourceProvider variantSourceProvider,
             @Nullable SourceProvider multiFlavorSourceProviders,
             @Nullable Set<String> abiFilters,
@@ -86,7 +88,8 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
             @NonNull InstantRun instantRun) {
         super(name, assembleTaskName, compileTaskName,
                 classesFolder, javaResourcesFolder,
-                dependencies, variantSourceProvider, multiFlavorSourceProviders,
+                compileDependencies, packageDependencies,
+                variantSourceProvider, multiFlavorSourceProviders,
                 generatedSourceFolders);
 
         this.outputs = outputs;
@@ -171,5 +174,54 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
     @Override
     public InstantRun getInstantRun() {
         return instantRun;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        AndroidArtifactImpl that = (AndroidArtifactImpl) o;
+        return isSigned == that.isSigned &&
+                Objects.equal(outputs, that.outputs) &&
+                Objects.equal(signingConfigName, that.signingConfigName) &&
+                Objects.equal(applicationId, that.applicationId) &&
+                Objects.equal(sourceGenTaskName, that.sourceGenTaskName) &&
+                Objects
+                        .equal(generatedResourceFolders, that.generatedResourceFolders) &&
+                Objects.equal(abiFilters, that.abiFilters) &&
+                Objects.equal(nativeLibraries, that.nativeLibraries) &&
+                Objects.equal(buildConfigFields, that.buildConfigFields) &&
+                Objects.equal(resValues, that.resValues) &&
+                Objects.equal(instantRun, that.instantRun);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects
+                .hashCode(outputs, isSigned, signingConfigName, applicationId, sourceGenTaskName,
+                        generatedResourceFolders, abiFilters, nativeLibraries, buildConfigFields,
+                        resValues,
+                        instantRun);
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this)
+                .add("outputs", outputs)
+                .add("isSigned", isSigned)
+                .add("signingConfigName", signingConfigName)
+                .add("applicationId", applicationId)
+                .add("sourceGenTaskName", sourceGenTaskName)
+                .add("generatedResourceFolders", generatedResourceFolders)
+                .add("abiFilters", abiFilters)
+                .add("nativeLibraries", nativeLibraries)
+                .add("buildConfigFields", buildConfigFields)
+                .add("resValues", resValues)
+                .add("instantRun", instantRun)
+                .toString();
     }
 }

@@ -52,24 +52,27 @@ public class JavaArtifactImpl extends BaseArtifactImpl implements JavaArtifact, 
                 javaArtifact.getClassesFolder(),
                 javaArtifact.getJavaResourcesFolder(),
                 javaArtifact.getMockablePlatformJar(),
-                DependenciesImpl.cloneDependenciesForJavaArtifacts(javaArtifact.getDependencies()),
+                DependenciesImpl.cloneDependenciesForJavaArtifacts(javaArtifact.getCompileDependencies()),
+                DependenciesImpl.cloneDependenciesForJavaArtifacts(javaArtifact.getPackageDependencies()),
                 variantSP != null ? SourceProviderImpl.cloneProvider(variantSP) : null,
                 flavorsSP != null ? SourceProviderImpl.cloneProvider(flavorsSP) : null);
     }
 
-    public JavaArtifactImpl(@NonNull String name,
-                            @NonNull String assembleTaskName,
-                            @NonNull String compileTaskName,
-                            @NonNull Iterable<String> ideSetupTaskNames,
-                            @NonNull Collection<File> generatedSourceFolders,
-                            @NonNull File classesFolder,
-                            @NonNull File javaResourcesFolder,
-                            @Nullable File mockablePlatformJar,
-                            @NonNull Dependencies dependencies,
-                            @Nullable SourceProvider variantSourceProvider,
-                            @Nullable SourceProvider multiFlavorSourceProviders) {
+    public JavaArtifactImpl(
+            @NonNull String name,
+            @NonNull String assembleTaskName,
+            @NonNull String compileTaskName,
+            @NonNull Iterable<String> ideSetupTaskNames,
+            @NonNull Collection<File> generatedSourceFolders,
+            @NonNull File classesFolder,
+            @NonNull File javaResourcesFolder,
+            @Nullable File mockablePlatformJar,
+            @NonNull Dependencies compileDependencies,
+            @NonNull Dependencies packageDependencies,
+            @Nullable SourceProvider variantSourceProvider,
+            @Nullable SourceProvider multiFlavorSourceProviders) {
         super(name, assembleTaskName, compileTaskName,
-                classesFolder, javaResourcesFolder, dependencies,
+                classesFolder, javaResourcesFolder, compileDependencies, packageDependencies,
                 variantSourceProvider, multiFlavorSourceProviders, generatedSourceFolders);
         this.ideSetupTaskNames = Sets.newHashSet(ideSetupTaskNames);
         this.mockablePlatformJar = mockablePlatformJar;

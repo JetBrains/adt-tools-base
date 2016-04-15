@@ -21,11 +21,13 @@ import static com.android.SdkConstants.FD_RENDERSCRIPT;
 import static com.android.SdkConstants.FN_ANNOTATIONS_ZIP;
 import static com.android.SdkConstants.FN_CLASSES_JAR;
 import static com.android.SdkConstants.LIBS_FOLDER;
-import static com.android.builder.dependency.LibraryBundle.FN_PROGUARD_TXT;
+import static com.android.builder.dependency.AbstractLibraryDependency.FN_PROGUARD_TXT;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.api.transform.QualifiedContent.Scope;
+import com.android.build.api.transform.Transform;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
@@ -45,14 +47,13 @@ import com.android.build.gradle.internal.variant.LibraryVariantData;
 import com.android.build.gradle.internal.variant.VariantHelper;
 import com.android.build.gradle.tasks.ExtractAnnotations;
 import com.android.build.gradle.tasks.MergeResources;
-import com.android.build.api.transform.QualifiedContent.Scope;
-import com.android.build.api.transform.Transform;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.BuilderConstants;
-import com.android.builder.dependency.LibraryBundle;
-import com.android.builder.dependency.LibraryDependency;
-import com.android.builder.dependency.ManifestDependency;
+import com.android.builder.dependency.AbstractLibraryDependency;
+import com.android.builder.dependency.JarDependency;
+import com.android.builder.dependency.MavenCoordinatesImpl;
 import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.MavenCoordinates;
 import com.android.builder.model.SyncIssue;
 import com.android.builder.profile.ExecutionType;
@@ -60,6 +61,7 @@ import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
 import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 
 import org.gradle.api.Action;
@@ -478,58 +480,13 @@ public class LibraryTaskManager extends TaskManager {
         }
 
         // configure the variant to be testable.
-        variantConfig.setOutput(new LibraryBundle(
+        variantConfig.setOutput(new LocalTestedAarLibrary(
                 bundle.getArchivePath(),
                 variantBundleDir,
                 variantData.getName(),
-                project.getPath()) {
-            @Override
-            @Nullable
-            public String getProjectVariant() {
-                return variantData.getName();
-            }
-
-            @NonNull
-            @Override
-            public List<LibraryDependency> getDependencies() {
-                return variantConfig.getDirectLibraries();
-            }
-
-            @NonNull
-            @Override
-            public List<? extends AndroidLibrary> getLibraryDependencies() {
-                return variantConfig.getDirectLibraries();
-            }
-
-            @NonNull
-            @Override
-            public List<? extends ManifestDependency> getManifestDependencies() {
-                return variantConfig.getDirectLibraries();
-            }
-
-            @Override
-            @Nullable
-            public MavenCoordinates getRequestedCoordinates() {
-                return null;
-            }
-
-            @Override
-            @Nullable
-            public MavenCoordinates getResolvedCoordinates() {
-                return null;
-            }
-
-            @Override
-            @NonNull
-            protected File getJarsRootFolder() {
-                return getFolder();
-            }
-
-            @Override
-            public boolean isOptional() {
-                return false;
-            }
-        });
+                project.getPath(),
+                variantData.getName(),
+                false /*isProvided*/));
 
         ThreadRecorder.get().record(ExecutionType.LIB_TASK_MANAGER_CREATE_LINT_TASK,
                 new Recorder.Block<Void>() {
@@ -539,6 +496,70 @@ public class LibraryTaskManager extends TaskManager {
                         return null;
                     }
                 });
+    }
+
+    private static final class LocalTestedAarLibrary extends AbstractLibraryDependency {
+
+        @NonNull
+        private final String projectVariant;
+
+        LocalTestedAarLibrary(
+                @NonNull File bundle,
+                @NonNull File bundleFolder,
+                @Nullable String name,
+                @Nullable String projectPath,
+                @NonNull String projectVariant,
+                boolean isProvided) {
+            super(bundle, bundleFolder, name, projectPath, isProvided);
+            this.projectVariant = projectVariant;
+        }
+
+        @Override
+        @NonNull
+        public String getProjectVariant() {
+            return projectVariant;
+        }
+
+        @NonNull
+        @Override
+        protected File getJarsRootFolder() {
+            // this instance represents the staged version of the aar, rather than the
+            // exploded version, which makes the location of the jar files different.
+            return getFolder();
+        }
+
+        @NonNull
+        @Override
+        public List<? extends AndroidLibrary> getLibraryDependencies() {
+            // we don't want to include these since it's carried by the
+            // test configuration
+            return ImmutableList.of();
+        }
+
+        @NonNull
+        @Override
+        public Collection<? extends JavaLibrary> getJavaDependencies() {
+            // we don't want to include these since it's carried by the
+            // test configuration
+            return ImmutableList.of();
+        }
+
+        @Override
+        @Nullable
+        public MavenCoordinates getRequestedCoordinates() {
+            return null;
+        }
+
+        @Override
+        @NonNull
+        public MavenCoordinates getResolvedCoordinates() {
+            return new MavenCoordinatesImpl("__tested_library__", getBundle().getPath(), "unspecified");
+        }
+
+        @Override
+        public boolean isSkipped() {
+            return false;
+        }
     }
 
     private void excludeDataBindingClassesIfNecessary(final VariantScope variantScope,

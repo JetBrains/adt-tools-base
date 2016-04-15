@@ -79,7 +79,7 @@ public class LocalJarInAarInModelTest {
 
         Variant variant = ModelHelper.getVariant(model.getVariants(), "debug");
 
-        Dependencies dependencies = variant.getMainArtifact().getDependencies();
+        Dependencies dependencies = variant.getMainArtifact().getCompileDependencies();
         Collection<AndroidLibrary> libraries = dependencies.getLibraries();
 
         assertThat(libraries).hasSize(1);
@@ -102,7 +102,7 @@ public class LocalJarInAarInModelTest {
 
         Variant variant = ModelHelper.getVariant(model.getVariants(), "debug");
 
-        Dependencies dependencies = variant.getMainArtifact().getDependencies();
+        Dependencies dependencies = variant.getMainArtifact().getCompileDependencies();
         Collection<AndroidLibrary> libraries = dependencies.getLibraries();
 
         assertThat(libraries).hasSize(1);
