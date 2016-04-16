@@ -17,6 +17,7 @@
 package com.android.build.gradle.tasks;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.aapt.AaptGradleFactory;
 import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
@@ -27,8 +28,6 @@ import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.internal.aapt.Aapt;
 import com.android.builder.internal.aapt.AaptPackageConfig;
-import com.android.builder.internal.aapt.v1.AaptV1;
-import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessException;
 import com.google.common.base.CharMatcher;
 
@@ -112,8 +111,7 @@ public class GenerateSplitAbiRes extends BaseTask {
                 fileWriter.flush();
             }
 
-            Aapt aapt = new AaptV1(getBuilder().getProcessExecutor(),
-                    new LoggedProcessOutputHandler(getILogger()), getBuildTools());
+            Aapt aapt = AaptGradleFactory.make(getBuilder());
             AaptPackageConfig.Builder aaptConfig = new AaptPackageConfig.Builder();
             aaptConfig
                     .setManifestFile(tmpFile)

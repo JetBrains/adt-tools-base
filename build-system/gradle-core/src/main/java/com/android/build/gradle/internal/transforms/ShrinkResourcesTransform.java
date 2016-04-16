@@ -17,21 +17,21 @@
 package com.android.build.gradle.internal.transforms;
 
 import com.android.annotations.NonNull;
-import com.android.build.api.transform.TransformInvocation;
-import com.android.build.gradle.internal.pipeline.TransformManager;
-import com.android.build.gradle.internal.variant.BaseVariantData;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.build.gradle.tasks.ProcessAndroidResources;
-import com.android.build.gradle.tasks.ResourceUsageAnalyzer;
 import com.android.build.api.transform.QualifiedContent.ContentType;
 import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
+import com.android.build.api.transform.TransformInvocation;
+import com.android.build.gradle.internal.aapt.AaptGradleFactory;
+import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.android.build.gradle.internal.variant.BaseVariantData;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.build.gradle.tasks.ProcessAndroidResources;
+import com.android.build.gradle.tasks.ResourceUsageAnalyzer;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.internal.aapt.Aapt;
 import com.android.builder.internal.aapt.AaptPackageConfig;
-import com.android.builder.internal.aapt.v1.AaptV1;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableList;
@@ -223,13 +223,7 @@ public class ShrinkResourcesTransform extends Transform {
                 String sourceOutputPath = null;
 
                 // Repackage the resources:
-                Aapt aapt = new AaptV1(androidBuilder.getProcessExecutor(),
-                        new LoggedProcessOutputHandler(androidBuilder.getLogger()),
-                        variantData.getScope()
-                                .getGlobalScope()
-                                .getAndroidBuilder()
-                                .getTargetInfo()
-                                .getBuildTools());
+                Aapt aapt = AaptGradleFactory.make(androidBuilder);
                 AaptPackageConfig.Builder aaptPackageConfig = new AaptPackageConfig.Builder()
                         .setManifestFile(mergedManifest)
                         .setOptions(processResourcesTask.getAaptOptions())

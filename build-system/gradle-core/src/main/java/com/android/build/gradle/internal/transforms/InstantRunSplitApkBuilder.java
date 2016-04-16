@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.transforms;
 import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.aapt.AaptGradleFactory;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
@@ -32,7 +33,6 @@ import com.android.build.gradle.tasks.PackageAndroidArtifact;
 import com.android.builder.core.VariantType;
 import com.android.builder.internal.aapt.Aapt;
 import com.android.builder.internal.aapt.AaptPackageConfig;
-import com.android.builder.internal.aapt.v1.AaptV1;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.packaging.DuplicateFileException;
 import com.android.builder.packaging.PackagerException;
@@ -225,8 +225,7 @@ public class InstantRunSplitApkBuilder extends BaseTask {
 
         File resFilePackageFile = new File(supportDir, "resources_ap");
 
-        Aapt aapt = new AaptV1(getBuilder().getProcessExecutor(),
-                new LoggedProcessOutputHandler(getILogger()), getBuildTools());
+        Aapt aapt = AaptGradleFactory.make(getBuilder());
         AaptPackageConfig.Builder aaptConfig = new AaptPackageConfig.Builder()
                 .setManifestFile(androidManifest)
                 .setOptions(getAaptOptions())
