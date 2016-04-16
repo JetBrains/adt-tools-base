@@ -22,12 +22,14 @@ import com.android.build.gradle.internal.core.Toolchain;
 import com.android.build.gradle.managed.NdkAbiOptions;
 
 import org.gradle.api.Action;
+import org.gradle.internal.os.OperatingSystem;
 import org.gradle.model.ModelMap;
 import org.gradle.nativeplatform.platform.NativePlatform;
 import org.gradle.nativeplatform.toolchain.Clang;
 import org.gradle.nativeplatform.toolchain.Gcc;
 import org.gradle.nativeplatform.toolchain.GccCompatibleToolChain;
 import org.gradle.nativeplatform.toolchain.NativeToolChainRegistry;
+import org.gradle.nativeplatform.toolchain.internal.gcc.DefaultGccPlatformToolChain;
 import org.gradle.platform.base.PlatformContainer;
 
 import java.util.Collections;
@@ -67,6 +69,14 @@ public class ToolchainConfiguration {
                     // Configure each platform.
                     for (final Abi abi : ndkHandler.getSupportedAbis()) {
                         toolchain.target(abi.getName(), targetPlatform -> {
+                            // Disable usage of response file as clang do not handle file
+                            // with \r\n properly.
+                            if (OperatingSystem.current().isWindows()
+                                    && toolchainName.equals("clang")) {
+                                ((DefaultGccPlatformToolChain) targetPlatform)
+                                        .setCanUseCommandFile(false);
+                            }
+
                             if (Toolchain.GCC.equals(ndkToolchain)) {
                                 String gccPrefix = abi.getGccExecutablePrefix();
                                 targetPlatform.getcCompiler().setExecutable(gccPrefix + "-gcc");
