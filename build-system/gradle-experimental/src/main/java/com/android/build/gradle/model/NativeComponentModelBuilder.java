@@ -25,10 +25,9 @@ import com.android.build.gradle.internal.model.NativeFileImpl;
 import com.android.build.gradle.internal.model.NativeFolderImpl;
 import com.android.build.gradle.internal.model.NativeSettingsImpl;
 import com.android.build.gradle.internal.model.NativeToolchainImpl;
+import com.android.build.gradle.ndk.internal.NativeCompilerArgsUtil;
 import com.android.build.gradle.managed.NativeBuildConfig;
 import com.android.build.gradle.managed.NativeLibrary;
-import com.android.build.gradle.managed.NativeSourceFile;
-import com.android.build.gradle.managed.NativeSourceFolder;
 import com.android.builder.Version;
 import com.android.builder.model.NativeAndroidProject;
 import com.android.builder.model.NativeArtifact;
@@ -113,13 +112,13 @@ public class NativeComponentModelBuilder implements ToolingModelBuilder {
             List<NativeFolder> folders = lib.getFolders().stream().map(src -> new NativeFolderImpl(
                     src.getSrc(),
                     ImmutableMap.of(
-                            "c", getSettingsName(StringHelper.tokenizeString(src.getcFlags())),
-                            "c++", getSettingsName(StringHelper.tokenizeString(src.getCppFlags()))),
+                            "c", getSettingsName(convertFlagFormat(src.getcFlags())),
+                            "c++", getSettingsName(convertFlagFormat(src.getCppFlags()))),
                     src.getWorkingDirectory()))
                     .collect(Collectors.toList());
             List<NativeFile> files = lib.getFiles().stream().map(src -> new NativeFileImpl(
                     src.getSrc(),
-                    getSettingsName(StringHelper.tokenizeString(src.getFlags())),
+                    getSettingsName(convertFlagFormat(src.getFlags())),
                     src.getWorkingDirectory()))
                     .collect(Collectors.toList());
             Preconditions.checkNotNull(lib.getToolchain());
@@ -137,6 +136,11 @@ public class NativeComponentModelBuilder implements ToolingModelBuilder {
             artifacts.add(artifact);
         }
         return artifacts;
+    }
+
+    @NonNull
+    private static List<String> convertFlagFormat(@NonNull String flags) {
+        return NativeCompilerArgsUtil.transform(StringHelper.tokenizeString(flags));
     }
 
     private String getSettingsName(List<String> flags) {
