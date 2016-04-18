@@ -88,5 +88,4 @@ public class TestVariantFactory extends ApplicationVariantFactory {
         signingConfigs.create(BuilderConstants.DEBUG);
         buildTypes.create(BuilderConstants.DEBUG);
     }
-
 }

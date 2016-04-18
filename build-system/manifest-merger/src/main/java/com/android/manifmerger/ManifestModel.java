@@ -371,8 +371,17 @@ class ManifestModel {
          * {@link <a href=http://developer.android.com/guide/topics/manifest/instrumentation-element.html>
          *     Instrunentation Xml documentation</a>}
          */
-        INSTRUMENTATION(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER,
-                AttributeModel.newModel(SdkConstants.ATTR_NAME).setIsPackageDependent()),
+        INSTRUMENTATION(
+                MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER,
+                AttributeModel.newModel("name").setMergingPolicy(AttributeModel.NO_MERGING_POLICY),
+                AttributeModel.newModel("targetPackage")
+                        .setMergingPolicy(AttributeModel.NO_MERGING_POLICY),
+                AttributeModel.newModel("functionalTest")
+                        .setMergingPolicy(AttributeModel.NO_MERGING_POLICY),
+                AttributeModel.newModel("handleProfiling")
+                        .setMergingPolicy(AttributeModel.NO_MERGING_POLICY),
+                AttributeModel.newModel("label").setMergingPolicy(AttributeModel.NO_MERGING_POLICY)
+        ),
 
         /**
          * Intent-filter (contained in activity, activity-alias, service, receiver)

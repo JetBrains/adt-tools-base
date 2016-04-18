@@ -65,8 +65,8 @@ import java.util.Set;
  */
 public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, F extends ProductFlavor> {
 
-    // per variant, as is caches some manifest data specific to this variant.
-    private final ManifestParser sManifestParser = new DefaultManifestParser();
+    // for every manifest file analyzed, just create a new parser
+    private Map<File, ManifestAttributeSupplier> manifestParsers = Maps.newHashMap();
 
     /**
      * Full, unique name of the variant in camel case, including BuildType and Flavors (and Test)
@@ -162,7 +162,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      */
     @Nullable
     public static String getManifestPackage(@NonNull File manifestFile) {
-        return new DefaultManifestParser().getPackage(manifestFile);
+        return new DefaultManifestParser(manifestFile).getPackage();
     }
 
     /**
@@ -771,6 +771,16 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         return id;
     }
 
+    @NonNull
+    public String getTestApplicationId(){
+        if (!Strings.isNullOrEmpty(mMergedFlavor.getTestApplicationId())) {
+            // if it's specified through build file read from there
+            return mMergedFlavor.getTestApplicationId();
+        } else {
+            return getApplicationId();
+        }
+    }
+
     @Nullable
     public String getTestedApplicationId() {
         if (mType.isForTesting()) {
@@ -879,6 +889,11 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             return runner;
         }
 
+        runner = getInstrumentationRunnerFromManifest();
+        if (runner != null){
+            return runner;
+        }
+
         if (isMultiDexEnabled() && isLegacyMultiDexMode()) {
             return MULTIDEX_TEST_RUNNER;
         }
@@ -903,6 +918,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     /**
      * Returns handleProfiling value to use to test this variant, or if the
      * variant is a test, the one to use to test the tested variant.
+     *
      * @return the handleProfiling value
      */
     @NonNull
@@ -913,12 +929,16 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             checkState(config != null);
         }
         Boolean handleProfiling = config.mMergedFlavor.getTestHandleProfiling();
+        if (handleProfiling == null){
+            handleProfiling = getHandleProfilingFromManifest();
+        }
         return handleProfiling != null ? handleProfiling : DEFAULT_HANDLE_PROFILING;
     }
 
     /**
      * Returns functionalTest value to use to test this variant, or if the
      * variant is a test, the one to use to test the tested variant.
+     *
      * @return the functionalTest value
      */
     @NonNull
@@ -929,7 +949,17 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             checkState(config != null);
         }
         Boolean functionalTest = config.mMergedFlavor.getTestFunctionalTest();
+        if (functionalTest == null){
+            functionalTest = getFunctionalTestFromManifest();
+        }
+
         return functionalTest != null ? functionalTest : DEFAULT_FUNCTIONAL_TEST;
+    }
+
+    /** Gets the test label for this variant */
+    @Nullable
+    public String getTestLabel(){
+        return getTestLabelFromManifest();
     }
 
     /**
@@ -940,7 +970,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         checkState(!mType.isForTesting());
 
         File manifestLocation = mDefaultSourceProvider.getManifestFile();
-        String packageName = sManifestParser.getPackage(manifestLocation);
+        String packageName = getManifestParser(manifestLocation).getPackage();
         if (packageName == null) {
             throw new RuntimeException(String.format("Cannot read packageName from %1$s",
                     mDefaultSourceProvider.getManifestFile().getAbsolutePath()));
@@ -948,21 +978,45 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         return packageName;
     }
 
-    /**
-     * Reads the version name from the manifest.
-     */
     @Nullable
     public String getVersionNameFromManifest() {
         File manifestLocation = mDefaultSourceProvider.getManifestFile();
-        return sManifestParser.getVersionName(manifestLocation);
+        return getManifestParser(manifestLocation).getVersionName();
     }
 
-    /**
-     * Reads the version code from the manifest.
-     */
     public int getVersionCodeFromManifest() {
         File manifestLocation = mDefaultSourceProvider.getManifestFile();
-        return sManifestParser.getVersionCode(manifestLocation);
+        return getManifestParser(manifestLocation).getVersionCode();
+    }
+
+    @Nullable
+    public String getTestedApplicationIdFromManifest(){
+        File manifestLocation = mDefaultSourceProvider.getManifestFile();
+        return getManifestParser(manifestLocation).getTargetPackage();
+    }
+
+    @Nullable
+    public String getInstrumentationRunnerFromManifest(){
+        File manifestLocation = mDefaultSourceProvider.getManifestFile();
+        return getManifestParser(manifestLocation).getInstrumentationRunner();
+    }
+
+    @Nullable
+    public Boolean getFunctionalTestFromManifest(){
+        File manifestLocation = mDefaultSourceProvider.getManifestFile();
+        return getManifestParser(manifestLocation).getFunctionalTest();
+    }
+
+    @Nullable
+    public Boolean getHandleProfilingFromManifest(){
+        File manifestLocation = mDefaultSourceProvider.getManifestFile();
+        return getManifestParser(manifestLocation).getHandleProfiling();
+    }
+
+    @Nullable
+    public String getTestLabelFromManifest(){
+        File manifestLocation = mDefaultSourceProvider.getManifestFile();
+        return getManifestParser(manifestLocation).getTestLabel();
     }
 
     /**
@@ -983,7 +1037,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             // read it from the main manifest
             File manifestLocation = mDefaultSourceProvider.getManifestFile();
             minSdkVersion = DefaultApiVersion.create(
-                    sManifestParser.getMinSdkVersion(manifestLocation));
+                    getManifestParser(manifestLocation).getMinSdkVersion());
         }
 
         return minSdkVersion;
@@ -1006,7 +1060,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             // read it from the main manifest
             File manifestLocation = mDefaultSourceProvider.getManifestFile();
             targetSdkVersion = DefaultApiVersion.create(
-                    sManifestParser.getTargetSdkVersion(manifestLocation));
+                    getManifestParser(manifestLocation).getTargetSdkVersion());
         }
 
         return targetSdkVersion;
@@ -2192,5 +2246,16 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         jarjarRuleFiles.addAll(getMergedFlavor().getJarJarRuleFiles());
         jarjarRuleFiles.addAll(mBuildType.getJarJarRuleFiles());
         return jarjarRuleFiles.build();
+    }
+
+    /** Gets the existing manifest attribute supplier for specified file, or creates a new one. */
+    @NonNull
+    private ManifestAttributeSupplier getManifestParser(@NonNull File manifestFile) {
+        ManifestAttributeSupplier parser = manifestParsers.get(manifestFile);
+        if (parser == null) {
+            parser = new DefaultManifestParser(manifestFile);
+            manifestParsers.put(manifestFile, parser);
+        }
+        return parser;
     }
 }

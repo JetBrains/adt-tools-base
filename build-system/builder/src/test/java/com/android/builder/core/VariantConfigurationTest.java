@@ -31,42 +31,6 @@ public class VariantConfigurationTest extends TestCase {
     private DefaultProductFlavor mFlavorConfig;
     private DefaultBuildType mBuildType;
 
-    private static class ManifestParserMock implements ManifestParser {
-
-        private final String mPackageName;
-
-        ManifestParserMock(String packageName) {
-            mPackageName = packageName;
-        }
-
-        @Nullable
-        @Override
-        public String getPackage(@NonNull File manifestFile) {
-            return mPackageName;
-        }
-
-        @Override
-        public Object getMinSdkVersion(@NonNull File manifestFile) {
-            return null;
-        }
-
-        @Override
-        public Object getTargetSdkVersion(@NonNull File manifestFile) {
-            return null;
-        }
-
-        @Nullable
-        @Override
-        public String getVersionName(@NonNull File manifestFile) {
-            return "1.0";
-        }
-
-        @Override
-        public int getVersionCode(@NonNull File manifestFile) {
-            return 1;
-        }
-    }
-
     @Override
     protected void setUp() throws Exception {
         mDefaultConfig = new DefaultProductFlavor("main");

@@ -153,8 +153,8 @@ import java.util.zip.ZipFile;
  * create a builder with {@link #AndroidBuilder(String, String, ProcessExecutor, JavaProcessExecutor, ErrorReporter, ILogger, boolean)}
  *
  * then build steps can be done with
- * {@link #mergeManifests(File, List, List, String, int, String, String, String, Integer, String, String, String, ManifestMerger2.MergeType, Map, List, File)}
- * {@link #processTestManifest(String, String, String, String, String, Boolean, Boolean, File, List, Map, File, File)}
+ * {@link #mergeManifestsForApplication(File, List, List, String, int, String, String, String, Integer, String, String, String, ManifestMerger2.MergeType, Map, List, File)}
+ * {@link #mergeManifestsForTestVariant(String, String, String, String, String, Boolean, Boolean, String, File, List, Map, File, File)}
  * {@link #processResources(Aapt, AaptPackageConfig.Builder, boolean)}
  * {@link #compileAllAidlFiles(List, File, File, Collection, List, DependencyFileProcessor, ProcessOutputHandler)}
  * {@link #convertByteCode(Collection, File, boolean, File, DexOptions, boolean, boolean, ProcessOutputHandler)}
@@ -624,7 +624,7 @@ public class AndroidBuilder {
     /**
      * Invoke the Manifest Merger version 2.
      */
-    public void mergeManifests(
+    public void mergeManifestsForApplication(
             @NonNull File mainManifest,
             @NonNull List<File> manifestOverlays,
             @NonNull List<? extends AndroidLibrary> libraries,
@@ -639,7 +639,7 @@ public class AndroidBuilder {
             @Nullable String outInstantRunManifestLocation,
             ManifestMerger2.MergeType mergeType,
             Map<String, Object> placeHolders,
-            List<Invoker.Feature> optionalFeatures,
+            @NonNull List<Invoker.Feature> optionalFeatures,
             @Nullable File reportFile) {
 
         try {
@@ -803,9 +803,12 @@ public class AndroidBuilder {
      * @param instrumentationRunner the name of the instrumentation runner
      * @param handleProfiling whether or not the Instrumentation object will turn profiling on and off
      * @param functionalTest whether or not the Instrumentation class should run as a functional test
+     * @param testLabel the label for the tests
      * @param testManifestFile optionally user provided AndroidManifest.xml for testing application
      * @param libraries the library dependency graph
+     * @param manifestPlaceholders used placeholders in the manifest
      * @param outManifest the output location for the merged manifest
+     * @param tmpDir temporary dir used for processing
      *
      * @see VariantConfiguration#getApplicationId()
      * @see VariantConfiguration#getTestedConfig()
@@ -814,9 +817,10 @@ public class AndroidBuilder {
      * @see VariantConfiguration#getInstrumentationRunner()
      * @see VariantConfiguration#getHandleProfiling()
      * @see VariantConfiguration#getFunctionalTest()
-     * @see VariantConfiguration#getDirectLibraries()
+     * @see VariantConfiguration#getTestLabel()
+     * @see VariantConfiguration#getCompileAndroidLibraries() ()
      */
-    public void processTestManifest(
+    public void mergeManifestsForTestVariant(
             @NonNull String testApplicationId,
             @NonNull String minSdkVersion,
             @NonNull String targetSdkVersion,
@@ -824,6 +828,7 @@ public class AndroidBuilder {
             @NonNull String instrumentationRunner,
             @NonNull Boolean handleProfiling,
             @NonNull Boolean functionalTest,
+            @Nullable String testLabel,
             @Nullable File testManifestFile,
             @NonNull List<? extends AndroidLibrary> libraries,
             @NonNull Map<String, Object> manifestPlaceholders,
@@ -849,6 +854,8 @@ public class AndroidBuilder {
                     ? outManifest
                     : (tempFile1 = File.createTempFile("manifestMerger", ".xml", tmpDir));
 
+            // we are generating the manifest and if there is an existing one,
+            // it will be overlaid with the generated one
             mLogger.verbose("Generating in %1$s", generatedTestManifest.getAbsolutePath());
             generateTestManifest(
                     testApplicationId,
@@ -860,27 +867,34 @@ public class AndroidBuilder {
                     functionalTest,
                     generatedTestManifest);
 
-            if (testManifestFile != null) {
-                tempFile2 = File.createTempFile("manifestMerger", ".xml", tmpDir);
-                mLogger.verbose("Merging user supplied manifest in %1$s",
-                        generatedTestManifest.getAbsolutePath());
+            if (testManifestFile != null && testManifestFile.exists()) {
                 Invoker invoker = ManifestMerger2.newMerger(
                         testManifestFile, mLogger, ManifestMerger2.MergeType.APPLICATION)
-                        .setOverride(SystemProperty.PACKAGE, testApplicationId)
                         .setPlaceHolderValues(manifestPlaceholders)
                         .setPlaceHolderValue(PlaceholderHandler.INSTRUMENTATION_RUNNER,
                                 instrumentationRunner)
-                        .addLibraryManifests(generatedTestManifest);
+                        .addLibraryManifest(generatedTestManifest);
 
+                // we override these properties
+                invoker.setOverride(SystemProperty.PACKAGE, testApplicationId);
                 invoker.setOverride(SystemProperty.MIN_SDK_VERSION, minSdkVersion);
+                invoker.setOverride(SystemProperty.NAME, instrumentationRunner);
+                invoker.setOverride(SystemProperty.TARGET_PACKAGE, testedApplicationId);
+                invoker.setOverride(SystemProperty.FUNCTIONAL_TEST, functionalTest.toString());
+                invoker.setOverride(SystemProperty.HANDLE_PROFILING, handleProfiling.toString());
+                if (testLabel != null) {
+                    invoker.setOverride(SystemProperty.LABEL, testLabel);
+                }
 
                 if (!targetSdkVersion.equals("-1")) {
                     invoker.setOverride(SystemProperty.TARGET_SDK_VERSION, targetSdkVersion);
                 }
+
                 MergingReport mergingReport = invoker.merge();
                 if (libraries.isEmpty()) {
                     handleMergingResult(mergingReport, outManifest);
                 } else {
+                    tempFile2 = File.createTempFile("manifestMerger", ".xml", tmpDir);
                     handleMergingResult(mergingReport, tempFile2);
                     generatedTestManifest = tempFile2;
                 }
@@ -897,14 +911,21 @@ public class AndroidBuilder {
 
                 handleMergingResult(mergingReport, outManifest);
             }
-        } catch(Exception e) {
-            throw new RuntimeException(e);
+        } catch(IOException e) {
+            throw new RuntimeException("Unable to create the temporary file", e);
+        } catch (ManifestMerger2.MergeFailureException e) {
+            throw new RuntimeException("Manifest merging exception", e);
         } finally {
-            if (tempFile1 != null) {
-                FileUtils.delete(tempFile1);
-            }
-            if (tempFile2 != null) {
-                FileUtils.delete(tempFile2);
+            try {
+                if (tempFile1 != null) {
+                    FileUtils.delete(tempFile1);
+                }
+                if (tempFile2 != null) {
+                    FileUtils.delete(tempFile2);
+                }
+            } catch (IOException e){
+                // just log this, so we do not mask the initial exception if there is any
+                mLogger.error(e, "Unable to clean up the temporary files.");
             }
         }
     }
