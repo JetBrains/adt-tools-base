@@ -21,12 +21,15 @@ import com.android.builder.Version;
 import com.android.builder.model.AndroidProject;
 import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 import com.google.common.io.Resources;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
+import java.net.URLConnection;
 
 import org.gradle.api.Project;
 
@@ -64,7 +67,11 @@ public class ProguardFiles {
                 try {
                     Files.createParentDirs(proguardFile);
                     URL proguardURL = ProguardFiles.class.getResource(name);
-                    Resources.asByteSource(proguardURL).copyTo(Files.asByteSink(proguardFile));
+                    URLConnection urlConnection = proguardURL.openConnection();
+                    urlConnection.setUseCaches(false);
+                    try (InputStream is = urlConnection.getInputStream()) {
+                        Files.asByteSink(proguardFile).writeFrom(is);
+                    }
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
