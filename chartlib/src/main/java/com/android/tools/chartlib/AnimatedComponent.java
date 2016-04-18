@@ -15,6 +15,8 @@
  */
 package com.android.tools.chartlib;
 
+import com.android.annotations.NonNull;
+
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
@@ -43,9 +45,18 @@ public abstract class AnimatedComponent extends JComponent implements Animatable
 
     protected long mLastRenderTime;
 
+    protected long mUpdateStartTime;
+
+    protected long mUpdateEndTime;
+
     protected boolean mDrawDebugInfo;
 
-    private List<String> mDebugInfo;
+    @NonNull
+    private final List<String> mDebugInfo;
+
+    private int mDrawCount;
+
+    private int mMultiDrawNumFrames;
 
     public AnimatedComponent() {
         mDebugInfo = new LinkedList<String>();
@@ -62,8 +73,12 @@ public abstract class AnimatedComponent extends JComponent implements Animatable
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
+
+        mLastRenderTime = System.nanoTime();
         Graphics2D g2d = (Graphics2D) g.create();
         draw(g2d);
+        mDrawCount++;
+
         if (mDrawDebugInfo) {
             doDebugDraw(g2d);
         }
@@ -79,6 +94,9 @@ public abstract class AnimatedComponent extends JComponent implements Animatable
     private void doDebugDraw(Graphics2D g) {
         debugDraw(g);
 
+        addDebugInfo("Multi-draw Frame Count: %d", mMultiDrawNumFrames);
+        addDebugInfo("Draw Count: %d", mDrawCount);
+        addDebugInfo("Update time: %.2fms", (mUpdateEndTime - mUpdateStartTime) / 1000000.f);
         addDebugInfo("Render time: %.2fms", (System.nanoTime() - mLastRenderTime) / 1000000.f);
         addDebugInfo("FPS: %.2f", (1.0f / mFrameLength));
         g.setFont(DEFAULT_FONT);
@@ -130,8 +148,24 @@ public abstract class AnimatedComponent extends JComponent implements Animatable
 
     @Override
     public void animate(float frameLength) {
+        if (mDrawCount > 1) {
+            // draw is expected to be triggered once per component per animation cycle.
+            // Otherwise, we are potentially wasting cycles repainting the same data. e.g. This can
+            // happen if there are overlapping translucent components requesting repaints.
+            //
+            // Note - there are circumstances where multiple draws in a cycle is normal,
+            // such as when the panel resizes, or anything that triggers repaint in the swing
+            // rendering system. This code does not distinguish against those cases at the moment.
+            mMultiDrawNumFrames++;
+        }
+        mDrawCount = 0;
+
         mFrameLength = frameLength;
+
+        mUpdateStartTime = System.nanoTime();
         this.updateData();
+        mUpdateEndTime = System.nanoTime();
+
         this.repaint();
     }
 }
