@@ -16,31 +16,41 @@
 package com.android.tools.chartlib;
 
 import com.android.annotations.NonNull;
+import com.android.tools.chartlib.model.UnorderedRange;
 
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionAdapter;
-import java.awt.geom.Line2D;
+import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
+import java.awt.geom.RoundRectangle2D;
 
 /**
  * A component for performing/rendering selection and any overlay information (e.g. Tooltip).
  */
 public final class SelectionComponent extends AnimatedComponent {
 
+    /**
+     * This component can be in five modes: - OBSERVE: User is not modifying the selection (if any).
+     * - CREATE: User is currently creating a selection. The first handle has been set and the other
+     * will be when the user release the mouse button. - MOVE: User placed the mouse cursor between
+     * the two handle and pressed the button. The two handles are moving together as a block. -
+     * ADJUST User is adjusting a end of the selection.
+     */
+    private enum Mode {
+        OBSERVE, CREATE, MOVE, ADJUST
+    }
+
+    private Mode mode;
+
     private static final Color SELECTION_FORECOLOR = new Color(0x88aae2);
     private static final Color SELECTION_BACKCOLOR = new Color(0x5588aae2, true);
-
-    private double mSelectionStartX;
-    private boolean mIsSelecting, mIsSelected;
-
-    @NonNull
-    private Point mMousePosition;
 
     @NonNull
     private final AxisComponent mAxis;
@@ -49,30 +59,50 @@ public final class SelectionComponent extends AnimatedComponent {
      * The range being selected.
      */
     @NonNull
-    private final Range mSelectionRange;
+    private final Range mObserverRange;
 
     /**
      * The global range for clamping selection.
      */
     @NonNull
-    private final Range mGlobalRange;
+    private final Range mDataRange;
 
     /**
      * The current viewing range which gets shifted when user drags the selection box beyond the
      * component's dimension.
      */
     @NonNull
-    private final Range mCurrentRange;
+    private final Range mViewRange;
+
+    /**
+     * Store the current selection value (in range space).
+     */
+    private UnorderedRange mSelectionRange;
+
+    /**
+     * Value used when moving the selection as a block: The user never click right in the middle of
+     * the selection. This allows to move the block relative to the initial point the selection was
+     * "grabbed".
+     */
+    double mSelectionBlockClickOffset = 0;
+
+    /**
+     * Default drawing Dimension for the handles.
+     */
+    private Dimension handleDim = new Dimension(12, 40);
+    final static private int dimRoundingCorner = 5;
+
 
     public SelectionComponent(@NonNull AxisComponent axis,
             @NonNull Range selectionRange,
-            @NonNull Range globalRange,
-            @NonNull Range currentRange) {
+            @NonNull Range dataRange,
+            @NonNull Range viewRange) {
         mAxis = axis;
-        mSelectionRange = selectionRange;
-        mGlobalRange = globalRange;
-        mCurrentRange = currentRange;
-        mMousePosition = new Point();
+        mObserverRange = selectionRange;
+        mDataRange = dataRange;
+        mViewRange = viewRange;
+        mode = Mode.OBSERVE;
+        mSelectionRange = new UnorderedRange(0);
 
         // TODO mechanism to cancel/undo the selection.
         addMouseListener(new MouseAdapter() {
@@ -82,12 +112,17 @@ public final class SelectionComponent extends AnimatedComponent {
                 if (!(e.getButton() == MouseEvent.BUTTON1)) {
                     return;
                 }
-                // Begin Selection - mark the selection start point.
-                mMousePosition.x = e.getX();
-                mMousePosition.y = e.getY();
-                mSelectionStartX = mAxis.getValueAtPosition(mMousePosition.x);
-                mIsSelecting = true;
-                mIsSelected = true;
+
+                // Start selection
+                Point mMousePosition = getMouseLocation();
+                mode = setupModeForMousePosition(mMousePosition);
+                switch (mode) {
+                    case CREATE:
+                        mSelectionRange.reset(mAxis.getValueAtPosition(e.getX()));
+                        break;
+                    default:
+                        break;
+                }
             }
 
             @Override
@@ -96,92 +131,188 @@ public final class SelectionComponent extends AnimatedComponent {
                 if (!(e.getButton() == MouseEvent.BUTTON1)) {
                     return;
                 }
-                // End Selection.
-                mIsSelecting = false;
-            }
-        });
 
-        addMouseMotionListener(new MouseMotionAdapter() {
-            @Override
-            public void mouseDragged(MouseEvent e) {
-                mMousePosition.x = e.getX();
-                mMousePosition.y = e.getY();
+                // End Selection.
+                switch (mode) {
+                    case CREATE:
+                        double value =  mAxis.getValueAtPosition(e.getX());
+                        value = viewRange.clamp(value);
+                        mSelectionRange.setEnd(value);
+                        break;
+                    default:
+                        break;
+                }
+                mode = Mode.OBSERVE;
             }
         });
+    }
+
+    /**
+     * Component.getMousePosition() returns null because SelectionComponent is usually overlayed.
+     * The work around is to use absolute coordinates for mouse and component and subtract them.
+     */
+    private Point getMouseLocation() {
+        Point mLoc = MouseInfo.getPointerInfo().getLocation();
+        Point cLoc = getLocationOnScreen();
+        int x = (int) (mLoc.getX() - cLoc.getX());
+        int y = (int) (mLoc.getY() - cLoc.getY());
+        return new Point(x, y);
+    }
+
+    private Mode setupModeForMousePosition(Point mMousePosition) {
+
+        // Detect when mouse is over a handle.
+        if (getHandleAreaForValue(mSelectionRange.getMax()).contains(mMousePosition)) {
+            // Setup the range so subsequent calls to setEnd in updateData() produce the expected result.
+            mSelectionRange.set(mSelectionRange.getMin(), mSelectionRange.getMax());
+            return Mode.ADJUST;
+        }
+
+        // Detect when mouse is over the other handle.
+        if (getHandleAreaForValue(mSelectionRange.getMin()).contains(mMousePosition)) {
+            // Setup the range so subsequent calls to setEnd in updateData() produce the expected result.
+            mSelectionRange.set(mSelectionRange.getMax(), mSelectionRange.getMin());
+            return Mode.ADJUST;
+        }
+
+        // Detect mouse between handle.
+        if (getBetweenHandlesArea().contains(mMousePosition)) {
+            saveMouseBlockOffset(mMousePosition);
+            return Mode.MOVE;
+        }
+
+        return Mode.CREATE;
+    }
+
+    private void saveMouseBlockOffset(Point mMousePosition) {
+        double value = mAxis.getValueAtPosition(mMousePosition.x);
+        mSelectionBlockClickOffset = mSelectionRange.getMin() - value;
     }
 
     @Override
     protected void updateData() {
-        if (!mIsSelecting) {
-            return;
+        Point mMousePosition = getMouseLocation();
+
+        double value = mAxis.getValueAtPosition(mMousePosition.x);
+
+        // Clamp to data range.
+        if (value > mDataRange.getMax()) {
+            value = mDataRange.getMax();
+        }
+        if (value < mDataRange.getMin()) {
+            value = mDataRange.getMin();
         }
 
-        // If user is selecting, update the selection range based on the last mouse position.
-        Dimension dim = getSize();
-        double selectionEndX = mAxis.getValueAtPosition(mMousePosition.x);
-        double startX = Math.max(mGlobalRange.getMin(), Math.min(mSelectionStartX, selectionEndX));
-        double endX = Math.min(mGlobalRange.getMax(), Math.max(mSelectionStartX, selectionEndX));
-        boolean minChanged = mSelectionRange.getMin() != startX;
-        boolean maxChanged = mSelectionRange.getMax() != endX;
-        if (minChanged) {
-            mSelectionRange.setMin(startX);
+        // Extend view range if necessary
+        if (value > mViewRange.getMax()) {
+            mViewRange.setMax(value);
         }
-        if (maxChanged) {
-            mSelectionRange.setMax(endX);
+        if (value < mViewRange.getMin()) {
+            mViewRange.setMin(value);
         }
 
-        mSelectionRange.lockValues();
+        switch (mode) {
+            case CREATE:
+            case ADJUST:
+                mSelectionRange.setEnd(value);
+                mSelectionRange.setEnd(value);
+                break;
+            case MOVE:
+                double length = mSelectionRange.getLength();
+                mSelectionRange.set(value + mSelectionBlockClickOffset,
+                        value + mSelectionBlockClickOffset + length);
 
-        // Extends current range if it does not contain the whole selection range.
-        // This happens when the user drags the selection box beyond the current dimension.
-        if (mMousePosition.x < 0) {
-            double currentRange = mCurrentRange.getLength();
-            if (minChanged) {
-                mCurrentRange.setMin(startX);
-                mCurrentRange.setMax(startX + currentRange);
-            } else if (maxChanged) {
-                mCurrentRange.setMin(endX);
-                mCurrentRange.setMax(endX + currentRange);
-            }
+                // Limit the selection block to viewRange Min
+                if (mSelectionRange.getMin() < mViewRange.getMin()) {
+                    mSelectionRange.add(mViewRange.getMin() - mSelectionRange.getMin());
+                }
+                // Limit the selection block to viewRange Max
+                if (mSelectionRange.getMax() > mViewRange.getMax()) {
+                    mSelectionRange.add(mViewRange.getMax() - mSelectionRange.getMax());
+                }
+                break;
+        }
 
-            mCurrentRange.lockValues();
-        } else if (mMousePosition.x >= dim.width) {
-            double currentRange = mCurrentRange.getLength();
-            if (minChanged) {
-                mCurrentRange.setMax(startX);
-                mCurrentRange.setMin(startX - currentRange);
-            } else if (maxChanged) {
-                mCurrentRange.setMax(endX);
-                mCurrentRange.setMin(endX - currentRange);
-            }
+        // Notify the observer range.
+        mObserverRange.setMax(mSelectionRange.getMax());
+        mObserverRange.setMin(mSelectionRange.getMin());
+        mObserverRange.lockValues();
+    }
 
-            mCurrentRange.lockValues();
+    private void drawCursor() {
+        Point mMousePosition = getMouseLocation();
+
+        int cursor = Cursor.DEFAULT_CURSOR;
+
+        // Detect mouse over handle
+        if (getHandleAreaForValue(mSelectionRange.getMax()).contains(mMousePosition) ||
+                getHandleAreaForValue(mSelectionRange.getMin()).contains(mMousePosition)) {
+            cursor = Cursor.W_RESIZE_CURSOR;
+        }
+        // Detect mouse between handle
+        else if (getBetweenHandlesArea().contains(mMousePosition)) {
+            cursor = Cursor.HAND_CURSOR;
+        }
+
+        if (getTopLevelAncestor().getCursor().getType() != cursor) {
+            getTopLevelAncestor().setCursor(Cursor.getPredefinedCursor(cursor));
         }
     }
 
+
     @Override
     protected void draw(Graphics2D g) {
+        if (mSelectionRange.isEmpty()) {
+            return;
+        }
+
         Dimension dim = getSize();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        // A selected region exists so render the region.
-        if (mIsSelected) {
-            g.setColor(SELECTION_BACKCOLOR);
-            float startXPos = mAxis.getPositionAtValue(mSelectionRange.getMin());
-            float endXPos = mAxis.getPositionAtValue(mSelectionRange.getMax());
+        drawCursor();
 
-            Rectangle2D.Float rect = new Rectangle2D.Float();
-            rect.setRect(startXPos, 0, endXPos - startXPos, dim.height);
-            g.fill(rect);
+        // Draw selected area.
+        g.setColor(SELECTION_BACKCOLOR);
+        float startXPos = mAxis.getPositionAtValue(mSelectionRange.getMin());
+        float endXPos = mAxis.getPositionAtValue(mSelectionRange.getMax());
+        Rectangle2D.Float rect = new Rectangle2D.Float(startXPos, 0, endXPos - startXPos,
+                dim.height);
+        g.fill(rect);
 
-            g.setColor(SELECTION_FORECOLOR);
+        // Draw vertical lines, one for each endsValue.
+        g.setColor(SELECTION_FORECOLOR);
+        Path2D.Float path = new Path2D.Float();
+        path.moveTo(startXPos, 0);
+        path.lineTo(startXPos, dim.height);
+        path.moveTo(endXPos, dim.height);
+        path.lineTo(endXPos, 0);
+        g.draw(path);
 
-            Line2D.Float line = new Line2D.Float();
-            line.setLine(startXPos, 0, startXPos, dim.height);
-            g.draw(line);
+        // Draw handles
+        drawHandleAtValue(g, mSelectionRange.getMin());
+        drawHandleAtValue(g, mSelectionRange.getMax());
+    }
 
-            line.setLine(endXPos, 0, endXPos, dim.height);
-            g.draw(line);
-        }
+    private void drawHandleAtValue(Graphics2D g, double value) {
+        g.setPaint(Color.gray);
+        RoundRectangle2D.Double handle = getHandleAreaForValue(value);
+        g.fill(handle);
+    }
+
+
+    private RoundRectangle2D.Double getHandleAreaForValue(double value) {
+        float x = mAxis.getPositionAtValue(value);
+        return new RoundRectangle2D.Double(x - handleDim.getWidth() / 2, 0, handleDim.getWidth(),
+                handleDim.getHeight(), dimRoundingCorner, dimRoundingCorner);
+    }
+
+    private Rectangle2D.Double getBetweenHandlesArea() {
+
+        // Convert range space value to component space value.
+        double startXPos = mAxis.getPositionAtValue(mSelectionRange.getMin());
+        double endXPos = mAxis.getPositionAtValue(mSelectionRange.getMax());
+
+        return new Rectangle2D.Double(startXPos - handleDim.getWidth() / 2, 0, endXPos - startXPos,
+                handleDim.getHeight());
     }
 }
