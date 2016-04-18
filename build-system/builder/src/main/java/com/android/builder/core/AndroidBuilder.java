@@ -30,6 +30,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
 import com.android.annotations.concurrency.GuardedBy;
 import com.android.builder.compiling.DependencyFileProcessor;
 import com.android.builder.core.BuildToolsServiceLoader.BuildToolServiceLoader;
@@ -105,6 +106,7 @@ import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.android.utils.LineCollector;
 import com.android.utils.Pair;
+import com.android.utils.SdkUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Functions;
 import com.google.common.base.Joiner;
@@ -113,6 +115,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Strings;
+import com.google.common.base.Supplier;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -220,6 +223,8 @@ public class AndroidBuilder {
     private List<File> mBootClasspathAll;
     @NonNull
     private List<LibraryRequest> mLibraryRequests = ImmutableList.of();
+
+    private Boolean isDexInProcess = null;
 
     /**
      * Creates an AndroidBuilder.
@@ -1533,7 +1538,7 @@ public class AndroidBuilder {
             throws ProcessException, IOException, InterruptedException {
         initDexExecutorService(dexOptions);
 
-        if (shouldDexInProcess(dexOptions)) {
+        if (shouldDexInProcess(dexOptions, mTargetInfo.getBuildTools().getRevision())) {
             dexInProcess(builder, dexOptions, processOutputHandler);
         } else {
             dexOutOfProcess(builder, dexOptions, processOutputHandler);
@@ -1625,11 +1630,89 @@ public class AndroidBuilder {
         }
     }
 
+
     /**
      * Determine whether to dex in process.
      */
-    private static boolean shouldDexInProcess(DexOptions dexOptions) {
-        return dexOptions.getDexInProcess();
+    @VisibleForTesting
+    synchronized boolean shouldDexInProcess(
+            @NonNull DexOptions dexOptions,
+            @NonNull Revision buildToolsVersion) {
+        if (isDexInProcess != null) {
+            return isDexInProcess;
+        }
+        if (!dexOptions.getDexInProcess()) {
+            isDexInProcess = false;
+            return false;
+        }
+        if (buildToolsVersion.compareTo(DexProcessBuilder.FIXED_DX_MERGER) < 0) {
+            // We substitute Dex > 23.0.2 with the local implementation.
+            mLogger.warning("Running dex in-process requires build tools %1$s.\n"
+                            + "For faster builds update this project to use the latest build tools.",
+                    DexProcessBuilder.FIXED_DX_MERGER.toShortString());
+            isDexInProcess = false;
+            return false;
+
+        }
+
+        // Requested memory for dex.
+        long requestedHeapSize = parseHeapSize(dexOptions.getJavaMaxHeapSize(), mLogger);
+        // 1G - 300M as Runtime.maxMemory() reports less than the XMX setting.
+        final long NON_DEX_HEAP_SIZE = 724 * 1024 * 1024;
+        // Approximate heap size requested.
+        long requiredHeapSizeHeuristic = requestedHeapSize + NON_DEX_HEAP_SIZE;
+        // Reported max heap size.
+        long maxMemory = Runtime.getRuntime().maxMemory();
+
+        if (requiredHeapSizeHeuristic > maxMemory) {
+            mLogger.warning("To run dex in process, the Gradle daemon needs a larger heap.\n"
+                            + "It currently has approximately %1$d MB.\n"
+                            + "For faster builds, increase the maximum heap size for the "
+                            + "Gradle daemon to more than %2$s MB.\n"
+                            + "To do this set org.gradle.jvmargs=-Xmx%2$sM in the "
+                            + "project gradle.properties.\n"
+                            + "For more information see "
+                            + "https://docs.gradle.org/current/userguide/build_environment.html",
+                    maxMemory / (1024 * 1024),
+                    requiredHeapSizeHeuristic / (1024 * 1024) + 300);
+            // Add 300M to the suggestion as Runtime.maxMemory() reports less than the XMX setting.
+            isDexInProcess = false;
+            return false;
+        }
+        isDexInProcess = true;
+        return true;
+
+    }
+
+    private static final long DEFAULT_DEX_HEAP_SIZE = 1024 * 1024 * 1024; // 1 GiB
+
+    @VisibleForTesting
+    static long parseHeapSize(@Nullable String sizeParameter, @NonNull ILogger logger) {
+        if (sizeParameter == null) {
+            return DEFAULT_DEX_HEAP_SIZE;
+        }
+        long multiplier = 1;
+        if (SdkUtils.endsWithIgnoreCase(sizeParameter, "k")) {
+            multiplier = 1024;
+        } else if (SdkUtils.endsWithIgnoreCase(sizeParameter, "m")) {
+            multiplier = 1024 * 1024;
+        } else if (SdkUtils.endsWithIgnoreCase(sizeParameter, "g")) {
+            multiplier = 1024 * 1024 * 1024;
+        }
+
+        if (multiplier != 1) {
+            sizeParameter = sizeParameter.substring(0, sizeParameter.length() - 1);
+        }
+
+        try {
+            return multiplier * Long.parseLong(sizeParameter);
+        } catch (NumberFormatException e) {
+            logger.warning(
+                    "Unable to parse dex options size parameter '%1$s', assuming %2$s bytes.",
+                    sizeParameter,
+                    DEFAULT_DEX_HEAP_SIZE);
+            return DEFAULT_DEX_HEAP_SIZE;
+        }
     }
 
     public Set<String> createMainDexList(
