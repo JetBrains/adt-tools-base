@@ -21,15 +21,15 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import java.awt.geom.Path2D;
+import java.awt.geom.Line2D;
 import java.util.ArrayList;
 import java.util.List;
 
 import gnu.trove.TFloatArrayList;
 
 /**
- * A component that draws grid lines within the given dimension.
- * The grid lines correspond to the tick markers of the {@link AxisComponent} that were added to this grid.
+ * A component that draws grid lines within the given dimension. The grid lines correspond to the
+ * tick markers of the {@link AxisComponent} that were added to this grid.
  */
 public final class GridComponent extends AnimatedComponent {
 
@@ -56,27 +56,31 @@ public final class GridComponent extends AnimatedComponent {
         g.setColor(GRID_COLOR);
 
         Dimension dim = getSize();
-        Path2D.Float path = new Path2D.Float();
+        Line2D.Float line = new Line2D.Float();
         for (final AxisComponent axis : mAxes) {
             TFloatArrayList markers = axis.getMajorMarkerPositions();
             switch (axis.getOrientation()) {
                 case LEFT:
                 case RIGHT:
                     for (int j = 0; j < markers.size(); j++) {
-                        path.moveTo(0, dim.height - markers.get(j) - 1);
-                        path.lineTo(dim.width - 1, dim.height - markers.get(j) - 1);
+                        line.setLine(0,
+                                dim.height - markers.get(j) - 1,
+                                dim.width - 1,
+                                dim.height - markers.get(j) - 1);
+                        g.draw(line);
                     }
-
                     break;
                 case TOP:
                 case BOTTOM:
                     for (int j = 0; j < markers.size(); j++) {
-                        path.moveTo(markers.get(j), 0);
-                        path.lineTo(markers.get(j), dim.height - 1);
+                        line.setLine(markers.get(j),
+                                0,
+                                markers.get(j),
+                                dim.height - 1);
+                        g.draw(line);
                     }
                     break;
             }
         }
-        g.draw(path);
     }
 }

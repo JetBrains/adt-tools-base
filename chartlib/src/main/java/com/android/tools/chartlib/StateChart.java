@@ -19,9 +19,15 @@ package com.android.tools.chartlib;
 import com.android.annotations.NonNull;
 import com.android.tools.chartlib.model.RangedDiscreteSeries;
 import com.android.tools.chartlib.model.StateChartData;
+
 import gnu.trove.TIntArrayList;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.RenderingHints;
+import java.awt.Shape;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
@@ -58,10 +64,10 @@ public class StateChart extends AnimatedComponent {
     private boolean mHovered;
 
     /**
-     * @param data The state chart data.
-     * @param colors An array of colors corresponding to the different states from the data.
-     * TODO need a better solution than passing in a Color array, as that has no correlation
-     * to the enum types used by the data.
+     * @param data   The state chart data.
+     * @param colors An array of colors corresponding to the different states from the data. TODO
+     *               need a better solution than passing in a Color array, as that has no
+     *               correlation to the enum types used by the data.
      */
     public StateChart(@NonNull StateChartData data, @NonNull Color[] colors) {
         mData = data;
@@ -107,6 +113,7 @@ public class StateChart extends AnimatedComponent {
 
     /**
      * Sets the gap between multiple data series.
+     *
      * @param gap The gap value as a percentage {0...1} of the height given to each data series
      */
     public void setHeightGap(float gap) {
@@ -116,40 +123,44 @@ public class StateChart extends AnimatedComponent {
     @Override
     protected void updateData() {
         int seriesSize = mData.series().size();
-        mPaths.clear();
-        mValues.clear();
-
+        int rectCount = 0;
         if (seriesSize > 0) {
             // TODO support adding series on the fly and interpolation.
-            double height = 1 / (float) seriesSize;
-            double gap = height * mHeightGap;
+            float height = 1f / seriesSize;
+            float gap = height * mHeightGap;
             int seriesCount = 0;
 
+            int size;
+            double min, max;
+            long x, previousX;
+            int y, previousY;
+            float startHeight;
+            RoundRectangle2D.Float rect;
             for (RangedDiscreteSeries data : mData.series()) {
-                double min = data.getXRange().getMin();
-                double max = data.getXRange().getMax();
-                int size = data.getSeries().size();
+                min = data.getXRange().getMin();
+                max = data.getXRange().getMax();
+                size = data.getSeries().size();
 
                 // Add paths as continuous blocks of rectangles.
-                int previousY = -1;
-                double previousX = -1;
+                previousY = -1;
+                previousX = -1;
 
                 for (int i = 0; i < size; i++) {
-                    double x = data.getSeries().getX(i);
-                    int y = data.getSeries().getY(i);
-                    double startHeight = 1 - (height * (seriesCount + 1));
+                    x = data.getSeries().getX(i);
+                    y = data.getSeries().getY(i);
+                    startHeight = 1 - (height * (seriesCount + 1));
 
                     if (i > 0) {
                         // Draw the previous block.
-                        RoundRectangle2D.Float rect = new RoundRectangle2D.Float();
-                        rect.setRoundRect((previousX - min) / (max - min),
-                                          startHeight + gap * 0.5,
-                                          (x - previousX) / (max - min),
-                                          height - gap,
-                                          mArcWidth,
-                                          mArcHeight);
-                        mPaths.add(rect);
-                        mValues.add(previousY);
+                        setRectangleAndValueData(rectCount,
+                                previousX,
+                                x,
+                                min,
+                                max,
+                                previousY,
+                                startHeight + gap * 0.5f,
+                                height - gap);
+                        rectCount++;
                     }
 
                     // Start a new block.
@@ -161,20 +172,25 @@ public class StateChart extends AnimatedComponent {
                         break;
                     } else if (i == size - 1) {
                         // Reached the end, assumes the last data point continues till max.
-                        RoundRectangle2D.Float rect = new RoundRectangle2D.Float();
-                        rect.setRoundRect((previousX - min) / (max - min),
-                                          startHeight + gap * 0.5,
-                                          (max - previousX) / (max - min),
-                                          height - gap,
-                                          mArcWidth,
-                                          mArcHeight);
-                        mPaths.add(rect);
-                        mValues.add(previousY);
+                        setRectangleAndValueData(rectCount,
+                                previousX,
+                                max,
+                                min,
+                                max,
+                                previousY,
+                                startHeight + gap * 0.5f,
+                                height - gap);
+                        rectCount++;
                         break;
                     }
                 }
                 seriesCount++;
             }
+        }
+
+        if (rectCount < mPaths.size() - 1) {
+            mPaths.subList(rectCount, mPaths.size()).clear();
+            mValues.remove(rectCount, mValues.size() - rectCount);
         }
     }
 
@@ -202,10 +218,41 @@ public class StateChart extends AnimatedComponent {
                 double min = data.getXRange().getMin();
                 double max = data.getXRange().getMax();
                 double range = max - min;
-                long targetX = (long)(range * mMousePosition.x / dim.width + min);
+                long targetX = (long) (range * mMousePosition.x / dim.width + min);
                 addDebugInfo("State: %s", data.getSeries().findYFromX(targetX).toString());
             }
         }
+    }
+
+    private RoundRectangle2D.Float setRectangleAndValueData(int rectCount,
+            double previousX,
+            double currentX,
+            double minX,
+            double maxX,
+            int previousY,
+            float rectY,
+            float rectHeight) {
+        RoundRectangle2D.Float rect;
+
+        //Reuse existing Rectangle objects when possible to avoid unnecessary allocations.
+        if (rectCount == mPaths.size()) {
+            rect = new RoundRectangle2D.Float();
+            mPaths.add(rect);
+            mValues.add(previousY);
+
+        } else {
+            rect = mPaths.get(rectCount);
+            mValues.set(rectCount, previousY);
+        }
+
+        rect.setRoundRect((previousX - minX) / (maxX - minX),
+                rectY,
+                (currentX - previousX) / (maxX - minX),
+                rectHeight,
+                mArcWidth,
+                mArcHeight);
+
+        return rect;
     }
 }
 

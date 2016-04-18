@@ -26,7 +26,7 @@ import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
-import java.awt.geom.Path2D;
+import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
 
 /**
@@ -158,7 +158,6 @@ public final class SelectionComponent extends AnimatedComponent {
     @Override
     protected void draw(Graphics2D g) {
         Dimension dim = getSize();
-        g.setFont(DEFAULT_FONT);
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         // A selected region exists so render the region.
@@ -172,12 +171,13 @@ public final class SelectionComponent extends AnimatedComponent {
             g.fill(rect);
 
             g.setColor(SELECTION_FORECOLOR);
-            Path2D.Float path = new Path2D.Float();
-            path.moveTo(startXPos, 0);
-            path.lineTo(startXPos, dim.height);
-            path.moveTo(endXPos, dim.height);
-            path.lineTo(endXPos, 0);
-            g.draw(path);
+
+            Line2D.Float line = new Line2D.Float();
+            line.setLine(startXPos, 0, startXPos, dim.height);
+            g.draw(line);
+
+            line.setLine(endXPos, 0, endXPos, dim.height);
+            g.draw(line);
         }
     }
 }

@@ -40,15 +40,13 @@ public class VisualTests extends JDialog {
 
     private List<VisualTest> mTests = new LinkedList<VisualTest>();
 
-    private static final int CHOREOGRAPHER_FPS = 40;
-
-    private Choreographer mChoreographer;
+    private List<Choreographer> mChoreographers = new LinkedList<Choreographer>();
 
     private VisualTests() {
         final JPanel contentPane = new JPanel(new BorderLayout());
         final JTabbedPane tabs = new JTabbedPane();
 
-        addTests(new Choreographer(CHOREOGRAPHER_FPS));
+        addTests();
         resetTabs(tabs);
 
         contentPane.setPreferredSize(new Dimension(1280, 1024));
@@ -94,14 +92,18 @@ public class VisualTests extends JDialog {
         step.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                mChoreographer.step();
+                for (Choreographer c : mChoreographers) {
+                    c.step();
+                }
             }
         });
         final JCheckBox update = new JCheckBox("Update");
         update.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                mChoreographer.setUpdate(update.isSelected());
+                for (Choreographer c : mChoreographers) {
+                    c.setUpdate(update.isSelected());
+                }
                 step.setEnabled(!update.isSelected());
             }
         });
@@ -125,18 +127,18 @@ public class VisualTests extends JDialog {
         getRootPane().setDefaultButton(close);
     }
 
-    private void addTests(Choreographer choreographer) {
-        mChoreographer = choreographer;
-        mTests.add(new AxisLineChartVisualTest(choreographer));
-        mTests.add(new StateChartVisualTest(choreographer));
-        mTests.add(new LineChartVisualTest(choreographer));
-        mTests.add(new SunburstVisualTest(choreographer));
-        mTests.add(new TimelineVisualTest(choreographer));
+    private void addTests() {
+        mTests.add(new AxisLineChartVisualTest());
+        mTests.add(new StateChartVisualTest());
+        mTests.add(new LineChartVisualTest());
+        mTests.add(new SunburstVisualTest());
+        mTests.add(new TimelineVisualTest());
     }
 
     private void resetTests() {
-        mTests = new LinkedList<VisualTest>();
-        addTests(new Choreographer(CHOREOGRAPHER_FPS));
+        mTests.clear();
+        mChoreographers.clear();
+        addTests();
     }
 
     private void resetTabs(JTabbedPane tabs) {
@@ -148,6 +150,7 @@ public class VisualTests extends JDialog {
             test.registerComponents(mComponents);
             test.initialize();
             tabs.addTab(test.getName(), test.getPanel());
+            mChoreographers.add(test.getChoreographer());
         }
         // Return to previous selected tab if there was one
         if (currentTabIndex != -1) {
