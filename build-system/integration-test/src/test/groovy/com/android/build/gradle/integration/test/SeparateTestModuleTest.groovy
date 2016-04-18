@@ -15,6 +15,8 @@
  */
 
 package com.android.build.gradle.integration.test
+
+import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.builder.model.AndroidProject
 import groovy.transform.CompileStatic
@@ -22,8 +24,12 @@ import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
+import org.junit.experimental.categories.Category
+
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 /**
  * Test for setup with 2 modules: app and test-app
+ * Checking the manifest merging for the test modules.
  */
 @CompileStatic
 class SeparateTestModuleTest {
@@ -36,6 +42,14 @@ class SeparateTestModuleTest {
 
     @BeforeClass
     static void setUp() {
+        project.getSubproject("test").getBuildFile() << """
+android {
+    defaultConfig {
+        testApplicationId 'com.example.android.testing.blueprint.test'
+        testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
+    }
+}
+"""
         models = project.executeAndReturnMultiModel("assemble")
     }
 
@@ -46,13 +60,59 @@ class SeparateTestModuleTest {
     }
 
     @Test
-    void "check model"() throws Exception {
-        // check the content of the test model.
-    }
-
-    @Test
     public void "check dependencies between tasks"() throws Exception {
         // Check :test:assembleDebug succeeds on its own, i.e. compiles the app module.
         project.execute("clean", ":test:assembleDebug", ":test:checkDependencies")
+    }
+
+    @Test
+    public void "check instrumentation read from build file"() throws Exception {
+        GradleTestProject testProject = project.getSubproject("test")
+        addInstrumentationToManifest()
+        project.execute("clean", ":test:assembleDebug")
+
+        assertThat(
+                testProject.file("build/intermediates/manifests/full/debug/AndroidManifest.xml"))
+                .containsAllOf(
+                    "package=\"com.example.android.testing.blueprint.test\"",
+                    "android:name=\"android.support.test.runner.AndroidJUnitRunner\"",
+                    "android:targetPackage=\"com.android.tests.basic\"")
+    }
+
+    @Test
+    public void "check instrumentation added"() throws Exception {
+        GradleTestProject testProject = project.getSubproject("test")
+        project.execute("clean", ":test:assembleDebug")
+
+        assertThat(
+                testProject.file("build/intermediates/manifests/full/debug/AndroidManifest.xml"))
+                .containsAllOf(
+                    "package=\"com.example.android.testing.blueprint.test\"",
+                    "<instrumentation",
+                    "android:name=\"android.support.test.runner.AndroidJUnitRunner\"",
+                    "android:targetPackage=\"com.android.tests.basic\"")
+    }
+
+    @Test
+    @Category(DeviceTests.class)
+    public void "check will run without instrumentation in manifest"() throws Exception{
+        GradleTestProject testProject = project.getSubproject("test")
+        testProject.executeConnectedCheck()
+    }
+
+    private static void addInstrumentationToManifest(){
+        GradleTestProject testProject = project.getSubproject("test")
+        testProject.file("src/main/AndroidManifest.xml").delete()
+        testProject.file("src/main/AndroidManifest.xml") << """<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+      package="com.android.tests.basic.test">
+      <uses-sdk android:minSdkVersion="16" android:targetSdkVersion="16" />
+      <instrumentation android:name="android.test.InstrumentationTestRunner"
+                       android:targetPackage="com.android.tests.basic"
+                       android:handleProfiling="false"
+                       android:functionalTest="false"
+                       android:label="Tests for com.android.tests.basic"/>
+</manifest>
+"""
     }
 }
