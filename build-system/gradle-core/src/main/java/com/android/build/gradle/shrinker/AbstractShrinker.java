@@ -32,7 +32,6 @@ import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 
@@ -43,7 +42,6 @@ import org.objectweb.asm.ClassWriter;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -89,6 +87,7 @@ public abstract class AbstractShrinker<T> {
         } else {
             return className.startsWith("java/")
                     || (className.startsWith("android/")
+                            && !className.contains("/databinding/")
                             // Match android/support and android/preview/support, possibly others.
                             && !className.contains("/support/"));
         }
