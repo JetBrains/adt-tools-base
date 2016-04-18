@@ -210,8 +210,12 @@ class MultiDexTest {
     @Test
     @Category(DeviceTests.class)
     void connectedCheck() {
-        //project.execute("assemble")
-        //adb.exclusiveAccess();
-        //project.execute("connectedCheck");
+        project.execute(
+                "assembleIcsDebug",
+                "assembleIcsDebugAndroidTest",
+                "assembleLollipopDebug",
+                "assembleLollipopDebugAndroidTest");
+        adb.exclusiveAccess();
+        project.execute("connectedCheck");
     }
 }
