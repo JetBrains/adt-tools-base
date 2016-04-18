@@ -979,7 +979,7 @@ public class AndroidBuilder {
      * @param aapt the interface to the {@code aapt} tool
      * @param aaptConfigBuilder aapt command invocation parameters; this will receive some additional
      * data (build tools, Android target and logger) and will be used to request package invocation
-     * in {@code aapt} (see {@link Aapt#makePackage(AaptPackageConfig)})
+     * in {@code aapt} (see {@link Aapt#link(AaptPackageConfig)})
      * @param enforceUniquePackageName if {@code true} method will fail if some libraries share the
      * same package name
      * @throws IOException
@@ -1001,7 +1001,7 @@ public class AndroidBuilder {
 
         AaptPackageConfig aaptConfig = aaptConfigBuilder.build();
         try {
-            aapt.makePackage(aaptConfig).get();
+            aapt.link(aaptConfig).get();
         } catch (Exception e) {
             throw new ProcessException("Failed to execute aapt", e);
         }

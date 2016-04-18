@@ -35,19 +35,19 @@ public abstract class AbstractAapt implements Aapt {
 
     @Override
     @NonNull
-    public ListenableFuture<Void> makePackage(@NonNull AaptPackageConfig config)
+    public ListenableFuture<Void> link(@NonNull AaptPackageConfig config)
             throws AaptException {
         validatePackageConfig(config);
         return makeValidatedPackage(config);
     }
 
     /**
-     * Same as {@link #makePackage(AaptPackageConfig)} but invoked only after validation has
+     * Same as {@link #link(AaptPackageConfig)} but invoked only after validation has
      * been performed.
      *
-     * @param config same as in {@link #makePackage(AaptPackageConfig)}
-     * @return same as in {@link #makePackage(AaptPackageConfig)}
-     * @throws AaptException same as in {@link #makePackage(AaptPackageConfig)}
+     * @param config same as in {@link #link(AaptPackageConfig)}
+     * @return same as in {@link #link(AaptPackageConfig)}
+     * @throws AaptException same as in {@link #link(AaptPackageConfig)}
      */
     @NonNull
     protected abstract ListenableFuture<Void> makeValidatedPackage(

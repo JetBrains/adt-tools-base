@@ -30,7 +30,7 @@ import java.io.File;
 public interface Aapt {
 
     /**
-     * Invokes {@code aapt} to package resources.
+     * Invokes {@code aapt} to link the compiled resources into the {@code ap_} file.
      *
      * @param config a package configuration
      * @return a {@code Future} to monitor execution; this {@code Future} always returns
@@ -40,7 +40,7 @@ public interface Aapt {
      * the error will be reported in the returned {@code Future}, not as an exception here
      */
     @NonNull
-    ListenableFuture<Void> makePackage(@NonNull AaptPackageConfig config) throws AaptException;
+    ListenableFuture<Void> link(@NonNull AaptPackageConfig config) throws AaptException;
 
     /**
      * Invokes {@code aapt} to compile a file.
