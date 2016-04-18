@@ -25,7 +25,6 @@ import com.android.repository.api.RepoManager;
 import com.android.repository.api.RepoPackage;
 import com.android.repository.api.Repository;
 import com.android.repository.api.RepositorySource;
-import com.android.repository.impl.generated.v1.ArchivesType;
 import com.google.common.annotations.VisibleForTesting;
 
 import java.util.List;
@@ -54,7 +53,6 @@ public abstract class RemotePackageImpl extends RepoPackageImpl implements Remot
             }
         }
         return null;
-
     }
 
     /**

@@ -41,6 +41,11 @@ import javax.xml.bind.annotation.XmlTransient;
 public abstract class Archive {
 
     /**
+     * Environment variable used to override the detected OS.
+     */
+    public static final String OS_OVERRIDE_ENV_VAR = "REPO_OS_OVERRIDE";
+
+    /**
      * The detected bit size of the JVM.
      */
     private static int sJvmBits = 0;
@@ -67,7 +72,10 @@ public abstract class Archive {
     public boolean isCompatible() {
         if (getHostOs() != null) {
             if (sOs == null) {
-                String os = System.getProperty("os.name");
+                String os = System.getenv(OS_OVERRIDE_ENV_VAR);
+                if (os == null) {
+                    os = System.getProperty("os.name");
+                }
                 if (os.startsWith("Mac")) {
                     os = "macosx";
                 } else if (os.startsWith("Windows")) {
