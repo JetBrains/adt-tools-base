@@ -105,7 +105,6 @@ public abstract class ZFileExtension {
     /**
      * The zip file has been updated on disk. The default implementation does nothing.
      *
-     * @return an optional runnable to run when notification of all listeners has ended
      * @throws IOException failed to perform update tasks
      */
     public void updated() throws IOException {

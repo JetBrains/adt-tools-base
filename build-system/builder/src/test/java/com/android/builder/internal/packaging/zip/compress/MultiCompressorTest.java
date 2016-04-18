@@ -17,6 +17,7 @@
 package com.android.builder.internal.packaging.zip.compress;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.android.builder.internal.packaging.zip.CentralDirectoryHeaderCompressInfo;
@@ -66,17 +67,17 @@ public class MultiCompressorTest {
     public void storeIsBest() throws Exception {
         File zip = new File(mTemporaryFolder.getRoot(), "test.zip");
 
-        ZFile zf = new ZFile(zip);
-        zf.add("file", new ByteArrayInputStream(new byte[0]));
-        StoredEntry entry = zf.get("file");
+        try (ZFile zf = new ZFile(zip)) {
+            zf.add("file", new ByteArrayInputStream(new byte[0]));
+            StoredEntry entry = zf.get("file");
+            assertNotNull(entry);
 
-        CentralDirectoryHeaderCompressInfo ci =
-                entry.getCentralDirectoryHeader().getCompressionInfoWithWait();
+            CentralDirectoryHeaderCompressInfo ci =
+                    entry.getCentralDirectoryHeader().getCompressionInfoWithWait();
 
-        assertEquals(0, ci.getCompressedSize());
-        assertEquals(CompressionMethod.STORE, ci.getMethod());
-
-        zf.close();
+            assertEquals(0, ci.getCompressedSize());
+            assertEquals(CompressionMethod.STORE, ci.getMethod());
+        }
     }
 
     @Test
@@ -85,17 +86,17 @@ public class MultiCompressorTest {
 
         byte[] data = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
-        ZFile zf = new ZFile(zip);
-        zf.add("file", new ByteArrayInputStream(data));
-        StoredEntry entry = zf.get("file");
+        try (ZFile zf = new ZFile(zip)) {
+            zf.add("file", new ByteArrayInputStream(data));
+            StoredEntry entry = zf.get("file");
+            assertNotNull(entry);
 
-        CentralDirectoryHeaderCompressInfo ci =
-                entry.getCentralDirectoryHeader().getCompressionInfoWithWait();
+            CentralDirectoryHeaderCompressInfo ci =
+                    entry.getCentralDirectoryHeader().getCompressionInfoWithWait();
 
-        assertEquals(CompressionMethod.DEFLATE, ci.getMethod());
-        assertTrue(ci.getCompressedSize() < data.length);
-
-        zf.close();
+            assertEquals(CompressionMethod.DEFLATE, ci.getMethod());
+            assertTrue(ci.getCompressedSize() < data.length);
+        }
     }
 
     @Test
@@ -114,14 +115,12 @@ public class MultiCompressorTest {
         resultOptions.setCompressor(new BestAndDefaultDeflateExecutorCompressor(
                 MoreExecutors.sameThreadExecutor(), resultOptions.getTracker(), ratio + 0.001));
 
-        ZFile defaultZFile = new ZFile(defaultFile);
-        ZFile resultZFile = new ZFile(resultFile, resultOptions);
-
-        defaultZFile.add("wikipedia.html", new ByteArrayInputStream(data));
-        resultZFile.add("wikipedia.html", new ByteArrayInputStream(data));
-
-        defaultZFile.close();
-        resultZFile.close();
+        try (
+                ZFile defaultZFile = new ZFile(defaultFile);
+                ZFile resultZFile = new ZFile(resultFile, resultOptions)) {
+            defaultZFile.add("wikipedia.html", new ByteArrayInputStream(data));
+            resultZFile.add("wikipedia.html", new ByteArrayInputStream(data));
+        }
 
         long defaultFileSize = defaultFile.length();
         long resultFileSize = resultFile.length();
@@ -145,14 +144,12 @@ public class MultiCompressorTest {
         resultOptions.setCompressor(new BestAndDefaultDeflateExecutorCompressor(
                 MoreExecutors.sameThreadExecutor(), resultOptions.getTracker(), ratio - 0.001));
 
-        ZFile defaultZFile = new ZFile(defaultFile);
-        ZFile resultZFile = new ZFile(resultFile, resultOptions);
-
-        defaultZFile.add("wikipedia.html", new ByteArrayInputStream(data));
-        resultZFile.add("wikipedia.html", new ByteArrayInputStream(data));
-
-        defaultZFile.close();
-        resultZFile.close();
+        try (
+                ZFile defaultZFile = new ZFile(defaultFile);
+                ZFile resultZFile = new ZFile(resultFile, resultOptions)) {
+            defaultZFile.add("wikipedia.html", new ByteArrayInputStream(data));
+            resultZFile.add("wikipedia.html", new ByteArrayInputStream(data));
+        }
 
         long defaultFileSize = defaultFile.length();
         long resultFileSize = resultFile.length();

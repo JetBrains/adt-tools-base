@@ -70,8 +70,8 @@ class FileUseMap {
         Preconditions.checkArgument(size >= 0, "size < 0");
 
         mSize = size;
-        mMap = new TreeSet<FileUseMapEntry<?>>(FileUseMapEntry.COMPARE_BY_START);
-        mFree = new TreeSet<FileUseMapEntry<?>>(FileUseMapEntry.COMPARE_BY_SIZE);
+        mMap = new TreeSet<>(FileUseMapEntry.COMPARE_BY_START);
+        mFree = new TreeSet<>(FileUseMapEntry.COMPARE_BY_SIZE);
 
         if (size > 0) {
             internalAdd(FileUseMapEntry.makeFree(0, size));

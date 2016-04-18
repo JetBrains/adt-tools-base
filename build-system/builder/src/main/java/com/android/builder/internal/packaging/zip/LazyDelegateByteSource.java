@@ -117,12 +117,12 @@ public class LazyDelegateByteSource extends CloseableByteSource {
     }
 
     @Override
-    public long copyTo(OutputStream output) throws IOException {
+    public long copyTo(@NonNull OutputStream output) throws IOException {
         return get().copyTo(output);
     }
 
     @Override
-    public long copyTo(ByteSink sink) throws IOException {
+    public long copyTo(@NonNull ByteSink sink) throws IOException {
         return get().copyTo(sink);
     }
 
@@ -132,7 +132,7 @@ public class LazyDelegateByteSource extends CloseableByteSource {
     }
 
     @Override
-    public <T> T read(ByteProcessor<T> processor) throws IOException {
+    public <T> T read(@NonNull ByteProcessor<T> processor) throws IOException {
         return get().read(processor);
     }
 
@@ -142,7 +142,7 @@ public class LazyDelegateByteSource extends CloseableByteSource {
     }
 
     @Override
-    public boolean contentEquals(ByteSource other) throws IOException {
+    public boolean contentEquals(@NonNull ByteSource other) throws IOException {
         return get().contentEquals(other);
     }
 
