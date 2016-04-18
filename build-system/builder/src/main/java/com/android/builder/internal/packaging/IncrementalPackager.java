@@ -21,8 +21,8 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.files.NativeLibraryAbiPredicate;
 import com.android.builder.files.RelativeFile;
-import com.android.builder.packaging.ApkCreatorFactory;
 import com.android.builder.packaging.ApkCreator;
+import com.android.builder.packaging.ApkCreatorFactory;
 import com.android.builder.packaging.PackagerException;
 import com.android.ide.common.res2.FileStatus;
 import com.google.common.base.Function;
@@ -214,7 +214,7 @@ public class IncrementalPackager implements Closeable {
                     archiveUpdate.getName());
         }
 
-        for (File arch : archives) {
+        for (File arch : Sets.newHashSet(archives)) {
             mApkCreator.writeZip(arch, Functions.forMap(pathNameMap),
                     Predicates.not(Predicates.in(names)));
         }
