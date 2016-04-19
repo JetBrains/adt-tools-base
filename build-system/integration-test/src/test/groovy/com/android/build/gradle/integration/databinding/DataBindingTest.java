@@ -54,6 +54,7 @@ public class DataBindingTest {
     }
     private final boolean myWithoutAdapters;
     private final boolean myLibrary;
+    private final String buildFile;
 
     public DataBindingTest(boolean library, boolean forExperimentalPlugin, boolean withoutAdapters) {
         myWithoutAdapters = withoutAdapters;
@@ -70,9 +71,12 @@ public class DataBindingTest {
             options.add("forexperimental");
         }
         project = GradleTestProject.builder()
-                .fromTestProject("databinding", options.isEmpty() ? null : Joiner.on('-').join(options))
+                .fromTestProject("databinding")
                 .useExperimentalGradleVersion(forExperimentalPlugin)
                 .create();
+        buildFile = options.isEmpty()
+                ? null
+                : "build." + Joiner.on('-').join(options) + ".gradle";
     }
 
     @Rule
@@ -85,6 +89,7 @@ public class DataBindingTest {
 
     @Test
     public void checkApkContainsDataBindingClasses() throws IOException, ProcessException {
+        project.setBuildFile(buildFile);
         project.execute("assembleDebug");
         String buildOutput = project.getStdout();
 

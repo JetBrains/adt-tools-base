@@ -61,15 +61,17 @@ public class DataBindingIncrementalTest {
     private static final String ACTIVITY_MAIN_JAVA
             = "src/main/java/android/databinding/testapp/MainActivity.java";
 
+    private final boolean experimental;
+
     @Parameterized.Parameters(name = "experimental_{0}")
     public static List<Boolean> parameters() {
         return Arrays.asList(true, false);
     }
 
     public DataBindingIncrementalTest(boolean experimental) {
+        this.experimental = experimental;
         project = GradleTestProject.builder()
-                .fromTestProject("databindingIncremental",
-                        experimental ? "forexperimental" : null)
+                .fromTestProject("databindingIncremental")
                 .useExperimentalGradleVersion(experimental)
                 .create();
     }
@@ -77,6 +79,7 @@ public class DataBindingIncrementalTest {
     @Before
     public void skipOnJack() throws Exception {
         Assume.assumeFalse(GradleTestProject.USE_JACK);
+        project.setBuildFile(experimental ? "build.forexperimental.gradle" : null);
     }
 
     @Test

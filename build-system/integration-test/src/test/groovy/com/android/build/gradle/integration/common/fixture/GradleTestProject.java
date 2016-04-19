@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.common.fixture;
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -41,6 +42,7 @@ import com.android.sdklib.internal.project.ProjectPropertiesWorkingCopy;
 import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -159,17 +161,14 @@ public class GradleTestProject implements TestRule {
 
         @Nullable
         private String name;
-
         @Nullable
         private TestProject testProject = null;
-
         @Nullable
         File sdkDir = SdkHelper.findSdkDir();
         @Nullable
         File ndkDir = findNdkDir();
         @Nullable
         private String targetGradleVersion;
-
         boolean useJack = false;
         boolean useMinify = false;
         @NonNull
@@ -207,8 +206,7 @@ public class GradleTestProject implements TestRule {
         }
 
         /**
-         * Use the gradle version for experimental plugin, but the test project do not necessarily
-         * have to use experimental plugin.
+         * Use the gradle version for experimental plugin.
          */
         public Builder useExperimentalGradleVersion(boolean mode) {
             if (mode) {
@@ -237,18 +235,10 @@ public class GradleTestProject implements TestRule {
          * Create GradleTestProject from an existing test project.
          */
         public Builder fromTestProject(@NonNull String project) {
-            return fromTestProject(project, null);
-        }
-
-        /**
-         * Create GradleTestProject from an existing test project.
-         * @param buildFileSuffix if non-null, imports files named build.suffix.gradle.
-         */
-        public Builder fromTestProject(@NonNull String project, @Nullable String buildFileSuffix) {
             AndroidTestApp app = new EmptyTestApp();
             name = project;
             File projectDir = new File(TEST_PROJECT_DIR, project);
-            addAllFiles(app, projectDir, buildFileSuffix);
+            addAllFiles(app, projectDir);
             return fromTestApp(app);
         }
 
@@ -264,7 +254,7 @@ public class GradleTestProject implements TestRule {
                         .getParentFile().getParentFile().getParentFile();
                 parentDir = new File(parentDir, "external");
                 File projectDir = new File(parentDir, project);
-                addAllFiles(app, projectDir, null /*buildFileSuffix*/);
+                addAllFiles(app, projectDir);
                 return fromTestApp(app);
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -310,6 +300,7 @@ public class GradleTestProject implements TestRule {
 
     private final String name;
     private final File outDir;
+    @Nullable
     private File testDir;
     private File sourceDir;
     private File buildFile;
@@ -411,28 +402,17 @@ public class GradleTestProject implements TestRule {
         }
     }
 
-    private static final Pattern BUILD_FILE_PATTERN = Pattern.compile("build\\.(.+\\.)?gradle");
-
     /**
      * Add all files in a directory to an AndroidTestApp.
      */
-    private static void addAllFiles(AndroidTestApp app, File projectDir, String buildFileSuffix) {
-        String buildFileNameToKeep = (buildFileSuffix != null) ?
-                "build." + buildFileSuffix + ".gradle" : "build.gradle";
+    private static void addAllFiles(AndroidTestApp app, File projectDir) {
         for (String filePath : TestFileUtils.listFiles(projectDir)) {
             File file = new File(filePath);
             try {
-                String fileName = file.getName();
-                if (BUILD_FILE_PATTERN.matcher(fileName).matches()) {
-                    if (!fileName.equals(buildFileNameToKeep)) {
-                        continue;
-                    }
-                    fileName = "build.gradle";
-                }
                 app.addFile(
                         new TestSourceFile(
                                 file.getParent(),
-                                fileName,
+                                file.getName(),
                                 Files.toByteArray(new File(projectDir, filePath))));
             } catch (IOException e) {
                 fail(e.toString());
@@ -543,6 +523,21 @@ public class GradleTestProject implements TestRule {
     public File getBuildFile() {
         return buildFile;
     }
+
+    /**
+     * Change the build file used for execute.  Should be run after @Before/@BeforeClass.
+     */
+    public void setBuildFile(@Nullable String buildFileName) {
+        Preconditions.checkNotNull(
+                buildFile,
+                "Cannot call selectBuildFile before test directory is created.");
+        if (buildFileName == null) {
+            buildFileName = "build.gradle";
+        }
+        buildFile = new File(testDir, buildFileName);
+        assertThat(buildFile).exists();
+    }
+
 
     /**
      * Return the output directory from Android plugins.
@@ -1098,6 +1093,9 @@ public class GradleTestProject implements TestRule {
             ResultHandler<Void> resultHandler) {
         syncFileSystem();
         List<String> args = Lists.newArrayListWithCapacity(5 + arguments.size());
+        if (!buildFile.getName().equals("build.gradle")) {
+            args.add("--build-file=" + buildFile.getPath());
+        }
         args.add("-i");
         args.add("-u");
         args.add("-Pcom.android.build.gradle.integratonTest.useJack=" + Boolean.toString(useJack));
