@@ -450,7 +450,6 @@ public final class AndroidManifest {
                 ":" + ATTRIBUTE_HANDLE_PROFILING;
     }
 
-
     /**
      * Returns the instrumentation label value for the manifest.
      * @param manifestFile the manifest to parse.

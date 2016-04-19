@@ -773,10 +773,14 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
 
     @NonNull
     public String getTestApplicationId(){
+        checkState(mType.isForTesting());
+
         if (!Strings.isNullOrEmpty(mMergedFlavor.getTestApplicationId())) {
             // if it's specified through build file read from there
             return mMergedFlavor.getTestApplicationId();
         } else {
+            // otherwise getApplicationId() contains rules for getting the
+            // applicationId for the test app from the tested application
             return getApplicationId();
         }
     }

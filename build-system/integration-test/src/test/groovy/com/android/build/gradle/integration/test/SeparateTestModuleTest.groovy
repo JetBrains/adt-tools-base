@@ -45,7 +45,6 @@ class SeparateTestModuleTest {
         project.getSubproject("test").getBuildFile() << """
 android {
     defaultConfig {
-        testApplicationId 'com.example.android.testing.blueprint.test'
         testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
     }
 }

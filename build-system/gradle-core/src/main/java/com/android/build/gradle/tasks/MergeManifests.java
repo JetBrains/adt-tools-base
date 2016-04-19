@@ -86,6 +86,7 @@ public class MergeManifests extends ManifestProcessorTask {
                 getReportFile());
     }
 
+    @Optional
     @InputFile
     public File getMainManifest() {
         return variantConfiguration.getMainManifest();
