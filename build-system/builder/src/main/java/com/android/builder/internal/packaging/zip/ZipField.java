@@ -154,10 +154,10 @@ abstract class ZipField {
 
         long r;
         if (mSize == 2) {
-            r = LittleEndianUtils.readUnsigned2Le(bytes.slice(mOffset, bytes.size()));
+            r = LittleEndianUtils.readUnsigned2Le(bytes.slice(mOffset, mSize));
         } else {
             Verify.verify(mSize == 4);
-            r = LittleEndianUtils.readUnsigned4Le(bytes.slice(mOffset, bytes.size()));
+            r = LittleEndianUtils.readUnsigned4Le(bytes.slice(mOffset, mSize));
         }
 
         checkVerifiesInvariants(r);
