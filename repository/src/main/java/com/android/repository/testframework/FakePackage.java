@@ -22,6 +22,7 @@ import com.android.repository.api.Channel;
 import com.android.repository.api.Dependency;
 import com.android.repository.api.License;
 import com.android.repository.api.LocalPackage;
+import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
 import com.android.repository.api.RepoPackage;
@@ -35,6 +36,7 @@ import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.ImmutableList;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 
 /**
@@ -86,6 +88,13 @@ public class FakePackage implements LocalPackage, RemotePackage {
     @Override
     public Channel getChannel() {
         return mChannel == null ? Channel.DEFAULT : mChannel;
+    }
+
+    @NonNull
+    @Override
+    public File getInstallDir(@NonNull RepoManager manager, @NonNull ProgressIndicator progress)
+            throws IOException {
+        return null;
     }
 
     public void setTypeDetails(TypeDetails details) {

@@ -19,6 +19,7 @@ package com.android.repository.impl.manager;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.api.FallbackLocalRepoLoader;
+import com.android.repository.api.License;
 import com.android.repository.api.LocalPackage;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RepoManager;
@@ -30,6 +31,7 @@ import com.android.repository.impl.meta.LocalPackageImpl;
 import com.android.repository.impl.meta.SchemaModuleUtil;
 import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
+import com.android.repository.util.InstallerUtil;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
@@ -273,7 +275,10 @@ public final class LocalRepoLoaderImpl implements LocalRepoLoader {
             fos = mFop.newFileOutputStream(packageXml);
             Repository repo = impl.createFactory().createRepositoryType();
             repo.setLocalPackage(impl);
-            repo.addLicense(impl.getLicense());
+            License license = impl.getLicense();
+            if (license != null) {
+                repo.addLicense(license);
+            }
 
             CommonFactory factory = ((CommonFactory) RepoManager.getCommonModule()
               .createLatestFactory());

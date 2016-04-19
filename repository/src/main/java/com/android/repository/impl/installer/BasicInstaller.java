@@ -17,6 +17,7 @@
 package com.android.repository.impl.installer;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.repository.api.Downloader;
 import com.android.repository.api.Installer;
 import com.android.repository.api.ProgressIndicator;
@@ -142,8 +143,11 @@ public class BasicInstaller extends AbstractPackageOperation.AbstractInstaller {
      * @see #completeInstall(RemotePackage, ProgressIndicator, RepoManager, FileOp)
      */
     @Override
-    protected boolean doCompleteInstall(@NonNull File installTempPath,
+    protected boolean doCompleteInstall(@Nullable File installTempPath,
       @NonNull File destination, @NonNull ProgressIndicator progress) {
+        if (installTempPath == null) {
+            return false;
+        }
         try {
             if (progress.isCanceled()) {
                 return false;

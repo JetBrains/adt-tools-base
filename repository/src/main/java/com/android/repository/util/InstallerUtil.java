@@ -164,23 +164,29 @@ public class InstallerUtil {
         CommonFactory factory = (CommonFactory) manager.getCommonModule().createLatestFactory();
         // Create the package.xml
         Repository repo = factory.createRepositoryType();
+        License license = p.getLicense();
+        if (license != null) {
+            repo.addLicense(license);
+        }
         RemotePackageImpl toWrite = RemotePackageImpl.create(p);
         repo.addChannel(p.getChannel());
         repo.getRemotePackage().add(toWrite);
-        File packageXml = new File(new File(packageRoot, INSTALLER_DIR_FN), PENDING_PACKAGE_XML_FN);
-        writeRepoXml(p, manager, repo, packageXml, fop, progress);
+        File packageXml = new File(packageRoot, PENDING_PACKAGE_XML_FN);
+        writeRepoXml(manager, repo, packageXml, fop, progress);
     }
 
     @Nullable
-    public static RemotePackage readPendingPackageXml(@NonNull RemotePackage p,
+    public static RemotePackage readPendingPackageXml(@NonNull File containingDir,
             @NonNull RepoManager manager, @NonNull FileOp fop,
             @NonNull ProgressIndicator progress) throws IOException {
-        File path = getInstallPath(p, manager, progress);
         Repository repo;
         try {
+            File xmlFile = new File(containingDir, PENDING_PACKAGE_XML_FN);
+            if (!fop.exists(xmlFile)) {
+                return null;
+            }
             repo = (Repository) SchemaModuleUtil.unmarshal(
-                    fop.newFileInputStream(
-                            new File(new File(path, INSTALLER_DIR_FN), PENDING_PACKAGE_XML_FN)),
+                    fop.newFileInputStream(xmlFile),
                     manager.getSchemaModules(), manager.getResourceResolver(progress), false,
                     progress);
         } catch (JAXBException e) {
@@ -209,26 +215,25 @@ public class InstallerUtil {
         CommonFactory factory = (CommonFactory) RepoManager.getCommonModule().createLatestFactory();
         // Create the package.xml
         Repository repo = factory.createRepositoryType();
-        LocalPackageImpl impl = LocalPackageImpl.create(p);
-        repo.setLocalPackage(impl);
-        File packageXml = new File(packageRoot, LocalRepoLoaderImpl.PACKAGE_XML_FN);
-        writeRepoXml(p, manager, repo, packageXml, fop, progress);
-    }
-
-    public static void writeRepoXml(@NonNull RemotePackage p, @NonNull RepoManager manager,
-            @NonNull Repository repo, @NonNull File packageXml, @NonNull FileOp fop,
-            @NonNull ProgressIndicator progress) throws IOException {
         License l = p.getLicense();
         if (l != null) {
             repo.addLicense(l);
         }
+        LocalPackageImpl impl = LocalPackageImpl.create(p);
+        repo.setLocalPackage(impl);
+        File packageXml = new File(packageRoot, LocalRepoLoaderImpl.PACKAGE_XML_FN);
+        writeRepoXml(manager, repo, packageXml, fop, progress);
+    }
+
+    public static void writeRepoXml(@NonNull RepoManager manager,
+            @NonNull Repository repo, @NonNull File packageXml, @NonNull FileOp fop,
+            @NonNull ProgressIndicator progress) throws IOException {
         OutputStream fos = fop.newFileOutputStream(packageXml);
         JAXBElement<Repository> element = ((CommonFactory) RepoManager.getCommonModule()
                 .createLatestFactory()).generateRepository(repo);
         try {
-            SchemaModuleUtil
-                    .marshal(element, p.getSource().getPermittedModules(), fos,
-                            manager.getResourceResolver(progress), progress);
+            SchemaModuleUtil.marshal(element, manager.getSchemaModules(), fos,
+                    manager.getResourceResolver(progress), progress);
         } finally {
             fos.close();
         }
