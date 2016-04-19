@@ -21,7 +21,9 @@ import com.android.build.gradle.integration.common.fixture.Adb
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.build.gradle.integration.common.utils.DexInProcessHelper
+import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.utils.FileUtils
+import com.google.common.base.Charsets
 import com.google.common.io.Files
 import groovy.transform.CompileStatic
 import org.gradle.api.JavaVersion
@@ -177,6 +179,31 @@ class MultiDexTest {
         project.executeExpectingFailure("assembleIcsDebug")
 
         assertThat(project.stderr).contains("main dex capacity exceeded")
+    }
+
+    @Test
+    public void checkManifestKeepListFilter() {
+        project.execute("collectIcsDebugMultiDexComponents");
+        assertThat(
+                Files.toString(
+                        project.file("build/intermediates/multi-dex/ics/debug/manifest_keep.txt"),
+                        Charsets.UTF_8))
+                .contains("com.android.tests.basic.Main");
+        TestFileUtils.appendToFile(project.getBuildFile(), "\n" +
+                "afterEvaluate {\n" +
+                "    project.collectIcsDebugMultiDexComponents.filter({\n" +
+                "        name, attrs -> \n" +
+                "            !name.equals(\"activity\") ||\n" +
+                "            !\"com.android.tests.basic.Main\".equals(attrs.get(\"android:name\")); })\n" +
+                "}\n");
+
+        project.execute("collectIcsDebugMultiDexComponents");
+
+        assertThat(
+                Files.toString(
+                        project.file("build/intermediates/multi-dex/ics/debug/manifest_keep.txt"),
+                        Charsets.UTF_8))
+                .doesNotContain("com.android.tests.basic.Main");
     }
 
     private void commonApkChecks(String buildType) {
