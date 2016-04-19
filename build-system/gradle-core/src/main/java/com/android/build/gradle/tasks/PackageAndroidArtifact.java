@@ -594,21 +594,22 @@ public class PackageAndroidArtifact extends IncrementalTask implements FileSuppl
          * Save all used zips in the cache.
          */
         Stream.concat(
-                changedDex.keySet().stream(),
-                Stream.concat(
-                        changedJavaResources.keySet().stream(),
-                        Stream.concat(
-                                changedAndroidResources.keySet().stream(),
-                                changedNLibs.keySet().stream())))
-                .map(RelativeFile::getBase)
-                .filter(File::isFile)
-                .forEach((File f) -> {
-                    try {
-                        cacheByPath.add(f);
-                    } catch (IOException e) {
-                        throw new IOExceptionWrapper(e);
-                    }
-                });
+            changedDex.keySet().stream(),
+            Stream.concat(
+                    changedJavaResources.keySet().stream(),
+                    Stream.concat(
+                            changedAndroidResources.keySet().stream(),
+                            changedNLibs.keySet().stream())))
+            .map(RelativeFile::getBase)
+            .filter(File::isFile)
+            .distinct()
+            .forEach((File f) -> {
+                try {
+                    cacheByPath.add(f);
+                } catch (IOException e) {
+                    throw new IOExceptionWrapper(e);
+                }
+            });
 
         // mark this APK production, this will eventually be saved when instant-run is enabled.
         // this might get overriden if the apk is signed/aligned.
