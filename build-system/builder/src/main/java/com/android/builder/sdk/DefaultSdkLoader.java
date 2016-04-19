@@ -25,14 +25,23 @@ import static com.android.SdkConstants.FN_ADB;
 import static com.android.SdkConstants.FN_ANNOTATIONS_JAR;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.repository.Revision;
+import com.android.repository.api.Channel;
+import com.android.repository.api.Installer;
 import com.android.repository.api.ProgressIndicator;
-import com.android.repository.io.FileOpUtils;
+import com.android.repository.api.RemotePackage;
+import com.android.repository.api.RepoManager;
+import com.android.repository.api.SettingsController;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.LoggerProgressIndicatorWrapper;
+import com.android.sdklib.repository.installer.SdkInstallerUtil;
+import com.android.sdklib.repository.legacy.LegacyDownloader;
+import com.android.sdklib.repository.meta.DetailsTypes;
 import com.android.utils.ILogger;
+import com.android.utils.StdLogger;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
@@ -43,6 +52,29 @@ import java.util.List;
  * Singleton-based implementation of SdkLoader for a standard SDK
  */
 public class DefaultSdkLoader implements SdkLoader {
+
+    /**
+     * Settings singleton used for the download related settings.
+     */
+    //TODO: Change settings to be per project, rather than a singleton.
+    public static final SettingsController SETTINGS = new SettingsController() {
+        @Override
+        public boolean getForceHttp() {
+            return false;
+        }
+
+        @Override
+        public void setForceHttp(boolean force) {
+            // For the moment support both HTTP and HTTPS.
+        }
+
+        @Nullable
+        @Override
+        public Channel getChannel() {
+            // For the moment support only the default channel.
+            return Channel.DEFAULT;
+        }
+    };
 
     private static DefaultSdkLoader sLoader;
 
@@ -75,7 +107,14 @@ public class DefaultSdkLoader implements SdkLoader {
             @NonNull ILogger logger) {
         init(logger);
 
-        ProgressIndicator progress = new LoggerProgressIndicatorWrapper(logger);
+        ProgressIndicator progress = new LoggerProgressIndicatorWrapper(
+          new StdLogger(StdLogger.Level.VERBOSE)) {
+            @Override
+            public void setText(@Nullable String s) {
+                super.setText(s);
+                logInfo(s);
+            }
+        };
         IAndroidTarget target = mSdkHandler.getAndroidTargetManager(progress)
                 .getTargetFromHashString(targetHash, progress);
         if (target == null) {
@@ -84,8 +123,34 @@ public class DefaultSdkLoader implements SdkLoader {
 
         BuildToolInfo buildToolInfo = mSdkHandler.getBuildToolInfo(buildToolRevision, progress);
         if (buildToolInfo == null) {
-            throw new IllegalStateException("failed to find Build Tools revision "
-                    + buildToolRevision.toString());
+            if (Boolean.getBoolean("com.android.sdkManager")) {
+                RepoManager repoManager = mSdkHandler.getSdkManager(progress);
+                LegacyDownloader downloader = new LegacyDownloader(mSdkHandler.getFileOp());
+
+                repoManager.loadSynchronously
+                        (RepoManager.DEFAULT_EXPIRATION_PERIOD_MS, progress, downloader, SETTINGS);
+
+                String path = DetailsTypes.getBuildToolsPath(buildToolRevision);
+                RemotePackage p = repoManager.getPackages().getRemotePackages().get(path);
+                if (p.getLicense() == null
+                        || p.getLicense().checkAccepted(repoManager.getLocalPath())) {
+                    Installer installer = SdkInstallerUtil.findBestInstallerFactory(p, mSdkHandler)
+                            .createInstaller(p, repoManager, mSdkHandler.getFileOp());
+                    installer.prepareInstall(downloader, progress);
+                    installer.completeInstall(progress);
+                }
+                repoManager.markInvalid();
+                repoManager.loadSynchronously(0, progress, null, null);
+                buildToolInfo = mSdkHandler.getBuildToolInfo(buildToolRevision, progress);
+                if (buildToolInfo == null) {
+                    throw new IllegalStateException("failed to find Build Tools revision "
+                            + buildToolRevision.toString());
+                }
+            } else {
+                throw new IllegalStateException("failed to find Build Tools revision "
+                        + buildToolRevision.toString());
+            }
+
         }
 
         return new TargetInfo(target, buildToolInfo);
