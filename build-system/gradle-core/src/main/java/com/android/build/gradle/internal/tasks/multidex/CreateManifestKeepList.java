@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.tasks.multidex;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -58,6 +59,8 @@ public class CreateManifestKeepList extends DefaultAndroidTask {
 
     private File proguardFile;
 
+    private Filter filter;
+
     @InputFile
     public File getManifest() {
         return manifest;
@@ -85,13 +88,37 @@ public class CreateManifestKeepList extends DefaultAndroidTask {
         this.proguardFile = proguardFile;
     }
 
+    /**
+     * Register the filter to remove classes that would otherwise be kept in the main dex by
+     * the manifest.
+     *
+     * @deprecated Will be replaced in a subsequent version
+     */
+    @Deprecated
+    public void setFilter(@NonNull Filter filter) {
+        getLogger().warn("setFilter will be replaced in a subsequent version.");
+        this.filter = filter;
+        // The filter cannot be a task input. Force the task to always run if it is set.
+        getOutputs().upToDateWhen(task -> false);
+    }
+
     @TaskAction
     public void generateKeepListFromManifest()
             throws ParserConfigurationException, SAXException, IOException {
+        generateKeepListFromManifest(getManifest(), getOutputFile(), getProguardFile(), filter);
+    }
+
+    @VisibleForTesting
+    static void generateKeepListFromManifest(
+            @NonNull File manifest,
+            @NonNull File outputFile,
+            @Nullable File proguardFile,
+            @Nullable Filter filter) throws ParserConfigurationException, SAXException,
+            IOException {
         SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
 
-        try (Writer out = new BufferedWriter(new FileWriter(getOutputFile()))) {
-            parser.parse(getManifest(), new ManifestHandler(out));
+        try (Writer out = new BufferedWriter(new FileWriter(outputFile))) {
+            parser.parse(manifest, new ManifestHandler(out, filter));
 
             // add a couple of rules that cannot be easily parsed from the manifest.
             out.write("-keep public class * extends android.app.backup.BackupAgent {\n"
@@ -127,22 +154,30 @@ public class CreateManifestKeepList extends DefaultAndroidTask {
 
     private static class ManifestHandler extends DefaultHandler {
         private Writer out;
+        private final Filter filter;
 
-        ManifestHandler(Writer out) {
+        ManifestHandler(@NonNull Writer out, @Nullable Filter filter) {
             this.out = out;
+            this.filter = filter;
         }
 
         @Override
         public void startElement(String uri, String localName, String qName, Attributes attr) {
-            // IJ thinks the qualified reference to KEEP_SPECS is not needed but Groovy needs
-            // it at runtime?!?
-            //noinspection UnnecessaryQualifiedReference
             String keepSpec = CreateManifestKeepList.KEEP_SPECS.get(qName);
-            if (!Strings.isNullOrEmpty(keepSpec)) {
+            if (!Strings.isNullOrEmpty(keepSpec) &&
+                    (filter == null || filter.keep(qName, makeAttrMap(attr)))) {
                 keepClass(attr.getValue("android:name"), keepSpec, out);
                 // Also keep the original application class when using instant-run.
                 keepClass(attr.getValue("name"), keepSpec, out);
             }
+        }
+
+        private static ImmutableMap<String, String> makeAttrMap(Attributes attr) {
+            ImmutableMap.Builder<String, String> attrMap = ImmutableMap.builder();
+            for (int i = 0; i < attr.getLength(); i++) {
+                attrMap.put(attr.getQName(i), attr.getValue(i));
+            }
+            return attrMap.build();
         }
     }
 
@@ -200,5 +235,22 @@ public class CreateManifestKeepList extends DefaultAndroidTask {
             manifestKeepListTask.proguardFile = scope.getVariantConfiguration().getMultiDexKeepProguard();
             manifestKeepListTask.outputFile = scope.getManifestKeepListFile();
         }
+    }
+
+    /**
+     * Callback to allow build authors to selectively remove things that would be generated
+     * from the manifest.
+     *
+     * <p> Registered by calling {@link #setFilter(Filter)}.
+     */
+    public interface Filter {
+        /**
+         * Returns whether to keep the referenced code in the main dex.
+         *
+         * @param name the xml tag name without the android: namespace, e.g. 'activity'
+         * @param attributes the xml attributes e.g. ['android:name':'com.example.ActivityClass']
+         * @return true if and only if the keep rules for this manifest entry should be generated.
+         */
+        boolean keep(@NonNull String name, @NonNull Map<String, String> attributes);
     }
 }
