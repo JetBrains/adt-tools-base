@@ -367,13 +367,7 @@ public class ZFile implements Closeable {
                 mMap.extend(Ints.checkedCast(rafSize));
                 readData();
 
-                notify(new IOExceptionFunction<ZFileExtension, IOExceptionRunnable>() {
-                    @Nullable
-                    @Override
-                    public IOExceptionRunnable apply(ZFileExtension input) throws IOException {
-                        return input.open();
-                    }
-                });
+                notify(ZFileExtension::open);
             }
         } catch (IOException e) {
             throw new IOException("Failed to read zip file '" + file.getAbsolutePath() + "'.", e);
@@ -718,12 +712,7 @@ public class ZFile implements Closeable {
         mEntries.remove(path);
 
         if (notify) {
-            notify(new IOExceptionFunction<ZFileExtension, IOExceptionRunnable>() {
-                @Override
-                public IOExceptionRunnable apply(ZFileExtension input) throws IOException {
-                    return input.removed(entry);
-                }
-            });
+            notify(ext -> ext.removed(entry));
         }
     }
 
@@ -739,15 +728,7 @@ public class ZFile implements Closeable {
          */
         processAllReadyEntriesWithWait();
 
-        notify(new IOExceptionFunction<ZFileExtension, IOExceptionRunnable>() {
-            @Nullable
-            @Override
-            public IOExceptionRunnable apply(@Nullable ZFileExtension input) throws IOException {
-                Verify.verifyNotNull(input);
-                assert input != null;
-                return input.beforeUpdate();
-            }
-        });
+        notify(ZFileExtension::beforeUpdate);
 
         /*
          * Process all background stuff that may be leftover by the extensions.
@@ -771,7 +752,7 @@ public class ZFile implements Closeable {
          * System does caching, but it certainly won't hurt :)
          */
         TreeMap<FileUseMapEntry<?>, StoredEntry> toWriteToStore =
-                new TreeMap<FileUseMapEntry<?>, StoredEntry>(FileUseMapEntry.COMPARE_BY_START);
+                new TreeMap<>(FileUseMapEntry.COMPARE_BY_START);
 
 
         for (FileUseMapEntry<StoredEntry> entry : mEntries.values()) {
@@ -813,16 +794,9 @@ public class ZFile implements Closeable {
 
             hasCentralDirectory = (mDirectoryEntry != null);
 
-            notify(new IOExceptionFunction<ZFileExtension, IOExceptionRunnable>() {
-                @Nullable
-                @Override
-                public IOExceptionRunnable apply(@Nullable ZFileExtension input)
-                        throws IOException {
-                    Verify.verifyNotNull(input);
-                    assert input != null;
-                    input.entriesWritten();
-                    return null;
-                }
+            notify(ext -> {
+                ext.entriesWritten();
+                return null;
             });
 
             if ((--extensionBugDetector) == 0) {
@@ -839,15 +813,9 @@ public class ZFile implements Closeable {
 
         mDirty = false;
 
-        notify(new IOExceptionFunction<ZFileExtension, IOExceptionRunnable>() {
-            @Nullable
-            @Override
-            public IOExceptionRunnable apply(@Nullable ZFileExtension input) throws IOException {
-                Verify.verifyNotNull(input);
-                assert input != null;
-                input.updated();
-                return null;
-            }
+        notify(ext -> {
+           ext.updated();
+            return null;
         });
     }
 
@@ -859,12 +827,9 @@ public class ZFile implements Closeable {
         update();
         innerClose();
 
-        notify(new IOExceptionFunction<ZFileExtension, IOExceptionRunnable>() {
-            @Override
-            public IOExceptionRunnable apply(ZFileExtension input) throws IOException {
-                input.closed();
-                return null;
-            }
+        notify(ext -> {
+           ext.closed();
+            return null;
         });
     }
 
@@ -1117,7 +1082,7 @@ public class ZFile implements Closeable {
         mRaf = null;
         mState = ZipFileState.CLOSED;
         if (mClosedControl == null) {
-            mClosedControl = new CachedFileContents<Object>(mFile);
+            mClosedControl = new CachedFileContents<>(mFile);
         }
 
         mClosedControl.closed(null);
@@ -1175,13 +1140,7 @@ public class ZFile implements Closeable {
         mState = ZipFileState.OPEN_RW;
 
         if (wasClosed) {
-            notify(new IOExceptionFunction<ZFileExtension, IOExceptionRunnable>() {
-                @Nullable
-                @Override
-                public IOExceptionRunnable apply(ZFileExtension input) throws IOException {
-                    return input.open();
-                }
-            });
+            notify(ZFileExtension::open);
         }
     }
 
@@ -1248,14 +1207,7 @@ public class ZFile implements Closeable {
             });
 
             ListenableFuture<CloseableByteSource> compressedByteSourceFuture =
-                    Futures.transform(result,
-                            new Function<CompressionResult, CloseableByteSource>() {
-                                @Override
-                                public CloseableByteSource apply(CompressionResult input) {
-                                    return input.getSource();
-                                }
-                            });
-
+                    Futures.transform(result, CompressionResult::getSource);
             LazyDelegateByteSource compressedByteSource = new LazyDelegateByteSource(
                     compressedByteSourceFuture);
             newSource = new ProcessedAndRawByteSources(source, compressedByteSource);
@@ -1394,13 +1346,7 @@ public class ZFile implements Closeable {
 
         mDirty = true;
 
-        notify(new IOExceptionFunction<ZFileExtension, IOExceptionRunnable>() {
-            @Nullable
-            @Override
-            public IOExceptionRunnable apply(ZFileExtension input) {
-                return input.added(newEntry, replaceStore);
-            }
-        });
+        notify(ext -> ext.added(newEntry, replaceStore));
     }
 
     /**

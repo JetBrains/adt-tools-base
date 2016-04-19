@@ -50,14 +50,11 @@ public abstract class ExecutorCompressor implements Compressor {
     public ListenableFuture<CompressionResult> compress(
             @NonNull final CloseableByteSource source) {
         final SettableFuture<CompressionResult> future = SettableFuture.create();
-        mExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    future.set(immediateCompress(source));
-                } catch (Exception e) {
-                    future.setException(e);
-                }
+        mExecutor.execute(() -> {
+            try {
+                future.set(immediateCompress(source));
+            } catch (Exception e) {
+                future.setException(e);
             }
         });
 

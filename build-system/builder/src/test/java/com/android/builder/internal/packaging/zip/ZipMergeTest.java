@@ -28,6 +28,7 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Predicates;
 import com.google.common.hash.Hashing;
 import com.google.common.io.ByteStreams;
+import com.google.common.io.Closer;
 import com.google.common.io.Files;
 
 import org.junit.Rule;
@@ -48,45 +49,46 @@ public class ZipMergeTest {
     public void mergeZip() throws Exception {
         File aZip = ZipTestUtils.cloneRsrc("simple-zip.zip", mTemporaryFolder, "a.zip");
 
+        CachedFileContents<Object> changeDetector;
         File merged = new File(mTemporaryFolder.getRoot(), "r.zip");
-        ZFile mergedZf = new ZFile(merged);
-        mergedZf.mergeFrom(new ZFile(aZip), Predicates.<String>alwaysFalse());
-        mergedZf.close();
+        try (ZFile mergedZf = new ZFile(merged)) {
+            mergedZf.mergeFrom(new ZFile(aZip), Predicates.<String>alwaysFalse());
+            mergedZf.close();
 
-        assertEquals(3, mergedZf.entries().size());
+            assertEquals(3, mergedZf.entries().size());
 
-        StoredEntry e0 = mergedZf.get("dir/");
-        assertNotNull(e0);
-        assertSame(StoredEntryType.DIRECTORY, e0.getType());
+            StoredEntry e0 = mergedZf.get("dir/");
+            assertNotNull(e0);
+            assertSame(StoredEntryType.DIRECTORY, e0.getType());
 
-        StoredEntry e1 = mergedZf.get("dir/inside");
-        assertNotNull(e1);
-        assertSame(StoredEntryType.FILE, e1.getType());
-        ByteArrayOutputStream e1BytesOut = new ByteArrayOutputStream();
-        ByteStreams.copy(e1.open(), e1BytesOut);
-        byte e1Bytes[] = e1BytesOut.toByteArray();
-        String e1Txt = new String(e1Bytes, Charsets.US_ASCII);
-        assertEquals("inside", e1Txt);
+            StoredEntry e1 = mergedZf.get("dir/inside");
+            assertNotNull(e1);
+            assertSame(StoredEntryType.FILE, e1.getType());
+            ByteArrayOutputStream e1BytesOut = new ByteArrayOutputStream();
+            ByteStreams.copy(e1.open(), e1BytesOut);
+            byte e1Bytes[] = e1BytesOut.toByteArray();
+            String e1Txt = new String(e1Bytes, Charsets.US_ASCII);
+            assertEquals("inside", e1Txt);
 
-        StoredEntry e2 = mergedZf.get("file.txt");
-        assertNotNull(e2);
-        assertSame(StoredEntryType.FILE, e2.getType());
-        ByteArrayOutputStream e2BytesOut = new ByteArrayOutputStream();
-        ByteStreams.copy(e2.open(), e2BytesOut);
-        byte e2Bytes[] = e2BytesOut.toByteArray();
-        String e2Txt = new String(e2Bytes, Charsets.US_ASCII);
-        assertEquals("file with more text to allow deflating to be useful", e2Txt);
+            StoredEntry e2 = mergedZf.get("file.txt");
+            assertNotNull(e2);
+            assertSame(StoredEntryType.FILE, e2.getType());
+            ByteArrayOutputStream e2BytesOut = new ByteArrayOutputStream();
+            ByteStreams.copy(e2.open(), e2BytesOut);
+            byte e2Bytes[] = e2BytesOut.toByteArray();
+            String e2Txt = new String(e2Bytes, Charsets.US_ASCII);
+            assertEquals("file with more text to allow deflating to be useful", e2Txt);
 
-        CachedFileContents<Object> changeDetector = new CachedFileContents<Object>(merged);
-        changeDetector.closed(null);
+            changeDetector = new CachedFileContents<>(merged);
+            changeDetector.closed(null);
 
-        /*
-         * Clone aZip into bZip and merge. Should have no effect on the final zip file.
-         */
-        File bZip = ZipTestUtils.cloneRsrc("simple-zip.zip", mTemporaryFolder, "b.zip");
+            /*
+             * Clone aZip into bZip and merge. Should have no effect on the final zip file.
+             */
+            File bZip = ZipTestUtils.cloneRsrc("simple-zip.zip", mTemporaryFolder, "b.zip");
 
-        mergedZf.mergeFrom(new ZFile(bZip), Predicates.<String>alwaysFalse());
-        mergedZf.close();
+            mergedZf.mergeFrom(new ZFile(bZip), Predicates.<String>alwaysFalse());
+        }
 
         assertTrue(changeDetector.isValid());
     }
@@ -97,30 +99,29 @@ public class ZipMergeTest {
 
         byte[] wBytes = Files.toByteArray(ZipTestUtils.rsrcFile("text-files/wikipedia.html"));
 
-        ZipOutputStream fooOut = new ZipOutputStream(new FileOutputStream(foo));
-        try {
+        try (ZipOutputStream fooOut = new ZipOutputStream(new FileOutputStream(foo))) {
             fooOut.putNextEntry(new ZipEntry("w"));
             fooOut.write(wBytes);
-        } finally {
-            fooOut.close();
         }
 
-        ZFile fooZf = new ZFile(foo);
-        StoredEntry wStored = fooZf.get("w");
-        assertNotNull(wStored);
-        assertTrue(wStored.getCentralDirectoryHeader().getGpBit().isDeferredCrc());
-        assertEquals(CompressionMethod.DEFLATE,
-                wStored.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
+        try (Closer closer = Closer.create()) {
+            ZFile fooZf = closer.register(new ZFile(foo));
+            StoredEntry wStored = fooZf.get("w");
+            assertNotNull(wStored);
+            assertTrue(wStored.getCentralDirectoryHeader().getGpBit().isDeferredCrc());
+            assertEquals(CompressionMethod.DEFLATE,
+                    wStored.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
 
-        ZFile merged = new ZFile(new File(mTemporaryFolder.getRoot(), "bar"));
-        merged.mergeFrom(fooZf, Predicates.<String>alwaysFalse());
-        merged.update();
+            ZFile merged = closer.register(new ZFile(new File(mTemporaryFolder.getRoot(), "bar")));
+            merged.mergeFrom(fooZf, Predicates.<String>alwaysFalse());
+            merged.update();
 
-        StoredEntry wmStored = merged.get("w");
-        assertNotNull(wmStored);
-        assertFalse(wmStored.getCentralDirectoryHeader().getGpBit().isDeferredCrc());
-        assertEquals(CompressionMethod.DEFLATE,
-                wmStored.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
+            StoredEntry wmStored = merged.get("w");
+            assertNotNull(wmStored);
+            assertFalse(wmStored.getCentralDirectoryHeader().getGpBit().isDeferredCrc());
+            assertEquals(CompressionMethod.DEFLATE,
+                    wmStored.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
+        }
     }
 
     @Test
@@ -130,8 +131,7 @@ public class ZipMergeTest {
         byte[] wBytes = Files.toByteArray(ZipTestUtils.rsrcFile("text-files/wikipedia.html"));
         byte[] lBytes = Files.toByteArray(ZipTestUtils.rsrcFile("images/lena.png"));
 
-        ZipOutputStream fooOut = new ZipOutputStream(new FileOutputStream(foo));
-        try {
+        try (ZipOutputStream fooOut = new ZipOutputStream(new FileOutputStream(foo))) {
             fooOut.putNextEntry(new ZipEntry("w"));
             fooOut.write(wBytes);
             ZipEntry le = new ZipEntry("l");
@@ -140,36 +140,36 @@ public class ZipMergeTest {
             le.setCrc(Hashing.crc32().hashBytes(lBytes).padToLong());
             fooOut.putNextEntry(le);
             fooOut.write(lBytes);
-        } finally {
-            fooOut.close();
         }
 
-        ZFile fooZf = new ZFile(foo);
-        StoredEntry wStored = fooZf.get("w");
-        assertNotNull(wStored);
-        assertEquals(CompressionMethod.DEFLATE,
-                wStored.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
-        StoredEntry lStored = fooZf.get("l");
-        assertNotNull(lStored);
-        assertEquals(CompressionMethod.STORE,
-                lStored.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
+        try (Closer closer = Closer.create()) {
+            ZFile fooZf = closer.register(new ZFile(foo));
+            StoredEntry wStored = fooZf.get("w");
+            assertNotNull(wStored);
+            assertEquals(CompressionMethod.DEFLATE,
+                    wStored.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
+            StoredEntry lStored = fooZf.get("l");
+            assertNotNull(lStored);
+            assertEquals(CompressionMethod.STORE,
+                    lStored.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
 
-        ZFile merged = new ZFile(new File(mTemporaryFolder.getRoot(), "bar"));
-        merged.mergeFrom(fooZf, Predicates.<String>alwaysFalse());
-        merged.update();
+            ZFile merged = closer.register(new ZFile(new File(mTemporaryFolder.getRoot(), "bar")));
+            merged.mergeFrom(fooZf, Predicates.<String>alwaysFalse());
+            merged.update();
 
-        StoredEntry wmStored = merged.get("w");
-        assertNotNull(wmStored);
-        assertFalse(wmStored.getCentralDirectoryHeader().getGpBit().isDeferredCrc());
-        assertEquals(CompressionMethod.DEFLATE,
-                wmStored.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
-        assertArrayEquals(wBytes, wmStored.read());
+            StoredEntry wmStored = merged.get("w");
+            assertNotNull(wmStored);
+            assertFalse(wmStored.getCentralDirectoryHeader().getGpBit().isDeferredCrc());
+            assertEquals(CompressionMethod.DEFLATE,
+                    wmStored.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
+            assertArrayEquals(wBytes, wmStored.read());
 
-        StoredEntry lmStored = merged.get("l");
-        assertNotNull(lmStored);
-        assertEquals(CompressionMethod.STORE,
-                lmStored.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
-        assertArrayEquals(lBytes, lmStored.read());
+            StoredEntry lmStored = merged.get("l");
+            assertNotNull(lmStored);
+            assertEquals(CompressionMethod.STORE,
+                    lmStored.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod());
+            assertArrayEquals(lBytes, lmStored.read());
+        }
     }
 
     @Test
@@ -179,8 +179,7 @@ public class ZipMergeTest {
         byte[] wBytes = Files.toByteArray(ZipTestUtils.rsrcFile("text-files/wikipedia.html"));
         byte[] lBytes = Files.toByteArray(ZipTestUtils.rsrcFile("images/lena.png"));
 
-        ZipOutputStream fooOut = new ZipOutputStream(new FileOutputStream(foo));
-        try {
+        try (ZipOutputStream fooOut = new ZipOutputStream(new FileOutputStream(foo))) {
             fooOut.putNextEntry(new ZipEntry("w"));
             fooOut.write(wBytes);
             ZipEntry le = new ZipEntry("l");
@@ -189,23 +188,22 @@ public class ZipMergeTest {
             le.setCrc(Hashing.crc32().hashBytes(lBytes).padToLong());
             fooOut.putNextEntry(le);
             fooOut.write(lBytes);
-        } finally {
-            fooOut.close();
         }
 
-        ZFile fooZf = new ZFile(foo);
+        try (
+                ZFile fooZf = new ZFile(foo);
+                ZFile merged = new ZFile(new File(mTemporaryFolder.getRoot(), "bar"))) {
+            merged.mergeFrom(fooZf, Predicates.<String>alwaysFalse());
+            merged.sortZipContents();
+            merged.update();
 
-        ZFile merged = new ZFile(new File(mTemporaryFolder.getRoot(), "bar"));
-        merged.mergeFrom(fooZf, Predicates.<String>alwaysFalse());
-        merged.sortZipContents();
-        merged.update();
+            StoredEntry wmStored = merged.get("w");
+            assertNotNull(wmStored);
+            assertArrayEquals(wBytes, wmStored.read());
 
-        StoredEntry wmStored = merged.get("w");
-        assertNotNull(wmStored);
-        assertArrayEquals(wBytes, wmStored.read());
-
-        StoredEntry lmStored = merged.get("l");
-        assertNotNull(lmStored);
-        assertArrayEquals(lBytes, lmStored.read());
+            StoredEntry lmStored = merged.get("l");
+            assertNotNull(lmStored);
+            assertArrayEquals(lBytes, lmStored.read());
+        }
     }
 }

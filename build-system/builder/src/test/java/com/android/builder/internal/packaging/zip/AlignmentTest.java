@@ -48,10 +48,10 @@ public class AlignmentTest {
 
         byte testBytes[] = "This is some text.".getBytes(Charsets.US_ASCII);
 
-        ZFile zf = new ZFile(newZFile);
-        zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*\\.txt"), 1024, false));
-        zf.add("test.txt", new ByteArrayInputStream(testBytes), false);
-        zf.close();
+        try (ZFile zf = new ZFile(newZFile)) {
+            zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*\\.txt"), 1024, false));
+            zf.add("test.txt", new ByteArrayInputStream(testBytes), false);
+        }
 
         byte found[] = FileUtils.readSegment(newZFile, 1024, testBytes.length);
         assertArrayEquals(testBytes, found);
@@ -63,10 +63,10 @@ public class AlignmentTest {
 
         byte testBytes[] = "This is some text.".getBytes(Charsets.US_ASCII);
 
-        ZFile zf = new ZFile(newZFile);
-        zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*\\.txt"), 1024, false));
-        zf.add("test.txt.foo", new ByteArrayInputStream(testBytes), false);
-        zf.close();
+        try (ZFile zf = new ZFile(newZFile)) {
+            zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*\\.txt"), 1024, false));
+            zf.add("test.txt.foo", new ByteArrayInputStream(testBytes), false);
+        }
 
         assertTrue(newZFile.length() < 1024);
     }
@@ -78,35 +78,36 @@ public class AlignmentTest {
         byte testBytes0[] = "Text number 1".getBytes(Charsets.US_ASCII);
         byte testBytes1[] = "Text number 2, which is actually 1".getBytes(Charsets.US_ASCII);
 
-        ZFile zf = new ZFile(newZFile);
-        zf.add("file1.txt", new ByteArrayInputStream(testBytes1), false);
-        zf.add("file0.txt", new ByteArrayInputStream(testBytes0), false);
-        zf.close();
+        try (ZFile zf = new ZFile(newZFile)) {
+            zf.add("file1.txt", new ByteArrayInputStream(testBytes1), false);
+            zf.add("file0.txt", new ByteArrayInputStream(testBytes0), false);
+            zf.close();
 
-        StoredEntry se0 = zf.get("file0.txt");
-        assertNotNull(se0);
-        long offset0 = se0.getCentralDirectoryHeader().getOffset();
+            StoredEntry se0 = zf.get("file0.txt");
+            assertNotNull(se0);
+            long offset0 = se0.getCentralDirectoryHeader().getOffset();
 
-        StoredEntry se1 = zf.get("file1.txt");
-        assertNotNull(se1);
+            StoredEntry se1 = zf.get("file1.txt");
+            assertNotNull(se1);
 
-        assertTrue(newZFile.length() < 1024);
+            assertTrue(newZFile.length() < 1024);
 
-        zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*\\.txt"), 1024, false));
-        se1.realign();
-        zf.close();
+            zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*\\.txt"), 1024, false));
+            se1.realign();
+            zf.close();
 
-        se0 = zf.get("file0.txt");
-        assertNotNull(se0);
-        assertEquals(offset0, se0.getCentralDirectoryHeader().getOffset());
+            se0 = zf.get("file0.txt");
+            assertNotNull(se0);
+            assertEquals(offset0, se0.getCentralDirectoryHeader().getOffset());
 
-        se1 = zf.get("file1.txt");
-        assertNotNull(se1);
-        assertTrue(se1.getCentralDirectoryHeader().getOffset() > 950);
-        assertTrue(se1.getCentralDirectoryHeader().getOffset() < 1024);
-        assertArrayEquals(testBytes1, FileUtils.readSegment(newZFile, 1024, testBytes1.length));
+            se1 = zf.get("file1.txt");
+            assertNotNull(se1);
+            assertTrue(se1.getCentralDirectoryHeader().getOffset() > 950);
+            assertTrue(se1.getCentralDirectoryHeader().getOffset() < 1024);
+            assertArrayEquals(testBytes1, FileUtils.readSegment(newZFile, 1024, testBytes1.length));
 
-        assertTrue(newZFile.length() > 1024);
+            assertTrue(newZFile.length() > 1024);
+        }
     }
 
     @Test
@@ -116,36 +117,38 @@ public class AlignmentTest {
         byte testBytes0[] = "Text number 1".getBytes(Charsets.US_ASCII);
         byte testBytes1[] = "Text number 2, which is actually 1".getBytes(Charsets.US_ASCII);
 
-        ZFile zf = new ZFile(newZFile);
-        zf.add("file0.txt", new ByteArrayInputStream(testBytes0), false);
-        zf.add("file1.txt", new ByteArrayInputStream(testBytes1), false);
-        zf.close();
+        try (ZFile zf = new ZFile(newZFile)) {
+            zf.add("file0.txt", new ByteArrayInputStream(testBytes0), false);
+            zf.add("file1.txt", new ByteArrayInputStream(testBytes1), false);
 
-        assertTrue(newZFile.length() < 1024);
+            zf.close();
 
-        zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*\\.txt"), 1024, false));
-        zf.realign();
-        zf.close();
+            assertTrue(newZFile.length() < 1024);
 
-        StoredEntry se0 = zf.get("file0.txt");
-        assertNotNull(se0);
-        long off0 = 1024;
+            zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*\\.txt"), 1024, false));
+            zf.realign();
+            zf.close();
 
-        StoredEntry se1 = zf.get("file1.txt");
-        assertNotNull(se1);
-        long off1 = 2048;
+            StoredEntry se0 = zf.get("file0.txt");
+            assertNotNull(se0);
+            long off0 = 1024;
 
-        /*
-         * ZFile does not guarantee any order.
-         */
-        if (se1.getCentralDirectoryHeader().getOffset() <
-                se0.getCentralDirectoryHeader().getOffset()) {
-            off0 = 2048;
-            off1 = 1024;
+            StoredEntry se1 = zf.get("file1.txt");
+            assertNotNull(se1);
+            long off1 = 2048;
+
+            /*
+             * ZFile does not guarantee any order.
+             */
+            if (se1.getCentralDirectoryHeader().getOffset() <
+                    se0.getCentralDirectoryHeader().getOffset()) {
+                off0 = 2048;
+                off1 = 1024;
+            }
+
+            assertArrayEquals(testBytes0, FileUtils.readSegment(newZFile, off0, testBytes0.length));
+            assertArrayEquals(testBytes1, FileUtils.readSegment(newZFile, off1, testBytes1.length));
         }
-
-        assertArrayEquals(testBytes0, FileUtils.readSegment(newZFile, off0, testBytes0.length));
-        assertArrayEquals(testBytes1, FileUtils.readSegment(newZFile, off1, testBytes1.length));
     }
 
     @Test
@@ -154,22 +157,23 @@ public class AlignmentTest {
 
         byte testBytes[] = "This is some text.".getBytes(Charsets.US_ASCII);
 
-        ZFile zf = new ZFile(newZFile);
-        zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*\\.txt"), 1024, false));
-        zf.add("test.txt", new ByteArrayInputStream(testBytes), false);
-        zf.close();
+        try (ZFile zf = new ZFile(newZFile)) {
+            zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*\\.txt"), 1024, false));
+            zf.add("test.txt", new ByteArrayInputStream(testBytes), false);
+            zf.close();
 
-        assertArrayEquals(testBytes, FileUtils.readSegment(newZFile, 1024, testBytes.length));
+            assertArrayEquals(testBytes, FileUtils.readSegment(newZFile, 1024, testBytes.length));
 
-        int flen = (int) newZFile.length();
+            int flen = (int) newZFile.length();
 
-        StoredEntry entry = zf.get("test.txt");
-        assertNotNull(entry);
-        assertFalse(entry.realign());
+            StoredEntry entry = zf.get("test.txt");
+            assertNotNull(entry);
+            assertFalse(entry.realign());
 
-        zf.close();
-        assertEquals(flen, (int) newZFile.length());
-        assertArrayEquals(testBytes, FileUtils.readSegment(newZFile, 1024, testBytes.length));
+            zf.close();
+            assertEquals(flen, (int) newZFile.length());
+            assertArrayEquals(testBytes, FileUtils.readSegment(newZFile, 1024, testBytes.length));
+        }
     }
 
     @Test
@@ -179,20 +183,21 @@ public class AlignmentTest {
         byte testBytes0[] = "Text number 1".getBytes(Charsets.US_ASCII);
         byte testBytes1[] = "Text number 2, which is actually 1".getBytes(Charsets.US_ASCII);
 
-        ZFile zf = new ZFile(newZFile);
-        zf.add("file0.txt", new ByteArrayInputStream(testBytes0), false);
-        zf.finishAllBackgroundTasks();
-        zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*\\.txt"), 1024, false));
-        zf.add("file1.txt", new ByteArrayInputStream(testBytes1), false);
-        zf.close();
+        try (ZFile zf = new ZFile(newZFile)) {
+            zf.add("file0.txt", new ByteArrayInputStream(testBytes0), false);
+            zf.finishAllBackgroundTasks();
+            zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*\\.txt"), 1024, false));
+            zf.add("file1.txt", new ByteArrayInputStream(testBytes1), false);
+            zf.close();
 
-        StoredEntry se0 = zf.get("file0.txt");
-        assertNotNull(se0);
-        assertEquals(0, se0.getCentralDirectoryHeader().getOffset());
+            StoredEntry se0 = zf.get("file0.txt");
+            assertNotNull(se0);
+            assertEquals(0, se0.getCentralDirectoryHeader().getOffset());
 
-        StoredEntry se1 = zf.get("file1.txt");
-        assertNotNull(se1);
-        assertArrayEquals(testBytes1, FileUtils.readSegment(newZFile, 1024, testBytes1.length));
+            StoredEntry se1 = zf.get("file1.txt");
+            assertNotNull(se1);
+            assertArrayEquals(testBytes1, FileUtils.readSegment(newZFile, 1024, testBytes1.length));
+        }
     }
 
     @Test
@@ -203,8 +208,7 @@ public class AlignmentTest {
         new Random().nextBytes(pattern);
 
         String name = "";
-        ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFile));
-        try {
+        try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFile))) {
             for (int j = 0; j < 10; j++) {
                 name = name + "a";
                 ZipEntry ze = new ZipEntry(name);
@@ -213,14 +217,12 @@ public class AlignmentTest {
                     zos.write(pattern);
                 }
             }
-        } finally {
-            zos.close();
         }
 
-        ZFile zf = new ZFile(zipFile);
-        zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*"), 10, false));
-        zf.realign();
-        zf.close();
+        try (ZFile zf = new ZFile(zipFile)) {
+            zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*"), 10, false));
+            zf.realign();
+        }
     }
 
     @Test
@@ -239,18 +241,17 @@ public class AlignmentTest {
         int uncompressedFiles = 5;
         int align = 1000;
 
-        ZFile zf = new ZFile(zipFile, new ZFileOptions());
-        zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*"), align, false));
+        try (ZFile zf = new ZFile(zipFile, new ZFileOptions())) {
+            zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*"), align, false));
 
-        for (int i = 0; i < compressedFiles; i++) {
-            zf.add("comp" + i, new ByteArrayInputStream(compressibleData1));
+            for (int i = 0; i < compressedFiles; i++) {
+                zf.add("comp" + i, new ByteArrayInputStream(compressibleData1));
+            }
+
+            for (int i = 0; i < uncompressedFiles; i++) {
+                zf.add("unc" + i, new ByteArrayInputStream(compressibleData2), false);
+            }
         }
-
-        for (int i = 0; i < uncompressedFiles; i++) {
-            zf.add("unc" + i, new ByteArrayInputStream(compressibleData2), false);
-        }
-
-        zf.close();
 
         for (int i = 0; i < uncompressedFiles; i++) {
             long start = align * (i + 1);
@@ -263,8 +264,8 @@ public class AlignmentTest {
     public void alignAppliedOnlyToAllFiles() throws Exception {
         File zipFile = new File(mTemporaryFolder.getRoot(), "test.zip");
 
-        byte[] recognizable1 = new byte[]{4, 3, 2, 1, 1, 2, 3, 4, 5, 4, 3, 3, 4, 5};
-        byte[] recognizable2 = new byte[]{9, 9, 8, 8, 7, 7, 6, 6, 7, 7, 8, 8, 9, 9};
+        byte[] recognizable1 = new byte[] { 4, 3, 2, 1, 1, 2, 3, 4, 5, 4, 3, 3, 4, 5 };
+        byte[] recognizable2 = new byte[] { 9, 9, 8, 8, 7, 7, 6, 6, 7, 7, 8, 8, 9, 9 };
 
         byte[] compressibleData1 = new byte[107];
         byte[] compressibleData2 = new byte[107];
@@ -276,18 +277,17 @@ public class AlignmentTest {
         int align = 1000;
 
         ZFileOptions options = new ZFileOptions();
-        ZFile zf = new ZFile(zipFile, options);
-        zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*"), align, true));
+        try (ZFile zf = new ZFile(zipFile, options)) {
+            zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*"), align, true));
 
-        for (int i = 0; i < compressedFiles; i++) {
-            zf.add("comp" + i, new ByteArrayInputStream(compressibleData1));
+            for (int i = 0; i < compressedFiles; i++) {
+                zf.add("comp" + i, new ByteArrayInputStream(compressibleData1));
+            }
+
+            for (int i = 0; i < uncompressedFiles; i++) {
+                zf.add("unc" + i, new ByteArrayInputStream(compressibleData2), false);
+            }
         }
-
-        for (int i = 0; i < uncompressedFiles; i++) {
-            zf.add("unc" + i, new ByteArrayInputStream(compressibleData2), false);
-        }
-
-        zf.close();
 
         CloseableByteSource source1 = options.getTracker().fromStream(new ByteArrayInputStream(
                 compressibleData1));

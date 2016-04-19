@@ -67,7 +67,6 @@ public class FileUseMapTest {
         long[] runs = new long[MAX_RUNS];
         int currentRun = 0;
 
-        long startTimeMs = System.currentTimeMillis();
         Stopwatch testStopwatch = Stopwatch.createStarted();
         while (testStopwatch.elapsed(TimeUnit.MILLISECONDS) < MAX_TEST_DURATION_MS
                 && currentRun < runs.length) {

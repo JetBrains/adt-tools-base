@@ -32,9 +32,9 @@ public class ReadWithDifferentCompressionLevelsTest {
         String rsrcPath = packagingRoot.getAbsolutePath() + "/l9.zip";
         File l9File = new File(rsrcPath);
 
-        ZFile read = new ZFile(l9File, new ZFileOptions());
-        assertNotNull(read.get("text-files/rfc2460.txt"));
-        read.close();
+        try (ZFile read = new ZFile(l9File, new ZFileOptions())) {
+            assertNotNull(read.get("text-files/rfc2460.txt"));
+        }
     }
 
     @Test
@@ -43,8 +43,8 @@ public class ReadWithDifferentCompressionLevelsTest {
         String rsrcPath = packagingRoot.getAbsolutePath() + "/l1.zip";
         File l1File = new File(rsrcPath);
 
-        ZFile read = new ZFile(l1File, new ZFileOptions());
-        assertNotNull(read.get("text-files/rfc2460.txt"));
-        read.close();
+        try (ZFile read = new ZFile(l1File, new ZFileOptions())) {
+            assertNotNull(read.get("text-files/rfc2460.txt"));
+        }
     }
 }

@@ -123,16 +123,6 @@ class GPFlags {
     }
 
     /**
-     * Creates a new default bit mask.
-     *
-     * @return the new bit mask
-     */
-    @NonNull
-    static GPFlags makeDefault() {
-        return new GPFlags(0);
-    }
-
-    /**
      * Creates a new bit mask.
      *
      * @param utf8Encoding should UTF-8 encoding be used?

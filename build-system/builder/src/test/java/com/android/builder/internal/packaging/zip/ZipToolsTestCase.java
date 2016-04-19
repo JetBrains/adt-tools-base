@@ -104,18 +104,18 @@ public abstract class ZipToolsTestCase {
 
     @Test
     public void zfileReadsZipFile() throws Exception {
-        ZFile zf = new ZFile(cloneZipFile());
+        try (ZFile zf = new ZFile(cloneZipFile())) {
+            if (mToolStoresDirectories) {
+                assertEquals(6, zf.entries().size());
+            } else {
+                assertEquals(4, zf.entries().size());
+            }
 
-        if (mToolStoresDirectories) {
-            assertEquals(6, zf.entries().size());
-        } else {
-            assertEquals(4, zf.entries().size());
+            assertFileInZip(zf, "root");
+            assertFileInZip(zf, "images/lena.png");
+            assertFileInZip(zf, "text-files/rfc2460.txt");
+            assertFileInZip(zf, "text-files/wikipedia.html");
         }
-
-        assertFileInZip(zf, "root");
-        assertFileInZip(zf, "images/lena.png");
-        assertFileInZip(zf, "text-files/rfc2460.txt");
-        assertFileInZip(zf, "text-files/wikipedia.html");
     }
 
     @Test
@@ -133,21 +133,21 @@ public abstract class ZipToolsTestCase {
         Assume.assumeTrue(new File(unzipcmd).canExecute());
 
         File zfile = new File (mTemporaryFolder.getRoot(), "zfile.zip");
-        ZFile zf = new ZFile(zfile);
+        try (ZFile zf = new ZFile(zfile)) {
 
-        if (align) {
-            zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*"), 500, false));
+            if (align) {
+                zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*"), 500, false));
+            }
+
+            zf.add("root", new FileInputStream(rsrcFile("root")));
+            zf.add("images/", new ByteArrayInputStream(new byte[0]));
+            zf.add("images/lena.png", new FileInputStream(rsrcFile("images/lena.png")));
+            zf.add("text-files/", new ByteArrayInputStream(new byte[0]));
+            zf.add("text-files/rfc2460.txt", new FileInputStream(rsrcFile(
+                    "text-files/rfc2460.txt")));
+            zf.add("text-files/wikipedia.html",
+                    new FileInputStream(rsrcFile("text-files/wikipedia.html")));
         }
-
-        zf.add("root", new FileInputStream(rsrcFile("root")));
-        zf.add("images/", new ByteArrayInputStream(new byte[0]));
-        zf.add("images/lena.png", new FileInputStream(rsrcFile("images/lena.png")));
-        zf.add("text-files/", new ByteArrayInputStream(new byte[0]));
-        zf.add("text-files/rfc2460.txt", new FileInputStream(rsrcFile(
-                "text-files/rfc2460.txt")));
-        zf.add("text-files/wikipedia.html",
-                new FileInputStream(rsrcFile("text-files/wikipedia.html")));
-        zf.close();
 
         List<String> command = Lists.newArrayList(mUnzipCommand);
         command.add(zfile.getAbsolutePath());
