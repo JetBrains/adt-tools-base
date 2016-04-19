@@ -122,15 +122,25 @@ public abstract class AbstractPackageOperation implements PackageOperation {
         @Override
         public final boolean completeInstall(@NonNull ProgressIndicator progress) {
             if (!updateStatus(InstallStatus.INSTALLING, progress)) {
+                progress.setFraction(1);
+                progress.setIndeterminate(false);
                 return false;
             }
             boolean result = false;
             File dest = null;
-            String installTempPath = mInstallProperties.getProperty(PATH_KEY);
-            if (installTempPath == null) {
-                return false;
+            if (mInstallProperties == null) {
+                try {
+                    mInstallProperties = readInstallProperties(
+                            getPackage().getInstallDir(getRepoManager(), progress));
+                } catch (IOException e) {
+                    // We won't have a temp path, but try to continue anyway
+                }
             }
-            File installTemp = new File(installTempPath);
+            String installTempPath = null;
+            if (mInstallProperties != null) {
+                installTempPath = mInstallProperties.getProperty(PATH_KEY);
+            }
+            File installTemp = installTempPath == null ? null : new File(installTempPath);
             try {
                 dest = InstallerUtil.getInstallPath(getPackage(), getRepoManager(), progress);
                 result = doCompleteInstall(installTemp, dest, progress);
@@ -154,10 +164,11 @@ public abstract class AbstractPackageOperation implements PackageOperation {
             try {
                 if (result) {
                     try {
-                        InstallerUtil
-                                .writePackageXml(getPackage(), dest, getRepoManager(), mFop,
-                                        progress);
-                        mFop.delete(installTemp);
+                        InstallerUtil.writePackageXml(getPackage(), dest, getRepoManager(), mFop,
+                                progress);
+                        if (installTemp != null) {
+                            mFop.deleteFileOrFolder(installTemp);
+                        }
                     } catch (IOException e) {
                         progress.logWarning("Failed to update package.xml", e);
                         result = false;
@@ -167,19 +178,23 @@ public abstract class AbstractPackageOperation implements PackageOperation {
                 getRepoManager().installEnded(getPackage());
                 getRepoManager().markInvalid();
             }
+            progress.setFraction(1);
+            progress.setIndeterminate(false);
             return result;
         }
 
         /**
          * Subclasses should implement this to do any completion actions required.
          *
-         * @param installTemp The temporary dir in which we prepared the install.
+         * @param installTemp The temporary dir in which we prepared the install. May be
+         *                    {@code null} if for example the installer removed the installer
+         *                    properties file, but should not be normally.
          * @param dest        The destination into which to install the package.
          * @param progress    For logging and progress indication.
          * @return {@code true} if the install succeeded, {@code false} otherwise.
          * @see #completeInstall(ProgressIndicator)
          */
-        protected abstract boolean doCompleteInstall(@NonNull File installTemp, @NonNull File dest,
+        protected abstract boolean doCompleteInstall(@Nullable File installTemp, @NonNull File dest,
                 @NonNull ProgressIndicator progress);
 
         /**
@@ -247,6 +262,31 @@ public abstract class AbstractPackageOperation implements PackageOperation {
 
         /**
          * Looks in {@code installPath} for an install properties file and returns the contents if
+         * found.
+         */
+        @Nullable
+        private Properties readInstallProperties(@NonNull File installPath) throws IOException {
+            File metaDir = new File(installPath, InstallerUtil.INSTALLER_DIR_FN);
+            if (!mFop.exists(metaDir)) {
+                return null;
+            }
+            File dataFile = new File(metaDir, INSTALL_DATA_FN);
+
+            if (mFop.exists(dataFile)) {
+                Properties installProperties = new Properties();
+                InputStream inStream = mFop.newFileInputStream(dataFile);
+                try {
+                    installProperties.load(inStream);
+                    return installProperties;
+                } finally {
+                    inStream.close();
+                }
+            }
+            return null;
+        }
+
+        /**
+         * Looks in {@code installPath} for an install properties file and returns the contents if
          * found. If not found, creates and populates it.
          *
          * @param installPath The path in which the package will be installed
@@ -255,34 +295,30 @@ public abstract class AbstractPackageOperation implements PackageOperation {
         @NonNull
         private Properties readOrCreateInstallProperties(@NonNull File installPath)
                 throws IOException {
+            Properties installProperties = readInstallProperties(installPath);
+            if (installProperties != null) {
+                return installProperties;
+            }
+            installProperties = new Properties();
+
             File metaDir = new File(installPath, InstallerUtil.INSTALLER_DIR_FN);
             if (!mFop.exists(metaDir)) {
                 mFop.mkdirs(metaDir);
             }
             File dataFile = new File(metaDir, INSTALL_DATA_FN);
-            Properties installProperties = new Properties();
-            if (mFop.exists(dataFile)) {
-                InputStream inStream = mFop.newFileInputStream(dataFile);
-                try {
-                    installProperties.load(inStream);
-                } finally {
-                    inStream.close();
-                }
-            } else {
-                File installTempPath = FileOpUtils.getNewTempDir("BasicInstaller", mFop);
-                if (installTempPath == null) {
-                    throw new IOException("Failed to create temp path");
-                }
-                mFop.mkdirs(installTempPath);
-                installProperties.put(PATH_KEY, installTempPath.getPath());
-                installProperties.put(CLASSNAME_KEY, getClass().getName());
-                mFop.createNewFile(dataFile);
-                OutputStream out = mFop.newFileOutputStream(dataFile);
-                try {
-                    installProperties.store(out, null);
-                } finally {
-                    out.close();
-                }
+            File installTempPath = FileOpUtils.getNewTempDir("BasicInstaller", mFop);
+            if (installTempPath == null) {
+                throw new IOException("Failed to create temp path");
+            }
+            mFop.mkdirs(installTempPath);
+            installProperties.put(PATH_KEY, installTempPath.getPath());
+            installProperties.put(CLASSNAME_KEY, getClass().getName());
+            mFop.createNewFile(dataFile);
+            OutputStream out = mFop.newFileOutputStream(dataFile);
+            try {
+                installProperties.store(out, null);
+            } finally {
+                out.close();
             }
             return installProperties;
         }
@@ -321,9 +357,6 @@ public abstract class AbstractPackageOperation implements PackageOperation {
                 return null;
             }
             mFop.deleteOnExit(installTempPath);
-            InstallerUtil
-                    .writePendingPackageXml(mPackage, installPath, getRepoManager(), mFop,
-                            progress);
             return installTempPath;
         }
     }
