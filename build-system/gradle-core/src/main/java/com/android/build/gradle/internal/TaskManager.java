@@ -2816,11 +2816,14 @@ public abstract class TaskManager {
     }
 
     public void createCheckManifestTask(@NonNull TaskFactory tasks, @NonNull VariantScope scope) {
-        final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
         scope.setCheckManifestTask(
-                androidTasks.create(tasks, new CheckManifest.ConfigAction(scope)));
+                androidTasks.create(tasks, getCheckManifestConfig(scope)));
         scope.getCheckManifestTask().dependsOn(tasks, scope.getPreBuildTask());
         scope.getPrepareDependenciesTask().dependsOn(tasks, scope.getCheckManifestTask());
+    }
+
+    protected CheckManifest.ConfigAction getCheckManifestConfig(@NonNull VariantScope scope){
+        return new CheckManifest.ConfigAction(scope, false);
     }
 
     @NonNull

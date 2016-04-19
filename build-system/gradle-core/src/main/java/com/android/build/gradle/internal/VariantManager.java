@@ -519,13 +519,16 @@ public class VariantManager implements VariantModel {
             @NonNull List<? extends ProductFlavor> productFlavorList) {
         BuildTypeData buildTypeData = buildTypes.get(buildType.getName());
 
-        GradleVariantConfiguration variantConfig = GradleVariantConfiguration.create(
-                defaultConfigData.getProductFlavor(),
-                defaultConfigData.getSourceSet(),
-                buildTypeData.getBuildType(),
-                buildTypeData.getSourceSet(),
-                variantFactory.getVariantConfigurationType(),
-                signingOverride);
+
+        GradleVariantConfiguration variantConfig =
+                GradleVariantConfiguration.getBuilderForExtension(extension).create(
+                        defaultConfigData.getProductFlavor(),
+                        defaultConfigData.getSourceSet(),
+                        buildTypeData.getBuildType(),
+                        buildTypeData.getSourceSet(),
+                        variantFactory.getVariantConfigurationType(),
+                        signingOverride
+                );
 
         if (variantConfig.getType() == LIBRARY && variantConfig.getJackOptions().isEnabled()) {
             project.getLogger().warn(
@@ -685,7 +688,6 @@ public class VariantManager implements VariantModel {
     public TestVariantData createTestVariantData(
             BaseVariantData testedVariantData,
             VariantType type) {
-        CoreProductFlavor defaultConfig = defaultConfigData.getProductFlavor();
         CoreBuildType buildType = testedVariantData.getVariantConfiguration().getBuildType();
         BuildTypeData buildTypeData = buildTypes.get(buildType.getName());
 
@@ -698,14 +700,10 @@ public class VariantManager implements VariantModel {
         // but it's never the case on defaultConfigData
         // The constructor does a runtime check on the instances so we should be safe.
         @SuppressWarnings("ConstantConditions")
-        GradleVariantConfiguration testVariantConfig = GradleVariantConfiguration.createTestConfig(
-                testedVariantData.getVariantConfiguration(),
-                defaultConfig,
-                defaultConfigData.getTestSourceSet(type),
-                buildType,
-                buildTypeData.getTestSourceSet(type),
-                type,
-                signingOverride);
+        GradleVariantConfiguration testVariantConfig =
+                testedConfig.getMyTestConfig(
+                        defaultConfigData.getTestSourceSet(type),
+                        buildTypeData.getTestSourceSet(type), type);
 
 
         for (CoreProductFlavor productFlavor : productFlavorList) {
