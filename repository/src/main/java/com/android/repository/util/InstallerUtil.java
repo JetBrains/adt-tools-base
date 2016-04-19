@@ -322,11 +322,6 @@ public class InstallerUtil {
             Collection<Dependency> currentDependencies = currentPackage.getAllDependencies();
             for (Dependency d : currentDependencies) {
                 String dependencyPath = d.getPath();
-                if (seen.contains(dependencyPath)) {
-                    allDependencies.put(dependencyPath, d);
-                    continue;
-                }
-                seen.add(dependencyPath);
                 UpdatablePackage updatableDependency = consolidatedPackages.get(dependencyPath);
                 if (updatableDependency == null) {
                     logger.logWarning(
@@ -340,11 +335,15 @@ public class InstallerUtil {
                 if (r != null) {
                     requiredMinRevision = r.toRevision();
                 }
-                if ((requiredMinRevision == null && localDependency != null) ||
-                        (requiredMinRevision != null && localDependency != null &&
-                                requiredMinRevision.compareTo(localDependency.getVersion()) <= 0)) {
+                if (localDependency != null && (requiredMinRevision == null ||
+                        requiredMinRevision.compareTo(localDependency.getVersion()) <= 0)) {
                     continue;
                 }
+                if (seen.contains(dependencyPath)) {
+                    allDependencies.put(dependencyPath, d);
+                    continue;
+                }
+                seen.add(dependencyPath);
                 RemotePackage remoteDependency = updatableDependency.getRemote();
                 if (remoteDependency == null || (requiredMinRevision != null
                         && requiredMinRevision.compareTo(remoteDependency.getVersion()) > 0)) {

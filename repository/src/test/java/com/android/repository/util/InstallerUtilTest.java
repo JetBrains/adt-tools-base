@@ -335,6 +335,62 @@ public class InstallerUtilTest extends TestCase {
     }
 
     /**
+     * {r1, r2}->r3. Request both r1 and r2. R3 is installed, so only r1 and r2 are returned.
+     */
+    public void testMultiRequestSatisfied() throws Exception {
+        RemotePackage r1 = new FakePackage("r1", new Revision(1),
+                                           ImmutableList.<Dependency>of(new FakeDependency("r3")));
+        RemotePackage r2 = new FakePackage("r2", new Revision(1),
+                                           ImmutableList.<Dependency>of(new FakeDependency("r3")));
+        LocalPackage r3 = new FakePackage("r3", new Revision(1), NONE);
+
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+        ImmutableList<RemotePackage> request = ImmutableList.of(r1, r2);
+        List<RemotePackage> result =
+          InstallerUtil.computeRequiredPackages(request,
+                                                new RepositoryPackagesBuilder()
+                                                  .addRemote(r1)
+                                                  .addRemote(r2)
+                                                  .addLocal(r3)
+                                                  .build(), progress);
+        assertEquals(2, result.size());
+        assertTrue(result.get(0).equals(r1) || result.get(1).equals(r1));
+        assertTrue(result.get(0).equals(r2) || result.get(1).equals(r2));
+
+        progress.assertNoErrorsOrWarnings();
+    }
+
+    /**
+     * {r1, r2}->r3. Request both r1 and r2. R3 is installed, but r2 requires an update.
+     * All should be returned, with r3 before r2.
+     */
+    public void testMultiRequestHalfSatisfied() throws Exception {
+        RemotePackage r1 = new FakePackage("r1", new Revision(1),
+                ImmutableList.of(new FakeDependency("r3")));
+        RemotePackage r2 = new FakePackage("r2", new Revision(1),
+                ImmutableList.of(new FakeDependency("r3", 2, 0, 0)));
+        RemotePackage r3 = new FakePackage("r3", new Revision(2), NONE);
+        LocalPackage l3 = new FakePackage("r3", new Revision(1), NONE);
+
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+        ImmutableList<RemotePackage> request = ImmutableList.of(r1, r2);
+        List<RemotePackage> result =
+                InstallerUtil.computeRequiredPackages(request,
+                        new RepositoryPackagesBuilder()
+                                .addRemote(r1)
+                                .addRemote(r2)
+                                .addRemote(r3)
+                                .addLocal(l3)
+                                .build(), progress);
+
+        assertTrue(result.get(0).equals(r3) || result.get(1).equals(r3));
+        assertTrue(result.get(0).equals(r1) || result.get(1).equals(r1));
+        assertTrue(result.get(1).equals(r2) || result.get(2).equals(r2));
+
+        progress.assertNoErrorsOrWarnings();
+    }
+
+    /**
      * r1->bogus. Null should be returned, and there should be an error.
      */
     public void testBogus() throws Exception {
