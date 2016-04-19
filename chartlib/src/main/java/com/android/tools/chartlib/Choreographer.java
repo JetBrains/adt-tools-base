@@ -16,6 +16,8 @@
 
 package com.android.tools.chartlib;
 
+import com.android.annotations.NonNull;
+
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
@@ -39,7 +41,7 @@ public class Choreographer implements ActionListener {
     private JComponent mParentContainer;
 
     public Choreographer(int fps) {
-        mComponents = new LinkedList<Animatable>();
+        mComponents = new LinkedList<>();
         mUpdate = true;
         mTimer = new Timer(1000 / fps, this);
         mTimer.start();
@@ -58,6 +60,10 @@ public class Choreographer implements ActionListener {
 
     public void register(Animatable animatable) {
         mComponents.add(animatable);
+    }
+
+    public void register(@NonNull List<Animatable> animatables) {
+        mComponents.addAll(animatables);
     }
 
     @Override

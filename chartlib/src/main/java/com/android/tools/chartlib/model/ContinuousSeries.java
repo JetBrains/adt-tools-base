@@ -28,11 +28,10 @@ public class ContinuousSeries {
     @NonNull
     private final TLongArrayList mY = new TLongArrayList();
 
-    long mMaxY;
+    private long mMaxY;
 
     public void add(long x, long y) {
         mMaxY = Math.max(mMaxY, y);
-
         mX.add(x);
         mY.add(y);
     }
