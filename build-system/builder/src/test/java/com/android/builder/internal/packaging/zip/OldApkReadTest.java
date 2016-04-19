@@ -34,9 +34,9 @@ public class OldApkReadTest {
         File apkFile = new File(apkPath);
         assertTrue(apkFile.exists());
 
-        ZFile zf = new ZFile(apkFile, new ZFileOptions());
-        StoredEntry classesDex = zf.get("classes.dex");
-        assertNotNull(classesDex);
-        zf.close();
+        try (ZFile zf = new ZFile(apkFile, new ZFileOptions())) {
+            StoredEntry classesDex = zf.get("classes.dex");
+            assertNotNull(classesDex);
+        }
     }
 }

@@ -53,26 +53,24 @@ public class StoredEntry {
     /**
      * Comparator that compares instances of {@link StoredEntry} by their names.
      */
-    static Comparator<StoredEntry> COMPARE_BY_NAME = new Comparator<StoredEntry>() {
-        @Override
-        public int compare(@Nullable StoredEntry o1, @Nullable StoredEntry o2) {
-            if (o1 == null && o2 == null) {
-                return 0;
-            }
+    static final Comparator<StoredEntry> COMPARE_BY_NAME =
+            (o1, o2) -> {
+                if (o1 == null && o2 == null) {
+                    return 0;
+                }
 
-            if (o1 == null) {
-                return -1;
-            }
+                if (o1 == null) {
+                    return -1;
+                }
 
-            if (o2 == null) {
-                return -1;
-            }
+                if (o2 == null) {
+                    return 1;
+                }
 
-            String name1 = o1.getCentralDirectoryHeader().getName();
-            String name2 = o2.getCentralDirectoryHeader().getName();
-            return name1.compareTo(name2);
-        }
-    };
+                String name1 = o1.getCentralDirectoryHeader().getName();
+                String name2 = o2.getCentralDirectoryHeader().getName();
+                return name1.compareTo(name2);
+            };
 
     /**
      * Signature of the data descriptor.

@@ -24,8 +24,6 @@ import com.android.builder.internal.packaging.zip.utils.CloseableByteSource;
 import com.google.common.io.Closer;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.concurrent.Executor;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
@@ -69,16 +67,8 @@ public class DeflateExecutionCompressor extends ExecutorCompressor {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         Deflater deflater = new Deflater(mLevel, true);
 
-        Closer closer = Closer.create();
-        try {
-            InputStream dataStream = closer.register(source.openStream());
-
-            DeflaterOutputStream dos = closer.register(new DeflaterOutputStream(output, deflater));
+        try (DeflaterOutputStream dos = new DeflaterOutputStream(output, deflater)) {
             dos.write(source.read());
-        } catch (IOException e) {
-            throw closer.rethrow(e);
-        } finally {
-            closer.close();
         }
 
         CloseableByteSource result = mTracker.fromStream(output);

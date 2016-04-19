@@ -18,7 +18,6 @@ package com.android.builder.internal.packaging.zip;
 
 import com.android.annotations.NonNull;
 import com.android.builder.internal.packaging.zip.utils.CloseableByteSource;
-import com.google.common.io.ByteSource;
 import com.google.common.util.concurrent.ListenableFuture;
 
 /**
