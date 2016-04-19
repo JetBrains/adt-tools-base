@@ -1139,10 +1139,15 @@ public class PackageAndroidArtifact extends IncrementalTask implements FileSuppl
 
         private final VariantOutputScope scope;
         private final DexPackagingPolicy dexPackagingPolicy;
+        private final boolean instantRunEnabled;
 
-        public ConfigAction(VariantOutputScope scope, DexPackagingPolicy dexPackagingPolicy) {
+        public ConfigAction(
+                @NonNull VariantOutputScope scope,
+                @NonNull DexPackagingPolicy dexPackagingPolicy,
+                boolean instantRunEnabled) {
             this.scope = scope;
             this.dexPackagingPolicy = dexPackagingPolicy;
+            this.instantRunEnabled = instantRunEnabled;
         }
 
         @NonNull
@@ -1181,6 +1186,7 @@ public class PackageAndroidArtifact extends IncrementalTask implements FileSuppl
 
             if (config.isMinifyEnabled()
                     && config.getBuildType().isShrinkResources()
+                    && !instantRunEnabled
                     && !config.getJackOptions().isEnabled()) {
                 ConventionMappingHelper.map(packageApp, "resourceFile",
                         (Callable<File>) scope::getCompressedResourceFile);
