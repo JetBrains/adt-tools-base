@@ -19,6 +19,7 @@ package com.android.builder.internal.packaging.zip;
 import com.android.annotations.NonNull;
 import com.google.common.base.Charsets;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
@@ -44,10 +45,30 @@ public class EncodeUtils {
      * @return the decode file name
      */
     @NonNull
+    public static String decode(@NonNull ByteBuffer bytes, int length, @NonNull GPFlags flags)
+            throws IOException {
+        if (bytes.remaining() < length) {
+            throw new IOException("Only " + bytes.remaining() + " bytes exist in the buffer, but "
+                    + "length is " + length + ".");
+        }
+
+        Charset charset = flagsCharset(flags);
+        byte[] stringBytes = new byte[length];
+        bytes.get(stringBytes);
+        return charset.decode(ByteBuffer.wrap(stringBytes)).toString();
+    }
+
+    /**
+     * Decodes a file name.
+     *
+     * @param data the raw data
+     * @param flags the zip entry flags
+     * @return the decode file name
+     */
+    @NonNull
     public static String decode(@NonNull byte[] data, @NonNull GPFlags flags) {
         Charset charset = flagsCharset(flags);
-        ByteBuffer wrapped = ByteBuffer.wrap(data);
-        return charset.decode(wrapped).toString();
+        return charset.decode(ByteBuffer.wrap(data)).toString();
     }
 
     /**

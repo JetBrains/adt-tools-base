@@ -22,11 +22,11 @@ import com.android.builder.internal.packaging.zip.utils.LittleEndianUtils;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Verify;
 import com.google.common.collect.Sets;
-import com.google.common.io.ByteSource;
 import com.google.common.primitives.Ints;
 
 import java.io.IOException;
-import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Set;
 
 /**
@@ -138,26 +138,42 @@ abstract class ZipField {
     }
 
     /**
+     * Advances the position in the provided byte buffer by the size of this field.
+     *
+     * @param bytes the byte buffer; at the end of the method its position will be greater by
+     * the size of this field
+     * @throws IOException failed to advance the buffer
+     */
+    void skip(@NonNull ByteBuffer bytes) throws IOException {
+        if (bytes.remaining() < mSize) {
+            throw new IOException("Cannot skip field " + mName + " because only "
+                    + bytes.remaining() + " remain in the buffer.");
+        }
+
+        bytes.position(bytes.position() + mSize);
+    }
+
+    /**
      * Reads a field value.
      *
-     * @param bytes the byte source with the record data
+     * @param bytes the byte buffer with the record data; after this method finishes, the buffer
+     * will be positioned at the first byte after the field
      * @return the value of the field
      * @throws IOException failed to read the field
      */
-    long read(@NonNull ByteSource bytes) throws IOException {
-        Preconditions.checkNotNull(bytes, "bytes == null");
-
-        if (bytes.size() < mSize + mOffset) {
-            throw new IOException("Not enough data: expected to read " + mSize +  " bytes at "
-                    + "offset " + mOffset + ".");
+    long read(@NonNull ByteBuffer bytes) throws IOException {
+        if (bytes.remaining() < mSize) {
+            throw new IOException("Cannot skip field " + mName + " because only "
+                    + bytes.remaining() + " remain in the buffer.");
         }
+
+        bytes.order(ByteOrder.LITTLE_ENDIAN);
 
         long r;
         if (mSize == 2) {
-            r = LittleEndianUtils.readUnsigned2Le(bytes.slice(mOffset, mSize));
+            r = LittleEndianUtils.readUnsigned2Le(bytes);
         } else {
-            Verify.verify(mSize == 4);
-            r = LittleEndianUtils.readUnsigned4Le(bytes.slice(mOffset, mSize));
+            r =  LittleEndianUtils.readUnsigned4Le(bytes);
         }
 
         checkVerifiesInvariants(r);
@@ -165,13 +181,14 @@ abstract class ZipField {
     }
 
     /**
-     * Verifies that the field has the expected value. The field must have been created with the
-     * constructor that defines the expected value.
+     * Verifies that the field at the current buffer position has the expected value. The field
+     * must have been created with the constructor that defines the expected value.
      *
-     * @param bytes the byte source with the record data
+     * @param bytes the byte buffer with the record data; after this method finishes, the buffer
+     * will be positioned at the first byte after the field
      * @throws IOException failed to read the field or the field does not have the expected value
      */
-    void verify(@NonNull ByteSource bytes) throws IOException {
+    void verify(@NonNull ByteBuffer bytes) throws IOException {
         Preconditions.checkState(mExpected != null, "mExpected == null");
         verify(bytes, mExpected);
     }
@@ -179,12 +196,13 @@ abstract class ZipField {
     /**
      * Verifies that the field has an expected value.
      *
-     * @param bytes the byte source with the record data
+     * @param bytes the byte buffer with the record data; after this method finishes, the buffer
+     * will be positioned at the first byte after the field
      * @param expected the value we expect the field to have; if this field has invariants, the
      * value must verify them
      * @throws IOException failed to read the data or the field does not have the expected value
      */
-    void verify(@NonNull ByteSource bytes, long expected) throws IOException {
+    void verify(@NonNull ByteBuffer bytes, long expected) throws IOException {
         checkVerifiesInvariants(expected);
         long r = read(bytes);
         if (r != expected) {
@@ -196,12 +214,12 @@ abstract class ZipField {
     /**
      * Writes the value of the field.
      *
-     * @param output where to write the field; the field will be written at the beginning of the
-     * stream
+     * @param output where to write the field; the field will be written at the current position
+     * of the buffer
      * @param value the value to write
      * @throws IOException failed to write the value in the stream
      */
-    void write(@NonNull OutputStream output, long value) throws IOException {
+    void write(@NonNull ByteBuffer output, long value) throws IOException {
         checkVerifiesInvariants(value);
 
         Preconditions.checkArgument(value >= 0, "value (%s) < 0", value);
@@ -220,11 +238,11 @@ abstract class ZipField {
     /**
      * Writes the value of the field. The field must have an expected value set in the constructor.
      *
-     * @param output where to write the field; the field will be written at the beginning of the
-     * stream
+     * @param output where to write the field; the field will be written at the current position
+     * of the buffer
      * @throws IOException failed to write the value in the stream
      */
-    void write(@NonNull OutputStream output) throws IOException {
+    void write(@NonNull ByteBuffer output) throws IOException {
         Preconditions.checkState(mExpected != null, "mExpected == null");
         write(output, mExpected);
     }
