@@ -260,14 +260,14 @@ public class AndroidGradleOptions {
 
     @Nullable
     private static String getString(@NonNull Project project, String propertyName) {
-        return (String) project.getProperties().get(propertyName);
+        return project.hasProperty(propertyName) ? (String) project.property(propertyName) : null;
     }
 
     @Nullable
     private static Integer getInteger(@NonNull Project project, String propertyName) {
         if (project.hasProperty(propertyName)) {
             try {
-                return Integer.parseInt(project.getProperties().get(propertyName).toString());
+                return Integer.parseInt(project.property(propertyName).toString());
             } catch (NumberFormatException e) {
                 throw new RuntimeException("Property " + propertyName + " needs to be an integer.");
             }
@@ -280,7 +280,7 @@ public class AndroidGradleOptions {
     private static Float getFloat(@NonNull Project project, String propertyName) {
         if (project.hasProperty(propertyName)) {
             try {
-                return Float.parseFloat(project.getProperties().get(propertyName).toString());
+                return Float.parseFloat(project.property(propertyName).toString());
             } catch (NumberFormatException e) {
                 throw new RuntimeException("Property " + propertyName + " needs to be a float.");
             }
@@ -300,7 +300,7 @@ public class AndroidGradleOptions {
             @NonNull String propertyName,
             boolean defaultValue) {
         if (project.hasProperty(propertyName)) {
-            Object value = project.getProperties().get(propertyName);
+            Object value = project.property(propertyName);
             if (value instanceof String) {
                 return Boolean.parseBoolean((String) value);
             } else if (value instanceof Boolean) {
