@@ -1,4 +1,4 @@
-package com.example.bendowski.vectors;
+package com.example.test.vectors;
 
 import android.app.Activity;
 import android.os.Bundle;
