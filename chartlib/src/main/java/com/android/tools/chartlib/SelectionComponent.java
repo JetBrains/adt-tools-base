@@ -16,7 +16,6 @@
 package com.android.tools.chartlib;
 
 import com.android.annotations.NonNull;
-import com.android.tools.chartlib.model.Range;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -59,16 +58,16 @@ public final class SelectionComponent extends AnimatedComponent {
     private final Range mGlobalRange;
 
     /**
-     * The current viewing range which gets shifted when user drags
-     * the selection box beyond the component's dimension.
+     * The current viewing range which gets shifted when user drags the selection box beyond the
+     * component's dimension.
      */
     @NonNull
     private final Range mCurrentRange;
 
     public SelectionComponent(@NonNull AxisComponent axis,
-                              @NonNull Range selectionRange,
-                              @NonNull Range globalRange,
-                              @NonNull Range currentRange) {
+            @NonNull Range selectionRange,
+            @NonNull Range globalRange,
+            @NonNull Range currentRange) {
         mAxis = axis;
         mSelectionRange = selectionRange;
         mGlobalRange = globalRange;
@@ -117,7 +116,7 @@ public final class SelectionComponent extends AnimatedComponent {
             return;
         }
 
-        // If user is actively selecting, update the selection range based on the last mouse position.
+        // If user is selecting, update the selection range based on the last mouse position.
         Dimension dim = getSize();
         double selectionEndX = mAxis.getValueAtPosition(mMousePosition.x);
         double startX = Math.max(mGlobalRange.getMin(), Math.min(mSelectionStartX, selectionEndX));
@@ -131,6 +130,8 @@ public final class SelectionComponent extends AnimatedComponent {
             mSelectionRange.setMax(endX);
         }
 
+        mSelectionRange.lockValues();
+
         // Extends current range if it does not contain the whole selection range.
         // This happens when the user drags the selection box beyond the current dimension.
         if (mMousePosition.x < 0) {
@@ -142,8 +143,9 @@ public final class SelectionComponent extends AnimatedComponent {
                 mCurrentRange.setMin(endX);
                 mCurrentRange.setMax(endX + currentRange);
             }
-        }
-        else if (mMousePosition.x >= dim.width) {
+
+            mCurrentRange.lockValues();
+        } else if (mMousePosition.x >= dim.width) {
             double currentRange = mCurrentRange.getLength();
             if (minChanged) {
                 mCurrentRange.setMax(startX);
@@ -152,6 +154,8 @@ public final class SelectionComponent extends AnimatedComponent {
                 mCurrentRange.setMax(endX);
                 mCurrentRange.setMin(endX - currentRange);
             }
+
+            mCurrentRange.lockValues();
         }
     }
 

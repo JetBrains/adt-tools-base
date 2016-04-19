@@ -17,6 +17,7 @@
 package com.android.tools.chartlib.model;
 
 import com.android.annotations.NonNull;
+import com.android.tools.chartlib.Range;
 
 import java.awt.BasicStroke;
 import java.awt.Stroke;
@@ -95,5 +96,4 @@ public class RangedContinuousSeries {
     public boolean isStepped() {
         return mIsStepped;
     }
-
 }

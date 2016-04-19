@@ -16,7 +16,6 @@
 package com.android.tools.chartlib;
 
 import com.android.annotations.NonNull;
-import com.android.tools.chartlib.model.Range;
 import gnu.trove.TFloatArrayList;
 
 import java.awt.*;
@@ -155,6 +154,7 @@ public final class AxisComponent extends AnimatedComponent {
 
     /**
      * @param range A Range object this AxisComponent listens to for the min/max values.
+     * @param globalRange The global min/max range.
      * @param label The label/name of the axis.
      * @param orientation The orientation of the axis.
      * @param startMargin Space (in pixels) before the start of the axis.
@@ -162,7 +162,8 @@ public final class AxisComponent extends AnimatedComponent {
      * @param showMinMax If true, min/max values are shown on the axis.
      * @param domain Domain used for formatting the tick markers.
      */
-    public AxisComponent(@NonNull Range range, @NonNull Range globalRange, @NonNull String label, @NonNull AxisOrientation orientation,
+    public AxisComponent(@NonNull Range range, @NonNull Range globalRange,
+                         @NonNull String label, @NonNull AxisOrientation orientation,
                          int startMargin, int endMargin, boolean showMinMax, @NonNull BaseAxisDomain domain) {
         mRange = range;
         mGlobalRange = globalRange;

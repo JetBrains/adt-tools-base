@@ -17,6 +17,17 @@
 package com.android.tools.chartlib;
 
 interface Animatable {
-
+    /**
+     * Triggered by the {@link Choreographer} to give an {@link Animatable} a chance to
+     * update/interpolate any components or data based on the current frame rate.
+     */
     void animate(float frameLength);
+
+    /**
+     * Triggered by the {@link Choreographer} after all components have finished animating.
+     * This allows an {@link Animatable} to read any data modified by other components
+     * during {@link #animate(float)}.
+     */
+    default void postAnimate() {
+    }
 }

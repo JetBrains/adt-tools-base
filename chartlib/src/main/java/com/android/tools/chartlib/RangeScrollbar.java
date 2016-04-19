@@ -16,7 +16,6 @@
 package com.android.tools.chartlib;
 
 import com.android.annotations.NonNull;
-import com.android.tools.chartlib.model.Range;
 
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -37,8 +36,8 @@ import javax.swing.JScrollBar;
  * +---------------------------------------------------+
  *
  * A. Range data's global minimum -> {@link DefaultBoundedRangeModel#min}
- * B. {@link Range#mMin} -> BoundedRangeModel's min
- * C. {@link Range#mMax} -> BoundedRangeModel's min + extent
+ * B. {@link Range#mCurrentMin} -> BoundedRangeModel's min
+ * C. {@link Range#mCurrentMax} -> BoundedRangeModel's min + extent
  * D. Range data's global maximum -> BoundedRangeModel's max
  */
 public final class RangeScrollbar extends JScrollBar implements Animatable {
@@ -60,17 +59,10 @@ public final class RangeScrollbar extends JScrollBar implements Animatable {
      */
     private static final float STREAMING_POSITION_THRESHOLD = 0.1f;
 
-    /**
-     * Percentage threshold to clamp zooming.
-     */
-    private static final float ZOOMING_THRESHOLD = 0.001f;
-
     @NonNull
     private ScrollingMode mScrollingMode;
 
     private boolean mStableScrolling;
-
-    private double mZoomDelta;
 
     @NonNull
     private final Range mGlobalRange;
@@ -84,13 +76,11 @@ public final class RangeScrollbar extends JScrollBar implements Animatable {
         mGlobalRange = globalRange;
         mRange = range;
         mScrollingMode = ScrollingMode.STREAMING;
-        mZoomDelta = 0;
 
         addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
                 mScrollingMode = ScrollingMode.SCROLLING;
-                mZoomDelta = 0;
             }
 
             @Override
@@ -113,37 +103,20 @@ public final class RangeScrollbar extends JScrollBar implements Animatable {
      * Adjust zoom by a percentage of the current view range.
      */
     public void zoom(float percentage) {
-        mZoomDelta += (mRange.getMax() - mRange.getMin()) * percentage;
+        double zoomDelta = mRange.getLength() * percentage;
+        double targetMin = Math.max(mGlobalRange.getMin(), mRange.getMin() - zoomDelta);
+        double targetMax = Math.min(mGlobalRange.getMax(), mRange.getMax() + zoomDelta);
+        mRange.setMinTarget(targetMin);
+        mRange.setMaxTarget(targetMax);
     }
 
     @Override
     public void animate(float frameLength) {
-        // Perform zooming.
-        if (mZoomDelta != 0) {
-            double min = mRange.getMin();
-            double max = mRange.getMax();
-
-            double zoomedMin, zoomedMax;
-            // Only keep lerping until we've reached an insignificant mZoomDelta value.
-            if (Math.abs(mZoomDelta / (max - min)) > ZOOMING_THRESHOLD) {
-                zoomedMax = Choreographer.lerp(max, max + mZoomDelta, 0.95f, frameLength);
-                zoomedMin = Choreographer.lerp(min, min - mZoomDelta, 0.95f, frameLength);
-            } else {
-                zoomedMax = max + mZoomDelta;
-                zoomedMin = min - mZoomDelta;
-            }
-
-            // Do not zoom past global min/max.
-            mRange.setMin(Math.max(mGlobalRange.getMin(), zoomedMin));
-            mRange.setMax(Math.min(mGlobalRange.getMax(), zoomedMax));
-
-            // Update mZoomDelta
-            mZoomDelta = max + mZoomDelta - zoomedMax;
-        }
-
-        // Sticks to the range's global max if we are in STREAMING mode.
         if (mScrollingMode == ScrollingMode.STREAMING) {
-            mRange.setMax(mGlobalRange.getMax());
+            if (!mRange.setMax(mGlobalRange.getMax())) {
+                // If something else has finalized the range, quit streaming mode.
+                mScrollingMode = ScrollingMode.VIEWING;
+            }
         }
 
         // Keeps the scrollbar visuals in sync with the global and current data range.
@@ -198,8 +171,8 @@ public final class RangeScrollbar extends JScrollBar implements Animatable {
                 double newMin = (globalRange * adjustedValue / scrollbarRange) + mGlobalRange.getMin();
                 mRange.setMin(newMin);
                 mRange.setMax(newMin + currentRange);
+                mRange.lockValues();
                 break;
-
         }
     }
 

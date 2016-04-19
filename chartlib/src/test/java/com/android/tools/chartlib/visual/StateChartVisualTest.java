@@ -21,8 +21,8 @@ import com.android.tools.chartlib.AnimatedComponent;
 import com.android.tools.chartlib.AnimatedTimeRange;
 import com.android.tools.chartlib.AxisComponent;
 import com.android.tools.chartlib.Choreographer;
+import com.android.tools.chartlib.Range;
 import com.android.tools.chartlib.StateChart;
-import com.android.tools.chartlib.model.Range;
 import com.android.tools.chartlib.model.RangedDiscreteSeries;
 import com.android.tools.chartlib.model.StateChartData;
 
@@ -77,13 +77,11 @@ public class StateChartVisualTest extends VisualTest {
 
     private static final int AXIS_SIZE = 100;
 
-    private final long mStartTimeMs;
-
     @NonNull
     private final Range mXRange;
 
     @NonNull
-    private final AnimatedTimeRange mAnimatedRange;
+    private final AnimatedTimeRange mAnimatedTimeRange;
 
     @NonNull
     private final StateChart mNetworkStatusChart;
@@ -100,9 +98,9 @@ public class StateChartVisualTest extends VisualTest {
     public StateChartVisualTest() {
         mNetworkData = new StateChartData();
         mRadioData = new StateChartData();
-        mStartTimeMs = System.currentTimeMillis();
-        mXRange = new Range(0, 10000);
-        mAnimatedRange = new AnimatedTimeRange(mXRange, mStartTimeMs);
+        long now = System.currentTimeMillis();
+        mXRange = new Range(now, now + 60000);
+        mAnimatedTimeRange = new AnimatedTimeRange(mXRange, 0);
 
         mNetworkData.add(new RangedDiscreteSeries(MockFruitState.class, mXRange));
         mRadioData.add(new RangedDiscreteSeries(MockStrengthState.class, mXRange));
@@ -110,7 +108,8 @@ public class StateChartVisualTest extends VisualTest {
         mNetworkStatusChart = new StateChart(mNetworkData, MOCK_COLORS_1);
         mRadioStateChart = new StateChart(mRadioData, MOCK_COLORS_2);
 
-        mChoreographer.register(mAnimatedRange);
+        mChoreographer.register(mAnimatedTimeRange);
+        mChoreographer.register(mXRange);
         mChoreographer.register(mNetworkStatusChart);
         mChoreographer.register(mRadioStateChart);
     }
@@ -148,7 +147,7 @@ public class StateChartVisualTest extends VisualTest {
                 super.run();
                 try {
                     while (true) {
-                        long now = System.currentTimeMillis() - mStartTimeMs;
+                        long now = System.currentTimeMillis();
 
                         int v = networkVariance.get();
                         for (RangedDiscreteSeries series : mNetworkData.series()) {
@@ -255,7 +254,7 @@ public class StateChartVisualTest extends VisualTest {
         controls.add(VisualTests.createCheckbox("Shift xRange Min", new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent itemEvent) {
-                mAnimatedRange.setShift(itemEvent.getStateChange() == ItemEvent.SELECTED);
+                mAnimatedTimeRange.setShift(itemEvent.getStateChange() == ItemEvent.SELECTED);
             }
         }));
         controls.add(

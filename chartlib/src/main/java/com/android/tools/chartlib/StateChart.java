@@ -20,8 +20,6 @@ import com.android.annotations.NonNull;
 import com.android.tools.chartlib.model.RangedDiscreteSeries;
 import com.android.tools.chartlib.model.StateChartData;
 
-import gnu.trove.TIntArrayList;
-
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -34,6 +32,8 @@ import java.awt.event.MouseMotionAdapter;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.RoundRectangle2D;
 import java.util.ArrayList;
+
+import gnu.trove.TIntArrayList;
 
 /**
  * A chart component that renders series of state change events as rectangles.

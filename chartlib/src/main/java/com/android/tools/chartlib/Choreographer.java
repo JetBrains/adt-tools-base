@@ -106,6 +106,10 @@ public class Choreographer implements ActionListener {
             component.animate(frameLength);
         }
 
+        for (Animatable component : mComponents) {
+            component.postAnimate();
+        }
+
         if (mParentContainer != null) {
             // If a parent container is assigned, calling repaint on it
             // would force repaint on all its descendants in the correct z-order.
