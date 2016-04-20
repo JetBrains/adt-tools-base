@@ -25,6 +25,7 @@ import com.android.build.gradle.internal.dependency.NativeDependencyResolveResul
 import com.android.build.gradle.internal.dependency.NativeLibraryArtifact;
 import com.android.build.gradle.internal.model.NativeLibraryFactory;
 import com.android.build.gradle.internal.model.NativeLibraryImpl;
+import com.android.build.gradle.ndk.internal.NativeCompilerArgsUtil;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
@@ -122,15 +123,14 @@ public class ComponentNativeLibraryFactory implements NativeLibraryFactory {
         }
 
         NdkOptions targetOptions = abiOptions.get(abi.getName());
-        List<String> cFlags = nativeBinary.get().getcCompiler().getArgs();
-        List<String> cppFlags = nativeBinary.get().getCppCompiler().getArgs();
+        Iterable<String> cFlags = nativeBinary.get().getcCompiler().getArgs();
+        Iterable<String> cppFlags = nativeBinary.get().getCppCompiler().getArgs();
         if (targetOptions != null) {
             if (!targetOptions.getCFlags().isEmpty()) {
-                cFlags = ImmutableList.copyOf(Iterables.concat(cFlags, targetOptions.getCFlags()));
+                cFlags = Iterables.concat(cFlags, targetOptions.getCFlags());
             }
             if (!targetOptions.getCppFlags().isEmpty()) {
-                cppFlags = ImmutableList.copyOf(
-                        Iterables.concat(cppFlags, targetOptions.getCppFlags()));
+                cppFlags = Iterables.concat(cppFlags, targetOptions.getCppFlags());
             }
         }
 
@@ -149,8 +149,8 @@ public class ComponentNativeLibraryFactory implements NativeLibraryFactory {
                 ndkHandler.getStlIncludes(ndkConfig.getStl(), ndkConfig.getStlVersion(), abi),
                 Collections.<String>emptyList(),  /*cDefines*/
                 Collections.<String>emptyList(),  /*cppDefines*/
-                cFlags,
-                cppFlags,
+                NativeCompilerArgsUtil.transform(cFlags),
+                NativeCompilerArgsUtil.transform(cppFlags),
                 debuggableLibDir));
     }
 
