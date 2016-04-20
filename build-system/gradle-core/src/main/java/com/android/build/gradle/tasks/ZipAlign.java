@@ -3,7 +3,7 @@ package com.android.build.gradle.tasks;
 import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.internal.annotations.ApkFile;
+import com.android.build.gradle.internal.annotations.PackageFile;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
@@ -59,10 +59,9 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
 
     private File outputFile;
 
-    @ApkFile
+    @PackageFile
     private File inputFile;
 
-    @ApkFile
     private File zipAlignExe;
 
     private InstantRunBuildContext instantRunBuildContext;
@@ -164,8 +163,8 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
                 @Override
                 public File call() throws Exception {
                     // wire to the output of the package task.
-                    PackageAndroidArtifact packageAndroidArtifactTask = ((ApkVariantOutputData) scope
-                            .getVariantOutputData()).packageAndroidArtifactTask;
+                    PackageAndroidArtifact packageAndroidArtifactTask =
+                            scope.getVariantOutputData().packageAndroidArtifactTask;
                     return packageAndroidArtifactTask == null
                             ? scope.getPackageApk()
                             : packageAndroidArtifactTask.getOutputFile();

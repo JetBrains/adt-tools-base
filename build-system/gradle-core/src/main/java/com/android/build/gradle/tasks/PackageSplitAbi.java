@@ -151,8 +151,7 @@ public class PackageSplitAbi extends SplitRelatedTask {
                         isJniDebuggable(),
                         getSigningConfig(),
                         outFile,
-                        getMinSdkVersion(),
-                        incrementalDir);
+                        getMinSdkVersion());
                 unprocessedSplits.remove(matcher.group(1));
             }
         }
