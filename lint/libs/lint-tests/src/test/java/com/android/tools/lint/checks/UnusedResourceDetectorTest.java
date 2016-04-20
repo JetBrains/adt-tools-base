@@ -553,6 +553,40 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+
+    public void testThemeFromLayout() throws Exception {
+        mEnableIds = false;
+        assertEquals("No warnings.",
+
+                lintProject(
+                        xml("res/values/styles.xml", ""
+                                + "<resources>\n"
+                                + "    <style name=\"InlineActionView\" />\n"
+                                + "    <style name=\"InlineActionView.Like\">\n"
+                                + "    </style>\n"
+                                + "</resources>\n"),
+                        xml("res/layout/main.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    android:orientation=\"vertical\" android:layout_width=\"match_parent\"\n"
+                                + "    android:layout_height=\"match_parent\">\n"
+                                + "\n"
+                                + "    <Button\n"
+                                + "        android:layout_width=\"wrap_content\"\n"
+                                + "        android:layout_height=\"wrap_content\"\n"
+                                + "        style=\"@style/InlineActionView.Like\"\n"
+                                + "        android:layout_gravity=\"center_horizontal\" />\n"
+                                + "</LinearLayout>"),
+                        java("test/my/pkg/MyTest.java", ""
+                                + "package my.pkg;\n"
+                                + "class MyTest {\n"
+                                + "    public void test() {\n"
+                                + "        System.out.println(R.layout.main);\n"
+                                + "    }\n"
+                                + "}\n")
+                ));
+    }
+
     @Override
     protected TestLintClient createClient() {
         if (!getName().startsWith("testDynamicResources")) {
