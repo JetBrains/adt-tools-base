@@ -149,6 +149,7 @@ public class InstantRunSlicer extends Transform {
         if (isIncremental) {
             sliceIncrementally(inputs, outputProvider, slices);
         } else {
+            FileUtils.delete(InstantRunBuildType.RESTART.getIncrementalChangesFile(variantScope));
             slice(inputs, outputProvider, slices);
             combineAllJars(inputs, outputProvider);
         }
