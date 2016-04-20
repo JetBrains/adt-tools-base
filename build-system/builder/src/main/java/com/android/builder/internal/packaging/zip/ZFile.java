@@ -19,10 +19,10 @@ package com.android.builder.internal.packaging.zip;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.internal.packaging.zip.utils.ByteTracker;
-import com.android.builder.internal.utils.CachedFileContents;
 import com.android.builder.internal.packaging.zip.utils.CloseableByteSource;
 import com.android.builder.internal.packaging.zip.utils.LittleEndianUtils;
 import com.android.builder.internal.packaging.zip.utils.RandomAccessFileUtils;
+import com.android.builder.internal.utils.CachedFileContents;
 import com.android.builder.internal.utils.IOExceptionFunction;
 import com.android.builder.internal.utils.IOExceptionRunnable;
 import com.android.utils.FileUtils;
@@ -51,6 +51,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -533,7 +534,8 @@ public class ZFile implements Closeable {
                  */
 
                 foundEocdSignature = endIdx;
-                ByteSource eocdBytes = ByteSource.wrap(last).slice(foundEocdSignature, last.length);
+                ByteBuffer eocdBytes =
+                        ByteBuffer.wrap(last, foundEocdSignature, last.length - foundEocdSignature);
 
                 try {
                     eocd = new Eocd(eocdBytes);
@@ -574,7 +576,7 @@ public class ZFile implements Closeable {
         if (zip64LocatorStart >= 0) {
             byte possibleZip64Locator[] = new byte[4];
             directFullyRead(zip64LocatorStart, possibleZip64Locator);
-            if (LittleEndianUtils.readUnsigned4Le(ByteSource.wrap(possibleZip64Locator)) ==
+            if (LittleEndianUtils.readUnsigned4Le(ByteBuffer.wrap(possibleZip64Locator)) ==
                     ZIP64_EOCD_LOCATOR_SIGNATURE) {
                 throw new IOException("Zip64 EOCD locator found but Zip64 format is not "
                         + "supported.");
@@ -615,7 +617,7 @@ public class ZFile implements Closeable {
         byte[] directoryData = new byte[Ints.checkedCast(dirSize)];
         directFullyRead(eocd.getDirectoryOffset(), directoryData);
 
-        CentralDirectory directory = CentralDirectory.makeFromData(ByteSource.wrap(directoryData),
+        CentralDirectory directory = CentralDirectory.makeFromData(ByteBuffer.wrap(directoryData),
                 eocd.getTotalRecords(), this);
         if (eocd.getDirectorySize() > 0) {
             mDirectoryEntry = mMap.add(eocd.getDirectoryOffset(), eocd.getDirectoryOffset()

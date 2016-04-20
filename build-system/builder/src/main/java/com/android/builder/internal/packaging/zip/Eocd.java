@@ -22,11 +22,11 @@ import com.android.builder.internal.utils.IOExceptionWrapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Verify;
-import com.google.common.io.ByteSource;
 import com.google.common.primitives.Ints;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 /**
  * End Of Central Directory record in a zip file.
@@ -119,11 +119,11 @@ class Eocd {
      * Creates a new EOCD, reading it from a byte source. This method will parse the byte source
      * and obtain the EOCD. It will check that the byte source starts with the EOCD signature.
      *
-     * @param bytes the byte source with the EOCD data
+     * @param bytes the byte buffer with the EOCD data; when this method finishes, the byte
+     * buffer's position will have moved to the end of the EOCD
      * @throws IOException failed to read information or the EOCD data is corrupt or invalid
      */
-    Eocd(@NonNull ByteSource bytes) throws IOException {
-        Preconditions.checkNotNull(bytes, "bytes == null");
+    Eocd(@NonNull ByteBuffer bytes) throws IOException {
 
         /*
          * Read the EOCD record.
@@ -135,7 +135,7 @@ class Eocd {
         long totalRecords2 = F_RECORDS_TOTAL.read(bytes);
         long directorySize = F_CD_SIZE.read(bytes);
         long directoryOffset = F_CD_OFFSET.read(bytes);
-        long commentSize = F_COMMENT_SIZE.read(bytes);
+        int commentSize = Ints.checkedCast(F_COMMENT_SIZE.read(bytes));
 
         /*
          * Some sanity checks.
@@ -151,12 +151,13 @@ class Eocd {
         mDirectorySize = directorySize;
         mDirectoryOffset = directoryOffset;
 
-        if (bytes.size() < F_COMMENT_SIZE.endOffset() + commentSize) {
+        if (bytes.remaining() < commentSize) {
             throw new IOException("Corrupt EOCD record: not enough data for comment (comment "
                     + "size is " + commentSize + ").");
         }
 
-        mComment = bytes.slice(F_COMMENT_SIZE.endOffset(), commentSize).read();
+        mComment = new byte[commentSize];
+        bytes.get(mComment);
         mByteSupplier = new CachedSupplier<byte[]>() {
             @Override
             protected byte[] compute() throws IOException {
@@ -251,7 +252,7 @@ class Eocd {
      */
     @NonNull
     private byte[] computeByteRepresentation() throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteBuffer out = ByteBuffer.allocate(F_COMMENT_SIZE.endOffset() + mComment.length);
 
         F_SIGNATURE.write(out);
         F_NUMBER_OF_DISK.write(out);
@@ -261,8 +262,8 @@ class Eocd {
         F_CD_SIZE.write(out, mDirectorySize);
         F_CD_OFFSET.write(out, mDirectoryOffset);
         F_COMMENT_SIZE.write(out, mComment.length);
-        out.write(mComment);
+        out.put(mComment);
 
-        return out.toByteArray();
+        return out.array();
     }
 }

@@ -27,9 +27,9 @@ import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
 import com.google.common.primitives.Ints;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.Comparator;
 
 /**
@@ -391,15 +391,18 @@ public class StoredEntry {
 
         CentralDirectoryHeaderCompressInfo compressInfo = mCdh.getCompressionInfoWithWait();
 
-        ByteSource byteSource = ByteSource.wrap(localHeader);
-        F_LOCAL_SIGNATURE.verify(byteSource);
-        F_VERSION_EXTRACT.verify(byteSource, compressInfo.getVersionExtract());
-        F_GP_BIT.verify(byteSource, mCdh.getGpBit().getValue());
-        F_METHOD.verify(byteSource, compressInfo.getMethod().methodCode);
+        ByteBuffer bytes = ByteBuffer.wrap(localHeader);
+        F_LOCAL_SIGNATURE.verify(bytes);
+        F_VERSION_EXTRACT.verify(bytes, compressInfo.getVersionExtract());
+        F_GP_BIT.verify(bytes, mCdh.getGpBit().getValue());
+        F_METHOD.verify(bytes, compressInfo.getMethod().methodCode);
 
-        if (!mFile.areTimestampsIgnored()) {
-            F_LAST_MOD_TIME.verify(byteSource, mCdh.getLastModTime());
-            F_LAST_MOD_DATE.verify(byteSource, mCdh.getLastModDate());
+        if (mFile.areTimestampsIgnored()) {
+            F_LAST_MOD_TIME.skip(bytes);
+            F_LAST_MOD_DATE.skip(bytes);
+        } else {
+            F_LAST_MOD_TIME.verify(bytes, mCdh.getLastModTime());
+            F_LAST_MOD_DATE.verify(bytes, mCdh.getLastModDate());
         }
 
         /*
@@ -407,14 +410,18 @@ public class StoredEntry {
          * File Header must be ignored and their actual values must be read from the Data
          * Descriptor following the contents of this entry. See readDataDescriptorRecord().
          */
-        if (!mCdh.getGpBit().isDeferredCrc()) {
-            F_CRC32.verify(byteSource, mCdh.getCrc32());
-            F_COMPRESSED_SIZE.verify(byteSource, compressInfo.getCompressedSize());
-            F_UNCOMPRESSED_SIZE.verify(byteSource, mCdh.getUncompressedSize());
+        if (mCdh.getGpBit().isDeferredCrc()) {
+            F_CRC32.skip(bytes);
+            F_COMPRESSED_SIZE.skip(bytes);
+            F_UNCOMPRESSED_SIZE.skip(bytes);
+        } else {
+            F_CRC32.verify(bytes, mCdh.getCrc32());
+            F_COMPRESSED_SIZE.verify(bytes, compressInfo.getCompressedSize());
+            F_UNCOMPRESSED_SIZE.verify(bytes, mCdh.getUncompressedSize());
         }
 
-        F_FILE_NAME_LENGTH.verify(byteSource, mCdh.getEncodedFileName().length);
-        long extraLength = F_EXTRA_LENGTH.read(byteSource);
+        F_FILE_NAME_LENGTH.verify(bytes, mCdh.getEncodedFileName().length);
+        long extraLength = F_EXTRA_LENGTH.read(bytes);
         long fileNameStart = mCdh.getOffset() + F_EXTRA_LENGTH.endOffset();
         byte[] fileNameData = new byte[mCdh.getEncodedFileName().length];
         mFile.directFullyRead(fileNameStart, fileNameData);
@@ -448,15 +455,16 @@ public class StoredEntry {
         byte ddData[] = new byte[DataDescriptorType.DATA_DESCRIPTOR_WITH_SIGNATURE.size];
         mFile.directFullyRead(ddStart, ddData);
 
-        ByteSource ddSource = ByteSource.wrap(ddData);
+        ByteBuffer ddBytes = ByteBuffer.wrap(ddData);
 
         ZipField.F4 signatureField = new ZipField.F4(0, "Data descriptor signature");
-        long sig = signatureField.read(ddSource);
+        int cpos = ddBytes.position();
+        long sig = signatureField.read(ddBytes);
         if (sig == DATA_DESC_SIGNATURE) {
             mDataDescriptorType = DataDescriptorType.DATA_DESCRIPTOR_WITH_SIGNATURE;
-            ddSource = ddSource.slice(4, ddSource.size());
         } else {
             mDataDescriptorType = DataDescriptorType.DATA_DESCRIPTOR_WITHOUT_SIGNATURE;
+            ddBytes.position(cpos);
         }
 
         ZipField.F4 crc32Field = new ZipField.F4(0, "CRC32");
@@ -464,9 +472,9 @@ public class StoredEntry {
         ZipField.F4 uncompressedField = new ZipField.F4(compressedField.endOffset(),
                 "Uncompressed size");
 
-        crc32Field.verify(ddSource, mCdh.getCrc32());
-        compressedField.verify(ddSource, compressInfo.getCompressedSize());
-        uncompressedField.verify(ddSource, mCdh.getUncompressedSize());
+        crc32Field.verify(ddBytes, mCdh.getCrc32());
+        compressedField.verify(ddBytes, compressInfo.getCompressedSize());
+        uncompressedField.verify(ddBytes, mCdh.getUncompressedSize());
     }
 
     /**
@@ -615,7 +623,11 @@ public class StoredEntry {
      */
     @NonNull
     byte[] toHeaderData() throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        byte[] encodedFileName = mCdh.getEncodedFileName();
+
+        ByteBuffer out = ByteBuffer.allocate(F_EXTRA_LENGTH.endOffset() + encodedFileName.length
+                + mLocalExtra.length);
 
         CentralDirectoryHeaderCompressInfo compressInfo = mCdh.getCompressionInfoWithWait();
 
@@ -638,10 +650,10 @@ public class StoredEntry {
         F_FILE_NAME_LENGTH.write(out, mCdh.getEncodedFileName().length);
         F_EXTRA_LENGTH.write(out, mLocalExtra.length);
 
-        out.write(mCdh.getEncodedFileName());
-        out.write(mLocalExtra);
+        out.put(mCdh.getEncodedFileName());
+        out.put(mLocalExtra);
 
-        return out.toByteArray();
+        return out.array();
     }
 
     /**
