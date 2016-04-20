@@ -48,7 +48,6 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
     @NonNull
     private final File mOutputFile;
     private boolean mVerbose = false;
-    private boolean mIncremental = false;
     private boolean mNoOptimize = false;
     private boolean mMultiDex = false;
     private File mMainDexList = null;
@@ -61,12 +60,6 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
     @NonNull
     public DexProcessBuilder setVerbose(boolean verbose) {
         mVerbose = verbose;
-        return this;
-    }
-
-    @NonNull
-    public DexProcessBuilder setIncremental(boolean incremental) {
-        mIncremental = incremental;
         return this;
     }
 
@@ -107,10 +100,6 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
 
     public boolean isVerbose() {
         return mVerbose;
-    }
-
-    public boolean isIncremental() {
-        return mIncremental;
     }
 
     public boolean isNoOptimize() {
@@ -169,10 +158,6 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
 
         if (dexOptions.getJumboMode()) {
             builder.addArgs("--force-jumbo");
-        }
-
-        if (mIncremental) {
-            builder.addArgs("--incremental", "--no-strict");
         }
 
         if (mNoOptimize) {

@@ -256,6 +256,12 @@ public class PreDexCacheTest {
         public List<String> getAdditionalParameters() {
             return Lists.newArrayList();
         }
+
+        @Nullable
+        @Override
+        public Boolean getOptimize() {
+            return null;
+        }
     }
 
     private static class FakeProcessExecutor implements ProcessExecutor {

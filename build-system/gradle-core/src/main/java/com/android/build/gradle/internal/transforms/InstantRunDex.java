@@ -38,6 +38,7 @@ import com.android.ide.common.process.ProcessException;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.base.CaseFormat;
+import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -247,8 +248,7 @@ public class InstantRunDex extends Transform {
                 false /* multiDexEnabled */,
                 null /*getMainDexListFile */,
                 dexOptions,
-                false /* incremental */,
-                true /* optimize */,
+                Objects.firstNonNull(dexOptions.getOptimize(), false) /* optimize */,
                 new LoggedProcessOutputHandler(logger));
     }
 

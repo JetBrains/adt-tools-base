@@ -51,6 +51,7 @@ import com.android.sdklib.BuildToolInfo;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.base.Charsets;
+import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -180,7 +181,7 @@ public class DexTransform extends Transform {
         try {
             Map<String, Object> params = Maps.newHashMapWithExpectedSize(4);
 
-            params.put("debugMode", debugMode);
+            params.put("optimize", getOptimize());
             params.put("predex", dexOptions.getPreDexLibraries());
             params.put("jumbo", dexOptions.getJumboMode());
             params.put("multidex", multiDex);
@@ -257,8 +258,7 @@ public class DexTransform extends Transform {
                         multiDex,
                         mainDexListFile,
                         dexOptions,
-                        false,
-                        true,
+                        getOptimize(),
                         outputHandler);
 
                 for (File file : Files.fileTreeTraverser().breadthFirstTraversal(outputDir)) {
@@ -400,8 +400,7 @@ public class DexTransform extends Transform {
                             multiDex,
                             mainDexListFile,
                             dexOptions,
-                            false,
-                            true,
+                            getOptimize(),
                             outputHandler);
                 }
             }
@@ -512,7 +511,7 @@ public class DexTransform extends Transform {
             @NonNull File file) {
         // In InstantRun mode, all files are guaranteed to have a unique name due to the slicer
         // transform. adding sha1 to the name can lead to cleaning issues in device, it's much
-        // easier if the slices always have the same names, irrespective of the current vairiant,
+        // easier if the slices always have the same names, irrespective of the current variant,
         // last version wins.
         String name = instantRunBuildContext.isInInstantRunMode()
                 && (qualifiedContent.getScopes().contains(Scope.PROJECT)
@@ -536,6 +535,16 @@ public class DexTransform extends Transform {
         String suffix = multiDex ? "" : SdkConstants.DOT_JAR;
 
         return FileUtils.getDirectoryNameForJar(inputFile) + suffix;
+    }
+
+    /**
+     * Decides whether to run dx with optimizations.
+     *
+     * <p>Value from {@link DexOptions} is used if set, otherwise we check if the build is
+     * debuggable.
+     */
+    private boolean getOptimize() {
+        return Objects.firstNonNull(dexOptions.getOptimize(), !debugMode);
     }
 
 }
