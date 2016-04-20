@@ -245,6 +245,29 @@ model {
         }
     }
 
+    @Test
+    void "check that compiler flags are transformed as in options.txt" () {
+        project.buildFile <<
+                """
+model {
+    android {
+        ndk {
+            CFlags.add("-Ipath with spaces")
+            CFlags.add("-Ipath\twith\ttabs")
+            CFlags.add("-Ipath\\\\with\\\\backslashes")
+        }
+    }
+}
+"""
+        AndroidProject model = project.executeAndReturnModel("assembleDebug")
+        NativeLibrary lib = ModelHelper.getVariant(model.getVariants(), "debug").getMainArtifact()
+                .getNativeLibraries().first()
+        assertThat(lib.getCCompilerFlags()).containsAllOf(
+                "\"-Ipath with spaces\"",
+                "\"-Ipath\twith\ttabs\"",
+                "-Ipath\\\\with\\\\backslashes");
+    }
+
     /**
      * Verify resulting model is as expected.
      *
