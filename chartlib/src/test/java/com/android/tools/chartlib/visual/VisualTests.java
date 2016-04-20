@@ -17,149 +17,25 @@
 package com.android.tools.chartlib.visual;
 
 import com.android.tools.chartlib.AnimatedComponent;
-import com.android.tools.chartlib.Choreographer;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.LayoutManager;
-import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemListener;
-import java.util.LinkedList;
-import java.util.List;
 
-import javax.swing.*;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JSlider;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-public class VisualTests extends JDialog {
-
-    private List<AnimatedComponent> mComponents;
-
-    private List<VisualTest> mTests = new LinkedList<VisualTest>();
-
-    private List<Choreographer> mChoreographers = new LinkedList<Choreographer>();
-
-    private final JTabbedPane mTabs;
-
-    private VisualTests() {
-        final JPanel contentPane = new JPanel(new BorderLayout());
-        mTabs = new JTabbedPane();
-
-        contentPane.setPreferredSize(new Dimension(1280, 1024));
-        contentPane.add(mTabs, BorderLayout.CENTER);
-
-        JButton close = new JButton("Close");
-        close.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                dispose();
-            }
-        });
-        JButton reset = new JButton("Reset");
-        reset.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                resetTabs();
-            }
-        });
-        JPanel bottom = new JPanel(new BorderLayout());
-        Box bottomButtonsBox = Box.createHorizontalBox();
-        bottomButtonsBox.add(reset);
-        bottomButtonsBox.add(close);
-        bottom.add(bottomButtonsBox, BorderLayout.EAST);
-        contentPane.add(bottom, BorderLayout.SOUTH);
-
-        JPanel controls = new JPanel();
-        controls.setLayout(new BoxLayout(controls, BoxLayout.Y_AXIS));
-        controls.add(Box.createRigidArea(new Dimension(100, 20)));
-        final JCheckBox debug = new JCheckBox("Debug");
-        debug.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent actionEvent) {
-                for (AnimatedComponent component : mComponents) {
-                    component.setDrawDebugInfo(debug.isSelected());
-                }
-            }
-        });
-        controls.add(debug);
-
-        final JButton step = new JButton("Step");
-        step.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent actionEvent) {
-                for (Choreographer c : mChoreographers) {
-                    c.step();
-                }
-            }
-        });
-        final JCheckBox update = new JCheckBox("Update");
-        update.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent actionEvent) {
-                for (Choreographer c : mChoreographers) {
-                    c.setUpdate(update.isSelected());
-                }
-                step.setEnabled(!update.isSelected());
-            }
-        });
-        update.setSelected(true);
-        step.setEnabled(false);
-        final JCheckBox darcula = new JCheckBox("Darcula");
-        darcula.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent actionEvent) {
-                setDarculaMode(darcula.isSelected());
-            }
-        });
-        controls.add(darcula);
-        controls.add(update);
-        controls.add(step);
-        contentPane.add(controls, BorderLayout.WEST);
-
-        setDarculaMode(false);
-        setContentPane(contentPane);
-        setModal(true);
-        getRootPane().setDefaultButton(close);
-    }
-
-    public void addTest(VisualTest test) {
-        mTests.add(test);
-    }
-
-    private void resetTabs() {
-        int currentTabIndex = mTabs.getSelectedIndex();
-        mTabs.removeAll();
-        mChoreographers.clear();
-        // Make sure to reset the components list
-        mComponents = new LinkedList<AnimatedComponent>();
-        for (VisualTest test : mTests) {
-            test.registerComponents(mComponents);
-            test.reset();
-            mTabs.addTab(test.getName(), test.getPanel());
-            mChoreographers.add(test.getChoreographer());
-        }
-        // Return to previous selected tab if there was one
-        if (currentTabIndex != -1) {
-            mTabs.setSelectedIndex(currentTabIndex);
-        }
-    }
-
-    private void setDarculaMode(boolean dark) {
-        for (VisualTest c : mTests) {
-            if (c.getPanel() != null) {
-                c.getPanel().setBackground(dark ? new Color(60, 63, 65) : new Color(244, 244, 244));
-            }
-        }
-    }
-
-    @Override
-    public void pack() {
-        super.pack();
-        resetTabs();
-    }
+public class VisualTests {
 
     interface Value {
         void set(int v);
@@ -227,12 +103,13 @@ public class VisualTests extends JDialog {
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
             public void run() {
-                VisualTests dialog = new VisualTests();
+                VisualTestsDialog dialog = new VisualTestsDialog();
                 dialog.addTest(new AxisLineChartVisualTest());
                 dialog.addTest(new StateChartVisualTest());
                 dialog.addTest(new LineChartVisualTest());
                 dialog.addTest(new SunburstVisualTest());
                 dialog.addTest(new TimelineVisualTest());
+                dialog.setTitle("Visual Tests");
                 dialog.pack();
                 dialog.setVisible(true);
             }
