@@ -35,6 +35,7 @@ import com.android.builder.model.MavenCoordinates;
 import com.android.builder.model.Variant;
 import com.android.ide.common.repository.GradleCoordinate;
 import com.android.ide.common.repository.GradleCoordinate.RevisionComponent;
+import com.android.ide.common.repository.GradleVersion;
 import com.android.ide.common.repository.SdkMavenRepository;
 import com.android.repository.Revision;
 import com.android.tools.lint.client.api.LintClient;
@@ -490,9 +491,11 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     private static GradleCoordinate resolveCoordinate(@NonNull Context context,
             @NonNull GradleCoordinate gc) {
         assert gc.getRevision().contains("$") : gc.getRevision();
-        Variant variant = context.getProject().getCurrentVariant();
+        Project project = context.getProject();
+        Variant variant = project.getCurrentVariant();
         if (variant != null) {
-            Dependencies dependencies = variant.getMainArtifact().getCompileDependencies();
+            Dependencies dependencies = getCompileDependencies(variant.getMainArtifact(),
+                    project.getGradleModelVersion());
             for (AndroidLibrary library : dependencies.getLibraries()) {
                 MavenCoordinates mc = library.getResolvedCoordinates();
                 if (mc != null
@@ -1175,7 +1178,10 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             return;
         }
         AndroidArtifact artifact = variant.getMainArtifact();
-        Collection<AndroidLibrary> libraries = artifact.getCompileDependencies().getLibraries();
+        GradleVersion version = project.getGradleModelVersion();
+        Collection<AndroidLibrary> libraries;
+        Dependencies compileDependencies = getCompileDependencies(artifact, version);
+        libraries = compileDependencies.getLibraries();
         Multimap<String, MavenCoordinates> versionToCoordinate = ArrayListMultimap.create();
         for (AndroidLibrary library : libraries) {
             addGmsLibraryVersions(versionToCoordinate, library);
@@ -1305,5 +1311,21 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     @SuppressWarnings({"MethodMayBeStatic", "UnusedParameters"})
     protected Location createLocation(@NonNull Context context, @NonNull Object cookie) {
         return null;
+    }
+
+    @NonNull
+    public static Dependencies getCompileDependencies(@NonNull AndroidArtifact artifact,
+            @Nullable GradleVersion version) {
+        // getCompileDependencies was added in builder model 2.2; in older versions, just
+        // use getDependencies
+        Dependencies compileDependencies;
+        if (version != null &&
+                (version.getMajor() > 2 || version.getMajor() == 2 && version.getMinor() >= 2)) {
+            compileDependencies = artifact.getCompileDependencies();
+        } else {
+            //noinspection deprecation
+            compileDependencies = artifact.getDependencies();
+        }
+        return compileDependencies;
     }
 }
