@@ -540,7 +540,7 @@ public class ResourceUsageModel {
             nameMap = Maps.newHashMapWithExpectedSize(30);
             mTypeToName.put(type, nameMap);
         }
-        nameMap.put(name, resource);
+        nameMap.put(LintUtils.getFieldName(name), resource);
 
         // TODO: Assert that we don't set the same resource multiple times to different values.
         // Could happen if you pass in stale data!
