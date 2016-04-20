@@ -16,7 +16,8 @@
 
 package com.android.tools.chartlib;
 
-interface Animatable {
+public interface Animatable {
+
     /**
      * Triggered by the {@link Choreographer} to give an {@link Animatable} a chance to
      * update/interpolate any components or data based on the current frame rate.

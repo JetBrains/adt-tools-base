@@ -17,9 +17,9 @@
 package com.android.tools.chartlib.visual;
 
 import com.android.annotations.NonNull;
+import com.android.tools.chartlib.Animatable;
 import com.android.tools.chartlib.AnimatedComponent;
 import com.android.tools.chartlib.AnimatedTimeRange;
-import com.android.tools.chartlib.Choreographer;
 import com.android.tools.chartlib.LineChart;
 import com.android.tools.chartlib.Range;
 import com.android.tools.chartlib.model.LineChartData;
@@ -29,6 +29,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -39,15 +40,16 @@ import javax.swing.JPanel;
 public class LineChartVisualTest extends VisualTest {
 
     @NonNull
-    private final LineChart mLineChart;
+    private LineChart mLineChart;
 
     @NonNull
-    private final LineChartData mData;
+    private LineChartData mData;
 
     @NonNull
-    private final AnimatedTimeRange mAnimatedTimeRange;
+    private AnimatedTimeRange mAnimatedTimeRange;
 
-    public LineChartVisualTest() {
+    @Override
+    protected List<Animatable> createComponentsList() {
         mData = new LineChartData();
 
         long now = System.currentTimeMillis();
@@ -55,24 +57,27 @@ public class LineChartVisualTest extends VisualTest {
         mLineChart = new LineChart(mData);
         mAnimatedTimeRange = new AnimatedTimeRange(xRange, 0);
 
-        // Set up the scene
-        mChoreographer.register(mAnimatedTimeRange);
-        mChoreographer.register(xRange);
-        mChoreographer.register(mLineChart);
+        List<Animatable> componentsList = new ArrayList<>();
 
-        Range mYRange = null;
+        // Add the scene components to the list
+        componentsList.add(mAnimatedTimeRange);
+        componentsList.add(xRange);
+        componentsList.add(mLineChart);
+
+        Range mYRange = new Range(0.0, 100.0);
         for (int i = 0; i < 4; i++) {
             if (i % 2 == 0) {
                 mYRange = new Range(0.0, 100.0);
-                mChoreographer.register(mYRange);
+                componentsList.add(mYRange);
             }
             RangedContinuousSeries ranged = new RangedContinuousSeries(xRange, mYRange);
             mData.add(ranged);
         }
+        return componentsList;
     }
 
     @Override
-    void registerComponents(List<AnimatedComponent> components) {
+    protected void registerComponents(List<AnimatedComponent> components) {
         components.add(mLineChart);
     }
 
@@ -89,7 +94,7 @@ public class LineChartVisualTest extends VisualTest {
 
         final AtomicInteger variance = new AtomicInteger(10);
         final AtomicInteger delay = new AtomicInteger(100);
-        new Thread() {
+        mUpdateDataThread = new Thread() {
             @Override
             public void run() {
                 super.run();
@@ -108,7 +113,9 @@ public class LineChartVisualTest extends VisualTest {
                 } catch (InterruptedException e) {
                 }
             }
-        }.start();
+        };
+
+        mUpdateDataThread.start();
 
         controls.add(VisualTests.createVariableSlider("Delay", 10, 5000, new VisualTests.Value() {
             @Override

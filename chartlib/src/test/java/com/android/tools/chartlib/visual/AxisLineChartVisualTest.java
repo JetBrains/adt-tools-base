@@ -17,6 +17,7 @@
 package com.android.tools.chartlib.visual;
 
 import com.android.annotations.NonNull;
+import com.android.tools.chartlib.Animatable;
 import com.android.tools.chartlib.AnimatedComponent;
 import com.android.tools.chartlib.AnimatedTimeRange;
 import com.android.tools.chartlib.AxisComponent;
@@ -40,6 +41,7 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -54,25 +56,19 @@ public class AxisLineChartVisualTest extends VisualTest {
 
     private static final int AXIS_SIZE = 100;
 
-    private final long mStartTimeMs;
+    private long mStartTimeMs;
 
     @NonNull
-    private final Range mXRange;
+    private Range mXGlobalRange;
 
     @NonNull
-    private final Range mXGlobalRange;
+    private LineChart mLineChart;
 
     @NonNull
-    private final AnimatedTimeRange mAnimatedTimeRange;
+    private AnimatedTimeRange mAnimatedTimeRange;
 
     @NonNull
-    private final Range mXSelectionRange;
-
-    @NonNull
-    private final LineChart mLineChart;
-
-    @NonNull
-    private final LineChartData mData;
+    private LineChartData mData;
 
     @NonNull
     private AxisComponent mMemoryAxis1;
@@ -90,82 +86,67 @@ public class AxisLineChartVisualTest extends VisualTest {
     private SelectionComponent mSelection;
 
     @NonNull
-    private final RangeScrollbar mScrollbar;
+    private RangeScrollbar mScrollbar;
 
-    public AxisLineChartVisualTest() {
+    @Override
+    protected List<Animatable> createComponentsList() {
         mData = new LineChartData();
         mLineChart = new LineChart(mData);
 
         mStartTimeMs = System.currentTimeMillis();
-        mXRange = new Range(0, 0);
+        final Range xRange = new Range(0, 0);
         mXGlobalRange = new Range(0, 0);
         mAnimatedTimeRange = new AnimatedTimeRange(mXGlobalRange, mStartTimeMs);
-
-        mScrollbar = new RangeScrollbar(mXGlobalRange, mXRange);
+        mScrollbar = new RangeScrollbar(mXGlobalRange, xRange);
 
         // add horizontal time axis
-        mTimeAxis = new AxisComponent(mXRange,
-                mXGlobalRange,
-                "TIME",
+        mTimeAxis = new AxisComponent(xRange, mXGlobalRange, "TIME",
                 AxisComponent.AxisOrientation.BOTTOM,
-                AXIS_SIZE,
-                AXIS_SIZE,
-                false,
-                new TimeAxisDomain(10, 50, 5));
+                AXIS_SIZE, AXIS_SIZE, false, new TimeAxisDomain(10, 50, 5));
 
         // left memory data + axis
         Range yRange1Animatable = new Range(0, 100);
-        mMemoryAxis1 = new AxisComponent(yRange1Animatable,
-                yRange1Animatable,
-                "MEMORY1",
-                AxisComponent.AxisOrientation.LEFT,
-                AXIS_SIZE,
-                AXIS_SIZE,
-                true,
+        mMemoryAxis1 = new AxisComponent(yRange1Animatable, yRange1Animatable, "MEMORY1",
+                AxisComponent.AxisOrientation.LEFT, AXIS_SIZE, AXIS_SIZE, true,
                 new MemoryAxisDomain(10, 50, 5));
-        RangedContinuousSeries ranged1 = new RangedContinuousSeries(mXRange, yRange1Animatable);
+        RangedContinuousSeries ranged1 = new RangedContinuousSeries(xRange, yRange1Animatable);
         mData.add(ranged1);
 
         // right memory data + axis
         Range yRange2Animatable = new Range(0, 100);
-        mMemoryAxis2 = new AxisComponent(yRange2Animatable,
-                yRange2Animatable,
-                "MEMORY2",
-                AxisComponent.AxisOrientation.RIGHT,
-                AXIS_SIZE,
-                AXIS_SIZE,
-                true,
+        mMemoryAxis2 = new AxisComponent(yRange2Animatable, yRange2Animatable, "MEMORY2",
+                AxisComponent.AxisOrientation.RIGHT, AXIS_SIZE, AXIS_SIZE, true,
                 new MemoryAxisDomain(10, 50, 5));
-        RangedContinuousSeries ranged2 = new RangedContinuousSeries(mXRange, yRange2Animatable);
+        RangedContinuousSeries ranged2 = new RangedContinuousSeries(xRange, yRange2Animatable);
         mData.add(ranged2);
 
         mGrid = new GridComponent();
         mGrid.addAxis(mTimeAxis);
         mGrid.addAxis(mMemoryAxis1);
 
-        mXSelectionRange = new Range(0, 0);
-        mSelection = new SelectionComponent(mTimeAxis, mXSelectionRange, mXGlobalRange, mXRange);
+        final Range xSelectionRange = new Range(0, 0);
+        mSelection = new SelectionComponent(mTimeAxis, xSelectionRange, mXGlobalRange, xRange);
 
         // Note: the order below is important as some components depend on
         // others to be updated first. e.g. the ranges need to be updated before the axes.
         // The comment on each line highlights why the component needs to be in that position.
-        mChoreographer.register(mAnimatedTimeRange);     // Update global time range immediate.
-        mChoreographer.register(mSelection);             // Update selection range immediate.
-        mChoreographer.register(mScrollbar);             // Update current range immediate.
-        mChoreographer.register(mLineChart);             // Set y's interpolation values.
-        mChoreographer.register(yRange1Animatable);      // Interpolate y1.
-        mChoreographer.register(yRange2Animatable);      // Interpolate y2.
-        mChoreographer.register(mTimeAxis);              // Read ranges.
-        mChoreographer.register(mMemoryAxis1);           // Read ranges.
-        mChoreographer.register(mMemoryAxis2);           // Read ranges.
-        mChoreographer.register(mGrid);                  // No-op.
-        mChoreographer.register(mXRange);                // Reset flags.
-        mChoreographer.register(mXGlobalRange);          // Reset flags.
-        mChoreographer.register(mXSelectionRange);       // Reset flags.
+        return Arrays.asList(mAnimatedTimeRange, // Update global time range immediate.
+                mSelection, // Update selection range immediate.
+                mScrollbar, // Update current range immediate.
+                mLineChart, // Set y's interpolation values.
+                yRange1Animatable, // Interpolate y1.
+                yRange2Animatable, // Interpolate y2.
+                mTimeAxis, // Read ranges.
+                mMemoryAxis1, // Read ranges.
+                mMemoryAxis2, // Read ranges.
+                mGrid, // No-op.
+                xRange, // Reset flags.
+                mXGlobalRange, // Reset flags.
+                xSelectionRange); // Reset flags.
     }
 
     @Override
-    void registerComponents(List<AnimatedComponent> components) {
+    protected void registerComponents(List<AnimatedComponent> components) {
         components.add(mLineChart);
         components.add(mSelection);
         components.add(mTimeAxis);
@@ -194,7 +175,7 @@ public class AxisLineChartVisualTest extends VisualTest {
 
         final AtomicInteger variance = new AtomicInteger(10);
         final AtomicInteger delay = new AtomicInteger(10);
-        new Thread() {
+        mUpdateDataThread = new Thread() {
             @Override
             public void run() {
                 super.run();
@@ -215,7 +196,8 @@ public class AxisLineChartVisualTest extends VisualTest {
                 } catch (InterruptedException e) {
                 }
             }
-        }.start();
+        };
+        mUpdateDataThread.start();
 
         controls.add(VisualTests.createVariableSlider("Delay", 10, 5000, new VisualTests.Value() {
             @Override
