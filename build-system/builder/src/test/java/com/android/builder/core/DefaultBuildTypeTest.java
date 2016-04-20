@@ -16,16 +16,18 @@
 
 package com.android.builder.core;
 
+import com.android.builder.model.BuildType;
 import com.android.testutils.internal.CopyOfTester;
 
 import org.junit.Test;
 
-public class DefaultDexOptionsTest {
+public class DefaultBuildTypeTest {
 
     @Test
-    public void copyOfHandlesAllFields() throws Exception {
-        DefaultDexOptions instance = new DefaultDexOptions();
-        CopyOfTester.assertAllMethodsCalled(DexOptions.class, instance, DefaultDexOptions::copyOf);
+    public void testInitWith() throws Exception {
+        CopyOfTester.assertAllMethodsCalled(
+                BuildType.class,
+                new DefaultBuildType("debug"),
+                original -> new DefaultBuildType(original.getName()).initWith(original));
     }
-
 }
