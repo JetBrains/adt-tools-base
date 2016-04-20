@@ -37,6 +37,8 @@ public class DefaultDexOptions implements DexOptions {
 
     private Integer threadCount = null;
 
+    private Boolean optimize = null;
+
     private String javaMaxHeapSize;
 
     private List<String> additionalParameters = Lists.newArrayList();
@@ -53,6 +55,7 @@ public class DefaultDexOptions implements DexOptions {
         result.setJavaMaxHeapSize(dexOptions.getJavaMaxHeapSize());
         result.setAdditionalParameters(dexOptions.getAdditionalParameters());
         result.setMaxProcessCount(dexOptions.getMaxProcessCount());
+        result.setOptimize(dexOptions.getOptimize());
 
         return result;
     }
@@ -131,7 +134,7 @@ public class DefaultDexOptions implements DexOptions {
         return additionalParameters;
     }
 
-    public void setAdditionalParameters(List<String> additionalParameters) {
+    public void setAdditionalParameters(@NonNull List<String> additionalParameters) {
         this.additionalParameters = Lists.newArrayList(additionalParameters);
     }
 
@@ -154,5 +157,21 @@ public class DefaultDexOptions implements DexOptions {
 
     public void setMaxProcessCount(Integer maxProcessCount) {
         this.maxProcessCount = maxProcessCount;
+    }
+
+    public void setOptimize(Boolean optimize) {
+        this.optimize = optimize;
+    }
+
+    /**
+     * Whether to run the {@code dx} compiler with the {@code --no-optimize} flag.
+     *
+     * <p>If not specified, debuggable builds will be compiled with optimizations turned off and
+     * release builds with optimizations turned on.
+     */
+    @Nullable
+    @Override
+    public Boolean getOptimize() {
+        return optimize;
     }
 }
