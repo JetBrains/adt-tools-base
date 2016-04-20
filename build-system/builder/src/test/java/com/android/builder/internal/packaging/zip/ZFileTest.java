@@ -981,8 +981,9 @@ public class ZFileTest {
     @Test
     public void unusedZipAreasAreClearedOnWrite() throws Exception {
         File zipFile = new File(mTemporaryFolder.getRoot(), "a.zip");
-        try (ZFile zf = new ZFile(zipFile)) {
-            zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*\\.txt"), 1000, false));
+        ZFileOptions options = new ZFileOptions();
+        options.setAlignmentRule(AlignmentRules.constantForSuffix(".txt", 1000));
+        try (ZFile zf = new ZFile(zipFile, options)) {
             zf.add("test1.txt", new ByteArrayInputStream(new byte[]{1}), false);
         }
 
