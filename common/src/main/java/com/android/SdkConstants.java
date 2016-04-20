@@ -1453,6 +1453,10 @@ public final class SdkConstants {
     public static final String GRAVITY_VALUE_CENTER_VERTICAL = "center_vertical";     //$NON-NLS-1$
     public static final String GRAVITY_VALUE_FILL = "fill";                           //$NON-NLS-1$
 
+    public static final class ImageViewAttributes {
+        public static final String TINT = "tint";
+    }
+
     public static final class PreferenceTags {
         public static final String CHECK_BOX_PREFERENCE = "CheckBoxPreference";
         public static final String EDIT_TEXT_PREFERENCE = "EditTextPreference";
@@ -1460,6 +1464,11 @@ public final class SdkConstants {
         public static final String MULTI_SELECT_LIST_PREFERENCE = "MultiSelectListPreference";
         public static final String RINGTONE_PREFERENCE = "RingtonePreference";
         public static final String SWITCH_PREFERENCE = "SwitchPreference";
+    }
+
+    public static final class PreferenceAttributes {
+        public static final String DEFAULT_VALUE = "defaultValue";
+        public static final String KEY = "key";
     }
 
     // Text Alignment values.
@@ -1477,6 +1486,10 @@ public final class SdkConstants {
     public static class TextStyle {
         public static final String VALUE_BOLD = "bold";                               //$NON-NLS-1$
         public static final String VALUE_ITALIC = "italic";                           //$NON-NLS-1$
+    }
+
+    public static final class ViewAttributes {
+        public static final String MIN_HEIGHT = "minHeight";
     }
 
     /**
