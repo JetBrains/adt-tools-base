@@ -180,7 +180,7 @@ public class GrammarActions {
                     annotationType,
                     getSignature("***", 0),
                     "*",
-                    "(" + getSignature("...", 0) + ")",
+                    "\\(" + getSignature("...", 0) + "\\)",
                     modifier);
         }
         field(classSpec, annotationType, typeSig, name, modifier);
@@ -258,7 +258,7 @@ public class GrammarActions {
             @Nullable ModifierSpecification modifier) {
         String fullName = "^" + convertNameToPattern(name);
         fullName += ":";
-        fullName += signature.replace("(", "\\(").replace(")", "\\)");
+        fullName += signature;
         if (typeSig != null) {
             fullName += typeSig;
         } else {
