@@ -14,83 +14,69 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.performance
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.TestProject
-import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp
-import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
-import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
-import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
-import com.android.build.gradle.integration.common.fixture.app.VariantBuildScriptGenerator
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
-import org.junit.Test
+package com.android.build.gradle.integration.performance;
 
-import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.BUILD_FULL
-import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.EVALUATION
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.BUILD_FULL;
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.EVALUATION;
+
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.fixture.TestProject;
+import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp;
+import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
+import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject;
+import com.android.build.gradle.integration.common.fixture.app.TestSourceFile;
+import com.android.build.gradle.integration.common.fixture.app.VariantBuildScriptGenerator;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 /**
  * Performance test on gradle experimental plugin with multiple sub-projects and multiple variants.
  */
-class MultiProjectsAndroidComponentTest {
-    public static AndroidTestApp app = HelloWorldApp.noBuildFile()
+public class MultiProjectsAndroidComponentTest {
+
+    private static AndroidTestApp app = HelloWorldApp.noBuildFile();
     static {
-        VariantBuildScriptGenerator generator = new VariantBuildScriptGenerator(
-                buildTypes: VariantBuildScriptGenerator.MEDIUM_NUMBER,
-                productFlavors: VariantBuildScriptGenerator.MEDIUM_NUMBER,
-                """
-                apply plugin: "com.android.model.application"
+        String buildFile = new VariantBuildScriptGenerator()
+                .forComponentPlugin()
+                .withNumberOfBuildTypes(VariantBuildScriptGenerator.MEDIUM_NUMBER)
+                .withNumberOfProductFlavors(VariantBuildScriptGenerator.MEDIUM_NUMBER)
+                .createBuildScript();
 
-                model {
-                    android {
-                        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-                        buildToolsVersion = "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-                    }
-
-                    android.buildTypes {
-                        \${buildTypes}
-                    }
-
-                    android.productFlavors {
-                        \${productFlavors}
-                    }
-                }
-                """.stripIndent())
-        generator.addPostProcessor("buildTypes") { return (String) "create(\"$it\")" }
-        generator.addPostProcessor("productFlavors") { return (String) "create(\"$it\")" }
-
-        app.addFile(new TestSourceFile("", "build.gradle", generator.createBuildScript()))
+        app.addFile(new TestSourceFile("", "build.gradle", buildFile));
     }
 
-    public static TestProject baseProject = new MultiModuleTestProject("app", app, 10)
+    private static TestProject baseProject = new MultiModuleTestProject("app", app, 10);
 
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(baseProject)
             .useExperimentalGradleVersion(true)
-            .create()
+            .create();
 
     @BeforeClass
-    static void setUp() {
+    public static void setUp() {
         // Execute before performance test to warm up the cache.
         project.execute("help");
     }
 
     @AfterClass
-    static void cleanUp() {
+    public static void cleanUp() {
         app = null;
         baseProject = null;
         project = null;
     }
 
     @Test
-    void "performance test - projects"() {
-        project.executeWithBenchmark("MultiProjectsAndroid", EVALUATION, "projects")
+    public void performanceTestProjects() {
+        project.executeWithBenchmark("MultiProjectsAndroid", EVALUATION, "projects");
     }
 
     @Test
-    void "performance test - single variant"() {
-        project.executeWithBenchmark("MultiProjectsAndroid", BUILD_FULL, ":app0:assembleProductFlavor0BuildType0")
+    public void performanceTestSingleVariant() {
+        project.executeWithBenchmark("MultiProjectsAndroid", BUILD_FULL,
+                ":app0:assembleProductFlavor0BuildType0");
     }
 }

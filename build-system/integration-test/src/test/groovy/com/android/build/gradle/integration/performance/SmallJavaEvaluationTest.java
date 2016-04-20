@@ -14,39 +14,35 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.performance
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.JavaGradleModule
-import com.android.build.gradle.integration.common.fixture.app.LargeTestProject
-import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.ClassRule
-import org.junit.Test
+package com.android.build.gradle.integration.performance;
 
-import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.EVALUATION
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.EVALUATION;
+
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.fixture.app.JavaGradleModule;
+import com.android.build.gradle.integration.common.fixture.app.LargeTestProject;
+
+import org.junit.Rule;
+import org.junit.Test;
+
+import java.io.IOException;
 
 /**
  * test with ~30 projects that evaluates the projects
  */
-@CompileStatic
-class SmallJavaEvaluationTest {
+public class SmallJavaEvaluationTest {
 
-    @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(LargeTestProject.builder()
-                .withModule(JavaGradleModule)
-                .withDepth(LargeTestProject.SMALL_DEPTH)
-                .withBreadth(LargeTestProject.SMALL_BREADTH)
-                .create())
-            .create()
-
-    @AfterClass
-    static void cleanUp() {
-        project = null
-    }
+                    .withModule(JavaGradleModule.class)
+                    .withDepth(LargeTestProject.SMALL_DEPTH)
+                    .withBreadth(LargeTestProject.SMALL_BREADTH)
+                    .create())
+            .create();
 
     @Test
-    void "'projects' task run on 30 projects"() {
-        project.executeWithBenchmark("MediumJava", EVALUATION, "projects")
+    public void projectsTaskRunOn30Projects() {
+        project.executeWithBenchmark("MediumJava", EVALUATION, "projects");
     }
 }

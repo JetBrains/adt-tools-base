@@ -14,69 +14,74 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.performance
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.TestFileUtils
-import groovy.transform.CompileStatic
-import org.junit.After
-import org.junit.Before
-import org.junit.Rule
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
+package com.android.build.gradle.integration.performance;
 
-import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.BUILD_FULL
-import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.BUILD_INC_JAVA
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.BUILD_FULL;
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.BUILD_INC_JAVA;
+
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.utils.TestFileUtils;
+
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+
 /**
  * Performance test for full and incremental build on ioschedule 2014
  */
 @RunWith(Parameterized.class)
-@CompileStatic
-class IOScheduleCodeChangeTest {
+public class IOScheduleCodeChangeTest {
 
-    @Parameterized.Parameters(name="minify={0} jack={1}")
+    @Parameterized.Parameters(name = "minify={0} jack={1}")
     public static Collection<Object[]> data() {
         // returns an array of boolean for all combinations of (proguard, jack).
         // Right now, only return the (false, false) and (false, true) cases.
-        return [
-//                [true, false].toArray(),
-//                [true, true].toArray(),
-                [false, false].toArray(),
-                [false, true].toArray(),
-        ];
+        return Arrays.asList(new Object[][]{
+//              {true, false},
+//              {true, true},
+                {false, false},
+                {false, true},
+        });
     }
 
-    private final boolean proguard
-    private final boolean jack
+    private final boolean jack;
 
-    IOScheduleCodeChangeTest(boolean proguard, boolean jack) {
-        this.proguard = proguard
-        this.jack = jack
+    public IOScheduleCodeChangeTest(boolean proguard, boolean jack) {
+        this.jack = jack;
+        project = GradleTestProject.builder()
+                .fromExternalProject("iosched")
+                .withJack(jack)
+                .withMinify(proguard)
+                .create();
     }
 
     @Rule
-    public GradleTestProject project = GradleTestProject.builder()
-            .fromExternalProject("iosched")
-            .withJack(jack)
-            .withMinify(proguard)
-            .create()
+    public GradleTestProject project;
 
     @Before
-    public void setUp() {
-        project.executeWithBenchmark("iosched2014", BUILD_FULL, "clean" , "assembleDebug")
-    }
-
-    @After
-    void cleanUp() {
-        project = null;
+    public void setUp() throws IOException {
+        if (jack) {
+            TestFileUtils.searchAndReplace(
+                    project.file("android/build.gradle"),
+                    "buildToolsVersion \"21.1.2\"",
+                    "buildToolsVersion '" + GradleTestProject.UPCOMING_BUILD_TOOL_VERSION + "'");
+        }
+        project.executeWithBenchmark("iosched2014", BUILD_FULL, "clean", "assembleDebug");
     }
 
     @Test
-    void "Incremental Build on Java Change"() {
+    public void incrementalBuildOnJavaChange() throws IOException {
         TestFileUtils.replaceLine(
-                project.file("android/src/main/java/com/google/samples/apps/iosched/model/ScheduleItem.java"),
+                project.file("android/src/main/java/com/google/samples/apps"
+                        + "/iosched/model/ScheduleItem.java"),
                 30,
-                "    public long startTime = 1;")
-        project.executeWithBenchmark("iosched2014", BUILD_INC_JAVA, "assembleDebug")
+                "    public long startTime = 1;");
+        project.executeWithBenchmark("iosched2014", BUILD_INC_JAVA, "assembleDebug");
     }
 }

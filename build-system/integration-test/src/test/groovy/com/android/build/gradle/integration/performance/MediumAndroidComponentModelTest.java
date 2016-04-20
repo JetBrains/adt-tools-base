@@ -14,47 +14,43 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.performance
+package com.android.build.gradle.integration.performance;
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.AndroidComponentGradleModule
-import com.android.build.gradle.integration.common.fixture.app.LargeTestProject
-import com.android.builder.model.AndroidProject
-import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.ClassRule
-import org.junit.Ignore
-import org.junit.Test
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.SYNC;
+import static com.android.build.gradle.integration.common.fixture.app.LargeTestProject.MEDIUM_BREADTH;
+import static com.android.build.gradle.integration.common.fixture.app.LargeTestProject.MEDIUM_DEPTH;
 
-import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.SYNC
-import static com.android.build.gradle.integration.common.fixture.app.LargeTestProject.MEDIUM_BREADTH
-import static com.android.build.gradle.integration.common.fixture.app.LargeTestProject.MEDIUM_DEPTH
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.fixture.app.AndroidComponentGradleModule;
+import com.android.build.gradle.integration.common.fixture.app.LargeTestProject;
+import com.android.builder.model.AndroidProject;
+
+import org.junit.Ignore;
+import org.junit.Rule;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.util.Map;
 
 /**
  * test with ~120 projects that queries the IDE model
  */
-@CompileStatic
-class MediumAndroidComponentModelTest {
+public class MediumAndroidComponentModelTest {
 
-    @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(LargeTestProject.builder()
-                .withModule(AndroidComponentGradleModule)
-                .withDepth(MEDIUM_DEPTH)
-                .withBreadth(MEDIUM_BREADTH)
-                .create())
+                    .withModule(AndroidComponentGradleModule.class)
+                    .withDepth(MEDIUM_DEPTH)
+                    .withBreadth(MEDIUM_BREADTH)
+                    .create())
             .useExperimentalGradleVersion(true)
-            .create()
-
-    @AfterClass
-    static void cleanUp() {
-        project = null
-    }
+            .create();
 
     @Test
     @Ignore
-    void "model query for 120 projects"() {
+    public void modelQueryFor120Projects() {
         Map<String, AndroidProject> models = project.getAllModelsWithBenchmark(
-                AndroidProject.MODEL_LEVEL_LATEST, "MediumAndroid", SYNC)
+                AndroidProject.MODEL_LEVEL_LATEST, "MediumAndroid", SYNC);
     }
 }

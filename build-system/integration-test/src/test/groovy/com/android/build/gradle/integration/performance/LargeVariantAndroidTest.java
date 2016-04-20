@@ -14,60 +14,44 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.performance
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
-import com.android.build.gradle.integration.common.fixture.app.VariantBuildScriptGenerator
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
-import org.junit.Test
+package com.android.build.gradle.integration.performance;
 
-import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.EVALUATION
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.EVALUATION;
+
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
+import com.android.build.gradle.integration.common.fixture.app.VariantBuildScriptGenerator;
+
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+
+import java.io.IOException;
 
 /**
  * Performance test on gradle plugin with a large number of variants
  */
-class LargeVariantAndroidTest {
-    @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+public class LargeVariantAndroidTest {
+
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(HelloWorldApp.noBuildFile())
             .useExperimentalGradleVersion(true)
-            .create()
+            .create();
 
-    @BeforeClass
-    static void setUp() {
-        project.buildFile << new VariantBuildScriptGenerator(
-                buildTypes: VariantBuildScriptGenerator.LARGE_NUMBER,
-                productFlavors: VariantBuildScriptGenerator.LARGE_NUMBER,
-                """
-                apply plugin: "com.android.application"
-
-                android {
-                    compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-                    buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-
-                    buildTypes {
-                        \${buildTypes}
-                    }
-
-                    productFlavors {
-                        \${productFlavors}
-                    }
-                }
-                """.stripIndent()).createBuildScript()
+    @Before
+    public void setUp() throws IOException {
+        new VariantBuildScriptGenerator()
+                .withNumberOfBuildTypes(VariantBuildScriptGenerator.LARGE_NUMBER)
+                .withNumberOfProductFlavors(VariantBuildScriptGenerator.LARGE_NUMBER)
+                .writeBuildScript(project);
 
         // Execute before performance test to warm up the cache.
         project.execute("help");
     }
 
-    @AfterClass
-    static void cleanUp() {
-        project = null
-    }
-
     @Test
-    void performanceTest() {
-        project.executeWithBenchmark("LargeVariantAndroid", EVALUATION, "projects")
+    public void performanceTest() {
+        project.executeWithBenchmark("LargeVariantAndroid", EVALUATION, "projects");
     }
 }

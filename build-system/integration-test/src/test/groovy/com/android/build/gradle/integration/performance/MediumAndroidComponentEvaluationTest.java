@@ -14,43 +14,39 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.performance
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.AndroidComponentGradleModule
-import com.android.build.gradle.integration.common.fixture.app.LargeTestProject
-import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.ClassRule
-import org.junit.Test
+package com.android.build.gradle.integration.performance;
 
-import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.EVALUATION
-import static com.android.build.gradle.integration.common.fixture.app.LargeTestProject.MEDIUM_BREADTH
-import static com.android.build.gradle.integration.common.fixture.app.LargeTestProject.MEDIUM_DEPTH
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.EVALUATION;
+import static com.android.build.gradle.integration.common.fixture.app.LargeTestProject.MEDIUM_BREADTH;
+import static com.android.build.gradle.integration.common.fixture.app.LargeTestProject.MEDIUM_DEPTH;
+
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.fixture.app.AndroidComponentGradleModule;
+import com.android.build.gradle.integration.common.fixture.app.LargeTestProject;
+
+import org.junit.Rule;
+import org.junit.Test;
+
+import java.io.IOException;
 
 /**
  * test with ~120 projects that queries the IDE model
  */
-@CompileStatic
-class MediumAndroidComponentEvaluationTest {
+public class MediumAndroidComponentEvaluationTest {
 
-    @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(LargeTestProject.builder()
-                .withModule(AndroidComponentGradleModule)
-                .withDepth(MEDIUM_DEPTH)
-                .withBreadth(MEDIUM_BREADTH)
-                .create())
+                    .withModule(AndroidComponentGradleModule.class)
+                    .withDepth(MEDIUM_DEPTH)
+                    .withBreadth(MEDIUM_BREADTH)
+                    .create())
             .useExperimentalGradleVersion(true)
             .withHeap("2048m")
-            .create()
-
-    @AfterClass
-    static void cleanUp() {
-        project = null
-    }
+            .create();
 
     @Test
-    void "'projects' task run on 120 projects"() {
-        project.executeWithBenchmark("MediumAndroid", EVALUATION, "projects")
+    public void projectsTaskRunOn120Projects() {
+        project.executeWithBenchmark("MediumAndroid", EVALUATION, "projects");
     }
 }

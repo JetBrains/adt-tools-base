@@ -14,57 +14,53 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.performance
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.TestFileUtils
-import groovy.transform.CompileStatic
-import org.junit.After
-import org.junit.Before
-import org.junit.Rule
-import org.junit.Test
+package com.android.build.gradle.integration.performance;
 
-import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.BUILD_FULL
-import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.BUILD_INC_RES_ADD
-import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.BUILD_INC_RES_EDIT
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.BUILD_FULL;
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.BUILD_INC_RES_ADD;
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.BUILD_INC_RES_EDIT;
+
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.utils.TestFileUtils;
+
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+
+import java.io.IOException;
 
 /**
  * Performance test for full and incremental build on ioschedule 2014
  */
-@CompileStatic
-class IOScheduleResChangeTest {
+public class IOScheduleResChangeTest {
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
             .fromExternalProject("iosched")
-            .create()
+            .create();
 
     @Before
     public void setUp() {
-        project.executeWithBenchmark("iosched2014", BUILD_FULL, "clean" , "assembleDebug")
-    }
-
-    @After
-    void cleanUp() {
-        project = null;
+        project.executeWithBenchmark("iosched2014", BUILD_FULL, "clean", "assembleDebug");
     }
 
     @Test
-    void "Incremental Build on Resource Edit Change"() {
+    public void incrementalBuildOnResourceEditChange() throws IOException {
         TestFileUtils.replaceLine(
                 project.file("android/src/main/res/values/strings.xml"),
                 97,
-                "    <string name=\"app_name\">Google I/O 2015</string>")
+                "    <string name=\"app_name\">Google I/O 2015</string>");
 
-        project.executeWithBenchmark("iosched2014", BUILD_INC_RES_EDIT, "assembleDebug")
+        project.executeWithBenchmark("iosched2014", BUILD_INC_RES_EDIT, "assembleDebug");
     }
 
     @Test
-    void "Incremental Build on Resource Add Change"() {
+    public void incrementalBuildOnResourceAddChange() throws IOException {
         TestFileUtils.replaceLine(
                 project.file("android/src/main/res/values/strings.xml"),
                 97,
-                "    <string name=\"app_name\">Google I/O 2015</string><string name=\"aaaa\">aaa</string>")
+                "    <string name=\"app_name\">Google I/O 2015</string><string name=\"aaaa\">aaa</string>");
 
-        project.executeWithBenchmark("iosched2014", BUILD_INC_RES_ADD, "assembleDebug")
+        project.executeWithBenchmark("iosched2014", BUILD_INC_RES_ADD, "assembleDebug");
     }
 }

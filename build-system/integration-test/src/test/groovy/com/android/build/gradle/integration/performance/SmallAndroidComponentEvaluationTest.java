@@ -14,42 +14,39 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.performance
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.AndroidComponentGradleModule
-import com.android.build.gradle.integration.common.fixture.app.LargeTestProject
-import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.ClassRule
-import org.junit.Test
+package com.android.build.gradle.integration.performance;
 
-import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.EVALUATION
-import static com.android.build.gradle.integration.common.fixture.app.LargeTestProject.SMALL_BREADTH
-import static com.android.build.gradle.integration.common.fixture.app.LargeTestProject.SMALL_DEPTH
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.EVALUATION;
+import static com.android.build.gradle.integration.common.fixture.app.LargeTestProject.SMALL_BREADTH;
+import static com.android.build.gradle.integration.common.fixture.app.LargeTestProject.SMALL_DEPTH;
+
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.fixture.app.AndroidComponentGradleModule;
+import com.android.build.gradle.integration.common.fixture.app.LargeTestProject;
+
+import org.junit.Rule;
+import org.junit.Test;
+
+import java.io.IOException;
 
 /**
  * test with ~30 projects that queries the IDE model
  */
-@CompileStatic
-class SmallAndroidComponentEvaluationTest {
+public class SmallAndroidComponentEvaluationTest {
 
-    @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
-            .fromTestApp(LargeTestProject.builder()
-                .withModule(AndroidComponentGradleModule)
-                .withDepth(SMALL_DEPTH)
-                .withBreadth(SMALL_BREADTH)
-                .create())
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
+            .fromTestApp(
+                    LargeTestProject.builder()
+                            .withModule(AndroidComponentGradleModule.class)
+                            .withDepth(SMALL_DEPTH)
+                            .withBreadth(SMALL_BREADTH)
+                            .create())
             .useExperimentalGradleVersion(true)
-            .create()
-
-    @AfterClass
-    static void cleanUp() {
-        project = null
-    }
+            .create();
 
     @Test
-    void "'projects' task run on 30 projects"() {
-        project.executeWithBenchmark("SmallAndroid", EVALUATION, "projects")
+    public void projectsTaskRunOn30Projects() {
+        project.executeWithBenchmark("SmallAndroid", EVALUATION, "projects");
     }
 }
