@@ -229,14 +229,12 @@ public class InstantRunTransform extends Transform {
                             }
 
                             try {
-                                // do not record the changes, everything should be packaged in the
-                                // main APK.
                                 transformToClasses2Format(
                                         inputDir,
                                         file,
                                         classesTwoOutput,
                                         Status.ADDED,
-                                        RecordingPolicy.DO_NOT_RECORD);
+                                        RecordingPolicy.RECORD);
                             } catch (IOException e) {
                                 throw new RuntimeException("Exception while preparing "
                                         + file.getAbsolutePath());
