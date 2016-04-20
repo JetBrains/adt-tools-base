@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
-package com.android.builder.core;
+package com.android.build.gradle.internal.dsl;
 
 import com.android.testutils.internal.CopyOfTester;
 
 import org.junit.Test;
 
-public class DefaultDexOptionsTest {
+public class ShaderOptionsTest {
 
     @Test
-    public void copyOfHandlesAllFields() throws Exception {
-        DefaultDexOptions instance = new DefaultDexOptions();
-        CopyOfTester.assertAllMethodsCalled(DexOptions.class, instance, DefaultDexOptions::copyOf);
+    public void testInitWith() throws Exception {
+        CopyOfTester.assertAllMethodsCalled(
+                CoreShaderOptions.class,
+                new ShaderOptions(),
+                original -> new ShaderOptions()._initWith(original));
     }
-
 }

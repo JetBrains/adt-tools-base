@@ -16,16 +16,17 @@
 
 package com.android.builder.core;
 
+import com.android.builder.model.VectorDrawablesOptions;
 import com.android.testutils.internal.CopyOfTester;
 
 import org.junit.Test;
 
-public class DefaultDexOptionsTest {
-
+public class DefaultVectorDrawablesOptionsTest {
     @Test
-    public void copyOfHandlesAllFields() throws Exception {
-        DefaultDexOptions instance = new DefaultDexOptions();
-        CopyOfTester.assertAllMethodsCalled(DexOptions.class, instance, DefaultDexOptions::copyOf);
+    public void testCopyOf() throws Exception {
+        CopyOfTester.assertAllMethodsCalled(
+                VectorDrawablesOptions.class,
+                new DefaultVectorDrawablesOptions(),
+                DefaultVectorDrawablesOptions::copyOf);
     }
-
 }
