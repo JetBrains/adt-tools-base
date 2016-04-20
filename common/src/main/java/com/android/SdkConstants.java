@@ -1052,6 +1052,10 @@ public final class SdkConstants {
     public static final String ATTR_LISTHEADER = "listheader";         //$NON-NLS-1$
     public static final String ATTR_LISTITEM = "listitem";             //$NON-NLS-1$
 
+    // Tools attributes for scrolling
+    public static final String ATTR_SCROLLX = "scrollX";               //$NON-NLS-1$
+    public static final String ATTR_SCROLLY = "scrollY";               //$NON-NLS-1$
+
     // AbsoluteLayout layout params
     public static final String ATTR_LAYOUT_Y = "layout_y";             //$NON-NLS-1$
     public static final String ATTR_LAYOUT_X = "layout_x";             //$NON-NLS-1$
