@@ -23,7 +23,6 @@ import com.android.annotations.NonNull;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.JarInput;
 import com.android.build.api.transform.QualifiedContent;
-import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.api.transform.Status;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
@@ -39,14 +38,12 @@ import com.android.build.gradle.shrinker.KeepRules;
 import com.android.build.gradle.shrinker.ProguardConfig;
 import com.android.build.gradle.shrinker.ProguardFlagsKeepRules;
 import com.android.build.gradle.shrinker.ShrinkerLogger;
-import com.android.builder.core.VariantType;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 
 import org.gradle.tooling.BuildException;
 import org.slf4j.Logger;
@@ -67,16 +64,15 @@ public class NewShrinkerTransform extends ProguardConfigurable {
     private static final Logger logger = LoggerFactory.getLogger(NewShrinkerTransform.class);
     private static final String NAME = "newClassShrinker";
 
-    private final VariantType variantType;
     private final Set<File> platformJars;
     private final File incrementalDir;
     private final List<String> dontwarnLines;
     private final List<String> keepLines;
 
     public NewShrinkerTransform(@NonNull VariantScope scope) {
+        super(scope);
         this.platformJars = ImmutableSet.copyOf(
                 scope.getGlobalScope().getAndroidBuilder().getBootClasspath(true));
-        this.variantType = scope.getVariantData().getType();
         this.incrementalDir = scope.getIncrementalDir(scope.getTaskName(NAME));
         this.dontwarnLines = Lists.newArrayList();
         this.keepLines = Lists.newArrayList();
@@ -92,35 +88,6 @@ public class NewShrinkerTransform extends ProguardConfigurable {
     @Override
     public Set<QualifiedContent.ContentType> getInputTypes() {
         return TransformManager.CONTENT_CLASS;
-    }
-
-    @NonNull
-    @Override
-    public Set<Scope> getScopes() {
-        if (variantType == VariantType.LIBRARY) {
-            return Sets.immutableEnumSet(Scope.PROJECT, Scope.PROJECT_LOCAL_DEPS);
-        }
-
-        return TransformManager.SCOPE_FULL_PROJECT;
-    }
-
-    @NonNull
-    @Override
-    public Set<Scope> getReferencedScopes() {
-        Set<Scope> set = Sets.newLinkedHashSetWithExpectedSize(5);
-        if (variantType == VariantType.LIBRARY) {
-            set.add(Scope.SUB_PROJECTS);
-            set.add(Scope.SUB_PROJECTS_LOCAL_DEPS);
-            set.add(Scope.EXTERNAL_LIBRARIES);
-        }
-
-        if (variantType.isForTesting()) {
-            set.add(Scope.TESTED_CODE);
-        }
-
-        set.add(Scope.PROVIDED_ONLY);
-
-        return Sets.immutableEnumSet(set);
     }
 
     @NonNull

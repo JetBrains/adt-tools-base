@@ -20,6 +20,7 @@ import static com.android.build.OutputFile.DENSITY;
 import static com.android.builder.core.BuilderConstants.CONNECTED;
 import static com.android.builder.core.BuilderConstants.DEVICE;
 import static com.android.builder.core.VariantType.ANDROID_TEST;
+import static com.android.builder.core.VariantType.LIBRARY;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Verify.verifyNotNull;
@@ -147,8 +148,6 @@ import com.android.builder.core.DefaultDexOptions;
 import com.android.builder.core.DexOptions;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
-import com.android.builder.dependency.LibraryDependency;
-import com.android.builder.internal.testing.SimpleTestCallable;
 import com.android.builder.model.DataBindingOptions;
 import com.android.builder.model.SyncIssue;
 import com.android.builder.sdk.TargetInfo;
@@ -2548,11 +2547,7 @@ public abstract class TaskManager {
 
     private void createNewShrinkerTransform(VariantScope scope, TaskFactory taskFactory) {
         NewShrinkerTransform transform = new NewShrinkerTransform(scope);
-        addProguardConfigFiles(transform, scope.getVariantData());
-
-        if (scope.getVariantConfiguration().isTestCoverageEnabled()) {
-            addJacocoShrinkerFlags(transform);
-        }
+        applyProguardConfig(transform, scope.getVariantData());
 
         if (getIncrementalMode(scope.getVariantConfiguration()) != IncrementalMode.NONE) {
             //TODO: This is currently overly broad, as finding the actual application class
@@ -2587,9 +2582,7 @@ public abstract class TaskManager {
             applyProguardDefaultsForTest(transform);
             // All -dontwarn rules for test dependencies should go in here:
             transform.setConfigurationFiles(
-                    Suppliers.ofInstance(
-                            (Collection<File>) testedVariantData.getVariantConfiguration()
-                                    .getTestProguardFiles()));
+                    testedVariantData.getVariantConfiguration()::getTestProguardFiles);
 
             // register the mapping file which may or may not exists (only exist if obfuscation)
             // is enabled.
@@ -2597,16 +2590,10 @@ public abstract class TaskManager {
         } else if (isTestedAppMinified(variantScope)){
             applyProguardDefaultsForTest(transform);
             // All -dontwarn rules for test dependencies should go in here:
-            transform.setConfigurationFiles(
-                    Suppliers.ofInstance(
-                            (Collection<File>) variantConfig.getTestProguardFiles()));
+            transform.setConfigurationFiles(variantConfig::getTestProguardFiles);
             transform.applyTestedMapping(mappingConfiguration);
         } else {
-            if (variantConfig.isTestCoverageEnabled()) {
-                addJacocoShrinkerFlags(transform);
-            }
-
-            addProguardConfigFiles(transform, variantData);
+            applyProguardConfig(transform, variantData);
 
             if (mappingConfiguration != null) {
                 transform.applyTestedMapping(mappingConfiguration);
@@ -2635,7 +2622,7 @@ public abstract class TaskManager {
         }
     }
 
-    private void applyProguardDefaultsForTest(ProGuardTransform transform) {
+    private static void applyProguardDefaultsForTest(ProGuardTransform transform) {
         // Don't remove any code in tested app.
         transform.dontshrink();
         transform.dontoptimize();
@@ -2688,15 +2675,7 @@ public abstract class TaskManager {
         }
     }
 
-    private static void addJacocoShrinkerFlags(ProguardConfigurable transform) {
-        // when collecting coverage, don't remove the JaCoCo runtime
-        transform.keep("class com.vladium.** {*;}");
-        transform.keep("class org.jacoco.** {*;}");
-        transform.keep("interface org.jacoco.** {*;}");
-        transform.dontwarn("org.jacoco.**");
-    }
-
-    private void addProguardConfigFiles(
+    private void applyProguardConfig(
             ProguardConfigurable transform,
             final BaseVariantData<? extends BaseVariantOutputData> variantData) {
         final GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
@@ -2713,6 +2692,19 @@ public abstract class TaskManager {
             proguardFiles.add(outputData.processResourcesTask.getProguardOutputFile());
             return proguardFiles;
         });
+
+        if (variantData.getType() == LIBRARY) {
+            transform.keep("class **.R");
+            transform.keep("class **.R$*");
+        }
+
+        if (variantData.getVariantConfiguration().isTestCoverageEnabled()) {
+            // when collecting coverage, don't remove the JaCoCo runtime
+            transform.keep("class com.vladium.** {*;}");
+            transform.keep("class org.jacoco.** {*;}");
+            transform.keep("interface org.jacoco.** {*;}");
+            transform.dontwarn("org.jacoco.**");
+        }
     }
 
     public void createReportTasks(

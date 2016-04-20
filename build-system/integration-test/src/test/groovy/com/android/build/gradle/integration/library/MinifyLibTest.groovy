@@ -18,39 +18,81 @@ package com.android.build.gradle.integration.library
 
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject
+import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.build.gradle.integration.common.truth.TruthHelper
-import com.google.common.truth.Truth
+import com.android.build.gradle.integration.shrinker.ShrinkerTestUtils
+import com.google.common.io.Files
 import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
+import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
+
+import java.nio.charset.Charset
 
 /**
  * Assemble tests for minifyLib.
  */
 @CompileStatic
+@RunWith(FilterableParameterized)
 class MinifyLibTest {
-    @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    @Parameterized.Parameters(name = "useProguard = {0}")
+    public static Collection<Object[]> data() {
+        return [
+                [true] as Object[],
+                [false] as Object[],
+        ]
+    }
+
+    @Parameterized.Parameter(0)
+    public boolean useProguard
+
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("minifyLib")
             .create()
 
-    @BeforeClass
-    static void setUp() {
-        project.execute("clean", "assembleDebug")
-    }
+    @Test
+    public void consumerProguardFile() throws Exception {
+        if (!useProguard) {
+            ShrinkerTestUtils.enableShrinker(project.getSubproject(":app"), "debug")
+        }
 
-    @AfterClass
-    static void cleanUp() {
-        project = null
+        project.execute(":app:assembleDebug")
+        File apk = project.getSubproject(":app").getApk("debug")
+        TruthHelper.assertThatApk(apk).containsClass("Lcom/android/tests/basic/StringProvider;")
+        TruthHelper.assertThatApk(apk).containsClass("Lcom/android/tests/basic/UnusedClass;")
     }
 
     @Test
-    void lint() {
-        project.execute("lint")
+    public void shrinkingTheLibrary() throws Exception {
+        enableLibShrinking()
+
+        project.execute(":app:assembleDebug")
+
+        File aar = project.getSubproject(":lib").getAar("release")
+        TruthHelper.assertThatAar(aar).containsClass("Lcom/android/tests/basic/StringProvider;")
+        TruthHelper.assertThatAar(aar).doesNotContainClass("Lcom/android/tests/basic/UnusedClass;")
+
+        File apk = project.getSubproject(":app").getApk("debug")
+        TruthHelper.assertThatApk(apk).containsClass("Lcom/android/tests/basic/StringProvider;")
+        TruthHelper.assertThatApk(apk).doesNotContainClass("Lcom/android/tests/basic/UnusedClass;")
+    }
+
+    /**
+     * Tests the edge case of a library with no classes (after shrinking). We should at least not
+     * crash.
+     */
+    @Test
+    public void shrinkingTheLibrary_noClasses() throws Exception {
+        enableLibShrinking()
+        Files.write(
+                "", // Remove the -keep rules.
+                project.getSubproject(":lib").file("config.pro"),
+                Charset.defaultCharset());
+
+        project.execute(":lib:assembleDebug")
     }
 
     @Test
@@ -58,4 +100,19 @@ class MinifyLibTest {
     void connectedCheck() {
         project.executeConnectedCheck()
     }
+
+    private void enableLibShrinking() {
+        project.getSubproject(":lib").buildFile << """android {
+            buildTypes.release {
+                minifyEnabled true
+                proguardFiles getDefaultProguardFile('proguard-android.txt'), 'config.pro'
+            }
+        }
+        """
+
+        if (!useProguard) {
+            ShrinkerTestUtils.enableShrinker(project.getSubproject(":lib"), "release")
+        }
+    }
+
 }
