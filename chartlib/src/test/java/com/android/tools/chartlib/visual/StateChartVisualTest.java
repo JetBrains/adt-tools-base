@@ -17,10 +17,10 @@
 package com.android.tools.chartlib.visual;
 
 import com.android.annotations.NonNull;
+import com.android.tools.chartlib.Animatable;
 import com.android.tools.chartlib.AnimatedComponent;
 import com.android.tools.chartlib.AnimatedTimeRange;
 import com.android.tools.chartlib.AxisComponent;
-import com.android.tools.chartlib.Choreographer;
 import com.android.tools.chartlib.Range;
 import com.android.tools.chartlib.StateChart;
 import com.android.tools.chartlib.model.RangedDiscreteSeries;
@@ -37,6 +37,7 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -78,24 +79,25 @@ public class StateChartVisualTest extends VisualTest {
     private static final int AXIS_SIZE = 100;
 
     @NonNull
-    private final Range mXRange;
+    private Range mXRange;
 
     @NonNull
-    private final AnimatedTimeRange mAnimatedTimeRange;
+    private AnimatedTimeRange mAnimatedTimeRange;
 
     @NonNull
-    private final StateChart mNetworkStatusChart;
+    private StateChart mNetworkStatusChart;
 
     @NonNull
-    private final StateChart mRadioStateChart;
+    private StateChart mRadioStateChart;
 
     @NonNull
-    private final StateChartData mNetworkData;
+    private StateChartData mNetworkData;
 
     @NonNull
-    private final StateChartData mRadioData;
+    private StateChartData mRadioData;
 
-    public StateChartVisualTest() {
+    @Override
+    protected List<Animatable> createComponentsList() {
         mNetworkData = new StateChartData();
         mRadioData = new StateChartData();
         long now = System.currentTimeMillis();
@@ -108,14 +110,11 @@ public class StateChartVisualTest extends VisualTest {
         mNetworkStatusChart = new StateChart(mNetworkData, MOCK_COLORS_1);
         mRadioStateChart = new StateChart(mRadioData, MOCK_COLORS_2);
 
-        mChoreographer.register(mAnimatedTimeRange);
-        mChoreographer.register(mXRange);
-        mChoreographer.register(mNetworkStatusChart);
-        mChoreographer.register(mRadioStateChart);
+        return Arrays.asList(mAnimatedTimeRange, mXRange, mNetworkStatusChart, mRadioStateChart);
     }
 
     @Override
-    void registerComponents(List<AnimatedComponent> components) {
+    protected void registerComponents(List<AnimatedComponent> components) {
         components.add(mNetworkStatusChart);
         components.add(mRadioStateChart);
     }
@@ -141,7 +140,7 @@ public class StateChartVisualTest extends VisualTest {
         final AtomicInteger networkVariance = new AtomicInteger(MockFruitState.values().length);
         final AtomicInteger radioVariance = new AtomicInteger(MockStrengthState.values().length);
         final AtomicInteger delay = new AtomicInteger(100);
-        new Thread() {
+        mUpdateDataThread = new Thread() {
             @Override
             public void run() {
                 super.run();
@@ -168,7 +167,8 @@ public class StateChartVisualTest extends VisualTest {
                 } catch (InterruptedException e) {
                 }
             }
-        }.start();
+        };
+        mUpdateDataThread.start();
 
         controls.add(VisualTests.createVariableSlider("ArcWidth", 0, 100, new VisualTests.Value() {
             @Override

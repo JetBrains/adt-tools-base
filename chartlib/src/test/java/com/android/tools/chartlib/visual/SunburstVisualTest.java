@@ -16,8 +16,8 @@
 
 package com.android.tools.chartlib.visual;
 
+import com.android.tools.chartlib.Animatable;
 import com.android.tools.chartlib.AnimatedComponent;
-import com.android.tools.chartlib.Choreographer;
 import com.android.tools.chartlib.SunburstComponent;
 import com.android.tools.chartlib.ValuedTreeNode;
 
@@ -27,6 +27,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
@@ -40,19 +41,19 @@ import javax.swing.tree.DefaultMutableTreeNode;
 
 public class SunburstVisualTest extends VisualTest {
 
-    private final SunburstComponent mSunburst;
+    private SunburstComponent mSunburst;
 
-    public SunburstVisualTest() {
-
-        final DataNode data = new DataNode();
-        data.addDataNode(new DataNode(1, 10));
-        mSunburst = new SunburstComponent(data);
-        mChoreographer.register(mSunburst);
+    @Override
+    protected void registerComponents(List<AnimatedComponent> components) {
+        components.add(mSunburst);
     }
 
     @Override
-    void registerComponents(List<AnimatedComponent> components) {
-        components.add(mSunburst);
+    protected List<Animatable> createComponentsList() {
+        final DataNode data = new DataNode();
+        data.addDataNode(new DataNode(1, 10));
+        mSunburst = new SunburstComponent(data);
+        return Collections.singletonList(mSunburst);
     }
 
     @Override

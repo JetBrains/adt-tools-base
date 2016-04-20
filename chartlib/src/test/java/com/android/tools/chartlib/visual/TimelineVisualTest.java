@@ -16,8 +16,8 @@
 
 package com.android.tools.chartlib.visual;
 
+import com.android.tools.chartlib.Animatable;
 import com.android.tools.chartlib.AnimatedComponent;
-import com.android.tools.chartlib.Choreographer;
 import com.android.tools.chartlib.EventData;
 import com.android.tools.chartlib.TimelineComponent;
 import com.android.tools.chartlib.TimelineData;
@@ -31,6 +31,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -41,22 +42,23 @@ import javax.swing.UIManager;
 
 public class TimelineVisualTest extends VisualTest {
 
-    private final TimelineComponent mTimeline;
+    private TimelineComponent mTimeline;
 
-    private final EventData mEvents;
+    private EventData mEvents;
 
-    private final TimelineData mData;
+    private TimelineData mData;
 
-    public TimelineVisualTest() {
-        mEvents = new EventData();
-        mData = new TimelineData(2, 2000);
-        mTimeline = new TimelineComponent(mData, mEvents, 1.0f, 10.0f, 1000.0f, 10.0f);
-        mChoreographer.register(mTimeline);
+       @Override
+    protected void registerComponents(List<AnimatedComponent> components) {
+        components.add(mTimeline);
     }
 
     @Override
-    void registerComponents(List<AnimatedComponent> components) {
-        components.add(mTimeline);
+    protected List<Animatable> createComponentsList() {
+        mEvents = new EventData();
+        mData = new TimelineData(2, 2000);
+        mTimeline = new TimelineComponent(mData, mEvents, 1.0f, 10.0f, 1000.0f, 10.0f);
+        return Collections.singletonList(mTimeline);
     }
 
     static void changeStreamSize(AtomicInteger streamSize,
@@ -115,7 +117,7 @@ public class TimelineVisualTest extends VisualTest {
         final AtomicInteger type = new AtomicInteger(0);
         final List<String> labelSharingStreams = new ArrayList<String>();
         final int maxNumStreams = 10;
-        new Thread() {
+        mUpdateDataThread = new Thread() {
             @Override
             public void run() {
                 super.run();
@@ -149,7 +151,8 @@ public class TimelineVisualTest extends VisualTest {
                 } catch (InterruptedException e) {
                 }
             }
-        }.start();
+        };
+        mUpdateDataThread.start();
 
         mTimeline.configureStream(0, "Data 0", new Color(0x78abd9));
         mTimeline.configureStream(1, "Data 1", new Color(0xbaccdc));

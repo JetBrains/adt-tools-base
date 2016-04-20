@@ -42,15 +42,14 @@ public class VisualTests extends JDialog {
 
     private List<Choreographer> mChoreographers = new LinkedList<Choreographer>();
 
+    private final JTabbedPane mTabs;
+
     private VisualTests() {
         final JPanel contentPane = new JPanel(new BorderLayout());
-        final JTabbedPane tabs = new JTabbedPane();
-
-        addTests();
-        resetTabs(tabs);
+        mTabs = new JTabbedPane();
 
         contentPane.setPreferredSize(new Dimension(1280, 1024));
-        contentPane.add(tabs, BorderLayout.CENTER);
+        contentPane.add(mTabs, BorderLayout.CENTER);
 
         JButton close = new JButton("Close");
         close.addActionListener(new ActionListener() {
@@ -63,8 +62,7 @@ public class VisualTests extends JDialog {
         reset.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                resetTests();
-                resetTabs(tabs);
+                resetTabs();
             }
         });
         JPanel bottom = new JPanel(new BorderLayout());
@@ -127,34 +125,25 @@ public class VisualTests extends JDialog {
         getRootPane().setDefaultButton(close);
     }
 
-    private void addTests() {
-        mTests.add(new AxisLineChartVisualTest());
-        mTests.add(new StateChartVisualTest());
-        mTests.add(new LineChartVisualTest());
-        mTests.add(new SunburstVisualTest());
-        mTests.add(new TimelineVisualTest());
+    public void addTest(VisualTest test) {
+        mTests.add(test);
     }
 
-    private void resetTests() {
-        mTests.clear();
+    private void resetTabs() {
+        int currentTabIndex = mTabs.getSelectedIndex();
+        mTabs.removeAll();
         mChoreographers.clear();
-        addTests();
-    }
-
-    private void resetTabs(JTabbedPane tabs) {
-        int currentTabIndex = tabs.getSelectedIndex();
-        tabs.removeAll();
         // Make sure to reset the components list
         mComponents = new LinkedList<AnimatedComponent>();
         for (VisualTest test : mTests) {
             test.registerComponents(mComponents);
-            test.initialize();
-            tabs.addTab(test.getName(), test.getPanel());
+            test.reset();
+            mTabs.addTab(test.getName(), test.getPanel());
             mChoreographers.add(test.getChoreographer());
         }
         // Return to previous selected tab if there was one
         if (currentTabIndex != -1) {
-            tabs.setSelectedIndex(currentTabIndex);
+            mTabs.setSelectedIndex(currentTabIndex);
         }
     }
 
@@ -164,6 +153,12 @@ public class VisualTests extends JDialog {
                 c.getPanel().setBackground(dark ? new Color(60, 63, 65) : new Color(244, 244, 244));
             }
         }
+    }
+
+    @Override
+    public void pack() {
+        super.pack();
+        resetTabs();
     }
 
     interface Value {
@@ -233,7 +228,11 @@ public class VisualTests extends JDialog {
             @Override
             public void run() {
                 VisualTests dialog = new VisualTests();
-
+                dialog.addTest(new AxisLineChartVisualTest());
+                dialog.addTest(new StateChartVisualTest());
+                dialog.addTest(new LineChartVisualTest());
+                dialog.addTest(new SunburstVisualTest());
+                dialog.addTest(new TimelineVisualTest());
                 dialog.pack();
                 dialog.setVisible(true);
             }
