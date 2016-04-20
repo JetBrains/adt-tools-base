@@ -214,28 +214,6 @@ public class DataBindingIncrementalTest {
         assertRecompile();
     }
 
-    @Test
-    public void testUpdateExpression() throws IOException, ProcessException {
-        project.execute("assembleDebug");
-        TestFileUtils.replaceLine(project.file(ACTIVITY_MAIN_XML), 29,
-                "<TextView android:text='@{foo + ` changed`}'");
-        project.execute("assembleDebug");
-        assertUpToDate(EXPORT_INFO_TASK, false);
-        assertUpToDate(PROCESS_LAYOUTS_TASK, false);
-        assertRecompile();
-    }
-
-    @Test
-    public void testUpdateToTwoWayExpression() throws IOException, ProcessException {
-        project.execute("assembleDebug");
-        TestFileUtils.replaceLine(project.file(ACTIVITY_MAIN_XML), 29,
-                "<TextView android:text='@={foo}'");
-        project.execute("assembleDebug");
-        assertUpToDate(EXPORT_INFO_TASK, false);
-        assertUpToDate(PROCESS_LAYOUTS_TASK, false);
-        assertRecompile();
-    }
-
     private void assertRecompile() {
         project.execute("assembleDebug");
 
