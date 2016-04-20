@@ -165,7 +165,5 @@ public abstract class AnimatedComponent extends JComponent implements Animatable
         mUpdateStartTime = System.nanoTime();
         this.updateData();
         mUpdateEndTime = System.nanoTime();
-
-        this.repaint();
     }
 }

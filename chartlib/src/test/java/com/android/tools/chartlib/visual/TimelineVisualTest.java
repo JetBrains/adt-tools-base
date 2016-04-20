@@ -16,6 +16,7 @@
 
 package com.android.tools.chartlib.visual;
 
+import com.android.annotations.NonNull;
 import com.android.tools.chartlib.Animatable;
 import com.android.tools.chartlib.AnimatedComponent;
 import com.android.tools.chartlib.EventData;
@@ -110,7 +111,7 @@ public class TimelineVisualTest extends VisualTest {
     }
 
     @Override
-    protected JPanel create() {
+    protected void populateUi(@NonNull JPanel panel) {
         final AtomicInteger streamSize = new AtomicInteger(2);
         final AtomicInteger variance = new AtomicInteger(10);
         final AtomicInteger delay = new AtomicInteger(100);
@@ -185,7 +186,6 @@ public class TimelineVisualTest extends VisualTest {
         };
         mTimeline.addListener(listener);
 
-        final JPanel panel = new JPanel();
         final JPanel controls = VisualTests.createControlledPane(panel, mTimeline);
 
         controls.add(VisualTests.createVariableSlider("Delay", 10, 5000, new VisualTests.Value() {
@@ -261,6 +261,5 @@ public class TimelineVisualTest extends VisualTest {
 
         controls.add(new Box.Filler(new Dimension(0, 0), new Dimension(300, Integer.MAX_VALUE), new Dimension(300, Integer.MAX_VALUE)));
         panel.add(mTimeline, BorderLayout.CENTER);
-        return panel;
     }
 }
