@@ -34,6 +34,10 @@ import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Properties;
 
@@ -63,9 +67,7 @@ public class FileOpImpl implements FileOp {
             sFileSetExecutable = File.class.getMethod("setExecutable", //$NON-NLS-1$
                     boolean.class, boolean.class);
 
-        } catch (SecurityException e) {
-            // do nothing we'll use chmod instead
-        } catch (NoSuchMethodException e) {
+        } catch (SecurityException | NoSuchMethodException e) {
             // do nothing we'll use chmod instead
         }
     }
@@ -126,11 +128,7 @@ public class FileOpImpl implements FileOp {
             try {
                 sFileSetExecutable.invoke(file, sFileSetExecutableParams);
                 return;
-            } catch (IllegalArgumentException e) {
-                // we'll run chmod below
-            } catch (IllegalAccessException e) {
-                // we'll run chmod below
-            } catch (InvocationTargetException e) {
+            } catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException e) {
                 // we'll run chmod below
             }
         }
@@ -149,31 +147,11 @@ public class FileOpImpl implements FileOp {
     public void copyFile(@NonNull File source, @NonNull File dest) throws IOException {
         byte[] buffer = new byte[8192];
 
-        FileInputStream fis = null;
-        FileOutputStream fos = null;
-        try {
-            fis = new FileInputStream(source);
-            fos = new FileOutputStream(dest);
-
+        try (FileInputStream fis = new FileInputStream(source);
+             FileOutputStream fos = new FileOutputStream(dest)) {
             int read;
             while ((read = fis.read(buffer)) != -1) {
                 fos.write(buffer, 0, read);
-            }
-
-        } finally {
-            if (fis != null) {
-                try {
-                    fis.close();
-                } catch (IOException e) {
-                    // Ignore.
-                }
-            }
-            if (fos != null) {
-                try {
-                    fos.close();
-                } catch (IOException e) {
-                    // Ignore.
-                }
             }
         }
     }
@@ -185,13 +163,8 @@ public class FileOpImpl implements FileOp {
             return false;
         }
 
-        FileInputStream fis1 = null;
-        FileInputStream fis2 = null;
-
-        try {
-            fis1 = new FileInputStream(file1);
-            fis2 = new FileInputStream(file2);
-
+        try (FileInputStream fis1 = new FileInputStream(file1);
+             FileInputStream fis2 = new FileInputStream(file2)) {
             byte[] buffer1 = new byte[8192];
             byte[] buffer2 = new byte[8192];
 
@@ -213,23 +186,7 @@ public class FileOpImpl implements FileOp {
                     return false;
                 }
             }
-        } finally {
-            if (fis2 != null) {
-                try {
-                    fis2.close();
-                } catch (IOException e) {
-                    // ignore
-                }
-            }
-            if (fis1 != null) {
-                try {
-                    fis1.close();
-                } catch (IOException e) {
-                    // ignore
-                }
-            }
         }
-
         return true;
     }
 
@@ -281,7 +238,21 @@ public class FileOpImpl implements FileOp {
 
     @Override
     public boolean renameTo(@NonNull File oldFile, @NonNull File newFile) {
-        return oldFile.renameTo(newFile);
+        try {
+            try {
+                java.nio.file.Files
+                        .move(oldFile.toPath(), newFile.toPath(), StandardCopyOption.ATOMIC_MOVE);
+            } catch (AtomicMoveNotSupportedException exception) {
+                // try non-atomic
+                java.nio.file.Files.move(oldFile.toPath(), newFile.toPath());
+            }
+            return true;
+        } catch (FileAlreadyExistsException | DirectoryNotEmptyException exception) {
+            return false;
+        } catch (IOException exception) {
+            // Optimistically try the old way too
+            return oldFile.renameTo(newFile);
+        }
     }
 
     @Override
