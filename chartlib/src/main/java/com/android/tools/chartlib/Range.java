@@ -147,4 +147,15 @@ public class Range implements Animatable {
     public double getLength() {
         return mCurrentMax - mCurrentMin;
     }
+
+
+    public double clamp(double value) {
+        if (value < getMin()){
+            value = getMin();
+        }
+        if (value > getMax()){
+            value = getMax();
+        }
+        return value;
+    }
 }
