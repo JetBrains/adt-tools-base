@@ -161,7 +161,7 @@ import java.util.zip.ZipFile;
  * {@link #processResources(Aapt, AaptPackageConfig.Builder, boolean)}
  * {@link #compileAllAidlFiles(List, File, File, Collection, List, DependencyFileProcessor, ProcessOutputHandler)}
  * {@link #convertByteCode(Collection, File, boolean, File, DexOptions, boolean, ProcessOutputHandler)}
- * {@link #oldPackageApk(String, Set, Collection, Collection, Set, boolean, SigningConfig, File, int, File)}
+ * {@link #oldPackageApk(String, Set, Collection, Collection, Set, boolean, SigningConfig, File, int)}
  *
  * Java compilation is not handled but the builder provides the boot classpath with
  * {@link #getBootClasspath(boolean)}.
@@ -2164,7 +2164,6 @@ public class AndroidBuilder {
      * @param jniDebugBuild whether the app should include jni debug data
      * @param signingConfig the signing configuration
      * @param outApkLocation location of the APK.
-     * @param intermediateDir a directory where to store intermediate files
      * @throws FileNotFoundException if the store location was not found
      * @throws KeytoolException
      * @throws PackagerException
@@ -2178,8 +2177,7 @@ public class AndroidBuilder {
             boolean jniDebugBuild,
             @Nullable SigningConfig signingConfig,
             @NonNull File outApkLocation,
-            int minSdkVersion,
-            @NonNull File intermediateDir)
+            int minSdkVersion)
             throws KeytoolException, PackagerException, SigningException, IOException {
         checkNotNull(androidResPkgLocation, "androidResPkgLocation cannot be null.");
         checkNotNull(outApkLocation, "outApkLocation cannot be null.");
@@ -2217,7 +2215,6 @@ public class AndroidBuilder {
                         Functions.constant(FileModificationType.NEW)));
             }
         }
-
 
         Closer closer = Closer.create();
         try {
