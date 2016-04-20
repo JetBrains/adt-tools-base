@@ -16,6 +16,7 @@
 
 package com.android.tools.chartlib.visual;
 
+import com.android.annotations.NonNull;
 import com.android.tools.chartlib.Animatable;
 import com.android.tools.chartlib.AnimatedComponent;
 
@@ -49,8 +50,7 @@ public class MemoryProfilerVisualTest extends VisualTest {
     }
 
     @Override
-    protected JPanel create() {
+    protected void populateUi(@NonNull JPanel panel) {
         // TODO: implement memory profiler panel
-        return new JPanel();
     }
 }

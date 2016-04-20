@@ -16,6 +16,7 @@
 
 package com.android.tools.chartlib.visual;
 
+import com.android.annotations.NonNull;
 import com.android.tools.chartlib.Animatable;
 import com.android.tools.chartlib.AnimatedComponent;
 import com.android.tools.chartlib.SunburstComponent;
@@ -62,8 +63,7 @@ public class SunburstVisualTest extends VisualTest {
     }
 
     @Override
-    protected JPanel create() {
-        final JPanel panel = new JPanel();
+    protected void populateUi(@NonNull JPanel panel) {
         JPanel controls = VisualTests.createControlledPane(panel, mSunburst);
         final JLabel info = new JLabel("<No information yet>");
         panel.add(info, BorderLayout.SOUTH);
@@ -202,7 +202,6 @@ public class SunburstVisualTest extends VisualTest {
                         node.getValue(), node.getCount()));
             }
         });
-        return panel;
     }
 
     static class DataNode extends DefaultMutableTreeNode implements ValuedTreeNode {

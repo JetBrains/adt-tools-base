@@ -28,6 +28,11 @@ import java.util.List;
 import javax.swing.JComponent;
 import javax.swing.Timer;
 
+/**
+ * An auxiliary object that synchronizes a group of {@link Animatable} via a simple update loop
+ * running at a specific frame rate. This ensures all UI components and model classes are reading
+ * and displaying consistent information at any given time.
+ */
 public class Choreographer implements ActionListener {
 
     private static final float NANOSECONDS_IN_SECOND = 1000000000.0f;
@@ -38,24 +43,26 @@ public class Choreographer implements ActionListener {
     private boolean mUpdate;
     private long mFrameTime;
 
-    private JComponent mParentContainer;
+    /**
+     * At the end of each update loop, repaint is trigger on the parent container so that all its
+     * children are redrawn, displaying the updated data. This avoids having to trigger repaint on
+     * individual components registered to the Choreographer, which can result in redundant draw
+     * calls between loops if they overlap.
+     */
+    @NonNull
+    private final JComponent mParentContainer;
 
-    public Choreographer(int fps) {
+    /**
+     * @param fps    The frame rate that this Choreographer should run at.
+     * @param parent The parent component that contains all {@link AnimatedComponent} registered
+     *               with the Choreographer.
+     */
+    public Choreographer(int fps, @NonNull JComponent parent) {
+        mParentContainer = parent;
         mComponents = new LinkedList<>();
         mUpdate = true;
         mTimer = new Timer(1000 / fps, this);
         mTimer.start();
-    }
-
-    /**
-     * Sets the parent container to trigger a single repaint on all its children components
-     * at the end of every cycle.
-     * TODO - We should refactor this. Instead of having to call setParentContainer,
-     * we can either make it part of the constructor, or use a listener pattern (e.g. postAnimated)
-     * to trigger the master panel's repaint externally.
-     */
-    public void setParentContainer(JComponent parent) {
-        mParentContainer = parent;
     }
 
     public void register(Animatable animatable) {
@@ -78,26 +85,27 @@ public class Choreographer implements ActionListener {
         step(frame);
     }
 
-  /**
-   * Legacy method to animate components. Each component animates on its own and has a choreographer
-   * that is bound to that component's visibility.
-   */
-  public static void animate(final AnimatedComponent component) {
-      final Choreographer choreographer = new Choreographer(30);
-      choreographer.register(component);
-      HierarchyListener listener = new HierarchyListener() {
-          @Override
-          public void hierarchyChanged(HierarchyEvent ignored) {
-              if (choreographer.mTimer.isRunning() && !component.isShowing()) {
-                  choreographer.mTimer.stop();
-              } else if (!choreographer.mTimer.isRunning() && component.isShowing()) {
-                  choreographer.mTimer.start();
-              }
-          }
-      };
-      listener.hierarchyChanged(null);
-      component.addHierarchyListener(listener);
-  }
+    /**
+     * @deprecated Legacy method to animate components. Each component animates on its own and has a
+     * choreographer that is bound to that component's visibility. This can be safely removed once
+     * all the legacy AnimatedComponents in Studio has been replaced by the new UI.
+     */
+    public static void animate(final AnimatedComponent component) {
+        final Choreographer choreographer = new Choreographer(30, component);
+        choreographer.register(component);
+        HierarchyListener listener = new HierarchyListener() {
+            @Override
+            public void hierarchyChanged(HierarchyEvent ignored) {
+                if (choreographer.mTimer.isRunning() && !component.isShowing()) {
+                    choreographer.mTimer.stop();
+                } else if (!choreographer.mTimer.isRunning() && component.isShowing()) {
+                    choreographer.mTimer.start();
+                }
+            }
+        };
+        listener.hierarchyChanged(null);
+        component.addHierarchyListener(listener);
+    }
 
     public void setUpdate(boolean update) {
         mUpdate = update;
@@ -116,13 +124,7 @@ public class Choreographer implements ActionListener {
             component.postAnimate();
         }
 
-        if (mParentContainer != null) {
-            // If a parent container is assigned, calling repaint on it
-            // would force repaint on all its descendants in the correct z-order.
-            // This prevent the children components' repaint call to trigger
-            // redundant redraws on overlapping elements.
-            mParentContainer.repaint();
-        }
+        mParentContainer.repaint();
     }
 
     /**
@@ -130,10 +132,10 @@ public class Choreographer implements ActionListener {
      * value {@code from} moves towards the value {@code to} at a rate of {@code fraction} per
      * second. The actual interpolated amount depends on the current frame length.
      *
-     * @param from          the value to interpolate from.
-     * @param to            the target value.
-     * @param fraction      the interpolation fraction.
-     * @param frameLength   the frame length in seconds.
+     * @param from        the value to interpolate from.
+     * @param to          the target value.
+     * @param fraction    the interpolation fraction.
+     * @param frameLength the frame length in seconds.
      * @return the interpolated value.
      */
     public static float lerp(float from, float to, float fraction, float frameLength) {
