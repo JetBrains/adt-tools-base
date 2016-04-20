@@ -33,6 +33,7 @@ import com.android.build.gradle.internal.tasks.CheckManifest;
 import com.android.build.gradle.internal.tasks.FileSupplier;
 import com.android.build.gradle.internal.tasks.GenerateApkDataTask;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
+import com.android.build.gradle.internal.transforms.JackTransform;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.BinaryFileProviderTask;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
@@ -131,7 +132,8 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     /** Can be JavaCompile or JackTask depending on user's settings. */
     public Task javaCompilerTask;
     public JavaCompile javacTask;
-    public Task jackTask;
+    @Nullable
+    public JackTransform jackTransform = null;
     public Jar classesJarTask;
     // empty anchor compile task to set all compilations tasks as dependents.
     public Task compileTask;
@@ -332,6 +334,9 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
 
         for (File f : generatedSourceFolders) {
             javacTask.source(f);
+            if (jackTransform != null) {
+                jackTransform.addSource(f);
+            }
         }
 
         addJavaSourceFoldersToModel(generatedSourceFolders);
@@ -342,6 +347,9 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
 
         for (File f : generatedSourceFolders) {
             javacTask.source(f);
+            if (jackTransform != null) {
+                jackTransform.addSource(f);
+            }
         }
 
         addJavaSourceFoldersToModel(generatedSourceFolders);

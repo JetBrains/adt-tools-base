@@ -2175,10 +2175,10 @@ public abstract class TaskManager {
 
         // ----- Create Jack Task -----
         JackTransform jackTransform = new JackTransform(scope, isDebugLog(), compileJavaSources);
+        scope.getVariantData().jackTransform = jackTransform;
         final AndroidTask<TransformTask> jackTask = scope.getTransformManager().addTransform(
                 tasks, scope, jackTransform,
                 (transform, task) -> {
-                    scope.getVariantData().jackTask = task;
                     scope.getVariantData().javaCompilerTask = task;
 
                     scope.getVariantData().mappingFileProviderTask = new FileSupplier() {
