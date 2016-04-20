@@ -17,7 +17,13 @@
 package com.android.util;
 
 
+import com.android.annotations.NonNull;
+
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * LayoutLib can return properties that a View asked for at the time of inflation. This map is from
@@ -25,16 +31,134 @@ import java.util.HashMap;
  */
 public class PropertiesMap extends HashMap<String, PropertiesMap.Property> {
 
+    public static final PropertiesMap EMPTY_MAP = new EmptyMap();
+
+    public PropertiesMap() {
+    }
+
+    public PropertiesMap(int capacity) {
+        super(capacity);
+    }
+
     public static class Property {
 
-        /** Pre-resolution resource value */
+        /**
+         * Pre-resolution resource value
+         */
         public final String resource;
-        /** Post-resolution value */
+        /**
+         * Post-resolution value
+         */
         public final String value;
 
         public Property(String resource, String value) {
             this.resource = resource;
             this.value = value;
+        }
+    }
+
+    private static class EmptyMap extends PropertiesMap {
+
+        EmptyMap() {
+            super(0);
+        }
+
+        @Override
+        public int size() {
+            return 0;
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return true;
+        }
+
+        @Override
+        public Property get(Object key) {
+            return null;
+        }
+
+        @Override
+        public boolean containsKey(Object key) {
+            return false;
+        }
+
+        @Override
+        public Property put(String key, Property value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void putAll(Map<? extends String, ? extends Property> m) {
+            throw new UnsupportedOperationException();
+
+        }
+
+        @Override
+        public Property remove(Object key) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void clear() {
+        }
+
+        @Override
+        public boolean containsValue(Object value) {
+            return false;
+        }
+
+        @NonNull
+        @Override
+        public Set<String> keySet() {
+            return Collections.emptySet();
+        }
+
+        @NonNull
+        @Override
+        public Collection<Property> values() {
+            return Collections.emptySet();
+        }
+
+        @NonNull
+        @Override
+        public Set<Entry<String, Property>> entrySet() {
+            return Collections.emptySet();
+        }
+
+        @Override
+        public Property getOrDefault(Object key, Property defaultValue) {
+            return defaultValue;
+        }
+
+        @Override
+        public Property putIfAbsent(String key, Property value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean remove(Object key, Object value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean replace(String key, Property oldValue, Property newValue) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Property replace(String key, Property value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return (o instanceof Map) && ((Map<?, ?>) o).isEmpty();
+        }
+
+        @Override
+        public int hashCode() {
+            return 0;
         }
     }
 }
