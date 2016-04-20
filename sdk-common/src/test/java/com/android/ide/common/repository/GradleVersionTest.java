@@ -332,21 +332,6 @@ public class GradleVersionTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testInvalidVersion4() {
-        GradleVersion.parse("1.2.3-foo-bar");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testInvalidVersion5() {
-        GradleVersion.parse("1.2.3-1-2");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testInvalidVersion6() {
-        GradleVersion.parse("1.2.3-1");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testInvalidVersion7() {
         GradleVersion.parse("1.2.3-develop");
     }
 
@@ -446,6 +431,14 @@ public class GradleVersionTest {
         assertNull(version.getPreviewType());
         assertFalse(version.isSnapshot());
         assertEquals("2.0+", version.toString());
+    }
+
+    @Test
+    public void testParseArbitraryQualifiers() {
+        GradleVersion version = GradleVersion.parse("1.2-XTEXT-PATCHED");
+        assertEquals(1, version.getMajor());
+        assertEquals(2, version.getMinor());
+        assertEquals(0, version.getMicro());
     }
 
     @Test(expected = IllegalArgumentException.class)

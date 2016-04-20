@@ -149,8 +149,6 @@ public class GradleVersion implements Comparable<GradleVersion>, Serializable {
                             if (matcher.groupCount() == 2) {
                                 preview = Integer.parseInt(matcher.group(2));
                             }
-                        } else {
-                            throw parsingFailure(value);
                         }
                     }
                 }
