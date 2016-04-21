@@ -23,6 +23,7 @@ import com.android.annotations.Nullable;
 import com.android.build.OutputFile;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.AndroidGradleOptions;
+import com.android.build.gradle.TestAndroidConfig;
 import com.android.build.gradle.api.ApkOutputFile;
 import com.android.build.gradle.internal.BuildTypeData;
 import com.android.build.gradle.internal.ExtraModelInfo;
@@ -60,6 +61,7 @@ import com.android.builder.model.SigningConfig;
 import com.android.builder.model.SourceProvider;
 import com.android.builder.model.SourceProviderContainer;
 import com.android.builder.model.SyncIssue;
+import com.android.builder.model.TestedTargetVariant;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.google.common.collect.ImmutableCollection;
@@ -298,6 +300,9 @@ public class ModelBuilder implements ToolingModelBuilder {
             sdkVersionOverride = ApiVersionImpl.clone(version);
         }
 
+        // used for test only modules
+        Collection<TestedTargetVariant> testTargetVariants = getTestTargetVariants();
+
         return new VariantImpl(
                 variantName,
                 variantConfiguration.getBaseName(),
@@ -309,7 +314,20 @@ public class ModelBuilder implements ToolingModelBuilder {
                         sdkVersionOverride),
                 mainArtifact,
                 extraAndroidArtifacts,
-                clonedExtraJavaArtifacts);
+                clonedExtraJavaArtifacts,
+                testTargetVariants);
+    }
+
+    @NonNull
+    private Collection<TestedTargetVariant> getTestTargetVariants() {
+        if (config instanceof TestAndroidConfig) {
+            TestAndroidConfig testConfig = (TestAndroidConfig) config;
+            return ImmutableList.of(
+                    new TestedTargetVariantImpl(
+                            testConfig.getTargetProjectPath(), testConfig.getTargetVariant()));
+        } else {
+            return ImmutableList.of();
+        }
     }
 
     private JavaArtifactImpl createUnitTestsJavaArtifact(

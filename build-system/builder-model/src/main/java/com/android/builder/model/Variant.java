@@ -17,7 +17,6 @@
 package com.android.builder.model;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.List;
@@ -100,4 +99,13 @@ public interface Variant {
      */
     @NonNull
     ProductFlavor getMergedFlavor();
+
+    /**
+     * Returns the list of target projects and the variants that this variant is testing.
+     * This is specified for the test only variants (ones using the test plugin).
+     *
+     * @return all tested variants
+     */
+    @NonNull
+    Collection<TestedTargetVariant> getTestedTargetVariants();
 }
