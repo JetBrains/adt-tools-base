@@ -16,7 +16,6 @@
 
 package com.android.manifmerger;
 
-import static com.android.manifmerger.ManifestMerger2.SystemProperty;
 import static com.android.manifmerger.ManifestModel.NodeTypes.USES_PERMISSION;
 import static com.android.manifmerger.ManifestModel.NodeTypes.USES_SDK;
 import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
@@ -42,7 +41,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-import java.io.File;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -85,7 +83,7 @@ public class XmlDocument {
     @NonNull
     private final KeyResolver<String> mSelectors;
     @NonNull
-    private final KeyBasedValueResolver<SystemProperty> mSystemPropertyResolver;
+    private final KeyBasedValueResolver<ManifestSystemProperty> mSystemPropertyResolver;
     @NonNull
     private final Type mType;
     @NonNull
@@ -94,7 +92,7 @@ public class XmlDocument {
     public XmlDocument(
             @NonNull SourceFile sourceLocation,
             @NonNull KeyResolver<String> selectors,
-            @NonNull KeyBasedValueResolver<SystemProperty> systemPropertyResolver,
+            @NonNull KeyBasedValueResolver<ManifestSystemProperty> systemPropertyResolver,
             @NonNull Element element,
             @NonNull Type type,
             @NonNull Optional<String> mainManifestPackageName) {
@@ -177,10 +175,10 @@ public class XmlDocument {
 
     /**
      * Returns the {@link com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver} capable
-     * of resolving all injected {@link com.android.manifmerger.ManifestMerger2.SystemProperty}
+     * of resolving all injected {@link ManifestSystemProperty}
      */
     @NonNull
-    public KeyBasedValueResolver<SystemProperty> getSystemPropertyResolver() {
+    public KeyBasedValueResolver<ManifestSystemProperty> getSystemPropertyResolver() {
         return mSystemPropertyResolver;
     }
 
@@ -304,7 +302,7 @@ public class XmlDocument {
     @NonNull
     private String getMinSdkVersion() {
         // check for system properties.
-        String injectedMinSdk = mSystemPropertyResolver.getValue(SystemProperty.MIN_SDK_VERSION);
+        String injectedMinSdk = mSystemPropertyResolver.getValue(ManifestSystemProperty.MIN_SDK_VERSION);
         if (injectedMinSdk != null) {
             return injectedMinSdk;
         }
@@ -339,7 +337,7 @@ public class XmlDocument {
 
         // check for system properties.
         String injectedTargetVersion = mSystemPropertyResolver
-                .getValue(SystemProperty.TARGET_SDK_VERSION);
+                .getValue(ManifestSystemProperty.TARGET_SDK_VERSION);
         if (injectedTargetVersion != null) {
             return injectedTargetVersion;
         }

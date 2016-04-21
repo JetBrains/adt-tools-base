@@ -23,7 +23,6 @@ import static com.android.SdkConstants.FD_RES_XML;
 import static com.android.builder.core.BuilderConstants.ANDROID_WEAR;
 import static com.android.builder.core.BuilderConstants.ANDROID_WEAR_MICRO_APK;
 import static com.android.manifmerger.ManifestMerger2.Invoker;
-import static com.android.manifmerger.ManifestMerger2.SystemProperty;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -96,6 +95,7 @@ import com.android.jack.api.v02.Api02Config;
 import com.android.manifmerger.ManifestMerger2;
 import com.android.manifmerger.MergingReport;
 import com.android.manifmerger.PlaceholderHandler;
+import com.android.manifmerger.ManifestSystemProperty;
 import com.android.repository.Revision;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
@@ -713,7 +713,7 @@ public class AndroidBuilder {
     }
 
     /**
-     * Sets the {@link com.android.manifmerger.ManifestMerger2.SystemProperty} that can be injected
+     * Sets the {@link ManifestSystemProperty} that can be injected
      * in the manifest file.
      */
     private static void setInjectableValues(
@@ -726,23 +726,23 @@ public class AndroidBuilder {
             @Nullable Integer maxSdkVersion) {
 
         if (!Strings.isNullOrEmpty(packageOverride)) {
-            invoker.setOverride(SystemProperty.PACKAGE, packageOverride);
+            invoker.setOverride(ManifestSystemProperty.PACKAGE, packageOverride);
         }
         if (versionCode > 0) {
-            invoker.setOverride(SystemProperty.VERSION_CODE,
+            invoker.setOverride(ManifestSystemProperty.VERSION_CODE,
                     String.valueOf(versionCode));
         }
         if (!Strings.isNullOrEmpty(versionName)) {
-            invoker.setOverride(SystemProperty.VERSION_NAME, versionName);
+            invoker.setOverride(ManifestSystemProperty.VERSION_NAME, versionName);
         }
         if (!Strings.isNullOrEmpty(minSdkVersion)) {
-            invoker.setOverride(SystemProperty.MIN_SDK_VERSION, minSdkVersion);
+            invoker.setOverride(ManifestSystemProperty.MIN_SDK_VERSION, minSdkVersion);
         }
         if (!Strings.isNullOrEmpty(targetSdkVersion)) {
-            invoker.setOverride(SystemProperty.TARGET_SDK_VERSION, targetSdkVersion);
+            invoker.setOverride(ManifestSystemProperty.TARGET_SDK_VERSION, targetSdkVersion);
         }
         if (maxSdkVersion != null) {
-            invoker.setOverride(SystemProperty.MAX_SDK_VERSION, maxSdkVersion.toString());
+            invoker.setOverride(ManifestSystemProperty.MAX_SDK_VERSION, maxSdkVersion.toString());
         }
     }
 
@@ -878,18 +878,18 @@ public class AndroidBuilder {
                         .addLibraryManifest(generatedTestManifest);
 
                 // we override these properties
-                invoker.setOverride(SystemProperty.PACKAGE, testApplicationId);
-                invoker.setOverride(SystemProperty.MIN_SDK_VERSION, minSdkVersion);
-                invoker.setOverride(SystemProperty.NAME, instrumentationRunner);
-                invoker.setOverride(SystemProperty.TARGET_PACKAGE, testedApplicationId);
-                invoker.setOverride(SystemProperty.FUNCTIONAL_TEST, functionalTest.toString());
-                invoker.setOverride(SystemProperty.HANDLE_PROFILING, handleProfiling.toString());
+                invoker.setOverride(ManifestSystemProperty.PACKAGE, testApplicationId);
+                invoker.setOverride(ManifestSystemProperty.MIN_SDK_VERSION, minSdkVersion);
+                invoker.setOverride(ManifestSystemProperty.NAME, instrumentationRunner);
+                invoker.setOverride(ManifestSystemProperty.TARGET_PACKAGE, testedApplicationId);
+                invoker.setOverride(ManifestSystemProperty.FUNCTIONAL_TEST, functionalTest.toString());
+                invoker.setOverride(ManifestSystemProperty.HANDLE_PROFILING, handleProfiling.toString());
                 if (testLabel != null) {
-                    invoker.setOverride(SystemProperty.LABEL, testLabel);
+                    invoker.setOverride(ManifestSystemProperty.LABEL, testLabel);
                 }
 
                 if (!targetSdkVersion.equals("-1")) {
-                    invoker.setOverride(SystemProperty.TARGET_SDK_VERSION, targetSdkVersion);
+                    invoker.setOverride(ManifestSystemProperty.TARGET_SDK_VERSION, targetSdkVersion);
                 }
 
                 MergingReport mergingReport = invoker.merge();
@@ -906,7 +906,7 @@ public class AndroidBuilder {
                 MergingReport mergingReport = ManifestMerger2.newMerger(
                         generatedTestManifest, mLogger, ManifestMerger2.MergeType.APPLICATION)
                         .withFeatures(Invoker.Feature.REMOVE_TOOLS_DECLARATIONS)
-                        .setOverride(SystemProperty.PACKAGE, testApplicationId)
+                        .setOverride(ManifestSystemProperty.PACKAGE, testApplicationId)
                         .addLibraryManifests(collectLibraries(libraries))
                         .setPlaceHolderValues(manifestPlaceholders)
                         .merge();

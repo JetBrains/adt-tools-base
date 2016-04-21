@@ -16,7 +16,6 @@
 
 package com.android.manifmerger;
 
-import static com.android.manifmerger.ManifestMerger2.SystemProperty;
 import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
 
 import com.android.annotations.NonNull;
@@ -50,11 +49,11 @@ public class TestUtils {
         }
     };
 
-    private static final KeyBasedValueResolver<SystemProperty> NO_PROPERTY_RESOLVER =
-            new KeyBasedValueResolver<SystemProperty>() {
+    private static final KeyBasedValueResolver<ManifestSystemProperty> NO_PROPERTY_RESOLVER =
+            new KeyBasedValueResolver<ManifestSystemProperty>() {
                 @Nullable
                 @Override
-                public String getValue(@NonNull SystemProperty key) {
+                public String getValue(@NonNull ManifestSystemProperty key) {
                     return null;
                 }
             };
