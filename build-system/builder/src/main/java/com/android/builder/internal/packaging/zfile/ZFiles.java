@@ -22,6 +22,7 @@ import com.android.builder.internal.packaging.sign.FullApkSignExtension;
 import com.android.builder.internal.packaging.sign.ManifestGenerationExtension;
 import com.android.builder.internal.packaging.sign.SignatureExtension;
 import com.android.builder.internal.packaging.zip.AlignmentRule;
+import com.android.builder.internal.packaging.zip.AlignmentRules;
 import com.android.builder.internal.packaging.zip.ZFile;
 import com.android.builder.internal.packaging.zip.ZFileOptions;
 
@@ -30,7 +31,6 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.regex.Pattern;
 
 /**
  * Factory for {@link ZFile}s that are specifically configured to be APKs, AARs, ...
@@ -40,14 +40,12 @@ public class ZFiles {
     /**
      * By default, files are aligned at 4-byte boundaries.
      */
-    private static final AlignmentRule DEFAULT_RULE =
-            new AlignmentRule(Pattern.compile(".*"), 4, false);
+    private static final AlignmentRule DEFAULT_RULE = AlignmentRules.constant(4);
 
     /**
      * SOs are aligned at 4096-byte boundaries and identified as files ending with {@code .so}.
      */
-    private static final AlignmentRule SO_RULE =
-            new AlignmentRule(Pattern.compile(".*\\.so"), 4096, false);
+    private static final AlignmentRule SO_RULE = AlignmentRules.constantForSuffix(".so", 4096);
 
     /**
      * Default build by string.
@@ -72,8 +70,8 @@ public class ZFiles {
     @NonNull
     public static ZFile apk(@NonNull File f, @NonNull ZFileOptions options) throws IOException {
         ZFile zfile = new ZFile(f, options);
-        zfile.getAlignmentRules().add(SO_RULE);
-        zfile.getAlignmentRules().add(DEFAULT_RULE);
+        options.setAlignmentRule(
+                AlignmentRules.compose(options.getAlignmentRule(), SO_RULE, DEFAULT_RULE));
         return zfile;
     }
 
@@ -98,6 +96,8 @@ public class ZFiles {
             @Nullable PrivateKey key, @Nullable X509Certificate certificate,
             @Nullable String builtBy, @Nullable String createdBy, int minSdkVersion)
             throws IOException {
+        options.setAlignmentRule(
+                AlignmentRules.compose(options.getAlignmentRule(), SO_RULE, DEFAULT_RULE));
         ZFile zfile = apk(f, options);
 
         if (builtBy == null) {
@@ -125,8 +125,6 @@ public class ZFiles {
             }
         }
 
-        zfile.getAlignmentRules().add(SO_RULE);
-        zfile.getAlignmentRules().add(DEFAULT_RULE);
         return zfile;
     }
 }

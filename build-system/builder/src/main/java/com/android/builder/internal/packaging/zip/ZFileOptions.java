@@ -46,16 +46,24 @@ public class ZFileOptions {
     private boolean mNoTimestamps;
 
     /**
+     * The alginment rule to use.
+     */
+    @NonNull
+    private AlignmentRule mAlignmentRule;
+
+    /**
      * Creates a new options object. All options are set to their defaults.
      */
     public ZFileOptions() {
         mTracker = new ByteTracker();
         mCompressor = new DeflateExecutionCompressor(MoreExecutors.sameThreadExecutor(), mTracker,
                 Deflater.DEFAULT_COMPRESSION);
+        mAlignmentRule = AlignmentRules.compose();
     }
 
     /**
      * Obtains the ZFile's byte tracker.
+     *
      * @return the byte tracker
      */
     @NonNull
@@ -66,6 +74,7 @@ public class ZFileOptions {
     /**
      * Sets the byte tracker to use. Setting the tracker usually requires setting the compressor
      * to use this tracker.
+     *
      * @param tracker the byte tracker
      */
     public void setTracker(@NonNull ByteTracker tracker) {
@@ -74,6 +83,7 @@ public class ZFileOptions {
 
     /**
      * Obtains the compressor to use.
+     *
      * @return the compressor
      */
     @NonNull
@@ -83,6 +93,7 @@ public class ZFileOptions {
 
     /**
      * Sets the compressor to use.
+     *
      * @param compressor the compressor
      */
     public void setCompressor(@NonNull Compressor compressor) {
@@ -91,6 +102,7 @@ public class ZFileOptions {
 
     /**
      * Obtains whether timestamps should be zeroed.
+     *
      * @return should timestamps be zeroed?
      */
     public boolean getNoTimestamps() {
@@ -99,9 +111,29 @@ public class ZFileOptions {
 
     /**
      * Sets whether timestamps should be zeroed.
+     *
      * @param noTimestamps should timestamps be zeroed?
      */
     public void setNoTimestamps(boolean noTimestamps) {
         mNoTimestamps = noTimestamps;
+    }
+
+    /**
+     * Obtains the alignment rule.
+     *
+     * @return the alignment rule
+     */
+    @NonNull
+    public AlignmentRule getAlignmentRule() {
+        return mAlignmentRule;
+    }
+
+    /**
+     * Sets the alignment rule.
+     *
+     * @param alignmentRule the alignment rule
+     */
+    public void setAlignmentRule(@NonNull AlignmentRule alignmentRule) {
+        mAlignmentRule = alignmentRule;
     }
 }

@@ -103,8 +103,8 @@ import java.util.concurrent.Future;
  *
  * <p>{@code ZFile} supports <em>alignment</em>. Alignment means that file data (not entries -- the
  * local header must be discounted) must start at offsets that are multiple of a number -- the
- * alignment. Alignment is defined by setting rules in an {@link AlignmentRules} object that can
- * be obtained using {@link #getAlignmentRules()}.
+ * alignment. Alignment is defined by an alignment rules ({@link AlignmentRule} in the
+ * {@link ZFileOptions} object used to create the {@link ZFile}.
  *
  * <p>When a file is added to the zip, the alignment rules will be checked and alignment will be
  * honored when positioning the file in the zip. This means that unused spaces in the zip may
@@ -112,7 +112,7 @@ import java.util.concurrent.Future;
  *
  * <p>Entries can be realigned individually (see {@link StoredEntry#realign()} or the full zip file
  * may be realigned (see {@link #realign()}). When realigning the full zip entries that are already
- * realigned will not be affected.
+ * aligned will not be affected.
  *
  * <p>Because realignment may cause files to move in the zip, realignment is done in-memory meaning
  * that files that need to change location will moved to memory and will only be flushed when
@@ -258,10 +258,10 @@ public class ZFile implements Closeable {
     private CachedFileContents<Object> mClosedControl;
 
     /**
-     * The set of alignment rules.
+     * The alignment rule.
      */
     @NonNull
-    private final AlignmentRules mAlignmentRules;
+    private final AlignmentRule mAlignmentRule;
 
     /**
      * Extensions registered with the file.
@@ -335,7 +335,7 @@ public class ZFile implements Closeable {
         mMap = new FileUseMap(0);
         mDirty = false;
         mClosedControl = null;
-        mAlignmentRules = new AlignmentRules();
+        mAlignmentRule = options.getAlignmentRule();
         mExtensions = Lists.newArrayList();
         mToRun = Lists.newArrayList();
         mNoTimestamps = options.getNoTimestamps();
@@ -1373,8 +1373,12 @@ public class ZFile implements Closeable {
         boolean isCompressed =
                 entry.getCentralDirectoryHeader().getCompressionInfoWithWait().getMethod() !=
                         CompressionMethod.STORE;
-        int alignment = mAlignmentRules.alignment(entry.getCentralDirectoryHeader().getName(),
-                isCompressed);
+        int alignment;
+        if (isCompressed) {
+            alignment = AlignmentRule.NO_ALIGNMENT;
+        } else {
+            alignment = mAlignmentRule.alignment(entry.getCentralDirectoryHeader().getName());
+        }
 
         long newOffset = mMap.locateFree(size, localHeaderSize, alignment);
         long newEnd = newOffset + entry.getInFileSize();
@@ -1508,17 +1512,6 @@ public class ZFile implements Closeable {
     }
 
     /**
-     * Obtains the set of alignment rules in use by this file. Note that changes to the rules
-     * will only apply in general to new files (see class description for details).
-     *
-     * @return the rules that can be changed
-     */
-    @NonNull
-    public AlignmentRules getAlignmentRules() {
-        return mAlignmentRules;
-    }
-
-    /**
      * Realigns all entries in the zip. This is equivalent to call {@link StoredEntry#realign()}
      * for all entries in the zip file.
      *
@@ -1552,8 +1545,12 @@ public class ZFile implements Closeable {
         CentralDirectoryHeader cdh = entry.getCentralDirectoryHeader();
         CompressionMethod compMethod = cdh.getCompressionInfoWithWait().getMethod();
 
-        int expectedAlignment = mAlignmentRules.alignment(cdh.getName(),
-                compMethod != CompressionMethod.STORE);
+        int expectedAlignment;
+        if (compMethod == CompressionMethod.STORE) {
+            expectedAlignment = mAlignmentRule.alignment(cdh.getName());
+        } else {
+            expectedAlignment = AlignmentRule.NO_ALIGNMENT;
+        }
 
         FileUseMapEntry<StoredEntry> mapEntry = mEntries.get(
                 entry.getCentralDirectoryHeader().getName());

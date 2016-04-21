@@ -22,7 +22,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import com.android.builder.internal.packaging.zip.utils.CloseableByteSource;
 import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 
@@ -34,7 +33,6 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.Random;
-import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -48,8 +46,9 @@ public class AlignmentTest {
 
         byte testBytes[] = "This is some text.".getBytes(Charsets.US_ASCII);
 
-        try (ZFile zf = new ZFile(newZFile)) {
-            zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*\\.txt"), 1024, false));
+        ZFileOptions options = new ZFileOptions();
+        options.setAlignmentRule(AlignmentRules.constantForSuffix(".txt", 1024));
+        try (ZFile zf = new ZFile(newZFile, options)) {
             zf.add("test.txt", new ByteArrayInputStream(testBytes), false);
         }
 
@@ -63,8 +62,9 @@ public class AlignmentTest {
 
         byte testBytes[] = "This is some text.".getBytes(Charsets.US_ASCII);
 
-        try (ZFile zf = new ZFile(newZFile)) {
-            zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*\\.txt"), 1024, false));
+        ZFileOptions options = new ZFileOptions();
+        options.setAlignmentRule(AlignmentRules.constantForSuffix(".txt", 1024));
+        try (ZFile zf = new ZFile(newZFile, options)) {
             zf.add("test.txt.foo", new ByteArrayInputStream(testBytes), false);
         }
 
@@ -78,6 +78,7 @@ public class AlignmentTest {
         byte testBytes0[] = "Text number 1".getBytes(Charsets.US_ASCII);
         byte testBytes1[] = "Text number 2, which is actually 1".getBytes(Charsets.US_ASCII);
 
+        long offset0;
         try (ZFile zf = new ZFile(newZFile)) {
             zf.add("file1.txt", new ByteArrayInputStream(testBytes1), false);
             zf.add("file0.txt", new ByteArrayInputStream(testBytes0), false);
@@ -85,18 +86,23 @@ public class AlignmentTest {
 
             StoredEntry se0 = zf.get("file0.txt");
             assertNotNull(se0);
-            long offset0 = se0.getCentralDirectoryHeader().getOffset();
+            offset0 = se0.getCentralDirectoryHeader().getOffset();
 
             StoredEntry se1 = zf.get("file1.txt");
             assertNotNull(se1);
 
             assertTrue(newZFile.length() < 1024);
+        }
 
-            zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*\\.txt"), 1024, false));
+        ZFileOptions options = new ZFileOptions();
+        options.setAlignmentRule(AlignmentRules.constantForSuffix(".txt", 1024));
+        try (ZFile zf = new ZFile(newZFile, options)) {
+            StoredEntry se1 = zf.get("file1.txt");
+            assertNotNull(se1);
             se1.realign();
             zf.close();
 
-            se0 = zf.get("file0.txt");
+            StoredEntry se0 = zf.get("file0.txt");
             assertNotNull(se0);
             assertEquals(offset0, se0.getCentralDirectoryHeader().getOffset());
 
@@ -120,14 +126,15 @@ public class AlignmentTest {
         try (ZFile zf = new ZFile(newZFile)) {
             zf.add("file0.txt", new ByteArrayInputStream(testBytes0), false);
             zf.add("file1.txt", new ByteArrayInputStream(testBytes1), false);
+        }
 
-            zf.close();
+        assertTrue(newZFile.length() < 1024);
 
-            assertTrue(newZFile.length() < 1024);
-
-            zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*\\.txt"), 1024, false));
+        ZFileOptions options = new ZFileOptions();
+        options.setAlignmentRule(AlignmentRules.constantForSuffix(".txt", 1024));
+        try (ZFile zf = new ZFile(newZFile, options)) {
             zf.realign();
-            zf.close();
+            zf.update();
 
             StoredEntry se0 = zf.get("file0.txt");
             assertNotNull(se0);
@@ -157,23 +164,24 @@ public class AlignmentTest {
 
         byte testBytes[] = "This is some text.".getBytes(Charsets.US_ASCII);
 
-        try (ZFile zf = new ZFile(newZFile)) {
-            zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*\\.txt"), 1024, false));
+        ZFileOptions options = new ZFileOptions();
+        options.setAlignmentRule(AlignmentRules.constantForSuffix(".txt", 1024));
+        try (ZFile zf = new ZFile(newZFile, options)) {
             zf.add("test.txt", new ByteArrayInputStream(testBytes), false);
-            zf.close();
+        }
 
-            assertArrayEquals(testBytes, FileUtils.readSegment(newZFile, 1024, testBytes.length));
+        assertArrayEquals(testBytes, FileUtils.readSegment(newZFile, 1024, testBytes.length));
 
-            int flen = (int) newZFile.length();
+        int flen = (int) newZFile.length();
 
+        try (ZFile zf = new ZFile(newZFile)) {
             StoredEntry entry = zf.get("test.txt");
             assertNotNull(entry);
             assertFalse(entry.realign());
-
-            zf.close();
-            assertEquals(flen, (int) newZFile.length());
-            assertArrayEquals(testBytes, FileUtils.readSegment(newZFile, 1024, testBytes.length));
         }
+
+        assertEquals(flen, (int) newZFile.length());
+        assertArrayEquals(testBytes, FileUtils.readSegment(newZFile, 1024, testBytes.length));
     }
 
     @Test
@@ -185,10 +193,13 @@ public class AlignmentTest {
 
         try (ZFile zf = new ZFile(newZFile)) {
             zf.add("file0.txt", new ByteArrayInputStream(testBytes0), false);
-            zf.finishAllBackgroundTasks();
-            zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*\\.txt"), 1024, false));
+        }
+
+        ZFileOptions options = new ZFileOptions();
+        options.setAlignmentRule(AlignmentRules.constantForSuffix(".txt", 1024));
+        try (ZFile zf = new ZFile(newZFile, options)) {
             zf.add("file1.txt", new ByteArrayInputStream(testBytes1), false);
-            zf.close();
+            zf.update();
 
             StoredEntry se0 = zf.get("file0.txt");
             assertNotNull(se0);
@@ -219,8 +230,9 @@ public class AlignmentTest {
             }
         }
 
-        try (ZFile zf = new ZFile(zipFile)) {
-            zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*"), 10, false));
+        ZFileOptions options = new ZFileOptions();
+        options.setAlignmentRule(AlignmentRules.constant(10));
+        try (ZFile zf = new ZFile(zipFile, options)) {
             zf.realign();
         }
     }
@@ -241,45 +253,9 @@ public class AlignmentTest {
         int uncompressedFiles = 5;
         int align = 1000;
 
-        try (ZFile zf = new ZFile(zipFile, new ZFileOptions())) {
-            zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*"), align, false));
-
-            for (int i = 0; i < compressedFiles; i++) {
-                zf.add("comp" + i, new ByteArrayInputStream(compressibleData1));
-            }
-
-            for (int i = 0; i < uncompressedFiles; i++) {
-                zf.add("unc" + i, new ByteArrayInputStream(compressibleData2), false);
-            }
-        }
-
-        for (int i = 0; i < uncompressedFiles; i++) {
-            long start = align * (i + 1);
-            byte[] read = FileUtils.readSegment(zipFile, start, recognizable2.length);
-            assertArrayEquals(recognizable2, read);
-        }
-    }
-
-    @Test
-    public void alignAppliedOnlyToAllFiles() throws Exception {
-        File zipFile = new File(mTemporaryFolder.getRoot(), "test.zip");
-
-        byte[] recognizable1 = new byte[] { 4, 3, 2, 1, 1, 2, 3, 4, 5, 4, 3, 3, 4, 5 };
-        byte[] recognizable2 = new byte[] { 9, 9, 8, 8, 7, 7, 6, 6, 7, 7, 8, 8, 9, 9 };
-
-        byte[] compressibleData1 = new byte[107];
-        byte[] compressibleData2 = new byte[107];
-        System.arraycopy(recognizable1, 0, compressibleData1, 0, recognizable1.length);
-        System.arraycopy(recognizable2, 0, compressibleData2, 0, recognizable2.length);
-
-        int compressedFiles = 5;
-        int uncompressedFiles = 5;
-        int align = 1000;
-
         ZFileOptions options = new ZFileOptions();
+        options.setAlignmentRule(AlignmentRules.constant(align));
         try (ZFile zf = new ZFile(zipFile, options)) {
-            zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*"), align, true));
-
             for (int i = 0; i < compressedFiles; i++) {
                 zf.add("comp" + i, new ByteArrayInputStream(compressibleData1));
             }
@@ -289,18 +265,8 @@ public class AlignmentTest {
             }
         }
 
-        CloseableByteSource source1 = options.getTracker().fromStream(new ByteArrayInputStream(
-                compressibleData1));
-        byte[] deflated1 = options.getCompressor().compress(source1).get().getSource().read();
-
-        for (int i = 0; i < compressedFiles; i++) {
-            long start = align * (i + 1);
-            byte[] read = FileUtils.readSegment(zipFile, start, deflated1.length);
-            assertArrayEquals(deflated1, read);
-        }
-
         for (int i = 0; i < uncompressedFiles; i++) {
-            long start = align * (compressedFiles + i + 1);
+            long start = align * (i + 1);
             byte[] read = FileUtils.readSegment(zipFile, start, recognizable2.length);
             assertArrayEquals(recognizable2, read);
         }
