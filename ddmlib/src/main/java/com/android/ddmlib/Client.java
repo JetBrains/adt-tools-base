@@ -516,7 +516,7 @@ public class Client extends JdwpAgent {
         try {
             HandleHeap.sendREAQ(this);
         } catch (IOException e) {
-            Log.e("ddmlib", e);
+            Log.w("ddmlib", "IO Error while obtaining allocation status");
         }
     }
 
