@@ -81,7 +81,7 @@ public class InstantRunClient {
     public static final boolean USE_BUILD_ID_TEMP_FILE =
             !Boolean.getBoolean("instantrun.use_datadir");
 
-    @NonNull
+    @Nullable
     private final UserFeedback mUserFeedback;
 
     @NonNull
@@ -95,7 +95,7 @@ public class InstantRunClient {
 
     public InstantRunClient(
             @NonNull String packageName,
-            @NonNull UserFeedback userFeedback,
+            @Nullable UserFeedback userFeedback,
             @NonNull ILogger logger,
             long token) {
         this(packageName, userFeedback, logger, token, DEFAULT_LOCAL_PORT);
@@ -104,7 +104,7 @@ public class InstantRunClient {
     @VisibleForTesting
     public InstantRunClient(
             @NonNull String packageName,
-            @NonNull UserFeedback userFeedback,
+            @Nullable UserFeedback userFeedback,
             @NonNull ILogger logger,
             long token,
             int port) {
@@ -211,7 +211,9 @@ public class InstantRunClient {
                 mLogger.warning("%s", Throwables.getStackTraceAsString(e));
             } catch (SocketException e) {
                 if (e.getMessage().equals("Broken pipe")) {
-                    mUserFeedback.error("No connection to app; cannot sync changes");
+                    if (mUserFeedback != null) {
+                        mUserFeedback.error("No connection to app; cannot sync changes");
+                    }
                     return errorValue;
                 }
                 mLogger.warning("%s", Throwables.getStackTraceAsString(e));
@@ -406,7 +408,9 @@ public class InstantRunClient {
                 transferLocalIdToDeviceId(device, buildId);
             }
 
-            mUserFeedback.noChanges();
+            if (mUserFeedback != null) {
+                mUserFeedback.noChanges();
+            }
             return;
         }
 
@@ -446,7 +450,9 @@ public class InstantRunClient {
             transferLocalIdToDeviceId(device, buildId);
         }
 
-        mUserFeedback.notifyEnd(updateMode);
+        if (mUserFeedback != null) {
+            mUserFeedback.notifyEnd(updateMode);
+        }
     }
 
     /**
@@ -513,9 +519,14 @@ public class InstantRunClient {
      */
     @Nullable
     public String getDeviceBuildTimestamp(@NonNull IDevice device) {
+        return getDeviceBuildTimestamp(device, mPackageName, mLogger);
+    }
+
+    @Nullable
+    public static String getDeviceBuildTimestamp(@NonNull IDevice device, @NonNull String packageName, @NonNull ILogger logger) {
         try {
             if (USE_BUILD_ID_TEMP_FILE) {
-                String remoteIdFile = getDeviceIdFolder(mPackageName);
+                String remoteIdFile = getDeviceIdFolder(packageName);
                 File localIdFile = createTempFile("build-id", "txt");
                 try {
                     device.pullFile(remoteIdFile, localIdFile.getPath());
@@ -527,11 +538,11 @@ public class InstantRunClient {
                     localIdFile.delete();
                 }
             } else {
-                String remoteIdFile = Paths.getDataDirectory(mPackageName) + "/"
+                String remoteIdFile = Paths.getDataDirectory(packageName) + "/"
                                       + Paths.BUILD_ID_TXT;
                 CollectingOutputReceiver receiver = new CollectingOutputReceiver();
-                device.executeShellCommand("run-as " + mPackageName + " cat " + remoteIdFile,
-                        receiver);
+                device.executeShellCommand("run-as " + packageName + " cat " + remoteIdFile,
+                                           receiver);
                 String output = receiver.getOutput().trim();
                 String id;
                 if (output.contains(":")) { // cat: command not found, cat: permission denied etc
@@ -543,10 +554,10 @@ public class InstantRunClient {
                     // So we first copy to /data/local/tmp and pull from there..
                     String remoteTmpFile = "/data/local/tmp/build-id.txt";
                     device.executeShellCommand("cp " + remoteIdFile + " " + remoteTmpFile,
-                            receiver);
+                                               receiver);
                     output = receiver.getOutput().trim();
                     if (!output.isEmpty()) {
-                        mLogger.info(output);
+                        logger.info(output);
                     }
                     File localIdFile = createTempFile("build-id", "txt");
                     device.pullFile(remoteTmpFile, localIdFile.getPath());
@@ -559,14 +570,8 @@ public class InstantRunClient {
                 return id;
             }
         } catch (IOException ignore) {
-        } catch (AdbCommandRejectedException e) {
-            mLogger.warning("%s", Throwables.getStackTraceAsString(e));
-        } catch (SyncException e) {
-            mLogger.warning("%s", Throwables.getStackTraceAsString(e));
-        } catch (TimeoutException e) {
-            mLogger.warning("%s", Throwables.getStackTraceAsString(e));
-        } catch (ShellCommandUnresponsiveException e) {
-            mLogger.warning("%s", Throwables.getStackTraceAsString(e));
+        } catch (AdbCommandRejectedException | SyncException | TimeoutException | ShellCommandUnresponsiveException e) {
+            logger.warning("%s", Throwables.getStackTraceAsString(e));
         }
 
         return null;
