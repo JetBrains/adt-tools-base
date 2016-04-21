@@ -29,7 +29,6 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.util.regex.Pattern;
 
 public class ZFileSortTest {
     @Rule
@@ -145,7 +144,12 @@ public class ZFileSortTest {
 
     @Test
     public void sortFilesWithAlignment() throws Exception {
-        mZFile.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*\\.so$"), 1024, false));
+        mZFile.close();
+
+        ZFileOptions options = new ZFileOptions();
+        options.setAlignmentRule(AlignmentRules.constantForSuffix(".so", 1024));
+        mZFile = new ZFile(mFile, options);
+
         mZFile.sortZipContents();
         mZFile.update();
 

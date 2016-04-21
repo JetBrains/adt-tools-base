@@ -21,7 +21,6 @@ import com.android.builder.internal.packaging.zip.CompressionMethod;
 import com.android.builder.internal.packaging.zip.CompressionResult;
 import com.android.builder.internal.packaging.zip.utils.ByteTracker;
 import com.android.builder.internal.packaging.zip.utils.CloseableByteSource;
-import com.google.common.io.Closer;
 
 import java.io.ByteArrayOutputStream;
 import java.util.concurrent.Executor;

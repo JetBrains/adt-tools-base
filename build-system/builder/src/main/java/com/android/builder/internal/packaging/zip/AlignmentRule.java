@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,84 +17,23 @@
 package com.android.builder.internal.packaging.zip;
 
 import com.android.annotations.NonNull;
-import com.google.common.base.Preconditions;
-
-import java.util.regex.Pattern;
 
 /**
- * An alignment rule defines how should some files be aligned in a zip file. A rule is defined
- * by two properties: a pattern and an alignment value.
- *
- * <p>The pattern is applied to the file name and defines which files this rule applies to. Note
- * that the pattern is <em>not</em> applied to the <em>path</em>, only to the file name.
- * The value defines the alignment of data. So,
- * for example, an alignment of {@code 1024} means that the data needs to start in a byte {@code b}
- * such that {@code b % 1024 == 0}.
- *
- * <p>Alignment rules can be only applied to uncompressed files by setting
- * {@code getApplyToCompressed == false} in the constructor. If aligning files in the zip for the
- * purpose of reading them with mmap(), then compressed files do not need to be aligned. This
- * setting is defined on a rule-by-rule basis.
+ * An alignment rule defines how to a file should be aligned in a zip, based on its name.
  */
-public class AlignmentRule {
+public interface AlignmentRule {
 
     /**
-     * File name pattern.
+     * Alignment value of files that do not require alignment.
      */
-    @NonNull
-    private Pattern mPattern;
+    int NO_ALIGNMENT = 1;
 
     /**
-     * Alignment value.
-     */
-    private int mAlignment;
-
-    /**
-     * Should the rule be applied to compressed files?
-     */
-    private boolean mApplyToCompressed;
-
-    /**
-     * Creates a new alignment rule.
+     * Obtains the alignment this rule computes for a given path.
      *
-     * @param pattern the pattern to apply to file names to decide whether the rules applies or not
-     * to a file; this will be checked using {@code matches()}, not {@code find()}
-     * @param alignment the alignment value, must be non-negative
-     * @param applyToCompressed should the rule be applied to compressed files?
+     * @param path the path in the zip file
+     * @return the alignment value, always greater than {@code 0}; if this rule places no
+     * restrictions on the provided path, then {@link #NO_ALIGNMENT} is returned
      */
-    public AlignmentRule(@NonNull Pattern pattern, int alignment, boolean applyToCompressed) {
-        Preconditions.checkArgument(alignment > 0, "alignment (%s) <= 0", alignment);
-
-        mPattern = pattern;
-        mAlignment = alignment;
-        mApplyToCompressed = applyToCompressed;
-    }
-
-    /**
-     * Obtains the pattern used to match files.
-     *
-     * @return the pattern
-     */
-    @NonNull
-    public Pattern getPattern() {
-        return mPattern;
-    }
-
-    /**
-     * Obtains the alignment value for the file.
-     *
-     * @return the alignment
-     */
-    public int getAlignment() {
-        return mAlignment;
-    }
-
-    /**
-     * Should this rule be applied to compressed files?
-     *
-     * @return should the rule be applied to compressed files?
-     */
-    public boolean getApplyToCompressed() {
-        return mApplyToCompressed;
-    }
+    int alignment(@NonNull String path);
 }

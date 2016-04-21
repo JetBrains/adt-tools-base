@@ -132,13 +132,13 @@ public abstract class ZipToolsTestCase {
         String unzipcmd = mUnzipCommand.get(0);
         Assume.assumeTrue(new File(unzipcmd).canExecute());
 
+        ZFileOptions options = new ZFileOptions();
+        if (align) {
+            options.setAlignmentRule(AlignmentRules.constant(500));
+        }
+
         File zfile = new File (mTemporaryFolder.getRoot(), "zfile.zip");
-        try (ZFile zf = new ZFile(zfile)) {
-
-            if (align) {
-                zf.getAlignmentRules().add(new AlignmentRule(Pattern.compile(".*"), 500, false));
-            }
-
+        try (ZFile zf = new ZFile(zfile, options)) {
             zf.add("root", new FileInputStream(rsrcFile("root")));
             zf.add("images/", new ByteArrayInputStream(new byte[0]));
             zf.add("images/lena.png", new FileInputStream(rsrcFile("images/lena.png")));
