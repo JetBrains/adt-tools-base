@@ -72,7 +72,7 @@ public class MathDetectorTest extends AbstractCheckTest {
     }
 
     public void test() throws Exception {
-        int compileSdkVersion = getHighestTargetSmallerThan(23);
+        int compileSdkVersion = getHighestTargetSmallerThan(22);
         if (compileSdkVersion < 9) {
             // Need to have a pre-M, post-Froyo target installed
             return;
