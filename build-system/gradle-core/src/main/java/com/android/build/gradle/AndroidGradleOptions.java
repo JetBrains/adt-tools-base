@@ -320,6 +320,17 @@ public class AndroidGradleOptions {
         return string == null ?  new String[]{} : string.split(",");
     }
 
+    @Nullable
+    public static String getRestrictVariantProject(@NonNull Project project) {
+        return getString(project, AndroidProject.PROPERTY_RESTRICT_VARIANT_PROJECT);
+    }
+
+    @Nullable
+    public static String getRestrictVariantName(@NonNull Project project) {
+        return getString(project, AndroidProject.PROPERTY_RESTRICT_VARIANT_NAME);
+    }
+
+
     public static class SigningOptions {
         @NonNull public final String storeFile;
         @NonNull public final String storePassword;

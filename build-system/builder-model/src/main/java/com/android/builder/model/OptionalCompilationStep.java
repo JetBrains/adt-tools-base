@@ -38,5 +38,9 @@ public enum OptionalCompilationStep {
     /**
      * presence will force production of all the necessary artifacts to do an application restart.
      */
-    RESTART_ONLY
+    RESTART_ONLY,
+    /**
+     * presence will restrict the variants being configured to only the ones that are needed.
+     */
+    RESTRICT_VARIANTS,
 }

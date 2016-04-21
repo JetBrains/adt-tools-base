@@ -19,5 +19,6 @@ package com.android.build.gradle.api;
 /**
  * @deprecated Use com.android.build.api.variant.VariantFilter
  */
+@Deprecated
 public interface VariantFilter extends com.android.build.api.variant.VariantFilter {
 }

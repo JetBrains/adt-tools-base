@@ -18,6 +18,8 @@ package com.android.build.gradle.internal.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.core.VariantConfiguration;
+import com.android.builder.core.VariantType;
 import com.android.builder.model.BuildType;
 import com.android.builder.model.ProductFlavor;
 
@@ -38,6 +40,8 @@ public class VariantFilter implements com.android.build.gradle.api.VariantFilter
     private ProductFlavor defaultConfig;
     private BuildType buildType;
     private List<ProductFlavor> flavors;
+    private VariantType type;
+    private String name;
 
     public VariantFilter(@NonNull ReadOnlyObjectProvider readOnlyObjectProvider) {
         this.readOnlyObjectProvider = readOnlyObjectProvider;
@@ -46,11 +50,14 @@ public class VariantFilter implements com.android.build.gradle.api.VariantFilter
     public void reset(
             @NonNull ProductFlavor defaultConfig,
             @NonNull BuildType buildType,
+            @NonNull VariantType type,
             @Nullable List<ProductFlavor> flavors) {
         ignore = false;
         this.defaultConfig = defaultConfig;
         this.buildType = buildType;
         this.flavors = flavors;
+        this.type = type;
+        this.name = null;
     }
 
     /**
@@ -101,5 +108,18 @@ public class VariantFilter implements com.android.build.gradle.api.VariantFilter
         return flavors != null ?
                 new ImmutableFlavorList(flavors, readOnlyObjectProvider) :
                 Collections.<ProductFlavor>emptyList();
+    }
+
+    @NonNull
+    @Override
+    public String getName() {
+        if (name == null) {
+            name = VariantConfiguration.computeFullName(
+                    VariantConfiguration.computeFlavorName(flavors),
+                    buildType,
+                    type);
+        }
+
+        return name;
     }
 }
