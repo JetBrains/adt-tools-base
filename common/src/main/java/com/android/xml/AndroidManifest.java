@@ -24,14 +24,11 @@ import com.android.io.IAbstractFolder;
 import com.android.io.StreamException;
 import com.google.common.io.Closeables;
 
-import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 
-import java.io.IOException;
 import java.io.InputStream;
 
 import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 
 /**
@@ -105,7 +102,8 @@ public final class AndroidManifest {
     public static final String ATTRIBUTE_UI_OPTIONS = "uiOptions";
     public static final String ATTRIBUTE_VALUE = "value";
 
-    public static final String VALUE_PARENT_ACTIVITY = SdkConstants.ANDROID_SUPPORT_PKG_PREFIX + "PARENT_ACTIVITY";
+    public static final String VALUE_PARENT_ACTIVITY =
+            SdkConstants.ANDROID_SUPPORT_PKG_PREFIX + "PARENT_ACTIVITY";
 
     /**
      * Returns an {@link IAbstractFile} object representing the manifest for the given project.
@@ -114,7 +112,8 @@ public final class AndroidManifest {
      * @return An IAbstractFile object pointing to the manifest or null if the manifest
      *         is missing.
      */
-    public static IAbstractFile getManifest(IAbstractFolder projectFolder) {
+    @Nullable
+    public static IAbstractFile getManifest(@NonNull  IAbstractFolder projectFolder) {
         IAbstractFile file = projectFolder.getFile(SdkConstants.FN_ANDROID_MANIFEST_XML);
         if (file != null && file.exists()) {
             return file;
@@ -125,13 +124,14 @@ public final class AndroidManifest {
 
     /**
      * Returns the package for a given project.
+     *
      * @param projectFolder the folder of the project.
      * @return the package info or null (or empty) if not found.
-     * @throws XPathExpressionException
      * @throws StreamException If any error happens when reading the manifest.
      */
-    public static String getPackage(IAbstractFolder projectFolder)
-            throws XPathExpressionException, StreamException {
+    @Nullable
+    public static String getPackage(@NonNull IAbstractFolder projectFolder)
+            throws StreamException {
         IAbstractFile file = getManifest(projectFolder);
         if (file != null) {
             return getPackage(file);
@@ -142,20 +142,20 @@ public final class AndroidManifest {
 
     /**
      * Returns the package for a given manifest.
+     *
      * @param manifestFile the manifest to parse.
      * @return the package info or null (or empty) if not found.
-     * @throws XPathExpressionException
      * @throws StreamException If any error happens when reading the manifest.
      */
-    public static String getPackage(IAbstractFile manifestFile)
-            throws XPathExpressionException, StreamException {
+    @NonNull
+    public static String getPackage(@NonNull IAbstractFile manifestFile) throws StreamException {
         return getStringValue(manifestFile, getPackageXPath());
     }
 
     /** Returns the XPath expression for the package **/
+    @NonNull
     public static String getPackageXPath(){
-        return  "/" + NODE_MANIFEST +
-                "/@" + ATTRIBUTE_PACKAGE;
+        return  "/" + NODE_MANIFEST + "/@" + ATTRIBUTE_PACKAGE;
     }
 
     /**
@@ -166,16 +166,15 @@ public final class AndroidManifest {
      *
      * @param manifestFile the manifest to parse.
      * @return true if the application is debuggable.
-     * @throws XPathExpressionException
      * @throws StreamException If any error happens when reading the manifest.
      */
-    public static boolean getDebuggable(IAbstractFile manifestFile)
-            throws XPathExpressionException, StreamException {
+    public static boolean getDebuggable(@NonNull IAbstractFile manifestFile)
+            throws StreamException {
         String value = getStringValue(manifestFile,
-                "/"  + NODE_MANIFEST +
-                "/"  + NODE_APPLICATION +
-                "/@" + AndroidXPathFactory.DEFAULT_NS_PREFIX +
-                ":"  + ATTRIBUTE_DEBUGGABLE);
+                "/" + NODE_MANIFEST
+                        + "/" + NODE_APPLICATION
+                        + "/@" + AndroidXPathFactory.DEFAULT_NS_PREFIX
+                        + ":" + ATTRIBUTE_DEBUGGABLE);
 
         // default is not debuggable, which is the same behavior as parseBoolean
         return Boolean.parseBoolean(value);
@@ -183,13 +182,12 @@ public final class AndroidManifest {
 
     /**
      * Returns the value of the versionCode attribute or -1 if the value is not set.
+     *
      * @param manifestFile the manifest file to read the attribute from.
      * @return the integer value or -1 if not set.
-     * @throws XPathExpressionException
      * @throws StreamException If any error happens when reading the manifest.
      */
-    public static int getVersionCode(IAbstractFile manifestFile)
-            throws XPathExpressionException, StreamException {
+    public static int getVersionCode(@NonNull IAbstractFile manifestFile) throws StreamException {
         String result = getStringValue(manifestFile, getVersionCodeXPath());
 
         try {
@@ -200,52 +198,30 @@ public final class AndroidManifest {
     }
 
     /** Returns the XPath expression for the versionCode **/
+    @NonNull
     public static String getVersionCodeXPath(){
-        return "/" + NODE_MANIFEST +
-                "/@" + AndroidXPathFactory.DEFAULT_NS_PREFIX +
-                ":" + ATTRIBUTE_VERSIONCODE;
+        return "/" + NODE_MANIFEST
+                + "/@" + AndroidXPathFactory.DEFAULT_NS_PREFIX
+                + ":" + ATTRIBUTE_VERSIONCODE;
     }
 
     /**
      * Returns whether the version Code attribute is set in a given manifest.
+     *
      * @param manifestFile the manifest to check
      * @return true if the versionCode attribute is present and its value is not empty.
-     * @throws XPathExpressionException
      * @throws StreamException If any error happens when reading the manifest.
      */
-    public static boolean hasVersionCode(IAbstractFile manifestFile)
-            throws XPathExpressionException, StreamException {
-        XPath xPath = AndroidXPathFactory.newXPath();
-
-        InputStream is = null;
-        try {
-            is = manifestFile.getContents();
-            Object result = xPath.evaluate(
-                    getVersionCodeXPath(),
-                    new InputSource(is),
-                    XPathConstants.NODE);
-
-            if (result != null) {
-                Node node  = (Node)result;
-                if (!node.getNodeValue().isEmpty()) {
-                    return true;
-                }
-            }
-        } finally {
-            try {
-                Closeables.close(is, true /* swallowIOException */);
-            } catch (IOException e) {
-                // cannot happen
-            }
-        }
-
-        return false;
+    public static boolean hasVersionCode(@NonNull IAbstractFile manifestFile)
+            throws StreamException {
+        return getVersionCode(manifestFile) != -1;
     }
     /** Returns the XPath expression for the versionName **/
+    @NonNull
     public static String getVersionNameXPath(){
-        return "/" + NODE_MANIFEST +
-                "/@" + AndroidXPathFactory.DEFAULT_NS_PREFIX +
-                ":" + ATTRIBUTE_VERSIONNAME;
+        return "/" + NODE_MANIFEST
+                + "/@" + AndroidXPathFactory.DEFAULT_NS_PREFIX
+                + ":" + ATTRIBUTE_VERSIONNAME;
     }
 
 
@@ -260,12 +236,11 @@ public final class AndroidManifest {
      *
      * @param manifestFile the manifest file to read the attribute from.
      * @return the attribute value.
-     * @throws XPathExpressionException
      * @throws StreamException If any error happens when reading the manifest.
      */
     @Nullable
-    public static Object getMinSdkVersion(IAbstractFile manifestFile)
-            throws XPathExpressionException, StreamException {
+    public static Object getMinSdkVersion(@NonNull IAbstractFile manifestFile)
+            throws StreamException {
         String result = getStringValue(manifestFile, getMinSdkVersionXPath());
 
         try {
@@ -276,31 +251,31 @@ public final class AndroidManifest {
     }
 
     /** Returns the XPath expression for the minSdkVersion**/
+    @NonNull
     public static String getMinSdkVersionXPath(){
-        return "/" + NODE_MANIFEST +
-                "/" + NODE_USES_SDK +
-                "/@" + AndroidXPathFactory.DEFAULT_NS_PREFIX +
-                ":" + ATTRIBUTE_MIN_SDK_VERSION;
+        return "/" + NODE_MANIFEST
+                + "/" + NODE_USES_SDK
+                + "/@" + AndroidXPathFactory.DEFAULT_NS_PREFIX
+                + ":" + ATTRIBUTE_MIN_SDK_VERSION;
     }
 
     /**
      * Returns the value of the targetSdkVersion attribute.
-     * <p/>
-     * If the attribute is set with an int value, the method returns an Integer object.
-     * <p/>
-     * If the attribute is set with a codename, it returns the codename as a String object.
-     * <p/>
-     * If the attribute is not set, it returns null.
+     *
+     * <p>If the attribute is set with an int value, the method returns an Integer object.
+     *
+     * <p>If the attribute is set with a codename, it returns the codename as a String object.
+     *
+     * <p>If the attribute is not set, it returns null.
      *
      * @param manifestFile the manifest file to read the attribute from.
      * @return the integer value or -1 if not set.
-     * @throws XPathExpressionException
      * @throws StreamException If any error happens when reading the manifest.
      */
     @Nullable
-    public static Object getTargetSdkVersion(IAbstractFile manifestFile)
-            throws XPathExpressionException, StreamException {
-        String result = getStringValue(manifestFile,getTargetSdkVersionXPath());
+    public static Object getTargetSdkVersion(@NonNull IAbstractFile manifestFile)
+            throws StreamException {
+        String result = getStringValue(manifestFile, getTargetSdkVersionXPath());
         try {
             return Integer.valueOf(result);
         } catch (NumberFormatException e) {
@@ -308,65 +283,66 @@ public final class AndroidManifest {
         }
     }
     /** Returns the XPath expression for the targetSdkVersion**/
+    @NonNull
     public static String getTargetSdkVersionXPath(){
-        return  "/" + NODE_MANIFEST +
-                "/" + NODE_USES_SDK +
-                "/@" + AndroidXPathFactory.DEFAULT_NS_PREFIX +
-                ":" + ATTRIBUTE_TARGET_SDK_VERSION;
+        return "/" + NODE_MANIFEST
+                + "/" + NODE_USES_SDK
+                + "/@" + AndroidXPathFactory.DEFAULT_NS_PREFIX
+                + ":" + ATTRIBUTE_TARGET_SDK_VERSION;
     }
 
 
     /**
      * Returns the application icon  for a given manifest.
+     *
      * @param manifestFile the manifest to parse.
      * @return the icon or null (or empty) if not found.
-     * @throws XPathExpressionException
      * @throws StreamException If any error happens when reading the manifest.
      */
-    public static String getApplicationIcon(IAbstractFile manifestFile)
-            throws XPathExpressionException, StreamException {
+    @NonNull
+    public static String getApplicationIcon(@NonNull IAbstractFile manifestFile)
+            throws StreamException {
         return getStringValue(manifestFile,
-                "/" + NODE_MANIFEST +
-                "/" + NODE_APPLICATION +
-                "/@" + AndroidXPathFactory.DEFAULT_NS_PREFIX +
-                ":" + ATTRIBUTE_ICON);
+                "/" + NODE_MANIFEST
+                        + "/" + NODE_APPLICATION
+                        + "/@" + AndroidXPathFactory.DEFAULT_NS_PREFIX
+                        + ":" + ATTRIBUTE_ICON);
     }
 
     /**
      * Returns the application label  for a given manifest.
+     *
      * @param manifestFile the manifest to parse.
      * @return the label or null (or empty) if not found.
-     * @throws XPathExpressionException
      * @throws StreamException If any error happens when reading the manifest.
      */
-    public static String getApplicationLabel(IAbstractFile manifestFile)
-            throws XPathExpressionException, StreamException {
+    @NonNull
+    public static String getApplicationLabel(@NonNull IAbstractFile manifestFile)
+            throws StreamException {
         return getStringValue(manifestFile,
-                "/" + NODE_MANIFEST +
-                "/" + NODE_APPLICATION +
-                "/@" + AndroidXPathFactory.DEFAULT_NS_PREFIX +
-                ":" + ATTRIBUTE_LABEL);
+                "/" + NODE_MANIFEST
+                        + "/" + NODE_APPLICATION
+                        + "/@" + AndroidXPathFactory.DEFAULT_NS_PREFIX
+                        + ":" + ATTRIBUTE_LABEL);
     }
 
   /**
    * Returns whether the manifest is set to make the application RTL aware.
    *
-   * If the give manifest does not contain the supportsRtl attribute then the application
+   * <p>If the give manifest does not contain the supportsRtl attribute then the application
    * is considered to not be not supporting RTL (there will be no layout mirroring).
    *
    * @param manifestFile the manifest to parse.
    * @return true if the application is supporting RTL.
-   * @throws XPathExpressionException
    * @throws StreamException If any error happens when reading the manifest.
    */
-  public static boolean getSupportsRtl(IAbstractFile manifestFile)
-      throws XPathExpressionException, StreamException {
-
+  public static boolean getSupportsRtl(@NonNull IAbstractFile manifestFile)
+          throws StreamException {
       String value = getStringValue(manifestFile,
-              "/"  + NODE_MANIFEST +
-              "/"  + NODE_APPLICATION +
-              "/@" + AndroidXPathFactory.DEFAULT_NS_PREFIX +
-              ":"  + ATTRIBUTE_SUPPORTS_RTL);
+              "/" + NODE_MANIFEST
+                      + "/" + NODE_APPLICATION
+                      + "/@" + AndroidXPathFactory.DEFAULT_NS_PREFIX
+                      + ":" + ATTRIBUTE_SUPPORTS_RTL);
 
       // default is not debuggable, which is the same behavior as parseBoolean
       return Boolean.parseBoolean(value);
@@ -374,110 +350,124 @@ public final class AndroidManifest {
 
     /**
      * Returns the instrumentation runner for the manifest.
+     *
      * @param manifestFile the manifest to parse.
      * @return the instrumentation runner or null (or empty) if not found.
-     * @throws XPathExpressionException
      * @throws StreamException If any error happens when reading the manifest.
      */
-    public static String getTestInstrumentationRunner(IAbstractFile manifestFile)
-            throws XPathExpressionException, StreamException {
+    @NonNull
+    public static String getTestInstrumentationRunner(@NonNull IAbstractFile manifestFile)
+            throws StreamException {
         return getStringValue(manifestFile, getInstrumentationRunnerXPath());
     }
 
     /** Returns the XPath expression for the instrumentation runner **/
+    @NonNull
     public static String getInstrumentationRunnerXPath(){
-        return "/" + NODE_MANIFEST +
-                "/" + NODE_INSTRUMENTATION +
-                "/@" + AndroidXPathFactory.DEFAULT_NS_PREFIX +
-                ":" + ATTRIBUTE_NAME;
+        return "/" + NODE_MANIFEST
+                + "/" + NODE_INSTRUMENTATION
+                + "/@" + AndroidXPathFactory.DEFAULT_NS_PREFIX
+                + ":" + ATTRIBUTE_NAME;
     }
 
     /**
      * Returns the test target package for the manifest.
+     *
      * @param manifestFile the manifest to parse.
      * @return the test target package or null (or empty) if not found.
-     * @throws XPathExpressionException
      * @throws StreamException If any error happens when reading the manifest.
      */
-    public static String getTestTargetPackage(IAbstractFile manifestFile)
-            throws XPathExpressionException, StreamException {
+    @NonNull
+    public static String getTestTargetPackage(@NonNull IAbstractFile manifestFile)
+            throws StreamException {
         return getStringValue(manifestFile, getTestTargetPackageXPath());
     }
 
     /** Returns the XPath expression for the instrumentation target package **/
+    @NonNull
     public static String getTestTargetPackageXPath(){
-        return "/" + NODE_MANIFEST +
-                        "/" + NODE_INSTRUMENTATION +
-                        "/@" + AndroidXPathFactory.DEFAULT_NS_PREFIX +
-                        ":" + ATTRIBUTE_TARGET_PACKAGE;
+        return "/" + NODE_MANIFEST
+                + "/" + NODE_INSTRUMENTATION
+                + "/@" + AndroidXPathFactory.DEFAULT_NS_PREFIX
+                + ":" + ATTRIBUTE_TARGET_PACKAGE;
     }
 
     /**
      * Returns the instrumentation functionalTest value for the manifest.
+     *
      * @param manifestFile the manifest to parse.
      * @return the instrumentation functionalTest or null (or empty) if not found.
-     * @throws XPathExpressionException
      * @throws StreamException If any error happens when reading the manifest.
      */
-    public static String getTestFunctionalTest(IAbstractFile manifestFile)
-            throws XPathExpressionException, StreamException {
+    @NonNull
+    public static String getTestFunctionalTest(@NonNull IAbstractFile manifestFile)
+            throws StreamException {
         return getStringValue(manifestFile,getTestFunctionalTestXPath());
     }
     /** Returns the XPath expression for the instrumentation functionTest **/
+    @NonNull
     public static String getTestFunctionalTestXPath(){
-        return  "/" + NODE_MANIFEST +
-                "/" + NODE_INSTRUMENTATION +
-                "/@" + AndroidXPathFactory.DEFAULT_NS_PREFIX +
-                ":" + ATTRIBUTE_FUNCTIONAL_TEST;
+        return  "/" + NODE_MANIFEST
+                + "/" + NODE_INSTRUMENTATION
+                + "/@" + AndroidXPathFactory.DEFAULT_NS_PREFIX
+                + ":" + ATTRIBUTE_FUNCTIONAL_TEST;
     }
 
     /**
      * Returns the instrumentation handleProfiling value for the manifest.
+     *
      * @param manifestFile the manifest to parse.
      * @return the instrumentation handleProfiling or null (or empty) if not found.
-     * @throws XPathExpressionException
      * @throws StreamException If any error happens when reading the manifest.
      */
-    public static String getTestHandleProfiling(IAbstractFile manifestFile)
-            throws XPathExpressionException, StreamException {
+    @NonNull
+    public static String getTestHandleProfiling(@NonNull IAbstractFile manifestFile)
+            throws StreamException {
         return getStringValue(manifestFile, getTestHandleProfilingXPath());
     }
     /** Returns the XPath expression for the test handleProfiling **/
+    @NonNull
     public static String getTestHandleProfilingXPath(){
-        return "/" + NODE_MANIFEST +
-                "/" + NODE_INSTRUMENTATION +
-                "/@" + AndroidXPathFactory.DEFAULT_NS_PREFIX +
-                ":" + ATTRIBUTE_HANDLE_PROFILING;
+        return "/" + NODE_MANIFEST
+                + "/" + NODE_INSTRUMENTATION
+                + "/@" + AndroidXPathFactory.DEFAULT_NS_PREFIX
+                + ":" + ATTRIBUTE_HANDLE_PROFILING;
     }
 
     /**
      * Returns the instrumentation label value for the manifest.
+     *
      * @param manifestFile the manifest to parse.
      * @return the instrumentation label or null (or empty) if not found.
-     * @throws XPathExpressionException
      * @throws StreamException If any error happens when reading the manifest.
      */
-    public static String getTestLabel(IAbstractFile manifestFile)
-            throws XPathExpressionException, StreamException {
+    @NonNull
+    public static String getTestLabel(@NonNull IAbstractFile manifestFile)
+            throws StreamException {
         return getStringValue(manifestFile, getTestLabelXPath());
     }
 
     /** Returns the XPath expression for the test testLabel**/
+    @NonNull
     public static String getTestLabelXPath(){
-        return "/" + NODE_MANIFEST +
-                "/" + NODE_INSTRUMENTATION +
-                "/@" + AndroidXPathFactory.DEFAULT_NS_PREFIX +
-                ":" + ATTRIBUTE_INSTRUMENTATION_LABEL;
+        return "/" + NODE_MANIFEST
+                + "/" + NODE_INSTRUMENTATION
+                + "/@" + AndroidXPathFactory.DEFAULT_NS_PREFIX
+                + ":" + ATTRIBUTE_INSTRUMENTATION_LABEL;
     }
 
     /**
      * Combines a java package, with a class value from the manifest to make a fully qualified
      * class name
+     *
      * @param javaPackage the java package from the manifest.
      * @param className the class name from the manifest.
      * @return the fully qualified class name.
      */
-    public static String combinePackageAndClassName(String javaPackage, String className) {
+    @Nullable
+    public static String combinePackageAndClassName(
+            @Nullable String javaPackage,
+            @Nullable String className) {
         if (className == null || className.isEmpty()) {
             return javaPackage;
         }
@@ -512,7 +502,10 @@ public final class AndroidManifest {
      * @param packageName The project base package name, e.g. "com.foo"
      * @return The relative activity name if it can be computed or the original fullActivityName.
      */
-    public static String extractActivityName(String fullActivityName, String packageName) {
+    @Nullable
+    public static String extractActivityName(
+            @Nullable String fullActivityName,
+            @Nullable String packageName) {
         if (packageName != null && fullActivityName != null) {
             if (!packageName.isEmpty() && fullActivityName.startsWith(packageName)) {
                 String name = fullActivityName.substring(packageName.length());
@@ -525,21 +518,22 @@ public final class AndroidManifest {
         return fullActivityName;
     }
 
-
+    @NonNull
     private static String getStringValue(@NonNull IAbstractFile file, @NonNull String xPath)
-            throws StreamException, XPathExpressionException {
+            throws StreamException {
         XPath xpath = AndroidXPathFactory.newXPath();
 
         InputStream is = null;
         try {
             is = file.getContents();
             return xpath.evaluate(xPath, new InputSource(is));
+        } catch (XPathExpressionException e){
+            throw new RuntimeException(
+                    "Malformed XPath expression when reading the attribute from the manifest,"
+                            + "exp = " + xPath,
+                    e);
         } finally {
-            try {
-                Closeables.close(is, true /* swallowIOException */);
-            } catch (IOException e) {
-                // cannot happen
-            }
+            Closeables.closeQuietly(is);
         }
     }
 }
