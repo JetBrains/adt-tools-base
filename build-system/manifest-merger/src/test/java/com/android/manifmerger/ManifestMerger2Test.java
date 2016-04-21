@@ -61,6 +61,7 @@ public class ManifestMerger2Test {
             "05_inject_package_placeholder.xml",
             "05_inject_package_with_overlays.xml",
             "06_inject_attributes_with_specific_prefix.xml",
+            "05_inject_applicationid_not_provided.xml",
             "07_no_package_provided.xml",
             "08_no_library_package_provided.xml",
             "09_overlay_package_provided.xml",
