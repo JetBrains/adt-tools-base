@@ -34,7 +34,6 @@ import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.api.transform.Transform;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.AndroidGradleOptions;
-import com.android.builder.model.OptionalCompilationStep;
 import com.android.build.gradle.ProguardFiles;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
@@ -148,9 +147,8 @@ import com.android.builder.core.DefaultDexOptions;
 import com.android.builder.core.DexOptions;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
-import com.android.builder.dependency.LibraryDependency;
-import com.android.builder.internal.testing.SimpleTestCallable;
 import com.android.builder.model.DataBindingOptions;
+import com.android.builder.model.OptionalCompilationStep;
 import com.android.builder.model.SyncIssue;
 import com.android.builder.sdk.TargetInfo;
 import com.android.builder.testing.ConnectedDeviceProvider;
@@ -2348,7 +2346,8 @@ public abstract class TaskManager {
 
                     try {
                         if (variantOutputData.getMetadataFile() != null) {
-                            project.getArtifacts().add("default-metadata",
+                            project.getArtifacts().add(
+                                    "default" + VariantDependencies.CONFIGURATION_METADATA,
                                     new MetadataPublishArtifact(projectBaseName, null,
                                             variantOutputData.getMetadataFile()));
                         }
@@ -2357,7 +2356,8 @@ public abstract class TaskManager {
                     }
 
                     if (variantData.getMappingFileProvider() != null) {
-                        project.getArtifacts().add("default-mapping",
+                        project.getArtifacts().add(
+                                "default" + VariantDependencies.CONFIGURATION_MAPPING,
                                 new MappingPublishArtifact(projectBaseName, null,
                                         variantData.getMappingFileProvider()));
                     }

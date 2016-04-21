@@ -38,6 +38,7 @@ import com.android.build.gradle.internal.TaskContainerAdaptor;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.VariantManager;
 import com.android.build.gradle.internal.coverage.JacocoPlugin;
+import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.dsl.BuildType;
 import com.android.build.gradle.internal.dsl.BuildTypeFactory;
 import com.android.build.gradle.internal.dsl.ProductFlavor;
@@ -469,9 +470,9 @@ public abstract class BasePlugin {
                 extraModelInfo, isLibrary());
 
         // create the default mapping configuration.
-        project.getConfigurations().create("default-mapping")
+        project.getConfigurations().create("default" + VariantDependencies.CONFIGURATION_MAPPING)
                 .setDescription("Configuration for default mapping artifacts.");
-        project.getConfigurations().create("default-metadata")
+        project.getConfigurations().create("default" + VariantDependencies.CONFIGURATION_METADATA)
                 .setDescription("Metadata for the produced APKs.");
 
         DependencyManager dependencyManager = new DependencyManager(project, extraModelInfo);

@@ -40,6 +40,15 @@ import java.util.Set;
  */
 public class VariantDependencies {
 
+    /** Name of the metadata configuration */
+    public static final String CONFIGURATION_METADATA = "-metadata";
+    /** Name of the mapping configuration */
+    public static final String CONFIGURATION_MAPPING = "-mapping";
+    /** Name of the classes configuration */
+    public static final String CONFIGURATION_CLASSES = "-classes";
+    /** Name of the manifest configuration */
+    public static final String CONFIGURATION_MANIFEST = "-manifest";
+
     @NonNull
     private final String variantName;
 
@@ -131,18 +140,19 @@ public class VariantDependencies {
             }
 
             // create configuration for -metadata.
-            metadata = project.getConfigurations().create(variantName + "-metadata");
+            metadata = project.getConfigurations().create(variantName + CONFIGURATION_METADATA);
             metadata.setDescription("Published APKs metadata for Variant " + variantName);
 
             // create configuration for -mapping and -classes.
-            mapping = project.getConfigurations().maybeCreate(variantName + "-mapping");
+            mapping = project.getConfigurations().maybeCreate(variantName + CONFIGURATION_MAPPING);
             mapping.setDescription("Published mapping configuration for Variant " + variantName);
 
-            classes = project.getConfigurations().maybeCreate(variantName + "-classes");
+            classes = project.getConfigurations().maybeCreate(variantName + CONFIGURATION_CLASSES);
             classes.setDescription("Published classes configuration for Variant " + variantName);
 
             // create configuration for -manifest
-            manifest = project.getConfigurations().maybeCreate(variantName + "-manifest");
+            manifest =
+                    project.getConfigurations().maybeCreate(variantName + CONFIGURATION_MANIFEST);
             manifest.setDescription("Published manifest configuration for Variant " + variantName);
 
             // because we need the transitive dependencies for the classes, extend the compile config.

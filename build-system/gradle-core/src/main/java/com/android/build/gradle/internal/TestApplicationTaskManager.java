@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.TestAndroidConfig;
+import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
@@ -91,7 +92,8 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
         Configuration testTarget = getTestTargetConfiguration("");
 
         // and create the configuration for the project's metadata.
-        Configuration testTargetMetadata = getTestTargetConfiguration("metadata");
+        Configuration testTargetMetadata =
+                getTestTargetConfiguration(VariantDependencies.CONFIGURATION_METADATA);
 
         TestData testData = new TestApplicationTestData(
                 variantData, testTarget, testTargetMetadata, androidBuilder);
@@ -149,7 +151,8 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
     @Nullable
     private Configuration getTestTargetMapping(@NonNull VariantScope variantScope){
         if (mTestTargetMapping == null){
-            mTestTargetMapping = getTestTargetConfiguration("mapping");
+            mTestTargetMapping =
+                    getTestTargetConfiguration(VariantDependencies.CONFIGURATION_MAPPING);
         }
 
         if (mTestTargetMapping.getFiles().isEmpty()
@@ -165,7 +168,8 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
     @NonNull
     private Configuration getTargetManifestConfiguration(){
         if (mTargetManifestConfiguration == null){
-            mTargetManifestConfiguration = getTestTargetConfiguration("manifest");
+            mTargetManifestConfiguration =
+                    getTestTargetConfiguration(VariantDependencies.CONFIGURATION_MANIFEST);
         }
 
         return mTargetManifestConfiguration;
@@ -185,10 +189,8 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
     private Configuration getTestTargetConfiguration(@NonNull String targetConfigurationName){
 
         String testTargetConfigurationName = TEST_CONFIGURATION_PREFIX;
-        String prefix = "";
         if (!targetConfigurationName.isEmpty()){
             testTargetConfigurationName += StringHelper.capitalize(targetConfigurationName);
-            prefix = "-";
         }
 
         Configuration testTargetConfiguration = project.getConfigurations()
@@ -201,7 +203,7 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
                 ImmutableMap.of(
                         "path", testExtension.getTargetProjectPath(),
                         "configuration",
-                        testExtension.getTargetVariant() + prefix + targetConfigurationName)));
+                        testExtension.getTargetVariant() + targetConfigurationName)));
 
         return testTargetConfiguration;
     }

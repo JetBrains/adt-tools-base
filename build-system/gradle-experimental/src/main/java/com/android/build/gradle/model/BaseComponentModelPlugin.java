@@ -44,6 +44,7 @@ import com.android.build.gradle.internal.coverage.JacocoPlugin;
 import com.android.build.gradle.internal.dependency.AndroidNativeDependencySpec;
 import com.android.build.gradle.internal.dependency.NativeDependencyResolveResult;
 import com.android.build.gradle.internal.dependency.NativeDependencyResolver;
+import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor;
 import com.android.build.gradle.internal.process.GradleProcessExecutor;
@@ -182,11 +183,23 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         // created.
         // TODO: Migrate to new dependency management if it's ready.
         ConfigurationContainer configurations = project.getConfigurations();
-        createConfiguration(configurations, "compile", "Classpath for compiling the default sources.");
-        createConfiguration(configurations, "testCompile", "Classpath for compiling the test sources.");
-        createConfiguration(configurations, "androidTestCompile", "Classpath for compiling the androidTest sources.");
-        createConfiguration(configurations, "default-metadata", "Metadata for published APKs");
-        createConfiguration(configurations, "default-mapping", "Metadata for published APKs");
+        createConfiguration(
+                configurations,
+                "compile", "Classpath for compiling the default sources.");
+        createConfiguration(
+                configurations,
+                "testCompile", "Classpath for compiling the test sources.");
+        createConfiguration(
+                configurations,
+                "androidTestCompile", "Classpath for compiling the androidTest sources.");
+        createConfiguration(
+                configurations,
+                "default" + VariantDependencies.CONFIGURATION_METADATA,
+                "Metadata for published APKs");
+        createConfiguration(
+                configurations,
+                "default" + VariantDependencies.CONFIGURATION_MAPPING,
+                "Metadata for published APKs");
 
         project.getPlugins().apply(NdkComponentModelPlugin.class);
 

@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.variant;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.TestAndroidConfig;
+import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.dsl.BuildType;
 import com.android.build.gradle.internal.dsl.ProductFlavor;
 import com.android.build.gradle.internal.dsl.SigningConfig;
@@ -31,6 +32,8 @@ import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.internal.reflect.Instantiator;
+
+import java.util.Map;
 
 /**
  * Customization of ApplcationVariantFactory for test-only projects.
@@ -71,10 +74,12 @@ public class TestVariantFactory extends ApplicationVariantFactory {
         // Instead we'll automatically detect that these dependencies are coming from the tested
         // app module and we'll skip them automatically (in the apk scope)
         DependencyHandler handler = project.getDependencies();
-        handler.add("compile", handler.project(ImmutableMap.of(
-                "path", path,
-                "configuration", testExtension.getTargetVariant() + "-classes"
-        )));
+        Map<String, String> projectNotation =
+                ImmutableMap.of(
+                        "path", path, "configuration",
+                        testExtension.getTargetVariant()
+                                + VariantDependencies.CONFIGURATION_CLASSES);
+        handler.add("compile", handler.project(projectNotation));
     }
 
     @Override
