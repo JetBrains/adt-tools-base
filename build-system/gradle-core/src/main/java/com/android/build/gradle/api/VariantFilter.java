@@ -16,39 +16,8 @@
 
 package com.android.build.gradle.api;
 
-import com.android.annotations.NonNull;
-import com.android.builder.model.BuildType;
-import com.android.builder.model.ProductFlavor;
-
-import java.util.List;
-
 /**
- * Interface for variant control, allowing to query a variant for some base
- * data and allowing to disable some variants.
+ * @deprecated Use com.android.build.api.variant.VariantFilter
  */
-public interface VariantFilter {
-
-    /**
-     * Sets whether or not to ignore this particular variant. Default is false.
-     * @param ignore whether to ignore the variant
-     */
-    void setIgnore(boolean ignore);
-
-    /**
-     * Returns the ProductFlavor that represents the default config.
-     */
-    @NonNull
-    ProductFlavor getDefaultConfig();
-
-    /**
-     * Returns the Build Type.
-     */
-    @NonNull
-    BuildType getBuildType();
-
-    /**
-     * Returns the list of flavors, or an empty list.
-     */
-    @NonNull
-    List<ProductFlavor> getFlavors();
+public interface VariantFilter extends com.android.build.api.variant.VariantFilter {
 }
