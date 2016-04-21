@@ -1014,7 +1014,7 @@
     </orderEntry>
     <orderEntry type="library" name="antlr" level="project" />
     <orderEntry type="library" name="slf4j-api" level="project" />
-    <orderEntry type="module-library">
+    <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/m2/repository/org/gradle/gradle-tooling-api/2.1/gradle-tooling-api-2.1.jar!/" />
@@ -1034,6 +1034,15 @@
         <SOURCES>
           <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/m2/repository/org/jsoup/jsoup/1.6.3/jsoup-1.6.3-sources.jar!/" />
         </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="file://$MODULE_DIR$/../../../../out/build/base/gradle-core/build/classes/incremental-test/baseJasmin" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
       </library>
     </orderEntry>
   </component>
