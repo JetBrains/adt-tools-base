@@ -359,7 +359,6 @@ public abstract class BasePlugin {
     protected void configureProject() {
         extraModelInfo = new ExtraModelInfo(project, isLibrary());
         checkGradleVersion();
-        AndroidSdkHandler.setRemoteFallback(new LegacyRemoteRepoLoader(DefaultSdkLoader.SETTINGS));
         sdkHandler = new SdkHandler(project, getLogger());
         androidBuilder = new AndroidBuilder(
                 project == project.getRootProject() ? project.getName() : project.getPath(),

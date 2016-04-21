@@ -135,7 +135,7 @@ public class RemoteRepoLoaderImpl implements RemoteRepoLoader {
                         parsedPackages = repo.getRemotePackage();
                     } else if (mFallback != null) {
                         // TODO: don't require downloading again
-                        parsedPackages = mFallback.parseLegacyXml(source, progress);
+                        parsedPackages = mFallback.parseLegacyXml(source, settings, progress);
                         legacy = true;
                     }
                     if (parsedPackages != null && !parsedPackages.isEmpty()) {
