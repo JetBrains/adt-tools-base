@@ -115,14 +115,14 @@ public class ConnectedColdSwapTest {
             throws Exception {
         // Set up
         logcat.start(device, "coldswaptest");
-        AndroidProject model = project.getSingleModel();
+        AndroidProject model = project.model().getSingle();
         instantRunModel = InstantRunTestUtils.getInstantRunModel(model);
         long token = PackagingUtils.computeApplicationHash(model.getBuildFolder());
 
         // Initial build
-        project.execute(InstantRunTestUtils
-                        .getInstantRunArgs(device, coldswapMode, OptionalCompilationStep.RESTART_ONLY),
-                "clean", "assembleDebug");
+        project.executor()
+                .withInstantRun(device, coldswapMode, OptionalCompilationStep.RESTART_ONLY)
+                .run("clean", "assembleDebug");
 
         InstantRunBuildInfo info = InstantRunTestUtils.loadContext(instantRunModel);
         InstantRunTestUtils.doInstall(device, info.getArtifacts());
@@ -142,8 +142,9 @@ public class ConnectedColdSwapTest {
 
         // Cold swap
         makeColdSwapChange();
-        project.execute(InstantRunTestUtils.getInstantRunArgs(device, coldswapMode),
-                instantRunModel.getIncrementalAssembleTaskName());
+        project.executor()
+                .withInstantRun(device, coldswapMode)
+                .run(instantRunModel.getIncrementalAssembleTaskName());
 
         InstantRunBuildInfo coldSwapContext = InstantRunTestUtils.loadContext(instantRunModel);
 

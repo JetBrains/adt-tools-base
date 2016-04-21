@@ -97,9 +97,9 @@ public class InstantRunShrinkerTest {
     @Test
     public void checkApplicationIsNotRemoved() throws Exception {
         project.execute("clean");
-        project.execute(InstantRunTestUtils.getInstantRunArgs(23,
-                ColdswapMode.DEFAULT, OptionalCompilationStep.RESTART_ONLY),
-                "assembleDebug");
+        project.executor()
+                .withInstantRun(23, ColdswapMode.DEFAULT, OptionalCompilationStep.RESTART_ONLY)
+                .run("assembleDebug");
 
         // Check the custom application class was included.
         assertThatApk(project.getApk("debug"))

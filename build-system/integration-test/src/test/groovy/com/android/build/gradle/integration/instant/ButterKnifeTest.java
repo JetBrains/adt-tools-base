@@ -113,8 +113,9 @@ public class ButterKnifeTest {
 
         makeHotSwapChange();
 
-        project.execute(InstantRunTestUtils.getInstantRunArgs(23, COLDSWAP_MODE),
-                instantRunModel.getIncrementalAssembleTaskName());
+        project.executor()
+                .withInstantRun(23, COLDSWAP_MODE)
+                .run(instantRunModel.getIncrementalAssembleTaskName());
 
         InstantRunArtifact artifact =
                 InstantRunTestUtils.getCompiledHotSwapCompatibleChange(instantRunModel);

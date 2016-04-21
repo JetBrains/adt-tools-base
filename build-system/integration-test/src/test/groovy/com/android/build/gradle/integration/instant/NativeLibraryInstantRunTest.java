@@ -89,12 +89,9 @@ public class NativeLibraryInstantRunTest {
         IDevice device = adb.getDevice(thatUsesArt());
         AndroidProject model = project.getSingleModel();
         InstantRun instantRunModel = InstantRunTestUtils.getInstantRunModel(model);
-        project.execute(
-                InstantRunTestUtils.getInstantRunArgs(
-                        21,
-                        ColdswapMode.DEFAULT,
-                        OptionalCompilationStep.RESTART_ONLY),
-                "assembleDebug");
+        project.executor()
+                .withInstantRun(21, ColdswapMode.DEFAULT, OptionalCompilationStep.RESTART_ONLY)
+                .run("assembleDebug");
         InstantRunBuildInfo info = InstantRunTestUtils.loadContext(instantRunModel);
         InstantRunTestUtils.doInstall(device, info.getArtifacts());
 

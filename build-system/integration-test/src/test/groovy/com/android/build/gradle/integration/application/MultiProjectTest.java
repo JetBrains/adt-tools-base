@@ -47,7 +47,7 @@ public class MultiProjectTest {
 
     @BeforeClass
     public static void setUp() {
-        models = project.getAllModels();
+        models = project.model().getMulti();
     }
 
     @AfterClass

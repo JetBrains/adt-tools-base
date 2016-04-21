@@ -98,7 +98,8 @@ public class AppWithCompileIndirectJavaProjectTest {
 
     @Test
     public void checkLevel1Model() {
-        Map<String, AndroidProject> models = project.getAllModels(AndroidProject.MODEL_LEVEL_1_SYNC_ISSUE);
+        Map<String, AndroidProject> models = project.model()
+                .level(AndroidProject.MODEL_LEVEL_1_SYNC_ISSUE).getMulti();
 
         // ---
         // test the dependencies on the :app module.
@@ -152,8 +153,8 @@ public class AppWithCompileIndirectJavaProjectTest {
 
     @Test
     public void checkLevel2Model() {
-        Map<String, AndroidProject> models = project
-                .getAllModels(AndroidProject.MODEL_LEVEL_LATEST);
+        Map<String, AndroidProject> models = project.model()
+                .level(AndroidProject.MODEL_LEVEL_LATEST).getMulti();
 
         // ---
         // test full transitive dependencies from the :app module.

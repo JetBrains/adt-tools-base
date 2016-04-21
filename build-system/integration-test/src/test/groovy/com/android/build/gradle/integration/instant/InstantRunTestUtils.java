@@ -24,7 +24,6 @@ import static org.junit.Assert.assertNotNull;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
-import com.android.build.gradle.internal.incremental.InstantRunMethodVerifier;
 import com.android.builder.model.OptionalCompilationStep;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.truth.TruthHelper;
@@ -87,50 +86,6 @@ public final class InstantRunTestUtils {
             }
         }
         throw new AssertionError("Could not find debug variant.");
-    }
-
-    @NonNull
-    public static List<String> getInstantRunArgs(int apiLevel,
-            @NonNull ColdswapMode coldswapMode,
-            @NonNull OptionalCompilationStep... flags) {
-        return getInstantRunArgs(new AndroidVersion(apiLevel, null),
-                null /* density */, coldswapMode, flags);
-    }
-
-    static List<String> getInstantRunArgs(
-            @NonNull IDevice device,
-            @NonNull ColdswapMode coldswapMode,
-            @NonNull OptionalCompilationStep... flags) {
-        return getInstantRunArgs(device.getVersion(),
-                Density.getEnum(device.getDensity()), coldswapMode, flags);
-    }
-
-    @NonNull
-    private static List<String> getInstantRunArgs(
-            @Nullable AndroidVersion androidVersion,
-            @Nullable Density denisty,
-            @NonNull ColdswapMode coldswapMode,
-            @NonNull OptionalCompilationStep[] flags) {
-        ImmutableList.Builder<String> builder = ImmutableList.builder();
-        if (androidVersion != null) {
-            builder.add(String.format(
-                    "-Pandroid.injected.build.api=%s", androidVersion.getApiString()));
-        }
-        if (denisty != null) {
-            builder.add(String.format(
-                    "-Pandroid.injected.build.density=%s", denisty.getResourceValue()));
-        }
-
-        builder.add(String.format("-Pandroid.injected.coldswap.mode=%s", coldswapMode.name()));
-
-        StringBuilder optionalSteps = new StringBuilder()
-                .append("-P").append("android.optional.compilation").append('=')
-                .append("INSTANT_DEV");
-        for (OptionalCompilationStep step : flags) {
-            optionalSteps.append(',').append(step);
-        }
-        builder.add(optionalSteps.toString());
-        return builder.build();
     }
 
     static void doInstall(
@@ -197,9 +152,8 @@ public final class InstantRunTestUtils {
         project.execute("clean");
         InstantRun instantRunModel = getInstantRunModel(project.getSingleModel());
 
-        project.execute(
-                getInstantRunArgs(apiLevel, coldswapMode, OptionalCompilationStep.RESTART_ONLY),
-                "assembleDebug");
+        project.executor().withInstantRun(apiLevel, coldswapMode, OptionalCompilationStep.RESTART_ONLY)
+                .run("assembleDebug");
 
         return instantRunModel;
     }

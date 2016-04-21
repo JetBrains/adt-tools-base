@@ -15,14 +15,14 @@
  */
 
 package com.android.build.gradle.integration.application
+
+import com.android.build.gradle.integration.common.fixture.GradleBuildResult
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import groovy.transform.CompileStatic
-import org.gradle.tooling.BuildException
 import org.junit.Rule
 import org.junit.Test
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-import static org.junit.Assert.fail
 
 /**
  * Check that we recognize dependency cycles.
@@ -43,14 +43,9 @@ dependencies {
 }
 """
 
-        try {
-            project.execute("clean", ":app:assemble")
-            fail("should throw")
-        } catch (BuildException e) {
-            // expected.
-        }
+        GradleBuildResult result =
+                project.executor().expectFailure().run("clean", ":app:assemble");
 
-        String output = project.stderr.toString()
-        assertThat(output).contains(":app -> :lib -> :app")
+        assertThat(result.getStderr()).contains(":app -> :lib -> :app");
     }
 }

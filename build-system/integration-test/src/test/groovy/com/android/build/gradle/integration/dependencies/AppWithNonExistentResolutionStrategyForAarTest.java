@@ -93,7 +93,7 @@ public class AppWithNonExistentResolutionStrategyForAarTest {
                 "    compile \"org.jdeferred:jdeferred-android-aar:1.2.3\"\n" +
                 "}\n");
 
-        models = project.getAllModelsIgnoringSyncIssues();
+        models = project.model().ignoreSyncIssues().getMulti();
     }
 
     @AfterClass

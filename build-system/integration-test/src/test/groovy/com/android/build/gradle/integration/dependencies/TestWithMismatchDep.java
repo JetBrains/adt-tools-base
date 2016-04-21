@@ -20,6 +20,7 @@ import static com.android.build.gradle.integration.common.utils.TestFileUtils.ap
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static org.junit.Assert.fail;
 
+import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.SyncIssue;
@@ -68,23 +69,21 @@ public class TestWithMismatchDep {
     public void testMismatchDependencyBreaksTestBuild() {
         // want to check the log, so can't use Junit's expected exception mechanism.
 
-        try {
-            project.execute("assembleAndroidTest");
-            fail("build succeeded");
-        } catch (Exception e) {
-            Throwable t = e;
-            while (t.getCause() != null) {
-                t = t.getCause();
-            }
-
-            // looks like we can't actually test the instance t against GradleException
-            // due to it coming through the tooling API from a different class loader.
-            assertThat(t.getClass().getCanonicalName()).isEqualTo("org.gradle.api.GradleException");
-            assertThat(t.getMessage()).isEqualTo("Dependency Error. See console for details.");
+        GradleBuildResult result =
+                project.executor().expectFailure().run("assembleAndroidTest");
+        Throwable t = result.getException();
+        while (t.getCause() != null) {
+            t = t.getCause();
         }
 
+        // looks like we can't actually test the instance t against GradleException
+        // due to it coming through the tooling API from a different class loader.
+        assertThat(t.getClass().getCanonicalName()).isEqualTo("org.gradle.api.GradleException");
+        assertThat(t.getMessage()).isEqualTo("Dependency Error. See console for details.");
+
+
         // check there is a version of the error, after the task name:
-        assertThat(project.getStderr()).named("stderr").contains(ERROR_MSG);
+        assertThat(result.getStderr()).named("stderr").contains(ERROR_MSG);
 
     }
 

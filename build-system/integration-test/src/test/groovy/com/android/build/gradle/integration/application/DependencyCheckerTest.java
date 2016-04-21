@@ -19,11 +19,11 @@ package com.android.build.gradle.integration.application;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static org.junit.Assert.fail;
 
+import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 
-import org.gradle.tooling.BuildException;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -66,14 +66,9 @@ public class DependencyCheckerTest {
                 + "    compile 'com.google.android:android:4.1.1.4'\n"
                 + "}");
 
-        try {
-            project.execute("clean", "assemble");
-            fail("should throw");
-        } catch (BuildException e) {
-            // expected.
-        }
+        GradleBuildResult result = project.executor().expectFailure().run("clean", "assemble");
 
-        String stderr = project.getStderr();
+        String stderr = result.getStderr();
         assertThat(stderr).contains("corresponds to API level 15");
         // Picked up from com.google.android
         assertThat(stderr).contains("which is 14"); // Declared in Gradle.

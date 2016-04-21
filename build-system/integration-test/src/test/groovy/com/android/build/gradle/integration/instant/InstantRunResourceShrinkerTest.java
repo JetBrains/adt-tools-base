@@ -47,11 +47,8 @@ public class InstantRunResourceShrinkerTest {
     @Test
     public void checkPackaging() throws Exception {
         project.execute("clean");
-        project.execute(
-                InstantRunTestUtils.getInstantRunArgs(
-                        23,
-                        ColdswapMode.MULTIDEX,
-                        OptionalCompilationStep.RESTART_ONLY),
-                "assembleDebug");
+        project.executor()
+                .withInstantRun(23, ColdswapMode.MULTIDEX, OptionalCompilationStep.RESTART_ONLY)
+                .run("assembleDebug");
     }
 }

@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.component;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 
+import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject;
@@ -50,7 +51,7 @@ public class InvalidDependencyOnAppTest {
 
     @Test
     public void testBuildFails() throws Exception {
-        project.executeExpectingFailure("assembleDebug");
-        assertThat(project.getStdout()).contains("resolves to an APK");
+        GradleBuildResult result = project.executor().expectFailure().run("assembleDebug");
+        assertThat(result.getStdout()).contains("resolves to an APK");
     }
 }

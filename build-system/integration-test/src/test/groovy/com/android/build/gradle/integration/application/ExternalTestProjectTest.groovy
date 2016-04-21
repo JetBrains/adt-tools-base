@@ -15,12 +15,13 @@
  */
 
 package com.android.build.gradle.integration.application
+
+import com.android.build.gradle.integration.common.fixture.GradleBuildResult
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.SyncIssue
 import groovy.transform.CompileStatic
-import org.gradle.tooling.BuildException
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -29,7 +30,6 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertTrue
-import static org.junit.Assert.fail
 /**
  * Check that a project can depend on a jar dependency published by another app project.
  */
@@ -110,24 +110,23 @@ dependencies {
     compile project(path: ':app1')
 }
 """
-        try {
-            project.execute('clean', 'app2:assembleDebug')
-            fail('Broken build file did not throw exception')
-        } catch (BuildException e) {
-            Throwable t = e
-            while (t.getCause() != null) {
-                t = t.getCause()
-            }
+        GradleBuildResult result =
+                project.executor().expectFailure().run('clean', 'app2:assembleDebug')
 
-            // looks like we can't actually test the instance t against GradleException
-            // due to it coming through the tooling API from a different class loader.
-            assertEquals("org.gradle.api.GradleException", t.getClass().canonicalName)
-            assertEquals("Dependency Error. See console for details.", t.getMessage())
+        Throwable t = result.getException();
+        while (t.getCause() != null) {
+            t = t.getCause()
         }
+
+        // looks like we can't actually test the instance t against GradleException
+        // due to it coming through the tooling API from a different class loader.
+        assertEquals("org.gradle.api.GradleException", t.getClass().canonicalName)
+        assertEquals("Dependency Error. See console for details.", t.getMessage())
+
 
         // check there is a version of the error, after the task name:
 
-        assertTrue("stderr contains error", project.getStderr().contains(
+        assertTrue("stderr contains error", result.getStderr().contains(
                 "Dependency project:app1:unspecified on project app2 resolves to an APK archive which is not supported as a compilation dependency. File:"))
 
     }
@@ -147,7 +146,7 @@ dependencies {
 }
 """
 
-        Map<String, AndroidProject> modelMap = project.getAllModelsIgnoringSyncIssues()
+        Map<String, AndroidProject> modelMap = project.model().ignoreSyncIssues().getMulti()
 
         AndroidProject model = modelMap.get(':app2')
         assertNotNull(model)
