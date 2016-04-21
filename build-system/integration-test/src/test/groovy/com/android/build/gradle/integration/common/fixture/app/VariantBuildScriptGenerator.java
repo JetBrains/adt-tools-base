@@ -1,21 +1,13 @@
 package com.android.build.gradle.integration.common.fixture.app;
 
-import com.google.common.collect.Maps;
+import com.android.annotations.NonNull;
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.utils.TestFileUtils;
 
-import java.util.Map;
-
-import groovy.lang.Closure;
+import java.io.IOException;
 
 /**
- * Generator to create build.gradle with arbitrary number of variants.
- *
- * The build.gradle is created from the given template and a map of strings to replace.  E.g., if
- * the map contains an entry ("buildTypes" : 3), the all instances of "${buildTypes}" in the
- * template will be replace by:
- * buildType0
- * buildType1
- * buildType2
- * This allows arbitrary number of build types and product flavors to be generated easily.
+ * Creates a build.gradle with the specified number of build types and product flavors.
  */
 public class VariantBuildScriptGenerator {
 
@@ -25,59 +17,76 @@ public class VariantBuildScriptGenerator {
 
     public static final Integer SMALL_NUMBER = 2;
 
-    private final String template;
+    private int buildTypes = -1;
+    private int productFlavors = -1;
+    private boolean componentPlugin = false;
 
-    private final Map<String, Integer> variantCounts;
-
-    private final Map<String, Closure<String>> variantPostProcessors = Maps.newHashMap();
-
-    /**
-     * Create a VariantBuildScriptGenerator
-     *
-     * @param variantCounts a map where the key represents the string in template to replace and the
-     *                      value represent the number of variants to replace with.
-     * @param template a template for the build script.  Strings in the format "${key}" will be
-     *                 replaced if the key exists in variantCounts.
-     */
-    public VariantBuildScriptGenerator(
-            Map<String, Integer> variantCounts,
-            String template) {
-        this.template = template;
-        this.variantCounts = variantCounts;
+    public VariantBuildScriptGenerator withNumberOfBuildTypes(int buildTypes) {
+        this.buildTypes = buildTypes;
+        return this;
     }
 
-    /**
-     * Add a post processor to customize the output format of a specified variant.
-     *
-     * @param variant Name of the variant type.
-     * @param postProcessor A Closure that accept the variant type name as String and return the
-     *                      formatted String.
-     */
-    public void addPostProcessor(String variant, Closure<String> postProcessor) {
-        variantPostProcessors.put(variant, postProcessor);
+    public VariantBuildScriptGenerator withNumberOfProductFlavors(int productFlavors) {
+        this.productFlavors = productFlavors;
+        return this;
     }
 
-    /**
-     * Generate the string for a build.gradle script.
-     */
+    public VariantBuildScriptGenerator forComponentPlugin() {
+        componentPlugin = true;
+        return this;
+    }
+
     public String createBuildScript() {
-        String buildScript = template;
-        for (Map.Entry<String, Integer> variantCount : variantCounts.entrySet()) {
-            String variantName = variantCount.getKey();
-            StringBuilder variants = new StringBuilder();
-            for (int i = 0; i < variantCount.getValue(); i++) {
-                Closure<String> postProcessor = variantPostProcessors.get(variantName);
-                if (postProcessor == null) {
-                    variants.append(variantName);
-                    variants.append(i);
-                } else {
-                    variants.append(postProcessor.call(variantName + i));
-                }
-                variants.append("\n");
-            }
-            buildScript = buildScript.replace("${" + variantName + "}", variants.toString());
+        if (buildTypes < 0 || productFlavors < 0) {
+            throw new IllegalStateException(
+                    "Number of build types and product flavors must be set.");
+        }
+        StringBuilder script = new StringBuilder();
+        if (componentPlugin) {
+            script.append("apply plugin: 'com.android.model.application'\n"
+                    + "model {\n");
+        } else {
+            script.append("apply plugin: \"com.android.application\"\n");
+        }
+        script.append("\n"
+                + "    android {\n"
+                + "        compileSdkVersion = ")
+                .append(GradleTestProject.DEFAULT_COMPILE_SDK_VERSION).append("\n"
+                + "        buildToolsVersion = '")
+                .append(GradleTestProject.DEFAULT_BUILD_TOOL_VERSION).append("'\n"
+                + "    }\n");
+
+        script.append("    android.buildTypes {\n");
+        appendVariants(script, "buildType", buildTypes);
+
+        script.append("    }\n"
+                + "    android.productFlavors {\n");
+
+        appendVariants(script, "productFlavor", productFlavors);
+        script.append("    }\n");
+
+        if (componentPlugin) {
+            script.append("}\n");
         }
 
-        return buildScript;
+        return script.toString();
+    }
+
+    public void writeBuildScript(GradleTestProject project) throws IOException {
+        TestFileUtils.appendToFile(project.getBuildFile(), createBuildScript());
+    }
+
+
+    private void appendVariants(
+            @NonNull StringBuilder script, @NonNull String name, int count) {
+        if (componentPlugin) {
+            for (int i = 0; i < count; i++) {
+                script.append("            create('").append(name).append(i).append("')\n");
+            }
+        } else {
+            for (int i = 0; i < count; i++) {
+                script.append("            ").append(name).append(i).append("\n");
+            }
+        }
     }
 }

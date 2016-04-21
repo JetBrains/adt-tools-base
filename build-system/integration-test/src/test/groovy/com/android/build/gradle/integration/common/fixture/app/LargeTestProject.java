@@ -67,7 +67,7 @@ public class LargeTestProject<T extends GradleModule> implements TestProject {
             return this;
         }
 
-        public LargeTestProject create() throws IOException {
+        public LargeTestProject create() {
             return new LargeTestProject(new GradleModuleFactory(moduleClass), maxDepth, maxBreadth);
         }
     }
