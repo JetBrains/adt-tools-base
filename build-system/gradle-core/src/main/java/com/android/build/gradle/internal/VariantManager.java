@@ -763,7 +763,7 @@ public class VariantManager implements VariantModel {
 
         CoreProductFlavor defaultConfig = defaultConfigData.getProductFlavor();
 
-        Action<com.android.build.gradle.api.VariantFilter> variantFilterAction =
+        Action<com.android.build.api.variant.VariantFilter> variantFilterAction =
                 extension.getVariantFilter();
 
         for (BuildTypeData buildTypeData : buildTypes.values()) {

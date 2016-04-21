@@ -15,12 +15,12 @@
  */
 package com.android.build.gradle;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.api.transform.Transform;
+import com.android.build.api.variant.VariantFilter;
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.api.BaseVariant;
-import com.android.build.gradle.api.VariantFilter;
 import com.android.build.gradle.internal.CompileOptions;
 import com.android.build.gradle.internal.ExtraModelInfo;
 import com.android.build.gradle.internal.LoggingUtil;
@@ -31,16 +31,15 @@ import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.dsl.AdbOptions;
 import com.android.build.gradle.internal.dsl.AndroidSourceSetFactory;
 import com.android.build.gradle.internal.dsl.BuildType;
-import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.dsl.DataBindingOptions;
 import com.android.build.gradle.internal.dsl.ExternalNativeBuild;
+import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.dsl.LintOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.dsl.ProductFlavor;
 import com.android.build.gradle.internal.dsl.SigningConfig;
 import com.android.build.gradle.internal.dsl.Splits;
 import com.android.build.gradle.internal.dsl.TestOptions;
-import com.android.build.api.transform.Transform;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.LibraryRequest;
@@ -48,8 +47,8 @@ import com.android.builder.model.SourceProvider;
 import com.android.builder.sdk.TargetInfo;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
-import com.android.resources.Density;
 import com.android.repository.Revision;
+import com.android.resources.Density;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -598,9 +597,9 @@ public abstract class BaseExtension implements AndroidConfig {
     /**
      * Callback to control which variants should be excluded.
      *
-     * <p>The {@link Action} is passed a single object of type
-     * {@link com.android.build.gradle.api.VariantFilter}. It should set the
-     * {@link VariantFilter#setIgnore(boolean)} flag to filter out the given variant.
+     * <p>The {@link Action} is passed a single object of type {@link VariantFilter}.
+     * It should set the {@link VariantFilter#setIgnore(boolean)} flag to filter out the
+     * given variant.
      */
     @Override
     public Action<VariantFilter> getVariantFilter() {
