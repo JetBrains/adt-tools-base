@@ -107,6 +107,10 @@ public class InstantRunSlicerTest {
         when(variantScope.getInstantRunBuildContext()).thenReturn(instantRunBuildContext);
 
         jarOutput = new File(jarOutputDir.getRoot(), "output.jar");
+
+        File incrementalChanges = InstantRunBuildType.RESTART
+                .getIncrementalChangesFile(variantScope);
+        Files.write("SHOULD NOT BE READ", incrementalChanges, Charsets.UTF_8);
     }
 
     @Test
@@ -255,6 +259,9 @@ public class InstantRunSlicerTest {
         if (!isIncremental) {
             // delete the output directory and create a new clean one.
             FileUtils.deletePath(getOutputDir());
+            FileUtils.createFile(
+                    InstantRunBuildType.RESTART.getIncrementalChangesFile(variantScope),
+                    "EMPTY");
             outputDir.create();
         } else {
             // create the incremental change file.
