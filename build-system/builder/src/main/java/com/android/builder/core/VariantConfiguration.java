@@ -65,9 +65,6 @@ import java.util.Set;
  */
 public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, F extends ProductFlavor> {
 
-    // for every manifest file analyzed, just create a new parser
-    private Map<File, ManifestAttributeSupplier> manifestParsers = Maps.newHashMap();
-
     /**
      * Full, unique name of the variant in camel case, including BuildType and Flavors (and Test)
      */
@@ -154,16 +151,10 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      */
     private final SigningConfig mSigningConfigOverride;
 
-
     /**
-     * Parses the manifest file and return the package name.
-     * @param manifestFile the manifest file
-     * @return the package name found or null
+     * For every manifest file analyzed, just create a new parser.
      */
-    @Nullable
-    public static String getManifestPackage(@NonNull File manifestFile) {
-        return new DefaultManifestParser(manifestFile).getPackage();
-    }
+    private Map<File, ManifestAttributeSupplier> mManifestParsers = Maps.newHashMap();
 
     /**
      * Creates the configuration with the base source sets for a given {@link VariantType}. Meant
@@ -2255,10 +2246,10 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     /** Gets the existing manifest attribute supplier for specified file, or creates a new one. */
     @NonNull
     private ManifestAttributeSupplier getManifestParser(@NonNull File manifestFile) {
-        ManifestAttributeSupplier parser = manifestParsers.get(manifestFile);
+        ManifestAttributeSupplier parser = mManifestParsers.get(manifestFile);
         if (parser == null) {
             parser = new DefaultManifestParser(manifestFile);
-            manifestParsers.put(manifestFile, parser);
+            mManifestParsers.put(manifestFile, parser);
         }
         return parser;
     }

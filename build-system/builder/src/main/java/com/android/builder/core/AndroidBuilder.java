@@ -83,6 +83,8 @@ import com.android.ide.common.signing.CertificateInfo;
 import com.android.ide.common.signing.KeystoreHelper;
 import com.android.ide.common.signing.KeytoolException;
 import com.android.ide.common.xml.XmlPrettyPrinter;
+import com.android.io.FileWrapper;
+import com.android.io.StreamException;
 import com.android.jack.api.ConfigNotSupportedException;
 import com.android.jack.api.JackProvider;
 import com.android.jack.api.v01.Api01CompilationTask;
@@ -107,6 +109,7 @@ import com.android.utils.ILogger;
 import com.android.utils.LineCollector;
 import com.android.utils.Pair;
 import com.android.utils.SdkUtils;
+import com.android.xml.AndroidManifest;
 import com.google.common.base.Charsets;
 import com.google.common.base.Functions;
 import com.google.common.base.Joiner;
@@ -115,7 +118,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Strings;
-import com.google.common.base.Supplier;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -1043,8 +1045,14 @@ public class AndroidBuilder {
             // (since that R class was already created).
             String appPackageName = aaptConfig.getCustomPackageForR();
             if (appPackageName == null) {
-                appPackageName = VariantConfiguration.getManifestPackage(
-                        aaptConfig.getManifestFile());
+                File manifestFile = aaptConfig.getManifestFile();
+                if (manifestFile != null) {
+                    try {
+                        appPackageName = AndroidManifest.getPackage(new FileWrapper(manifestFile));
+                    } catch (StreamException e) {
+                        // we were not able to get the content of the file, keep the null value
+                    }
+                }
             }
 
             // list of all the symbol loaders per package names.
@@ -1054,9 +1062,17 @@ public class AndroidBuilder {
                 if (lib.isOptional()) {
                     continue;
                 }
-                String packageName = VariantConfiguration.getManifestPackage(lib.getManifest());
-                if (appPackageName == null) {
+
+                if (Strings.isNullOrEmpty(appPackageName)) {
                     continue;
+                }
+
+                String packageName;
+                try {
+                    packageName = AndroidManifest.getPackage(new FileWrapper(lib.getManifest()));
+                } catch (StreamException e) {
+                    // we were not able to get the content of the file,
+                    packageName = null;
                 }
 
                 if (appPackageName.equals(packageName)) {
