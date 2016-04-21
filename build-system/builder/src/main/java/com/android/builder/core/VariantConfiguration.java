@@ -154,7 +154,6 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      */
     private final SigningConfig mSigningConfigOverride;
 
-
     /**
      * Parses the manifest file and return the package name.
      * @param manifestFile the manifest file

@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.JavaArtifact;
 import com.android.builder.model.ProductFlavor;
+import com.android.builder.model.TestedTargetVariant;
 import com.android.builder.model.Variant;
 
 import java.io.Serializable;
@@ -48,6 +49,8 @@ class VariantImpl implements Variant, Serializable {
     private final Collection<AndroidArtifact> extraAndroidArtifacts;
     @NonNull
     private final Collection<JavaArtifact> extraJavaArtifacts;
+    @NonNull
+    private final Collection<TestedTargetVariant> testedTargetVariants;
 
     VariantImpl(@NonNull String name,
                 @NonNull String displayName,
@@ -56,7 +59,8 @@ class VariantImpl implements Variant, Serializable {
                 @NonNull ProductFlavorImpl mergedFlavor,
                 @NonNull AndroidArtifact mainArtifactInfo,
                 @NonNull Collection<AndroidArtifact> extraAndroidArtifacts,
-                @NonNull Collection<JavaArtifact> extraJavaArtifacts) {
+                @NonNull Collection<JavaArtifact> extraJavaArtifacts,
+                @NonNull Collection<TestedTargetVariant> testedTargetVariants) {
         this.name = name;
         this.displayName = displayName;
         this.buildTypeName = buildTypeName;
@@ -65,6 +69,7 @@ class VariantImpl implements Variant, Serializable {
         this.mainArtifactInfo = mainArtifactInfo;
         this.extraAndroidArtifacts = extraAndroidArtifacts;
         this.extraJavaArtifacts = extraJavaArtifacts;
+        this.testedTargetVariants = testedTargetVariants;
     }
 
     @Override
@@ -113,5 +118,11 @@ class VariantImpl implements Variant, Serializable {
     @Override
     public Collection<JavaArtifact> getExtraJavaArtifacts() {
         return extraJavaArtifacts;
+    }
+
+    @NonNull
+    @Override
+    public Collection<TestedTargetVariant> getTestedTargetVariants() {
+        return testedTargetVariants;
     }
 }

@@ -18,11 +18,10 @@ package com.android.build.gradle.integration.test
 
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.builder.model.AndroidProject
+import com.android.builder.model.TestedTargetVariant
 import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
+import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
@@ -33,15 +32,13 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
  */
 @CompileStatic
 class SeparateTestModuleTest {
-    @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("separateTestModule")
             .create()
 
-    static Map<String, AndroidProject> models
-
-    @BeforeClass
-    static void setUp() {
+    @Before
+    public void setUp() {
         project.getSubproject("test").getBuildFile() << """
 android {
     defaultConfig {
@@ -49,13 +46,6 @@ android {
     }
 }
 """
-        models = project.executeAndReturnMultiModel("assemble")
-    }
-
-    @AfterClass
-    static void cleanUp() {
-        project = null
-        models = null
     }
 
     @Test
@@ -99,7 +89,18 @@ android {
         testProject.executeConnectedCheck()
     }
 
-    private static void addInstrumentationToManifest(){
+    @Test
+    public void "check model contains tested apks to install"() throws Exception{
+        Collection<TestedTargetVariant> toInstall =
+                project.executeAndReturnMultiModel("clean")
+                        .get(":test").variants.first().getTestedTargetVariants()
+
+        assertThat(toInstall).hasSize(1)
+        assertThat(toInstall.first().getTargetProjectPath()).isEqualTo(":app")
+        assertThat(toInstall.first().getTargetVariant()).isEqualTo("debug")
+    }
+
+    private void addInstrumentationToManifest(){
         GradleTestProject testProject = project.getSubproject("test")
         testProject.file("src/main/AndroidManifest.xml").delete()
         testProject.file("src/main/AndroidManifest.xml") << """<?xml version="1.0" encoding="utf-8"?>
