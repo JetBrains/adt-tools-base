@@ -40,6 +40,11 @@ public final class AxisComponent extends AnimatedComponent {
     private static final int MARKER_LABEL_MARGIN = 2;
 
     /**
+     * The axis to which this axis should sync its intervals to.
+     */
+    private AxisComponent mParentAxis;
+
+    /**
      * The Range object that drives this axis.
      */
     @NonNull
@@ -120,12 +125,12 @@ public final class AxisComponent extends AnimatedComponent {
     /**
      * Calculated - Interval value per major marker.
      */
-    private int mMajorInterval;
+    private float mMajorInterval;
 
     /**
      * Calculated - Interval value per minor marker.
      */
-    private int mMinorInterval;
+    private float mMinorInterval;
 
     /**
      * Calculated - Number of pixels per major interval.
@@ -185,6 +190,14 @@ public final class AxisComponent extends AnimatedComponent {
         mMetrics = getFontMetrics(DEFAULT_FONT);
     }
 
+    /**
+     * When assigned a parent, the tick interval calculations are
+     * sync'd to the parent so that their major intervals would have the same scale.
+     */
+    public void setParentAxis(AxisComponent parent) {
+        mParentAxis = parent;
+    }
+
     @NonNull
     public AxisOrientation getOrientation() {
         return mOrientation;
@@ -236,7 +249,7 @@ public final class AxisComponent extends AnimatedComponent {
 
     /**
      * Returns the formatted value corresponding to a pixel position on the axis.
-     * The formatting depends on the {@link MarkerFormatter} object associated
+     * The formatting depends on the {@link BaseAxisDomain} object associated
      * with this axis.
      *
      * e.g. For a value of 1500 in milliseconds, this will return "1.5s".
@@ -284,11 +297,15 @@ public final class AxisComponent extends AnimatedComponent {
 
         if (mDrawLength > 0) {
             double range = mRange.getLength();
-            mMajorInterval = mDomain.getMajorInterval(range, mDrawLength);
-            mMajorScale = (float)(mMajorInterval * mDrawLength / range);
-
-            mMinorInterval = mDomain.getMinorInterval(mMajorInterval, (int)mMajorScale);
-            mMinorScale = (float)(mMinorInterval * mDrawLength / range);
+            if (mParentAxis != null) {
+                mMajorScale = mMinorScale = mParentAxis.mMajorScale;
+                mMajorInterval = mMinorInterval = (float)range / mDrawLength * mMajorScale;
+            } else {
+                mMajorInterval = mDomain.getMajorInterval(range, mDrawLength);
+                mMajorScale = (float)(mMajorInterval * mDrawLength / range);
+                mMinorInterval = mDomain.getMinorInterval(mMajorInterval, (int)mMajorScale);
+                mMinorScale = (float)(mMinorInterval * mDrawLength / range);
+            }
 
             // Calculate the value and offset of the first major marker
             mFirstMarkerValue = Math.floor(mCurrentMinValue / mMajorInterval) * mMajorInterval;
@@ -297,7 +314,7 @@ public final class AxisComponent extends AnimatedComponent {
 
             // Calculate marker positions
             int numMarkers = (int)Math.floor((mCurrentMaxValue - mFirstMarkerValue) / mMinorInterval) + 1;
-            int numMinorPerMajor = mMajorInterval / mMinorInterval;
+            int numMinorPerMajor = (int)(mMajorInterval / mMinorInterval);
             for (int i = 0; i < numMarkers; i++) {
                 float markerOffset = firstMarkerOffset + i * mMinorScale;
                 if (i % numMinorPerMajor == 0) {    // Major Tick.
