@@ -1594,6 +1594,7 @@ public class LintDriver {
                 }
                 Collections.sort(detectorNames);
 
+                /* Let's not complain quite yet
                 String message = String.format("Lint found one or more custom checks using its "
                         + "older Java API; these checks are still run in compatibility mode, "
                         + "but this causes duplicated parsing, and in the next version lint "
@@ -1607,6 +1608,7 @@ public class LintDriver {
                         IssueRegistry.LINT_ERROR,
                         project.getConfiguration(this).getSeverity(IssueRegistry.LINT_ERROR),
                         location, message, TextFormat.RAW);
+                */
 
 
                 JavaVisitor oldVisitor = new JavaVisitor(javaParser, filtered);
