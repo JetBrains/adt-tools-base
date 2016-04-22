@@ -23,17 +23,31 @@ import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.prefs.AndroidLocation;
 import com.android.prefs.AndroidLocation.AndroidLocationException;
+import com.android.repository.api.RepoManager;
 import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.utils.Pair;
-import org.apache.http.*;
+
+import org.apache.http.Header;
+import org.apache.http.HttpHeaders;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.message.BasicHeader;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
@@ -48,7 +62,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * default and tries to update resources if they are older than 10 minutes by respecting
  * either ETag or Last-Modified, and finally server-cache is a strategy to always serve
  * cached entries if present.)
+ *
+ * @deprecated This is part of the old SDK manager framework. Use
+ * {@link AndroidSdkHandler}/{@link RepoManager} and associated classes instead.
  */
+@Deprecated
 public class DownloadCache {
 
     /*

@@ -9,7 +9,7 @@ import com.android.repository.impl.meta.TypeDetails;
 import com.android.repository.io.FileOp;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.ISystemImage;
-import com.android.sdklib.repository.legacy.local.PackageParserUtils;
+import com.android.sdklib.repository.PackageParserUtils;
 import com.android.sdklib.repository.IdDisplay;
 import com.android.sdklib.repository.meta.DetailsTypes;
 import com.android.sdklib.repository.meta.SysImgFactory;

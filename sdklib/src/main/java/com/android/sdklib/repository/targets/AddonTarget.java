@@ -28,7 +28,7 @@ import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
-import com.android.sdklib.repository.legacy.local.PackageParserUtils;
+import com.android.sdklib.repository.PackageParserUtils;
 import com.android.sdklib.repository.legacy.LegacyRepoUtils;
 import com.android.sdklib.repository.meta.DetailsTypes;
 import com.android.sdklib.repository.meta.Library;

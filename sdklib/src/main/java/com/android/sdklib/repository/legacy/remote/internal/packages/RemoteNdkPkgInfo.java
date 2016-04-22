@@ -15,24 +15,32 @@
  */
 package com.android.sdklib.repository.legacy.remote.internal.packages;
 
+import com.android.repository.api.RepoManager;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.legacy.descriptors.PkgDesc;
 import com.android.sdklib.repository.legacy.remote.RemotePkgInfo;
 import com.android.sdklib.repository.legacy.remote.internal.sources.SdkSource;
+
 import org.w3c.dom.Node;
 
 import java.util.Map;
 
 /**
  * Remote package representing the Android NDK.
+ *
+ * @deprecated This is part of the old SDK manager framework. Use {@link AndroidSdkHandler}/{@link
+ * RepoManager} and associated classes instead.
  */
+@Deprecated
 public class RemoteNdkPkgInfo extends RemotePkgInfo {
 
-  public RemoteNdkPkgInfo(SdkSource source, Node packageNode, String nsUri, Map<String, String> licenses) {
-    super(source, packageNode, nsUri, licenses);
-    mPkgDesc = PkgDesc.Builder.newNdk(getRevision())
-      .setListDisplay("Android NDK")
-      .setDescriptionShort("Android NDK")
-      .setLicense(getLicense())
-      .create();
-  }
+    public RemoteNdkPkgInfo(SdkSource source, Node packageNode, String nsUri,
+            Map<String, String> licenses) {
+        super(source, packageNode, nsUri, licenses);
+        mPkgDesc = PkgDesc.Builder.newNdk(getRevision())
+                .setListDisplay("Android NDK")
+                .setDescriptionShort("Android NDK")
+                .setLicense(getLicense())
+                .create();
+    }
 }

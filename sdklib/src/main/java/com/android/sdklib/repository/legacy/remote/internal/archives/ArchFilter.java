@@ -20,12 +20,19 @@ package com.android.sdklib.repository.legacy.remote.internal.archives;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.Revision;
+import com.android.repository.api.RepoManager;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.google.common.base.Objects;
 
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * @deprecated This is part of the old SDK manager framework. Use
+ * {@link AndroidSdkHandler}/{@link RepoManager} and associated classes instead.
+ */
+@Deprecated
 public class ArchFilter {
 
     private static final String PROP_HOST_OS = "Archive.HostOs";

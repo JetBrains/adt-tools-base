@@ -17,83 +17,90 @@
 package com.android.sdklib.repository.legacy.remote.internal.packages;
 
 import com.android.repository.Revision;
+import com.android.repository.api.RepoManager;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.legacy.remote.internal.sources.SdkRepoConstants;
+
 import org.w3c.dom.Node;
 
 import java.util.Properties;
 
 /**
  * Represents an XML node in an SDK repository that has a min-tools-rev requirement.
+ *
+ * @deprecated This is part of the old SDK manager framework. Use
+ * {@link AndroidSdkHandler}/{@link RepoManager} and associated classes instead.
  */
+@Deprecated
 class MinToolsMixin implements IMinToolsDependency {
 
-  /**
-   * The minimal revision of the tools package required by this extra package, if > 0,
-   * or {@link #MIN_TOOLS_REV_NOT_SPECIFIED} if there is no such requirement.
-   */
-  private final Revision mMinToolsRevision;
+    /**
+     * The minimal revision of the tools package required by this extra package, if > 0, or {@link
+     * #MIN_TOOLS_REV_NOT_SPECIFIED} if there is no such requirement.
+     */
+    private final Revision mMinToolsRevision;
 
-  /**
-   * Creates a new mixin from the attributes and elements of the given XML node.
-   * This constructor should throw an exception if the package cannot be created.
-   *
-   * @param packageNode The XML element being parsed.
-   */
-  MinToolsMixin(Node packageNode) {
+    /**
+     * Creates a new mixin from the attributes and elements of the given XML node. This constructor
+     * should throw an exception if the package cannot be created.
+     *
+     * @param packageNode The XML element being parsed.
+     */
+    MinToolsMixin(Node packageNode) {
 
-    mMinToolsRevision =
-      RemotePackageParserUtils
-        .parseRevisionElement(RemotePackageParserUtils.findChildElement(packageNode, SdkRepoConstants.NODE_MIN_TOOLS_REV));
-  }
-
-  /**
-   * The minimal revision of the tools package required by this extra package, if > 0,
-   * or {@link #MIN_TOOLS_REV_NOT_SPECIFIED} if there is no such requirement.
-   */
-  @Override
-  public Revision getMinToolsRevision() {
-    return mMinToolsRevision;
-  }
-
-  public void saveProperties(Properties props) {
-    if (!getMinToolsRevision().equals(MIN_TOOLS_REV_NOT_SPECIFIED)) {
-      props.setProperty(PkgProps.MIN_TOOLS_REV, getMinToolsRevision().toShortString());
+        mMinToolsRevision =
+                RemotePackageParserUtils
+                        .parseRevisionElement(RemotePackageParserUtils.findChildElement(packageNode,
+                                SdkRepoConstants.NODE_MIN_TOOLS_REV));
     }
-  }
 
-  @Override
-  public int hashCode() {
-    return hashCode(super.hashCode());
-  }
+    /**
+     * The minimal revision of the tools package required by this extra package, if > 0, or {@link
+     * #MIN_TOOLS_REV_NOT_SPECIFIED} if there is no such requirement.
+     */
+    @Override
+    public Revision getMinToolsRevision() {
+        return mMinToolsRevision;
+    }
 
-  int hashCode(int superHashCode) {
-    final int prime = 31;
-    int result = superHashCode;
-    result = prime * result + ((mMinToolsRevision == null) ? 0 : mMinToolsRevision.hashCode());
-    return result;
-  }
+    public void saveProperties(Properties props) {
+        if (!getMinToolsRevision().equals(MIN_TOOLS_REV_NOT_SPECIFIED)) {
+            props.setProperty(PkgProps.MIN_TOOLS_REV, getMinToolsRevision().toShortString());
+        }
+    }
 
-  @Override
-  public boolean equals(Object obj) {
-    if (this == obj) {
-      return true;
+    @Override
+    public int hashCode() {
+        return hashCode(super.hashCode());
     }
-    if (!super.equals(obj)) {
-      return false;
+
+    int hashCode(int superHashCode) {
+        final int prime = 31;
+        int result = superHashCode;
+        result = prime * result + ((mMinToolsRevision == null) ? 0 : mMinToolsRevision.hashCode());
+        return result;
     }
-    if (!(obj instanceof IMinToolsDependency)) {
-      return false;
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!super.equals(obj)) {
+            return false;
+        }
+        if (!(obj instanceof IMinToolsDependency)) {
+            return false;
+        }
+        IMinToolsDependency other = (IMinToolsDependency) obj;
+        if (mMinToolsRevision == null) {
+            if (other.getMinToolsRevision() != null) {
+                return false;
+            }
+        } else if (!mMinToolsRevision.equals(other.getMinToolsRevision())) {
+            return false;
+        }
+        return true;
     }
-    IMinToolsDependency other = (IMinToolsDependency)obj;
-    if (mMinToolsRevision == null) {
-      if (other.getMinToolsRevision() != null) {
-        return false;
-      }
-    }
-    else if (!mMinToolsRevision.equals(other.getMinToolsRevision())) {
-      return false;
-    }
-    return true;
-  }
 }

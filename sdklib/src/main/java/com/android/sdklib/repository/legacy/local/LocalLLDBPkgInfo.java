@@ -17,6 +17,8 @@
 package com.android.sdklib.repository.legacy.local;
 
 import com.android.annotations.NonNull;
+import com.android.repository.api.RepoManager;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.legacy.descriptors.IPkgDesc;
 import com.android.sdklib.repository.legacy.descriptors.PkgDesc;
 import com.android.repository.Revision;
@@ -27,10 +29,11 @@ import java.util.Properties;
 /**
  * Local package representing the Android LLDB.
  *
- * @deprecated in favor of new sdk system
+ * @deprecated This is part of the old SDK manager framework. Use
+ * {@link AndroidSdkHandler}/{@link RepoManager} and associated classes instead.
  */
 @Deprecated
-public class LocalLLDBPkgInfo extends LocalPkgInfo {
+class LocalLLDBPkgInfo extends LocalPkgInfo {
   /**
    * The LLDB SDK package revision's major and minor numbers are pinned in Android Studio.
    *
@@ -38,15 +41,15 @@ public class LocalLLDBPkgInfo extends LocalPkgInfo {
    */
 
   @Deprecated
-  public static final Revision PINNED_REVISION = new Revision(2, 0);
+  static final Revision PINNED_REVISION = new Revision(2, 0);
 
   @NonNull
   private final IPkgDesc mDesc;
 
-  protected LocalLLDBPkgInfo(@NonNull LocalSdk localSdk,
-                             @NonNull File localDir,
-                             @NonNull Properties sourceProps,
-                             @NonNull Revision revision) {
+  LocalLLDBPkgInfo(@NonNull LocalSdk localSdk,
+          @NonNull File localDir,
+          @NonNull Properties sourceProps,
+          @NonNull Revision revision) {
     super(localSdk, localDir, sourceProps);
     mDesc = PkgDesc.Builder.newLLDB(revision).setDescriptionShort("LLDB").setListDisplay("LLDB").create();
   }

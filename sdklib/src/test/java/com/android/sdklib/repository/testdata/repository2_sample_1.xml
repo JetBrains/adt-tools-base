@@ -85,7 +85,7 @@
     <remotePackage path="docs">
         <type-details xsi:type="generic:genericDetailsType"/>
         <revision>
-            <major>1</major>
+            <major>43</major>
         </revision>
         <display-name>Documentation</display-name>
         <archives>

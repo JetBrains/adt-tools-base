@@ -17,32 +17,38 @@
 package com.android.sdklib.repository.legacy.remote.internal.archives;
 
 
+import com.android.repository.api.RepoManager;
+import com.android.sdklib.repository.AndroidSdkHandler;
+
 /**
  * The legacy Architecture that this archive can be downloaded on.
  * <p/>
- * This attribute was used for the &lt;archive&gt; element in repo schema 1-9.
- * add-on schema 1-6 and sys-img schema 1-2.
- * Starting with repo schema 10, add-on schema 7 and sys-img schema 3, this is replaced
- * by the &lt;host-bit&gt; and &lt;jvm-bit&gt; elements and {@link ArchFilter}.
+ * This attribute was used for the &lt;archive&gt; element in repo schema 1-9. add-on schema 1-6 and
+ * sys-img schema 1-2. Starting with repo schema 10, add-on schema 7 and sys-img schema 3, this is
+ * replaced by the &lt;host-bit&gt; and &lt;jvm-bit&gt; elements and {@link ArchFilter}.
  *
  * @see HostOs
+ *
+ * @deprecated This is part of the old SDK manager framework. Use
+ * {@link AndroidSdkHandler}/{@link RepoManager} and associated classes instead.
  */
+@Deprecated
 public enum LegacyArch {
-  ANY("Any"),
-  PPC("PowerPC"),
-  X86("x86"),
-  X86_64("x86_64");
+    ANY("Any"),
+    PPC("PowerPC"),
+    X86("x86"),
+    X86_64("x86_64");
 
-  private final String mUiName;
+    private final String mUiName;
 
-  LegacyArch(String uiName) {
-    mUiName = uiName;
-  }
+    LegacyArch(String uiName) {
+        mUiName = uiName;
+    }
 
-  /**
-   * Returns the UI name of the architecture.
-   */
-  public String getUiName() {
-    return mUiName;
-  }
+    /**
+     * Returns the UI name of the architecture.
+     */
+    public String getUiName() {
+        return mUiName;
+    }
 }

@@ -19,6 +19,8 @@ package com.android.sdklib.repository.legacy.local;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.Revision;
+import com.android.repository.api.RepoManager;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.legacy.descriptors.IPkgDesc;
 import com.android.sdklib.repository.legacy.descriptors.IPkgDescExtra;
 import com.android.sdklib.repository.legacy.descriptors.PkgDesc;
@@ -27,19 +29,24 @@ import com.android.sdklib.repository.IdDisplay;
 import java.io.File;
 import java.util.Properties;
 
+/**
+ * @deprecated This is part of the old SDK manager framework. Use
+ * {@link AndroidSdkHandler}/{@link RepoManager} and associated classes instead.
+ */
+@Deprecated
 public class LocalExtraPkgInfo extends LocalPkgInfo {
 
     @NonNull
     private final IPkgDescExtra mDesc;
 
-    public LocalExtraPkgInfo(@NonNull  LocalSdk localSdk,
-                             @NonNull  File localDir,
-                             @NonNull  Properties sourceProps,
-                             @NonNull IdDisplay vendor,
-                             @NonNull  String path,
-                             @Nullable String displayName,
-                             @NonNull  String[] oldPaths,
-                             @NonNull  Revision revision) {
+    LocalExtraPkgInfo(@NonNull  LocalSdk localSdk,
+            @NonNull  File localDir,
+            @NonNull  Properties sourceProps,
+            @NonNull IdDisplay vendor,
+            @NonNull  String path,
+            @Nullable String displayName,
+            @NonNull  String[] oldPaths,
+            @NonNull  Revision revision) {
         super(localSdk, localDir, sourceProps);
         mDesc = (IPkgDescExtra) PkgDesc.Builder.newExtra(
                 vendor,

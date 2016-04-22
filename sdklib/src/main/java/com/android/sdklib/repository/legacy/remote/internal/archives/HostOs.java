@@ -18,6 +18,8 @@ package com.android.sdklib.repository.legacy.remote.internal.archives;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.repository.api.RepoManager;
+import com.android.sdklib.repository.AndroidSdkHandler;
 
 import java.util.Locale;
 
@@ -28,7 +30,11 @@ import java.util.Locale;
  * <p/>
  * The actual OS requirements for the SDK are listed at
  * <a href="http://d.android.com/sdk">http://d.android.com/sdk</a>
+ *
+ * @deprecated This is part of the old SDK manager framework. Use
+ * {@link AndroidSdkHandler}/{@link RepoManager} and associated classes instead.
  */
+@Deprecated
 public enum HostOs {
   /**
    * Any of the Unix-like host OSes.
@@ -60,7 +66,7 @@ public enum HostOs {
   /**
    * Returns the XML name of the OS.
    *
-   * @returns Null, windows, macosx or linux.
+   * @return Null, windows, macosx or linux.
    */
   @NonNull
   public String getXmlName() {

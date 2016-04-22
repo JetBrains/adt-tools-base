@@ -19,14 +19,21 @@ package com.android.sdklib.repository.legacy.local;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.Revision;
+import com.android.repository.api.RepoManager;
 import com.android.sdklib.BuildToolInfo;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.legacy.descriptors.IPkgDesc;
 import com.android.sdklib.repository.legacy.descriptors.PkgDesc;
 
 import java.io.File;
 import java.util.Properties;
 
-public class LocalBuildToolPkgInfo extends LocalPkgInfo {
+/**
+ * @deprecated This is part of the old SDK manager framework. Use
+ * {@link AndroidSdkHandler}/{@link RepoManager} and associated classes instead.
+ */
+@Deprecated
+class LocalBuildToolPkgInfo extends LocalPkgInfo {
 
 
     @Nullable
@@ -34,7 +41,7 @@ public class LocalBuildToolPkgInfo extends LocalPkgInfo {
     @NonNull
     private final IPkgDesc mDesc;
 
-    public LocalBuildToolPkgInfo(@NonNull LocalSdk localSdk,
+    LocalBuildToolPkgInfo(@NonNull LocalSdk localSdk,
             @NonNull File localDir,
             @NonNull Properties sourceProps,
             @NonNull Revision revision,

@@ -19,7 +19,9 @@ package com.android.sdklib.repository.legacy.descriptors;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.repository.Revision;
+import com.android.repository.api.RepoManager;
 import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.repository.AndroidSdkHandler;
 
 import java.util.EnumSet;
 
@@ -27,7 +29,11 @@ import java.util.EnumSet;
  * Package types handled by the legacy SDK.
  * <p/>
  * Integer bit values indicate the natural ordering of the packages.
+ *
+ * @deprecated This is part of the old SDK manager framework. Use
+ * {@link AndroidSdkHandler}/{@link RepoManager} and associated classes instead.
  */
+@Deprecated
 public enum PkgType {
 
     // Boolean attributes below, in that order:

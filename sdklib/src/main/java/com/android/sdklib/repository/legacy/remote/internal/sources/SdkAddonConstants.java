@@ -16,6 +16,8 @@
 
 package com.android.sdklib.repository.legacy.remote.internal.sources;
 
+import com.android.repository.api.RepoManager;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.legacy.RepoXsdUtil;
 
 import javax.xml.transform.stream.StreamSource;
@@ -23,20 +25,24 @@ import java.io.InputStream;
 
 /**
  * Public constants for the sdk-addon XML Schema.
+ *
+ * @deprecated This is part of the old SDK manager framework. Use
+ * {@link AndroidSdkHandler}/{@link RepoManager} and associated classes instead.
  */
+@Deprecated
 public class SdkAddonConstants extends RepoConstants {
 
     /**
      * The latest version of the sdk-addon XML Schema.
      * Valid version numbers are between 1 and this number, included.
      */
-    public static final int NS_LATEST_VERSION = 7;
+    static final int NS_LATEST_VERSION = 7;
 
     /**
      * The default name looked for by SdkSource when trying to load an
      * sdk-addon XML if the URL doesn't match an existing resource.
      */
-    public static final String URL_DEFAULT_FILENAME = "addon.xml";         //$NON-NLS-1$
+    static final String URL_DEFAULT_FILENAME = "addon.xml";         //$NON-NLS-1$
 
     /** The base of our sdk-addon XML namespace. */
     private static final String NS_BASE =
@@ -46,19 +52,19 @@ public class SdkAddonConstants extends RepoConstants {
      * The pattern of our sdk-addon XML namespace.
      * Matcher's group(1) is the schema version (integer).
      */
-    public static final String NS_PATTERN = NS_BASE + "([0-9]+)";     //$NON-NLS-1$
+    static final String NS_PATTERN = NS_BASE + "([0-9]+)";     //$NON-NLS-1$
 
     /** The XML namespace of the latest sdk-addon XML. */
-    public static final String NS_URI = getSchemaUri(NS_LATEST_VERSION);
+    static final String NS_URI = getSchemaUri(NS_LATEST_VERSION);
 
     /** The root sdk-addon element */
-    public static final String NODE_SDK_ADDON       = "sdk-addon";         //$NON-NLS-1$
+    static final String NODE_SDK_ADDON       = "sdk-addon";         //$NON-NLS-1$
 
     /** An add-on package. */
-    public static final String NODE_ADD_ON          = "add-on";            //$NON-NLS-1$
+    static final String NODE_ADD_ON          = "add-on";            //$NON-NLS-1$
 
     /** An extra package. */
-    public static final String NODE_EXTRA           = "extra";             //$NON-NLS-1$
+    static final String NODE_EXTRA           = "extra";             //$NON-NLS-1$
 
     /**
      * Returns a stream to the requested {@code sdk-addon} XML Schema.
@@ -67,7 +73,7 @@ public class SdkAddonConstants extends RepoConstants {
      * @return An {@link InputStream} object for the local XSD file or
      *         null if there is no schema for the requested version.
      */
-    public static StreamSource[] getXsdStream(int version) {
+    static StreamSource[] getXsdStream(int version) {
         return RepoXsdUtil.getXsdStream(NODE_SDK_ADDON, version);
     }
 
@@ -75,7 +81,7 @@ public class SdkAddonConstants extends RepoConstants {
      * Returns the URI of the sdk-addon schema for the given version number.
      * @param version Between 1 and {@link #NS_LATEST_VERSION} included.
      */
-    public static String getSchemaUri(int version) {
+    static String getSchemaUri(int version) {
         return String.format(NS_BASE + "%d", version);           //$NON-NLS-1$
     }
 }

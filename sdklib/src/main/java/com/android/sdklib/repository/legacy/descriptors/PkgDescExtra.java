@@ -20,12 +20,18 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.Revision;
 import com.android.repository.api.License;
+import com.android.repository.api.RepoManager;
 import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.IdDisplay;
 
 /**
  * Implementation detail of {@link IPkgDescExtra} for extra packages.
+ *
+ * @deprecated This is part of the old SDK manager framework. Use
+ * {@link AndroidSdkHandler}/{@link RepoManager} and associated classes instead.
  */
+@Deprecated
 public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
 
     private final String[] mOldPaths;

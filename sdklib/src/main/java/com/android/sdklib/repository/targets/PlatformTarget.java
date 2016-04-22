@@ -29,7 +29,7 @@ import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.SdkVersionInfo;
 import com.android.sdklib.internal.project.ProjectProperties;
-import com.android.sdklib.repository.legacy.local.PackageParserUtils;
+import com.android.sdklib.repository.PackageParserUtils;
 import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.meta.DetailsTypes;
 import com.google.common.base.Charsets;

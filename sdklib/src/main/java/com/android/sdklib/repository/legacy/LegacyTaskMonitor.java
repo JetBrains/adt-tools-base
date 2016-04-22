@@ -25,13 +25,13 @@ import com.android.repository.api.ProgressIndicator;
  * Implementation of {@link ITaskMonitor} that wraps a {@link ProgressIndicator}, for interaction
  * with the legacy SDK framework.
  */
-public class LegacyTaskMonitor implements ITaskMonitor {
+class LegacyTaskMonitor implements ITaskMonitor {
 
     private final ProgressIndicator mWrapped;
 
     private int mProgressMax;
 
-    public LegacyTaskMonitor(ProgressIndicator toWrap) {
+    LegacyTaskMonitor(ProgressIndicator toWrap) {
         mWrapped = toWrap;
         mProgressMax = 100;
     }
