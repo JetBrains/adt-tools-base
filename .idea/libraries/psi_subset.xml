@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="psi-subset">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/android/tools/external/com-intellij/psi-subset/143.1821.5/psi-subset-143.1821.5.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>

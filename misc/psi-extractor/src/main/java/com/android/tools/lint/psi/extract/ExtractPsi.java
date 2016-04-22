@@ -88,7 +88,7 @@ import static org.objectweb.asm.Opcodes.ASM5;
 // Clean up method body rewriting!
 public class ExtractPsi {
     public static final String GROUP_ID = "com.android.tools.external.com-intellij";
-    public static final String ARTIFACT_ID = "psi-subset";
+    public static final String ARTIFACT_ID = "uast";
 
     /*
      * List of classes from the included set of packages that we want to explicitly
@@ -144,6 +144,8 @@ public class ExtractPsi {
             "com/intellij/psi/PsiReferenceProviderBean",
             "com/intellij/psi/PsiReferenceRegistrar",
             "com/intellij/psi/PsiReferenceService",
+            "com/intellij/psi/PsiReferenceService$Hints",
+            "com/intellij/psi/HintedReferenceHost",
             "com/intellij/psi/PsiResolveHelper",
             "com/intellij/psi/ReferenceProviderType",
             "com/intellij/psi/PsiJavaCodeReferenceCodeFragment",
@@ -518,7 +520,7 @@ public class ExtractPsi {
                 + "    <packaging>jar</packaging>\n"
                 + "    <name>" + ARTIFACT_ID + "</name>\n"
                 + "    <url>http://www.jetbrains.com/idea</url>\n"
-                + "    <description>A subset of IntelliJ IDEA's PSI APIs and implementation,\n"
+                + "    <description>A subset of IntelliJ IDEA's AST APIs and implementation,\n"
                 + "    focusing on the read-only aspects, intended for use by Android Lint\n"
                 + "    when running outside of the IDE (typically from Gradle.)\n"
                 + "    </description>\n"
@@ -1678,7 +1680,7 @@ public class ExtractPsi {
                 for (int i = 0, n = nodes.size(); i < n; i++) {
                     AbstractInsnNode instruction = nodes.get(i);
                     if (instruction instanceof InvokeDynamicInsnNode) {
-                        throw new IllegalArgumentException("PSI is using dynamic instructions now: update handling here");
+                        System.out.println("Warning: Ignoring invokeDynamic");
                     } else if (instruction instanceof MethodInsnNode) {
                         MethodInsnNode node = (MethodInsnNode) instruction;
                         CgMethod method = findMethod(node.owner, node.name, node.desc);
@@ -1781,6 +1783,11 @@ public class ExtractPsi {
                                 if (clazz != null) {
                                     addDependency(clazz);
                                 }
+                            }
+                        } else if (node.desc.contains("/")) {
+                            CgClass clazz = findClass(node.desc);
+                            if (clazz != null) {
+                                addDependency(clazz);
                             }
                         }
                     } else if (instruction instanceof LdcInsnNode) {
