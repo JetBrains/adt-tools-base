@@ -75,6 +75,16 @@ public interface SigningConfig {
     String getStoreType();
 
     /**
+     * Returns {@code true} if signing using JAR Signature Scheme (aka v1 scheme) is enabled.
+     */
+    boolean isV1SigningEnabled();
+
+    /**
+     * Returns {@code true} if signing using APK Signature Scheme v2 (aka v2 scheme) is enabled.
+     */
+    boolean isV2SigningEnabled();
+
+    /**
      * Returns whether the config is fully configured for signing.
      *
      * @return true if all the required information are present.

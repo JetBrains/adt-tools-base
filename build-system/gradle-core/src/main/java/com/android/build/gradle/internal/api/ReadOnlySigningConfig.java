@@ -81,6 +81,16 @@ public class ReadOnlySigningConfig implements SigningConfig {
     }
 
     @Override
+    public boolean isV1SigningEnabled() {
+        return signingConfig.isV1SigningEnabled();
+    }
+
+    @Override
+    public boolean isV2SigningEnabled() {
+        return signingConfig.isV2SigningEnabled();
+    }
+
+    @Override
     public boolean isSigningReady() {
         return signingConfig.isSigningReady();
     }

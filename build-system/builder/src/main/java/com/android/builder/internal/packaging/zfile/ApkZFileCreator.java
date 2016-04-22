@@ -59,8 +59,10 @@ class ApkZFileCreator implements ApkCreator {
     ApkZFileCreator(@NonNull ApkCreatorFactory.CreationData creationData,
             @NonNull ZFileOptions options) throws IOException {
         mZip = ZFiles.apk(creationData.getApkPath(), options, creationData.getPrivateKey(),
-                creationData.getCertificate(), creationData.getBuiltBy(),
-                creationData.getCreatedBy(), creationData.getMinSdkVersion());
+                creationData.getCertificate(),
+                creationData.isV1SigningEnabled(), creationData.isV2SigningEnabled(),
+                creationData.getBuiltBy(), creationData.getCreatedBy(),
+                creationData.getMinSdkVersion());
         mClosed = false;
     }
 

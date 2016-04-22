@@ -63,6 +63,16 @@ public interface ApkCreatorFactory {
         private final X509Certificate mCertificate;
 
         /**
+         * Whether signing the APK with JAR Signing Scheme (aka v1 signing) is enabled.
+         */
+        private final boolean mV1SigningEnabled;
+
+        /**
+         * Whether signing the APK with APK Signature Scheme v2 (aka v2 signing) is enabled.
+         */
+        private final boolean mV2SigningEnabled;
+
+        /**
          * Built-by information for the APK, if any.
          */
         @Nullable
@@ -86,6 +96,10 @@ public interface ApkCreatorFactory {
          * @param key key used to sign the APK. May be {@code null}
          * @param certificate certificate used to sign the APK. Is {@code null} if and only if
          * {@code key} is {@code null}
+         * @param v1SigningEnabled {@code true} if this APK should be signed with JAR Signature
+         *        Scheme (aka v1 scheme).
+         * @param v2SigningEnabled {@code true} if this APK should be signed with APK Signature
+         *        Scheme v2 (aka v2 scheme).
          * @param builtBy built-by information for the APK, if any; if {@code null} then the default
          * should be used
          * @param createdBy created-by information for the APK, if any; if {@code null} then the
@@ -93,8 +107,9 @@ public interface ApkCreatorFactory {
          * @param minSdkVersion minimum SDK version that will run the APK
          */
         public CreationData(@NonNull File apkPath, @Nullable PrivateKey key,
-                @Nullable X509Certificate certificate, @Nullable String builtBy,
-                @Nullable String createdBy, int minSdkVersion) {
+                @Nullable X509Certificate certificate, boolean v1SigningEnabled,
+                boolean v2SigningEnabled,
+                @Nullable String builtBy, @Nullable String createdBy, int minSdkVersion) {
             Preconditions.checkArgument((key == null) == (certificate == null),
                     "(key == null) != (certificate == null)");
             Preconditions.checkArgument(minSdkVersion >= 0, "minSdkVersion < 0");
@@ -102,6 +117,8 @@ public interface ApkCreatorFactory {
             mApkPath = apkPath;
             mKey = key;
             mCertificate = certificate;
+            mV1SigningEnabled = v1SigningEnabled;
+            mV2SigningEnabled = v2SigningEnabled;
             mBuiltBy = builtBy;
             mCreatedBy = createdBy;
             mMinSdkVersion = minSdkVersion;
@@ -137,6 +154,22 @@ public interface ApkCreatorFactory {
         @Nullable
         public X509Certificate getCertificate() {
             return mCertificate;
+        }
+
+        /**
+         * Returns {@code true} if this APK should be signed with JAR Signature Scheme (aka v1
+         * scheme).
+         */
+        public boolean isV1SigningEnabled() {
+            return mV1SigningEnabled;
+        }
+
+        /**
+         * Returns {@code true} if this APK should be signed with APK Signature Scheme v2 (aka v2
+         * scheme).
+         */
+        public boolean isV2SigningEnabled() {
+            return mV2SigningEnabled;
         }
 
         /**

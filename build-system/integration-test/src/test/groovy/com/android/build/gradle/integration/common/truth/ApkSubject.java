@@ -31,6 +31,7 @@ import com.android.ide.common.process.ProcessExecutor;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.utils.StdLogger;
 import com.google.common.collect.ImmutableList;
+import com.google.common.io.ByteSource;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 import com.google.common.io.LineProcessor;
@@ -230,6 +231,60 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
                 return DexClassSubject.FACTORY.getSubject(failureStrategy, null);
             }
         };
+    }
+
+    /**
+     * Asserts that the APK file contains an APK Signing Block (the block which may contain APK
+     * Signature Scheme v2 signatures).
+     */
+    public void containsApkSigningBlock() throws ProcessException {
+        if (!hasApkSigningBlock()) {
+            failWithRawMessage("APK does not contain APK Signing Block");
+        }
+    }
+
+    /**
+     * Asserts that the APK file does not contain an APK Signing Block (the block which may contain
+     * APK Signature Scheme v2 signatures).
+     */
+    public void doesNotContainApkSigningBlock() throws ProcessException {
+        if (hasApkSigningBlock()) {
+            failWithRawMessage("APK contains APK Signing Block");
+        }
+    }
+
+    private static final byte[] APK_SIG_BLOCK_MAGIC =
+            {0x41, 0x50, 0x4b, 0x20, 0x53, 0x69, 0x67, 0x20, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x20,
+                    0x34, 0x32};
+
+    /**
+     * Returns {@code true} if this APK contains an APK Signing Block.
+     */
+    private boolean hasApkSigningBlock() throws ProcessException {
+        // IMPLEMENTATION NOTE: To avoid having to implement too much parsing, this method does not
+        // parse the APK to locate the APK Signing Block. Instead, it simply scans the file for the
+        // APK Signing Block magic bitstring. If the string is there in the file, it's assumed to
+        // contain an APK Signing Block.
+        try {
+            byte[] contents = Files.toByteArray(getSubject());
+            outer:
+            for (int contentsOffset = contents.length - APK_SIG_BLOCK_MAGIC.length;
+                    contentsOffset >= 0; contentsOffset--) {
+                for (int magicOffset = 0; magicOffset < APK_SIG_BLOCK_MAGIC.length; magicOffset++) {
+                    if (contents[contentsOffset + magicOffset]
+                            != APK_SIG_BLOCK_MAGIC[magicOffset]) {
+                        continue outer;
+                    }
+                }
+                // Found at offset contentsOffset
+                return true;
+            }
+            // Not found
+            return false;
+        } catch (IOException e) {
+            throw new ProcessException(
+                    "Failed to check for APK Signing Block presence in " + getSubject(), e);
+        }
     }
 
     /**

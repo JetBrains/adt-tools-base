@@ -565,7 +565,7 @@ public class SignatureExtension {
      * @param name the file name
      * @return should it be ignored
      */
-    private static boolean isIgnoredFile(@NonNull String name) {
+    public static boolean isIgnoredFile(@NonNull String name) {
         String metaInfPfx = ManifestGenerationExtension.META_INF_DIR + "/";
         boolean inMetaInf = name.startsWith(metaInfPfx)
                 && !name.substring(metaInfPfx.length()).contains("/");
