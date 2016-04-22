@@ -17,32 +17,37 @@
 package com.android.sdklib.repository.legacy.remote.internal.archives;
 
 
+import com.android.repository.api.RepoManager;
+import com.android.sdklib.repository.AndroidSdkHandler;
+
 /**
  * The legacy OS that this archive can be downloaded on.
  * <p/>
- * This attribute was used for the &lt;archive&gt; element in repo schema 1-9.
- * add-on schema 1-6 and sys-img schema 1-2.
- * Starting with repo schema 10, add-on schema 7 and sys-img schema 3, this is replaced
- * by the &lt;host-os&gt; element and {@link com.android.sdklib.repository.legacy.remote.internal.archives.ArchFilter}.
+ * This attribute was used for the &lt;archive&gt; element in repo schema 1-9. add-on schema 1-6 and
+ * sys-img schema 1-2. Starting with repo schema 10, add-on schema 7 and sys-img schema 3, this is
+ * replaced by the &lt;host-os&gt; element and {@link com.android.sdklib.repository.legacy.remote.internal.archives.ArchFilter}.
  *
  * @see com.android.sdklib.repository.legacy.remote.internal.archives.HostOs
+ * @deprecated This is part of the old SDK manager framework. Use {@link AndroidSdkHandler}/{@link
+ * RepoManager} and associated classes instead.
  */
+@Deprecated
 public enum LegacyOs {
-  ANY("Any"),
-  LINUX("Linux"),
-  MACOSX("MacOS X"),
-  WINDOWS("Windows");
+    ANY("Any"),
+    LINUX("Linux"),
+    MACOSX("MacOS X"),
+    WINDOWS("Windows");
 
-  private final String mUiName;
+    private final String mUiName;
 
-  LegacyOs(String uiName) {
-    mUiName = uiName;
-  }
+    LegacyOs(String uiName) {
+        mUiName = uiName;
+    }
 
-  /**
-   * Returns the UI name of the OS.
-   */
-  public String getUiName() {
-    return mUiName;
-  }
+    /**
+     * Returns the UI name of the OS.
+     */
+    public String getUiName() {
+        return mUiName;
+    }
 }

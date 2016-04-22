@@ -23,9 +23,11 @@ import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.repository.Revision;
 import com.android.repository.Revision.PreviewComparison;
 import com.android.repository.api.License;
+import com.android.repository.api.RepoManager;
 import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.IdDisplay;
 import com.android.sdklib.repository.targets.SystemImage;
 
@@ -43,9 +45,13 @@ import java.util.Locale;
  * <p/>
  * To query packages capabilities, rely on {@link #getType()} and the {@code PkgDesc.hasXxx()}
  * methods provided in the base {@link PkgDesc}.
+ *
+ * @deprecated This is part of the old SDK manager framework. Use
+ * {@link AndroidSdkHandler}/{@link RepoManager} and associated classes instead.
  */
+@Deprecated
 public class PkgDesc implements IPkgDesc {
-    public static final String PREVIEW_SUFFIX = "-preview";
+    static final String PREVIEW_SUFFIX = "-preview";
     private final PkgType mType;
     private final Revision mRevision;
     private final AndroidVersion mAndroidVersion;

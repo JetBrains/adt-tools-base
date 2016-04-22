@@ -18,50 +18,56 @@ package com.android.sdklib.repository.legacy.remote.internal.archives;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.repository.api.RepoManager;
+import com.android.sdklib.repository.AndroidSdkHandler;
 
 /**
  * The Architecture that this archive can be downloaded on.
+ *
+ * @deprecated This is part of the old SDK manager framework. Use {@link AndroidSdkHandler}/{@link
+ * RepoManager} and associated classes instead.
  */
+@Deprecated
 public enum BitSize {
-  _32(32),
-  _64(64);
+    _32(32),
+    _64(64);
 
-  private final int mSize;
+    private final int mSize;
 
-  private BitSize(int size) {
-    mSize = size;
-  }
-
-  /**
-   * Returns the size of the architecture.
-   */
-  public int getSize() {
-    return mSize;
-  }
-
-  /**
-   * Returns the XML name of the bit size.
-   */
-  @NonNull
-  public String getXmlName() {
-    return Integer.toString(mSize);
-  }
-
-  /**
-   * Returns the enum value matching the given XML name.
-   *
-   * @return A valid {@link HostOs} constant or null if not a valid XML name.
-   */
-  @Nullable
-  public static BitSize fromXmlName(@Nullable String xmlName) {
-    if (xmlName != null) {
-      for (BitSize v : values()) {
-        if (v.getXmlName().equalsIgnoreCase(xmlName)) {
-          return v;
-        }
-      }
+    private BitSize(int size) {
+        mSize = size;
     }
-    return null;
-  }
+
+    /**
+     * Returns the size of the architecture.
+     */
+    public int getSize() {
+        return mSize;
+    }
+
+    /**
+     * Returns the XML name of the bit size.
+     */
+    @NonNull
+    public String getXmlName() {
+        return Integer.toString(mSize);
+    }
+
+    /**
+     * Returns the enum value matching the given XML name.
+     *
+     * @return A valid {@link HostOs} constant or null if not a valid XML name.
+     */
+    @Nullable
+    public static BitSize fromXmlName(@Nullable String xmlName) {
+        if (xmlName != null) {
+            for (BitSize v : values()) {
+                if (v.getXmlName().equalsIgnoreCase(xmlName)) {
+                    return v;
+                }
+            }
+        }
+        return null;
+    }
 
 }

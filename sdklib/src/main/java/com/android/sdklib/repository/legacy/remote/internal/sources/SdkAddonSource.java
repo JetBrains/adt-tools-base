@@ -17,91 +17,99 @@
 package com.android.sdklib.repository.legacy.remote.internal.sources;
 
 import com.android.annotations.Nullable;
+import com.android.repository.api.RepoManager;
+import com.android.sdklib.repository.AndroidSdkHandler;
+import com.android.sdklib.repository.legacy.remote.RemotePkgInfo;
+
 import org.w3c.dom.Document;
 
-import javax.xml.transform.stream.StreamSource;
 import java.io.InputStream;
+
+import javax.xml.transform.stream.StreamSource;
 
 
 /**
- * An sdk-addon source, i.e. a download site for addons and extra packages.
- * A repository describes one or more {@link RemotePkgInfo}s available for download.
+ * An sdk-addon source, i.e. a download site for addons and extra packages. A repository describes
+ * one or more {@link RemotePkgInfo}s available for download.
+ *
+ * @deprecated This is part of the old SDK manager framework. Use {@link AndroidSdkHandler}/{@link
+ * RepoManager} and associated classes instead.
  */
+@Deprecated
 public class SdkAddonSource extends SdkSource {
 
-  /**
-   * Constructs a new source for the given repository URL.
-   *
-   * @param url    The source URL. Cannot be null. If the URL ends with a /, the default
-   *               addon.xml filename will be appended automatically.
-   * @param uiName The UI-visible name of the source. Can be null.
-   */
-  public SdkAddonSource(String url, String uiName) {
-    super(url, uiName);
-  }
+    /**
+     * Constructs a new source for the given repository URL.
+     *
+     * @param url    The source URL. Cannot be null. If the URL ends with a /, the default addon.xml
+     *               filename will be appended automatically.
+     * @param uiName The UI-visible name of the source. Can be null.
+     */
+    public SdkAddonSource(String url, String uiName) {
+        super(url, uiName);
+    }
 
-  /**
-   * Returns true if this is an addon source.
-   * We only load addons and extras from these sources.
-   */
-  @Override
-  public boolean isAddonSource() {
-    return true;
-  }
+    /**
+     * Returns true if this is an addon source. We only load addons and extras from these sources.
+     */
+    @Override
+    public boolean isAddonSource() {
+        return true;
+    }
 
-  /**
-   * Returns true if this is a system-image source.
-   * We only load system-images from these sources.
-   */
-  @Override
-  public boolean isSysImgSource() {
-    return false;
-  }
+    /**
+     * Returns true if this is a system-image source. We only load system-images from these
+     * sources.
+     */
+    @Override
+    public boolean isSysImgSource() {
+        return false;
+    }
 
-  @Override
-  protected String[] getDefaultXmlFileUrls() {
-    return new String[]{SdkAddonConstants.URL_DEFAULT_FILENAME};
-  }
+    @Override
+    protected String[] getDefaultXmlFileUrls() {
+        return new String[]{SdkAddonConstants.URL_DEFAULT_FILENAME};
+    }
 
-  @Override
-  protected int getNsLatestVersion() {
-    return SdkAddonConstants.NS_LATEST_VERSION;
-  }
+    @Override
+    protected int getNsLatestVersion() {
+        return SdkAddonConstants.NS_LATEST_VERSION;
+    }
 
-  @Override
-  protected String getNsUri() {
-    return SdkAddonConstants.NS_URI;
-  }
+    @Override
+    protected String getNsUri() {
+        return SdkAddonConstants.NS_URI;
+    }
 
-  @Override
-  protected String getNsPattern() {
-    return SdkAddonConstants.NS_PATTERN;
-  }
+    @Override
+    protected String getNsPattern() {
+        return SdkAddonConstants.NS_PATTERN;
+    }
 
-  @Override
-  protected String getSchemaUri(int version) {
-    return SdkAddonConstants.getSchemaUri(version);
-  }
+    @Override
+    protected String getSchemaUri(int version) {
+        return SdkAddonConstants.getSchemaUri(version);
+    }
 
-  @Override
-  protected String getRootElementName() {
-    return SdkAddonConstants.NODE_SDK_ADDON;
-  }
+    @Override
+    protected String getRootElementName() {
+        return SdkAddonConstants.NODE_SDK_ADDON;
+    }
 
-  @Override
-  protected StreamSource[] getXsdStream(int version) {
-    return SdkAddonConstants.getXsdStream(version);
-  }
+    @Override
+    protected StreamSource[] getXsdStream(int version) {
+        return SdkAddonConstants.getXsdStream(version);
+    }
 
-  /**
-   * This kind of schema does not support forward-evolution of the &lt;tool&gt; element.
-   *
-   * @param xml The input XML stream. Can be null.
-   * @return Always null.
-   * @null This implementation always return null.
-   */
-  @Override
-  protected Document findAlternateToolsXml(@Nullable InputStream xml) {
-    return null;
-  }
+    /**
+     * This kind of schema does not support forward-evolution of the &lt;tool&gt; element.
+     *
+     * @param xml The input XML stream. Can be null.
+     * @return Always null.
+     * @null This implementation always return null.
+     */
+    @Override
+    protected Document findAlternateToolsXml(@Nullable InputStream xml) {
+        return null;
+    }
 }

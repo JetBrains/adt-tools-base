@@ -17,8 +17,10 @@
 package com.android.sdklib.repository.legacy.local;
 
 import com.android.annotations.NonNull;
+import com.android.repository.api.RepoManager;
 import com.android.sdklib.AndroidVersion;
 import com.android.repository.Revision;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.legacy.descriptors.IPkgDesc;
 import com.android.sdklib.repository.legacy.descriptors.PkgDesc;
 
@@ -29,17 +31,21 @@ import java.util.Properties;
  * Local source package, for a given platform's {@link AndroidVersion}.
  * The package itself has a major revision.
  * There should be only one for a given android platform version.
+ *
+ * @deprecated This is part of the old SDK manager framework. Use
+ * {@link AndroidSdkHandler}/{@link RepoManager} and associated classes instead.
  */
-public class LocalSourcePkgInfo extends LocalPkgInfo {
+@Deprecated
+class LocalSourcePkgInfo extends LocalPkgInfo {
 
     @NonNull
     private final IPkgDesc mDesc;
 
-    public LocalSourcePkgInfo(@NonNull LocalSdk localSdk,
-                              @NonNull File localDir,
-                              @NonNull Properties sourceProps,
-                              @NonNull AndroidVersion version,
-                              @NonNull Revision revision) {
+    LocalSourcePkgInfo(@NonNull LocalSdk localSdk,
+            @NonNull File localDir,
+            @NonNull Properties sourceProps,
+            @NonNull AndroidVersion version,
+            @NonNull Revision revision) {
         super(localSdk, localDir, sourceProps);
         mDesc = PkgDesc.Builder.newSource(version, revision).create();
     }

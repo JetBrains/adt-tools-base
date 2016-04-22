@@ -34,7 +34,7 @@ import java.net.URL;
 /**
  * A {@link Downloader} implementation that uses the old {@link DownloadCache}.
  *
- * TODO: Implement a new, fully-featured downloader.
+ * TODO: Implement a new, fully-featured downloader, then mark this as deprecated.
  */
 public class LegacyDownloader implements Downloader {
 

@@ -17,6 +17,8 @@
 package com.android.sdklib.repository.legacy.remote.internal.packages;
 
 import com.android.repository.Revision;
+import com.android.repository.api.RepoManager;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.legacy.remote.RemotePkgInfo;
 import com.android.sdklib.repository.legacy.remote.internal.sources.SdkSource;
 import org.w3c.dom.Node;
@@ -25,8 +27,12 @@ import java.util.Map;
 
 /**
  * Represents an XML node in an SDK repository that has a min-tools-rev requirement.
+ *
+ * @deprecated This is part of the old SDK manager framework. Use
+ * {@link AndroidSdkHandler}/{@link RepoManager} and associated classes instead.
  */
-public abstract class RemoteMinToolsPkgInfo extends RemotePkgInfo implements IMinToolsDependency {
+@Deprecated
+abstract class RemoteMinToolsPkgInfo extends RemotePkgInfo implements IMinToolsDependency {
 
     private final MinToolsMixin mMinToolsMixin;
 

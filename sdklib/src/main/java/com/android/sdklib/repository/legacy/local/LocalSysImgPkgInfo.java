@@ -19,7 +19,9 @@ package com.android.sdklib.repository.legacy.local;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.Revision;
+import com.android.repository.api.RepoManager;
 import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.legacy.descriptors.IPkgDesc;
 import com.android.sdklib.repository.legacy.descriptors.PkgDesc;
@@ -35,7 +37,11 @@ import java.util.Properties;
  * and given ABI.
  * The package itself has a major revision.
  * There should be only one for a given android platform version & ABI.
+ *
+ * @deprecated This is part of the old SDK manager framework. Use
+ * {@link AndroidSdkHandler}/{@link RepoManager} and associated classes instead.
  */
+@Deprecated
 public class LocalSysImgPkgInfo extends LocalPkgInfo {
 
 
@@ -43,12 +49,12 @@ public class LocalSysImgPkgInfo extends LocalPkgInfo {
     private final IPkgDesc mDesc;
 
     public LocalSysImgPkgInfo(@NonNull  LocalSdk localSdk,
-                              @NonNull  File localDir,
-                              @NonNull  Properties sourceProps,
-                              @NonNull  AndroidVersion version,
-                              @Nullable IdDisplay tag,
-                              @NonNull  String abi,
-                              @NonNull Revision revision) {
+            @NonNull  File localDir,
+            @NonNull  Properties sourceProps,
+            @NonNull  AndroidVersion version,
+            @Nullable IdDisplay tag,
+            @NonNull  String abi,
+            @NonNull Revision revision) {
         super(localSdk, localDir, sourceProps);
         String listDisplay = sourceProps.getProperty(PkgProps.PKG_LIST_DISPLAY);
         if (listDisplay == null) {

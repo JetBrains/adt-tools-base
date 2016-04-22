@@ -17,6 +17,9 @@
 package com.android.sdklib.repository.legacy.remote.internal.sources;
 
 import com.android.annotations.Nullable;
+import com.android.repository.api.RepoManager;
+import com.android.sdklib.repository.AndroidSdkHandler;
+
 import org.w3c.dom.Document;
 
 import javax.xml.transform.stream.StreamSource;
@@ -26,7 +29,11 @@ import java.io.InputStream;
 /**
  * An sdk-sys-img source, i.e. a download site for system-image packages.
  * A repository describes one or more {@link RemotePkgInfo}s available for download.
+ *
+ * @deprecated This is part of the old SDK manager framework. Use
+ * {@link AndroidSdkHandler}/{@link RepoManager} and associated classes instead.
  */
+@Deprecated
 public class SdkSysImgSource extends SdkSource {
 
     /**

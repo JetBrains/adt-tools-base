@@ -22,6 +22,8 @@ import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.prefs.AndroidLocation;
 import com.android.prefs.AndroidLocation.AndroidLocationException;
+import com.android.repository.api.RepoManager;
+import com.android.sdklib.repository.AndroidSdkHandler;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -38,8 +40,12 @@ import java.util.Properties;
  * All instances of {@link com.android.sdklib.repository.legacy.remote.internal.sources.SdkSourceProperties} share the same singleton storage.
  * The persisted setting file is loaded as necessary, however callers must persist
  * it at some point by calling {@link #save()}.
+ *
+ * @deprecated This is part of the old SDK manager framework. Use
+ * {@link AndroidSdkHandler}/{@link RepoManager} and associated classes instead.
  */
-public class SdkSourceProperties {
+@Deprecated
+class SdkSourceProperties {
 
     /**
      * An internal file version number, in case we want to change the format later.
@@ -48,18 +54,18 @@ public class SdkSourceProperties {
     /**
      * The last known UI name of the source.
      */
-    public static final String KEY_NAME     = "@name@";                     //$NON-NLS-1$
+    static final String KEY_NAME     = "@name@";                     //$NON-NLS-1$
     /**
      * A non-null string if the source is disabled. Null if the source is enabled.
      */
-    public static final String KEY_DISABLED = "@disabled@";                 //$NON-NLS-1$
+    static final String KEY_DISABLED = "@disabled@";                 //$NON-NLS-1$
 
     private static final Properties sSourcesProperties = new Properties();
     private static final String     SRC_FILENAME = "sites-settings.cfg";    //$NON-NLS-1$
 
     private static boolean sModified = false;
 
-    public SdkSourceProperties() {
+    SdkSourceProperties() {
     }
 
     public void save() {

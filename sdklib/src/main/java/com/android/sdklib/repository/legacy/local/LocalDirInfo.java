@@ -18,7 +18,9 @@ package com.android.sdklib.repository.legacy.local;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.repository.api.RepoManager;
 import com.android.repository.io.FileOp;
+import com.android.sdklib.repository.AndroidSdkHandler;
 
 import java.io.File;
 import java.io.InputStream;
@@ -44,7 +46,11 @@ import java.util.zip.Adler32;
  * defer to the underlying File object. This allows the DirInfo to be placed
  * into a map and still call {@link Map#containsKey(Object)} with a File
  * object to check whether there's a corresponding DirInfo in the map.
+ *
+ * @deprecated This is part of the old SDK manager framework. Use
+ * {@link AndroidSdkHandler}/{@link RepoManager} and associated classes instead.
  */
+@Deprecated
 class LocalDirInfo {
     @NonNull
     private final FileOp mFileOp;
@@ -61,7 +67,7 @@ class LocalDirInfo {
      * @param fileOp The {@link FileOp} to use for all file-based interactions.
      * @param dir The platform/addon directory of the target. It should be a directory.
      */
-    public LocalDirInfo(@NonNull FileOp fileOp, @NonNull File dir) {
+    LocalDirInfo(@NonNull FileOp fileOp, @NonNull File dir) {
         mFileOp = fileOp;
         mDir = dir;
         mDirModifiedTS = mFileOp.lastModified(dir);
@@ -86,7 +92,7 @@ class LocalDirInfo {
      * @return True if the directory modified timestamp or
      *  its source.property files have changed.
      */
-    public boolean hasChanged() {
+    boolean hasChanged() {
         // Does platform directory still exist?
         if (!mFileOp.isDirectory(mDir)) {
             return true;
@@ -229,7 +235,7 @@ class LocalDirInfo {
      * Helper for Map.contains() to make sure we're comparing the inner directory File
      * object and not the outer wrapper itself.
      */
-    public static class MapComparator {
+    static class MapComparator {
         private final File mDir;
 
         public MapComparator(File dir) {
