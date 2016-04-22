@@ -21,7 +21,6 @@ import com.android.annotations.Nullable;
 import com.android.prefs.AndroidLocation;
 import com.android.repository.Revision;
 import com.android.repository.api.ConstantSourceProvider;
-import com.android.repository.api.FallbackRemoteRepoLoader;
 import com.android.repository.api.LocalPackage;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemoteListSourceProvider;
@@ -38,6 +37,7 @@ import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.repository.legacy.LegacyLocalRepoLoader;
+import com.android.sdklib.repository.legacy.LegacyRemoteRepoLoader;
 import com.android.sdklib.repository.meta.DetailsTypes;
 import com.android.sdklib.repository.meta.SysImgFactory;
 import com.android.sdklib.repository.sources.RemoteSiteType;
@@ -182,14 +182,6 @@ public final class AndroidSdkHandler {
     private LocalSourceProvider mUserSourceProvider;
 
     /**
-     * Loader capable of loading old-style repository xml files, with namespace like
-     * http://schemas.android.com/sdk/android/repository/NN or similar.
-     *
-     * Static, shared among {@link AndroidSdkHandler} instances.
-     */
-    private static FallbackRemoteRepoLoader sRemoteFallback;
-
-    /**
      * Lazily-initialized class containing our static repository configuration, shared between
      * AndroidSdkHandler instances.
      */
@@ -237,8 +229,8 @@ public final class AndroidSdkHandler {
                 mLatestBuildTool = null;
 
                 result = getRepoConfig(progress)
-                        .createRepoManager(progress, mLocation, sRemoteFallback,
-                                getUserSourceProvider(progress), mFop);
+                        .createRepoManager(progress, mLocation, getUserSourceProvider(progress),
+                                mFop);
                 // Invalidate system images, targets, the latest build tool, and the legacy local
                 // package manager when local packages change
                 result.registerLocalChangeListener(new RepoManager.RepoLoadedCallback() {
@@ -295,18 +287,6 @@ public final class AndroidSdkHandler {
     @Nullable
     public LocalPackage getLocalPackage(@NonNull String path, @NonNull ProgressIndicator progress) {
         return getSdkManager(progress).getPackages().getLocalPackages().get(path);
-    }
-
-    /**
-     * Sets the {@link FallbackRemoteRepoLoader} to be used to parse any old-style remote
-     * repositories we might receive.<p> Invalidates the repo manager; it will be recreated when
-     * next retrieved.
-     */
-    public static void setRemoteFallback(@Nullable FallbackRemoteRepoLoader fallbackSdk) {
-        synchronized (MANAGER_LOCK) {
-            sRemoteFallback = fallbackSdk;
-            invalidateAll();
-        }
     }
 
     /**
@@ -496,7 +476,6 @@ public final class AndroidSdkHandler {
         @NonNull
         public RepoManager createRepoManager(@NonNull ProgressIndicator progress,
                 @Nullable File localLocation,
-                @Nullable FallbackRemoteRepoLoader remoteFallbackLoader,
                 @Nullable LocalSourceProvider userProvider, @NonNull FileOp fop) {
             RepoManager result = RepoManager.create(fop);
 
@@ -528,7 +507,7 @@ public final class AndroidSdkHandler {
                 result.loadSynchronously(0, progress, null, null);
             }
 
-            result.setFallbackRemoteRepoLoader(remoteFallbackLoader);
+            result.setFallbackRemoteRepoLoader(new LegacyRemoteRepoLoader());
             return result;
         }
     }

@@ -59,20 +59,6 @@ public class LegacyRemoteRepoLoader implements FallbackRemoteRepoLoader {
     private DownloadCache mDownloadCache;
 
     /**
-     * Settings used when downloading.
-     */
-    private SettingsController mSettingsController;
-
-    /**
-     * Create a new loader.
-     *
-     * @param settingsController For download-related settings.
-     */
-    public LegacyRemoteRepoLoader(@NonNull SettingsController settingsController) {
-        mSettingsController = settingsController;
-    }
-
-    /**
      * Sets the {@link DownloadCache} for us to use, so that a custom one can be used during tests.
      *
      * @param cache The {@link DownloadCache} to use. If {@code null} a new {@link DownloadCache}
@@ -100,7 +86,7 @@ public class LegacyRemoteRepoLoader implements FallbackRemoteRepoLoader {
     @NonNull
     @Override
     public Collection<RemotePackage> parseLegacyXml(@NonNull RepositorySource source,
-            @NonNull ProgressIndicator progress) {
+            @NonNull SettingsController settings, @NonNull ProgressIndicator progress) {
         SdkSource legacySource;
         RemotePkgInfo[] packages = null;
         for (SchemaModule module : source.getPermittedModules()) {
@@ -115,7 +101,7 @@ public class LegacyRemoteRepoLoader implements FallbackRemoteRepoLoader {
             if (legacySource != null) {
                 legacySource
                         .load(getDownloadCache(), new TaskMonitorProgressIndicatorAdapter(progress),
-                                mSettingsController.getForceHttp());
+                                settings.getForceHttp());
                 if (legacySource.getFetchError() != null) {
                     progress.logInfo(legacySource.getFetchError());
                 }

@@ -59,7 +59,6 @@ public class SdkDownloader {
             }
         }
         Settings settingsController = new Settings();
-        AndroidSdkHandler.setRemoteFallback(new LegacyRemoteRepoLoader(settingsController));
         AndroidSdkHandler handler = AndroidSdkHandler.getInstance(localPath);
         RepoManager mgr = handler.getSdkManager(progress);
         LegacyDownloader downloader = new LegacyDownloader(handler.getFileOp());
