@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef NETWORK_SAMPLER_H_
-#define NETWORK_SAMPLER_H_
+#ifndef NETWORK_DATA_COLLECTOR_H_
+#define NETWORK_DATA_COLLECTOR_H_
 
 #include <string>
 #include <vector>
@@ -69,4 +69,4 @@ class NetworkDataCollector {
 
 } // namespace network_sampler
 
-#endif // NETWORK_SAMPLER_H_
+#endif // NETWORK_DATA_COLLECTOR_H_

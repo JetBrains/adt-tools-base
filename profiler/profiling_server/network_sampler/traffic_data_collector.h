@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef TRAFFIC_DATA_COLLECTOR_
-#define TRAFFIC_DATA_COLLECTOR_
+#ifndef TRAFFIC_DATA_COLLECTOR_H_
+#define TRAFFIC_DATA_COLLECTOR_H_
 
 #include "network_data_collector.h"
 #include "network_sample_data.h"
@@ -44,4 +44,4 @@ class TrafficDataCollector : public NetworkDataCollector {
 
 } // namespace network_sampler
 
-#endif // TRAFFIC_DATA_COLLECTOR_
+#endif // TRAFFIC_DATA_COLLECTOR_H_

@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef NETWORK_FILES_
-#define NETWORK_FILES_
+#ifndef NETWORK_FILES_H_
+#define NETWORK_FILES_H_
 
 #include <string>
 #include <vector>
@@ -49,4 +49,4 @@ class NetworkFiles {
 
 } // namespace network_sampler
 
-#endif // NETWORK_FILES_
+#endif // NETWORK_FILES_H_
