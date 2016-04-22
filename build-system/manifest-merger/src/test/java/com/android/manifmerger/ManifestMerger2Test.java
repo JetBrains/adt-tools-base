@@ -112,6 +112,7 @@ public class ManifestMerger2Test {
             "76_app_metadata_ignore",
             "77_app_metadata_conflict",
             "78_removeAll",
+            "78b_removeAllActivities",
             "79_custom_node.xml",
     };
 

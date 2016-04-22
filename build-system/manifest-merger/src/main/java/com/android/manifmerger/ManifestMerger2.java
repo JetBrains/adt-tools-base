@@ -296,11 +296,11 @@ public class ManifestMerger2 {
         if (document == null) {
             return;
         }
-        // only remove tools annotations if we are packaging an application.
-        if (mOptionalFeatures.contains(Invoker.Feature.REMOVE_TOOLS_DECLARATIONS)) {
-            document = ToolsInstructionsCleaner.cleanToolsReferences(document, mLogger);
-        }
 
+        // perform tools: annotations removal if requested.
+        if (mOptionalFeatures.contains(Invoker.Feature.REMOVE_TOOLS_DECLARATIONS)) {
+            document = ToolsInstructionsCleaner.cleanToolsReferences(mMergeType, document, mLogger);
+        }
         if (document != null) {
             if (mOptionalFeatures.contains(Invoker.Feature.EXTRACT_FQCNS)) {
                 extractFcqns(document);
