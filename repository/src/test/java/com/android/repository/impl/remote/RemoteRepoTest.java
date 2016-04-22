@@ -26,6 +26,7 @@ import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
 import com.android.repository.api.RepositorySource;
 import com.android.repository.api.RepositorySourceProvider;
+import com.android.repository.api.SettingsController;
 import com.android.repository.api.SimpleRepositorySource;
 import com.android.repository.impl.manager.RemoteRepoLoader;
 import com.android.repository.impl.manager.RemoteRepoLoaderImpl;
@@ -148,6 +149,7 @@ public class RemoteRepoTest extends TestCase {
                     @Override
                     public Collection<RemotePackage> parseLegacyXml(
                             @NonNull RepositorySource source,
+                            @NonNull SettingsController settings,
                             @NonNull ProgressIndicator progress) {
                         assertEquals(legacyUrl, source.getUrl());
                         FakePackage legacy = new FakePackage("legacy", new Revision(1, 2, 9),
@@ -185,6 +187,7 @@ public class RemoteRepoTest extends TestCase {
                     @Override
                     public Collection<RemotePackage> parseLegacyXml(
                             @NonNull RepositorySource source,
+                            @NonNull SettingsController settings,
                             @NonNull ProgressIndicator progress) {
                         assertEquals(legacyUrl, source.getUrl());
                         FakePackage legacy = new FakePackage("dummy;foo", new Revision(1, 2, 3),
@@ -222,6 +225,7 @@ public class RemoteRepoTest extends TestCase {
                     @Override
                     public Collection<RemotePackage> parseLegacyXml(
                             @NonNull RepositorySource source,
+                            @NonNull SettingsController settings,
                             @NonNull ProgressIndicator progress) {
                         assertEquals(legacyUrl, source.getUrl());
                         FakePackage legacy = new FakePackage("dummy;foo", new Revision(1, 2, 4),
