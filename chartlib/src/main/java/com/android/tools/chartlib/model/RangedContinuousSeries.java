@@ -29,11 +29,6 @@ import java.awt.Stroke;
 public class RangedContinuousSeries {
 
     /**
-     * Whether the series should be represented by dashed lines.
-     */
-    private boolean mIsDashed = false;
-
-    /**
      * Stroke style to be used in dashed line.
      */
     public static final Stroke DASHED_STROKE = new BasicStroke(1, BasicStroke.CAP_BUTT,
@@ -45,12 +40,22 @@ public class RangedContinuousSeries {
     public static final Stroke BASIC_STROKE = new BasicStroke();
 
     /**
+     * Whether the series should be represented by dashed lines.
+     */
+    private boolean mIsDashed = false;
+
+    /**
      * Whether the series should be represented by a stepped chart.
      * In case it is not, a straight line is drawn between points (e.g. (x0, y0) and (x1, y1)).
      * Otherwise, a line is drawn from (x0, y0) to (x0, y1) and another one is drawn from (x0, y1)
      * to (x1, y1).
      */
     private boolean mIsStepped = false;
+
+    /**
+     * Whether the series should be represented by a filled chart, instead of only lines.
+     */
+    private boolean mIsFilled = false;
 
     @NonNull
     private final Range mXRange;
@@ -85,6 +90,7 @@ public class RangedContinuousSeries {
     public void setDashed(boolean isDashed) {
         mIsDashed = isDashed;
     }
+
     public boolean isDashed() {
         return mIsDashed;
     }
@@ -95,5 +101,13 @@ public class RangedContinuousSeries {
 
     public boolean isStepped() {
         return mIsStepped;
+    }
+
+    public void setFilled(boolean isFilled) {
+        mIsFilled = isFilled;
+    }
+
+    public boolean isFilled() {
+        return mIsFilled;
     }
 }
