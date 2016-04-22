@@ -16,9 +16,9 @@
 
 package com.android.build.gradle.integration.performance;
 
-import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.BUILD_FULL;
-import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.BUILD_INC_RES_ADD;
-import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.BUILD_INC_RES_EDIT;
+import static com.android.build.gradle.integration.performance.BenchmarkMode.BUILD_FULL;
+import static com.android.build.gradle.integration.performance.BenchmarkMode.BUILD_INC_RES_ADD;
+import static com.android.build.gradle.integration.performance.BenchmarkMode.BUILD_INC_RES_EDIT;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;

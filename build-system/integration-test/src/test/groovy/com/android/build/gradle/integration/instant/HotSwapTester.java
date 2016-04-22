@@ -42,7 +42,7 @@ import org.mockito.Mockito;
 /**
  * Helper for automating HotSwap testing.
  */
-class HotSwapTester {
+public class HotSwapTester {
     private HotSwapTester() {}
 
     public static void run(

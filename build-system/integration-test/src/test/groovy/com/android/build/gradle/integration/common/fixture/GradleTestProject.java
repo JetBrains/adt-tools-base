@@ -28,6 +28,7 @@ import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile;
 import com.android.build.gradle.integration.common.utils.SdkHelper;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
+import com.android.build.gradle.integration.performance.BenchmarkMode;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Version;
@@ -103,10 +104,6 @@ public class GradleTestProject implements TestRule {
     private static final String RECORD_BENCHMARK_NAME = "com.android.benchmark.name";
     private static final String RECORD_BENCHMARK_MODE = "com.android.benchmark.mode";
     public static final String DEVICE_TEST_TASK = "deviceCheck";
-
-    public enum BenchmarkMode {
-        EVALUATION, SYNC, BUILD_FULL, BUILD_INC_JAVA, BUILD_INC_RES_EDIT, BUILD_INC_RES_ADD
-    }
 
     static {
         String envBuildToolVersion = System.getenv("CUSTOM_BUILDTOOLS");
