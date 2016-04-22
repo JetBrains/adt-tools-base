@@ -109,7 +109,7 @@ public final class SelectionComponent extends AnimatedComponent {
             @Override
             public void mousePressed(MouseEvent e) {
                 // Just capture events of the left mouse button.
-                if (!(e.getButton() == MouseEvent.BUTTON1)) {
+                if (e.getButton() != MouseEvent.BUTTON1) {
                     return;
                 }
 
@@ -191,6 +191,10 @@ public final class SelectionComponent extends AnimatedComponent {
 
     @Override
     protected void updateData() {
+        // If component is not showing, there is no point in updating data
+        if (!isShowing()) {
+            return;
+        }
         Point mMousePosition = getMouseLocation();
 
         double value = mAxis.getValueAtPosition(mMousePosition.x);
@@ -241,16 +245,15 @@ public final class SelectionComponent extends AnimatedComponent {
 
     private void drawCursor() {
         Point mMousePosition = getMouseLocation();
-
         int cursor = Cursor.DEFAULT_CURSOR;
 
-        // Detect mouse over handle
         if (getHandleAreaForValue(mSelectionRange.getMax()).contains(mMousePosition) ||
                 getHandleAreaForValue(mSelectionRange.getMin()).contains(mMousePosition)) {
-            cursor = Cursor.W_RESIZE_CURSOR;
-        }
-        // Detect mouse between handle
-        else if (getBetweenHandlesArea().contains(mMousePosition)) {
+            // Detect mouse over the handles.
+            // TODO: Replace for appropriate cursor.
+            cursor = Cursor.MOVE_CURSOR;
+        } else if (getBetweenHandlesArea().contains(mMousePosition)) {
+            // Detect mouse between handles
             cursor = Cursor.HAND_CURSOR;
         }
 
