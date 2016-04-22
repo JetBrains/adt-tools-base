@@ -102,7 +102,7 @@ public class VariantDependencyTest {
                 "}\n");
 
         project.execute("clean", "assemble");
-        model = project.getSingleModel();
+        model = project.model().getSingle();
 
         FakeProgressIndicator progress = new FakeProgressIndicator();
         BuildToolInfo buildToolInfo =

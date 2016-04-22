@@ -188,7 +188,7 @@ class SigningTest {
 
     @Test
     void "check custom signing"() throws Exception {
-        Collection<Variant> variants = project.singleModel.variants
+        Collection<Variant> variants = project.model().getSingle().getVariants();
 
         for (Variant variant : variants) {
             // Release variant doesn't specify the signing config, so it should not be considered
@@ -206,7 +206,7 @@ class SigningTest {
 
     @Test
     public void "signing configs model"() {
-        def model = project.getSingleModel()
+        def model = project.model().getSingle()
 
         Collection<SigningConfig> signingConfigs = model.signingConfigs
         assertThat(signingConfigs.collect {it.name}).containsExactly("debug", "customDebug")

@@ -83,7 +83,7 @@ model {
 }
 """
         // Ensure all combinations of assemble* tasks are created.
-        List<String> tasks = project.getTaskList()
+        List<String> tasks = project.model().getTaskList()
         assertThat(tasks).containsAllOf(
                 "assemble",
                 "assembleB1",
@@ -111,7 +111,7 @@ model {
 
     @Test
     void generationInModel() {
-        AndroidProject model = project.getSingleModel()
+        AndroidProject model = project.model().getSingle()
         assertThat(model.getPluginGeneration())
                 .named("Plugin Generation")
                 .isEqualTo(AndroidProject.GENERATION_COMPONENT)

@@ -616,13 +616,6 @@ public class GradleTestProject implements TestRule {
     }
 
     /**
-     * Return a list of all task names of the project.
-     */
-    public List<String> getTaskList() {
-        return model().getTaskList();
-    }
-
-    /**
      * Runs gradle on the project.  Throws exception on failure.
      *
      * @param tasks Variadic list of tasks to execute.
@@ -738,150 +731,21 @@ public class GradleTestProject implements TestRule {
     }
 
     /**
-     * Runs gradle on the project, and returns a project model for each sub-project.
-     * Throws exception on failure.
+     * Return the stdout from the last execute command.
      *
-     * @param tasks Variadic list of tasks to execute.
-     *
-     * @return the AndroidProject model for the project.
+     * @deprecated  use {@link GradleBuildResult#getStdout()} ()} instead.
      */
-    @NonNull
-    public <T> Map<String, T> executeAndReturnMultiModel(Class<T> modelClass, String... tasks) {
-        lastBuild = executor().run(tasks);
-        return model().getMulti(modelClass);
-    }
-
-    /**
-     * Runs gradle on the project, and returns a AndroidProject model for each sub-project.
-     * Throws exception on failure.
-     *
-     * @param modelLevel whether to emulate an older IDE (studio 1.0) querying the model.
-     * @param tasks Variadic list of tasks to execute.
-     *
-     * @return the AndroidProject model for the project.
-     */
-    @NonNull
-    public Map<String, AndroidProject> executeAndReturnMultiModel(
-            int modelLevel,
-            String... tasks) {
-        lastBuild = executor().run(tasks);
-        return model().level(modelLevel).getMulti();
-    }
-
-    /**
-     * Runs gradle on the project, and returns a project model for each sub-project.
-     * Throws exception on failure.
-     *
-     * @param modelClass Class of the model to return
-     * @param modelLevel whether to emulate an older IDE (studio 1.0) querying the model.
-     * @param tasks Variadic list of tasks to execute.
-     *
-     * @return the AndroidProject model for the project.
-     */
-    @NonNull
-    public <T> Map<String, T> executeAndReturnMultiModel(
-            Class<T> modelClass,
-            int modelLevel,
-            String... tasks) {
-        lastBuild = executor().run(tasks);
-        return model().level(modelLevel).getMulti(modelClass);
-    }
-
-    /**
-     * Returns the project model without building.
-     *
-     * This will fail if the project is a multi-project setup or if there are any sync issues
-     * while loading the project.
-     */
-    @NonNull
-    public AndroidProject getSingleModel() {
-        return model().getSingle();
-    }
-
-    /**
-     * Returns the project model without building, querying it the way Studio 1.0 does.
-     *
-     * This will fail if the project is a multi-project setup or if there are any sync issues
-     * while loading the project.
-     */
-    @NonNull
-    public AndroidProject getSingleModelAsStudio1() {
-        return model().asStudio1().getSingle();
-    }
-
-    /**
-     * Returns the project model without building.
-     *
-     * This will fail if the project is a multi-project setup.
-     */
-    @NonNull
-    public AndroidProject getSingleModelIgnoringSyncIssues() {
-        return model().ignoreSyncIssues().getSingle();
-    }
-
-    /**
-     * Returns a project model for each sub-project without building generating a {@link
-     * AssertionError} if any sync issue is raised during the model loading.
-     */
-    @NonNull
-    public Map<String, AndroidProject> getAllModels() {
-        return model().getMulti();
-    }
-
-    /**
-     * Returns a project model for each sub-project without building generating a
-     * {@link AssertionError} if any sync issue is raised during the model loading.
-     *
-     * @param modelLevel the level of the model we want.
-     */
-    @NonNull
-    public Map<String, AndroidProject> getAllModels(int modelLevel) {
-        return model().level(modelLevel).getMulti();
-    }
-
-    /**
-     * Returns a project model for each sub-project without building generating a
-     * @param modelLevel the level of the model we want.
-     * @param benchmarkName optional benchmark name to pass to Gradle
-     * @param benchmarkMode optional benchmark mode to pass to gradle.
-
-     * {@link AssertionError} if any sync issue is raised during the model loading.
-     */
-    @NonNull
-    public Map<String, AndroidProject> getAllModelsWithBenchmark(
-            int modelLevel,
-            @Nullable String benchmarkName,
-            @Nullable BenchmarkMode benchmarkMode) {
-        if (benchmarkName == null ^ benchmarkMode == null) {
-            throw new IllegalArgumentException(
-                    String.format("Partial benchmark info, either both should be null or neither: "
-                            + "name: %1$s, mode: %2$s", benchmarkName, benchmarkMode));
-        }
-        if (benchmarkMode != null) {
-            return model().level(modelLevel).recordBenchmark(benchmarkName, benchmarkMode)
-                    .getMulti();
-        } else {
-            return model().level(modelLevel).getMulti();
-        }
-    }
-
-    /**
-     * Returns a project model for each sub-project without building and ignoring potential sync
-     * issues. Sync issues will still be returned for each {@link AndroidProject} that failed to
-     * sync properly.
-     */
-    @NonNull
-    public Map<String, AndroidProject> getAllModelsIgnoringSyncIssues() {
-        return model().ignoreSyncIssues().getMulti();
-    }
-
+    @Deprecated
     public String getStdout() {
         return lastBuild.getStdout();
     }
 
     /**
-     * Return the stderr from all execute command.
+     * Return the stderr from the last execute command.
+     *
+     * @deprecated  use {@link GradleBuildResult#getStderr()} instead.
      */
+    @Deprecated
     @NonNull
     public String getStderr() {
         return lastBuild.getStderr();
