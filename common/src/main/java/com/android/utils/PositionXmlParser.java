@@ -26,7 +26,9 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
@@ -363,6 +365,123 @@ public class PositionXmlParser {
     public static SourcePosition getPosition(@NonNull Node node, int start, int end) {
         Position p = getPositionHelper(node, start, end);
         return p == null ? SourcePosition.UNKNOWN : p.toSourcePosition();
+    }
+
+    /**
+     * Finds the leaf node at the given offset
+     *
+     * @param document root node
+     * @param offset   offset to look for
+     * @return the leaf node at that offset, if any
+     */
+    @Nullable
+    public static Node findNodeAtOffset(@NonNull Document document, int offset) {
+        Element root = document.getDocumentElement();
+        if (root != null) {
+            return findNodeAtOffset(root, offset);
+        }
+
+        return null;
+    }
+
+    @Nullable
+    private static Node findNodeAtOffset(@NonNull Node node, int offset) {
+        Position p = getPositionHelper(node, -1, -1);
+        if (p != null) {
+            if (offset < p.getOffset()) {
+                return null;
+            }
+            Position end = p.getEnd();
+            if (end != null) {
+                if (offset >= end.getOffset()) {
+                    return null;
+                }
+            }
+        } else {
+            return null;
+        }
+
+        NodeList children = node.getChildNodes();
+        for (int i = 0, n = children.getLength(); i < n; i++) {
+            Node item = children.item(i);
+            Node match = findNodeAtOffset(item, offset);
+            if (match != null) {
+                return match;
+            }
+        }
+
+        NamedNodeMap attributes = node.getAttributes();
+        if (attributes != null) {
+            for (int i = 0, n = attributes.getLength(); i < n; i++) {
+                Node item = attributes.item(i);
+                Node match = findNodeAtOffset(item, offset);
+                if (match != null) {
+                    return match;
+                }
+            }
+        }
+
+        return node;
+    }
+
+    /**
+     * Finds the leaf node at the given offset
+     *
+     * @param document root node
+     * @param line     the line
+     * @param column   the column, or -1
+     * @return the leaf node at that offset, if any
+     */
+    @Nullable
+    public static Node findNodeAtLineAndCol(@NonNull Document document, int line, int column) {
+        Element root = document.getDocumentElement();
+        if (root != null) {
+            return findNodeAtLineAndCol(root, line, column);
+        }
+
+        return null;
+    }
+
+    @Nullable
+    private static Node findNodeAtLineAndCol(@NonNull Node node, int line, int column) {
+        Position p = getPositionHelper(node, -1, -1);
+        if (p != null) {
+            if (line < p.getLine() || line == p.getLine() && column != -1
+                    && column < p.getColumn()) {
+                return null;
+            }
+            Position end = p.getEnd();
+            if (end != null) {
+                if (line > end.getLine() || line == end.getLine() && column != -1
+                        && column >= end.getColumn()) {
+                    return null;
+                }
+            }
+        } else {
+            return null;
+        }
+
+        NodeList children = node.getChildNodes();
+        for (int i = 0, n = children.getLength(); i < n; i++) {
+            Node item = children.item(i);
+            Node match = findNodeAtLineAndCol(item, line, column);
+            if (match != null) {
+                return match;
+            }
+        }
+
+        NamedNodeMap attributes = node.getAttributes();
+        if (attributes != null) {
+            for (int i = 0, n = attributes.getLength(); i < n; i++) {
+                Node item = attributes.item(i);
+                Node match = findNodeAtLineAndCol(item, line, column);
+                if (match != null) {
+                    return match;
+                }
+            }
+        }
+
+        return node;
     }
 
     @Nullable

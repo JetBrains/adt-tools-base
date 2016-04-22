@@ -104,6 +104,11 @@ public class PositionXmlParserTest extends TestCase {
         assertEquals(xml.indexOf("/>", position.getStartOffset()) + 2, position.getEndOffset());
         assertEquals(16, position.getEndLine());
 
+        assertSame(button2, PositionXmlParser.findNodeAtLineAndCol(document,
+                position.getStartLine(), position.getStartColumn()));
+        assertSame(button2, PositionXmlParser.findNodeAtOffset(document,
+                position.getStartOffset()));
+
         file.delete();
     }
 

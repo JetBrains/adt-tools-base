@@ -299,14 +299,22 @@ public class ManifestMerger2 {
             if (mOptionalFeatures.contains(Invoker.Feature.EXTRACT_FQCNS)) {
                 extractFcqns(document);
             }
-            mergingReport.setMergedDocument(
-                    MergingReport.MergedManifestKind.MERGED, document.prettyPrint());
 
-            try {
-                mergingReport.setMergedDocument(MergingReport.MergedManifestKind.BLAME,
-                        mergingReport.blame(document));
-            } catch (Exception e) {
-                mLogger.error(e, "Error while saving blame file, build will continue");
+            mergingReport.setMergedXmlDocument(
+              MergingReport.MergedManifestKind.MERGED, document);
+            if (!mOptionalFeatures.contains(Invoker.Feature.SKIP_XML_STRING)) {
+                mergingReport.setMergedDocument(
+                  MergingReport.MergedManifestKind.MERGED, document.prettyPrint());
+            }
+
+            if (!mOptionalFeatures.contains(Invoker.Feature.SKIP_BLAME)) {
+                try {
+                    mergingReport.setMergedDocument(MergingReport.MergedManifestKind.BLAME,
+                                                    mergingReport.blame(document));
+                }
+                catch (Exception e) {
+                    mLogger.error(e, "Error while saving blame file, build will continue");
+                }
             }
 
             if (mOptionalFeatures.contains(Invoker.Feature.MAKE_AAPT_SAFE)) {
@@ -820,7 +828,17 @@ public class ManifestMerger2 {
             /**
              * Perform InstantRun related swapping in the merged manifest file.
              */
-            INSTANT_RUN_REPLACEMENT
+            INSTANT_RUN_REPLACEMENT,
+
+            /**
+             * Clients will not request the blame history
+             */
+            SKIP_BLAME,
+
+            /**
+             * Clients will only request the merged XML documents, not XML pretty printed documents
+             */
+            SKIP_XML_STRING,
         }
 
         /**
