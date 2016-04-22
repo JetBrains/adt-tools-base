@@ -32,6 +32,7 @@ import com.android.sdklib.AndroidVersion.AndroidVersionException;
 import com.android.sdklib.AndroidVersionHelper;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
+import com.android.sdklib.repository.PackageParserUtils;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.legacy.descriptors.IPkgDesc;
 import com.android.sdklib.repository.legacy.descriptors.PkgDescExtra;
@@ -251,7 +252,7 @@ public class LocalSdk {
     @Deprecated
     @Nullable
     public String getPath() {
-      return mSdkRoot != null ? mSdkRoot.getPath() : null;
+        return mSdkRoot != null ? mSdkRoot.getPath() : null;
     }
 
     /**
@@ -307,8 +308,8 @@ public class LocalSdk {
     @Nullable
     public LocalPkgInfo getPkgInfo(@NonNull PkgType filter, @NonNull AndroidVersion version) {
         assert filter == PkgType.PKG_PLATFORM ||
-               filter == PkgType.PKG_SAMPLE ||
-               filter == PkgType.PKG_SOURCE;
+                filter == PkgType.PKG_SAMPLE ||
+                filter == PkgType.PKG_SOURCE;
 
         for (LocalPkgInfo pkg : getPkgsInfos(filter)) {
             IPkgDesc d = pkg.getDesc();
@@ -359,15 +360,15 @@ public class LocalSdk {
     public LocalPkgInfo getPkgInfo(@NonNull PkgType filter, @NonNull String path) {
 
         assert filter == PkgType.PKG_ADDON ||
-               filter == PkgType.PKG_PLATFORM;
+                filter == PkgType.PKG_PLATFORM;
 
         for (LocalPkgInfo pkg : getPkgsInfos(filter)) {
             IPkgDesc d = pkg.getDesc();
             if (d.hasPath() && path.equals(d.getPath())) {
-               return pkg;
-           }
-       }
-       return null;
+                return pkg;
+            }
+        }
+        return null;
     }
 
     /**
@@ -383,21 +384,21 @@ public class LocalSdk {
      */
     @Nullable
     public LocalPkgInfo getPkgInfo(@NonNull PkgType filter,
-                                   @NonNull String vendor,
-                                   @NonNull String path) {
+            @NonNull String vendor,
+            @NonNull String path) {
 
         assert filter == PkgType.PKG_EXTRA ||
-               filter == PkgType.PKG_ADDON;
+                filter == PkgType.PKG_ADDON;
 
         for (LocalPkgInfo pkg : getPkgsInfos(filter)) {
             IPkgDesc d = pkg.getDesc();
             if (d.hasVendor() && vendor.equals(d.getVendor().getId())) {
                 if (d.hasPath() && path.equals(d.getPath())) {
-                   return pkg;
-               }
+                    return pkg;
+                }
             }
-       }
-       return null;
+        }
+        return null;
     }
 
     /**
@@ -424,10 +425,10 @@ public class LocalSdk {
     @Nullable
     public LocalPkgInfo getPkgInfo(@NonNull PkgType filter) {
         if (filter != PkgType.PKG_TOOLS &&
-            filter != PkgType.PKG_PLATFORM_TOOLS &&
-            filter != PkgType.PKG_DOC &&
-            filter != PkgType.PKG_NDK &&
-            filter != PkgType.PKG_LLDB) {
+                filter != PkgType.PKG_PLATFORM_TOOLS &&
+                filter != PkgType.PKG_DOC &&
+                filter != PkgType.PKG_NDK &&
+                filter != PkgType.PKG_LLDB) {
             assert false;
             return null;
         }
@@ -444,23 +445,23 @@ public class LocalSdk {
 
             if (!mVisitedDirs.containsEntry(filter, new LocalDirInfo.MapComparator(uniqueDir))) {
                 switch(filter) {
-                case PKG_TOOLS:
-                    info = scanTools(uniqueDir);
-                    break;
-                case PKG_PLATFORM_TOOLS:
-                    info = scanPlatformTools(uniqueDir);
-                    break;
-                case PKG_DOC:
-                    info = scanDoc(uniqueDir);
-                    break;
-                case PKG_NDK:
-                    info = scanNdk(uniqueDir);
-                    break;
-                case PKG_LLDB:
-                    info = scanLLDB(uniqueDir);
-                    break;
-                default:
-                    break;
+                    case PKG_TOOLS:
+                        info = scanTools(uniqueDir);
+                        break;
+                    case PKG_PLATFORM_TOOLS:
+                        info = scanPlatformTools(uniqueDir);
+                        break;
+                    case PKG_DOC:
+                        info = scanDoc(uniqueDir);
+                        break;
+                    case PKG_NDK:
+                        info = scanNdk(uniqueDir);
+                        break;
+                    case PKG_LLDB:
+                        info = scanLLDB(uniqueDir);
+                        break;
+                    default:
+                        break;
                 }
             }
 
@@ -539,47 +540,47 @@ public class LocalSdk {
 
                     if (!mVisitedDirs.containsEntry(filter, new LocalDirInfo.MapComparator(subDir))) {
                         switch(filter) {
-                        case PKG_BUILD_TOOLS:
-                            scanBuildTools(subDir, existing);
-                            break;
+                            case PKG_BUILD_TOOLS:
+                                scanBuildTools(subDir, existing);
+                                break;
 
-                        case PKG_PLATFORM:
-                            scanPlatforms(subDir, existing);
-                            break;
+                            case PKG_PLATFORM:
+                                scanPlatforms(subDir, existing);
+                                break;
 
-                        case PKG_SYS_IMAGE:
-                            scanSysImages(subDir, existing, false);
-                            break;
+                            case PKG_SYS_IMAGE:
+                                scanSysImages(subDir, existing, false);
+                                break;
 
-                        case PKG_ADDON_SYS_IMAGE:
-                            scanSysImages(subDir, existing, true);
-                            break;
+                            case PKG_ADDON_SYS_IMAGE:
+                                scanSysImages(subDir, existing, true);
+                                break;
 
-                        case PKG_ADDON:
-                            scanAddons(subDir, existing);
-                            break;
+                            case PKG_ADDON:
+                                scanAddons(subDir, existing);
+                                break;
 
-                        case PKG_SAMPLE:
-                            scanSamples(subDir, existing);
-                            break;
+                            case PKG_SAMPLE:
+                                scanSamples(subDir, existing);
+                                break;
 
-                        case PKG_SOURCE:
-                            scanSources(subDir, existing);
-                            break;
+                            case PKG_SOURCE:
+                                scanSources(subDir, existing);
+                                break;
 
-                        case PKG_EXTRA:
-                            scanExtras(subDir, existing);
-                            break;
+                            case PKG_EXTRA:
+                                scanExtras(subDir, existing);
+                                break;
 
-                        case PKG_TOOLS:
-                        case PKG_PLATFORM_TOOLS:
-                        case PKG_DOC:
-                        case PKG_NDK:
-                        case PKG_LLDB:
-                            break;
-                        default:
-                            throw new IllegalArgumentException(
-                                    "Unsupported pkg type " + filter.toString());
+                            case PKG_TOOLS:
+                            case PKG_PLATFORM_TOOLS:
+                            case PKG_DOC:
+                            case PKG_NDK:
+                            case PKG_LLDB:
+                                break;
+                            default:
+                                throw new IllegalArgumentException(
+                                        "Unsupported pkg type " + filter.toString());
                         }
                         mVisitedDirs.put(filter, new LocalDirInfo(mFileOp, subDir));
                         list.addAll(existing);
@@ -707,7 +708,7 @@ public class LocalSdk {
 
 
         Revision minPlatToolsRev =
-            PackageParserUtils.getRevisionProperty(props, PkgProps.MIN_PLATFORM_TOOLS_REV);
+                PackageParserUtils.getRevisionProperty(props, PkgProps.MIN_PLATFORM_TOOLS_REV);
         if (minPlatToolsRev == null) {
             minPlatToolsRev = Revision.NOT_SPECIFIED;
         }
@@ -740,15 +741,15 @@ public class LocalSdk {
         return info;
     }
 
-  /**
-   * Creates a new revision with at least three components (major, minor, micro)
-   * based on the given revision. This is important since in the past we would
-   * sometimes write out revisions with only one component when internally we
-   * required that they have more, and would convert using the specific Revision
-   * subclass.
-   * @param rev
-   * @return
-   */
+    /**
+     * Creates a new revision with at least three components (major, minor, micro)
+     * based on the given revision. This is important since in the past we would
+     * sometimes write out revisions with only one component when internally we
+     * required that they have more, and would convert using the specific Revision
+     * subclass.
+     * @param rev
+     * @return
+     */
     private static Revision fullySpecifyRevision(Revision rev) {
         // Since we used to require a complete revision
         if (!rev.isPreview()) {
@@ -878,7 +879,7 @@ public class LocalSdk {
 
             BuildToolInfo btInfo = new BuildToolInfo(rev, buildToolDir);
             LocalBuildToolPkgInfo pkgInfo =
-                new LocalBuildToolPkgInfo(this, buildToolDir, props, rev, btInfo);
+                    new LocalBuildToolPkgInfo(this, buildToolDir, props, rev, btInfo);
             outCollection.add(pkgInfo);
         }
     }
@@ -896,7 +897,7 @@ public class LocalSdk {
             }
 
             Revision minToolsRev =
-                PackageParserUtils.getRevisionProperty(props, PkgProps.MIN_TOOLS_REV);
+                    PackageParserUtils.getRevisionProperty(props, PkgProps.MIN_TOOLS_REV);
             if (minToolsRev == null) {
                 minToolsRev = Revision.NOT_SPECIFIED;
             }
@@ -905,7 +906,7 @@ public class LocalSdk {
                 AndroidVersion vers = AndroidVersionHelper.create(props);
 
                 LocalPlatformPkgInfo pkgInfo =
-                    new LocalPlatformPkgInfo(this, platformDir, props, vers, rev, minToolsRev);
+                        new LocalPlatformPkgInfo(this, platformDir, props, vers, rev, minToolsRev);
                 outCollection.add(pkgInfo);
 
             } catch (AndroidVersionException e) {
@@ -1035,7 +1036,7 @@ public class LocalSdk {
 
                 if (vendorId == null && !scanAddons) {
                     LocalSysImgPkgInfo pkgInfo =
-                      new LocalSysImgPkgInfo(this, abiDir, props, vers, tag, abiDir.getName(), rev);
+                            new LocalSysImgPkgInfo(this, abiDir, props, vers, tag, abiDir.getName(), rev);
                     outCollection.add(pkgInfo);
 
                 } else if (vendorId != null && scanAddons) {
@@ -1067,7 +1068,7 @@ public class LocalSdk {
             }
 
             Revision minToolsRev =
-                PackageParserUtils.getRevisionProperty(props, PkgProps.MIN_TOOLS_REV);
+                    PackageParserUtils.getRevisionProperty(props, PkgProps.MIN_TOOLS_REV);
             if (minToolsRev == null) {
                 minToolsRev = Revision.NOT_SPECIFIED;
             }
@@ -1076,7 +1077,7 @@ public class LocalSdk {
                 AndroidVersion vers = AndroidVersionHelper.create(props);
 
                 LocalSamplePkgInfo pkgInfo =
-                    new LocalSamplePkgInfo(this, platformDir, props, vers, rev, minToolsRev);
+                        new LocalSamplePkgInfo(this, platformDir, props, vers, rev, minToolsRev);
                 outCollection.add(pkgInfo);
             } catch (AndroidVersionException e) {
                 continue; // skip invalid or missing android version.
@@ -1101,7 +1102,7 @@ public class LocalSdk {
                 AndroidVersion vers = AndroidVersionHelper.create(props);
 
                 LocalSourcePkgInfo pkgInfo =
-                    new LocalSourcePkgInfo(this, platformDir, props, vers, rev);
+                        new LocalSourcePkgInfo(this, platformDir, props, vers, rev);
                 outCollection.add(pkgInfo);
             } catch (AndroidVersionException e) {
                 continue; // skip invalid or missing android version.
@@ -1122,7 +1123,7 @@ public class LocalSdk {
 
                 Properties props = parseProperties(new File(extraDir, SdkConstants.FN_SOURCE_PROP));
                 Revision rev =
-                    PackageParserUtils.getRevisionProperty(props, PkgProps.PKG_REVISION);
+                        PackageParserUtils.getRevisionProperty(props, PkgProps.PKG_REVISION);
                 if (rev == null) {
                     continue; // skip, no revision
                 }
@@ -1130,7 +1131,7 @@ public class LocalSdk {
                 rev = fullySpecifyRevision(rev);
 
                 String oldPaths =
-                    PackageParserUtils.getProperty(props, PkgProps.EXTRA_OLD_PATHS, null);
+                        PackageParserUtils.getProperty(props, PkgProps.EXTRA_OLD_PATHS, null);
 
                 String vendorId   = vendorDir.getName();
                 String vendorDisp = props.getProperty(PkgProps.EXTRA_VENDOR_DISPLAY);
@@ -1141,14 +1142,14 @@ public class LocalSdk {
                 String displayName = props.getProperty(PkgProps.EXTRA_NAME_DISPLAY, null);
 
                 LocalExtraPkgInfo pkgInfo = new LocalExtraPkgInfo(
-                  this,
-                  extraDir,
-                  props,
-                  IdDisplay.create(vendorId, vendorDisp),
-                  extraDir.getName(),
-                  displayName,
-                  PkgDescExtra.convertOldPaths(oldPaths),
-                  rev);
+                        this,
+                        extraDir,
+                        props,
+                        IdDisplay.create(vendorId, vendorDisp),
+                        extraDir.getName(),
+                        displayName,
+                        PkgDescExtra.convertOldPaths(oldPaths),
+                        rev);
                 outCollection.add(pkgInfo);
             }
         }

@@ -17,8 +17,10 @@
 package com.android.sdklib.repository.legacy.local;
 
 import com.android.annotations.NonNull;
+import com.android.repository.api.RepoManager;
 import com.android.sdklib.AndroidVersion;
 import com.android.repository.Revision;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.legacy.descriptors.IPkgDesc;
 import com.android.sdklib.repository.legacy.descriptors.PkgDesc;
 
@@ -29,18 +31,22 @@ import java.util.Properties;
  * Local sample package, for a given platform's {@link AndroidVersion}.
  * The package itself has a major revision.
  * There should be only one for a given android platform version.
+ *
+ * @deprecated This is part of the old SDK manager framework. Use
+ * {@link AndroidSdkHandler}/{@link RepoManager} and associated classes instead.
  */
-public class LocalSamplePkgInfo extends LocalPkgInfo {
+@Deprecated
+class LocalSamplePkgInfo extends LocalPkgInfo {
 
     @NonNull
     private final IPkgDesc mDesc;
 
-    public LocalSamplePkgInfo(@NonNull LocalSdk localSdk,
-                              @NonNull File localDir,
-                              @NonNull Properties sourceProps,
-                              @NonNull AndroidVersion version,
-                              @NonNull Revision revision,
-                              @NonNull Revision minToolsRev) {
+    LocalSamplePkgInfo(@NonNull LocalSdk localSdk,
+            @NonNull File localDir,
+            @NonNull Properties sourceProps,
+            @NonNull AndroidVersion version,
+            @NonNull Revision revision,
+            @NonNull Revision minToolsRev) {
         super(localSdk, localDir, sourceProps);
         mDesc = PkgDesc.Builder.newSample(version, revision, minToolsRev).create();
     }

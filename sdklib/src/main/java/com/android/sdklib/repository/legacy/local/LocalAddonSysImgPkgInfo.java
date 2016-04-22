@@ -19,7 +19,9 @@ package com.android.sdklib.repository.legacy.local;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.Revision;
+import com.android.repository.api.RepoManager;
 import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.legacy.descriptors.IPkgDesc;
 import com.android.sdklib.repository.legacy.descriptors.PkgDesc;
@@ -34,14 +36,18 @@ import java.util.Properties;
  * The system-image tag is the add-on name.
  * The package itself has a major revision.
  * There should be only one for a given android platform version & ABI.
+ *
+ * @deprecated This is part of the old SDK manager framework. Use
+ * {@link AndroidSdkHandler}/{@link RepoManager} and associated classes instead.
  */
-public class LocalAddonSysImgPkgInfo extends LocalPkgInfo {
+@Deprecated
+class LocalAddonSysImgPkgInfo extends LocalPkgInfo {
 
 
     @NonNull
     private final IPkgDesc mDesc;
 
-    public LocalAddonSysImgPkgInfo(@NonNull LocalSdk localSdk,
+    LocalAddonSysImgPkgInfo(@NonNull LocalSdk localSdk,
             @NonNull File localDir,
             @NonNull Properties sourceProps,
             @NonNull AndroidVersion version,

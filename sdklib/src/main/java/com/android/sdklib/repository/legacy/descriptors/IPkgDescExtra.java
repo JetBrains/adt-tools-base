@@ -18,6 +18,8 @@ package com.android.sdklib.repository.legacy.descriptors;
 
 import com.android.annotations.NonNull;
 import com.android.repository.Revision;
+import com.android.repository.api.RepoManager;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.IdDisplay;
 
 /**
@@ -35,7 +37,11 @@ import com.android.sdklib.repository.IdDisplay;
  * <p/>
  * To query generic packages capabilities, rely on {@link #getType()} and the
  * {@code IPkgDesc.hasXxx()} methods provided by {@link IPkgDesc}.
+ *
+ * @deprecated This is part of the old SDK manager framework. Use
+ * {@link AndroidSdkHandler}/{@link RepoManager} and associated classes instead.
  */
+@Deprecated
 public interface IPkgDescExtra extends IPkgDesc {
     /**
      * Returns an optional list of older paths for this extra package.

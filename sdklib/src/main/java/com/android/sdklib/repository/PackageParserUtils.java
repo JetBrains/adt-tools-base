@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.sdklib.repository.legacy.local;
+package com.android.sdklib.repository;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.Revision;
 import com.android.repository.io.FileOp;
-import com.android.sdklib.repository.PkgProps;
 
 import java.io.File;
 import java.util.ArrayList;

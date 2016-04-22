@@ -18,6 +18,8 @@ package com.android.sdklib.repository.legacy.local;
 
 import com.android.annotations.NonNull;
 import com.android.repository.Revision;
+import com.android.repository.api.RepoManager;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.legacy.descriptors.IPkgDesc;
 import com.android.sdklib.repository.legacy.descriptors.PkgDesc;
 
@@ -26,13 +28,17 @@ import java.util.Properties;
 
 /**
  * Local package representing the Android NDK
+ *
+ * @deprecated This is part of the old SDK manager framework. Use
+ * {@link AndroidSdkHandler}/{@link RepoManager} and associated classes instead.
  */
-public class LocalNdkPkgInfo extends LocalPkgInfo {
+@Deprecated
+class LocalNdkPkgInfo extends LocalPkgInfo {
 
     @NonNull
     private final IPkgDesc mDesc;
 
-    protected LocalNdkPkgInfo(@NonNull LocalSdk localSdk,
+    LocalNdkPkgInfo(@NonNull LocalSdk localSdk,
             @NonNull File localDir,
             @NonNull Properties sourceProps,
             @NonNull Revision revision) {

@@ -19,8 +19,10 @@ package com.android.sdklib.repository.legacy.descriptors;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.Revision;
-import com.android.sdklib.AndroidVersion;
 import com.android.repository.api.License;
+import com.android.repository.api.RepoManager;
+import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.IdDisplay;
 
 import java.io.File;
@@ -36,7 +38,11 @@ import java.io.File;
  * <p/>
  * To query packages capabilities, rely on {@link #getType()} and the {@code IPkgDesc.hasXxx()}
  * methods provided by {@link IPkgDesc}.
+ *
+ * @deprecated This is part of the old SDK manager framework. Use
+ * {@link AndroidSdkHandler}/{@link RepoManager} and associated classes instead.
  */
+@Deprecated
 public interface IPkgDesc extends Comparable<IPkgDesc> {
 
     /**

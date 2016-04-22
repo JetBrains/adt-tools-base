@@ -65,10 +65,24 @@ public class LegacyRepoUtils {
             "^([a-zA-Z0-9._-]+\\.jar);(.*)$", Pattern.CASE_INSENSITIVE);    //$NON-NLS-1$
 
     /**
+     * The list of libraries of the add-on. <br/>
+     * This is a string in the format "java.package1;java.package2;...java.packageN".
+     * For each library's java package name, the manifest.ini contains a key with
+     * value "library.jar;Jar Description String". Example:
+     * <pre>
+     * libraries=com.example.foo;com.example.bar
+     * com.example.foo=foo.jar;Foo Library
+     * com.example.bar=bar.jar;Bar Library
+     * </pre>
+     * Not saved in source.properties.
+     */
+    private static final String ADDON_LIBRARIES    = "libraries";            //$NON-NLS-1$
+
+    /**
      * Convert a {@link IPkgDesc} and other old-style information into a {@link TypeDetails}.
      */
     @NonNull
-    public static TypeDetails createTypeDetails(@NonNull IPkgDesc desc,
+    static TypeDetails createTypeDetails(@NonNull IPkgDesc desc,
             int layoutLibVersion, @NonNull Collection<OptionalLibrary> addonLibraries,
             @Nullable File packageDir, @NonNull ProgressIndicator progress, @NonNull FileOp fop) {
 
@@ -241,7 +255,7 @@ public class LegacyRepoUtils {
             return result;
         }
         // get the optional libraries
-        String librariesValue = propertyMap.get(AddonManifestIniProps.ADDON_LIBRARIES);
+        String librariesValue = propertyMap.get(ADDON_LIBRARIES);
 
         SdkCommonFactory sdkFactory = (SdkCommonFactory) AndroidSdkHandler.getCommonModule()
                 .createLatestFactory();

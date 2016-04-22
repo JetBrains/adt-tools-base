@@ -18,7 +18,9 @@ package com.android.sdklib.repository.legacy.local;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.repository.api.RepoManager;
 import com.android.repository.io.FileOpUtils;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.legacy.descriptors.IPkgDesc;
 
 import java.io.File;
@@ -31,7 +33,11 @@ import java.util.Properties;
  * Clients should not need to create instances of {@link LocalPkgInfo} directly.
  * Instead please use the {@link LocalSdk} methods to parse and retrieve packages.
  * <p/>
+ *
+ * @deprecated This is part of the old SDK manager framework. Use
+ * {@link AndroidSdkHandler}/{@link RepoManager} and associated classes instead.
  */
+@Deprecated
 public abstract class LocalPkgInfo
         implements Comparable<LocalPkgInfo> {
 

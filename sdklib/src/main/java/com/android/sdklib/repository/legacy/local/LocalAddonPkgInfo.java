@@ -18,7 +18,9 @@ package com.android.sdklib.repository.legacy.local;
 
 import com.android.annotations.NonNull;
 import com.android.repository.Revision;
+import com.android.repository.api.RepoManager;
 import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.legacy.descriptors.IPkgDesc;
 import com.android.sdklib.repository.legacy.descriptors.PkgDesc;
 import com.android.sdklib.repository.IdDisplay;
@@ -28,12 +30,17 @@ import java.util.Locale;
 import java.util.Properties;
 
 @SuppressWarnings("MethodMayBeStatic")
+/**
+ * @deprecated This is part of the old SDK manager framework. Use
+ * {@link AndroidSdkHandler}/{@link RepoManager} and associated classes instead.
+ */
+@Deprecated
 public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
 
     @NonNull
     private final IPkgDesc mAddonDesc;
 
-    public LocalAddonPkgInfo(@NonNull LocalSdk localSdk,
+    LocalAddonPkgInfo(@NonNull LocalSdk localSdk,
             @NonNull File localDir,
             @NonNull Properties sourceProps,
             @NonNull AndroidVersion version,

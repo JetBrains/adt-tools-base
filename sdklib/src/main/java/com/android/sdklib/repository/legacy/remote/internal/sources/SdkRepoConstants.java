@@ -18,6 +18,8 @@ package com.android.sdklib.repository.legacy.remote.internal.sources;
 
 
 import com.android.annotations.NonNull;
+import com.android.repository.api.RepoManager;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.legacy.RepoXsdUtil;
 
 import javax.xml.transform.stream.StreamSource;
@@ -27,14 +29,18 @@ import java.util.regex.Pattern;
 
 /**
  * Public constants for the sdk-repository XML Schema.
+ *
+ * @deprecated This is part of the old SDK manager framework. Use
+ * {@link AndroidSdkHandler}/{@link RepoManager} and associated classes instead.
  */
+@Deprecated
 public class SdkRepoConstants extends RepoConstants {
 
     /**
      * The latest version of the sdk-repository XML Schema.
      * Valid version numbers are between 1 and this number, included.
      */
-    public static final int NS_LATEST_VERSION = 12;
+    static final int NS_LATEST_VERSION = 12;
 
     /**
      * The min version of the sdk-repository XML Schema we'll try to load.
@@ -44,7 +50,7 @@ public class SdkRepoConstants extends RepoConstants {
      * 5, so we know that <em>our</em> server will never contain a repository
      * XML with a schema version lower than this one.
      */
-    public static final int NS_SERVER_MIN_VERSION = 5;
+    static final int NS_SERVER_MIN_VERSION = 5;
 
     /**
      * The URL of the official Google sdk-repository site.
@@ -57,7 +63,7 @@ public class SdkRepoConstants extends RepoConstants {
      * The default name looked for by SdkSource when trying to load an
      * sdk-repository XML if the URL doesn't match an existing resource.
      */
-    public static final String URL_DEFAULT_FILENAME = "repository.xml";         //$NON-NLS-1$
+    static final String URL_DEFAULT_FILENAME = "repository.xml";         //$NON-NLS-1$
 
     /**
      * The pattern name looked by {@link SdkSource} when trying to load
@@ -66,7 +72,7 @@ public class SdkRepoConstants extends RepoConstants {
      * This must be used with {@link String#format(String, Object...)} with
      * one integer parameter between 1 and {@link #NS_LATEST_VERSION}.
      */
-    public static final String URL_FILENAME_PATTERN = "repository-%1$d.xml";      //$NON-NLS-1$
+    static final String URL_FILENAME_PATTERN = "repository-%1$d.xml";      //$NON-NLS-1$
 
     /** The base of our sdk-repository XML namespace. */
     private static final String NS_BASE =
@@ -76,13 +82,13 @@ public class SdkRepoConstants extends RepoConstants {
      * The pattern of our sdk-repository XML namespace.
      * Matcher's group(1) is the schema version (integer).
      */
-    public static final String NS_PATTERN = NS_BASE + "([0-9]+)";          //$NON-NLS-1$
+    static final String NS_PATTERN = NS_BASE + "([0-9]+)";          //$NON-NLS-1$
 
     /** The XML namespace of the latest sdk-repository XML. */
-    public static final String NS_URI = getSchemaUri(NS_LATEST_VERSION);
+    static final String NS_URI = getSchemaUri(NS_LATEST_VERSION);
 
     /** The root sdk-repository element */
-    public static final String NODE_SDK_REPOSITORY = "sdk-repository";        //$NON-NLS-1$
+    static final String NODE_SDK_REPOSITORY = "sdk-repository";        //$NON-NLS-1$
 
     /* The major revision for tool and platform-tool package
      * (the full revision number is revision.minor.micro + preview#.)
@@ -102,23 +108,23 @@ public class SdkRepoConstants extends RepoConstants {
     public static final String NODE_PREVIEW         = "preview";              //$NON-NLS-1$
 
     /** A platform package. */
-    public static final String NODE_PLATFORM        = "platform";             //$NON-NLS-1$
+    static final String NODE_PLATFORM        = "platform";             //$NON-NLS-1$
     /** A tool package. */
-    public static final String NODE_TOOL            = "tool";                 //$NON-NLS-1$
+    static final String NODE_TOOL            = "tool";                 //$NON-NLS-1$
     /** A platform-tool package. */
     public static final String NODE_PLATFORM_TOOL   = "platform-tool";        //$NON-NLS-1$
     /** A build-tool package. */
-    public static final String NODE_BUILD_TOOL      = "build-tool";           //$NON-NLS-1$
+    static final String NODE_BUILD_TOOL      = "build-tool";           //$NON-NLS-1$
     /** A doc package. */
-    public static final String NODE_DOC             = "doc";                  //$NON-NLS-1$
+    static final String NODE_DOC             = "doc";                  //$NON-NLS-1$
     /** A sample package. */
-    public static final String NODE_SAMPLE          = "sample";               //$NON-NLS-1$
+    static final String NODE_SAMPLE          = "sample";               //$NON-NLS-1$
     /** A source package. */
-    public static final String NODE_SOURCE          = "source";               //$NON-NLS-1$
+    static final String NODE_SOURCE          = "source";               //$NON-NLS-1$
     /** A NDK package. */
-    public static final String NODE_NDK             = "ndk";                  //$NON-NLS-1$
+    static final String NODE_NDK             = "ndk";                  //$NON-NLS-1$
     /** A LLDB package. */
-    public static final String NODE_LLDB             = "lldb";                //$NON-NLS-1$
+    static final String NODE_LLDB             = "lldb";                //$NON-NLS-1$
     /** A generic package. */
     public static final String NODE_GENERIC         = "generic";              //$NON-NLS-1$
 
@@ -143,7 +149,7 @@ public class SdkRepoConstants extends RepoConstants {
      * @return An {@link InputStream} object for the local XSD file or
      *         null if there is no schema for the requested version.
      */
-    public static StreamSource[] getXsdStream(int version) {
+    static StreamSource[] getXsdStream(int version) {
         return RepoXsdUtil.getXsdStream(NODE_SDK_REPOSITORY, version);
     }
 
@@ -151,7 +157,7 @@ public class SdkRepoConstants extends RepoConstants {
      * Returns the URI of the SDK Repository schema for the given version number.
      * @param version Between 1 and {@link #NS_LATEST_VERSION} included.
      */
-    public static String getSchemaUri(int version) {
+    static String getSchemaUri(int version) {
         return String.format(NS_BASE + "%d", version);           //$NON-NLS-1$
     }
 

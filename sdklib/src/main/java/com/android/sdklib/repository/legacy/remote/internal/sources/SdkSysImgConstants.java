@@ -16,6 +16,8 @@
 
 package com.android.sdklib.repository.legacy.remote.internal.sources;
 
+import com.android.repository.api.RepoManager;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.legacy.RepoXsdUtil;
 
 import javax.xml.transform.stream.StreamSource;
@@ -23,14 +25,18 @@ import java.io.InputStream;
 
 /**
  * Public constants for the sdk-sys-img XML Schema.
+ *
+ * @deprecated This is part of the old SDK manager framework. Use
+ * {@link AndroidSdkHandler}/{@link RepoManager} and associated classes instead.
  */
+@Deprecated
 public class SdkSysImgConstants extends RepoConstants {
 
     /**
      * The default name looked for by SdkSource when trying to load an
      * sdk-sys-img XML if the URL doesn't match an existing resource.
      */
-    public static final String URL_DEFAULT_FILENAME = "sys-img.xml";       //$NON-NLS-1$
+    static final String URL_DEFAULT_FILENAME = "sys-img.xml";       //$NON-NLS-1$
 
     /** The base of our sdk-sys-img XML namespace. */
     private static final String NS_BASE =
@@ -40,19 +46,19 @@ public class SdkSysImgConstants extends RepoConstants {
      * The pattern of our sdk-sys-img XML namespace.
      * Matcher's group(1) is the schema version (integer).
      */
-    public static final String NS_PATTERN = NS_BASE + "([0-9]+)";     //$NON-NLS-1$
+    static final String NS_PATTERN = NS_BASE + "([0-9]+)";     //$NON-NLS-1$
 
     /**
      * The latest version of the sdk-sys-img XML Schema.
      * Valid version numbers are between 1 and this number, included.
      */
-    public static final int NS_LATEST_VERSION = 3;
+    static final int NS_LATEST_VERSION = 3;
 
     /** The XML namespace of the latest sdk-sys-img XML. */
-    public static final String NS_URI = getSchemaUri(NS_LATEST_VERSION);
+    static final String NS_URI = getSchemaUri(NS_LATEST_VERSION);
 
     /** The root sdk-sys-img element */
-    public static final String NODE_SDK_SYS_IMG     = "sdk-sys-img";       //$NON-NLS-1$
+    static final String NODE_SDK_SYS_IMG     = "sdk-sys-img";       //$NON-NLS-1$
 
     /** A system-image tag id. */
     public static final String ATTR_TAG_ID = "tag-id";                          //$NON-NLS-1$
@@ -69,7 +75,7 @@ public class SdkSysImgConstants extends RepoConstants {
      * @return An {@link InputStream} object for the local XSD file or
      *         null if there is no schema for the requested version.
      */
-    public static StreamSource[] getXsdStream(int version) {
+    static StreamSource[] getXsdStream(int version) {
         return RepoXsdUtil.getXsdStream(NODE_SDK_SYS_IMG, version);
     }
 
@@ -77,7 +83,7 @@ public class SdkSysImgConstants extends RepoConstants {
      * Returns the URI of the sdk-sys-img schema for the given version number.
      * @param version Between 1 and {@link #NS_LATEST_VERSION} included.
      */
-    public static String getSchemaUri(int version) {
+    static String getSchemaUri(int version) {
         return String.format(NS_BASE + "%d", version);           //$NON-NLS-1$
     }
 }

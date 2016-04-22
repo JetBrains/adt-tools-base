@@ -19,9 +19,11 @@ package com.android.sdklib.repository.legacy.local;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.repository.Revision;
+import com.android.repository.api.RepoManager;
 import com.android.repository.io.FileOp;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.internal.project.ProjectProperties;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.legacy.descriptors.IPkgDesc;
 import com.android.sdklib.repository.legacy.descriptors.PkgDesc;
@@ -32,6 +34,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+/**
+ * @deprecated This is part of the old SDK manager framework. Use
+ * {@link AndroidSdkHandler}/{@link RepoManager} and associated classes instead.
+ */
+@Deprecated
 @SuppressWarnings("ConstantConditions")
 public class LocalPlatformPkgInfo extends LocalPkgInfo {
 
@@ -48,7 +55,7 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
     private static final int LAYOUTLIB_VERSION_NOT_SPECIFIED = 0;
     private Map<String, String> myPlatformProp;
 
-    public LocalPlatformPkgInfo(@NonNull LocalSdk localSdk,
+    LocalPlatformPkgInfo(@NonNull LocalSdk localSdk,
             @NonNull File localDir,
             @NonNull Properties sourceProps,
             @NonNull AndroidVersion version,
@@ -116,7 +123,7 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
 
             if (!fileOp.isFile(buildProp) || !fileOp.isFile(sourcePropFile)) {
                 appendLoadError("Ignoring platform '%1$s': %2$s is missing.",   //$NON-NLS-1$
-                                platformFolder.getName(), SdkConstants.FN_BUILD_PROP);
+                        platformFolder.getName(), SdkConstants.FN_BUILD_PROP);
                 return null;
             }
 
@@ -136,7 +143,7 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
 
             try {
                 map =
-                  ProjectProperties.parsePropertyStream(fileOp.newFileInputStream(sourcePropFile), sourcePropFile.getPath(), null /*log*/);
+                        ProjectProperties.parsePropertyStream(fileOp.newFileInputStream(sourcePropFile), sourcePropFile.getPath(), null /*log*/);
                 if (map != null) {
                     result.putAll(map);
                 }

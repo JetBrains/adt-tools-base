@@ -16,6 +16,8 @@
 
 package com.android.sdklib.repository.legacy;
 
+import com.android.repository.api.RepoManager;
+import com.android.sdklib.repository.AndroidSdkHandler;
 import com.google.common.collect.Lists;
 
 import org.xml.sax.Attributes;
@@ -30,7 +32,11 @@ import javax.xml.transform.stream.StreamSource;
 
 /**
  * Utilities related to the respository XSDs.
+ *
+ * @deprecated This is part of the old SDK manager framework. Use
+ * {@link AndroidSdkHandler}/{@link RepoManager} and associated classes instead.
  */
+@Deprecated
 public class RepoXsdUtil {
 
     public static final String NODE_IMPORT = "import";

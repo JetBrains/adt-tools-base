@@ -24,16 +24,17 @@ import com.android.sdklib.repository.legacy.descriptors.PkgDesc;
 import java.io.File;
 import java.util.Properties;
 
-public class LocalToolPkgInfo extends LocalPkgInfo {
+@Deprecated
+class LocalToolPkgInfo extends LocalPkgInfo {
 
     @NonNull
     private final IPkgDesc mDesc;
 
     public LocalToolPkgInfo(@NonNull LocalSdk localSdk,
-                            @NonNull File localDir,
-                            @NonNull Properties sourceProps,
-                            @NonNull Revision revision,
-                            @NonNull Revision minPlatformToolsRev) {
+            @NonNull File localDir,
+            @NonNull Properties sourceProps,
+            @NonNull Revision revision,
+            @NonNull Revision minPlatformToolsRev) {
         super(localSdk, localDir, sourceProps);
         mDesc = PkgDesc.Builder.newTool(revision, minPlatformToolsRev).create();
     }
