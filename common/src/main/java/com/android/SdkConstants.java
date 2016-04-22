@@ -1451,6 +1451,8 @@ public final class SdkConstants {
     public static final String GRAVITY_VALUE_FILL_VERTICAL = "fill_vertical";         //$NON-NLS-1$
     public static final String GRAVITY_VALUE_CENTER_HORIZONTAL = "center_horizontal"; //$NON-NLS-1$
     public static final String GRAVITY_VALUE_CENTER_VERTICAL = "center_vertical";     //$NON-NLS-1$
+    public static final String GRAVITY_VALUE_CLIP_HORIZONTAL = "clip_horizontal";     //$NON-NLS-1$
+    public static final String GRAVITY_VALUE_CLIP_VERTICAL = "clip_vertical";         //$NON-NLS-1$
     public static final String GRAVITY_VALUE_FILL = "fill";                           //$NON-NLS-1$
 
     public static final class ImageViewAttributes {
