@@ -25,9 +25,12 @@ import com.android.builder.internal.aapt.AaptPackageConfig;
 import com.android.builder.internal.aapt.AaptUtils;
 import com.android.builder.internal.aapt.AbstractProcessExecutionAapt;
 import com.android.builder.model.AaptOptions;
+import com.android.builder.png.QueuedCruncher;
+import com.android.ide.common.internal.PngException;
 import com.android.ide.common.process.ProcessExecutor;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.ide.common.process.ProcessOutputHandler;
+import com.android.repository.Revision;
 import com.android.resources.Density;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
@@ -38,11 +41,17 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.hash.Hashing;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Implementation of an interface to the original {@code aapt}. This implementation relies on
@@ -51,10 +60,83 @@ import java.util.List;
 public class AaptV1 extends AbstractProcessExecutionAapt {
 
     /**
+     * What mode should PNG be processed?
+     */
+    public enum PngProcessMode {
+        /**
+         * All PNGs should be crunched and 9-patch processed.
+         */
+        ALL {
+            @Override
+            public boolean shouldProcess(@NonNull File file) {
+                return file.getName().endsWith(SdkConstants.DOT_PNG);
+            }
+        },
+
+        /**
+         * PNGs should not be crunched, but 9-patch processed.
+         */
+        NINE_PATCH_ONLY {
+            @Override
+            public boolean shouldProcess(@NonNull File file) {
+                return file.getName().endsWith(SdkConstants.DOT_9PNG);
+            }
+        },
+
+        /**
+         * PNGs should not be crunched and 9-patch should not be processed.
+         */
+        NONE {
+            @Override
+            public boolean shouldProcess(@NonNull File file) {
+                return false;
+            }
+        };
+
+        /**
+         * Should a file be processed in this mode?
+         *
+         * @param file the file
+         * @return should it be processed
+         */
+        public abstract boolean shouldProcess(@NonNull File file);
+    }
+
+    /**
+     * How much time, in milliseconds, before a wait thread automatically shuts down.
+     */
+    private static final long AUTO_THREAD_SHUTDOWN_MS = 250;
+
+    /**
+     * Buildtools version for which {@code aapt} can run in server mode and, therefore,
+     * {@link QueuedCruncher} can be used.
+     */
+    private static final Revision VERSION_FOR_SERVER_AAPT = new Revision(22, 0, 0);
+
+    /**
      * Build tools.
      */
     @NonNull
     private final BuildToolInfo mBuildToolInfo;
+
+    /**
+     * Queued cruncher, if available.
+     */
+    @Nullable
+    private final QueuedCruncher mCruncher;
+
+    /**
+     * Request handlers we wait for. Everytime a request is made to the {@link #mCruncher},
+     * we add an entry here to wait for it to end.
+     */
+    @NonNull
+    private final Executor mWaitExecutor;
+
+    /**
+     * The process mode to run {@code aapt} on.
+     */
+    @NonNull
+    private final PngProcessMode mProcessMode;
 
     /**
      * Creates a new entry point to the original {@code aapt}.
@@ -62,13 +144,32 @@ public class AaptV1 extends AbstractProcessExecutionAapt {
      * @param processExecutor the executor for external processes
      * @param processOutputHandler the handler to process the executed process' output
      * @param buildToolInfo the build tools to use
+     * @param logger logger to use
+     * @param processMode the process mode to run {@code aapt} on
      */
-    public AaptV1(@NonNull ProcessExecutor processExecutor,
+    public AaptV1(
+            @NonNull ProcessExecutor processExecutor,
             @NonNull ProcessOutputHandler processOutputHandler,
-            @NonNull BuildToolInfo buildToolInfo) {
+            @NonNull BuildToolInfo buildToolInfo,
+            @NonNull ILogger logger,
+            @NonNull PngProcessMode processMode) {
         super(processExecutor, processOutputHandler);
 
         mBuildToolInfo = buildToolInfo;
+        mWaitExecutor = new ThreadPoolExecutor(
+                0, // Core threads
+                1, // Maximum threads
+                AUTO_THREAD_SHUTDOWN_MS,
+                TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<>());
+        mProcessMode = processMode;
+
+        if (buildToolInfo.getRevision().compareTo(VERSION_FOR_SERVER_AAPT) >= 0) {
+            mCruncher =
+                    QueuedCruncher.Builder.INSTANCE.newCruncher(getAaptExecutablePath(), logger);
+        } else {
+            mCruncher = null;
+        }
     }
 
     @Override
@@ -261,6 +362,49 @@ public class AaptV1 extends AbstractProcessExecutionAapt {
         return builder;
     }
 
+    @NonNull
+    @Override
+    public ListenableFuture<File> compile(@NonNull File file, @NonNull File output)
+            throws AaptException {
+        if (mCruncher == null) {
+            /*
+             * Revert to old-style crunching.
+             */
+            return super.compile(file, output);
+        }
+
+        Preconditions.checkArgument(file.isFile(), "!file.isFile()");
+        Preconditions.checkArgument(output.isDirectory(), "!output.isDirectory()");
+
+        SettableFuture<File> future = SettableFuture.create();
+
+        if (!mProcessMode.shouldProcess(file)) {
+            future.set(null);
+            return future;
+        }
+
+        File outputFile = compileOutputFor(file, output);
+
+        int key = mCruncher.start();
+        try {
+            mCruncher.crunchPng(key, file, outputFile);
+        } catch (PngException e) {
+            throw new AaptException("Failed to crunch file '" + file.getAbsolutePath() + "' "
+                    + "into '" + outputFile.getAbsolutePath() + "'.");
+        }
+
+        mWaitExecutor.execute(() -> {
+            try {
+                mCruncher.end(key);
+                future.set(outputFile);
+            } catch (Exception e) {
+                future.setException(e);
+            }
+        });
+
+        return future;
+    }
+
     @Nullable
     @Override
     protected CompileInvocation makeCompileProcessBuilder(@NonNull File file, @NonNull File output)
@@ -292,10 +436,9 @@ public class AaptV1 extends AbstractProcessExecutionAapt {
      */
     @NonNull
     private static File compileOutputFor(@NonNull File file, @NonNull File output) {
-        String path = file.getAbsolutePath();
-        String pathHash = Hashing.sha1().hashString(path, Charsets.UTF_8).toString()
-                + "_" + file.getName() + ".compiled";
-        return new File(output, pathHash);
+        Preconditions.checkArgument(file.isFile(), "!file.isFile()");
+        Preconditions.checkArgument(output.isDirectory(), "!output.isDirectory()");
+        return new File(output, file.getName());
     }
 
     /**
