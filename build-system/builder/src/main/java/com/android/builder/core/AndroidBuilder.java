@@ -661,6 +661,10 @@ public class AndroidBuilder {
                             new Invoker.Feature[optionalFeatures.size()]))
                     .setMergeReportFile(reportFile);
 
+            if (mergeType == ManifestMerger2.MergeType.APPLICATION) {
+                manifestMergerInvoker.withFeatures(Invoker.Feature.REMOVE_TOOLS_DECLARATIONS);
+            }
+
             //noinspection VariableNotUsedInsideIf
             if (outAaptSafeManifestLocation != null) {
                 manifestMergerInvoker.withFeatures(Invoker.Feature.MAKE_AAPT_SAFE);
@@ -906,6 +910,7 @@ public class AndroidBuilder {
             if (!libraries.isEmpty()) {
                 MergingReport mergingReport = ManifestMerger2.newMerger(
                         generatedTestManifest, mLogger, ManifestMerger2.MergeType.APPLICATION)
+                        .withFeatures(Invoker.Feature.REMOVE_TOOLS_DECLARATIONS)
                         .setOverride(SystemProperty.PACKAGE, testApplicationId)
                         .addLibraryManifests(collectLibraries(libraries))
                         .setPlaceHolderValues(manifestPlaceholders)

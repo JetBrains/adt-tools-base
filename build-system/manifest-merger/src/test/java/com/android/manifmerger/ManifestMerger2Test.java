@@ -112,7 +112,6 @@ public class ManifestMerger2Test {
             "76_app_metadata_ignore",
             "77_app_metadata_conflict",
             "78_removeAll",
-            "78b_removeAllActivities",
             "79_custom_node.xml",
     };
 
@@ -138,7 +137,8 @@ public class ManifestMerger2Test {
                 stdLogger, ManifestMerger2.MergeType.APPLICATION)
                 .addLibraryManifests(testFiles.getLibs())
                 .addFlavorAndBuildTypeManifests(testFiles.getOverlayFiles())
-                .withFeatures(ManifestMerger2.Invoker.Feature.KEEP_INTERMEDIARY_STAGES);
+                .withFeatures(ManifestMerger2.Invoker.Feature.KEEP_INTERMEDIARY_STAGES,
+                        ManifestMerger2.Invoker.Feature.REMOVE_TOOLS_DECLARATIONS);
 
         if (!Strings.isNullOrEmpty(testFiles.getPackageOverride())) {
             invoker.setOverride(SystemProperty.PACKAGE, testFiles.getPackageOverride());

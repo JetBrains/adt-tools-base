@@ -17,6 +17,7 @@
 package com.android.manifmerger;
 
 import com.android.sdklib.mock.MockLog;
+import com.google.common.base.Optional;
 import com.google.common.base.Strings;
 
 import junit.framework.TestCase;
@@ -27,7 +28,6 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.Optional;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -56,8 +56,7 @@ public class ToolsInstructionsCleanerTest extends TestCase {
                 TestUtils.sourceFile(getClass(), "testNodeRemoveOperation"), main);
 
         Element rootElement = mainDocument.getRootNode().getXml();
-        ToolsInstructionsCleaner.cleanToolsReferences(
-                ManifestMerger2.MergeType.APPLICATION, mainDocument, mockLog);
+        ToolsInstructionsCleaner.cleanToolsReferences(mainDocument, mockLog);
 
         Optional<Element> application = getChildElementByName(rootElement, "application");
         assertTrue(application.isPresent());
@@ -90,8 +89,7 @@ public class ToolsInstructionsCleanerTest extends TestCase {
                 TestUtils.sourceFile(getClass(), "testNodeRemoveWithChildrenOperation"), main);
 
         Element rootElement = mainDocument.getRootNode().getXml();
-        ToolsInstructionsCleaner.cleanToolsReferences(
-                ManifestMerger2.MergeType.APPLICATION, mainDocument, mockLog);
+        ToolsInstructionsCleaner.cleanToolsReferences(mainDocument, mockLog);
 
         Optional<Element> application = getChildElementByName(rootElement, "application");
         assertTrue(application.isPresent());
@@ -119,8 +117,7 @@ public class ToolsInstructionsCleanerTest extends TestCase {
         XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
                 TestUtils.sourceFile(getClass(), "testNodeRemoveOperation"), main);
 
-        assertNull(ToolsInstructionsCleaner.cleanToolsReferences(
-                ManifestMerger2.MergeType.APPLICATION, mainDocument, mockLog));
+        assertNull(ToolsInstructionsCleaner.cleanToolsReferences(mainDocument, mockLog));
     }
 
     public void testInvalidToolsRemoveAllOperation()
@@ -138,8 +135,7 @@ public class ToolsInstructionsCleanerTest extends TestCase {
         XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
                 TestUtils.sourceFile(getClass(), "testNodeRemoveOperation"), main);
 
-        assertNull(ToolsInstructionsCleaner.cleanToolsReferences(
-                ManifestMerger2.MergeType.APPLICATION, mainDocument, mockLog));
+        assertNull(ToolsInstructionsCleaner.cleanToolsReferences(mainDocument, mockLog));
     }
 
     public void testNodeReplaceOperation()
@@ -161,8 +157,7 @@ public class ToolsInstructionsCleanerTest extends TestCase {
                 TestUtils.sourceFile(getClass(), "testNodeReplaceOperation"), main);
 
         Element rootElement = mainDocument.getRootNode().getXml();
-        ToolsInstructionsCleaner.cleanToolsReferences(
-                ManifestMerger2.MergeType.APPLICATION, mainDocument, mockLog);
+        ToolsInstructionsCleaner.cleanToolsReferences(mainDocument, mockLog);
 
         Optional<Element> application = getChildElementByName(rootElement, "application");
         assertTrue(application.isPresent());
@@ -190,7 +185,7 @@ public class ToolsInstructionsCleanerTest extends TestCase {
                 TestUtils.sourceFile(getClass(), "testAttributeRemoveOperation"), main);
 
         Element rootElement = mainDocument.getRootNode().getXml();
-        ToolsInstructionsCleaner.cleanToolsReferences(ManifestMerger2.MergeType.APPLICATION, mainDocument, mockLog);
+        ToolsInstructionsCleaner.cleanToolsReferences(mainDocument, mockLog);
 
         Optional<Element> application = getChildElementByName(rootElement, "application");
         assertTrue(application.isPresent());
@@ -222,8 +217,7 @@ public class ToolsInstructionsCleanerTest extends TestCase {
                 TestUtils.sourceFile(getClass(), "testSelectorRemoval"), main);
 
         Element rootElement = mainDocument.getRootNode().getXml();
-        ToolsInstructionsCleaner.cleanToolsReferences(
-                ManifestMerger2.MergeType.APPLICATION, mainDocument, mockLog);
+        ToolsInstructionsCleaner.cleanToolsReferences(mainDocument, mockLog);
 
         Optional<Element> application = getChildElementByName(rootElement, "application");
         assertTrue(application.isPresent());
@@ -253,8 +247,7 @@ public class ToolsInstructionsCleanerTest extends TestCase {
                 TestUtils.sourceFile(getClass(), "testNodeReplaceOperation"), main);
 
         Element rootElement = mainDocument.getRootNode().getXml();
-        ToolsInstructionsCleaner.cleanToolsReferences(
-                ManifestMerger2.MergeType.APPLICATION, mainDocument, mockLog);
+        ToolsInstructionsCleaner.cleanToolsReferences(mainDocument, mockLog);
 
         Optional<Element> application = getChildElementByName(rootElement, "application");
         assertTrue(application.isPresent());
@@ -275,6 +268,6 @@ public class ToolsInstructionsCleanerTest extends TestCase {
                 return Optional.of((Element) item);
             }
         }
-        return Optional.empty();
+        return Optional.absent();
     }
 }

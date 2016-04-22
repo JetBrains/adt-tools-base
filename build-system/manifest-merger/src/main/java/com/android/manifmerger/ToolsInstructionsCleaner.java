@@ -58,15 +58,12 @@ public class ToolsInstructionsCleaner {
      */
     @Nullable
     public static XmlDocument cleanToolsReferences(
-            @NonNull ManifestMerger2.MergeType mergeType,
             @NonNull XmlDocument document,
             @NonNull ILogger logger) {
 
         Preconditions.checkNotNull(document);
         Preconditions.checkNotNull(logger);
-        MergingReport.Result result = cleanToolsReferences(
-                mergeType,
-                document.getRootNode().getXml(),
+        MergingReport.Result result = cleanToolsReferences(document.getRootNode().getXml(),
                 logger);
         return result == MergingReport.Result.SUCCESS
             ? document.reparse()
@@ -75,7 +72,6 @@ public class ToolsInstructionsCleaner {
 
     @NonNull
     private static MergingReport.Result cleanToolsReferences(
-            @NonNull ManifestMerger2.MergeType mergeType,
             @NonNull Element element,
             @NonNull ILogger logger) {
 
@@ -91,7 +87,7 @@ public class ToolsInstructionsCleaner {
                 if (SdkConstants.TOOLS_URI.equals(attribute.getNamespaceURI())) {
                     // we need to special case when the element contained tools:node="remove"
                     // since it also needs to be deleted unless it had a selector.
-                    // if this is tools:node="removeAll", we always delete the element whether or
+                    // if this is ools:node="removeAll", we always delete the element whether or
                     // not there is a tools:selector.
                     boolean hasSelector = namedNodeMap.getNamedItemNS(
                             SdkConstants.TOOLS_URI, "selector") != null;
@@ -111,18 +107,14 @@ public class ToolsInstructionsCleaner {
                             element.getParentNode().removeChild(element);
                         }
                     } else {
-                        // anything else, we just clean the attribute unless we are merging for
-                        // libraries.
-                        if (mergeType != ManifestMerger2.MergeType.LIBRARY) {
-                            element.removeAttributeNS(
-                                    attribute.getNamespaceURI(), attribute.getLocalName());
-                        }
+                        // anything else, we just clean the attribute.
+                        element.removeAttributeNS(
+                                attribute.getNamespaceURI(), attribute.getLocalName());
                     }
                 }
                 // this could also be the xmlns:tools declaration.
                 if (attribute.getNodeName().startsWith(SdkConstants.XMLNS_PREFIX)
-                    && SdkConstants.TOOLS_URI.equals(attribute.getNodeValue())
-                        && mergeType != ManifestMerger2.MergeType.LIBRARY) {
+                    && SdkConstants.TOOLS_URI.equals(attribute.getNodeValue())) {
                     element.removeAttribute(attribute.getNodeName());
                 }
             }
@@ -138,7 +130,7 @@ public class ToolsInstructionsCleaner {
             }
         }
         for (Element childElement : childElements.build()) {
-            if (cleanToolsReferences(mergeType, childElement, logger) == ERROR) {
+            if (cleanToolsReferences(childElement, logger) == ERROR) {
                 return ERROR;
             }
         }
