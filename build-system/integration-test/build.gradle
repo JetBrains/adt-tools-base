@@ -36,6 +36,8 @@ dependencies {
 }
 
 def testEnvironment = [
+    OS: System.env.OS,
+    ProgramW6432: System.env.ProgramW6432,
     PROJECT_BUILD_DIR: project.buildDir,
     CUSTOM_REPO: rootProject.file("../out/repo"),
     CUSTOM_PLUGIN_VERSION: System.env.CUSTOM_PLUGIN_VERSION,

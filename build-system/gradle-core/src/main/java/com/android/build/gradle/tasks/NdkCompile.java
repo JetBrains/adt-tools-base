@@ -264,7 +264,7 @@ public class NdkCompile extends NdkTask {
         StringBuilder sb = new StringBuilder();
 
         sb.append("LOCAL_PATH := $(call my-dir)\n" +
-                "include \\$(CLEAR_VARS)\n\n");
+                "include $(CLEAR_VARS)\n\n");
 
         String moduleName = ndk.getModuleName() != null ? ndk.getModuleName() : getProject().getName();
         if (isForTesting) {
@@ -317,7 +317,7 @@ public class NdkCompile extends NdkTask {
             sb.append("LOCAL_C_INCLUDES += $(TARGET_OBJS)/$(LOCAL_MODULE)\n");
         }
 
-        sb.append("\ninclude \\$(BUILD_SHARED_LIBRARY)\n");
+        sb.append("\ninclude $(BUILD_SHARED_LIBRARY)\n");
 
         Files.write(sb.toString(), makefile, Charsets.UTF_8);
     }
