@@ -147,7 +147,10 @@ public class GradleVersion implements Comparable<GradleVersion>, Serializable {
                         if (matcher.matches()) {
                             previewType = matcher.group(1);
                             if (matcher.groupCount() == 2) {
-                                preview = Integer.parseInt(matcher.group(2));
+                                String group = matcher.group(2);
+                                if (!isNullOrEmpty(group)) {
+                                    preview = Integer.parseInt(group);
+                                }
                             }
                         }
                     }
