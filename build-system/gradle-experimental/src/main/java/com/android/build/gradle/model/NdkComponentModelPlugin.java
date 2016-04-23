@@ -21,6 +21,7 @@ import static com.android.build.gradle.model.ModelConstants.EXTERNAL_BUILD_CONFI
 import static com.android.build.gradle.model.ModelConstants.NATIVE_DEPENDENCIES;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.NativeDependencyLinkage;
 import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.ProductFlavorCombo;
@@ -46,11 +47,13 @@ import com.android.build.gradle.ndk.internal.StlNativeToolSpecification;
 import com.android.build.gradle.ndk.internal.ToolchainConfiguration;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.VariantConfiguration;
+import com.android.builder.model.AndroidProject;
 import com.android.utils.NativeSourceFileExtensions;
 import com.android.utils.StringHelper;
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
+import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -83,6 +86,8 @@ import org.gradle.model.Path;
 import org.gradle.model.RuleSource;
 import org.gradle.model.Validate;
 import org.gradle.model.internal.core.ModelPath;
+import org.gradle.model.internal.core.ModelReference;
+import org.gradle.model.internal.core.ModelRegistrations;
 import org.gradle.model.internal.registry.ModelRegistry;
 import org.gradle.model.internal.type.ModelType;
 import org.gradle.model.internal.type.ModelTypes;
@@ -106,6 +111,7 @@ import org.gradle.platform.base.PlatformContainer;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -137,6 +143,11 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         project.getPluginManager().apply(AndroidComponentModelPlugin.class);
         project.getPluginManager().apply(CPlugin.class);
         project.getPluginManager().apply(CppPlugin.class);
+
+        // Remove this when our models no longer depends on Project.
+        modelRegistry.register(ModelRegistrations
+                .bridgedInstance(ModelReference.of("projectModel", Project.class), project)
+                .descriptor("Model of project.").build());
 
         toolingRegistry.register(new NativeComponentModelBuilder(modelRegistry));
     }
@@ -556,14 +567,28 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
             }
         }
 
+        @Model("androidInjectedBuildAbi")
+        public static String getBuildAbi(Project project) {
+            return Strings.nullToEmpty(AndroidGradleOptions.getBuildTargetAbi(project));
+        }
+
         @Finalize
-        public static void attachNativeTasksToAndroidBinary(ModelMap<AndroidBinaryInternal> binaries) {
+        public static void attachNativeTasksToAndroidBinary(
+                ModelMap<AndroidBinaryInternal> binaries,
+                @Path("androidInjectedBuildAbi") final String buildAbi) {
             binaries.afterEach(new Action<AndroidBinaryInternal>() {
                 @Override
                 public void execute(AndroidBinaryInternal binary) {
+                    // Only build the first supported ABI of the device.
+                    String deviceAbi = buildAbi.isEmpty()
+                            ? null
+                            : Iterables.getFirst(Arrays.asList(buildAbi.split(",")), null);
                     for (NativeLibraryBinarySpec nativeBinary : binary.getNativeBinaries()) {
-                        if (binary.getTargetAbi().isEmpty() || binary.getTargetAbi().contains(
-                                nativeBinary.getTargetPlatform().getName())) {
+                        List<String> targetAbi = binary.getTargetAbi();
+                        if ((deviceAbi == null
+                                || nativeBinary.getTargetPlatform().getName().equals(deviceAbi))
+                                && (targetAbi.isEmpty()
+                                || targetAbi.contains(nativeBinary.getTargetPlatform().getName()))) {
                             binary.getBuildTask().dependsOn(
                                     NdkNamingScheme.getNdkBuildTaskName(nativeBinary));
                         }

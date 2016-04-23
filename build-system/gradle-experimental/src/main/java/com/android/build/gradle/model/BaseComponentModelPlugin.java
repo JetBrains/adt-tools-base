@@ -203,11 +203,6 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
         project.getPlugins().apply(NdkComponentModelPlugin.class);
 
-        // Remove this when our models no longer depends on Project.
-        modelRegistry.register(ModelRegistrations
-                .bridgedInstance(ModelReference.of("projectModel", Project.class), project)
-                .descriptor("Model of project.").build());
-
         toolingRegistry.register(new ComponentModelBuilder(modelRegistry));
 
         // Inserting the ToolingModelBuilderRegistry into the model so that it can be use to create
