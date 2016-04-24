@@ -381,7 +381,14 @@ public class GradleVersion implements Comparable<GradleVersion>, Serializable {
                 if (text.startsWith(PLUS)) {
                     throw new NumberFormatException("Version segment cannot start with +");
                 }
-                mValue = Integer.parseInt(text);
+                int value;
+                try {
+                    value = Integer.parseInt(text);
+                }
+                catch (NumberFormatException e) {
+                    value = 0;
+                }
+                mValue = value;
             }
         }
 

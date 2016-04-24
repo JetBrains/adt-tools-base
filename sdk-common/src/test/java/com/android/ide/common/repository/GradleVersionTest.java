@@ -315,21 +315,6 @@ public class GradleVersionTest {
         assertEquals(6, sixth.getValue());
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testInvalidVersion1() {
-        GradleVersion.parse("a");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testInvalidVersion2() {
-        GradleVersion.parse("a.b");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testInvalidVersion3() {
-        GradleVersion.parse("a.b.c");
-    }
-
     @Test
     public void testCompare() {
         assertEquals(0, GradleVersion.parse("1.0.0").compareTo("1.0.0"));
@@ -436,13 +421,21 @@ public class GradleVersionTest {
         assertEquals(0, version.getMicro());
     }
 
-
     @Test
     public void testParseArbitraryQualifiers2() {
         GradleVersion version = GradleVersion.parse("1.2.3-incubating");
         assertEquals(1, version.getMajor());
         assertEquals(2, version.getMinor());
         assertEquals(3, version.getMicro());
+    }
+
+    @Test
+    public void testParseArbitraryQualifiers3() {
+        GradleVersion version = GradleVersion.parse("r09");
+        assertEquals(0, version.getMajor());
+        assertEquals(0, version.getMinor());
+        assertEquals(0, version.getMicro());
+        assertEquals("r09", version.toString());
     }
 
     @Test(expected = IllegalArgumentException.class)
