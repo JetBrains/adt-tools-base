@@ -18,7 +18,7 @@ package com.android.resources;
 
 /**
  * Screen Ratio enum.
- * <p/>This is used in the manifest in the uses-configuration node and in the resource folder names.
+ * <p>This is used in the manifest in the uses-configuration node and in the resource folder names.
  */
 public enum ScreenRatio implements ResourceEnum {
     NOTLONG("notlong", "Not Long", "Short screen aspect ratio"), //$NON-NLS-1$

@@ -18,7 +18,7 @@ package com.android.resources;
 
 /**
  * Touch screen enum.
- * <p/>This is used in the manifest in the uses-configuration node and in the resource folder names.
+ * <p>This is used in the manifest in the uses-configuration node and in the resource folder names.
  */
 public enum TouchScreen implements ResourceEnum {
     NOTOUCH("notouch", "No Touch", "No-touch screen"), //$NON-NLS-1$

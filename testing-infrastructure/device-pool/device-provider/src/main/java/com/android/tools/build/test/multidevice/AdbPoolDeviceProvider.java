@@ -30,7 +30,7 @@ import java.util.Set;
  *     <li>Return the devices as specified in the comma-separated com.android.test.devicepool.serial
  *         list. The devices should have already been reserved.</li>
  * </ol>
- * @see {@link com.android.tools.build.test.multidevice.DevicePoolPlugin}
+ * {@link com.android.tools.build.test.multidevice.DevicePoolPlugin}
  */
 public class AdbPoolDeviceProvider extends DeviceProvider {
 

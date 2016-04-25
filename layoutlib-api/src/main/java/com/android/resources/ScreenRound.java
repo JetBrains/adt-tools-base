@@ -18,7 +18,7 @@ package com.android.resources;
 
 /**
  * Screen Round enum.
- * <p/>This is used in the resource folder names.
+ * <p>This is used in the resource folder names.
  */
 public enum ScreenRound implements ResourceEnum {
     NOTROUND("notround", "Not Round", "Not Round screen"), //$NON-NLS-1$

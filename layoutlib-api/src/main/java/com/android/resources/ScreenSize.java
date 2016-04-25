@@ -20,7 +20,7 @@ import com.android.annotations.Nullable;
 
 /**
  * Screen size enum.
- * <p/>This is used in the manifest in the uses-configuration node and in the resource folder names.
+ * <p>This is used in the manifest in the uses-configuration node and in the resource folder names.
  */
 public enum ScreenSize implements ResourceEnum {
     SMALL("small", "Small", "Small Screen"), //$NON-NLS-1$

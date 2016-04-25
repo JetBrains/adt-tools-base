@@ -59,7 +59,7 @@ public interface ILayoutResult {
 
     /**
      * Returns the error message.
-     * <p/>Only valid when {@link #getSuccess()} returns {@link #ERROR}
+     * <p>Only valid when {@link #getSuccess()} returns {@link #ERROR}
      */
     String getErrorMessage();
 

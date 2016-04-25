@@ -18,7 +18,7 @@ package com.android.resources;
 
 /**
  * Navigation enum.
- * <p/>This is used in the manifest in the uses-configuration node and in the resource folder names.
+ * <p>This is used in the manifest in the uses-configuration node and in the resource folder names.
  */
 public enum Navigation implements ResourceEnum {
     NONAV("nonav", "None", "No navigation"), //$NON-NLS-1$

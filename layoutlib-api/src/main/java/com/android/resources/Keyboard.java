@@ -18,7 +18,7 @@ package com.android.resources;
 
 /**
  * Keyboard enum.
- * <p/>This is used in the manifest in the uses-configuration node and in the resource folder names.
+ * <p>This is used in the manifest in the uses-configuration node and in the resource folder names.
  */
 public enum Keyboard implements ResourceEnum {
     NOKEY("nokeys", null, "No Keys", "No keyboard"), //$NON-NLS-1$

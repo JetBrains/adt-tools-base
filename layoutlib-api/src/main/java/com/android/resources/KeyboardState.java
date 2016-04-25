@@ -18,7 +18,7 @@ package com.android.resources;
 
 /**
  * Keyboard state enum.
- * <p/>This is used in the manifest in the uses-configuration node and in the resource folder names.
+ * <p>This is used in the manifest in the uses-configuration node and in the resource folder names.
  */
 public enum KeyboardState implements ResourceEnum {
     EXPOSED("keysexposed", "Exposed", "Exposed keyboard"), //$NON-NLS-1$
