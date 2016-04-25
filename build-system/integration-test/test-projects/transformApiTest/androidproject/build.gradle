@@ -2,7 +2,7 @@ apply from: "../../commonHeader.gradle"
 apply from: '../../commonLocalRepo.gradle'
 buildscript { apply from: "../../commonBuildScript.gradle" }
 
-rootProject.ext.buildToolsVersion = '23.0.0'
+rootProject.ext.buildToolsVersion = '23.0.2'
 rootProject.ext.latestCompileSdk = 23
 
 buildscript {
