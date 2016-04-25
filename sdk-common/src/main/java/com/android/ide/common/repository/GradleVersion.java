@@ -147,7 +147,10 @@ public class GradleVersion implements Comparable<GradleVersion>, Serializable {
                         if (matcher.matches()) {
                             previewType = matcher.group(1);
                             if (matcher.groupCount() == 2) {
-                                preview = Integer.parseInt(matcher.group(2));
+                                String group = matcher.group(2);
+                                if (!isNullOrEmpty(group)) {
+                                    preview = Integer.parseInt(group);
+                                }
                             }
                         }
                     }
@@ -378,7 +381,14 @@ public class GradleVersion implements Comparable<GradleVersion>, Serializable {
                 if (text.startsWith(PLUS)) {
                     throw new NumberFormatException("Version segment cannot start with +");
                 }
-                mValue = Integer.parseInt(text);
+                int value;
+                try {
+                    value = Integer.parseInt(text);
+                }
+                catch (NumberFormatException e) {
+                    value = 0;
+                }
+                mValue = value;
             }
         }
 
