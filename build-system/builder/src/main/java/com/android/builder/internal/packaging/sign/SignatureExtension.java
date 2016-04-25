@@ -259,9 +259,9 @@ public class SignatureExtension {
         mCertificate = certificate;
         mPrivateKey = privateKey;
 
-        mDigestAlgorithm = DigestAlgorithm.findBest(minSdkVersion);
-        mSignatureAlgorithm = SignatureAlgorithm.fromKeyAlgorithm(privateKey.getAlgorithm(),
-                minSdkVersion);
+        mSignatureAlgorithm =
+                SignatureAlgorithm.fromKeyAlgorithm(privateKey.getAlgorithm(), minSdkVersion);
+        mDigestAlgorithm = DigestAlgorithm.findBest(minSdkVersion, mSignatureAlgorithm);
         mMessageDigest = MessageDigest.getInstance(mDigestAlgorithm.messageDigestName);
     }
 

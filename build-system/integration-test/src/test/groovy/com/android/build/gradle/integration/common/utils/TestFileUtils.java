@@ -82,7 +82,7 @@ public class TestFileUtils {
             @NonNull String replace) throws IOException {
         String content = Files.toString(file, Charset.defaultCharset());
         String newContent = content.replaceAll(search, replace);
-        assertNotEquals("No match in file.", content, newContent);
+        assertNotEquals("No match in file", content, newContent);
         Files.write(newContent, file, Charset.defaultCharset());
     }
 
