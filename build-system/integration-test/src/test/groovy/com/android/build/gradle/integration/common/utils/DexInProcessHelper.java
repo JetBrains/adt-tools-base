@@ -22,7 +22,7 @@ import java.io.IOException;
 public class DexInProcessHelper {
     private DexInProcessHelper() {}
 
-    public static void enableDexInProcess(File buildFile) throws IOException {
-        TestFileUtils.appendToFile(buildFile, "\nandroid.dexOptions.dexInProcess = true\n");
+    public static void disableDexInProcess(File buildFile) throws IOException {
+        TestFileUtils.appendToFile(buildFile, "\nandroid.dexOptions.dexInProcess = false\n");
     }
 }
