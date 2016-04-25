@@ -134,7 +134,7 @@ public class JarSigningTest {
         ZFile zf2 = new ZFile(zipFile);
         ManifestGenerationExtension me = new ManifestGenerationExtension("Merry", "Christmas");
         me.register(zf2);
-        new SignatureExtension(me, 20, p.getSecond(), p.getFirst()).register();
+        new SignatureExtension(me, 21, p.getSecond(), p.getFirst()).register();
         zf2.close();
 
         ZFile zf3 = new ZFile(zipFile);

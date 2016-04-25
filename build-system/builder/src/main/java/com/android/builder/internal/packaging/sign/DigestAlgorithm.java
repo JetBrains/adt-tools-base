@@ -17,7 +17,6 @@
 package com.android.builder.internal.packaging.sign;
 
 import com.android.annotations.NonNull;
-import com.google.common.base.Verify;
 
 /**
  * Message digest algorithms.
@@ -33,22 +32,24 @@ public enum DigestAlgorithm {
      * Digest-Algorithms attribute, only support SHA or SHA1 algorithm names in .SF and
      * MANIFEST.MF attributes.
      */
-    SHA1(0, 1, "SHA1", "SHA-1"),
+    SHA1("SHA1", "SHA-1"),
 
     /**
      * SHA-256 digest.
      */
-    SHA256(18, 2, "SHA-256", "SHA-256");
+    SHA256("SHA-256", "SHA-256");
 
     /**
-     * The minimum SDK version this algorithm can be used with.
+     * API level which supports {@link #SHA256} with {@link SignatureAlgorithm#RSA}.
      */
-    public final int minSdk;
+    public static final int API_SHA_256_RSA = 18;
 
     /**
-     * The priority of the algorithm; the higher the priority, the better the algorithm.
+     * API level which supports {@link #SHA256} for all {@link SignatureAlgorithm}s.
+     *
+     * <p>Before that, SHA256 can only be used with RSA.
      */
-    public final int priority;
+    public static final int API_SHA_256_ALL_ALGORITHMS = 21;
 
     /**
      * Name of algorithm for message digest.
@@ -71,16 +72,10 @@ public enum DigestAlgorithm {
     /**
      * Creates a digest algorithm.
      *
-     * @param minSdk the minimum SDK version this algorithm can be used with
-     * @param priority the priority of the algorithm; the higher the priority, the better the
-     * algorithm
      * @param attributeName attribute name in the signature file
      * @param messageDigestName name of algorithm for message digest
      */
-    DigestAlgorithm(int minSdk, int priority, @NonNull String attributeName,
-            @NonNull String messageDigestName) {
-        this.minSdk = minSdk;
-        this.priority = priority;
+    DigestAlgorithm(@NonNull String attributeName, @NonNull String messageDigestName) {
         this.messageDigestName = messageDigestName;
         this.entryAttributeName = attributeName + "-Digest";
         this.manifestAttributeName = attributeName + "-Digest-Manifest";
@@ -90,19 +85,21 @@ public enum DigestAlgorithm {
      * Finds the best digest algorithm applicable for a given SDK.
      *
      * @param minSdk the minimum SDK
+     * @param signatureAlgorithm signature algorithm used
      * @return the best algorithm found
      */
     @NonNull
-    public static DigestAlgorithm findBest(int minSdk) {
-        DigestAlgorithm bestSoFar = null;
-        for (DigestAlgorithm da : values()) {
-            if (da.minSdk <= minSdk && (bestSoFar == null || bestSoFar.priority < da.priority)) {
-                bestSoFar = da;
-            }
+    public static DigestAlgorithm findBest(
+            int minSdk,
+            @NonNull SignatureAlgorithm signatureAlgorithm) {
+        if (signatureAlgorithm == SignatureAlgorithm.RSA) {
+            // PKCS #7 RSA signatures with SHA-256 are
+            // supported only since API Level 18 (JB MR2).
+            return minSdk >= API_SHA_256_RSA ? SHA256 : SHA1;
+        } else {
+            // PKCS #7 ECDSA and DSA signatures with SHA-256
+            // are supported only since API Level 21 (Android L).
+            return minSdk >= API_SHA_256_ALL_ALGORITHMS ? SHA256 : SHA1;
         }
-
-        Verify.verifyNotNull(bestSoFar);
-        assert bestSoFar != null;
-        return bestSoFar;
     }
 }

@@ -23,6 +23,8 @@ import com.android.build.gradle.integration.common.runner.FilterableParameterize
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.build.gradle.integration.common.utils.SigningConfigHelper
+import com.android.builder.internal.packaging.sign.DigestAlgorithm
+import com.android.builder.internal.packaging.sign.SignatureAlgorithm
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.SigningConfig
@@ -61,15 +63,22 @@ class SigningTest {
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> data() {
-        def parameters = [
-                ["rsa_keystore.jks", "CERT.RSA", 1] as Object[],
-        ]
+        def parameters = [[
+                "rsa_keystore.jks",
+                "CERT.RSA",
+                SignatureAlgorithm.RSA.minSdkVersion] as Object[]]
 
         // These are not available on 1.6. To test, run the following (with proper JAVA_HOME):
         // JAVA_FOR_TESTS=1.8 ./gradlew :b:i:testPrebuilts --tests=*.SigningTest
         if (!System.getProperty("java.version").startsWith("1.6")) {
-            parameters.add(["dsa_keystore.jks", "CERT.DSA", 1] as Object[])
-            parameters.add(["ec_keystore.jks", "CERT.EC", 18] as Object[])
+            parameters.add([
+                    "dsa_keystore.jks",
+                    "CERT.DSA",
+                    SignatureAlgorithm.DSA.minSdkVersion] as Object[])
+            parameters.add([
+                    "ec_keystore.jks",
+                    "CERT.EC",
+                    SignatureAlgorithm.ECDSA.minSdkVersion] as Object[])
         }
 
         return parameters
@@ -140,7 +149,7 @@ class SigningTest {
 
     }
 
-    private void createKeystoreFile(String resourceName, File keystore) {
+    private static void createKeystoreFile(String resourceName, File keystore) {
         def keystoreBytes =
                 Resources.toByteArray(
                         Resources.getResource(SigningTest, "SigningTest/" + resourceName))
@@ -226,33 +235,74 @@ class SigningTest {
     public void 'SHA algorithm change'() throws Exception {
         File apk = project.getApk("debug")
 
-        if (minSdkVersion < 18) {
+        if (minSdkVersion < DigestAlgorithm.API_SHA_256_RSA) {
             project.execute("assembleDebug")
 
             assertThatApk(apk).containsFileWithMatch("META-INF/CERT.SF", "SHA1-Digest");
+            assertThatApk(apk).containsFileWithoutContent("META-INF/CERT.SF", "SHA-1-Digest");
             assertThatApk(apk).containsFileWithoutContent("META-INF/CERT.SF", "SHA-256-Digest");
             assertThatApk(apk).containsFileWithMatch("META-INF/MANIFEST.MF", "SHA1-Digest");
+            assertThatApk(apk).containsFileWithoutContent("META-INF/MANIFEST.MF", "SHA-1-Digest");
             assertThatApk(apk).containsFileWithoutContent("META-INF/MANIFEST.MF", "SHA-256-Digest");
 
-            TestFileUtils.searchAndReplace(project.buildFile, "minSdkVersion \\d+", "minSdkVersion 18")
+            TestFileUtils.searchAndReplace(
+                    project.buildFile,
+                    "minSdkVersion \\d+",
+                    "minSdkVersion $DigestAlgorithm.API_SHA_256_RSA")
         }
+
+        project.execute("assembleDebug")
+
+        if (certEntryName.endsWith(SignatureAlgorithm.RSA.name())) {
+            assertThatApk(apk).containsFileWithMatch("META-INF/CERT.SF", "SHA-256-Digest");
+            assertThatApk(apk).containsFileWithoutContent("META-INF/CERT.SF", "SHA1-Digest");
+            assertThatApk(apk).containsFileWithoutContent("META-INF/CERT.SF", "SHA-1-Digest");
+            assertThatApk(apk).containsFileWithMatch("META-INF/MANIFEST.MF", "SHA-256-Digest");
+            assertThatApk(apk).containsFileWithoutContent("META-INF/MANIFEST.MF", "SHA-1-Digest");
+        } else {
+            assertThatApk(apk).containsFileWithMatch("META-INF/CERT.SF", "SHA1-Digest");
+            assertThatApk(apk).containsFileWithoutContent("META-INF/CERT.SF", "SHA-1-Digest");
+            assertThatApk(apk).containsFileWithoutContent("META-INF/CERT.SF", "SHA-256-Digest");
+            assertThatApk(apk).containsFileWithMatch("META-INF/MANIFEST.MF", "SHA1-Digest");
+            assertThatApk(apk).containsFileWithoutContent("META-INF/MANIFEST.MF", "SHA-1-Digest");
+            assertThatApk(apk).containsFileWithoutContent("META-INF/MANIFEST.MF", "SHA-256-Digest");
+        }
+
+        TestFileUtils.searchAndReplace(
+                project.buildFile,
+                "minSdkVersion \\d+",
+                "minSdkVersion $DigestAlgorithm.API_SHA_256_ALL_ALGORITHMS")
 
         project.execute("assembleDebug")
 
         assertThatApk(apk).containsFileWithMatch("META-INF/CERT.SF", "SHA-256-Digest");
         assertThatApk(apk).containsFileWithoutContent("META-INF/CERT.SF", "SHA1-Digest");
+        assertThatApk(apk).containsFileWithoutContent("META-INF/CERT.SF", "SHA-1-Digest");
         assertThatApk(apk).containsFileWithMatch("META-INF/MANIFEST.MF", "SHA-256-Digest");
-        assertThatApk(apk).containsFileWithoutContent("META-INF/MANIFEST.MF", "SHA1-Digest");
+        assertThatApk(apk).containsFileWithoutContent("META-INF/MANIFEST.MF", "SHA-1-Digest");
     }
 
     @Test
     @Category(DeviceTests)
     public void 'SHA algorithm change - on device'() throws Exception {
+        project.execute("uninstallAll")
         project.executeConnectedCheck()
 
-        if (minSdkVersion < 18) {
-            TestFileUtils.searchAndReplace(project.buildFile, "minSdkVersion \\d+", "minSdkVersion 18")
+        if (minSdkVersion < DigestAlgorithm.API_SHA_256_RSA) {
+            TestFileUtils.searchAndReplace(
+                    project.buildFile,
+                    "minSdkVersion \\d+",
+                    "minSdkVersion $DigestAlgorithm.API_SHA_256_RSA")
+            project.execute("uninstallAll")
             project.executeConnectedCheck()
         }
+
+        // TODO: How to skip this if running against a KitKat phone?
+        TestFileUtils.searchAndReplace(
+                project.buildFile,
+                "minSdkVersion \\d+",
+                "minSdkVersion $DigestAlgorithm.API_SHA_256_ALL_ALGORITHMS")
+        project.execute("uninstallAll")
+        project.executeConnectedCheck()
     }
 }
