@@ -21,7 +21,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
 
 import com.android.SdkConstants;
@@ -33,11 +32,12 @@ import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.shrinker.parser.FilterSpecification;
+import com.android.ide.common.internal.WaitableExecutor;
 import com.android.sdklib.SdkVersionInfo;
 import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
 import org.junit.After;
@@ -90,6 +90,8 @@ public abstract class AbstractShrinkerTest {
 
     protected int mExpectedWarnings;
 
+    protected FullRunShrinker<String> mFullRunShrinker;
+
     @Before
     public void setUp() throws Exception {
         mTestPackageDir = tmpDir.newFolder("app-classes", "test");
@@ -111,6 +113,12 @@ public abstract class AbstractShrinkerTest {
                 Mockito.any(Format.class))).thenReturn(mOutDir);
 
         mInputs = ImmutableList.of(transformInput);
+
+        mFullRunShrinker = new FullRunShrinker<>(
+                WaitableExecutor.useGlobalSharedThreadPool(),
+                JavaSerializationShrinkerGraph.empty(mIncrementalDir),
+                getPlatformJars(),
+                mShrinkerLogger);
     }
 
     @Before
@@ -232,5 +240,15 @@ public abstract class AbstractShrinkerTest {
         ProguardConfig config = new ProguardConfig();
         config.parse(rules);
         return new ProguardFlagsKeepRules(config.getFlags(), mShrinkerLogger);
+    }
+
+    protected void run(KeepRules keepRules) throws IOException {
+        mFullRunShrinker.run(
+                mInputs,
+                Collections.<TransformInput>emptyList(),
+                mOutput,
+                ImmutableMap.of(
+                        AbstractShrinker.CounterSet.SHRINK, keepRules),
+                false);
     }
 }

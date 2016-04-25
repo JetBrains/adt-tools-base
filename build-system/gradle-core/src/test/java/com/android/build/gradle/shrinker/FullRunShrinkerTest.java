@@ -16,13 +16,10 @@
 
 package com.android.build.gradle.shrinker;
 
-import com.android.annotations.NonNull;
-import com.android.build.api.transform.TransformInput;
 import com.android.build.gradle.shrinker.TestClasses.InnerClasses;
 import com.android.build.gradle.shrinker.TestClasses.Interfaces;
 import com.android.build.gradle.shrinker.TestClasses.Reflection;
 import com.android.ide.common.internal.WaitableExecutor;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
 
 import org.junit.Before;
@@ -30,28 +27,11 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
 
 /**
  * Tests for {@link FullRunShrinker}.
  */
 public class FullRunShrinkerTest extends AbstractShrinkerTest {
-
-    private FullRunShrinker<String> mShrinker;
-
-    @Before
-    public void createShrinker() throws Exception {
-        mShrinker = new FullRunShrinker<>(
-                WaitableExecutor.<Void>useGlobalSharedThreadPool(),
-                buildGraph(),
-                getPlatformJars(),
-                mShrinkerLogger);
-    }
-
-    @NonNull
-    private ShrinkerGraph<String> buildGraph() throws IOException {
-        return JavaSerializationShrinkerGraph.empty(mIncrementalDir);
-    }
 
     @Test
     public void simple_oneClass() throws Exception {
@@ -392,69 +372,6 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
         assertClassSkipped("MyCharSequence");
         assertClassSkipped("MyInterface");
         assertClassSkipped("MyImpl");
-    }
-
-    @Test
-    public void interfaces_keepRules_interfaceOnInterface() throws Exception {
-        // Given:
-        Files.write(Interfaces.main(), new File(mTestPackageDir, "Main.class"));
-        Files.write(Interfaces.myCharSequence(), new File(mTestPackageDir, "MyCharSequence.class"));
-        Files.write(Interfaces.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
-        Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
-        Files.write(Interfaces.namedRunnable(), new File(mTestPackageDir, "NamedRunnable.class"));
-        Files.write(Interfaces.namedRunnableImpl(), new File(mTestPackageDir, "NamedRunnableImpl.class"));
-        Files.write(Interfaces.doesSomething(), new File(mTestPackageDir, "DoesSomething.class"));
-        Files.write(
-                Interfaces.implementationFromSuperclass(),
-                new File(mTestPackageDir, "ImplementationFromSuperclass.class"));
-
-        // When:
-        run(parseKeepRules("-keep interface test/MyInterface"));
-
-        // Then:
-        assertMembersLeft("MyInterface");
-    }
-
-    @Test
-    public void interfaces_keepRules_interfaceOnClass() throws Exception {
-        // Given:
-        Files.write(Interfaces.main(), new File(mTestPackageDir, "Main.class"));
-        Files.write(Interfaces.myCharSequence(), new File(mTestPackageDir, "MyCharSequence.class"));
-        Files.write(Interfaces.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
-        Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
-        Files.write(Interfaces.namedRunnable(), new File(mTestPackageDir, "NamedRunnable.class"));
-        Files.write(Interfaces.namedRunnableImpl(), new File(mTestPackageDir, "NamedRunnableImpl.class"));
-        Files.write(Interfaces.doesSomething(), new File(mTestPackageDir, "DoesSomething.class"));
-        Files.write(
-                Interfaces.implementationFromSuperclass(),
-                new File(mTestPackageDir, "ImplementationFromSuperclass.class"));
-
-        // When:
-        run(parseKeepRules("-keep interface test/Main"));
-
-        // Then:
-        assertClassSkipped("Main");
-    }
-
-    @Test
-    public void interfaces_keepRules_atInterfaceOnInterface() throws Exception {
-        // Given:
-        Files.write(Interfaces.main(), new File(mTestPackageDir, "Main.class"));
-        Files.write(Interfaces.myCharSequence(), new File(mTestPackageDir, "MyCharSequence.class"));
-        Files.write(Interfaces.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
-        Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
-        Files.write(Interfaces.namedRunnable(), new File(mTestPackageDir, "NamedRunnable.class"));
-        Files.write(Interfaces.namedRunnableImpl(), new File(mTestPackageDir, "NamedRunnableImpl.class"));
-        Files.write(Interfaces.doesSomething(), new File(mTestPackageDir, "DoesSomething.class"));
-        Files.write(
-                Interfaces.implementationFromSuperclass(),
-                new File(mTestPackageDir, "ImplementationFromSuperclass.class"));
-
-        // When:
-        run(parseKeepRules("-keep @interface test/MyInterface"));
-
-        // Then:
-        assertClassSkipped("MyInterface");
     }
 
     @Test
@@ -1421,13 +1338,4 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
         run(new TestKeepRules(className, methods));
     }
 
-    private void run(KeepRules keepRules) throws IOException {
-        mShrinker.run(
-                mInputs,
-                Collections.<TransformInput>emptyList(),
-                mOutput,
-                ImmutableMap.of(
-                        AbstractShrinker.CounterSet.SHRINK, keepRules),
-                false);
-    }
 }
