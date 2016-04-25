@@ -195,7 +195,17 @@ public class GrammarActions {
 
     @NonNull
     static String getSignature(@NonNull String name, int dim) {
+        return getSignature(name, dim, false);
+    }
+
+    @NonNull
+    static String getSignature(@NonNull String name, int dim, boolean negator) {
         StringBuilder sig = new StringBuilder();
+
+        if (negator) {
+            // Use negative lookahead to discard matches.
+            sig.append("(?!");
+        }
 
         for (int i = 0; i < dim; i++) {
             sig.append("\\[");
@@ -244,6 +254,12 @@ public class GrammarActions {
             default:
                 sig.append("L").append(convertNameToPattern(name)).append(";");
                 break;
+        }
+
+        if (negator) {
+            // Close the negative lookahead section and match anything that didn't match the
+            // negated part.
+            sig.append(").*");
         }
 
         return sig.toString();

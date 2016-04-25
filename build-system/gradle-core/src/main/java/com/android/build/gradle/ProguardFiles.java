@@ -17,13 +17,14 @@
 package com.android.build.gradle;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.VisibleForTesting;
 import com.android.builder.Version;
 import com.android.builder.model.AndroidProject;
 import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
-import com.google.common.io.Resources;
+
+import org.gradle.api.Project;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,14 +32,13 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 
-import org.gradle.api.Project;
-
 /**
  * Deals with the default ProGuard files for Gradle.
  */
 public class ProguardFiles {
 
-    private static final ImmutableSet<String> DEFAULT_PROGUARD_WHITELIST =
+    @VisibleForTesting
+    public static final ImmutableSet<String> DEFAULT_PROGUARD_WHITELIST =
             ImmutableSet.of("proguard-android.txt", "proguard-android-optimize.txt");
 
     /**
@@ -56,31 +56,36 @@ public class ProguardFiles {
      * @param project used to determine the output location.
      */
     public static File getDefaultProguardFile(@NonNull String name, @NonNull Project project) {
-        if (DEFAULT_PROGUARD_WHITELIST.contains(name)) {
-            File proguardFile = FileUtils.join(
-                    project.getRootProject().getBuildDir(),
-                    AndroidProject.FD_INTERMEDIATES,
-                    "proguard-files",
-                    name + "-" + Version.ANDROID_GRADLE_PLUGIN_VERSION);
+        File proguardFile = FileUtils.join(
+                project.getRootProject().getBuildDir(),
+                AndroidProject.FD_INTERMEDIATES,
+                "proguard-files",
+                name + "-" + Version.ANDROID_GRADLE_PLUGIN_VERSION);
 
+        if (DEFAULT_PROGUARD_WHITELIST.contains(name)) {
             if (!proguardFile.exists()) {
-                try {
-                    Files.createParentDirs(proguardFile);
-                    URL proguardURL = ProguardFiles.class.getResource(name);
-                    URLConnection urlConnection = proguardURL.openConnection();
-                    urlConnection.setUseCaches(false);
-                    try (InputStream is = urlConnection.getInputStream()) {
-                        Files.asByteSink(proguardFile).writeFrom(is);
-                    }
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                extractBundledProguardFile(name, proguardFile);
             }
             return proguardFile;
         } else {
             throw new RuntimeException("User supplied default proguard base extension "
                     + "name is unsupported. Valid values are: "
                     + DEFAULT_PROGUARD_WHITELIST);
+        }
+    }
+
+    @VisibleForTesting
+    public static void extractBundledProguardFile(@NonNull String name, File proguardFile) {
+        try {
+            Files.createParentDirs(proguardFile);
+            URL proguardURL = ProguardFiles.class.getResource(name);
+            URLConnection urlConnection = proguardURL.openConnection();
+            urlConnection.setUseCaches(false);
+            try (InputStream is = urlConnection.getInputStream()) {
+                Files.asByteSink(proguardFile).writeFrom(is);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
