@@ -18,13 +18,9 @@ package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.AndroidGradleOptions;
 import com.android.builder.model.AndroidProject;
 import com.android.sdklib.AndroidVersion;
 import com.google.common.base.Strings;
-
-import org.gradle.api.Project;
-import org.gradle.api.logging.Logger;
 
 import java.util.Locale;
 
@@ -39,22 +35,37 @@ public enum InstantRunPatchingPolicy {
      * non incremental build or the last build that contained changes identified by the verifier as
      * incompatible.
      */
-    PRE_LOLLIPOP,
+    PRE_LOLLIPOP(DexPackagingPolicy.STANDARD),
 
     /**
-     * For Lollipop and above, the application will be split in shards of dex files upon initial
+     * For Lollipop and before N, the application will be split in shards of dex files upon initial
      * build and packaged as a native multi dex application. Each incremental changes will trigger
      * rebuilding the affected shard dex files. Such dex files will be pushed on the device using
      * the embedded micro-server and installed by it.
      */
-    MULTI_DEX,
+    MULTI_DEX(DexPackagingPolicy.INSTANT_RUN_SHARDS_IN_SINGLE_APK),
 
     /**
-     * For Lollipop and above, each shard dex file described above will be packaged in a single pure
+     * For N and above, each shard dex file described above will be packaged in a single pure
      * split APK that will be pushed and installed on the device using adb install-multiple
      * commands.
      */
-    MULTI_APK;
+    MULTI_APK(DexPackagingPolicy.INSTANT_RUN_MULTI_APK);
+
+    private final DexPackagingPolicy dexPatchingPolicy;
+
+    InstantRunPatchingPolicy(DexPackagingPolicy dexPatchingPolicy) {
+        this.dexPatchingPolicy = dexPatchingPolicy;
+    }
+
+    /**
+     * Returns the dex packaging policy for this patching policy. There can be variations depending
+     * on the target platforms.
+     * @return the desired dex packaging policy for dex files
+     */
+    public DexPackagingPolicy getDexPatchingPolicy() {
+        return dexPatchingPolicy;
+    }
 
     /**
      * Returns the patching policy following the {@link AndroidProject#PROPERTY_BUILD_API} value
@@ -73,8 +84,10 @@ public enum InstantRunPatchingPolicy {
         if (version.compareTo(AndroidVersion.ART_RUNTIME) < 0) {
             return PRE_LOLLIPOP;
         } else {
-            // whe dealing with Lollipop and above, by default, we use MULTI_DEX.
-            InstantRunPatchingPolicy defaultModeForArchitecture = MULTI_DEX;
+            // whe dealing with Lollipop or Marshmallow, by default, we use MULTI_DEX
+            // , but starting with 24, use MULT_APK
+            InstantRunPatchingPolicy defaultModeForArchitecture =
+                    version.getFeatureLevel() < 24 ? MULTI_DEX : MULTI_APK;
 
             if (Strings.isNullOrEmpty(coldswapMode)) {
                 return defaultModeForArchitecture;
@@ -85,13 +98,9 @@ public enum InstantRunPatchingPolicy {
                 case MULTIAPK: return MULTI_APK;
                 case MULTIDEX: return MULTI_DEX;
                 case AUTO:
-                    if (version.getApiLevel() < 23) {
-                        return MULTI_DEX;
-                    } else {
-                        return MULTI_APK;
-                    }
+                    return defaultModeForArchitecture;
                 case DEFAULT:
-                    return MULTI_DEX;
+                    return defaultModeForArchitecture;
                 default:
                     throw new RuntimeException("Cold-swap case not handled " + coldswap);
             }

@@ -34,6 +34,8 @@ import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.api.transform.Transform;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.AndroidGradleOptions;
+import com.android.build.gradle.internal.incremental.DexPackagingPolicy;
+import com.android.builder.model.OptionalCompilationStep;
 import com.android.build.gradle.ProguardFiles;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
@@ -2210,22 +2212,11 @@ public abstract class TaskManager {
             final VariantOutputScope variantOutputScope = variantOutputData.getScope();
 
             final String outputName = variantOutputData.getFullName();
-            InstantRunPatchingPolicy instantRunPatchingPolicy =
+            InstantRunPatchingPolicy patchingPolicy =
                     variantScope.getInstantRunBuildContext().getPatchingPolicy();
 
-            // when building for instant run, never puts the user's code in the APK directly.
-            PackageAndroidArtifact.DexPackagingPolicy dexPackagingPolicy =
-                     incrementalMode == IncrementalMode.NONE
-                            || variantScope.getInstantRunBuildContext().getPatchingPolicy()
-                                    == InstantRunPatchingPolicy.PRE_LOLLIPOP
-                            ? PackageAndroidArtifact.DexPackagingPolicy.STANDARD
-                            : PackageAndroidArtifact.DexPackagingPolicy.INSTANT_RUN;
-
             AndroidTask<PackageApplication> packageApp = androidTasks.create(tasks,
-                    new PackageApplication.ConfigAction(
-                            variantOutputScope,
-                            dexPackagingPolicy,
-                            incrementalMode != IncrementalMode.NONE));
+                    new PackageApplication.ConfigAction(variantOutputScope, patchingPolicy));
 
             packageApp.dependsOn(tasks, prePackageApp, variantOutputScope.getProcessResourcesTask());
 
@@ -2287,11 +2278,11 @@ public abstract class TaskManager {
                 variantScope.getAssembleTask().dependsOn(tasks, fullBuildInfoGeneratorTask.getName());
             }
 
-            // when dealing with 23 and above, we should make sure the packaging task is running
+            // when dealing with MULTI_APK, we should make sure the packaging task is running
             // as part of the incremental build in case resources have changed and need to be
             // repackaged in the main APK.
-            if (dexPackagingPolicy == PackageAndroidArtifact.DexPackagingPolicy.INSTANT_RUN
-                    && instantRunPatchingPolicy == InstantRunPatchingPolicy.MULTI_APK) {
+            if (patchingPolicy != null && patchingPolicy.getDexPatchingPolicy() ==
+                            DexPackagingPolicy.INSTANT_RUN_MULTI_APK) {
                 variantScope.getInstantRunIncrementalTask().dependsOn(tasks, appTask);
             }
 

@@ -35,6 +35,8 @@ import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformInvocation;
 import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.incremental.DexPackagingPolicy;
+import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.tasks.ColdswapArtifactsKickerTask;
@@ -93,9 +95,18 @@ public class InstantRunSlicer extends Transform {
     @NonNull
     private final VariantScope variantScope;
 
+    @NonNull
+    private final InstantRunPatchingPolicy patchingPolicy;
+
     public InstantRunSlicer(@NonNull Logger logger, @NonNull VariantScope variantScope) {
         this.logger = new LoggerWrapper(logger);
         this.variantScope = variantScope;
+        InstantRunPatchingPolicy patchingPolicy =
+                variantScope.getInstantRunBuildContext().getPatchingPolicy();
+        if (patchingPolicy == null) {
+            throw new RuntimeException("Patching policy not set when creating InstantRunSlicer");
+        }
+        this.patchingPolicy = patchingPolicy;
     }
 
     @NonNull
@@ -119,7 +130,12 @@ public class InstantRunSlicer extends Transform {
     @NonNull
     @Override
     public Set<Scope> getScopes() {
-        return EnumSet.of(Scope.PROJECT, Scope.SUB_PROJECTS);
+        // if we are targeting a N and above, it's fine to merge all the dependencies.jar inside
+        // the dependencies.jar file as the VM team fixed the issue around split java packages
+        // landing in two different dex files.
+        return patchingPolicy.getDexPatchingPolicy() == DexPackagingPolicy.INSTANT_RUN_MULTI_APK
+                ? TransformManager.SCOPE_FULL_PROJECT
+                : Sets.immutableEnumSet(Scope.PROJECT, Scope.SUB_PROJECTS);
     }
 
     @Override
@@ -226,6 +242,7 @@ public class InstantRunSlicer extends Transform {
         for (TransformInput input : inputs) {
             for (JarInput jarInput : input.getJarInputs()) {
                 File jarFile = jarInput.getFile();
+
                 // handle separately instant-run runtime and the generated AppInfo so it is
                 // directly packaged in the APK and can be loaded successfully by Android runtime.
                 // This is obviously not very clean but until the Transform API can provide a way
@@ -234,7 +251,9 @@ public class InstantRunSlicer extends Transform {
                     // this gets packaged in the main slice.
                     File mainSliceOutput = getMainSliceOutputFolder(outputProvider, null);
                     Files.copy(jarFile, mainSliceOutput);
-                } else if (jarFile.getAbsolutePath().contains("incremental-classes")) {
+                } else if (variantScope.getInstantRunBuildContext().getPatchingPolicy()
+                                != InstantRunPatchingPolicy.MULTI_APK
+                        && jarFile.getAbsolutePath().contains("incremental-classes")) {
                     File mainSliceOutput = getMainSliceOutputFolder(outputProvider, "b");
                     Files.copy(jarFile, mainSliceOutput);
                 } else {

@@ -516,7 +516,7 @@ public class DexTransform extends Transform {
         String name = instantRunBuildContext.isInInstantRunMode()
                 && (qualifiedContent.getScopes().contains(Scope.PROJECT)
                     || qualifiedContent.getScopes().contains(Scope.SUB_PROJECTS))
-                ? file.getName() : getFilename(file);
+                ? getInstantRunFileName(file) : getFilename(file);
         File contentLocation = output.getContentLocation(name,
                 TransformManager.CONTENT_DEX, qualifiedContent.getScopes(),
                 multiDex ? Format.DIRECTORY : Format.JAR);
@@ -526,6 +526,15 @@ public class DexTransform extends Transform {
             FileUtils.mkdirs(contentLocation.getParentFile());
         }
         return contentLocation;
+    }
+
+    @NonNull
+    private String getInstantRunFileName(@NonNull File inputFile) {
+        if (inputFile.isDirectory()) {
+            return inputFile.getName();
+        } else {
+            return inputFile.getName().replace(".", "_");
+        }
     }
 
     @NonNull

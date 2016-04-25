@@ -34,6 +34,7 @@ import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.pipeline.TransformInvocationBuilder;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.tasks.ColdswapArtifactsKickerTask;
@@ -104,6 +105,8 @@ public class InstantRunSlicerTest {
         MarkerFile.createMarkerFile(
                 ColdswapArtifactsKickerTask.ConfigAction.getMarkerFile(variantScope),
                 MarkerFile.Command.RUN);
+        when(instantRunBuildContext.getPatchingPolicy()).thenReturn(
+                InstantRunPatchingPolicy.MULTI_DEX);
         when(variantScope.getInstantRunBuildContext()).thenReturn(instantRunBuildContext);
 
         jarOutput = new File(jarOutputDir.getRoot(), "output.jar");

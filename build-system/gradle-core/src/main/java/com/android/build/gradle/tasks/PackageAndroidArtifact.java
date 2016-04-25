@@ -18,6 +18,7 @@ package com.android.build.gradle.tasks;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.QualifiedContent.ContentType;
 import com.android.build.api.transform.QualifiedContent.Scope;
@@ -26,7 +27,9 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.dsl.CoreSigningConfig;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
+import com.android.build.gradle.internal.incremental.DexPackagingPolicy;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.packaging.ApkCreatorFactories;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.FilterableStreamCollection;
@@ -101,21 +104,6 @@ import java.util.zip.ZipOutputStream;
  * Abstract task to package an Android artifact.
  */
 public abstract class PackageAndroidArtifact extends IncrementalTask implements FileSupplier {
-
-    public enum DexPackagingPolicy {
-        /**
-         * Standard Dex packaging policy, all dex files will be packaged at the root of the package.
-         */
-        STANDARD,
-
-        /**
-         * InstantRun specific Dex packaging policy, all dex files with a name containing
-         * {@link InstantRunSlicer#MAIN_SLICE_NAME} will be packaged at the root of the package
-         * while all other dex files will be packaged in a instant-run.zip itself packaged at the
-         * root of the package.
-         */
-        INSTANT_RUN
-    }
 
     public static final String INSTANT_RUN_PACKAGES_PREFIX = "instant-run";
 
@@ -362,8 +350,9 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
                 ImmutableMap.builder();
         javaResourcesForApk.putAll(changedJavaResources);
 
+        Collection<File> instantRunDexBaseFiles;
         switch(dexPackagingPolicy) {
-            case INSTANT_RUN:
+            case INSTANT_RUN_SHARDS_IN_SINGLE_APK:
                 /*
                  * If we're doing instant run, then we don't want to treat all dex archives
                  * as dex archives for packaging. We will package some of the dex files as
@@ -374,7 +363,7 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
                  * resources as defined by makeInstantRunResourcesFromDex.
                  */
                 ;
-                Collection<File> instantRunDexBaseFiles = getDexFolders()
+                instantRunDexBaseFiles = getDexFolders()
                         .stream()
                         .filter(input -> input.getName().contains(INSTANT_RUN_PACKAGES_PREFIX))
                         .collect(Collectors.toSet());
@@ -382,7 +371,6 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
                         .stream()
                         .filter(f -> !instantRunDexBaseFiles.contains(f))
                         .collect(Collectors.toSet());
-
 
                 ImmutableMap<RelativeFile, FileStatus> newInstantRunResources =
                         makeInstantRunResourcesFromDex(nonInstantRunDexBaseFiles);
@@ -402,6 +390,19 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
                                 )));
 
                 break;
+            case INSTANT_RUN_MULTI_APK:
+                instantRunDexBaseFiles = getDexFolders()
+                        .stream()
+                        .filter(input -> input.getName().contains(InstantRunSlicer.MAIN_SLICE_NAME))
+                        .collect(Collectors.toSet());
+                changedDex = ImmutableMap.copyOf(
+                        Maps.filterKeys(
+                                changedDex,
+                                Predicates.compose(
+                                        Predicates.in(instantRunDexBaseFiles),
+                                        RelativeFile.EXTRACT_BASE
+                                )));
+
             case STANDARD:
                 break;
             default:
@@ -994,11 +995,12 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
 
         public ConfigAction(
                 @NonNull VariantOutputScope scope,
-                @NonNull DexPackagingPolicy dexPackagingPolicy,
-                boolean instantRunEnabled) {
+                @Nullable InstantRunPatchingPolicy patchingPolicy) {
             this.scope = scope;
-            this.dexPackagingPolicy = dexPackagingPolicy;
-            this.instantRunEnabled = instantRunEnabled;
+            instantRunEnabled = patchingPolicy != null;
+            dexPackagingPolicy = patchingPolicy == null
+                    ? DexPackagingPolicy.STANDARD
+                    : patchingPolicy.getDexPatchingPolicy();
         }
 
         @Override
