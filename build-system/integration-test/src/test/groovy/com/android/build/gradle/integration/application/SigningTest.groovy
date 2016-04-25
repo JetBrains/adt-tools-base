@@ -17,21 +17,27 @@
 package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.category.DeviceTests
+import com.android.build.gradle.integration.common.fixture.Adb
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
-import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.integration.common.utils.AndroidVersionMatcher
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.build.gradle.integration.common.utils.SigningConfigHelper
+import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.builder.internal.packaging.sign.DigestAlgorithm
 import com.android.builder.internal.packaging.sign.SignatureAlgorithm
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.SigningConfig
 import com.android.builder.model.Variant
+import com.android.ddmlib.IDevice
+import com.android.sdklib.AndroidVersion
 import com.google.common.collect.ImmutableList
+import com.google.common.collect.Range
 import com.google.common.io.Resources
 import groovy.transform.CompileStatic
+import org.hamcrest.Matcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -97,6 +103,9 @@ class SigningTest {
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(HelloWorldApp.noBuildFile())
             .create()
+
+    @Rule
+    public Adb adb = new Adb();
 
     private File keystore
 
@@ -282,27 +291,60 @@ class SigningTest {
         assertThatApk(apk).containsFileWithoutContent("META-INF/MANIFEST.MF", "SHA-1-Digest");
     }
 
+    /**
+     * Runs the connected tests to make sure the APK can be successfully installed. To cover
+     * different scenarios, for every signature algorithm we need to build APKs with three different
+     * minimum SDK versions and run each one against three different phones (for ECDSA there are
+     * only two APKs and two phones).
+     */
     @Test
     @Category(DeviceTests)
     public void 'SHA algorithm change - on device'() throws Exception {
-        project.execute("uninstallAll")
-        project.executeConnectedCheck()
+        List<Matcher<AndroidVersion>> matchers = [
+                AndroidVersionMatcher.forRange(
+                        Range.lessThan(DigestAlgorithm.API_SHA_256_RSA)),
+                AndroidVersionMatcher.forRange(
+                        Range.closedOpen(
+                                DigestAlgorithm.API_SHA_256_RSA,
+                                DigestAlgorithm.API_SHA_256_ALL_ALGORITHMS)),
+                AndroidVersionMatcher.forRange(
+                        Range.atLeast(DigestAlgorithm.API_SHA_256_ALL_ALGORITHMS))
+        ]
 
+        List<IDevice> devices = matchers.collect{ m -> adb.getDevice(m)}
+
+        // Check APK with minimum SDK 1. Skip this for ECDSA.
         if (minSdkVersion < DigestAlgorithm.API_SHA_256_RSA) {
+            for (IDevice device : devices) {
+                checkOnDevice(device)
+            }
+
             TestFileUtils.searchAndReplace(
                     project.buildFile,
                     "minSdkVersion \\d+",
                     "minSdkVersion $DigestAlgorithm.API_SHA_256_RSA")
-            project.execute("uninstallAll")
-            project.executeConnectedCheck()
         }
 
-        // TODO: How to skip this if running against a KitKat phone?
+        // Check APK with minimum SDK 18. Build script was set to 18 from the start or was just
+        // changed above. Don't run on the oldest device, it's not compatible with the APK.
+        for (IDevice device : devices.drop(1)) {
+            checkOnDevice(device)
+        }
+
+        // Check APK with minimum SDK 21.
         TestFileUtils.searchAndReplace(
                 project.buildFile,
                 "minSdkVersion \\d+",
                 "minSdkVersion $DigestAlgorithm.API_SHA_256_ALL_ALGORITHMS")
-        project.execute("uninstallAll")
-        project.executeConnectedCheck()
+
+        checkOnDevice(devices.last())
     }
+
+    private void checkOnDevice(IDevice device) {
+        project.execute(
+                Arrays.asList(Adb.getInjectToDeviceProviderProperty(device)),
+                "uninstallAll",
+                GradleTestProject.DEVICE_TEST_TASK)
+    }
+
 }
