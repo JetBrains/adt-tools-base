@@ -28,7 +28,6 @@ import com.android.tools.chartlib.model.RangedContinuousSeries;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -138,30 +137,27 @@ public class LineChartVisualTest extends VisualTest {
                 return variance.get();
             }
         }));
-        controls.add(VisualTests.createCheckbox("Shift xRange Min", new ItemListener() {
-            @Override
-            public void itemStateChanged(ItemEvent itemEvent) {
-                mAnimatedTimeRange.setShift(itemEvent.getStateChange() == ItemEvent.SELECTED);
+        controls.add(VisualTests.createCheckbox("Shift xRange Min", itemEvent ->
+                mAnimatedTimeRange.setShift(itemEvent.getStateChange() == ItemEvent.SELECTED)));
+        controls.add(VisualTests.createCheckbox("Stepped chart", itemEvent -> {
+            boolean isStepped = itemEvent.getStateChange() == ItemEvent.SELECTED;
+            // Make only some lines stepped
+            for (int i = 0; i < mData.series().size(); i += 2) {
+                mData.series().get(i).setStepped(isStepped);
             }
         }));
-        controls.add(VisualTests.createCheckbox("Stepped chart", new ItemListener() {
-            @Override
-            public void itemStateChanged(ItemEvent itemEvent) {
-                boolean isStepped = itemEvent.getStateChange() == ItemEvent.SELECTED;
-                // Make only some lines stepped
-                for (int i = 0; i < mData.series().size(); i += 2) {
-                    mData.series().get(i).setStepped(isStepped);
-                }
+        controls.add(VisualTests.createCheckbox("Dashed lines", itemEvent -> {
+            boolean isDashed = itemEvent.getStateChange() == ItemEvent.SELECTED;
+            // Dash only some lines
+            for (int i = 0; i < mData.series().size(); i += 2) {
+                mData.series().get(i).setDashed(isDashed);
             }
         }));
-        controls.add(VisualTests.createCheckbox("Dashed lines", new ItemListener() {
-            @Override
-            public void itemStateChanged(ItemEvent itemEvent) {
-                boolean isDashed = itemEvent.getStateChange() == ItemEvent.SELECTED;
-                // Dash only some lines
-                for (int i = 0; i < mData.series().size(); i += 2) {
-                    mData.series().get(i).setDashed(isDashed);
-                }
+        controls.add(VisualTests.createCheckbox("Filled lines", itemEvent -> {
+            boolean isFilled = itemEvent.getStateChange() == ItemEvent.SELECTED;
+            // Fill only some lines
+            for (int i = 0; i < mData.series().size(); i += 2) {
+                mData.series().get(i).setFilled(isFilled);
             }
         }));
 
