@@ -78,7 +78,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -123,6 +122,7 @@ public class GradleTestProject implements TestRule {
 
     private static final String RECORD_BENCHMARK_NAME = "com.android.benchmark.name";
     private static final String RECORD_BENCHMARK_MODE = "com.android.benchmark.mode";
+    public static final String DEVICE_TEST_TASK = "deviceCheck";
 
     public enum BenchmarkMode {
         EVALUATION, SYNC, BUILD_FULL, BUILD_INC_JAVA, BUILD_INC_RES_EDIT, BUILD_INC_RES_ADD
@@ -724,7 +724,7 @@ public class GradleTestProject implements TestRule {
     }
 
     public void executeConnectedCheck(List<String> arguments) {
-        execute(arguments, "deviceCheck");
+        execute(arguments, DEVICE_TEST_TASK);
     }
 
     /**

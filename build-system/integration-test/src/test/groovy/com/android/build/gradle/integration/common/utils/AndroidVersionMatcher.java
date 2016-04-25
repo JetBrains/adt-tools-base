@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.common.utils;
 
 import com.android.sdklib.AndroidVersion;
+import com.google.common.collect.Range;
 
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
@@ -32,36 +33,12 @@ public class AndroidVersionMatcher {
         return atLeast(21);
     }
 
-    public static Matcher<AndroidVersion> atLeast(final int version) {
-        return new BaseMatcher<AndroidVersion>() {
-            @Override
-            public boolean matches(Object item) {
-                return item instanceof AndroidVersion &&
-                        ((AndroidVersion) item).isGreaterOrEqualThan(version);
-            }
-
-            @Override
-            public void describeTo(Description description) {
-                description.appendText("Android versions ").appendValue(version)
-                        .appendText(" and above.");
-            }
-        };
+    public static Matcher<AndroidVersion> atLeast(int version) {
+        return forRange(Range.atLeast(version));
     }
 
-    public static Matcher<AndroidVersion> atMost(final int version) {
-        return new BaseMatcher<AndroidVersion>() {
-            @Override
-            public boolean matches(Object item) {
-                return item instanceof AndroidVersion &&
-                        ((AndroidVersion) item).compareTo(version, null) <= 0;
-            }
-
-            @Override
-            public void describeTo(Description description) {
-                description.appendText("Android versions ").appendValue(version)
-                        .appendText(" and below.");
-            }
-        };
+    public static Matcher<AndroidVersion> atMost(int version) {
+        return forRange(Range.atMost(version));
     }
 
     public static Matcher<AndroidVersion> anyAndroidVersion() {
@@ -78,4 +55,21 @@ public class AndroidVersionMatcher {
         };
     }
 
+    public static Matcher<AndroidVersion> forRange(Range<Integer> range) {
+        return new BaseMatcher<AndroidVersion>() {
+            @Override
+            public boolean matches(Object item) {
+                return item instanceof AndroidVersion &&
+                        range.contains(((AndroidVersion) item).getApiLevel());
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description
+                        .appendText("Android versions in the ")
+                        .appendText(range.toString())
+                        .appendText(" range.");
+            }
+        };
+    }
 }
