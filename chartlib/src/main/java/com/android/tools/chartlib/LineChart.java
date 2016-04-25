@@ -36,16 +36,21 @@ public class LineChart extends AnimatedComponent {
 
     private static final Color[] COLORS = {
             new Color(0x6baed6),
-            new Color(0xc6dbef),
+            new Color(0xff0000),
             new Color(0xfd8d3c),
-            new Color(0xfdd0a2),
-            new Color(0x74c476),
+            new Color(0x00ffa2),
+            new Color(0x000ff0),
             new Color(0xc7e9c0),
             new Color(0x9e9ac8),
             new Color(0xdadaeb),
             new Color(0x969696),
             new Color(0xd9d9d9),
     };
+
+    /**
+     * Transparency value to be applied in filled line charts.
+     */
+    private static final int ALPHA_MASK = 0x88000000;
 
     @NonNull
     private final LineChartData mData;
@@ -92,6 +97,7 @@ public class LineChart extends AnimatedComponent {
             double yMin = ranged.getYRange().getMin();
             double yMax = ranged.getYRange().getMax();
 
+            double firstXd = 0f; // X coordinate of the first destination point
             // TODO optimize to not draw anything before or after min and max.
             int size = ranged.getSeries().size();
             for (int i = 0; i < size; i++) {
@@ -101,13 +107,25 @@ public class LineChart extends AnimatedComponent {
                 double yd = (y - yMin) / (yMax - yMin);
                 if (i == 0) {
                     path.moveTo(xd, 1.0f);
-                }
-                if (ranged.isStepped()) {
-                    path.lineTo(path.getCurrentPoint().getX(), 1.0f - yd);
-                    path.lineTo(xd, 1.0f - yd);
+                    firstXd = xd;
                 } else {
+                    // If the chart is stepped, a horizontal line should be drawn from the current
+                    // point (e.g. (x0, y0)) to the destination's X value (e.g. (x1, y0)) before
+                    // drawing a line to the destination point itself (e.g. (x1, y1)).
+                    if (ranged.isStepped()) {
+                        path.lineTo(xd, path.getCurrentPoint().getY());
+                    }
                     path.lineTo(xd, 1.0f - yd);
                 }
+            }
+            // If the chart is filled, draw a line from the last point to X axis and another one
+            // from this new point to the first destination point. The resulting polygon is going to
+            // be filled.
+            // TODO: When stacked charts are implemented, the polygon shouldn't be drawn
+            // until the X axis, but the Y value of the last path
+            if (ranged.isFilled()) {
+                path.lineTo(path.getCurrentPoint().getX(), 1.0f);
+                path.lineTo(firstXd, 1.0f);
             }
 
             addDebugInfo("Range[%d] Max: %.2f", p, xMax);
@@ -130,7 +148,16 @@ public class LineChart extends AnimatedComponent {
                 g2d.setStroke(RangedContinuousSeries.BASIC_STROKE);
             }
             Shape shape = scale.createTransformedShape(mPaths.get(i));
-            g2d.draw(shape);
+            if (mData.series().get(i).isFilled()) {
+                // If the chart is filled, we want to set some transparency in its color
+                // so the other charts can also be visible
+                int newColorRGBA = 0x00ffffff & g2d.getColor().getRGB(); // reset alpha
+                newColorRGBA |= ALPHA_MASK; // set new alpha
+                g2d.setColor(new Color(newColorRGBA, true));
+                g2d.fill(shape);
+            } else {
+                g2d.draw(shape);
+            }
         }
     }
 }
