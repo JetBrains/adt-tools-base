@@ -37,44 +37,51 @@ public class ProguardParserTest_Primitives extends AbstractShrinkerTest {
                         "intArrayReturn:()[I",
                         "intArray2Return:()[[I",
                         "intArgument:(I)V",
+                        "twoPrimitiveArguments:(IF)V",
                         "intArrayArgument:([I)V",
                         "intArray2Argument:([[I)V"),
                 new File(mTestPackageDir, "Main.class"));
     }
 
     @Test
-    public void primitives_argument() throws Exception {
+    public void argument() throws Exception {
         run(parseKeepRules("-keep class test/Main { void *(%); }"));
         assertMembersLeft("Main", "<init>:()V", "intArgument:(I)V");
     }
 
     @Test
-    public void primitives_arrayArgument() throws Exception {
+    public void arrayArgument() throws Exception {
         run(parseKeepRules("-keep class test/Main { void *(%[]); }"));
         assertMembersLeft("Main", "<init>:()V", "intArrayArgument:([I)V");
     }
 
     @Test
-    public void primitives_arrayArgument_twoDimensions() throws Exception {
+    public void arrayArgument_twoDimensions() throws Exception {
         run(parseKeepRules("-keep class test/Main { void *(%[][]); }"));
         assertMembersLeft("Main", "<init>:()V", "intArray2Argument:([[I)V");
     }
 
     @Test
-    public void primitives_return() throws Exception {
+    public void returnPrimitive() throws Exception {
         run(parseKeepRules("-keep class test/Main { % *(); }"));
         assertMembersLeft("Main", "<init>:()V", "intReturn:()I");
     }
 
     @Test
-    public void primitives_returnArray() throws Exception {
+    public void returnArray() throws Exception {
         run(parseKeepRules("-keep class test/Main { %[] *(); }"));
         assertMembersLeft("Main", "<init>:()V", "intArrayReturn:()[I");
     }
 
     @Test
-    public void primitives_returnArray_twoDimensions() throws Exception {
+    public void returnArray_twoDimensions() throws Exception {
         run(parseKeepRules("-keep class test/Main { %[][] *(); }"));
         assertMembersLeft("Main", "<init>:()V", "intArray2Return:()[[I");
+    }
+
+    @Test
+    public void twoPrimitiveArguments() throws Exception {
+        run(parseKeepRules("-keep class test/Main { void *(%, %); }"));
+        assertMembersLeft("Main", "<init>:()V", "twoPrimitiveArguments:(IF)V");
     }
 }

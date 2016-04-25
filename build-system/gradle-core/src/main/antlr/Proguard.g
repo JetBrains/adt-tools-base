@@ -20,14 +20,14 @@ package com.android.build.gradle.shrinker.parser;
 @members {
   @Override
   public void emitErrorMessage(String msg) {
-    throw new RuntimeException(msg);
+    throw new ProguardParserException(msg);
   }
 }
 
 @lexer::members {
   @Override
   public void emitErrorMessage(String msg) {
-    throw new RuntimeException(msg);
+    throw new ProguardParserException(msg);
   }
 }
 
@@ -253,12 +253,11 @@ private arguments returns [String signature]
 private type returns [String signature]
 @init {
   int dim = 0;
+  boolean negator = false;
 }
   :
   (
-    (typeName='%' ('[]' {dim++;})* {String sig = $typeName.text; signature = GrammarActions.getSignature(sig == null ? "" : sig, dim);})
-    |
-    (typeName=NAME ('[]' {dim++;})*  {String sig = $typeName.text; signature = GrammarActions.getSignature(sig == null ? "" : sig, dim);})
+    (NEGATOR {negator = true;})? typeName=('%' | NAME) ('[]' {dim++;})* {String sig = $typeName.text; signature = GrammarActions.getSignature(sig == null ? "" : sig, dim, negator);}
   )
   ;
 
