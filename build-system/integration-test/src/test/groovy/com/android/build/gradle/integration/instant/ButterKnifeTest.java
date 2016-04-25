@@ -28,6 +28,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.Logcat;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.internal.incremental.ColdswapMode;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
 import com.android.builder.model.InstantRun;
 import com.android.ddmlib.IDevice;
@@ -97,9 +98,9 @@ public class ButterKnifeTest {
             }
 
             @Override
-            public void checkArtifacts(List<InstantRunArtifact> artifacts) throws Exception {
-                InstantRunArtifact artifact = Iterables.getOnlyElement(artifacts);
-                assertThatDex(artifact.file)
+            public void checkArtifacts(List<InstantRunBuildContext.Artifact> artifacts) throws Exception {
+                InstantRunBuildContext.Artifact artifact = Iterables.getOnlyElement(artifacts);
+                assertThatDex(artifact.getLocation())
                         .hasClass(ACTIVITY_DESC)
                         .that().hasMethod("getMessage");
             }
