@@ -74,9 +74,9 @@ public class DexLimitTest {
     }
 
     @Before
-    public void setDexInProcess() throws IOException {
+    public void disableDexInProcess() throws IOException {
         if (mDexInProcess) {
-            DexInProcessHelper.enableDexInProcess(mProject.getBuildFile());
+            DexInProcessHelper.disableDexInProcess(mProject.getBuildFile());
         }
     }
 
