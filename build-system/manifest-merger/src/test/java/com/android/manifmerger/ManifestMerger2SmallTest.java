@@ -131,6 +131,64 @@ public class ManifestMerger2SmallTest {
     }
 
     @Test
+    public void testToolsAnnotationRemovalForLibraries() throws Exception {
+        MockLog mockLog = new MockLog();
+        String overlay = ""
+                + "<manifest\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                + "    package=\"com.example.app1\">\n"
+                + "\n"
+                + "    <application android:label=\"@string/lib_name\">\n"
+                + "       <activity tools:node=\"removeAll\">\n"
+                + "        </activity>\n"
+                + "    </application>"
+                + "\n"
+                + "</manifest>";
+
+        File overlayFile = inputAsFile("testToolsAnnotationRemoval", overlay);
+        assertTrue(overlayFile.exists());
+
+        String libraryInput = ""
+                + "<manifest\n"
+                + "xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "package=\"com.example.app1\">\n"
+                + "\n"
+                + "<application android:name=\"TheApp\" >\n"
+                + "    <!-- Activity to configure widget -->\n"
+                + "    <activity\n"
+                + "            android:icon=\"@drawable/widget_icon\"\n"
+                + "            android:label=\"Configure Widget\"\n"
+                + "            android:name=\"com.example.lib1.WidgetConfigurationUI\"\n"
+                + "            android:theme=\"@style/Theme.WidgetConfigurationUI\" >\n"
+                + "        <intent-filter >\n"
+                + "            <action android:name=\"android.appwidget.action.APPWIDGET_CONFIGURE\" />\n"
+                + "        </intent-filter>\n"
+                + "    </activity>\n"
+                + "</application>\n"
+                + "\n"
+                + "</manifest>";
+        File libFile = inputAsFile("testToolsAnnotationRemoval", libraryInput);
+
+
+        try {
+            MergingReport mergingReport =
+                    ManifestMerger2.newMerger(libFile, mockLog, ManifestMerger2.MergeType.LIBRARY)
+                            .withFeatures(ManifestMerger2.Invoker.Feature.REMOVE_TOOLS_DECLARATIONS)
+                            .addFlavorAndBuildTypeManifest(overlayFile)
+                            .merge();
+            assertEquals(MergingReport.Result.SUCCESS, mergingReport.getResult());
+            // ensure tools annotation removal.
+            Document xmlDocument = parse(mergingReport.getMergedDocument(MergedManifestKind.MERGED));
+            NodeList applications = xmlDocument.getElementsByTagName(SdkConstants.TAG_ACTIVITY);
+            assertTrue(applications.getLength() == 0);
+        } finally {
+            assertTrue(overlayFile.delete());
+            assertTrue(libFile.delete());
+        }
+    }
+
+    @Test
     public void testToolsAnnotationPresence() throws Exception {
 
         MockLog mockLog = new MockLog();
