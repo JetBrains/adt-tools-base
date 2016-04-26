@@ -179,6 +179,9 @@ public class DexTransform extends Transform {
     @Override
     public Map<String, Object> getParameterInputs() {
         try {
+            // ATTENTION: if you add something here, consider adding the value to DexKey - it needs
+            // to be saved if affects how dx is invoked.
+
             Map<String, Object> params = Maps.newHashMapWithExpectedSize(4);
 
             params.put("optimize", getOptimize());
@@ -198,7 +201,6 @@ public class DexTransform extends Transform {
             params.put("build-tools", buildTools.getRevision().toString());
 
             return params;
-
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -456,7 +458,7 @@ public class DexTransform extends Transform {
             }
 
             androidBuilder.preDexLibrary(
-                    from, to, multiDex, dexOptions, mOutputHandler);
+                    from, to, multiDex, dexOptions, getOptimize(), mOutputHandler);
 
             for (File file : Files.fileTreeTraverser().breadthFirstTraversal(to)) {
                 if (file.isFile()) {

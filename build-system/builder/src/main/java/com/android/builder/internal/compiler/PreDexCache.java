@@ -24,14 +24,11 @@ import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.DexOptions;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutputHandler;
-import com.android.repository.Revision;
 import com.android.utils.FileUtils;
 import com.android.utils.Pair;
 import com.google.common.io.Files;
 
-import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
-import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 import java.io.File;
@@ -50,7 +47,7 @@ import java.util.logging.Logger;
  * Because different project could use different build-tools, both the library to pre-dex and the
  * version of the build tools are used as keys in the cache.
  *
- * The API is fairly simple, just call {@link #preDexLibrary(AndroidBuilder, File, File, boolean, DexOptions, ProcessOutputHandler)}
+ * The API is fairly simple, just call {@link #preDexLibrary(AndroidBuilder, File, File, boolean, DexOptions, boolean, ProcessOutputHandler)}
  *
  * The call will be blocking until the pre-dexing happened, either through actual pre-dexing or
  * through copying the output of a previous pre-dex run.
@@ -59,8 +56,6 @@ import java.util.logging.Logger;
  * will allow saving the known pre-dexed libraries for future reuse.
  */
 public class PreDexCache extends PreProcessCache<DexKey> {
-
-    private static final String ATTR_JUMBO_MODE = "jumboMode";
 
     private static final PreDexCache sSingleton = new PreDexCache();
 
@@ -71,14 +66,7 @@ public class PreDexCache extends PreProcessCache<DexKey> {
     @Override
     @NonNull
     protected KeyFactory<DexKey> getKeyFactory() {
-        return new KeyFactory<DexKey>() {
-            @Override
-            public DexKey of(@NonNull File sourceFile, @NonNull Revision revision,
-                    @NonNull NamedNodeMap attrMap) {
-                return DexKey.of(sourceFile, revision,
-                        Boolean.parseBoolean(attrMap.getNamedItem(ATTR_JUMBO_MODE).getNodeValue()));
-            }
-        };
+        return DexKey.FACTORY;
     }
 
     /**
@@ -89,6 +77,7 @@ public class PreDexCache extends PreProcessCache<DexKey> {
      * @param outFile the output file or folder (if multi-dex is enabled), must exist
      * @param multiDex whether multi-dex is enabled
      * @param dexOptions the dex options to run pre-dex
+     * @param optimize whether to run dx with optimizations turned on
      * @throws IOException
      * @throws ProcessException
      * @throws InterruptedException
@@ -97,8 +86,9 @@ public class PreDexCache extends PreProcessCache<DexKey> {
             @NonNull AndroidBuilder builder,
             @NonNull File inputFile,
             @NonNull File outFile,
-                     boolean multiDex,
+            boolean multiDex,
             @NonNull DexOptions dexOptions,
+            boolean optimize,
             @NonNull ProcessOutputHandler processOutputHandler)
             throws IOException, ProcessException, InterruptedException {
         checkState(!multiDex || outFile.isDirectory());
@@ -107,7 +97,9 @@ public class PreDexCache extends PreProcessCache<DexKey> {
         DexKey itemKey = DexKey.of(
                 inputFile,
                 builder.getTargetInfo().getBuildTools().getRevision(),
-                dexOptions.getJumboMode());
+                dexOptions.getJumboMode(),
+                optimize,
+                dexOptions.getAdditionalParameters());
 
         Pair<Item, Boolean> pair = getItem(itemKey);
         Item item = pair.getFirst();
@@ -174,9 +166,7 @@ public class PreDexCache extends PreProcessCache<DexKey> {
         Node itemNode = super.createItemNode(document, itemKey, item);
 
         if (itemNode != null) {
-            Attr attr = document.createAttribute(ATTR_JUMBO_MODE);
-            attr.setValue(Boolean.toString(itemKey.isJumboMode()));
-            itemNode.getAttributes().setNamedItem(attr);
+            itemKey.writeFieldsToXml(itemNode);
         }
 
         return itemNode;
