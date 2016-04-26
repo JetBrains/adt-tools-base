@@ -16,10 +16,17 @@
 package com.android.tools.chartlib;
 
 import com.android.annotations.NonNull;
-import gnu.trove.TFloatArrayList;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.RenderingHints;
 import java.awt.geom.Line2D;
+
+import gnu.trove.TFloatArrayList;
 
 /**
  * A component that draw an axis based on data from a {@link Range} object.
@@ -106,21 +113,9 @@ public final class AxisComponent extends AnimatedComponent {
     private double mCurrentMinValue;
 
     /**
-     * The starting point in pixel where the axis is drawn.
-     */
-    @NonNull
-    private Point mStartPoint;
-
-    /**
-     * The ending point in pixel where the axis is drawn.
-     */
-    @NonNull
-    private Point mEndPoint;
-
-    /**
      * Length of the axis in pixels - used for internal calculation.
      */
-    private int mDrawLength;
+    private int mAxisLength;
 
     /**
      * Calculated - Interval value per major marker.
@@ -176,8 +171,6 @@ public final class AxisComponent extends AnimatedComponent {
         mOrientation = orientation;
         mShowMinMax = showMinMax;
         mDomain = domain;
-        mStartPoint = new Point();
-        mEndPoint = new Point();
         mMajorMarkerPositions = new TFloatArrayList();
         mMinorMarkerPositions = new TFloatArrayList();
 
@@ -217,7 +210,8 @@ public final class AxisComponent extends AnimatedComponent {
         switch (mOrientation) {
             case LEFT:
             case RIGHT:
-                ret = mDrawLength - offset;
+                // Vertical axes are drawn from bottom to top so reverse the offset.
+                ret = 1 - offset;
                 break;
             case TOP:
             case BOTTOM:
@@ -225,26 +219,28 @@ public final class AxisComponent extends AnimatedComponent {
                 break;
         }
 
-        return ret;
+        return ret * mAxisLength;
     }
 
     /**
      * Returns the value corresponding to a pixel position on the axis.
      */
     public double getValueAtPosition(int position) {
-        int offset = 0;
+        float offset = 0;
         switch (mOrientation) {
             case LEFT:
             case RIGHT:
-                offset =  mDrawLength - position;
+                // Vertical axes are drawn from bottom to top so reverse the position.
+                offset = mAxisLength - position;
                 break;
             case TOP:
             case BOTTOM:
-                offset =  position;
+                offset = position;
                 break;
         }
 
-        return mCurrentMinValue + mMinorInterval * offset / mMinorScale;
+        float normalizedOffset = offset / mAxisLength;
+        return mCurrentMinValue + mMinorInterval * normalizedOffset / mMinorScale;
     }
 
     /**
@@ -261,98 +257,93 @@ public final class AxisComponent extends AnimatedComponent {
 
     @Override
     protected void updateData() {
-        // Calculate drawing parameters.
-        Dimension dimension = getSize();
-        switch (mOrientation) {
-            case LEFT:
-                mStartPoint.x = mEndPoint.x = dimension.width - 1;   // TODO account for brush thickness.
-                mStartPoint.y = dimension.height - mStartMargin - 1;
-                mEndPoint.y = mEndMargin;
-                mDrawLength = mStartPoint.y - mEndPoint.y;
-                break;
-            case BOTTOM:
-                mStartPoint.x = mStartMargin;
-                mEndPoint.x = dimension.width - mEndMargin - 1;
-                mStartPoint.y = mEndPoint.y = 0;
-                mDrawLength = mEndPoint.x - mStartPoint.x;
-                break;
-            case RIGHT:
-                mStartPoint.x = mEndPoint.x = 0;
-                mStartPoint.y = dimension.height - mStartMargin - 1;
-                mEndPoint.y = mEndMargin;
-                mDrawLength = mStartPoint.y - mEndPoint.y;
-                break;
-            case TOP:
-                mStartPoint.x = mStartMargin;
-                mEndPoint.x = dimension.width - mEndMargin - 1;
-                mStartPoint.y = mEndPoint.y = dimension.height - 1;  // TODO account for brush thickness.
-                mDrawLength = mEndPoint.x - mStartPoint.x;
-                break;
-        }
-
         mMajorMarkerPositions.reset();
         mMinorMarkerPositions.reset();
         mCurrentMinValue = mRange.getMin();
         mCurrentMaxValue = mRange.getMax();
 
-        if (mDrawLength > 0) {
-            double range = mRange.getLength();
-            if (mParentAxis != null) {
-                mMajorScale = mMinorScale = mParentAxis.mMajorScale;
-                mMajorInterval = mMinorInterval = (float)range / mDrawLength * mMajorScale;
-            } else {
-                mMajorInterval = mDomain.getMajorInterval(range, mDrawLength);
-                mMajorScale = (float)(mMajorInterval * mDrawLength / range);
-                mMinorInterval = mDomain.getMinorInterval(mMajorInterval, (int)mMajorScale);
-                mMinorScale = (float)(mMinorInterval * mDrawLength / range);
-            }
-
-            // Calculate the value and offset of the first major marker
-            mFirstMarkerValue = Math.floor(mCurrentMinValue / mMajorInterval) * mMajorInterval;
-            // Pixel offset of first major marker.
-            float firstMarkerOffset = (float)(mMinorScale * (mFirstMarkerValue - mCurrentMinValue) / mMinorInterval);
-
-            // Calculate marker positions
-            int numMarkers = (int)Math.floor((mCurrentMaxValue - mFirstMarkerValue) / mMinorInterval) + 1;
-            int numMinorPerMajor = (int)(mMajorInterval / mMinorInterval);
-            for (int i = 0; i < numMarkers; i++) {
-                float markerOffset = firstMarkerOffset + i * mMinorScale;
-                if (i % numMinorPerMajor == 0) {    // Major Tick.
-                    mMajorMarkerPositions.add(markerOffset);
-                } else {
-                    mMinorMarkerPositions.add(markerOffset);
-                }
-            }
+        double range = mRange.getLength();
+        if (mParentAxis != null) {
+            mMajorScale = mMinorScale = mParentAxis.mMajorScale;
+            mMajorInterval = mMinorInterval = (float)range * mMajorScale;
         } else {
-            mMinorInterval = 0;
-            mMajorInterval = 0;
-            mMajorScale = 0;
-            mMinorScale = 0;
-            mFirstMarkerValue = 0;
+            mMajorInterval = mDomain.getMajorInterval(range);
+            mMajorScale = (float)(mMajorInterval / range);
+            mMinorInterval = mDomain.getMinorInterval(mMajorInterval);
+            mMinorScale = (float)(mMinorInterval / range);
+        }
+
+        // Calculate the value and offset of the first major marker
+        mFirstMarkerValue = Math.floor(mCurrentMinValue / mMajorInterval) * mMajorInterval;
+        // Percentage offset of first major marker.
+        float firstMarkerOffset = (float)(mMinorScale * (mFirstMarkerValue - mCurrentMinValue) / mMinorInterval);
+
+        // Calculate marker positions
+        int numMarkers = (int)Math.floor((mCurrentMaxValue - mFirstMarkerValue) / mMinorInterval) + 1;
+        int numMinorPerMajor = (int)(mMajorInterval / mMinorInterval);
+        for (int i = 0; i < numMarkers; i++) {
+            float markerOffset = firstMarkerOffset + i * mMinorScale;
+            if (i % numMinorPerMajor == 0) {    // Major Tick.
+                mMajorMarkerPositions.add(markerOffset);
+            } else {
+                mMinorMarkerPositions.add(markerOffset);
+            }
         }
     }
 
     @Override
     protected void draw(Graphics2D g) {
-        if (mDrawLength > 0) {
+        // Calculate drawing parameters.
+        Point startPoint = new Point();
+        Point endPoint = new Point();
+        Dimension dimension = getSize();
+        switch (mOrientation) {
+            case LEFT:
+                startPoint.x = endPoint.x = dimension.width - 1;
+                startPoint.y = dimension.height - mStartMargin - 1;
+                endPoint.y = mEndMargin;
+                mAxisLength = startPoint.y - endPoint.y;
+                break;
+            case BOTTOM:
+                startPoint.x = mStartMargin;
+                endPoint.x = dimension.width - mEndMargin - 1;
+                startPoint.y = endPoint.y = 0;
+                mAxisLength = endPoint.x - startPoint.x;
+                break;
+            case RIGHT:
+                startPoint.x = endPoint.x = 0;
+                startPoint.y = dimension.height - mStartMargin - 1;
+                endPoint.y = mEndMargin;
+                mAxisLength = startPoint.y - endPoint.y;
+                break;
+            case TOP:
+                startPoint.x = mStartMargin;
+                endPoint.x = dimension.width - mEndMargin - 1;
+                startPoint.y = endPoint.y = dimension.height - 1;
+                mAxisLength = endPoint.x - startPoint.x;
+                break;
+        }
+
+        if (mAxisLength > 0) {
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
             // Draw axis.
-            g.drawLine(mStartPoint.x, mStartPoint.y, mEndPoint.x, mEndPoint.y);
+            g.drawLine(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
 
-            drawMarkers(g);
+            // TODO account for pixel spacing so we can skip ticks if the length is too narrow.
+            drawMarkers(g, startPoint);
 
             // TODO draw axis label.
         }
     }
 
-    private void drawMarkers(Graphics2D g2d) {
+    private void drawMarkers(Graphics2D g2d, Point origin) {
         g2d.setFont(DEFAULT_FONT);
         g2d.setColor(TEXT_COLOR);
 
         if (mShowMinMax) {
-            drawMarkerLabel(g2d, 0, mCurrentMinValue, true);
-            drawMarkerLabel(g2d, mDrawLength, mCurrentMaxValue, true);
+            drawMarkerLabel(g2d, 0, origin, mCurrentMinValue, true);
+            drawMarkerLabel(g2d, mAxisLength, origin, mCurrentMaxValue, true);
         }
 
         // TODO fade in/out markers.
@@ -361,42 +352,45 @@ public final class AxisComponent extends AnimatedComponent {
         // Draw minor ticks.
         for (int i = 0; i < mMinorMarkerPositions.size(); i++) {
             if (mMinorMarkerPositions.get(i) >= 0) {
-                drawMarkerLine(g2d, line, mMinorMarkerPositions.get(i), false);
+                float scaledPosition = mMinorMarkerPositions.get(i) * mAxisLength;
+                drawMarkerLine(g2d, line, scaledPosition, origin, false);
             }
         }
 
         // Draw major ticks.
         for (int i = 0; i < mMajorMarkerPositions.size(); i++) {
             if (mMajorMarkerPositions.get(i) >= 0) {
-                drawMarkerLine(g2d, line, mMajorMarkerPositions.get(i), true);
+                float scaledPosition = mMajorMarkerPositions.get(i) * mAxisLength;
+                drawMarkerLine(g2d, line, scaledPosition, origin, true);
 
                 double markerValue = mFirstMarkerValue + i * mMajorInterval;
-                drawMarkerLabel(g2d, mMajorMarkerPositions.get(i), markerValue, !mShowMinMax);
+                drawMarkerLabel(g2d, scaledPosition, origin, markerValue, !mShowMinMax);
             }
         }
     }
 
-    private void drawMarkerLine(Graphics2D g2d, Line2D.Float line, float markerOffset, boolean isMajor) {
+    private void drawMarkerLine(Graphics2D g2d, Line2D.Float line, float markerOffset,
+            Point origin, boolean isMajor) {
         float markerStartX = 0, markerStartY = 0, markerEndX = 0, markerEndY = 0;
         int markerLength = isMajor ? MAJOR_MARKER_LENGTH : MINOR_MARKER_LENGTH;
         switch (mOrientation) {
             case LEFT:
-                markerStartX = mStartPoint.x - markerLength;
-                markerStartY = markerEndY = mStartPoint.y - markerOffset;
-                markerEndX = mStartPoint.x;
+                markerStartX = origin.x - markerLength;
+                markerStartY = markerEndY = origin.y - markerOffset;
+                markerEndX = origin.x;
                 break;
             case RIGHT:
                 markerStartX = 0;
-                markerStartY = markerEndY = mStartPoint.y - markerOffset;
+                markerStartY = markerEndY = origin.y - markerOffset;
                 markerEndX = markerLength;
                 break;
             case TOP:
-                markerStartX = markerEndX = mStartPoint.x + markerOffset;
-                markerStartY = mStartPoint.y - markerLength;
-                markerEndY = mStartPoint.y;
+                markerStartX = markerEndX = origin.x + markerOffset;
+                markerStartY = origin.y - markerLength;
+                markerEndY = origin.y;
                 break;
             case BOTTOM:
-                markerStartX = markerEndX = mStartPoint.x + markerOffset;
+                markerStartX = markerEndX = origin.x + markerOffset;
                 markerStartY = 0;
                 markerEndY = markerLength;
                 break;
@@ -406,7 +400,8 @@ public final class AxisComponent extends AnimatedComponent {
         g2d.draw(line);
     }
 
-    private void drawMarkerLabel(Graphics2D g2d, float markerOffset, double markerValue, boolean isMinMax) {
+    private void drawMarkerLabel(Graphics2D g2d, float markerOffset, Point origin,
+            double markerValue, boolean isMinMax) {
         String formattedValue = mDomain.getFormattedString(mGlobalRange.getLength(), markerValue);
         int stringAscent = mMetrics.getAscent();
         int stringLength = mMetrics.stringWidth(formattedValue);
@@ -415,22 +410,22 @@ public final class AxisComponent extends AnimatedComponent {
         float reserved; // reserved space for min/max labels.
         switch (mOrientation) {
             case LEFT:
-                labelX = mStartPoint.x - MAJOR_MARKER_LENGTH - MARKER_LABEL_MARGIN - stringLength;
-                labelY = mStartPoint.y - markerOffset + stringAscent * 0.5f;
+                labelX = origin.x - MAJOR_MARKER_LENGTH - MARKER_LABEL_MARGIN - stringLength;
+                labelY = origin.y - markerOffset + stringAscent * 0.5f;
                 reserved = stringAscent;
                 break;
             case RIGHT:
                 labelX = MAJOR_MARKER_LENGTH + MARKER_LABEL_MARGIN;
-                labelY = mStartPoint.y - markerOffset + stringAscent * 0.5f;
+                labelY = origin.y - markerOffset + stringAscent * 0.5f;
                 reserved = stringAscent;
                 break;
             case TOP:
-                labelX = mStartPoint.x + markerOffset + MARKER_LABEL_MARGIN;
-                labelY = mStartPoint.y - MINOR_MARKER_LENGTH;
+                labelX = origin.x + markerOffset + MARKER_LABEL_MARGIN;
+                labelY = origin.y - MINOR_MARKER_LENGTH;
                 reserved = stringLength;
                 break;
             case BOTTOM:
-                labelX = mStartPoint.x + markerOffset + MARKER_LABEL_MARGIN;
+                labelX = origin.x + markerOffset + MARKER_LABEL_MARGIN;
                 labelY = MINOR_MARKER_LENGTH + stringAscent;
                 reserved = stringLength;
                 break;
@@ -438,7 +433,7 @@ public final class AxisComponent extends AnimatedComponent {
                 throw new AssertionError("Unexpected orientation: " + mOrientation);
         }
 
-        if (isMinMax || (markerOffset - reserved > 0 && markerOffset + reserved < mDrawLength)) {
+        if (isMinMax || (markerOffset - reserved > 0 && markerOffset + reserved < mAxisLength)) {
             g2d.drawString(formattedValue, labelX, labelY);
         }
     }

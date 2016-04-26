@@ -64,18 +64,18 @@ public final class GridComponent extends AnimatedComponent {
                 case RIGHT:
                     for (int j = 0; j < markers.size(); j++) {
                         line.setLine(0,
-                                dim.height - markers.get(j) - 1,
+                                (dim.height - 1) * (1 - markers.get(j)),
                                 dim.width - 1,
-                                dim.height - markers.get(j) - 1);
+                                (dim.height - 1) * (1 - markers.get(j)));
                         g.draw(line);
                     }
                     break;
                 case TOP:
                 case BOTTOM:
                     for (int j = 0; j < markers.size(); j++) {
-                        line.setLine(markers.get(j),
+                        line.setLine((dim.width - 1) * markers.get(j),
                                 0,
-                                markers.get(j),
+                                (dim.width - 1) * markers.get(j),
                                 dim.height - 1);
                         g.draw(line);
                     }

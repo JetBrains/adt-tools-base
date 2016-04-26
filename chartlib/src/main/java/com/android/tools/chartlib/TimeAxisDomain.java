@@ -34,8 +34,8 @@ public final class TimeAxisDomain extends BaseAxisDomain {
         }
     }
 
-    public TimeAxisDomain(int minorSpacing, int majorSpacing, int switchThreshold) {
-        super(minorSpacing, majorSpacing, switchThreshold);
+    public TimeAxisDomain(int maxMinorTicks, int maxMajorTicks, int switchThreshold) {
+        super(maxMinorTicks, maxMajorTicks, switchThreshold);
     }
 
     /**

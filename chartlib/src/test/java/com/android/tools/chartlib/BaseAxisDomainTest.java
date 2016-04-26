@@ -25,8 +25,8 @@ public class BaseAxisDomainTest extends TestCase {
     public void setUp() throws Exception {
         super.setUp();
 
-        // minMinorSpacing = 10, minMajorSpacing = 100, switchThreshold = 5;
-        domain = new MockAxisDomain(10, 100, 5);
+        // maxMajorTicks = 5, maxMajorTicks = 10, switchThreshold = 5;
+        domain = new MockAxisDomain(5, 10, 5);
     }
 
     @Override
@@ -34,33 +34,17 @@ public class BaseAxisDomainTest extends TestCase {
         domain = null;
     }
 
-    public void testGetMajorInterval() throws Exception {
-        // minMajoringSpacing is 100, so we are expected to
-        // to get one major interval of a 100 units (10cm).
-        int interval = domain.getMajorInterval(100, 100);
+    public void testGetInterval() throws Exception {
+        // maxMinorTicks is 5 so the smallest possible interval is 100 / 5 = 20
+        // The axis is in base 10 which has factors: {1, 5, 10}, so the interval
+        // will get round up using the factor 5, which gives us 50.
+        int interval = domain.getMinorInterval(100);
+        assertEquals(50, interval);
+
+        // maxMajorTicks is 10 so the smallest possible interval is 1000 / 10 = 100
+        // This essentially matches the base factor 10, so this gives exactly 100.
+        interval = domain.getMajorInterval(1000);
         assertEquals(100, interval);
-
-        // Axis length is smaller than min spacing, and we should
-        // expect at least one major tick of a 100 units.
-        interval = domain.getMajorInterval(100, 10);
-        assertEquals(100, interval);
-
-        // minMajorSpacing is 100, so we can fit at least 10 major ticks
-        // and is just equal to the min interval (1cm) at that scale.
-        interval = domain.getMajorInterval(100, 1000);
-        assertEquals(10, interval);
-    }
-
-    public void testGetMinorInterval() throws Exception {
-        // minMinorSpacing is 10, so we are expected to get
-        // 10 minor intervals of 10 units each.
-        int interval = domain.getMinorInterval(100, 100);
-        assertEquals(10, interval);
-
-        // minMinorSpacing is 10, so we are expected to get
-        // 5 minor intervals of 1 unit each
-        interval = domain.getMinorInterval(5, 50);
-        assertEquals(1, interval);
     }
 
     public void testGetMultiplierIndex() throws Exception {
