@@ -38,14 +38,13 @@ import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.gradle.internal.variant.LibraryVariantData;
 import com.android.build.gradle.tasks.SimpleWorkQueue;
+import com.android.builder.core.VariantType;
 import com.android.builder.tasks.Job;
 import com.android.builder.tasks.JobContext;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -81,6 +80,7 @@ public class ProGuardTransform extends BaseProguardAction {
     public ProGuardTransform(
             @NonNull VariantScope variantScope,
             boolean asJar) {
+        super(variantScope);
         this.variantScope = variantScope;
 
         // TODO: Allow asJar to be true, once we make sure input jars have unique file names.
@@ -88,7 +88,7 @@ public class ProGuardTransform extends BaseProguardAction {
         // "directory output" mode.
         this.asJar = true;
 
-        isLibrary = variantScope.getVariantData() instanceof LibraryVariantData;
+        isLibrary = variantScope.getVariantData().getType() == VariantType.LIBRARY;
         isTest = variantScope.getTestedVariantData() != null;
 
         GlobalScope globalScope = variantScope.getGlobalScope();
@@ -129,35 +129,6 @@ public class ProGuardTransform extends BaseProguardAction {
     @Override
     public Set<ContentType> getInputTypes() {
         return TransformManager.CONTENT_JARS;
-    }
-
-    @NonNull
-    @Override
-    public Set<Scope> getScopes() {
-        if (isLibrary) {
-            return Sets.immutableEnumSet(Scope.PROJECT, Scope.PROJECT_LOCAL_DEPS);
-        }
-
-        return TransformManager.SCOPE_FULL_PROJECT;
-    }
-
-    @NonNull
-    @Override
-    public Set<Scope> getReferencedScopes() {
-        Set<Scope> set = Sets.newLinkedHashSetWithExpectedSize(5);
-        if (isLibrary) {
-            set.add(Scope.SUB_PROJECTS);
-            set.add(Scope.SUB_PROJECTS_LOCAL_DEPS);
-            set.add(Scope.EXTERNAL_LIBRARIES);
-        }
-
-        if (isTest) {
-            set.add(Scope.TESTED_CODE);
-        }
-
-        set.add(Scope.PROVIDED_ONLY);
-
-        return Sets.immutableEnumSet(set);
     }
 
     @NonNull
@@ -232,11 +203,6 @@ public class ProGuardTransform extends BaseProguardAction {
 
         try {
             GlobalScope globalScope = variantScope.getGlobalScope();
-
-            if (isLibrary) {
-                keep("class **.R");
-                keep("class **.R$*");
-            }
 
             // set the mapping file if there is one.
             File testedMappingFile = computeMappingFile();

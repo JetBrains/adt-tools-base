@@ -202,12 +202,7 @@ public class LibraryJarTransform extends Transform {
             @NonNull final List<Pattern> excludes)
             throws IOException {
         JarMerger jarMerger = new JarMerger(mainClassLocation);
-        jarMerger.setFilter(new ZipEntryFilter() {
-            @Override
-            public boolean checkEntry(String archivePath) {
-                return LibraryJarTransform.checkEntry(excludes, archivePath);
-            }
-        });
+        jarMerger.setFilter(archivePath -> checkEntry(excludes, archivePath));
 
         for (QualifiedContent content : qualifiedContentList) {
             System.out.println(content);
@@ -230,12 +225,7 @@ public class LibraryJarTransform extends Transform {
         // somewhere else.
         // TODO: maybe do the folders separately to handle incremental?
 
-        ZipEntryFilter classOnlyFilter = new ZipEntryFilter() {
-            @Override
-            public boolean checkEntry(String archivePath) {
-                return archivePath.endsWith(SdkConstants.DOT_CLASS);
-            }
-        };
+        ZipEntryFilter classOnlyFilter = path -> path.endsWith(SdkConstants.DOT_CLASS);
 
         Iterator<QualifiedContent> iterator = qualifiedContentList.iterator();
 
@@ -266,29 +256,21 @@ public class LibraryJarTransform extends Transform {
     private void jarFolderToRootLocation(@NonNull File file, @NonNull final List<Pattern> excludes)
             throws IOException {
         JarMerger jarMerger = new JarMerger(mainClassLocation);
-        jarMerger.setFilter(new ZipEntryFilter() {
-            @Override
-            public boolean checkEntry(String archivePath) {
-                return LibraryJarTransform.checkEntry(excludes, archivePath);
-            }
-        });
+        jarMerger.setFilter(archivePath -> checkEntry(excludes, archivePath));
         jarMerger.addFolder(file);
         jarMerger.close();
     }
 
-    public static void copyJarWithContentFilter(
+    private static void copyJarWithContentFilter(
             @NonNull File from,
             @NonNull File to,
             @NonNull final List<Pattern> excludes) throws IOException {
-        copyJarWithContentFilter(from, to, new ZipEntryFilter() {
-            @Override
-            public boolean checkEntry(String archivePath) {
-                return LibraryJarTransform.checkEntry(excludes, archivePath);
-            }
+        copyJarWithContentFilter(from, to, archivePath -> {
+            return checkEntry(excludes, archivePath);
         });
     }
 
-    public static void copyJarWithContentFilter(
+    private static void copyJarWithContentFilter(
             @NonNull File from,
             @NonNull File to,
             @Nullable ZipEntryFilter filter) throws IOException {

@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.transforms;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
@@ -42,7 +43,8 @@ public abstract class BaseProguardAction extends ProguardConfigurable {
 
     protected final Configuration configuration = new Configuration();
 
-    public BaseProguardAction() {
+    public BaseProguardAction(@NonNull VariantScope scope) {
+        super(scope);
         configuration.useMixedCaseClassNames = false;
         configuration.programJars = new ClassPath();
         configuration.libraryJars = new ClassPath();

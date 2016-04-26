@@ -20,11 +20,6 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.api.transform.SecondaryInput;
-import com.android.build.api.transform.TransformInvocation;
-import com.android.build.gradle.internal.pipeline.TransformManager;
-import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.api.transform.Context;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.JarInput;
 import com.android.build.api.transform.QualifiedContent;
@@ -32,7 +27,9 @@ import com.android.build.api.transform.QualifiedContent.ContentType;
 import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
-import com.android.build.api.transform.TransformOutputProvider;
+import com.android.build.api.transform.TransformInvocation;
+import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.ide.common.process.ProcessException;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
@@ -75,6 +72,7 @@ public class MultiDexTransform extends BaseProguardAction {
             @NonNull File manifestKeepListFile,
             @NonNull VariantScope variantScope,
             @Nullable File includeInMainDexJarFile) {
+        super(variantScope);
         this.manifestKeepListFile = manifestKeepListFile;
         this.variantScope = variantScope;
         this.includeInMainDexJarFile = includeInMainDexJarFile;
