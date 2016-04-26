@@ -263,6 +263,13 @@ public class FileOpImpl implements FileOp {
 
     @Override
     @NonNull
+    public OutputStream newFileOutputStream(@NonNull File file, boolean append)
+            throws FileNotFoundException {
+        return new FileOutputStream(file, append);
+    }
+
+    @Override
+    @NonNull
     public InputStream newFileInputStream(@NonNull File file) throws FileNotFoundException {
         return new FileInputStream(file);
     }

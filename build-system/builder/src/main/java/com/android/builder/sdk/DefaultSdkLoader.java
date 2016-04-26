@@ -132,8 +132,8 @@ public class DefaultSdkLoader implements SdkLoader {
 
                 String path = DetailsTypes.getBuildToolsPath(buildToolRevision);
                 RemotePackage p = repoManager.getPackages().getRemotePackages().get(path);
-                if (p.getLicense() == null
-                        || p.getLicense().checkAccepted(repoManager.getLocalPath())) {
+                if (p.getLicense() == null || p.getLicense()
+                        .checkAccepted(repoManager.getLocalPath(), mSdkHandler.getFileOp())) {
                     Installer installer = SdkInstallerUtil.findBestInstallerFactory(p, mSdkHandler)
                             .createInstaller(p, repoManager, mSdkHandler.getFileOp());
                     installer.prepareInstall(downloader, progress);
