@@ -1119,11 +1119,13 @@ public class AndroidBuilder {
                     throw new RuntimeException(msg);
                 }
 
+                //noinspection ConstantConditions
                 SymbolWriter writer =
                         new SymbolWriter(
                                 aaptConfig.getSourceOutputDir().getAbsolutePath(),
                                 packageName,
-                                fullSymbolValues);
+                                fullSymbolValues,
+                                aaptConfig.getVariantType() != VariantType.LIBRARY);
                 for (SymbolLoader symbolLoader : symbols) {
                     writer.addSymbolsToWrite(symbolLoader);
                 }
