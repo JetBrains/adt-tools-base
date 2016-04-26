@@ -18,7 +18,7 @@ package com.android.resources;
 
 /**
  * UI Mode enum.
- * <p/>This is used in the resource folder names.
+ * <p>This is used in the resource folder names.
  */
 public enum UiMode implements ResourceEnum {
     NORMAL("", "Normal", 1),

@@ -18,7 +18,7 @@ package com.android.resources;
 
 /**
  * Navigation state enum.
- * <p/>This is used in the resource folder names.
+ * <p>This is used in the resource folder names.
  */
 public enum NavigationState implements ResourceEnum {
     EXPOSED("navexposed", "Exposed", "Exposed navigation"), //$NON-NLS-1$

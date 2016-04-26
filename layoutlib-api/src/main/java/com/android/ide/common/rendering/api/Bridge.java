@@ -37,10 +37,10 @@ public abstract class Bridge {
 
     /**
      * Returns the API level of the layout library.
-     * <p/>
+     * <p>
      * While no methods will ever be removed, some may become deprecated, and some new ones
      * will appear.
-     * <p/>All Layout libraries based on {@link Bridge} return at minimum an API level of 5.
+     * <p>All Layout libraries based on {@link Bridge} return at minimum an API level of 5.
      */
     public abstract int getApiLevel();
 
@@ -121,11 +121,11 @@ public abstract class Bridge {
 
     /**
      * Clears the resource cache for a specific project.
-     * <p/>This cache contains bitmaps and nine patches that are loaded from the disk and reused
+     * <p>This cache contains bitmaps and nine patches that are loaded from the disk and reused
      * until this method is called.
-     * <p/>The cache is not configuration dependent and should only be cleared when a
+     * <p>The cache is not configuration dependent and should only be cleared when a
      * resource changes (at this time only bitmaps and 9 patches go into the cache).
-     * <p/>
+     * <p>
      * The project key provided must be similar to the one passed in {@link RenderParams}.
      *
      * @param projectKey the key for the project.

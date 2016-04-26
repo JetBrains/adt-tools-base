@@ -24,21 +24,23 @@ import com.google.common.base.Objects;
 import java.util.regex.Pattern;
 
 /**
+ * <p>
  * Represents the version of a target or device.
- * <p/>
+ * </p>
  * A version is defined by an API level and an optional code name.
  * <ul><li>Release versions of the Android platform are identified by their API level (integer),
  * (technically the code name for release version is "REL" but this class will return
- * <code>null<code> instead.)</li>
+ * <code>null</code> instead.)</li>
  * <li>Preview versions of the platform are identified by a code name. Their API level
  * is usually set to the value of the previous platform.</li></ul>
- * <p/>
+ * <p>
  * While this class contains both values, its goal is to abstract them, so that code comparing 2+
  * versions doesn't have to deal with the logic of handle both values.
- * <p/>
+ * </p>
+ * <p>
  * There are some cases where ones may want to access the values directly. This can be done
  * with {@link #getApiLevel()} and {@link #getCodename()}.
- * <p/>
+ * </p>
  * For generic UI display of the API version, {@link #getApiString()} is to be used.
  */
 public final class AndroidVersion implements Comparable<AndroidVersion> {
@@ -74,9 +76,10 @@ public final class AndroidVersion implements Comparable<AndroidVersion> {
     }
 
     /**
+     * <p>
      * Creates an {@link AndroidVersion} from a string that may be an integer API
      * level or a string codename.
-     * <p/>
+     * </p>
      * <Em>Important</em>: An important limitation of this method is that cannot possible
      * recreate the API level integer from a pure string codename. This is only OK to use
      * if the caller can guarantee that only {@link #getApiString()} will be used later.
@@ -116,10 +119,10 @@ public final class AndroidVersion implements Comparable<AndroidVersion> {
 
     /**
      * Returns the api level as an integer.
-     * <p/>For target that are in preview mode, this can be superseded by
-     * {@link #getCodename()}.
-     * <p/>To display the API level in the UI, use {@link #getApiString()}, which will use the
-     * codename if applicable.
+     * <p>For target that are in preview mode, this can be superseded by
+     * {@link #getCodename()}.</p>
+     * <p>To display the API level in the UI, use {@link #getApiString()}, which will use the
+     * codename if applicable.</p>
      * @see #getCodename()
      * @see #getApiString()
      */
@@ -144,8 +147,8 @@ public final class AndroidVersion implements Comparable<AndroidVersion> {
 
     /**
      * Returns the version code name if applicable, null otherwise.
-     * <p/>If the codename is non null, then the API level should be ignored, and this should be
-     * used as a unique identifier of the target instead.
+     * <p>If the codename is non null, then the API level should be ignored, and this should be
+     * used as a unique identifier of the target instead.</p>
      */
     @Nullable
     public String getCodename() {
@@ -174,13 +177,15 @@ public final class AndroidVersion implements Comparable<AndroidVersion> {
     /**
      * Checks whether a device running a version similar to the receiver can run a project compiled
      * for the given <var>version</var>.
-     * <p/>
+     * <p>
      * Be aware that this is not a perfect test, as other properties could break compatibility
      * despite this method returning true.
-     * <p/>
+     * </p>
+     * <p>
      * Nevertheless, when testing if an application can run on a device (where there is no
      * access to the list of optional libraries), this method can give a good indication of whether
      * there is a chance the application could run, or if there's a direct incompatibility.
+     * </p>
      */
     public boolean canRun(@NonNull AndroidVersion appVersion) {
         // if the application is compiled for a preview version, the device must be running exactly

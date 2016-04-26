@@ -83,7 +83,7 @@ public class ImageViewer extends JComponent {
 
     private final AWTEventListener mAwtKeyEventListener;
 
-    /** Current 9patch zoom level, {@link #MIN_ZOOM} <= zoom <= {@link #MAX_ZOOM} */
+    /** Current 9patch zoom level, {@link #MIN_ZOOM} &lt;= zoom &lt;= {@link #MAX_ZOOM} */
     private int zoom = DEFAULT_ZOOM;
     private boolean showPatches;
     private boolean showLock = false;

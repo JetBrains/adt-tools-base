@@ -18,7 +18,7 @@ package com.android.ide.common.rendering.api;
 
 /**
  * Scene result class. This is an immutable class.
- * <p/>
+ * <p>
  * This cannot be allocated directly, instead use
  * {@link Status#createResult()},
  * {@link Status#createResult(String, Throwable)},
@@ -34,7 +34,7 @@ public class Result {
 
     /**
      * Scene Status enum.
-     * <p/>This indicates the status of all scene actions.
+     * <p>This indicates the status of all scene actions.
      */
     public enum Status {
         SUCCESS,

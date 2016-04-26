@@ -18,7 +18,7 @@ package com.android.resources;
 
 /**
  * Screen Orientation enum.
- * <p/>This is used in the manifest in the uses-configuration node and in the resource folder names.
+ * <p>This is used in the manifest in the uses-configuration node and in the resource folder names.
  */
 public enum ScreenOrientation implements ResourceEnum {
     PORTRAIT("port", "Portrait", "Portrait Orientation"), //$NON-NLS-1$

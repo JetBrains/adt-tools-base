@@ -22,3 +22,8 @@ dependencies {
 group = 'com.android.tools.internal.build.test'
 archivesBaseName = 'devicepool'
 version = '0.1'
+
+// set classpath with provided files.
+tasks.withType(Javadoc) {
+    classpath += configurations.provided
+}

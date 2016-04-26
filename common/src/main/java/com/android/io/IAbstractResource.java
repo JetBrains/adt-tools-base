@@ -17,7 +17,7 @@
 package com.android.io;
 
 /**
- * Base representation of a file system resource.<p/>
+ * <p>Base representation of a file system resource.</p>
  * This somewhat limited interface is designed to let classes use file-system resources, without
  * having the manually handle either the standard Java file or the Eclipse file API..
  */
