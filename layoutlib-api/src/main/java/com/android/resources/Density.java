@@ -22,7 +22,7 @@ import java.util.Set;
 
 /**
  * Density enum.
- * <p/>This is used in the manifest in the uses-configuration node and in the resource folder names
+ * <p>This is used in the manifest in the uses-configuration node and in the resource folder names
  * as well as other places needing to know the density values.
  */
 public enum Density implements ResourceEnum {

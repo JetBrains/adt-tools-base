@@ -23,3 +23,8 @@ sdk {
         item 'etc/jobb.bat'
     }
 }
+
+// turn off strict javadoc
+tasks.withType(Javadoc) {
+    options.addStringOption('Xdoclint:none', '-quiet')
+}

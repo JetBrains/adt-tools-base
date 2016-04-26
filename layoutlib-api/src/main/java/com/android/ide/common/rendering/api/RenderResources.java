@@ -22,7 +22,7 @@ import java.util.List;
 
 /**
  * A class containing all the resources needed to do a rendering.
- * <p/>
+ * <p>
  * This contains both the project specific resources and the framework resources, and provide
  * convenience methods to resolve resource and theme references.
  */
@@ -66,7 +66,7 @@ public class RenderResources {
 
     /**
      * Use this theme to resolve resources.
-     * <p/>
+     * <p>
      * Remember to call {@link #clearStyles()} to clear the applied styles, so the default theme
      * may be restored.
      *
@@ -217,7 +217,7 @@ public class RenderResources {
 
     /**
      * Searches for, and returns a {@link ResourceValue} by its reference.
-     * <p/>
+     * <p>
      * The reference format can be:
      * <pre>@resType/resName</pre>
      * <pre>@android:resType/resName</pre>
@@ -226,7 +226,7 @@ public class RenderResources {
      * <pre>?android:resType/resName</pre>
      * <pre>?resType/android:resName</pre>
      * Any other string format will return <code>null</code>.
-     * <p/>
+     * <p>
      * The actual format of a reference is <pre>@[namespace:]resType/resName</pre> but this method
      * only support the android namespace.
      *
@@ -241,11 +241,11 @@ public class RenderResources {
 
     /**
      * Resolves the value of a resource, if the value references a theme or resource value.
-     * <p/>
+     * <p>
      * This method ensures that it returns a {@link ResourceValue} object that does not
      * reference another resource.
      * If the resource cannot be resolved, it returns <code>null</code>.
-     * <p/>
+     * <p>
      * If a value that does not need to be resolved is given, the method will return a new
      * instance of {@link ResourceValue} that contains the input value.
      *
@@ -263,11 +263,11 @@ public class RenderResources {
 
     /**
      * Returns the {@link ResourceValue} referenced by the value of <var>value</var>.
-     * <p/>
+     * <p>
      * This method ensures that it returns a {@link ResourceValue} object that does not
      * reference another resource.
      * If the resource cannot be resolved, it returns <code>null</code>.
-     * <p/>
+     * <p>
      * If a value that does not need to be resolved is given, the method will return the input
      * value.
      *
@@ -299,7 +299,7 @@ public class RenderResources {
     /**
      * Returns the name of the resources as written in the XML. This undos the flattening of some
      * characters to '_' as done by aapt.
-     * <p/>
+     * <p>
      * The method is not guaranteed to be implemented on the IDE side. In such a case, the method
      * will return null.
      * @param type the type of the resource

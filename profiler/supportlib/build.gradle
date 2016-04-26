@@ -41,3 +41,8 @@ sourceSets {
 jar {
     archiveName 'profilers-support-lib.jar'
 }
+
+// turn off strict javadoc
+tasks.withType(Javadoc) {
+    options.addStringOption('Xdoclint:none', '-quiet')
+}

@@ -274,8 +274,9 @@ public final class SdkConstants {
     public static final String FD_RESOURCES = "res";                    //$NON-NLS-1$
     /** Assets folder name, i.e. "assets" */
     public static final String FD_ASSETS = "assets";                    //$NON-NLS-1$
-    /** Default source folder name in an SDK project, i.e. "src".
-     * <p/>
+    /**
+     * <p>Default source folder name in an SDK project, i.e. "src".
+     * </p>
      * Note: this is not the same as {@link #FD_PKG_SOURCES}
      * which is an SDK sources folder for packages. */
     public static final String FD_SOURCES = "src";                      //$NON-NLS-1$
@@ -325,8 +326,9 @@ public final class SdkConstants {
     public static final String FD_ADDONS = "add-ons";                   //$NON-NLS-1$
     /** Name of the SDK system-images folder. */
     public static final String FD_SYSTEM_IMAGES = "system-images";      //$NON-NLS-1$
-    /** Name of the SDK sources folder where source packages are installed.
-     * <p/>
+    /**
+     * <p>Name of the SDK sources folder where source packages are installed.
+     * </p>
      * Note this is not the same as {@link #FD_SOURCES} which is the folder name where sources
      * are installed inside a project. */
     public static final String FD_PKG_SOURCES = "sources";              //$NON-NLS-1$
@@ -413,8 +415,9 @@ public final class SdkConstants {
         "http://schemas.android.com/apk/res/android";                   //$NON-NLS-1$
 
     /**
+     * <p>
      * Namespace pattern for the custom resource XML, i.e. "http://schemas.android.com/apk/res/%s"
-     * <p/>
+     * </p>
      * This string contains a %s. It must be combined with the desired Java package, e.g.:
      * <pre>
      *    String.format(SdkConstants.NS_CUSTOM_RESOURCES_S, "android");

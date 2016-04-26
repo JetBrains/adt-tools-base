@@ -16,3 +16,8 @@ dependencies {
 sourceSets {
     main.resources.srcDirs = [ 'src/test/java' ]
 }
+
+// turn off strict javadoc
+tasks.withType(Javadoc) {
+    options.addStringOption('Xdoclint:none', '-quiet')
+}

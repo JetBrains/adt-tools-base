@@ -25,8 +25,9 @@ import java.util.Formatter;
 
 
 /**
+ * <p>
  * An implementation of {@link ILogger} that prints to {@link System#out} and {@link System#err}.
- * <p/>
+ * </p>
  *
  */
 public class StdLogger implements ILogger {
@@ -67,13 +68,16 @@ public class StdLogger implements ILogger {
     }
 
     /**
+     * <p>
      * Prints an error message.
-     * <p/>
+     * </p>
+     * <p>
      * The message will be tagged with "Error" on the output so the caller does not
      * need to put such a prefix in the format string.
-     * <p/>
+     * </p>
+     * <p>
      * The output is done on {@link System#err}.
-     * <p/>
+     * </p>
      * This is always displayed, independent of the logging {@link Level}.
      *
      * @param t is an optional {@link Throwable} or {@link Exception}. If non-null, it's
@@ -95,13 +99,17 @@ public class StdLogger implements ILogger {
     }
 
     /**
+     * <p>
      * Prints a warning message.
-     * <p/>
+     * </p>
+     * <p>
      * The message will be tagged with "Warning" on the output so the caller does not
      * need to put such a prefix in the format string.
-     * <p/>
+     * </p>
+     * <p>
      * The output is done on {@link System#out}.
-     * <p/>
+     * </p>
+     * <p>
      * This is displayed only if the logging {@link Level} is {@link Level#WARNING} or higher.
      *
      * @param warningFormat is a string format to be used with a {@link Formatter}. Cannot be null.
@@ -119,10 +127,13 @@ public class StdLogger implements ILogger {
     }
 
     /**
+     * <p>
      * Prints an info message.
-     * <p/>
+     * </p>
+     * <p>
      * The output is done on {@link System#out}.
-     * <p/>
+     * </p>
+     * <p>
      * This is displayed only if the logging {@link Level} is {@link Level#INFO} or higher.
      *
      * @param msgFormat is a string format to be used with a {@link Formatter}. Cannot be null.
@@ -140,12 +151,15 @@ public class StdLogger implements ILogger {
     }
 
     /**
+     * <p>
      * Prints a verbose message.
-     * <p/>
+     * </p>
+     * <p>
      * The output is done on {@link System#out}.
-     * <p/>
+     * </p>
+     * <p>
      * This is displayed only if the logging {@link Level} is {@link Level#VERBOSE} or higher.
-     *
+     * </p>
      * @param msgFormat is a string format to be used with a {@link Formatter}. Cannot be null.
      * @param args provides the arguments for msgFormat.
      */

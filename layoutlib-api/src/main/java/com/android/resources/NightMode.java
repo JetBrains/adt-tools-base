@@ -18,7 +18,7 @@ package com.android.resources;
 
 /**
  * Night enum.
- * <p/>This is used in the resource folder names.
+ * <p>This is used in the resource folder names.
  */
 public enum NightMode implements ResourceEnum {
     NOTNIGHT("notnight", "Not Night", "Day time"),

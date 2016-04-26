@@ -47,3 +47,9 @@ jar {
     }
     exclude('com/android/annotations/**', 'NOTICE')
 }
+
+// set proper classpath and turn off strict mode.
+tasks.withType(Javadoc) {
+    classpath += files(androidJar)
+    options.addStringOption('Xdoclint:none', '-quiet')
+}
