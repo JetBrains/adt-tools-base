@@ -84,6 +84,7 @@ import com.android.resources.Density;
 import com.android.utils.ILogger;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 
@@ -221,6 +222,11 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         modelRegistry.register(ModelRegistrations.bridgedInstance(
                 ModelReference.of("createSdkHandler", SdkHandler.class),
                 sdkHandler).descriptor("SDK handler.").build());
+
+        // Apply additional plugins
+        for (String plugin : AndroidGradleOptions.getAdditionalPlugins(project)) {
+            project.apply(ImmutableMap.of("plugin", plugin));
+        }
     }
 
     private SdkHandler createSdkHandler(final Project project) {
