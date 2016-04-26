@@ -36,6 +36,7 @@ import com.android.ddmlib.CollectingOutputReceiver;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.InstallException;
+import com.android.sdklib.AndroidVersion;
 import com.android.tools.fd.client.AppState;
 import com.android.tools.fd.client.InstantRunArtifact;
 import com.android.tools.fd.client.InstantRunArtifactType;
@@ -68,9 +69,11 @@ public final class InstantRunTestUtils {
     }
 
     @NonNull
-    public static InstantRunBuildContext loadBuildContext(@NonNull InstantRun instantRunModel)
-        throws Exception {
+    public static InstantRunBuildContext loadBuildContext(
+            int apiLevel,
+            @NonNull InstantRun instantRunModel) throws Exception {
         InstantRunBuildContext context = new InstantRunBuildContext();
+        context.setApiLevel(new AndroidVersion(apiLevel, null), null, null);
         context.loadFromXml(Files.toString(instantRunModel.getInfoFile(), Charsets.UTF_8));
         return context;
     }

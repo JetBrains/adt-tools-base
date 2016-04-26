@@ -27,6 +27,7 @@ import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
 import com.android.build.api.transform.JarInput;
 import com.android.build.api.transform.QualifiedContent;
+import com.android.build.api.transform.SecondaryFile;
 import com.android.build.api.transform.Status;
 import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
@@ -47,6 +48,7 @@ import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
@@ -124,6 +126,16 @@ public class InstantRunTransform extends Transform {
     @Override
     public boolean isIncremental() {
         return true;
+    }
+
+    @NonNull
+    @Override
+    public Map<String, Object> getParameterInputs() {
+        // Force the instant run transform to re-run when the dex patching policy changes,
+        // as the slicer will re-run.
+        return ImmutableMap.of("dex patching policy",
+                variantScope.getInstantRunBuildContext().getPatchingPolicy()
+                        .getDexPatchingPolicy().toString());
     }
 
     @Override
