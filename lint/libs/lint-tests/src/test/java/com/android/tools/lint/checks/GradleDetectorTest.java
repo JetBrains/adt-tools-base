@@ -58,7 +58,6 @@ import com.android.utils.Pair;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.google.common.io.Files;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
@@ -133,6 +132,8 @@ public class GradleDetectorTest extends AbstractCheckTest {
                     "extras/android/m2repository/com/android/support/support-v4/20.0.0/support-v4-20.0.0.aar",
                     "extras/android/m2repository/com/android/support/support-v4/21.0.0/support-v4-21.0.0.aar",
                     "extras/android/m2repository/com/android/support/support-v4/21.0.2/support-v4-21.0.2.aar",
+                    "extras/android/m2repository/com/android/support/test/runner/0.5/runner-0.5.aar",
+                    "extras/android/m2repository/com/android/support/multidex/1.0.1/multidex-1.0.1.aar",
 
                     // Google repository
                     "extras/google/m2repository/com/google/android/gms/play-services/3.1.36/play-services-3.1.36.aar",
@@ -245,10 +246,16 @@ public class GradleDetectorTest extends AbstractCheckTest {
             + "build.gradle:26: Warning: A newer version of com.google.android.support:wearable than 1.2.0 is available: 1.3.0 [GradleDependency]\n"
             + "    compile 'com.google.android.support:wearable:1.2.0'\n"
             + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+            + "build.gradle:27: Warning: A newer version of com.android.support:multidex than 1.0.0 is available: 1.0.1 [GradleDependency]\n"
+            + "    compile 'com.android.support:multidex:1.0.0'\n"
+            + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+            + "build.gradle:29: Warning: A newer version of com.android.support.test:runner than 0.3 is available: 0.5 [GradleDependency]\n"
+            + "    androidTestCompile 'com.android.support.test:runner:0.3'\n"
+            + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
             + "build.gradle:23: Warning: Avoid using + in version numbers; can lead to unpredictable and unrepeatable builds (com.android.support:appcompat-v7:+) [GradleDynamicVersion]\n"
             + "    compile 'com.android.support:appcompat-v7:+'\n"
             + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-            + "1 errors, 6 warnings\n",
+            + "1 errors, 8 warnings\n",
 
             lintProject("gradle/Dependencies.gradle=>build.gradle"));
     }
@@ -304,7 +311,13 @@ public class GradleDetectorTest extends AbstractCheckTest {
                 + "build.gradle:26: Warning: A newer version of com.google.android.support:wearable than 1.2.0 is available: 1.3.0 [GradleDependency]\n"
                 + "    compile 'com.google.android.support:wearable:1.2.0'\n"
                 + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "0 errors, 4 warnings\n",
+                + "build.gradle:27: Warning: A newer version of com.android.support:multidex than 1.0.0 is available: 1.0.1 [GradleDependency]\n"
+                + "    compile 'com.android.support:multidex:1.0.0'\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "build.gradle:29: Warning: A newer version of com.android.support.test:runner than 0.3 is available: 0.5 [GradleDependency]\n"
+                + "    androidTestCompile 'com.android.support.test:runner:0.3'\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 6 warnings\n",
 
                 lintProject("gradle/Dependencies.gradle=>build.gradle"));
     }
