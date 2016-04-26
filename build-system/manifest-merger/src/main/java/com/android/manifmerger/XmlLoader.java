@@ -16,21 +16,17 @@
 
 package com.android.manifmerger;
 
-import static com.android.manifmerger.ManifestMerger2.SystemProperty;
 import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
 
 import com.android.annotations.NonNull;
 import com.android.ide.common.blame.SourceFile;
 import com.android.utils.PositionXmlParser;
 import com.google.common.base.Optional;
-import com.google.common.io.Closeables;
 
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -53,7 +49,7 @@ public final class XmlLoader {
     @NonNull
     public static XmlDocument load(
             @NonNull KeyResolver<String> selectors,
-            @NonNull KeyBasedValueResolver<SystemProperty> systemPropertyResolver,
+            @NonNull KeyBasedValueResolver<ManifestSystemProperty> systemPropertyResolver,
             @NonNull String displayName,
             @NonNull File xmlFile,
             @NonNull InputStream inputStream,
@@ -83,7 +79,7 @@ public final class XmlLoader {
     @NonNull
     public static XmlDocument load(
             @NonNull KeyResolver<String> selectors,
-            @NonNull KeyBasedValueResolver<SystemProperty> systemPropertyResolver,
+            @NonNull KeyBasedValueResolver<ManifestSystemProperty> systemPropertyResolver,
             @NonNull SourceFile sourceFile,
             @NonNull String xml,
             @NonNull XmlDocument.Type type,

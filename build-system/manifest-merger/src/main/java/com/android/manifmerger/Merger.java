@@ -126,14 +126,14 @@ public class Merger {
                     return 1;
                 }
                 try {
-                    ManifestMerger2.SystemProperty systemProperty = ManifestMerger2.SystemProperty
+                    ManifestSystemProperty manifestSystemProperty = ManifestSystemProperty
                             .valueOf(value.substring(0, value.indexOf('='))
                                     .toUpperCase(Locale.ENGLISH));
-                    invoker.setOverride(systemProperty, value.substring(value.indexOf('=') + 1));
+                    invoker.setOverride(manifestSystemProperty, value.substring(value.indexOf('=') + 1));
                 } catch (IllegalArgumentException e) {
                     logger.error(e, "Invalid property name "+ value.substring(0, value.indexOf('='))
                         + ", allowed properties are : " + Joiner
-                            .on(',').join(ManifestMerger2.SystemProperty.values()));
+                            .on(',').join(ManifestSystemProperty.values()));
                     return 1;
                 }
             }
@@ -190,7 +190,7 @@ public class Merger {
         System.out.println("\t--libs [path separated list of lib's manifests]");
         System.out.println("\t--overlays [path separated list of overlay's manifests]");
         System.out.println("\t--property ["
-                + Joiner.on(" | ").join(ManifestMerger2.SystemProperty.values())
+                + Joiner.on(" | ").join(ManifestSystemProperty.values())
                 + "=value]");
         System.out.println("\t--placeholder [name=value]");
         System.out.println("\t--out [path of the output file]");
