@@ -19,6 +19,9 @@ package com.android.build.gradle.integration.shrinker;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.utils.TestFileUtils;
+
+import java.io.IOException;
 
 /**
  * Utility code for testing the new built-in class shrinker.
@@ -27,5 +30,12 @@ public class ShrinkerTestUtils {
     public static void checkShrinkerWasUsed(GradleTestProject project) {
         // Sanity check, to make sure we're testing the right thing.
         assertThat(project.file("build/intermediates/transforms/newClassShrinker")).exists();
+    }
+
+    public static void enableShrinker(GradleTestProject project, String buildType)
+            throws IOException {
+        TestFileUtils.appendToFile(
+                project.getBuildFile(),
+                "\n\nandroid.buildTypes." + buildType + ".useProguard = false");
     }
 }
