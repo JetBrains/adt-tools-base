@@ -226,6 +226,13 @@ public class AxisLineChartVisualTest extends VisualTest {
                 mScrollbar.setStableScrolling(itemEvent.getStateChange() == ItemEvent.SELECTED);
             }
         }));
+        controls.add(VisualTests.createCheckbox("Sync Vertical Axes", new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent itemEvent) {
+                mMemoryAxis2.setParentAxis(itemEvent.getStateChange() == ItemEvent.SELECTED ?
+                        mMemoryAxis1 : null);
+            }
+        }));
         controls.add(VisualTests.createButton("Zoom In Test", new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -257,12 +264,12 @@ public class AxisLineChartVisualTest extends VisualTest {
         timelinePane.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
-                JLayeredPane host = (JLayeredPane)e.getComponent();
+                JLayeredPane host = (JLayeredPane) e.getComponent();
                 if (host != null) {
                     Dimension dim = host.getSize();
                     for (Component c : host.getComponents()) {
                         if (c instanceof AxisComponent) {
-                            AxisComponent axis = (AxisComponent)c;
+                            AxisComponent axis = (AxisComponent) c;
                             switch (axis.getOrientation()) {
                                 case LEFT:
                                     axis.setBounds(0, 0, AXIS_SIZE, dim.height);
