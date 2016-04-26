@@ -96,7 +96,6 @@ import com.android.build.gradle.internal.transforms.InstantRunVerifierTransform;
 import com.android.build.gradle.internal.transforms.JackTransform;
 import com.android.build.gradle.internal.transforms.JacocoTransform;
 import com.android.build.gradle.internal.transforms.JarMergingTransform;
-import com.android.build.gradle.internal.transforms.JillTransform;
 import com.android.build.gradle.internal.transforms.MergeJavaResourcesTransform;
 import com.android.build.gradle.internal.transforms.MultiDexTransform;
 import com.android.build.gradle.internal.transforms.NewShrinkerTransform;
@@ -2070,28 +2069,20 @@ public abstract class TaskManager {
                             .build());
         }
 
-        // ----- Create Jill tasks -----
-        JillTransform jillPackagedTransform = new JillTransform(
-                androidBuilder,
-                globalScope.getExtension().getDexOptions(),
-                scope.getVariantConfiguration().getJackOptions().isJackInProcess(),
-                true);
-        scope.getTransformManager().addTransform(tasks, scope, jillPackagedTransform);
-
-        // Jill runtime libraries
-        JillTransform jillRuntimeLibTransform = new JillTransform(
-                androidBuilder,
-                globalScope.getExtension().getDexOptions(),
-                scope.getVariantConfiguration().getJackOptions().isJackInProcess(),
-                false);
-        scope.getTransformManager().addTransform(tasks, scope, jillRuntimeLibTransform);
-
-        // ----- Create PreDex tasks -----
+        // ----- Create PreDex tasks for libraries -----
         JackPreDexTransform preDexPackagedTransform = new JackPreDexTransform(
                 androidBuilder,
                 globalScope.getExtension().getDexOptions().getJavaMaxHeapSize(),
-                scope.getVariantConfiguration().getJackOptions().isJackInProcess());
+                scope.getVariantConfiguration().getJackOptions().isJackInProcess(),
+                true);
         scope.getTransformManager().addTransform(tasks, scope, preDexPackagedTransform);
+
+        JackPreDexTransform preDexRuntimeTransform = new JackPreDexTransform(
+                androidBuilder,
+                globalScope.getExtension().getDexOptions().getJavaMaxHeapSize(),
+                scope.getVariantConfiguration().getJackOptions().isJackInProcess(),
+                false);
+        scope.getTransformManager().addTransform(tasks, scope, preDexRuntimeTransform);
 
 
         // ----- Create Jack Task -----

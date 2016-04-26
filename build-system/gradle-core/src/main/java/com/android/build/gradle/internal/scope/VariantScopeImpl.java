@@ -695,27 +695,6 @@ public class VariantScopeImpl implements VariantScope {
 
     @Override
     @NonNull
-    public File getJillPackagedLibrariesDir() {
-        return new File(globalScope.getIntermediatesDir(),
-                "jill/" + getVariantConfiguration().getDirName() + "/packaged");
-    }
-
-    @Override
-    @NonNull
-    public File getJillRuntimeLibrariesDir() {
-        return new File(globalScope.getIntermediatesDir(),
-                "jill/" + getVariantConfiguration().getDirName() + "/runtime");
-    }
-
-    @Override
-    @NonNull
-    public File getJackDestinationDir() {
-        return new File(globalScope.getIntermediatesDir(),
-                "dex/" + getVariantConfiguration().getDirName());
-    }
-
-    @Override
-    @NonNull
     public File getJackClassesZip() {
         return new File(globalScope.getIntermediatesDir(),
                 "packaged/" + getVariantConfiguration().getDirName() + "/classes.zip");

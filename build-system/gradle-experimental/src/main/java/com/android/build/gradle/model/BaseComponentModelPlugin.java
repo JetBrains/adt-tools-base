@@ -52,7 +52,6 @@ import com.android.build.gradle.internal.profile.RecordingBuildListener;
 import com.android.build.gradle.internal.tasks.DependencyReportTask;
 import com.android.build.gradle.internal.tasks.SigningReportTask;
 import com.android.build.gradle.internal.transforms.DexTransform;
-import com.android.build.gradle.internal.transforms.JillTransform;
 import com.android.build.gradle.internal.variant.VariantFactory;
 import com.android.build.gradle.managed.AndroidConfig;
 import com.android.build.gradle.managed.BuildType;
@@ -68,6 +67,7 @@ import com.android.build.gradle.managed.adaptor.DataBindingOptionsAdapter;
 import com.android.build.gradle.managed.adaptor.ProductFlavorAdaptor;
 import com.android.build.gradle.model.internal.AndroidBinaryInternal;
 import com.android.build.gradle.model.internal.AndroidComponentSpecInternal;
+import com.android.build.gradle.tasks.JackPreDexTransform;
 import com.android.builder.Version;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.internal.compiler.JackConversionCache;
@@ -254,7 +254,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                                     new File(project.getRootProject().getBuildDir(),
                                             FD_INTERMEDIATES + "/dex-cache/cache.xml"));
                             break;
-                        } else if (transform instanceof JillTransform) {
+                        } else if (transform instanceof JackPreDexTransform) {
                             JackConversionCache.getCache().load(
                                     new File(project.getRootProject().getBuildDir(),
                                             FD_INTERMEDIATES + "/jack-cache/cache.xml"));

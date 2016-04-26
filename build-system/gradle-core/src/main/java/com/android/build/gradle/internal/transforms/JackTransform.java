@@ -34,6 +34,7 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.tasks.JackPreDexTransform;
 import com.android.build.gradle.tasks.factory.AbstractCompilesUtil;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.JackProcessOptions;
@@ -65,9 +66,8 @@ import java.util.Set;
  *
  * <p>Transform inputs:</p>
  * <ul>
- *     <li>Jack format libraries, produced by the for packaged libs {@link JillTransform}
- *         (optionally pre-dexed)</li>
- *     <li>Jack format classpath, produced by the for runtime libs {@link JillTransform}
+ *     <li>Jack format libraries, produced by the for packaged libs {@link JackPreDexTransform}</li>
+ *     <li>Jack format classpath, produced by the for runtime libs {@link JackPreDexTransform}
  *         i.e. normally the android.jar</li>
  * </ul>
  * <p>Secondary inputs:</p>

@@ -62,7 +62,7 @@ public class JackIncrementalTest {
         // Check pre-dexed library is not updated
         File androidJar =
                 FileUtils.find(
-                        project.file("build/intermediates/transforms/jillRuntime"),
+                        project.file("build/intermediates/transforms/preJackRuntimeLibraries"),
                         Pattern.compile("android.*")).get(0);
         long androidJarTimestamp = androidJar.lastModified();
 
