@@ -827,7 +827,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             @NonNull Context context,
             @NonNull GradleCoordinate dependency,
             @NonNull Object cookie) {
-        if ("com.android.support".equals(dependency.getGroupId())) {
+        if (dependency.getGroupId() != null && dependency.getGroupId().startsWith("com.android.support")) {
             checkSupportLibraries(context, dependency, cookie);
             if (mMinSdkVersion >= 14 && "appcompat-v7".equals(dependency.getArtifactId())
                   && mCompileSdkVersion >= 1 && mCompileSdkVersion < 21) {
@@ -1094,24 +1094,26 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         String artifactId = dependency.getArtifactId();
         assert groupId != null && artifactId != null;
 
-        if (mCompileSdkVersion >= 18 && dependency.getMajorVersion() != mCompileSdkVersion &&
-                dependency.getMajorVersion() != GradleCoordinate.PLUS_REV_VALUE &&
-                // The multidex library doesn't follow normal supportlib numbering scheme
-                !dependency.getArtifactId().startsWith("multidex") &&
-                context.isEnabled(COMPATIBILITY)) {
-            String message = "This support library should not use a different version ("
-                    + dependency.getMajorVersion() + ") than the `compileSdkVersion` ("
-                    + mCompileSdkVersion + ")";
-            report(context, cookie, COMPATIBILITY, message);
-        } else if (mTargetSdkVersion > 0 && dependency.getMajorVersion() < mTargetSdkVersion &&
-                dependency.getMajorVersion() != GradleCoordinate.PLUS_REV_VALUE &&
-                // The multidex library doesn't follow normal supportlib numbering scheme
-                !dependency.getArtifactId().startsWith("multidex") &&
-                context.isEnabled(COMPATIBILITY)) {
-            String message = "This support library should not use a lower version ("
-                + dependency.getMajorVersion() + ") than the `targetSdkVersion` ("
-                    + mTargetSdkVersion + ")";
-            report(context, cookie, COMPATIBILITY, message);
+        // For artifacts that follow the platform numbering scheme, check that it matches the SDK
+        // versions used.
+        if ("com.android.support".equals(groupId) && !artifactId.startsWith("multidex")) {
+            if (mCompileSdkVersion >= 18
+                    && dependency.getMajorVersion() != mCompileSdkVersion
+                    && dependency.getMajorVersion() != GradleCoordinate.PLUS_REV_VALUE
+                    && context.isEnabled(COMPATIBILITY)) {
+                String message = "This support library should not use a different version ("
+                        + dependency.getMajorVersion() + ") than the `compileSdkVersion` ("
+                        + mCompileSdkVersion + ")";
+                report(context, cookie, COMPATIBILITY, message);
+            } else if (mTargetSdkVersion > 0
+                    && dependency.getMajorVersion() < mTargetSdkVersion
+                    && dependency.getMajorVersion() != GradleCoordinate.PLUS_REV_VALUE
+                    && context.isEnabled(COMPATIBILITY)) {
+                String message = "This support library should not use a lower version ("
+                        + dependency.getMajorVersion() + ") than the `targetSdkVersion` ("
+                        + mTargetSdkVersion + ")";
+                report(context, cookie, COMPATIBILITY, message);
+            }
         }
 
         // Check to make sure you have the Android support repository installed

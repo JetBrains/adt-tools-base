@@ -24,4 +24,7 @@ dependencies {
     freeCompile 'com.google.guava:guava:11.0.2'
     compile 'com.android.support:appcompat-v7:13.0.0'
     compile 'com.google.android.support:wearable:1.2.0'
+    compile 'com.android.support:multidex:1.0.0'
+
+    androidTestCompile 'com.android.support.test:runner:0.3'
 }
