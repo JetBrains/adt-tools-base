@@ -492,7 +492,7 @@ public class MockFileOp implements FileOp {
         }
 
         for (String folder : mExistingFolders) {
-            if (folder.startsWith(path) && !folder.equals(path)) {
+            if (folder.startsWith(path + File.separator) && !folder.equals(path)) {
                 // the File.delete operation is not recursive and would fail to remove
                 // a root dir that is not empty.
                 return false;
@@ -500,7 +500,7 @@ public class MockFileOp implements FileOp {
         }
 
         for (String filePath : mExistingFiles.keySet()) {
-            if (filePath.startsWith(path) && !filePath.equals(path)) {
+            if (filePath.startsWith(path + File.separator) && !filePath.equals(path)) {
                 // the File.delete operation is not recursive and would fail to remove
                 // a root dir that is not empty.
                 return false;
@@ -579,10 +579,10 @@ public class MockFileOp implements FileOp {
             String filePath = entry.getKey();
             Matcher m = pathRE.matcher(filePath);
             if (m.matches()) {
-                it.remove();
                 String newFilePath = newPath + m.group(2);
                 newFiles.put(newFilePath, entry.getValue());
                 renamed = true;
+                it.remove();
             }
         }
         mExistingFiles.putAll(newFiles);
@@ -721,6 +721,10 @@ public class MockFileOp implements FileOp {
         }
         recordExistingFile(file);
         return true;
+    }
+
+    public byte[] getContent(File file) {
+        return mExistingFiles.get(getAgnosticAbsPath(file)).getContent();
     }
 
     // -----
