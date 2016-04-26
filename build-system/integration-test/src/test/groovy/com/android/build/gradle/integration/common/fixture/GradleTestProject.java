@@ -169,7 +169,7 @@ public class GradleTestProject implements TestRule {
         File ndkDir = findNdkDir();
         @Nullable
         private String targetGradleVersion;
-        boolean useJack = false;
+        boolean useJack = USE_JACK;
         boolean useMinify = false;
         @NonNull
         private List<String> gradleProperties = Lists.newArrayList();

@@ -1,20 +1,17 @@
 package com.android.build.gradle.integration.application;
 
-import static com.android.build.gradle.integration.common.utils.AndroidVersionMatcher.thatUsesArt;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static org.junit.Assume.assumeTrue;
 
 import com.android.build.gradle.integration.common.category.DeviceTests;
 import com.android.build.gradle.integration.common.fixture.Adb;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.truth.TruthHelper;
-import com.android.build.gradle.integration.common.utils.AndroidVersionMatcher;
-import com.android.ddmlib.IDevice;
 import com.google.common.collect.ImmutableList;
 
 import org.gradle.api.JavaVersion;
 import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -32,15 +29,15 @@ public class JackSmokeTest {
     public Adb adb = new Adb();
 
     @ClassRule
-    public static GradleTestProject basic = GradleTestProject.builder().withName("basic")
+    public static GradleTestProject sBasic = GradleTestProject.builder().withName("basic")
             .fromTestProject("basic").create();
 
     @ClassRule
-    public static GradleTestProject minify = GradleTestProject.builder().withName("minify")
+    public static GradleTestProject sMinify = GradleTestProject.builder().withName("minify")
             .fromTestProject("minify").create();
 
     @ClassRule
-    public static GradleTestProject multiDex = GradleTestProject.builder().withName("multiDex")
+    public static GradleTestProject sMultiDex = GradleTestProject.builder().withName("multiDex")
             .fromTestProject("multiDex").create();
 
     private static final List<String> JACK_OPTIONS = ImmutableList
@@ -54,60 +51,60 @@ public class JackSmokeTest {
 
     @AfterClass
     public static void cleanUp() {
-        basic = null;
-        minify = null;
-        multiDex = null;
+        sBasic = null;
+        sMinify = null;
+        sMultiDex = null;
     }
 
     @Test
     public void assembleBasicDebug() throws Exception {
-        basic.execute(JACK_OPTIONS, "clean", "assembleDebug", "assembleDebugAndroidTest");
-        TruthHelper.assertThatApk(basic.getApk("debug")).contains("classes.dex");
-        TruthHelper.assertThat(basic.getStdout()).contains("transformJackWithJack");
+        sBasic.execute(JACK_OPTIONS, "clean", "assembleDebug", "assembleDebugAndroidTest");
+        TruthHelper.assertThatApk(sBasic.getApk("debug")).contains("classes.dex");
+        assertThat(sBasic.getStdout()).contains("transformJackWithJack");
     }
 
     @Test
     public void assembleMinifyDebug() {
-        minify.execute(JACK_OPTIONS, "clean", "assembleDebug", "assembleDebugAndroidTest");
-        TruthHelper.assertThat(minify.getStdout()).contains("transformJackWithJack");
+        sMinify.execute(JACK_OPTIONS, "clean", "assembleDebug", "assembleDebugAndroidTest");
+        assertThat(sMinify.getStdout()).contains("transformJackWithJack");
     }
 
     @Test
     public void assembleMultiDexDebug() {
-        multiDex.execute(JACK_OPTIONS, "clean",
+        sMultiDex.execute(JACK_OPTIONS, "clean",
                 "assembleIcsDebugAndroidTest", "assembleDebug", "assembleLollipopDebugAndroidTest");
-        TruthHelper.assertThat(multiDex.getStdout()).contains("transformJackWithJack");
+        assertThat(sMultiDex.getStdout()).contains("transformJackWithJack");
     }
 
     @Test
     @Category(DeviceTests.class)
     public void basicConnectedCheck() {
-        basic.executeConnectedCheck(JACK_OPTIONS);
+        sBasic.executeConnectedCheck(JACK_OPTIONS);
     }
 
     @Test
     @Category(DeviceTests.class)
     public void multiDexConnectedCheck() throws IOException {
-        multiDex.execute(JACK_OPTIONS, "assembleDebug",
+        sMultiDex.execute(JACK_OPTIONS, "assembleDebug",
                 "assembleIcsDebugAndroidTest",
                 "assembleLollipopDebugAndroidTest");
         adb.exclusiveAccess();
-        multiDex.execute(JACK_OPTIONS, "connectedCheck");
+        sMultiDex.execute(JACK_OPTIONS, "connectedCheck");
     }
 
     @Test
     public void minifyUnitTestsWithJavac() {
-        minify.execute("testMinified");
+        sMinify.execute("testMinified");
     }
 
     @Test
     public void minifyUnitTestsWithJack() {
-        minify.execute(JACK_OPTIONS, "clean", "testMinified");
+        sMinify.execute(JACK_OPTIONS, "clean", "testMinified");
 
         // Make sure javac was run.
-        TruthHelper.assertThat(minify.file("build/intermediates/classes/minified")).exists();
+        assertThat(sMinify.file("build/intermediates/classes/minified")).exists();
 
         // Make sure jack was not run.
-        TruthHelper.assertThat(minify.file("build/intermediates/jill")).doesNotExist();
+        assertThat(sMinify.file("build/intermediates/transforms/preDexJackRuntimeLibraries")).doesNotExist();
     }
 }

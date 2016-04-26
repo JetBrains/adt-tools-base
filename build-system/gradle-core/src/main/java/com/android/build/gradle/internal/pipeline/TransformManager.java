@@ -23,15 +23,15 @@ import static com.android.utils.StringHelper.capitalize;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.TaskFactory;
-import com.android.build.gradle.internal.scope.AndroidTask;
-import com.android.build.gradle.internal.scope.AndroidTaskRegistry;
-import com.android.build.gradle.internal.scope.BaseScope;
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.QualifiedContent.ContentType;
 import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.api.transform.Transform;
-import com.android.build.gradle.internal.transforms.JillTransform;
+import com.android.build.gradle.internal.TaskFactory;
+import com.android.build.gradle.internal.scope.AndroidTask;
+import com.android.build.gradle.internal.scope.AndroidTaskRegistry;
+import com.android.build.gradle.internal.scope.BaseScope;
+import com.android.build.gradle.tasks.JackPreDexTransform;
 import com.android.builder.core.ErrorReporter;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.SyncIssue;
@@ -410,8 +410,8 @@ public class TransformManager extends FilterableStreamCollection {
 
         // check some scopes are not consumed.
         Set<Scope> scopes = transform.getScopes();
-        // Allow Jill transform to consume provided classes as the .jack files are needed.
-        if (scopes.contains(Scope.PROVIDED_ONLY) && !isJillRuntimeLibs(transform)) {
+        // Allow Jack transform to consume provided classes as the .jack files are needed.
+        if (scopes.contains(Scope.PROVIDED_ONLY) && !isJackRuntimeLib(transform)) {
             errorReporter.handleSyncError(null, SyncIssue.TYPE_GENERIC,
                     String.format("PROVIDED_ONLY scope cannot be consumed by Transform '%1$s'",
                             transform.getName()));
@@ -444,8 +444,8 @@ public class TransformManager extends FilterableStreamCollection {
         return true;
     }
 
-    private static boolean isJillRuntimeLibs(@NonNull Transform transform) {
-        return (transform instanceof JillTransform)
-                && ((JillTransform) transform).isForRuntimeLibs();
+    private static boolean isJackRuntimeLib(@NonNull Transform transform) {
+        return (transform instanceof JackPreDexTransform)
+                && ((JackPreDexTransform) transform).isForRuntimeLibs();
     }
 }

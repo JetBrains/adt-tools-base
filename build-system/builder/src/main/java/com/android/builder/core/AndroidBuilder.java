@@ -46,7 +46,6 @@ import com.android.builder.internal.aapt.Aapt;
 import com.android.builder.internal.aapt.AaptPackageConfig;
 import com.android.builder.internal.compiler.AidlProcessor;
 import com.android.builder.internal.compiler.DexWrapper;
-import com.android.builder.internal.compiler.JackConversionCache;
 import com.android.builder.internal.compiler.LeafFolderGatherer;
 import com.android.builder.internal.compiler.PreDexCache;
 import com.android.builder.internal.compiler.RenderScriptProcessor;
@@ -94,9 +93,6 @@ import com.android.jack.api.v01.MultiDexKind;
 import com.android.jack.api.v01.ReporterKind;
 import com.android.jack.api.v01.UnrecoverableException;
 import com.android.jack.api.v02.Api02Config;
-import com.android.jill.api.JillProvider;
-import com.android.jill.api.v01.Api01TranslationTask;
-import com.android.jill.api.v01.TranslationException;
 import com.android.manifmerger.ManifestMerger2;
 import com.android.manifmerger.MergingReport;
 import com.android.manifmerger.PlaceholderHandler;
@@ -137,7 +133,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
@@ -2050,116 +2045,6 @@ public class AndroidBuilder {
         mJavaProcessExecutor.execute(
                 builder.build(mTargetInfo.getBuildTools()), processOutputHandler)
                 .rethrowFailure().assertNormalExitValue();
-    }
-
-    /**
-     * Converts the bytecode of a library to the jack format
-     * @param inputFile the input file
-     * @param outFile the location of the output classes.dex file
-     * @param dexOptions dex options
-     *
-     * @throws ProcessException
-     * @throws IOException
-     * @throws InterruptedException
-     */
-    public void convertLibraryToJack(
-            @NonNull File inputFile,
-            @NonNull File outFile,
-            @NonNull DexOptions dexOptions,
-            @NonNull ProcessOutputHandler processOutputHandler,
-            boolean isJackInProcess)
-            throws ProcessException, IOException, InterruptedException, ClassNotFoundException,
-            com.android.jill.api.ConfigNotSupportedException, TranslationException,
-            com.android.jill.api.v01.ConfigurationException {
-        checkState(mTargetInfo != null,
-                "Cannot call preJackLibrary() before setTargetInfo() is called.");
-
-        BuildToolInfo buildToolInfo = mTargetInfo.getBuildTools();
-
-        JackConversionCache.getCache().convertLibrary(
-                inputFile,
-                outFile,
-                dexOptions,
-                buildToolInfo,
-                isJackInProcess,
-                mVerboseExec,
-                mJavaProcessExecutor,
-                processOutputHandler,
-                mLogger);
-    }
-
-    public static List<File> convertLibraryWithJillUsingApis(
-            @NonNull File inputFile,
-            @NonNull File outFile,
-            @NonNull BuildToolInfo buildToolInfo,
-            boolean verbose,
-            @NonNull ILogger logger)
-            throws ClassNotFoundException, com.android.jill.api.ConfigNotSupportedException,
-            com.android.jill.api.v01.ConfigurationException, TranslationException {
-        BuildToolServiceLoader buildToolServiceLoader = BuildToolsServiceLoader.INSTANCE
-                .forVersion(buildToolInfo);
-        Optional<JillProvider> jillProviderOptional = buildToolServiceLoader
-                .getSingleService(logger, BuildToolsServiceLoader.JILL);
-
-        if (jillProviderOptional.isPresent()) {
-            com.android.jill.api.v01.Api01Config config =
-                    jillProviderOptional.get().createConfig(
-                            com.android.jill.api.v01.Api01Config.class);
-            config.setInputJavaBinaryFile(inputFile);
-            config.setOutputJackFile(outFile);
-            config.setVerbose(verbose);
-
-            Api01TranslationTask translationTask = config.getTask();
-            translationTask.run();
-
-            return ImmutableList.of(outFile);
-        } else {
-            throw new ClassNotFoundException("Cannot load Jill APIs v01.");
-        }
-    }
-
-    public static List<File> convertLibraryWithJillUsingCli(
-            @NonNull File inputFile,
-            @NonNull File outFile,
-            @NonNull DexOptions dexOptions,
-            @NonNull BuildToolInfo buildToolInfo,
-            boolean verbose,
-            @NonNull JavaProcessExecutor processExecutor,
-            @NonNull ProcessOutputHandler processOutputHandler,
-            @NonNull ILogger logger)
-            throws ProcessException {
-        checkNotNull(inputFile, "inputFile cannot be null.");
-        checkNotNull(outFile, "outFile cannot be null.");
-        checkNotNull(dexOptions, "dexOptions cannot be null.");
-
-        // launch dx: create the command line
-        ProcessInfoBuilder builder = new ProcessInfoBuilder();
-
-        String jill = buildToolInfo.getPath(BuildToolInfo.PathId.JILL);
-        if (jill == null || !new File(jill).isFile()) {
-            throw new IllegalStateException("jill.jar is missing");
-        }
-
-        builder.setClasspath(jill);
-        builder.setMain("com.android.jill.Main");
-
-        if (dexOptions.getJavaMaxHeapSize() != null) {
-            builder.addJvmArg("-Xmx" + dexOptions.getJavaMaxHeapSize());
-        }
-        builder.addArgs(inputFile.getAbsolutePath());
-        builder.addArgs("--output");
-        builder.addArgs(outFile.getAbsolutePath());
-
-        if (verbose) {
-            builder.addArgs("--verbose");
-        }
-
-        logger.verbose(builder.toString());
-        JavaProcessInfo javaProcessInfo = builder.createJavaProcess();
-        ProcessResult result = processExecutor.execute(javaProcessInfo, processOutputHandler);
-        result.rethrowFailure().assertNormalExitValue();
-
-        return Collections.singletonList(outFile);
     }
 
     /**

@@ -19,6 +19,7 @@ package com.android.build.gradle.tasks;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.api.transform.Format;
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.Transform;
@@ -29,47 +30,58 @@ import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.transforms.TransformInputUtil;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.JackProcessOptions;
-import com.android.builder.tasks.Job;
-import com.android.builder.tasks.JobContext;
-import com.android.builder.tasks.Task;
+import com.android.builder.internal.compiler.JackConversionCache;
 import com.android.ide.common.process.ProcessException;
 import com.android.jack.api.ConfigNotSupportedException;
 import com.android.jack.api.v01.CompilationException;
 import com.android.jack.api.v01.ConfigurationException;
 import com.android.jack.api.v01.UnrecoverableException;
+import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
+import com.google.common.hash.HashCode;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 
 /**
- * PreDex Jack libraries created from Jill tranform.
+ * Predex Java libraries and convert to class to jayce format using Jack.
  */
 public class JackPreDexTransform extends Transform {
 
     private AndroidBuilder androidBuilder;
     private String javaMaxHeapSize;
     private boolean jackInProcess;
+    private boolean forPackagedLibs;
 
-    public JackPreDexTransform(AndroidBuilder androidBuilder, String javaMaxHeapSize,
-            boolean jackInProcess) {
+    public JackPreDexTransform(
+            @NonNull AndroidBuilder androidBuilder,
+            @Nullable String javaMaxHeapSize,
+            boolean jackInProcess,
+            boolean forPackagedLibs) {
         this.androidBuilder = androidBuilder;
         this.javaMaxHeapSize = javaMaxHeapSize;
         this.jackInProcess = jackInProcess;
+        this.forPackagedLibs = forPackagedLibs;
     }
 
     @NonNull
     @Override
     public String getName() {
-        return "preDexJackPackagedLibraries";
+        return forPackagedLibs ? "preJackPackagedLibraries" : "preJackRuntimeLibraries";
     }
 
     @NonNull
     @Override
     public Set<QualifiedContent.ContentType> getInputTypes() {
-        return TransformManager.CONTENT_JACK;
+        return TransformManager.CONTENT_JARS;
     }
 
     @NonNull
@@ -81,7 +93,9 @@ public class JackPreDexTransform extends Transform {
     @NonNull
     @Override
     public Set<QualifiedContent.Scope> getScopes() {
-        return TransformManager.SCOPE_FULL_PROJECT;
+        return forPackagedLibs
+                ? TransformManager.SCOPE_FULL_PROJECT
+                :  Collections.singleton(QualifiedContent.Scope.PROVIDED_ONLY);
     }
 
     @Override
@@ -89,48 +103,33 @@ public class JackPreDexTransform extends Transform {
         return true;
     }
 
+    @NonNull
+    @Override
+    public Map<String, Object> getParameterInputs() {
+        return ImmutableMap.of(
+                "buildToolsRev",
+                androidBuilder.getTargetInfo().getBuildTools().getRevision().toString());
+    }
+
     @Override
     public void transform(@NonNull final TransformInvocation transformInvocation)
             throws TransformException, InterruptedException, IOException {
-        final Job<Void> job = new Job<>(getName(), new Task<Void>() {
-            @Override
-            public void run(@NonNull Job<Void> job, @NonNull JobContext<Void> context)
-                    throws IOException {
-                try {
-                    runJack(transformInvocation);
-                } catch (ProcessException e) {
-                    throw new IOException(e);
-                } catch (ConfigurationException e) {
-                    throw new IOException(e);
-                } catch (UnrecoverableException e) {
-                    throw new IOException(e);
-                } catch (CompilationException e) {
-                    throw new IOException(e);
-                } catch (ConfigNotSupportedException e) {
-                    throw new IOException(e);
-                } catch (ClassNotFoundException e) {
-                    throw new IOException(e);
-                }
-            }
-
-        });
         try {
-            SimpleWorkQueue.push(job);
-
-            // wait for the task completion.
-            if (!job.awaitRethrowExceptions()) {
-                throw new RuntimeException("Jack compilation failed, see logs for details");
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
+            runJack(transformInvocation);
+        } catch (ProcessException
+                | ConfigurationException
+                | UnrecoverableException
+                | ConfigNotSupportedException
+                | CompilationException
+                | ClassNotFoundException e) {
+            throw new TransformException(e);
         }
-
     }
 
     private void runJack(@NonNull TransformInvocation transformInvocation)
             throws ConfigNotSupportedException, CompilationException, ProcessException,
-            UnrecoverableException, ConfigurationException, ClassNotFoundException {
+            UnrecoverableException, ConfigurationException, ClassNotFoundException, IOException,
+            InterruptedException {
         TransformOutputProvider outputProvider = transformInvocation.getOutputProvider();
         checkNotNull(outputProvider);
 
@@ -145,20 +144,64 @@ public class JackPreDexTransform extends Transform {
             options.setDexOutputDirectory(outDirectory);
             options.setJavaMaxHeapSize(javaMaxHeapSize);
 
-            androidBuilder.convertByteCodeUsingJack(options, jackInProcess);
+            JackConversionCache.getCache().convertLibrary(
+                    androidBuilder,
+                    file,
+                    outDirectory,
+                    options,
+                    jackInProcess);
         }
-        for (File file : TransformInputUtil.getJarFiles(transformInvocation.getInputs())) {
+
+        Iterable<File> jarInputs = forPackagedLibs
+                ? TransformInputUtil.getJarFiles(transformInvocation.getInputs())
+                : Iterables.concat(
+                        TransformInputUtil.getJarFiles(transformInvocation.getInputs()),
+                        androidBuilder.getBootClasspath(true));
+        for (File file : jarInputs) {
             JackProcessOptions options = new JackProcessOptions();
             options.setImportFiles(ImmutableList.of(file));
             File outFile = outputProvider.getContentLocation(
-                    file.getName().substring(0, file.getName().lastIndexOf('.')),
+                    getJackFileName(file),
                     getOutputTypes(),
                     getScopes(),
                     Format.JAR);
             options.setOutputFile(outFile);
             options.setJavaMaxHeapSize(javaMaxHeapSize);
 
-            androidBuilder.convertByteCodeUsingJack(options, jackInProcess);
+            JackConversionCache.getCache().convertLibrary(
+                    androidBuilder,
+                    file,
+                    outFile,
+                    options,
+                    jackInProcess);
         }
+    }
+
+    /**
+     * Returns a unique file name for the converted library, even if there are 2 libraries with the
+     * same file names (but different paths)
+     *
+     * @param inputFile the library
+     */
+    @NonNull
+    public static String getJackFileName(@NonNull File inputFile) {
+        // get the filename
+        String name = inputFile.getName();
+        // remove the extension
+        int pos = name.lastIndexOf('.');
+        if (pos != -1) {
+            name = name.substring(0, pos);
+        }
+
+        // add a hash of the original file path.
+        String input = inputFile.getAbsolutePath();
+        HashFunction hashFunction = Hashing.sha1();
+        HashCode hashCode = hashFunction.hashString(input, Charsets.UTF_16LE);
+
+        return name + "-" + hashCode.toString();
+    }
+
+    public boolean isForRuntimeLibs() {
+        return !forPackagedLibs;
     }
 }

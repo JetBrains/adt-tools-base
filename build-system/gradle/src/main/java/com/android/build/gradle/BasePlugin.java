@@ -51,9 +51,9 @@ import com.android.build.gradle.internal.process.GradleJavaProcessExecutor;
 import com.android.build.gradle.internal.process.GradleProcessExecutor;
 import com.android.build.gradle.internal.profile.RecordingBuildListener;
 import com.android.build.gradle.internal.transforms.DexTransform;
-import com.android.build.gradle.internal.transforms.JillTransform;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.VariantFactory;
+import com.android.build.gradle.tasks.JackPreDexTransform;
 import com.android.builder.Version;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.BuilderConstants;
@@ -439,7 +439,7 @@ public abstract class BasePlugin {
                                             new File(project.getRootProject().getBuildDir(),
                                                     FD_INTERMEDIATES + "/dex-cache/cache.xml"));
                                     break;
-                                } else if (transform instanceof JillTransform) {
+                                } else if (transform instanceof JackPreDexTransform) {
                                     JackConversionCache.getCache().load(
                                             new File(project.getRootProject().getBuildDir(),
                                                     FD_INTERMEDIATES + "/jack-cache/cache.xml"));
