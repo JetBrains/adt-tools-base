@@ -73,8 +73,20 @@ public final class FileOpUtils {
      */
     public static void recursiveCopy(@NonNull File src, @NonNull File dest, @NonNull FileOp fop,
             @NonNull ProgressIndicator progress) throws IOException {
+        recursiveCopy(src, dest, false, fop, progress);
+    }
+
+    @VisibleForTesting
+    static void recursiveCopy(@NonNull File src, @NonNull File dest, boolean merge,
+            @NonNull FileOp fop, @NonNull ProgressIndicator progress) throws IOException {
         if (fop.exists(dest)) {
-            throw new IOException(dest + " already exists!");
+            if (!merge) {
+                throw new IOException(dest + " already exists!");
+            }
+            else if (fop.isDirectory(src) != fop.isDirectory(dest)) {
+                throw new IOException(String.format("%s already exists but %s a directory!", dest,
+                        fop.isDirectory(dest) ? "is" : "is not"));
+            }
         }
         if (progress.isCanceled()) {
             throw new IOException("Operation cancelled");
@@ -85,9 +97,9 @@ public final class FileOpUtils {
             File[] children = fop.listFiles(src);
             for (File child : children) {
                 File newDest = new File(dest, child.getName());
-                recursiveCopy(child, newDest, fop, progress);
+                recursiveCopy(child, newDest, merge, fop, progress);
             }
-        } else if (fop.isFile(src)) {
+        } else if (fop.isFile(src) && !fop.exists(dest)) {
             fop.copyFile(src, dest);
             if (!fop.isWindows() && fop.canExecute(src)) {
                 fop.setExecutablePermission(dest);
@@ -107,45 +119,98 @@ public final class FileOpUtils {
      * @param progress Currently only used for error logging.
      * @throws IOException If some problem occurs during copies or directory creation.
      */
-    // TODO: Seems strange to use the more-fully-featured ProgressIndicator here.
-    //       Is a more general logger needed?
     public static void safeRecursiveOverwrite(@NonNull File src, @NonNull File dest,
             @NonNull FileOp fop, @NonNull ProgressIndicator progress) throws IOException {
-        if (fop.exists(dest)) {
-            File toDelete = getNewTempDir("FileOpUtilsToDelete", fop);
-            if (toDelete == null) {
-                // weird, try to delete in place
-                fop.deleteFileOrFolder(dest);
-            } else {
-                FileOpUtils.recursiveCopy(dest, toDelete, fop, progress);
-            }
-            try {
-                fop.deleteFileOrFolder(dest);
-                FileOpUtils.recursiveCopy(src, dest, fop, progress);
-                fop.deleteFileOrFolder(src);
-            } catch (IOException e) {
-                // this is bad
-                progress.logWarning("Old dir was moved away, but new one failed to be moved into "
-                        + "place. Trying to move old one back.");
+        File destBackup = getTempDir(dest, "backup", fop);
+        boolean success = false;
+        try {
+            if (fop.exists(dest)) {
+                moveOrCopyAndDelete(dest, destBackup, fop, progress);
                 if (fop.exists(dest)) {
-                    fop.deleteFileOrFolder(dest);
+                    throw new IOException("Failed to move away or delete existing target file");
                 }
-                if (toDelete == null) {
-                    // this is the worst case
-                    progress.logWarning(
-                            "Failed to move old dir back into place! Component was lost.");
-                } else {
-                    FileOpUtils.recursiveCopy(toDelete, dest, fop, progress);
+                success = true;
+            }
+        } finally {
+            if (!success && fop.exists(destBackup)) {
+                try {
+                    // Merge in case some things had been moved and some not.
+                    recursiveCopy(destBackup, dest, true, fop, progress);
+                    fop.deleteFileOrFolder(destBackup);
                 }
-                throw new IOException("failed to move new dir into place", e);
+                catch (IOException e) {
+                    // we're already throwing the exception from the original "try", and there's
+                    // nothing more to be done here. Just log it.
+                    progress.logWarning(String.format(
+                            "Failed to move original content of %s back into place! "
+                                    + "It should be available at %s", dest, destBackup), e);
+                }
             }
-            if (toDelete != null) {
-                fop.deleteFileOrFolder(toDelete);
+            // If the backup doesn't exist we failed before doing anything at all, so there's no
+            // cleanup needed.
+        }
+
+        success = false;
+        // At this point the target should be moved away.
+        try {
+            // Actually move src to dest.
+            moveOrCopyAndDelete(src, dest, fop, progress);
+            success = true;
+        } finally {
+            if (!success) {
+                // It failed. Now we have to restore the backup.
+                fop.deleteFileOrFolder(dest);
+                if (fop.exists(dest)) {
+                    // Failed to delete the new stuff. Move it away and delete later.
+                    File toDelete = getTempDir(dest, "delete", fop);
+                    fop.renameTo(dest, toDelete);
+                    fop.deleteOnExit(toDelete);
+                }
+                try {
+                    if (fop.exists(dest)) {
+                        // Couldn't get rid of the new, partial stuff. Try merging the old ones back
+                        // over.
+                        recursiveCopy(destBackup, dest, true, fop, progress);
+                    } else {
+                        // dest is cleared. Move temp stuff back into place
+                        moveOrCopyAndDelete(destBackup, dest, fop, progress);
+                    }
+                } catch (IOException e) {
+                    // we're already throwing the exception from the original "try", and there's
+                    // nothing more to be done here. Just log it.
+                    progress.logWarning(String.format(
+                            "Failed to move original content of %s back into place! "
+                                    + "It should be available at %s", dest, destBackup), e);
+                }
             }
-        } else {
-            FileOpUtils.recursiveCopy(src, dest, fop, progress);
+        }
+
+        // done, delete the backup
+        fop.deleteFileOrFolder(destBackup);
+    }
+
+    private static void moveOrCopyAndDelete(File src, File dest, FileOp fop,
+            ProgressIndicator progress) throws IOException {
+        if (!fop.renameTo(src, dest)) {
+            // Failed to move. Try copy/delete, with merge in case something already got moved.
+            recursiveCopy(src, dest, true, fop, progress);
             fop.deleteFileOrFolder(src);
         }
+    }
+
+    private static File getTempDir(File orig, String suffix, FileOp fop) {
+        File result = new File(orig + "." + suffix);
+        int i = 1;
+        while (fop.exists(result)) {
+            // The dir is already there. Try to delete it.
+            fop.deleteFileOrFolder(result);
+            if (!fop.exists(result)) {
+                break;
+            }
+            // We couldn't delete it. Make a new dir.
+            result = new File(result.getPath() + "-" + i++);
+        }
+        return result;
     }
 
     /**
