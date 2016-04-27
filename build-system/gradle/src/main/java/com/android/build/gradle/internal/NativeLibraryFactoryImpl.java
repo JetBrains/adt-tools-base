@@ -22,6 +22,8 @@ import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.model.NativeLibraryFactory;
 import com.android.build.gradle.internal.model.NativeLibraryImpl;
+import com.android.build.gradle.internal.ndk.NdkHandler;
+import com.android.build.gradle.internal.ndk.Stl;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
@@ -72,7 +74,10 @@ public class NativeLibraryFactoryImpl implements NativeLibraryFactory {
                 Collections.<File>emptyList(),  /*cIncludeDirs*/
                 Collections.<File>emptyList(),  /*cppIncludeDirs*/
                 Collections.<File>emptyList(),  /*cSystemIncludeDirs*/
-                ndkHandler.getStlIncludes(ndkConfig.getStl(), null /*stlVersion*/, abi),
+                ndkHandler.getStlNativeToolSpecification(
+                        Stl.getById(ndkConfig.getStl()),
+                        null /*stlVersion*/,
+                        abi).getIncludes(),
                 Collections.<String>emptyList(),  /*cDefines*/
                 Collections.<String>emptyList(),  /*cppDefines*/
                 cFlags,

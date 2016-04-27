@@ -32,7 +32,7 @@ import com.android.build.gradle.internal.ExtraModelInfo;
 import com.android.build.gradle.internal.LibraryCache;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.NativeLibraryFactoryImpl;
-import com.android.build.gradle.internal.NdkHandler;
+import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.SdkHandler;
 import com.android.build.gradle.internal.TaskContainerAdaptor;
 import com.android.build.gradle.internal.TaskManager;
@@ -622,7 +622,7 @@ public abstract class BasePlugin {
         checkState(extension.getBuildToolsRevision() != null, "buildToolsVersion is not specified.");
         checkState(extension.getCompileSdkVersion() != null, "compileSdkVersion is not specified.");
 
-        ndkHandler.setPlatformVersion(extension.getCompileSdkVersion());
+        ndkHandler.setCompileSdkVersion(extension.getCompileSdkVersion());
 
         // get current plugins and look for the default Java plugin.
         if (project.getPlugins().hasPlugin(JavaPlugin.class)) {

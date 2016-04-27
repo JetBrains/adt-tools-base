@@ -25,11 +25,11 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.AndroidGradleOptions;
-import com.android.builder.model.OptionalCompilationStep;
-import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.SdkHandler;
+import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.model.AndroidProject;
+import com.android.builder.model.OptionalCompilationStep;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Objects;
 

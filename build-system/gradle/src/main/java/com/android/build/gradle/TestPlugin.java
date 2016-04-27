@@ -18,10 +18,10 @@ package com.android.build.gradle;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.DependencyManager;
-import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.SdkHandler;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.TestApplicationTaskManager;
+import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.variant.TestVariantFactory;
 import com.android.build.gradle.internal.variant.VariantFactory;
 import com.android.builder.core.AndroidBuilder;

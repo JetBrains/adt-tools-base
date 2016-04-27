@@ -27,7 +27,7 @@ import com.android.build.gradle.TestAndroidConfig;
 import com.android.build.gradle.api.ApkOutputFile;
 import com.android.build.gradle.internal.BuildTypeData;
 import com.android.build.gradle.internal.ExtraModelInfo;
-import com.android.build.gradle.internal.NdkHandler;
+import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.ProductFlavorData;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.VariantManager;
@@ -228,7 +228,7 @@ public class ModelBuilder implements ToolingModelBuilder {
      */
     public static Map<Abi, NativeToolchain> createNativeToolchainModelMap(
             @NonNull NdkHandler ndkHandler) {
-        if (!ndkHandler.isNdkDirConfigured()) {
+        if (!ndkHandler.isConfigured()) {
             return ImmutableMap.of();
         }
 
@@ -403,7 +403,7 @@ public class ModelBuilder implements ToolingModelBuilder {
 
         CoreNdkOptions ndkConfig = variantData.getVariantConfiguration().getNdkConfig();
         Collection<NativeLibrary> nativeLibraries = ImmutableList.of();
-        if (ndkHandler.getNdkDirectory() != null) {
+        if (ndkHandler.isConfigured()) {
             if (config.getSplits().getAbi().isEnable()) {
                 nativeLibraries = createNativeLibraries(
                         config.getSplits().getAbi().isUniversalApk()

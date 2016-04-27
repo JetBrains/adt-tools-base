@@ -19,13 +19,13 @@ package com.android.build.gradle.model;
 import static com.android.build.gradle.model.AndroidComponentModelPlugin.COMPONENT_NAME;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.dependency.NativeDependencyResolveResult;
 import com.android.build.gradle.internal.dependency.NativeLibraryArtifact;
 import com.android.build.gradle.internal.model.NativeLibraryFactory;
 import com.android.build.gradle.internal.model.NativeLibraryImpl;
-import com.android.build.gradle.ndk.internal.NativeCompilerArgsUtil;
+import com.android.build.gradle.internal.ndk.NdkHandler;
+import com.android.build.gradle.internal.ndk.Stl;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
@@ -33,6 +33,7 @@ import com.android.build.gradle.managed.NdkAbiOptions;
 import com.android.build.gradle.managed.NdkConfig;
 import com.android.build.gradle.managed.NdkOptions;
 import com.android.build.gradle.model.internal.AndroidBinaryInternal;
+import com.android.build.gradle.ndk.internal.NativeCompilerArgsUtil;
 import com.android.builder.model.NativeLibrary;
 import com.android.utils.StringHelper;
 import com.google.common.collect.ImmutableList;
@@ -146,7 +147,10 @@ public class ComponentNativeLibraryFactory implements NativeLibraryFactory {
                 Collections.<File>emptyList(),  /*cIncludeDirs*/
                 Collections.<File>emptyList(),  /*cppIncludeDirs*/
                 Collections.<File>emptyList(),  /*cSystemIncludeDirs*/
-                ndkHandler.getStlIncludes(ndkConfig.getStl(), ndkConfig.getStlVersion(), abi),
+                ndkHandler.getStlNativeToolSpecification(
+                        Stl.getById(ndkConfig.getStl()),
+                        ndkConfig.getStlVersion(),
+                        abi).getIncludes(),
                 Collections.<String>emptyList(),  /*cDefines*/
                 Collections.<String>emptyList(),  /*cppDefines*/
                 NativeCompilerArgsUtil.transform(cFlags),
