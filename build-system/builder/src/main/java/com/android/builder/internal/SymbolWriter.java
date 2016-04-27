@@ -17,7 +17,9 @@
 package com.android.builder.internal;
 
 import com.android.SdkConstants;
+import com.android.annotations.NonNull;
 import com.android.builder.internal.SymbolLoader.SymbolEntry;
+import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Splitter;
 import com.google.common.collect.HashBasedTable;
@@ -41,21 +43,32 @@ import java.util.Set;
  */
 public class SymbolWriter {
 
+    @NonNull
     private final String mOutFolder;
+    @NonNull
     private final String mPackageName;
+    @NonNull
     private final List<SymbolLoader> mSymbols = Lists.newArrayList();
+    @NonNull
     private final SymbolLoader mValues;
+    private final boolean generateFinalIds;
 
-    public SymbolWriter(String outFolder, String packageName, SymbolLoader values) {
+    public SymbolWriter(
+            @NonNull String outFolder,
+            @NonNull String packageName,
+            @NonNull SymbolLoader values,
+            boolean generateFinalIds) {
         mOutFolder = outFolder;
         mPackageName = packageName;
         mValues = values;
+        this.generateFinalIds = generateFinalIds;
     }
 
-    public void addSymbolsToWrite(SymbolLoader symbols) {
+    public void addSymbolsToWrite(@NonNull SymbolLoader symbols) {
         mSymbols.add(symbols);
     }
 
+    @NonNull
     private Table<String, String, SymbolEntry> getAllSymbols() {
         Table<String, String, SymbolEntry> symbols = HashBasedTable.create();
 
@@ -73,10 +86,13 @@ public class SymbolWriter {
         for (String folder : folders) {
             file = new File(file, folder);
         }
-        file.mkdirs();
+        FileUtils.mkdirs(file);
         file = new File(file, SdkConstants.FN_RESOURCE_CLASS);
 
         Closer closer = Closer.create();
+
+        String idModifiers = generateFinalIds ? "public static final " : "public static ";
+
         try {
             BufferedWriter writer = closer.register(Files.newWriter(file, Charsets.UTF_8));
 
@@ -112,7 +128,8 @@ public class SymbolWriter {
                     // get the matching SymbolEntry from the values Table.
                     SymbolEntry value = values.get(row, symbolName);
                     if (value != null) {
-                        writer.write("\t\tpublic static final ");
+                        writer.write("\t\t");
+                        writer.write(idModifiers);
                         writer.write(value.getType());
                         writer.write(" ");
                         writer.write(value.getName());
