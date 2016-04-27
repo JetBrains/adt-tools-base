@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.common.fixture.app;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 
 /**
  * Simple test application that uses JNI to print a "hello world!".
@@ -149,6 +148,33 @@ public class HelloWorldJniApp extends AbstractAndroidTestApp implements AndroidT
 "        assertTrue(\"hello world!\".equals(a.stringFromJNI()));\n" +
 "    }\n" +
 "}\n");
+
+    public static final TestSourceFile androidMkC(String folder) {
+        return new TestSourceFile(
+                folder, "Android.mk",
+                "LOCAL_PATH := \\$(call my-dir)\n"
+                        + "\n"
+                        + "include \\$(CLEAR_VARS)\n"
+                        + "\n"
+                        + "LOCAL_MODULE    := hello-jni\n"
+                        + "LOCAL_SRC_FILES := hello-jni.c\n"
+                        + "\n"
+                        + "include \\$(BUILD_SHARED_LIBRARY)");
+    }
+
+    public static final TestSourceFile cmakeLists(String folder) {
+        return new TestSourceFile(
+                folder, "CMakeLists.txt",
+                "cmake_minimum_required(VERSION 3.4.1)\n" +
+                        "\n" +
+                        "# Compile all source files under this tree into a single shared library\n" +
+                        "file(GLOB_RECURSE SRC src/*.c src/*.cpp src/*.cc src/*.cxx src/*.c++ src/*.C)\n" +
+                        "message(\"${SRC}\")\n" +
+                        "add_library(hello-jni SHARED ${SRC})\n" +
+                        "\n" +
+                        "# Include a nice standard set of libraries to link against by default\n" +
+                        "target_link_libraries(hello-jni log)");
+    }
 
     public HelloWorldJniApp() {
         this("jni", false);

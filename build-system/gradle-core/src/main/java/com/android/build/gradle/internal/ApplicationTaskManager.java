@@ -202,6 +202,18 @@ public class ApplicationTaskManager extends TaskManager {
         }
         variantScope.setNdkBuildable(getNdkBuildable(variantData));
 
+        // Add external native build tasks
+        ThreadRecorder.get().record(
+                ExecutionType.APP_TASK_MANAGER_CREATE_EXTERNAL_NATIVE_BUILD_TASK,
+                new Recorder.Block<Void>() {
+                    @Override
+                    public Void call() {
+                        createExternalNativeBuildTasks(tasks, variantScope);
+                        return null;
+                    }
+                }
+        );
+
         // Add a task to merge the jni libs folders
         ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_MERGE_JNILIBS_FOLDERS_TASK,
                 new Recorder.Block<Void>() {

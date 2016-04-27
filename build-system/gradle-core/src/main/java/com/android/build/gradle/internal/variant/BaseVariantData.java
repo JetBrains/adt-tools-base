@@ -198,6 +198,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
                 new TransformManager(taskManager.getAndroidTasks(), errorReporter),
                 this);
         taskManager.configureScopeForNdk(scope);
+        taskManager.configureScopeForExternalNativeBuild(scope);
     }
 
     @NonNull

@@ -16,8 +16,10 @@
 
 package com.android.build.gradle.internal.core;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.dsl.CoreExternalNativeCmakeOptions;
+import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 
 import java.util.Set;
@@ -28,20 +30,28 @@ import java.util.Set;
 public class MergedCoreExternalNativeCmakeOptions implements CoreExternalNativeCmakeOptions {
 
     private String cFlags;
-    private Set<String> abiFilters;
+    private String cppFlags;
+    @NonNull
+    private Set<String> abiFilters = Sets.newHashSet();
 
-    public void append(CoreExternalNativeCmakeOptions options) {
+    public void append(@NonNull CoreExternalNativeCmakeOptions options) {
         if (options.getAbiFilters() != null) {
-            if (abiFilters == null) {
-                abiFilters = Sets.newHashSetWithExpectedSize(options.getAbiFilters().size());
-            }
-            abiFilters.addAll(options.getAbiFilters());
+            Set<String> abis = Sets.newHashSet();
+            abis.addAll(abiFilters);
+            abis.addAll(options.getAbiFilters());
+            abiFilters = abis;
         }
 
         if (cFlags == null) {
             cFlags = options.getcFlags();
-        } else if (options.getcFlags() != null && !options.getcFlags().isEmpty()) {
+        } else if (!Strings.isNullOrEmpty(options.getcFlags())) {
             cFlags = cFlags + " " + options.getcFlags();
+        }
+
+        if (cppFlags == null) {
+            cppFlags = options.getCppFlags();
+        } else if (!Strings.isNullOrEmpty(options.getCppFlags())) {
+            cppFlags = cppFlags + " " + options.getCppFlags();
         }
     }
 
@@ -49,6 +59,12 @@ public class MergedCoreExternalNativeCmakeOptions implements CoreExternalNativeC
     @Override
     public String getcFlags() {
         return cFlags;
+    }
+
+    @Nullable
+    @Override
+    public String getCppFlags() {
+        return cppFlags;
     }
 
     @Nullable
