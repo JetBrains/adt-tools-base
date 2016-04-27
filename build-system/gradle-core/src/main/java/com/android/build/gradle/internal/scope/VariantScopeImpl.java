@@ -25,9 +25,9 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.coverage.JacocoReportTask;
+import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.incremental.InstantRunAnchorTask;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
-import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.pipeline.TransformTask;
@@ -42,6 +42,7 @@ import com.android.build.gradle.internal.variant.LibraryVariantData;
 import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.BinaryFileProviderTask;
+import com.android.build.gradle.tasks.ExternalNativeBuildTask;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.MergeResources;
@@ -65,7 +66,6 @@ import org.gradle.api.tasks.Sync;
 import org.gradle.api.tasks.compile.JavaCompile;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -86,8 +86,6 @@ public class VariantScopeImpl implements VariantScope {
     @Nullable
     private Collection<Object> ndkBuildable;
     @Nullable
-    private Collection<Object> externalNativeBuildable;
-    @Nullable
     private Collection<File> ndkSoFolder;
     @Nullable
     private Collection<File> externalNativeBuildSoFolder;
@@ -97,8 +95,6 @@ public class VariantScopeImpl implements VariantScope {
     private File externalNativeBuildObjFolder;
     @NonNull
     private Map<Abi, File> ndkDebuggableLibraryFolders = Maps.newHashMap();
-    @NonNull
-    private Map<Abi, File> externalNativeBuildDebuggableLibraryFolders = Maps.newHashMap();
 
     @Nullable
     private File mergeResourceOutputDir;
@@ -144,6 +140,9 @@ public class VariantScopeImpl implements VariantScope {
 
     // empty anchor compile task to set all compilations tasks as dependents.
     private AndroidTask<Task> compileTask;
+
+    @Nullable
+    private AndroidTask<ExternalNativeBuildTask> externalNativeBuild;
 
     /**
      * This is an instance of {@link JacocoReportTask} in android test variants, an umbrella
@@ -223,17 +222,6 @@ public class VariantScopeImpl implements VariantScope {
     @Override
     public void setNdkBuildable(@NonNull Collection<Object> ndkBuildable) {
         this.ndkBuildable = ndkBuildable;
-    }
-
-    @Override
-    @Nullable
-    public Collection<Object> getExternalNativeBuildable() {
-        return externalNativeBuildable;
-    }
-
-    @Override
-    public void setExternalNativeBuildable(@NonNull Collection<Object> externalNativeBuildable) {
-        this.externalNativeBuildable = externalNativeBuildable;
     }
 
     @Nullable
@@ -317,19 +305,6 @@ public class VariantScopeImpl implements VariantScope {
     @Override
     public void addNdkDebuggableLibraryFolders(@NonNull Abi abi, @NonNull File searchPath) {
         this.ndkDebuggableLibraryFolders.put(abi, searchPath);
-    }
-
-    @Nullable
-    @Override
-    public File getExternalNativeBuildDebuggableLibraryFolders(@NonNull Abi abi) {
-        return externalNativeBuildDebuggableLibraryFolders.get(abi);
-    }
-
-    @Override
-    public void addExternalNativeBuildDebuggableLibraryFolders(@NonNull Abi abi,
-            @NonNull File searchPath) {
-        this.externalNativeBuildDebuggableLibraryFolders.put(abi, searchPath);
-
     }
 
     @Override
@@ -820,6 +795,14 @@ public class VariantScopeImpl implements VariantScope {
                         + "-report.txt");
     }
 
+    @NonNull
+    @Override
+    public File getExternalNativeBuildIntermediatesFolder() {
+        return new File(getGlobalScope().getIntermediatesDir(),
+                "external-native-build/" +
+                        variantData.getVariantConfiguration().getDirName());
+    }
+
     // Tasks getters/setters.
 
     @Override
@@ -1059,6 +1042,18 @@ public class VariantScopeImpl implements VariantScope {
             AndroidTask<Task> compileTask) {
         this.compileTask = compileTask;
     }
+
+    @Override
+    public void setExternalNativeBuildTask(
+            AndroidTask<ExternalNativeBuildTask> task) {
+        this.externalNativeBuild = task;
+    }
+
+    @Override
+    public AndroidTask<ExternalNativeBuildTask> getExternalNativeBuildTask() {
+        return externalNativeBuild;
+    }
+
 
     @Override
     public AndroidTask<?> getCoverageReportTask() {

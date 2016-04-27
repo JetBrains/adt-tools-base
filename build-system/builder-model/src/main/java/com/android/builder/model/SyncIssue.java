@@ -81,7 +81,9 @@ public interface SyncIssue {
     // data is maven artifact coordinates.
     int TYPE_DEPENDENCY_INTERNAL_CONFLICT = 15;
 
-    int TYPE_MAX                      = 13; // increment when adding new types.
+    int TYPE_EXTERNAL_NATIVE_BUILD_CONFIGURATION = 16;
+
+    int TYPE_MAX                      = 16; // increment when adding new types.
 
     /**
      * Returns the severity of the issue.

@@ -232,6 +232,22 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
         return mergedExternalNativeCmakeOptions;
     }
 
+    @NonNull
+    public Set<String> getExternalNativeAbiFilters() {
+        if (mergedExternalNativeCmakeOptions != null
+                && mergedExternalNativeCmakeOptions.getAbiFilters() != null
+                && !mergedExternalNativeCmakeOptions.getAbiFilters().isEmpty()) {
+            return mergedExternalNativeCmakeOptions.getAbiFilters();
+        }
+
+        if (mergedExternalNativeNdkBuildOptions != null
+                && mergedExternalNativeNdkBuildOptions.getAbiFilters() != null
+                && !mergedExternalNativeNdkBuildOptions.getAbiFilters().isEmpty()) {
+            return mergedExternalNativeNdkBuildOptions.getAbiFilters();
+        }
+        return Sets.newHashSet();
+    }
+
     /**
      * Returns the ABI filters associated with the artifact, or null if there are no filters.
      *

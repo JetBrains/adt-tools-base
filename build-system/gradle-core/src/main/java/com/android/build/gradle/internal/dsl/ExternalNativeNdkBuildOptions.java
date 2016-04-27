@@ -30,6 +30,7 @@ import java.util.Set;
 public class ExternalNativeNdkBuildOptions implements CoreExternalNativeNdkBuildOptions {
 
     private String cFlags;
+    private String cppFlags;
     private Set<String> abiFilters;
 
     @Nullable
@@ -40,6 +41,16 @@ public class ExternalNativeNdkBuildOptions implements CoreExternalNativeNdkBuild
 
     public void setcFlags(String cFlags) {
         this.cFlags = cFlags;
+    }
+
+    @Nullable
+    @Override
+    public String getCppFlags() {
+        return cppFlags;
+    }
+
+    public void setCppFlags(String cppFlags) {
+        this.cppFlags = cppFlags;
     }
 
     @Nullable

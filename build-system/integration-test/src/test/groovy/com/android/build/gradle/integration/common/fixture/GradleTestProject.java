@@ -262,6 +262,18 @@ public class GradleTestProject implements TestRule {
         }
 
         /**
+         * Add a new file to the project.
+         */
+        public Builder addFile(@NonNull TestSourceFile file) {
+            if (!(this.testProject instanceof AndroidTestApp)) {
+                throw new IllegalStateException("addFile is only for AndroidTestApp");
+            }
+            AndroidTestApp app = (AndroidTestApp) this.testProject;
+            app.addFile(file);
+            return this;
+        }
+
+        /**
          * Add gradle properties.
          */
         public Builder addGradleProperties(@NonNull String property) {

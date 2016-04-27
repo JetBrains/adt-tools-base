@@ -39,6 +39,9 @@ public class NdkBuildOptions implements CoreNdkBuildOptions {
     @Nullable
     private String cflags;
 
+    @Nullable
+    private String cppflags;
+
     public NdkBuildOptions() {
     }
 
@@ -62,5 +65,16 @@ public class NdkBuildOptions implements CoreNdkBuildOptions {
     @Override
     public void setcFlags(String cflags) {
         this.cflags = cflags;
+    }
+
+    @Nullable
+    @Override
+    public String getCppFlags() {
+        return this.cppflags;
+    }
+
+    @Override
+    public void setCppFlags(String cppflags) {
+        this.cppflags = cppflags;
     }
 }

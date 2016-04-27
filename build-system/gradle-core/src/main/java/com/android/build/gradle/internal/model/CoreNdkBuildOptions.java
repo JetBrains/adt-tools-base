@@ -43,4 +43,8 @@ public interface CoreNdkBuildOptions {
     @Nullable
     String getcFlags();
     void setcFlags(String cflags);
+
+    @Nullable
+    String getCppFlags();
+    void setCppFlags(String cppflags);
 }

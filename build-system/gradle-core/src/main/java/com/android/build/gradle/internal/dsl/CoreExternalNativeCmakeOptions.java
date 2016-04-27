@@ -31,6 +31,12 @@ public interface CoreExternalNativeCmakeOptions {
     String getcFlags();
 
     /**
+     * The CPP Flags
+     */
+    @Nullable
+    String getCppFlags();
+
+    /**
      * The ABI Filters
      */
     @Nullable
