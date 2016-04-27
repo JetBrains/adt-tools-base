@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.ndk.internal;
 
-import com.android.build.gradle.internal.NdkHandler;
+import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.Toolchain;
 import com.android.build.gradle.managed.NdkAbiOptions;

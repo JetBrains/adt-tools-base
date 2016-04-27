@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,16 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.ndk.internal;
+package com.android.build.gradle.internal.ndk;
 
-import org.gradle.nativeplatform.NativeBinarySpec;
+import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.core.Abi;
 
 /**
- * Interface for native binaries flag configurations.
+ * Factory interface for creating StlSpecification.
  */
-public interface NativeToolSpecification {
+public interface StlSpecificationFactory {
+    @NonNull
+    StlSpecification create(@NonNull Stl stl, @NonNull String stlVersion, @NonNull Abi abi);
 
-    Iterable<String> getCFlags();
-
-    Iterable<String> getCppFlags();
-
-    Iterable<String> getLdFlags();
-
-    void apply(NativeBinarySpec binary);
 }

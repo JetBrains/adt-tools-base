@@ -1,6 +1,7 @@
 package com.android.build.gradle.ndk.internal;
 
 import com.android.build.gradle.internal.core.Toolchain;
+import com.android.build.gradle.internal.ndk.Stl;
 import com.android.build.gradle.managed.NdkConfig;
 import com.google.common.primitives.Ints;
 
@@ -10,8 +11,6 @@ import org.gradle.api.InvalidUserDataException;
  * Action to setup default values for NdkExtension.
  */
 public class NdkExtensionConvention {
-
-    public static final String DEFAULT_STL = "system";
 
     /**
      * Validate the NdkExtension and provide default values.
@@ -29,9 +28,10 @@ public class NdkExtensionConvention {
         }
 
         if (ndkConfig.getStl().isEmpty()) {
-            ndkConfig.setStl(DEFAULT_STL);
+            ndkConfig.setStl(Stl.DEFAULT.getId());
         } else {
-            StlConfiguration.checkStl(ndkConfig.getStl());
+            // Validate STL.  getById throws exception when STL is not valid.
+            Stl.getById(ndkConfig.getStl());
         }
 
         if (ndkConfig.getPlatformVersion() != null

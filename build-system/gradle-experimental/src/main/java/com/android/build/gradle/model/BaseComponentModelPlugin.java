@@ -34,7 +34,7 @@ import com.android.build.gradle.internal.JniLibsLanguageTransform;
 import com.android.build.gradle.internal.LibraryCache;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.NativeDependencyLinkage;
-import com.android.build.gradle.internal.NdkHandler;
+import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.NdkOptionsHelper;
 import com.android.build.gradle.internal.ProductFlavorCombo;
 import com.android.build.gradle.internal.SdkHandler;

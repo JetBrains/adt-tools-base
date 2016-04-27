@@ -18,7 +18,7 @@ package com.android.build.gradle.tasks;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.LoggerWrapper;
-import com.android.build.gradle.internal.NdkHandler;
+import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.process.GradleProcessExecutor;
 import com.android.build.gradle.ndk.internal.NdkNamingScheme;
@@ -178,7 +178,7 @@ public class StripDebugSymbolTask extends DefaultTask {
             task.setOutputFolder(new File(
                     buildDir,
                     NdkNamingScheme.getOutputDirectoryName(binary)));
-            task.setStripExecutable(handler.getStripCommand(
+            task.setStripExecutable(handler.getStripExecutable(
                     Abi.getByName(binary.getTargetPlatform().getName())));
             task.dependsOn(binary);
         }

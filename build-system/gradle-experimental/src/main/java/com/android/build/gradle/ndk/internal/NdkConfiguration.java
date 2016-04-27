@@ -18,13 +18,16 @@ package com.android.build.gradle.ndk.internal;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.NativeDependencyLinkage;
-import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.dependency.AndroidNativeDependencySpec;
 import com.android.build.gradle.internal.dependency.NativeDependencyResolveResult;
 import com.android.build.gradle.internal.dependency.NativeDependencyResolver;
 import com.android.build.gradle.internal.dependency.NativeLibraryArtifact;
 import com.android.build.gradle.internal.dependency.NativeLibraryArtifactAdaptor;
+import com.android.build.gradle.internal.ndk.NativeToolSpecification;
+import com.android.build.gradle.internal.ndk.NdkHandler;
+import com.android.build.gradle.internal.ndk.Stl;
+import com.android.build.gradle.internal.ndk.StlNativeToolSpecification;
 import com.android.build.gradle.managed.NdkConfig;
 import com.android.build.gradle.model.NativeSourceSet;
 import com.android.build.gradle.tasks.StripDebugSymbolTask;
@@ -125,7 +128,7 @@ public class NdkConfiguration {
                             }
                         });
 
-                        new DefaultNativeToolSpecification().apply(binary);
+                        applyNativeToolSpecification(new DefaultNativeToolSpecification(), binary);
 
                         String sysroot = ndkHandler.getSysroot(
                                 Abi.getByName(binary.getTargetPlatform().getName()));
@@ -188,8 +191,8 @@ public class NdkConfiguration {
             NativeLibraryBinarySpec binary,
             final NdkConfig ndkConfig,
             final NdkHandler ndkHandler) {
-        String sysroot = ndkHandler.getSysroot(
-                Abi.getByName(binary.getTargetPlatform().getName()));
+        Abi abi = Abi.getByName(binary.getTargetPlatform().getName());
+        String sysroot = ndkHandler.getSysroot(abi);
 
         if (ndkConfig.getRenderscriptNdkMode()) {
             binary.getcCompiler().args("-I" + sysroot + "/usr/include/rs");
@@ -201,17 +204,19 @@ public class NdkConfiguration {
 
         // STL flags must be applied before user defined flags to resolve possible undefined symbols
         // in the STL library.
-        StlNativeToolSpecification stlConfig = new StlNativeToolSpecification(
-                ndkHandler,
-                ndkConfig.getStl(),
-                ndkConfig.getStlVersion(),
-                binary.getTargetPlatform());
-        stlConfig.apply(binary);
 
-        NativeToolSpecificationFactory.create(
-                ndkHandler,
-                binary.getTargetPlatform(),
-                Objects.firstNonNull(ndkConfig.getDebuggable(), false)).apply(
+        StlNativeToolSpecification stlConfig = ndkHandler.getStlNativeToolSpecification(
+                Stl.getById(ndkConfig.getStl()),
+                ndkConfig.getStlVersion(),
+                abi);
+        applyNativeToolSpecification(stlConfig, binary);
+
+
+        applyNativeToolSpecification(
+                NativeToolSpecificationFactory.create(
+                        ndkHandler,
+                        binary.getTargetPlatform(),
+                        Objects.firstNonNull(ndkConfig.getDebuggable(), false)),
                 binary);
 
         // Add flags defined in NdkConfig
@@ -229,6 +234,20 @@ public class NdkConfiguration {
 
         for (String ldLib : ndkConfig.getLdLibs()) {
             binary.getLinker().args("-l" + ldLib.trim());
+        }
+    }
+
+    private static void applyNativeToolSpecification(NativeToolSpecification spec, NativeBinarySpec binary) {
+        for (String arg : spec.getCFlags()) {
+            binary.getcCompiler().args(arg);
+        }
+
+        for (String arg : spec.getCppFlags()) {
+            binary.getCppCompiler().args(arg);
+        }
+
+        for (String arg : spec.getLdFlags()) {
+            binary.getLinker().args(arg);
         }
     }
 
@@ -369,7 +388,7 @@ public class NdkConfiguration {
                     binary,
                     buildDir,
                     ndkHandler,
-                    ndkConfig.getStl(),
+                    Stl.getById(ndkConfig.getStl()),
                     ndkConfig.getStlVersion(),
                     compileNdkTaskName);
 

@@ -18,7 +18,7 @@ package com.android.build.gradle.tasks;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.LoggerWrapper;
-import com.android.build.gradle.internal.NdkHandler;
+import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.process.GradleProcessExecutor;
 import com.android.build.gradle.ndk.internal.NdkNamingScheme;
@@ -213,9 +213,9 @@ public class StripDependenciesTask extends DefaultTask {
                     buildDir,
                     NdkNamingScheme.getOutputDirectoryName(buildType, flavor, "")));
             Map<Abi, File> stripCommands = Maps.newHashMap();
-            if (handler.isNdkDirConfigured()) {
+            if (handler.isConfigured()) {
                 for(Abi abi : handler.getSupportedAbis()) {
-                    stripCommands.put(abi, handler.getStripCommand(abi));
+                    stripCommands.put(abi, handler.getStripExecutable(abi));
                     task.addStripExecutables(stripCommands);
                 }
             }

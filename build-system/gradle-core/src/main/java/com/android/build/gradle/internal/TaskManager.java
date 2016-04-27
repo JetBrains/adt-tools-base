@@ -53,6 +53,7 @@ import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
 import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
+import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.OriginalStream;
 import com.android.build.gradle.internal.pipeline.TransformManager;
