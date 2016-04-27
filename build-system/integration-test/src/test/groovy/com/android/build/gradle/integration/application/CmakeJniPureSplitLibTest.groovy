@@ -22,13 +22,16 @@ import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
+import org.junit.Ignore
 import org.junit.Test
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
+
 /**
  * Assemble tests for pure splits under CMake
  */
 @CompileStatic
+@Ignore("Waiting for CMake in SDK")
 class CmakeJniPureSplitLibTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
