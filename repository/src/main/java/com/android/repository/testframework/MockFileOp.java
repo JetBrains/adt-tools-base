@@ -642,7 +642,14 @@ public class MockFileOp implements FileOp {
     @NonNull
     @Override
     public OutputStream newFileOutputStream(@NonNull File file) throws FileNotFoundException {
-        StringOutputStream os = new StringOutputStream(file);
+        return newFileOutputStream(file, false);
+    }
+
+    @NonNull
+    @Override
+    public OutputStream newFileOutputStream(@NonNull File file, boolean append)
+            throws FileNotFoundException {
+        StringOutputStream os = new StringOutputStream(file, append);
         mOutputStreams.add(os);
         return os;
     }
@@ -651,12 +658,19 @@ public class MockFileOp implements FileOp {
      * An {@link OutputStream} that will capture the stream as an UTF-8 string once properly closed
      * and associate it to the given {@link File}.
      */
-    public class StringOutputStream extends ByteArrayOutputStream {
+    private class StringOutputStream extends ByteArrayOutputStream {
         private String mData;
         private final File mFile;
 
-        public StringOutputStream(File file) {
+        public StringOutputStream(File file, boolean append) {
             mFile = file;
+            if (append && exists(file)) {
+                try {
+                    write(getContent(file));
+                } catch (IOException e) {
+                    // shouldn't happen in mock case
+                }
+            }
             recordExistingFile(file);
         }
 

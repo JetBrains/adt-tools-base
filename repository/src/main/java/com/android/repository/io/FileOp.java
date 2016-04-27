@@ -129,6 +129,11 @@ public interface FileOp {
     OutputStream newFileOutputStream(@NonNull File file)
             throws FileNotFoundException;
 
+    /** Creates a new {@link OutputStream} for the given {@code file}. */
+    @NonNull
+    OutputStream newFileOutputStream(@NonNull File file, boolean append)
+            throws FileNotFoundException;
+
     /** Creates a new {@link InputStream} for the given {@code file}. */
     @NonNull
     InputStream newFileInputStream(@NonNull File file)
