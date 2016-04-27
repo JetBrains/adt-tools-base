@@ -27,6 +27,7 @@ def env = new Object() {
             String nativeApiVersion
             String experimentalVersion
             String experimentalGradleVersion
+            String versionModifier
         }
     }
 }
