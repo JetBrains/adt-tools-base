@@ -77,7 +77,7 @@ public abstract class AbstractAapt implements Aapt {
      *     <ul>
      *         <li>Assets dir (see {@link AaptPackageConfig#getAssetsDir()}};
      *         <li>Custom package for {@code R} (see
-     *         {@link AaptPackageConfig#setCustomPackageForR(String)});
+     *         {@link AaptPackageConfig#getCustomPackageForR()});
      *         <li>Libraries (see {@link AaptPackageConfig#getLibraries()}); if none is set, an
      *         empty list is assumed;
      *         <li>Preferred density (see {@link AaptPackageConfig#getPreferredDensity()});

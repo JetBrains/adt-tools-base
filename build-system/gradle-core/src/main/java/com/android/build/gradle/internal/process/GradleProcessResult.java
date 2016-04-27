@@ -18,7 +18,9 @@ package com.android.build.gradle.internal.process;
 
 import com.android.annotations.NonNull;
 import com.android.ide.common.process.ProcessException;
+import com.android.ide.common.process.ProcessInfo;
 import com.android.ide.common.process.ProcessResult;
+import com.google.common.base.Joiner;
 
 import org.gradle.process.ExecResult;
 import org.gradle.process.internal.ExecException;
@@ -30,8 +32,12 @@ class GradleProcessResult implements ProcessResult {
     @NonNull
     private final ExecResult result;
 
-    GradleProcessResult(@NonNull ExecResult result) {
+    @NonNull
+    private final ProcessInfo processInfo;
+
+    GradleProcessResult(@NonNull ExecResult result, @NonNull ProcessInfo processInfo) {
         this.result = result;
+        this.processInfo = processInfo;
     }
 
     @NonNull
@@ -40,7 +46,7 @@ class GradleProcessResult implements ProcessResult {
         try {
             result.assertNormalExitValue();
         } catch (ExecException e) {
-            throw new ProcessException(e);
+            throw buildProcessException(e);
         }
 
         return this;
@@ -57,8 +63,15 @@ class GradleProcessResult implements ProcessResult {
         try {
             result.rethrowFailure();
         } catch (ExecException e) {
-            throw new ProcessException(e);
+            throw buildProcessException(e);
         }
         return this;
+    }
+
+    @NonNull
+    private ProcessException buildProcessException(@NonNull ExecException e) {
+        return new ProcessException("Error while executing '"
+                + processInfo.getExecutable() + "' with arguments {"
+                + Joiner.on(' ').join(processInfo.getArgs()) + "}", e);
     }
 }
