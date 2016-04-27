@@ -481,8 +481,8 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                                 + "        new ConstructorTest(res, range);\n"
                                 + "    }\n"
                                 + "}\n"),
-                        mWorkerThreadPermission,
-                        mUiThreadPermission,
+                        mWorkerThread,
+                        mUiThread,
                         copy("src/android/support/annotation/DrawableRes.java.txt",
                                 "src/android/support/annotation/DrawableRes.java"),
                         copy("src/android/support/annotation/IntRange.java.txt",
@@ -585,7 +585,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "    }\n"
                 + "}");
 
-    private final TestFile mUiThreadPermission = java("src/android/support/annotation/UiThread.java", ""
+    private final TestFile mUiThread = java("src/android/support/annotation/UiThread.java", ""
             + "package android.support.annotation;\n"
             + "\n"
             + "import java.lang.annotation.Retention;\n"
@@ -601,7 +601,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
             + "public @interface UiThread {\n"
             + "}\n");
 
-    private final TestFile mMainThreadPermission = java("src/android/support/annotation/MainThread.java", ""
+    private final TestFile mMainThread = java("src/android/support/annotation/MainThread.java", ""
             + "package android.support.annotation;\n"
             + "\n"
             + "import java.lang.annotation.Retention;\n"
@@ -617,7 +617,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
             + "public @interface MainThread {\n"
             + "}\n");
 
-    private final TestFile mWorkerThreadPermission = java("src/android/support/annotation/WorkerThread.java", ""
+    private final TestFile mWorkerThread = java("src/android/support/annotation/WorkerThread.java", ""
             + "package android.support.annotation;\n"
             + "\n"
             + "import java.lang.annotation.Retention;\n"
@@ -631,6 +631,38 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
             + "@Retention(CLASS)\n"
             + "@Target({METHOD,CONSTRUCTOR,TYPE})\n"
             + "public @interface WorkerThread {\n"
+            + "}\n");
+
+    private final TestFile mBinderThread = java("src/android/support/annotation/BinderThread.java", ""
+            + "package android.support.annotation;\n"
+            + "\n"
+            + "import java.lang.annotation.Retention;\n"
+            + "import java.lang.annotation.Target;\n"
+            + "\n"
+            + "import static java.lang.annotation.ElementType.CONSTRUCTOR;\n"
+            + "import static java.lang.annotation.ElementType.METHOD;\n"
+            + "import static java.lang.annotation.ElementType.TYPE;\n"
+            + "import static java.lang.annotation.RetentionPolicy.CLASS;\n"
+            + "\n"
+            + "@Retention(CLASS)\n"
+            + "@Target({METHOD,CONSTRUCTOR,TYPE})\n"
+            + "public @interface BinderThread {\n"
+            + "}\n");
+
+    private final TestFile mAnyThread = java("src/android/support/annotation/AnyThread.java", ""
+            + "package android.support.annotation;\n"
+            + "\n"
+            + "import java.lang.annotation.Retention;\n"
+            + "import java.lang.annotation.Target;\n"
+            + "\n"
+            + "import static java.lang.annotation.ElementType.CONSTRUCTOR;\n"
+            + "import static java.lang.annotation.ElementType.METHOD;\n"
+            + "import static java.lang.annotation.ElementType.TYPE;\n"
+            + "import static java.lang.annotation.RetentionPolicy.CLASS;\n"
+            + "\n"
+            + "@Retention(CLASS)\n"
+            + "@Target({METHOD,CONSTRUCTOR,TYPE})\n"
+            + "public @interface AnyThread {\n"
             + "}\n");
 
     private TestFile createResAnnotation(String prefix) {
@@ -1047,9 +1079,222 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                         + "        }\n"
                         + "    }\n"
                         + "}\n"),
-                        mUiThreadPermission,
-                        mMainThreadPermission,
-                        mWorkerThreadPermission));
+                    mUiThread,
+                    mMainThread,
+                    mWorkerThread));
+    }
+
+    @SuppressWarnings("all") // Sample code, warts and all
+    public void testThreadingIssue207313() throws Exception {
+        // Regression test for scenario in
+        //  https://code.google.com/p/android/issues/detail?id=207313
+        assertEquals(""
+                + "src/test/pkg/BigClassClient.java:10: Error: Constructor BigClass must be called from the UI thread, currently inferred thread is worker thread [WrongThread]\n"
+                + "        BigClass o = new BigClass();\n"
+                + "                     ~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/BigClassClient.java:11: Error: Method f1 must be called from the UI thread, currently inferred thread is worker thread [WrongThread]\n"
+                + "        o.f1();   // correct WrongThread: must be called from the UI thread currently inferred thread is worker\n"
+                + "        ~~~~~~\n"
+                + "src/test/pkg/BigClassClient.java:12: Error: Method f2 must be called from the UI thread, currently inferred thread is worker thread [WrongThread]\n"
+                + "        o.f2();   // correct WrongThread: must be called from the UI thread currently inferred thread is worker\n"
+                + "        ~~~~~~\n"
+                + "src/test/pkg/BigClassClient.java:13: Error: Method f100 must be called from the UI thread, currently inferred thread is worker thread [WrongThread]\n"
+                + "        o.f100(); // correct WrongThread: must be called from the UI thread currently inferred thread is worker\n"
+                + "        ~~~~~~~~\n"
+                + "src/test/pkg/BigClassClient.java:22: Error: Method g must be called from the worker thread, currently inferred thread is UI thread [WrongThread]\n"
+                + "        o.g();    // correct WrongThread: must be called from the worker thread currently inferred thread is UI\n"
+                + "        ~~~~~\n"
+                + "5 errors, 0 warnings\n",
+
+                lintProject(
+                        java("src/test/pkg/ThreadTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.support.annotation.UiThread;\n"
+                                + "import android.support.annotation.WorkerThread;\n"
+                                + "\n"
+                                + "@UiThread // it's here to prevent putting it on all 100 methods\n"
+                                + "class BigClass {\n"
+                                + "    void f1() { }\n"
+                                + "    void f2() { }\n"
+                                + "    //...\n"
+                                + "    void f100() { }\n"
+                                + "    @WorkerThread // this single method is not UI, it's something else\n"
+                                + "    void g() { }\n"
+                                + "}\n"),
+                        java("src/test/pkg/BigClassClient.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.support.annotation.UiThread;\n"
+                                + "import android.support.annotation.WorkerThread;\n"
+                                + "\n"
+                                + "@SuppressWarnings(\"unused\")\n"
+                                + "public class BigClassClient {\n"
+                                + "    @WorkerThread\n"
+                                + "    void worker() {\n"
+                                + "        BigClass o = new BigClass();\n"
+                                + "        o.f1();   // correct WrongThread: must be called from the UI thread currently inferred thread is worker\n"
+                                + "        o.f2();   // correct WrongThread: must be called from the UI thread currently inferred thread is worker\n"
+                                + "        o.f100(); // correct WrongThread: must be called from the UI thread currently inferred thread is worker\n"
+                                + "        o.g();    // unexpected WrongThread: must be called from the UI thread currently inferred thread is worker\n"
+                                + "    }\n"
+                                + "    @UiThread\n"
+                                + "    void ui() {\n"
+                                + "        BigClass o = new BigClass();\n"
+                                + "        o.f1();   // no problem\n"
+                                + "        o.f2();   // no problem\n"
+                                + "        o.f100(); // no problem\n"
+                                + "        o.g();    // correct WrongThread: must be called from the worker thread currently inferred thread is UI\n"
+                                + "    }\n"
+                                + "}\n"),
+                        mUiThread,
+                        mWorkerThread));
+    }
+
+    @SuppressWarnings("all") // Sample code
+    public void testThreadingIssue207302() throws Exception {
+        // Regression test for
+        //    https://code.google.com/p/android/issues/detail?id=207302
+        assertEquals("No warnings.",
+
+                lintProject(
+                        java("src/test/pkg/TestPostRunnable.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.support.annotation.WorkerThread;\n"
+                                + "import android.view.View;\n"
+                                + "\n"
+                                + "public class TestPostRunnable {\n"
+                                + "    View view;\n"
+                                + "    @WorkerThread\n"
+                                + "    void f() {\n"
+                                + "        view.post(new Runnable() {\n"
+                                + "            @Override public void run() {\n"
+                                + "                // stuff on UI thread\n"
+                                + "            }\n"
+                                + "        });\n"
+                                + "    }\n"
+                                + "}"),
+                        mWorkerThread));
+    }
+
+    @SuppressWarnings("all") // Sample code
+    public void testAnyThread() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/AnyThreadTest.java:11: Error: Method worker must be called from the worker thread, currently inferred thread is any thread [WrongThread]\n"
+                + "        worker(); // ERROR\n"
+                + "        ~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+                lintProject(
+                        java("src/test/pkg/AnyThreadTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.support.annotation.AnyThread;\n"
+                                + "import android.support.annotation.UiThread;\n"
+                                + "import android.support.annotation.WorkerThread;\n"
+                                + "\n"
+                                + "@UiThread\n"
+                                + "class AnyThreadTest {\n"
+                                + "    @AnyThread\n"
+                                + "    static void threadSafe() {\n"
+                                + "        worker(); // ERROR\n"
+                                + "    }\n"
+                                + "    @WorkerThread\n"
+                                + "    static void worker() {\n"
+                                + "        threadSafe(); // OK\n"
+                                + "    }\n"
+                                + "}\n"),
+                        mAnyThread,
+                        mUiThread,
+                        mWorkerThread));
+    }
+
+    @SuppressWarnings("all") // Sample code
+    public void testMultipleThreads() throws Exception {
+        // Ensure that when multiple threading annotations are specified
+        // on methods, this is handled properly: calls can satisfy any one
+        // threading annotation on the target, but if multiple threads are
+        // found in the context, all of them must be valid for all targets
+        assertEquals(""
+                + "src/test/pkg/MultiThreadTest.java:21: Error: Method calleee must be called from the UI or worker thread, currently inferred thread is binder and worker thread [WrongThread]\n"
+                + "        calleee(); // Not ok: thread could be binder thread, not supported by target\n"
+                + "        ~~~~~~~~~\n"
+                + "src/test/pkg/MultiThreadTest.java:28: Error: Method calleee must be called from the UI or worker thread, currently inferred thread is worker and binder thread [WrongThread]\n"
+                + "        calleee(); // Not ok: thread could be binder thread, not supported by target\n"
+                + "        ~~~~~~~~~\n"
+                + "2 errors, 0 warnings\n",
+
+                lintProject(
+                        java("src/test/pkg/MultiThreadTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.support.annotation.BinderThread;\n"
+                                + "import android.support.annotation.UiThread;\n"
+                                + "import android.support.annotation.WorkerThread;\n"
+                                + "\n"
+                                + "class MultiThreadTest {\n"
+                                + "    @UiThread\n"
+                                + "    @WorkerThread\n"
+                                + "    private static void calleee() {\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    @WorkerThread\n"
+                                + "    private static void call1() {\n"
+                                + "        calleee(); // OK - context is included in target\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    @BinderThread\n"
+                                + "    @WorkerThread\n"
+                                + "    private static void call2() {\n"
+                                + "        calleee(); // Not ok: thread could be binder thread, not supported by target\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    // Same case as call2 but different order to make sure we don't just test the first one:\n"
+                                + "    @WorkerThread\n"
+                                + "    @BinderThread\n"
+                                + "    private static void call3() {\n"
+                                + "        calleee(); // Not ok: thread could be binder thread, not supported by target\n"
+                                + "    }\n"
+                                + "}\n"),
+                        mUiThread,
+                        mBinderThread,
+                        mWorkerThread));
+    }
+
+    public void testStaticMethod() throws Exception {
+        // Regression test for
+        //  https://code.google.com/p/android/issues/detail?id=175397
+        assertEquals("No warnings.",
+                lintProject(
+                        java("src/test/pkg/StaticMethods.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.content.Context;\n"
+                                + "import android.os.AsyncTask;\n"
+                                + "import android.support.annotation.WorkerThread;\n"
+                                + "import android.view.View;\n"
+                                + "\n"
+                                + "public class StaticMethods extends View {\n"
+                                + "    public StaticMethods(Context context) {\n"
+                                + "        super(context);\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    class MyAsyncTask extends AsyncTask<Long, Void, Boolean> {\n"
+                                + "        @Override\n"
+                                + "        protected Boolean doInBackground(Long... sizes) {\n"
+                                + "            return workedThreadMethod();\n"
+                                + "        }\n"
+                                + "\n"
+                                + "        @Override\n"
+                                + "        protected void onPostExecute(Boolean isEnoughFree) {\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public static boolean workedThreadMethod() {\n"
+                                + "        return true;\n"
+                                + "    }\n"
+                                + "}"),
+                        mWorkerThread));
     }
 
     public void testIntentPermission() throws Exception {
