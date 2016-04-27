@@ -35,12 +35,12 @@ import com.android.resources.Density;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.utils.ILogger;
-import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.hash.Hashing;
+import com.google.common.io.Files;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 
@@ -366,43 +366,67 @@ public class AaptV1 extends AbstractProcessExecutionAapt {
     @Override
     public ListenableFuture<File> compile(@NonNull File file, @NonNull File output)
             throws AaptException {
+        ListenableFuture<File> compilationFuture;
+
         if (mCruncher == null) {
             /*
              * Revert to old-style crunching.
              */
-            return super.compile(file, output);
-        }
+            compilationFuture = super.compile(file, output);
+        } else {
+            Preconditions.checkArgument(file.isFile(), "!file.isFile()");
+            Preconditions.checkArgument(output.isDirectory(), "!output.isDirectory()");
 
-        Preconditions.checkArgument(file.isFile(), "!file.isFile()");
-        Preconditions.checkArgument(output.isDirectory(), "!output.isDirectory()");
+            SettableFuture<File> future = SettableFuture.create();
+            compilationFuture = future;
 
-        SettableFuture<File> future = SettableFuture.create();
+            if (!mProcessMode.shouldProcess(file)) {
+                future.set(null);
+            } else {
+                File outputFile = compileOutputFor(file, output);
 
-        if (!mProcessMode.shouldProcess(file)) {
-            future.set(null);
-            return future;
-        }
+                int key = mCruncher.start();
+                try {
+                    mCruncher.crunchPng(key, file, outputFile);
+                } catch (PngException e) {
+                    throw new AaptException(
+                            "Failed to crunch file '" + file.getAbsolutePath() + "' "
+                                    + "into '" + outputFile.getAbsolutePath() + "'.");
+                }
 
-        File outputFile = compileOutputFor(file, output);
-
-        int key = mCruncher.start();
-        try {
-            mCruncher.crunchPng(key, file, outputFile);
-        } catch (PngException e) {
-            throw new AaptException("Failed to crunch file '" + file.getAbsolutePath() + "' "
-                    + "into '" + outputFile.getAbsolutePath() + "'.");
-        }
-
-        mWaitExecutor.execute(() -> {
-            try {
-                mCruncher.end(key);
-                future.set(outputFile);
-            } catch (Exception e) {
-                future.setException(e);
+                mWaitExecutor.execute(() -> {
+                    try {
+                        mCruncher.end(key);
+                        future.set(outputFile);
+                    } catch (Exception e) {
+                        future.setException(e);
+                    }
+                });
             }
-        });
+        }
 
-        return future;
+        /*
+         * When the compilationFuture is complete, check if the generated file is not bigger than
+         * the original file. If the original file is smaller, copy the original file over the
+         * generated file.
+         *
+         * Return a new future after this verification is done.
+         */
+        return Futures.transform(compilationFuture, (File result) -> {
+            SettableFuture<File> returnFuture = SettableFuture.create();
+
+            try {
+                if (result != null && file.length() < result.length()) {
+                    Files.copy(file, result);
+                }
+
+                returnFuture.set(result);
+            } catch (Exception e) {
+                returnFuture.setException(e);
+            }
+
+            return returnFuture;
+        });
     }
 
     @Nullable
