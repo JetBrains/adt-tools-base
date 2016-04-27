@@ -19,6 +19,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
 
 import com.android.build.gradle.integration.common.category.DeviceTests;
+import com.android.build.gradle.integration.common.fixture.BuildScriptGenerator;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.runner.FilterableParameterized;
@@ -43,33 +44,42 @@ import java.util.Collection;
  */
 @RunWith(FilterableParameterized.class)
 public class JackTest {
-    @Parameterized.Parameters(name = "jackInProcess={0}")
+    @Parameterized.Parameters(name = "jackInProcess={0}, forComponentPlugin={1}")
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {
-                // jackInProcess
-                {true},
-                {false},
+                // jackInProcess forComponentPlugin
+                {true,           false},
+                {false,          false},
+                {true,           true},
+                {false,          true},
         });
     }
 
     private boolean jackInProcess;
-
-    public JackTest(boolean jackInProcess) {
-        this.jackInProcess = jackInProcess;
-    }
+    private boolean forComponentPlugin;
 
     @Rule
-    public GradleTestProject project = GradleTestProject.builder()
-            .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
+    public GradleTestProject project;
+
+    public JackTest(boolean jackInProcess, boolean forComponentPlugin) {
+        this.jackInProcess = jackInProcess;
+        this.forComponentPlugin = forComponentPlugin;
+
+        project = GradleTestProject.builder()
+            .fromTestApp(HelloWorldApp.noBuildFile())
+            .useExperimentalGradleVersion(forComponentPlugin)
             .create();
+    }
 
     @Before
     public void setUp() throws IOException {
         Assume.assumeTrue("Jack tool requires Java 7", JavaVersion.current().isJava7Compatible());
-        Files.append(
-                "android {\n"
-                        + "    buildToolsVersion '" + GradleTestProject.UPCOMING_BUILD_TOOL_VERSION
-                        + "'\n"
+        String buildScript = new BuildScriptGenerator(
+                "apply plugin: '${application_plugin}'\n"
+                        + "${model_start}"
+                        + "android {\n"
+                        + "    compileSdkVersion " + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION + "\n"
+                        + "    buildToolsVersion '" + GradleTestProject.UPCOMING_BUILD_TOOL_VERSION + "'\n"
                         + "    defaultConfig {\n"
                         + "        jackOptions {\n"
                         + "            enabled true\n"
@@ -81,7 +91,10 @@ public class JackTest {
                         + "            testCoverageEnabled false\n"
                         + "        }\n"
                         + "    }\n"
-                        + "}\n",
+                        + "}\n"
+                        + "${model_end}").build(forComponentPlugin);
+        Files.append(
+                buildScript,
                 project.getBuildFile(),
                 Charsets.UTF_8);
     }
