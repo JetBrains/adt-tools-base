@@ -22,6 +22,7 @@ import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
@@ -30,6 +31,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
  * Assemble tests for CMake.
  */
 @CompileStatic
+@Ignore("Waiting for CMake in SDK")
 class CmakeJniLibTest {
 
     @ClassRule
