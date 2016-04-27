@@ -77,7 +77,7 @@ public class SdkDownloader {
         for (RemotePackage p : remotes) {
             License l = p.getLicense();
             if (l != null) {
-                if (!l.checkAccepted(localPath)) {
+                if (!l.checkAccepted(localPath, handler.getFileOp())) {
                     progress.logError(String.format(
                             "License for %1$s (%2$s) is not accepted. Please install using "
                                     + "studio, then copy <studio sdk path>/licenses/* to "
