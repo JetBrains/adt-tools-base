@@ -56,12 +56,6 @@ model {
         ndk {
             moduleName "hello-jni"
         }
-        externalNativeBuild {
-            ndkBuild {
-                path file("Android.mk")
-                cFlags "-DFLAVOR=CHOCOLATE"
-            }
-        }
         buildTypes {
             release {
                 minifyEnabled false

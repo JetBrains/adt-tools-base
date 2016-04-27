@@ -51,7 +51,6 @@ import com.android.build.gradle.tasks.MergeResources;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.dependency.AbstractLibraryDependency;
-import com.android.builder.dependency.JarDependency;
 import com.android.builder.dependency.MavenCoordinatesImpl;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.JavaLibrary;
@@ -291,6 +290,17 @@ public class LibraryTaskManager extends TaskManager {
                     });
         }
         variantScope.setNdkBuildable(getNdkBuildable(variantData));
+
+        // External native build
+        ThreadRecorder.get().record(
+                ExecutionType.LIB_TASK_MANAGER_CREATE_EXTERNAL_NATIVE_BUILD_TASK,
+                new Recorder.Block<Void>() {
+                    @Override
+                    public Void call() throws Exception {
+                        createExternalNativeBuildTasks(tasks, variantScope);
+                        return null;
+                    }
+                });
 
         // merge jni libs.
         createMergeJniLibFoldersTasks(tasks, variantScope);

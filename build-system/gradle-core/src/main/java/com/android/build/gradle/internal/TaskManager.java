@@ -54,6 +54,7 @@ import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
 import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.ndk.NdkHandler;
+import com.android.build.gradle.internal.model.CoreExternalNativeBuild;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.OriginalStream;
 import com.android.build.gradle.internal.pipeline.TransformManager;
@@ -112,8 +113,11 @@ import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.tasks.AidlCompile;
+import com.android.build.gradle.tasks.CmakeJsonModelGenerationTask;
 import com.android.build.gradle.tasks.ColdswapArtifactsKickerTask;
 import com.android.build.gradle.tasks.CompatibleScreensManifest;
+import com.android.build.gradle.tasks.ExternalNativeBuildTask;
+import com.android.build.gradle.tasks.ExternalNativeBuildTaskUtils;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.GenerateSplitAbiRes;
@@ -123,6 +127,7 @@ import com.android.build.gradle.tasks.ManifestProcessorTask;
 import com.android.build.gradle.tasks.MergeManifests;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.MergeSourceSetFolders;
+import com.android.build.gradle.tasks.NdkBuildJsonModelGenerationTask;
 import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.PackageAndroidArtifact;
 import com.android.build.gradle.tasks.PackageApplication;
@@ -345,6 +350,16 @@ public abstract class TaskManager {
                     new File(objFolder, "local/" + abi.getName()));
         }
 
+    }
+
+    /**
+     * Override to configure external native build data in the scope.
+     */
+    public void configureScopeForExternalNativeBuild(@NonNull VariantScope scope) {
+        scope.setExternalNativeBuildSoFolder(Collections.singleton(new File(
+                scope.getExternalNativeBuildIntermediatesFolder(),  "lib")));
+        File objFolder = new File(scope.getExternalNativeBuildIntermediatesFolder(),  "obj");
+        scope.setExternalNativeBuildObjFolder(objFolder);
     }
 
     protected AndroidConfig getExtension() {
@@ -724,7 +739,6 @@ public abstract class TaskManager {
                 .setDependency(mergeJniLibFoldersTask.getName())
                 .build());
 
-
         // create a stream that contains the content of the local NDK build
         variantScope.getTransformManager().addStream(OriginalStream.builder()
                 .addContentType(ExtendedContentType.NATIVE_LIBS)
@@ -732,6 +746,16 @@ public abstract class TaskManager {
                 .setFolders(Suppliers.ofInstance(variantScope.getNdkSoFolder()))
                 .setDependency(getNdkBuildable(variantScope.getVariantData()))
                 .build());
+
+        // create a stream that contains the content of the local external native build
+        if (variantScope.getExternalNativeBuildTask() != null) {
+            variantScope.getTransformManager().addStream(OriginalStream.builder()
+                    .addContentType(ExtendedContentType.NATIVE_LIBS)
+                    .addScope(Scope.PROJECT)
+                    .setFolders(Suppliers.ofInstance(variantScope.getExternalNativeBuildSoFolder()))
+                    .setDependency(variantScope.getExternalNativeBuildTask().getName())
+                    .build());
+        }
 
         // create a stream containing the content of the renderscript compilation output
         // if support mode is enabled.
@@ -914,6 +938,9 @@ public abstract class TaskManager {
 
         packageSplitAbiTask.dependsOn(tasks, generateSplitAbiRes);
         packageSplitAbiTask.dependsOn(tasks, scope.getNdkBuildable());
+        if (scope.getExternalNativeBuildTask() != null) {
+            packageSplitAbiTask.dependsOn(tasks, scope.getExternalNativeBuildTask());
+        }
 
         // set up dependency on the jni merger.
         for (TransformStream stream : scope.getTransformManager().getStreams(
@@ -1117,6 +1144,62 @@ public abstract class TaskManager {
         scope.getResourceGenTask().dependsOn(tasks, generateMicroApkTask);
     }
 
+    public void createExternalNativeBuildTasks(TaskFactory tasks, @NonNull VariantScope scope) {
+        final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
+
+        CoreExternalNativeBuild externalNativeBuild = extension.getExternalNativeBuild();
+
+        ExternalNativeBuildTaskUtils.ExternalNativeBuildProjectPathResolution pathResolution =
+                ExternalNativeBuildTaskUtils.getProjectPath(project.getProjectDir(), extension);
+        if (pathResolution.errorText != null) {
+            androidBuilder.getErrorReporter().handleSyncError(
+                    scope.getVariantConfiguration().getFullName(),
+                    SyncIssue.TYPE_EXTERNAL_NATIVE_BUILD_CONFIGURATION,
+                    pathResolution.errorText );
+            return;
+        }
+
+        if (pathResolution.path == null) {
+            // No project
+            return;
+        }
+
+        AndroidTask<?> generateTask;
+
+        if (pathResolution.taskClass == NdkBuildJsonModelGenerationTask.class) {
+            generateTask = androidTasks.create(
+                    tasks,
+                    new NdkBuildJsonModelGenerationTask.ConfigAction(
+                            pathResolution.path,
+                            externalNativeBuild.getNdkBuild(),
+                            androidBuilder,
+                            sdkHandler,
+                            scope));
+
+
+        } else if (pathResolution.taskClass == CmakeJsonModelGenerationTask.class) {
+            generateTask = androidTasks.create(
+                    tasks,
+                    new CmakeJsonModelGenerationTask.ConfigAction(
+                            pathResolution.path,
+                            externalNativeBuild.getCmake(),
+                            androidBuilder,
+                            sdkHandler,
+                            scope));
+        } else {
+            return;
+        }
+        generateTask.dependsOn(tasks, scope.getPreBuildTask());
+
+        AndroidTask<ExternalNativeBuildTask> buildTask = androidTasks.create(
+                tasks,
+                new ExternalNativeBuildTask.ConfigAction(scope, androidBuilder));
+
+        buildTask.dependsOn(tasks, generateTask);
+        scope.setExternalNativeBuildTask(buildTask);
+        scope.getCompileTask().dependsOn(tasks, buildTask);
+    }
+
     public void createNdkTasks(@NonNull VariantScope scope) {
         final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
         NdkCompile ndkCompile = project.getTasks().create(
@@ -1270,6 +1353,9 @@ public abstract class TaskManager {
             createNdkTasks(variantScope);
         }
         variantScope.setNdkBuildable(getNdkBuildable(variantData));
+
+        // Add ExternalNativeBuild tasks
+        createExternalNativeBuildTasks(tasks, variantScope);
 
         // add tasks to merge jni libs.
         createMergeJniLibFoldersTasks(tasks, variantScope);

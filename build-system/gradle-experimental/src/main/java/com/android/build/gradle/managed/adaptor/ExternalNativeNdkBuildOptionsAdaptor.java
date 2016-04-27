@@ -42,6 +42,12 @@ public class ExternalNativeNdkBuildOptionsAdaptor implements CoreExternalNativeN
 
     @Nullable
     @Override
+    public String getCppFlags() {
+        return options.getCppFlags();
+    }
+
+    @Nullable
+    @Override
     public Set<String> getAbiFilters() {
         return options.getAbiFilters();
     }

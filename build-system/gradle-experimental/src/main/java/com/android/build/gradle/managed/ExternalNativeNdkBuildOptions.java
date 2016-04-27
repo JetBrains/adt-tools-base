@@ -36,4 +36,10 @@ public interface ExternalNativeNdkBuildOptions {
      */
     String getcFlags();
     void setcFlags(String flags);
+
+    /**
+     * The CPP Flags
+     */
+    String getCppFlags();
+    void setCppFlags(String flags);
 }

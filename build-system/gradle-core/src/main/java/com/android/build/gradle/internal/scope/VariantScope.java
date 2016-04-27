@@ -30,15 +30,7 @@ import com.android.build.gradle.internal.tasks.databinding.DataBindingExportBuil
 import com.android.build.gradle.internal.tasks.databinding.DataBindingProcessLayoutsTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.build.gradle.tasks.AidlCompile;
-import com.android.build.gradle.tasks.GenerateBuildConfig;
-import com.android.build.gradle.tasks.GenerateResValues;
-import com.android.build.gradle.tasks.MergeResources;
-import com.android.build.gradle.tasks.MergeSourceSetFolders;
-import com.android.build.gradle.tasks.ProcessAndroidResources;
-import com.android.build.gradle.tasks.RenderscriptCompile;
-import com.android.build.gradle.tasks.ShaderCompile;
-
+import com.android.build.gradle.tasks.*;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Task;
 import org.gradle.api.file.FileCollection;
@@ -66,11 +58,6 @@ public interface VariantScope extends BaseScope {
     void setNdkBuildable(@NonNull Collection<Object> ndkBuildable);
 
     @Nullable
-    Collection<Object> getExternalNativeBuildable();
-
-    void setExternalNativeBuildable(@NonNull Collection<Object> ndkBuildable);
-
-    @Nullable
     Collection<File> getNdkSoFolder();
 
     void setNdkSoFolder(@NonNull Collection<File> ndkSoFolder);
@@ -95,11 +82,6 @@ public interface VariantScope extends BaseScope {
     File getNdkDebuggableLibraryFolders(@NonNull Abi abi);
 
     void addNdkDebuggableLibraryFolders(@NonNull Abi abi, @NonNull File searchPath);
-
-    @Nullable
-    File getExternalNativeBuildDebuggableLibraryFolders(@NonNull Abi abi);
-
-    void addExternalNativeBuildDebuggableLibraryFolders(@NonNull Abi abi, @NonNull File searchPath);
 
     @NonNull
     File getDexOutputFolder();
@@ -288,6 +270,9 @@ public interface VariantScope extends BaseScope {
     @NonNull
     File  getManifestReportFile();
 
+    @NonNull
+    File getExternalNativeBuildIntermediatesFolder();
+
     AndroidTask<DefaultTask> getAssembleTask();
 
     void setAssembleTask(@NonNull AndroidTask<DefaultTask> assembleTask);
@@ -386,8 +371,11 @@ public interface VariantScope extends BaseScope {
     void setJavaCompilerTask(@NonNull AndroidTask<? extends Task> javaCompileTask);
 
     AndroidTask<Task> getCompileTask();
-
     void setCompileTask(AndroidTask<Task> compileTask);
+
+    @Nullable
+    AndroidTask<ExternalNativeBuildTask> getExternalNativeBuildTask();
+    void setExternalNativeBuildTask(AndroidTask<ExternalNativeBuildTask> task);
 
     AndroidTask<?> getCoverageReportTask();
 

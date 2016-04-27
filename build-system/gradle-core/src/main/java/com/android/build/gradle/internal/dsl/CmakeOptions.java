@@ -39,6 +39,9 @@ public class CmakeOptions implements CoreCmakeOptions {
     @Nullable
     private String cflags;
 
+    @Nullable
+    private String cppflags;
+
     public CmakeOptions() {
     }
 
@@ -62,5 +65,16 @@ public class CmakeOptions implements CoreCmakeOptions {
     @Override
     public void setcFlags(String cflags) {
         this.cflags = cflags;
+    }
+
+    @Nullable
+    @Override
+    public String getCppFlags() {
+        return this.cppflags;
+    }
+
+    @Override
+    public void setCppFlags(String cppflags) {
+        this.cppflags = cppflags;
     }
 }
