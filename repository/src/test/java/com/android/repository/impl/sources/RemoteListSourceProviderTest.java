@@ -108,7 +108,8 @@ public class RemoteListSourceProviderTest extends TestCase {
 
             @Override
             public void downloadFully(@NonNull URL url, @Nullable File target,
-                    @NonNull ProgressIndicator indicator) throws IOException {
+                    @Nullable String checksum, @NonNull ProgressIndicator indicator)
+                    throws IOException {
                 fail("shouldn't be downloading again");
             }
         };
