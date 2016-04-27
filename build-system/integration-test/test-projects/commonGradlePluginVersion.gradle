@@ -30,6 +30,7 @@ if (buildVersion == null && System.env.CUSTOM_REPO != null) {
                 String experimentalGradleVersion
                 String apiVersion
                 String nativeApiVersion
+                String versionModifier
             }
         }
     }
