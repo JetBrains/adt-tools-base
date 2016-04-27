@@ -19,17 +19,16 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.AndroidGradleOptions;
+import com.android.build.gradle.internal.aapt.AaptGradleFactory;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.IncrementalTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.builder.internal.aapt.Aapt;
 import com.android.builder.model.VectorDrawablesOptions;
-import com.android.builder.png.QueuedCruncher;
 import com.android.builder.png.VectorDrawableRenderer;
-import com.android.ide.common.internal.PngCruncher;
-import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.res2.FileStatus;
 import com.android.ide.common.res2.FileValidity;
 import com.android.ide.common.res2.GeneratedResourceSet;
@@ -40,11 +39,8 @@ import com.android.ide.common.res2.ResourceMerger;
 import com.android.ide.common.res2.ResourcePreprocessor;
 import com.android.ide.common.res2.ResourceSet;
 import com.android.resources.Density;
-import com.android.sdklib.BuildToolInfo;
 import com.android.utils.FileUtils;
-import com.android.utils.ILogger;
 import com.google.common.base.Objects;
-import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 
 import org.gradle.api.tasks.Input;
@@ -62,14 +58,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @ParallelizableTask
 public class MergeResources extends IncrementalTask {
 
-    private static final List<Pattern> IGNORED_WARNINGS = Lists.newArrayList(
-            Pattern.compile("Not recognizing known sRGB profile that has been edited"));
 
     // ----- PUBLIC TASK API -----
 
@@ -123,30 +116,6 @@ public class MergeResources extends IncrementalTask {
         return true;
     }
 
-    private PngCruncher getCruncher() {
-        if (getUseNewCruncher()) {
-            // At this point ensureTargetSetup() has been called, so no NPE below.
-            // noinspection ConstantConditions
-            BuildToolInfo buildTools = getBuilder().getTargetInfo().getBuildTools();
-            if (buildTools.getRevision().getMajor() >= 22) {
-                return QueuedCruncher.Builder.INSTANCE.newCruncher(
-                        buildTools.getPath(BuildToolInfo.PathId.AAPT),
-                        getFilteringLogger());
-            }
-            getLogger().info("New PNG cruncher will be enabled with build tools 22 and above.");
-        }
-
-        return getBuilder().getAaptCruncher(new LoggedProcessOutputHandler(getFilteringLogger()));
-    }
-
-    /**
-     * Returns an {@link ILogger} that degrades certain warnings to INFO level.
-     */
-    @NonNull
-    private ILogger getFilteringLogger() {
-        return new FilteringLogger(getILogger());
-    }
-
     @Override
     protected void doFullTaskAction() throws IOException {
         ResourcePreprocessor preprocessor = getPreprocessor();
@@ -167,14 +136,13 @@ public class MergeResources extends IncrementalTask {
             }
 
             // get the merged set and write it down.
+            Aapt aapt = AaptGradleFactory.make(getBuilder(), getCrunchPng(), getProcess9Patch());
             MergedResourceWriter writer = new MergedResourceWriter(
                     destinationDir,
-                    getCruncher(),
-                    getCrunchPng(),
-                    getProcess9Patch(),
                     getPublicFile(),
                     getBlameLogFolder(),
-                    preprocessor);
+                    preprocessor,
+                    aapt::compile);
 
             merger.mergeData(writer, false /*doCleanUp*/);
 
@@ -237,14 +205,15 @@ public class MergeResources extends IncrementalTask {
                 }
             }
 
+
+
+            Aapt aapt = AaptGradleFactory.make(getBuilder(), getCrunchPng(), getProcess9Patch());
             MergedResourceWriter writer = new MergedResourceWriter(
                     getOutputDir(),
-                    getCruncher(),
-                    getCrunchPng(),
-                    getProcess9Patch(),
                     getPublicFile(),
                     getBlameLogFolder(),
-                    preprocessor);
+                    preprocessor,
+                    aapt::compile);
             merger.mergeData(writer, false /*doCleanUp*/);
             // No exception? Write the known state.
             merger.writeBlobTo(getIncrementalFolder(), writer, false);
@@ -301,14 +270,6 @@ public class MergeResources extends IncrementalTask {
     public void setInputResourceSets(
             List<ResourceSet> inputResourceSets) {
         this.inputResourceSets = inputResourceSets;
-    }
-
-    public boolean getUseNewCruncher() {
-        return useNewCruncher;
-    }
-
-    public void setUseNewCruncher(boolean useNewCruncher) {
-        this.useNewCruncher = useNewCruncher;
     }
 
     @OutputDirectory
@@ -477,8 +438,6 @@ public class MergeResources extends IncrementalTask {
                     vectorDrawablesOptions.getUseSupportLibrary()
                             || mergeResourcesTask.getGeneratedDensities().isEmpty());
 
-            mergeResourcesTask.setUseNewCruncher(extension.getAaptOptions().getUseNewCruncher());
-
             final boolean validateEnabled = AndroidGradleOptions.isResourceValidationEnabled(
                     scope.getGlobalScope().getProject());
 
@@ -518,51 +477,4 @@ public class MergeResources extends IncrementalTask {
         }
     }
 
-    private static class FilteringLogger implements ILogger {
-
-        private final ILogger mDelegate;
-
-        FilteringLogger(ILogger delegate) {
-            mDelegate = delegate;
-        }
-
-        @Override
-        public void error(@Nullable Throwable t, @Nullable String msgFormat, Object... args) {
-            if (msgFormat != null && isIgnored(msgFormat, args)) {
-                mDelegate.info(Strings.nullToEmpty(msgFormat), args);
-            } else {
-                mDelegate.error(t, msgFormat, args);
-            }
-        }
-
-        @Override
-        public void warning(@NonNull String msgFormat, Object... args) {
-            if (isIgnored(msgFormat, args)) {
-                mDelegate.info(msgFormat, args);
-            } else {
-                mDelegate.warning(msgFormat, args);
-            }
-        }
-
-        @Override
-        public void info(@NonNull String msgFormat, Object... args) {
-            mDelegate.info(msgFormat, args);
-        }
-
-        @Override
-        public void verbose(@NonNull String msgFormat, Object... args) {
-            mDelegate.verbose(msgFormat, args);
-        }
-
-        private boolean isIgnored(String msgFormat, Object... args) {
-            String message = String.format(msgFormat, args);
-            for (Pattern pattern : IGNORED_WARNINGS) {
-                if (pattern.matcher(message).find()) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-    }
 }

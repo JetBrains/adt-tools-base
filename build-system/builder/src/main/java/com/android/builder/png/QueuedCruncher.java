@@ -41,6 +41,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class QueuedCruncher implements PngCruncher {
 
+    /**
+     * Number of concurrent cruncher processes to launch.
+     */
+    public static final int NUMBER_CRUNCHER_PROCESSES = 5;
+
     // use an enum to ensure singleton.
     public enum Builder {
         INSTANCE;
@@ -157,8 +162,13 @@ public class QueuedCruncher implements PngCruncher {
                 mAaptProcesses.clear();
             }
         };
-        mCrunchingRequests = new WorkQueue<AaptProcess>(
-                mLogger, queueThreadContext, "png-cruncher", 5, 2f);
+        mCrunchingRequests =
+                new WorkQueue<>(
+                        mLogger,
+                        queueThreadContext,
+                        "png-cruncher",
+                        NUMBER_CRUNCHER_PROCESSES,
+                        2f);
     }
 
     private static final class QueuedJob extends Job<AaptProcess> {

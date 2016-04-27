@@ -118,8 +118,12 @@ public class AaptV1Test {
             throw new RuntimeException("Test requires build-tools " + revision.toShortString());
         }
 
-        return new AaptV1(new DefaultProcessExecutor(new StdLogger(StdLogger.Level.INFO)),
-                new LoggedProcessOutputHandler(logger), buildToolInfo);
+        return new AaptV1(
+                new DefaultProcessExecutor(logger),
+                new LoggedProcessOutputHandler(logger),
+                buildToolInfo,
+                logger,
+                AaptV1.PngProcessMode.ALL);
     }
 
     @Test

@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.dsl;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.LoggerWrapper;
 
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
@@ -37,8 +38,6 @@ public class AaptOptions implements com.android.builder.model.AaptOptions {
 
     @Nullable
     private List<String> noCompressList;
-
-    private boolean useNewCruncher = true;
 
     private boolean cruncherEnabled = true;
 
@@ -97,11 +96,15 @@ public class AaptOptions implements com.android.builder.model.AaptOptions {
     }
 
     public void useNewCruncher(boolean value) {
-        useNewCruncher = value;
+        LoggerWrapper.getLogger(AaptOptions.class).warning("useNewCruncher has been deprecated. "
+                + "It will be removed in a future version of the gradle plugin. New cruncher is "
+                + "now always enabled.");
     }
 
     public void setUseNewCruncher(boolean value) {
-        useNewCruncher = value;
+        LoggerWrapper.getLogger(AaptOptions.class).warning("useNewCruncher has been deprecated. "
+                + "It will be removed in a future version of the gradle plugin. New cruncher is "
+                + "now always enabled.");
     }
 
     /**
@@ -124,7 +127,7 @@ public class AaptOptions implements com.android.builder.model.AaptOptions {
      */
     @Input
     public boolean getUseNewCruncher() {
-        return useNewCruncher;
+        return true;
     }
 
     public void failOnMissingConfigEntry(boolean value) {

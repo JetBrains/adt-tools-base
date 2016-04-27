@@ -18,8 +18,6 @@ package com.android.ide.common.res2;
 
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_TYPE;
-import static com.android.SdkConstants.DOT_9PNG;
-import static com.android.SdkConstants.DOT_PNG;
 import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.RES_QUALIFIER_SEP;
 import static com.android.SdkConstants.TAG_RESOURCES;
@@ -31,8 +29,6 @@ import com.android.ide.common.blame.MergingLog;
 import com.android.ide.common.blame.SourceFile;
 import com.android.ide.common.blame.SourceFilePosition;
 import com.android.ide.common.blame.SourcePosition;
-import com.android.ide.common.internal.NopPngCruncher;
-import com.android.ide.common.internal.PngCruncher;
 import com.android.ide.common.internal.PngException;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
@@ -44,18 +40,24 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.SettableFuture;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -64,9 +66,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
  * A {@link MergeWriter} for assets, using {@link ResourceItem}.
  */
 public class MergedResourceWriter extends MergeWriter<ResourceItem> {
-
-    @NonNull
-    private final PngCruncher mCruncher;
 
     @NonNull
     private final ResourcePreprocessor mPreprocessor;
@@ -81,11 +80,8 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
 
     private DocumentBuilderFactory mFactory;
 
-    private final boolean mCrunchPng;
-
-    private final boolean mProcess9Patch;
-
-    private final int mCruncherKey;
+    @NonNull
+    private final AaptCompiler mAaptCompiler;
 
     /**
      * map of XML values files to write after parsing all the files. the key is the qualifier.
@@ -99,31 +95,41 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
      */
     private Set<String> mQualifierWithDeletedValues;
 
+    /**
+     * Futures we are waiting for...
+     */
+    @NonNull
+    private ConcurrentLinkedDeque<Future<File>> mCompiling;
+
     public MergedResourceWriter(@NonNull File rootFolder,
-            @NonNull PngCruncher pngRunner,
-            boolean crunchPng,
-            boolean process9Patch,
             @Nullable File publicFile,
             @Nullable File blameLogFolder,
-            @NonNull ResourcePreprocessor preprocessor) {
+            @NonNull ResourcePreprocessor preprocessor,
+            @NonNull AaptCompiler aaptCompiler) {
         super(rootFolder);
-        mCruncher = pngRunner;
-        mCruncherKey = mCruncher.start();
-        mCrunchPng = crunchPng;
-        mProcess9Patch = process9Patch;
+        mAaptCompiler = aaptCompiler;
         mPublicFile = publicFile;
         mMergingLog = blameLogFolder != null ? new MergingLog(blameLogFolder) : null;
         mPreprocessor = preprocessor;
+        mCompiling = new ConcurrentLinkedDeque<>();
     }
 
-    public static MergedResourceWriter createWriterWithoutPngCruncher(@NonNull File rootFolder,
-                                                                      @Nullable File publicFile,
-                                                                      @Nullable File blameLogFolder,
-                                                                      @NonNull ResourcePreprocessor preprocessor) {
-        return new MergedResourceWriter(rootFolder, new NopPngCruncher(),
-                                        false, /* crunchPng */
-                                        false, /* process9Patch */
-                                        publicFile, blameLogFolder, preprocessor);
+    public static MergedResourceWriter createWriterWithoutPngCruncher(
+            @NonNull File rootFolder,
+            @Nullable File publicFile,
+            @Nullable File blameLogFolder,
+            @NonNull ResourcePreprocessor preprocessor) {
+        return new MergedResourceWriter(
+                rootFolder,
+                publicFile,
+                blameLogFolder,
+                preprocessor,
+                (@NonNull File file, @NonNull File output) -> {
+                    SettableFuture<File> future = SettableFuture.create();
+                    future.set(null);
+                    return future;
+                }
+        );
     }
 
     @Override
@@ -139,9 +145,12 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
         // Make sure all PNGs are generated first.
         super.end();
         try {
-            // Wait for all PNGs to be crunched.
-            mCruncher.end(mCruncherKey);
-        } catch (InterruptedException e) {
+            Future<File> first;
+            while ((first = mCompiling.pollFirst()) != null) {
+                first.get();
+            }
+
+        } catch (InterruptedException|ExecutionException e) {
             throw new ConsumerException(e);
         }
 
@@ -163,7 +172,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
     public boolean ignoreItemInMerge(ResourceItem item) {
         return item.getIgnoredFromDiskMerge();
     }
-
+    
     @Override
     public void addItem(@NonNull final ResourceItem item) throws ConsumerException {
         final ResourceFile.FileType type = item.getSourceType();
@@ -179,59 +188,64 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
             // This is a single value file or a set of generated files. Only write it if the state
             // is TOUCHED.
             if (item.isTouched()) {
-                getExecutor().execute(new Callable<Void>() {
-                    @Override
-                    public Void call() throws Exception {
-                        File file = item.getFile();
+                getExecutor().execute(() -> {
+                    File file = item.getFile();
 
-                        String filename = file.getName();
-                        String folderName = getFolderName(item);
-                        File typeFolder = new File(getRootFolder(), folderName);
+                    String filename = file.getName();
+                    String folderName = getFolderName(item);
+                    File typeFolder = new File(getRootFolder(), folderName);
+                    try {
+                        createDir(typeFolder);
+                    } catch (IOException ioe) {
+                        throw MergingException.wrapException(ioe).withFile(typeFolder).build();
+                    }
+
+                    File outFile = new File(typeFolder, filename);
+
+                    if (type == DataFile.FileType.GENERATED_FILES) {
                         try {
-                            createDir(typeFolder);
-                        } catch (IOException ioe) {
-                            throw MergingException.wrapException(ioe).withFile(typeFolder).build();
+                            mPreprocessor.generateFile(file, item.getSource().getFile());
+                        } catch (Exception e) {
+                            throw new ConsumerException(e, item.getSource().getFile());
                         }
+                    }
 
-                        File outFile = new File(typeFolder, filename);
-
-                        if (type == DataFile.FileType.GENERATED_FILES) {
-                            try {
-                                mPreprocessor.generateFile(file, item.getSource().getFile());
-                            } catch (Exception e) {
-                                throw new ConsumerException(e, item.getSource().getFile());
-                            }
-                        }
-
-                        try {
-                            if (item.getType() == ResourceType.RAW) {
-                                // Don't crunch, don't insert source comments, etc - leave alone.
-                                Files.copy(file, outFile);
-                            } else if (filename.endsWith(DOT_PNG)) {
-                                if (mCrunchPng && mProcess9Patch) {
-                                    mCruncher.crunchPng(mCruncherKey, file, outFile);
-                                } else {
-                                    // we should not crunch the png files, but we should still
-                                    // process the nine patch.
-                                    if (mProcess9Patch && filename.endsWith(DOT_9PNG)) {
-                                        mCruncher.crunchPng(mCruncherKey, file, outFile);
-                                    } else {
+                    try {
+                        if (item.getType() == ResourceType.RAW) {
+                            // Don't crunch, don't insert source comments, etc - leave alone.
+                            Files.copy(file, outFile);
+                        } else {
+                            ListenableFuture<File> result =
+                                    mAaptCompiler.compile(file, typeFolder);
+                            mCompiling.add(result);
+                            result.addListener(() -> {
+                                try {
+                                    if (result.get() == null) {
                                         Files.copy(file, outFile);
                                     }
+                                } catch (Exception e) {
+                                    /*
+                                     * We will detect any exceptions (or generate them during copy)
+                                     * asynchronously, so we need to be careful to report them back.
+                                     * Because end() will wait for all futures and report any
+                                     * failures, we will register a new future that will throw the
+                                     * exception when we fail. This ensures that end() will throw
+                                     * the exception.
+                                     */
+                                    SettableFuture<File> failureSimulator =
+                                            SettableFuture.create();
+                                    failureSimulator.setException(e);
+                                    mCompiling.add(failureSimulator);
                                 }
-                            } else {
-                                Files.copy(file, outFile);
-                            }
-                            if (mMergingLog != null) {
-                                mMergingLog.logCopy(file, outFile);
-                            }
-                        } catch (PngException e) {
-                            throw MergingException.wrapException(e).withFile(file).build();
-                        } catch (IOException ioe) {
-                            throw MergingException.wrapException(ioe).withFile(file).build();
+                            }, MoreExecutors.sameThreadExecutor());
                         }
-                        return null;
+                        if (mMergingLog != null) {
+                            mMergingLog.logCopy(file, outFile);
+                        }
+                    } catch (PngException|IOException e) {
+                        throw MergingException.wrapException(e).withFile(file).build();
                     }
+                    return null;
                 });
             }
         }
@@ -297,7 +311,6 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                 // Name of the file is the same as the folder as AAPT gets confused with name
                 // collision when not normalizing folders name.
                 File outFile = new File(valuesFolder, folderName + DOT_XML);
-                ResourceFile currentFile = null;
                 try {
                     createDir(valuesFolder);
 
@@ -338,8 +351,6 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                     // finish with a carriage return
                     rootNode.appendChild(document.createTextNode("\n"));
 
-                    currentFile = null;
-
                     final String content;
 
                     if (mMergingLog != null) {
@@ -377,9 +388,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                         Files.write(text, mPublicFile, Charsets.UTF_8);
                     }
                 } catch (Throwable t) {
-                    ConsumerException exception = new ConsumerException(t,
-                            currentFile != null ? currentFile.getFile() : outFile);
-                    throw exception;
+                    throw new ConsumerException(t, outFile);
                 }
             }
         }

@@ -69,7 +69,7 @@ public class GradleJavaProcessExecutor implements JavaProcessExecutor {
             return new OutputHandlerFailedGradleProcessResult(e);
         }
 
-        return new GradleProcessResult(result);
+        return new GradleProcessResult(result, javaProcessInfo);
     }
 
     private static class ExecAction implements Action<JavaExecSpec> {

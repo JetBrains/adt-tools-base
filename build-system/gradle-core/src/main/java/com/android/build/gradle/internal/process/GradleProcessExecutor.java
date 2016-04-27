@@ -87,7 +87,7 @@ public class GradleProcessExecutor implements ProcessExecutor {
         } catch (final ProcessException e) {
             return new OutputHandlerFailedGradleProcessResult(e);
         }
-        return new GradleProcessResult(result);
+        return new GradleProcessResult(result, processInfo);
     }
 
     private static class ExecAction implements Action<ExecSpec> {
