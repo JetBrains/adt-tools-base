@@ -38,6 +38,10 @@ public class Range implements Animatable {
         mFraction = DEFAULT_INTERPOLATION_FRACTION;
     }
 
+    public Range() {
+        this(0,0);
+    }
+
     /**
      * Sets the fraction at which the min/max interpolates if the values set are
      * not immediately applied. See {@link Choreographer#lerp(double, double, float, float)}
@@ -157,5 +161,27 @@ public class Range implements Animatable {
             value = getMax();
         }
         return value;
+    }
+
+    public void flip() {
+        set(getMax(), getMin());
+    }
+
+    public void set(double min, double max) {
+        setMin(min);
+        setMax(max);
+    }
+
+    public void setEmptyAt(double value){
+        set(value, value);
+    }
+
+    public void add(double delta) {
+        setMax(getMax() + delta);
+        setMin(getMin() + delta);
+    }
+
+    public boolean isEmpty() {
+        return getMax() == getMin();
     }
 }
