@@ -22,7 +22,6 @@ import com.android.tools.chartlib.AnimatedComponent;
 import com.android.tools.chartlib.AnimatedTimeRange;
 import com.android.tools.chartlib.LineChart;
 import com.android.tools.chartlib.Range;
-import com.android.tools.chartlib.model.LineChartData;
 import com.android.tools.chartlib.model.RangedContinuousSeries;
 
 import java.awt.Color;
@@ -42,18 +41,18 @@ public class LineChartVisualTest extends VisualTest {
     private LineChart mLineChart;
 
     @NonNull
-    private LineChartData mData;
+    private List<RangedContinuousSeries> mData;
 
     @NonNull
     private AnimatedTimeRange mAnimatedTimeRange;
 
     @Override
     protected List<Animatable> createComponentsList() {
-        mData = new LineChartData();
+        mData = new ArrayList<>();
 
         long now = System.currentTimeMillis();
         Range xRange = new Range(now, now + 60000);
-        mLineChart = new LineChart(mData);
+        mLineChart = new LineChart();
         mAnimatedTimeRange = new AnimatedTimeRange(xRange, 0);
 
         List<Animatable> componentsList = new ArrayList<>();
@@ -72,6 +71,8 @@ public class LineChartVisualTest extends VisualTest {
             RangedContinuousSeries ranged = new RangedContinuousSeries(xRange, mYRange);
             mData.add(ranged);
         }
+        mLineChart.addLines(mData);
+
         return componentsList;
     }
 
@@ -100,7 +101,7 @@ public class LineChartVisualTest extends VisualTest {
                     while (true) {
                         int v = variance.get();
                         long now = System.currentTimeMillis();
-                        for (RangedContinuousSeries rangedSeries : mData.series()) {
+                        for (RangedContinuousSeries rangedSeries : mData) {
                             int size = rangedSeries.getSeries().size();
                             long last = size > 0 ? rangedSeries.getSeries().getY(size - 1) : 0;
                             float delta = (float) Math.random() * variance.get() - v * 0.45f;
@@ -142,22 +143,25 @@ public class LineChartVisualTest extends VisualTest {
         controls.add(VisualTests.createCheckbox("Stepped chart", itemEvent -> {
             boolean isStepped = itemEvent.getStateChange() == ItemEvent.SELECTED;
             // Make only some lines stepped
-            for (int i = 0; i < mData.series().size(); i += 2) {
-                mData.series().get(i).setStepped(isStepped);
+            for (int i = 0; i < mData.size(); i += 2) {
+                RangedContinuousSeries series = mData.get(i);
+                mLineChart.getLineConfig(series).setStepped(isStepped);
             }
         }));
         controls.add(VisualTests.createCheckbox("Dashed lines", itemEvent -> {
             boolean isDashed = itemEvent.getStateChange() == ItemEvent.SELECTED;
             // Dash only some lines
-            for (int i = 0; i < mData.series().size(); i += 2) {
-                mData.series().get(i).setDashed(isDashed);
+            for (int i = 0; i < mData.size(); i += 2) {
+                RangedContinuousSeries series = mData.get(i);
+                mLineChart.getLineConfig(series).setDashed(isDashed);
             }
         }));
         controls.add(VisualTests.createCheckbox("Filled lines", itemEvent -> {
             boolean isFilled = itemEvent.getStateChange() == ItemEvent.SELECTED;
             // Fill only some lines
-            for (int i = 0; i < mData.series().size(); i += 2) {
-                mData.series().get(i).setFilled(isFilled);
+            for (int i = 0; i < mData.size(); i += 2) {
+                RangedContinuousSeries series = mData.get(i);
+                mLineChart.getLineConfig(series).setFilled(isFilled);
             }
         }));
 

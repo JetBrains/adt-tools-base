@@ -28,7 +28,6 @@ import com.android.tools.chartlib.Range;
 import com.android.tools.chartlib.RangeScrollbar;
 import com.android.tools.chartlib.SelectionComponent;
 import com.android.tools.chartlib.TimeAxisDomain;
-import com.android.tools.chartlib.model.LineChartData;
 import com.android.tools.chartlib.model.RangedContinuousSeries;
 
 import java.awt.BorderLayout;
@@ -41,6 +40,7 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -68,7 +68,7 @@ public class AxisLineChartVisualTest extends VisualTest {
     private AnimatedTimeRange mAnimatedTimeRange;
 
     @NonNull
-    private LineChartData mData;
+    private List<RangedContinuousSeries> mData;
 
     @NonNull
     private AxisComponent mMemoryAxis1;
@@ -90,8 +90,8 @@ public class AxisLineChartVisualTest extends VisualTest {
 
     @Override
     protected List<Animatable> createComponentsList() {
-        mData = new LineChartData();
-        mLineChart = new LineChart(mData);
+        mData = new ArrayList<>();
+        mLineChart = new LineChart();
 
         mStartTimeMs = System.currentTimeMillis();
         final Range xRange = new Range(0, 0);
@@ -119,6 +119,8 @@ public class AxisLineChartVisualTest extends VisualTest {
                 new MemoryAxisDomain(4, 10, 5));
         RangedContinuousSeries ranged2 = new RangedContinuousSeries(xRange, yRange2Animatable);
         mData.add(ranged2);
+
+        mLineChart.addLines(mData);
 
         mGrid = new GridComponent();
         mGrid.addAxis(mTimeAxis);
@@ -183,7 +185,7 @@ public class AxisLineChartVisualTest extends VisualTest {
                         //  Insert new data point at now.
                         long now = System.currentTimeMillis() - mStartTimeMs;
                         int v = variance.get();
-                        for (RangedContinuousSeries rangedSeries : mData.series()) {
+                        for (RangedContinuousSeries rangedSeries : mData) {
                             int size = rangedSeries.getSeries().size();
                             long last = size > 0 ? rangedSeries.getSeries().getY(size - 1) : 0;
                             float delta = (float) Math.random() * variance.get() - v * 0.45f;
