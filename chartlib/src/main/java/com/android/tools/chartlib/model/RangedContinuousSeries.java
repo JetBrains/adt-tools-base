@@ -24,7 +24,6 @@ import com.android.tools.chartlib.Range;
  * within given x and y ranged.
  */
 public class RangedContinuousSeries {
-
     @NonNull
     private final Range mXRange;
 
