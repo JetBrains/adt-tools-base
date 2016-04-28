@@ -26,7 +26,6 @@ import com.android.tools.chartlib.TimeAxisDomain;
 import com.android.tools.chartlib.hchart.HNode;
 import com.android.tools.chartlib.hchart.HTreeChart;
 import com.android.tools.chartlib.Range;
-import com.android.tools.chartlib.model.LineChartData;
 import com.android.tools.chartlib.model.RangedContinuousSeries;
 import com.android.tools.chartlib.visual.VisualTest;
 
@@ -79,9 +78,6 @@ public class ThreadCallsVisualTest extends VisualTest implements ActionListener 
     private LineChart mLineChart;
 
     @NonNull
-    private LineChartData mData;
-
-    @NonNull
     private JScrollBar mScrollBar;
 
     public ThreadCallsVisualTest() {
@@ -97,8 +93,7 @@ public class ThreadCallsVisualTest extends VisualTest implements ActionListener 
         this.mChart.setHRenderer(new MethodHRenderer());
         this.mChart.setXRange(mSelectionRange);
 
-        mData = new LineChartData();
-        mLineChart = new LineChart(mData);
+        mLineChart = new LineChart();
     }
 
     @Override
@@ -232,7 +227,7 @@ public class ThreadCallsVisualTest extends VisualTest implements ActionListener 
                     series.getSeries()
                             .add((long) (start + (end - start) / 100 * i), r.nextInt(100));
                 }
-                mData.add(series);
+                mLineChart.addLine(series);
                 mScrollBar.setValues(0, mChart.getHeight(), 0, mChart.getMaximumHeight());
             }
         }
