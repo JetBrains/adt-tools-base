@@ -188,7 +188,7 @@ class DefaultManifestParser implements ManifestAttributeSupplier {
         }
     }
 
-    @NonNull
+    @Nullable
     private static Boolean parseBoolean(String value) {
         if (value != null) {
             return Boolean.parseBoolean(value);
