@@ -52,7 +52,8 @@ task initSdkForTests(type: JavaExec) {
             'platforms;android-18', 'platforms;android-15',
             'add-ons;addon-google_apis-google-21', 'add-ons;addon-google_apis-google-22',
             'add-ons;addon-google_apis-google-23',
-            'extras;android;support', 'extras;google;m2repository', 'extras;android;m2repository']
+            'extras;android;support', 'extras;google;m2repository', 'extras;android;m2repository',
+            'cmake']
 }
 // TODO: needed?
 task copyXsd(type: Copy) {
