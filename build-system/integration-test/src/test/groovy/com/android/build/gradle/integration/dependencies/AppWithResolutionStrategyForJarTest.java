@@ -90,7 +90,7 @@ public class AppWithResolutionStrategyForJarTest {
                 "    compile \"com.google.guava:guava:17.0\"\n" +
                 "}\n");
 
-        models = project.getAllModels();
+        models = project.model().getMulti();
     }
 
     @AfterClass

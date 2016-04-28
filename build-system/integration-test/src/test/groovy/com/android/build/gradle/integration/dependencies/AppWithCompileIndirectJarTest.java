@@ -21,7 +21,6 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.utils.ModelHelper;
-import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
@@ -79,7 +78,8 @@ public class AppWithCompileIndirectJarTest {
 
     @Test
     public void checkLevel1Model() {
-        Map<String, AndroidProject> models = project.getAllModels(AndroidProject.MODEL_LEVEL_1_SYNC_ISSUE);
+        Map<String, AndroidProject> models = project.model()
+                .level(AndroidProject.MODEL_LEVEL_1_SYNC_ISSUE).getMulti();
 
         Variant appDebug = ModelHelper.getVariant(models.get(":app").getVariants(), "debug");
 
@@ -119,7 +119,8 @@ public class AppWithCompileIndirectJarTest {
 
     @Test
     public void checkLevel2Model() {
-        Map<String, AndroidProject> models = project.getAllModels(AndroidProject.MODEL_LEVEL_LATEST);
+        Map<String, AndroidProject> models = project.model()
+                .level(AndroidProject.MODEL_LEVEL_LATEST).getMulti();
 
         Variant appDebug = ModelHelper.getVariant(models.get(":app").getVariants(), "debug");
 

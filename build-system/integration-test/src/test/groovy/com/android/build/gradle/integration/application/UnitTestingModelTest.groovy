@@ -42,7 +42,7 @@ class UnitTestingModelTest {
         // Build the project, so we can verify paths in the model exist.
         project.execute("test")
 
-        AndroidProject model = project.allModels[":app"]
+        AndroidProject model = project.model().getMulti()[":app"]
 
         assertThat(model.extraArtifacts*.name).containsExactly(
                 AndroidProject.ARTIFACT_ANDROID_TEST,
@@ -98,7 +98,7 @@ android {
     productFlavors { paid; free }
 }
 """
-        AndroidProject model = project.allModels[":app"]
+        AndroidProject model = project.model().getMulti()[":app"]
 
         assertThat(model.productFlavors).hasSize(2)
 

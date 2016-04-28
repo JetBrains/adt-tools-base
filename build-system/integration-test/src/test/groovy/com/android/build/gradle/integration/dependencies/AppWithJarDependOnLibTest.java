@@ -59,7 +59,7 @@ public class AppWithJarDependOnLibTest {
                 "dependencies {\n" +
                 "    compile project(\":library\")\n" +
                 "}\n");
-        models = project.getAllModelsIgnoringSyncIssues();
+        models = project.model().ignoreSyncIssues().getMulti();
     }
 
     @AfterClass

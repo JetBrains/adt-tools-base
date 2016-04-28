@@ -74,7 +74,7 @@ public class LibDependencyTest {
     @Test
     public void buildIncrementallyWithInstantRun() throws Exception {
         project.execute("clean");
-        Map<String, AndroidProject> projects = project.getAllModels();
+        Map<String, AndroidProject> projects = project.model().getMulti();
         InstantRun instantRunModel = getInstantRunModel(projects.get(":app"));
 
         // Check that original class is included.
@@ -104,15 +104,14 @@ public class LibDependencyTest {
                 project.file("javalib/build.gradle"), Charsets.UTF_8);
         createJavaLibraryClass("original");
 
-        Map<String, AndroidProject> projects = project.getAllModels();
+        Map<String, AndroidProject> projects = project.model().getMulti();
         InstantRun instantRunModel = getInstantRunModel(projects.get(":app"));
-        project.execute(
-                InstantRunTestUtils.getInstantRunArgs(
-                        23, ColdswapMode.MULTIDEX, OptionalCompilationStep.RESTART_ONLY),
-                "clean", ":app:assembleDebug");
+        project.executor()
+                .withInstantRun(23, ColdswapMode.MULTIDEX, OptionalCompilationStep.RESTART_ONLY)
+                .run("clean", ":app:assembleDebug");
         createJavaLibraryClass("changed");
-        project.execute(InstantRunTestUtils.getInstantRunArgs(23, ColdswapMode.MULTIDEX),
-                instantRunModel.getIncrementalAssembleTaskName());
+        project.executor().withInstantRun(23, ColdswapMode.MULTIDEX)
+                .run(instantRunModel.getIncrementalAssembleTaskName());
         InstantRunBuildInfo context = InstantRunTestUtils.loadContext(instantRunModel);
         assertThat(context.getVerifierStatus()).isEqualTo(
                 InstantRunVerifierStatus.COMPATIBLE.toString());
@@ -127,7 +126,7 @@ public class LibDependencyTest {
         Files.write("java resource", resource, Charsets.UTF_8);
 
         project.execute("clean");
-        Map<String, AndroidProject> projects = project.getAllModels();
+        Map<String, AndroidProject> projects = project.model().getMulti();
         InstantRun instantRunModel = getInstantRunModel(projects.get(":app"));
 
         // Check that original class is included.

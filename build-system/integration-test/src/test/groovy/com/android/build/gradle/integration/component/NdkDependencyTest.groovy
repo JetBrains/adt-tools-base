@@ -247,11 +247,9 @@ model {
     }
 }
 """
+        project.executor().run("clean",  ":app:assembleDebug");
         Map<String, NativeAndroidProject> models =
-                project.executeAndReturnMultiModel(
-                        NativeAndroidProject.class,
-                        "clean",
-                        ":app:assembleDebug")
+                project.model().getMulti(NativeAndroidProject.class);
         NativeAndroidProject model = models.get(":app")
         File apk = project.getSubproject("app").getApk("debug")
         for (String abi : ABIS) {

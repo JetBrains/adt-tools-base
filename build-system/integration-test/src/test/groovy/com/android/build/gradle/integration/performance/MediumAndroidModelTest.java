@@ -28,7 +28,6 @@ import com.android.builder.model.AndroidProject;
 import org.junit.Rule;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.Map;
 
 /**
@@ -48,7 +47,9 @@ public class MediumAndroidModelTest {
 
     @Test
     public void modelQueryFor120Projects() {
-        Map<String, AndroidProject> models = project.getAllModelsWithBenchmark(
-                AndroidProject.MODEL_LEVEL_LATEST, "MediumAndroid", SYNC);
+        Map<String, AndroidProject> models = project.model()
+                .level(AndroidProject.MODEL_LEVEL_LATEST)
+                .recordBenchmark("MediumAndroid", SYNC)
+                .getMulti();
     }
 }

@@ -86,10 +86,8 @@ public class HotSwapTest {
         InstantRun instantRunModel = InstantRunTestUtils
                 .getInstantRunModel(project.getSingleModel());
 
-        project.execute(
-                InstantRunTestUtils.getInstantRunArgs(19,
-                        COLDSWAP_MODE, OptionalCompilationStep.RESTART_ONLY),
-                "assembleDebug");
+        project.executor().withInstantRun(19, COLDSWAP_MODE, OptionalCompilationStep.RESTART_ONLY)
+                .run("assembleDebug");
 
         // As no injected API level, will default to no splits.
         ApkSubject apkFile = expect.about(ApkSubject.FACTORY)
@@ -102,8 +100,8 @@ public class HotSwapTest {
 
         makeBasicHotswapChange();
 
-        project.execute(InstantRunTestUtils.getInstantRunArgs(19, COLDSWAP_MODE),
-                instantRunModel.getIncrementalAssembleTaskName());
+        project.executor().withInstantRun(19, COLDSWAP_MODE)
+                .run(instantRunModel.getIncrementalAssembleTaskName());
 
         InstantRunArtifact artifact =
                 InstantRunTestUtils.getCompiledHotSwapCompatibleChange(instantRunModel);

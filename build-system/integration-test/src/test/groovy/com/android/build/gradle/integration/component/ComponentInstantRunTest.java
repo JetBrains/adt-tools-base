@@ -49,7 +49,7 @@ public class ComponentInstantRunTest {
 
     @Test
     public void basicAssemble() {
-        project.execute(InstantRunTestUtils.getInstantRunArgs(21, ColdswapMode.DEFAULT), "assembleDebug");
+        project.executor().withInstantRun(21, ColdswapMode.DEFAULT).run("assembleDebug");
         assertThat(project.getApk("debug")).exists();
     }
 
@@ -65,13 +65,10 @@ public class ComponentInstantRunTest {
                 project.getBuildFile(),
                 Charsets.UTF_8);
 
-        project.execute(
-                InstantRunTestUtils.getInstantRunArgs(
-                        21,
-                        ColdswapMode.DEFAULT,
-                        OptionalCompilationStep.RESTART_ONLY),
-                "assembleDebug");
-        AndroidProject model = project.getSingleModel();
+        project.executor()
+                .withInstantRun(21, ColdswapMode.DEFAULT, OptionalCompilationStep.RESTART_ONLY)
+                .run("assembleDebug");
+        AndroidProject model = project.model().getSingle();
         File apk = project.getApk("debug");
         assertThat(apk).exists();
         assertThatApk(apk).contains("lib/x86/libhello-jni.so");
@@ -80,9 +77,9 @@ public class ComponentInstantRunTest {
         Files.append("\nvoid foo() {}\n", src, Charsets.UTF_8);
 
         InstantRun instantRunModel = InstantRunTestUtils.getInstantRunModel(model);
-        project.execute(
-                InstantRunTestUtils.getInstantRunArgs(21, ColdswapMode.DEFAULT),
-                instantRunModel.getIncrementalAssembleTaskName());
+        project.executor()
+                .withInstantRun(21, ColdswapMode.DEFAULT)
+                .run(instantRunModel.getIncrementalAssembleTaskName());
         InstantRunBuildInfo context = InstantRunTestUtils.loadContext(instantRunModel);
         assertThat(context.getVerifierStatus()).isEqualTo(
                 InstantRunVerifierStatus.JAVA_RESOURCES_CHANGED.toString());

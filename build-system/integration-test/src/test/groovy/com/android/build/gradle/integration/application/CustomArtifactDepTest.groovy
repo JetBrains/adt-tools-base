@@ -30,7 +30,7 @@ import org.junit.Test
 
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
-import static org.junit.Assert.assertTrue
+
 /**
  * Assemble tests for customArtifactDep.
  */
@@ -44,7 +44,7 @@ class CustomArtifactDepTest {
 
     @BeforeClass
     static void setUp() {
-        models = project.getAllModels()
+        models = project.model().getMulti()
     }
 
     @AfterClass

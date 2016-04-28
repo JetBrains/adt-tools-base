@@ -53,7 +53,7 @@ public class AppWithPackageLibTest {
                 "dependencies {\n" +
                 "    apk project(\":library\")\n" +
                 "}\n");
-        models = project.getAllModelsIgnoringSyncIssues();
+        models = project.model().ignoreSyncIssues().getMulti();
     }
 
     @AfterClass
