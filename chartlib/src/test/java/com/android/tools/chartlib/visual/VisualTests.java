@@ -104,6 +104,7 @@ public class VisualTests {
             @Override
             public void run() {
                 VisualTestsDialog dialog = new VisualTestsDialog();
+                dialog.addTest(new ThreadCallsVisualTest());
                 dialog.addTest(new AxisLineChartVisualTest());
                 dialog.addTest(new StateChartVisualTest());
                 dialog.addTest(new LineChartVisualTest());
