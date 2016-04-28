@@ -152,9 +152,9 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     private final SigningConfig mSigningConfigOverride;
 
     /**
-     * For every manifest file analyzed, just create a new parser.
+     * For reading the attributes from the main manifest file in the default source set.
      */
-    private Map<File, ManifestAttributeSupplier> mManifestParsers = Maps.newHashMap();
+    private ManifestAttributeSupplier mManifestAttributeSupplier = null;
 
     /**
      * Creates the configuration with the base source sets for a given {@link VariantType}. Meant
@@ -964,8 +964,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     public String getPackageFromManifest() {
         checkState(!mType.isForTesting());
 
-        File manifestLocation = mDefaultSourceProvider.getManifestFile();
-        String packageName = getManifestParser(manifestLocation).getPackage();
+        String packageName = getManifestAttributeSupplier().getPackage();
         if (packageName == null) {
             throw new RuntimeException(String.format("Cannot read packageName from %1$s",
                     mDefaultSourceProvider.getManifestFile().getAbsolutePath()));
@@ -975,43 +974,36 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
 
     @Nullable
     public String getVersionNameFromManifest() {
-        File manifestLocation = mDefaultSourceProvider.getManifestFile();
-        return getManifestParser(manifestLocation).getVersionName();
+        return getManifestAttributeSupplier().getVersionName();
     }
 
     public int getVersionCodeFromManifest() {
-        File manifestLocation = mDefaultSourceProvider.getManifestFile();
-        return getManifestParser(manifestLocation).getVersionCode();
+        return getManifestAttributeSupplier().getVersionCode();
     }
 
     @Nullable
     public String getTestedApplicationIdFromManifest(){
-        File manifestLocation = mDefaultSourceProvider.getManifestFile();
-        return getManifestParser(manifestLocation).getTargetPackage();
+        return getManifestAttributeSupplier().getTargetPackage();
     }
 
     @Nullable
     public String getInstrumentationRunnerFromManifest(){
-        File manifestLocation = mDefaultSourceProvider.getManifestFile();
-        return getManifestParser(manifestLocation).getInstrumentationRunner();
+        return getManifestAttributeSupplier().getInstrumentationRunner();
     }
 
     @Nullable
     public Boolean getFunctionalTestFromManifest(){
-        File manifestLocation = mDefaultSourceProvider.getManifestFile();
-        return getManifestParser(manifestLocation).getFunctionalTest();
+        return getManifestAttributeSupplier().getFunctionalTest();
     }
 
     @Nullable
     public Boolean getHandleProfilingFromManifest(){
-        File manifestLocation = mDefaultSourceProvider.getManifestFile();
-        return getManifestParser(manifestLocation).getHandleProfiling();
+        return getManifestAttributeSupplier().getHandleProfiling();
     }
 
     @Nullable
     public String getTestLabelFromManifest(){
-        File manifestLocation = mDefaultSourceProvider.getManifestFile();
-        return getManifestParser(manifestLocation).getTestLabel();
+        return getManifestAttributeSupplier().getTestLabel();
     }
 
     /**
@@ -1030,9 +1022,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         ApiVersion minSdkVersion = mMergedFlavor.getMinSdkVersion();
         if (minSdkVersion == null) {
             // read it from the main manifest
-            File manifestLocation = mDefaultSourceProvider.getManifestFile();
             minSdkVersion = DefaultApiVersion.create(
-                    getManifestParser(manifestLocation).getMinSdkVersion());
+                    getManifestAttributeSupplier().getMinSdkVersion());
         }
 
         return minSdkVersion;
@@ -1053,9 +1044,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         ApiVersion targetSdkVersion = mMergedFlavor.getTargetSdkVersion();
         if (targetSdkVersion == null) {
             // read it from the main manifest
-            File manifestLocation = mDefaultSourceProvider.getManifestFile();
             targetSdkVersion = DefaultApiVersion.create(
-                    getManifestParser(manifestLocation).getTargetSdkVersion());
+                    getManifestAttributeSupplier().getTargetSdkVersion());
         }
 
         return targetSdkVersion;
@@ -2243,14 +2233,12 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         return jarjarRuleFiles.build();
     }
 
-    /** Gets the existing manifest attribute supplier for specified file, or creates a new one. */
     @NonNull
-    private ManifestAttributeSupplier getManifestParser(@NonNull File manifestFile) {
-        ManifestAttributeSupplier parser = mManifestParsers.get(manifestFile);
-        if (parser == null) {
-            parser = new DefaultManifestParser(manifestFile);
-            mManifestParsers.put(manifestFile, parser);
+    private ManifestAttributeSupplier getManifestAttributeSupplier(){
+        if (mManifestAttributeSupplier == null){
+            mManifestAttributeSupplier =
+                    new DefaultManifestParser(mDefaultSourceProvider.getManifestFile());
         }
-        return parser;
+        return mManifestAttributeSupplier;
     }
 }
