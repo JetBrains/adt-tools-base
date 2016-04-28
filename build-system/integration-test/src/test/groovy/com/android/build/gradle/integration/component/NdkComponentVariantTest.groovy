@@ -88,7 +88,7 @@ model {
 
     @Test
     public void "check old ndk tasks are not created"() {
-        List<String> tasks = project.getTaskList()
+        List<String> tasks = project.model().getTaskList()
         assertThat(tasks).containsNoneOf(
                 "compileArmDebugNdk",
                 "compileX86DebugNdk",

@@ -22,7 +22,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import com.android.build.gradle.integration.common.truth.TruthHelper;
 import com.android.build.gradle.integration.common.utils.ModelHelper;
 import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidProject;
@@ -32,12 +31,9 @@ import com.android.builder.model.Variant;
 import com.google.common.collect.Iterables;
 import com.google.common.truth.Truth;
 
-import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.File;
@@ -56,7 +52,7 @@ public class AppWithClassifierDepTest {
 
     @BeforeClass
     public static void setUp() {
-        model = project.getSingleModel();
+        model = project.model().getSingle();
     }
 
     @AfterClass

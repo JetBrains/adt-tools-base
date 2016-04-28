@@ -87,7 +87,7 @@ public class NativeLibraryInstantRunTest {
     @Category(DeviceTests.class)
     public void checkRuns() throws Exception {
         IDevice device = adb.getDevice(thatUsesArt());
-        AndroidProject model = project.getSingleModel();
+        AndroidProject model = project.model().getSingle();
         InstantRun instantRunModel = InstantRunTestUtils.getInstantRunModel(model);
         project.executor()
                 .withInstantRun(21, ColdswapMode.DEFAULT, OptionalCompilationStep.RESTART_ONLY)

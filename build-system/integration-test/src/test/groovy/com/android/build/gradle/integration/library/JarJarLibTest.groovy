@@ -120,7 +120,7 @@ android {
 }
 """
 
-        AndroidProject model = project.getSingleModelIgnoringSyncIssues()
+        AndroidProject model = project.model().ignoreSyncIssues().getSingle();
 
         assertThat(model).hasSingleIssue(
                 SyncIssue.SEVERITY_ERROR,

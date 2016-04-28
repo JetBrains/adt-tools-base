@@ -59,7 +59,7 @@ class OptionalLibraryTest {
             }
             """.stripIndent()
 
-        AndroidProject project = project.getSingleModelIgnoringSyncIssues()
+        AndroidProject project = project.model().ignoreSyncIssues().getSingle()
 
         assertThat(project).hasSingleIssue(
                 SyncIssue.SEVERITY_ERROR,
@@ -81,7 +81,7 @@ class OptionalLibraryTest {
             }
             """.stripIndent()
 
-        AndroidProject project = project.getSingleModel()
+        AndroidProject project = project.model().getSingle()
 
         // get the SDK folder
         File sdkLocation = new File(System.getenv("ANDROID_HOME"))
@@ -115,7 +115,7 @@ class OptionalLibraryTest {
             }
             """.stripIndent()
 
-        AndroidProject project = project.getSingleModel()
+        AndroidProject project = project.model().getSingle()
 
         // get the SDK folder
         File sdkLocation = new File(System.getenv("ANDROID_HOME"))

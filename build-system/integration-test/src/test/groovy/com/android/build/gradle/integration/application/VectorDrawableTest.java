@@ -500,7 +500,7 @@ public class VectorDrawableTest {
                         + "hdpiOnly { vectorDrawables.generatedDensities = ['hdpi'] }\n"
                         + "}");
 
-        AndroidProject model = project.getSingleModel();
+        AndroidProject model = project.model().getSingle();
 
         VectorDrawablesOptions defaultConfigOptions =
                 model.getDefaultConfig().getProductFlavor().getVectorDrawables();
