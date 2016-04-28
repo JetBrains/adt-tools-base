@@ -17,8 +17,8 @@
 package com.android.tools.chartlib;
 
 import com.android.annotations.NonNull;
+import com.android.tools.chartlib.config.LineConfig;
 import com.android.tools.chartlib.model.ContinuousSeries;
-import com.android.tools.chartlib.model.LineChartData;
 import com.android.tools.chartlib.model.RangedContinuousSeries;
 
 import java.awt.Color;
@@ -30,43 +30,79 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class LineChart extends AnimatedComponent {
-
-    private static final Color[] COLORS = {
-            new Color(0x6baed6),
-            new Color(0xff0000),
-            new Color(0xfd8d3c),
-            new Color(0x00ffa2),
-            new Color(0x000ff0),
-            new Color(0xc7e9c0),
-            new Color(0x9e9ac8),
-            new Color(0xdadaeb),
-            new Color(0x969696),
-            new Color(0xd9d9d9),
-    };
 
     /**
      * Transparency value to be applied in filled line charts.
      */
     private static final int ALPHA_MASK = 0x88000000;
 
+    /**
+     * Maps the series to their correspondent visual line configuration.
+     * The keys insertion order is preserved.
+     */
     @NonNull
-    private final LineChartData mData;
+    private final Map<RangedContinuousSeries, LineConfig> mLinesConfig = new LinkedHashMap<>();
 
     @NonNull
     private final ArrayList<Path2D.Float> mPaths;
 
-    public LineChart(@NonNull LineChartData data) {
-        mData = data;
-        mPaths = new ArrayList<Path2D.Float>();
+    /**
+     * The color of the next line to be inserted, if not specified, is picked from {@code COLORS}
+     * array of {@link LineConfig}. This field holds the color index.
+     */
+    private int mNextLineColorIndex;
+
+    public LineChart() {
+        mPaths = new ArrayList<>();
+    }
+
+    /**
+     * Initialize a {@code LineChart} with a list of lines.
+     */
+    public LineChart(@NonNull List<RangedContinuousSeries> data) {
+        this();
+        addLines(data);
+    }
+
+    /**
+     * Add a line to the line chart.
+     * @param series data of the line to be inserted
+     * @param config configuration of the line to be inserted
+     */
+    public void addLine(@NonNull RangedContinuousSeries series, @NonNull LineConfig config) {
+        mLinesConfig.put(series, config);
+    }
+
+    /**
+     * Add a line to the line chart with default configuration.
+     * @param series series data of the line to be inserted
+     */
+    public void addLine(@NonNull RangedContinuousSeries series) {
+        mLinesConfig.put(series, new LineConfig(LineConfig.COLORS[mNextLineColorIndex++]));
+        mNextLineColorIndex %= LineConfig.COLORS.length;
+    }
+
+    /**
+     * Add multiple lines with default configuration.
+     */
+    public void addLines(@NonNull List<RangedContinuousSeries> data) {
+        data.forEach(this::addLine);
+    }
+
+    @NonNull
+    public LineConfig getLineConfig(RangedContinuousSeries rangedContinuousSeries) {
+        return mLinesConfig.get(rangedContinuousSeries);
     }
 
     @Override
     protected void updateData() {
-        Map<Range, Long> max = new HashMap<Range, Long>();
-        for (RangedContinuousSeries ranged : mData.series()) {
+        Map<Range, Long> max = new HashMap<>();
+        for (RangedContinuousSeries ranged : mLinesConfig.keySet()) {
             ContinuousSeries series = ranged.getSeries();
             long maxY = series.getMaxY();
             Long m = max.get(ranged.getYRange());
@@ -82,7 +118,8 @@ public class LineChart extends AnimatedComponent {
     @Override
     public void postAnimate() {
         int p = 0;
-        for (RangedContinuousSeries ranged : mData.series()) {
+        for (RangedContinuousSeries ranged : mLinesConfig.keySet()) {
+            LineConfig config = mLinesConfig.get(ranged);
             Path2D.Float path;
             if (p == mPaths.size()) {
                 path = new Path2D.Float();
@@ -112,7 +149,7 @@ public class LineChart extends AnimatedComponent {
                     // If the chart is stepped, a horizontal line should be drawn from the current
                     // point (e.g. (x0, y0)) to the destination's X value (e.g. (x1, y0)) before
                     // drawing a line to the destination point itself (e.g. (x1, y1)).
-                    if (ranged.isStepped()) {
+                    if (config.isStepped()) {
                         path.lineTo(xd, path.getCurrentPoint().getY());
                     }
                     path.lineTo(xd, 1.0f - yd);
@@ -123,7 +160,7 @@ public class LineChart extends AnimatedComponent {
             // be filled.
             // TODO: When stacked charts are implemented, the polygon shouldn't be drawn
             // until the X axis, but the Y value of the last path
-            if (ranged.isFilled()) {
+            if (config.isFilled()) {
                 path.lineTo(path.getCurrentPoint().getX(), 1.0f);
                 path.lineTo(firstXd, 1.0f);
             }
@@ -139,16 +176,18 @@ public class LineChart extends AnimatedComponent {
         Dimension dim = getSize();
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         AffineTransform scale = AffineTransform.getScaleInstance(dim.getWidth(), dim.getHeight());
-        for (int i = 0; i < mPaths.size(); i++) {
-            assert i < mData.series().size();
-            g2d.setColor(COLORS[i % COLORS.length]);
-            if (mData.series().get(i).isDashed()) {
-                g2d.setStroke(RangedContinuousSeries.DASHED_STROKE);
+        assert mPaths.size() == mLinesConfig.size();
+        int i = 0;
+        for (RangedContinuousSeries ranged : mLinesConfig.keySet()) {
+            LineConfig config = mLinesConfig.get(ranged);
+            g2d.setColor(config.getColor());
+            if (config.isDashed()) {
+                g2d.setStroke(LineConfig.DASHED_STROKE);
             } else {
-                g2d.setStroke(RangedContinuousSeries.BASIC_STROKE);
+                g2d.setStroke(LineConfig.BASIC_STROKE);
             }
             Shape shape = scale.createTransformedShape(mPaths.get(i));
-            if (mData.series().get(i).isFilled()) {
+            if (config.isFilled()) {
                 // If the chart is filled, we want to set some transparency in its color
                 // so the other charts can also be visible
                 int newColorRGBA = 0x00ffffff & g2d.getColor().getRGB(); // reset alpha
@@ -158,6 +197,7 @@ public class LineChart extends AnimatedComponent {
             } else {
                 g2d.draw(shape);
             }
+            i++;
         }
     }
 }

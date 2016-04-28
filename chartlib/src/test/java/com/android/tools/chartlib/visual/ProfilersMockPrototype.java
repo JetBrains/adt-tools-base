@@ -18,7 +18,7 @@ package com.android.tools.chartlib.visual;
 
 import javax.swing.SwingUtilities;
 
-public class ProfilersMockPrototype  {
+public class ProfilersMockPrototype {
 
     private static final String PROFILERS_DIALOG_TITLE = "Android Profilers";
 
