@@ -30,8 +30,8 @@ public class MockAxisDomain extends BaseAxisDomain {
     private static final String[] UNITS = new String[] { "mm", "cm", "m"};
     private static final TIntArrayList BASE_FACTORS = new TIntArrayList(new int[]{ 10, 5, 1 });
 
-    public MockAxisDomain(int minorSpacing, int majorSpacing, int switchThreshold) {
-        super(minorSpacing, majorSpacing, switchThreshold);
+    public MockAxisDomain(int maxMinorTicks, int maxMajorTicks, int switchThreshold) {
+        super(maxMinorTicks, maxMajorTicks, switchThreshold);
     }
 
     @Override

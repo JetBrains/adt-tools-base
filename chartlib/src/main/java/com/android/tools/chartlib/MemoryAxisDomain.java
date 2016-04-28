@@ -26,8 +26,8 @@ public final class MemoryAxisDomain extends BaseAxisDomain {
     private static String[] UNITS = new String[] { "KB", "MB", "GB" };
     private static final TIntArrayList BASE_FACTORS = new TIntArrayList(new int[] { 2, 1 });
 
-    public MemoryAxisDomain(int minorSpacing, int majorSpacing, int switchThreshold) {
-        super(minorSpacing, majorSpacing, switchThreshold);
+    public MemoryAxisDomain(int maxMinorTicks, int maxMajorTicks, int switchThreshold) {
+        super(maxMinorTicks, maxMajorTicks, switchThreshold);
     }
 
     @Override

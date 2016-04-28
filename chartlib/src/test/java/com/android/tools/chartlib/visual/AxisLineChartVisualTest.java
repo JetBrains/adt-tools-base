@@ -102,13 +102,13 @@ public class AxisLineChartVisualTest extends VisualTest {
         // add horizontal time axis
         mTimeAxis = new AxisComponent(xRange, mXGlobalRange, "TIME",
                 AxisComponent.AxisOrientation.BOTTOM,
-                AXIS_SIZE, AXIS_SIZE, false, new TimeAxisDomain(10, 50, 5));
+                AXIS_SIZE, AXIS_SIZE, false, new TimeAxisDomain(5, 5, 5));
 
         // left memory data + axis
         Range yRange1Animatable = new Range(0, 100);
         mMemoryAxis1 = new AxisComponent(yRange1Animatable, yRange1Animatable, "MEMORY1",
                 AxisComponent.AxisOrientation.LEFT, AXIS_SIZE, AXIS_SIZE, true,
-                new MemoryAxisDomain(10, 50, 5));
+                new MemoryAxisDomain(4, 10, 5));
         RangedContinuousSeries ranged1 = new RangedContinuousSeries(xRange, yRange1Animatable);
         mData.add(ranged1);
 
@@ -116,7 +116,7 @@ public class AxisLineChartVisualTest extends VisualTest {
         Range yRange2Animatable = new Range(0, 100);
         mMemoryAxis2 = new AxisComponent(yRange2Animatable, yRange2Animatable, "MEMORY2",
                 AxisComponent.AxisOrientation.RIGHT, AXIS_SIZE, AXIS_SIZE, true,
-                new MemoryAxisDomain(10, 50, 5));
+                new MemoryAxisDomain(4, 10, 5));
         RangedContinuousSeries ranged2 = new RangedContinuousSeries(xRange, yRange2Animatable);
         mData.add(ranged2);
 

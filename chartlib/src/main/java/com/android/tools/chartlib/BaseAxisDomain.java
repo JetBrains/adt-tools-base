@@ -16,45 +16,47 @@
 package com.android.tools.chartlib;
 
 import com.android.annotations.NonNull;
+
 import gnu.trove.TIntArrayList;
 
 /**
- * An auxiliary object that formats the axis by determining the marker
- * placement positions and their corresponding labels.
+ * An auxiliary object that formats the axis by determining the marker placement positions and their
+ * corresponding labels.
  */
 public abstract class BaseAxisDomain {
 
     protected int mMultiplier;
 
-    private final int mMinMinorSpacing;
+    private final int mMaxMinorTicks;
 
-    private final int mMinMajorSpacing;
+    private final int mMaxMajorTicks;
 
     private final int mSwitchThreshold;
 
     /**
-     * @param minMinorSpacing The minimal spacing in pixels for the minor intervals.
-     * @param minMajorSpacing The minimal spacing in pixels for the major intervals.
-     * @param switchThreshold A multiplier that indicates the number of minimal units
-     *                        that must exist at the current scale before using a larger scale.
-     *                        This avoids the problem of very sparse major ticks when
-     *                        the axis first jumps to the next scale.
-     *                        e.g. On a time axis with a switchThreshold value of 5, the axis
-     *                        will return millisecond intervals up to 5000ms before transitioning
-     *                        to second intervals.
+     * @param maxMinorTicks   The maximum number of minor ticks in a major interval. Note that this
+     *                        should be greater than zero.
+     * @param maxMajorTicks   The maximum number of major ticks along the whole axis. Note that this
+     *                        should be greater than zero.
+     * @param switchThreshold A multiplier that indicates the number of minimal units that must
+     *                        exist at the current scale before using a larger scale. This avoids
+     *                        the problem of very sparse major ticks when the axis first jumps to
+     *                        the next scale. e.g. On a time axis with a switchThreshold value of 5,
+     *                        the axis will return millisecond intervals up to 5000ms before
+     *                        transitioning to second intervals.
      */
-    protected BaseAxisDomain(int minMinorSpacing, int minMajorSpacing, int switchThreshold) {
-        mMinMinorSpacing = minMinorSpacing;
-        mMinMajorSpacing = minMajorSpacing;
+    protected BaseAxisDomain(int maxMinorTicks, int maxMajorTicks, int switchThreshold) {
+        mMaxMinorTicks = Math.max(1, maxMinorTicks);
+        mMaxMajorTicks = Math.max(1, maxMajorTicks);
         mSwitchThreshold = switchThreshold;
     }
 
     /**
      * @param globalRange The global range of the axis.
-     * @param value The value to display.
+     * @param value       The value to display.
      * @return A nicely formatted string to display as the tick label.
      */
-    public @NonNull String getFormattedString(double globalRange, double value) {
+    @NonNull public String getFormattedString(double globalRange, double value) {
         int index = getMultiplierIndex(globalRange, 1);
         String unit = getUnit(index);
         return String.format("%.2f%s", (float)value / mMultiplier, unit);
@@ -64,28 +66,28 @@ public abstract class BaseAxisDomain {
      * Determines the major interval value that should be used for a particular range.
      *
      * @param range The range to calculate intervals for.
-     * @param axisLength The pixel length of the range.
      */
-    public int getMajorInterval(double range, int axisLength) {
+    public int getMajorInterval(double range) {
         int index = getMultiplierIndex(range, mSwitchThreshold);
         int base = getUnitBase(index);
         int minInterval = getUnitMinimalInterval(index);
         TIntArrayList factors = getUnitBaseFactors(index);
-        return getInterval(range / mMultiplier, axisLength, base, minInterval, mMinMajorSpacing, factors) * mMultiplier;
+        return getInterval(range / mMultiplier, mMaxMajorTicks, base, minInterval, factors)
+                * mMultiplier;
     }
 
     /**
      * Determines the minor interval value that should be used for a particular range.
      *
      * @param range The range to calculate intervals for.
-     * @param axisLength The pixel length of the range.
      */
-    public int getMinorInterval(double range, int axisLength) {
+    public int getMinorInterval(double range) {
         int index = getMultiplierIndex(range, mSwitchThreshold);
         int base = getUnitBase(index);
         int minInterval = getUnitMinimalInterval(index);
         TIntArrayList factors = getUnitBaseFactors(index);
-        return getInterval(range / mMultiplier, axisLength, base, minInterval, mMinMinorSpacing, factors) * mMultiplier;
+        return getInterval(range / mMultiplier, mMaxMinorTicks, base, minInterval, factors)
+                * mMultiplier;
     }
 
     /**
@@ -143,21 +145,19 @@ public abstract class BaseAxisDomain {
     }
 
     /**
-     * Determines the interval value that should be used for a particular range.
-     * The return value is expected to be some nice factor or multiple of base.
+     * Determines the interval value that should be used for a particular range. The return value is
+     * expected to be some nice factor or multiple of base.
      *
-     * @param range The range to calculate intervals for.
-     * @param axisLength The length in pixels that contains the range.
-     * @param base The base system used by the intervals on the axis.
+     * @param range       The range to calculate intervals for.
+     * @param maxTicks    The maximum number of ticks.
+     * @param base        The base system used by the intervals on the axis.
      * @param minInterval The minimal possible interval.
-     * @param minSpacing The minimal possible number of pixels between the intervals.
-     * @param baseFactors A factor array of base in descending order. see mBaseFactor in AxisComponent.
+     * @param baseFactors A factor array of base in descending order. see mBaseFactor in
+     *                    AxisComponent.
      */
-    protected static int getInterval(double range, int axisLength, int base,
-                                   int minInterval, int minSpacing, TIntArrayList baseFactors) {
-        int maxTicks = Math.max(axisLength / minSpacing, 1);
-
-        // Find the target interval based on how many ticks we can render within the range.
+    protected static int getInterval(double range, int maxTicks, int base,
+            int minInterval, TIntArrayList baseFactors) {
+        // Find the target interval based on the max num ticks we can render within the range.
         double interval = Math.max(minInterval, range / maxTicks);
 
         // Order of magnitude of minInterval relative to base.
@@ -174,7 +174,7 @@ public abstract class BaseAxisDomain {
         if (multiplier > 1) {
             for (int i = 1; i < baseFactors.size(); i++) {
                 if (multiplier > baseFactors.get(i)) {
-                    multiplier = baseFactors.get(i-1);
+                    multiplier = baseFactors.get(i - 1);
                     break;
                 }
             }
@@ -184,8 +184,9 @@ public abstract class BaseAxisDomain {
     }
 
     /**
-     * Creates a factor array for the value base. Note that this does not include all factors of base,
-     * but it recursively finds the biggest factor that can divide the previous value in the array.
+     * Creates a factor array for the value base. Note that this does not include all factors of
+     * base, but it recursively finds the biggest factor that can divide the previous value in the
+     * array.
      * e.g. for a base of 10, the result would be {10, 5, 1}
      * e.g. for a base of 60, the result would be {60, 30, 15, 5, 1}
      */
