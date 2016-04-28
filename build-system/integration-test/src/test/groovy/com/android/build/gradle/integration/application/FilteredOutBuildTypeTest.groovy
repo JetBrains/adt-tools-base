@@ -52,7 +52,7 @@ class FilteredOutBuildTypeTest {
 
     @Test
     void "check filtered out variant isn't in model"() {
-        assertThat(project.getTaskList()).doesNotContain("assembleDebug")
+        assertThat(project.model().getTaskList()).doesNotContain("assembleDebug")
         // Load the custom model for the project
         assertEquals("Variant Count", 1, model.getVariants().size())
         Variant variant = model.getVariants().iterator().next()

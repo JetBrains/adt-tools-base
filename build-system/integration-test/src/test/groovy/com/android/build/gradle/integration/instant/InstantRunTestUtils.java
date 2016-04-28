@@ -36,8 +36,6 @@ import com.android.ddmlib.CollectingOutputReceiver;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.InstallException;
-import com.android.resources.Density;
-import com.android.sdklib.AndroidVersion;
 import com.android.tools.fd.client.AppState;
 import com.android.tools.fd.client.InstantRunArtifact;
 import com.android.tools.fd.client.InstantRunArtifactType;
@@ -150,7 +148,7 @@ public final class InstantRunTestUtils {
             int apiLevel,
             @NonNull ColdswapMode coldswapMode) {
         project.execute("clean");
-        InstantRun instantRunModel = getInstantRunModel(project.getSingleModel());
+        InstantRun instantRunModel = getInstantRunModel(project.model().getSingle());
 
         project.executor().withInstantRun(apiLevel, coldswapMode, OptionalCompilationStep.RESTART_ONLY)
                 .run("assembleDebug");

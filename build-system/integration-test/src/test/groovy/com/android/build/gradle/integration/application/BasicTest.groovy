@@ -19,7 +19,6 @@ import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.category.SmokeTests
 import com.android.build.gradle.integration.common.fixture.Adb
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.AssumeUtil
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
@@ -133,7 +132,7 @@ class BasicTest {
 
     @Test
     void generationInModel() {
-        AndroidProject model = project.getSingleModel()
+        AndroidProject model = project.model().getSingle()
         assertThat(model.getPluginGeneration())
                 .named("Plugin Generation")
                 .isEqualTo(AndroidProject.GENERATION_ORIGINAL)

@@ -62,6 +62,6 @@ public class AppWithCompileLocalAarFromOlderIdeTest {
 
     @Test(expected=BuildException.class)
     public void checkModelFailedToLoad() {
-        project.getSingleModelAsStudio1();
+        project.model().asStudio1().getSingle();
     }
 }

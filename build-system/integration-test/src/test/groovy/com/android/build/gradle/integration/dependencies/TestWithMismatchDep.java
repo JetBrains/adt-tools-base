@@ -56,7 +56,7 @@ public class TestWithMismatchDep {
     @Test
     public void testMismatchDependencyErrorIsInTheModel() {
         // Query the model to get the mismatch dep sync error.
-        AndroidProject model = project.getSingleModelIgnoringSyncIssues();
+        AndroidProject model = project.model().ignoreSyncIssues().getSingle();
 
         assertThat(model).hasSingleIssue(
                 SyncIssue.SEVERITY_ERROR,

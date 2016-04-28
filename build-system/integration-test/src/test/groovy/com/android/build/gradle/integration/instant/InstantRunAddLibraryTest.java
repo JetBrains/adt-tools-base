@@ -82,7 +82,7 @@ public class InstantRunAddLibraryTest {
     public void checkAddedLibraryCausesColdSwap() throws Exception {
         project.execute("clean");
         InstantRun instantRunModel = InstantRunTestUtils
-                .getInstantRunModel(project.getSingleModel());
+                .getInstantRunModel(project.model().getSingle());
 
         project.executor()
                 .withInstantRun(23, ColdswapMode.DEFAULT, OptionalCompilationStep.RESTART_ONLY)
