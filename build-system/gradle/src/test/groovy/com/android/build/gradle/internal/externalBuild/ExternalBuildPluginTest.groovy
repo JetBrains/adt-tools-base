@@ -42,16 +42,17 @@ public class ExternalBuildPluginTest {
     @Test
     public void externalBuildExtensionPopulation() {
         Project project = createAndConfigureBasicProject()
-        assertThat(project.extensions.externalBuild.getManifestPath()).isEqualTo('/usr/tmp/foo')
+        assertThat(project.extensions.externalBuild.getBuildManifestPath()).isEqualTo('/usr/tmp/foo')
     }
 
     @Test
     public void setManifestPathIsReflectedInTaskConfiguration() {
         Project project = createAndConfigureBasicProject()
-        assertThat(project.tasks.process.getManifestPath()).isEqualTo('/usr/tmp/foo')
+        assertThat(project.tasks.process.getBuildManifest().getPath()).isEqualTo(
+                '/usr/tmp/foo'.replace('/' as char, File.separatorChar))
     }
 
-    private Project createBasicProject() {
+    private static Project createBasicProject() {
         Project project = ProjectBuilder.builder().build()
         project.apply plugin: 'com.android.external.build'
         return project;
@@ -59,7 +60,7 @@ public class ExternalBuildPluginTest {
 
     private void configureBasicProject(Project project) {
         project.externalBuild {
-            manifestPath = '/usr/tmp/foo'
+            buildManifestPath = '/usr/tmp/foo'
         }
     }
 
