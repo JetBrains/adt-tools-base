@@ -5,6 +5,10 @@
     <dependency mavenUrl="com.android.support:appcompat-v7:${buildApi}.+"/>
 </#if>
 
+<#if unitTestsSupported>
+    <dependency mavenUrl="junit:junit:${junitVersion}" gradleConfiguration="testCompile" />
+</#if>
+
 <#if !createActivity>
     <mkdir at="${escapeXmlAttribute(srcOut)}" />
 </#if>

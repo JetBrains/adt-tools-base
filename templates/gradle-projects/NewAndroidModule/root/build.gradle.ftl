@@ -62,17 +62,9 @@ android {
 }
 
 dependencies {
-    <#if dependencyList?? >
-    <#list dependencyList as dependency>
-    compile '${dependency}'
-    </#list>
-    </#if>
     compile fileTree(dir: 'libs', include: ['*.jar'])
 <#if WearprojectName?has_content && NumberOfEnabledFormFactors?has_content && NumberOfEnabledFormFactors gt 1 && Wearincluded>
     wearApp project(':${WearprojectName}')
     compile 'com.google.android.gms:play-services:+'
-</#if>
-<#if unitTestsSupported>
-    testCompile 'junit:junit:${junitVersion}'
 </#if>
 }
