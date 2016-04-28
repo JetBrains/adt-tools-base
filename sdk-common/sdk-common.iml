@@ -22,6 +22,6 @@
     <orderEntry type="library" exported="" name="gson" level="project" />
     <orderEntry type="module" module-name="builder-test-api" />
     <orderEntry type="library" name="bouncy-castle" level="project" />
-    <orderEntry type="library" name="Mocks" level="project" />
+    <orderEntry type="library" scope="TEST" name="Mocks" level="project" />
   </component>
 </module>
