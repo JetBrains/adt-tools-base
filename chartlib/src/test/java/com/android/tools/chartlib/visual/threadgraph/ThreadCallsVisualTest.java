@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.tools.chartlib.visual;
+package com.android.tools.chartlib.visual.threadgraph;
 
 import com.android.annotations.NonNull;
 import com.android.tools.chartlib.Animatable;
@@ -23,14 +23,12 @@ import com.android.tools.chartlib.AxisComponent;
 import com.android.tools.chartlib.LineChart;
 import com.android.tools.chartlib.SelectionComponent;
 import com.android.tools.chartlib.TimeAxisDomain;
-import com.android.tools.chartlib.threadstacks.HNode;
-import com.android.tools.chartlib.threadstacks.HTreeChart;
-import com.android.tools.chartlib.threadstacks.Sampler;
-import com.android.tools.chartlib.threadstacks.Method;
-import com.android.tools.chartlib.threadstacks.MethodRenderer;
+import com.android.tools.chartlib.hchart.HNode;
+import com.android.tools.chartlib.hchart.HTreeChart;
 import com.android.tools.chartlib.Range;
 import com.android.tools.chartlib.model.LineChartData;
 import com.android.tools.chartlib.model.RangedContinuousSeries;
+import com.android.tools.chartlib.visual.VisualTest;
 
 import java.awt.Component;
 import java.awt.Dimension;
@@ -51,7 +49,6 @@ import javax.swing.JComboBox;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollBar;
-import javax.swing.JScrollPane;
 
 public class ThreadCallsVisualTest extends VisualTest implements ActionListener {
 
@@ -97,7 +94,7 @@ public class ThreadCallsVisualTest extends VisualTest implements ActionListener 
         this.mSelector = new SelectionComponent(mAxis, mSelectionRange, mDataRange, mDataRange);
 
         this.mChart = new HTreeChart<Method>();
-        this.mChart.setRenderer(new MethodRenderer());
+        this.mChart.setHRenderer(new MethodHRenderer());
         this.mChart.setXRange(mSelectionRange);
 
         mData = new LineChartData();

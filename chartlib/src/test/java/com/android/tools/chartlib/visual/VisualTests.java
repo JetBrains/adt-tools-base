@@ -17,6 +17,7 @@
 package com.android.tools.chartlib.visual;
 
 import com.android.tools.chartlib.AnimatedComponent;
+import com.android.tools.chartlib.visual.threadgraph.ThreadCallsVisualTest;
 
 import java.awt.BorderLayout;
 import java.awt.Component;

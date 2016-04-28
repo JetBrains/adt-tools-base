@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.android.tools.chartlib.threadstacks;
+package com.android.tools.chartlib.visual.threadgraph;
 
 import com.android.annotations.NonNull;
+import com.android.tools.chartlib.hchart.HRenderer;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -25,7 +26,7 @@ import java.awt.Graphics2D;
 import java.awt.geom.Rectangle2D;
 import java.util.regex.Pattern;
 
-public class MethodRenderer implements Renderer<Method> {
+public class MethodHRenderer implements HRenderer<Method> {
 
     Font mFont;
 
@@ -44,7 +45,7 @@ public class MethodRenderer implements Renderer<Method> {
 
     private static final Pattern dotPattern = Pattern.compile("\\.");
 
-    public MethodRenderer() {
+    public MethodHRenderer() {
         mRect = new Rectangle2D.Float();
     }
 

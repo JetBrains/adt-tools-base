@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.android.tools.chartlib.threadstacks;
+package com.android.tools.chartlib.visual.threadgraph;
+
+import com.android.tools.chartlib.hchart.HNode;
 
 import java.util.HashMap;
 import java.util.Set;

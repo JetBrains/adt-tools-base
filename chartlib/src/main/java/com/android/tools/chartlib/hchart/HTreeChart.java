@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.tools.chartlib.threadstacks;
+package com.android.tools.chartlib.hchart;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -35,7 +35,7 @@ import javax.swing.UIManager;
 public class HTreeChart<T> extends AnimatedComponent implements MouseWheelListener {
 
     @Nullable
-    private Renderer<T> mRenderer;
+    private HRenderer<T> mHRenderer;
 
     @NonNull
     private HNode<T> mRoot;
@@ -128,7 +128,7 @@ public class HTreeChart<T> extends AnimatedComponent implements MouseWheelListen
         mRect.height = mFontMetrics.getHeight();
 
         // 4. Render node
-        mRenderer.render(g, n.getData(), mRect);
+        mHRenderer.render(g, n.getData(), mRect);
     }
 
     // This could be done with an Axis. But that seems overkill. A simple method will do for now.
@@ -142,9 +142,9 @@ public class HTreeChart<T> extends AnimatedComponent implements MouseWheelListen
         return x / getWidth() * getXRange().getLength() + getXRange().getMin();
     }
 
-    public void setRenderer(Renderer<T> r) {
-        this.mRenderer = r;
-        this.mRenderer.setFont(mFont);
+    public void setHRenderer(HRenderer<T> r) {
+        this.mHRenderer = r;
+        this.mHRenderer.setFont(mFont);
     }
 
     public void setHTree(HNode<T> root) {
