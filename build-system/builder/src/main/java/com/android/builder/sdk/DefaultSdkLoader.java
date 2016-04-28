@@ -28,11 +28,16 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.Revision;
 import com.android.repository.api.Channel;
+import com.android.repository.api.Downloader;
 import com.android.repository.api.Installer;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
 import com.android.repository.api.SettingsController;
+import com.android.repository.api.UpdatablePackage;
+import com.android.repository.util.InstallerUtil;
+import com.android.sdklib.AndroidTargetHash;
+import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.repository.AndroidSdkHandler;
@@ -56,8 +61,8 @@ public class DefaultSdkLoader implements SdkLoader {
     /**
      * Settings singleton used for the download related settings.
      */
-    //TODO: Change settings to be per project, rather than a singleton.
-    public static final SettingsController SETTINGS = new SettingsController() {
+    // TODO: Change settings to be per project, rather than a singleton.
+    private static final SettingsController SETTINGS = new SettingsController() {
         @Override
         public boolean getForceHttp() {
             return false;
@@ -108,7 +113,7 @@ public class DefaultSdkLoader implements SdkLoader {
         init(logger);
 
         ProgressIndicator progress = new LoggerProgressIndicatorWrapper(
-          new StdLogger(StdLogger.Level.VERBOSE)) {
+                new StdLogger(StdLogger.Level.VERBOSE)) {
             @Override
             public void setText(@Nullable String s) {
                 super.setText(s);
@@ -117,43 +122,173 @@ public class DefaultSdkLoader implements SdkLoader {
         };
         IAndroidTarget target = mSdkHandler.getAndroidTargetManager(progress)
                 .getTargetFromHashString(targetHash, progress);
-        if (target == null) {
-            throw new IllegalStateException("failed to find target with hash string '" + targetHash + "' in: " + mSdkLocation);
-        }
 
         BuildToolInfo buildToolInfo = mSdkHandler.getBuildToolInfo(buildToolRevision, progress);
-        if (buildToolInfo == null) {
-            if (Boolean.getBoolean("com.android.sdkManager")) {
+
+        if (Boolean.getBoolean("com.android.builder.sdkDownload")) {
+            if (target == null || buildToolInfo == null) {
                 RepoManager repoManager = mSdkHandler.getSdkManager(progress);
                 LegacyDownloader downloader = new LegacyDownloader(mSdkHandler.getFileOp());
 
                 repoManager.loadSynchronously
                         (RepoManager.DEFAULT_EXPIRATION_PERIOD_MS, progress, downloader, SETTINGS);
 
-                String path = DetailsTypes.getBuildToolsPath(buildToolRevision);
-                RemotePackage p = repoManager.getPackages().getRemotePackages().get(path);
-                if (p.getLicense() == null || p.getLicense()
-                        .checkAccepted(repoManager.getLocalPath(), mSdkHandler.getFileOp())) {
-                    Installer installer = SdkInstallerUtil.findBestInstallerFactory(p, mSdkHandler)
-                            .createInstaller(p, repoManager, mSdkHandler.getFileOp());
-                    installer.prepareInstall(downloader, progress);
-                    installer.completeInstall(progress);
+                if (buildToolInfo == null) {
+                    installBuildTools(buildToolRevision, repoManager, downloader, progress);
+                }
+
+                if (target == null) {
+                    installTarget(targetHash, repoManager, downloader, progress);
                 }
                 repoManager.markInvalid();
                 repoManager.loadSynchronously(0, progress, null, null);
-                buildToolInfo = mSdkHandler.getBuildToolInfo(buildToolRevision, progress);
-                if (buildToolInfo == null) {
-                    throw new IllegalStateException("failed to find Build Tools revision "
-                            + buildToolRevision.toString());
-                }
-            } else {
-                throw new IllegalStateException("failed to find Build Tools revision "
-                        + buildToolRevision.toString());
-            }
 
+                buildToolInfo = mSdkHandler.getBuildToolInfo(buildToolRevision, progress);
+                target = mSdkHandler.getAndroidTargetManager(progress)
+                        .getTargetFromHashString(targetHash, progress);
+            }
+        }
+        if (target == null) {
+            throw new IllegalStateException(
+                    "Failed to find target with hash string '" + targetHash + "' in: "
+                            + mSdkLocation);
+        }
+
+        if (buildToolInfo == null) {
+            throw new IllegalStateException("Failed to find Build Tools revision "
+                    + buildToolRevision.toString());
         }
 
         return new TargetInfo(target, buildToolInfo);
+    }
+
+    private void installTarget(
+            @NonNull String targetHash,
+            @NonNull RepoManager repoManager,
+            @NonNull Downloader downloader,
+            @NonNull ProgressIndicator progress) {
+
+        AndroidVersion targetVersion = AndroidTargetHash.getVersionFromHash(targetHash);
+        String platformPath = DetailsTypes.getPlatformPath(targetVersion);
+
+        UpdatablePackage platformPkg = repoManager.getPackages().getConsolidatedPkgs()
+                .get(platformPath);
+
+        // Malformed target hash
+        if (platformPkg == null) {
+            throw new IllegalStateException(
+                    "Failed to find Platform SDK with path: "
+                            + platformPath);
+        }
+
+        // Install platform sdk if it's not there.
+        if (!platformPkg.hasLocal()) {
+            if (!installRemotePackage(
+                    platformPkg.getRemote(), repoManager, downloader, progress)) {
+                throw new IllegalStateException(
+                        "Couldn't install Platform SDK with path: "
+                                + platformPath);
+            }
+        }
+
+        // Addon case
+        if (!AndroidTargetHash.isPlatform(targetHash)) {
+            RemotePackage addonPackage = null;
+            for (RemotePackage p : repoManager.getPackages().getRemotePackages()
+                    .values()) {
+                if (p.getTypeDetails() instanceof DetailsTypes.AddonDetailsType) {
+                    DetailsTypes.AddonDetailsType addonDetails
+                            = (DetailsTypes.AddonDetailsType) p.getTypeDetails();
+                    String addonHash = AndroidTargetHash.getAddonHashString(
+                            addonDetails.getVendor().getDisplay(),
+                            addonDetails.getTag().getDisplay(),
+                            DetailsTypes.getAndroidVersion(addonDetails));
+                    if (targetHash.equals(addonHash)) {
+                        addonPackage = p;
+                        break;
+                    }
+                }
+            }
+
+            // Malformed target hash
+            if (addonPackage == null) {
+                throw new IllegalStateException(
+                        "Failed to find target with hash string " + targetHash);
+            }
+
+            if (!installRemotePackage(
+                    addonPackage, repoManager, downloader, progress)) {
+                throw new IllegalStateException(
+                        "Couldn't install target with target "
+                                + "hash " + targetHash);
+            }
+
+        }
+    }
+
+    private void installBuildTools(
+            @NonNull Revision buildToolRevision,
+            @NonNull RepoManager repoManager,
+            @NonNull Downloader downloader,
+            @NonNull ProgressIndicator progress) {
+        String buildToolsPath = DetailsTypes.getBuildToolsPath(buildToolRevision);
+        RemotePackage buildToolsPackage = repoManager
+                .getPackages()
+                .getRemotePackages()
+                .get(buildToolsPath);
+
+        if (buildToolsPackage == null) {
+            throw new IllegalStateException("Failed to find Build Tools revision "
+                    + buildToolRevision.toString());
+        }
+
+        if (!installRemotePackage(
+                buildToolsPackage, repoManager, downloader, progress)) {
+            throw new IllegalStateException("Couldn't install Build Tools revision "
+                    + buildToolRevision);
+        }
+    }
+
+    /**
+     * Installs a {@code RemotePackage} and its dependent packages.
+     * @return true if all the packages have been installed properly.
+     */
+    private boolean installRemotePackage(
+            @NonNull RemotePackage requestPackage,
+            @NonNull RepoManager repoManager,
+            @NonNull Downloader downloader,
+            @NonNull ProgressIndicator progress) {
+
+        List<RemotePackage> remotePackages =
+                InstallerUtil.computeRequiredPackages(
+                        ImmutableList.of(requestPackage), repoManager.getPackages(), progress);
+
+        if (remotePackages == null) {
+            return false;
+        }
+
+        for (RemotePackage p : remotePackages) {
+            if (p.getLicense() != null && !p.getLicense().checkAccepted(
+                    repoManager.getLocalPath(), mSdkHandler.getFileOp())) {
+                progress.setText(
+                        "The license for package " + p.getDisplayName() + " was not accepted. "
+                                + "Please install this package through Android Studio SDK "
+                                + "Manager.");
+                return false;
+            }
+
+            Installer installer = SdkInstallerUtil
+                    .findBestInstallerFactory(p, mSdkHandler)
+                    .createInstaller(p, repoManager, mSdkHandler.getFileOp());
+            boolean result = installer.prepareInstall(downloader, progress)
+                    && installer.completeInstall(progress);
+
+            if (!result) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Override
