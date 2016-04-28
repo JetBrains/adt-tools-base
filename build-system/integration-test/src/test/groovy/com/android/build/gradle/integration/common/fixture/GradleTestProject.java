@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.common.fixture;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -27,15 +26,11 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.integration.common.fixture.app.AbstractAndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile;
-import com.android.build.gradle.integration.common.utils.JacocoAgent;
 import com.android.build.gradle.integration.common.utils.SdkHelper;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.model.AndroidProject;
-import com.android.builder.model.NativeAndroidProject;
-import com.android.builder.model.SyncIssue;
 import com.android.builder.model.Version;
-import com.android.ide.common.util.ReferenceHolder;
 import com.android.io.StreamException;
 import com.android.sdklib.internal.project.ProjectProperties;
 import com.android.sdklib.internal.project.ProjectPropertiesWorkingCopy;
@@ -44,41 +39,26 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
-import org.apache.commons.io.output.TeeOutputStream;
-import org.gradle.tooling.BuildAction;
-import org.gradle.tooling.BuildActionExecuter;
-import org.gradle.tooling.BuildLauncher;
 import org.gradle.tooling.GradleConnectionException;
 import org.gradle.tooling.GradleConnector;
-import org.gradle.tooling.LongRunningOperation;
 import org.gradle.tooling.ProjectConnection;
-import org.gradle.tooling.ResultHandler;
 import org.gradle.tooling.internal.consumer.DefaultGradleConnector;
-import org.gradle.tooling.model.GradleProject;
-import org.gradle.tooling.model.GradleTask;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
  * JUnit4 test rule for integration test.
@@ -144,18 +124,6 @@ public class GradleTestProject implements TestRule {
     private static final String COMMON_BUILD_SCRIPT = "commonBuildScript.gradle";
     private static final String COMMON_GRADLE_PLUGIN_VERSION = "commonGradlePluginVersion.gradle";
     private static final String DEFAULT_TEST_PROJECT_NAME = "project";
-
-    private static final ResultHandler<Void> EXPECT_SUCCESS = new ResultHandler<Void>() {
-        @Override
-        public void onComplete(Void aVoid) {
-            // OK, that's what we want.
-        }
-
-        @Override
-        public void onFailure(GradleConnectionException e) {
-            throw e;
-        }
-    };
 
     public static class Builder {
 
@@ -319,10 +287,6 @@ public class GradleTestProject implements TestRule {
     private final File ndkDir;
     private final File sdkDir;
 
-    @NonNull
-    private ByteArrayOutputStream stdout = new ByteArrayOutputStream();
-    @NonNull
-    private ByteArrayOutputStream stderr = new ByteArrayOutputStream();
 
     private final Collection<String> gradleProperties;
 
@@ -336,6 +300,11 @@ public class GradleTestProject implements TestRule {
 
     @Nullable
     private String heapSize;
+
+    private GradleBuildResult lastBuild;
+    private ProjectConnection projectConnection;
+    private final GradleTestProject rootProject;
+    private final List<ProjectConnection> openConnections;
 
     private GradleTestProject(
             @Nullable String name,
@@ -360,6 +329,8 @@ public class GradleTestProject implements TestRule {
         this.ndkDir = ndkDir;
         this.heapSize = heapSize;
         this.gradleProperties = gradleProperties;
+        openConnections = Lists.newArrayList();
+        rootProject = this;
     }
 
     /**
@@ -385,6 +356,8 @@ public class GradleTestProject implements TestRule {
         targetGradleVersion = rootProject.getTargetGradleVersion();
         minifyEnabled = false;
         useJack = false;
+        openConnections = null;
+        this.rootProject = rootProject;
     }
 
     String getTargetGradleVersion() {
@@ -438,7 +411,11 @@ public class GradleTestProject implements TestRule {
             @Override
             public void evaluate() throws Throwable {
                 createTestDirectory(description.getTestClass(), description.getMethodName());
-                base.evaluate();
+                try {
+                    base.evaluate();
+                } finally {
+                    openConnections.forEach(ProjectConnection::close);
+                }
             }
         };
     }
@@ -505,7 +482,7 @@ public class GradleTestProject implements TestRule {
         if (name.startsWith(":")) {
             name = name.substring(1);
         }
-        return new GradleTestProject(name, this);
+        return new GradleTestProject(name, rootProject);
     }
 
     /**
@@ -640,20 +617,21 @@ public class GradleTestProject implements TestRule {
                "apply from: \"../commonLocalRepo.gradle\"\n";
     }
 
+    /** Fluent method to run a build. */
+    public RunGradleTasks executor() {
+        return new RunGradleTasks(this, getProjectConnection());
+    }
+
+    /** Fluent method to get the model. */
+    public BuildModel model() {
+        return new BuildModel(this, getProjectConnection());
+    }
+
     /**
      * Return a list of all task names of the project.
      */
     public List<String> getTaskList() {
-        ProjectConnection connection = getProjectConnection();
-        try {
-            GradleProject project = connection.getModel(GradleProject.class);
-            return project.getTasks().stream()
-                    .map(GradleTask::getName)
-                    .collect(Collectors.toList());
-        } finally {
-            connection.close();
-        }
-
+        return model().getTaskList();
     }
 
     /**
@@ -661,82 +639,40 @@ public class GradleTestProject implements TestRule {
      *
      * @param tasks Variadic list of tasks to execute.
      */
-    public void execute(String ... tasks) {
-        execute(AndroidProject.class,
-                Collections.<String>emptyList(),
-                false,
-                AndroidProject.MODEL_LEVEL_LATEST,
-                EXPECT_SUCCESS,
-                tasks);
+    public void execute(@NonNull String... tasks) {
+        lastBuild = executor().run(tasks);
     }
 
-    public void execute(@NonNull List<String> arguments, String ... tasks) {
-        execute(AndroidProject.class,
-                arguments,
-                false,
-                AndroidProject.MODEL_LEVEL_LATEST,
-                EXPECT_SUCCESS,
-                tasks);
+
+    public void execute(@NonNull List<String> arguments, @NonNull String... tasks) {
+        lastBuild = executor().withArguments(arguments).run(tasks);
     }
 
     public void executeWithBenchmark(
             @NonNull String benchmarkName,
             @NonNull BenchmarkMode benchmarkMode,
-            String ... tasks) {
-        List<String> arguments = ImmutableList.of(
-                "-P" + RECORD_BENCHMARK_NAME + "=" + benchmarkName,
-                "-P" + RECORD_BENCHMARK_MODE + "=" + benchmarkMode.name().toLowerCase(Locale.US)
-        );
-        execute(AndroidProject.class,
-                arguments,
-                false,
-                AndroidProject.MODEL_LEVEL_LATEST,
-                EXPECT_SUCCESS,
-                tasks);
+            @NonNull String... tasks) {
+        lastBuild = executor().recordBenchmark(benchmarkName, benchmarkMode).run(tasks);
     }
 
     public GradleConnectionException executeExpectingFailure(@NonNull String... tasks) {
-        return executeExpectingFailure(Collections.<String>emptyList(), tasks);
+        lastBuild =  executor().expectFailure().run(tasks);
+        return lastBuild.getException();
     }
 
     public GradleConnectionException executeExpectingFailure(
             @NonNull final List<String> arguments,
-            final String... tasks) {
-        final ReferenceHolder<GradleConnectionException> result = ReferenceHolder.empty();
-
-        execute(AndroidProject.class,
-                arguments,
-                false /*returnModel*/,
-                AndroidProject.MODEL_LEVEL_LATEST,
-                new ResultHandler<Void>() {
-                    @Override
-                    public void onComplete(Void aVoid) {
-                        throw new AssertionError(
-                                String.format(
-                                        "Expecting build to fail:\n" +
-                                                "    Tasks:     %s\n" +
-                                                "    Arguments: %s",
-                                        Joiner.on(' ').join(tasks),
-                                        Joiner.on(' ').join(arguments)));
-                    }
-
-                    @Override
-                    public void onFailure(GradleConnectionException e) {
-                        //noinspection ThrowableResultOfMethodCallIgnored
-                        result.setValue(e);
-                    }
-                },
-                tasks);
-
-        return result.getValue();
+            @NonNull String... tasks) {
+        lastBuild = executor().expectFailure().withArguments(arguments).run(tasks);
+        return lastBuild.getException();
     }
 
     public void executeConnectedCheck() {
-        executeConnectedCheck(Collections.emptyList());
+        lastBuild = executor().executeConnectedCheck();
     }
 
-    public void executeConnectedCheck(List<String> arguments) {
-        execute(arguments, DEVICE_TEST_TASK);
+    public void executeConnectedCheck(@NonNull List<String> arguments) {
+        lastBuild = executor().withArguments(arguments).executeConnectedCheck();
     }
 
     /**
@@ -747,8 +683,9 @@ public class GradleTestProject implements TestRule {
      * @return the AndroidProject model for the project.
      */
     @NonNull
-    public AndroidProject executeAndReturnModel(String ... tasks) {
-        return executeAndReturnModel(AndroidProject.MODEL_LEVEL_LATEST, tasks);
+    public AndroidProject executeAndReturnModel(@NonNull String... tasks) {
+        lastBuild = executor().run(tasks);
+        return model().getSingle();
     }
 
     /**
@@ -761,8 +698,9 @@ public class GradleTestProject implements TestRule {
      * @return the model for the project with the specified type.
      */
     @NonNull
-    public <T> T executeAndReturnModel(Class<T> modelClass, String ... tasks) {
-        return this.executeAndReturnModel(modelClass, AndroidProject.MODEL_LEVEL_LATEST, tasks);
+    public <T> T executeAndReturnModel(Class<T> modelClass, String... tasks) {
+        lastBuild = executor().run(tasks);
+        return model().getSingle(modelClass);
     }
 
     /**
@@ -774,10 +712,9 @@ public class GradleTestProject implements TestRule {
      * @return the AndroidProject model for the project.
      */
     @NonNull
-    public AndroidProject executeAndReturnModel(int modelLevel, String ... tasks) {
-        //noinspection ConstantConditions
-        return execute(AndroidProject.class, Collections.<String>emptyList(), true, modelLevel,
-                EXPECT_SUCCESS, tasks);
+    public AndroidProject executeAndReturnModel(int modelLevel, String... tasks) {
+        lastBuild = executor().run(tasks);
+        return model().level(modelLevel).getSingle();
     }
 
     /**
@@ -793,10 +730,9 @@ public class GradleTestProject implements TestRule {
     public <T> T executeAndReturnModel(
             Class<T> modelClass,
             int modelLevel,
-            String ... tasks) {
-        //noinspection ConstantConditions
-        return execute(modelClass, Collections.<String>emptyList(), true, modelLevel,
-                EXPECT_SUCCESS, tasks);
+            String... tasks) {
+        lastBuild = executor().run(tasks);
+        return model().level(modelLevel).getSingle(modelClass);
     }
 
     /**
@@ -808,8 +744,9 @@ public class GradleTestProject implements TestRule {
      * @return the AndroidProject model for the project.
      */
     @NonNull
-    public Map<String, AndroidProject> executeAndReturnMultiModel(String ... tasks) {
-        return executeAndReturnMultiModel(AndroidProject.MODEL_LEVEL_LATEST, tasks);
+    public Map<String, AndroidProject> executeAndReturnMultiModel(String... tasks) {
+        lastBuild = executor().run(tasks);
+        return model().getMulti();
     }
 
     /**
@@ -821,8 +758,9 @@ public class GradleTestProject implements TestRule {
      * @return the AndroidProject model for the project.
      */
     @NonNull
-    public <T> Map<String, T> executeAndReturnMultiModel(Class<T> modelClass, String ... tasks) {
-        return executeAndReturnMultiModel(modelClass, AndroidProject.MODEL_LEVEL_LATEST, tasks);
+    public <T> Map<String, T> executeAndReturnMultiModel(Class<T> modelClass, String... tasks) {
+        lastBuild = executor().run(tasks);
+        return model().getMulti(modelClass);
     }
 
     /**
@@ -837,8 +775,9 @@ public class GradleTestProject implements TestRule {
     @NonNull
     public Map<String, AndroidProject> executeAndReturnMultiModel(
             int modelLevel,
-            String ... tasks) {
-        return executeAndReturnMultiModel(AndroidProject.class, modelLevel, tasks);
+            String... tasks) {
+        lastBuild = executor().run(tasks);
+        return model().level(modelLevel).getMulti();
     }
 
     /**
@@ -855,28 +794,9 @@ public class GradleTestProject implements TestRule {
     public <T> Map<String, T> executeAndReturnMultiModel(
             Class<T> modelClass,
             int modelLevel,
-            String ... tasks) {
-        ProjectConnection connection = getProjectConnection();
-        try {
-            executeBuild(Collections.<String>emptyList(), connection, tasks, EXPECT_SUCCESS);
-
-            // TODO: Make buildModel multithreaded all the time.
-            // Getting multiple NativeAndroidProject results in duplicated class implemented error
-            // in a multithreaded environment.  This is due to issues in Gradle relating to the
-            // automatic generation of the implementation class of NativeSourceSet.  Make this
-            // multithreaded when the issue is resolved.
-            boolean isMultithreaded = !NativeAndroidProject.class.equals(modelClass);
-
-            return buildModel(
-                    connection,
-                    new GetAndroidModelAction<>(modelClass, isMultithreaded),
-                    modelLevel,
-                    null,
-                    null);
-
-        } finally {
-            connection.close();
-        }
+            String... tasks) {
+        lastBuild = executor().run(tasks);
+        return model().level(modelLevel).getMulti(modelClass);
     }
 
     /**
@@ -887,7 +807,7 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     public AndroidProject getSingleModel() {
-        return getSingleModel(AndroidProject.MODEL_LEVEL_LATEST, true /*assertNodSyncIssues */);
+        return model().getSingle();
     }
 
     /**
@@ -898,7 +818,7 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     public AndroidProject getSingleModelAsStudio1() {
-        return getSingleModel(AndroidProject.MODEL_LEVEL_0_ORIGNAL, true /*assertNodSyncIssues */);
+        return model().asStudio1().getSingle();
     }
 
     /**
@@ -908,50 +828,16 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     public AndroidProject getSingleModelIgnoringSyncIssues() {
-        return getSingleModel(AndroidProject.MODEL_LEVEL_LATEST, false /*assertNodSyncIssues */);
+        return model().ignoreSyncIssues().getSingle();
     }
 
     /**
-     * Returns the project model without building.
-     *
-     * This will fail if the project is a multi-project setup.
-     *
-     * @param modelLevel the level of the model we want.
-     * @param assertNoSyncIssues true if the presence of sync issues during the model evaluation
-     *                           should raise a {@link AssertionError}s
-     */
-    @NonNull
-    private AndroidProject getSingleModel(int modelLevel, boolean assertNoSyncIssues) {
-        ProjectConnection connection = getProjectConnection();
-        try {
-            Map<String, AndroidProject> modelMap = buildModel(
-                    connection,
-                    new GetAndroidModelAction<>(AndroidProject.class),
-                    modelLevel,
-                    null,
-                    null);
-
-            // ensure there was only one project
-            assertEquals("Quering GradleTestProject.getModel() with multi-project settings",
-                    1, modelMap.size());
-
-            AndroidProject androidProject = modelMap.get(":");
-            if (assertNoSyncIssues) {
-                assertNoSyncIssues(androidProject);
-            }
-            return androidProject;
-        } finally {
-            connection.close();
-        }
-    }
-
-    /**
-     * Returns a project model for each sub-project without building generating a
-     * {@link AssertionError} if any sync issue is raised during the model loading.
+     * Returns a project model for each sub-project without building generating a {@link
+     * AssertionError} if any sync issue is raised during the model loading.
      */
     @NonNull
     public Map<String, AndroidProject> getAllModels() {
-        return getAllModelsWithBenchmark(AndroidProject.MODEL_LEVEL_LATEST, null, null);
+        return model().getMulti();
     }
 
     /**
@@ -962,7 +848,7 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     public Map<String, AndroidProject> getAllModels(int modelLevel) {
-        return getAllModelsWithBenchmark(modelLevel, null, null);
+        return model().level(modelLevel).getMulti();
     }
 
     /**
@@ -978,29 +864,16 @@ public class GradleTestProject implements TestRule {
             int modelLevel,
             @Nullable String benchmarkName,
             @Nullable BenchmarkMode benchmarkMode) {
-        Map<String, AndroidProject> allModels = getAllModels(
-                new GetAndroidModelAction<>(AndroidProject.class),
-                modelLevel,
-                benchmarkName,
-                benchmarkMode);
-        for (AndroidProject project : allModels.values()) {
-            assertNoSyncIssues(project);
+        if (benchmarkName == null ^ benchmarkMode == null) {
+            throw new IllegalArgumentException(
+                    String.format("Partial benchmark info, either both should be null or neither: "
+                            + "name: %1$s, mode: %2$s", benchmarkName, benchmarkMode));
         }
-        return allModels;
-    }
-
-
-    private static void assertNoSyncIssues(AndroidProject project) {
-        if (!project.getSyncIssues().isEmpty()) {
-            StringBuilder msg = new StringBuilder();
-            msg.append("Project ")
-                    .append(project.getName())
-                    .append(" had sync issues :\n");
-            for (SyncIssue syncIssue : project.getSyncIssues()) {
-                msg.append(syncIssue);
-                msg.append("\n");
-            }
-            fail(msg.toString());
+        if (benchmarkMode != null) {
+            return model().level(modelLevel).recordBenchmark(benchmarkName, benchmarkMode)
+                    .getMulti();
+        } else {
+            return model().level(modelLevel).getMulti();
         }
     }
 
@@ -1011,202 +884,11 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     public Map<String, AndroidProject> getAllModelsIgnoringSyncIssues() {
-        return getAllModels(
-                new GetAndroidModelAction<AndroidProject>(AndroidProject.class),
-                AndroidProject.MODEL_LEVEL_LATEST,
-                null,
-                null);
-    }
-
-    /**
-     * Returns a project model for each sub-project without building.
-     *
-     * @param action the build action to gather the model
-     * @param modelLevel the level of the model we want.
-     * @param benchmarkName optional benchmark name to pass to Gradle
-     * @param benchmarkMode optional benchmark mode to pass to gradle.
-     */
-    @NonNull
-    public <K, V> Map<K, V> getAllModels(
-            @NonNull BuildAction<Map<K, V>> action,
-            int modelLevel,
-            @Nullable String benchmarkName,
-            @Nullable BenchmarkMode benchmarkMode) {
-        ProjectConnection connection = getProjectConnection();
-        try {
-            return buildModel(connection, action, modelLevel, benchmarkName, benchmarkMode);
-
-        } finally {
-            connection.close();
-        }
-    }
-
-    /**
-     * Runs gradle on the project.  Throws exception on failure.
-     *
-     * @param arguments List of arguments for the gradle command.
-     * @param returnModel whether the model should be queried and returned.
-     * @param modelLevel the level of the model we want.
-     * @param resultHandler Result handler that should verify the result (either success or failure
-     *                      is what the caller expects.
-     * @param tasks Variadic list of tasks to execute.
-     *
-     * @return the model, if <var>returnModel</var> was true, null otherwise
-     */
-    @Nullable
-    private <T> T execute(
-            Class<T> type,
-            @NonNull List<String> arguments,
-            boolean returnModel,
-            int modelLevel,
-            ResultHandler<Void> resultHandler,
-            @NonNull String ... tasks) {
-        ProjectConnection connection = getProjectConnection();
-        try {
-            executeBuild(arguments, connection, tasks, resultHandler);
-
-            if (returnModel) {
-                Map<String, T> modelMap = this.buildModel(
-                        connection,
-                        new GetAndroidModelAction<>(type),
-                        modelLevel,
-                        null,
-                        null);
-
-                // ensure there was only one project
-                assertEquals("Quering GradleTestProject.getModel() with multi-project settings",
-                        1, modelMap.size());
-
-                return modelMap.get(":");
-            }
-        } finally {
-            connection.close();
-        }
-
-        return null;
-    }
-
-    private static void syncFileSystem() {
-        try {
-            if (System.getProperty("os.name").contains("Linux")) {
-                if (Runtime.getRuntime().exec("/bin/sync").waitFor() != 0) {
-                    throw new IOException("Failed to sync file system.");
-                }
-            }
-        } catch (IOException | InterruptedException e) {
-            System.err.println(Throwables.getStackTraceAsString(e));
-        }
-    }
-
-    private void executeBuild(
-            final List<String> arguments,
-            ProjectConnection connection,
-            final String[] tasks,
-            ResultHandler<Void> resultHandler) {
-        syncFileSystem();
-        List<String> args = Lists.newArrayListWithCapacity(5 + arguments.size());
-        if (!buildFile.getName().equals("build.gradle")) {
-            args.add("--build-file=" + buildFile.getPath());
-        }
-        args.add("-i");
-        args.add("-u");
-        args.add("-Pcom.android.build.gradle.integratonTest.useJack=" + Boolean.toString(useJack));
-        args.add("-Pcom.android.build.gradle.integratonTest.minifyEnabled=" +
-                Boolean.toString(minifyEnabled));
-        args.addAll(arguments);
-
-        System.out.println("[GradleTestProject] Executing tasks: gradle "
-                + Joiner.on(' ').join(args) + " " + Joiner.on(' ').join(tasks));
-
-        BuildLauncher launcher = connection.newBuild()
-                .forTasks(tasks)
-                .withArguments(Iterables.toArray(args, String.class));
-
-        setJvmArguments(launcher);
-
-        stdout.reset();
-        stderr.reset();
-        launcher.setStandardOutput(new TeeOutputStream(stdout, System.out));
-        launcher.setStandardError(new TeeOutputStream(stderr, System.err));
-        launcher.run(resultHandler);
-    }
-
-    private void setJvmArguments(LongRunningOperation launcher) {
-        List<String> jvmArguments = new ArrayList<>();
-
-        if (!Strings.isNullOrEmpty(heapSize)) {
-            jvmArguments.add("-Xmx" + heapSize);
-        }
-
-        jvmArguments.add("-XX:MaxPermSize=1024m");
-
-        String debugIntegrationTest = System.getenv("DEBUG_INNER_TEST");
-        if (!Strings.isNullOrEmpty(debugIntegrationTest)) {
-            jvmArguments.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5006");
-        }
-
-        if (JacocoAgent.isJacocoEnabled()) {
-            jvmArguments.add(JacocoAgent.getJvmArg());
-        }
-
-        launcher.setJvmArguments(Iterables.toArray(jvmArguments, String.class));
-    }
-
-    /**
-     * Returns a project model for each sub-project without building.
-     * @param connection the opened ProjectConnection
-     * @param action the build action to gather the model
-     * @param modelLevel whether to emulate an older IDE (studio 1.0) querying the model.
-     * @param benchmarkName optional benchmark name to pass to Gradle
-     * @param benchmarkMode optional benchmark mode to pass to gradle.
-     */
-    @NonNull
-    private <K,V> Map<K, V> buildModel(
-            @NonNull ProjectConnection connection,
-            @NonNull BuildAction<Map<K, V>> action,
-            int modelLevel,
-            @Nullable String benchmarkName,
-            @Nullable BenchmarkMode benchmarkMode) {
-
-        BuildActionExecuter<Map<K, V>> executor = connection.action(action);
-
-        List<String> arguments = Lists.newArrayListWithCapacity(5);
-        arguments.add("-P" + AndroidProject.PROPERTY_BUILD_MODEL_ONLY + "=true");
-        arguments.add("-P" + AndroidProject.PROPERTY_INVOKED_FROM_IDE + "=true");
-
-        switch (modelLevel) {
-            case AndroidProject.MODEL_LEVEL_0_ORIGNAL:
-                // nothing.
-                break;
-            case AndroidProject.MODEL_LEVEL_2_DEP_GRAPH:
-                arguments.add("-P" + AndroidProject.PROPERTY_BUILD_MODEL_ONLY_VERSIONED + "=" + modelLevel);
-                // intended fall-through
-            case AndroidProject.MODEL_LEVEL_1_SYNC_ISSUE:
-                arguments.add("-P" + AndroidProject.PROPERTY_BUILD_MODEL_ONLY_ADVANCED + "=true");
-                break;
-            default:
-                throw new RuntimeException("Unsupported ModelLevel");
-        }
-
-        if (benchmarkName != null) {
-            arguments.add("-P" + RECORD_BENCHMARK_NAME + "=" + benchmarkName);
-            if (benchmarkMode != null) {
-                arguments.add("-P" + RECORD_BENCHMARK_MODE + "=" + benchmarkMode.name().toLowerCase(Locale.US));
-            }
-        }
-
-        setJvmArguments(executor);
-
-        executor.withArguments(Iterables.toArray(arguments, String.class));
-
-        executor.setStandardOutput(System.out);
-        executor.setStandardError(System.err);
-
-        return executor.run();
+        return model().ignoreSyncIssues().getMulti();
     }
 
     public String getStdout() {
-        return stdout.toString();
+        return lastBuild.getStdout();
     }
 
     /**
@@ -1214,7 +896,7 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     public String getStderr() {
-        return stderr.toString();
+        return lastBuild.getStderr();
     }
 
     /**
@@ -1252,16 +934,23 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     private ProjectConnection getProjectConnection() {
+        if (projectConnection != null) {
+            return projectConnection;
+        }
         GradleConnector connector = GradleConnector.newConnector();
 
         // Limit daemon idle time for tests. 10 seconds is enough for another test
         // to start and reuse the daemon.
         ((DefaultGradleConnector) connector).daemonMaxIdleTime(10, TimeUnit.SECONDS);
 
-        return connector
+        projectConnection = connector
                 .useGradleVersion(targetGradleVersion)
                 .forProjectDirectory(testDir)
                 .connect();
+
+        rootProject.openConnections.add(projectConnection);
+
+        return projectConnection;
     }
 
     private static File createLocalProp(
@@ -1287,5 +976,17 @@ public class GradleTestProject implements TestRule {
         Files.write(Joiner.on('\n').join(gradleProperties), propertyFile, Charset.defaultCharset());
     }
 
+    @Nullable
+    String getHeapSize() {
+        return heapSize;
+    }
+
+    boolean isUseJack() {
+        return useJack;
+    }
+
+    boolean isMinifyEnabled() {
+        return minifyEnabled;
+    }
 
 }

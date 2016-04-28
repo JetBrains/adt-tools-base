@@ -63,10 +63,10 @@ class HotSwapTester {
             InstantRun instantRunModel = InstantRunTestUtils.getInstantRunModel(model);
 
             // Run first time on device
-            project.execute(
-                    InstantRunTestUtils.getInstantRunArgs(
-                            device, ColdswapMode.MULTIDEX, OptionalCompilationStep.RESTART_ONLY),
-                    "assembleDebug");
+            project.executor()
+                    .withInstantRun(
+                            device, ColdswapMode.MULTIDEX, OptionalCompilationStep.RESTART_ONLY)
+                    .run("assembleDebug");
 
             // Deploy to device
             InstantRunBuildInfo info = InstantRunTestUtils.loadContext(instantRunModel);
@@ -96,8 +96,8 @@ class HotSwapTester {
             steps.makeChange();
 
             // Now build the hot swap patch.
-            project.execute(InstantRunTestUtils.getInstantRunArgs(device, ColdswapMode.MULTIDEX),
-                    instantRunModel.getIncrementalAssembleTaskName());
+            project.executor().withInstantRun(device, ColdswapMode.MULTIDEX)
+                    .run(instantRunModel.getIncrementalAssembleTaskName());
 
             InstantRunArtifact artifact =
                     InstantRunTestUtils.getCompiledHotSwapCompatibleChange(instantRunModel);

@@ -27,7 +27,6 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.Map;
 
 /**
@@ -48,7 +47,9 @@ public class SmallAndroidComponentModelTest {
     @Test
     @Ignore
     public void modelQueryFor30Projects() {
-        Map<String, AndroidProject> models = project.getAllModelsWithBenchmark(
-                AndroidProject.MODEL_LEVEL_LATEST, "SmallAndroid", SYNC);
+        Map<String, AndroidProject> models = project.model()
+                .level(AndroidProject.MODEL_LEVEL_LATEST)
+                .recordBenchmark("SmallAndroid", SYNC)
+                .getMulti();
     }
 }

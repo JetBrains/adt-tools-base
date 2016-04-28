@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.instant;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 
+import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
 import com.android.builder.model.OptionalCompilationStep;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp;
@@ -75,12 +76,12 @@ public class ProvidedSubclassTest {
     @Test
     public void checkV() throws Exception {
         project.execute("clean");
-        project.execute(InstantRunTestUtils.getInstantRunArgs(23,
-                ColdswapMode.DEFAULT, OptionalCompilationStep.RESTART_ONLY),
-                "assembleDebug");
+        GradleBuildResult result = project.executor()
+                .withInstantRun(23, ColdswapMode.DEFAULT, OptionalCompilationStep.RESTART_ONLY)
+                .run("assembleDebug");
 
         // Check we can find the parent class.
-        assertThat(project.getStderr()).doesNotContain("ByteSink");
+        assertThat(result.getStderr()).doesNotContain("ByteSink");
 
     }
 

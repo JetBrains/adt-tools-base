@@ -84,9 +84,9 @@ public class InstantRunAddLibraryTest {
         InstantRun instantRunModel = InstantRunTestUtils
                 .getInstantRunModel(project.getSingleModel());
 
-        project.execute(InstantRunTestUtils.getInstantRunArgs(23,
-                ColdswapMode.DEFAULT, OptionalCompilationStep.RESTART_ONLY),
-                "assembleDebug");
+        project.executor()
+                .withInstantRun(23, ColdswapMode.DEFAULT, OptionalCompilationStep.RESTART_ONLY)
+                .run("assembleDebug");
 
         // Add dependency
         TestFileUtils.appendToFile(project.getBuildFile(), "\n"
@@ -97,8 +97,8 @@ public class InstantRunAddLibraryTest {
         // Use that dependency
         writeClass("com.google.common.base.Strings.nullToEmpty(null);");
 
-        project.execute(InstantRunTestUtils.getInstantRunArgs(23, ColdswapMode.MULTIDEX),
-                instantRunModel.getIncrementalAssembleTaskName());
+        project.executor().withInstantRun(23, ColdswapMode.MULTIDEX)
+                .run(instantRunModel.getIncrementalAssembleTaskName());
 
         InstantRunBuildInfo context = InstantRunTestUtils.loadContext(instantRunModel);
 

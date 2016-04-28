@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.Adb
+import com.android.build.gradle.integration.common.fixture.GradleBuildResult
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.build.gradle.integration.common.utils.DexInProcessHelper
@@ -176,9 +177,9 @@ class MultiDexTest {
 
         project.buildFile << "\nandroid.dexOptions.additionalParameters '--set-max-idx-number=10'\n"
 
-        project.executeExpectingFailure("assembleIcsDebug")
+        GradleBuildResult result = project.executor().expectFailure().run("assembleIcsDebug")
 
-        assertThat(project.stderr).contains("main dex capacity exceeded")
+        assertThat(result.getStderr()).contains("main dex capacity exceeded")
     }
 
     @Test

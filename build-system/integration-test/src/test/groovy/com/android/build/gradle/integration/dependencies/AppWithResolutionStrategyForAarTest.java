@@ -102,7 +102,7 @@ public class AppWithResolutionStrategyForAarTest {
                 "    compile \"org.jdeferred:jdeferred-android-aar:1.2.3\"\n" +
                 "}\n");
 
-        models = project.getAllModels();
+        models = project.model().getMulti();
     }
 
     @AfterClass

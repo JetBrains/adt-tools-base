@@ -23,7 +23,6 @@ import com.android.build.gradle.internal.incremental.ColdswapMode;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
 import com.android.builder.model.InstantRun;
-import com.android.tools.fd.client.InstantRunArtifact;
 import com.android.tools.fd.client.InstantRunBuildInfo;
 
 import java.io.File;
@@ -65,9 +64,9 @@ class ColdSwapTester {
 
         mSteps.makeChange();
 
-        mProject.execute(
-                InstantRunTestUtils.getInstantRunArgs(apiLevel, coldswapMode),
-                instantRunModel.getIncrementalAssembleTaskName());
+        mProject.executor()
+                .withInstantRun(apiLevel, coldswapMode)
+                .run(instantRunModel.getIncrementalAssembleTaskName());
 
         InstantRunBuildContext buildContext = InstantRunTestUtils.loadBuildContext(instantRunModel);
 

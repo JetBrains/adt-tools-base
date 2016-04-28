@@ -58,21 +58,17 @@ public class JavaResourcesTest {
 
     @Test
     public void testChangingJavaResources() throws Exception {
-        project.execute(
-                InstantRunTestUtils.getInstantRunArgs(
-                        21,
-                        ColdswapMode.DEFAULT,
-                        OptionalCompilationStep.RESTART_ONLY),
-                "assembleDebug");
-        AndroidProject model = project.getSingleModel();
+        project.executor()
+                .withInstantRun(21, ColdswapMode.DEFAULT, OptionalCompilationStep.RESTART_ONLY)
+                .run("assembleDebug");
+        AndroidProject model = project.model().getSingle();
 
         assertThat(project.getApk("debug")).exists();
         Files.write("bar", resource, Charsets.UTF_8);
 
         InstantRun instantRunModel = InstantRunTestUtils.getInstantRunModel(model);
-        project.execute(
-                InstantRunTestUtils.getInstantRunArgs(21, ColdswapMode.DEFAULT),
-                instantRunModel.getIncrementalAssembleTaskName());
+        project.executor().withInstantRun(21, ColdswapMode.DEFAULT)
+                .run(instantRunModel.getIncrementalAssembleTaskName());
         InstantRunBuildInfo context = InstantRunTestUtils.loadContext(instantRunModel);
         assertThat(context.getVerifierStatus()).isEqualTo(
                 InstantRunVerifierStatus.JAVA_RESOURCES_CHANGED.toString());
@@ -81,21 +77,17 @@ public class JavaResourcesTest {
 
     @Test
     public void testChangingJavaSources() throws Exception {
-        project.execute(
-                InstantRunTestUtils.getInstantRunArgs(
-                        21,
-                        ColdswapMode.DEFAULT,
-                        OptionalCompilationStep.RESTART_ONLY),
-                "assembleDebug");
-        AndroidProject model = project.getSingleModel();
+        project.executor()
+                .withInstantRun(21, ColdswapMode.DEFAULT, OptionalCompilationStep.RESTART_ONLY)
+                .run("assembleDebug");
+        AndroidProject model = project.model().getSingle();
         assertThat(project.getApk("debug")).exists();
 
         Files.write("bar", resource, Charsets.UTF_8);
 
         InstantRun instantRunModel = InstantRunTestUtils.getInstantRunModel(model);
-        project.execute(
-                InstantRunTestUtils.getInstantRunArgs(21, ColdswapMode.DEFAULT),
-                instantRunModel.getIncrementalAssembleTaskName());
+        project.executor().withInstantRun(21, ColdswapMode.DEFAULT)
+                .run(instantRunModel.getIncrementalAssembleTaskName());
         InstantRunBuildInfo context = InstantRunTestUtils.loadContext(instantRunModel);
         assertThat(context.getVerifierStatus()).isEqualTo(
                 InstantRunVerifierStatus.JAVA_RESOURCES_CHANGED.toString());
