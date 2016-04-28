@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.android.tools.chartlib.threadstacks;
+package com.android.tools.chartlib.hchart;
 
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.geom.Rectangle2D;
 
-public interface Renderer<T> {
+public interface HRenderer<T> {
 
     void setFont(Font font);
 

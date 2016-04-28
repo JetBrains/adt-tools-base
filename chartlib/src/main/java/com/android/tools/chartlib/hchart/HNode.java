@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.tools.chartlib.threadstacks;
+package com.android.tools.chartlib.hchart;
 
 import java.util.ArrayList;
 import java.util.List;
