@@ -31,6 +31,7 @@ import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.ide.common.process.ProcessResult;
 import com.android.sdklib.BuildToolInfo;
+import com.android.utils.ILogger;
 import com.google.common.collect.Maps;
 
 import java.io.File;
@@ -78,8 +79,8 @@ public class RenderScriptProcessor {
             new Abi("mips", "mipsel-unknown-linux", BuildToolInfo.PathId.LD_MIPS, "-EL"),
             new Abi("x86", "i686-unknown-linux", BuildToolInfo.PathId.LD_X86, "-m", "elf_i386") };
     private static final Abi[] ABIS_64 = {
-            new Abi("arm64-v8a", "aarch64-linux-android", BuildToolInfo.PathId.LD_ARM64, "-X") };
-
+            new Abi("arm64-v8a", "aarch64-linux-android", BuildToolInfo.PathId.LD_ARM64, "-X"),
+            new Abi("x86_64", "x86_64-unknown-linux", BuildToolInfo.PathId.LD_X86_64, "-m", "elf_x86_64") };
 
 
     public static final String RS_DEPS = "rsDeps";
@@ -105,6 +106,9 @@ public class RenderScriptProcessor {
     @NonNull
     private final BuildToolInfo mBuildToolInfo;
 
+    @NonNull
+    private final ILogger mLogger;
+
     private final int mTargetApi;
 
     private final int mOptimizationLevel;
@@ -114,6 +118,7 @@ public class RenderScriptProcessor {
     private final boolean mSupportMode;
 
     private final Set<String> mAbiFilters;
+
 
     private final File mRsLib;
     private final Map<String, File> mLibClCore = Maps.newHashMap();
@@ -131,7 +136,8 @@ public class RenderScriptProcessor {
             int optimizationLevel,
             boolean ndkMode,
             boolean supportMode,
-            @Nullable Set<String> abiFilters) {
+            @Nullable Set<String> abiFilters,
+            @NonNull ILogger logger) {
         mSourceFolders = sourceFolders;
         mImportFolders = importFolders;
         mSourceOutputDir = sourceOutputDir;
@@ -144,18 +150,23 @@ public class RenderScriptProcessor {
         mNdkMode = ndkMode;
         mSupportMode = supportMode;
         mAbiFilters = abiFilters;
+        mLogger = logger;
 
         if (supportMode) {
             File rs = new File(mBuildToolInfo.getLocation(), "renderscript");
             mRsLib = new File(rs, "lib");
             File bcFolder = new File(mRsLib, "bc");
             for (Abi abi : ABIS_32) {
-                mLibClCore.put(abi.mDevice,
-                        new File(bcFolder, abi.mDevice + File.separatorChar + LIBCLCORE_BC));
+                File rsClCoreFile = new File(bcFolder, abi.mDevice + File.separatorChar + LIBCLCORE_BC);
+                if (rsClCoreFile.exists()) {
+                    mLibClCore.put(abi.mDevice, rsClCoreFile);
+                }
             }
             for (Abi abi : ABIS_64) {
-                mLibClCore.put(abi.mDevice,
-                        new File(bcFolder, abi.mDevice + File.separatorChar + LIBCLCORE_BC));
+                File rsClCoreFile = new File(bcFolder, abi.mDevice + File.separatorChar + LIBCLCORE_BC);
+                if (rsClCoreFile.exists()) {
+                    mLibClCore.put(abi.mDevice, rsClCoreFile);
+                }
             }
         } else {
             mRsLib = null;
@@ -323,6 +334,17 @@ public class RenderScriptProcessor {
 
             for (final Abi abi : abis) {
                 if (mAbiFilters != null && !mAbiFilters.contains(abi.mDevice)) {
+                    continue;
+                }
+                // only build for the ABIs bundled in Build-Tools.
+                if (mLibClCore.get(abi.mDevice) == null) {
+                    // warn the user to update Build-Tools if the desired ABI is not found.
+                    mLogger.warning("Skipped RenderScript support mode compilation for "
+                                    + abi.mDevice
+                                    + " : required components not found in Build-Tools "
+                                    + mBuildToolInfo.getRevision().toString()
+                                    + '\n'
+                                    + "Please check and update your BuildTools.");
                     continue;
                 }
 

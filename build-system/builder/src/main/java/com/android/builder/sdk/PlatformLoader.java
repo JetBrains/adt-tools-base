@@ -100,6 +100,7 @@ public class PlatformLoader implements SdkLoader {
                 new File(hostTools, "arm-linux-androideabi-ld"),
                 new File(hostTools, "aarch64-linux-android-ld"),
                 new File(hostTools, "i686-linux-android-ld"),
+                new File(hostTools, "x86_64-linux-android-ld"),
                 new File(hostTools, "mipsel-linux-android-ld"),
                 new File(hostTools, FN_ZIPALIGN));
 
