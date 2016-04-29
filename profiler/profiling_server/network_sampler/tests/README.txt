@@ -5,8 +5,8 @@
 
 2. Use "adb push" to push binary to the testing device.
 
-   adb push libs/x86/network_sampler /data/local/tmp/network_sampler
+   adb push libs/x86/network_sampler_unittest /data/local/tmp/network_sampler_unittest
 
-3. Run on device to see data collect result.
+3. Run on device to see unit tests' result.
 
-   adb shell /data/local/tmp/network_sampler
+   adb shell /data/local/tmp/network_sampler_unittest

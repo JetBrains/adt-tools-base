@@ -1,11 +1,16 @@
 LOCAL_PATH := $(call my-dir)
-include $(CLEAR_VARS)
 
+include $(CLEAR_VARS)
+LOCAL_MODULE := network_sampler_unittest
 LOCAL_CPPFLAGS += -std=c++11
 LOCAL_LDFLAGS += -fPIE -pie
 
-LOCAL_MODULE    := network_sampler
+LOCAL_SRC_FILES := \
+    time_value_buffer_unittest.cc \
+    timespec_math_unittest.cc
 
-LOCAL_SRC_FILES := ../network_data_collector.cc ../connection_data_collector.cc ../traffic_data_collector.cc test.cc
+LOCAL_STATIC_LIBRARIES := googletest_main
 
 include $(BUILD_EXECUTABLE)
+
+$(call import-module,third_party/googletest)

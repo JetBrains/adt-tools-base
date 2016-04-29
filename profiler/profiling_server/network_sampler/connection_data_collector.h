@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef CONNECTION_DATA_COLLECTOR_
-#define CONNECTION_DATA_COLLECTOR_
+#ifndef CONNECTION_DATA_COLLECTOR_H_
+#define CONNECTION_DATA_COLLECTOR_H_
 
 #include "network_data_collector.h"
 #include "network_sample_data.h"
@@ -58,4 +58,4 @@ class ConnectionDataCollector : public NetworkDataCollector {
 
 } // namespace network_sampler
 
-#endif // CONNECTION_DATA_COLLECTOR_
+#endif // CONNECTION_DATA_COLLECTOR_H_
