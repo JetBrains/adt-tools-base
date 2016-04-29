@@ -5,7 +5,7 @@ apply plugin: 'base'
 apply plugin: 'com.android.external.build'
 
 externalBuild {
-  buildManifestPath = 'apk_manifest'
+  buildManifestPath = project.file('apk_manifest')
 }
 
 

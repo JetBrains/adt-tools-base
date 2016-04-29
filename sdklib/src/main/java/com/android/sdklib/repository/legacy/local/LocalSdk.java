@@ -673,7 +673,7 @@ public class LocalSdk {
         File platformToolsLib = ptInfo.getLocalDir();
         File platformToolsRs = new File(platformTools, SdkConstants.FN_FRAMEWORK_RENDERSCRIPT);
 
-        return new BuildToolInfo(
+        return BuildToolInfo.modifiedLayout(
                 ptInfo.getDesc().getRevision(),
                 platformTools,
                 new File(platformTools, SdkConstants.FN_AAPT),
@@ -877,7 +877,7 @@ public class LocalSdk {
             // Since we used to require a complete revision
             rev = fullySpecifyRevision(rev);
 
-            BuildToolInfo btInfo = new BuildToolInfo(rev, buildToolDir);
+            BuildToolInfo btInfo = BuildToolInfo.fromStandardDirectoryLayout(rev, buildToolDir);
             LocalBuildToolPkgInfo pkgInfo =
                     new LocalBuildToolPkgInfo(this, buildToolDir, props, rev, btInfo);
             outCollection.add(pkgInfo);

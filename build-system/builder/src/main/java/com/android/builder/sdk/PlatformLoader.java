@@ -76,7 +76,7 @@ public class PlatformLoader implements SdkLoader {
 
         File hostTools = getHostToolsFolder();
 
-        BuildToolInfo buildToolInfo = new BuildToolInfo(
+        BuildToolInfo buildToolInfo = BuildToolInfo.modifiedLayout(
                 buildToolRevision,
                 mTreeLocation,
                 new File(hostTools, FN_AAPT),

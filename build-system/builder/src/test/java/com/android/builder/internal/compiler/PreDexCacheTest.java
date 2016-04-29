@@ -262,10 +262,9 @@ public class PreDexCacheTest {
         TargetInfo targetInfo = mock(TargetInfo.class);
         when(targetInfo.getBuildTools()).thenReturn(getBuildToolInfo());
 
-        mAndroidBuilder.setTargetInfo(
-                mock(SdkInfo.class),
-                targetInfo,
-                ImmutableList.of());
+        mAndroidBuilder.setSdkInfo(mock(SdkInfo.class));
+        mAndroidBuilder.setTargetInfo(targetInfo);
+        mAndroidBuilder.setLibraryRequests(ImmutableList.of());
 
         mCacheFile = mTemporaryFolder.newFile("cache.xml");
     }
@@ -557,7 +556,7 @@ public class PreDexCacheTest {
         File dx = new File(toolDir, FN_DX_JAR);
         Files.write("dx!", dx, Charsets.UTF_8);
 
-        return new BuildToolInfo(
+        return BuildToolInfo.modifiedLayout(
                 new Revision(21, 0, 1),
                 toolDir,
                 new File(toolDir, FN_AAPT),

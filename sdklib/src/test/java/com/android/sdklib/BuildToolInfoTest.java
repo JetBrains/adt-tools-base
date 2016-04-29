@@ -37,7 +37,7 @@ public class BuildToolInfoTest extends TestCase {
         assertNotNull(bt);
 
         // Check the actual JVM running this test.
-        Revision curr = bt.getCurrentJvmVersion();
+        Revision curr = BuildToolInfo.getCurrentJvmVersion();
         // We can reasonably expect this to at least run with JVM 1.5 or more
         assertTrue(curr.compareTo(new Revision(1, 5, 0)) > 0);
         // and we can reasonably expect to not be running with JVM 42.0.0

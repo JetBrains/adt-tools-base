@@ -37,7 +37,5 @@ public class ExternalBuildPluginTest {
     @Test
     public void testBuild() {
         project.execute("clean", "process")
-        // nothing to verify so far.
     }
-
 }
