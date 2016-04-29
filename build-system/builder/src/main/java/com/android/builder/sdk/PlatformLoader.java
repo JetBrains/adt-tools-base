@@ -24,11 +24,15 @@ import static com.android.SdkConstants.FN_ZIPALIGN;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.builder.internal.FakeAndroidTarget;
+import com.android.repository.api.Downloader;
+import com.android.repository.api.SettingsController;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.repository.Revision;
 import com.android.utils.ILogger;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
 import java.io.File;
@@ -68,10 +72,16 @@ public class PlatformLoader implements SdkLoader {
 
     @NonNull
     @Override
-    public TargetInfo getTargetInfo(@NonNull String targetHash,
-            @NonNull Revision buildToolRevision, @NonNull ILogger logger) {
+    public TargetInfo getTargetInfo(
+            @NonNull String targetHash,
+            @NonNull Revision buildToolRevision,
+            @NonNull ILogger logger,
+            @Nullable SettingsController settings,
+            @Nullable Downloader downloader,
+            boolean useGradleSdkDownload) {
         init(logger);
-
+        Preconditions.checkArgument(useGradleSdkDownload == false, "The Platform Loader does"
+                + "not support downloading missing components");
         IAndroidTarget androidTarget = new FakeAndroidTarget(mTreeLocation.getPath(), targetHash);
 
         File hostTools = getHostToolsFolder();

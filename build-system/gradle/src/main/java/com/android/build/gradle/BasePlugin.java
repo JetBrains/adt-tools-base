@@ -32,7 +32,6 @@ import com.android.build.gradle.internal.ExtraModelInfo;
 import com.android.build.gradle.internal.LibraryCache;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.NativeLibraryFactoryImpl;
-import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.SdkHandler;
 import com.android.build.gradle.internal.TaskContainerAdaptor;
 import com.android.build.gradle.internal.TaskManager;
@@ -46,6 +45,7 @@ import com.android.build.gradle.internal.dsl.ProductFlavorFactory;
 import com.android.build.gradle.internal.dsl.SigningConfig;
 import com.android.build.gradle.internal.dsl.SigningConfigFactory;
 import com.android.build.gradle.internal.model.ModelBuilder;
+import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor;
 import com.android.build.gradle.internal.process.GradleProcessExecutor;
@@ -65,18 +65,23 @@ import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.ProcessRecorderFactory;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
-import com.android.builder.sdk.DefaultSdkLoader;
 import com.android.builder.sdk.TargetInfo;
 import com.android.dx.command.dexer.Main;
 import com.android.ide.common.internal.ExecutorSingleton;
+import com.android.repository.api.Channel;
+import com.android.repository.api.Downloader;
+import com.android.repository.api.ProgressIndicator;
+import com.android.repository.api.SettingsController;
+import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.repository.AndroidSdkHandler;
-import com.android.sdklib.repository.legacy.LegacyRemoteRepoLoader;
+import com.android.sdklib.repository.legacy.LegacyDownloader;
 import com.android.utils.ILogger;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.common.io.Files;
 
 import org.gradle.BuildListener;
 import org.gradle.BuildResult;
@@ -101,10 +106,12 @@ import android.databinding.tool.DataBindingBuilder;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.net.URLConnection;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Calendar;
@@ -698,7 +705,10 @@ public abstract class BasePlugin {
                     extension.getBuildToolsRevision(),
                     extension.getLibraryRequests(),
                     androidBuilder,
-                    SdkHandler.useCachedSdk(project));
+                    SdkHandler.useCachedSdk(project),
+                    AndroidGradleOptions.getUseSdkDownload(project),
+                    getSettingsController(),
+                    getDownloader());
         }
     }
 
@@ -759,5 +769,69 @@ public abstract class BasePlugin {
                 "in the project directory.";
 
         throw new StopExecutionException(message);
+    }
+
+    private SettingsController getSettingsController() {
+        return new SettingsController() {
+            @Override
+            public boolean getForceHttp() {
+                return false;
+            }
+
+            @Override
+            public void setForceHttp(boolean force) {
+                // Default, doesn't allow to set force HTTP.
+            }
+
+            @Nullable
+            @Override
+            public Channel getChannel() {
+                return Channel.DEFAULT;
+            }
+        };
+
+
+    }
+
+    private Downloader getDownloader() {
+        // Used for testing, in case we don't want to download online, we could use file URLs.
+        if (System.getenv(AndroidSdkHandler.SDK_TEST_BASE_URL_ENV_VAR) != null) {
+            return new Downloader() {
+                @Nullable
+                @Override
+                public InputStream downloadAndStream(@NonNull URL url,
+                        @NonNull ProgressIndicator indicator)
+                        throws IOException {
+                    return url.openStream();
+                }
+
+                @Nullable
+                @Override
+                public File downloadFully(@NonNull URL url, @NonNull ProgressIndicator indicator)
+                        throws IOException {
+                    File tempFile = File.createTempFile("GradleDownloader", null);
+                    downloadFully(url, tempFile, null, indicator);
+                    return tempFile;
+                }
+
+                @Override
+                public void downloadFully(
+                        @NonNull URL url,
+                        @NonNull File target,
+                        @Nullable String checksum,
+                        @NonNull ProgressIndicator indicator) throws IOException {
+                    Files.createParentDirs(target);
+                    URLConnection urlConnection = url.openConnection();
+                    try (InputStream is = urlConnection.getInputStream()) {
+                        Files.asByteSink(target).writeFrom(is);
+                    } catch (IOException e) {
+                        indicator.setText("The download was cancelled.");
+                        throw new RuntimeException(e);
+                    }
+                }
+            };
+        } else {
+            return new LegacyDownloader(FileOpUtils.create());
+        }
     }
 }

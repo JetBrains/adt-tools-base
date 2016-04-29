@@ -506,7 +506,10 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 sdkHandler.initTarget(androidExtension.getCompileSdkVersion(),
                         androidExtension.getBuildToolsRevision(),
                         androidExtension.getLibraryRequests(), androidBuilder,
-                        SdkHandler.useCachedSdk(project));
+                        SdkHandler.useCachedSdk(project),
+                        false,
+                        null,
+                        null);
             }
 
             VariantManager variantManager = new VariantManager(project, androidBuilder,

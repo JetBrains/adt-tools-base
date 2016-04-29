@@ -32,8 +32,8 @@ import com.android.build.gradle.internal.dsl.AdbOptions;
 import com.android.build.gradle.internal.dsl.AndroidSourceSetFactory;
 import com.android.build.gradle.internal.dsl.BuildType;
 import com.android.build.gradle.internal.dsl.DataBindingOptions;
-import com.android.build.gradle.internal.dsl.ExternalNativeBuild;
 import com.android.build.gradle.internal.dsl.DexOptions;
+import com.android.build.gradle.internal.dsl.ExternalNativeBuild;
 import com.android.build.gradle.internal.dsl.LintOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.dsl.ProductFlavor;
@@ -48,10 +48,18 @@ import com.android.builder.sdk.TargetInfo;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
 import com.android.repository.Revision;
+import com.android.repository.api.Channel;
+import com.android.repository.api.Downloader;
+import com.android.repository.api.ProgressIndicator;
+import com.android.repository.api.SettingsController;
+import com.android.repository.io.FileOpUtils;
 import com.android.resources.Density;
+import com.android.sdklib.repository.AndroidSdkHandler;
+import com.android.sdklib.repository.legacy.LegacyDownloader;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.common.io.Files;
 
 import org.gradle.api.Action;
 import org.gradle.api.GradleException;
@@ -66,6 +74,10 @@ import org.gradle.api.tasks.SourceSet;
 import org.gradle.internal.reflect.Instantiator;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -151,7 +163,6 @@ public abstract class BaseExtension implements AndroidConfig {
     private boolean isWritable = true;
 
     protected Project project;
-
 
     BaseExtension(
             @NonNull final ProjectInternal project,
@@ -855,7 +866,10 @@ public abstract class BaseExtension implements AndroidConfig {
                     buildToolsRevision,
                     libraryRequests,
                     androidBuilder,
-                    SdkHandler.useCachedSdk(project));
+                    SdkHandler.useCachedSdk(project),
+                    false,
+                    null,
+                    null);
         }
     }
 

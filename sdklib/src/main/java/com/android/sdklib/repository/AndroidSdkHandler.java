@@ -105,7 +105,7 @@ public final class AndroidSdkHandler {
      * The name of the environment variable used to override the url of the primary repository, for
      * testing.
      */
-    private static final String SDK_TEST_BASE_URL_ENV_VAR = "SDK_TEST_BASE_URL";
+    public static final String SDK_TEST_BASE_URL_ENV_VAR = "SDK_TEST_BASE_URL";
 
     /**
      * The latest version of legacy remote packages we should expect to receive from a server. If
