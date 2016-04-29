@@ -16,6 +16,7 @@ File baseInstrumentedClasses = new File(classesDir, "baseInstrumented")
 sourceSets {
     main {
         java.srcDirs += 'src/fromGradle/java'
+        java.srcDirs += 'src/main/generated'
         resources.srcDirs = ['src/main/resources', 'src/fromGradle/resources']
         compileClasspath += configurations.provided
     }
@@ -41,6 +42,7 @@ dependencies {
     compile "org.jacoco:org.jacoco.core:0.7.4.201502262128"
     compile "org.jacoco:org.jacoco.report:0.7.4.201502262128"
     compile "net.sf.jopt-simple:jopt-simple:4.9"
+    compile "com.google.protobuf:protobuf-java:2.6.1"
     testCompile project(':base:instant-run:instant-run-annotations')
     testCompile project(':base:instant-run:instant-run-runtime')
 

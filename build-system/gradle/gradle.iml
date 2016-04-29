@@ -14,5 +14,6 @@
     <orderEntry type="module" module-name="gradle-core" exported="" />
     <orderEntry type="module" module-name="sdk-common-base" />
     <orderEntry type="module" module-name="project-test-lib" />
+    <orderEntry type="library" name="truth" level="project" />
   </component>
 </module>
