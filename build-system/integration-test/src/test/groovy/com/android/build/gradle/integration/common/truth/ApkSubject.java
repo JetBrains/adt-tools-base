@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.common.truth;
 
 import static com.android.SdkConstants.FN_APK_CLASSES_N_DEX;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
@@ -30,6 +31,8 @@ import com.android.ide.common.process.ProcessExecutor;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.utils.StdLogger;
 import com.google.common.collect.ImmutableList;
+import com.google.common.io.ByteStreams;
+import com.google.common.io.Files;
 import com.google.common.io.LineProcessor;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.IterableSubject;
@@ -39,6 +42,7 @@ import org.junit.Assert;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -94,6 +98,11 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
             @Override
             @NonNull
             public DexFileSubject that() {
+                // For Windows, we need to extract the classes.dex first due to b/28385192.
+                if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) {
+                    File dexFile = extractClassesDex(getSubject());
+                    return DexFileSubject.FACTORY.getSubject(failureStrategy, dexFile);
+                }
                 return DexFileSubject.FACTORY.getSubject(failureStrategy, getSubject());
             }
         };
@@ -391,9 +400,16 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
      * @throws ProcessException
      */
     private static boolean checkFileForClassWithDexDump(
-            final @NonNull String expectedClassName,
+            @NonNull final String expectedClassName,
             @NonNull File file,
             @NonNull File dexDumpExe) throws ProcessException {
+        // For Windows, we need to extract the classes.dex first due to b/28385192.
+        if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) {
+            if (!file.getName().endsWith(SdkConstants.DOT_DEX)) {
+                file = extractClassesDex(file);
+            }
+        }
+
         ProcessExecutor executor = new DefaultProcessExecutor(
                 new StdLogger(StdLogger.Level.ERROR));
 
@@ -457,5 +473,23 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
         }
 
         failWithRawMessage("maxSdkVersion not found in badging output for %s", getDisplaySubject());
+    }
+
+    private static File extractClassesDex(File file) {
+        try (ZipFile zipFile = new ZipFile(file)) {
+            String path = "classes.dex";
+            InputStream classDexStream = zipFile.getInputStream(zipFile.getEntry(path));
+            if (classDexStream == null) {
+                throw new RuntimeException(path + " entry not found !");
+            }
+            byte[] content = ByteStreams.toByteArray(classDexStream);
+            // write into tmp file
+            File dexFile = File.createTempFile("classes", ".dex");
+            Files.write(content, dexFile);
+            dexFile.deleteOnExit();
+            return dexFile;
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to extract classes.dex.", e);
+        }
     }
 }
