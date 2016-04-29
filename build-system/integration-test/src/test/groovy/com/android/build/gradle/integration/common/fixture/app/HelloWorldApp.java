@@ -22,6 +22,14 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 
 /**
  * Simple test application that prints "hello world!".
+ *
+ * <p>Using this in a test application as a rule is usually done as:
+ * <pre>
+ * @Rule
+ * public GradleTestProject project = GradleTestProject.builder()
+ *     .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
+ *     .create();
+ * </pre>
  */
 public class HelloWorldApp extends AbstractAndroidTestApp implements AndroidTestApp {
 
