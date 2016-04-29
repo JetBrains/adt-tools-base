@@ -37,27 +37,22 @@ import java.io.File;
 /**
  * Task responsible for loading past iteration build-info.xml file and backup necessary files for
  * disconnected devices to be able to "catch up" to latest bits.
+ *
+ * It has no explicitly declared inputs and outputs, as it needs to run every time anyway.
  */
 public class BuildInfoLoaderTask extends BaseTask {
 
-    @OutputDirectory
+    // Outputs
     File pastBuildsFolder;
 
-    @Input
+    // Inputs
     String buildId;
-
-    @InputFile
-    @Optional
-    @NonNull
     File buildInfoFile;
-
-
-    @InputFile
-    @Optional
-    @NonNull
     File tmpBuildInfoFile;
 
     Logger logger;
+
+    // Variant state that is modified.
     InstantRunBuildContext instantRunBuildContext;
 
     @TaskAction
