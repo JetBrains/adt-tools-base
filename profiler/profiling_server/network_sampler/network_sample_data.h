@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef NETWORK_SAMPLE_DATA_
-#define NETWORK_SAMPLE_DATA_
+#ifndef NETWORK_SAMPLE_DATA_H_
+#define NETWORK_SAMPLE_DATA_H_
 
 #include <cstdint>
 
@@ -34,4 +34,4 @@ struct NetworkSampleData {
 
 } // namespace network_sampler
 
-#endif // NETWORK_SAMPLE_DATA_
+#endif // NETWORK_SAMPLE_DATA_H_
