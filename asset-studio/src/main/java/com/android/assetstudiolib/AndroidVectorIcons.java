@@ -22,17 +22,25 @@ import java.net.URL;
 public class AndroidVectorIcons {
   private static final String MATERIAL_DESIGN_ICONS_PATH = "images/material_design_icons/";
 
-  private static VdIcon load(String path) {
+  private static VdIcon load(String path, int size) {
     URL url = GraphicGenerator.class.getClassLoader().getResource(MATERIAL_DESIGN_ICONS_PATH + path);
-    return new VdIcon(url, 16, 16);
+    return new VdIcon(url, size, size);
   }
 
   public static class EditorIcons {
-    public static final VdIcon Bold = load("editor/ic_format_bold_black_24dp.xml");
-    public static final VdIcon Italic = load("editor/ic_format_italic_black_24dp.xml");
-    public static final VdIcon AllCaps = load("editor/ic_text_fields_black_24dp.xml");
-    public static final VdIcon AlignLeft = load("editor/ic_format_align_left_black_24dp.xml");
-    public static final VdIcon AlignCenter = load("editor/ic_format_align_center_black_24dp.xml");
-    public static final VdIcon AlignRight = load("editor/ic_format_align_right_black_24dp.xml");
+    public static final VdIcon Bold = load("editor/ic_format_bold_black_24dp.xml", 16);
+    public static final VdIcon Italic = load("editor/ic_format_italic_black_24dp.xml", 16);
+    public static final VdIcon AllCaps = load("editor/ic_text_fields_black_24dp.xml", 16);
+    public static final VdIcon AlignLeft = load("editor/ic_format_align_left_black_24dp.xml", 16);
+    public static final VdIcon AlignCenter = load("editor/ic_format_align_center_black_24dp.xml", 16);
+    public static final VdIcon AlignRight = load("editor/ic_format_align_right_black_24dp.xml", 16);
+  }
+
+  public static class LayoutEditorIcons {
+    public static final VdIcon UnSetUp = load("navigation/ic_more_horiz_black_24dp.xml", 10);
+    public static final VdIcon UnSetDown = load("navigation/ic_more_horiz_black_24dp.xml", 10);
+    public static final VdIcon ArrowUp = load("navigation/ic_arrow_upward_black_24dp.xml", 10);
+    public static final VdIcon ArrowDown = load("navigation/ic_arrow_downward_black_24dp.xml", 10);
+    public static final VdIcon Clip = load("content/ic_content_cut_black_24dp.xml", 16);
   }
 }
