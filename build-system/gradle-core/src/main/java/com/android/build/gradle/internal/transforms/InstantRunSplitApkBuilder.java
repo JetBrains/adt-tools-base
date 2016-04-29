@@ -182,7 +182,7 @@ public class InstantRunSplitApkBuilder extends BaseTask {
         Files.createParentDirs(outputLocation);
         File resPackageFile = generateSplitApkManifest(file.encodeName());
         getBuilder().packageCodeSplitApk(resPackageFile.getAbsolutePath(),
-                file.dexFile, signingConf, outputLocation, incrementalDir);
+                file.dexFile, signingConf, outputLocation);
         // zip align it.
         final File alignedOutput = new File(getOutputDirectory(), file.encodeName() + ".apk");
         ProcessInfoBuilder processInfoBuilder = new ProcessInfoBuilder();

@@ -25,7 +25,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.core.AndroidBuilder;
+import com.android.builder.internal.ClassFieldImpl;
 import com.android.builder.model.ClassField;
 import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.resources.ResourceType;
@@ -83,7 +83,7 @@ public class ResValueGenerator {
 
     public ResValueGenerator addResource(
             @NonNull String type, @NonNull String name, @NonNull String value) {
-        mFields.add(AndroidBuilder.createClassField(type, name, value));
+        mFields.add(new ClassFieldImpl(type, name, value));
         return this;
     }
 

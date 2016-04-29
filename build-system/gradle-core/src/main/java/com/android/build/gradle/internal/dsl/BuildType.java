@@ -20,9 +20,9 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.build.gradle.internal.LoggingUtil;
-import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.DefaultBuildType;
+import com.android.builder.internal.ClassFieldImpl;
 import com.android.builder.model.BaseConfig;
 import com.android.builder.model.ClassField;
 
@@ -198,7 +198,7 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
             logger.info("BuildType({}): buildConfigField '{}' value is being replaced: {} -> {}",
                     getName(), name, alreadyPresent.getValue(), value);
         }
-        addBuildConfigField(AndroidBuilder.createClassField(type, name, value));
+        addBuildConfigField(new ClassFieldImpl(type, name, value));
     }
 
     /**
@@ -221,7 +221,7 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
             logger.info("BuildType({}): resValue '{}' value is being replaced: {} -> {}",
                     getName(), name, alreadyPresent.getValue(), value);
         }
-        addResValue(AndroidBuilder.createClassField(type, name, value));
+        addResValue(new ClassFieldImpl(type, name, value));
     }
 
     /**

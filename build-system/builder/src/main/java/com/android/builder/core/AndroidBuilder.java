@@ -37,7 +37,6 @@ import com.android.builder.files.FileModificationType;
 import com.android.builder.files.NativeLibraryAbiPredicate;
 import com.android.builder.files.RelativeFile;
 import com.android.builder.files.RelativeFiles;
-import com.android.builder.internal.ClassFieldImpl;
 import com.android.builder.internal.SymbolLoader;
 import com.android.builder.internal.SymbolWriter;
 import com.android.builder.internal.TestManifestGenerator;
@@ -50,10 +49,8 @@ import com.android.builder.internal.compiler.PreDexCache;
 import com.android.builder.internal.compiler.RenderScriptProcessor;
 import com.android.builder.internal.compiler.ShaderProcessor;
 import com.android.builder.internal.compiler.SourceSearcher;
-import com.android.builder.internal.incremental.DependencyData;
 import com.android.builder.internal.packaging.OldPackager;
 import com.android.builder.model.AndroidLibrary;
-import com.android.builder.model.ClassField;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.model.SyncIssue;
 import com.android.builder.packaging.ApkCreatorFactory;
@@ -64,9 +61,7 @@ import com.android.builder.packaging.ZipAbortException;
 import com.android.builder.sdk.SdkInfo;
 import com.android.builder.sdk.TargetInfo;
 import com.android.builder.signing.SignedJarApkCreator;
-import com.android.ide.common.internal.AaptCruncher;
 import com.android.ide.common.internal.LoggedErrorException;
-import com.android.ide.common.internal.PngCruncher;
 import com.android.ide.common.process.CachedProcessOutputHandler;
 import com.android.ide.common.process.JavaProcessExecutor;
 import com.android.ide.common.process.JavaProcessInfo;
@@ -80,7 +75,6 @@ import com.android.ide.common.process.ProcessResult;
 import com.android.ide.common.signing.CertificateInfo;
 import com.android.ide.common.signing.KeystoreHelper;
 import com.android.ide.common.signing.KeytoolException;
-import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.io.FileWrapper;
 import com.android.io.StreamException;
 import com.android.jack.api.ConfigNotSupportedException;
@@ -93,9 +87,9 @@ import com.android.jack.api.v01.ReporterKind;
 import com.android.jack.api.v01.UnrecoverableException;
 import com.android.jack.api.v02.Api02Config;
 import com.android.manifmerger.ManifestMerger2;
+import com.android.manifmerger.ManifestSystemProperty;
 import com.android.manifmerger.MergingReport;
 import com.android.manifmerger.PlaceholderHandler;
-import com.android.manifmerger.ManifestSystemProperty;
 import com.android.repository.Revision;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
@@ -121,13 +115,11 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
-import com.google.common.io.Closer;
 import com.google.common.io.Files;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -165,15 +157,14 @@ import java.util.zip.ZipFile;
  */
 public class AndroidBuilder {
 
+    /**
+     * Minimal supported version of build tools.
+     */
     private static final Revision MIN_BUILD_TOOLS_REV = new Revision(19, 1, 0);
 
-    private static final DependencyFileProcessor sNoOpDependencyFileProcessor = new DependencyFileProcessor() {
-        @Override
-        public DependencyData processFile(@NonNull File dependencyFile) {
-            return null;
-        }
-    };
-
+    /**
+     * Object used for locking when handling the {@link #sDexExecutorService}.
+     */
     private static final Object LOCK_FOR_DEX = new Object();
 
     /**
@@ -324,13 +315,6 @@ public class AndroidBuilder {
         checkState(mTargetInfo != null,
                 "Cannot call getTargetCodename() before setTargetInfo() is called.");
         return mTargetInfo.getTarget().getVersion().getCodename();
-    }
-
-    @NonNull
-    public File getDxJar() {
-        checkState(mTargetInfo != null,
-                "Cannot call getDxJar() before setTargetInfo() is called.");
-        return new File(mTargetInfo.getBuildTools().getPath(BuildToolInfo.PathId.DX_JAR));
     }
 
     /**
@@ -588,20 +572,6 @@ public class AndroidBuilder {
         return null;
     }
 
-    /**
-     * Returns an {@link PngCruncher} using aapt underneath
-     * @return an PngCruncher object
-     */
-    @NonNull
-    public PngCruncher getAaptCruncher(ProcessOutputHandler processOutputHandler) {
-        checkState(mTargetInfo != null,
-                "Cannot call getAaptCruncher() before setTargetInfo() is called.");
-        return new AaptCruncher(
-                mTargetInfo.getBuildTools().getPath(BuildToolInfo.PathId.AAPT),
-                mProcessExecutor,
-                processOutputHandler);
-    }
-
     @NonNull
     public ProcessExecutor getProcessExecutor() {
         return mProcessExecutor;
@@ -611,16 +581,6 @@ public class AndroidBuilder {
     public ProcessResult executeProcess(@NonNull ProcessInfo processInfo,
             @NonNull ProcessOutputHandler handler) {
         return mProcessExecutor.execute(processInfo, handler);
-    }
-
-    @NonNull
-    public static ClassField createClassField(@NonNull String type, @NonNull String name, @NonNull String value) {
-        return new ClassFieldImpl(type, name, value);
-    }
-
-    // Temporary trampoline
-    public static String formatXml(@NonNull org.w3c.dom.Node node, boolean endWithNewline) {
-        return XmlPrettyPrinter.prettyPrint(node, endWithNewline);
     }
 
     /**
@@ -784,7 +744,7 @@ public class AndroidBuilder {
             ImmutableList.Builder<Pair<String, File>> manifestFiles) {
 
         for (AndroidLibrary library : libraries) {
-            if (!library.isOptional()) {
+            if (!library.isProvided()) {
                 manifestFiles.add(Pair.of(library.getName(), library.getManifest()));
                 List<? extends AndroidLibrary> manifestDependencies = library
                         .getLibraryDependencies();
@@ -1054,7 +1014,7 @@ public class AndroidBuilder {
             Multimap<String, SymbolLoader> libMap = ArrayListMultimap.create();
 
             for (AndroidLibrary lib : aaptConfig.getLibraries()) {
-                if (lib.isOptional()) {
+                if (lib.isProvided()) {
                     continue;
                 }
 
@@ -1247,7 +1207,7 @@ public class AndroidBuilder {
                 packagedOutputDir,
                 packageWhiteList,
                 dependencyFileProcessor != null ?
-                        dependencyFileProcessor : sNoOpDependencyFileProcessor,
+                        dependencyFileProcessor : DependencyFileProcessor.NO_OP,
                 mProcessExecutor,
                 processOutputHandler);
 
@@ -1299,7 +1259,7 @@ public class AndroidBuilder {
                 packagedOutputDir,
                 packageWhitelist,
                 dependencyFileProcessor != null ?
-                        dependencyFileProcessor : sNoOpDependencyFileProcessor,
+                        dependencyFileProcessor : DependencyFileProcessor.NO_OP,
                 mProcessExecutor,
                 processOutputHandler);
 
@@ -1466,6 +1426,7 @@ public class AndroidBuilder {
      * @return a list of leaf folder, never null.
      */
     @NonNull
+    @SafeVarargs
     public static List<File> getLeafFolders(@NonNull String extension, List<File>... importFolders) {
         List<File> results = Lists.newArrayList();
 
@@ -1476,16 +1437,10 @@ public class AndroidBuilder {
                 LeafFolderGatherer processor = new LeafFolderGatherer();
                 try {
                     searcher.search(processor);
-                } catch (InterruptedException e) {
-                    // wont happen as we're not using the executor, and our processor
-                    // doesn't throw those.
-                } catch (IOException e) {
-                    // wont happen as we're not using the executor, and our processor
-                    // doesn't throw those.
-                } catch (LoggedErrorException e) {
-                    // wont happen as we're not using the executor, and our processor
-                    // doesn't throw those.
-                } catch (ProcessException e) {
+                } catch (InterruptedException
+                        | IOException
+                        | ProcessException
+                        | LoggedErrorException e) {
                     // wont happen as we're not using the executor, and our processor
                     // doesn't throw those.
                 }
@@ -1562,15 +1517,12 @@ public class AndroidBuilder {
         final String submission = Joiner.on(',').join(builder.getInputs());
         getLogger().info("Dexing in-process.");
         try {
-            sDexExecutorService.submit(new Callable<Void>() {
-                @Override
-                public Void call() throws Exception {
-                    Stopwatch stopwatch = Stopwatch.createStarted();
-                    ProcessResult result = DexWrapper.run(builder, dexOptions, outputHandler);
-                    result.assertNormalExitValue();
-                    getLogger().info("Dexing %s took %s.", submission, stopwatch.toString());
-                    return null;
-                }
+            sDexExecutorService.submit(() -> {
+                Stopwatch stopwatch = Stopwatch.createStarted();
+                ProcessResult result = DexWrapper.run(builder, dexOptions, outputHandler);
+                result.assertNormalExitValue();
+                getLogger().info("Dexing %s took %s.", submission, stopwatch.toString());
+                return null;
             }).get();
         } catch (Exception e) {
             throw new ProcessException(e);
@@ -1586,16 +1538,13 @@ public class AndroidBuilder {
         try {
             final String submission = Joiner.on(',').join(builder.getInputs());
 
-            Callable<Void> task = new Callable<Void>() {
-                @Override
-                public Void call() throws Exception {
-                    JavaProcessInfo javaProcessInfo =
-                            builder.build(mTargetInfo.getBuildTools(), dexOptions);
-                    ProcessResult result =
-                            mJavaProcessExecutor.execute(javaProcessInfo, processOutputHandler);
-                    result.rethrowFailure().assertNormalExitValue();
-                    return null;
-                }
+            Callable<Void> task = () -> {
+                JavaProcessInfo javaProcessInfo =
+                        builder.build(mTargetInfo.getBuildTools(), dexOptions);
+                ProcessResult result =
+                        mJavaProcessExecutor.execute(javaProcessInfo, processOutputHandler);
+                result.rethrowFailure().assertNormalExitValue();
+                return null;
             };
 
             Stopwatch stopwatch = Stopwatch.createStarted();
@@ -1827,11 +1776,8 @@ public class AndroidBuilder {
         runDexer(builder, dexOptions, processOutputHandler);
 
         if (multiDex) {
-            File[] files = outFile.listFiles(new FilenameFilter() {
-                @Override
-                public boolean accept(File file, String name) {
-                    return name.endsWith(DOT_DEX);
-                }
+            File[] files = outFile.listFiles((file, name) -> {
+                return name.endsWith(DOT_DEX);
             });
 
             if (files == null || files.length == 0) {
@@ -1857,18 +1803,15 @@ public class AndroidBuilder {
             return checkFolder(input);
         }
 
-        ZipFile zipFile = new ZipFile(input);
-        try {
+        try (ZipFile zipFile = new ZipFile(input)) {
             Enumeration<? extends ZipEntry> entries = zipFile.entries();
-            while(entries.hasMoreElements()) {
+            while (entries.hasMoreElements()) {
                 String name = entries.nextElement().getName();
                 if (name.endsWith(DOT_CLASS) || name.endsWith(DOT_DEX)) {
                     return true;
                 }
             }
             return false;
-        } finally {
-            zipFile.close();
         }
     }
 
@@ -1937,6 +1880,7 @@ public class AndroidBuilder {
      * Converts java source code into android byte codes using the jack integration APIs.
      * Jack will run in memory.
      */
+    @SuppressWarnings("WeakerAccess")
     public void convertByteCodeUsingJackApis(@NonNull JackProcessOptions options)
             throws ConfigNotSupportedException, ConfigurationException, CompilationException,
             UnrecoverableException, ClassNotFoundException {
@@ -1946,68 +1890,67 @@ public class AndroidBuilder {
 
         Api01CompilationTask compilationTask = null;
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        try {
-            Optional<JackProvider> jackProvider = buildToolServiceLoader
-                    .getSingleService(getLogger(), BuildToolsServiceLoader.JACK);
-            if (jackProvider.isPresent()) {
-                Api02Config config;
+        Optional<JackProvider> jackProvider =
+                buildToolServiceLoader.getSingleService(getLogger(), BuildToolsServiceLoader.JACK);
+        if (jackProvider.isPresent()) {
+            Api02Config config;
 
-                // Get configuration object
-                try {
-                    config = jackProvider.get().createConfig(Api02Config.class);
+            // Get configuration object
+            try {
+                config = jackProvider.get().createConfig(Api02Config.class);
 
-                    config.setClasspath(options.getClasspaths());
-                    if (options.getDexOutputDirectory() != null) {
-                        config.setOutputDexDir(options.getDexOutputDirectory());
+                config.setClasspath(options.getClasspaths());
+                if (options.getDexOutputDirectory() != null) {
+                    config.setOutputDexDir(options.getDexOutputDirectory());
+                }
+                if (options.getOutputFile() != null) {
+                    config.setOutputJackFile(options.getOutputFile());
+                }
+                config.setImportedJackLibraryFiles(options.getImportFiles());
+                if (options.getMinSdkVersion() > 0) {
+                    config.setAndroidMinApiLevel(options.getMinSdkVersion());
+                }
+
+                config.setProguardConfigFiles(options.getProguardFiles());
+                config.setJarJarConfigFiles(options.getJarJarRuleFiles());
+
+                if (options.isMultiDex()) {
+                    if (options.getMinSdkVersion() <
+                            BuildToolInfo.SDK_LEVEL_FOR_MULTIDEX_NATIVE_SUPPORT) {
+                        config.setMultiDexKind(MultiDexKind.LEGACY);
+                    } else {
+                        config.setMultiDexKind(MultiDexKind.NATIVE);
                     }
-                    if (options.getOutputFile() != null) {
-                        config.setOutputJackFile(options.getOutputFile());
+                }
+
+                config.setSourceEntries(options.getInputFiles());
+                if (options.getMappingFile() != null) {
+                    config.setProperty("jack.obfuscation.mapping.dump", "true");
+                    config.setObfuscationMappingOutputFile(options.getMappingFile());
+                }
+
+                config.setProperty("jack.import.resource.policy", "keep-first");
+
+                config.setReporter(ReporterKind.DEFAULT, outputStream);
+
+                if (options.getSourceCompatibility() != null) {
+                    config.setProperty(
+                            "jack.java.source.version",
+                            options.getSourceCompatibility());
+                }
+
+                if (options.getIncrementalDir() != null
+                        && options.getIncrementalDir().exists()) {
+                    config.setIncrementalDir(options.getIncrementalDir());
+                }
+
+                ImmutableList.Builder<File> resourcesDir = ImmutableList.builder();
+                for (File file : options.getResourceDirectories()) {
+                    if (file.exists()) {
+                        resourcesDir.add(file);
                     }
-                    config.setImportedJackLibraryFiles(options.getImportFiles());
-                    if (options.getMinSdkVersion() > 0) {
-                        config.setAndroidMinApiLevel(options.getMinSdkVersion());
-                    }
-
-                    config.setProguardConfigFiles(options.getProguardFiles());
-                    config.setJarJarConfigFiles(options.getJarJarRuleFiles());
-
-                    if (options.isMultiDex()) {
-                        if (options.getMinSdkVersion() <
-                                BuildToolInfo.SDK_LEVEL_FOR_MULTIDEX_NATIVE_SUPPORT) {
-                            config.setMultiDexKind(MultiDexKind.LEGACY);
-                        } else {
-                            config.setMultiDexKind(MultiDexKind.NATIVE);
-                        }
-                    }
-
-                    config.setSourceEntries(options.getInputFiles());
-                    if (options.getMappingFile() != null) {
-                        config.setProperty("jack.obfuscation.mapping.dump", "true");
-                        config.setObfuscationMappingOutputFile(options.getMappingFile());
-                    }
-
-                    config.setProperty("jack.import.resource.policy", "keep-first");
-
-                    config.setReporter(ReporterKind.DEFAULT, outputStream);
-
-                    if (options.getSourceCompatibility() != null) {
-                        config.setProperty(
-                                "jack.java.source.version",
-                                options.getSourceCompatibility());
-                    }
-
-                    if (options.getIncrementalDir() != null
-                            && options.getIncrementalDir().exists()) {
-                        config.setIncrementalDir(options.getIncrementalDir());
-                    }
-
-                    ImmutableList.Builder<File> resourcesDir = ImmutableList.builder();
-                    for (File file : options.getResourceDirectories()) {
-                        if (file.exists()) {
-                            resourcesDir.add(file);
-                        }
-                    }
-                    config.setResourceDirs(resourcesDir.build());
+                }
+                config.setResourceDirs(resourcesDir.build());
 
                     config.setProperty(
                             "jack.dex.forcejumbo", Boolean.toString(options.getJumboMode()));
@@ -2027,28 +1970,22 @@ public class AndroidBuilder {
                 }
             }
 
-            Preconditions.checkNotNull(compilationTask);
+        Preconditions.checkNotNull(compilationTask);
 
-            // Run the compilation
-            try {
-                compilationTask.run();
-                mLogger.info(outputStream.toString());
-            } catch (CompilationException e) {
-                mLogger.error(e, outputStream.toString());
-                throw e;
-            } catch (UnrecoverableException e) {
-                mLogger.error(e, "Something out of Jack control has happened: " + e.getMessage());
-                throw e;
-            } catch (ConfigurationException e) {
-                mLogger.error(e, outputStream.toString());
-                throw e;
-            }
-        } catch (ClassNotFoundException e) {
-            getLogger().error(e, "Cannot load Jack APIs v02 " + e.getMessage());
+        // Run the compilation
+        try {
+            compilationTask.run();
+            mLogger.info(outputStream.toString());
+        } catch (CompilationException | ConfigurationException e) {
+            mLogger.error(e, outputStream.toString());
+            throw e;
+        } catch (UnrecoverableException e) {
+            mLogger.error(e, "Something out of Jack control has happened: " + e.getMessage());
             throw e;
         }
     }
 
+    @SuppressWarnings("WeakerAccess")
     public void convertByteCodeUsingJackCli(
             @NonNull JackProcessOptions options,
             @NonNull ProcessOutputHandler processOutputHandler) throws ProcessException {
@@ -2080,6 +2017,7 @@ public class AndroidBuilder {
      * @throws KeytoolException
      * @throws PackagerException
      */
+    @SuppressWarnings("deprecation")
     public void oldPackageApk(
             @NonNull String androidResPkgLocation,
             @NonNull Set<File> dexFolders,
@@ -2098,7 +2036,7 @@ public class AndroidBuilder {
          * This is because this method is not supposed be be called in an incremental build. So, if
          * an out APK already exists, we delete it.
          */
-        outApkLocation.delete();
+        FileUtils.deleteIfExists(outApkLocation);
 
         Map<RelativeFile, FileModificationType> javaResourceMods = Maps.newHashMap();
         Map<File, FileModificationType> javaResourceArchiveMods = Maps.newHashMap();
@@ -2128,39 +2066,32 @@ public class AndroidBuilder {
             }
         }
 
-        Closer closer = Closer.create();
-        try {
-            PrivateKey key;
-            X509Certificate certificate;
+        PrivateKey key;
+        X509Certificate certificate;
 
-            if (signingConfig != null && signingConfig.isSigningReady()) {
-                CertificateInfo certificateInfo = KeystoreHelper.getCertificateInfo(
-                        signingConfig.getStoreType(),
-                        Preconditions.checkNotNull(signingConfig.getStoreFile()),
-                        Preconditions.checkNotNull(signingConfig.getStorePassword()),
-                        Preconditions.checkNotNull(signingConfig.getKeyPassword()),
-                        Preconditions.checkNotNull(signingConfig.getKeyAlias()));
-                key = certificateInfo.getKey();
-                certificate = certificateInfo.getCertificate();
-            } else {
-                key = null;
-                certificate = null;
-            }
+        if (signingConfig != null && signingConfig.isSigningReady()) {
+            CertificateInfo certificateInfo = KeystoreHelper.getCertificateInfo(
+                    signingConfig.getStoreType(),
+                    Preconditions.checkNotNull(signingConfig.getStoreFile()),
+                    Preconditions.checkNotNull(signingConfig.getStorePassword()),
+                    Preconditions.checkNotNull(signingConfig.getKeyPassword()),
+                    Preconditions.checkNotNull(signingConfig.getKeyAlias()));
+            key = certificateInfo.getKey();
+            certificate = certificateInfo.getCertificate();
+        } else {
+            key = null;
+            certificate = null;
+        }
 
-            ApkCreatorFactory.CreationData creationData =
-                    new ApkCreatorFactory.CreationData(
-                            outApkLocation,
-                            key,
-                            certificate,
-                            null,   // BuiltBy
-                            mCreatedBy,
-                            minSdkVersion);
-            OldPackager packager = closer.register(
-                    new OldPackager(
-                            creationData,
-                            androidResPkgLocation,
-                            mLogger));
-
+        ApkCreatorFactory.CreationData creationData =
+                new ApkCreatorFactory.CreationData(
+                        outApkLocation,
+                        key,
+                        certificate,
+                        null,   // BuiltBy
+                        mCreatedBy,
+                        minSdkVersion);
+        try (OldPackager packager = new OldPackager(creationData, androidResPkgLocation, mLogger)) {
             // add dex folder to the apk root.
             if (!dexFolders.isEmpty()) {
                 packager.addDexFiles(dexFolders);
@@ -2175,7 +2106,7 @@ public class AndroidBuilder {
             for (Map.Entry<File, FileModificationType> resourceArchiveUpdate :
                     javaResourceArchiveMods.entrySet()) {
                 packager.updateResourceArchive(resourceArchiveUpdate.getKey(),
-                        resourceArchiveUpdate.getValue(), Predicates.<String>alwaysFalse());
+                        resourceArchiveUpdate.getValue(), Predicates.alwaysFalse());
             }
 
             for (Map.Entry<RelativeFile, FileModificationType> jniLibUpdates : jniMods.entrySet()) {
@@ -2187,19 +2118,7 @@ public class AndroidBuilder {
                 packager.updateResourceArchive(resourceArchiveUpdate.getKey(),
                         resourceArchiveUpdate.getValue(), Predicates.not(nativeLibraryPredicate));
             }
-
-            packager.close();
-        } catch (SealedPackageException e) {
-            // shouldn't happen since we control the package from start to end.
-            throw closer.rethrow(e);
-        } catch (PackagerException e) {
-            throw closer.rethrow(e, PackagerException.class);
-        } catch (RuntimeException e) {
-            throw closer.rethrow(e);
-        } finally {
-            closer.close();
         }
-
     }
 
     /**
@@ -2210,8 +2129,7 @@ public class AndroidBuilder {
             @NonNull String androidResPkgLocation,
             @NonNull File dexFile,
             @Nullable SigningConfig signingConfig,
-            @NonNull File outApkLocation,
-            @NonNull File intermediateDir)
+            @NonNull File outApkLocation)
             throws KeytoolException, PackagerException, IOException {
 
         PrivateKey key;
@@ -2235,21 +2153,11 @@ public class AndroidBuilder {
                 creationData = new ApkCreatorFactory.CreationData(outApkLocation,
                 key, certificate, null, mCreatedBy, API_LEVEL_SPLIT_APK);
 
-        Closer closer = Closer.create();
-        try {
-            OldPackager packager =
-                    closer.register(new OldPackager(creationData, androidResPkgLocation, mLogger));
-
+        try (OldPackager packager = new OldPackager(creationData, androidResPkgLocation, mLogger)) {
             packager.addFile(dexFile, "classes.dex");
         } catch (SealedPackageException e) {
             // shouldn't happen since we control the package from start to end.
             throw new RuntimeException(e);
-        } catch (PackagerException e) {
-            throw closer.rethrow(e, PackagerException.class);
-        } catch (IOException e) {
-            throw closer.rethrow(e);
-        } finally {
-            closer.close();
         }
     }
 
@@ -2266,9 +2174,11 @@ public class AndroidBuilder {
      * @throws ZipAbortException
      * @throws com.android.builder.signing.SigningException
      */
-    public void signApk(@NonNull File in, @Nullable SigningConfig signingConfig, @NonNull File out)
-            throws IOException, KeytoolException, SigningException, NoSuchAlgorithmException,
-            ZipAbortException,
+    public static void signApk(
+            @NonNull File in,
+            @Nullable SigningConfig signingConfig,
+            @NonNull File out)
+            throws KeytoolException, SigningException, NoSuchAlgorithmException, ZipAbortException,
             com.android.builder.signing.SigningException, IOException {
 
         PrivateKey key;
@@ -2292,11 +2202,9 @@ public class AndroidBuilder {
                 creationData = new ApkCreatorFactory.CreationData(out,
                 key, certificate, null, null, 1);
 
-        SignedJarApkCreator signedJarBuilder = new SignedJarApkCreator(creationData);
-
-        signedJarBuilder.writeZip(in);
-        signedJarBuilder.close();
-
+        try (SignedJarApkCreator signedJarBuilder = new SignedJarApkCreator(creationData)) {
+            signedJarBuilder.writeZip(in);
+        }
     }
 
     /**
