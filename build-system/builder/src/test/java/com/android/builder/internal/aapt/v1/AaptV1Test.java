@@ -70,7 +70,7 @@ public class AaptV1Test {
     }
 
     /**
-     * Obtains a PNG for testing.
+     * Obtains a text file for testing.
      *
      * @return a PNG
      */
@@ -79,6 +79,18 @@ public class AaptV1Test {
         File txt = mTemporaryFolder.newFile();
         Files.write("text.txt", txt, Charsets.US_ASCII);
         return txt;
+    }
+
+    /**
+     * Obtains a PNG that cannot be crunched for testing.
+     *
+     * @return a PNG
+     */
+    @NonNull
+    private static File getNonCrunchableTestPng() {
+        File png = new File(TestUtils.getRoot("aapt"), "png-that-is-bigger-if-crunched.png");
+        assertTrue(png.isFile());
+        return png;
     }
 
     /**
@@ -165,5 +177,25 @@ public class AaptV1Test {
             File f = futures[i].get();
             assertTrue(results.add(f));
         }
+    }
+
+    @Test
+    public void noCrunchPngIfBigger() throws Exception {
+        Aapt aapt = makeAapt();
+
+        File originalFile = getNonCrunchableTestPng();
+
+        Future<File> compiledFuture = aapt.compile(originalFile, getOutputDir());
+        File compiled = compiledFuture.get();
+        assertNotNull(compiled);
+        assertTrue(compiled.isFile());
+
+        assertTrue(
+                "originaFile.length() ["
+                        + originalFile.length()
+                        + "] >= compiled.length() ["
+                        + compiled.length()
+                        + "]",
+                originalFile.length() >= compiled.length());
     }
 }
