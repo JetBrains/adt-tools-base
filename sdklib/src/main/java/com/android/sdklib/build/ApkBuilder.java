@@ -83,7 +83,7 @@ public final class ApkBuilder implements IArchiveBuilder {
     /**
      * Custom {@link IZipEntryFilter} to filter out everything that is not a standard java
      * resources, and also record whether the zip file contains native libraries.
-     * <p/>Used in {@link SignedJarBuilder#writeZip(java.io.InputStream, IZipEntryFilter)} when
+     * <p>Used in {@link SignedJarBuilder#writeZip(java.io.InputStream, IZipEntryFilter)} when
      * we only want the java resources from external jars.
      */
     private final class JavaAndNativeResourceFilter implements IZipEntryFilter {

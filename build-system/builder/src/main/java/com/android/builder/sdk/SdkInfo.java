@@ -37,7 +37,7 @@ public class SdkInfo {
     }
 
     /**
-     * Returns the location of the annotations jar for compilation targets that are <= 15.
+     * Returns the location of the annotations jar for compilation targets that are &le; 15.
      */
     @NonNull
     public File getAnnotationsJar() {

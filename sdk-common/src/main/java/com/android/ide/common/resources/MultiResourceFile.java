@@ -38,7 +38,7 @@ import javax.xml.parsers.SAXParserFactory;
 /**
  * Represents a resource file able to declare multiple resources, which could be of
  * different {@link ResourceType}.
- * <p/>
+ * <p>
  * This is typically an XML file inside res/values.
  */
 public final class MultiResourceFile extends ResourceFile implements IValueResourceRepository {

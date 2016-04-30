@@ -76,7 +76,7 @@ public final class EventLogParser {
 
     /**
      * Inits the parser for a specific Device.
-     * <p/>
+     * <p>
      * This methods reads the event-log-tags located on the device to find out
      * what tags are being written to the event log and what their format is.
      * @param device The device.

@@ -39,7 +39,7 @@ import javax.xml.transform.stream.StreamSource;
 
 
 /**
- * An sdk-repository source, i.e. a download site. A repository describes one or more {@link
+ * An sdk-repository source, i.e. a download site. A repository describes one or more {@code
  * com.android.sdklib.repository.legacy.remote.internal.packages.Package}s available for download.
  *
  * @deprecated This is part of the old SDK manager framework. Use {@link AndroidSdkHandler}/{@link

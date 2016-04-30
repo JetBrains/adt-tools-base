@@ -63,7 +63,7 @@ public class SystemImageManager {
     private Table<IdDisplay, AndroidVersion, Multimap<IdDisplay, SystemImage>> mValuesToImage;
 
     /**
-     * Create a new {@link SystemImageManager} using the given {@link RepoManager}.<br/> {@code
+     * Create a new {@link SystemImageManager} using the given {@link RepoManager}.<br> {@code
      * factory} is used to enable validation.
      */
     public SystemImageManager(@NonNull RepoManager mgr, @NonNull SysImgFactory factory,

@@ -68,7 +68,7 @@ public class AndroidManifestParser {
 
         /**
          * Checks that a class is valid and can be used in the Android Manifest.
-         * <p/>
+         * <p>
          * Errors are put as {@code org.eclipse.core.resources.IMarker} on the manifest file.
          *
          * @param locator
@@ -82,8 +82,8 @@ public class AndroidManifestParser {
     }
 
     /**
-     * XML error & data handler used when parsing the AndroidManifest.xml file.
-     * <p/>
+     * XML error and data handler used when parsing the AndroidManifest.xml file.
+     * <p>
      * During parsing this will fill up the {@link ManifestData} object given to the constructor
      * and call out errors to the given {@link ManifestErrorHandler}.
      */
@@ -627,7 +627,7 @@ public class AndroidManifestParser {
     /**
      * Parses the Android Manifest, and returns an object containing the result of the parsing.
      *
-     * <p/>
+     * <p>
      * This is the equivalent of calling <pre>parse(manifestFile, true, null)</pre>
      *
      * @param manifestFile the manifest file to parse.

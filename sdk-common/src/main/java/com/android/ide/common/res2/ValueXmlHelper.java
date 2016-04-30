@@ -271,7 +271,7 @@ public class ValueXmlHelper {
      * backslash
      * <li>If the string starts with a {@code '?'} or {@code '@'}, that character is escaped with a
      * backslash
-     * <il>{@code '&'} and {@code '<'} are escaped with {@code "&amp;"} and {@code "&lt;"}
+     * <li>{@code '&'} and {@code '<'} are escaped with {@code "&amp;"} and {@code "&lt;"}
      * </ol>
      *
      * <p>If the string contains markup it will lose its semantics and become plain character data.
@@ -298,7 +298,7 @@ public class ValueXmlHelper {
      * backslash
      * <li>If the string starts with a {@code '?'} or {@code '@'}, that character is escaped with a
      * backslash
-     * <il>If escapeMarkupDelimiters is true, {@code '&'} and {@code '<'} are escaped with
+     * <li>If escapeMarkupDelimiters is true, {@code '&'} and {@code '<'} are escaped with
      * {@code "&amp;"} and {@code "&lt;"}
      * </ol>
      *

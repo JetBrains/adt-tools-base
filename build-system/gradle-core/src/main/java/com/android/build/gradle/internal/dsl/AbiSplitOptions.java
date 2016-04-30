@@ -67,7 +67,7 @@ public class AbiSplitOptions extends SplitOptions {
     /**
      * Returns the list of actual abi filters, each value of the collection is guaranteed to be non
      * null and of the possible API value.
-     * @param allFilters list of applicable filters {@see #getApplicationFilters}
+     * @param allFilters list of applicable filters.
      */
     @NonNull
     public static ImmutableSet<String> getAbiFilters(@NonNull Set<String> allFilters) {

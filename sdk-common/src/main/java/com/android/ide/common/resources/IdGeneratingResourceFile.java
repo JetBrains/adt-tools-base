@@ -35,7 +35,7 @@ import java.util.Set;
 
 /**
  * Represents a resource file that also generates ID resources.
- * <p/>
+ * <p>
  * This is typically an XML file in res/layout or res/menu
  */
 public final class IdGeneratingResourceFile extends ResourceFile

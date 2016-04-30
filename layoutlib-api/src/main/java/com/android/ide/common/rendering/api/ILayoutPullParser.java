@@ -26,7 +26,7 @@ public interface ILayoutPullParser extends XmlPullParser {
 
     /**
      * Returns a cookie for the current XML node.
-     * <p/>This cookie will be passed back in the {@link ViewInfo} objects, allowing association
+     * <p>This cookie will be passed back in the {@link ViewInfo} objects, allowing association
      * of a particular XML node with its result from the layout computation.
      *
      * @see ViewInfo#getCookie()

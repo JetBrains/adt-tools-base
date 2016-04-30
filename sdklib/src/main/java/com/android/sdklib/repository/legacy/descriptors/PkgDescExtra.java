@@ -105,7 +105,7 @@ public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
      * Helper to computhe whether the extra path of both {@link IPkgDescExtra}s
      * are compatible with each other, which means they are either equal or are
      * matched between existing path and the potential old paths list.
-     * <p/>
+     * <p>
      * This also covers backward compatibility -- in earlier schemas the vendor id was
      * merged into the path string when reloading installed extras.
      *

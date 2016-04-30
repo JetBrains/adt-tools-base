@@ -290,7 +290,7 @@ public abstract class GraphicGenerator {
      * Returns the full size clip art image for a given image name.
      *
      * @param name the name of the image to be loaded (which can be looked up via
-     *            {@link #getResourcesNames(String, String)} ()})
+     *            {@link #getResourcesNames(String, String)})
      * @return the clip art image
      * @throws IOException if the image cannot be loaded
      */

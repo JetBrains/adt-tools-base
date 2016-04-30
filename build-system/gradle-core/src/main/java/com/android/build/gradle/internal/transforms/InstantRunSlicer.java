@@ -73,11 +73,9 @@ import java.util.jar.JarOutputStream;
 
 /**
  * Transform that slices the project's classes into approximately 10 slices for
- * {@link Scope#PROJECT} and {@link Scope#SUB_PROJECTS}</ul>
+ * {@link Scope#PROJECT} and {@link Scope#SUB_PROJECTS}.
  *
  * Dependencies are not processed by the Slicer but will be dex'ed separately.
- *
- *
  */
 public class InstantRunSlicer extends Transform {
 

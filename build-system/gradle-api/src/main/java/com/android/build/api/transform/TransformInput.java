@@ -23,7 +23,7 @@ import java.util.Collection;
 
 /**
  * The input to a Transform.
- * <p/>
+ * <p>
  * It is mostly composed of a list of {@link JarInput} and a list of {@link DirectoryInput}.
  */
 public interface TransformInput {

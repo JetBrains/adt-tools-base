@@ -108,8 +108,8 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
      * Turns this class into an override class that can be loaded by our custom class loader:
      *<ul>
      *   <li>Make the class name be OriginalName$override</li>
-     *   <li>Ensure the class derives from java.lang.Object, no other inheritance</li></li>
-     *   <li>Ensure the class has a public parameterless constructor that is a noop.</li></li>
+     *   <li>Ensure the class derives from java.lang.Object, no other inheritance</li>
+     *   <li>Ensure the class has a public parameterless constructor that is a noop.</li>
      *</ul>
      */
     @Override
@@ -301,10 +301,10 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         /**
          * Visits an instance field access. The field could be of the visited class or it could be
          * an accessible field from the class being visited (unless it's private).
-         * <p/>
+         * <p>
          * For private instance fields, the access instruction is rewritten to calls to reflection
          * to access the fields value:
-         * <p/>
+         * <p>
          * Pseudo code for Get:
          * <code>
          *   value = $instance.fieldName;
@@ -313,7 +313,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
          * <code>
          *   value = (unbox)$package/AndroidInstantRuntime.getPrivateField($instance, $fieldName);
          * </code>
-         * <p/>
+         * <p>
          * Pseudo code for Set:
          * <code>
          *   $instance.fieldName = value;
@@ -410,7 +410,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
          *
          * For private static fields, the access instruction is rewritten to calls to reflection
          * to access the fields value:
-         * <p/>
+         * <p>
          * Pseudo code for Get:
          * <code>
          *   value = $type.fieldName;
@@ -420,7 +420,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
          *   value = (unbox)$package/AndroidInstantRuntime.getStaticPrivateField(
          *       $type.class, $fieldName);
          * </code>
-         * <p/>
+         * <p>
          * Pseudo code for Set:
          * <code>
          *   $type.fieldName = value;
@@ -551,7 +551,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
 
         /**
          * Rewrites INVOKEVIRTUAL method calls.
-         * <p/>
+         * <p>
          * Virtual calls to protected methods are rewritten according to the following pseudo code:
          * before:
          * <code>
@@ -598,7 +598,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
 
         /**
          * Rewrites INVOKESTATIC method calls.
-         * <p/>
+         * <p>
          * Static calls to non-public methods are rewritten according to the following pseudo code:
          * before:
          * <code>
@@ -682,9 +682,9 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
 
         /**
          * For calls to constructors in the same package, calls are rewritten to use reflection
-         * to create the instance (see above, the NEW & DUP instructions are also removed) using
+         * to create the instance (see above, the NEW and DUP instructions are also removed) using
          * the following pseudo code.
-         * <p/>
+         * <p>
          * before:
          * <code>
          *   $value = new $type(arg1, arg2);
@@ -885,7 +885,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     /**
      * To each class, add the dispatch method called by the original code that acts as a trampoline to
      * invoke the changed methods.
-     * <p/>
+     * <p>
      * Pseudo code:
      * <code>
      *   Object access$dispatch(String name, object[] args) {

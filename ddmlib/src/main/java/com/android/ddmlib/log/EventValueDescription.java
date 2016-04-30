@@ -23,10 +23,10 @@ import java.util.Locale;
 
 /**
  * Describes an {@link EventContainer} value.
- * <p/>
+ * <p>
  * This is a stand-alone object, not linked to a particular Event. It describes the value, by
  * name, type ({@link EventValueType}), and (if needed) value unit ({@link ValueType}).
- * <p/>
+ * <p>
  * The index of the value is not contained within this class, and is instead dependent on the
  * index of this particular object in the array of {@link EventValueDescription} returned by
  * {@link EventLogParser#getEventInfoMap()} when queried for a particular event tag.
@@ -99,7 +99,7 @@ public final class EventValueDescription {
 
     /**
      * Builds a {@link EventValueDescription} with a name and a type.
-     * <p/>
+     * <p>
      * If the type is {@link EventValueType#INT} or {@link EventValueType#LONG}, the
      * {@link #mValueType} is set to {@link ValueType#BYTES} by default. It set to
      * {@link ValueType#NOT_APPLICABLE} for all other {@link EventValueType} values.
@@ -118,7 +118,7 @@ public final class EventValueDescription {
 
     /**
      * Builds a {@link EventValueDescription} with a name and a type, and a {@link ValueType}.
-     * <p/>
+     * <p>
      * @param name
      * @param type
      * @param valueType
@@ -187,7 +187,7 @@ public final class EventValueDescription {
     /**
      * Returns an object of a valid type (based on the value returned by
      * {@link #getEventValueType()}) from a String value.
-     * <p/>
+     * <p>
      * IMPORTANT {@link EventValueType#LIST} and {@link EventValueType#TREE} are not
      * supported.
      * @param value the value of the object expressed as a string.

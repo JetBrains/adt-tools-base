@@ -34,7 +34,7 @@ import javax.xml.parsers.SAXParserFactory;
 
 /**
  * Represents a resource file describing a single resource.
- * <p/>
+ * <p>
  * This is typically an XML file inside res/anim, res/layout, or res/menu or an image file
  * under res/drawable.
  */

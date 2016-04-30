@@ -191,8 +191,8 @@ public final class SunburstComponent extends AnimatedComponent {
         }
 
         // mDelta is the extra radius needed to keep the same length at the fixes radius
-        // (mDelta + mFixed * Rad(mCurrentAngle) == 2PI * mFixed =>
-        // mDelta + mFixed == 2PI * mFixed / Rad(mCurrentAngle) =>
+        // (mDelta + mFixed * Rad(mCurrentAngle) == 2PI * mFixed ⇒
+        // mDelta + mFixed == 2PI * mFixed / Rad(mCurrentAngle) ⇒
         mDelta = 360.0f * mFixed / mCurrentAngle - mFixed;
         mDirection = new Point2D.Float((float) Math.cos(mStart * Math.PI / 180.0f),
                 -(float) Math.sin(mStart * Math.PI / 180.0f));

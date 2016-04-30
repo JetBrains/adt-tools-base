@@ -530,10 +530,10 @@ public final class Device {
      * is user friendly with devices using names first sorted alphabetically
      * followed by all devices that use a numeric screen size sorted by actual
      * size.
-     * <p/>
+     * <p>
      * Note that although the name results in a proper sort, it is not a name
      * that you actually want to display to the user.
-     * <p/>
+     * <p>
      * Extracted from DeviceMenuListener. Modified to remove the leading space
      * insertion as it doesn't render neatly in the avd manager. Instead added
      * the option to add leading zeroes to make the string names sort properly.

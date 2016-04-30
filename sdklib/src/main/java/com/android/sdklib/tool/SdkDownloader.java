@@ -38,10 +38,10 @@ import java.util.List;
  * Simple tool for downloading SDK packages, to be used in the windows studio release process.
  *
  * Can be run from the commandline like:
- * java -cp plugins/android/lib/repository.jar:plugins/android/lib/sdklib.jar:\
+ * {@code java -cp plugins/android/lib/repository.jar:plugins/android/lib/sdklib.jar:\
  *          plugins/android/lib/common.jar:lib/guava-17.0.jar:lib/httpcore-4.4.1.jar:\
  *          lib/httpclient-4.4.1.jar:lib/commons-logging-1.2.jar \
- *          com.android.sdklib.tool.SdkDownloader <sdkdir> <paths...>
+ *          com.android.sdklib.tool.SdkDownloader <sdkdir> <paths...>}
  */
 public class SdkDownloader {
 

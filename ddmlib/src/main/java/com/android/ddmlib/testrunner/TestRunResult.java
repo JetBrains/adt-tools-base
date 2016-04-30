@@ -26,9 +26,9 @@ import java.util.Set;
 
 /**
  * Holds results from a single test run.
- * <p/>
+ * <p>
  * Maintains an accurate count of tests, and tracks incomplete tests.
- * <p/>
+ * <p>
  * Not thread safe! The test* callbacks must be called in order
  */
 public class TestRunResult implements ITestRunListener {

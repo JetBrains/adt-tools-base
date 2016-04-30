@@ -341,7 +341,7 @@ final class MonitorThread extends Thread {
 
     /**
      * Drops a client from the monitor.
-     * <p/>This will lock the {@link Client} list of the {@link Device} running <var>client</var>.
+     * <p>This will lock the {@link Client} list of the {@link Device} running <var>client</var>.
      * @param client
      * @param notify
      */

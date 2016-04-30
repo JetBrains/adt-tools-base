@@ -45,7 +45,7 @@ import java.util.List;
 
 /**
  * A {@link Context} used when checking .class files.
- * <p/>
+ * <p>
  * <b>NOTE: This is not a public or final API; if you rely on this be prepared
  * to adjust your code for the next tools release.</b>
  */

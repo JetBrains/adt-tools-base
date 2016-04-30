@@ -50,7 +50,7 @@ public class RepoXsdUtil {
      *
      * @param rootElement The root of the filename of the XML schema. This is by convention the same
      *                    as the root element declared by the schema.
-     * @param version     The XML schema revision number, an integer >= 1.
+     * @param version     The XML schema revision number, an integer &ge; 1.
      */
     public static StreamSource[] getXsdStream(final String rootElement, int version) {
         String filename = String.format("%1$s-%2$02d.xsd", rootElement, version);      //$NON-NLS-1$

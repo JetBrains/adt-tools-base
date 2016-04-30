@@ -28,7 +28,7 @@ public final class HandleViewDebug extends ChunkHandler {
     /** Enable/Disable tracing of OpenGL calls. */
     public static final int CHUNK_VUGL = type("VUGL");
 
-    /** List {@link ViewRootImpl}'s of this process. */
+    /** List <code>ViewRootImpl</code>'s of this process. */
     public static final int CHUNK_VULW = type("VULW");
 
     /** Operation on view root, first parameter in packet should be one of VURT_* constants */

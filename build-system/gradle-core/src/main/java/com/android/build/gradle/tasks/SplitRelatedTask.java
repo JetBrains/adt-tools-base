@@ -61,7 +61,7 @@ public abstract class SplitRelatedTask extends BaseTask {
     public abstract List<FilterData> getSplitsData();
 
     /**
-     * Returns a list of {@link Supplier<File>} for each split APK file
+     * Returns a list of {@link SplitFileSupplier} for each split APK file
      */
     public List<SplitFileSupplier> getOutputFileSuppliers() {
         ImmutableList.Builder<SplitFileSupplier> suppliers = ImmutableList.builder();

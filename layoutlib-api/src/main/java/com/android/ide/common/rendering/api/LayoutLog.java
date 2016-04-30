@@ -23,7 +23,7 @@ public class LayoutLog {
     /**
      * Prefix for resource warnings/errors. This is not meant to be used as-is by the Layout
      * Library, but is there to help test against a wider type of warning/error.
-     * <p/>
+     * <p>
      * {@code tag.startsWith(LayoutLog.TAG_RESOURCE_PREFIX} will test if the tag is any type
      * of resource warning/error
      */
@@ -32,7 +32,7 @@ public class LayoutLog {
     /**
      * Prefix for matrix warnings/errors. This is not meant to be used as-is by the Layout
      * Library, but is there to help test against a wider type of warning/error.
-     * <p/>
+     * <p>
      * {@code tag.startsWith(LayoutLog.TAG_MATRIX_PREFIX} will test if the tag is any type
      * of matrix warning/error
      */

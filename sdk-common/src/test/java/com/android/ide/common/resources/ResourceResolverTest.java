@@ -258,7 +258,7 @@ public class ResourceResolverTest extends TestCase {
 
 
         // resolveResValue
-        //    android:color/bright_foreground_dark => @android:color/background_light => white
+        //    android:color/bright_foreground_dark ⇒ @android:color/background_light ⇒ white
         assertEquals("Todo", resolver.resolveResValue(
                 resolver.findResValue("@string/show_all_apps", false)).getValue());
         assertEquals("#ffffffff", resolver.resolveResValue(

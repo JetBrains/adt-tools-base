@@ -57,12 +57,12 @@ import java.util.Properties;
 /**
  * This class keeps information on the current locally installed SDK.
  * It tries to lazily load information as much as possible.
- * <p/>
+ * <p>
  * Packages are accessed by their type and a main query attribute, depending on the
  * package type. There are different versions of {@link #getPkgInfo} which depend on the
  * query attribute.
  *
- * <table border='1' cellpadding='3'>
+ * <table border='1' cellpadding='3' summary="">
  * <tr>
  * <th>Type</th>
  * <th>Query parameter</th>
@@ -72,86 +72,86 @@ import java.util.Properties;
  * <tr>
  * <td>Tools</td>
  * <td>Unique instance</td>
- * <td>{@code getPkgInfo(PkgType.PKG_TOOLS)} => {@link LocalPkgInfo}</td>
+ * <td>{@code getPkgInfo(PkgType.PKG_TOOLS)} ⇒ {@link LocalPkgInfo}</td>
  * </tr>
  *
  * <tr>
  * <td>Platform-Tools</td>
  * <td>Unique instance</td>
- * <td>{@code getPkgInfo(PkgType.PKG_PLATFORM_TOOLS)} => {@link LocalPkgInfo}</td>
+ * <td>{@code getPkgInfo(PkgType.PKG_PLATFORM_TOOLS)} ⇒ {@link LocalPkgInfo}</td>
  * </tr>
  *
  * <tr>
  * <td>Docs</td>
  * <td>Unique instance</td>
- * <td>{@code getPkgInfo(PkgType.PKG_DOCS)} => {@link LocalPkgInfo}</td>
+ * <td>{@code getPkgInfo(PkgType.PKG_DOCS)} ⇒ {@link LocalPkgInfo}</td>
  * </tr>
  *
  * <tr>
  * <td>Build-Tools</td>
  * <td>{@link Revision}</td>
- * <td>{@code getLatestBuildTool()} => {@link BuildToolInfo}, <br/>
- *     or {@code getBuildTool(Revision)} => {@link BuildToolInfo}, <br/>
- *     or {@code getPkgInfo(PkgType.PKG_BUILD_TOOLS, Revision)} => {@link LocalPkgInfo}, <br/>
- *     or {@code getPkgsInfos(PkgType.PKG_BUILD_TOOLS)} => {@link LocalPkgInfo}[]</td>
+ * <td>{@code getLatestBuildTool()} ⇒ {@link BuildToolInfo}, <br>
+ *     or {@code getBuildTool(Revision)} ⇒ {@link BuildToolInfo}, <br>
+ *     or {@code getPkgInfo(PkgType.PKG_BUILD_TOOLS, Revision)} ⇒ {@link LocalPkgInfo}, <br>
+ *     or {@code getPkgsInfos(PkgType.PKG_BUILD_TOOLS)} ⇒ {@link LocalPkgInfo}[]</td>
  * </tr>
  *
  * <tr>
  * <td>Extras</td>
  * <td>String vendor/path</td>
- * <td>{@code getExtra(String)} => {@link LocalExtraPkgInfo}, <br/>
- *     or {@code getPkgInfo(PkgType.PKG_EXTRAS, String)} => {@link LocalPkgInfo}, <br/>
- *     or {@code getPkgsInfos(PkgType.PKG_EXTRAS)} => {@link LocalPkgInfo}[]</td>
+ * <td>{@code getExtra(String)} ⇒ {@link LocalExtraPkgInfo}, <br>
+ *     or {@code getPkgInfo(PkgType.PKG_EXTRAS, String)} ⇒ {@link LocalPkgInfo}, <br>
+ *     or {@code getPkgsInfos(PkgType.PKG_EXTRAS)} ⇒ {@link LocalPkgInfo}[]</td>
  * </tr>
  *
  * <tr>
  * <td>Sources</td>
  * <td>{@link AndroidVersion}</td>
- * <td>{@code getPkgInfo(PkgType.PKG_SOURCES, AndroidVersion)} => {@link LocalPkgInfo}, <br/>
- *     or {@code getPkgsInfos(PkgType.PKG_SOURCES)} => {@link LocalPkgInfo}[]</td>
+ * <td>{@code getPkgInfo(PkgType.PKG_SOURCES, AndroidVersion)} ⇒ {@link LocalPkgInfo}, <br>
+ *     or {@code getPkgsInfos(PkgType.PKG_SOURCES)} ⇒ {@link LocalPkgInfo}[]</td>
  * </tr>
  *
  * <tr>
  * <td>Samples</td>
  * <td>{@link AndroidVersion}</td>
- * <td>{@code getPkgInfo(PkgType.PKG_SAMPLES, AndroidVersion)} => {@link LocalPkgInfo}, <br/>
- *     or {@code getPkgsInfos(PkgType.PKG_SAMPLES)} => {@link LocalPkgInfo}[]</td>
+ * <td>{@code getPkgInfo(PkgType.PKG_SAMPLES, AndroidVersion)} ⇒ {@link LocalPkgInfo}, <br>
+ *     or {@code getPkgsInfos(PkgType.PKG_SAMPLES)} ⇒ {@link LocalPkgInfo}[]</td>
  * </tr>
  *
  * <tr>
  * <td>Platforms</td>
  * <td>{@link AndroidVersion}</td>
- * <td>{@code getPkgInfo(PkgType.PKG_PLATFORMS, AndroidVersion)} => {@link LocalPkgInfo}, <br/>
- *     or {@code getPkgInfo(PkgType.PKG_ADDONS, String)} => {@link LocalPkgInfo}, <br/>
- *     or {@code getPkgsInfos(PkgType.PKG_PLATFORMS)} => {@link LocalPkgInfo}[], <br/>
- *     or {@code getTargetFromHashString(String)} => {@link IAndroidTarget}</td>
+ * <td>{@code getPkgInfo(PkgType.PKG_PLATFORMS, AndroidVersion)} ⇒ {@link LocalPkgInfo}, <br>
+ *     or {@code getPkgInfo(PkgType.PKG_ADDONS, String)} ⇒ {@link LocalPkgInfo}, <br>
+ *     or {@code getPkgsInfos(PkgType.PKG_PLATFORMS)} ⇒ {@link LocalPkgInfo}[], <br>
+ *     or {@code getTargetFromHashString(String)} ⇒ {@link IAndroidTarget}</td>
  * </tr>
  *
  * <tr>
  * <td>Add-ons</td>
  * <td>{@link AndroidVersion} x String vendor/path</td>
- * <td>{@code getPkgInfo(PkgType.PKG_ADDONS, String)} => {@link LocalPkgInfo}, <br/>
- *     or {@code getPkgsInfos(PkgType.PKG_ADDONS)}    => {@link LocalPkgInfo}[], <br/>
- *     or {@code getTargetFromHashString(String)} => {@link IAndroidTarget}</td>
+ * <td>{@code getPkgInfo(PkgType.PKG_ADDONS, String)} ⇒ {@link LocalPkgInfo}, <br>
+ *     or {@code getPkgsInfos(PkgType.PKG_ADDONS)}    ⇒ {@link LocalPkgInfo}[], <br>
+ *     or {@code getTargetFromHashString(String)} ⇒ {@link IAndroidTarget}</td>
  * </tr>
  *
  * <tr>
  * <td>System images</td>
  * <td>{@link AndroidVersion} x {@link String} ABI</td>
- * <td>{@code getPkgsInfos(PkgType.PKG_SYS_IMAGES)} => {@link LocalPkgInfo}[]</td>
+ * <td>{@code getPkgsInfos(PkgType.PKG_SYS_IMAGES)} ⇒ {@link LocalPkgInfo}[]</td>
  * </tr>
  *
  * </table>
  *
  * Apps/libraries that use it are encouraged to keep an existing instance around
  * (using a singleton or similar mechanism).
- * <p/>
+ * <p>
  * Threading: All accessor methods are synchronized on the same internal lock so
- * it's safe to call them from any thread, even concurrently. <br/>
+ * it's safe to call them from any thread, even concurrently. <br>
  * A method like {@code getPkgsInfos} returns a copy of its data array, which objects are
  * not altered after creation, so its value is not influenced by the internal state after
  * it returns.
- * <p/>
+ * <p>
  *
  * Implementation Background:
  * <ul>
@@ -160,7 +160,7 @@ import java.util.Properties;
  * <li> Goal was to split it in 2 cleanly separated parts: {@link LocalSdk} parses sdk on disk,
  *      and a separate class wraps the downloaded manifest (this is now handled within Studio only)
  * <li> The local SDK should be a singleton accessible somewhere, so there will be one in ADT
- *      (via the Sdk instance), one in Studio, and one in the command line tool. <br/>
+ *      (via the Sdk instance), one in Studio, and one in the command line tool. <br>
  *      Right now there's a bit of mess with some classes creating a temp LocalSdkParser,
  *      some others using an SdkManager instance, and that needs to be sorted out.
  * <li> As a transition, the SdkManager instance wraps a LocalSdk and uses this. Eventually the
@@ -256,7 +256,7 @@ public class LocalSdk {
     }
 
     /**
-     * Clear the tracked visited folders & the cached {@link LocalPkgInfo} for the
+     * Clear the tracked visited folders and the cached {@link LocalPkgInfo} for the
      * given filter types.
      *
      * @param filters A set of PkgType constants or {@link PkgType#PKG_ALL} to clear everything.
@@ -323,7 +323,7 @@ public class LocalSdk {
 
     /**
      * Retrieves information on a package identified by its {@link Revision}.
-     * <p/>
+     * <p>
      * Note that {@link PkgType#PKG_TOOLS} and {@link PkgType#PKG_PLATFORM_TOOLS}
      * are unique in a local SDK so you'll want to use {@link #getPkgInfo(PkgType)}
      * to retrieve them instead.
@@ -348,7 +348,7 @@ public class LocalSdk {
 
     /**
      * Retrieves information on a package identified by its {@link String} path.
-     * <p/>
+     * <p>
      * For add-ons and platforms, the path is the target hash string
      * (see {@link AndroidTargetHash} for helpers methods to generate this string.)
      *
@@ -373,7 +373,7 @@ public class LocalSdk {
 
     /**
      * Retrieves information on a package identified by both vendor and path strings.
-     * <p/>
+     * <p>
      * For add-ons the path is target hash string
      * (see {@link AndroidTargetHash} for helpers methods to generate this string.)
      *
@@ -481,7 +481,7 @@ public class LocalSdk {
      * This is used for the package types that have one or more instances, each with different
      * versions.
      * The resulting array is sorted according to the PkgInfo's sort order.
-     * <p/>
+     * <p>
      * Note: you can use this with {@link PkgType#PKG_TOOLS}, {@link PkgType#PKG_PLATFORM_TOOLS} and
      * {@link PkgType#PKG_DOC} but since there can only be one package of these types, it is
      * more efficient to use {@link #getPkgInfo(PkgType)} to query them.
@@ -499,10 +499,10 @@ public class LocalSdk {
      * This is used for the package types that have one or more instances, each with different
      * versions.
      * The resulting array is sorted according to the PkgInfo's sort order.
-     * <p/>
+     * <p>
      * To force the LocalSdk parser to load <b>everything</b>, simply call this method
      * with the {@link PkgType#PKG_ALL} argument to load all the known package types.
-     * <p/>
+     * <p>
      * Note: you can use this with {@link PkgType#PKG_TOOLS}, {@link PkgType#PKG_PLATFORM_TOOLS} and
      * {@link PkgType#PKG_DOC} but since there can only be one package of these types, it is
      * more efficient to use {@link #getPkgInfo(PkgType)} to query them.
@@ -613,7 +613,7 @@ public class LocalSdk {
 
     /**
      * Returns the highest build-tool revision known, or null if there are are no build-tools.
-     * <p/>
+     * <p>
      * If no specific build-tool package is installed but the platform-tools is lower than 17,
      * then this creates and returns a "legacy" built-tool package using platform-tools.
      * (We only split build-tools out of platform-tools starting with revision 17,

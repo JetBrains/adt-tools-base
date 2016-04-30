@@ -26,7 +26,7 @@ public interface IXmlPullParser extends XmlPullParser {
 
     /**
      * Returns a key for the current XML node.
-     * <p/>This key will be passed back in the {@link com.android.ide.common.rendering.api.ViewInfo}
+     * <p>This key will be passed back in the {@link com.android.ide.common.rendering.api.ViewInfo}
      * objects, allowing association of a particular XML node with its result from the
      * layout computation.
      */

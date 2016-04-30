@@ -146,7 +146,7 @@ class DefaultSdkInfo extends SdkInfo {
         return interfaceName.equals(INTERFACES.get(className));
     }
 
-    // Strip off type parameters, e.g. AdapterView<?> => AdapterView
+    // Strip off type parameters, e.g. AdapterView<?> ⇒ AdapterView
     private static String getRawType(String type) {
         if (type != null) {
             int index = type.indexOf('<');

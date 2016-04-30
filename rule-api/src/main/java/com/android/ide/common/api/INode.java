@@ -28,13 +28,13 @@ import java.util.List;
 /**
  * Represents a view in the XML layout being edited.
  * Each view or layout maps to exactly one XML node, thus the name.
- * <p/>
+ * <p>
  * The primordial characteristic of a node is the fully qualified View class name that
  * it represents (a.k.a FQCN), for example "android.view.View" or "android.widget.Button".
- * <p/>
+ * <p>
  * There are 2 kind of nodes:
  * - Nodes matching a view actually rendered in the layout canvas have a valid "bounds"
- *   rectangle that describe their position in pixels in the canvas. <br/>
+ *   rectangle that describe their position in pixels in the canvas. <br>
  * - Nodes created by IViewRule scripts but not yet rendered have an invalid bounds rectangle
  *   since they only exist in the uncommitted XML model and not yet in the rendered View model.
  * <p>
@@ -53,11 +53,11 @@ public interface INode {
 
     /**
      * Returns the bounds of this node.
-     * <p/>
+     * <p>
      * The bounds are valid when this node maps a view that is already rendered.
      * Typically, if the node is the target of a drag &amp; drop operation then you can be
      * guaranteed that its bounds are known and thus are valid.
-     * <p/>
+     * <p>
      * However the bounds are invalid (e.g. not known yet) for new XML elements
      * that have just been created, e.g. by the {@link #appendChild(String)} method.
      *
@@ -86,7 +86,7 @@ public interface INode {
 
     /**
      * Returns the root element of the view hierarchy.
-     * <p/>
+     * <p>
      * When a node is not attached to a hierarchy, it is its own root node.
      * This may return null if the {@link INode} was not created using a correct UiNode,
      * which is unlikely.
@@ -126,9 +126,9 @@ public interface INode {
 
     /**
      * Creates a new XML element as a child of this node's XML element.
-     * <p/>
+     * <p>
      * For this to work, the editor must have a descriptor for the given FQCN.
-     * <p/>
+     * <p>
      * This call must be done in the context of editXml().
      *
      * @param viewFqcn The FQCN of the element to create. The actual XML local name will
@@ -141,9 +141,9 @@ public interface INode {
     /**
      * Creates a new XML element as a child of this node's XML element and inserts
      * it at the specified position in the children list.
-     * <p/>
+     * <p>
      * For this to work, the editor must have a descriptor for the given FQCN.
-     * <p/>
+     * <p>
      * This call must be done in the context of editXml().
      *
      * @param viewFqcn The FQCN of the element to create. The actual XML local name will
@@ -157,7 +157,7 @@ public interface INode {
 
     /**
      * Removes the given XML element child from this node's list of children.
-     * <p/>
+     * <p>
      * This call must be done in the context of editXml().
      *
      * @param node The child to be deleted.
@@ -168,11 +168,11 @@ public interface INode {
      * Sets an attribute for the underlying XML element.
      * Attributes are not written immediately -- instead the XML editor batches edits and
      * then commits them all together at once later.
-     * <p/>
+     * <p>
      * Custom attributes will be created on the fly.
-     * <p/>
+     * <p>
      * Passing an empty value actually <em>removes</em> an attribute from the XML.
-     * <p/>
+     * <p>
      * This call must be done in the context of editXml().
      *
      * @param uri The XML namespace URI of the attribute.
@@ -184,7 +184,7 @@ public interface INode {
 
     /**
      * Returns a given XML attribute.
-     * <p/>
+     * <p>
      * This looks up an attribute in the <em>current</em> XML source, not the in-memory model.
      * That means that if called in the context of {@link #editXml(String, INodeHandler)}, the value
      * returned here is not affected by {@link #setAttribute(String, String, String)} until
@@ -199,14 +199,14 @@ public interface INode {
 
     /**
      * Returns the {@link IAttributeInfo} for a given attribute.
-     * <p/>
+     * <p>
      * The information is useful to determine the format of an attribute (e.g. reference, string,
      * float, enum, flag, etc.) and in the case of enums and flags also gives the possible values.
-     * <p/>
+     * <p>
      * Note: in Android resources, an enum can only take one of the possible values (e.g.
      * "visibility" can be either "visible" or "none"), whereas a flag can accept one or more
      * value (e.g. "align" can be "center_vertical|center_horizontal".)
-     * <p/>
+     * <p>
      * Note that this method does not handle custom non-android attributes. It may either
      * return null for these or it may return a synthetic "string" format attribute depending
      * on how the attribute was loaded.
@@ -220,16 +220,16 @@ public interface INode {
 
     /**
      * Returns the list of all attributes declared by this node's descriptor.
-     * <p/>
+     * <p>
      * This returns a fixed list of all attributes known to the view or layout descriptor.
      * This list does not depend on whether the attributes are actually used in the
      * XML for this node.
-     * <p/>
+     * <p>
      * Note that for views, the list of attributes also includes the layout attributes
      * inherited from the parent view. This means callers must not cache this list based
      * solely on the type of the node, as its attribute list changes depending on the place
      * of the view in the view hierarchy.
-     * <p/>
+     * <p>
      * If you want attributes actually written in the XML and their values, please use
      * {@link #getStringAttr(String, String)} or {@link #getLiveAttributes()} instead.
      *
@@ -255,12 +255,12 @@ public interface INode {
 
     /**
      * Returns the list of all attributes defined in the XML for this node.
-     * <p/>
+     * <p>
      * This looks up an attribute in the <em>current</em> XML source, not the in-memory model.
      * That means that if called in the context of {@link #editXml(String, INodeHandler)}, the value
      * returned here is not affected by {@link #setAttribute(String, String, String)} until
      * the editXml closure is completed and the actual XML is updated.
-     * <p/>
+     * <p>
      * If you want a list of all possible attributes, whether used in the XML or not by
      * this node, please see {@link #getDeclaredAttributes()} instead.
      *
@@ -273,7 +273,7 @@ public interface INode {
 
     /**
      * An XML attribute in an {@link INode} with a namespace URI, a name and its current value.
-     * <p/>
+     * <p>
      * The name cannot be empty.
      * The namespace URI can be empty for an attribute without a namespace but is never null.
      * The value can be empty but cannot be null.

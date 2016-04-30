@@ -57,7 +57,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Detector looking for cut & paste issues
+ * Detector looking for cut &amp; paste issues
  */
 public class CutPasteDetector extends Detector implements Detector.JavaPsiScanner {
     /** The main issue discovered by this detector */

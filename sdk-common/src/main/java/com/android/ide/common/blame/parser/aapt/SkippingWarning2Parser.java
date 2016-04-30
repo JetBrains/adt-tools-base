@@ -29,7 +29,7 @@ class SkippingWarning2Parser extends AbstractAaptOutputParser {
 
     /**
      * Error message emitted when aapt skips a file because for example it's name is invalid, such
-     * as a layout file name which starts with _. <p/> This error message is used by AAPT in Tools
+     * as a layout file name which starts with _. <p> This error message is used by AAPT in Tools
      * 20 and later.
      */
     private static final Pattern MSG_PATTERN = Pattern

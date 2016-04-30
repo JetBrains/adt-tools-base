@@ -614,7 +614,7 @@ public abstract class PermissionRequirement {
 
     /**
      * Returns true if the given permission name is a revocable permission for
-     * targetSdkVersion >= 23
+     * targetSdkVersion &ge; 23
      *
      * @param name permission name
      * @return true if this is a revocable permission

@@ -116,7 +116,7 @@ public class RenderSession {
     }
 
     /**
-     * Returns the map of View Cookie -> properties (attribute name, attribute value) for all the
+     * Returns the map of View Cookie → properties (attribute name, attribute value) for all the
      * views that have a view cookie.
      */
     public Map<Object, PropertiesMap> getDefaultProperties() {
@@ -215,7 +215,7 @@ public class RenderSession {
     /**
      * Inserts a new child in a ViewGroup object, and renders the result.
      * <p>
-     * The child is first inflated and then added to its new parent, at the given <var>index<var>
+     * The child is first inflated and then added to its new parent, at the given <var>index</var>
      * position. If the <var>index</var> is -1 then the child is added at the end of the parent.
      * <p>
      * If an animation listener is passed then the rendering is done asynchronously and the
@@ -246,7 +246,7 @@ public class RenderSession {
      * Move a new child to a different ViewGroup object.
      * <p>
      * The child is first removed from its current parent, and then added to its new parent, at the
-     * given <var>index<var> position. In case the <var>parentView</var> is the current parent of
+     * given <var>index</var> position. In case the <var>parentView</var> is the current parent of
      * <var>childView</var> then the index must be the value with the <var>childView</var> removed
      * from its parent. If the <var>index</var> is -1 then the child is added at the end of
      * the parent.

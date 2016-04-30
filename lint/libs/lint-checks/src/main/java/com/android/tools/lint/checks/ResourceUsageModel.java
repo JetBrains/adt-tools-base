@@ -1448,7 +1448,7 @@ public class ResourceUsageModel {
                     for (; end < bytes.length; end++) {
                         byte c = bytes[end];
                         if (c != '/' && !Character.isJavaIdentifierPart((char)c)) {
-                            // android_res/raw/my_drawable.png => @raw/my_drawable
+                            // android_res/raw/my_drawable.png ⇒ @raw/my_drawable
                             String url = "@" + new String(bytes, begin, end - begin, UTF_8);
                             Resource resource = getResourceFromUrl(url);
                             if (resource != null) {
@@ -1500,7 +1500,7 @@ public class ResourceUsageModel {
                 for (; end < length; end++) {
                     char c = text.charAt(end);
                     if (c != '/' && !Character.isJavaIdentifierPart(c)) {
-                        // android_res/raw/my_drawable.png => @raw/my_drawable
+                        // android_res/raw/my_drawable.png ⇒ @raw/my_drawable
                         markReachable(getResourceFromUrl("@" + text.substring(begin, end)));
                         break;
                     }

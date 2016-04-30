@@ -211,9 +211,7 @@ public abstract class RemotePkgInfo implements Comparable<RemotePkgInfo> {
      * Returns the optional description for all packages (platform, add-on, tool, doc) or for a lib.
      * This is the raw description available from the XML meta data and is typically only used
      * internally.
-     * <p/>
-     * For actual display in the UI, use the methods from {@link IDescription} instead.
-     * <p/>
+     * <p>
      * Can be empty but not null.
      */
     @NonNull
@@ -224,9 +222,7 @@ public abstract class RemotePkgInfo implements Comparable<RemotePkgInfo> {
     /**
      * Returns the optional list-display for all packages as defined in the XML meta data and is
      * typically only used internally.
-     * <p/>
-     * For actual display in the UI, use {@link IListDescription} instead.
-     * <p/>
+     * <p>
      * Can be empty but not null.
      */
     @NonNull
@@ -254,9 +250,8 @@ public abstract class RemotePkgInfo implements Comparable<RemotePkgInfo> {
     /**
      * Returns the short description of the source, if not null. Otherwise returns the default
      * Object toString result.
-     * <p/>
-     * This is mostly helpful for debugging. For UI display, use the {@link IDescription}
-     * interface.
+     * <p>
+     * This is mostly helpful for debugging.
      */
     @NonNull
     @Override
@@ -269,7 +264,7 @@ public abstract class RemotePkgInfo implements Comparable<RemotePkgInfo> {
     }
 
     /**
-     * Returns a short description for an {@link IDescription}. Can be empty but not null.
+     * Returns a short description. Can be empty but not null.
      */
     @NonNull
     public final String getShortDescription() {

@@ -54,10 +54,10 @@ import java.util.regex.Pattern;
 /**
  * Mock version of {@link FileOpImpl} that wraps some common {@link File}
  * operations on files and folders.
- * <p/>
+ * <p>
  * This version does not perform any file operation. Instead it records a textual
  * representation of all the file operations performed.
- * <p/>
+ * <p>
  * To avoid cross-platform path issues (e.g. Windows path), the methods here should
  * always use rooted (aka absolute) unix-looking paths, e.g. "/dir1/dir2/file3".
  * When processing {@link File}, you can convert them using {@link #getAgnosticAbsPath(File)}.
@@ -184,7 +184,7 @@ public class MockFileOp implements FileOp {
     /**
      * Records a new absolute file path.
      * Parent folders are automatically created.
-     * <p/>
+     * <p>
      * The syntax should always look "unix-like", e.g. "/dir/file".
      * On Windows that means you'll want to use {@link #getAgnosticAbsPath(File)}.
      * @param absFilePath A unix-like file path, e.g. "/dir/file"
@@ -194,9 +194,9 @@ public class MockFileOp implements FileOp {
     }
 
     /**
-     * Records a new absolute file path & its input stream content.
+     * Records a new absolute file path and its input stream content.
      * Parent folders are automatically created.
-     * <p/>
+     * <p>
      * The syntax should always look "unix-like", e.g. "/dir/file".
      * On Windows that means you'll want to use {@link #getAgnosticAbsPath(File)}.
      * @param absFilePath A unix-like file path, e.g. "/dir/file"
@@ -208,9 +208,9 @@ public class MockFileOp implements FileOp {
     }
 
     /**
-     * Records a new absolute file path & its input stream content.
+     * Records a new absolute file path and its input stream content.
      * Parent folders are automatically created.
-     * <p/>
+     * <p>
      * The syntax should always look "unix-like", e.g. "/dir/file".
      * On Windows that means you'll want to use {@link #getAgnosticAbsPath(File)}.
      * @param absFilePath A unix-like file path, e.g. "/dir/file"
@@ -222,9 +222,9 @@ public class MockFileOp implements FileOp {
     }
 
     /**
-     * Records a new absolute file path & its input stream content.
+     * Records a new absolute file path and its input stream content.
      * Parent folders are automatically created.
-     * <p/>
+     * <p>
      * The syntax should always look "unix-like", e.g. "/dir/file".
      * On Windows that means you'll want to use {@link #getAgnosticAbsPath(File)}.
      * @param absFilePath A unix-like file path, e.g. "/dir/file"
@@ -248,9 +248,9 @@ public class MockFileOp implements FileOp {
     }
 
     /**
-     * Records a new absolute file path & its input stream content.
+     * Records a new absolute file path and its input stream content.
      * Parent folders are automatically created.
-     * <p/>
+     * <p>
      * The syntax should always look "unix-like", e.g. "/dir/file".
      * On Windows that means you'll want to use {@link #getAgnosticAbsPath(File)}.
      * @param absFilePath A unix-like file path, e.g. "/dir/file"
@@ -274,7 +274,7 @@ public class MockFileOp implements FileOp {
     /**
      * Records a new absolute folder path.
      * Parent folders are automatically created.
-     * <p/>
+     * <p>
      * The syntax should always look "unix-like", e.g. "/dir/file".
      * On Windows that means you'll want to use {@link #getAgnosticAbsPath(File)}.
      * @param absFolderPath A unix-like folder path, e.g. "/dir/file"
@@ -301,7 +301,7 @@ public class MockFileOp implements FileOp {
     /**
      * Returns the list of paths added using {@link #recordExistingFile(String)}
      * and eventually updated by {@link #delete(File)} operations.
-     * <p/>
+     * <p>
      * The returned list is sorted by alphabetic absolute path string.
      */
     @NonNull
@@ -313,7 +313,7 @@ public class MockFileOp implements FileOp {
     /**
      * Returns the list of folder paths added using {@link #recordExistingFolder(String)}
      * and eventually updated {@link #delete(File)} or {@link #mkdirs(File)} operations.
-     * <p/>
+     * <p>
      * The returned list is sorted by alphabetic absolute path string.
      */
     @NonNull
@@ -348,7 +348,7 @@ public class MockFileOp implements FileOp {
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <p>
      * <em>Note: this mock version does nothing.</em>
      */
     @Override
@@ -358,7 +358,7 @@ public class MockFileOp implements FileOp {
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <p>
      * <em>Note: this mock version does nothing.</em>
      */
     @Override
@@ -592,7 +592,7 @@ public class MockFileOp implements FileOp {
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <p>
      * <em>TODO: we might want to overload this to read mock properties instead of a real file.</em>
      */
     @NonNull
@@ -616,7 +616,7 @@ public class MockFileOp implements FileOp {
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <p>
      * <em>Note that this uses the mock version of {@link #newFileOutputStream(File)} and thus
      * records the write rather than actually performing it.</em>
      */

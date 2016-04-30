@@ -458,7 +458,7 @@ public class InheritancePlugin extends Plugin {
 
     /**
      * Adds a method to a class allowing the caller to check whether a string value is valid with
-     * respect to the facets of a field.<br/>
+     * respect to the facets of a field.<br>
      * Currently only pattern facets are supported.
      */
     private static void addValidityChecks(ClassOutline classOutline, JCodeModel codeModel) {

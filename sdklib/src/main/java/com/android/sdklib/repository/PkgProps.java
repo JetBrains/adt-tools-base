@@ -21,7 +21,7 @@ package com.android.sdklib.repository;
 /**
  * Public constants used by the repository when saving {@code source.properties}
  * files in local packages.
- * <p/>
+ * <p>
  * These constants are public and part of the SDK Manager public API.
  * Once published we can't change them arbitrarily since various parts
  * of our build process depend on them.

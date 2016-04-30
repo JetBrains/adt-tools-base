@@ -26,7 +26,7 @@ import com.android.utils.StdLogger;
 /**
  * Common utilities to use a simple shared instance of {@link WorkQueue}.
  * The context for job will be empty, and it is the responsibility of the
- * {@link com.android.builder.tasks.WorkQueue.QueueTask} to have enough context to run.
+ * {@code com.android.builder.tasks.WorkQueue.QueueTask} to have enough context to run.
  */
 public class SimpleWorkQueue {
 

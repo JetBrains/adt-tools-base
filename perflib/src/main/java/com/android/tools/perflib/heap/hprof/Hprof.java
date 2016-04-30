@@ -48,7 +48,7 @@ public class Hprof {
 
     /**
      * Write the hprof data to the given output stream in binary format.
-     * @param filename - The file to write to.
+     * @param os - The output stream to write to.
      */
     public void write(OutputStream os) throws IOException {
         HprofOutputStream hprof = new HprofOutputStream(idSize, os);

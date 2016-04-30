@@ -261,3 +261,8 @@ test {
 artifacts {
     incrementalTestClasses jarIncrementalTests
 }
+
+javadoc {
+    classpath += configurations.provided
+}
+

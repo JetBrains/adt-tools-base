@@ -71,7 +71,7 @@ public class ClientData {
     public enum AllocationTrackingStatus {
         /**
          * Allocation tracking status: unknown.
-         * <p/>This happens right after a {@link Client} is discovered
+         * <p>This happens right after a {@link Client} is discovered
          * by the {@link AndroidDebugBridge}, and before the {@link Client} answered the query
          * regarding its allocation tracking status.
          * @see Client#requestAllocationStatus()
@@ -86,7 +86,7 @@ public class ClientData {
     public enum MethodProfilingStatus {
         /**
          * Method profiling status: unknown.
-         * <p/>This happens right after a {@link Client} is discovered
+         * <p>This happens right after a {@link Client} is discovered
          * by the {@link AndroidDebugBridge}, and before the {@link Client} answered the query
          * regarding its method profiling status.
          * @see Client#requestMethodProfilingStatus()
@@ -216,8 +216,8 @@ public class ClientData {
 
     /**
      * Heap Information.
-     * <p/>The heap is composed of several {@link HeapSegment} objects.
-     * <p/>A call to {@link #isHeapDataComplete()} will indicate if the segments (available through
+     * <p>The heap is composed of several {@link HeapSegment} objects.
+     * <p>A call to {@link #isHeapDataComplete()} will indicate if the segments (available through
      * {@link #getHeapSegments()}) represent the full heap.
      */
     public static class HeapData {
@@ -380,7 +380,7 @@ public class ClientData {
         /**
          * Called when a hprof dump failed to end on the VM side
          * @param client the client that was profiled.
-         * @param message an optional (<code>null<code> ok) error message to be displayed.
+         * @param message an optional (<code>null</code> ok) error message to be displayed.
          */
         void onEndFailure(Client client, String message);
     }
@@ -406,14 +406,14 @@ public class ClientData {
         /**
          * Called when method tracing failed to start
          * @param client the client that was profiled.
-         * @param message an optional (<code>null<code> ok) error message to be displayed.
+         * @param message an optional (<code>null</code> ok) error message to be displayed.
          */
         void onStartFailure(Client client, String message);
 
         /**
          * Called when method tracing failed to end on the VM side
          * @param client the client that was profiled.
-         * @param message an optional (<code>null<code> ok) error message to be displayed.
+         * @param message an optional (<code>null</code> ok) error message to be displayed.
          */
         void onEndFailure(Client client, String message);
     }
@@ -535,7 +535,7 @@ public class ClientData {
 
     /**
      * Returns the client description.
-     * <p/>This is generally the name of the package defined in the
+     * <p>This is generally the name of the package defined in the
      * <code>AndroidManifest.xml</code>.
      *
      * @return the client description or <code>null</code> if not the description was not yet
@@ -666,7 +666,7 @@ public class ClientData {
 
     /**
      * Returns an iterator over the list of known VM heap ids.
-     * <p/>
+     * <p>
      * The caller must synchronize on the {@link ClientData} object while iterating.
      *
      * @return an iterator over the list of heap ids
@@ -703,7 +703,7 @@ public class ClientData {
 
     /**
      * Returns the list of threads as {@link ThreadInfo} objects.
-     * <p/>The list is empty until a thread update was requested with
+     * <p>The list is empty until a thread update was requested with
      * {@link Client#requestThreadUpdate()}.
      */
     public synchronized ThreadInfo[] getThreads() {

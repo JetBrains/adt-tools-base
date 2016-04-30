@@ -84,7 +84,7 @@ public class DiscreteSeries<E extends Enum<E>> {
      *
      * @param xValue the xValue value to search for
      * @return The corresponding state y from the same data point as xValue.
-     * If there is no data <= xValue, the default enum state is returned.
+     * If there is no data &le; xValue, the default enum state is returned.
      */
     public E findYFromX(long xValue) {
         int index = mX.binarySearch(xValue);

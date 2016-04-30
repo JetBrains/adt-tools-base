@@ -225,7 +225,7 @@ public class SdkVersionInfo {
     }
 
     /**
-     * Returns the API level of the given build code (e.g. JELLY_BEAN_MR1 => 17), or -1 if not
+     * Returns the API level of the given build code (e.g. JELLY_BEAN_MR1 ⇒ 17), or -1 if not
      * recognized
      *
      * @param buildCode         the build code name (not case sensitive)
@@ -250,7 +250,7 @@ public class SdkVersionInfo {
     }
 
     /**
-     * Returns the API level of the given preview code name (e.g. JellyBeanMR2 => 17), or -1 if not
+     * Returns the API level of the given preview code name (e.g. JellyBeanMR2 ⇒ 17), or -1 if not
      * recognized
      *
      * @param previewName       the preview name (not case sensitive)

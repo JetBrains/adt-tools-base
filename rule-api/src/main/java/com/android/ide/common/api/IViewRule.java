@@ -25,18 +25,18 @@ import java.util.List;
 /**
  * An {@link IViewRule} describes the rules that apply to a given Layout or View object
  * in the Graphical Layout Editor.
- * <p/>
+ * <p>
  * Rules are implemented by builtin layout helpers, or 3rd party layout rule implementations
  * provided with or for a given 3rd party widget.
- * <p/>
+ * <p>
  * A 3rd party layout rule should use the same fully qualified class name as the layout it
  * represents, plus "Rule" as a suffix. For example, the layout rule for the
  * LinearLayout class is LinearLayoutRule, in the same package.
- * <p/>
+ * <p>
  * Rule instances are stateless. They are created once per View class to handle and are shared
  * across platforms or editor instances. As such, rules methods should never cache editor-specific
  * arguments that they might receive.
- * <p/>
+ * <p>
  * <b>NOTE: This is not a public or final API; if you rely on this be prepared
  * to adjust your code for the next tools release.</b>
  * </p>
@@ -66,7 +66,7 @@ public interface IViewRule {
 
     /**
      * Returns the class name to display when an element is selected in the layout editor.
-     * <p/>
+     * <p>
      * If null is returned, the layout editor will automatically shorten the class name using its
      * own heuristic, which is to keep the first 2 package components and the class name.
      * The class name is the <code>fqcn</code> argument that was given
@@ -84,10 +84,10 @@ public interface IViewRule {
      * <p>
      * The order of the menu items is determined by the sort priority set on
      * the actions.
-     * <p/>
+     * <p>
      * Most rules should consider calling super.{@link #addContextMenuActions(List, INode)}
      * as well.
-     * <p/>
+     * <p>
      * Menu actions are either toggles or fixed lists with one currently-selected
      * item. It is expected that the rule will need to recreate the actions with
      * different selections when a menu is going to shown, which is why the result
@@ -135,9 +135,9 @@ public interface IViewRule {
      * Returns a list of strings that will be displayed when a single child is being
      * selected in a layout corresponding to this rule. This gives the container a chance
      * to describe the child's layout attributes or other relevant information.
-     * <p/>
+     * <p>
      * Note that this is called only for single selections.
-     * <p/>
+     * <p>
      *
      * @param parentNode The parent of the node selected. Never null.
      * @param childNode The child node that was selected. Never null.
@@ -209,16 +209,16 @@ public interface IViewRule {
 
     /**
      * Called when drop leaves the target without actually dropping.
-     * <p/>
+     * <p>
      * When switching between views, onDropLeave is called on the old node *after* onDropEnter
      * is called after a new node that returned a non-null feedback. The feedback received here
      * is the one given by the previous onDropEnter on the same target.
-     * <p/>
+     * <p>
      * E.g. call order is:
      * <pre>
-     * - onDropEnter(node1) => feedback1
+     * - onDropEnter(node1) ⇒ feedback1
      * <i>...user moves to new view...</i>
-     * - onDropEnter(node2) => feedback2
+     * - onDropEnter(node2) ⇒ feedback2
      * - onDropLeave(node1, feedback1)
      * <i>...user leaves canvas...</i>
      * - onDropLeave(node2, feedback2)

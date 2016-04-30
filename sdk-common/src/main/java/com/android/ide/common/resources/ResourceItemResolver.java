@@ -301,7 +301,7 @@ public class ResourceItemResolver extends RenderResources {
     /**
      * Optional method to set a list the resolver should record all value resolutions
      * into. Useful if you want to find out the resolution chain for a resource,
-     * e.g. {@code @color/buttonForeground => @color/foreground => @android:color/black }.
+     * e.g. {@code @color/buttonForeground ⇒ @color/foreground ⇒ @android:color/black }.
      * <p>
      * There is no getter. Clients setting this list should look it up themselves.
      * Note also that if this resolver has to delegate to a full resource resolver,

@@ -26,8 +26,9 @@ public class AndroidVersionHelper {
 
     /**
      * Creates an {@link AndroidVersion} from {@link Properties}, with default values if the {@link
-     * Properties} object doesn't contain the expected values. <p/>The {@link Properties} is
-     * expected to have been filled with {@link #saveProperties(AndroidVersion, Properties)}.
+     * Properties} object doesn't contain the expected values. <p>The {@link Properties} is
+     * expected to have been filled with the deleted
+     * <code>saveProperties(AndroidVersion, Properties)</code>}.
      */
     @NonNull
     public static AndroidVersion create(@Nullable Properties properties, int defaultApiLevel,
@@ -48,7 +49,6 @@ public class AndroidVersionHelper {
      *
      * @throws AndroidVersion.AndroidVersionException if no Android version information have been
      *                                                found
-     * @see #saveProperties(AndroidVersion, Properties)
      */
     @NonNull
     public static AndroidVersion create(@NonNull Properties properties)
