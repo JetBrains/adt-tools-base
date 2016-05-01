@@ -1467,6 +1467,8 @@ public final class SdkConstants {
         public static final String EDIT_TEXT_PREFERENCE = "EditTextPreference";
         public static final String LIST_PREFERENCE = "ListPreference";
         public static final String MULTI_SELECT_LIST_PREFERENCE = "MultiSelectListPreference";
+        public static final String PREFERENCE_CATEGORY = "PreferenceCategory";
+        public static final String PREFERENCE_SCREEN = "PreferenceScreen";
         public static final String RINGTONE_PREFERENCE = "RingtonePreference";
         public static final String SWITCH_PREFERENCE = "SwitchPreference";
     }
