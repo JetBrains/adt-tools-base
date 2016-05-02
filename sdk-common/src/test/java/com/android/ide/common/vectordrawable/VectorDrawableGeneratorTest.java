@@ -127,6 +127,10 @@ public class VectorDrawableGeneratorTest extends GeneratorTest {
 
     //////////////////////////////////////////////////////////
     // Tests starts here:
+    public void testSvgFillAlpha() throws Exception {
+        checkSvgConversion("ic_add_to_notepad_black");
+    }
+
     public void testSvgArcto1() throws Exception {
         checkSvgConversion("test_arcto_1");
     }
