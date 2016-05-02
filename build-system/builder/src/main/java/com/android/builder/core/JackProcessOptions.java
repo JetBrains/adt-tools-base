@@ -19,7 +19,6 @@ package com.android.builder.core;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.Revision;
-import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 
 import java.io.File;
@@ -47,6 +46,8 @@ public class JackProcessOptions {
     private List<File> mProguardFiles = ImmutableList.of();
     @Nullable
     private String mJavaMaxHeapSize = null;
+    private boolean mJumboMode = false;
+    private boolean mDexOptimize = false;
     @Nullable
     private File mMappingFile = null;
     private boolean mMultiDex;
@@ -132,6 +133,22 @@ public class JackProcessOptions {
 
     public void setJavaMaxHeapSize(@Nullable String javaMaxHeapSize) {
         mJavaMaxHeapSize = javaMaxHeapSize;
+    }
+
+    public boolean getJumboMode() {
+        return mJumboMode;
+    }
+
+    public void setJumboMode(boolean jumboMode) {
+        mJumboMode = jumboMode;
+    }
+
+    public boolean getDexOptimize() {
+        return mDexOptimize;
+    }
+
+    public void setDexOptimize(boolean dexOptimize) {
+        mDexOptimize = dexOptimize;
     }
 
     @Nullable

@@ -2009,6 +2009,11 @@ public class AndroidBuilder {
                     }
                     config.setResourceDirs(resourcesDir.build());
 
+                    config.setProperty(
+                            "jack.dex.forcejumbo", Boolean.toString(options.getJumboMode()));
+                    config.setProperty(
+                            "jack.dex.optimize", Boolean.toString(options.getDexOptimize()));
+
                     compilationTask = config.getTask();
                 } catch (ConfigNotSupportedException e) {
                     mLogger.error(e,
