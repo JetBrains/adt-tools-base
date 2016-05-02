@@ -152,7 +152,7 @@ import java.util.zip.ZipFile;
  * {@link #mergeManifestsForTestVariant(String, String, String, String, String, Boolean, Boolean, String, File, List, Map, File, File)}
  * {@link #processResources(Aapt, AaptPackageConfig.Builder, boolean)}
  * {@link #compileAllAidlFiles(List, File, File, Collection, List, DependencyFileProcessor, ProcessOutputHandler)}
- * {@link #convertByteCode(Collection, File, boolean, File, DexOptions, boolean, ProcessOutputHandler)}
+ * {@link #getDexByteCodeConverter()}
  * {@link #oldPackageApk(String, Set, Collection, Collection, Set, boolean, SigningConfig, File, int)}
  *
  * Java compilation is not handled but the builder provides the boot classpath with
@@ -217,6 +217,8 @@ public class AndroidBuilder {
 
     private Boolean isDexInProcess = null;
 
+    private DexByteCodeConverter mDexByteCodeConverter = null;
+
     /**
      * Creates an AndroidBuilder.
      * <p>
@@ -259,6 +261,8 @@ public class AndroidBuilder {
             @NonNull Collection<LibraryRequest> libraryRequests) {
         mSdkInfo = sdkInfo;
         mTargetInfo = targetInfo;
+        mDexByteCodeConverter = new DexByteCodeConverter(
+                getLogger(), mTargetInfo, mJavaProcessExecutor, mVerboseExec);
 
         if (mTargetInfo.getBuildTools().getRevision().compareTo(MIN_BUILD_TOOLS_REV) < 0) {
             throw new IllegalArgumentException(String.format(
@@ -1455,6 +1459,13 @@ public class AndroidBuilder {
         return results;
     }
 
+    @NonNull
+    public DexByteCodeConverter getDexByteCodeConverter() {
+        checkState(mDexByteCodeConverter != null,
+                "Cannot call getDexByteCodeConverter() before setTargetInfo() is called.");
+        return mDexByteCodeConverter;
+    }
+
     /**
      * Converts the bytecode to Dalvik format
      * @param inputs the input files
@@ -1473,216 +1484,14 @@ public class AndroidBuilder {
             boolean optimize,
             @NonNull ProcessOutputHandler processOutputHandler)
             throws IOException, InterruptedException, ProcessException {
-        checkNotNull(inputs, "inputs cannot be null.");
-        checkNotNull(outDexFolder, "outDexFolder cannot be null.");
-        checkNotNull(dexOptions, "dexOptions cannot be null.");
-        checkArgument(outDexFolder.isDirectory(), "outDexFolder must be a folder");
-        checkState(mTargetInfo != null,
-                "Cannot call convertByteCode() before setTargetInfo() is called.");
 
-        ImmutableList.Builder<File> verifiedInputs = ImmutableList.builder();
-        for (File input : inputs) {
-            if (checkLibraryClassesJar(input)) {
-                verifiedInputs.add(input);
-            }
-        }
-
-        DexProcessBuilder builder = new DexProcessBuilder(outDexFolder);
-
-        builder.setVerbose(mVerboseExec)
-                .setNoOptimize(!optimize)
-                .setMultiDex(multidex)
-                .setMainDexList(mainDexList)
-                .addInputs(verifiedInputs.build());
-
-        runDexer(builder, dexOptions, processOutputHandler);
-    }
-
-    private void runDexer(
-            @NonNull final DexProcessBuilder builder,
-            @NonNull final DexOptions dexOptions,
-            @NonNull final ProcessOutputHandler processOutputHandler)
-            throws ProcessException, IOException, InterruptedException {
-        initDexExecutorService(dexOptions);
-
-        if (shouldDexInProcess(dexOptions, mTargetInfo.getBuildTools().getRevision())) {
-            dexInProcess(builder, dexOptions, processOutputHandler);
-        } else {
-            dexOutOfProcess(builder, dexOptions, processOutputHandler);
-        }
-    }
-
-    private void dexInProcess(
-            @NonNull final DexProcessBuilder builder,
-            @NonNull final DexOptions dexOptions,
-            @NonNull final ProcessOutputHandler outputHandler)
-            throws IOException, ProcessException {
-        final String submission = Joiner.on(',').join(builder.getInputs());
-        getLogger().info("Dexing in-process.");
-        try {
-            sDexExecutorService.submit(() -> {
-                Stopwatch stopwatch = Stopwatch.createStarted();
-                ProcessResult result = DexWrapper.run(builder, dexOptions, outputHandler);
-                result.assertNormalExitValue();
-                getLogger().info("Dexing %s took %s.", submission, stopwatch.toString());
-                return null;
-            }).get();
-        } catch (Exception e) {
-            throw new ProcessException(e);
-        }
-    }
-
-    private void dexOutOfProcess(
-            @NonNull final DexProcessBuilder builder,
-            @NonNull final DexOptions dexOptions,
-            @NonNull final ProcessOutputHandler processOutputHandler)
-            throws ProcessException, InterruptedException {
-        getLogger().info("Dexing out-of-process.");
-        try {
-            final String submission = Joiner.on(',').join(builder.getInputs());
-
-            Callable<Void> task = () -> {
-                JavaProcessInfo javaProcessInfo =
-                        builder.build(mTargetInfo.getBuildTools(), dexOptions);
-                ProcessResult result =
-                        mJavaProcessExecutor.execute(javaProcessInfo, processOutputHandler);
-                result.rethrowFailure().assertNormalExitValue();
-                return null;
-            };
-
-            Stopwatch stopwatch = Stopwatch.createStarted();
-            // this is a hack, we always spawn a new process for dependencies.jar so it does
-            // get built in parallel with the slices, this is only valid for InstantRun mode.
-            if (submission.contains("dependencies.jar")) {
-                task.call();
-            } else {
-                sDexExecutorService.submit(task).get();
-            }
-            getLogger().info("Dexing %s took %s.", submission, stopwatch.toString());
-        } catch (Exception e) {
-            throw new ProcessException(e);
-        }
-    }
-
-    private void initDexExecutorService(@NonNull DexOptions dexOptions) {
-        synchronized (LOCK_FOR_DEX) {
-            if (sDexExecutorService == null) {
-                if (dexOptions.getMaxProcessCount() != null) {
-                    DEX_PROCESS_COUNT.set(dexOptions.getMaxProcessCount());
-                }
-                getLogger().info(
-                        "Allocated dexExecutorService of size %d.",
-                        DEX_PROCESS_COUNT.get());
-                sDexExecutorService = Executors.newFixedThreadPool(DEX_PROCESS_COUNT.get());
-            } else {
-                // check whether our executor service has the same number of max processes as
-                // this module requests, and print a warning if necessary.
-                if (dexOptions.getMaxProcessCount() != null
-                        && dexOptions.getMaxProcessCount() != DEX_PROCESS_COUNT.get()) {
-                    getLogger().warning(
-                            "dexOptions is specifying a maximum number of %1$d concurrent dx processes,"
-                                    + " but the Gradle daemon was initialized with %2$d.\n"
-                                    + "To initialize with a different maximum value,"
-                                    + " first stop the Gradle daemon by calling ‘gradlew —-stop’.",
-                            dexOptions.getMaxProcessCount(),
-                            DEX_PROCESS_COUNT.get());
-                }
-            }
-        }
-    }
-
-
-    /**
-     * Determine whether to dex in process.
-     */
-    @VisibleForTesting
-    synchronized boolean shouldDexInProcess(
-            @NonNull DexOptions dexOptions,
-            @NonNull Revision buildToolsVersion) {
-        if (isDexInProcess != null) {
-            return isDexInProcess;
-        }
-        if (!dexOptions.getDexInProcess()) {
-            isDexInProcess = false;
-            return false;
-        }
-        if (buildToolsVersion.compareTo(DexProcessBuilder.FIXED_DX_MERGER) < 0) {
-            // We substitute Dex > 23.0.2 with the local implementation.
-            mLogger.warning("Running dex in-process requires build tools %1$s.\n"
-                            + "For faster builds update this project to use the latest build tools.",
-                    DexProcessBuilder.FIXED_DX_MERGER.toShortString());
-            isDexInProcess = false;
-            return false;
-
-        }
-
-        // Requested memory for dex.
-        long requestedHeapSize = parseHeapSize(dexOptions.getJavaMaxHeapSize(), mLogger);
-        final long NON_DEX_HEAP_SIZE = 1024 * 1024 * 1024;
-        // Approximate heap size requested.
-        long requiredHeapSizeHeuristic = requestedHeapSize + NON_DEX_HEAP_SIZE;
-        // Get the approximate heap size that was specified by the user.
-        // It is important that this be close to the -Xmx value specified, as is is compared with
-        // the requiredHeapSizeHeuristic, which we suggest the user sets in their gradle.properties.
-        long maxMemory = 0;
-        for (MemoryPoolMXBean mpBean: ManagementFactory.getMemoryPoolMXBeans()) {
-            if (mpBean.getType() == MemoryType.HEAP) {
-                maxMemory += mpBean.getUsage().getMax();
-            }
-        }
-
-        // Allow a little extra overhead (50M) as in practice the sum of the heap pools is
-        // slightly lower than the Xmx setting specified by the user.
-        final long EXTRA_HEAP_OVERHEAD =  50 * 1024 * 1024;
-        if (requiredHeapSizeHeuristic > maxMemory + EXTRA_HEAP_OVERHEAD) {
-            mLogger.warning("Running dex as a separate process.\n\n"
-                            + "To run dex in process, the Gradle daemon needs a larger heap.\n"
-                            + "It currently has approximately %1$d MB.\n"
-                            + "For faster builds, increase the maximum heap size for the "
-                            + "Gradle daemon to more than %2$s MB.\n"
-                            + "To do this set org.gradle.jvmargs=-Xmx%2$sM in the "
-                            + "project gradle.properties.\n"
-                            + "For more information see "
-                            + "https://docs.gradle.org/current/userguide/build_environment.html",
-                    maxMemory / (1024 * 1024),
-                    requiredHeapSizeHeuristic / (1024 * 1024));
-            isDexInProcess = false;
-            return false;
-        }
-        isDexInProcess = true;
-        return true;
-
-    }
-
-    private static final long DEFAULT_DEX_HEAP_SIZE = 1024 * 1024 * 1024; // 1 GiB
-
-    @VisibleForTesting
-    static long parseHeapSize(@Nullable String sizeParameter, @NonNull ILogger logger) {
-        if (sizeParameter == null) {
-            return DEFAULT_DEX_HEAP_SIZE;
-        }
-        long multiplier = 1;
-        if (SdkUtils.endsWithIgnoreCase(sizeParameter, "k")) {
-            multiplier = 1024;
-        } else if (SdkUtils.endsWithIgnoreCase(sizeParameter, "m")) {
-            multiplier = 1024 * 1024;
-        } else if (SdkUtils.endsWithIgnoreCase(sizeParameter, "g")) {
-            multiplier = 1024 * 1024 * 1024;
-        }
-
-        if (multiplier != 1) {
-            sizeParameter = sizeParameter.substring(0, sizeParameter.length() - 1);
-        }
-
-        try {
-            return multiplier * Long.parseLong(sizeParameter);
-        } catch (NumberFormatException e) {
-            logger.warning(
-                    "Unable to parse dex options size parameter '%1$s', assuming %2$s bytes.",
-                    sizeParameter,
-                    DEFAULT_DEX_HEAP_SIZE);
-            return DEFAULT_DEX_HEAP_SIZE;
-        }
+        getDexByteCodeConverter().convertByteCode(inputs,
+                outDexFolder,
+                multidex,
+                mainDexList,
+                dexOptions,
+                optimize,
+                processOutputHandler);
     }
 
     public Set<String> createMainDexList(
@@ -1785,7 +1594,7 @@ public class AndroidBuilder {
                 .setMultiDex(multiDex)
                 .addInput(inputFile);
 
-        runDexer(builder, dexOptions, processOutputHandler);
+        getDexByteCodeConverter().runDexer(builder, dexOptions, processOutputHandler);
 
         if (multiDex) {
             File[] files = outFile.listFiles((file, name) -> {

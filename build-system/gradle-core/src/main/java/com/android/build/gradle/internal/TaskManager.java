@@ -156,7 +156,6 @@ import com.android.builder.core.DexOptions;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
 import com.android.builder.model.DataBindingOptions;
-import com.android.builder.model.OptionalCompilationStep;
 import com.android.builder.model.SyncIssue;
 import com.android.builder.sdk.TargetInfo;
 import com.android.builder.testing.ConnectedDeviceProvider;
@@ -2015,7 +2014,7 @@ public abstract class TaskManager {
         InstantRunDex reloadDexTransform = new InstantRunDex(
                 variantScope,
                 InstantRunBuildType.RELOAD,
-                androidBuilder,
+                androidBuilder::getDexByteCodeConverter,
                 dexOptions,
                 getLogger(),
                 ImmutableSet.of(ExtendedContentType.CLASSES_ENHANCED));
@@ -2080,7 +2079,7 @@ public abstract class TaskManager {
             InstantRunDex classesTwoTransform = new InstantRunDex(
                     scope,
                     InstantRunBuildType.RESTART,
-                    androidBuilder,
+                    androidBuilder::getDexByteCodeConverter,
                     dexOptions,
                     getLogger(),
                     ImmutableSet.of(DefaultContentType.CLASSES));

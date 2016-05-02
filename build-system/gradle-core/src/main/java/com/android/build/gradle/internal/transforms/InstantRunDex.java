@@ -26,12 +26,12 @@ import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformInvocation;
+import com.android.build.gradle.internal.scope.TransformVariantScope;
+import com.android.builder.core.DexByteCodeConverter;
 import com.android.builder.model.OptionalCompilationStep;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
-import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.tasks.ColdswapArtifactsKickerTask;
-import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.DexOptions;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessException;
@@ -52,6 +52,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
@@ -63,7 +64,7 @@ import java.util.jar.JarOutputStream;
 public class InstantRunDex extends Transform {
 
     @NonNull
-    private final AndroidBuilder androidBuilder;
+    private final Supplier<DexByteCodeConverter> dexByteCodeConverter;
 
     @NonNull
     private final DexOptions dexOptions;
@@ -78,21 +79,21 @@ public class InstantRunDex extends Transform {
     private final InstantRunBuildType buildType;
 
     @NonNull
-    private final VariantScope variantScope;
+    private final TransformVariantScope variantScope;
 
     @NonNull
     private final InstantRunBuildContext instantRunBuildContext;
 
     public InstantRunDex(
-            @NonNull VariantScope variantScope,
+            @NonNull TransformVariantScope transformVariantScope,
             @NonNull InstantRunBuildType buildType,
-            @NonNull AndroidBuilder androidBuilder,
+            @NonNull Supplier<DexByteCodeConverter> dexByteCodeConverter,
             @NonNull DexOptions dexOptions,
             @NonNull Logger logger,
             @NonNull Set<QualifiedContent.ContentType> inputTypes) {
-        this.variantScope = variantScope;
+        this.variantScope = transformVariantScope;
         this.buildType = buildType;
-        this.androidBuilder = androidBuilder;
+        this.dexByteCodeConverter = dexByteCodeConverter;
         this.dexOptions = dexOptions;
         this.logger = new LoggerWrapper(logger);
         this.inputTypes = inputTypes;
@@ -243,7 +244,7 @@ public class InstantRunDex extends Transform {
     @VisibleForTesting
     protected void convertByteCode(List<File> inputFiles, File outputFolder)
             throws InterruptedException, ProcessException, IOException {
-        androidBuilder.convertByteCode(inputFiles,
+        dexByteCodeConverter.get().convertByteCode(inputFiles,
                 outputFolder,
                 false /* multiDexEnabled */,
                 null /*getMainDexListFile */,

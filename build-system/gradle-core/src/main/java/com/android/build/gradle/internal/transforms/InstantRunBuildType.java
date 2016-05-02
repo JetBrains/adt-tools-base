@@ -17,7 +17,7 @@
 package com.android.build.gradle.internal.transforms;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.scope.TransformVariantScope;
 
 import java.io.File;
 
@@ -31,7 +31,7 @@ public enum InstantRunBuildType {
     RELOAD {
         @NonNull
         @Override
-        File getOutputFolder(VariantScope variantScope) {
+        File getOutputFolder(TransformVariantScope variantScope) {
             return variantScope.getReloadDexOutputFolder();
         }
     },
@@ -42,16 +42,16 @@ public enum InstantRunBuildType {
     RESTART {
         @NonNull
         @Override
-        File getOutputFolder(VariantScope variantScope) {
+        File getOutputFolder(TransformVariantScope variantScope) {
             return variantScope.getRestartDexOutputFolder();
         }
     };
 
     @NonNull
-    abstract File getOutputFolder(VariantScope variantScope);
+    abstract File getOutputFolder(TransformVariantScope variantScope);
 
     @NonNull
-    public File getIncrementalChangesFile(VariantScope variantScope) {
+    public File getIncrementalChangesFile(TransformVariantScope variantScope) {
         return new File(variantScope.getInstantRunSupportDir(),
                 name().toLowerCase() + "-changes.txt");
     }

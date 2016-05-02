@@ -33,6 +33,8 @@ import com.android.build.api.transform.Status;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
+import com.android.build.gradle.internal.scope.TransformVariantScope;
+import com.android.builder.core.DexByteCodeConverter;
 import com.android.builder.model.OptionalCompilationStep;
 import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.pipeline.TransformInvocationBuilder;
@@ -76,13 +78,13 @@ import java.util.Set;
 public class InstantRunDexTest {
 
     @Mock
-    VariantScope variantScope;
+    TransformVariantScope variantScope;
 
     @Mock
     GlobalScope globalScope;
 
     @Mock
-    AndroidBuilder androidBuilder;
+    DexByteCodeConverter dexByteCodeConverter;
 
     @Mock
     TransformOutputProvider transformOutputProvider;
@@ -128,7 +130,7 @@ public class InstantRunDexTest {
         when(variantScope.getRestartDexOutputFolder()).thenReturn(restartOutputFolder);
         when(variantScope.getReloadDexOutputFolder()).thenReturn(reloadOutputFolder);
         when(variantScope.getGlobalScope()).thenReturn(globalScope);
-        when(variantScope.getGlobalScope().getProject()).thenReturn(project);
+        when(globalScope.getProject()).thenReturn(project);
         when(project.getProperties()).then(new Answer<Object>() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
@@ -211,7 +213,7 @@ public class InstantRunDexTest {
         instantRunDex = new InstantRunDex(
                 variantScope,
                 InstantRunBuildType.RESTART,
-                androidBuilder,
+                ()-> dexByteCodeConverter,
                 dexOptions,
                 logger,
                 ImmutableSet.<QualifiedContent.ContentType>of());
@@ -246,7 +248,7 @@ public class InstantRunDexTest {
         InstantRunDex instantRunDex = new InstantRunDex(
                 variantScope,
                 InstantRunBuildType.RELOAD,
-                androidBuilder,
+                ()-> dexByteCodeConverter,
                 dexOptions,
                 logger,
                 ImmutableSet.<QualifiedContent.ContentType>of());
@@ -262,7 +264,7 @@ public class InstantRunDexTest {
         instantRunDex = new InstantRunDex(
                 variantScope,
                 InstantRunBuildType.RESTART,
-                androidBuilder,
+                ()-> dexByteCodeConverter,
                 dexOptions,
                 logger,
                 ImmutableSet.<QualifiedContent.ContentType>of());
@@ -288,7 +290,7 @@ public class InstantRunDexTest {
         InstantRunDex instantRunDex = new InstantRunDex(
                 variantScope,
                 InstantRunBuildType.RELOAD,
-                androidBuilder,
+                ()-> dexByteCodeConverter,
                 dexOptions,
                 logger,
                 ImmutableSet.<QualifiedContent.ContentType>of());
@@ -302,7 +304,7 @@ public class InstantRunDexTest {
         instantRunDex = new InstantRunDex(
                 variantScope,
                 InstantRunBuildType.RESTART,
-                androidBuilder,
+                ()-> dexByteCodeConverter,
                 dexOptions,
                 logger,
                 ImmutableSet.<QualifiedContent.ContentType>of());
@@ -320,7 +322,7 @@ public class InstantRunDexTest {
         return  new InstantRunDex(
                 variantScope,
                 type,
-                androidBuilder,
+                ()-> dexByteCodeConverter,
                 dexOptions,
                 logger,
                 ImmutableSet.<QualifiedContent.ContentType>of()) {
