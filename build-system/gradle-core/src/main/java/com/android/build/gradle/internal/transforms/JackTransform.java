@@ -18,7 +18,6 @@ package com.android.build.gradle.internal.transforms;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.build.api.transform.Format;
 import com.android.build.api.transform.QualifiedContent;
@@ -45,7 +44,7 @@ import com.android.jack.api.v01.ConfigurationException;
 import com.android.jack.api.v01.UnrecoverableException;
 import com.android.repository.Revision;
 import com.android.sdklib.BuildToolInfo;
-import com.android.utils.FileUtils;
+import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -262,6 +261,11 @@ public class JackTransform extends Transform {
         }
         final GradleVariantConfiguration config = scope.getVariantData().getVariantConfiguration();
         options.setJavaMaxHeapSize(globalScope.getExtension().getDexOptions().getJavaMaxHeapSize());
+        options.setJumboMode(globalScope.getExtension().getDexOptions().getJumboMode());
+        boolean isDebuggable = scope.getVariantConfiguration().getBuildType().isDebuggable();
+        options.setDexOptimize(
+                Objects.firstNonNull(
+                        globalScope.getExtension().getDexOptions().getOptimize(), !isDebuggable));
         options.setMultiDex(config.isMultiDexEnabled());
         options.setMinSdkVersion(config.getMinSdkVersion().getApiLevel());
         options.setIncrementalDir(scope.getIncrementalDir(getName()));

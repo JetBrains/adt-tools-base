@@ -76,6 +76,9 @@ public class JackProcessBuilder extends ProcessEnvBuilder<JackProcessBuilder> {
             builder.addJvmArg("-Xmx1024M");
         }
 
+        builder.addArgs("-D", "jack.dex.forcejumbo=" + Boolean.toString(options.getJumboMode()));
+        builder.addArgs("-D", "jack.dex.optimize=" + Boolean.toString(options.getDexOptimize()));
+
         if (options.isDebugLog()) {
             builder.addArgs("--verbose", "debug");
         } else if (options.isVerbose()) {

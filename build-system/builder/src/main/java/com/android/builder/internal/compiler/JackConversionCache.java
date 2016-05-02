@@ -27,6 +27,7 @@ import com.android.jack.api.v01.UnrecoverableException;
 import com.android.utils.FileUtils;
 import com.android.utils.Pair;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
 import java.io.File;
@@ -50,7 +51,7 @@ import java.io.IOException;
  * After a build a call to {@link #clear(java.io.File, com.android.utils.ILogger)} with a file
  * will allow saving the known converted libraries for future reuse.
  */
-public class JackConversionCache extends PreProcessCache<PreProcessCache.Key> {
+public class JackConversionCache extends PreProcessCache<DexKey> {
 
     private static final JackConversionCache sSingleton = new JackConversionCache();
 
@@ -60,8 +61,8 @@ public class JackConversionCache extends PreProcessCache<PreProcessCache.Key> {
 
     @NonNull
     @Override
-    protected KeyFactory<Key> getKeyFactory() {
-        return (sourceFile, revision, attrMap) -> Key.of(sourceFile, revision);
+    protected KeyFactory<DexKey> getKeyFactory() {
+        return DexKey.FACTORY;
     }
 
     /**
@@ -80,8 +81,12 @@ public class JackConversionCache extends PreProcessCache<PreProcessCache.Key> {
             CompilationException, UnrecoverableException, ProcessException, InterruptedException,
             IOException {
         Preconditions.checkNotNull(androidBuilder.getTargetInfo());
-        Key itemKey =
-                Key.of(inputFile, androidBuilder.getTargetInfo().getBuildTools().getRevision());
+        DexKey itemKey = DexKey.of(
+                inputFile,
+                androidBuilder.getTargetInfo().getBuildTools().getRevision(),
+                options.getJumboMode(),
+                options.getDexOptimize(),
+                Lists.newArrayList());
 
         Pair<PreProcessCache.Item, Boolean> pair = getItem(itemKey);
         Item item = pair.getFirst();
