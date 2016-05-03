@@ -322,10 +322,12 @@ public abstract class RepoManager {
      * Check to see if there have been any changes to the local repo since the last load.
      * This includes scanning the local repo for packages, but does not involve any reading or
      * parsing of package metadata files.
-     * Just loading normally will usually be good enough. This method should only be needed if
-     * you want to be extra-sure that there haven't been changes made to the repo manually.
+     * If there have been any changes, or if the cache is older than the default timeout,
+     * the local packages will be reloaded.
+     *
+     * @return {@code true} if a reload is done, {@code false} otherwise.
      */
-    public abstract void invalidateLocalIfNeeded();
+    public abstract boolean reloadLocalIfNeeded(@NonNull ProgressIndicator progress);
 
     /**
      * Gets the currently-loaded {@link RepositoryPackages}.
