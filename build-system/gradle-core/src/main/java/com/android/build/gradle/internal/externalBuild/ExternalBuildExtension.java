@@ -17,7 +17,7 @@
 package com.android.build.gradle.internal.externalBuild;
 
 /**
- * Extension for the {@see com.android.build.gradle.externalBuil.ExternalBuildPlugin}
+ * Extension for the {@code com.android.build.gradle.externalBuild.ExternalBuildPlugin}
  */
 public class ExternalBuildExtension {
 
