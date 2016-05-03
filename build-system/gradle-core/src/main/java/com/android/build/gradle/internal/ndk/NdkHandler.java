@@ -212,6 +212,14 @@ public class NdkHandler {
     }
 
     /**
+     * Returns the sysroot directory for the toolchain with an platform version override.
+     */
+    public String getSysroot(Abi abi, @NonNull String platformVersionOverride) {
+        return ndkDirectory + "/platforms/" + platformVersionOverride + "/arch-"
+                    + abi.getArchitecture();
+    }
+
+    /**
      * Return true if compiledSdkVersion supports 64 bits ABI.
      */
     public boolean supports64Bits() {

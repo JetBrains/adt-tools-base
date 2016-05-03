@@ -161,7 +161,7 @@ android {
                 .getNativeLibraries().first()
         for (String flag : lib.getCCompilerFlags()) {
             if (flag.contains("sysroot")) {
-                assertThat(flag).contains("android-${GradleTestProject.LATEST_NDK_VERSION}")
+                assertThat(flag).contains("android-${GradleTestProject.LATEST_NDK_PLATFORM_VERSION}")
             }
         }
     }

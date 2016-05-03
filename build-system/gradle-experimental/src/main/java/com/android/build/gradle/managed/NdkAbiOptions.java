@@ -16,6 +16,9 @@
 
 package com.android.build.gradle.managed;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+
 import org.gradle.api.Named;
 import org.gradle.model.Managed;
 
@@ -24,5 +27,7 @@ import org.gradle.model.Managed;
  */
 @Managed
 public interface NdkAbiOptions extends NdkOptions, Named {
-
+    @Nullable
+    String getPlatformVersion();
+    void setPlatformVersion(@Nullable String platformVersion);
 }

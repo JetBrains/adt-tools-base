@@ -78,7 +78,7 @@ public class GradleTestProject implements TestRule {
     public static final File TEST_PROJECT_DIR = new File("test-projects");
 
     public static final int DEFAULT_COMPILE_SDK_VERSION = 23;
-    public static final int LATEST_NDK_VERSION = 21;
+    public static final int LATEST_NDK_PLATFORM_VERSION = 21;
 
     /**
      * Last SDK that contained java 6 bytecode in the platform jar. Since we run integration tests
