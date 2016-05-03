@@ -21,6 +21,7 @@ import static org.junit.Assert.fail;
 
 import com.google.common.base.Stopwatch;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.text.DecimalFormat;
@@ -49,6 +50,7 @@ public class FileUseMapTest {
      * degrade somewhat as the file map size increases, but not too much.
      */
     @Test
+    @Ignore("This test relies on magic ratios to detect when performance is bad.")
     public void addPerformanceTest() {
         final long MAP_SIZE = 10000000;
         final int MAX_RUNS = 10000;
