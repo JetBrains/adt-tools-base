@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.integration.performance;
 
-import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.SYNC;
+import static com.android.build.gradle.integration.performance.BenchmarkMode.SYNC;
 import static com.android.build.gradle.integration.common.fixture.app.LargeTestProject.MEDIUM_BREADTH;
 import static com.android.build.gradle.integration.common.fixture.app.LargeTestProject.MEDIUM_DEPTH;
 

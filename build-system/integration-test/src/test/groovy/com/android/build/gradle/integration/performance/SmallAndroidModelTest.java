@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.integration.performance;
 
-import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.SYNC;
+import static com.android.build.gradle.integration.performance.BenchmarkMode.SYNC;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.AndroidGradleModule;

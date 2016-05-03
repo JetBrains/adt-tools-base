@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.integration.performance;
 
-import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.EVALUATION;
+import static com.android.build.gradle.integration.performance.BenchmarkMode.EVALUATION;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.JavaGradleModule;
@@ -24,8 +24,6 @@ import com.android.build.gradle.integration.common.fixture.app.LargeTestProject;
 
 import org.junit.Rule;
 import org.junit.Test;
-
-import java.io.IOException;
 
 /**
  * test with ~30 projects that evaluates the projects

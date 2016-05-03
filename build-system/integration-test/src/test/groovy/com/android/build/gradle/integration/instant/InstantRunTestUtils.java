@@ -160,7 +160,7 @@ public final class InstantRunTestUtils {
      * Gets the {@link InstantRunArtifact} produced by last build.
      */
     @NonNull
-    static InstantRunArtifact getCompiledHotSwapCompatibleChange(
+    public static InstantRunArtifact getCompiledHotSwapCompatibleChange(
             @NonNull InstantRun instantRunModel) throws Exception {
         InstantRunBuildInfo context = loadContext(instantRunModel);
 
