@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.common.fixture;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.integration.common.utils.JacocoAgent;
+import com.android.build.gradle.integration.performance.BenchmarkMode;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -66,7 +67,7 @@ public abstract class BaseGradleExecutor<T extends BaseGradleExecutor> {
      */
     public T recordBenchmark(
             @NonNull String benchmarkName,
-            @NonNull GradleTestProject.BenchmarkMode benchmarkMode) {
+            @NonNull BenchmarkMode benchmarkMode) {
         mArguments.add("-P" + RECORD_BENCHMARK_NAME + "=" + benchmarkName);
         mArguments.add("-P" + RECORD_BENCHMARK_MODE + "=" + benchmarkMode.name()
                 .toLowerCase(Locale.US));
