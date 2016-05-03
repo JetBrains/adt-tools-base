@@ -52,6 +52,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -117,6 +118,13 @@ import java.util.concurrent.Future;
  * <p>Because realignment may cause files to move in the zip, realignment is done in-memory meaning
  * that files that need to change location will moved to memory and will only be flushed when
  * either {@link #update()} or {@link #close()} are called.
+ *
+ * <p>In general, alignment is done by changing a file's offset, creating empty areas in the zip
+ * file. However, it is possible to tell {@link ZFile} to use the extra field in the local header
+ * to do the alignment instead. This is done by setting
+ * {@link ZFileOptions#setUseExtraFieldForAlignment(boolean)} to {@code true}. This has the
+ * advantage of leaving no gaps between entries in the zip, as required by some tools like Oracle's
+ * jar tool. However, setting this option will destroy the contents of the file's extra field.
  *
  * <p>{@code ZFile} support sorting zip files. Sorting (done through the {@link #sortZipContents()}
  * method) is a process by which all files are re-read into memory, if not already in memory,
@@ -306,6 +314,11 @@ public class ZFile implements Closeable {
     @NonNull
     private final ByteTracker mTracker;
 
+    /**
+     * Should the extra field be used for alignment?
+     */
+    private boolean mUseExtraFieldForAlignment;
+
 
     /**
      * Creates a new zip file. If the zip file does not exist, then no file is created at this
@@ -341,6 +354,7 @@ public class ZFile implements Closeable {
         mNoTimestamps = options.getNoTimestamps();
         mTracker = options.getTracker();
         mCompressor = options.getCompressor();
+        mUseExtraFieldForAlignment = options.getUseExtraFieldForAlignment();
 
         /*
          * These two values will be overwritten by openReadOnly() below if the file exists.
@@ -744,6 +758,46 @@ public class ZFile implements Closeable {
         reopenRw();
 
         /*
+         * We're going to change the file so delete the central directory and the EOCD as they
+         * will have to be rewritten.
+         */
+        deleteDirectoryAndEocd();
+        mMap.truncate();
+
+        /*
+         * If we need to use the extra field for alignment instead of offsets, we do the processing
+         * here.
+         */
+        if (mUseExtraFieldForAlignment) {
+
+            /* We will go over all files in the zip and check whether there is empty space before
+             * them. If there is, then we will move the entry to the beginning of the empty space
+             * (covering it) and extend the extra field with the size of the empty space.
+             */
+            for (FileUseMapEntry<StoredEntry> entry : new HashSet<>(mEntries.values())) {
+                StoredEntry storedEntry = entry.getStore();
+                Verify.verifyNotNull(storedEntry, "storedEntry == null");
+
+                FileUseMapEntry<?> before = mMap.before(entry);
+                if (before == null || !before.isFree()) {
+                    continue;
+                }
+
+                long newStart = before.getStart();
+                long newSize = entry.getSize() + before.getSize();
+                int localExtraSize =
+                        storedEntry.getLocalExtra().length + Ints.checkedCast(before.getSize());
+
+                String name = storedEntry.getCentralDirectoryHeader().getName();
+                mMap.remove(entry);
+                Verify.verify(entry == mEntries.remove(name));
+
+                storedEntry.setLocalExtra(new byte[localExtraSize]);
+                mEntries.put(name, mMap.add(newStart, newStart + newSize, storedEntry));
+            }
+        }
+
+        /*
          * Write new files in the zip. We identify new files because they don't have an offset
          * in the zip where they are written although we already know, by their location in the
          * file map, where they will be written to.
@@ -764,9 +818,6 @@ public class ZFile implements Closeable {
                 toWriteToStore.put(entry, entryStore);
             }
         }
-
-        deleteDirectoryAndEocd();
-        mMap.truncate();
 
         /*
          * Add all free entries to the set.

@@ -52,6 +52,11 @@ public class ZFileOptions {
     private AlignmentRule mAlignmentRule;
 
     /**
+     * Should the extra field be used for alignment instead of the offsets?
+     */
+    private boolean mUseExtraFieldForAlignment;
+
+    /**
      * Creates a new options object. All options are set to their defaults.
      */
     public ZFileOptions() {
@@ -135,5 +140,25 @@ public class ZFileOptions {
      */
     public void setAlignmentRule(@NonNull AlignmentRule alignmentRule) {
         mAlignmentRule = alignmentRule;
+    }
+
+    /**
+     * Obtains whether the extra field should be used for alignment. See {@link ZFile} for an
+     * explanation on using the extra field for alignment.
+     *
+     * @return should the extra field be used for alignment?
+     */
+    public boolean getUseExtraFieldForAlignment() {
+        return mUseExtraFieldForAlignment;
+    }
+
+    /**
+     * Sets whether the extra field should be used for alignment. See {@link ZFile} for an
+     * explanation on using the extra field for alignment.
+     *
+     * @param useExtraFieldForAlignment should the extra field be used for alignment?
+     */
+    public void setUseExtraFieldForAlignment(boolean useExtraFieldForAlignment) {
+        mUseExtraFieldForAlignment = useExtraFieldForAlignment;
     }
 }
