@@ -423,19 +423,19 @@ public class RepoManagerImpl extends RepoManager {
     }
 
     @Override
-    public void invalidateLocalIfNeeded() {
+    public boolean reloadLocalIfNeeded(@NonNull ProgressIndicator progress) {
         LocalRepoLoader local = mLocalRepoLoaderFactory.createLocalRepoLoader();
         if (local == null) {
-            return;
+            return false;
         }
 
         if (checkKnownPackagesUpdateTime()) {
             mLastLocalRefreshMs = 0;
-            return;
         }
-        if (updateKnownPackageHashFileIfNecessary(local)) {
+        else if (updateKnownPackageHashFileIfNecessary(local)) {
             mLastLocalRefreshMs = 0;
         }
+        return loadSynchronously(RepoManager.DEFAULT_EXPIRATION_PERIOD_MS, progress, null, null);
     }
 
     /**

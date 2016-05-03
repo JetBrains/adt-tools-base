@@ -414,12 +414,8 @@ public class RepoManagerImplTest extends TestCase {
                 null, true));
 
         // now we scan for it
-        mgr.invalidateLocalIfNeeded();
+        assertTrue(mgr.reloadLocalIfNeeded(runner.getProgressIndicator()));
 
-        // and now we reload
-        assertTrue(
-                mgr.load(RepoManager.DEFAULT_EXPIRATION_PERIOD_MS, null, null, null, runner, null,
-                        null, true));
         // caching keeps us from loading again
         assertFalse(mgr.load(RepoManager.DEFAULT_EXPIRATION_PERIOD_MS, null, null, null, runner, null,
                 null, true));
