@@ -222,6 +222,8 @@ public class WrongIdDetector extends LayoutDetector {
                     }
                 }
 
+                boolean isConstraintLayout = layout.getTagName().equals(SdkConstants.CLASS_CONSTRAINT_LAYOUT);
+
                 for (Element element : children) {
                     String selfId = stripIdPrefix(element.getAttributeNS(ANDROID_URI, ATTR_ID));
 
@@ -272,6 +274,13 @@ public class WrongIdDetector extends LayoutDetector {
                                 } else {
                                     assert value.startsWith(ID_PREFIX) : value;
                                     if (ids.contains(NEW_ID_PREFIX + stripIdPrefix(value))) {
+                                        continue;
+                                    }
+                                }
+                                if (isConstraintLayout) {
+                                    // A reference to the ConstraintLayout from a child is valid
+                                    String parentId = stripIdPrefix(layout.getAttributeNS(ANDROID_URI, ATTR_ID));
+                                    if (parentId.equals(stripIdPrefix(value))) {
                                         continue;
                                     }
                                 }
