@@ -2207,7 +2207,7 @@ public abstract class TaskManager {
         setupCompileTaskDependencies(tasks, scope, jackTask);
 
         jackTask.optionalDependsOn(tasks, scope.getMergeJavaResourcesTask());
-        jackTask.dependsOn(tasks, scope.getVariantData().sourceGenTask);
+        jackTask.dependsOn(tasks, scope.getSourceGenTask());
         return jackTask;
     }
 
