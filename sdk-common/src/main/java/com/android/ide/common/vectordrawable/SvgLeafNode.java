@@ -23,8 +23,13 @@ import org.w3c.dom.Node;
 import java.awt.geom.AffineTransform;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.text.DecimalFormat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.android.ide.common.vectordrawable.Svg2Vector.SVG_FILL_OPACITY;
+import static com.android.ide.common.vectordrawable.Svg2Vector.SVG_OPACITY;
+import static com.android.ide.common.vectordrawable.Svg2Vector.SVG_STROKE_OPACITY;
 
 /**
  * Represent a SVG file's leave element.
@@ -191,6 +196,10 @@ class SvgLeafNode extends SvgNode {
     }
 
     private String getAttributeValues(ImmutableMap<String, String> presentationMap) {
+        // There could be some redundant opacity information in the attributes' map,
+        // like opacity Vs fill-opacity / stroke-opacity.
+        parsePathOpacity();
+
         StringBuilder sb = new StringBuilder("/>\n");
         for (String key : mVdAttributesMap.keySet()) {
             String vectorDrawableAttr = presentationMap.get(key);
@@ -220,6 +229,42 @@ class SvgLeafNode extends SvgNode {
         }
         return sb.toString();
     }
+
+    /**
+     * A utility function to get the opacity value as a floating point number.
+     * @param key The key of the opacity
+     * @return the clamped opacity value, return 1 if not found.
+     */
+    private float getOpacityValueFromMap(String key) {
+        // Default opacity is 1
+        float result = 1;
+        String opacity = mVdAttributesMap.get(key);
+        if (opacity != null) {
+            try {
+                result = Float.parseFloat(opacity);
+            } catch (NumberFormatException e) {
+                // Ignore here, invalid value is replaced as default value 1.
+            }
+        }
+        return Math.min(Math.max(result, 0), 1);
+    }
+
+    /**
+     * Parse the SVG path's opacity attribute into fill and stroke.
+     */
+    private void parsePathOpacity() {
+        float opacityInFloat = getOpacityValueFromMap(SVG_OPACITY);
+        // If opacity is 1, then nothing need to change.
+        if (opacityInFloat < 1) {
+            DecimalFormat df = new DecimalFormat("#.##");
+            float fillOpacity = getOpacityValueFromMap(SVG_FILL_OPACITY);
+            float strokeOpacity = getOpacityValueFromMap(SVG_STROKE_OPACITY);
+            mVdAttributesMap.put(SVG_FILL_OPACITY, df.format(fillOpacity * opacityInFloat));
+            mVdAttributesMap.put(SVG_STROKE_OPACITY, df.format(strokeOpacity * opacityInFloat));
+        }
+        mVdAttributesMap.remove(SVG_OPACITY);
+    }
+
 
     public static int clamp(int val, int min, int max) {
         return Math.max(min, Math.min(max, val));
