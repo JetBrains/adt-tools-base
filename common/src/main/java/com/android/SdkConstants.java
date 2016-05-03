@@ -783,7 +783,7 @@ public final class SdkConstants {
     public static final String R_CLASS = "R";                          //$NON-NLS-1$
     public static final String ANDROID_PKG = "android";                //$NON-NLS-1$
 
-    public static final String SHERPA_PREFIX = "sherpa";               //$NON-NLS-1$
+    public static final String SHERPA_PREFIX = "app";                  //$NON-NLS-1$
     public static final String SHERPA_URI = "http://schemas.android.com/apk/res-auto";              //$NON-NLS-1$
 
     // Tags: Manifest
