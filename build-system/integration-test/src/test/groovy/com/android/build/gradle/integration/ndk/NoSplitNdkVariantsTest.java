@@ -16,20 +16,25 @@
 
 package com.android.build.gradle.integration.ndk;
 
+import static com.android.build.gradle.integration.common.utils.AndroidVersionMatcher.anyAndroidVersion;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import com.android.build.gradle.integration.common.category.DeviceTests;
+import com.android.build.gradle.integration.common.fixture.Adb;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp;
+import com.android.build.gradle.integration.common.utils.AndroidVersionMatcher;
 import com.android.build.gradle.integration.common.utils.DeviceHelper;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.testing.api.DeviceException;
+import com.android.ddmlib.IDevice;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -41,6 +46,9 @@ import java.util.zip.ZipFile;
  * Integration test of the native plugin with multiple variants without using splits.
  */
 public class NoSplitNdkVariantsTest {
+
+    @Rule
+    public Adb adb = new Adb();
 
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder()
@@ -136,16 +144,15 @@ public class NoSplitNdkVariantsTest {
     @Test
     @Category(DeviceTests.class)
     public void connectedAndroidTest() throws DeviceException {
-
-        if (GradleTestProject.DEVICE_PROVIDER_NAME.equals(BuilderConstants.CONNECTED)) {
-            Collection<String> abis = DeviceHelper.getDeviceAbis();
-            if (abis.contains("x86")) {
-                project.execute(GradleTestProject.DEVICE_PROVIDER_NAME + "x86DebugAndroidTest");
-            } else {
-                project.execute(GradleTestProject.DEVICE_PROVIDER_NAME + "ArmDebugAndroidTest");
-            }
-        } else {
-            project.execute(GradleTestProject.DEVICE_PROVIDER_NAME + "X86DebugAndroidTest");
-        }
+        project.executor().run(
+                "assembleX86Debug", "assembleX86DebugAndroidTest",
+                "assembleArmDebug", "assembleArmDebugAndroidTest");
+        IDevice testDevice = adb.getDevice(anyAndroidVersion());
+        Collection<String> abis = testDevice.getAbis();
+        String taskName = abis.contains("x86") ?
+                "devicePoolX86DebugAndroidTest" : "devicePoolArmDebugAndroidTest";
+        project.executor()
+                .withArgument(Adb.getInjectToDeviceProviderProperty(testDevice))
+                .run(taskName);
     }
 }
