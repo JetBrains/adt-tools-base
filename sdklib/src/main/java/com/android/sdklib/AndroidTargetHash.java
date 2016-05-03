@@ -38,10 +38,10 @@ public abstract class AndroidTargetHash {
     public static final String PLATFORM_HASH_PREFIX = "android-";
 
     /**
-     * String to compute hash for add-on targets. <br/>
-     * Format is {@code vendor:name:apiVersion}. <br/>
+     * String to compute hash for add-on targets. <br>
+     * Format is {@code vendor:name:apiVersion}. <br>
      *
-     * <em>Important<em/>: the vendor and name compontents are the display strings, not the
+     * <em>Important</em>: the vendor and name compontents are the display strings, not the
      * newer id strings.
      */
     public static final String ADD_ON_FORMAT = "%s:%s:%s"; //$NON-NLS-1$

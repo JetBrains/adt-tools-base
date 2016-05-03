@@ -25,12 +25,12 @@ import java.util.Map;
 
 /**
  * A {@link QualifiedContent} of type directory.
- * <p/>
+ * <p>
  * This means the {@link #getFile()} is the root directory containing the content.
- * <p/>
+ * <p>
  * This also contains incremental data if the transform is in incremental mode through
  * {@link #getChangedFiles()}.
- * <p/>
+ * <p>
  * For a transform to run in incremental mode:
  * <ul>
  *     <li>{@link Transform#isIncremental()} must return <code>true</code></li>
@@ -43,7 +43,7 @@ import java.util.Map;
  * information (it will <strong>not</strong> contain the list of all the files with state
  * {@link Status#NOTCHANGED}.)
  *
- * <p/>
+ * <p>
  * When a root level directory is removed, and incremental mode is on, the instance will receive
  * a {@link DirectoryInput} instance for the removed folder, but {@link QualifiedContent#getFile()}
  * will return a directory that does not exist. In this case, the transform should prcess this

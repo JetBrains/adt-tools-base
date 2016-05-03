@@ -29,7 +29,7 @@ import java.lang.annotation.Target;
  * default can not be null. This can be overridden by adding specific
  * {@link com.android.annotations.Nullable} annotations on fields, parameters or
  * methods that should not use the default.
- * <p/>
+ * <p>
  * NOTE: Eclipse does not yet handle defaults well (in particular, if
  * you add this on a class which implements Comparable, then it will insist
  * that your compare method is changing the nullness of the compare parameter,
@@ -37,7 +37,7 @@ import java.lang.annotation.Target;
  * the method should have implied @NonNull and you do not need to check
  * the parameter.). For now, it's best to individually annotate methods,
  * parameters and fields.
- * <p/>
+ * <p>
  * This is a marker annotation and it has no specific attributes.
  */
 @Documented

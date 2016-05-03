@@ -39,11 +39,10 @@ import java.util.TimeZone;
 /**
  * Writes JUnit results to an XML files in a format consistent with
  * Ant's XMLJUnitResultFormatter.
- * <p/>
+ * <p>
  * Creates a separate XML file per test run.
- * <p/>
- * @see https://svn.jenkins-ci.org/trunk/hudson/dtkit/dtkit-format/dtkit-junit-model/src/main/resources/com/thalesgroup/dtkit/junit/model/xsd/junit-4.xsd
- */
+ *
+ * @see <a href="https://svn.jenkins-ci.org/trunk/hudson/dtkit/dtkit-format/dtkit-junit-model/src/main/resources/com/thalesgroup/dtkit/junit/model/xsd/junit-4.xsd">https://svn.jenkins-ci.org/trunk/hudson/dtkit/dtkit-format/dtkit-junit-model/src/main/resources/com/thalesgroup/dtkit/junit/model/xsd/junit-4.xsd</a> */
 public class XmlTestRunListener implements ITestRunListener {
 
     private static final String LOG_TAG = "XmlResultReporter";

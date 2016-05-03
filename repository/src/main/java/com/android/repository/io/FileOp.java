@@ -31,7 +31,7 @@ import java.util.Properties;
 
 /**
  * Wraps some common {@link File} operations on files and folders.
- * <p/>
+ * <p>
  * This makes it possible to override/mock/stub some file operations in unit tests.
  */
 public interface FileOp {
@@ -48,12 +48,12 @@ public interface FileOp {
 
     /**
      * Sets the executable Unix permission (+x) on a file or folder.
-     * <p/>
+     * <p>
      * This attempts to use File#setExecutable through reflection if
      * it's available.
      * If this is not available, this invokes a chmod exec instead,
      * so there is no guarantee of it being fast.
-     * <p/>
+     * <p>
      * Caller must make sure to not invoke this under Windows.
      *
      * @param file The file to set permissions on.

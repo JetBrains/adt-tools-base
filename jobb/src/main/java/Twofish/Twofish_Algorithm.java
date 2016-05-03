@@ -350,7 +350,7 @@ System.out.println();
    /**
     * Expand a user-supplied key material into a session key.
     *
-    * @param key  The 64/128/192/256-bit user-key to use.
+    * @param k  The 64/128/192/256-bit user-key to use.
     * @return  This cipher's round keys.
     * @exception  InvalidKeyException  If the key is invalid.
     */

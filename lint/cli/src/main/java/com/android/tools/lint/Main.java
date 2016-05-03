@@ -736,7 +736,7 @@ public class Main {
 
     /**
      * Converts a relative or absolute command-line argument into an output file.
-     * <p/>
+     * <p>
      * The difference with {@code getInArgumentPath} is that we can't check whether the
      * a relative path turned into an absolute compared to lint.workdir actually exists.
      *

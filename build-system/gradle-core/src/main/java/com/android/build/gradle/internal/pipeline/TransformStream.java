@@ -65,7 +65,7 @@ public abstract class TransformStream {
     /**
      * Returns the type of content that the stream represents.
      *
-     * <p/>
+     * <p>
      * It's never null nor empty, but can contain several types.
      */
     @NonNull
@@ -76,7 +76,7 @@ public abstract class TransformStream {
     /**
      * Returns the scope of the stream.
      *
-     * <p/>
+     * <p>
      * It's never null nor empty, but can contain several scopes.
      */
     @NonNull

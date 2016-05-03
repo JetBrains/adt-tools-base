@@ -32,14 +32,14 @@ import java.lang.annotation.Target;
  * default assumption made by most static code checking tools, so usually you
  * don't need to use this annotation; its primary use is to override a default
  * wider annotation like {@link NonNullByDefault}.
- * <p/>
+ * <p>
  * When decorating a method call parameter, this denotes the parameter can
  * legitimately be null and the method will gracefully deal with it. Typically
  * used on optional parameters.
- * <p/>
+ * <p>
  * When decorating a method, this denotes the method might legitimately return
  * null.
- * <p/>
+ * <p>
  * This is a marker annotation and it has no specific attributes.
  */
 @Documented

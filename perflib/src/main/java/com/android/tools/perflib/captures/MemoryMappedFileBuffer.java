@@ -73,12 +73,13 @@ public class MemoryMappedFileBuffer implements DataBuffer {
     }
 
     /**
-     * Creates a buffer by memory-mapping file {@param f}.
+     * Creates a buffer by memory-mapping file {@code f}.
      *
      * It may be a good idea to dispose() the buffer if no longer needed. A garbage collection isn't
      * guaranteed to free up the resources, and in a long-running 32-bit JVM there's the risk of
      * exhausting the address space this way. On Windows, mmap locks the file, preventing it from
-     * being deleted. See {@link http://bugs.java.com/bugdatabase/view_bug.do?bug_id=4715154}.
+     * being deleted. See <a href="http://bugs.java.com/bugdatabase/view_bug.do?bug_id=4715154">
+     *     http://bugs.java.com/bugdatabase/view_bug.do?bug_id=4715154</a>.
      */
     public MemoryMappedFileBuffer(@NonNull File f) throws IOException {
         this(f, DEFAULT_SIZE, DEFAULT_PADDING);

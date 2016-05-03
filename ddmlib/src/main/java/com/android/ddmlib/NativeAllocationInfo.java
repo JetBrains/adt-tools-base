@@ -24,8 +24,8 @@ import java.util.regex.Pattern;
 
 /**
  * Stores native allocation information.
- * <p/>Contains number of allocations, their size and the stack trace.
- * <p/>Note: the ddmlib does not resolve the stack trace automatically. While this class provides
+ * <p>Contains number of allocations, their size and the stack trace.
+ * <p>Note: the ddmlib does not resolve the stack trace automatically. While this class provides
  * storage for resolved stack trace, this is merely for convenience.
  */
 public class NativeAllocationInfo {
@@ -125,7 +125,7 @@ public class NativeAllocationInfo {
 
     /**
      * Sets the resolved stack call for this allocation.
-     * <p/>
+     * <p>
      * If <code>resolvedStackCall</code> is non <code>null</code> then
      * {@link #isStackCallResolved()} will return <code>true</code> after this call.
      * @param resolvedStackCall The list of {@link NativeStackCallInfo}.
@@ -264,7 +264,7 @@ public class NativeAllocationInfo {
 
     /**
      * Returns the first {@link NativeStackCallInfo} that is relevant.
-     * <p/>
+     * <p>
      * A relevant <code>NativeStackCallInfo</code> is a stack call that is not deep in the
      * lower level of the libc, but the actual method that performed the allocation.
      * @return a <code>NativeStackCallInfo</code> or <code>null</code> if the stack call has not

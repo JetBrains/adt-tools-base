@@ -28,11 +28,11 @@ import java.util.Properties;
 
 /**
  * Information about a locally installed package.
- * <p/>
+ * <p>
  * Local package information is retrieved via the {@link LocalSdk} object.
  * Clients should not need to create instances of {@link LocalPkgInfo} directly.
  * Instead please use the {@link LocalSdk} methods to parse and retrieve packages.
- * <p/>
+ * <p>
  *
  * @deprecated This is part of the old SDK manager framework. Use
  * {@link AndroidSdkHandler}/{@link RepoManager} and associated classes instead.
@@ -88,7 +88,7 @@ public abstract class LocalPkgInfo
 
     /**
      * Comparison is solely done based on the {@link IPkgDesc}.
-     * <p/>
+     * <p>
      * Other local attributes (local directory, source properties)
      * are <em>not used</em> in the comparison. Consequently {@link #compareTo(LocalPkgInfo)}
      * does not match {@link #equals(Object)} and the {@link #hashCode()} properties.

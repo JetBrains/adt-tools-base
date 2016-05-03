@@ -79,7 +79,7 @@ public abstract class Bridge {
      *
      * @param platformProperties The build properties for the platform.
      * @param fontLocation the location of the fonts.
-     * @param enumValueMap map attrName => { map enumFlagName => Integer value }. This is typically
+     * @param enumValueMap map attrName ⇒ { map enumFlagName ⇒ Integer value }. This is typically
      *          read from attrs.xml in the SDK target.
      * @param log a {@link LayoutLog} object. Can be null.
      * @return true if success.

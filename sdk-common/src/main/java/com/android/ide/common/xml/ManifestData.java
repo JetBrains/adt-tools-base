@@ -36,8 +36,8 @@ public final class ManifestData {
     public static final int MIN_SDK_CODENAME = 0;
 
     /**
-     * Value returned by {@link #getGlEsVersion()} when there are no <uses-feature> node with the
-     * attribute glEsVersion set.
+     * Value returned by {@link #getGlEsVersion()} when there are no {@code <uses-feature>} node
+     * with the attribute glEsVersion set.
      */
     public static final int GL_ES_VERSION_NOT_SET = -1;
 
@@ -683,7 +683,8 @@ public final class ManifestData {
     }
 
     /**
-     * Returns the glEsVersion from a <uses-feature> or {@link #GL_ES_VERSION_NOT_SET} if not set.
+     * Returns the glEsVersion from a {@code <uses-feature>} or {@link #GL_ES_VERSION_NOT_SET}
+     * if not set.
      */
     public int getGlEsVersion() {
         for (UsesFeature feature : mFeatures) {

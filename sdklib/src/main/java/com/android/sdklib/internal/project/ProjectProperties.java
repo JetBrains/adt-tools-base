@@ -45,13 +45,13 @@ import java.util.regex.Pattern;
 
 /**
  * Class representing project properties for both ADT and Ant-based build.
- * <p/>The class is associated to a {@link PropertyType} that indicate which of the project
+ * <p>The class is associated to a {@link PropertyType} that indicate which of the project
  * property file is represented.
- * <p/>To load an existing file, use {@link #load(IAbstractFolder, PropertyType)}.
- * <p/>The class is meant to be always in sync (or at least not newer) than the file it represents.
+ * <p>To load an existing file, use {@link #load(IAbstractFolder, PropertyType)}.
+ * <p>The class is meant to be always in sync (or at least not newer) than the file it represents.
  * Once created, it can only be updated through {@link #reload()}
  *
- * <p/>The make modification or make new file, use a {@link ProjectPropertiesWorkingCopy} instance,
+ * <p>The make modification or make new file, use a {@link ProjectPropertiesWorkingCopy} instance,
  * either through {@link #create(IAbstractFolder, PropertyType)} or through
  * {@link #makeWorkingCopy()}.
  *
@@ -300,7 +300,7 @@ public class ProjectProperties implements IPropertySource {
 
     /**
      * Creates a new project properties object, with no properties.
-     * <p/>The file is not created until {@link ProjectPropertiesWorkingCopy#save()} is called.
+     * <p>The file is not created until {@link ProjectPropertiesWorkingCopy#save()} is called.
      * @param projectFolderOsPath the project folder.
      * @param type the type of property file to create
      *
@@ -315,7 +315,7 @@ public class ProjectProperties implements IPropertySource {
 
     /**
      * Creates a new project properties object, with no properties.
-     * <p/>The file is not created until {@link ProjectPropertiesWorkingCopy#save()} is called.
+     * <p>The file is not created until {@link ProjectPropertiesWorkingCopy#save()} is called.
      * @param projectFolder the project folder.
      * @param type the type of property file to create
      *
@@ -329,7 +329,7 @@ public class ProjectProperties implements IPropertySource {
 
     /**
      * Creates a new project properties object, with no properties.
-     * <p/>Nothing can be added to it, unless a {@link ProjectPropertiesWorkingCopy} is created
+     * <p>Nothing can be added to it, unless a {@link ProjectPropertiesWorkingCopy} is created
      * first with {@link #makeWorkingCopy()}.
      * @param projectFolderOsPath the project folder.
      * @param type the type of property file to create
@@ -345,7 +345,7 @@ public class ProjectProperties implements IPropertySource {
 
     /**
      * Creates a new project properties object, with no properties.
-     * <p/>Nothing can be added to it, unless a {@link ProjectPropertiesWorkingCopy} is created
+     * <p>Nothing can be added to it, unless a {@link ProjectPropertiesWorkingCopy} is created
      * first with {@link #makeWorkingCopy()}.
      * @param projectFolder the project folder.
      * @param type the type of property file to create
@@ -435,15 +435,15 @@ public class ProjectProperties implements IPropertySource {
 
     /**
      * Parses a property file (using UTF-8 encoding) and returns a map of the content.
-     * <p/>
+     * <p>
      * If the file is not present, null is returned with no error messages sent to the log.
-     * <p/>
+     * <p>
      * IMPORTANT: This method is now unfortunately used in multiple places to parse random
      * property files. This is NOT a safe practice since there is no corresponding method
      * to write property files unless you use {@link ProjectPropertiesWorkingCopy#save()}.
      * Code that writes INI or properties without at least using
      * {@link SdkUtils#escapePropertyValue(String)} (String)} will
-     * certainly not load back correct data. <br/>
+     * certainly not load back correct data. <br>
      * Unless there's a strong legacy need to support existing files, new callers should
      * probably just use Java's {@link Properties} which has well defined semantics.
      * It's also a mistake to write/read property files using this code and expect it to
@@ -483,15 +483,15 @@ public class ProjectProperties implements IPropertySource {
 
     /**
      * Parses a property file (using UTF-8 encoding) and returns a map of the content.
-     * <p/>
+     * <p>
      * Always closes the given input stream on exit.
-     * <p/>
+     * <p>
      * IMPORTANT: This method is now unfortunately used in multiple places to parse random
      * property files. This is NOT a safe practice since there is no corresponding method
      * to write property files unless you use {@link ProjectPropertiesWorkingCopy#save()}.
      * Code that writes INI or properties without at least using
      * {@link SdkUtils#escapePropertyValue(String)} (String)} will
-     * certainly not load back correct data. <br/>
+     * certainly not load back correct data. <br>
      * Unless there's a strong legacy need to support existing files, new callers should
      * probably just use Java's {@link Properties} which has well defined semantics.
      * It's also a mistake to write/read property files using this code and expect it to
@@ -562,7 +562,7 @@ public class ProjectProperties implements IPropertySource {
 
     /**
      * Private constructor.
-     * <p/>
+     * <p>
      * Use {@link #load(String, PropertyType)} or {@link #create(String, PropertyType)}
      * to instantiate.
      */

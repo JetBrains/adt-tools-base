@@ -47,7 +47,7 @@ import java.util.Set;
  * Builds a constructor object separating all its components.
  *
  * A generic constructor has the following form:
- *
+ * <pre>{@code
  * ...                  // Code to set up this (specially for inner classes). This code
  * ...                  // Is arbitrary with the exception of sending the "this" object
  * ...                  // as a method argument is not allowed.
@@ -61,7 +61,7 @@ import java.util.Set;
  * ...                  // be created.
  * INVOKESPECIAL <init> // super() or this() call
  * ...                  // the "body" of the constructor goes here.
- *
+ * }</pre>
  * This class has the utilities to detect which instruction is the right INVOKESPECIAL call before
  * the "body".
  */
@@ -85,17 +85,15 @@ public class ConstructorBuilder {
     /**
      * Deconstruct a constructor into its components and adds the necessary code to link the components
      * later. This code is not valid java, but it can be expressed in bytecode. In essence for this constructor:
-     * <p/>
-     * <code>
+     * <pre>{@code
      *   <init>(int x) {
      *     int a = 2;
      *     super(int b = 3, x = 1, expr2() ? 3 : a++)
      *     doSomething(x + a)
      *   }
-     * </code>
-     * <p/>
+     * }</pre>
      * it creates two parts:
-     * <code>
+     * <pre>{@code
      *   Object[] init$args(Clazz this, int x, Object[] locals) { // this is always null here
      *     int a = locals[0];
      *     int b = 3;
@@ -117,7 +115,7 @@ public class ConstructorBuilder {
      *     int b = locals[1];
      *     doSomething(x + a);
      *   }
-     * </code>
+     * }</pre>
      *
      * @param owner the owning class.
      * @param method the constructor method.

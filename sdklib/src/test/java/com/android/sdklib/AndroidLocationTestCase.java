@@ -28,7 +28,7 @@ import junit.framework.TestCase;
 
 /**
  * Test case that overrides the {@link AndroidLocation} to point to temp one.
- * <p/>
+ * <p>
  * This one doesn't create a temp fake SDK (see {@link SdkManagerTestCase}.)
  */
 public abstract class AndroidLocationTestCase extends TestCase {

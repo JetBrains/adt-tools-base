@@ -21,9 +21,9 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 /**
- * ABI values that can appear in a device's xml &lt;abi> field <em>and</em>
+ * ABI values that can appear in a device's xml {@code <abi>} field <em>and</em>
  * in a system-image abi.
- * <p/>
+ * <p>
  * The CPU arch and model values are used to configure an AVD using a given ABI.
  */
 public enum Abi {

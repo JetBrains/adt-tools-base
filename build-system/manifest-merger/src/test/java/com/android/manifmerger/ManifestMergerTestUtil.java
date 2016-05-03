@@ -108,7 +108,7 @@ public class ManifestMergerTestUtil {
      * The input (main + libs) are stored in temp files.
      * A new destination temp file is created to store the actual result output.
      * The expected result is actually kept in a string.
-     * <p/>
+     * <p>
      * Data File Syntax:
      * <ul>
      * <li> Lines starting with # are ignored (anywhere, as long as # is the first char).

@@ -63,7 +63,7 @@ import java.util.jar.JarFile;
  * by the InstantRun implementation.
  *
  * To verify class changes, this transform will save all .class files in a private directory
- * {@see VariantScope#getIncrementalVerifierDir}.
+ * see {@link VariantScope#getIncrementalVerifierDir}.
  *
  * When new classes are compiled, this transform will receive an incremental notification and will
  * compare the new versions to the ones saved in the private directory. The result of this

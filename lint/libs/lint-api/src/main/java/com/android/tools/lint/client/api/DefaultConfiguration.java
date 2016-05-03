@@ -59,7 +59,7 @@ import java.util.regex.PatternSyntaxException;
 /**
  * Default implementation of a {@link Configuration} which reads and writes
  * configuration data into {@code lint.xml} in the project directory.
- * <p/>
+ * <p>
  * <b>NOTE: This is not a public or final API; if you rely on this be prepared
  * to adjust your code for the next tools release.</b>
  */

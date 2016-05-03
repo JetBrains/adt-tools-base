@@ -70,7 +70,7 @@ import java.util.regex.Pattern;
 
 /**
  * Information on a specific build-tool folder.
- * <p/>
+ * <p>
  * For unit tests, see:
  * - sdklib/src/test/.../LocalSdkTest
  * - sdklib/src/test/.../SdkManagerTest
@@ -272,7 +272,7 @@ public class BuildToolInfo {
 
     /**
      * Returns the build-tool revision-specific folder.
-     * <p/>
+     * <p>
      * For compatibility reasons, use {@link #getPath(PathId)} if you need the path to a
      * specific tool.
      */

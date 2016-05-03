@@ -23,7 +23,7 @@ import java.util.List;
 
 /**
  * Represents a graphical context that rules can use to draw on the canvas.
- * <p/>
+ * <p>
  * The wrapper GC is only valid during the context of a paint operation.
  * This means {@link IViewRule}s should not cache this object and call it at
  * just about any time, it is only valid during a call that actually receives
@@ -147,11 +147,11 @@ public interface IGraphics {
 
     /**
      * Registers a color using 0x00rrggbb where each component is 0..0xFF.
-     * <p/>
+     * <p>
      * Transparency is handled separately using {@link #setAlpha(int)}.
-     * <p/>
+     * <p>
      * If the same color is registered twice, the same object will be returned.
-     * <p/>
+     * <p>
      * NOTE: It's preferable to use {@link #useStyle(DrawingStyle)} if possible
      * to ensure that your colors work properly across multiple current and
      * future themes.

@@ -159,9 +159,9 @@ public class TimelineData {
     }
 
     /**
-     * @Deprecated.
-     * TODO: Remove all usages then remove this method.
+     * @deprecated TODO: Remove all usages then remove this method.
      */
+    @Deprecated
     public Sample get(int index) {
         SampleInfo info = mSampleInfos.get(index);
         float[] values = new float[mStreams.size()];
@@ -236,9 +236,9 @@ public class TimelineData {
 
     /**
      * A sample of all the streams at a given moment in time.
-     * @Deprecated
-     * TODO: Remove all usages then remove this class.
+     * @deprecated TODO: Remove all usages then remove this class.
      */
+    @Deprecated
     public static class Sample {
 
         /**

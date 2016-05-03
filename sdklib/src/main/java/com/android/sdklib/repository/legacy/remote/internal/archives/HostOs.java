@@ -24,10 +24,10 @@ import com.android.sdklib.repository.AndroidSdkHandler;
 import java.util.Locale;
 
 /**
- * The OS that this archive can be downloaded on. <br/>
+ * The OS that this archive can be downloaded on. <br>
  * The represents a "host" where the SDK tools and the SDK Manager can run,
  * not the Android device targets.
- * <p/>
+ * <p>
  * The actual OS requirements for the SDK are listed at
  * <a href="http://d.android.com/sdk">http://d.android.com/sdk</a>
  *

@@ -21,30 +21,30 @@ import com.android.utils.ILogger;
 
 /**
  * A monitor interface for a {@link ITask}.
- * <p/>
+ * <p>
  * Depending on the task factory that created the task, there might not be any UI
  * or it might not implement all the methods, in which case calling them would be
  * a no-op but is guaranteed not to crash.
- * <p/>
+ * <p>
  * If the task runs in a non-UI worker thread, the task factory implementation
  * will take care of the update the UI in the correct thread. The task itself
  * must not have to deal with it.
- * <p/>
- * A monitor typically has 3 levels of text displayed: <br/>
+ * <p>
+ * A monitor typically has 3 levels of text displayed: <br>
  * - A <b>title</b> <em>may</em> be present on a task dialog, typically when a task
- *   dialog is created. This is not covered by this monitor interface. <br/>
+ *   dialog is created. This is not covered by this monitor interface. <br>
  * - A <b>description</b> displays prominent information on what the task
  *   is currently doing. This is expected to vary over time, typically changing
  *   with each sub-monitor, and typically only the last description is visible.
  *   For example an updater would typically have descriptions such as "downloading",
- *   "installing" and finally "done". This is set using {@link #setDescription}. <br/>
+ *   "installing" and finally "done". This is set using {@link #setDescription}. <br>
  * - A <b>verbose</b> optional log that can provide more information than the summary
  *   description and is typically displayed in some kind of scrollable multi-line
  *   text field so that the user can keep track of what happened. 3 levels are
  *   provided: error, normal and verbose. An UI may hide the log till an error is
  *   logged and/or might hide the verbose text unless a flag is checked by the user.
  *   This is set using {@link #log}, {@link #logError} and {@link #logVerbose}.
- * <p/>
+ * <p>
  * A monitor is also an {@link ILogger} implementation.
  *
  * @deprecated

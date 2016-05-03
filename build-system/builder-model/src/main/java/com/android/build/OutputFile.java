@@ -68,7 +68,7 @@ public interface OutputFile {
 
     /**
      * Returns the split dimensions the referenced APK was created with. Each collection's value
-     * is the string representation of an element of the {@see FilterType} enum.
+     * is the string representation of an element of the {@link FilterType} enum.
      */
     @NonNull
     Collection<String> getFilterTypes();

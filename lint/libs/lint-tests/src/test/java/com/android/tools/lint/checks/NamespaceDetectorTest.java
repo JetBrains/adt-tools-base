@@ -61,7 +61,7 @@ public class NamespaceDetectorTest extends AbstractCheckTest {
 
                     // Use a standard project properties instead: no warning since it's
                     // not a library project:
-                    //"multiproject/library.properties=>project.properties",
+                    //"multiproject/library.properties⇒project.properties",
 
                     "res/layout/customview.xml"
             ));

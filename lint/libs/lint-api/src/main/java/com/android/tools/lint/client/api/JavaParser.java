@@ -56,7 +56,7 @@ import lombok.ast.While;
 /**
  * A wrapper for a Java parser. This allows tools integrating lint to map directly
  * to builtin services, such as already-parsed data structures in Java editors.
- * <p/>
+ * <p>
  * <b>NOTE: This is not public or final API; if you rely on this be prepared
  * to adjust your code for the next tools release.</b>
  */

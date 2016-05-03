@@ -27,14 +27,14 @@ import java.util.Map.Entry;
 
 /**
  * Parses the command-line and stores flags needed or requested.
- * <p/>
+ * <p>
  * This is a base class. To be useful you want to:
  * <ul>
  * <li>override it.
  * <li>pass an action array to the constructor.
  * <li>define flags for your actions.
  * </ul>
- * <p/>
+ * <p>
  * To use, call {@link #parseArgs(String[])} and then
  * call {@link #getValue(String, String, String)}.
  */
@@ -70,11 +70,11 @@ public class CommandLineParser {
 
     /**
      * Action definitions.
-     * <p/>
+     * <p>
      * This list serves two purposes: first it is used to know which verb/object
      * actions are acceptable on the command-line; second it provides a summary
      * for each action that is printed in the help.
-     * <p/>
+     * <p>
      * Each entry is a string array with:
      * <ul>
      * <li> the verb.
@@ -92,7 +92,7 @@ public class CommandLineParser {
 
     /**
      * The map of all defined arguments.
-     * <p/>
+     * <p>
      * The key is a string "verb/directObject/longName".
      */
     private final HashMap<String, Arg> mArguments = new HashMap<String, Arg>();
@@ -171,13 +171,13 @@ public class CommandLineParser {
 
     /**
      * Raw access to parsed parameter values.
-     * <p/>
+     * <p>
      * The default is to scan all parameters. Parameters that have been explicitly set on the
      * command line are returned first. Otherwise one with a non-null value is returned.
-     * <p/>
+     * <p>
      * Both a verb and a direct object filter can be specified. When they are non-null they limit
      * the scope of the search.
-     * <p/>
+     * <p>
      * If nothing has been found, return the last default value seen matching the filter.
      *
      * @param verb The verb name, including {@link #GLOBAL_FLAG_VERB}. If null, all possible
@@ -232,7 +232,7 @@ public class CommandLineParser {
 
     /**
      * Parses the command-line arguments.
-     * <p/>
+     * <p>
      * This method will exit and not return if a parsing error arise.
      *
      * @param args The arguments typically received by a main method.

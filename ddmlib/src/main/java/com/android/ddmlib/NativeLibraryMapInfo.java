@@ -18,7 +18,7 @@ package com.android.ddmlib;
 
 /**
  * Memory address to library mapping for native libraries.
- * <p/>
+ * <p>
  * Each instance represents a single native library and its start and end memory addresses. 
  */
 public final class NativeLibraryMapInfo {

@@ -106,3 +106,6 @@ tasks.jar {
 tasks.sourcesJar {
     from({zipTree(configurations.sourcesProvided.singleFile)})
 }
+javadoc {
+    classpath += configurations.provided
+}

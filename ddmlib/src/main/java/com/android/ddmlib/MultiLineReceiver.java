@@ -23,8 +23,8 @@ import java.util.ArrayList;
 /**
  * Base implementation of {@link IShellOutputReceiver}, that takes the raw data coming from the
  * socket, and convert it into {@link String} objects.
- * <p/>Additionally, it splits the string by lines.
- * <p/>Classes extending it must implement {@link #processNewLines(String[])} which receives
+ * <p>Additionally, it splits the string by lines.
+ * <p>Classes extending it must implement {@link #processNewLines(String[])} which receives
  * new parsed lines as they become available.
  */
 public abstract class MultiLineReceiver implements IShellOutputReceiver {
@@ -124,7 +124,7 @@ public abstract class MultiLineReceiver implements IShellOutputReceiver {
 
     /**
      * Called when new lines are being received by the remote process.
-     * <p/>It is guaranteed that the lines are complete when they are given to this method.
+     * <p>It is guaranteed that the lines are complete when they are given to this method.
      * @param lines The array containing the new lines.
      */
     public abstract void processNewLines(String[] lines);

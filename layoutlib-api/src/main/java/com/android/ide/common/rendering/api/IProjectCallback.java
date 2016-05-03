@@ -49,13 +49,13 @@ public interface IProjectCallback {
 
     /**
      * Loads a custom class with the given constructor signature and arguments.
-     * <p/>
+     * <p>
      * Despite the name, the method is used not just for views (android.view.View),
      * but potentially any class in the project's namespace. However, when the
      * method is used for loading non-view classes the error messages reported may
      * not be ideal, since the the IDE may assume those classes to be a view and try
      * to use a different constructor or replace it with a MockView.
-     * <p/>
+     * <p>
      * This is done so that LayoutLib can continue to work on older versions of the IDE.
      * Newer versions of LayoutLib should call {@link
      * LayoutlibCallback#loadClass(String, Class[], Object[])} in such a case.
@@ -70,13 +70,13 @@ public interface IProjectCallback {
 
     /**
      * Returns the namespace of the application.
-     * <p/>This lets the Layout Lib load custom attributes for custom views.
+     * <p>This lets the Layout Lib load custom attributes for custom views.
      */
     String getNamespace();
 
     /**
      * Resolves the id of a resource Id.
-     * <p/>The resource id is the value of a <code>R.&lt;type&gt;.&lt;name&gt;</code>, and
+     * <p>The resource id is the value of a <code>R.&lt;type&gt;.&lt;name&gt;</code>, and
      * this method will return both the type and name of the resource.
      * @param id the Id to resolve.
      * @return a Pair of {@link ResourceType} and resource name, or null if the id
@@ -87,7 +87,7 @@ public interface IProjectCallback {
 
     /**
      * Resolves the id of a resource Id of type int[]
-     * <p/>The resource id is the value of a R.styleable.&lt;name&gt;, and this method will
+     * <p>The resource id is the value of a R.styleable.&lt;name&gt;, and this method will
      * return the name of the resource.
      * @param id the Id to resolve.
      * @return the name of the resource or <code>null</code> if not found.
@@ -96,7 +96,7 @@ public interface IProjectCallback {
 
     /**
      * Returns the id of a resource.
-     * <p/>The provided type and name must match an existing constant defined as
+     * <p>The provided type and name must match an existing constant defined as
      * <code>R.&lt;type&gt;.&lt;name&gt;</code>.
      * @param type the type of the resource
      * @param name the name of the resource

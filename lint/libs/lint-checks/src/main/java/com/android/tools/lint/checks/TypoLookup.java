@@ -435,7 +435,7 @@ public class TypoLookup {
             byte b = data[i];
             if (b == ' ') {
                 // We've matched up to the space in a split-word typo, such as
-                // in German all zu=>allzu; here we've matched just past "all".
+                // in German all zu⇒allzu; here we've matched just past "all".
                 // Rather than terminating, attempt to continue in the buffer.
                 if (j == end) {
                     int max = s.length();
@@ -491,10 +491,10 @@ public class TypoLookup {
             byte b = data[i];
             if (b == ' ') {
                 // We've matched up to the space in a split-word typo, such as
-                // in German all zu=>allzu; here we've matched just past "all".
+                // in German all zu⇒allzu; here we've matched just past "all".
                 // Rather than terminating, attempt to continue in the buffer.
                 // We've matched up to the space in a split-word typo, such as
-                // in German all zu=>allzu; here we've matched just past "all".
+                // in German all zu⇒allzu; here we've matched just past "all".
                 // Rather than terminating, attempt to continue in the buffer.
                 if (j == end) {
                     int max = s.length;

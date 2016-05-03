@@ -130,7 +130,7 @@ public abstract class ReadOnlyBaseConfig extends GroovyObjectSupport implements 
     /**
      * Some build scripts add dynamic properties to flavors declaration (and others) and expect to
      * retrieve such properties values through this model. Delegate any property we don't know about
-     * to the {@see BaseConfig} groovy object which hopefully will know about the dynamic property.
+     * to the {@link BaseConfig} groovy object which hopefully will know about the dynamic property.
      *
      * @param name the property name
      * @return the property value if exists or an exception will be thrown.

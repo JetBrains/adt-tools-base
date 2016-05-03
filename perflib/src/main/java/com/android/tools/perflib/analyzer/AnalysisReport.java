@@ -40,7 +40,7 @@ public class AnalysisReport {
 
     /**
      * Add the {@code entry} to the report. Since this is effectively a "reduce" call, the listener
-     * will want to get called on the same thread as {@link #addResultListener(Listener)} and {@link
+     * will want to get called on the same thread as {@link #addResultListeners(Set)} and {@link
      * #setCompleted()}.
      */
     public void addAnalysisResultEntries(@NonNull List<AnalysisResultEntry> entries) {

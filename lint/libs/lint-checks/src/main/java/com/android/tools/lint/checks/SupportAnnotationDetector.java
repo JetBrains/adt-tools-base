@@ -1239,7 +1239,7 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
         int actual;
         boolean isString = false;
 
-        // TODO: Collections syntax, e.g. Arrays.asList => param count, emptyList=0, singleton=1, etc
+        // TODO: Collections syntax, e.g. Arrays.asList ⇒ param count, emptyList=0, singleton=1, etc
         // TODO: Flow analysis
         // No flow analysis for this check yet, only checking literals passed in as parameters
 

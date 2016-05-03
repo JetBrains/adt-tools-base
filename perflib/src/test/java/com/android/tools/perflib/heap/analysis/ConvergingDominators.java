@@ -22,13 +22,15 @@ import com.android.tools.perflib.heap.RootObj;
 import com.android.tools.perflib.heap.Snapshot;
 
 /**
- * Initial implementation of dominator computation. <p/> Node <i>d</i> is said to dominate node
+ * Initial implementation of dominator computation. <p> Node <i>d</i> is said to dominate node
  * <i>n</i> if every path from any of the roots to node <i>n</i> must go through <i>d</i>. The
  * <b>immediate</b> dominator of a node <i>n</i> is the dominator <i>d</i> that is closest to
  * <i>n</i>. The immediate dominance relation yields a tree called <b>dominator tree</b>, with the
  * important property that the subtree of a node corresponds to the retained object graph of that
  * particular node, i.e. the amount of memory that could be freed if the node were garbage
- * collected. <p/> The full algorithm is described in {@see http://www.cs.rice.edu/~keith/EMBED/dom.pdf}.
+ * collected. <p> The full algorithm is described in
+ * <a href="http://www.cs.rice.edu/~keith/EMBED/dom.pdf">
+ *     http://www.cs.rice.edu/~keith/EMBED/dom.pdf</a>.
  * It's a simple iterative algorithm with worst-case complexity of O(N^2).
  */
 public class ConvergingDominators extends DominatorsBase {

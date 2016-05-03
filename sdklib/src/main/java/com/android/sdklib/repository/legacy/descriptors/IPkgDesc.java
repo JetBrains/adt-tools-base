@@ -30,12 +30,12 @@ import java.io.File;
 /**
  * {@link IPkgDesc} keeps information on individual SDK packages
  * (both local or remote packages definitions.)
- * <br/>
+ * <br>
  * Packages have different attributes depending on their type.
- * <p/>
+ * <p>
  * To create a new {@link IPkgDesc}, use one of the package-specific constructors
  * provided by {@code PkgDesc.Builder.newXxx()}.
- * <p/>
+ * <p>
  * To query packages capabilities, rely on {@link #getType()} and the {@code IPkgDesc.hasXxx()}
  * methods provided by {@link IPkgDesc}.
  *
@@ -88,11 +88,11 @@ public interface IPkgDesc extends Comparable<IPkgDesc> {
 
     /**
      * Returns the package's path string or null.
-     * <p/>
-     * For {@link PkgType#PKG_SYS_IMAGE}, the path is the system-image ABI. <br/>
-     * For {@link PkgType#PKG_PLATFORM}, the path is the platform hash string. <br/>
-     * For {@link PkgType#PKG_ADDON}, the path is the platform hash string. <br/>
-     * For {@link PkgType#PKG_EXTRA}, the path is the extra-path string. <br/>
+     * <p>
+     * For {@link PkgType#PKG_SYS_IMAGE}, the path is the system-image ABI. <br>
+     * For {@link PkgType#PKG_PLATFORM}, the path is the platform hash string. <br>
+     * For {@link PkgType#PKG_ADDON}, the path is the platform hash string. <br>
+     * For {@link PkgType#PKG_EXTRA}, the path is the extra-path string. <br>
      *
      * @return A non-null value if {@link #hasPath()} is true; otherwise a null value.
      */

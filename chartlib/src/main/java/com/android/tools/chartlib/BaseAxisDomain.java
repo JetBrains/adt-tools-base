@@ -103,14 +103,14 @@ public abstract class BaseAxisDomain {
 
     /**
      * @return The base value corresponding to a unit.
-     *          e.g. For time, ms -> 10, s -> 60, m -> 60
+     *          e.g. For time, ms → 10, s → 60, m → 60
      * @throws IndexOutOfBoundsException If index is out of the expected range.
      */
     protected abstract int getUnitBase(int index);
 
     /**
      * @return The ratio between the current and next units.
-     *          e.g. For time, ms -> 1000, s -> 60, m -> 60
+     *          e.g. For time, ms → 1000, s → 60, m → 60
      * @throws IndexOutOfBoundsException If index is out of the expected range.
      */
     protected abstract int getUnitMultiplier(int index);

@@ -153,8 +153,8 @@ public interface IDevice extends IShellEnabledDevice {
 
     /**
      * Returns the name of the AVD the emulator is running.
-     * <p/>This is only valid if {@link #isEmulator()} returns true.
-     * <p/>If the emulator is not running any AVD (for instance it's running from an Android source
+     * <p>This is only valid if {@link #isEmulator()} returns true.
+     * <p>If the emulator is not running any AVD (for instance it's running from an Android source
      * tree build), this method will return "<code>&lt;build&gt;</code>".
      *
      * @return the name of the AVD or <code>null</code> if there isn't any.
@@ -197,7 +197,7 @@ public interface IDevice extends IShellEnabledDevice {
     String getProperty(@NonNull String name);
 
     /**
-     * Returns <code>true></code> if properties have been cached
+     * Returns <code>true</code> if properties have been cached
      */
     boolean arePropertiesSet();
 
@@ -350,7 +350,7 @@ public interface IDevice extends IShellEnabledDevice {
 
     /**
      * Executes a shell command on the device, and sends the result to a <var>receiver</var>
-     * <p/>This is similar to calling
+     * <p>This is similar to calling
      * <code>executeShellCommand(command, receiver, DdmPreferences.getTimeOut())</code>.
      *
      * @param command the shell command to execute
@@ -371,7 +371,7 @@ public interface IDevice extends IShellEnabledDevice {
 
     /**
      * Runs the event log service and outputs the event log to the {@link LogReceiver}.
-     * <p/>This call is blocking until {@link LogReceiver#isCancelled()} returns true.
+     * <p>This call is blocking until {@link LogReceiver#isCancelled()} returns true.
      * @param receiver the receiver to receive the event log entries.
      * @throws TimeoutException in case of timeout on the connection. This can only be thrown if the
      * timeout happens during setup. Once logs start being received, no timeout will occur as it's
@@ -384,7 +384,7 @@ public interface IDevice extends IShellEnabledDevice {
 
     /**
      * Runs the log service for the given log and outputs the log to the {@link LogReceiver}.
-     * <p/>This call is blocking until {@link LogReceiver#isCancelled()} returns true.
+     * <p>This call is blocking until {@link LogReceiver#isCancelled()} returns true.
      *
      * @param logname the logname of the log to read from.
      * @param receiver the receiver to receive the event log entries.
@@ -588,7 +588,7 @@ public interface IDevice extends IShellEnabledDevice {
 
     /**
      * Return the device's battery level, from 0 to 100 percent.
-     * <p/>
+     * <p>
      * The battery level may be cached. Only queries the device for its
      * battery level if 5 minutes have expired since the last successful query.
      *
@@ -601,14 +601,14 @@ public interface IDevice extends IShellEnabledDevice {
 
     /**
      * Return the device's battery level, from 0 to 100 percent.
-     * <p/>
+     * <p>
      * The battery level may be cached. Only queries the device for its
      * battery level if <code>freshnessMs</code> ms have expired since the last successful query.
      *
      * @param freshnessMs
      * @return the battery level or <code>null</code> if it could not be retrieved
      * @throws ShellCommandUnresponsiveException
-     * @deprecated use {@link #getBattery(long, TimeUnit))}
+     * @deprecated use {@link #getBattery(long, TimeUnit)}
      */
     @Deprecated
     Integer getBatteryLevel(long freshnessMs) throws TimeoutException,
@@ -616,7 +616,7 @@ public interface IDevice extends IShellEnabledDevice {
 
     /**
      * Return the device's battery level, from 0 to 100 percent.
-     * <p/>
+     * <p>
      * The battery level may be cached. Only queries the device for its
      * battery level if 5 minutes have expired since the last successful query.
      *
@@ -628,7 +628,7 @@ public interface IDevice extends IShellEnabledDevice {
 
     /**
      * Return the device's battery level, from 0 to 100 percent.
-     * <p/>
+     * <p>
      * The battery level may be cached. Only queries the device for its
      * battery level if <code>freshnessTime</code> has expired since the last successful query.
      *

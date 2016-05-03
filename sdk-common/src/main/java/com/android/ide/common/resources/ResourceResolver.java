@@ -580,7 +580,8 @@ public class ResourceResolver extends RenderResources {
 
     /**
      * Computes the name of the parent style, or <code>null</code> if the style is a root style.
-     * You probably want to use {@link ResolutionUtils#getParentQualifiedName(StyleResourceValue)} instead
+     * You probably want to use {@code ResolutionUtils,getParentQualifiedName(StyleResourceValue)}
+     * instead
      */
     @Nullable
     public static String getParentName(StyleResourceValue style) {
@@ -711,7 +712,7 @@ public class ResourceResolver extends RenderResources {
 
     /**
      * Searches for and returns the {@link StyleResourceValue} from a given name.
-     * <p/>The format of the name can be:
+     * <p>The format of the name can be:
      * <ul>
      * <li>[android:]&lt;name&gt;</li>
      * <li>[android:]style/&lt;name&gt;</li>

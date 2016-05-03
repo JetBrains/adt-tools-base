@@ -52,7 +52,7 @@ public final class HttpWrapper {
     /**
      * Wraps URL.openConnect() and creates a wrapper class around the returned Http(s)URLConnection
      *
-     * url.openConnection() ==> HttpWrapper.wrapURLConnection(url.openConnection())
+     * url.openConnection() ⇒ HttpWrapper.wrapURLConnection(url.openConnection())
      */
     public static URLConnection wrapURLConnection(URLConnection wrapped) {
         return wrapURLConnectionHelper(wrapped);
@@ -61,7 +61,7 @@ public final class HttpWrapper {
     /**
      * Wraps URL.openStream()
      *
-     * url.openStream() ==> HttpWrapper.wrapOpenStream(url)
+     * url.openStream() ⇒ HttpWrapper.wrapOpenStream(url)
      */
     public static InputStream wrapOpenStream(URL url) throws IOException {
         return wrapURLConnectionHelper(url.openConnection()).getInputStream();
@@ -70,7 +70,7 @@ public final class HttpWrapper {
     /**
      * Wraps URL.getContent()
      *
-     * url.getContent() ==> HttpWrapper.wrapGetContent(url)
+     * url.getContent() ⇒ HttpWrapper.wrapGetContent(url)
      */
     public static Object wrapGetContent(URL url) throws IOException {
         return wrapURLConnectionHelper(url.openConnection()).getContent();
@@ -79,7 +79,7 @@ public final class HttpWrapper {
     /**
      * Wraps URL.getContent(Class[] types)
      *
-     * url.getContent(types) ==> HttpWrapper.wrapGetContent(url, types)
+     * url.getContent(types) ⇒ HttpWrapper.wrapGetContent(url, types)
      */
     public static Object wrapGetContent(URL url, Class[] types) throws IOException {
         return wrapURLConnectionHelper(url.openConnection()).getContent(types);

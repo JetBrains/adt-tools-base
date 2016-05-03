@@ -35,16 +35,16 @@ import java.util.regex.Pattern;
 
 /**
  * Provides control over emulated hardware of the Android emulator.
- * <p/>This is basically a wrapper around the command line console normally used with telnet.
- *<p/>
+ * <p>This is basically a wrapper around the command line console normally used with telnet.
+ *<p>
  * Regarding line termination handling:<br>
  * One of the issues is that the telnet protocol <b>requires</b> usage of <code>\r\n</code>. Most
  * implementations don't enforce it (the dos one does). In this particular case, this is mostly
  * irrelevant since we don't use telnet in Java, but that means we want to make
  * sure we use the same line termination than what the console expects. The console
  * code removes <code>\r</code> and waits for <code>\n</code>.
- * <p/>However this means you <i>may</i> receive <code>\r\n</code> when reading from the console.
- * <p/>
+ * <p>However this means you <i>may</i> receive <code>\r\n</code> when reading from the console.
+ * <p>
  * <b>This API will change in the near future.</b>
  */
 public final class EmulatorConsole {

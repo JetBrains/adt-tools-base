@@ -18,9 +18,12 @@ package com.android.builder.compiling;
 
 import com.android.annotations.NonNull;
 import com.android.builder.internal.incremental.DependencyData;
+import com.android.ide.common.process.ProcessOutputHandler;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * A Class that processes a dependency file after a compilation.
@@ -32,8 +35,7 @@ import java.io.IOException;
  *
  * The instance will be called for each dependency file that is created during compilation.
  *
- * @see com.android.builder.core.AndroidBuilder#compileAllAidlFiles(java.util.List, File, File, java.util.List, DependencyFileProcessor, com.android.ide.common.process.ProcessOutputHandler)
- * @see com.android.builder.core.AndroidBuilder#compileAidlFile(File, File, File, File, java.util.List, DependencyFileProcessor, com.android.ide.common.process.ProcessOutputHandler)
+ * @see com.android.builder.core.AndroidBuilder#compileAllAidlFiles(List, File, File, Collection, List, DependencyFileProcessor, ProcessOutputHandler)}
  */
 public interface DependencyFileProcessor {
 

@@ -98,7 +98,7 @@ import javax.xml.parsers.ParserConfigurationException;
  *         used for activity icons)</li>
  *     <li>The merged R class (to find the actual integer constants assigned to resources)</li>
  *     <li>The ProGuard log files (to find the mapping from original symbol names to
- *         short names)</li>*
+ *         short names)*</li>
  *     <li>The merged resources (to find which resources reference other resources, e.g.
  *         drawable state lists including other drawables, or layouts including other
  *         layouts, or styles referencing other drawables, or menus items including action

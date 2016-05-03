@@ -146,10 +146,10 @@ This implementation provides perfect incremental updates.
 <p>
 Additionally, by adding/removing extensions we can configure what type of apk we want:
 <ul>
-    <li>No SignatureExtension & No FullApkSignExtension => Aligned, unsigned apk.</li>
-    <li>Signature Extension & No FullApkSignExtension =>Aligned, v1 only signed apk.</li>
-    <li>Signature Extension & FullApkSignExtension => Aligned, v1 & v2 signed apk.</li>
-    <li>No Signature Extension & FullApkSignExtension => Aligned, v2 only signed apk.</li>
+    <li>No SignatureExtension &amp; No FullApkSignExtension ⇒ Aligned, unsigned apk.</li>
+    <li>Signature Extension &amp; No FullApkSignExtension ⇒ Aligned, v1 only signed apk.</li>
+    <li>Signature Extension &amp; FullApkSignExtension ⇒ Aligned, v1 &amp; v2 signed apk.</li>
+    <li>No Signature Extension &amp; FullApkSignExtension ⇒ Aligned, v2 only signed apk.</li>
 </ul>
 So, by configuring which extensions to add, the package task can decide what type of apk we want.
 */

@@ -703,7 +703,7 @@ public class ManifestMerger2 {
      * <ul>
      *     <li>Build types and flavors overriding manifests</li>
      *     <li>Application main manifest</li>
-     *     <li>Library manifest files</li></lib>
+     *     <li>Library manifest files</li>
      * </ul>
      *
      * Only the main manifest file is a mandatory parameter.

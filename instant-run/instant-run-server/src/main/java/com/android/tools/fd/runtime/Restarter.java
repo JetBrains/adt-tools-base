@@ -93,7 +93,7 @@ public class Restarter {
      * possible:
      * <ul>
      *     <li>The current activity</li>
-     *     <li>If possible, state in the current activity</li>, and
+     *     <li>If possible, state in the current activity, and</li>
      *     <li>The activity stack</li>
      * </ul>
      *
@@ -245,7 +245,7 @@ public class Restarter {
         //getWindow().getDecorView().findViewById(android.R.id.content).invalidate();
 
         // This is a bit of a sledgehammer. We should consider having an incremental updater,
-        // similar to IntelliJ's Look & Feel updater which iterates to the view hierarchy
+        // similar to IntelliJ's Look &amp; Feel updater which iterates to the view hierarchy
         // and tries to incrementally refresh the LAF delegates and force a repaint.
         // On the other hand, we may never be able to succeed with that, since there could be
         // UI elements on the screen cached from callbacks. I should probably *not* attempt

@@ -78,7 +78,7 @@ public class ResourceItem implements Comparable<ResourceItem> {
 
     /**
      * Returns whether the resource is editable directly.
-     * <p/>
+     * <p>
      * This is typically the case for resources that don't have alternate versions, or resources
      * of type {@link ResourceType#ID} that aren't declared inline.
      */

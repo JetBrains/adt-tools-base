@@ -52,7 +52,7 @@ import java.util.Map;
  * and redirect if necessary.
  *
  * Redirection will be achieved by calling a
- * {@link IncrementalChange#access$dispatch(String, Object...)} method.
+ * {@code IncrementalChange#access$dispatch(String, Object...)} method.
  */
 public class IncrementalSupportVisitor extends IncrementalVisitor {
 
@@ -98,7 +98,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
     /**
      * Ensures that the class contains a $change field used for referencing the
      * IncrementalChange dispatcher.
-     * <p/>
+     * <p>
      * Also updates package_private visiblity to public so we can call into this class from
      * outside the package.
      */
@@ -257,7 +257,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         /**
          * inserts a new local '$change' in each method that contains a reference to the type's
          * IncrementalChange dispatcher, this is done to avoid threading issues.
-         * <p/>
+         * <p>
          * Pseudo code:
          * <code>
          *   $package/IncrementalChange $local1 = $className$.$change;
@@ -338,7 +338,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
     /***
      * Inserts a trampoline to this class so that the updated methods can make calls to super
      * class methods.
-     * <p/>
+     * <p>
      * Pseudo code for this trampoline:
      * <code>
      *   Object access$super($classType instance, String name, object[] args) {
@@ -441,7 +441,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
      * Inserts a trampoline to this class so that the updated methods can make calls to
      * constructors.
      *
-     * <p/>
+     * <p>
      * Pseudo code for this trampoline:
      * <code>
      *   ClassName(Object[] args, Marker unused) {

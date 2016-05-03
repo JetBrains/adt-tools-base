@@ -317,15 +317,15 @@ public abstract class Detector {
      Java language specification, so guessing the corresponding names is
      straightforward; here are some examples:
      <pre>
-     ClassDeclaration => PsiClass
-     MethodDeclaration => PsiMethod
-     MethodInvocation => PsiMethodCallExpression
-     ConstructorInvocation => PsiNewExpression
-     If => PsiIfStatement
-     For => PsiForStatement
-     Continue => PsiContinueStatement
-     StringLiteral => PsiLiteral
-     IntegralLiteral => PsiLiteral
+     ClassDeclaration ⇒ PsiClass
+     MethodDeclaration ⇒ PsiMethod
+     MethodInvocation ⇒ PsiMethodCallExpression
+     ConstructorInvocation ⇒ PsiNewExpression
+     If ⇒ PsiIfStatement
+     For ⇒ PsiForStatement
+     Continue ⇒ PsiContinueStatement
+     StringLiteral ⇒ PsiLiteral
+     IntegralLiteral ⇒ PsiLiteral
      ... etc
      </pre>
      Lombok AST had no support for symbol and type resolution, so lint
@@ -370,7 +370,7 @@ public abstract class Detector {
      the hierarchy representing whitespace as well as parentheses. Watch
      out for this when calling getParent, getPrevSibling or
      getNextSibling - don't just go one level up and check instanceof
-     <something>; instead, use LintUtils.skipParentheses (or the
+     {@code <something>}; instead, use LintUtils.skipParentheses (or the
      corresponding methods to skip whitespace left and right.)  Note that
      when you write lint unit tests, the infrastructure will run your
      tests twice, one with a normal AST and once where it has inserted
@@ -400,7 +400,7 @@ public abstract class Detector {
      &#064;Override
      public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor,
              &#064;NonNull PsiCall node) {
-         if (method != null && method.getContainingClass() != null &&
+         if (method != null &amp;&amp; method.getContainingClass() != null &amp;&amp;
              "android.os.Parcel".equals(method.getContainingClass().getQualifiedName())) {
              ....
      </pre>
@@ -689,7 +689,7 @@ public abstract class Detector {
                 @NonNull MethodNode method, @NonNull AbstractInsnNode instruction);
 
         /**
-         * Return the list of method call names (in VM format, e.g. "<init>" for
+         * Return the list of method call names (in VM format, e.g. {@code "<init>"} for
          * constructors, etc) for method calls this detector is interested in,
          * or null. T his will be used to dispatch calls to
          * {@link #checkCall(ClassContext, ClassNode, MethodNode, MethodInsnNode)}

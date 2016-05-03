@@ -23,7 +23,7 @@ import javax.xml.bind.annotation.XmlTransient;
 
 /**
  * Container for marker interfaces for the different {@link RepositorySource} types that can be
- * included in the site list retrieved by {@link AndroidSdkHandler#mAddonsListSourceProvider}.
+ * included in the site list retrieved by {@code AndroidSdkHandler#mAddonsListSourceProvider}.
  */
 public final class RemoteSiteType {
 

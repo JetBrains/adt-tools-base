@@ -29,7 +29,7 @@ public enum Format {
     JAR,
     /**
      * The content is a directory.
-     * <p/>
+     * <p>
      * This means that in the case of java class files, the files should be in directories
      * matching their package names, directly under the root directory.
      */

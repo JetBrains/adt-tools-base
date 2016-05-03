@@ -67,7 +67,7 @@ import java.util.Properties;
 /**
  * This class holds static methods for downloading URL resources.
  * @see #openUrl(String, boolean, ITaskMonitor, Header[])
- * <p/>
+ * <p>
  * Implementation detail: callers should use {@link DownloadCache} instead of this class.
  * {@link DownloadCache#openDirectUrl} is a direct pass-through to {@link UrlOpener} since
  * there's no caching. However from an implementation perspective it's still recommended
@@ -132,21 +132,21 @@ class UrlOpener {
     /**
      * Opens a URL. It can be a simple URL or one which requires basic
      * authentication.
-     * <p/>
+     * <p>
      * Tries to access the given URL. If http response is either
      * {@code HttpStatus.SC_UNAUTHORIZED} or
      * {@code HttpStatus.SC_PROXY_AUTHENTICATION_REQUIRED}, asks for
      * login/password and tries to authenticate into proxy server and/or URL.
-     * <p/>
+     * <p>
      * This implementation relies on the Apache Http Client due to its
-     * capabilities of proxy/http authentication. <br/>
+     * capabilities of proxy/http authentication. <br>
      * Proxy configuration is determined by {@link ProxySelectorRoutePlanner} using the JVM proxy
      * settings by default.
-     * <p/>
-     * For more information see: <br/>
-     * - {@code http://hc.apache.org/httpcomponents-client-ga/} <br/>
+     * <p>
+     * For more information see: <br>
+     * - {@code http://hc.apache.org/httpcomponents-client-ga/} <br>
      * - {@code http://hc.apache.org/httpcomponents-client-ga/httpclient/apidocs/org/apache/http/impl/conn/ProxySelectorRoutePlanner.html}
-     * <p/>
+     * <p>
      * There's a very simple realm cache implementation.
      * Login/Password for each realm are stored in a static {@link Map}.
      * Before asking the user the method verifies if the information is already

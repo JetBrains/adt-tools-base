@@ -18,7 +18,7 @@ package com.android.ddmlib;
 
 /**
  * Abstract exception for exception that can be thrown when a user input cancels the action.
- * <p/>
+ * <p>
  * {@link #wasCanceled()} returns whether the action was canceled because of user input.
  *
  */

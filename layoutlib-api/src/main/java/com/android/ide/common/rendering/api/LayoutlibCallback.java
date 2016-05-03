@@ -26,10 +26,10 @@ import org.xmlpull.v1.XmlPullParser;
 /**
  * Intermediary class implementing parts of both the old and new ProjectCallback from the
  * LayoutLib API.
- * <p/>
+ * <p>
  * Even newer LayoutLibs use this directly instead of the the interface. This allows the flexibility
  * to add newer methods without having to update {@link Bridge#API_CURRENT LayoutLib API version}.
- * <p/>
+ * <p>
  * Clients should use this instead of {@link IProjectCallback} to target both old and new
  * Layout Libraries.
  */
@@ -90,7 +90,7 @@ public abstract class LayoutlibCallback implements IProjectCallback,
 
     /**
      * Find a custom class in the project.
-     * <p/>
+     * <p>
      * Like {@link #loadClass(String, Class[], Object[])}, but doesn't instantiate
      * an object and just returns the class found.
      * @param name className in binary format. (see {@link ClassLoader}.

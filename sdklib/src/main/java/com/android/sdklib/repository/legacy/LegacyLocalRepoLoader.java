@@ -72,7 +72,6 @@ public class LegacyLocalRepoLoader implements FallbackLocalRepoLoader {
      * @param root    The root directory of the SDK.
      * @param fop     {@link FileOp} to use. For normal operation should be {@link
      *                FileOpUtils#create()}.
-     * @param manager The {@link RepoManager} we're parsing for.
      */
     public LegacyLocalRepoLoader(@NonNull File root, @NonNull FileOp fop) {
         mLocalSdk = new LocalSdk(fop);

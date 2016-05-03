@@ -52,7 +52,7 @@ public final class LogReceiver {
     /**
      * Classes which implement this interface provide a method that deals
      * with {@link LogEntry} objects coming from log service through a {@link LogReceiver}.
-     * <p/>This interface provides two methods.
+     * <p>This interface provides two methods.
      * <ul>
      * <li>{@link #newEntry(com.android.ddmlib.log.LogReceiver.LogEntry)} provides a
      * first level of parsing, extracting {@link LogEntry} objects out of the log service output.</li>
@@ -93,7 +93,7 @@ public final class LogReceiver {
     
     /**
      * Creates a {@link LogReceiver} with an {@link ILogListener}.
-     * <p/>
+     * <p>
      * The {@link ILogListener} will receive new log entries as they are parsed, in the form 
      * of {@link LogEntry} objects.
      * @param listener the listener to receive new log entries.

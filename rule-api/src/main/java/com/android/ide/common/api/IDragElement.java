@@ -22,7 +22,7 @@ import com.google.common.annotations.Beta;
 
 /**
  * Represents an XML element with a name, attributes and inner elements.
- * <p/>
+ * <p>
  * The semantic of the element name is to be a fully qualified class name of a View to inflate.
  * The element name is not expected to have a namespace.
  * <p>
@@ -95,7 +95,7 @@ public interface IDragElement {
 
     /**
      * An XML attribute in the {@link IDragElement}.
-     * <p/>
+     * <p>
      * The attribute is always represented by a namespace URI, a name and a value.
      * The name cannot be empty.
      * The namespace URI can be empty for an attribute without a namespace but is never null.

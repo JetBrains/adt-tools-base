@@ -22,7 +22,7 @@ public abstract class DataBindingResourceItem extends DataItem<ResourceFile> {
     private DataBindingResourceType mType;
 
     /**
-     * Constructs the object with a name, type and optional value. <p/> Note that the object is not
+     * Constructs the object with a name, type and optional value. <p> Note that the object is not
      * fully usable as-is. It must be added to a DataFile first.
      *
      * @param name the name of the item
