@@ -247,8 +247,7 @@ public class InstantRunBuildContext {
          * deployed on the device.
          */
         public boolean isAccumulative() {
-            return fileType == FileType.DEX || fileType == FileType.SPLIT ||
-                    fileType == FileType.MAIN || fileType == FileType.RESOURCES;
+            return fileType != FileType.RELOAD_DEX && fileType != FileType.RESTART_DEX;
         }
 
         public void setLocation(@NonNull File location) {
@@ -446,6 +445,14 @@ public class InstantRunBuildContext {
             }
         }
         return null;
+    }
+
+    @Nullable
+    public Artifact getArtifactForType(@NonNull FileType fileType) {
+        Artifact artifactForType = currentBuild.getArtifactForType(fileType);
+        return artifactForType == null
+                ? getPastBuildsArtifactForType(fileType)
+                : artifactForType;
     }
 
     @VisibleForTesting
@@ -676,9 +683,20 @@ public class InstantRunBuildContext {
             instantRun.appendChild(taskTypeNode);
         }
 
-        // if we are doing a full APK build which may be incremental, we do not need to worry
-        // about what the incremental change might be since we produced the APK.
+
         if (persistenceMode == PersistenceMode.FULL_BUILD) {
+            // only include the last build, watch out, we may not have rebuilt the entire
+            // set of output so we should take the initial build list rather than what we just
+            // built (which maybe a lot less since due to the incremental assembleDebug).
+            Build lastBuild = previousBuilds.lastEntry().getValue();
+            List<Artifact> initialBuildArtifacts = new ArrayList<>(
+                    previousBuilds.firstEntry().getValue().getArtifacts());
+            lastBuild.artifacts.clear();
+            lastBuild.artifacts.addAll(initialBuildArtifacts);
+            currentBuild.artifacts.clear();
+            currentBuild.artifacts.addAll(initialBuildArtifacts);
+            // if we are doing a full APK build which may be incremental, we do not need to worry
+            // about what the incremental change might be since we produced the APK.
             currentBuild.verifierStatus = Optional.absent();
         }
 
@@ -694,7 +712,6 @@ public class InstantRunBuildContext {
 
         switch(persistenceMode) {
             case FULL_BUILD:
-                // only include the last build.
                 if (!previousBuilds.isEmpty()) {
                     instantRun.appendChild(previousBuilds.lastEntry().getValue().toXml(document));
                 }
