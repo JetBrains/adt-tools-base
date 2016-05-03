@@ -239,7 +239,7 @@ task dslHtmlZip(type: Zip) {
   baseName 'gradle-dsl'
 }
 
-def javaApiUrl = "http://docs.oracle.com/javase/1.6.0/docs/api/"
+def javaApiUrl = "http://docs.oracle.com/javase/8/docs/api/"
 def groovyApiUrl = "http://groovy.codehaus.org/gapi/"
 def publicGroovyProjects = [
         project(":base:gradle"),
@@ -335,4 +335,4 @@ task docsAll {
 
 // Make sure all the references are valid and up-to-date. Hopefully this will mark the build
 // red in Jenkins if they get out of sync.
-check.dependsOn dslHtml
+check.dependsOn dslHtml, javadocAll
