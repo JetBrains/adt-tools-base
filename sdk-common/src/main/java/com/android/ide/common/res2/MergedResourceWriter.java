@@ -32,6 +32,7 @@ import com.android.ide.common.blame.SourcePosition;
 import com.android.ide.common.internal.PngException;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
+import com.android.utils.FileUtils;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ArrayListMultimap;
@@ -49,7 +50,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -99,26 +99,35 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
      * Futures we are waiting for...
      */
     @NonNull
-    private ConcurrentLinkedDeque<Future<File>> mCompiling;
+    private final ConcurrentLinkedDeque<Future<File>> mCompiling;
+
+    /**
+     * Temporary directory to use while writing merged resources.
+     */
+    @NonNull
+    private final File mTemporaryDirectory;
 
     public MergedResourceWriter(@NonNull File rootFolder,
             @Nullable File publicFile,
             @Nullable File blameLogFolder,
             @NonNull ResourcePreprocessor preprocessor,
-            @NonNull AaptCompiler aaptCompiler) {
+            @NonNull AaptCompiler aaptCompiler,
+            @NonNull File temporaryDirectory) {
         super(rootFolder);
         mAaptCompiler = aaptCompiler;
         mPublicFile = publicFile;
         mMergingLog = blameLogFolder != null ? new MergingLog(blameLogFolder) : null;
         mPreprocessor = preprocessor;
         mCompiling = new ConcurrentLinkedDeque<>();
+        mTemporaryDirectory = temporaryDirectory;
     }
 
     public static MergedResourceWriter createWriterWithoutPngCruncher(
             @NonNull File rootFolder,
             @Nullable File publicFile,
             @Nullable File blameLogFolder,
-            @NonNull ResourcePreprocessor preprocessor) {
+            @NonNull ResourcePreprocessor preprocessor,
+            @NonNull File temporaryDirectory) {
         return new MergedResourceWriter(
                 rootFolder,
                 publicFile,
@@ -128,7 +137,8 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                     SettableFuture<File> future = SettableFuture.create();
                     future.set(null);
                     return future;
-                }
+                },
+                temporaryDirectory
         );
     }
 
@@ -193,14 +203,6 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
 
                     String filename = file.getName();
                     String folderName = getFolderName(item);
-                    File typeFolder = new File(getRootFolder(), folderName);
-                    try {
-                        createDir(typeFolder);
-                    } catch (IOException ioe) {
-                        throw MergingException.wrapException(ioe).withFile(typeFolder).build();
-                    }
-
-                    File outFile = new File(typeFolder, filename);
 
                     if (type == DataFile.FileType.GENERATED_FILES) {
                         try {
@@ -211,37 +213,38 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                     }
 
                     try {
-                        if (item.getType() == ResourceType.RAW) {
-                            // Don't crunch, don't insert source comments, etc - leave alone.
-                            Files.copy(file, outFile);
-                        } else {
-                            ListenableFuture<File> result =
-                                    mAaptCompiler.compile(file, typeFolder);
-                            mCompiling.add(result);
-                            result.addListener(() -> {
-                                try {
-                                    if (result.get() == null) {
-                                        Files.copy(file, outFile);
-                                    }
-                                } catch (Exception e) {
-                                    /*
-                                     * We will detect any exceptions (or generate them during copy)
-                                     * asynchronously, so we need to be careful to report them back.
-                                     * Because end() will wait for all futures and report any
-                                     * failures, we will register a new future that will throw the
-                                     * exception when we fail. This ensures that end() will throw
-                                     * the exception.
-                                     */
-                                    SettableFuture<File> failureSimulator =
-                                            SettableFuture.create();
-                                    failureSimulator.setException(e);
-                                    mCompiling.add(failureSimulator);
+                        ListenableFuture<File> result =
+                                mAaptCompiler.compile(file, getRootFolder());
+                        mCompiling.add(result);
+                        result.addListener(() -> {
+                            try {
+                                File outFile = result.get();
+                                if (outFile == null) {
+                                    File typeFolder = new File(getRootFolder(), folderName);
+                                    FileUtils.mkdirs(typeFolder);
+
+                                    outFile = new File(typeFolder, filename);
+                                    Files.copy(file, outFile);
                                 }
-                            }, MoreExecutors.sameThreadExecutor());
-                        }
-                        if (mMergingLog != null) {
-                            mMergingLog.logCopy(file, outFile);
-                        }
+
+                                if (mMergingLog != null) {
+                                    mMergingLog.logCopy(file, outFile);
+                                }
+                            } catch (Exception e) {
+                                /*
+                                 * We will detect any exceptions (or generate them during copy)
+                                 * asynchronously, so we need to be careful to report them back.
+                                 * Because end() will wait for all futures and report any
+                                 * failures, we will register a new future that will throw the
+                                 * exception when we fail. This ensures that end() will throw
+                                 * the exception.
+                                 */
+                                SettableFuture<File> failureSimulator =
+                                        SettableFuture.create();
+                                failureSimulator.setException(e);
+                                mCompiling.add(failureSimulator);
+                            }
+                        }, MoreExecutors.sameThreadExecutor());
                     } catch (PngException|IOException e) {
                         throw MergingException.wrapException(e).withFile(file).build();
                     }
@@ -303,16 +306,33 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
             }
 
             if (mustWriteFile) {
-                String folderName = key.isEmpty() ?
-                        ResourceFolderType.VALUES.getName() :
-                        ResourceFolderType.VALUES.getName() + RES_QUALIFIER_SEP + key;
-
-                File valuesFolder = new File(getRootFolder(), folderName);
-                // Name of the file is the same as the folder as AAPT gets confused with name
-                // collision when not normalizing folders name.
-                File outFile = new File(valuesFolder, folderName + DOT_XML);
+                /*
+                 * We will write the file to a temporary directory. If the folder name is "values",
+                 * we will write the XML file to "<tmpdir>/values/values.xml". If the folder name
+                 * is "values-XXX" we will write the XML file to
+                 * "<tmpdir/values-XXX/values-XXX.xml".
+                 *
+                 * Then, we will issue a compile operation or copy the file if aapt does not require
+                 * compilation of this file.
+                 */
                 try {
-                    createDir(valuesFolder);
+                    File tmpDir = new File(mTemporaryDirectory, "merged.dir");
+                    FileUtils.deletePath(tmpDir);
+                    FileUtils.mkdirs(tmpDir);
+                    tmpDir.deleteOnExit();
+
+                    String folderName = key.isEmpty() ?
+                            ResourceFolderType.VALUES.getName() :
+                            ResourceFolderType.VALUES.getName() + RES_QUALIFIER_SEP + key;
+
+                    File valuesFolder = new File(tmpDir, folderName);
+                    valuesFolder.deleteOnExit();
+                    // Name of the file is the same as the folder as AAPT gets confused with name
+                    // collision when not normalizing folders name.
+                    File outFile = new File(valuesFolder, folderName + DOT_XML);
+                    outFile.deleteOnExit();
+
+                    FileUtils.mkdirs(valuesFolder);
 
                     DocumentBuilder builder = mFactory.newDocumentBuilder();
                     Document document = builder.newDocument();
@@ -363,6 +383,21 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
 
                     Files.write(content, outFile, Charsets.UTF_8);
 
+                    /*
+                     * Now, compile the file using aapt.
+                     */
+                    Future<File> f = mAaptCompiler.compile(outFile, getRootFolder());
+                    File result = f.get();
+                    if (result == null) {
+                        /*
+                         * aapt cannot compile this file, copy it.
+                         */
+                        File copyFolder = new File(getRootFolder(), folderName);
+                        FileUtils.mkdirs(copyFolder);
+                        File copyOutput = new File(copyFolder, outFile.getName());
+                        Files.copy(outFile, copyOutput);
+                    }
+
                     if (publicNodes != null && mPublicFile != null) {
                         // Generate public.txt:
                         int size = publicNodes.size();
@@ -387,8 +422,8 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                         String text = sb.toString();
                         Files.write(text, mPublicFile, Charsets.UTF_8);
                     }
-                } catch (Throwable t) {
-                    throw new ConsumerException(t, outFile);
+                } catch (Exception e) {
+                    throw new ConsumerException(e);
                 }
             }
         }
@@ -427,12 +462,6 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
             mMergingLog.logRemove(new SourceFile(outFile));
         }
         return outFile.delete();
-    }
-
-    private synchronized void createDir(File folder) throws IOException {
-        if (!folder.isDirectory() && !folder.mkdirs()) {
-            throw new IOException("Failed to create directory: " + folder);
-        }
     }
 
     /**

@@ -32,8 +32,10 @@ import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.repository.Revision;
 import com.android.resources.Density;
+import com.android.resources.ResourceFolderType;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
+import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
@@ -45,6 +47,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -294,7 +297,7 @@ public class AaptV1 extends AbstractProcessExecutionAapt {
             builder.addArgs(additionalParameters);
         }
 
-        List<String> resourceConfigs = new ArrayList<String>();
+        List<String> resourceConfigs = new ArrayList<>();
         resourceConfigs.addAll(config.getResourceConfigs());
 
         if (mBuildToolInfo.getRevision().getMajor() < 21 && config.getPreferredDensity() != null) {
@@ -375,6 +378,14 @@ public class AaptV1 extends AbstractProcessExecutionAapt {
             throws AaptException {
         ListenableFuture<File> compilationFuture;
 
+        /*
+         * Do not compile raw resources.
+         */
+        if (ResourceFolderType.getFolderType(file.getParentFile().getName()) ==
+                ResourceFolderType.RAW) {
+            return Futures.immediateFuture(null);
+        }
+
         if (mCruncher == null) {
             /*
              * Revert to old-style crunching.
@@ -392,13 +403,22 @@ public class AaptV1 extends AbstractProcessExecutionAapt {
             } else {
                 File outputFile = compileOutputFor(file, output);
 
+                try {
+                    Files.createParentDirs(outputFile);
+                } catch (IOException e) {
+                    throw new AaptException(e,
+                            "Failed to create parent directories for file '%s'",
+                            output.getAbsolutePath());
+                }
+
                 int key = mCruncher.start();
                 try {
                     mCruncher.crunchPng(key, file, outputFile);
                 } catch (PngException e) {
-                    throw new AaptException(
-                            "Failed to crunch file '" + file.getAbsolutePath() + "' "
-                                    + "into '" + outputFile.getAbsolutePath() + "'.");
+                    throw new AaptException(e,
+                            "Failed to crunch file '%s' into '%s'",
+                            file.getAbsolutePath(),
+                            outputFile.getAbsolutePath());
                 }
 
                 mWaitExecutor.execute(() -> {
@@ -461,6 +481,8 @@ public class AaptV1 extends AbstractProcessExecutionAapt {
      * Obtains the file that will receive the compilation output of a given file. This method
      * will return a unique file in the output directory for each input file.
      *
+     * <p>This method will also create any parent directories needed to hold the output file.
+     *
      * @param file the file
      * @param output the output directory
      * @return the output file
@@ -469,7 +491,11 @@ public class AaptV1 extends AbstractProcessExecutionAapt {
     private static File compileOutputFor(@NonNull File file, @NonNull File output) {
         Preconditions.checkArgument(file.isFile(), "!file.isFile()");
         Preconditions.checkArgument(output.isDirectory(), "!output.isDirectory()");
-        return new File(output, file.getName());
+
+        File parentDir = new File(output, file.getParentFile().getName());
+        FileUtils.mkdirs(parentDir);
+
+        return new File(parentDir, file.getName());
     }
 
     /**

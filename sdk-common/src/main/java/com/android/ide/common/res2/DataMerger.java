@@ -52,7 +52,8 @@ import javax.xml.parsers.ParserConfigurationException;
  *
  * This is able to save its post work state and reload this for incremental update.
  */
-abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extends DataSet<I,F>> implements DataMap<I> {
+abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extends DataSet<I,F>>
+        implements DataMap<I> {
 
     static final String FN_MERGER_XML = "merger.xml";
     static final String NODE_MERGER = "merger";
@@ -270,7 +271,8 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
                 }
 
                 // now need to handle, the type of each (single res file, multi res file), whether
-                // they are the same object or not, whether the previously written object was deleted.
+                // they are the same object or not, whether the previously written object was
+                // deleted.
 
                 if (toWrite == null) {
                     // nothing to write? delete only then.

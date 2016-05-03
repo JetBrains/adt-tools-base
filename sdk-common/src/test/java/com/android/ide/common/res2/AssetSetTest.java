@@ -16,7 +16,12 @@
 
 package com.android.ide.common.res2;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import com.android.testutils.TestUtils;
+
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,11 +30,13 @@ public class AssetSetTest extends BaseTestCase {
 
     private static AssetSet sBaseResourceSet = null;
 
+    @Test
     public void testBaseAssetSetByCount() throws Exception {
         AssetSet assetSet = getBaseAssetSet();
         assertEquals(4, assetSet.size());
     }
 
+    @Test
     public void testBaseAssetSetByName() throws Exception {
         AssetSet assetSet = getBaseAssetSet();
 
@@ -41,6 +48,7 @@ public class AssetSetTest extends BaseTestCase {
         );
     }
 
+    @Test
     public void testDupAssetSet() throws Exception {
         File root = TestUtils.getRoot("assets", "dupSet");
 

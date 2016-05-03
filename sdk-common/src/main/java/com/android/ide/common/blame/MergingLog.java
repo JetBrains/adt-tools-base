@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 
@@ -240,6 +241,46 @@ public class MergingLog {
                 mWholeFileMaps.asMap().entrySet()) {
             MergingLogPersistUtil
                     .saveToSingleFile(mOutputFolder, entry.getKey(), entry.getValue());
+        }
+    }
+
+    /**
+     * Find a destination file that was mapped from an original file.
+     *
+     * @param original the original file
+     * @return a destination file that was generated from the original file
+     */
+    @NonNull
+    public SourceFile destinationFor(@NonNull SourceFile original) {
+        String shard = getShard(original);
+
+        try {
+            /*
+             * Search the whole file maps.
+             */
+            Optional<SourceFile> dst = mWholeFileMaps.get(shard).entrySet().stream()
+                    .filter(e -> e.getValue().equals(original))
+                    .map(Map.Entry::getKey)
+                    .findFirst();
+            if (dst.isPresent()) {
+                return dst.get();
+            }
+
+            /*
+             * Search the merged file maps.
+             */
+            dst = mMergedFileMaps.get(shard).entrySet().stream()
+                    .filter(e -> e.getValue().values().stream()
+                            .anyMatch(sfp -> sfp.getFile().equals(original)))
+                    .map(Map.Entry::getKey)
+                    .findFirst();
+            if (dst.isPresent()) {
+                return dst.get();
+            }
+
+            throw new RuntimeException("No destination found for " + original);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
         }
     }
 }

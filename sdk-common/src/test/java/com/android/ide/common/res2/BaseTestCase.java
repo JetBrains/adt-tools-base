@@ -16,13 +16,15 @@
 
 package com.android.ide.common.res2;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.android.annotations.NonNull;
 import com.android.testutils.TestUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ListMultimap;
 import com.google.common.io.Files;
-
-import junit.framework.TestCase;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -32,7 +34,7 @@ import java.util.regex.Matcher;
 
 import javax.imageio.ImageIO;
 
-public abstract class BaseTestCase extends TestCase {
+public abstract class BaseTestCase {
 
     protected void verifyResourceExists(DataMap<? extends DataItem> dataMap,
                                         String... dataItemKeys) {

@@ -287,6 +287,7 @@ public class BuildToolInfo {
         mPath = path;
 
         add(AAPT, FN_AAPT);
+        add(AAPT2, FN_AAPT2);
         add(AIDL, FN_AIDL);
         add(DX, FN_DX);
         add(DX_JAR, FD_LIB + File.separator + FN_DX_JAR);
@@ -305,7 +306,6 @@ public class BuildToolInfo {
         add(JILL, FN_JILL);
         add(JACK_JACOCO_REPORTER, FN_JACK_JACOCO_REPORTER);
         add(SPLIT_SELECT, FN_SPLIT_SELECT);
-        add(AAPT2, FN_AAPT2);
     }
 
     private void add(PathId id, String leaf) {

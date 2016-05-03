@@ -16,6 +16,9 @@
 
 package com.android.ide.common.res2;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import com.android.SdkConstants;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.resources.ResourceType;
@@ -25,6 +28,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 
+import org.junit.Test;
 import org.w3c.dom.Document;
 
 import java.io.BufferedOutputStream;
@@ -41,12 +45,14 @@ public class ValueResourceParser2Test extends BaseTestCase {
 
     private static List<ResourceItem> sResources = null;
 
+    @Test
     public void testParsedResourcesByCount() throws Exception {
         List<ResourceItem> resources = getParsedResources();
 
         assertEquals(28, resources.size());
     }
 
+    @Test
     public void testParsedResourcesByName() throws Exception {
         List<ResourceItem> resources = getParsedResources();
         Map<String, ResourceItem> resourceMap = Maps.newHashMapWithExpectedSize(resources.size());
@@ -101,6 +107,7 @@ public class ValueResourceParser2Test extends BaseTestCase {
         }
     }
 
+    @Test
     public void testParsedResourceByValues() throws Exception {
         List<ResourceItem> resources = getParsedResources();
         // Test tools:quantity parsing in plurals.
@@ -143,8 +150,9 @@ public class ValueResourceParser2Test extends BaseTestCase {
         return sResources;
     }
 
+    @Test
     public void testUtfBom() throws IOException, MergingException {
-        File file = File.createTempFile(getName(), SdkConstants.DOT_XML);
+        File file = File.createTempFile("testUtfBom", SdkConstants.DOT_XML);
         String xml = "" +
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
                 "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
@@ -178,9 +186,10 @@ public class ValueResourceParser2Test extends BaseTestCase {
         file.delete();
     }
 
+    @Test
     public void testBoolItems() throws IOException, MergingException {
         // BOOL types weren't covered in the baseSet/values.xml, so test that too.
-        File file = File.createTempFile(getName(), SdkConstants.DOT_XML);
+        File file = File.createTempFile("testBoolItems", SdkConstants.DOT_XML);
         String xml = "" +
                      "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
                      "<resources>\n" +
