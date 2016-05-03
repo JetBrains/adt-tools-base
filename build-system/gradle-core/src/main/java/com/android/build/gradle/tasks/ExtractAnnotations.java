@@ -60,11 +60,10 @@ import java.util.List;
  *     <li> For any {@code Keep} annotated elements, a Proguard keep file (pointed to by
  *          {@link ExtractAnnotations#proguard}, which lists APIs (classes, methods and fields)
  *          that should not be removed even if no references in code are found to those APIs.</li>
- * <p>
+ * </ul>
  * We typically only extract external annotations when building libraries; ProGuard annotations
  * are extracted when building libraries (to record in the AAR), <b>or</b> when building an
  * app module where ProGuarding is enabled.
- * </ul>
  */
 @ParallelizableTask
 public class ExtractAnnotations extends AbstractAndroidCompile {

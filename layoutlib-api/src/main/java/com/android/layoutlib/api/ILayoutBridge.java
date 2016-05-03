@@ -65,7 +65,7 @@ public interface ILayoutBridge {
     /**
      * Initializes the Bridge object.
      * @param fontOsLocation the location of the fonts.
-     * @param enumValueMap map <code>attrName => { map enumFlagName => Integer value }.</code>
+     * @param enumValueMap map <code>attrName ⇒ { map enumFlagName ⇒ Integer value }.</code>
      * @return true if success.
      * @since 1
      */

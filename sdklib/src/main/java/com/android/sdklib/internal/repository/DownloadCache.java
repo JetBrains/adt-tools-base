@@ -49,11 +49,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A simple cache for the XML resources handled by the SDK Manager.
- * <p/>
+ * <p>
  * Callers should use {@link #openDirectUrl} to download "large files"
  * that should not be cached (like actual installation packages which are several MBs big)
  * and call {@link #openCachedUrl(String, ITaskMonitor)} to download small XML files.
- * <p/>
+ * <p>
  * The cache can work in 3 different strategies (direct is a pass-through, fresh-cache is the
  * default and tries to update resources if they are older than 10 minutes by respecting
  * either ETag or Last-Modified, and finally server-cache is a strategy to always serve
@@ -93,27 +93,27 @@ public class DownloadCache {
     /**
      * Minimum time before we consider a cached entry is potentially stale.
      * Expressed in milliseconds.
-     * <p/>
+     * <p>
      * When using the {@link Strategy#FRESH_CACHE}, the cache will not try to refresh
      * a cached file if it's has been saved more recently than this time.
      * When using the direct mode or the serve mode, the cache either doesn't serve
      * cached files or always serves caches files so this expiration delay is not used.
-     * <p/>
+     * <p>
      * Default is 10 minutes.
-     * <p/>
+     * <p>
      * TODO: change for a dynamic preference later.
      */
     private static final long MIN_TIME_EXPIRED_MS =  10*60*1000;
     /**
      * Maximum time before we consider a cache entry to be stale.
      * Expressed in milliseconds.
-     * <p/>
+     * <p>
      * When using the {@link Strategy#FRESH_CACHE}, entries that have no ETag
      * or Last-Modified will be refreshed if their file timestamp is older than
      * this value.
-     * <p/>
+     * <p>
      * Default is 4 hours.
-     * <p/>
+     * <p>
      * TODO: change for a dynamic preference later.
      */
     private static final long MAX_TIME_EXPIRED_MS = 4*60*60*1000;
@@ -285,7 +285,7 @@ public class DownloadCache {
     /**
      * Calls {@link UrlOpener#openUrl(String, boolean, ITaskMonitor, Header[])}
      * to actually perform a download.
-     * <p/>
+     * <p>
      * Isolated so that it can be overridden by unit tests.
      */
     @VisibleForTesting(visibility=Visibility.PRIVATE)
@@ -303,11 +303,11 @@ public class DownloadCache {
      * Does a direct download of the given URL using {@link UrlOpener}.
      * This does not check the download cache and does not attempt to cache the file.
      * Instead the HttpClient library returns a progressive download stream.
-     * <p/>
+     * <p>
      * For details on realm authentication and user/password handling,
      * check the underlying {@link UrlOpener#openUrl(String, boolean, ITaskMonitor, Header[])}
      * documentation.
-     * <p/>
+     * <p>
      * The resulting input stream may not support mark/reset.
      *
      * @param urlString the URL string to be opened.
@@ -347,11 +347,11 @@ public class DownloadCache {
      * without passing any specific HTTP headers  and returns the resulting input stream
      * and the HTTP status code.
      * See the original method's description for details on its behavior.
-     * <p/>
+     * <p>
      * {@link #openDirectUrl(String, Header[], ITaskMonitor)} can accept customized
      * HTTP headers to send with the requests and also returns the full HTTP
      * response -- status line with code and protocol and all headers.
-     * <p/>
+     * <p>
      * The resulting input stream may not support mark/reset.
      *
      * @param urlString the URL string to be opened.
@@ -389,10 +389,10 @@ public class DownloadCache {
      * Downloads a small file, typically XML manifests.
      * The current {@link Strategy} governs whether the file is served as-is
      * from the cache, potentially updated first or directly downloaded.
-     * <p/>
+     * <p>
      * For large downloads (e.g. installable archives) please do not invoke the
      * cache and instead use the {@link #openDirectUrl} method.
-     * <p/>
+     * <p>
      * For details on realm authentication and user/password handling,
      * check the underlying {@link UrlOpener#openUrl(String, boolean, ITaskMonitor, Header[])}
      * documentation.
@@ -651,7 +651,7 @@ public class DownloadCache {
      * The download is only done if the server returns 200/OK.
      * On success, store an info file next to the download with
      * a few headers.
-     * <p/>
+     * <p>
      * This method deletes the cached file and the info file ONLY if it
      * attempted a download and it failed to complete. It doesn't erase
      * anything if there's no download because the server returned a 404

@@ -77,7 +77,7 @@ public class Revision implements Comparable<Revision> {
      * Parses a string of format "major.minor.micro rcPreview" and returns a new {@link Revision}
      * for it.
      *
-     * All the fields except major are optional. <p/>
+     * All the fields except major are optional. <p>
      *
      * @param revisionString   A non-null revisionString to parse.
      * @param minimumPrecision Create a {@code Revision} with at least the given precision,
@@ -143,7 +143,7 @@ public class Revision implements Comparable<Revision> {
      * Parses a string of format "major.minor.micro rcPreview" and returns a new {@code Revision}
      * for it.
      *
-     * All the fields except major are optional. <p/>
+     * All the fields except major are optional. <p>
      *
      * @param revisionString A non-null revisionString to parse.
      * @return A new non-null {@link Revision}, with precision depending on the precision of {@code
@@ -370,7 +370,7 @@ public class Revision implements Comparable<Revision> {
      *
      * Note that preview/release candidate are released before their final version, so "18.0.0 rc1"
      * comes below "18.0.0". The best way to think of it as if the lack of preview number was
-     * "+inf": "18.1.2 rc5" => "18.1.2.5" so its less than "18.1.2.+INF" but more than "18.1.1.0"
+     * "+inf": "18.1.2 rc5" ⇒ "18.1.2.5" so its less than "18.1.2.+INF" but more than "18.1.1.0"
      * and more than "18.1.2.4"
      *
      * @param rhs The right-hand side {@link Revision} to compare with.
@@ -386,7 +386,7 @@ public class Revision implements Comparable<Revision> {
      *
      * Note that preview/release candidate are released before their final version, so "18.0.0 rc1"
      * comes below "18.0.0". The best way to think of it as if the lack of preview number was
-     * "+inf": "18.1.2 rc5" => "18.1.2.5" so its less than "18.1.2.+INF" but more than "18.1.1.0"
+     * "+inf": "18.1.2 rc5" ⇒ "18.1.2.5" so its less than "18.1.2.+INF" but more than "18.1.1.0"
      * and more than "18.1.2.4"
      *
      * @param rhs            The right-hand side {@link Revision} to compare with.

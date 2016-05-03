@@ -29,15 +29,15 @@ import java.util.regex.Pattern;
 /**
  * A {@link RuleAction} represents an action provided by an {@link IViewRule}, typically
  * shown in a context menu or in the layout actions bar.
- * <p/>
+ * <p>
  * Each action should have a reasonably unique ID. This is used when multiple nodes
  * are selected to filter the actions down to just those actions that are supported
  * across all selected nodes. If an action does not support multiple nodes, it can
  * return false from {@link #supportsMultipleNodes()}.
- * <p/>
+ * <p>
  * Actions can be grouped into a hierarchy of sub-menus using the {@link NestedAction} class,
  * or into a flat submenu using the {@link Choices} class.
- * <p/>
+ * <p>
  * Actions (including separators) all have a "sort priority", and this is used to
  * sort the menu items or toolbar buttons into a specific order.
  * <p>
@@ -476,7 +476,7 @@ public class RuleAction implements Comparable<RuleAction> {
     /**
      * A toggle is a simple on/off action, displayed as an item in a context menu
      * with a check mark if the item is checked.
-     * <p/>
+     * <p>
      * Two toggles are equal if they have the same id, title and group-id.
      * It is expected for the checked state and action callback to be different.
      */

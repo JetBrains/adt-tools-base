@@ -18,10 +18,10 @@ package com.android.ide.common.rendering.api;
 
 /**
  * Special wrapper class used in special case for {@link ILayoutPullParser#getViewCookie()}.
- * <p/>
+ * <p>
  * When an {@code include} tag points to a layout with a {@code merge} top level item, there is no
  * top level item that can use the {@code include} item as cookie.
- * <p/>
+ * <p>
  * This class is used as a cookie for all items under the {@code merge} (while referencing the
  * original {@code include} cookie) to make it easy on the client to group all merged items
  * into a single outline item.

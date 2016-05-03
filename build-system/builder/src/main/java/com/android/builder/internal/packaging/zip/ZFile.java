@@ -1588,7 +1588,7 @@ public class ZFile implements Closeable {
 
         /*
          * Get the entry data source, but check if we have a compressed one (we don't want to
-         * inflate & deflate).
+         * inflate and deflate).
          */
         CentralDirectoryHeaderCompressInfo compressInfo =
                 entry.getCentralDirectoryHeader().getCompressionInfoWithWait();

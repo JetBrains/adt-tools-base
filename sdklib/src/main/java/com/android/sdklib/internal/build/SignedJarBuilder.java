@@ -152,7 +152,7 @@ public class SignedJarBuilder {
 
     /**
      * Creates a {@link SignedJarBuilder} with a given output stream, and signing information.
-     * <p/>If either <code>key</code> or <code>certificate</code> is <code>null</code> then
+     * <p>If either <code>key</code> or <code>certificate</code> is <code>null</code> then
      * the archive will not be signed.
      * @param out the {@link OutputStream} where to write the Jar archive.
      * @param key the {@link PrivateKey} used to sign the archive, or <code>null</code>.
@@ -203,7 +203,7 @@ public class SignedJarBuilder {
 
     /**
      * Copies the content of a Jar/Zip archive into the receiver archive.
-     * <p/>An optional {@link IZipEntryFilter} allows to selectively choose which files
+     * <p>An optional {@link IZipEntryFilter} allows to selectively choose which files
      * to copy over.
      * @param input the {@link InputStream} for the Jar/Zip to copy.
      * @param filter the filter or <code>null</code>

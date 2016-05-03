@@ -37,9 +37,8 @@ public class ElementsTrimmer {
      * Trims unwanted, duplicated elements from the merged document.
      * <p>
      * Current trimmed elements are :
-     * <p>
      * <ul>
-     *     <li>uses-features with glEsVersion key</li>
+     *     <li>uses-features with glEsVersion key
      * <ul>
      *     <li>The highest 1.x version element will be kept regardless of 'required' flag value</li>
      *     <li>If the above element is present and has a 'false' required flag, there can be at most
@@ -50,6 +49,7 @@ public class ElementsTrimmer {
      *     most one element of a lesser version (but higher than 2.0) with a 'required' attribute
      *     set to true.</li>
      * </ul>
+     * </li>
      * </ul>
      *
      * @param xmlDocument the xml document to trim.

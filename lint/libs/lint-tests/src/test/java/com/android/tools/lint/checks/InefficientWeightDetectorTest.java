@@ -77,7 +77,7 @@ public class InefficientWeightDetectorTest extends AbstractCheckTest {
     }
 
     public void testNoVerticalWeights4() throws Exception {
-        // Orientation not specified ==> horizontal
+        // Orientation not specified =⇒ horizontal
         assertEquals(
             "res/layout/baseline_weights3.xml:2: Warning: Set android:baselineAligned=\"false\" on this element for better performance [DisableBaselineAlignment]\n" +
             "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +

@@ -44,17 +44,17 @@ import java.util.logging.Level;
 /**
  * A stub application that patches the class loader, then replaces itself with the real application
  * by applying a liberal amount of reflection on Android internals.
- * <p/>
+ * <p>
  * <p>This is, of course, terribly error-prone. Most of this code was tested with API versions
  * 8, 10, 14, 15, 16, 17, 18, 19 and 21 on the Android emulator, a Nexus 5 running Lollipop LRX22C
  * and a Samsung GT-I5800 running Froyo XWJPE. The exception is {@code monkeyPatchAssetManagers},
  * which only works on Kitkat and Lollipop.
- * <p/>
+ * <p>
  * <p>Note that due to a bug in Dalvik, this only works on Kitkat if ART is the Java runtime.
- * <p/>
+ * <p>
  * <p>Unfortunately, if this does not work, we don't have a fallback mechanism: as soon as we
  * build the APK with this class as the Application, we are committed to going through with it.
- * <p/>
+ * <p>
  * <p>This class should use as few other classes as possible before the class loader is patched
  * because any class loaded before it cannot be incrementally deployed.
  */

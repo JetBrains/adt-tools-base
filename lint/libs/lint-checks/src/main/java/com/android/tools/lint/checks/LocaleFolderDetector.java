@@ -173,7 +173,7 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
             } else if (language.equals("yi")) {
                 replace = "ji";
             }
-            // Note: there is also fil=>tl
+            // Note: there is also fil⇒tl
 
             if (replace != null) {
                 // TODO: Check for suppress somewhere other than lint.xml?

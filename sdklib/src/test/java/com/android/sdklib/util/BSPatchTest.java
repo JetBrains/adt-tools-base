@@ -305,8 +305,8 @@ public class BSPatchTest extends TestCase {
      * Work around the lack of unsigned bytes in java by providing an initialization
      * array where each short is in the range 0..0xFF and converting it to signed bytes.
      *
-     * unsigned byte:   0..127 => signed java byte:    0..127
-     * unsigned byte: 128..255 => signed java byte: -128..-1
+     * unsigned byte:   0..127 ⇒ signed java byte:    0..127
+     * unsigned byte: 128..255 ⇒ signed java byte: -128..-1
      *
      * unsigned to signed java: (unsigned - 256) if unsigned > 127
      * signed java to unsigned: (256 + signed) if signed < 0
@@ -338,8 +338,8 @@ public class BSPatchTest extends TestCase {
      * Patches the binary "file1" using the bsdiff/bspatch "patch" data.
      * This implements bspatch.c in Java.
      *
-     * Reference: http://www.daemonology.net/bsdiff/ <br/>
-     * Based on bspatch.c as identified by <br/>
+     * Reference: http://www.daemonology.net/bsdiff/ <br>
+     * Based on bspatch.c as identified by <br>
      * {@code $FreeBSD: src/usr.bin/bsdiff/bspatch/bspatch.c,v 1.1 2005/08/06 01:59:06 cperciva Exp $}
      * (BSD license, Copyright 2003-2005 Colin Percival)
      *

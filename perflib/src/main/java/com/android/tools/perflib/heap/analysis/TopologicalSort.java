@@ -39,8 +39,8 @@ public class TopologicalSort {
         // dominator algorithm terminates when having to choose between two GC roots.
         Snapshot.SENTINEL_ROOT.setTopologicalOrder(0);
 
-        // Set localIDs in the range 1..keys.size(). This simplifies the algorithm & data structures
-        // for dominator computation.
+        // Set localIDs in the range 1..keys.size(). This simplifies the algorithm and data
+        // structures for dominator computation.
         int currentIndex = 0;
         for (Instance node : instances) {
             node.setTopologicalOrder(++currentIndex);

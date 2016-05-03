@@ -40,7 +40,7 @@ import java.util.regex.Matcher;
 
 /**
  * A modifiable and savable copy of a {@link ProjectProperties}.
- * <p/>This copy gives access to modification method such as {@link #setProperty(String, String)}
+ * <p>This copy gives access to modification method such as {@link #setProperty(String, String)}
  * and {@link #removeProperty(String)}.
  *
  * To get access to an instance, use {@link ProjectProperties#makeWorkingCopy()} or
@@ -89,10 +89,10 @@ public class ProjectPropertiesWorkingCopy extends ProjectProperties {
 
     /**
      * Merges all properties from the given file into the current properties.
-     * <p/>
+     * <p>
      * This emulates the Ant behavior: existing properties are <em>not</em> overridden.
      * Only new undefined properties become defined.
-     * <p/>
+     * <p>
      * Typical usage:
      * <ul>
      * <li>Create a ProjectProperties with {@code PropertyType#ANT}
@@ -262,7 +262,7 @@ public class ProjectPropertiesWorkingCopy extends ProjectProperties {
 
     /**
      * Private constructor.
-     * <p/>
+     * <p>
      * Use {@link #load(String, PropertyType)} or {@link #create(String, PropertyType)}
      * to instantiate.
      */

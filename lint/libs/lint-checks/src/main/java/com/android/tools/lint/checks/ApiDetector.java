@@ -910,7 +910,7 @@ public class ApiDetector extends ResourceXmlDetector
                         LocalVariableNode var = (LocalVariableNode) v;
                         String desc = var.desc;
                         if (desc.charAt(0) == 'L') {
-                            // "Lpackage/Class;" => "package/Bar"
+                            // "Lpackage/Class;" ⇒ "package/Bar"
                             String className = desc.substring(1, desc.length() - 1);
                             int api = mApiDatabase.getClassVersion(className);
                             if (api > minSdk) {

@@ -25,7 +25,7 @@ import java.util.Set;
 
 /**
  * The output of a transform.
- * <p/>
+ * <p>
  * There is no direct access to a location to write. Instead, Transforms can ask to get the
  * location for given scopes, content-types and a format.
  */
@@ -39,14 +39,14 @@ public interface TransformOutputProvider {
 
     /**
      * Returns the location of content for a given set of Scopes, Content Types, and Format.
-     * <p/>
+     * <p>
      * If the format is {@link Format#DIRECTORY} then the result is the file location of the
      * directory.<br>
      * If the format is {@link Format#JAR} then the result is a file representing the jar to create.
-     * <p/>
+     * <p>
      * Non of the directories or files are created by querying this method, and there is
      * no checks regarding the existence of content in this location.
-     * <p/>
+     * <p>
      * In case of incremental processing of removed files, it is safe to query the method to get
      * the location of the files to removed.
      *

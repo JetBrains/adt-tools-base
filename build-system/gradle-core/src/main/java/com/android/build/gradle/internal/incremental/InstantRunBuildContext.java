@@ -535,7 +535,7 @@ public class InstantRunBuildContext {
     }
 
     /**
-     * {@see loadFromXlFile} but using a String
+     * {@link #loadFromXmlFile(File)} but using a String
      */
     public void loadFromXml(@NonNull String persistedState)
             throws IOException, SAXException, ParserConfigurationException {

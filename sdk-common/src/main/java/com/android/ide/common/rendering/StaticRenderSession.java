@@ -27,9 +27,9 @@ import java.util.List;
 /**
  * Static {@link RenderSession} returning a given {@link Result}, {@link ViewInfo} and
  * {@link BufferedImage}.
- * <p/>
+ * <p>
  * All other methods are untouched from the base implementation provided by the API.
- * <p/>
+ * <p>
  * This is meant to be used as a wrapper around the static results. No further operations are
  * possible.
  *

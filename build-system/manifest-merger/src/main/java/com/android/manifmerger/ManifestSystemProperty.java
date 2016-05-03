@@ -56,7 +56,7 @@ public enum ManifestSystemProperty implements ManifestMerger2.AutoAddingProperty
         }
     },
     /**
-     * @see <a href=" http://developer.android.com/guide/topics/manifest/manifest-element.html#vname">
+     * @see <a href="http://developer.android.com/guide/topics/manifest/manifest-element.html#vname">
      *      http://developer.android.com/guide/topics/manifest/manifest-element.html#vname</a>
      */
     VERSION_NAME {

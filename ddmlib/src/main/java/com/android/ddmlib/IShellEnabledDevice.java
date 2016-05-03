@@ -29,18 +29,18 @@ public interface IShellEnabledDevice {
 
     /**
      * Returns a (humanized) name for this device. Typically this is the AVD name for AVD's, and
-     * a combination of the manufacturer name, model name & serial number for devices.
+     * a combination of the manufacturer name, model name &amp; serial number for devices.
      */
     String getName();
 
     /**
      * Executes a shell command on the device, and sends the result to a <var>receiver</var>.
-     * <p/><var>maxTimeToOutputResponse</var> is used as a maximum waiting time when expecting the
+     * <p><var>maxTimeToOutputResponse</var> is used as a maximum waiting time when expecting the
      * command output from the device.<br>
      * At any time, if the shell command does not output anything for a period longer than
      * <var>maxTimeToOutputResponse</var>, then the method will throw
      * {@link ShellCommandUnresponsiveException}.
-     * <p/>For commands like log output, a <var>maxTimeToOutputResponse</var> value of 0, meaning
+     * <p>For commands like log output, a <var>maxTimeToOutputResponse</var> value of 0, meaning
      * that the method will never throw and will block until the receiver's
      * {@link IShellOutputReceiver#isCancelled()} returns <code>true</code>, should be
      * used.

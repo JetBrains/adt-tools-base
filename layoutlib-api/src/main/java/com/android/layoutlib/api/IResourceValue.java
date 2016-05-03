@@ -42,7 +42,7 @@ public interface IResourceValue {
 
     /**
      * Returns whether the resource is a framework resource (<code>true</code>) or a project
-     * resource (<code>false</false>).
+     * resource (<code>false</code>).
      */
     boolean isFramework();
 }

@@ -196,7 +196,7 @@ public class XmlUtils {
         for (int i = 1; visited.contains(prefix); i++) {
             prefix = base + Integer.toString(i);
         }
-        // Also create & define this prefix/URI in the XML document as an attribute in the
+        // Also create and define this prefix/URI in the XML document as an attribute in the
         // first element of the document.
         if (doc != null) {
             node = doc.getFirstChild();

@@ -24,11 +24,11 @@ import com.android.utils.SdkUtils;
  *
  * <p>
  * Example:
- * <pre>
+ * <pre>{@code
  *     <activity android:name="com.foo.bar.ActivityUI"
  *          tools:node="remove_children">
  *     </activity>
- * </pre>
+ * }</pre>
  *
  */
 public enum NodeOperationType implements ConvertibleName {

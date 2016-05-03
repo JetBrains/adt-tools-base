@@ -22,9 +22,9 @@ import com.android.ide.common.rendering.api.SessionParams.Key;
 
 /**
  * This contains all known keys for the {@link RenderParams#setFlag(Key, Object)}.
- * <p/>
+ * <p>
  * LayoutLib has its own copy of this class which may be newer or older than this one.
- * <p/>
+ * <p>
  * Constants should never be modified or removed from this class.
  */
 @SuppressWarnings("unused")
@@ -38,7 +38,7 @@ public final class RenderParamsFlags {
         new Key<Boolean>("renderAllDrawableStates", Boolean.class);
     /**
      * To tell LayoutLib that the IDE supports RecyclerView.
-     * <p/>
+     * <p>
      * Default is false.
      */
     public static final Key<Boolean> FLAG_KEY_RECYCLER_VIEW_SUPPORT =

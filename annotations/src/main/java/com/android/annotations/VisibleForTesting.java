@@ -22,7 +22,7 @@ import java.lang.annotation.RetentionPolicy;
 /**
  * Denotes that the class, method or field has its visibility relaxed so
  * that unit tests can access it.
- * <p/>
+ * <p>
  * The <code>visibility</code> argument can be used to specific what the original
  * visibility should have been if it had not been made public or package-private for testing.
  * The default is to consider the element private.

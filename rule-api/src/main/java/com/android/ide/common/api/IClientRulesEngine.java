@@ -299,7 +299,7 @@ public interface IClientRulesEngine {
     /**
      * Given a UI root node and a potential XML node name, returns the first available id
      * that matches the pattern "prefix%d".
-     * <p/>
+     * <p>
      * TabWidget is a special case and the method will always return "@android:id/tabs".
      *
      * @param fqcn The fully qualified class name of the view to generate a unique id for

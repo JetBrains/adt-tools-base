@@ -266,7 +266,7 @@ public class Main {
     /**
      * Run and return a result code.
      * @param arguments the data + parameters for the conversion
-     * @return 0 if success > 0 otherwise.
+     * @return 0 if success &gt; 0 otherwise.
      */
     public int run(Arguments arguments) throws IOException {
 

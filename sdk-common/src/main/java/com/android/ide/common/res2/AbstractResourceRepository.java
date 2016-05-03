@@ -247,7 +247,7 @@ public abstract class AbstractResourceRepository {
     /**
      * Returns the {@link ResourceFile} matching the given name, {@link ResourceType} and
      * configuration.
-     * <p/>
+     * <p>
      * This only works with files generating one resource named after the file
      * (for instance, layouts, bitmap based drawable, xml, anims).
      *
@@ -268,7 +268,7 @@ public abstract class AbstractResourceRepository {
     /**
      * Returns a list of {@link ResourceFile} matching the given name, {@link ResourceType} and
      * configuration. This ignores the qualifiers which are missing from the configuration.
-     * <p/>
+     * <p>
      * This only works with files generating one resource named after the file (for instance,
      * layouts, bitmap based drawable, xml, anims).
      *
@@ -356,7 +356,7 @@ public abstract class AbstractResourceRepository {
 
     /**
      * Returns a map of (resource name, resource value) for the given {@link ResourceType}.
-     * <p/>The values returned are taken from the resource files best matching a given
+     * <p>The values returned are taken from the resource files best matching a given
      * {@link FolderConfiguration}.
      * @param type the type of the resources.
      * @param referenceConfig the configuration to best match.

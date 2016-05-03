@@ -39,8 +39,8 @@ import java.util.Locale;
  * task will execute from the IDE.
  *
  * Task responsibility :
- * <ul>generate the build-info.xml on each gradle invocation with InstantRun enabled.</ul>
- * <ul>delete incremental change files when doing a full build.</ul>
+ * <ul><li>generate the build-info.xml on each gradle invocation with InstantRun enabled.</li>
+ * <li>delete incremental change files when doing a full build.</li></ul>
  */
 public class InstantRunWrapperTask extends BaseTask {
 

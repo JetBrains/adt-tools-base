@@ -225,7 +225,7 @@ public class AndroidBuilder {
 
     /**
      * Creates an AndroidBuilder.
-     * <p/>
+     * <p>
      * <var>verboseExec</var> is needed on top of the ILogger due to remote exec tools not being
      * able to output info and verbose messages separately.
      *

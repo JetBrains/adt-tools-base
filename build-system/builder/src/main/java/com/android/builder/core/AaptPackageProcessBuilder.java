@@ -123,7 +123,7 @@ public class AaptPackageProcessBuilder extends ProcessEnvBuilder<AaptPackageProc
 
     /**
      * @param symbolOutputDir the folder to write symbols into
-     * @ itself
+     * @return itself
      */
     public AaptPackageProcessBuilder setSymbolOutputDir(@Nullable String symbolOutputDir) {
         mSymbolOutputDir = symbolOutputDir;

@@ -34,14 +34,14 @@ import java.util.zip.Adler32;
  * has changed later. A directory has changed if its timestamp has been
  * modified, or if an underlying source.properties file has changed in
  * timestamp or checksum.
- * <p/>
- * Note that depending on the filesystem & OS, the content of the files in
+ * <p>
+ * Note that depending on the filesystem and OS, the content of the files in
  * a directory can change without the directory's last-modified property
  * changing. To have a consistent behavior between OSes, we compute a quick
- * checksum using all the files & directories modified timestamps.
+ * checksum using all the files and directories modified timestamps.
  * The content of files is not included though, except for the checksum on
  * the source.property file since this one is the most important for the SDK.
- * <p/>
+ * <p>
  * The {@link #hashCode()} and {@link #equals(Object)} methods directly
  * defer to the underlying File object. This allows the DirInfo to be placed
  * into a map and still call {@link Map#containsKey(Object)} with a File
@@ -161,7 +161,7 @@ class LocalDirInfo {
     /**
      * Computes a checksum using the last-modified attributes of all
      * the files and <em>first-level</em>directories in this root directory.
-     * <p/>
+     * <p>
      * Heuristic: the SDK Manager updates package by replacing whole directories
      * so we don't need to do a recursive deep-first checksum of all files. Only
      * the top-level of the package directory should be sufficient to detect
@@ -198,7 +198,7 @@ class LocalDirInfo {
 
     /**
      * Returns the hashCode of the underlying File object.
-     * <p/>
+     * <p>
      * When a {@link LocalDirInfo} is placed in a map, what matters is to use the underlying
      * File object as the key so {@link #hashCode()} and {@link #equals(Object)} both
      * return the properties of the underlying File object.
@@ -212,7 +212,7 @@ class LocalDirInfo {
 
     /**
      * Checks equality of the underlying File object.
-     * <p/>
+     * <p>
      * When a {@link LocalDirInfo} is placed in a map, what matters is to use the underlying
      * File object as the key so {@link #hashCode()} and {@link #equals(Object)} both
      * return the properties of the underlying File object.
@@ -244,7 +244,7 @@ class LocalDirInfo {
 
         /**
          * Returns the hashCode of the underlying File object.
-         * <p/>
+         * <p>
          * When a {@link LocalDirInfo} is placed in a map, what matters is to use the underlying
          * File object as the key so {@link #hashCode()} and {@link #equals(Object)} both
          * return the properties of the underlying File object.
@@ -258,7 +258,7 @@ class LocalDirInfo {
 
         /**
          * Checks equality of the underlying File object.
-         * <p/>
+         * <p>
          * When a {@link LocalDirInfo} is placed in a map, what matters is to use the underlying
          * File object as the key so {@link #hashCode()} and {@link #equals(Object)} both
          * return the properties of the underlying File object.

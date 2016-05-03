@@ -35,7 +35,7 @@ import java.util.List;
  * multiple different issues as it's analyzing code, and we want to be able to
  * different severities for different issues, the ability to suppress one but
  * not other issues from the same detector, and so on.
- * <p/>
+ * <p>
  * <b>NOTE: This is not a public or final API; if you rely on this be prepared
  * to adjust your code for the next tools release.</b>
  */

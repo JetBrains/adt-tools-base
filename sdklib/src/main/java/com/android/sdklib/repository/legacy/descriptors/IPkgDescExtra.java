@@ -27,14 +27,14 @@ import com.android.sdklib.repository.IdDisplay;
  * (both local or remote packages definitions.) The base {@link IPkgDesc} tries
  * to present a unified interface to package attributes and this interface
  * adds methods specific to extras.
- * <p/>
+ * <p>
  * To create a new {@link IPkgDescExtra},
  * use {@link PkgDesc.Builder#newExtra(IdDisplay, String, String, String[], Revision)} )}.
- * <p/>
+ * <p>
  * The extra's revision is a {@link Revision}; the attribute is however
  * accessed via {@link IPkgDesc#getRevision()} instead of introducing a new
  * custom method.
- * <p/>
+ * <p>
  * To query generic packages capabilities, rely on {@link #getType()} and the
  * {@code IPkgDesc.hasXxx()} methods provided by {@link IPkgDesc}.
  *

@@ -318,7 +318,7 @@ public final class FileOpUtils {
         int start = 0;
         for (; start < len; start++) {
             // On Windows should compare in case-insensitive.
-            // Mac & Linux file systems can be both type, although their default
+            // Mac and Linux file systems can be both type, although their default
             // is generally to have a case-sensitive file system.
             if ((isWindows && !segments1[start].equalsIgnoreCase(segments2[start])) ||
                     (!isWindows && !segments1[start].equals(segments2[start]))) {

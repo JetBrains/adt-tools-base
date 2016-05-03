@@ -41,13 +41,13 @@ public class ArchFilter {
     private static final String PROP_MIN_JVM_VERSION = "Archive.MinJvmVers";
 
     /**
-     * The legacy property used to serialize {@link LegacyOs} in source.properties files. <p/>
+     * The legacy property used to serialize {@link LegacyOs} in source.properties files. <p>
      * Replaced by {@code ArchFilter.PROP_HOST_OS}.
      */
     public static final String LEGACY_PROP_OS = "Archive.Os";
 
     /**
-     * The legacy property used to serialize {@link LegacyArch} in source.properties files. <p/>
+     * The legacy property used to serialize {@link LegacyArch} in source.properties files. <p>
      * Replaced by {@code ArchFilter.PROP_HOST_BITS} and {@code ArchFilter.PROP_JVM_BITS}.
      */
     public static final String LEGACY_PROP_ARCH = "Archive.Arch";
@@ -58,7 +58,7 @@ public class ArchFilter {
     private final Revision mMinJvmVersion;
 
     /**
-     * Creates a new {@link ArchFilter} with the specified filter attributes. <p/> This filters
+     * Creates a new {@link ArchFilter} with the specified filter attributes. <p> This filters
      * represents the attributes requires for a package's {@link Archive} to be installable on the
      * current architecture. Not all fields are required -- those that are not specified imply there
      * is no limitation on that particular attribute.
@@ -81,7 +81,7 @@ public class ArchFilter {
 
     /**
      * Creates an {@link ArchFilter} using properties previously saved in a {@link Properties}
-     * object, typically by the {@link ArchFilter#saveProperties(Properties)} method. <p/> Missing
+     * object, typically by the {@link ArchFilter#saveProperties(Properties)} method. <p> Missing
      * properties are set to null and will not filter.
      *
      * @param props A properties object previously filled by {@link #saveProperties(Properties)}. If
@@ -167,13 +167,13 @@ public class ArchFilter {
 
     /**
      * Checks whether {@code this} {@link ArchFilter} is compatible with the right-hand side one.
-     * <p/> Typically this is used to check whether "this downloaded package is compatible with the
+     * <p> Typically this is used to check whether "this downloaded package is compatible with the
      * current architecture", which would be expressed as:
      * <pre>
      * DownloadedArchive.filter.isCompatibleWith(ArhFilter.getCurrent())
      * </pre>
-     * For the host OS & bit size attribute, if the attributes are non-null they must be equal. For
-     * the min-jvm-version, "this" version (the package we want to install) needs to be lower or
+     * For the host OS and bit size attribute, if the attributes are non-null they must be equal.
+     * For the min-jvm-version, "this" version (the package we want to install) needs to be lower or
      * equal to the "required" (current host) version.
      *
      * @param required The requirements to meet.
@@ -252,7 +252,7 @@ public class ArchFilter {
 
     /**
      * Save this {@link ArchFilter} attributes into the the given {@link Properties} object. These
-     * properties can later be given to the constructor that takes a {@link Properties} object. <p/>
+     * properties can later be given to the constructor that takes a {@link Properties} object. <p>
      * Null attributes are not saved in the properties.
      *
      * @param props A non-null properties object to fill with non-null attributes.

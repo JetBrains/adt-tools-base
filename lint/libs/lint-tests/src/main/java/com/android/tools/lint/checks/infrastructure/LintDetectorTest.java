@@ -595,7 +595,7 @@ public abstract class LintDetectorTest extends SdkTestCase {
 
     /**
      * Creates a test file from the given base64 data. To create this data, use {@link
-     * #toBase64(File)} or {@link #toBase64(byte[])}, for example via {@code assertEquals("",
+     * #toBase64(File)} or {@link #toBase64(byte[])}, for example via <pre>{@code assertEquals("",
      * uuencode(new File("path/to/your.class")));} </pre>
      *
      * @param to      the file to write as
@@ -918,7 +918,7 @@ public abstract class LintDetectorTest extends SdkTestCase {
 
             Collections.sort(mWarnings);
 
-            // Check compare contract & transitivity
+            // Check compare contract and transitivity
             Warning prev2 = prev;
             prev = null;
             for (Warning warning : mWarnings) {

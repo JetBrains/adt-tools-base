@@ -40,7 +40,7 @@ public final class RawImage {
 
     /**
      * Reads the header of a RawImage from a {@link ByteBuffer}.
-     * <p/>The way the data is sent over adb is defined in system/core/adb/framebuffer_service.c
+     * <p>The way the data is sent over adb is defined in system/core/adb/framebuffer_service.c
      * @param version the version of the protocol.
      * @param buf the buffer to read from.
      * @return true if success
@@ -89,7 +89,7 @@ public final class RawImage {
 
     /**
      * Returns the mask value for the red color.
-     * <p/>This value is compatible with org.eclipse.swt.graphics.PaletteData
+     * <p>This value is compatible with org.eclipse.swt.graphics.PaletteData
      */
     public int getRedMask() {
         return getMask(red_length, red_offset);
@@ -97,7 +97,7 @@ public final class RawImage {
 
     /**
      * Returns the mask value for the green color.
-     * <p/>This value is compatible with org.eclipse.swt.graphics.PaletteData
+     * <p>This value is compatible with org.eclipse.swt.graphics.PaletteData
      */
     public int getGreenMask() {
         return getMask(green_length, green_offset);
@@ -105,7 +105,7 @@ public final class RawImage {
 
     /**
      * Returns the mask value for the blue color.
-     * <p/>This value is compatible with org.eclipse.swt.graphics.PaletteData
+     * <p>This value is compatible with org.eclipse.swt.graphics.PaletteData
      */
     public int getBlueMask() {
         return getMask(blue_length, blue_offset);
@@ -199,7 +199,7 @@ public final class RawImage {
 
     /**
      * creates a mask value based on a length and offset.
-     * <p/>This value is compatible with org.eclipse.swt.graphics.PaletteData
+     * <p>This value is compatible with org.eclipse.swt.graphics.PaletteData
      */
     private int getMask(int length, int offset) {
         int res = getMask(length) << offset;

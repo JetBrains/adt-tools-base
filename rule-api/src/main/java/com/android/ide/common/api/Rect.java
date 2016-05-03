@@ -23,8 +23,8 @@ import com.google.common.annotations.Beta;
 
 /**
  * Mutable rectangle bounds.
- * <p/>
- * To be valid, w >= 1 and h >= 1.
+ * <p>
+ * To be valid, w &ge; 1 and h &ge; 1.
  * By definition:
  * - right side = x + w - 1.
  * - bottom side = y + h - 1.
@@ -74,7 +74,7 @@ public class Rect {
         return new Rect(x, y, w, h);
     }
 
-    /** Returns true if the rectangle has valid bounds, i.e. w>0 and h>0. */
+    /** Returns true if the rectangle has valid bounds, i.e. w&gt;0 and h&gt;0. */
     public boolean isValid() {
         return w > 0 && h > 0;
     }

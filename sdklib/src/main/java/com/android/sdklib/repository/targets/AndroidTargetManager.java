@@ -66,7 +66,7 @@ public class AndroidTargetManager {
     }
 
     /**
-     * Returns the targets (platforms & addons) that are available in the SDK, sorted in
+     * Returns the targets (platforms and addons) that are available in the SDK, sorted in
      * ascending order by API level.
      */
     @NonNull

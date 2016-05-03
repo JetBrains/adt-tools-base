@@ -35,7 +35,7 @@ import java.util.Date;
 
 /**
  * Sync service class to push/pull to/from devices/emulators, through the debug bridge.
- * <p/>
+ * <p>
  * To get a {@link SyncService} object, use {@link Device#getSyncService()}.
  */
 public class SyncService {
@@ -249,7 +249,7 @@ public class SyncService {
     /**
      * Returns a sync progress monitor that does nothing. This allows background tasks that don't
      * want/need to display ui, to pass a valid {@link ISyncProgressMonitor}.
-     * <p/>This object can be reused multiple times and can be used by concurrent threads.
+     * <p>This object can be reused multiple times and can be used by concurrent threads.
      */
     public static ISyncProgressMonitor getNullProgressMonitor() {
         return sNullSyncProgressMonitor;
@@ -258,7 +258,7 @@ public class SyncService {
     /**
      * Pulls file(s) or folder(s).
      * @param entries the remote item(s) to pull
-     * @param localPath The local destination. If the entries count is > 1 or
+     * @param localPath The local destination. If the entries count is &gt; 1 or
      *      if the unique entry is a folder, this should be a folder.
      * @param monitor The progress monitor. Cannot be null.
      * @throws SyncException
@@ -319,7 +319,7 @@ public class SyncService {
 
     /**
      * Pulls a single file.
-     * <p/>Because this method just deals with a String for the remote file instead of a
+     * <p>Because this method just deals with a String for the remote file instead of a
      * {@link FileEntry}, the size of the file being pulled is unknown and the
      * {@link ISyncProgressMonitor} will not properly show the progress
      * @param remoteFilepath the full path to the remote file

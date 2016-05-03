@@ -24,7 +24,7 @@ import java.io.File;
 
 /**
  * Context for the transform.
- * <p/>
+ * <p>
  * This gives access to a limited amount of context when the transform is run.
  */
 public interface Context {

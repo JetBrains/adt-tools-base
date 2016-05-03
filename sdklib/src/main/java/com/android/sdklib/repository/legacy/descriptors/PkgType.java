@@ -27,7 +27,7 @@ import java.util.EnumSet;
 
 /**
  * Package types handled by the legacy SDK.
- * <p/>
+ * <p>
  * Integer bit values indicate the natural ordering of the packages.
  *
  * @deprecated This is part of the old SDK manager framework. Use

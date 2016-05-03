@@ -52,7 +52,7 @@ public class XmlFormatPreferences {
         return sortAttributes.getAttributeComparator();
     }
 
-    /** Should there be a space before the closing > or /> ? */
+    /** Should there be a space before the closing {@code >}; or {@code >/;} ? */
     public boolean spaceBeforeClose = true;
 
     /** The string to insert for each indentation level */

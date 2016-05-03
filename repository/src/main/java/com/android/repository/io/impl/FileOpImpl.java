@@ -43,9 +43,9 @@ import java.util.Properties;
 
 /**
  * Wraps some common {@link File} operations on files and folders.
- * <p/>
+ * <p>
  * This makes it possible to override/mock/stub some file operations in unit tests.
- * <p/>
+ * <p>
  * Instances should be obtained through {@link FileOpUtils#create()}
  */
 public class FileOpImpl implements FileOp {

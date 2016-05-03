@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 
 /**
  * Provides {@link Device} side file listing service.
- * <p/>To get an instance for a known {@link Device}, call {@link Device#getFileListingService()}.
+ * <p>To get an instance for a known {@link Device}, call {@link Device#getFileListingService()}.
  */
 public final class FileListingService {
 
@@ -229,8 +229,8 @@ public final class FileListingService {
 
         /**
          * Returns the extra info for the entry.
-         * <p/>For a link, it will be a description of the link.
-         * <p/>For an application apk file it will be the application package as returned
+         * <p>For a link, it will be a description of the link.
+         * <p>For an application apk file it will be the application package as returned
          * by the Package Manager.
          */
         public String getInfo() {
@@ -671,19 +671,19 @@ public final class FileListingService {
 
     /**
      * Returns the children of a {@link FileEntry}.
-     * <p/>
+     * <p>
      * This method supports a cache mechanism and synchronous and asynchronous modes.
-     * <p/>
+     * <p>
      * If <var>receiver</var> is <code>null</code>, the device side <code>ls</code>
      * command is done synchronously, and the method will return upon completion of the command.<br>
      * If <var>receiver</var> is non <code>null</code>, the command is launched is a separate
      * thread and upon completion, the receiver will be notified of the result.
-     * <p/>
+     * <p>
      * The result for each <code>ls</code> command is cached in the parent
      * <code>FileEntry</code>. <var>useCache</var> allows usage of this cache, but only if the
      * cache is valid. The cache is valid only for {@link FileListingService#REFRESH_RATE} ms.
      * After that a new <code>ls</code> command is always executed.
-     * <p/>
+     * <p>
      * If the cache is valid and <code>useCache == true</code>, the method will always simply
      * return the value of the cache, whether a {@link IListingReceiver} has been provided or not.
      *
@@ -793,7 +793,7 @@ public final class FileListingService {
 
     /**
      * Returns the children of a {@link FileEntry}.
-     * <p/>
+     * <p>
      * This method is the explicit synchronous version of
      * {@link #getChildren(FileEntry, boolean, IListingReceiver)}. It is roughly equivalent to
      * calling

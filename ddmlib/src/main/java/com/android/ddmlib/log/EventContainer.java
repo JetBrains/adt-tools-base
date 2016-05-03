@@ -97,10 +97,10 @@ public class EventContainer {
         /**
          * Returns a storage string for an {@link Object} of type supported by
          * {@link EventValueType}.
-         * <p/>
+         * <p>
          * Strings created by this method can be reloaded with
          * {@link #getObjectFromStorageString(String)}.
-         * <p/>
+         * <p>
          * NOTE: for now, only {@link #STRING}, {@link #INT}, and {@link #LONG} are supported.
          * @param object the object to "convert" into a storage string.
          * @return a string storing the object and its type or null if the type was not recognized.

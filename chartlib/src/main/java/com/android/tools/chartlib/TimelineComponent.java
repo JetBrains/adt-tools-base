@@ -876,7 +876,7 @@ public final class TimelineComponent extends AnimatedComponent {
 
         /**
          * An event fired whenever a new Stream is added into a TimelineComponent. It's often a good idea to call
-         * {@link #configureStream(...)} at this point.
+         * {@link TimelineComponent#configureStream(int, String, Color, boolean)} at this point.
          */
         void onStreamAdded(int stream, @NonNull String id);
     }

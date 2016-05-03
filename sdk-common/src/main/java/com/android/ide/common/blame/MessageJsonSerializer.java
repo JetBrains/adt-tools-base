@@ -54,7 +54,7 @@ import java.io.IOException;
  *
  * All fields, other than text, may be omitted. They have the following defaults:
  *
- * <table>
+ * <table summary="Default values for the message fields.">
  *     <tr><th>Property</th>        <th>Default</th>             <th>Notes</th></tr>
  *     <tr><td>kind (ERROR, WARNING,
  *             INFO, UNKNOWN)</td>  <td>UNKNOWN</td>             <td></td></tr>
@@ -70,7 +70,7 @@ import java.io.IOException;
  *                                      startOffset</td></tr>
  * </table>
  *
- * <h4>Notes</h4>
+ * <b>Notes</b>
  * <ul>
  *     <li>Offset need not be included, if needed by the consumer of the message it can
  *         be derived from the file, line and column.</li>

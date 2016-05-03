@@ -37,12 +37,12 @@ import java.util.Locale;
 /**
  * {@link PkgDesc} keeps information on individual SDK packages
  * (both local or remote packages definitions.)
- * <br/>
+ * <br>
  * Packages have different attributes depending on their type.
- * <p/>
+ * <p>
  * To create a new {@link PkgDesc}, use one of the package-specific constructors
  * provided here.
- * <p/>
+ * <p>
  * To query packages capabilities, rely on {@link #getType()} and the {@code PkgDesc.hasXxx()}
  * methods provided in the base {@link PkgDesc}.
  *
@@ -502,7 +502,7 @@ public class PkgDesc implements IPkgDesc {
     /**
      * Compares this descriptor to another one.
      * All fields must match for equality.
-     * <p/>
+     * <p>
      * This is must not be used an indication that a package is a suitable update for another one.
      * The comparison order is however suitable for sorting packages for display purposes.
      */
@@ -956,7 +956,7 @@ public class PkgDesc implements IPkgDesc {
 
         /**
          * Create a new add-on package descriptor.
-         * <p/>
+         * <p>
          * The vendor id and the name id provided are used to compute the add-on's
          * target hash.
          *
@@ -984,7 +984,7 @@ public class PkgDesc implements IPkgDesc {
 
         /**
          * Create a new platform system-image package descriptor.
-         * <p/>
+         * <p>
          * For system-images, {@link PkgDesc#getPath()} returns the ABI.
          *
          * @param version The android version of the system-image package.
@@ -1009,7 +1009,7 @@ public class PkgDesc implements IPkgDesc {
 
         /**
          * Create a new add-on system-image package descriptor.
-         * <p/>
+         * <p>
          * For system-images, {@link PkgDesc#getPath()} returns the ABI.
          *
          * @param version The android version of the system-image package.

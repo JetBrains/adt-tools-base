@@ -35,10 +35,10 @@ import javax.swing.JScrollBar;
  * +              x----------------------|             +
  * +---------------------------------------------------+
  *
- * A. Range data's global minimum -> {@link DefaultBoundedRangeModel#min}
- * B. {@link Range#mCurrentMin} -> BoundedRangeModel's min
- * C. {@link Range#mCurrentMax} -> BoundedRangeModel's min + extent
- * D. Range data's global maximum -> BoundedRangeModel's max
+ * A. Range data's global minimum → {@link DefaultBoundedRangeModel#min}
+ * B. {@link Range#mCurrentMin} → BoundedRangeModel's min
+ * C. {@link Range#mCurrentMax} → BoundedRangeModel's min + extent
+ * D. Range data's global maximum → BoundedRangeModel's max
  */
 public final class RangeScrollbar extends JScrollBar implements Animatable {
 

@@ -74,7 +74,7 @@ public class Features {
     public static final int ACTION_BAR = 12;
     /**
      * Ability to simulate older Platform Versions.
-     * <p/>
+     * <p>
      * This is the last feature supported by API 12.
      */
     public static final int SIMULATE_PLATFORM = 13;
@@ -113,7 +113,7 @@ public class Features {
     public static final int THEME_PREVIEW_NAVIGATION_BAR = 19;
     /**
      * Last known feature.
-     * <p/>
+     * <p>
      * This should be avoided on the LayoutLib since, since using this makes updating the API used
      * by the LayoutLib without implementing any newly added features.
      */
