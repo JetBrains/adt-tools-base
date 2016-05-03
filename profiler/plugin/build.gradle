@@ -1,4 +1,5 @@
 apply plugin: 'java'
+apply plugin: 'maven'
 
 group = 'com.android.tools'
 archivesBaseName = 'studio-profiler-plugin'
@@ -14,16 +15,24 @@ dependencies {
     compile 'com.google.guava:guava:17.0'
     compile('com.android.tools.build:gradle-api:2.0.0-beta2')
 
-    support project(':base:profiler-supportlib')
+    support project(':supportlib')
 }
-
-project.ext.pomName = 'Android Studio profiler gradle plugin'
-project.ext.pomDesc = 'Plugin which allows instrumenting apps for profiler statistics'
-
 jar {
     from configurations.support
 }
 
+//// Publishing this library goes directly to a directory seen by studio at development time,
+//// and forms part of the components bundled with studio at build time.
+def repo = "$rootDir/../../../out/studio/repo/"
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: "file://$repo")
+        }
+    }
+    outputs.dir repo
+}
 
 // We have a small set of dependencies, so copy them manually
 def deps = [
@@ -32,23 +41,13 @@ def deps = [
         "com/android/tools/build/gradle-api/2.0.0-beta2",
         "com/android/tools/annotations/25.0.0-beta2",
 ]
+
 deps.each { name ->
     // create a task that copies some additional data in the library bundle
     def copyTask = tasks.create(name: "copy$name", type: Copy) {
         from           file("../../../../prebuilts/tools/common/m2/repository/" + name)
-        destinationDir file("$rootProject.ext.androidHostOut/studio/" + name)
+        destinationDir file("$repo/$name")
     }
-    publishLocal.dependsOn copyTask
+    uploadArchives.dependsOn copyTask
 }
-
-// Publishing this library goes directly to a directory seen by studio at development time,
-// and forms part of the components bundled with studio at build time.
-afterEvaluate {
-    publishLocal {
-        repositories {
-            mavenDeployer {
-                repository(url: uri("$rootProject.ext.androidHostOut/studio"))
-            }
-        }
-    }
-}
+build.dependsOn uploadArchives
