@@ -24,6 +24,7 @@ import com.android.tools.chartlib.model.RangedContinuousSeries;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
@@ -133,8 +134,21 @@ public class LineChart extends AnimatedComponent {
     public void postAnimate() {
         long duration = System.nanoTime();
         int p = 0;
+
+        // Store the Y coordinates of the last stacked series to use them to increment the Y values
+        // of the current stacked series.
+        List<Double> lastStackedSeriesY = null;
+        // Store the last stacked path points to close the polygon of the current stacked line,
+        // in case it is also filled
+        List<Point2D.Float> lastStackedPath = null;
+
         for (RangedContinuousSeries ranged : mLinesConfig.keySet()) {
-            LineConfig config = mLinesConfig.get(ranged);
+            // Stores the y coordinates of the current series in case it's used as a stacked series
+            final List<Double> currentSeriesY = new ArrayList<>();
+            // Store the current path points in case they are used later to close a stacked line
+            // polygon area
+            final List<Point2D.Float> currentPath = new ArrayList<>();
+            final LineConfig config = mLinesConfig.get(ranged);
             Path2D.Float path;
             if (p == mPaths.size()) {
                 path = new Path2D.Float();
@@ -161,16 +175,29 @@ public class LineChart extends AnimatedComponent {
                 long currY = ranged.getSeries().getY(i);
                 double xd = (currX - xMin) / (xMax - xMin);
                 double yd = (currY - yMin) / (yMax - yMin);
+
+                // If the current series is stacked, increment its yd by the yd of the last stacked
+                // series if it's not null.
+                // As the series are constantly populated, the current series might have one more
+                // point than the last stacked series (meaning that the last one was populated in a
+                // prior iteration). In this case, yd of the current series shouldn't change.
+                if (config.isStacked() && lastStackedSeriesY != null &&
+                        i < lastStackedSeriesY.size()) {
+                    yd += lastStackedSeriesY.get(i);
+                }
+                currentSeriesY.add(yd);
+
                 if (i == 0) {
                     path.moveTo(xd, 1.0f);
+                    currentPath.add(new Point2D.Float((float) xd, 1f));
                     firstXd = xd;
                 } else {
                     // Dashing only applies if we are not in fill mode.
                     if (config.isDashed() && !config.isFilled()) {
                         if (config.isStepped()) {
                             // If stepping, first draw horizontal dashes to xd
-                            currentDashPercentage = drawDash(path, currentDashPercentage,
-                                    prevX, prevY, currX, prevY, xd, path.getCurrentPoint().getY());
+                            currentDashPercentage = drawDash(path, currentDashPercentage, prevX,
+                                    prevY, currX, prevY, xd, path.getCurrentPoint().getY());
                             prevX = currX;
                         }
                         currentDashPercentage = drawDash(path, currentDashPercentage,
@@ -180,9 +207,13 @@ public class LineChart extends AnimatedComponent {
                         // point (e.g. (x0, y0)) to the destination's X value (e.g. (x1, y0)) before
                         // drawing a line to the destination point itself (e.g. (x1, y1)).
                         if (config.isStepped()) {
-                            path.lineTo(xd, path.getCurrentPoint().getY());
+                            float y = (float) path.getCurrentPoint().getY();
+                            path.lineTo(xd, y);
+                            currentPath.add(new Point2D.Float((float) xd, y));
                         }
-                        path.lineTo(xd, 1.0f - yd);
+                        float y = (float) (1.0 - yd);
+                        path.lineTo(xd, y);
+                        currentPath.add(new Point2D.Float((float) xd, y));
                     }
                 }
 
@@ -190,14 +221,26 @@ public class LineChart extends AnimatedComponent {
                 prevY = currY;
             }
 
-            // If the chart is filled, draw a line from the last point to X axis and another one
-            // from this new point to the first destination point. The resulting polygon is going to
-            // be filled.
-            // TODO: When stacked charts are implemented, the polygon shouldn't be drawn
-            // until the X axis, but the Y value of the last path
+            // Fill the line area in case it is filled
             if (config.isFilled()) {
-                path.lineTo(path.getCurrentPoint().getX(), 1.0f);
-                path.lineTo(firstXd, 1.0f);
+                // If the line is stacked above another line, draw a line to the last point of this
+                // other line and then start drawing lines to the points of its path backwards. This
+                // should be enough to close the polygon.
+                if (config.isStacked() && lastStackedPath != null) {
+                    int j = lastStackedPath.size();
+                    while (j-- > 0) {
+                        path.lineTo(lastStackedPath.get(j).getX(), lastStackedPath.get(j).getY());
+                    }
+                } else {
+                    // If the chart is filled, but not stacked, draw a line from the last point to X
+                    // axis and another one from this new point to the first destination point.
+                    path.lineTo(path.getCurrentPoint().getX(), 1f);
+                    path.lineTo(firstXd, 1f);
+                }
+            }
+            if (config.isStacked()) {
+                lastStackedSeriesY = currentSeriesY;
+                lastStackedPath = currentPath;
             }
 
             addDebugInfo("Range[%d] Max: %.2f", p, xMax);

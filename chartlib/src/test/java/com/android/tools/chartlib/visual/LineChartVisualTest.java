@@ -104,8 +104,10 @@ public class LineChartVisualTest extends VisualTest {
                         for (RangedContinuousSeries rangedSeries : mData) {
                             int size = rangedSeries.getSeries().size();
                             long last = size > 0 ? rangedSeries.getSeries().getY(size - 1) : 0;
-                            float delta = (float) Math.random() * variance.get() - v * 0.45f;
-                            rangedSeries.getSeries().add(now, last + (long) delta);
+                            float delta = ((float) Math.random() - 0.45f) * v;
+                            // Make sure not to add negative numbers.
+                            long current = Math.max(last + (long) delta, 0);
+                            rangedSeries.getSeries().add(now, current);
                         }
                         Thread.sleep(delay.get());
                     }
@@ -162,6 +164,14 @@ public class LineChartVisualTest extends VisualTest {
             for (int i = 0; i < mData.size(); i += 2) {
                 RangedContinuousSeries series = mData.get(i);
                 mLineChart.getLineConfig(series).setFilled(isFilled);
+            }
+        }));
+        controls.add(VisualTests.createCheckbox("Stacked lines", itemEvent -> {
+            boolean isStacked = itemEvent.getStateChange() == ItemEvent.SELECTED;
+            // Stack only some lines
+            for (int i = 0; i < mData.size(); i += 2) {
+                RangedContinuousSeries series = mData.get(i);
+                mLineChart.getLineConfig(series).setStacked(isStacked);
             }
         }));
 
