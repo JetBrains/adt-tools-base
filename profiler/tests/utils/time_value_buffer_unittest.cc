@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../time_value_buffer.h"
+#include "time_value_buffer.h"
 
 #include <gtest/gtest.h>
 
-using network_sampler::TimeValue;
-using network_sampler::TimeValueBuffer;
+using utils::TimeValue;
+using utils::TimeValueBuffer;
 
 const timespec t1 = {1, 0};
 const timespec t2 = {2, 0};

@@ -23,7 +23,7 @@
 
 #include "timespec_math.h"
 
-namespace network_sampler {
+namespace utils {
 
 // Data per sample. The time field indicates a independent time point when
 // value is collected.
@@ -91,6 +91,6 @@ template <typename T> class TimeValueBuffer {
   size_t size_ = 0;
   size_t start_ = 0;
 };
-} // namespace network_sampler
+} // namespace utils
 
 #endif // TIME_VALUE_BUFFER_H_

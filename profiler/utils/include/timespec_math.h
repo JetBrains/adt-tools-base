@@ -18,14 +18,14 @@
 
 #include <time.h>
 
-namespace network_sampler {
+namespace utils {
 
 // Class of Math operations on timespec objects. The operation result is
 // formalized, its nanosecond value should be non-negative and no larger
 // than 1e9. See also code in
 // http://www.gnu.org/software/libc/manual/html_node/Elapsed-Time.html
 class TimespecMath {
-public:
+ public:
   static void Add(const timespec &x, const timespec &y, timespec *result) {
     result->tv_sec = x.tv_sec + y.tv_sec;
     result->tv_nsec = x.tv_nsec + y.tv_nsec;

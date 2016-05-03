@@ -14,22 +14,23 @@
  * limitations under the License.
  */
 #include "connection_data_collector.h"
+#include "file_reader.h"
 
-namespace network_sampler {
+namespace network {
 
-void ConnectionDataCollector::ReadConnectionNumber(
-    const std::string &uid, NetworkSampleData *data) const {
-  data->type_ = GetType();
-  data->connections_ = 0;
+void ConnectionDataCollector::GetData(
+    profiler::proto::NetworkProfilerData *data) {
+  int connection_number = 0;
   for (const std::string &file_name : kConnectionFiles) {
-    data->connections_ += ReadConnectionNumber(uid, file_name);
+    connection_number += ReadConnectionNumber(kUid, file_name);
   }
+  data->mutable_connection_data()->set_connection_number(connection_number);
 }
 
 int ConnectionDataCollector::ReadConnectionNumber(const std::string &uid,
                                                   const std::string &file) {
   std::vector<std::string> lines;
-  NetworkDataCollector::Read(file, &lines);
+  utils::FileReader::Read(file, &lines);
 
   int result = 0;
   for (const std::string &line : lines) {
@@ -44,15 +45,11 @@ int ConnectionDataCollector::ReadConnectionNumber(const std::string &uid,
       continue;
     }
 
-    if (NetworkDataCollector::CompareToken(line, uid, kUidTokenIndex)) {
+    if (utils::FileReader::CompareToken(line, uid, kUidTokenIndex)) {
       result++;
     }
   }
   return result;
 }
 
-NetworkSampleType ConnectionDataCollector::GetType() const {
-  return NetworkSampleType::CONNECTION;
-}
-
-} // namespace network_sampler
+} // namespace network

@@ -13,41 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef NETWORK_DATA_COLLECTOR_H_
-#define NETWORK_DATA_COLLECTOR_H_
+#ifndef FILE_READER_H_
+#define FILE_READER_H_
 
 #include <string>
 #include <vector>
 
-#include "network_sample_data.h"
+namespace utils {
 
-namespace network_sampler {
-
-// Abstract network data collector.
-class NetworkDataCollector {
+// Class to read file and perform related tokenize util functions.
+class FileReader {
  public:
-  virtual ~NetworkDataCollector() = default;
-
-  // Returns the type of network sample data to collect.
-  virtual NetworkSampleType GetType() const = 0;
-
-  // Returns the app uid that is read from the given pid_status_file if present,
-  // -1 otherwise.
-  static int GetUid(const std::string &pid_status_file, int pid);
-
-  // Returns true if uid is present in given pid_status_file and appends to the
-  // parameter uid string, false otherwise.
-  static bool GetUidString(const std::string &pid_status_file, int pid,
-                           std::string *uid);
-
   // Real whole file and split it into lines.
-  static bool Read(const std::string& file_path,
+  static bool Read(const std::string &file_path,
                    std::vector<std::string> *lines);
 
   // Read whole file from beginning, and put output in a single string content.
-  static bool Read(const std::string& file_path, std::string *content);
+  static bool Read(const std::string &file_path, std::string *content);
 
- protected:
   // Returns true if the needed token is found, false otherwise. Tokens are
   // separated by whitespace in given line. token_index does not indicate the
   // character index but indicates the whitespace separated token index.
@@ -67,6 +50,6 @@ class NetworkDataCollector {
   static const short kBufferSize = 4096;
 };
 
-} // namespace network_sampler
+} // namespace utils
 
-#endif // NETWORK_DATA_COLLECTOR_H_
+#endif // FILE_READER_H_
