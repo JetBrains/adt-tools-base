@@ -177,8 +177,8 @@ public class DefaultSdkLoader implements SdkLoader {
     private synchronized void init(@NonNull ILogger logger) {
         if (mSdkHandler == null) {
             mSdkHandler = AndroidSdkHandler.getInstance(mSdkLocation);
-            mSdkHandler.getSdkManager(new LoggerProgressIndicatorWrapper(logger))
-                    .invalidateLocalIfNeeded();
+            ProgressIndicator progress = new LoggerProgressIndicatorWrapper(logger);
+            mSdkHandler.getSdkManager(progress).reloadLocalIfNeeded(progress);
 
             File toolsFolder = new File(mSdkLocation, FD_TOOLS);
             File supportToolsFolder = new File(toolsFolder, FD_SUPPORT);
