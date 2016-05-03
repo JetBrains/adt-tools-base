@@ -20,6 +20,8 @@ import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.Toolchain;
 import com.android.build.gradle.managed.NdkAbiOptions;
+import com.google.common.base.Objects;
+import com.google.common.base.Optional;
 
 import org.gradle.api.Action;
 import org.gradle.internal.os.OperatingSystem;
@@ -28,6 +30,7 @@ import org.gradle.nativeplatform.platform.NativePlatform;
 import org.gradle.nativeplatform.toolchain.Clang;
 import org.gradle.nativeplatform.toolchain.Gcc;
 import org.gradle.nativeplatform.toolchain.GccCompatibleToolChain;
+import org.gradle.nativeplatform.toolchain.GccPlatformToolChain;
 import org.gradle.nativeplatform.toolchain.NativeToolChainRegistry;
 import org.gradle.nativeplatform.toolchain.internal.gcc.DefaultGccPlatformToolChain;
 import org.gradle.platform.base.PlatformContainer;
@@ -49,7 +52,6 @@ public class ToolchainConfiguration {
             platform.architecture("ppc");
             platform.operatingSystem("linux");
         }
-
     }
 
     /**
@@ -65,7 +67,7 @@ public class ToolchainConfiguration {
                 "ndk-" + toolchainName,
                 (Class<? extends GccCompatibleToolChain>)
                         (toolchainName.equals("gcc") ? Gcc.class : Clang.class),
-                (Action<GccCompatibleToolChain>) toolchain -> {
+                toolchain -> {
                     // Configure each platform.
                     for (final Abi abi : ndkHandler.getSupportedAbis()) {
                         toolchain.target(abi.getName(), targetPlatform -> {
@@ -93,6 +95,16 @@ public class ToolchainConfiguration {
                                     args -> args.removeAll(Collections.singleton("-Xlinker")));
 
                             final NdkAbiOptions config = abiConfigs.get(abi.getName());
+                            String sysroot = (config == null || config.getPlatformVersion() == null)
+                                    ? ndkHandler.getSysroot(abi)
+                                    : ndkHandler.getSysroot(abi, config.getPlatformVersion());
+
+                            targetPlatform.getcCompiler().withArguments(
+                                    args -> args.add("--sysroot=" + sysroot));
+                            targetPlatform.getCppCompiler().withArguments(
+                                    args -> args.add("--sysroot=" + sysroot));
+                            targetPlatform.getLinker().withArguments(
+                                    args -> args.add("--sysroot=" + sysroot));
 
                             if (config != null) {
                                 // Specify ABI specific flags.
