@@ -69,6 +69,11 @@ public class LineConfig {
      */
     private boolean mIsFilled = false;
 
+    /**
+     * Whether the series should stack with other series instead of being independent.
+     */
+    private boolean mIsStacked = false;
+
     @NonNull
     private Color mColor;
 
@@ -98,6 +103,14 @@ public class LineConfig {
 
     public boolean isFilled() {
         return mIsFilled;
+    }
+
+    public void setStacked(boolean isStacked) {
+        mIsStacked = isStacked;
+    }
+
+    public boolean isStacked() {
+        return mIsStacked;
     }
 
     @NonNull
