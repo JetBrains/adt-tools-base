@@ -6,10 +6,6 @@
     android:id="@+id/${simpleLayoutName}"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
-    android:paddingBottom="@dimen/activity_vertical_margin"
 <#if hasAppBar && appBarLayoutName??>
     sherpa:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:showIn="@layout/${appBarLayoutName}"
