@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ Copyright (C) 2016 The Android Open Source Project
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<svg
+   xmlns="http://www.w3.org/2000/svg"
+   fill="#000000"
+   height="24"
+   viewBox="0 0 24 24"
+   width="24"
+   id="svg2"
+   version="1.1">
+  <path
+     style="color:#000000;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:medium;line-height:normal;font-family:sans-serif;text-indent:0;text-align:start;text-decoration:none;text-decoration-line:none;text-decoration-style:solid;text-decoration-color:#000000;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;baseline-shift:baseline;text-anchor:start;white-space:normal;clip-rule:nonzero;display:inline;overflow:visible;visibility:visible;opacity:0.6;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:#000000;solid-opacity:1;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.97204643;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.8;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto;enable-background:accumulate"
+     d="M 3.859375,0.80273438 C 3.5907247,0.8025927 3.3729052,1.0204122 3.3730469,1.2890625 l 0,16.3808595 c -1.416e-4,0.26865 0.2176779,0.48647 0.4863281,0.486328 l 7.775391,0 c 0.26865,1.42e-4 0.48647,-0.217678 0.486328,-0.486328 l 0,-3.507813 c 0.0052,1.7e-5 0.0065,0.0059 0.01172,0.0059 l 3.330079,0 c 0.267889,1.43e-4 0.485393,-0.216488 0.486328,-0.484375 l 0,-12.3945315 c 1.64e-4,-0.2686666 -0.217663,-0.48651087 -0.48633,-0.48636812 z m 2.1875,2.67382812 6.560547,0 c -0.07603,0 0.02491,0.00953 0.103516,0.1054687 0.0786,0.095935 0.138671,0.23875 0.138671,0.3808594 0,0.1421095 -0.06007,0.2829712 -0.138671,0.3789063 -0.07861,0.095935 -0.17955,0.1054687 -0.103516,0.1054687 l -6.560547,0 c 0.076033,0 -0.02491,-0.00953 -0.1035156,-0.1054687 C 5.8647542,4.2458618 5.8027344,4.105 5.8027344,3.9628906 c 0,-0.1421093 0.06202,-0.2849243 0.140625,-0.3808594 0.078605,-0.095935 0.1795488,-0.1054687 0.1035156,-0.1054687 z m 0,2.4296875 6.560547,0 c -0.07603,0 0.02491,0.00953 0.103516,0.1054688 0.0786,0.095935 0.138671,0.2387499 0.138671,0.3808593 0,0.1421095 -0.06007,0.2829712 -0.138671,0.3789063 -0.07861,0.095935 -0.17955,0.1074218 -0.103516,0.1074218 l -6.560547,0 c 0.076033,0 -0.02491,-0.011487 -0.1035156,-0.1074218 -0.078605,-0.095935 -0.140625,-0.2367969 -0.140625,-0.3789063 0,-0.1421093 0.06202,-0.2849243 0.140625,-0.3808593 C 6.0219646,5.9157837 6.1229082,5.90625 6.046875,5.90625 Z m 0,2.4296875 6.560547,0 c -0.07603,0 0.02491,0.011487 0.103516,0.1074219 0.0786,0.095935 0.138671,0.2367968 0.138671,0.3789062 0,0.1421095 -0.06007,0.2849244 -0.138671,0.3808594 -0.07861,0.095935 -0.17955,0.1054688 -0.103516,0.1054688 l -6.560547,0 c 0.076033,0 -0.02491,-0.00953 -0.1035156,-0.1054688 -0.078605,-0.095935 -0.140625,-0.23875 -0.140625,-0.3808594 0,-0.1421093 0.06202,-0.2829712 0.140625,-0.3789062 0.078605,-0.095935 0.1795488,-0.1074219 0.1035156,-0.1074219 z m 7.046875,6.3183595 c -0.26865,-1.42e-4 -0.48647,0.217678 -0.486328,0.486328 l 0,2.171875 c -3.1e-4,0.433417 0.523875,0.650491 0.830078,0.34375 l 2.164062,-2.171875 c 0.306741,-0.306203 0.08967,-0.830388 -0.34375,-0.830078 z"
+     id="path4146"/>
+  <path
+     style="color:#000000;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:medium;line-height:normal;font-family:Sans;-inkscape-font-specification:Sans;text-indent:0;text-align:start;text-decoration:none;text-decoration-line:none;letter-spacing:normal;word-spacing:normal;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;baseline-shift:baseline;text-anchor:start;display:inline;overflow:visible;visibility:visible;opacity:0.8;fill:#000000;fill-opacity:0.25;stroke:none;stroke-width:4;marker:none;enable-background:accumulate"
+     d="m 17.346056,16.595659 0,0.486024 0,2.551622 -2.551622,0 -0.486023,0 0,0.972046 0.486023,0 2.551622,0 0,2.551622 0,0.486023 0.972046,0 0,-0.486023 0,-2.551622 2.551622,0 0.486023,0 0,-0.972046 -0.486023,0 -2.551622,0 0,-2.551622 0,-0.486024 -0.972046,0 z"
+     id="path4172-4-6" />
+</svg>
