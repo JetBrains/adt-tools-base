@@ -111,7 +111,10 @@ public class GenerateSplitAbiRes extends BaseTask {
                 fileWriter.flush();
             }
 
-            Aapt aapt = AaptGradleFactory.make(getBuilder());
+            Aapt aapt =
+                    AaptGradleFactory.make(
+                            getBuilder(),
+                            variantOutputData.getScope().getVariantScope());
             AaptPackageConfig.Builder aaptConfig = new AaptPackageConfig.Builder();
             aaptConfig
                     .setManifestFile(tmpFile)

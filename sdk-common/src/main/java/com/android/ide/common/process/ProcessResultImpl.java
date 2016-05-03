@@ -54,7 +54,7 @@ class ProcessResultImpl implements ProcessResult {
                     String.format(
                             "Return code %d for process '%s'",
                             mExitValue,
-                            Joiner.on(", ").join(mCommand)));
+                            Joiner.on(" ").join(mCommand)));
         }
 
         return this;

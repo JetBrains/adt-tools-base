@@ -113,7 +113,7 @@ public class AaptPackageConfig implements Cloneable {
     private boolean mDebuggable;
 
     /**
-     * Package to use for {@code R} (see {@link AaptPackageConfig#setCustomPackageForR(String)}).
+     * Package to use for {@code R} (see {@link Builder#setCustomPackageForR(String)}).
      */
     @Nullable
     private String mPackageForR;

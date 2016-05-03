@@ -172,6 +172,10 @@ public final class SdkConstants {
     public static final String FN_AAPT =
         "aapt" + ext(".exe", "");                         //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 
+    /** aapt2 executable (with extension for the current OS) */
+    public static final String FN_AAPT2 =
+            "aapt2" + ext(".exe", "");                    //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+
     /** aidl executable (with extension for the current OS) */
     public static final String FN_AIDL =
         "aidl" + ext(".exe", "");                         //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$

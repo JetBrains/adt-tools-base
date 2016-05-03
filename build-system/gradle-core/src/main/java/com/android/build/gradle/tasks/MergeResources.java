@@ -84,8 +84,6 @@ public class MergeResources extends IncrementalTask {
 
     private boolean crunchPng;
 
-    private boolean useNewCruncher;
-
     private boolean validateEnabled;
 
     private File blameLogFolder;
@@ -99,6 +97,8 @@ public class MergeResources extends IncrementalTask {
     private Collection<String> generatedDensities;
 
     private int minSdk;
+
+    private VariantScope variantScope;
 
     @InputFiles
     @SuppressWarnings("unused") // Fake input to detect changes. Not actually used by the task.
@@ -136,7 +136,12 @@ public class MergeResources extends IncrementalTask {
             }
 
             // get the merged set and write it down.
-            Aapt aapt = AaptGradleFactory.make(getBuilder(), getCrunchPng(), getProcess9Patch());
+            Aapt aapt =
+                    AaptGradleFactory.make(
+                            getBuilder(),
+                            getCrunchPng(),
+                            getProcess9Patch(),
+                            variantScope);
             MergedResourceWriter writer = new MergedResourceWriter(
                     destinationDir,
                     getPublicFile(),
@@ -207,7 +212,12 @@ public class MergeResources extends IncrementalTask {
 
 
 
-            Aapt aapt = AaptGradleFactory.make(getBuilder(), getCrunchPng(), getProcess9Patch());
+            Aapt aapt =
+                    AaptGradleFactory.make(
+                            getBuilder(),
+                            getCrunchPng(),
+                            getProcess9Patch(),
+                            variantScope);
             MergedResourceWriter writer = new MergedResourceWriter(
                     getOutputDir(),
                     getPublicFile(),
@@ -415,6 +425,7 @@ public class MergeResources extends IncrementalTask {
             mergeResourcesTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             mergeResourcesTask.setVariantName(scope.getVariantConfiguration().getFullName());
             mergeResourcesTask.setIncrementalFolder(scope.getIncrementalDir(getName()));
+            mergeResourcesTask.variantScope = scope;
 
             // Libraries use this task twice, once for compilation (with dependencies),
             // where blame is useful, and once for packaging where it is not.

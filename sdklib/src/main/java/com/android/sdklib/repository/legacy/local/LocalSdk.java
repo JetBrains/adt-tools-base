@@ -689,7 +689,8 @@ public class LocalSdk {
                 null,
                 null,
                 null,
-                new File(platformTools, SdkConstants.FN_ZIPALIGN));
+                new File(platformTools, SdkConstants.FN_ZIPALIGN),
+                null);
     }
 
     // -------------

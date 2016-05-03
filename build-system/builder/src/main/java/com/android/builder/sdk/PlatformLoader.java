@@ -17,6 +17,7 @@
 package com.android.builder.sdk;
 
 import static com.android.SdkConstants.FN_AAPT;
+import static com.android.SdkConstants.FN_AAPT2;
 import static com.android.SdkConstants.FN_AIDL;
 import static com.android.SdkConstants.FN_BCC_COMPAT;
 import static com.android.SdkConstants.FN_RENDERSCRIPT;
@@ -102,7 +103,8 @@ public class PlatformLoader implements SdkLoader {
                 new File(hostTools, "i686-linux-android-ld"),
                 new File(hostTools, "x86_64-linux-android-ld"),
                 new File(hostTools, "mipsel-linux-android-ld"),
-                new File(hostTools, FN_ZIPALIGN));
+                new File(hostTools, FN_ZIPALIGN),
+                new File(hostTools, FN_AAPT2));
 
         return new TargetInfo(androidTarget, buildToolInfo);
     }

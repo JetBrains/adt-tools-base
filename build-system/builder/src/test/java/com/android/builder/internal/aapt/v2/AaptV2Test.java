@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-package com.android.builder.internal.aapt.v1;
+package com.android.builder.internal.aapt.v2;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.android.annotations.NonNull;
@@ -33,25 +31,19 @@ import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.testutils.TestUtils;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
-import com.google.common.io.Files;
 
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.Future;
 
 /**
- * Tests for {@link AaptV1}.
+ * Tests for {@code aapt2}.
  */
-public class AaptV1Test {
+public class AaptV2Test {
 
-    /**
-     * Temporary folder to use in tests.
-     */
     @Rule
     public TemporaryFolder mTemporaryFolder = new TemporaryFolder();
 
@@ -64,26 +56,25 @@ public class AaptV1Test {
     @NonNull
     private static Aapt makeAapt() throws Exception {
         ILogger logger = new StdLogger(StdLogger.Level.VERBOSE);
-        Revision revision = Revision.parseRevision("22.0.1");
+        Revision revision = Revision.parseRevision("24.0.0 rc2");
 
         FakeProgressIndicator progress = new FakeProgressIndicator();
         BuildToolInfo buildToolInfo =
-                AndroidSdkHandler.getInstance(TestUtils.getSdkDir()).getBuildToolInfo(revision,
-                        progress);
+                AndroidSdkHandler.getInstance(
+                        TestUtils.getSdkDir()).getBuildToolInfo(revision, progress);
         if (buildToolInfo == null) {
             throw new RuntimeException("Test requires build-tools " + revision.toShortString());
         }
 
-        return new AaptV1(
+        return new OutOfProcessAaptV2(
                 new DefaultProcessExecutor(logger),
                 new LoggedProcessOutputHandler(logger),
                 buildToolInfo,
-                logger,
-                AaptV1.PngProcessMode.ALL);
+                logger);
     }
 
     @Test
-    public void compilePng() throws Exception {
+    public void pngCrunchingTest() throws Exception {
         Aapt aapt = makeAapt();
         Future<File> compiledFuture =
                 aapt.compile(
@@ -95,59 +86,14 @@ public class AaptV1Test {
     }
 
     @Test
-    public void compileTxt() throws Exception {
+    public void resourceProcessingTest() throws Exception {
         Aapt aapt = makeAapt();
         Future<File> compiledFuture =
                 aapt.compile(
                         AaptTestUtils.getTestTxt(mTemporaryFolder),
                         AaptTestUtils.getOutputDir(mTemporaryFolder));
         File compiled = compiledFuture.get();
-        assertNull(compiled);
-    }
-
-    @Test
-    public void parallelInterface() throws Exception {
-        Aapt aapt = makeAapt();
-
-        int parallel = 10;
-        File[] imgs = new File[parallel];
-        for (int i = 0; i < parallel; i++) {
-            imgs[i] = mTemporaryFolder.newFile("i" + i + ".png");
-            Files.copy(AaptTestUtils.getTestPng(mTemporaryFolder), imgs[i]);
-        }
-
-        @SuppressWarnings("unchecked")
-        Future<File>[] futures = new Future[parallel];
-        for (int i = 0; i < parallel; i++) {
-            futures[i] = aapt.compile(imgs[i], AaptTestUtils.getOutputDir(mTemporaryFolder));
-            assertFalse(futures[i].isDone());
-        }
-
-        Set<File> results = new HashSet<>();
-        for (int i = 0; i < parallel; i++) {
-            File f = futures[i].get();
-            assertTrue(results.add(f));
-        }
-    }
-
-    @Test
-    public void noCrunchPngIfBigger() throws Exception {
-        Aapt aapt = makeAapt();
-
-        File originalFile = AaptTestUtils.getNonCrunchableTestPng();
-
-        Future<File> compiledFuture =
-                aapt.compile(originalFile, AaptTestUtils.getOutputDir(mTemporaryFolder));
-        File compiled = compiledFuture.get();
         assertNotNull(compiled);
         assertTrue(compiled.isFile());
-
-        assertTrue(
-                "originaFile.length() ["
-                        + originalFile.length()
-                        + "] >= compiled.length() ["
-                        + compiled.length()
-                        + "]",
-                originalFile.length() >= compiled.length());
     }
 }

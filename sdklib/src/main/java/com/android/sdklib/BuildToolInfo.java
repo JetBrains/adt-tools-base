@@ -18,6 +18,7 @@ package com.android.sdklib;
 
 import static com.android.SdkConstants.FD_LIB;
 import static com.android.SdkConstants.FN_AAPT;
+import static com.android.SdkConstants.FN_AAPT2;
 import static com.android.SdkConstants.FN_AIDL;
 import static com.android.SdkConstants.FN_BCC_COMPAT;
 import static com.android.SdkConstants.FN_DEXDUMP;
@@ -37,6 +38,7 @@ import static com.android.SdkConstants.FN_ZIPALIGN;
 import static com.android.SdkConstants.OS_FRAMEWORK_RS;
 import static com.android.SdkConstants.OS_FRAMEWORK_RS_CLANG;
 import static com.android.sdklib.BuildToolInfo.PathId.AAPT;
+import static com.android.sdklib.BuildToolInfo.PathId.AAPT2;
 import static com.android.sdklib.BuildToolInfo.PathId.AIDL;
 import static com.android.sdklib.BuildToolInfo.PathId.ANDROID_RS;
 import static com.android.sdklib.BuildToolInfo.PathId.ANDROID_RS_CLANG;
@@ -131,7 +133,10 @@ public class BuildToolInfo {
         JACK_JACOCO_REPORTER("24.0.0"),
 
         /** OS Path to the ARM64 linker. */
-        LD_X86_64("24.0.0");
+        LD_X86_64("24.0.0"),
+
+        /** OS Path to aapt2. */
+        AAPT2("24.0.0 rc2");
 
         /**
          * min revision this element was introduced.
@@ -155,7 +160,7 @@ public class BuildToolInfo {
          * @param revision the build tools revision.
          * @return true if the tool is present.
          */
-        boolean isPresentIn(@NonNull Revision revision) {
+        public boolean isPresentIn(@NonNull Revision revision) {
             return revision.compareTo(mMinRevision) >= 0;
         }
     }
@@ -194,7 +199,8 @@ public class BuildToolInfo {
             @Nullable File ldX86,
             @Nullable File ldX86_64,
             @Nullable File ldMips,
-            @NonNull File zipAlign) {
+            @NonNull File zipAlign,
+            @Nullable File aapt2) {
         BuildToolInfo result = new BuildToolInfo(revision, mainPath);
 
         result.add(AAPT, aapt);
@@ -238,6 +244,12 @@ public class BuildToolInfo {
             result.add(LD_MIPS, ldMips);
         } else if (LD_MIPS.isPresentIn(revision)) {
             throw new IllegalArgumentException("LD_MIPS required in " + revision.toString());
+        }
+
+        if (aapt2 != null) {
+            result.add(AAPT2, aapt2);
+        } else if (AAPT2.isPresentIn(revision)) {
+            throw new IllegalArgumentException("AAPT2 required in " + revision.toString());
         }
 
         return result;
@@ -293,6 +305,7 @@ public class BuildToolInfo {
         add(JILL, FN_JILL);
         add(JACK_JACOCO_REPORTER, FN_JACK_JACOCO_REPORTER);
         add(SPLIT_SELECT, FN_SPLIT_SELECT);
+        add(AAPT2, FN_AAPT2);
     }
 
     private void add(PathId id, String leaf) {

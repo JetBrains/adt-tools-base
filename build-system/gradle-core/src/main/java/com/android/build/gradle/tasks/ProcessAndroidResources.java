@@ -30,6 +30,7 @@ import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.IncrementalTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
@@ -37,7 +38,6 @@ import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.VariantType;
 import com.android.builder.internal.aapt.Aapt;
 import com.android.builder.internal.aapt.AaptPackageConfig;
-import com.android.builder.internal.aapt.v1.AaptV1;
 import com.android.builder.model.AndroidLibrary;
 import com.android.ide.common.blame.MergingLog;
 import com.android.ide.common.blame.MergingLogRewriter;
@@ -121,6 +121,8 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     private File buildInfoFile;
 
+    private VariantScope variantScope;
+
     @Override
     protected void doFullTaskAction() throws IOException {
         // we have to clean the source folder output in case the package name changed.
@@ -145,7 +147,7 @@ public class ProcessAndroidResources extends IncrementalTask {
                 new ToolOutputParser(new AaptOutputParser(), getILogger()),
                 new MergingLogRewriter(mergingLog, builder.getErrorReporter()));
 
-        Aapt aapt = AaptGradleFactory.make(getBuilder(), processOutputHandler);
+        Aapt aapt = AaptGradleFactory.make(getBuilder(), processOutputHandler, variantScope);
         AaptPackageConfig.Builder config = new AaptPackageConfig.Builder()
                 .setManifestFile(manifestFileToPackage)
                 .setOptions(getAaptOptions())
@@ -262,6 +264,7 @@ public class ProcessAndroidResources extends IncrementalTask {
 
             processResources.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             processResources.setVariantName(config.getFullName());
+            processResources.variantScope = scope.getVariantScope();
 
             if (variantData.getSplitHandlingPolicy() ==
                     BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY) {
