@@ -17,21 +17,14 @@
 package com.android.builder.internal.compiler;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.annotations.concurrency.Immutable;
 import com.android.repository.Revision;
-import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
-import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSortedSet;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
 import java.io.File;
-import java.util.List;
 
 /**
  * Key to store Item/StoredItem in maps.
@@ -40,95 +33,28 @@ import java.util.List;
  * - build tools revision
  * - jumbo mode
  * - optimization on/off
- * - additional parameters/flags
  */
-@Immutable
-final class DexKey extends PreProcessCache.Key {
+class DexKey extends PreProcessCache.Key {
 
-    private static final char ADDITIONAL_PARAMETERS_SEPARATOR = ',';
+    protected static final String ATTR_JUMBO_MODE = "jumboMode";
 
-    private static final String ATTR_JUMBO_MODE = "jumboMode";
-
-    private static final String ATTR_OPTIMIZE = "optimize";
-
-    private static final String ATTR_IS_MULTIDEX = "is-multidex";
-
-    private static final String ATTR_ADDITIONAL_PARAMETERS = "custom-flags";
-
-    static final PreProcessCache.KeyFactory<DexKey> FACTORY = (sourceFile, revision, attrMap) -> {
-        boolean jumboMode =
-                Boolean.parseBoolean(attrMap.getNamedItem(ATTR_JUMBO_MODE).getNodeValue());
-
-        boolean optimize;
-        Node optimizeAttribute = attrMap.getNamedItem(ATTR_OPTIMIZE);
-
-        //noinspection SimplifiableIfStatement
-        if (optimizeAttribute != null) {
-            optimize = Boolean.parseBoolean(optimizeAttribute.getNodeValue());
-        } else {
-            // Old code didn't set this attribute and always used optimizations.
-            optimize = true;
-        }
-
-        Boolean isMultiDex = null;
-        Node formatAttribute = attrMap.getNamedItem(ATTR_IS_MULTIDEX);
-        if (formatAttribute != null) {
-            isMultiDex = Boolean.parseBoolean(formatAttribute.getNodeValue());
-        }
-
-        List<String> additionalParameters = ImmutableList.of();
-        Node additionalParametersAttribute = attrMap.getNamedItem(ATTR_ADDITIONAL_PARAMETERS);
-        if (additionalParametersAttribute != null) {
-            additionalParameters =
-                    Splitter.on(ADDITIONAL_PARAMETERS_SEPARATOR)
-                            .omitEmptyStrings()
-                            .splitToList(additionalParametersAttribute.getNodeValue());
-        }
-
-        return DexKey.of(sourceFile, revision, jumboMode, optimize, isMultiDex, additionalParameters);
-    };
+    protected static final String ATTR_OPTIMIZE = "optimize";
 
     private final boolean mJumboMode;
 
     private final boolean mOptimize;
 
-    @Nullable
-    private final Boolean mIsMultiDex;
-
-    @NonNull
-    private final ImmutableSortedSet<String> mAdditionalParameters;
-
-    static DexKey of(
+    protected DexKey(
             @NonNull File sourceFile,
             @NonNull Revision buildToolsRevision,
             boolean jumboMode,
-            boolean optimize,
-            @Nullable Boolean isMultiDex,
-            @NonNull Iterable<String> additionalParameters) {
-        return new DexKey(
-                sourceFile,
-                buildToolsRevision,
-                jumboMode,
-                optimize,
-                isMultiDex,
-                additionalParameters);
-    }
-
-    private DexKey(
-            @NonNull File sourceFile,
-            @NonNull Revision buildToolsRevision,
-            boolean jumboMode,
-            boolean optimize,
-            @Nullable Boolean isMultiDex,
-            @NonNull Iterable<String> additionalParameters) {
+            boolean optimize) {
         super(sourceFile, buildToolsRevision);
         mJumboMode = jumboMode;
         mOptimize = optimize;
-        mAdditionalParameters = ImmutableSortedSet.copyOf(additionalParameters);
-        mIsMultiDex = isMultiDex;
     }
 
-    void writeFieldsToXml(@NonNull Node itemNode) {
+    protected void writeFieldsToXml(@NonNull Node itemNode) {
         Document document = itemNode.getOwnerDocument();
 
         Attr jumboMode = document.createAttribute(ATTR_JUMBO_MODE);
@@ -138,19 +64,6 @@ final class DexKey extends PreProcessCache.Key {
         Attr optimize = document.createAttribute(ATTR_OPTIMIZE);
         optimize.setValue(Boolean.toString(this.mOptimize));
         itemNode.getAttributes().setNamedItem(optimize);
-
-        if (mIsMultiDex != null) {
-            Attr isMultiDex = document.createAttribute(ATTR_IS_MULTIDEX);
-            isMultiDex.setValue(Boolean.toString(this.mIsMultiDex));
-            itemNode.getAttributes().setNamedItem(isMultiDex);
-        }
-
-        if (!mAdditionalParameters.isEmpty()) {
-            Attr additionalParameters = document.createAttribute(ATTR_ADDITIONAL_PARAMETERS);
-            additionalParameters.setValue(
-                    Joiner.on(ADDITIONAL_PARAMETERS_SEPARATOR).join(mAdditionalParameters));
-            itemNode.getAttributes().setNamedItem(additionalParameters);
-        }
     }
 
     @Override
@@ -166,16 +79,12 @@ final class DexKey extends PreProcessCache.Key {
         }
 
         DexKey dexKey = (DexKey) o;
-        return mJumboMode == dexKey.mJumboMode
-                && mOptimize == dexKey.mOptimize
-                && Objects.equal(mIsMultiDex, dexKey.mIsMultiDex)
-                && Objects.equal(mAdditionalParameters, dexKey.mAdditionalParameters);
+        return mJumboMode == dexKey.mJumboMode && mOptimize == dexKey.mOptimize;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(
-                super.hashCode(), mJumboMode, mOptimize, mIsMultiDex, mAdditionalParameters);
+        return Objects.hashCode(super.hashCode(), mJumboMode, mOptimize);
     }
 
     @Override
@@ -185,8 +94,6 @@ final class DexKey extends PreProcessCache.Key {
                 .add("sourceFile", getSourceFile())
                 .add("mJumboMode", mJumboMode)
                 .add("mOptimize", mOptimize)
-                .add("mIsMultiDex", mIsMultiDex)
-                .add("mAdditionalParameters", mAdditionalParameters)
                 .toString();
     }
 }

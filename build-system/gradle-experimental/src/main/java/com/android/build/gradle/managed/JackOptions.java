@@ -16,7 +16,12 @@
 
 package com.android.build.gradle.managed;
 
+import com.android.annotations.NonNull;
+
 import org.gradle.model.Managed;
+import org.gradle.model.ModelMap;
+
+import java.util.Map;
 
 /**
  * Managed type for Jack options.
@@ -29,11 +34,19 @@ public interface JackOptions {
      * <p>See <a href="http://tools.android.com/tech-docs/jackandjill">Jack and Jill</a>
      */
     Boolean getEnabled();
+
     void setEnabled(Boolean enabled);
 
     /**
      * Returns whether to run Jack the same JVM as Gradle.
      */
     Boolean getJackInProcess();
+
     void setJackInProcess(Boolean jackInProcess);
+
+    /**
+     * Additional parameters to be passed to Jack.
+     */
+    @NonNull
+    ModelMap<KeyValuePair> getAdditionalParameters();
 }

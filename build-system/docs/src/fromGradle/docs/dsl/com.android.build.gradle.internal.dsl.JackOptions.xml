@@ -23,6 +23,7 @@
             </thead>
             <tr><td>enabled</td></tr>
             <tr><td>jackInProcess</td></tr>
+            <tr><td>additionalParameters</td></tr>
         </table>
     </section>
     <section>

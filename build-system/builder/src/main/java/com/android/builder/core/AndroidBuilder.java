@@ -1773,35 +1773,41 @@ public class AndroidBuilder {
                 }
                 config.setResourceDirs(resourcesDir.build());
 
-                    config.setProperty(
-                            "jack.dex.forcejumbo", Boolean.toString(options.getJumboMode()));
-                    config.setProperty(
-                            "jack.dex.optimize", Boolean.toString(options.getDexOptimize()));
+                config.setProperty(
+                        "jack.dex.forcejumbo", Boolean.toString(options.getJumboMode()));
+                config.setProperty(
+                        "jack.dex.optimize", Boolean.toString(options.getDexOptimize()));
 
-                    if (!options.getAnnotationProcessorNames().isEmpty()) {
-                        config.setProcessorNames(options.getAnnotationProcessorNames());
-                    }
-                    try {
-                        config.setProcessorPath(options.getAnnotationProcessorClassPath());
-                    } catch (Exception e) {
-                        mLogger.error(e, "Could not resolve annotation processor path.");
-                        throw new RuntimeException(e);
-                    }
-
-                    config.setProcessorOptions(options.getAnnotationProcessorOptions());
-
-                    compilationTask = config.getTask();
-                } catch (ConfigNotSupportedException e) {
-                    mLogger.error(e,
-                            "jack.jar from build tools "
-                                    + mTargetInfo.getBuildTools().getRevision()
-                                    + " does not support Jack API v02.");
-                    throw e;
-                } catch (ConfigurationException e) {
-                    mLogger.error(e, "Jack APIs v02 configuration failed");
-                    throw e;
+                if (!options.getAnnotationProcessorNames().isEmpty()) {
+                    config.setProcessorNames(options.getAnnotationProcessorNames());
                 }
+                try {
+                    config.setProcessorPath(options.getAnnotationProcessorClassPath());
+                } catch (Exception e) {
+                    mLogger.error(e, "Could not resolve annotation processor path.");
+                    throw new RuntimeException(e);
+                }
+
+                config.setProcessorOptions(options.getAnnotationProcessorOptions());
+
+                // apply all additional parameters
+                for (String paramKey: options.getAdditionalParameters().keySet()) {
+                    String paramValue = options.getAdditionalParameters().get(paramKey);
+                    config.setProperty(paramKey, paramValue);
+                }
+
+                compilationTask = config.getTask();
+            } catch (ConfigNotSupportedException e) {
+                mLogger.error(e,
+                        "jack.jar from build tools "
+                                + mTargetInfo.getBuildTools().getRevision()
+                                + " does not support Jack API v02.");
+                throw e;
+            } catch (ConfigurationException e) {
+                mLogger.error(e, "Jack APIs v02 configuration failed");
+                throw e;
             }
+        }
 
         Preconditions.checkNotNull(compilationTask);
 

@@ -18,21 +18,32 @@ package com.android.build.gradle.internal.core;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.dsl.CoreJackOptions;
+import com.google.common.collect.Maps;
+
+import java.util.Map;
 
 /**
  * Implementation of CoreJackOptions used to merge multiple configs together.
  */
 public class MergedJackOptions implements CoreJackOptions {
+
     private boolean isEnabledFlag = false;
+
     private boolean isJackInProcessFlag = true;
 
-    public void merge(CoreJackOptions that) {
+    @NonNull
+    private Map<String, String> additionalParameters = Maps.newHashMap();
+
+    public void merge(@NonNull CoreJackOptions that) {
         if (that.isEnabled() != null) {
+            //noinspection ConstantConditions - Idea unable to infer that RHS is @NonNull
             isEnabledFlag = that.isEnabled();
         }
         if (that.isJackInProcess() != null) {
+            //noinspection ConstantConditions - the same as above
             isJackInProcessFlag = that.isJackInProcess();
         }
+        additionalParameters.putAll(that.getAdditionalParameters());
     }
 
     @Override
@@ -45,5 +56,11 @@ public class MergedJackOptions implements CoreJackOptions {
     @NonNull
     public Boolean isJackInProcess() {
         return isJackInProcessFlag;
+    }
+
+    @Override
+    @NonNull
+    public Map<String, String> getAdditionalParameters() {
+        return additionalParameters;
     }
 }

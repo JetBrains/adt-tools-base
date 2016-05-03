@@ -29,14 +29,32 @@ import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
 /**
- * Jack test for Java 8 features.
+ * Jack test for Java 8 features. Also testing the additional parameters property of the
+ * jack options DSL block.
  */
+@RunWith(Parameterized.class)
 public class JackJava8Test {
+
+    @Parameterized.Parameters(name = "specifyUsingAdditionalParameters_{0}")
+    public static List<Boolean> parameters() {
+        return Arrays.asList(true, false);
+    }
+
+    private boolean specifyUsingAdditionalParameters;
+
+    public JackJava8Test(boolean specifyUsingAdditionalParameters) {
+        this.specifyUsingAdditionalParameters = specifyUsingAdditionalParameters;
+    }
 
     private AndroidTestApp app = HelloWorldApp.forPlugin("com.android.application");
     private File javaSrc;
@@ -49,13 +67,23 @@ public class JackJava8Test {
     @Before
     public void setUp() throws IOException {
         Assume.assumeTrue("Jack tool requires Java 7", JavaVersion.current().isJava7Compatible());
+
+        String minSdkVersionSpec;
+        if (specifyUsingAdditionalParameters) {
+            minSdkVersionSpec = "        jackOptions{\n"
+                    + "            additionalParameters ('jack.android.min-api-level': '24')\n"
+                    + "        }\n";
+        } else {
+            minSdkVersionSpec = "        minSdkVersion 24\n";
+        }
+
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 "android {\n"
                         + "    buildToolsVersion '" + GradleTestProject.UPCOMING_BUILD_TOOL_VERSION + "'\n"
                         + "    compileSdkVersion 'android-N'\n"
                         + "    defaultConfig {\n"
-                        + "        minSdkVersion 24\n"
+                        + minSdkVersionSpec
                         + "        jackOptions {\n"
                         + "            enabled true\n"
                         + "        }\n"

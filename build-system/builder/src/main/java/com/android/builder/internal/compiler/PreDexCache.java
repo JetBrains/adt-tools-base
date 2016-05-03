@@ -55,7 +55,7 @@ import java.util.logging.Logger;
  * After a build a call to {@link #clear(java.io.File, com.android.utils.ILogger)} with a file
  * will allow saving the known pre-dexed libraries for future reuse.
  */
-public class PreDexCache extends PreProcessCache<DexKey> {
+public class PreDexCache extends PreProcessCache<DxDexKey> {
 
     private static final PreDexCache sSingleton = new PreDexCache();
 
@@ -65,8 +65,8 @@ public class PreDexCache extends PreProcessCache<DexKey> {
 
     @Override
     @NonNull
-    protected KeyFactory<DexKey> getKeyFactory() {
-        return DexKey.FACTORY;
+    protected KeyFactory<DxDexKey> getKeyFactory() {
+        return DxDexKey.FACTORY;
     }
 
     /**
@@ -94,13 +94,13 @@ public class PreDexCache extends PreProcessCache<DexKey> {
         checkState(!multiDex || outFile.isDirectory());
         checkState(builder.getTargetInfo() != null);
 
-        DexKey itemKey = DexKey.of(
+        DxDexKey itemKey = DxDexKey.of(
                 inputFile,
                 builder.getTargetInfo().getBuildTools().getRevision(),
                 dexOptions.getJumboMode(),
                 optimize,
-                multiDex,
-                dexOptions.getAdditionalParameters());
+                dexOptions.getAdditionalParameters(),
+                multiDex);
 
         Pair<Item, Boolean> pair = getItem(itemKey);
         Item item = pair.getFirst();
@@ -160,7 +160,7 @@ public class PreDexCache extends PreProcessCache<DexKey> {
     @Override
     protected Node createItemNode(
             @NonNull Document document,
-            @NonNull DexKey itemKey,
+            @NonNull DxDexKey itemKey,
             @NonNull BaseItem item) throws IOException {
         Node itemNode = super.createItemNode(document, itemKey, item);
 

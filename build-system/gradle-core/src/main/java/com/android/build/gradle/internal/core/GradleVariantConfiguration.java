@@ -284,11 +284,11 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
     }
 
     private void computeJackOptions() {
-        mMergedJackOptions.merge(getBuildType().getJackOptions());
-        for (CoreProductFlavor productFlavor : getProductFlavors()) {
-            mMergedJackOptions.merge(productFlavor.getJackOptions());
-        }
         mMergedJackOptions.merge(getDefaultConfig().getJackOptions());
+        for (int i = getProductFlavors().size() - 1; i >= 0; i--){
+            mMergedJackOptions.merge(getProductFlavors().get(i).getJackOptions());
+        }
+        mMergedJackOptions.merge(getBuildType().getJackOptions());
     }
 
     private void computeNdkConfig() {

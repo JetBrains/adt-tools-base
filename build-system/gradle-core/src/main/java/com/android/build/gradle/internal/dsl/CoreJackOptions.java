@@ -16,18 +16,31 @@
 
 package com.android.build.gradle.internal.dsl;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+
+import java.util.Map;
+
 /**
  * Options for configuring Jack.
  */
 public interface CoreJackOptions {
 
     /**
-     * Whether to use Jack for compilation.
+     * Whether to use Jack for compilation. By default, this value is {@code false}.
      */
+    @Nullable
     Boolean isEnabled();
 
     /**
-     * Whether to run Jack the same JVM as Gradle.
+     * Whether to run Jack the same JVM as Gradle. By default, this value is {@code true}.
      */
+    @Nullable
     Boolean isJackInProcess();
+
+    /**
+     * Additional parameters to be passed to Jack.
+     */
+    @NonNull
+    Map<String, String> getAdditionalParameters();
 }

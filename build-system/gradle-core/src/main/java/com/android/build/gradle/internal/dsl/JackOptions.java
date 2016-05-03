@@ -16,8 +16,12 @@
 
 package com.android.build.gradle.internal.dsl;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.google.common.base.Objects;
+import com.google.common.collect.Maps;
+
+import java.util.Map;
 
 /**
  * DSL object for configuring Jack options.
@@ -30,10 +34,13 @@ public class JackOptions implements CoreJackOptions {
     private Boolean isEnabledFlag;
     @Nullable
     private Boolean isJackInProcessFlag;
+    @NonNull
+    private Map<String, String> additionalParameters = Maps.newHashMap();
 
     void _initWith(CoreJackOptions that) {
         isEnabledFlag = that.isEnabled();
         isJackInProcessFlag = that.isJackInProcess();
+        additionalParameters = Maps.newHashMap(that.getAdditionalParameters());
     }
 
     /** {@inheritDoc} */
@@ -58,6 +65,22 @@ public class JackOptions implements CoreJackOptions {
         isJackInProcessFlag = jackInProcess;
     }
 
+    /** {@inheritDoc} */
+    @Override
+    @NonNull
+    public Map<String, String> getAdditionalParameters() {
+        return additionalParameters;
+    }
+
+    public void setAdditionalParameters(@NonNull Map<String, String> additionalParameters) {
+        this.additionalParameters.clear();
+        this.additionalParameters.putAll(additionalParameters);
+    }
+
+    public void additionalParameters(@NonNull Map<String, String> additionalParameters) {
+        this.additionalParameters.putAll(additionalParameters);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -68,12 +91,13 @@ public class JackOptions implements CoreJackOptions {
         }
         JackOptions that = (JackOptions) o;
         return Objects.equal(isEnabledFlag, that.isEnabledFlag)
-                && Objects.equal(isJackInProcessFlag, that.isJackInProcessFlag);
+                && Objects.equal(isJackInProcessFlag, that.isJackInProcessFlag)
+                && Objects.equal(additionalParameters, that.additionalParameters);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(isEnabledFlag, isJackInProcessFlag);
+        return Objects.hashCode(isEnabledFlag, isJackInProcessFlag, additionalParameters);
     }
 
     @Override
@@ -81,6 +105,7 @@ public class JackOptions implements CoreJackOptions {
         return Objects.toStringHelper(this)
                 .add("isEnabled", isEnabledFlag)
                 .add("isJackInProcess", isJackInProcessFlag)
+                .add("additionalParameters", isJackInProcessFlag)
                 .toString();
     }
 }
