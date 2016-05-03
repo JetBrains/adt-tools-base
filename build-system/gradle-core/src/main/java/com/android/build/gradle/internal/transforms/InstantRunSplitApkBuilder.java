@@ -322,7 +322,7 @@ public class InstantRunSplitApkBuilder extends BaseTask {
                             }
 
                             return variantScope.getTransformManager()
-                                    .getPipelineOutput(PackageAndroidArtifact.sDexFilter).keySet();
+                                    .getPipelineOutput(PackageAndroidArtifact.DEX_FILTER).keySet();
                         }
                     });
             ConventionMappingHelper.map(task, "aaptOptions",

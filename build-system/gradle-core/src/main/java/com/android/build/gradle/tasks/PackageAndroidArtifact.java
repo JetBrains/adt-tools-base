@@ -20,10 +20,8 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.api.transform.QualifiedContent;
-import com.android.build.api.transform.QualifiedContent.ContentType;
 import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.gradle.internal.annotations.PackageFile;
-import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.dsl.CoreSigningConfig;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
@@ -33,7 +31,6 @@ import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.packaging.ApkCreatorFactories;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.FilterableStreamCollection;
-import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
@@ -42,8 +39,7 @@ import com.android.build.gradle.internal.tasks.FileSupplier;
 import com.android.build.gradle.internal.tasks.IncrementalTask;
 import com.android.build.gradle.internal.tasks.ValidateSigningTask;
 import com.android.build.gradle.internal.transforms.InstantRunSlicer;
-import com.android.build.gradle.internal.variant.BaseVariantData;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.build.gradle.internal.variant.SplitHandlingPolicy;
 import com.android.builder.files.FileCacheByPath;
 import com.android.builder.files.IncrementalRelativeFileSets;
 import com.android.builder.files.RelativeFile;
@@ -107,33 +103,20 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
 
     public static final String INSTANT_RUN_PACKAGES_PREFIX = "instant-run";
 
-    public static final FilterableStreamCollection.StreamFilter sDexFilter =
-            new TransformManager.StreamFilter() {
-                @Override
-                public boolean accept(@NonNull Set<ContentType> types, @NonNull Set<Scope> scopes) {
-                    return types.contains(ExtendedContentType.DEX);
-                }
-            };
+    public static final FilterableStreamCollection.StreamFilter DEX_FILTER =
+            (types, scopes) -> types.contains(ExtendedContentType.DEX);
 
-    public static final FilterableStreamCollection.StreamFilter sResFilter =
-            new TransformManager.StreamFilter() {
-                @Override
-                public boolean accept(@NonNull Set<ContentType> types, @NonNull Set<Scope> scopes) {
-                    return types.contains(QualifiedContent.DefaultContentType.RESOURCES) &&
-                            !scopes.contains(Scope.PROVIDED_ONLY) &&
-                            !scopes.contains(Scope.TESTED_CODE);
-                }
-            };
+    public static final FilterableStreamCollection.StreamFilter RES_FILTER =
+            (types, scopes) ->
+                    types.contains(QualifiedContent.DefaultContentType.RESOURCES)
+                            && !scopes.contains(Scope.PROVIDED_ONLY)
+                            && !scopes.contains(Scope.TESTED_CODE);
 
-    public static final FilterableStreamCollection.StreamFilter sNativeLibsFilter =
-            new TransformManager.StreamFilter() {
-                @Override
-                public boolean accept(@NonNull Set<ContentType> types, @NonNull Set<Scope> scopes) {
-                    return types.contains(ExtendedContentType.NATIVE_LIBS) &&
-                            !scopes.contains(Scope.PROVIDED_ONLY) &&
-                            !scopes.contains(Scope.TESTED_CODE);
-                }
-            };
+    public static final FilterableStreamCollection.StreamFilter JNI_FILTER =
+            (types, scopes) ->
+                    types.contains(ExtendedContentType.NATIVE_LIBS)
+                            && !scopes.contains(Scope.PROVIDED_ONLY)
+                            && !scopes.contains(Scope.TESTED_CODE);
 
     // ----- PUBLIC TASK API -----
 
@@ -180,9 +163,14 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
     private File resourceFile;
 
     private Set<File> dexFolders;
+
     @InputFiles
     public Set<File> getDexFolders() {
         return dexFolders;
+    }
+
+    public void setDexFolders(Set<File> dexFolders) {
+        this.dexFolders = dexFolders;
     }
 
     /** list of folders and/or jars that contain the merged java resources. */
@@ -997,14 +985,14 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
 
     public abstract static class ConfigAction<T extends  PackageAndroidArtifact> implements TaskConfigAction<T> {
 
-        protected final VariantOutputScope scope;
+        protected final VariantOutputScope variantOutputScope;
         protected final DexPackagingPolicy dexPackagingPolicy;
         protected final boolean instantRunEnabled;
 
         public ConfigAction(
-                @NonNull VariantOutputScope scope,
+                @NonNull VariantOutputScope variantOutputScope,
                 @Nullable InstantRunPatchingPolicy patchingPolicy) {
-            this.scope = scope;
+            this.variantOutputScope = variantOutputScope;
             instantRunEnabled = patchingPolicy != null;
             dexPackagingPolicy = patchingPolicy == null
                     ? DexPackagingPolicy.STANDARD
@@ -1013,16 +1001,11 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
 
         @Override
         public void execute(@NonNull final T packageAndroidArtifact) {
-            final VariantScope variantScope = scope.getVariantScope();
-            final BaseVariantData variantData = variantScope.getVariantData();
-            final BaseVariantOutputData variantOutputData = scope.getVariantOutputData();
-            final GradleVariantConfiguration config = variantScope.getVariantConfiguration();
+            VariantScope variantScope = variantOutputScope.getVariantScope();
 
-            variantOutputData.packageAndroidArtifactTask = packageAndroidArtifact;
-            packageAndroidArtifact.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
-            packageAndroidArtifact.setVariantName(
-                    variantScope.getVariantConfiguration().getFullName());
-            packageAndroidArtifact.setMinSdkVersion(config.getMinSdkVersion());
+            packageAndroidArtifact.setAndroidBuilder(variantOutputScope.getGlobalScope().getAndroidBuilder());
+            packageAndroidArtifact.setVariantName(variantScope.getFullName());
+            packageAndroidArtifact.setMinSdkVersion(variantScope.getMinSdkVersion());
             packageAndroidArtifact.instantRunContext = variantScope.getInstantRunBuildContext();
             packageAndroidArtifact.dexPackagingPolicy = dexPackagingPolicy;
             packageAndroidArtifact.instantRunSupportDir = variantScope.getInstantRunSupportDir();
@@ -1031,20 +1014,20 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
 
             File cacheByPathDir = new File(packageAndroidArtifact.getIncrementalFolder(),
                     ZIP_DIFF_CACHE_DIR);
-            cacheByPathDir.mkdirs();
+            FileUtils.mkdirs(cacheByPathDir);
             packageAndroidArtifact.cacheByPath = new FileCacheByPath(cacheByPathDir);
 
-            if (config.isMinifyEnabled()
-                    && config.getBuildType().isShrinkResources()
+            if (variantScope.isMinifyEnabled()
+                    && variantScope.isShrinkResources()
                     && !instantRunEnabled
-                    && !config.getJackOptions().isEnabled()) {
+                    && !variantScope.isJackEnabled()) {
                 ConventionMappingHelper.map(packageAndroidArtifact, "resourceFile",
-                        (Callable<File>) scope::getCompressedResourceFile);
+                        (Callable<File>) variantOutputScope::getCompressedResourceFile);
             } else {
                 ConventionMappingHelper.map(packageAndroidArtifact, "resourceFile", new Callable<File>() {
                     @Override
                     public File call() {
-                        return variantOutputData.processResourcesTask.getPackageOutputFile();
+                        return variantOutputScope.getProcessResourcePackageOutputFile();
                     }
                 });
             }
@@ -1052,44 +1035,43 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
             ConventionMappingHelper.map(packageAndroidArtifact, "dexFolders", new Callable<Set<File>>() {
                 @Override
                 public  Set<File> call() {
-                    return variantScope.getTransformManager()
-                            .getPipelineOutput(sDexFilter).keySet();
+                    return variantScope.getDexFolders();
                 }
             });
 
             ConventionMappingHelper.map(packageAndroidArtifact, "javaResourceFiles", new Callable<Set<File>>() {
                 @Override
                 public Set<File> call() throws Exception {
-                    return variantScope.getTransformManager().getPipelineOutput(
-                            sResFilter).keySet();
+                    return variantScope.getJavaResources();
                 }
             });
 
             ConventionMappingHelper.map(packageAndroidArtifact, "jniFolders", new Callable<Set<File>>() {
                 @Override
                 public Set<File> call() {
-                    if (variantData.getSplitHandlingPolicy() ==
-                            BaseVariantData.SplitHandlingPolicy.PRE_21_POLICY) {
-                        return variantScope.getTransformManager().getPipelineOutput(
-                                sNativeLibsFilter).keySet();
+                    if (variantScope.getSplitHandlingPolicy() ==
+                            SplitHandlingPolicy.PRE_21_POLICY) {
+                        return variantScope.getJniFolders();
                     }
 
                     Set<String> filters = AbiSplitOptions.getAbiFilters(
-                            scope.getGlobalScope().getExtension().getSplits().getAbiFilters());
-                    return filters.isEmpty() ? variantScope.getTransformManager().getPipelineOutput(
-                            sNativeLibsFilter).keySet() : Collections.<File>emptySet();
+                            variantOutputScope.getGlobalScope()
+                                    .getExtension()
+                                    .getSplits()
+                                    .getAbiFilters());
+                    return filters.isEmpty() ? variantScope.getJniFolders() : Collections.emptySet();
                 }
             });
 
             ConventionMappingHelper.map(packageAndroidArtifact, "abiFilters", new Callable<Set<String>>() {
                 @Override
                 public Set<String> call() throws Exception {
-                    if (variantOutputData.getMainOutputFile().getFilter(com.android.build.OutputFile.ABI) != null) {
-                        return ImmutableSet.of(
-                                variantOutputData.getMainOutputFile()
-                                        .getFilter(com.android.build.OutputFile.ABI));
+                    String filter = variantOutputScope.getMainOutputFile().getFilter(
+                            com.android.build.OutputFile.ABI);
+                    if (filter != null) {
+                        return ImmutableSet.of(filter);
                     }
-                    Set<String> supportedAbis = config.getSupportedAbis();
+                    Set<String> supportedAbis = variantScope.getSupportedAbis();
                     if (supportedAbis != null) {
                         return supportedAbis;
                     }
@@ -1098,28 +1080,24 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
                 }
             });
 
-            ConventionMappingHelper.map(packageAndroidArtifact, "jniDebugBuild", new Callable<Boolean>() {
-                @Override
-                public Boolean call() throws Exception {
-                    return config.getBuildType().isJniDebuggable();
-                }
-            });
+            ConventionMappingHelper.map(
+                    packageAndroidArtifact, "jniDebugBuild", variantScope::isJniDebuggable);
 
-            CoreSigningConfig sc = (CoreSigningConfig) config.getSigningConfig();
-            packageAndroidArtifact.setSigningConfig(sc);
-            if (sc != null) {
-                String validateSigningTaskName = "validate" + StringHelper.capitalize(sc.getName()) + "Signing";
+            CoreSigningConfig signingConfig = variantScope.getSigningConfig();
+            packageAndroidArtifact.setSigningConfig(signingConfig);
+            if (signingConfig != null) {
+                String validateSigningTaskName = "validate" + StringHelper.capitalize(signingConfig.getName()) + "Signing";
                 ValidateSigningTask validateSigningTask =
-                        (ValidateSigningTask) scope.getGlobalScope().getProject().getTasks().findByName(validateSigningTaskName);
+                        (ValidateSigningTask) variantOutputScope.getGlobalScope().getProject().getTasks().findByName(validateSigningTaskName);
                 if (validateSigningTask == null) {
                     validateSigningTask =
-                            scope.getGlobalScope().getProject().getTasks().create(
-                                    "validate" + StringHelper.capitalize(sc.getName()) + "Signing",
+                            variantOutputScope.getGlobalScope().getProject().getTasks().create(
+                                    "validate" + StringHelper.capitalize(signingConfig.getName()) + "Signing",
                                     ValidateSigningTask.class);
-                    validateSigningTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+                    validateSigningTask.setAndroidBuilder(variantOutputScope.getGlobalScope().getAndroidBuilder());
                     validateSigningTask.setVariantName(
-                            variantScope.getVariantConfiguration().getFullName());
-                    validateSigningTask.setSigningConfig(sc);
+                            variantScope.getFullName());
+                    validateSigningTask.setSigningConfig(signingConfig);
                 }
 
                 packageAndroidArtifact.dependsOn(validateSigningTask);
@@ -1128,11 +1106,11 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
             ConventionMappingHelper.map(packageAndroidArtifact, "packagingOptions", new Callable<PackagingOptions>() {
                 @Override
                 public PackagingOptions call() throws Exception {
-                    return scope.getGlobalScope().getExtension().getPackagingOptions();
+                    return variantOutputScope.getGlobalScope().getExtension().getPackagingOptions();
                 }
             });
 
-            packageAndroidArtifact.scope = scope.getVariantScope();
+            packageAndroidArtifact.scope = variantOutputScope.getVariantScope();
         }
     }
 

@@ -33,6 +33,7 @@ import com.android.build.gradle.internal.transforms.InstantRunSplitApkBuilder;
 import com.android.build.gradle.internal.variant.ApplicationVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.build.gradle.internal.variant.SplitHandlingPolicy;
 import com.android.build.gradle.tasks.AndroidJarTask;
 import com.android.build.gradle.tasks.PackageAndroidArtifact;
 import com.android.builder.core.AndroidBuilder;
@@ -256,7 +257,7 @@ public class ApplicationTaskManager extends TaskManager {
         }
 
         if (variantData.getSplitHandlingPolicy().equals(
-                BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY)) {
+                SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY)) {
             if (getExtension().getBuildToolsRevision().getMajor() < 21) {
                 throw new RuntimeException("Pure splits can only be used with buildtools 21 and later");
             }
@@ -323,7 +324,7 @@ public class ApplicationTaskManager extends TaskManager {
 
             TransformManager transformManager = variantScope.getTransformManager();
             for (TransformStream stream : transformManager.getStreams(
-                    PackageAndroidArtifact.sDexFilter)) {
+                    PackageAndroidArtifact.DEX_FILTER)) {
                 // TODO Optimize to avoid creating too many actions
                 splitApk.dependsOn(tasks, stream.getDependencies());
             }
