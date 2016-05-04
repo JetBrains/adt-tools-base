@@ -18,6 +18,7 @@ package com.android.utils;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
+import java.awt.Color;
 import java.net.URL;
 
 public class HtmlBuilder {
@@ -159,6 +160,31 @@ public class HtmlBuilder {
         return this;
     }
 
+    public HtmlBuilder coloredText(@NonNull Color color, @NonNull String text) {
+        beginColor(color);
+        add(text);
+        endColor();
+        return this;
+    }
+
+    public HtmlBuilder beginColor(@NonNull Color color) {
+        mStringBuilder.append("<FONT color=\"#\"");
+        final String R = Integer.toHexString(color.getRed());
+        final String G = Integer.toHexString(color.getGreen());
+        final String B = Integer.toHexString(color.getBlue());
+        mStringBuilder.append(R.length() < 2 ? "0" : "").append(R).append(G.length() < 2 ? "0" : "")
+                .append(G).append(B.length() < 2
+                ? "0" : "").append(B);
+        mStringBuilder.append(">");
+
+        return this;
+    }
+
+    public HtmlBuilder endColor() {
+        mStringBuilder.append("</FONT>");
+
+        return this;
+    }
     public HtmlBuilder addUnderlined(String text) {
         beginUnderline();
         add(text);
