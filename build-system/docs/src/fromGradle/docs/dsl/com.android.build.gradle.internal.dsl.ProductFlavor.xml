@@ -11,6 +11,7 @@
             <tr><td>flavorDimension</td></tr>
             <tr><td>generatedDensities</td></tr>
             <tr><td>jackOptions</td></tr>
+            <tr><td>javaCompileOptions</td></tr>
             <tr><td>multiDexEnabled</td></tr>
             <tr><td>signingConfig</td></tr>
             <tr><td>testApplicationId</td></tr>

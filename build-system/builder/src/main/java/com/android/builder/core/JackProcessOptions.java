@@ -20,10 +20,16 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.Revision;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.util.concurrent.Callables;
+import com.google.common.util.concurrent.Futures;
 
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
 
 /**
  * Options for configuring Jack compilation.
@@ -64,6 +70,12 @@ public class JackProcessOptions {
     private String mSourceCompatibility = null;
     @Nullable
     private File mIncrementalDir = null;
+    @NonNull
+    private List<String> mAnnotationProcessorNames = ImmutableList.of();
+    @NonNull
+    private List<File> mAnnotationProcessorClassPath = ImmutableList.of();
+    @NonNull
+    private Map<String, String> mAnnotationProcessorOptions = ImmutableMap.of();
 
     public boolean isDebugLog() {
         return mDebugLog;
@@ -228,5 +240,34 @@ public class JackProcessOptions {
 
     public void setIncrementalDir(@Nullable File incrementalDir) {
         mIncrementalDir = incrementalDir;
+    }
+
+    @NonNull
+    public List<String> getAnnotationProcessorNames() {
+        return mAnnotationProcessorNames;
+    }
+
+    public void setAnnotationProcessorNames(@NonNull List<String> annotationProcessorNames) {
+        mAnnotationProcessorNames = annotationProcessorNames;
+    }
+
+    @NonNull
+    public List<File> getAnnotationProcessorClassPath() {
+        return mAnnotationProcessorClassPath;
+    }
+
+    public void setAnnotationProcessorClassPath(
+            @NonNull List<File> annotationProcessorClassPath) {
+        mAnnotationProcessorClassPath = annotationProcessorClassPath;
+    }
+
+    @NonNull
+    public Map<String, String> getAnnotationProcessorOptions() {
+        return mAnnotationProcessorOptions;
+    }
+
+    public void setAnnotationProcessorOptions(
+            @NonNull Map<String, String> annotationProcessorOptions) {
+        mAnnotationProcessorOptions = annotationProcessorOptions;
     }
 }

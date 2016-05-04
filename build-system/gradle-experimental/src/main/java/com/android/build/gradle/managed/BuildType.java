@@ -98,6 +98,8 @@ public interface BuildType extends BaseConfig {
      */
     JackOptions getJackOptions();
 
+    JavaCompileOptions getJavaCompileOptions();
+
     /**
      * Returns the shader compiler options for this build type.
      */

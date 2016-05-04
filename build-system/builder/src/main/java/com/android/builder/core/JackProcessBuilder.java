@@ -29,10 +29,13 @@ import com.android.repository.Revision;
 import com.android.sdklib.BuildToolInfo;
 import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
+import com.google.common.base.Joiner;
 import com.google.common.io.Files;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 /**
  * A builder to create a Jack-specific ProcessInfoBuilder
@@ -135,6 +138,25 @@ public class JackProcessBuilder extends ProcessEnvBuilder<JackProcessBuilder> {
 
         if (options.getMinSdkVersion() > 0) {
             builder.addArgs("-D", "jack.android.min-api-level=" + options.getMinSdkVersion());
+        }
+
+        if (!options.getAnnotationProcessorNames().isEmpty()) {
+            builder.addArgs("-D", "jack.annotation-processor.manual=true");
+            builder.addArgs("-D",
+                    "jack.annotation-processor.manual.list="
+                            + Joiner.on(',').join(options.getAnnotationProcessorNames()));
+        }
+        if (!options.getAnnotationProcessorClassPath().isEmpty()) {
+            builder.addArgs("-D", "jack.annotation-processor.path=true");
+            builder.addArgs("-D",
+                    "jack.annotation-processor.path.list="
+                            + FileUtils.joinFilePaths(options.getAnnotationProcessorClassPath()));
+        }
+        if (!options.getAnnotationProcessorOptions().isEmpty()) {
+            String processorOptions = options.getAnnotationProcessorOptions().entrySet().stream()
+                    .map(entry -> entry.getKey() + "=" + entry.getValue())
+                    .collect(Collectors.joining(","));
+            builder.addArgs("-D", "jack.annotation-processor.options=" + processorOptions);
         }
 
         if (!options.getInputFiles().isEmpty()) {

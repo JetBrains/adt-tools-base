@@ -194,12 +194,19 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 "androidTestCompile", "Classpath for compiling the androidTest sources.");
         createConfiguration(
                 configurations,
+                "provided", "Classpath for compiling the default sources.");
+        createConfiguration(
+                configurations,
                 "default" + VariantDependencies.CONFIGURATION_METADATA,
                 "Metadata for published APKs");
         createConfiguration(
                 configurations,
                 "default" + VariantDependencies.CONFIGURATION_MAPPING,
                 "Metadata for published APKs");
+        createConfiguration(
+                configurations,
+                "annotationProcessor",
+                "Classpath for annotation processors.");
 
         project.getPlugins().apply(NdkComponentModelPlugin.class);
 

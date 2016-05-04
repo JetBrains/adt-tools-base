@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.dsl.CoreExternalNativeCmakeOptions;
 import com.android.build.gradle.internal.dsl.CoreExternalNativeNdkBuildOptions;
 import com.android.build.gradle.internal.dsl.CoreJackOptions;
+import com.android.build.gradle.internal.dsl.CoreJavaCompileOptions;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
 import com.android.build.gradle.internal.dsl.CoreShaderOptions;
@@ -41,7 +42,7 @@ import java.util.Map;
 public class ProductFlavorAdaptor extends BaseConfigAdaptor implements CoreProductFlavor {
 
     @NonNull
-    protected final ProductFlavor productFlavor;
+    private final ProductFlavor productFlavor;
 
     public ProductFlavorAdaptor(@NonNull ProductFlavor productFlavor) {
         super(productFlavor);
@@ -190,6 +191,12 @@ public class ProductFlavorAdaptor extends BaseConfigAdaptor implements CoreProdu
     @Override
     public CoreJackOptions getJackOptions() {
         return new JackOptionsAdaptor(productFlavor.getJackOptions());
+    }
+
+    @Override
+    @NonNull
+    public CoreJavaCompileOptions getJavaCompileOptions() {
+        return new JavaCompileOptionsAdaptor(productFlavor.getJavaCompileOptions());
     }
 
     @NonNull

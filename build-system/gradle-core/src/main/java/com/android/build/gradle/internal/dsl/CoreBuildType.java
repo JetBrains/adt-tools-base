@@ -38,6 +38,9 @@ public interface CoreBuildType extends BuildType {
     CoreJackOptions getJackOptions();
 
     @NonNull
+    CoreJavaCompileOptions getJavaCompileOptions();
+
+    @NonNull
     CoreShaderOptions getShaders();
 
     boolean isShrinkResources();

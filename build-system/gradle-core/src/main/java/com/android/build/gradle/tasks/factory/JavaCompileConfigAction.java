@@ -4,10 +4,10 @@ import static com.android.builder.core.VariantType.LIBRARY;
 import static com.android.builder.core.VariantType.UNIT_TEST;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.CompileOptions;
 import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.dsl.CoreAnnotationProcessorOptions;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
@@ -27,6 +27,7 @@ import org.gradle.api.file.FileCollection;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 /**
@@ -197,6 +198,31 @@ public class JavaCompileConfigAction implements TaskConfigAction<AndroidJavaComp
             javacTask.getOptions().setIncremental(true);
         } else {
             LOG.info("Not using incremental javac compilation.");
+        }
+
+        List<File> processorPath =
+                scope.getVariantData().getVariantDependency()
+                        .resolveAndGetAnnotationProcessorClassPath();
+        if (!processorPath.isEmpty()) {
+            javacTask.getOptions().getCompilerArgs().add("-processorpath");
+            javacTask.getOptions().getCompilerArgs().add(
+                    FileUtils.joinFilePaths(processorPath));
+        }
+
+        CoreAnnotationProcessorOptions annotationProcessorOptions =
+                scope.getVariantConfiguration().getJavaCompileOptions()
+                        .getAnnotationProcessorOptions();
+        if (!annotationProcessorOptions.getClassNames().isEmpty()) {
+            javacTask.getOptions().getCompilerArgs().add("-processor");
+            javacTask.getOptions().getCompilerArgs().add(
+                    Joiner.on(',').join(annotationProcessorOptions.getClassNames()));
+        }
+        if (!annotationProcessorOptions.getArguments().isEmpty()) {
+            for (Map.Entry<String, String> arg :
+                    annotationProcessorOptions.getArguments().entrySet()) {
+                javacTask.getOptions().getCompilerArgs().add(
+                        "-A" + arg.getKey() + "=" + arg.getValue());
+            }
         }
     }
 }

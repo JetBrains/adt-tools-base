@@ -22,6 +22,7 @@ import com.android.build.gradle.internal.dsl.CoreBuildType;
 import com.android.build.gradle.internal.dsl.CoreExternalNativeCmakeOptions;
 import com.android.build.gradle.internal.dsl.CoreExternalNativeNdkBuildOptions;
 import com.android.build.gradle.internal.dsl.CoreJackOptions;
+import com.android.build.gradle.internal.dsl.CoreJavaCompileOptions;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.dsl.CoreShaderOptions;
 import com.android.build.gradle.managed.BuildType;
@@ -112,6 +113,12 @@ public class BuildTypeAdaptor extends BaseConfigAdaptor implements CoreBuildType
     @NonNull
     public CoreJackOptions getJackOptions() {
         return new JackOptionsAdaptor(buildType.getJackOptions());
+    }
+
+    @Override
+    @NonNull
+    public CoreJavaCompileOptions getJavaCompileOptions() {
+        return new JavaCompileOptionsAdaptor(buildType.getJavaCompileOptions());
     }
 
     @NonNull
