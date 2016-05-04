@@ -30,6 +30,7 @@
  */
 package com.android.build.gradle.external.gnumake;
 
+import com.android.SdkConstants;
 import com.android.build.gradle.external.gson.NativeBuildConfigValue;
 import com.android.build.gradle.truth.NativeBuildConfigValueSubject;
 import com.google.common.truth.Truth;
@@ -50,6 +51,10 @@ public class NativeBuildConfigValueBuilderTest {
                 new NativeBuildConfigValueBuilder(new File(projectPath))
                         .addCommands("echo build command", "debug", string, true)
                         .build();
+
+        if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) {
+            expected = expected.replace("/", "\\\\");
+        }
 
         NativeBuildConfigValue expectedValue =
                 new Gson().fromJson(expected, NativeBuildConfigValue.class);
