@@ -1,0 +1,118 @@
+android_sdk {
+  aapt: "third_party/java/android/android_sdk_linux/platform-tools/aapt.static"
+  adb: "third_party/java/android/android_sdk_linux/platform-tools/adb.static"
+  aidl: "third_party/java/android/android_sdk_linux/platform-tools/aidl.static"
+  android_jar: "third_party/java/android/android_sdk_linux/platforms/stable/android_external.jar"
+  annotations_jar: "third_party/java/android/android_sdk_linux/tools/support/annotations.jar"
+  apkbuilder: "external-out/host/bin/third_party/java/android/android_sdk_linux/tools/ApkBuilderMain"
+  dx: "external-out/host/bin/third_party/java/android/android_sdk_linux/dx_binary"
+  framework_aidl: "third_party/java/android/android_sdk_linux/platforms/stable/framework.aidl"
+  jack: "external-out/host/bin/tools/android/jack/jack"
+  jill: "external-out/host/bin/tools/android/jack/jill"
+  main_dex_classes: "third_party/java/android/android_sdk_linux/platforms/prerelease/mainDexClasses.rules"
+  main_dex_list_creator: "external-out/host/bin/third_party/java/android/android_sdk_linux/main_dex_list_creator"
+  proguard: "external-out/host/bin/third_party/java/proguard/ProGuard"
+  resource_extractor: "external-out/host/bin/tools/android/jack/resource_extractor"
+  shrinked_android_jar: "external-out/host/genfiles/third_party/java/android/android_sdk_linux/platforms/prerelease/shrinkedAndroid.jar"
+  zipalign: "third_party/java/android/android_sdk_linux/tools/zipalign"
+}
+jars {
+  exec_root_path: "external-out/gcc-4/bin/java/com/google/android/samples/hellogoogle3/activities/activities_resources.jar"
+  hash: ".\001</\r\377\271\024\305\233\207\364\000\342\005p"
+}
+jars {
+  exec_root_path: "external-out/gcc-4/bin/java/com/google/android/samples/hellogoogle3/activities/libactivities.jar"
+  hash: "\214\266\241&\024\304f\204\312m7$A\267P5"
+}
+jars {
+  exec_root_path: "external-out/gcc-4/bin/java/com/google/android/samples/hellogoogle3/math/libmath.jar"
+  hash: "\365\245\'\234\242\370\266J\311\036\321\036\034=\217\310"
+}
+jars {
+  exec_root_path: "external-out/gcc-4/bin/java/com/google/android/samples/hellogoogle3/proto/libandroid_hello_google3_pb.jar"
+  hash: "\216Z\261d\373[@\r\312\360\377\225\237=\344I"
+}
+jars {
+  exec_root_path: "external-out/gcc-4/bin/third_party/java_src/android_libs/protobuf_nano/v2/libv2.jar"
+  hash: "\002v\016\374\357\346]\307\376\234\255\\U`\360p"
+}
+jars {
+  exec_root_path: "external-out/gcc-4/bin/java/com/google/android/samples/hellogoogle3/service/libservice.jar"
+  hash: "\\{\304\243\271v33Z\304\277\316h\003\310\332"
+}
+jars {
+  exec_root_path: "external-out/gcc-4/bin/java/com/google/android/samples/hellogoogle3lib/hellogoogle3lib_resources.jar"
+  hash: "b\314\247\240\337\333{_\364\002\036\'J\374\254\031"
+}
+jars {
+  exec_root_path: "external-out/gcc-4/bin/java/com/google/android/samples/hellogoogle3lib/activities/activities_resources.jar"
+  hash: "\373\313\333\317H\244X\345\204\277\242\311\336\003\fQ"
+}
+jars {
+  exec_root_path: "external-out/gcc-4/bin/java/com/google/android/samples/hellogoogle3lib/activities/libactivities.jar"
+  hash: "\302Qh\227-_\233\306\347\004\0034?Q9u"
+}
+jars {
+  exec_root_path: "external-out/gcc-4/bin/java/com/google/android/samples/hellogoogle3lib/common/libcommon.jar"
+  hash: "\024\253U\023l\375\354G-3=`\0056\320\322"
+}
+jars {
+  exec_root_path: "external-out/gcc-4/bin/java/com/google/android/samples/hellogoogle3lib/math/libmath.jar"
+  hash: "\307\263o\200\347tW\225Q\304\024\371\221\336\016r"
+}
+jars {
+  exec_root_path: "external-out/gcc-4/bin/java/com/google/android/samples/hellogoogle3lib/proto/libandroid_hellogoogle3lib_pb.jar"
+  hash: "\036,\360\212\317\006\2072 \342@g\237F\373\230"
+}
+jars {
+  exec_root_path: "external-out/gcc-4/bin/java/com/google/android/samples/hellogoogle3lib/service/libservice.jar"
+  hash: "\003R\334h\231\006.\327\2351w\360+r\021\017"
+}
+jars {
+  exec_root_path: "external-out/gcc-4/bin/third_party/java/android_libs/guava_jdk5/HEAD/libHEAD.jar"
+  hash: "\211\311\217\203\270\2135\216t\313\t\217\211\376\214\270"
+}
+jars {
+  exec_root_path: "third_party/java/animal_sniffer/v1_14/animal-sniffer-annotations-1.14.jar"
+  hash: "\235B\344hE\310t\361q\n\237jt\037l\024"
+}
+jars {
+  exec_root_path: "external-out/gcc-4/bin/third_party/java/error_prone/libannotations.jar"
+  hash: "\313\361\001AjE\f\353\306\356\a\361\366TF\003"
+}
+jars {
+  exec_root_path: "external-out/gcc-4/bin/third_party/java_src/error_prone/libannotations.jar"
+  hash: "rN\320.\350q\377-+\2459\217a\030*g"
+}
+jars {
+  exec_root_path: "external-out/gcc-4/bin/third_party/java_src/error_prone/project/annotations/libannotations.jar"
+  hash: "F\177\317\352\363\355\3718\371;~\355<\3113\355"
+}
+jars {
+  exec_root_path: "external-out/gcc-4/bin/third_party/java_src/error_prone/project/annotations/libgoogle_internal.jar"
+  hash: "x\220\221\266Q\201\370w\001\213t\215\351\366\301\372"
+}
+jars {
+  exec_root_path: "external-out/gcc-4/bin/third_party/java_src/j2objc/libannotations_lib.jar"
+  hash: "\212\223\004\035\366\232e:+]\256\337\307\003\272\275"
+}
+jars {
+  exec_root_path: "external-out/gcc-4/bin/third_party/java/jsr305_annotations/libjsr305_annotations.jar"
+  hash: "\003?\202\327P\254\237\016=\277Hk:\3260\311"
+}
+jars {
+  exec_root_path: "third_party/java/jsr305_annotations/v0_r47/jsr305.jar"
+  hash: "\216&\307\025y\201\027\332\200z\377\027he\304I"
+}
+jars {
+  exec_root_path: "external-out/gcc-4/bin/java/com/google/android/samples/hellogoogle3/hellogoogle3_resources.jar"
+  hash: "%\206\302\376H@\234\277^:\016b\216\242O "
+}
+resource_apk {
+  exec_root_path: "external-out/gcc-4/bin/java/com/google/android/samples/hellogoogle3/hellogoogle3.ap_"
+  hash: "\316\aO\271\241\'\354\337>+\355V\351$cP"
+}
+android_manifest {
+  exec_root_path: "external-out/gcc-4/bin/java/com/google/android/samples/hellogoogle3/hellogoogle3_merged/hellogoogle3/AndroidManifest.xml"
+  hash: "\277\363\324\207E%^\230\306B\005:\263\254\\\257"
+}
