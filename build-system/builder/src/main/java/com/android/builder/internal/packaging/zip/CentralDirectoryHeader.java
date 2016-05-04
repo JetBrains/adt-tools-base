@@ -35,6 +35,13 @@ import java.util.concurrent.Future;
  * Because compression decision is done lazily, some data is stored with futures.
  */
 public class CentralDirectoryHeader implements Cloneable {
+
+    /**
+     * Default "version made by" field: upper byte needs to be 0 to set to MS-DOS compatibility.
+     * Lower byte can be anything, really. We use 18 because aapt uses 17 :)
+     */
+    private static final int DEFAULT_VERSION_MADE_BY = 0x0018;
+
     /**
      * Name of the file.
      */
@@ -130,7 +137,7 @@ public class CentralDirectoryHeader implements Cloneable {
         /*
          * Set sensible defaults for the rest.
          */
-        mMadeBy = 0;
+        mMadeBy = DEFAULT_VERSION_MADE_BY;
 
         mGpBit = flags;
         mLastModTime = MsDosDateTimeUtils.packCurrentTime();
