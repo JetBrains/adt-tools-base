@@ -121,6 +121,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryPoolMXBean;
+import java.lang.management.MemoryType;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -1615,15 +1618,25 @@ public class AndroidBuilder {
 
         // Requested memory for dex.
         long requestedHeapSize = parseHeapSize(dexOptions.getJavaMaxHeapSize(), mLogger);
-        // 1G - 300M as Runtime.maxMemory() reports less than the XMX setting.
-        final long NON_DEX_HEAP_SIZE = 724 * 1024 * 1024;
+        final long NON_DEX_HEAP_SIZE = 1024 * 1024 * 1024;
         // Approximate heap size requested.
         long requiredHeapSizeHeuristic = requestedHeapSize + NON_DEX_HEAP_SIZE;
-        // Reported max heap size.
-        long maxMemory = Runtime.getRuntime().maxMemory();
+        // Get the approximate heap size that was specified by the user.
+        // It is important that this be close to the -Xmx value specified, as is is compared with
+        // the requiredHeapSizeHeuristic, which we suggest the user sets in their gradle.properties.
+        long maxMemory = 0;
+        for (MemoryPoolMXBean mpBean: ManagementFactory.getMemoryPoolMXBeans()) {
+            if (mpBean.getType() == MemoryType.HEAP) {
+                maxMemory += mpBean.getUsage().getMax();
+            }
+        }
 
-        if (requiredHeapSizeHeuristic > maxMemory) {
-            mLogger.warning("To run dex in process, the Gradle daemon needs a larger heap.\n"
+        // Allow a little extra overhead (50M) as in practice the sum of the heap pools is
+        // slightly lower than the Xmx setting specified by the user.
+        final long EXTRA_HEAP_OVERHEAD =  50 * 1024 * 1024;
+        if (requiredHeapSizeHeuristic > maxMemory + EXTRA_HEAP_OVERHEAD) {
+            mLogger.warning("Running dex as a separate process.\n\n"
+                            + "To run dex in process, the Gradle daemon needs a larger heap.\n"
                             + "It currently has approximately %1$d MB.\n"
                             + "For faster builds, increase the maximum heap size for the "
                             + "Gradle daemon to more than %2$s MB.\n"
@@ -1632,8 +1645,7 @@ public class AndroidBuilder {
                             + "For more information see "
                             + "https://docs.gradle.org/current/userguide/build_environment.html",
                     maxMemory / (1024 * 1024),
-                    requiredHeapSizeHeuristic / (1024 * 1024) + 300);
-            // Add 300M to the suggestion as Runtime.maxMemory() reports less than the XMX setting.
+                    requiredHeapSizeHeuristic / (1024 * 1024));
             isDexInProcess = false;
             return false;
         }
