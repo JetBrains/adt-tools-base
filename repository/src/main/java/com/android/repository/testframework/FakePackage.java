@@ -30,6 +30,7 @@ import com.android.repository.api.RepositorySource;
 import com.android.repository.impl.meta.Archive;
 import com.android.repository.impl.meta.CommonFactory;
 import com.android.repository.impl.meta.GenericFactory;
+import com.android.repository.impl.meta.RepoPackageImpl;
 import com.android.repository.impl.meta.TypeDetails;
 import com.google.common.base.Objects;
 import com.google.common.collect.ComparisonChain;
@@ -92,9 +93,9 @@ public class FakePackage implements LocalPackage, RemotePackage {
 
     @NonNull
     @Override
-    public File getInstallDir(@NonNull RepoManager manager, @NonNull ProgressIndicator progress)
-            throws IOException {
-        return null;
+    public File getInstallDir(@NonNull RepoManager manager, @NonNull ProgressIndicator progress) {
+        return new File(manager.getLocalPath(),
+                getPath().replace(RepoPackage.PATH_SEPARATOR, File.separatorChar));
     }
 
     public void setTypeDetails(TypeDetails details) {
@@ -147,6 +148,12 @@ public class FakePackage implements LocalPackage, RemotePackage {
     @Override
     public CommonFactory createFactory() {
         return null;
+    }
+
+    @NonNull
+    @Override
+    public RepoPackageImpl asMarshallable() {
+        throw new UnsupportedOperationException();
     }
 
     @Override

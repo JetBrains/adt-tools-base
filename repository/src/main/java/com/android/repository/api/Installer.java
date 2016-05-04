@@ -36,24 +36,4 @@ public interface Installer extends PackageOperation {
     @NonNull
     RemotePackage getPackage();
 
-    /**
-     * Completes the installation. This should include anything that actually affects the installed
-     * SDK or requires user interaction.
-     *
-     * @param progress A {@link ProgressIndicator}, to show install progress and facilitate
-     *                 logging.
-     * @return {@code true} if the install was successful, {@code false} otherwise.
-     */
-    boolean completeInstall(@NonNull ProgressIndicator progress);
-
-    /**
-     * Prepares the package for installation. This includes downloading, unzipping, and anything
-     * else that can be done without affecting the installed SDK or other state.
-     *
-     * @param downloader The {@link Downloader} used to download the archive.
-     * @param progress   A {@link ProgressIndicator}, to show install progress and facilitate
-     *                   logging.
-     * @return {@code true} if the operation succeeded, {@code false} otherwise.
-     */
-    boolean prepareInstall(@NonNull Downloader downloader, @NonNull ProgressIndicator progress);
 }

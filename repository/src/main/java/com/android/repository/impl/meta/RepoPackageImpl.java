@@ -19,12 +19,12 @@ package com.android.repository.impl.meta;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.Revision;
-import com.android.repository.api.Channel;
 import com.android.repository.api.Dependency;
 import com.android.repository.api.License;
 import com.android.repository.api.LocalPackage;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoPackage;
+import com.android.repository.api.Repository;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.ImmutableList;
 
@@ -149,6 +149,12 @@ public abstract class RepoPackageImpl implements RepoPackage {
         }
         return 0;
     }
+
+    /**
+     * Adds this package to the given {@link Repository}, overwriting existing packages if
+     * necessary.
+     */
+    public abstract void addTo(@NonNull Repository repo);
 
     @Override
     public boolean equals(Object obj) {

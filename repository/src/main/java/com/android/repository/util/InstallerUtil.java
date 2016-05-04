@@ -155,28 +155,28 @@ public class InstallerUtil {
         }
     }
 
-    public static void writePendingPackageXml(@NonNull RemotePackage p, @NonNull File packageRoot,
+    public static void writePendingPackageXml(@NonNull RepoPackage p, @NonNull File packageRoot,
             @NonNull RepoManager manager, @NonNull FileOp fop, @NonNull ProgressIndicator progress)
             throws IOException {
         if (!fop.exists(packageRoot) || !fop.isDirectory(packageRoot)) {
             throw new IllegalArgumentException("packageRoot must exist and be a directory.");
         }
-        CommonFactory factory = (CommonFactory) manager.getCommonModule().createLatestFactory();
+        CommonFactory factory = p.createFactory();
         // Create the package.xml
         Repository repo = factory.createRepositoryType();
         License license = p.getLicense();
         if (license != null) {
             repo.addLicense(license);
         }
-        RemotePackageImpl toWrite = RemotePackageImpl.create(p);
-        repo.addChannel(p.getChannel());
-        repo.getRemotePackage().add(toWrite);
+
+        p.asMarshallable().addTo(repo);
+
         File packageXml = new File(packageRoot, PENDING_PACKAGE_XML_FN);
         writeRepoXml(manager, repo, packageXml, fop, progress);
     }
 
     @Nullable
-    public static RemotePackage readPendingPackageXml(@NonNull File containingDir,
+    public static RepoPackage readPendingPackageXml(@NonNull File containingDir,
             @NonNull RepoManager manager, @NonNull FileOp fop,
             @NonNull ProgressIndicator progress) throws IOException {
         Repository repo;
@@ -192,7 +192,11 @@ public class InstallerUtil {
         } catch (JAXBException e) {
             throw new IOException("Failed to parse pending package xml", e);
         }
-        return repo.getRemotePackage().get(0);
+        RepoPackage result = repo.getLocalPackage();
+        if (result == null) {
+            result = repo.getRemotePackage().get(0);
+        }
+        return result;
     }
 
     /**
@@ -425,17 +429,5 @@ public class InstallerUtil {
         }
 
         return true;
-    }
-
-    @NonNull
-    public static File getInstallPath(@NonNull RemotePackage p, @NonNull RepoManager manager,
-            @NonNull ProgressIndicator progress) throws IOException {
-        String path = p.getPath();
-        path = path.replace(RepoPackage.PATH_SEPARATOR, File.separatorChar);
-        File dest = new File(manager.getLocalPath(), path);
-        if (!InstallerUtil.checkValidPath(dest, manager, progress)) {
-            throw new IOException("Invalid install path");
-        }
-        return dest;
     }
 }

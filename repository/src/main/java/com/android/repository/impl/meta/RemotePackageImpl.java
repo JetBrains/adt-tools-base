@@ -91,14 +91,10 @@ public abstract class RemotePackageImpl extends RepoPackageImpl implements Remot
 
     @NonNull
     @Override
-    public File getInstallDir(@NonNull RepoManager manager, @NonNull ProgressIndicator progress)
-            throws IOException {
+    public File getInstallDir(@NonNull RepoManager manager, @NonNull ProgressIndicator progress) {
+        assert manager.getLocalPath() != null;
         String path = getPath().replace(RepoPackage.PATH_SEPARATOR, File.separatorChar);
-        File dest = new File(manager.getLocalPath(), path);
-        if (!InstallerUtil.checkValidPath(dest, manager, progress)) {
-            throw new IOException("Invalid install path");
-        }
-        return dest;
+        return new File(manager.getLocalPath(), path);
     }
 
     /**
@@ -151,6 +147,16 @@ public abstract class RemotePackageImpl extends RepoPackageImpl implements Remot
         archives.getArchive().add(archive);
     }
 
+    @NonNull
+    @Override
+    public RepoPackageImpl asMarshallable() {
+        return this;
+    }
+
+    @Override
+    public void addTo(@NonNull Repository repo) {
+        repo.getRemotePackage().add(this);
+    }
 
     @XmlTransient
     public abstract static class ChannelRef {

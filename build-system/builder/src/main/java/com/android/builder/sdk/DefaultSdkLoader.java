@@ -258,9 +258,9 @@ public class DefaultSdkLoader implements SdkLoader {
 
             Installer installer = SdkInstallerUtil
                     .findBestInstallerFactory(p, mSdkHandler)
-                    .createInstaller(p, repoManager, mSdkHandler.getFileOp());
-            boolean result = installer.prepareInstall(downloader, progress)
-                    && installer.completeInstall(progress);
+                    .createInstaller(p, repoManager, downloader, mSdkHandler.getFileOp());
+            boolean result = installer.prepare(progress)
+                    && installer.complete(progress);
 
             if (!result) {
                 return false;
