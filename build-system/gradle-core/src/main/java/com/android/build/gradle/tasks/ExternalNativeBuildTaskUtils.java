@@ -182,24 +182,19 @@ public class ExternalNativeBuildTaskUtils {
         // If there is exactly 1 path in the DSL, then use it.
         // If there are more than 1, then that is an error. The user has specified both cmake and
         //    ndkBuild in the same project.
-        // If there are zero paths in the project then light-up logic is use:
-        // If there is exactly 1 light-up path, then use it.
-        // If there are more than one light-up path, then that is an error. The project has both
-        //    CMakeLists.txt and Android.mk
-        // If there are zero light-up paths then there is no external build to be done.
+
+        // TODO(chiur): Default path is temporarily disabled, but some of the logic that was used
+        // for to handle default paths was kept.  If we decide to keep default disabled, we should
+        // simplify the logic in this function.
+
         Map<Class, File> externalProjectPaths = ExternalNativeBuildTaskUtils
                 .getExternalBuildExplicitPaths(config);
-        if (externalProjectPaths.size() == 0) {
-            externalProjectPaths = ExternalNativeBuildTaskUtils.getExternalBuildLightUpPaths(projectFolder);
-        } else if (externalProjectPaths.size() > 1) {
+        if (externalProjectPaths.size() > 1) {
             return new ExternalNativeBuildProjectPathResolution(
                     null, null, "More than one externalNativeBuild path specified");
         }
 
-        if (externalProjectPaths.size() > 1) {
-            return new ExternalNativeBuildProjectPathResolution(
-                    null, null, "More than one external native build implicit project file present");
-        } else if (externalProjectPaths.size() == 0) {
+        if (externalProjectPaths.isEmpty()) {
             // No external projects present.
             return new ExternalNativeBuildProjectPathResolution(null, null, null);
         }
