@@ -60,6 +60,16 @@ public class Dynamic implements BinaryObject {
         return mFields[index];
     }
 
+    public void setFieldValue(int index, Object value) {
+        mFields[index] = value;
+    }
+
+    public Dynamic copy() {
+        Dynamic result = new Dynamic(mKlass);
+        result.mFields = Arrays.copyOf(mFields, mFields.length);
+        return result;
+    }
+
     @NotNull
     @Override
     public Klass klass() {
