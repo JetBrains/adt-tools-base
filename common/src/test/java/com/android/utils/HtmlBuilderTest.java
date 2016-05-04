@@ -17,6 +17,7 @@ package com.android.utils;
 
 import junit.framework.TestCase;
 
+import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 
@@ -131,6 +132,11 @@ public class HtmlBuilderTest extends TestCase {
                        .getHtml());
     }
 
+    public void testColoredText() {
+        HtmlBuilder builder = new HtmlBuilder();
+        assertEquals("<FONT color=\"#\"804020>This is a test</FONT>",
+                builder.coloredText(new Color(128, 64, 32), "This is a test").getHtml());
+    }
 
     public void testAddImage() throws IOException {
         File f = File.createTempFile("img", "png");
