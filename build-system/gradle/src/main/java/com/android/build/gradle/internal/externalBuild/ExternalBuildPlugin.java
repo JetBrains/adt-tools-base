@@ -41,6 +41,8 @@ public class ExternalBuildPlugin implements Plugin<Project> {
 
         AndroidTaskRegistry taskRegistry = new AndroidTaskRegistry();
         taskRegistry.create(tasks, new ExternalBuildTask.ConfigAction(
-                project.getBuildDir(), externalBuildExtension));
+                project.getBuildDir(),
+                externalBuildExtension,
+                new DefaultManifestProcessor()));
     }
 }

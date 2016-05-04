@@ -16,18 +16,16 @@
 
 package com.android.build.gradle.internal.externalBuild;
 
+import com.android.annotations.NonNull;
+import com.google.devtools.build.lib.rules.android.apkmanifest.ExternalBuildApkManifest;
+
 /**
- * Extension for the {@see com.android.build.gradle.externalBuil.ExternalBuildPlugin}
+ * Default implementation of the {@link ExternalBuildProcessor} interface.
  */
-public class ExternalBuildExtension {
+public class DefaultManifestProcessor implements ExternalBuildProcessor {
 
-    String buildManifestPath;
-
-    public String getBuildManifestPath() {
-        return buildManifestPath;
-    }
-
-    public void setBuildManifestPath(String buildManifestPath) {
-        this.buildManifestPath = buildManifestPath;
+    @Override
+    public void process(@NonNull ExternalBuildApkManifest.ApkManifest apkManifest) {
+        // do nothing so far.
     }
 }

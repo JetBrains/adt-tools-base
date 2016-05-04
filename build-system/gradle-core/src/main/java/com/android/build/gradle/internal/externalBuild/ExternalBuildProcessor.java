@@ -16,18 +16,19 @@
 
 package com.android.build.gradle.internal.externalBuild;
 
+import com.android.annotations.NonNull;
+import com.google.devtools.build.lib.rules.android.apkmanifest.ExternalBuildApkManifest;
+
 /**
- * Extension for the {@see com.android.build.gradle.externalBuil.ExternalBuildPlugin}
+ * Processes instances of {@link ExternalBuildApkManifest}
  */
-public class ExternalBuildExtension {
+interface ExternalBuildProcessor {
 
-    String buildManifestPath;
 
-    public String getBuildManifestPath() {
-        return buildManifestPath;
-    }
-
-    public void setBuildManifestPath(String buildManifestPath) {
-        this.buildManifestPath = buildManifestPath;
-    }
+    /**
+     * Processes an instance of {@link ExternalBuildApkManifest}, code must support concurrent
+     * invocations.
+     * @param apkManifest the loaded apk_manifest proto.
+     */
+    void process(@NonNull ExternalBuildApkManifest.ApkManifest apkManifest);
 }
