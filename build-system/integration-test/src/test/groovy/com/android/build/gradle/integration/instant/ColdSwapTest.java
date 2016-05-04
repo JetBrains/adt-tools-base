@@ -27,7 +27,9 @@ import com.android.build.gradle.integration.common.truth.ApkSubject;
 import com.android.build.gradle.integration.common.truth.DexClassSubject;
 import com.android.build.gradle.integration.common.truth.DexFileSubject;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
+import com.android.sdklib.AndroidVersion;
 import com.android.tools.fd.client.InstantRunArtifact;
 import com.android.tools.fd.client.InstantRunArtifactType;
 import com.google.common.base.Charsets;
@@ -137,6 +139,11 @@ public class ColdSwapTest {
 
     @Test
     public void withMultiApk() throws Exception {
+        // should not run until we re-enable MULTI_APK
+        Assume.assumeTrue(
+                InstantRunPatchingPolicy.getPatchingPolicy(new AndroidVersion(24, "N"),
+                        null, null) == InstantRunPatchingPolicy.MULTI_APK);
+
         ColdSwapTester.testMultiApk(project, new ColdSwapTester.Steps() {
             @Override
             public void checkApk(File apk) throws Exception {

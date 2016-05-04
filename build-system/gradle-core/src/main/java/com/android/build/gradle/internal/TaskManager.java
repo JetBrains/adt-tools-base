@@ -1918,6 +1918,9 @@ public abstract class TaskManager {
 
         AndroidTask<BuildInfoLoaderTask> buildInfoLoaderTask = getAndroidTasks().create(tasks,
                 new BuildInfoLoaderTask.ConfigAction(variantScope, getLogger()));
+        if (variantScope.getSourceGenTask() != null) {
+            variantScope.getSourceGenTask().dependsOn(tasks, buildInfoLoaderTask);
+        }
 
         TransformManager transformManager = variantScope.getTransformManager();
 
