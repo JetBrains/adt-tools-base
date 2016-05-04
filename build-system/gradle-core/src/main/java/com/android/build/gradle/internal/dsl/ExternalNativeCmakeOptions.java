@@ -28,9 +28,12 @@ import java.util.Set;
  */
 public class ExternalNativeCmakeOptions implements CoreExternalNativeCmakeOptions {
 
+    @Nullable
     private String cFlags;
+    @Nullable
     private String cppFlags;
-    private Set<String> abiFilters;
+    @NonNull
+    private Set<String> abiFilters = Sets.newHashSet();
 
     @Nullable
     @Override
@@ -38,7 +41,7 @@ public class ExternalNativeCmakeOptions implements CoreExternalNativeCmakeOption
         return cFlags;
     }
 
-    public void setcFlags(String cFlags) {
+    public void setcFlags(@Nullable String cFlags) {
         this.cFlags = cFlags;
     }
 
@@ -48,11 +51,11 @@ public class ExternalNativeCmakeOptions implements CoreExternalNativeCmakeOption
         return cppFlags;
     }
 
-    public void setCppFlags(String cppFlags) {
+    public void setCppFlags(@Nullable String cppFlags) {
         this.cppFlags = cppFlags;
     }
 
-    @Nullable
+    @NonNull
     @Override
     public Set<String> getAbiFilters() {
         return abiFilters;
@@ -60,18 +63,12 @@ public class ExternalNativeCmakeOptions implements CoreExternalNativeCmakeOption
 
     @NonNull
     public ExternalNativeCmakeOptions abiFilter(String filter) {
-        if (abiFilters == null) {
-            abiFilters = Sets.newHashSetWithExpectedSize(1);
-        }
         abiFilters.add(filter);
         return this;
     }
 
     @NonNull
     public ExternalNativeCmakeOptions abiFilters(String... filters) {
-        if (abiFilters == null) {
-            abiFilters = Sets.newHashSetWithExpectedSize(filters.length);
-        }
         Collections.addAll(abiFilters, filters);
         return this;
     }

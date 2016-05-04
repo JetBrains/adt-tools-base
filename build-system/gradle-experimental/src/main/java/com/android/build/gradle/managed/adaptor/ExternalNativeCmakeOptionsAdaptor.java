@@ -46,7 +46,7 @@ public class ExternalNativeCmakeOptionsAdaptor implements CoreExternalNativeCmak
         return options.getCppFlags();
     }
 
-    @Nullable
+    @NonNull
     @Override
     public Set<String> getAbiFilters() {
         return options.getAbiFilters();

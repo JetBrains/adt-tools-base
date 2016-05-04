@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.dsl;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 import java.util.Set;
@@ -39,6 +40,6 @@ public interface CoreExternalNativeNdkBuildOptions {
     /**
      * The ABI Filters
      */
-    @Nullable
+    @NonNull
     Set<String> getAbiFilters();
 }

@@ -62,7 +62,7 @@ model {
                 proguardFiles.add(file("proguard-rules.pro"))
                 ndkBuild {
                     cFlags "-DCOLOR=RED"
-                    abiFilters = ["x86", "x86_64"]
+                    abiFilters.addAll("x86", "x86_64")
                 }
             }
         }

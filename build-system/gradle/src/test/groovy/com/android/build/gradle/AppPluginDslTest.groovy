@@ -16,6 +16,7 @@
 
 package com.android.build.gradle
 
+import android.databinding.tool.util.StringUtils
 import com.android.SdkConstants
 import com.android.annotations.NonNull
 import com.android.build.gradle.api.ApkVariant
@@ -27,12 +28,15 @@ import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.tasks.MockableAndroidJarTask
 import com.android.build.gradle.internal.test.BaseTest
+import com.android.utils.StringHelper
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 
 import static com.android.build.gradle.DslTestUtil.DEFAULT_VARIANTS
 import static com.android.build.gradle.DslTestUtil.countVariants
+import static com.google.common.truth.Truth.assertThat
+
 /**
  * Tests for the public DSL of the App plugin ("android")
  */
@@ -247,19 +251,24 @@ public class AppPluginDslTest extends BaseTest {
             productFlavors {
                 f1 {
                     dimension   "dimension1"
+                    javaCompileOptions.annotationProcessorOptions.className "f1"
                 }
                 f2 {
                     dimension   "dimension1"
+                    javaCompileOptions.annotationProcessorOptions.className "f2"
                 }
 
                 fa {
                     dimension   "dimension2"
+                    javaCompileOptions.annotationProcessorOptions.className "fa"
                 }
                 fb {
                     dimension   "dimension2"
+                    javaCompileOptions.annotationProcessorOptions.className "fb"
                 }
                 fc {
                     dimension   "dimension2"
+                    javaCompileOptions.annotationProcessorOptions.className "fc"
                 }
             }
         }
@@ -286,6 +295,18 @@ public class AppPluginDslTest extends BaseTest {
         checkTestedVariant("f2FaDebug", "f2FaDebugAndroidTest", variants, testVariants)
         checkTestedVariant("f2FbDebug", "f2FbDebugAndroidTest", variants, testVariants)
         checkTestedVariant("f2FcDebug", "f2FcDebugAndroidTest", variants, testVariants)
+
+        def variantsData = plugin.variantManager.variantDataList
+        Map<String, GradleVariantConfiguration> variantMap =
+                variantsData.collectEntries {[it.name, it.variantConfiguration]}
+        for (String dim1 : ["f1", "f2"]) {
+            for (String dim2 : ["fa", "fb", "fc"]) {
+                String variantName = StringHelper.combineAsCamelCase([dim1, dim2, "debug"]);
+                GradleVariantConfiguration variant = variantMap[variantName];
+                assertThat(variant.getJavaCompileOptions().getAnnotationProcessorOptions()
+                        .getClassNames()).containsExactly(dim2, dim1).inOrder()
+            }
+        }
 
         checkNonTestedVariant("f1FaRelease", variants)
         checkNonTestedVariant("f1FbRelease", variants)

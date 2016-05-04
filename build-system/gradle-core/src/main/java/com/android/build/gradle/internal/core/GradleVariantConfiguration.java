@@ -22,7 +22,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.TestAndroidConfig;
-import com.android.build.gradle.internal.dsl.CoreAnnotationProcessorOptions;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
 import com.android.build.gradle.internal.dsl.CoreExternalNativeCmakeOptions;
 import com.android.build.gradle.internal.dsl.CoreExternalNativeNdkBuildOptions;
@@ -43,6 +42,9 @@ import com.google.common.collect.Sets;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Version of {@link com.android.builder.core.VariantConfiguration} that uses the specific
@@ -54,14 +56,19 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
 
     @Nullable
     private Boolean enableInstantRunOverride = null;
-    private final MergedNdkConfig mMergedNdkConfig = new MergedNdkConfig();
-    private final MergedJackOptions mMergedJackOptions = new MergedJackOptions();
-    private final MergedCoreExternalNativeNdkBuildOptions mergedExternalNativeNdkBuildOptions
-            = new MergedCoreExternalNativeNdkBuildOptions();
-    private final MergedCoreExternalNativeCmakeOptions mergedExternalNativeCmakeOptions
-            = new MergedCoreExternalNativeCmakeOptions();
-    private final MergedJavaCompileOptions
-            mMergedJavaCompileOptions = new MergedJavaCompileOptions();
+    @NonNull
+    private final MergedNdkConfig mergedNdkConfig = new MergedNdkConfig();
+    @NonNull
+    private final MergedJackOptions mergedJackOptions = new MergedJackOptions();
+    @NonNull
+    private final MergedExternalNativeNdkBuildOptions mergedExternalNativeNdkBuildOptions =
+            new MergedExternalNativeNdkBuildOptions();
+    @NonNull
+    private final MergedExternalNativeCmakeOptions mergedExternalNativeCmakeOptions =
+            new MergedExternalNativeCmakeOptions();
+    @NonNull
+    private final MergedJavaCompileOptions mergedJavaCompileOptions =
+            new MergedJavaCompileOptions();
 
     private GradleVariantConfiguration(
             @Nullable VariantConfiguration testedConfig,
@@ -73,11 +80,7 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
             @Nullable SigningConfig signingConfigOverride) {
         super(defaultConfig, defaultSourceProvider, buildType, buildTypeSourceProvider, type,
                 testedConfig, signingConfigOverride);
-        computeJackOptions();
-        computeJavaCompileOptions();
-        computeNdkConfig();
-        computeNdkBuildConfig();
-        computeCmakeConfig();
+        mergeOptions();
     }
 
     /**
@@ -142,7 +145,7 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
      * file for these modules, and that is why the value resolution for these attributes
      * is different.
      */
-    private static class TestModuleConfigurationBuilder implements Builder{
+    private static class TestModuleConfigurationBuilder implements Builder {
 
         @NonNull
         @Override
@@ -160,13 +163,13 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
                     buildType,
                     buildTypeSourceProvider,
                     type,
-                    signingConfigOverride){
+                    signingConfigOverride) {
                 @NonNull
                 @Override
                 public String getApplicationId() {
                     String applicationId = getMergedFlavor().getTestApplicationId();
 
-                    if (Strings.isNullOrEmpty(applicationId)){
+                    if (Strings.isNullOrEmpty(applicationId)) {
                         applicationId = super.getApplicationId();
                     }
 
@@ -188,7 +191,8 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
                 @Override
                 public GradleVariantConfiguration getMyTestConfig(
                         @NonNull SourceProvider defaultSourceProvider,
-                        @Nullable SourceProvider buildTypeSourceProvider, @NonNull VariantType type) {
+                        @Nullable SourceProvider buildTypeSourceProvider,
+                        @NonNull VariantType type) {
                     throw new UnsupportedOperationException("Test modules have no test variants.");
                 }
             };
@@ -206,6 +210,43 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
         }
     }
 
+    /**
+     * Merge Gradle specific options from build types, product flavors and default config.
+     */
+    private void mergeOptions() {
+        computeMergedOptions(
+                mergedJackOptions,
+                CoreProductFlavor::getJackOptions,
+                CoreBuildType::getJackOptions,
+                MergedJackOptions::reset,
+                MergedJackOptions::append);
+        computeMergedOptions(
+                mergedJavaCompileOptions,
+                CoreProductFlavor::getJavaCompileOptions,
+                CoreBuildType::getJavaCompileOptions,
+                MergedJavaCompileOptions::reset,
+                MergedJavaCompileOptions::append);
+        computeMergedOptions(
+                mergedNdkConfig,
+                CoreProductFlavor::getNdkConfig,
+                CoreBuildType::getNdkConfig,
+                MergedNdkConfig::reset,
+                MergedNdkConfig::append);
+        computeMergedOptions(
+                mergedExternalNativeNdkBuildOptions,
+                CoreProductFlavor::getExternalNativeNdkBuildOptions,
+                CoreBuildType::getExternalNativeNdkBuildOptions,
+                MergedExternalNativeNdkBuildOptions::reset,
+                MergedExternalNativeNdkBuildOptions::append);
+        computeMergedOptions(
+                mergedExternalNativeCmakeOptions,
+                CoreProductFlavor::getExternalNativeCmakeOptions,
+                CoreBuildType::getExternalNativeCmakeOptions,
+                MergedExternalNativeCmakeOptions::reset,
+                MergedExternalNativeCmakeOptions::append);
+    }
+
+
     @NonNull
     @Override
     public VariantConfiguration addProductFlavor(
@@ -216,15 +257,13 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
         checkNotNull(sourceProvider);
         checkNotNull(dimensionName);
         super.addProductFlavor(productFlavor, sourceProvider, dimensionName);
-        computeNdkConfig();
-        computeNdkBuildConfig();
-        computeCmakeConfig();
+        mergeOptions();
         return this;
     }
 
     @NonNull
     public CoreNdkOptions getNdkConfig() {
-        return mMergedNdkConfig;
+        return mergedNdkConfig;
     }
 
     @NonNull
@@ -239,15 +278,11 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
 
     @NonNull
     public Set<String> getExternalNativeAbiFilters() {
-        if (mergedExternalNativeCmakeOptions != null
-                && mergedExternalNativeCmakeOptions.getAbiFilters() != null
-                && !mergedExternalNativeCmakeOptions.getAbiFilters().isEmpty()) {
+        if (!mergedExternalNativeCmakeOptions.getAbiFilters().isEmpty()) {
             return mergedExternalNativeCmakeOptions.getAbiFilters();
         }
 
-        if (mergedExternalNativeNdkBuildOptions != null
-                && mergedExternalNativeNdkBuildOptions.getAbiFilters() != null
-                && !mergedExternalNativeNdkBuildOptions.getAbiFilters().isEmpty()) {
+        if (!mergedExternalNativeNdkBuildOptions.getAbiFilters().isEmpty()) {
             return mergedExternalNativeNdkBuildOptions.getAbiFilters();
         }
         return Sets.newHashSet();
@@ -261,7 +296,7 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
      */
     @Nullable
     public Set<String> getSupportedAbis() {
-        return mMergedNdkConfig.getAbiFilters();
+        return mergedNdkConfig.getAbiFilters();
     }
 
     /**
@@ -276,84 +311,57 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
     }
 
     public CoreJackOptions getJackOptions() {
-        return mMergedJackOptions;
+        return mergedJackOptions;
+    }
+
+    /**
+     * Merge a specific option in GradleVariantConfiguration.
+     *
+     * It is assumed that merged option type with a method to reset and append is created for the
+     * option being merged.
+     *
+     * The order of priority is BuildType, ProductFlavors, and default config.  ProductFlavor added
+     * earlier has higher priority than ProductFlavor added later.
+     *
+     * @param option The merged option store in the GradleVariantConfiguration.
+     * @param productFlavorOptionGetter A Function to return the option from a ProductFlavor.
+     * @param buildTypeOptionGetter A Function to return the option from a BuildType.
+     * @param reset A method to return 'option' to its default state.
+     * @param append A BiConsumer to combine two options into one.  Option in second input argument
+     *               takes priority and overwrite option in the first input argument.
+     * @param <CORE_OPTION> The core type of the option being merge.
+     * @param <MERGED_OPTION> The merge option type.
+     */
+    private <CORE_OPTION, MERGED_OPTION> void computeMergedOptions(
+            @NonNull MERGED_OPTION option,
+            @NonNull Function<CoreProductFlavor, CORE_OPTION> productFlavorOptionGetter,
+            @NonNull Function<CoreBuildType, CORE_OPTION> buildTypeOptionGetter,
+            @NonNull Consumer<MERGED_OPTION> reset,
+            @NonNull BiConsumer<MERGED_OPTION, CORE_OPTION> append) {
+        reset.accept(option);
+
+        CORE_OPTION defaultOption = productFlavorOptionGetter.apply(getDefaultConfig());
+        if (defaultOption != null) {
+            append.accept(option, defaultOption);
+        }
+
+        // reverse loop for proper order
+        final List<CoreProductFlavor> flavors = getProductFlavors();
+        for (int i = flavors.size() - 1 ; i >= 0 ; i--) {
+            CORE_OPTION flavorOption = productFlavorOptionGetter.apply(flavors.get(i));
+            if (flavorOption != null) {
+                append.accept(option, flavorOption);
+            }
+        }
+
+        CORE_OPTION buildTypeOption = buildTypeOptionGetter.apply(getBuildType());
+        if (buildTypeOption != null) {
+            append.accept(option, buildTypeOption);
+        }
     }
 
     public CoreJavaCompileOptions getJavaCompileOptions() {
-        return mMergedJavaCompileOptions;
-    }
-
-    private void computeJackOptions() {
-        mMergedJackOptions.merge(getDefaultConfig().getJackOptions());
-        for (int i = getProductFlavors().size() - 1; i >= 0; i--){
-            mMergedJackOptions.merge(getProductFlavors().get(i).getJackOptions());
-        }
-        mMergedJackOptions.merge(getBuildType().getJackOptions());
-    }
-
-    private void computeNdkConfig() {
-        mMergedNdkConfig.reset();
-
-        if (getDefaultConfig().getNdkConfig() != null) {
-            mMergedNdkConfig.append(getDefaultConfig().getNdkConfig());
-        }
-
-        final List<CoreProductFlavor> flavors = getProductFlavors();
-        for (int i = flavors.size() - 1 ; i >= 0 ; i--) {
-            CoreNdkOptions ndkConfig = flavors.get(i).getNdkConfig();
-            if (ndkConfig != null) {
-                mMergedNdkConfig.append(ndkConfig);
-            }
-        }
-
-        if (getBuildType().getNdkConfig() != null && !getType().isForTesting()) {
-            mMergedNdkConfig.append(getBuildType().getNdkConfig());
-        }
-    }
-
-    private void computeNdkBuildConfig() {
-        if (getDefaultConfig().getExternalNativeNdkBuildOptions() != null) {
-            mergedExternalNativeNdkBuildOptions.append(getDefaultConfig().getExternalNativeNdkBuildOptions());
-        }
-
-        final List<CoreProductFlavor> flavors = getProductFlavors();
-        for (int i = flavors.size() - 1 ; i >= 0 ; i--) {
-            CoreExternalNativeNdkBuildOptions options = flavors.get(i).getExternalNativeNdkBuildOptions();
-            if (options != null) {
-                mergedExternalNativeNdkBuildOptions.append(options);
-            }
-        }
-
-        if (getBuildType().getNdkConfig() != null && !getType().isForTesting()) {
-            mergedExternalNativeNdkBuildOptions.append(getBuildType().getExternalNativeNdkBuildOptions());
-        }
-    }
-
-    private void computeCmakeConfig() {
-        if (getDefaultConfig().getExternalNativeNdkBuildOptions() != null) {
-            mergedExternalNativeCmakeOptions
-                    .append(getDefaultConfig().getExternalNativeCmakeOptions());
-        }
-
-        final List<CoreProductFlavor> flavors = getProductFlavors();
-        for (int i = flavors.size() - 1; i >= 0; i--) {
-            CoreExternalNativeCmakeOptions options = flavors.get(i).getExternalNativeCmakeOptions();
-            if (options != null) {
-                mergedExternalNativeCmakeOptions.append(options);
-            }
-        }
-
-        if (getBuildType().getNdkConfig() != null && !getType().isForTesting()) {
-            mergedExternalNativeCmakeOptions.append(getBuildType().getExternalNativeCmakeOptions());
-        }
-    }
-
-    private void computeJavaCompileOptions() {
-        mMergedJavaCompileOptions.merge(getBuildType().getJavaCompileOptions());
-        for (CoreProductFlavor productFlavor : getProductFlavors()) {
-            mMergedJavaCompileOptions.merge(productFlavor.getJavaCompileOptions());
-        }
-        mMergedJavaCompileOptions.merge(getDefaultConfig().getJavaCompileOptions());
+        return mergedJavaCompileOptions;
     }
 
     public boolean isInstantRunSupported() {
