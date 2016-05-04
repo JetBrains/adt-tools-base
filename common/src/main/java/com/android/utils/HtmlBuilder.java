@@ -147,6 +147,26 @@ public class HtmlBuilder {
         return this;
     }
 
+    public HtmlBuilder beginUnderline() {
+        mStringBuilder.append("<U>");
+
+        return this;
+    }
+
+    public HtmlBuilder endUnderline() {
+        mStringBuilder.append("</U>");
+
+        return this;
+    }
+
+    public HtmlBuilder addUnderlined(String text) {
+        beginUnderline();
+        add(text);
+        endUnderline();
+
+        return this;
+    }
+
     public HtmlBuilder addBold(String text) {
         beginBold();
         add(text);
