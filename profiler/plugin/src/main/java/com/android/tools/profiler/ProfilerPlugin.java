@@ -63,6 +63,9 @@ public class ProfilerPlugin implements Plugin<Project> {
   private static final String PROPERTY_ENABLED = "android.profiler.enabled";
   private static final String PROPERTY_GAPID_ENABLED = "android.profiler.gapid.enabled";
   private static final String PROPERTY_GAPID_TRACER_AAR = "android.profiler.gapid.tracer_aar";
+  private static final String PROPERTY_SUPPORT_LIB_ENABLED = "android.profiler.supportLib.enabled";
+  private static final String PROPERTY_INSTRUMENTATION_ENABLED =
+          "android.profiler.instrumentation.enabled";
 
   @NonNull
   private static File toOutputFile(File outputDir, File inputDir, File inputFile) {
@@ -112,27 +115,32 @@ public class ProfilerPlugin implements Plugin<Project> {
   @Override
   public void apply(final Project project) {
     Properties properties = getProperties(project);
-    boolean enabled = Boolean.parseBoolean(properties.getProperty(PROPERTY_ENABLED, "false"));
+    boolean enabled = getBoolean(properties, PROPERTY_ENABLED);
     if (enabled) {
-      addProfilersLib(project);
+      addProfilersLib(project, properties);
       applyGapidOptions(project, properties);
     }
-    // instrumentApp with enabled == false will undo any previous instrumentation.
-    instrumentApp(project, enabled);
+
+    if (getBoolean(properties, PROPERTY_INSTRUMENTATION_ENABLED)) {
+      // instrumentApp with enabled == false will undo any previous instrumentation.
+      instrumentApp(project, enabled);
+    }
   }
 
-  private void addProfilersLib(Project project) {
-    String path = "build/profilers-gen/profilers-support-lib.jar";
-    ConfigurableFileCollection files = project.files(path);
-    ExtractSupportLibJarTask task = project.getTasks()
-      .create("unpackProfilersLib", ExtractSupportLibJarTask.class);
-    task.setOutputFile(project.file(path));
-    files.builtBy(task);
-    project.getDependencies().add("compile", files);
+  private void addProfilersLib(Project project, Properties properties) {
+    if (getBoolean(properties, PROPERTY_SUPPORT_LIB_ENABLED)) {
+      String path = "build/profilers-gen/profilers-support-lib.jar";
+      ConfigurableFileCollection files = project.files(path);
+      ExtractSupportLibJarTask task = project.getTasks()
+              .create("unpackProfilersLib", ExtractSupportLibJarTask.class);
+      task.setOutputFile(project.file(path));
+      files.builtBy(task);
+      project.getDependencies().add("compile", files);
+    }
   }
 
   private void applyGapidOptions(Project project, Properties properties) {
-    if (Boolean.parseBoolean(properties.getProperty(PROPERTY_GAPID_ENABLED, "false"))) {
+    if (getBoolean(properties, PROPERTY_GAPID_ENABLED)) {
       String aarFileName = properties.getProperty(PROPERTY_GAPID_TRACER_AAR);
       final File aarFile = (aarFileName == null) ? null : new File(aarFileName);
       if (aarFile != null && aarFile.exists()) {
@@ -272,5 +280,9 @@ public class ProfilerPlugin implements Plugin<Project> {
     }
 
     return result;
+  }
+
+  private static boolean getBoolean(Properties properties, String name) {
+    return Boolean.parseBoolean(properties.getProperty(name, "false"));
   }
 }
