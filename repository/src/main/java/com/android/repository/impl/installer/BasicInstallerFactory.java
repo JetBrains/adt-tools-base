@@ -29,8 +29,6 @@ import com.android.repository.io.FileOp;
  */
 public class BasicInstallerFactory extends AbstractInstallerFactory {
 
-    static final String UNZIP_DIR_FN = "unzip";
-
     @NonNull
     @Override
     protected Installer doCreateInstaller(@NonNull RemotePackage p, @NonNull RepoManager mgr,

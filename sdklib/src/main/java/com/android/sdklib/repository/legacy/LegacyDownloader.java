@@ -25,6 +25,7 @@ import com.android.sdklib.internal.repository.DownloadCache;
 import com.android.utils.Pair;
 import com.google.common.io.ByteStreams;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -64,13 +65,20 @@ public class LegacyDownloader implements Downloader {
     public File downloadFully(@NonNull URL url, @NonNull ProgressIndicator indicator)
             throws IOException {
         File target = File.createTempFile("LegacyDownloader", null);
-        downloadFully(url, target, indicator);
+        downloadFully(url, target, null, indicator);
         return target;
     }
 
     @Override
-    public void downloadFully(@NonNull URL url, @NonNull File target,
+    public void downloadFully(@NonNull URL url, @NonNull File target, @Nullable String checksum,
             @NonNull ProgressIndicator indicator) throws IOException {
+        if (mFileOp.exists(target) && checksum != null) {
+            try (InputStream in = new BufferedInputStream(mFileOp.newFileInputStream(target))) {
+                if (checksum.equals(Downloader.hash(in, mFileOp.length(target), indicator))) {
+                    return;
+                }
+            }
+        }
         mFileOp.mkdirs(target.getParentFile());
         OutputStream out = mFileOp.newFileOutputStream(target);
         try {

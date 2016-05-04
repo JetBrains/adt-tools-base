@@ -322,8 +322,9 @@ public class BasicInstallerTest extends TestCase {
         FakeDownloader downloader = new FakeDownloader(fop) {
             @Override
             public void downloadFully(@NonNull URL url, @NonNull File target,
-                    @NonNull ProgressIndicator indicator) throws IOException {
-                super.downloadFully(url, target, indicator);
+                    @Nullable String checksum, @NonNull ProgressIndicator indicator)
+                    throws IOException {
+                super.downloadFully(url, target, checksum, indicator);
                 throw new IOException("expected");
             }
         };
@@ -344,45 +345,46 @@ public class BasicInstallerTest extends TestCase {
         downloader.registerUrl(archiveUrl, is);
 
         String repo = "<repo:repository\n" +
-                      "        xmlns:repo=\"http://schemas.android.com/repository/android/generic/01\"\n" +
-                      "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
-                      "    <remotePackage path=\"dummy;bar\">\n" +
-                      "        <type-details xsi:type=\"repo:genericDetailsType\"/>\n" +
-                      "        <revision>\n" +
-                      "            <major>4</major>\n" +
-                      "            <minor>5</minor>\n" +
-                      "            <micro>6</micro>\n" +
-                      "        </revision>\n" +
-                      "        <display-name>Test package 2</display-name>\n" +
-                      "        <archives>\n" +
-                      "            <archive>\n" +
-                      "                <complete>\n" +
-                      "                    <size>2345</size>\n" +
-                      "                    <checksum>" +
-                      BasicInstaller.hashFile(
-                              new ByteArrayInputStream(zipBytes), zipBytes.length,
-                              new FakeProgressIndicator()) +
-                      "</checksum>\n" +
-                      "                    <url>http://example.com/2/arch1</url>\n" +
-                      "                </complete>\n" +
-                      "            </archive>\n" +
-                      "        </archives>\n" +
-                      "    </remotePackage>\n" +
-                      "</repo:repository>";
+                "        xmlns:repo=\"http://schemas.android.com/repository/android/generic/01\"\n"
+                +
+                "        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
+                "    <remotePackage path=\"dummy;bar\">\n" +
+                "        <type-details xsi:type=\"repo:genericDetailsType\"/>\n" +
+                "        <revision>\n" +
+                "            <major>4</major>\n" +
+                "            <minor>5</minor>\n" +
+                "            <micro>6</micro>\n" +
+                "        </revision>\n" +
+                "        <display-name>Test package 2</display-name>\n" +
+                "        <archives>\n" +
+                "            <archive>\n" +
+                "                <complete>\n" +
+                "                    <size>2345</size>\n" +
+                "                    <checksum>" +
+                Downloader.hash(
+                        new ByteArrayInputStream(zipBytes), zipBytes.length,
+                        new FakeProgressIndicator()) +
+                "</checksum>\n" +
+                "                    <url>http://example.com/2/arch1</url>\n" +
+                "                </complete>\n" +
+                "            </archive>\n" +
+                "        </archives>\n" +
+                "    </remotePackage>\n" +
+                "</repo:repository>";
 
         // The repo we're going to download
         downloader.registerUrl(repoUrl, repo.getBytes());
 
         // Register a source provider to get the repo
         mgr.registerSourceProvider(new ConstantSourceProvider(repoUrl.toString(), "dummy",
-          ImmutableList.of(RepoManager.getGenericModule())));
+                ImmutableList.of(RepoManager.getGenericModule())));
         FakeProgressRunner runner = new FakeProgressRunner();
 
         // Load
         mgr.load(RepoManager.DEFAULT_EXPIRATION_PERIOD_MS,
-          ImmutableList.<RepoManager.RepoLoadedCallback>of(),
-          ImmutableList.<RepoManager.RepoLoadedCallback>of(), ImmutableList.<Runnable>of(),
-          runner, downloader, new FakeSettingsController(false), true);
+                ImmutableList.<RepoManager.RepoLoadedCallback>of(),
+                ImmutableList.<RepoManager.RepoLoadedCallback>of(), ImmutableList.<Runnable>of(),
+                runner, downloader, new FakeSettingsController(false), true);
 
         // Install one of the packages.
         RemotePackage p = mgr.getPackages().getRemotePackages().get("dummy;bar");
@@ -413,8 +415,11 @@ public class BasicInstallerTest extends TestCase {
 
             @Override
             public void downloadFully(@NonNull URL url, @NonNull File target,
-                    @NonNull ProgressIndicator indicator) throws IOException {
-                fail();
+                    @Nullable String checksum, @NonNull ProgressIndicator indicator)
+                    throws IOException {
+                assertEquals(checksum,
+                        Downloader.hash(fop.newFileInputStream(target),
+                                fop.length(target), indicator));
             }
         };
 
@@ -429,8 +434,8 @@ public class BasicInstallerTest extends TestCase {
 
         // Reload the packages.
         mgr.load(0, ImmutableList.<RepoManager.RepoLoadedCallback>of(),
-          ImmutableList.<RepoManager.RepoLoadedCallback>of(), ImmutableList.<Runnable>of(),
-          runner, downloader, new FakeSettingsController(false), true);
+                ImmutableList.<RepoManager.RepoLoadedCallback>of(), ImmutableList.<Runnable>of(),
+                runner, downloader, new FakeSettingsController(false), true);
         runner.getProgressIndicator().assertNoErrorsOrWarnings();
         File[] contents = fop.listFiles(new File(root, "dummy"));
 

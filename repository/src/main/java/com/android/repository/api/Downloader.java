@@ -18,6 +18,9 @@ package com.android.repository.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.hash.Hasher;
+import com.google.common.hash.Hashing;
 
 import java.io.File;
 import java.io.IOException;
@@ -57,8 +60,34 @@ public interface Downloader {
      *
      * @param url       The URL to fetch.
      * @param target    The location to download to.
+     * @param checksum  If specified, first check {@code target} to see if the given checksum
+     *                  matches the existing file. If so, returns immediately.
      * @param indicator Facility for showing download progress and logging.
      */
-    void downloadFully(@NonNull URL url, @NonNull File target, @NonNull ProgressIndicator indicator)
-            throws IOException;
+    void downloadFully(@NonNull URL url, @NonNull File target, @Nullable String checksum,
+            @NonNull ProgressIndicator indicator) throws IOException;
+
+    /**
+     * Hash the given input stream.
+     * @param in The stream to hash. It will be fully consumed but not closed.
+     * @param fileSize The expected length of the stream, for progress display purposes.
+     * @param progress The indicator will be updated with the expected completion fraction.
+     * @return The sha1 hash of the input stream.
+     * @throws IOException IF there's a problem reading from the stream.
+     */
+    @VisibleForTesting
+    @NonNull
+    static String hash(@NonNull InputStream in, long fileSize, @NonNull ProgressIndicator progress)
+            throws IOException {
+        progress.setText("Checking existing file...");
+        Hasher sha1 = Hashing.sha1().newHasher();
+        byte[] buf = new byte[5120];
+        long totalRead = 0;
+        int bytesRead;
+        while ((bytesRead = in.read(buf)) > 0) {
+            sha1.putBytes(buf, 0, bytesRead);
+            progress.setFraction((double) totalRead / (double) fileSize);
+        }
+        return sha1.hash().toString();
+    }
 }
