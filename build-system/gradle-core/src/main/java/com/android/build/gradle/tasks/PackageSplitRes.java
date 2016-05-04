@@ -26,6 +26,7 @@ import com.android.build.gradle.internal.scope.VariantOutputScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.packaging.SigningException;
@@ -144,7 +145,7 @@ public class PackageSplitRes extends SplitRelatedTask {
                     public void execute(String split, File file) {
                         File outFile = new File(outputDirectory, getOutputFileNameForSplit(split));
                         try {
-                            getBuilder().signApk(file, signingConfig, outFile);
+                            AndroidBuilder.signApk(file, signingConfig, outFile);
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         } catch (KeytoolException e) {

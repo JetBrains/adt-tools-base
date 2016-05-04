@@ -23,6 +23,7 @@ import static com.google.common.base.Preconditions.checkState;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.dependency.DependencyContainer;
+import com.android.builder.internal.ClassFieldImpl;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.BuildType;
@@ -1868,7 +1869,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      * @param value the value of the field
      */
     public void addBuildConfigField(@NonNull String type, @NonNull String name, @NonNull String value) {
-        ClassField classField = AndroidBuilder.createClassField(type, name, value);
+        ClassField classField = new ClassFieldImpl(type, name, value);
         mBuildConfigFields.put(name, classField);
     }
 
@@ -1879,7 +1880,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      * @param value the value of the field
      */
     public void addResValue(@NonNull String type, @NonNull String name, @NonNull String value) {
-        ClassField classField = AndroidBuilder.createClassField(type, name, value);
+        ClassField classField = new ClassFieldImpl(type, name, value);
         mResValues.put(name, classField);
     }
 
