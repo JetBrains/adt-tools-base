@@ -94,13 +94,18 @@ public final class AndroidSdkHandler {
      * The URL of the official Google sdk-repository site. The URL ends with a /, allowing easy
      * concatenation.
      */
-    public static final String URL_GOOGLE_SDK_SITE = "https://dl.google.com/android/repository/";
+    private static final String URL_GOOGLE_SDK_SITE = "https://dl.google.com/android/repository/";
+
+    /**
+     * A system property than can be used to add an extra fully-privileged update site.
+     */
+    private static final String CUSTOM_SOURCE_PROPERTY = "android.sdk.custom.url";
 
     /**
      * The name of the environment variable used to override the url of the primary repository, for
      * testing.
      */
-    public static final String SDK_TEST_BASE_URL_ENV_VAR = "SDK_TEST_BASE_URL";
+    private static final String SDK_TEST_BASE_URL_ENV_VAR = "SDK_TEST_BASE_URL";
 
     /**
      * The latest version of legacy remote packages we should expect to receive from a server. If
@@ -125,12 +130,6 @@ public final class AndroidSdkHandler {
      * Lock for synchronizing changes to the our {@link RepoManager}.
      */
     private static final Object MANAGER_LOCK = new Object();
-
-    /**
-     * Pattern for the URL pointing to the legacy repository xml (as defined by e.g.
-     * sdk-repository-12.xsd).
-     */
-    private static final String LEGACY_REPO_URL_PATTERN = "%srepository-%d.xml";
 
     /**
      * Pattern for the URL pointing to the repository xml (as defined by sdk-repository-01.xsd in
@@ -387,11 +386,6 @@ public final class AndroidSdkHandler {
         private ConstantSourceProvider mRepositorySourceProvider;
 
         /**
-         * Provider for the main legacy {@link RepositorySource}
-         */
-        private ConstantSourceProvider mLegacyRepositorySourceProvider;
-
-        /**
          * Sets up our {@link SchemaModule}s and {@link RepositorySourceProvider}s if they haven't
          * been yet.
          *
@@ -419,11 +413,6 @@ public final class AndroidSdkHandler {
             String url = String.format(REPO_URL_PATTERN, getBaseUrl(progress),
                                        REPOSITORY_MODULE.getNamespaceVersionMap().size());
             mRepositorySourceProvider = new ConstantSourceProvider(url, "Android Repository",
-                    ImmutableSet.of(REPOSITORY_MODULE, RepoManager.getGenericModule()));
-
-            url = String.format(LEGACY_REPO_URL_PATTERN, getBaseUrl(progress), LATEST_LEGACY_VERSION);
-            mLegacyRepositorySourceProvider = new ConstantSourceProvider(url,
-                    "Legacy Android Repository",
                     ImmutableSet.of(REPOSITORY_MODULE, RepoManager.getGenericModule()));
         }
 
@@ -486,7 +475,12 @@ public final class AndroidSdkHandler {
             result.registerSchemaModule(COMMON_MODULE);
 
             result.registerSourceProvider(mRepositorySourceProvider);
-            result.registerSourceProvider(mLegacyRepositorySourceProvider);
+            String customSourceUrl = System.getProperty(CUSTOM_SOURCE_PROPERTY);
+            if (customSourceUrl != null && !customSourceUrl.isEmpty()) {
+                result.registerSourceProvider(
+                        new ConstantSourceProvider(customSourceUrl, "Custom Provider",
+                                result.getSchemaModules()));
+            }
             result.registerSourceProvider(mAddonsListSourceProvider);
             if (userProvider != null) {
                 result.registerSourceProvider(userProvider);
