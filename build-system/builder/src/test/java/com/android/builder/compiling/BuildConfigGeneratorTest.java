@@ -19,7 +19,7 @@ package com.android.builder.compiling;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import com.android.builder.core.AndroidBuilder;
+import com.android.builder.internal.ClassFieldImpl;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
@@ -90,7 +90,7 @@ public class BuildConfigGeneratorTest {
 
         List<Object> items = Lists.newArrayList();
         items.add("Extra line");
-        items.add(AndroidBuilder.createClassField("int", "EXTRA", "42"));
+        items.add(new ClassFieldImpl("int", "EXTRA", "42"));
 
         generator.addItems(items).generate();
 

@@ -21,11 +21,11 @@ import static com.android.build.gradle.AndroidGradleOptions.USE_DEPRECATED_NDK;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.LoggingUtil;
-import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.DefaultApiVersion;
 import com.android.builder.core.DefaultProductFlavor;
 import com.android.builder.core.ErrorReporter;
+import com.android.builder.internal.ClassFieldImpl;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.ClassField;
 import com.android.builder.model.SyncIssue;
@@ -268,7 +268,7 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
                         flavorName, name, alreadyPresent.getValue(), value);
             }
         }
-        addBuildConfigField(AndroidBuilder.createClassField(type, name, value));
+        addBuildConfigField(new ClassFieldImpl(type, name, value));
     }
 
     /**
@@ -299,7 +299,7 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
                         flavorName, name, alreadyPresent.getValue(), value);
             }
         }
-        addResValue(AndroidBuilder.createClassField(type, name, value));
+        addResValue(new ClassFieldImpl(type, name, value));
     }
 
     /**
