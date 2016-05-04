@@ -8,6 +8,7 @@
             <tr><td>applicationIdSuffix</td></tr>
             <tr><td>debuggable</td></tr>
             <tr><td>embedMicroApp</td></tr>
+            <tr><td>javaCompileOptions</td></tr>
             <tr><td>jniDebuggable</td></tr>
             <tr><td>minifyEnabled</td></tr>
             <tr><td>multiDexEnabled</td></tr>

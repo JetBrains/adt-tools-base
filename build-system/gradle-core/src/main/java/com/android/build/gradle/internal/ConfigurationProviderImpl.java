@@ -49,5 +49,11 @@ public class ConfigurationProviderImpl implements ConfigurationProvider {
     public Configuration getProvidedConfiguration() {
         return project.getConfigurations().getByName(sourceSet.getProvidedConfigurationName());
     }
+
+    @NonNull
+    @Override
+    public Configuration getAnnotationProcessorConfiguration() {
+        return project.getConfigurations().getByName(sourceSet.getAnnotationProcessorConfigurationName());
+    }
 }
 

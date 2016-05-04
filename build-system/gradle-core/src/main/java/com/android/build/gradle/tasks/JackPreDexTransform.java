@@ -40,7 +40,6 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
@@ -81,7 +80,7 @@ public class JackPreDexTransform extends Transform {
     @NonNull
     @Override
     public Set<QualifiedContent.ContentType> getInputTypes() {
-        return TransformManager.CONTENT_JARS;
+        return TransformManager.CONTENT_CLASS;
     }
 
     @NonNull

@@ -30,6 +30,7 @@ import com.android.build.gradle.ProguardFiles;
 import com.android.build.gradle.internal.CompileOptions;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.dsl.CoreAnnotationProcessorOptions;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -111,6 +112,9 @@ public class JackTransform extends Transform {
             builder.add(new SecondaryFile(file, false));
         }
         for (File file : options.getJarJarRuleFiles()) {
+            builder.add(new SecondaryFile(file, false));
+        }
+        for (File file : options.getAnnotationProcessorClassPath()) {
             builder.add(new SecondaryFile(file, false));
         }
         checkNotNull(androidBuilder.getTargetInfo());
@@ -271,6 +275,17 @@ public class JackTransform extends Transform {
         options.setIncrementalDir(scope.getIncrementalDir(getName()));
         options.setOutputFile(scope.getJackClassesZip());
         options.setResourceDirectories(ImmutableList.of(scope.getJavaResourcesDestinationDir()));
+
+        List<File> annotationProcessors =
+                scope.getVariantData().getVariantDependency()
+                        .resolveAndGetAnnotationProcessorClassPath();
+        if (!annotationProcessors.isEmpty()) {
+            CoreAnnotationProcessorOptions annotationProcessorOptions =
+                    config.getJavaCompileOptions().getAnnotationProcessorOptions();
+            options.setAnnotationProcessorClassPath(annotationProcessors);
+            options.setAnnotationProcessorNames(annotationProcessorOptions.getClassNames());
+            options.setAnnotationProcessorOptions(annotationProcessorOptions.getArguments());
+        }
         options.setEcjOptionFile(scope.getJackEcjOptionsFile());
 
         jackInProcess = config.getJackOptions().isJackInProcess();

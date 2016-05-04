@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,27 +14,26 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal;
+package com.android.build.gradle.internal.dsl;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 
-import org.gradle.api.artifacts.Configuration;
+import java.util.List;
+import java.util.Map;
 
-/**
- * Provides the compile, provided and package configurations.
- */
-public interface ConfigurationProvider {
+public interface CoreAnnotationProcessorOptions {
 
+    /**
+     * Annotation processors to run.
+     *
+     * If empty, processors will be automatically discovered.
+     */
     @NonNull
-    Configuration getCompileConfiguration();
+    List<String> getClassNames();
 
+    /**
+     * Options for the annotation processors.
+     */
     @NonNull
-    Configuration getPackageConfiguration();
-
-    @Nullable
-    Configuration getProvidedConfiguration();
-
-    @NonNull
-    Configuration getAnnotationProcessorConfiguration();
+    Map<String, String> getArguments();
 }

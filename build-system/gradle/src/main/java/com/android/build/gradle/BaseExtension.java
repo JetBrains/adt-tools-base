@@ -225,6 +225,12 @@ public abstract class BaseExtension implements AndroidConfig {
                         sourceSet.getWearAppConfigurationName(),
                         "Link to a wear app to embed for object '" + sourceSet.getName() + "'.");
 
+                createConfiguration(
+                        configurations,
+                        sourceSet.getAnnotationProcessorConfigurationName(),
+                        "Classpath for the annotation processor for '" + sourceSet.getName() +
+                                "'.");
+
                 sourceSet.setRoot(String.format("src/%s", sourceSet.getName()));
             }
         });

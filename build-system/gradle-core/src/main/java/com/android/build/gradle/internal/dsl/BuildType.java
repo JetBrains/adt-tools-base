@@ -60,6 +60,9 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
     private final JackOptions jackOptions;
 
     @NonNull
+    private final JavaCompileOptions javaCompileOptions;
+
+    @NonNull
     private final ShaderOptions shaderOptions;
 
     /** Opt-in for now until we've validated it in the field. */
@@ -76,6 +79,7 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
         this.project = project;
         this.logger = logger;
         jackOptions = instantiator.newInstance(JackOptions.class);
+        javaCompileOptions = instantiator.newInstance(JavaCompileOptions.class, instantiator);
         shaderOptions = instantiator.newInstance(ShaderOptions.class);
         ndkConfig = instantiator.newInstance(NdkOptions.class);
         externalNativeNdkBuildOptions = instantiator.newInstance(ExternalNativeNdkBuildOptions.class);
@@ -90,6 +94,7 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
         this.project = project;
         this.logger = logger;
         jackOptions = new JackOptions();
+        javaCompileOptions = new JavaCompileOptions();
         shaderOptions = new ShaderOptions();
         ndkConfig = null;
         externalNativeNdkBuildOptions = null;
@@ -118,6 +123,15 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
     @NonNull
     public JackOptions getJackOptions() {
         return jackOptions;
+    }
+
+    /**
+     * Options for configuration Java compilation.
+     */
+    @Override
+    @NonNull
+    public CoreJavaCompileOptions getJavaCompileOptions() {
+        return javaCompileOptions;
     }
 
     @NonNull
@@ -151,6 +165,8 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
         super._initWith(that);
         BuildType thatBuildType = (BuildType) that;
         jackOptions._initWith(thatBuildType.getJackOptions());
+        javaCompileOptions.getAnnotationProcessorOptions()._initWith(
+                thatBuildType.getJavaCompileOptions().getAnnotationProcessorOptions());
         shrinkResources = thatBuildType.isShrinkResources();
         shaderOptions._initWith(thatBuildType.getShaders());
     }
@@ -158,6 +174,7 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + getJackOptions().hashCode();
+        result = 31 * result + javaCompileOptions.hashCode();
         result = 31 * result + (shrinkResources ? 1 : 0);
         return result;
     }
@@ -170,6 +187,7 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
         if (!super.equals(o)) return false;
         BuildType other = (BuildType) o;
         if (!jackOptions.equals(other.jackOptions)) return false;
+        if (!javaCompileOptions.equals(other.javaCompileOptions)) return false;
         if (shrinkResources != other.isShrinkResources()) return false;
 
         return true;
