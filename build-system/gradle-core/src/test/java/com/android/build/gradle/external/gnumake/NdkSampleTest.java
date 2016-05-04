@@ -15,6 +15,7 @@
  */
 package com.android.build.gradle.external.gnumake;
 
+import com.android.SdkConstants;
 import com.android.build.gradle.external.gson.NativeBuildConfigValue;
 import com.android.build.gradle.truth.NativeBuildConfigValueSubject;
 import com.google.common.base.Charsets;
@@ -34,14 +35,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Map;
 
-
-
 public class NdkSampleTest {
     // Turn this flag to true to regenerate test baselines in the case that output has intentionally
     // changed. Should never be checked in as 'true'.
     private static boolean REGENERATE_TEST_BASELINES = false;
     private static String THIS_TEST_FOLDER =
             "src/test/java/com/android/build/gradle/external/gnumake/";
+    private static boolean isWindows =
+            SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS;
 
     private static class Spawner {
         private static final int THREAD_JOIN_TIMEOUT_MILLIS = 2000;
@@ -129,7 +130,11 @@ public class NdkSampleTest {
     }
 
     private static File getNdkPath() throws IOException, InterruptedException {
-        return new File(System.getenv().get("ANDROID_NDK_HOME")).getAbsoluteFile();
+        String path = System.getenv().get("ANDROID_NDK_HOME");
+        if (isWindows) {
+            path = path.replace("/", "\\\\");
+        }
+        return new File(path).getAbsoluteFile();
     }
 
     private static Map<String, String> getVariantConfigs() {
@@ -168,6 +173,10 @@ public class NdkSampleTest {
     }
     private void checkJson(String path, boolean ndkBuildable)
             throws IOException, InterruptedException {
+
+        if (isWindows) {
+            path = path.replace("/", "\\");
+        }
         File ndkPath = getNdkPath();
         File testPath = new File(ndkPath, path);
         Map<String, String> variantConfigs = getVariantConfigs();
@@ -211,8 +220,17 @@ public class NdkSampleTest {
         String actualResult = new GsonBuilder()
                 .setPrettyPrinting()
                 .create()
-                .toJson(actualConfig)
-                .replace(testPath.toString(), "{testPath}");
+                .toJson(actualConfig);
+
+        String testPathString = testPath.toString();
+
+        if (isWindows) {
+            actualResult = actualResult.replace("/", "\\\\");
+            // JSon also uses \ as escape character. For this reason, we need to double escape
+            // the file path separators on Windows.
+            testPathString = testPathString.replace("\\", "\\\\");
+        }
+        actualResult = actualResult.replace(testPathString, "{testPath}");
         actualConfig = new Gson().fromJson(actualResult, NativeBuildConfigValue.class);
 
         if (REGENERATE_TEST_BASELINES) {
@@ -222,6 +240,11 @@ public class NdkSampleTest {
         // Build the baseline result.
         String baselineResult = Joiner.on('\n')
                 .join(Files.readLines(baselineJsonFile, Charsets.UTF_8));
+
+        if (isWindows) {
+            baselineResult = baselineResult.replace("/", "\\\\");
+        }
+
         NativeBuildConfigValue baselineConfig = new Gson()
                 .fromJson(baselineResult, NativeBuildConfigValue.class);
         Truth.assert_().about(NativeBuildConfigValueSubject.FACTORY)
