@@ -92,7 +92,7 @@ public class MockFileOp implements FileOp {
     @NonNull
     @Override
     public String toString(@NonNull File f, @NonNull Charset c) throws IOException {
-        FileInfo fileInfo = mExistingFiles.get(f.getAbsolutePath());
+        FileInfo fileInfo = mExistingFiles.get(getAgnosticAbsPath(f));
         if (fileInfo == null || fileInfo.getContent() == null) {
             throw new FileNotFoundException();
         }
