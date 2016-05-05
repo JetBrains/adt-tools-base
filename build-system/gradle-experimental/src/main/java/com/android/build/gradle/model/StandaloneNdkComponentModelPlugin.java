@@ -75,16 +75,13 @@ public class StandaloneNdkComponentModelPlugin implements Plugin<Project> {
                     tasks.create(
                             copyTaskName,
                             Copy.class,
-                            new Action<Copy>() {
-                                @Override
-                                public void execute(Copy copy) {
-                                    copy.from(new File(buildDir,
-                                            NdkNamingScheme.getOutputDirectoryName(nativeBinary)));
-                                    copy.into(new File(buildDir,
-                                            NdkNamingScheme
-                                                    .getStandaloneOutputDirectoryName(nativeBinary)));
-                                    copy.dependsOn(NdkNamingScheme.getNdkBuildTaskName(nativeBinary));
-                                }
+                            copy -> {
+                                copy.from(new File(buildDir,
+                                        NdkNamingScheme.getOutputDirectoryName(nativeBinary)));
+                                copy.into(new File(buildDir,
+                                        NdkNamingScheme
+                                                .getStandaloneOutputDirectoryName(nativeBinary)));
+                                copy.dependsOn(NdkNamingScheme.getNdkBuildTaskName(nativeBinary));
                             });
                     dependsOn(tasks, getAssembleTaskName(androidBinary), copyTaskName);
                 }
@@ -141,11 +138,8 @@ public class StandaloneNdkComponentModelPlugin implements Plugin<Project> {
                     }
                 }
 
-                tasks.named(binaryAssembleTaskName, new Action<Task>() {
-                    @Override
-                    public void execute(Task task) {
-                        task.dependsOn(binary);
-                    }
+                tasks.named(binaryAssembleTaskName, task -> {
+                    task.dependsOn(binary);
                 });
             }
         }
@@ -154,11 +148,8 @@ public class StandaloneNdkComponentModelPlugin implements Plugin<Project> {
                 @NonNull final ModelMap<Task> tasks,
                 @NonNull final String dependee,
                 @NonNull final String dependent) {
-            tasks.named(dependee, new Action<Task>() {
-                @Override
-                public void execute(Task task) {
-                    task.dependsOn(dependent);
-                }
+            tasks.named(dependee, task -> {
+                task.dependsOn(dependent);
             });
         }
 
@@ -180,13 +171,10 @@ public class StandaloneNdkComponentModelPlugin implements Plugin<Project> {
             String taskName = getAssembleTaskName(dimensions);
             tasks.create(
                     taskName,
-                    new Action<Task>() {
-                        @Override
-                        public void execute(Task task) {
-                            task.setDescription(
-                                    "Assembles all builds for flavor combination: " + flavorCombo);
-                            task.setGroup(BasePlugin.BUILD_GROUP);
-                        }
+                    task -> {
+                        task.setDescription(
+                                "Assembles all builds for flavor combination: " + flavorCombo);
+                        task.setGroup(BasePlugin.BUILD_GROUP);
                     });
         }
 
@@ -196,13 +184,10 @@ public class StandaloneNdkComponentModelPlugin implements Plugin<Project> {
             String taskName = getAssembleTaskName(dimension);
             tasks.create(
                     taskName,
-                    new Action<Task>() {
-                        @Override
-                        public void execute(Task task) {
-                            task.setDescription(
-                                    "Assembles all " + dimension.getName() + " builds.");
-                            task.setGroup(BasePlugin.BUILD_GROUP);
-                        }
+                    task -> {
+                        task.setDescription(
+                                "Assembles all " + dimension.getName() + " builds.");
+                        task.setGroup(BasePlugin.BUILD_GROUP);
                     });
         }
     }
