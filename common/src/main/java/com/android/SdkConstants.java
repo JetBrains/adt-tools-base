@@ -635,6 +635,7 @@ public final class SdkConstants {
     public static final String CLASS_CONSTRAINT_LAYOUT = "com.google.tnt.sherpa.ConstraintLayout";     //$NON-NLS-1$
     public static final String CLASS_TABLE_CONSTRAINT_LAYOUT = "com.google.tnt.sherpa.TableConstraintLayout";     //$NON-NLS-1$
     public static final String CLASS_CONSTRAINT_LAYOUT_GUIDELINE = "com.google.tnt.sherpa.Guideline";     //$NON-NLS-1$
+    public static final String CONSTRAINT_LAYOUT_LIB_ARTIFACT = "com.android.support.sherpa:constraint-layout";
 
     /** Returns the appropriate name for the 'android' command, which is 'android.exe' for
      * Windows and 'android' for all other platforms. */
