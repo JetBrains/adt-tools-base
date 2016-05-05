@@ -44,7 +44,7 @@ import java.util.List;
 /**
  * A scope containing data for a specific variant.
  */
-public interface VariantScope extends BaseScope {
+public interface VariantScope extends TransformVariantScope, BaseScope {
 
     @NonNull
     BaseVariantData<? extends BaseVariantOutputData> getVariantData();
@@ -89,11 +89,6 @@ public interface VariantScope extends BaseScope {
     @Nullable
     BaseVariantData getTestedVariantData();
 
-    @NonNull
-    File getReloadDexOutputFolder();
-
-    @NonNull
-    File getRestartDexOutputFolder();
 
     @NonNull
     File getInstantRunSplitApkOutputFolder();
@@ -108,9 +103,6 @@ public interface VariantScope extends BaseScope {
     File getJavaOutputDir();
 
     @NonNull
-    File getInstantRunSupportDir();
-
-    @NonNull
     File getInstantRunSliceSupportDir();
 
     @NonNull
@@ -118,9 +110,6 @@ public interface VariantScope extends BaseScope {
 
     @NonNull
     File getIncrementalApplicationSupportDir();
-
-    @NonNull
-    File getIncrementalVerifierDir();
 
     @NonNull
     Iterable<File> getJavaOutputs();
@@ -380,9 +369,6 @@ public interface VariantScope extends BaseScope {
     AndroidTask<?> getCoverageReportTask();
 
     void setCoverageReportTask(AndroidTask<?> coverageReportTask);
-
-    @NonNull
-    InstantRunBuildContext getInstantRunBuildContext();
 
     @NonNull
     AndroidTask<InstantRunAnchorTask> getInstantRunAnchorTask();

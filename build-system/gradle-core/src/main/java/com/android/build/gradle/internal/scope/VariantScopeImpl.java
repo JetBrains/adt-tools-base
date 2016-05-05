@@ -1113,4 +1113,10 @@ public class VariantScopeImpl implements VariantScope {
     public void setInstantRunVerifierTask(AndroidTask<TransformTask> verifierTask) {
         instantRunVerifierTask = verifierTask;
     }
+
+    @NonNull
+    @Override
+    public List<File> getBootClasspath(boolean includeOptionalLibraries) {
+        return getGlobalScope().getAndroidBuilder().getBootClasspath(includeOptionalLibraries);
+    }
 }

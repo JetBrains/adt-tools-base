@@ -42,7 +42,7 @@ import java.util.EnumSet;
 /**
  * A scope containing data for the Android plugin.
  */
-public class GlobalScope {
+public class GlobalScope implements TransformGlobalScope {
 
     @NonNull
     private Project project;
@@ -136,6 +136,7 @@ public class GlobalScope {
     }
 
     @NonNull
+    @Override
     public File getBuildDir() {
         return project.getBuildDir();
     }
@@ -213,6 +214,7 @@ public class GlobalScope {
                 getDefaultApkLocation());
     }
 
+    @Override
     public boolean isActive(OptionalCompilationStep step) {
         return optionalCompilationSteps.contains(step);
     }

@@ -40,6 +40,7 @@ import com.android.build.gradle.internal.incremental.IncrementalVisitor;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.android.build.gradle.internal.scope.TransformVariantScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.api.transform.QualifiedContent.ContentType;
 import com.android.ide.common.util.UrlClassLoaderUtil;
@@ -78,10 +79,10 @@ public class InstantRunTransform extends Transform {
     private final ChangeRecords generatedClasses2Files = new ChangeRecords();
     private final ChangeRecords generatedClasses3Files = new ChangeRecords();
     private final ImmutableList.Builder<String> generatedClasses3Names = ImmutableList.builder();
-    private final VariantScope variantScope;
+    private final TransformVariantScope transformScope;
 
-    public InstantRunTransform(VariantScope variantScope) {
-        this.variantScope = variantScope;
+    public InstantRunTransform(VariantScope transformScope) {
+        this.transformScope = transformScope;
     }
 
     enum RecordingPolicy {RECORD, DO_NOT_RECORD}
@@ -155,7 +156,7 @@ public class InstantRunTransform extends Transform {
 
         ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
         try {
-            variantScope.getInstantRunBuildContext().startRecording(
+            transformScope.getInstantRunBuildContext().startRecording(
                     InstantRunBuildContext.TaskType.INSTANT_RUN_TRANSFORM);
             Thread.currentThread().setContextClassLoader(urlClassLoader);
 
@@ -241,7 +242,8 @@ public class InstantRunTransform extends Transform {
                             }
                         }
                         File incremental =
-                                InstantRunBuildType.RESTART.getIncrementalChangesFile(variantScope);
+                                InstantRunBuildType.RESTART.getIncrementalChangesFile(
+                                        transformScope);
                         if (incremental.exists() && !incremental.delete()) {
                             LOGGER.warning("Cannot delete " + incremental);
                         }
@@ -254,7 +256,7 @@ public class InstantRunTransform extends Transform {
         } finally {
             Thread.currentThread().setContextClassLoader(currentClassLoader);
             UrlClassLoaderUtil.attemptToClose(urlClassLoader);
-            variantScope.getInstantRunBuildContext().stopRecording(
+            transformScope.getInstantRunBuildContext().stopRecording(
                     InstantRunBuildContext.TaskType.INSTANT_RUN_TRANSFORM);
         }
     }
@@ -270,17 +272,17 @@ public class InstantRunTransform extends Transform {
         }
 
         // read the previous iterations output and append it to this iteration changes.
-        File incremental = InstantRunBuildType.RESTART.getIncrementalChangesFile(variantScope);
+        File incremental = InstantRunBuildType.RESTART.getIncrementalChangesFile(transformScope);
         if (incremental.exists()) {
             ChangeRecords previousIterationChanges = ChangeRecords.load(incremental);
             merge(generatedClasses2Files, previousIterationChanges);
         }
 
         generatedClasses2Files.write(
-                InstantRunBuildType.RESTART.getIncrementalChangesFile(variantScope));
+                InstantRunBuildType.RESTART.getIncrementalChangesFile(transformScope));
 
         generatedClasses3Files.write(
-                InstantRunBuildType.RELOAD.getIncrementalChangesFile(variantScope));
+                InstantRunBuildType.RELOAD.getIncrementalChangesFile(transformScope));
     }
 
     /**
@@ -333,7 +335,7 @@ public class InstantRunTransform extends Transform {
         List<URL> referencedInputUrls = new ArrayList<>();
 
         // add the bootstrap classpath for jars like android.jar
-        for (File file : variantScope.getGlobalScope().getAndroidBuilder().getBootClasspath(
+        for (File file : transformScope.getBootClasspath(
                 true /* includeOptionalLibraries */)) {
             referencedInputUrls.add(file.toURI().toURL());
         }

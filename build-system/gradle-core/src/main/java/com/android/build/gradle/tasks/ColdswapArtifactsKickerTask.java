@@ -17,6 +17,7 @@
 package com.android.build.gradle.tasks;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.scope.TransformVariantScope;
 import com.android.builder.model.OptionalCompilationStep;
 import com.android.build.gradle.internal.scope.VariantScope;
 
@@ -51,7 +52,7 @@ public class ColdswapArtifactsKickerTask extends KickerTask {
             super(name, scope);
         }
 
-        public static File getMarkerFile(VariantScope scope) {
+        public static File getMarkerFile(TransformVariantScope scope) {
             return new File(scope.getInstantRunSupportDir(), "coldswap.marker");
         }
 
