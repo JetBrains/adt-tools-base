@@ -51,4 +51,9 @@ public interface VariantFilter {
      */
     @NonNull
     List<ProductFlavor> getFlavors();
+
+    /**
+     * Returns the unique variant name.
+     */
+    @NonNull String getName();
 }

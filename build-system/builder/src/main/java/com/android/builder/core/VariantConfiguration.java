@@ -230,23 +230,39 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     @NonNull
     public String getFullName() {
         if (mFullName == null) {
-            StringBuilder sb = new StringBuilder();
-            String flavorName = getFlavorName();
-            if (!flavorName.isEmpty()) {
-                sb.append(flavorName);
-                sb.append(StringHelper.capitalize(mBuildType.getName()));
-            } else {
-                sb.append(mBuildType.getName());
-            }
-
-            if (mType.isForTesting()) {
-                sb.append(mType.getSuffix());
-            }
-
-            mFullName = sb.toString();
+            mFullName = computeFullName(getFlavorName(), mBuildType, mType);
         }
 
         return mFullName;
+    }
+
+    /**
+     * Returns the full, unique name of the variant in camel case (starting with a lower case),
+     * including BuildType, Flavors and Test (if applicable).
+     *
+     * @param flavorName the flavor name, as computed by {@link #computeFlavorName(List)}
+     * @param buildType the build type
+     * @param type the variant type
+     *
+     * @return the name of the variant
+     */
+    @NonNull
+    public static <B extends BuildType> String computeFullName(
+            @NonNull String flavorName,
+            @NonNull B buildType,
+            @NonNull VariantType type) {
+        StringBuilder sb = new StringBuilder();
+        if (!flavorName.isEmpty()) {
+            sb.append(flavorName);
+            sb.append(StringHelper.capitalize(buildType.getName()));
+        } else {
+            sb.append(buildType.getName());
+        }
+
+        if (type.isForTesting()) {
+            sb.append(type.getSuffix());
+        }
+        return sb.toString();
     }
 
     /**
@@ -283,21 +299,34 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     @NonNull
     public String getFlavorName() {
         if (mFlavorName == null) {
-            if (mFlavors.isEmpty()) {
-                mFlavorName = "";
-            } else {
-                StringBuilder sb = new StringBuilder();
-                boolean first = true;
-                for (F flavor : mFlavors) {
-                    sb.append(first ? flavor.getName() : StringHelper.capitalize(flavor.getName()));
-                    first = false;
-                }
-
-                mFlavorName = sb.toString();
-            }
+            mFlavorName = computeFlavorName(mFlavors);
         }
 
         return mFlavorName;
+    }
+
+    /**
+     * Returns the flavor name for a variant composed of the given flavors, including all
+     * flavor names in camel case (starting with a lower case).
+     *
+     * If the flavor list is empty, then an empty string is returned.
+     *
+     * @param flavors the list of flavors
+     * @return the flavor name or an empty string.
+     */
+    public static <F extends ProductFlavor> String computeFlavorName(@NonNull List<F> flavors) {
+        if (flavors.isEmpty()) {
+            return "";
+        } else {
+            StringBuilder sb = new StringBuilder(flavors.size() * 10);
+            boolean first = true;
+            for (F flavor : flavors) {
+                sb.append(first ? flavor.getName() : StringHelper.capitalize(flavor.getName()));
+                first = false;
+            }
+
+            return sb.toString();
+        }
     }
 
     /**
@@ -690,7 +719,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
 
     /**
      * Returns all the library dependencies, direct and transitive in a single flat list.
-      */
+     */
     @NonNull
     public List<AndroidLibrary> getFlatPackageAndroidLibraries() {
         return mFlatPackageDependencies.getAndroidDependencies();
@@ -1150,8 +1179,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      */
     @NonNull
     public List<ResourceSet> getResourceSets(@NonNull List<File> generatedResFolders,
-                                             boolean includeDependencies,
-                                             boolean validateEnabled) {
+            boolean includeDependencies,
+            boolean validateEnabled) {
         List<ResourceSet> resourceSets = Lists.newArrayList();
 
         // the list of dependency must be reversed to use the right overlay order.
