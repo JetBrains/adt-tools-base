@@ -17,6 +17,7 @@
 package com.android.build.gradle.model;
 
 import static com.android.build.gradle.model.ModelConstants.EXTERNAL_BUILD_CONFIG;
+import static com.android.build.gradle.model.ModelConstants.NATIVE_BUILD_SYSTEMS;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.model.NativeAndroidProjectImpl;
@@ -47,6 +48,7 @@ import org.gradle.api.Project;
 import org.gradle.model.internal.core.ModelPath;
 import org.gradle.model.internal.registry.ModelRegistry;
 import org.gradle.model.internal.type.ModelType;
+import org.gradle.model.internal.type.ModelTypes;
 import org.gradle.tooling.provider.model.ToolingModelBuilder;
 
 import java.util.Collection;
@@ -60,11 +62,12 @@ import java.util.stream.Collectors;
 public class NativeComponentModelBuilder implements ToolingModelBuilder {
 
     @NonNull
-    ModelRegistry registry;
+    private ModelRegistry registry;
     @NonNull
-    Map<List<String>, NativeSettings> settingsMap = Maps.newHashMap();
-    int settingIndex = 0;
-    NativeBuildConfig config;
+    private Map<List<String>, NativeSettings> settingsMap = Maps.newHashMap();
+    private int settingIndex = 0;
+    private NativeBuildConfig config;
+    private List<String> buildSystems;
 
     public NativeComponentModelBuilder(@NonNull ModelRegistry registry) {
         this.registry = registry;
@@ -82,6 +85,9 @@ public class NativeComponentModelBuilder implements ToolingModelBuilder {
         config = registry.realize(
                 new ModelPath(EXTERNAL_BUILD_CONFIG),
                 ModelType.of(NativeBuildConfig.class));
+        buildSystems = registry.realize(
+                new ModelPath(NATIVE_BUILD_SYSTEMS),
+                ModelTypes.list(ModelType.of(String.class)));
         settingIndex = 0;
     }
 
@@ -101,6 +107,7 @@ public class NativeComponentModelBuilder implements ToolingModelBuilder {
                 toolchains,
                 settings,
                 extensions,
+                buildSystems,
                 Version.BUILDER_NATIVE_MODEL_API_VERSION);
 
     }
@@ -124,6 +131,7 @@ public class NativeComponentModelBuilder implements ToolingModelBuilder {
             Preconditions.checkNotNull(lib.getToolchain());
             Preconditions.checkNotNull(lib.getAssembleTaskName());
             Preconditions.checkNotNull(lib.getOutput());
+            Preconditions.checkNotNull(lib.getAbi());
             NativeArtifact artifact = new NativeArtifactImpl(
                     lib.getName(),
                     lib.getToolchain(),
@@ -132,7 +140,8 @@ public class NativeComponentModelBuilder implements ToolingModelBuilder {
                     folders,
                     files,
                     ImmutableList.copyOf(lib.getExportedHeaders()),
-                    lib.getOutput());
+                    lib.getOutput(),
+                    lib.getAbi());
             artifacts.add(artifact);
         }
         return artifacts;

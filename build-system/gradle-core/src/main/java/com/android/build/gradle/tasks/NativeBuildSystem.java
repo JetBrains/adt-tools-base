@@ -22,6 +22,8 @@ import com.android.annotations.NonNull;
  * Enumeration and descriptive metadata for the different external native build system types.
  */
 public enum NativeBuildSystem {
+    UNKNOWN("unknown"),
+    GRADLE("gradle"),
     CMAKE("cmake"),
     NDK_BUILD("ndk-build");
 
