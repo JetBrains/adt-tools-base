@@ -18,7 +18,6 @@ package com.android.build.gradle.internal;
 
 import com.android.build.gradle.internal.dependency.AndroidNativeDependencySpec;
 import com.android.build.gradle.internal.dependency.AndroidNativeDependencySpecContainer;
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 
@@ -40,42 +39,22 @@ public class DefaultAndroidNativeDependencySpecContainer implements
 
     @Override
     public AndroidNativeDependencySpec.Builder project(final String value) {
-        return doCreate(new Action<AndroidNativeDependencySpec.Builder>() {
-            @Override
-            public void execute(AndroidNativeDependencySpec.Builder builder) {
-                builder.project(value);
-            }
-        });
+        return doCreate(builder -> builder.project(value));
     }
 
     @Override
     public AndroidNativeDependencySpec.Builder library(final String value) {
-        return doCreate(new Action<AndroidNativeDependencySpec.Builder>() {
-            @Override
-            public void execute(AndroidNativeDependencySpec.Builder builder) {
-                builder.library(value);
-            }
-        });
+        return doCreate(builder -> builder.library(value));
     }
 
     @Override
     public AndroidNativeDependencySpec.Builder buildType(final String value) {
-        return doCreate(new Action<AndroidNativeDependencySpec.Builder>() {
-            @Override
-            public void execute(AndroidNativeDependencySpec.Builder builder) {
-                builder.buildType(value);
-            }
-        });
+        return doCreate(builder -> builder.buildType(value));
     }
 
     @Override
     public AndroidNativeDependencySpec.Builder productFlavor(final String value) {
-        return doCreate(new Action<AndroidNativeDependencySpec.Builder>() {
-            @Override
-            public void execute(AndroidNativeDependencySpec.Builder builder) {
-                builder.productFlavor(value);
-            }
-        });
+        return doCreate(builder -> builder.productFlavor(value));
     }
 
     @Override

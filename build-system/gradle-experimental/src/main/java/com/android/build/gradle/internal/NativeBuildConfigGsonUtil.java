@@ -54,22 +54,16 @@ public class NativeBuildConfigGsonUtil {
         }
         if (value.libraries != null) {
             for (final Map.Entry<String, NativeLibraryValue> entry : value.libraries.entrySet()) {
-                config.getLibraries().create(entry.getKey(), new Action<NativeLibrary>() {
-                    @Override
-                    public void execute(NativeLibrary nativeLibrary) {
-                        copyToNativeLibrary(entry.getValue(), nativeLibrary);
-                    }
-                });
+                config.getLibraries().create(
+                        entry.getKey(),
+                        nativeLibrary -> copyToNativeLibrary(entry.getValue(), nativeLibrary));
             }
         }
         if (value.toolchains != null) {
             for (final Map.Entry<String, NativeToolchainValue> entry : value.toolchains.entrySet()) {
                 try {
-                    config.getToolchains().create(entry.getKey(), new Action<NativeToolchain>() {
-                        @Override
-                        public void execute(NativeToolchain nativeToolchain) {
-                            copyToNativeToolchain(entry.getValue(), nativeToolchain);
-                        }
+                    config.getToolchains().create(entry.getKey(), nativeToolchain -> {
+                        copyToNativeToolchain(entry.getValue(), nativeToolchain);
                     });
                 } catch (DuplicateModelException e) {
                     // The same toolchain could be defined multiple times in different config files.
@@ -121,12 +115,8 @@ public class NativeBuildConfigGsonUtil {
         library.setToolchain(value.toolchain);
         if (value.folders != null) {
             for (final NativeSourceFolderValue folder : value.folders) {
-                library.getFolders().create(new Action<NativeSourceFolder>() {
-                    @Override
-                    public void execute(NativeSourceFolder nativeSourceFolder) {
-                        copyToNativeSourceFolder(folder, nativeSourceFolder);
-                    }
-                });
+                library.getFolders().create(
+                        nativeSourceFolder -> copyToNativeSourceFolder(folder, nativeSourceFolder));
             }
         }
 
@@ -135,12 +125,8 @@ public class NativeBuildConfigGsonUtil {
 
         if (value.files != null) {
             for (final NativeSourceFileValue folder : value.files) {
-                library.getFiles().create(new Action<NativeSourceFile>() {
-                    @Override
-                    public void execute(NativeSourceFile nativeSourceFolder) {
-                        copyToNativeSourceFile(folder, nativeSourceFolder);
-                    }
-                });
+                library.getFiles().create(
+                        nativeSourceFolder -> copyToNativeSourceFile(folder, nativeSourceFolder));
             }
         }
         if (value.exportedHeaders != null) {

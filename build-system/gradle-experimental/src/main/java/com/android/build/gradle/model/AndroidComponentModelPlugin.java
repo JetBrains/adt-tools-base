@@ -33,15 +33,12 @@ import com.android.builder.core.BuilderConstants;
 import com.android.repository.Revision;
 import com.android.utils.StringHelper;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;
 
-import org.gradle.api.Action;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.language.base.FunctionalSourceSet;
-import org.gradle.language.base.LanguageSourceSet;
 import org.gradle.language.base.ProjectSourceSet;
 import org.gradle.language.base.plugins.ComponentModelBasePlugin;
 import org.gradle.model.Defaults;
@@ -155,12 +152,9 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         @Defaults
         public static void createDefaultBuildTypes(
                 @Path("android.buildTypes") ModelMap<BuildType> buildTypes) {
-            buildTypes.create(BuilderConstants.DEBUG, new Action<BuildType>() {
-                @Override
-                public void execute(BuildType buildType) {
-                    buildType.setDebuggable(true);
-                    buildType.setEmbedMicroApp(false);
-                }
+            buildTypes.create(BuilderConstants.DEBUG, buildType -> {
+                buildType.setDebuggable(true);
+                buildType.setEmbedMicroApp(false);
             });
             buildTypes.create(BuilderConstants.RELEASE);
         }
@@ -228,22 +222,14 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
                     sources.create(flavor.getName());
                 }
             }
-            sources.afterEach(new Action<FunctionalSourceSet>() {
-                @Override
-                public void execute(final FunctionalSourceSet functionalSourceSet) {
-                    functionalSourceSet.afterEach(
-                            new Action<LanguageSourceSet>() {
-                                @Override
-                                public void execute(LanguageSourceSet languageSourceSet) {
-                                    SourceDirectorySet source = languageSourceSet.getSource();
-                                    if (source.getSrcDirs().isEmpty()) {
-                                        source.srcDir("src/" + languageSourceSet.getParentName()
-                                                + "/" + languageSourceSet.getName());
-                                    }
-                                }
-                            });
-                }
-            });
+            sources.afterEach(functionalSourceSet -> functionalSourceSet.afterEach(
+                    languageSourceSet -> {
+                        SourceDirectorySet source = languageSourceSet.getSource();
+                        if (source.getSrcDirs().isEmpty()) {
+                            source.srcDir("src/" + languageSourceSet.getParentName()
+                                    + "/" + languageSourceSet.getName());
+                        }
+                    }));
 
         }
 
@@ -268,21 +254,18 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
             for (final BuildType buildType : buildTypes.values()) {
                 for (final ProductFlavorCombo<ProductFlavor> flavorCombo : flavorCombos) {
                     binaries.create(getBinaryName(buildType, flavorCombo),
-                            new Action<AndroidBinary>() {
-                                @Override
-                                public void execute(AndroidBinary androidBinary) {
-                                    AndroidBinaryInternal binary = (AndroidBinaryInternal) androidBinary;
-                                    binary.setBuildType(buildType);
-                                    binary.setProductFlavors(flavorCombo.getFlavorList());
+                            androidBinary -> {
+                                AndroidBinaryInternal binary = (AndroidBinaryInternal) androidBinary;
+                                binary.setBuildType(buildType);
+                                binary.setProductFlavors(flavorCombo.getFlavorList());
 
-                                    sourceBinary(binary, sources, "main");
-                                    sourceBinary(binary, sources, buildType.getName());
-                                    for (ProductFlavor flavor : flavorCombo.getFlavorList()) {
-                                        sourceBinary(binary, sources, flavor.getName());
-                                    }
-                                    if (flavorCombo.getFlavorList().size() > 1) {
-                                        sourceBinary(binary, sources, flavorCombo.getName());
-                                    }
+                                sourceBinary(binary, sources, "main");
+                                sourceBinary(binary, sources, buildType.getName());
+                                for (ProductFlavor flavor : flavorCombo.getFlavorList()) {
+                                    sourceBinary(binary, sources, flavor.getName());
+                                }
+                                if (flavorCombo.getFlavorList().size() > 1) {
+                                    sourceBinary(binary, sources, flavorCombo.getName());
                                 }
                             });
                 }

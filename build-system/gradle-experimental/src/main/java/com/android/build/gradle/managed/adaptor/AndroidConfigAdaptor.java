@@ -36,16 +36,12 @@ import com.android.build.gradle.internal.dsl.Splits;
 import com.android.build.gradle.internal.dsl.TestOptions;
 import com.android.build.gradle.internal.model.CoreExternalNativeBuild;
 import com.android.build.gradle.managed.AndroidConfig;
-import com.android.build.gradle.managed.BuildType;
-import com.android.build.gradle.managed.ProductFlavor;
-import com.android.build.gradle.managed.SigningConfig;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.LibraryRequest;
 import com.android.builder.model.DataBindingOptions;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
 import com.android.repository.Revision;
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -61,7 +57,6 @@ import java.io.File;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * An adaptor to convert a managed.AndroidConfig to an model.AndroidConfig.

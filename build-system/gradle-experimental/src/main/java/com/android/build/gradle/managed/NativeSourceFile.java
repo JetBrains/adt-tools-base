@@ -22,7 +22,6 @@ import com.android.annotations.Nullable;
 import org.gradle.model.Managed;
 
 import java.io.File;
-import java.util.List;
 
 /**
  * A source file for a native library.

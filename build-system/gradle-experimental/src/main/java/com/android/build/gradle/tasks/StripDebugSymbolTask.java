@@ -101,24 +101,18 @@ public class StripDebugSymbolTask extends DefaultTask {
 
     @TaskAction
     void taskAction(IncrementalTaskInputs inputs) throws IOException {
-        inputs.outOfDate(new Action<InputFileDetails>() {
-            @Override
-            public void execute(InputFileDetails inputFileDetails) {
-                File input = inputFileDetails.getFile();
-                File output = new File(getOutputFolder(), input.getName());
-                stripFile(input, output);
-            }
+        inputs.outOfDate(inputFileDetails -> {
+            File input = inputFileDetails.getFile();
+            File output = new File(getOutputFolder(), input.getName());
+            stripFile(input, output);
         });
-        inputs.removed(new Action<InputFileDetails>() {
-            @Override
-            public void execute(InputFileDetails inputFileDetails) {
-                File input = inputFileDetails.getFile();
-                File output = new File(getOutputFolder(), input.getName());
-                try {
-                    FileUtils.deleteIfExists(output);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+        inputs.removed(inputFileDetails -> {
+            File input = inputFileDetails.getFile();
+            File output = new File(getOutputFolder(), input.getName());
+            try {
+                FileUtils.deleteIfExists(output);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
         });
     }
