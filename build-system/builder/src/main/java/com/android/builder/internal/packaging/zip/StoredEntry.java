@@ -673,4 +673,23 @@ public class StoredEntry {
 
         return mFile.realign(this);
     }
+
+    /**
+     * Obtains the contents of the local extra field.
+     *
+     * @return the contents of the local extra field, this byte array is modifiable
+     */
+    @NonNull
+    public byte[] getLocalExtra() {
+        return mLocalExtra;
+    }
+
+    /**
+     * Sets the contents of the local extra field, this byte array is modifiable externally.
+     *
+     * @param localExtra the contents of the local extra field
+     */
+    public void setLocalExtra(@NonNull byte[] localExtra) {
+        mLocalExtra = localExtra;
+    }
 }
