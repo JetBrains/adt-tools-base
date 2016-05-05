@@ -17,6 +17,7 @@
 package com.android.builder.internal.compiler;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.Immutable;
 import com.android.repository.Revision;
 import com.google.common.base.Joiner;
@@ -50,6 +51,8 @@ final class DexKey extends PreProcessCache.Key {
 
     private static final String ATTR_OPTIMIZE = "optimize";
 
+    private static final String ATTR_IS_MULTIDEX = "is-multidex";
+
     private static final String ATTR_ADDITIONAL_PARAMETERS = "custom-flags";
 
     static final PreProcessCache.KeyFactory<DexKey> FACTORY = (sourceFile, revision, attrMap) -> {
@@ -67,6 +70,12 @@ final class DexKey extends PreProcessCache.Key {
             optimize = true;
         }
 
+        Boolean isMultiDex = null;
+        Node formatAttribute = attrMap.getNamedItem(ATTR_IS_MULTIDEX);
+        if (formatAttribute != null) {
+            isMultiDex = Boolean.parseBoolean(formatAttribute.getNodeValue());
+        }
+
         List<String> additionalParameters = ImmutableList.of();
         Node additionalParametersAttribute = attrMap.getNamedItem(ATTR_ADDITIONAL_PARAMETERS);
         if (additionalParametersAttribute != null) {
@@ -76,12 +85,15 @@ final class DexKey extends PreProcessCache.Key {
                             .splitToList(additionalParametersAttribute.getNodeValue());
         }
 
-        return DexKey.of(sourceFile, revision, jumboMode, optimize, additionalParameters);
+        return DexKey.of(sourceFile, revision, jumboMode, optimize, isMultiDex, additionalParameters);
     };
 
     private final boolean mJumboMode;
 
     private final boolean mOptimize;
+
+    @Nullable
+    private final Boolean mIsMultiDex;
 
     @NonNull
     private final ImmutableSortedSet<String> mAdditionalParameters;
@@ -91,9 +103,15 @@ final class DexKey extends PreProcessCache.Key {
             @NonNull Revision buildToolsRevision,
             boolean jumboMode,
             boolean optimize,
+            @Nullable Boolean isMultiDex,
             @NonNull Iterable<String> additionalParameters) {
         return new DexKey(
-                sourceFile, buildToolsRevision, jumboMode, optimize, additionalParameters);
+                sourceFile,
+                buildToolsRevision,
+                jumboMode,
+                optimize,
+                isMultiDex,
+                additionalParameters);
     }
 
     private DexKey(
@@ -101,11 +119,13 @@ final class DexKey extends PreProcessCache.Key {
             @NonNull Revision buildToolsRevision,
             boolean jumboMode,
             boolean optimize,
+            @Nullable Boolean isMultiDex,
             @NonNull Iterable<String> additionalParameters) {
         super(sourceFile, buildToolsRevision);
         mJumboMode = jumboMode;
         mOptimize = optimize;
         mAdditionalParameters = ImmutableSortedSet.copyOf(additionalParameters);
+        mIsMultiDex = isMultiDex;
     }
 
     void writeFieldsToXml(@NonNull Node itemNode) {
@@ -118,6 +138,12 @@ final class DexKey extends PreProcessCache.Key {
         Attr optimize = document.createAttribute(ATTR_OPTIMIZE);
         optimize.setValue(Boolean.toString(this.mOptimize));
         itemNode.getAttributes().setNamedItem(optimize);
+
+        if (mIsMultiDex != null) {
+            Attr isMultiDex = document.createAttribute(ATTR_IS_MULTIDEX);
+            isMultiDex.setValue(Boolean.toString(this.mIsMultiDex));
+            itemNode.getAttributes().setNamedItem(isMultiDex);
+        }
 
         if (!mAdditionalParameters.isEmpty()) {
             Attr additionalParameters = document.createAttribute(ATTR_ADDITIONAL_PARAMETERS);
@@ -142,12 +168,14 @@ final class DexKey extends PreProcessCache.Key {
         DexKey dexKey = (DexKey) o;
         return mJumboMode == dexKey.mJumboMode
                 && mOptimize == dexKey.mOptimize
+                && Objects.equal(mIsMultiDex, dexKey.mIsMultiDex)
                 && Objects.equal(mAdditionalParameters, dexKey.mAdditionalParameters);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(super.hashCode(), mJumboMode, mOptimize, mAdditionalParameters);
+        return Objects.hashCode(
+                super.hashCode(), mJumboMode, mOptimize, mIsMultiDex, mAdditionalParameters);
     }
 
     @Override
@@ -157,6 +185,7 @@ final class DexKey extends PreProcessCache.Key {
                 .add("sourceFile", getSourceFile())
                 .add("mJumboMode", mJumboMode)
                 .add("mOptimize", mOptimize)
+                .add("mIsMultiDex", mIsMultiDex)
                 .add("mAdditionalParameters", mAdditionalParameters)
                 .toString();
     }
