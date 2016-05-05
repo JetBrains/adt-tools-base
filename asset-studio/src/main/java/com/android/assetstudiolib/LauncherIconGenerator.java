@@ -131,15 +131,15 @@ public class LauncherIconGenerator extends GraphicGenerator {
             launcherOptions.shape = applyDog(launcherOptions.shape);
         }
 
-        BufferedImage backImage = null, foreImage = null, maskImage = null;
+        BufferedImage shapeImageBack = null, shapeImageFore = null, shapeImageMask = null;
         if (launcherOptions.shape != Shape.NONE && launcherOptions.shape != null) {
             String shape = launcherOptions.shape.id;
 
-            backImage = context.loadImageResource("/images/launcher_stencil/"
+            shapeImageBack = context.loadImageResource("/images/launcher_stencil/"
                     + shape + "/" + density + "/back.png");
-            foreImage = context.loadImageResource("/images/launcher_stencil/"
+            shapeImageFore = context.loadImageResource("/images/launcher_stencil/"
                     + shape + "/" + density + "/" + launcherOptions.style.id + ".png");
-            maskImage = context.loadImageResource("/images/launcher_stencil/"
+            shapeImageMask = context.loadImageResource("/images/launcher_stencil/"
                     + shape + "/" + density + "/mask.png");
         }
 
@@ -158,34 +158,46 @@ public class LauncherIconGenerator extends GraphicGenerator {
                               GraphicGenerator.getMdpiScaleFactor(launcherOptions.density));
         }
 
+        // outImage will be our final image. Many intermediate textures will be rendered, in
+        // layers, onto this image
         BufferedImage outImage = AssetUtil.newArgbBufferedImage(imageRect.width, imageRect.height);
-        Graphics2D g = (Graphics2D) outImage.getGraphics();
-        if (backImage != null) {
-            g.drawImage(backImage, 0, 0, null);
+        Graphics2D gOut = (Graphics2D) outImage.getGraphics();
+        if (shapeImageBack != null) {
+            gOut.drawImage(shapeImageBack, 0, 0, null);
         }
 
+        // Render the background shape into an intermediate buffer. This lets us set a fill color.
         BufferedImage tempImage = AssetUtil.newArgbBufferedImage(imageRect.width, imageRect.height);
-        Graphics2D g2 = (Graphics2D) tempImage.getGraphics();
-        if (maskImage != null) {
-            g2.drawImage(maskImage, 0, 0, null);
-            g2.setComposite(AlphaComposite.SrcAtop);
-            g2.setPaint(new Color(launcherOptions.backgroundColor));
-            g2.fillRect(0, 0, imageRect.width, imageRect.height);
+        Graphics2D gTemp = (Graphics2D) tempImage.getGraphics();
+        if (shapeImageMask != null) {
+            gTemp.drawImage(shapeImageMask, 0, 0, null);
+            gTemp.setComposite(AlphaComposite.SrcAtop);
+            gTemp.setPaint(new Color(launcherOptions.backgroundColor));
+            gTemp.fillRect(0, 0, imageRect.width, imageRect.height);
         }
 
+        // Render the foreground icon onto an intermediate buffer and then render over the
+        // background shape. This lets us override the color of the icon.
+        BufferedImage iconImage = AssetUtil.newArgbBufferedImage(imageRect.width, imageRect.height);
+        Graphics2D gIcon = (Graphics2D)iconImage.getGraphics();
         if (launcherOptions.crop) {
-            AssetUtil.drawCenterCrop(g2, launcherOptions.sourceImage, targetRect);
+            AssetUtil.drawCenterCrop(gIcon, launcherOptions.sourceImage, targetRect);
         } else {
-            AssetUtil.drawCenterInside(g2, launcherOptions.sourceImage, targetRect);
+            AssetUtil.drawCenterInside(gIcon, launcherOptions.sourceImage, targetRect);
+        }
+        AssetUtil.drawEffects(gTemp, iconImage, 0, 0, new AssetUtil.Effect[]{
+          new AssetUtil.FillEffect(new Color(launcherOptions.foregroundColor), 1.0),});
+
+        // Finally, render all layers to the output image
+        gOut.drawImage(tempImage, 0, 0, null);
+        if (shapeImageFore != null) {
+            // Useful for some shape effects, like dogear (e.g. folded top right corner)
+            gOut.drawImage(shapeImageFore, 0, 0, null);
         }
 
-        g.drawImage(tempImage, 0, 0, null);
-        if (foreImage != null) {
-            g.drawImage(foreImage, 0, 0, null);
-        }
-
-        g.dispose();
-        g2.dispose();
+        gOut.dispose();
+        gTemp.dispose();
+        gIcon.dispose();
 
         return outImage;
     }
@@ -230,6 +242,9 @@ public class LauncherIconGenerator extends GraphicGenerator {
         public LauncherOptions() {
             mipmap = true;
         }
+
+        /** Foreground color, as an RRGGBB packed integer */
+        public int foregroundColor = 0;
 
         /** Background color, as an RRGGBB packed integer */
         public int backgroundColor = 0;
