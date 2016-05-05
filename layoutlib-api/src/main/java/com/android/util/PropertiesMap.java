@@ -19,11 +19,7 @@ package com.android.util;
 
 import com.android.annotations.NonNull;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * LayoutLib can return properties that a View asked for at the time of inflation. This map is from
@@ -54,6 +50,19 @@ public class PropertiesMap extends HashMap<String, PropertiesMap.Property> {
         public Property(String resource, String value) {
             this.resource = resource;
             this.value = value;
+        }
+
+        public boolean equals(Object other) {
+            if (!(other instanceof Property)) {
+                return false;
+            }
+            Property otherProperty = (Property)other;
+            return Objects.equals(resource, otherProperty.resource) &&
+                   Objects.equals(value, otherProperty.value);
+        }
+
+        public int hashCode() {
+            return Objects.hash(resource, value);
         }
     }
 
