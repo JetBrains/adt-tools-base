@@ -45,6 +45,7 @@ import com.android.build.gradle.internal.variant.TestedVariantData;
 import com.android.build.gradle.internal.variant.VariantFactory;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.VariantType;
+import com.android.builder.model.OptionalCompilationStep;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.model.SyncIssue;
@@ -766,12 +767,49 @@ public class VariantManager implements VariantModel {
         Action<com.android.build.api.variant.VariantFilter> variantFilterAction =
                 extension.getVariantFilter();
 
+        final boolean restrictVariants = taskManager.getGlobalScope().isActive(
+                OptionalCompilationStep.RESTRICT_VARIANTS);
+
+        // compare the project name if the type is not a lib.
+        final boolean projectMatch;
+        final String restrictedVariantName;
+        if (restrictVariants) {
+            projectMatch = !variantFactory.isLibrary() &&
+                    project.getPath().equals(AndroidGradleOptions.getRestrictVariantProject(project));
+            restrictedVariantName = AndroidGradleOptions.getRestrictVariantName(project);
+        } else {
+            projectMatch = false;
+            restrictedVariantName = null;
+        }
+
         for (BuildTypeData buildTypeData : buildTypes.values()) {
             boolean ignore = false;
-            if (variantFilterAction != null) {
-                variantFilter.reset(defaultConfig, buildTypeData.getBuildType(), productFlavorList);
-                variantFilterAction.execute(variantFilter);
-                ignore = variantFilter.isIgnore();
+
+            if (restrictVariants || variantFilterAction != null) {
+                variantFilter.reset(
+                        defaultConfig,
+                        buildTypeData.getBuildType(),
+                        variantFactory.getVariantConfigurationType(),
+                        productFlavorList);
+
+                if (restrictVariants) {
+                    if (variantFactory.isLibrary()) {
+                        // for a library, we can only safely remove variants if:
+                        // 1. we're not publishing all of them
+                        // 2. this is not the default variant.
+                        // This ensures that this is not a variant that is referenced by another module.
+                        ignore = !extension.getPublishNonDefault() &&
+                                !variantFilter.getName().equals(extension.getDefaultPublishConfig());
+                    } else if (projectMatch) {
+                        // get the app project, compare to this one, and if a match only accept
+                        // the variant being built.
+                        ignore = !variantFilter.getName().equals(restrictedVariantName);
+                    }
+                } else {
+                    // variantFilterAction != null always true here.
+                    variantFilterAction.execute(variantFilter);
+                    ignore = variantFilter.isIgnore();
+                }
             }
 
             if (!ignore) {

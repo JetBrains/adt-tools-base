@@ -54,6 +54,9 @@ public interface AndroidProject {
     // InstantDev related properties, must be ',' separated list of OptionalCompilationStep values.
     String OPTIONAL_COMPILATION_STEPS = "android.optional.compilation";
 
+    String PROPERTY_RESTRICT_VARIANT_PROJECT = "android.restrict.variant.project";
+    String PROPERTY_RESTRICT_VARIANT_NAME = "android.restrict.variant.name";
+
     String PROPERTY_APK_LOCATION = "android.injected.apk.location";
 
     String ARTIFACT_MAIN = "_main_";
