@@ -36,6 +36,7 @@ import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.pipeline.TransformInvocationBuilder;
+import com.android.build.gradle.internal.scope.InstantRunVariantScope;
 import com.android.build.gradle.internal.scope.TransformVariantScope;
 import com.android.build.gradle.tasks.ColdswapArtifactsKickerTask;
 import com.android.build.gradle.tasks.MarkerFile;
@@ -81,7 +82,7 @@ public class InstantRunSlicerTest {
     Logger logger;
 
     @Mock
-    TransformVariantScope variantScope;
+    InstantRunVariantScope variantScope;
 
     @Mock
     InstantRunBuildContext instantRunBuildContext;

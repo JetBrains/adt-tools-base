@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.externalBuild;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.devtools.build.lib.rules.android.apkmanifest.ExternalBuildApkManifest;
@@ -28,7 +27,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -37,11 +35,12 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.List;
 
 /**
- * Tests for the {@link ExternalBuildTask}
+ * Tests for the {@link ExternalBuildManifestLoader}
  */
-public class ExternalBuildTaskTest {
+public class ExternalBuildManifestLoaderTest {
 
     @Rule
     public TemporaryFolder tmpFolder = new TemporaryFolder();
@@ -49,30 +48,11 @@ public class ExternalBuildTaskTest {
     @Mock
     ExternalBuildExtension mExternalBuildExtension;
 
-    @Mock
-    ExternalBuildProcessor manifestProcessor;
-
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
     }
 
-    @Test
-    public void externalBuildTaskConfigurationTest() throws IOException {
-
-        when(mExternalBuildExtension.getBuildManifestPath()).thenReturn("/tmp/foo/bar");
-
-        ExternalBuildTask.ConfigAction configAction = new ExternalBuildTask.ConfigAction(
-                tmpFolder.getRoot(),
-                mExternalBuildExtension,
-                manifestProcessor);
-        Project project = ProjectBuilder.builder().build();
-        ExternalBuildTask task = project.getTasks().create("task", ExternalBuildTask.class);
-        configAction.execute(task);
-
-        assertThat(task.getBuildManifest().getPath()).isEqualTo(
-                "/tmp/foo/bar".replace('/', File.separatorChar));
-    }
 
     @Test
     public void manifestReadingTest() throws IOException {
@@ -82,35 +62,26 @@ public class ExternalBuildTaskTest {
                     .setAndroidSdk(ExternalBuildApkManifest.AndroidSdk.newBuilder()
                             .setAapt("/path/to/aapt"))
                     .addJars(ExternalBuildApkManifest.Artifact.newBuilder()
-                            .setExecRootPath("/tmp/one"))
+                            .setExecRootPath("tmp/one"))
                     .addJars(ExternalBuildApkManifest.Artifact.newBuilder()
-                            .setExecRootPath("/tmp/two"))
+                            .setExecRootPath("tmp/two"))
                     .build()
                     .writeTo(os);
         }
+        ExternalBuildContext externalBuildContext =
+                new ExternalBuildContext(mExternalBuildExtension);
+        ExternalBuildManifestLoader.loadAndPopulateContext(apk_manifest_test,
+                tmpFolder.getRoot(), externalBuildContext);
 
-        when(mExternalBuildExtension.getBuildManifestPath()).thenReturn(
-                apk_manifest_test.getAbsolutePath());
+        // assert build context population.
+        assertThat(externalBuildContext.getBuildManifest()).isNotNull();
+        ExternalBuildApkManifest.ApkManifest buildManifest = externalBuildContext
+                .getBuildManifest();
 
-        ExternalBuildTask.ConfigAction configAction = new ExternalBuildTask.ConfigAction(
-                tmpFolder.getRoot(),
-                mExternalBuildExtension,
-                manifestProcessor);
-
-        Project project = ProjectBuilder.builder().build();
-        ExternalBuildTask task = project.getTasks().create("task", ExternalBuildTask.class);
-        configAction.execute(task);
-
-        // now execute the task.
-        task.execute();
-
-        ArgumentCaptor<ExternalBuildApkManifest.ApkManifest> argumentCaptor =
-                ArgumentCaptor.forClass(ExternalBuildApkManifest.ApkManifest.class);
-        verify(manifestProcessor).process(argumentCaptor.capture());
-
-        ExternalBuildApkManifest.ApkManifest capture = argumentCaptor.getValue();
-        assertThat(capture.getJarsCount()).isEqualTo(2);
-        assertThat(capture.getAndroidSdk()).isNotNull();
-        assertThat(capture.getAndroidSdk().getAapt()).isEqualTo("/path/to/aapt");
+        assertThat(buildManifest.getJarsCount()).isEqualTo(2);
+        assertThat(buildManifest.getAndroidSdk().getAapt()).isEqualTo("/path/to/aapt");
+        assertThat(externalBuildContext.getInputJarFiles()).containsAllOf(
+                new File(tmpFolder.getRoot(), "tmp/one"),
+                new File(tmpFolder.getRoot(), "tmp/two"));
     }
 }

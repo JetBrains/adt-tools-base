@@ -28,6 +28,7 @@ import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformInvocation;
+import com.android.build.gradle.internal.scope.InstantRunVariantScope;
 import com.android.build.gradle.internal.scope.TransformVariantScope;
 import com.android.builder.model.OptionalCompilationStep;
 import com.android.build.gradle.internal.LoggerWrapper;
@@ -63,7 +64,7 @@ import java.util.jar.JarFile;
  * by the InstantRun implementation.
  *
  * To verify class changes, this transform will save all .class files in a private directory
- * see {@link VariantScope#getIncrementalVerifierDir}.
+ * see {@link InstantRunVariantScope#getIncrementalVerifierDir}.
  *
  * When new classes are compiled, this transform will receive an incremental notification and will
  * compare the new versions to the ones saved in the private directory. The result of this
@@ -75,7 +76,7 @@ public class InstantRunVerifierTransform extends Transform {
     private static final ILogger LOGGER =
             new LoggerWrapper(Logging.getLogger(InstantRunVerifierTransform.class));
 
-    private final TransformVariantScope variantScope;
+    private final InstantRunVariantScope variantScope;
     private final File outputDir;
 
     /**
@@ -101,7 +102,7 @@ public class InstantRunVerifierTransform extends Transform {
         }
     }
 
-    public InstantRunVerifierTransform(TransformVariantScope variantScope) {
+    public InstantRunVerifierTransform(InstantRunVariantScope variantScope) {
         this.variantScope = variantScope;
         this.outputDir = variantScope.getIncrementalVerifierDir();
     }

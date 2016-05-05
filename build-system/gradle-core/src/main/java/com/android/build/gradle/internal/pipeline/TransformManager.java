@@ -30,7 +30,7 @@ import com.android.build.api.transform.Transform;
 import com.android.build.gradle.internal.TaskFactory;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.AndroidTaskRegistry;
-import com.android.build.gradle.internal.scope.BaseScope;
+import com.android.build.gradle.internal.scope.TransformVariantScope;
 import com.android.build.gradle.tasks.JackPreDexTransform;
 import com.android.builder.core.ErrorReporter;
 import com.android.builder.model.AndroidProject;
@@ -67,14 +67,14 @@ public class TransformManager extends FilterableStreamCollection {
 
     public static final Set<Scope> EMPTY_SCOPES = ImmutableSet.of();
 
-    public static final Set<ContentType> CONTENT_CLASS = ImmutableSet.<ContentType>of(CLASSES);
-    public static final Set<ContentType> CONTENT_JARS = ImmutableSet.<ContentType>of(CLASSES, RESOURCES);
-    public static final Set<ContentType> CONTENT_RESOURCES = ImmutableSet.<ContentType>of(RESOURCES);
-    public static final Set<ContentType> CONTENT_NATIVE_LIBS = ImmutableSet.<ContentType>of(
+    public static final Set<ContentType> CONTENT_CLASS = ImmutableSet.of(CLASSES);
+    public static final Set<ContentType> CONTENT_JARS = ImmutableSet.of(CLASSES, RESOURCES);
+    public static final Set<ContentType> CONTENT_RESOURCES = ImmutableSet.of(RESOURCES);
+    public static final Set<ContentType> CONTENT_NATIVE_LIBS = ImmutableSet.of(
             ExtendedContentType.NATIVE_LIBS);
-    public static final Set<ContentType> CONTENT_DEX = ImmutableSet.<ContentType>of(
+    public static final Set<ContentType> CONTENT_DEX = ImmutableSet.of(
             ExtendedContentType.DEX);
-    public static final Set<ContentType> CONTENT_JACK = ImmutableSet.<ContentType>of(JACK);
+    public static final Set<ContentType> CONTENT_JACK = ImmutableSet.of(JACK);
     public static final Set<Scope> SCOPE_FULL_PROJECT = Sets.immutableEnumSet(
             Scope.PROJECT,
             Scope.PROJECT_LOCAL_DEPS,
@@ -144,7 +144,7 @@ public class TransformManager extends FilterableStreamCollection {
     @Nullable
     public <T extends Transform> AndroidTask<TransformTask> addTransform(
             @NonNull TaskFactory taskFactory,
-            @NonNull BaseScope scope,
+            @NonNull TransformVariantScope scope,
             @NonNull T transform) {
         return addTransform(taskFactory, scope, transform, null /*callback*/);
     }
@@ -168,7 +168,7 @@ public class TransformManager extends FilterableStreamCollection {
     @Nullable
     public <T extends Transform> AndroidTask<TransformTask> addTransform(
             @NonNull TaskFactory taskFactory,
-            @NonNull BaseScope scope,
+            @NonNull TransformVariantScope scope,
             @NonNull T transform,
             @Nullable TransformTask.ConfigActionCallback<T> callback) {
 
@@ -199,7 +199,7 @@ public class TransformManager extends FilterableStreamCollection {
                     SyncIssue.TYPE_GENERIC,
                     String.format(
                             "Unable to add Transform '%s' on variant '%s': requested streams not available: %s+%s / %s",
-                            transform.getName(), scope.getVariantConfiguration().getFullName(),
+                            transform.getName(), scope.getFullName(),
                             transform.getScopes(), transform.getReferencedScopes(),
                             transform.getInputTypes()));
             return null;
@@ -208,7 +208,7 @@ public class TransformManager extends FilterableStreamCollection {
         //noinspection PointlessBooleanExpression
         if (DEBUG && logger.isEnabled(LogLevel.DEBUG)) {
             logger.debug(
-                    "ADDED TRANSFORM(" + scope.getVariantConfiguration().getFullName()
+                    "ADDED TRANSFORM(" + scope.getFullName()
                             + "):");
             logger.debug("\tName: " + transform.getName());
             logger.debug("\tTask: " + taskName);
@@ -229,7 +229,7 @@ public class TransformManager extends FilterableStreamCollection {
         AndroidTask<TransformTask> task = taskRegistry.create(
                 taskFactory,
                 new TransformTask.ConfigAction<>(
-                        scope.getVariantConfiguration().getFullName(),
+                        scope.getFullName(),
                         taskName,
                         transform,
                         inputStreams,
@@ -289,7 +289,7 @@ public class TransformManager extends FilterableStreamCollection {
     @Nullable
     private IntermediateStream findTransformStreams(
             @NonNull Transform transform,
-            @NonNull BaseScope scope,
+            @NonNull TransformVariantScope scope,
             @NonNull List<TransformStream> inputStreams,
             @NonNull String taskName,
             @NonNull File buildDir) {

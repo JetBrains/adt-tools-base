@@ -20,43 +20,32 @@ import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 
 import java.io.File;
-import java.util.Collection;
 import java.util.List;
 
 /**
- * This is the scope available to
- * {@link com.android.build.api.transform.Transform}
+ * Scope for all variant scoped information related to supporting the Instant Run features.
  */
-public interface TransformVariantScope {
+public interface InstantRunVariantScope {
 
     @NonNull
     TransformGlobalScope getGlobalScope();
 
     @NonNull
-    String getTaskName(@NonNull String prefix);
+    List<File> getBootClasspath(boolean includeOptionalLibraries);
 
     @NonNull
-    String getTaskName(@NonNull String prefix, @NonNull String suffix);
+    File getReloadDexOutputFolder();
 
-    /**
-     * Returns a unique directory name (can include multiple folders) for the variant,
-     * based on build type, flavor and test.
-     *
-     * <p>This always uses forward slashes ('/') as separator on all platform.
-     *
-     * @return the directory name for the variant
-     */
     @NonNull
-    String getDirName();
+    File getRestartDexOutputFolder();
 
-    /**
-     * Returns a unique directory name (can include multiple folders) for the variant,
-     * based on build type, flavor and test.
-     *
-     * @return the directory name for the variant
-     */
     @NonNull
-    Collection<String> getDirectorySegments();
+    File getInstantRunSupportDir();
 
-    String getFullName();
+    @NonNull
+    File getIncrementalVerifierDir();
+
+    @NonNull
+    InstantRunBuildContext getInstantRunBuildContext();
+
 }

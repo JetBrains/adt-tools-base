@@ -33,6 +33,7 @@ import com.android.build.api.transform.Status;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
+import com.android.build.gradle.internal.scope.InstantRunVariantScope;
 import com.android.build.gradle.internal.scope.TransformVariantScope;
 import com.android.builder.core.DexByteCodeConverter;
 import com.android.builder.model.OptionalCompilationStep;
@@ -78,7 +79,7 @@ import java.util.Set;
 public class InstantRunDexTest {
 
     @Mock
-    TransformVariantScope variantScope;
+    InstantRunVariantScope variantScope;
 
     @Mock
     GlobalScope globalScope;

@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.external.gson.NativeBuildConfigValue;
 import com.android.build.gradle.internal.core.Abi;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.CoreSigningConfig;
 import com.android.build.gradle.internal.incremental.InstantRunAnchorTask;
 import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
@@ -58,11 +59,19 @@ import java.util.Set;
 /**
  * A scope containing data for a specific variant.
  */
-public interface VariantScope extends TransformVariantScope, BaseScope {
+public interface VariantScope extends TransformVariantScope, InstantRunVariantScope {
+
+    @Override
+    @NonNull
+    GlobalScope getGlobalScope();
+
+    @NonNull
+    GradleVariantConfiguration getVariantConfiguration();
 
     @NonNull
     BaseVariantData<? extends BaseVariantOutputData> getVariantData();
 
+    @Override
     @NonNull
     String getFullName();
 

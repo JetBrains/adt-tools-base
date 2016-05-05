@@ -16,26 +16,81 @@
 
 package com.android.build.gradle.integration.application;
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import com.google.common.base.Charsets
-import com.google.common.io.Files
+import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.utils.SdkHelper
+import com.android.sdklib.IAndroidTarget;
+import com.google.devtools.build.lib.rules.android.apkmanifest.ExternalBuildApkManifest
+import com.google.devtools.build.lib.rules.android.apkmanifest.ExternalBuildApkManifest.ApkManifest
+import com.google.protobuf.ByteString
+import com.google.protobuf.CodedOutputStream
+import org.junit.After;
+import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Test
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+import java.nio.file.Path
+
+import static com.google.common.truth.Truth.assertThat;
 
 /**
  * Integration test for the ExternalBuildPlugin.
  */
 public class ExternalBuildPluginTest {
 
+    File manifestFile;
+
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("externalBuildPlugin")
             .create()
 
+    @Before
+    public void setUp() {
+
+        IAndroidTarget target = SdkHelper.getTarget(23);
+        assertThat(target).isNotNull();
+
+        ApkManifest.Builder apkManifest = ApkManifest.newBuilder()
+                .setAndroidSdk(ExternalBuildApkManifest.AndroidSdk.newBuilder()
+                        .setAndroidJar(target.getFile(IAndroidTarget.ANDROID_JAR).absolutePath));
+        List<String> jarFiles = new FileNameFinder().getFileNames(
+                project.getTestDir().getAbsolutePath(), "**/*.jar");
+        for (String jarFile : jarFiles) {
+            apkManifest.addJars(ExternalBuildApkManifest.Artifact.newBuilder()
+                    .setExecRootPath(jarFile)
+                    .setHash(ByteString.copyFromUtf8(String.valueOf(jarFile.hashCode()))))
+        }
+
+        manifestFile = File.createTempFile("apk_manifest", ".tmp");
+        OutputStream os = new BufferedOutputStream(new FileOutputStream(manifestFile));
+        try {
+            CodedOutputStream cos =
+                    CodedOutputStream.newInstance(os);
+            apkManifest.build().writeTo(cos);
+            cos.flush();
+        } finally {
+            os.close();
+        }
+    }
+
+    @After
+    public void tearDown() {
+        manifestFile.delete();
+    }
+
     @Test
     public void testBuild() {
+        project.getBuildFile() << """
+apply from: "../commonHeader.gradle"
+buildscript { apply from: "../commonBuildScript.gradle" }
+
+apply plugin: 'base'
+apply plugin: 'com.android.external.build'
+
+externalBuild {
+  buildManifestPath = \$/""" + manifestFile.getAbsolutePath() + """/\$
+}
+"""
         project.execute("clean", "process")
     }
 }

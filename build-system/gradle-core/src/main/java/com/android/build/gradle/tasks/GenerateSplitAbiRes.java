@@ -122,7 +122,8 @@ public class GenerateSplitAbiRes extends BaseTask {
                     .setDebuggable(isDebuggable())
                     .setResourceOutputApk(new File(resPackageFileName))
                     .setVariantType(
-                            variantOutputData.getScope().getVariantConfiguration().getType());
+                            variantOutputData.getScope()
+                                    .getVariantScope().getVariantConfiguration().getType());
 
             getBuilder().processResources(
                     aapt,

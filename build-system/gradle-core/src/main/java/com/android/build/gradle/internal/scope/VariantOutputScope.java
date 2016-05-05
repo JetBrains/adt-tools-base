@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.scope;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.api.transform.Transform;
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.api.ApkOutputFile;
 import com.android.build.gradle.internal.TaskManager;
@@ -38,7 +39,7 @@ import java.util.Collection;
 /**
  * A scope containing data for a specific variant.
  */
-public class VariantOutputScope implements BaseScope {
+public class VariantOutputScope implements TransformVariantScope {
 
     @NonNull
     private VariantScope variantScope;
@@ -83,12 +84,6 @@ public class VariantOutputScope implements BaseScope {
 
     @NonNull
     @Override
-    public GradleVariantConfiguration getVariantConfiguration() {
-        return variantScope.getVariantConfiguration();
-    }
-
-    @NonNull
-    @Override
     public String getDirName() {
         // this is here as a safety net in the Transform manager which handles either VariantScope
         // or VariantOutputScope. Should this ever be called we'll need to compute this properly.
@@ -101,6 +96,11 @@ public class VariantOutputScope implements BaseScope {
         // this is here as a safety net in the Transform manager which handles either VariantScope
         // or VariantOutputScope. Should this ever be called we'll need to compute this properly.
         throw new UnsupportedOperationException("dir name per output scope not yet supported");
+    }
+
+    @Override
+    public String getFullName() {
+        return variantScope.getFullName();
     }
 
     @Override

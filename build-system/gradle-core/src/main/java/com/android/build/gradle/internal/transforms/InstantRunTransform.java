@@ -41,8 +41,7 @@ import com.android.build.gradle.internal.incremental.IncrementalVisitor;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.TransformManager;
-import com.android.build.gradle.internal.scope.TransformVariantScope;
-import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.scope.InstantRunVariantScope;
 import com.android.build.api.transform.QualifiedContent.ContentType;
 import com.android.ide.common.util.UrlClassLoaderUtil;
 import com.android.utils.FileUtils;
@@ -81,9 +80,9 @@ public class InstantRunTransform extends Transform {
     private final ChangeRecords generatedClasses2Files = new ChangeRecords();
     private final ChangeRecords generatedClasses3Files = new ChangeRecords();
     private final ImmutableList.Builder<String> generatedClasses3Names = ImmutableList.builder();
-    private final TransformVariantScope transformScope;
+    private final InstantRunVariantScope transformScope;
 
-    public InstantRunTransform(VariantScope transformScope) {
+    public InstantRunTransform(InstantRunVariantScope transformScope) {
         this.transformScope = transformScope;
     }
 

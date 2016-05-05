@@ -20,14 +20,18 @@ import static com.android.SdkConstants.FD_PLATFORM_TOOLS;
 import static com.android.SdkConstants.FN_ADB;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.repository.Revision;
 import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.sdklib.BuildToolInfo;
+import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.utils.FileUtils;
+import com.google.common.collect.ImmutableList;
 
 import java.io.File;
+import java.util.List;
 
 /**
  * Helper for SDK related functions.
@@ -94,5 +98,19 @@ public class SdkHelper {
             throw new RuntimeException("Unable to find adb.");
         }
         return adb;
+    }
+
+    /**
+     * Returns a {@link IAndroidTarget} with a minimum api level.
+     * @param minimumApiLevel the desired api level.
+     * @return the IAndroidTarget of that api level or above or null if not found.
+     */
+    @Nullable
+    public static IAndroidTarget getTarget(int minimumApiLevel) {
+        FakeProgressIndicator progressIndicator = new FakeProgressIndicator();
+        IAndroidTarget target = AndroidSdkHandler.getInstance(findSdkDir())
+                .getAndroidTargetManager(progressIndicator)
+                .getTargetOfAtLeastApiLevel(minimumApiLevel, progressIndicator);
+        return target;
     }
 }

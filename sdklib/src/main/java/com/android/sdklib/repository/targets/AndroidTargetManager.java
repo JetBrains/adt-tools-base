@@ -156,6 +156,23 @@ public class AndroidTargetManager {
     }
 
     /**
+     * Returns first target found with API level no lower than the minimum provided.
+     * @param minimumApiLevel minimum api level desired for target.
+     * @param progress progress indicator.
+     * @return a matching {@link IAndroidTarget} or null
+     */
+    @Nullable
+    public IAndroidTarget getTargetOfAtLeastApiLevel(
+            int minimumApiLevel, @NonNull ProgressIndicator progress) {
+        for (IAndroidTarget target : getTargets(progress)) {
+            if (target.getVersion().getApiLevel() >= minimumApiLevel) {
+                return target;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Returns the error, if any, encountered when error creating a target for a package.
      */
     @Nullable

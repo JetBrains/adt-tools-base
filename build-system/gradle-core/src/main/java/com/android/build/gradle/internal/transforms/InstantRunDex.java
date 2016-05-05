@@ -26,7 +26,7 @@ import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformInvocation;
-import com.android.build.gradle.internal.scope.TransformVariantScope;
+import com.android.build.gradle.internal.scope.InstantRunVariantScope;
 import com.android.builder.core.DexByteCodeConverter;
 import com.android.builder.model.OptionalCompilationStep;
 import com.android.build.gradle.internal.LoggerWrapper;
@@ -79,13 +79,13 @@ public class InstantRunDex extends Transform {
     private final InstantRunBuildType buildType;
 
     @NonNull
-    private final TransformVariantScope variantScope;
+    private final InstantRunVariantScope variantScope;
 
     @NonNull
     private final InstantRunBuildContext instantRunBuildContext;
 
     public InstantRunDex(
-            @NonNull TransformVariantScope transformVariantScope,
+            @NonNull InstantRunVariantScope transformVariantScope,
             @NonNull InstantRunBuildType buildType,
             @NonNull Supplier<DexByteCodeConverter> dexByteCodeConverter,
             @NonNull DexOptions dexOptions,

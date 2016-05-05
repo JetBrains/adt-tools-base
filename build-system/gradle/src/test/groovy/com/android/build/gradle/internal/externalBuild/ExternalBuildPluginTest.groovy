@@ -28,12 +28,6 @@ import static com.google.common.truth.Truth.assertThat;
 public class ExternalBuildPluginTest {
 
     @Test
-    public void externalBuildPluginAddsProcessTest() {
-        Project project = createBasicProject()
-        assertThat(project.tasks.process instanceof ExternalBuildTask).isTrue();
-    }
-
-    @Test
     public void externalBuildExtensionInstantiation() {
         Project project = createAndConfigureBasicProject()
         assertThat(project.extensions.externalBuild instanceof ExternalBuildExtension).isTrue();
@@ -43,13 +37,6 @@ public class ExternalBuildPluginTest {
     public void externalBuildExtensionPopulation() {
         Project project = createAndConfigureBasicProject()
         assertThat(project.extensions.externalBuild.getBuildManifestPath()).isEqualTo('/usr/tmp/foo')
-    }
-
-    @Test
-    public void setManifestPathIsReflectedInTaskConfiguration() {
-        Project project = createAndConfigureBasicProject()
-        assertThat(project.tasks.process.getBuildManifest().getPath()).isEqualTo(
-                '/usr/tmp/foo'.replace('/' as char, File.separatorChar))
     }
 
     private static Project createBasicProject() {

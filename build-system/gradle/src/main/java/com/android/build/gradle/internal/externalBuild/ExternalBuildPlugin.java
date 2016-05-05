@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.externalBuild;
 import com.android.build.gradle.internal.TaskContainerAdaptor;
 import com.android.build.gradle.internal.scope.AndroidTaskRegistry;
 
+import org.gradle.api.Action;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 
@@ -35,14 +36,18 @@ public class ExternalBuildPlugin implements Plugin<Project> {
 
     @Override
     public void apply(Project project) {
-        ExternalBuildExtension externalBuildExtension =
+        final ExternalBuildExtension externalBuildExtension =
                 project.getExtensions().create("externalBuild", ExternalBuildExtension.class);
-        TaskContainerAdaptor tasks = new TaskContainerAdaptor(project.getTasks());
 
-        AndroidTaskRegistry taskRegistry = new AndroidTaskRegistry();
-        taskRegistry.create(tasks, new ExternalBuildTask.ConfigAction(
-                project.getBuildDir(),
-                externalBuildExtension,
-                new DefaultManifestProcessor(project)));
+        ExternalBuildTaskManager taskManager =
+                new ExternalBuildTaskManager(project);
+
+        project.afterEvaluate(project1 -> {
+            try {
+                taskManager.createTasks(externalBuildExtension);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 }

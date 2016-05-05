@@ -38,8 +38,7 @@ import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.incremental.DexPackagingPolicy;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.pipeline.TransformManager;
-import com.android.build.gradle.internal.scope.TransformVariantScope;
-import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.scope.InstantRunVariantScope;
 import com.android.build.gradle.tasks.ColdswapArtifactsKickerTask;
 import com.android.build.gradle.tasks.MarkerFile;
 import com.android.utils.FileUtils;
@@ -64,7 +63,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
@@ -94,12 +92,12 @@ public class InstantRunSlicer extends Transform {
     private final ILogger logger;
 
     @NonNull
-    private final TransformVariantScope variantScope;
+    private final InstantRunVariantScope variantScope;
 
     @NonNull
     private final InstantRunPatchingPolicy patchingPolicy;
 
-    public InstantRunSlicer(@NonNull Logger logger, @NonNull TransformVariantScope variantScope) {
+    public InstantRunSlicer(@NonNull Logger logger, @NonNull InstantRunVariantScope variantScope) {
         this.logger = new LoggerWrapper(logger);
         this.variantScope = variantScope;
         InstantRunPatchingPolicy patchingPolicy =
