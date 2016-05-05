@@ -40,6 +40,9 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
+import org.gradle.api.logging.LogLevel;
+import org.gradle.api.logging.LoggingManager;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
@@ -91,7 +94,7 @@ public class MultiDexTransform extends BaseProguardAction {
     @NonNull
     @Override
     public Set<ContentType> getInputTypes() {
-        return ImmutableSet.<ContentType>of(QualifiedContent.DefaultContentType.CLASSES);
+        return ImmutableSet.of(QualifiedContent.DefaultContentType.CLASSES);
     }
 
     @NonNull
@@ -135,14 +138,16 @@ public class MultiDexTransform extends BaseProguardAction {
     @Override
     public void transform(@NonNull TransformInvocation invocation)
             throws IOException, TransformException, InterruptedException {
+        // Re-direct the output to appropriate log levels, just like the official ProGuard task.
+        LoggingManager loggingManager = invocation.getContext().getLogging();
+        loggingManager.captureStandardOutput(LogLevel.INFO);
+        loggingManager.captureStandardError(LogLevel.WARN);
 
         try {
             File input = verifyInputs(invocation.getReferencedInputs());
             shrinkWithProguard(input);
             computeList(input);
-        } catch (ParseException e) {
-            throw new TransformException(e);
-        } catch (ProcessException e) {
+        } catch (ParseException | ProcessException e) {
             throw new TransformException(e);
         }
     }
