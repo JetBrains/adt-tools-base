@@ -802,6 +802,7 @@ public final class SdkConstants {
     public static final String TAG_PROVIDER = "provider";              //$NON-NLS-1$
     public static final String TAG_GRANT_PERMISSION = "grant-uri-permission"; //$NON-NLS-1$
     public static final String TAG_PATH_PERMISSION = "path-permission"; //$NON-NLS-1$
+    public static final String TAG_ACTION = "action";                   //$NON-NLS-1$
 
     // Tags: Resources
     public static final String TAG_RESOURCES = "resources";            //$NON-NLS-1$
