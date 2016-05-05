@@ -19,28 +19,15 @@ package com.android.repository.impl.remote;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.Revision;
-import com.android.repository.api.Channel;
-import com.android.repository.api.Downloader;
-import com.android.repository.api.FallbackRemoteRepoLoader;
-import com.android.repository.api.ProgressIndicator;
-import com.android.repository.api.RemotePackage;
-import com.android.repository.api.RepoManager;
-import com.android.repository.api.RepositorySource;
-import com.android.repository.api.RepositorySourceProvider;
-import com.android.repository.api.SettingsController;
-import com.android.repository.api.SimpleRepositorySource;
+import com.android.repository.api.*;
 import com.android.repository.impl.manager.RemoteRepoLoader;
 import com.android.repository.impl.meta.Archive;
 import com.android.repository.impl.meta.RemotePackageImpl;
 import com.android.repository.impl.meta.TypeDetails;
-import com.android.repository.testframework.FakeDownloader;
-import com.android.repository.testframework.FakePackage;
-import com.android.repository.testframework.FakeProgressIndicator;
-import com.android.repository.testframework.FakeSettingsController;
-import com.android.repository.testframework.MockFileOp;
+import com.android.repository.testframework.*;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-
+import com.intellij.openapi.util.SystemInfo;
 import junit.framework.TestCase;
 
 import java.net.URL;
@@ -88,6 +75,7 @@ public class RemoteRepoTest extends TestCase {
     }
 
     public void testChannels() throws Exception {
+        if (SystemInfo.isWindows) return;
         RepositorySource source = new SimpleRepositorySource("http://www.example.com",
                                                              "Source UI Name", true,
                                                              ImmutableSet.of(RepoManager.getCommonModule(),
