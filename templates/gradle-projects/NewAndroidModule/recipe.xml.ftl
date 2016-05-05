@@ -6,8 +6,17 @@
 </#if>
 
 <#if unitTestsSupported>
-    <dependency mavenUrl="junit:junit:${junitVersion}" gradleConfiguration="testCompile" />
+    <dependency mavenUrl="junit:junit:4.12" gradleConfiguration="testCompile" />
 </#if>
+
+<dependency mavenUrl="com.android.support.test.espresso:espresso-core:2.2.2"
+            gradleConfiguration="androidTestCompile" />
+<dependency mavenUrl="com.android.support.test:runner:0.5"
+            gradleConfiguration="androidTestCompile" />
+
+<!-- We need an explicit dependency on the same version of support annotations as the main APK. -->
+<dependency mavenUrl="com.android.support:support-annotations:${buildApi}.+"
+            gradleConfiguration="androidTestCompile" />
 
 <#if !createActivity>
     <mkdir at="${escapeXmlAttribute(srcOut)}" />
@@ -55,8 +64,8 @@
     <instantiate from="root/res/values/strings.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/values/strings.xml" />
 
-    <instantiate from="root/test/app_package/ApplicationTest.java.ftl"
-                   to="${escapeXmlAttribute(testOut)}/ApplicationTest.java" />
+    <instantiate from="root/test/app_package/ExampleInstrumentationTest.java.ftl"
+                   to="${escapeXmlAttribute(testOut)}/ExampleInstrumentationTest.java" />
 
 <#if unitTestsSupported>
     <instantiate from="root/test/app_package/ExampleUnitTest.java.ftl"
