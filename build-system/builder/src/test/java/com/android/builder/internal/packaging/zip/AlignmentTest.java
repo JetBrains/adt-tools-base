@@ -271,4 +271,122 @@ public class AlignmentTest {
             assertArrayEquals(recognizable2, read);
         }
     }
+
+    @Test
+    public void alignFirstEntryUsingExtraField() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "test.zip");
+
+        byte[] recognizable = new byte[] { 1, 2, 3, 4, 4, 3, 2, 1 };
+
+        ZFileOptions options = new ZFileOptions();
+        options.setUseExtraFieldForAlignment(true);
+        options.setAlignmentRule(AlignmentRules.constant(1024));
+        try (ZFile zf = new ZFile(zipFile, options)) {
+            zf.add("foo", new ByteArrayInputStream(recognizable), false);
+        }
+
+        /*
+         * Contents should be at 1024 bytes.
+         */
+        assertArrayEquals(recognizable, FileUtils.readSegment(zipFile, 1024, recognizable.length));
+
+        /*
+         * But local header should be in the beginning.
+         */
+        try (ZFile zf = new ZFile(zipFile)) {
+            StoredEntry entry = zf.get("foo");
+            assertNotNull(entry);
+            assertEquals(0, entry.getCentralDirectoryHeader().getOffset());
+        }
+    }
+
+    @Test
+    public void alignFirstEntryUsingOffset() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "test.zip");
+
+        byte[] recognizable = new byte[] { 1, 2, 3, 4, 4, 3, 2, 1 };
+
+        ZFileOptions options = new ZFileOptions();
+        options.setUseExtraFieldForAlignment(false);
+        options.setAlignmentRule(AlignmentRules.constant(1024));
+        try (ZFile zf = new ZFile(zipFile, options)) {
+            zf.add("foo", new ByteArrayInputStream(recognizable), false);
+        }
+
+        /*
+         * Contents should be at 1024 bytes.
+         */
+        assertArrayEquals(recognizable, FileUtils.readSegment(zipFile, 1024, recognizable.length));
+
+        /*
+         * Local header should start at 991 (1024 - LOCAL_HEADER_SIZE - 3).
+         */
+        try (ZFile zf = new ZFile(zipFile)) {
+            StoredEntry entry = zf.get("foo");
+            assertNotNull(entry);
+            assertEquals(991, entry.getCentralDirectoryHeader().getOffset());
+        }
+    }
+
+    @Test
+    public void alignMiddleEntryUsingExtraField() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "test.zip");
+
+        byte[] recognizable = new byte[] { 1, 2, 3, 4, 4, 3, 2, 1 };
+
+        ZFileOptions options = new ZFileOptions();
+        options.setUseExtraFieldForAlignment(true);
+        options.setAlignmentRule(AlignmentRules.constantForSuffix(".a", 1024));
+        try (ZFile zf = new ZFile(zipFile, options)) {
+            zf.add("bar1", new ByteArrayInputStream(new byte[1024]), false);
+            zf.add("foo.a", new ByteArrayInputStream(recognizable), false);
+            zf.add("bar2", new ByteArrayInputStream(new byte[1024]), false);
+        }
+
+        /*
+         * Contents should be at 2048 bytes.
+         */
+        assertArrayEquals(recognizable, FileUtils.readSegment(zipFile, 2048, recognizable.length));
+
+        /*
+         * But local header should be in LOCAL_HEADER_SIZE + 4 + 1024.
+         */
+        try (ZFile zf = new ZFile(zipFile)) {
+            StoredEntry entry = zf.get("foo.a");
+            assertNotNull(entry);
+            assertEquals(
+                    ZFileTestConstants.LOCAL_HEADER_SIZE + 4 + 1024,
+                    entry.getCentralDirectoryHeader().getOffset());
+        }
+    }
+
+    @Test
+    public void alignMiddleEntryUsingOffset() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "test.zip");
+
+        byte[] recognizable = new byte[] { 1, 2, 3, 4, 4, 3, 2, 1 };
+
+        ZFileOptions options = new ZFileOptions();
+        options.setUseExtraFieldForAlignment(false);
+        options.setAlignmentRule(AlignmentRules.constantForSuffix(".a", 1024));
+        try (ZFile zf = new ZFile(zipFile, options)) {
+            zf.add("bar1", new ByteArrayInputStream(new byte[1024]), false);
+            zf.add("foo.a", new ByteArrayInputStream(recognizable), false);
+            zf.add("bar2", new ByteArrayInputStream(new byte[1024]), false);
+        }
+
+        /*
+         * Contents should be at 2048 bytes.
+         */
+        assertArrayEquals(recognizable, FileUtils.readSegment(zipFile, 2048, recognizable.length));
+
+        /*
+         * Local header should start at 2015 (2048 - LOCAL_HEADER_SIZE - 5).
+         */
+        try (ZFile zf = new ZFile(zipFile)) {
+            StoredEntry entry = zf.get("foo.a");
+            assertNotNull(entry);
+            assertEquals(2013, entry.getCentralDirectoryHeader().getOffset());
+        }
+    }
 }

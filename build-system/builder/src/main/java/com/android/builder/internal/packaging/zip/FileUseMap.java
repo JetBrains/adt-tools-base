@@ -17,6 +17,7 @@
 package com.android.builder.internal.packaging.zip;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Verify;
 import com.google.common.collect.Lists;
@@ -448,5 +449,19 @@ class FileUseMap {
         }
 
         return freeAreas;
+    }
+
+    /**
+     * Obtains the entry that is located before the one provided.
+     *
+     * @param entry the map entry to get the previous one for; must belong to the map
+     * @return the entry before the provided one, {@code null} if {@code entry} is the first entry
+     * in the map
+     */
+    @Nullable
+    FileUseMapEntry<?> before(@NonNull FileUseMapEntry<?> entry) {
+        Preconditions.checkNotNull(entry, "entry == null");
+
+        return mMap.lower(entry);
     }
 }
