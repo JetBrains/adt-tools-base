@@ -2266,7 +2266,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 @Override
                 protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
                     Revision revision = new Revision(22, 2, 1);
-                    BuildToolInfo info = new BuildToolInfo(revision, dir);
+                    BuildToolInfo info = BuildToolInfo.fromStandardDirectoryLayout(revision, dir);
 
                     Project fromSuper = super.createProject(dir, referenceDir);
                     Project spy = spy(fromSuper);
@@ -2281,7 +2281,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 @Override
                 protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
                     Revision revision = new Revision(23, 0, 2);
-                    BuildToolInfo info = new BuildToolInfo(revision, dir);
+                    BuildToolInfo info = BuildToolInfo.fromStandardDirectoryLayout(revision, dir);
 
                     Project fromSuper = super.createProject(dir, referenceDir);
                     Project spy = spy(fromSuper);

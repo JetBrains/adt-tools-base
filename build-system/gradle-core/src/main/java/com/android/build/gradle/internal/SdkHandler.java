@@ -125,7 +125,9 @@ public class SdkHandler {
         SdkInfo sdkInfo = sdkLoader.getSdkInfo(logger);
         TargetInfo targetInfo = sdkLoader.getTargetInfo(targetHash, buildToolRevision, logger);
 
-        androidBuilder.setTargetInfo(sdkInfo, targetInfo, usedLibraries);
+        androidBuilder.setSdkInfo(sdkInfo);
+        androidBuilder.setTargetInfo(targetInfo);
+        androidBuilder.setLibraryRequests(usedLibraries);
         logger.verbose("SDK initialized in %1$d ms", stopwatch.elapsed(TimeUnit.MILLISECONDS));
     }
 

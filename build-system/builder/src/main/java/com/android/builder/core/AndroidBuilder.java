@@ -163,7 +163,7 @@ public class AndroidBuilder {
     /**
      * Minimal supported version of build tools.
      */
-    private static final Revision MIN_BUILD_TOOLS_REV = new Revision(19, 1, 0);
+    public static final Revision MIN_BUILD_TOOLS_REV = new Revision(19, 1, 0);
 
     /**
      * Object used for locking when handling the {@link #sDexExecutorService}.
@@ -250,26 +250,26 @@ public class AndroidBuilder {
      * Sets the SdkInfo and the targetInfo on the builder. This is required to actually
      * build (some of the steps).
      *
-     * @param sdkInfo the SdkInfo
-     * @param targetInfo the TargetInfo
-     *
      * @see com.android.builder.sdk.SdkLoader
      */
-    public void setTargetInfo(
-            @NonNull SdkInfo sdkInfo,
-            @NonNull TargetInfo targetInfo,
-            @NonNull Collection<LibraryRequest> libraryRequests) {
-        mSdkInfo = sdkInfo;
+    public void setTargetInfo(@NonNull TargetInfo targetInfo) {
         mTargetInfo = targetInfo;
         mDexByteCodeConverter = new DexByteCodeConverter(
                 getLogger(), mTargetInfo, mJavaProcessExecutor, mVerboseExec);
 
         if (mTargetInfo.getBuildTools().getRevision().compareTo(MIN_BUILD_TOOLS_REV) < 0) {
             throw new IllegalArgumentException(String.format(
-                    "The SDK Build Tools revision (%1$s) is too low for project '%2$s'. Minimum required is %3$s",
+                    "The SDK Build Tools revision (%1$s) is too low for project '%2$s'. "
+                            + "Minimum required is %3$s",
                     mTargetInfo.getBuildTools().getRevision(), mProjectId, MIN_BUILD_TOOLS_REV));
         }
+    }
 
+    public void setSdkInfo(@NonNull SdkInfo sdkInfo) {
+        mSdkInfo = sdkInfo;
+    }
+
+    public void setLibraryRequests(@NonNull Collection<LibraryRequest> libraryRequests) {
         mLibraryRequests = ImmutableList.copyOf(libraryRequests);
     }
 
@@ -477,7 +477,7 @@ public class AndroidBuilder {
      *
      * @return the jar file, or null.
      *
-     * @see #setTargetInfo(SdkInfo, TargetInfo, Collection)
+     * @see #setTargetInfo(TargetInfo)
      */
     @Nullable
     public File getRenderScriptSupportJar() {
@@ -567,7 +567,7 @@ public class AndroidBuilder {
      *
      * @return the folder, or null.
      *
-     * @see #setTargetInfo(SdkInfo, TargetInfo, Collection)
+     * @see #setTargetInfo(TargetInfo)
      */
     @Nullable
     public File getSupportNativeLibFolder() {

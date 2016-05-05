@@ -43,6 +43,6 @@ public class ExternalBuildPlugin implements Plugin<Project> {
         taskRegistry.create(tasks, new ExternalBuildTask.ConfigAction(
                 project.getBuildDir(),
                 externalBuildExtension,
-                new DefaultManifestProcessor()));
+                new DefaultManifestProcessor(project)));
     }
 }

@@ -540,7 +540,7 @@ public final class AndroidSdkHandler {
                 continue;
             }
             if (info == null || info.getRevision().compareTo(p.getVersion()) < 0) {
-                 info = new BuildToolInfo(p.getVersion(), p.getLocation());
+                 info = BuildToolInfo.fromStandardDirectoryLayout(p.getVersion(), p.getLocation());
             }
         }
 
@@ -564,7 +564,7 @@ public final class AndroidSdkHandler {
         if (p == null) {
             return null;
         }
-        return new BuildToolInfo(p.getVersion(), p.getLocation());
+        return BuildToolInfo.fromStandardDirectoryLayout(p.getVersion(), p.getLocation());
     }
 
     /**
