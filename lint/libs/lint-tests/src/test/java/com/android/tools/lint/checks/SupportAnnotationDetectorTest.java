@@ -506,15 +506,29 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "src/test/pkg/CheckPermissions.java:22: Warning: The result of extractAlpha is not used [CheckResult]\n"
                 + "        bitmap.extractAlpha(); // WARNING\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/Intersect.java:7: Warning: The result of intersect is not used. If the rectangles do not intersect, no change is made and the original rectangle is not modified. These methods return false to indicate that this has happened. [CheckResult]\n"
+                + "    rect.intersect(aLeft, aTop, aRight, aBottom);\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "src/test/pkg/CheckPermissions.java:10: Warning: The result of checkCallingOrSelfPermission is not used; did you mean to call #enforceCallingOrSelfPermission(String,String)? [UseCheckPermission]\n"
                 + "        context.checkCallingOrSelfPermission(Manifest.permission.INTERNET); // WRONG\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "src/test/pkg/CheckPermissions.java:11: Warning: The result of checkPermission is not used; did you mean to call #enforcePermission(String,int,int,String)? [UseCheckPermission]\n"
                 + "        context.checkPermission(Manifest.permission.INTERNET, 1, 1);\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "0 errors, 3 warnings\n",
+                + "0 errors, 4 warnings\n",
 
-                lintProject("src/test/pkg/CheckPermissions.java.txt=>src/test/pkg/CheckPermissions.java"));
+                lintProject(copy("src/test/pkg/CheckPermissions.java.txt", "src/test/pkg/CheckPermissions.java"),
+                        java("src/test/pkg/Intersect.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.graphics.Rect;\n"
+                                + "\n"
+                                + "public class Intersect {\n"
+                                + "  void check(Rect rect, int aLeft, int aTop, int aRight, int aBottom) {\n"
+                                + "    rect.intersect(aLeft, aTop, aRight, aBottom);\n"
+                                + "  }\n"
+                                + "}")
+                        ));
     }
 
     private final TestFile mPermissionTest = java("src/test/pkg/PermissionTest.java", ""

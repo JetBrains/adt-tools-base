@@ -301,7 +301,7 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
         if (CHECK_RESULT_ANNOTATION.equals(signature)
                 // support findbugs annotation too
                 || signature.endsWith(".CheckReturnValue")) {
-            checkResult(context, call, annotation);
+            checkResult(context, call, method, annotation);
         } else if (signature.equals(PERMISSION_ANNOTATION)) {
             PermissionRequirement requirement = PermissionRequirement.create(context, annotation);
             checkPermission(context, call, method, null, requirement);
@@ -741,7 +741,7 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
     }
 
     private static void checkResult(@NonNull JavaContext context, @NonNull PsiElement node,
-            @NonNull PsiAnnotation annotation) {
+            @NonNull PsiMethod method, @NonNull PsiAnnotation annotation) {
         if (skipParentheses(node.getParent()) instanceof PsiExpressionStatement) {
             String methodName = JavaContext.getMethodName(node);
             String suggested = getAnnotationStringValue(annotation, ATTR_SUGGEST);
@@ -768,6 +768,11 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
                 message = String.format(
                         "The result of `%1$s` is not used; did you mean to call `%2$s`?",
                         methodName, suggested);
+            } else if ("intersect".equals(methodName)
+                    && context.getEvaluator().isMemberInClass(method, "android.graphics.Rect")) {
+                message += ". If the rectangles do not intersect, no change is made and the "
+                        + "original rectangle is not modified. These methods return false to "
+                        + "indicate that this has happened.";
             }
             context.report(issue, node, context.getLocation(node), message);
         }
