@@ -1069,6 +1069,10 @@ public final class SdkConstants {
     public static final String ATTR_LAYOUT_COLUMN = "layout_column";   //$NON-NLS-1$
     public static final String ATTR_LAYOUT_COLUMN_SPAN = "layout_columnSpan";       //$NON-NLS-1$
 
+    // ImageView attributes
+    public static final String ATTR_ADJUST_VIEW_BOUNDS = "adjustViewBounds"; //$NON-NLS-1$
+    public static final String ATTR_CROP_TO_PADDING = "cropToPadding"; //$NON-NLS-1$
+
     // ConstraintLayout layout params
     public static final String ATTR_LAYOUT_EDITOR_ABSOLUTE_X = "layout_editor_absoluteX";
     public static final String ATTR_LAYOUT_EDITOR_ABSOLUTE_Y = "layout_editor_absoluteY";
