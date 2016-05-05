@@ -28,6 +28,7 @@ import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformInvocation;
+import com.android.build.gradle.internal.scope.TransformVariantScope;
 import com.android.builder.model.OptionalCompilationStep;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
@@ -35,7 +36,6 @@ import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunVerifier;
 import com.android.build.gradle.internal.incremental.InstantRunVerifier.ClassBytesJarEntryProvider;
 import com.android.build.gradle.internal.pipeline.TransformManager;
-import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
@@ -72,16 +72,16 @@ import java.util.jar.JarFile;
  */
 public class InstantRunVerifierTransform extends Transform {
 
-    protected static final ILogger LOGGER =
+    private static final ILogger LOGGER =
             new LoggerWrapper(Logging.getLogger(InstantRunVerifierTransform.class));
 
-    private final VariantScope variantScope;
+    private final TransformVariantScope variantScope;
     private final File outputDir;
 
     /**
      * Object that encapsulates the result of the verification process.
      */
-    public static class VerificationResult {
+    private static class VerificationResult {
 
         @Nullable
         private final InstantRunVerifierStatus changes;
@@ -101,7 +101,7 @@ public class InstantRunVerifierTransform extends Transform {
         }
     }
 
-    public InstantRunVerifierTransform(VariantScope variantScope) {
+    public InstantRunVerifierTransform(TransformVariantScope variantScope) {
         this.variantScope = variantScope;
         this.outputDir = variantScope.getIncrementalVerifierDir();
     }
@@ -123,7 +123,7 @@ public class InstantRunVerifierTransform extends Transform {
         }
     }
 
-    public void doTransform(@NonNull Collection<TransformInput> inputs, boolean isIncremental)
+    private void doTransform(@NonNull Collection<TransformInput> inputs, boolean isIncremental)
             throws IOException, TransformException, InterruptedException {
 
         if (!isIncremental && outputDir.exists()) {
@@ -326,7 +326,7 @@ public class InstantRunVerifierTransform extends Transform {
             Files.createParentDirs(outputFile);
             Files.copy(inputFile, outputFile);
         } catch(IOException e) {
-            LOGGER.error(e, "Cannot copy $1$s to back up folder, build will continue but "
+            LOGGER.error(e, "Cannot copy %1$s to back up folder, build will continue but "
                     + "next time this file is modified will result in a cold swap.",
                     inputFile.getAbsolutePath());
         }
