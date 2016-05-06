@@ -36,8 +36,10 @@ import com.android.builder.model.Variant;
 import com.android.ide.common.repository.GradleCoordinate;
 import com.android.ide.common.repository.GradleCoordinate.RevisionComponent;
 import com.android.ide.common.repository.GradleVersion;
+import com.android.ide.common.repository.MavenRepositories;
 import com.android.ide.common.repository.SdkMavenRepository;
 import com.android.repository.Revision;
+import com.android.repository.io.FileOpUtils;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
@@ -850,7 +852,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                 File sdkHome = context.getClient().getSdkHome();
                 File repository = SdkMavenRepository.GOOGLE.getRepositoryLocation(sdkHome, true);
                 if (repository != null) {
-                    GradleCoordinate max = SdkMavenRepository.getHighestInstalledVersion(
+                    GradleCoordinate max = MavenRepositories.getHighestInstalledVersion(
                             dependency.getGroupId(), dependency.getArtifactId(), repository,
                             null, false);
                     if (max != null) {
@@ -1233,8 +1235,8 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
 
     private void checkLocalMavenVersions(Context context, GradleCoordinate dependency,
             Object cookie, String groupId, String artifactId, File repository) {
-        GradleCoordinate max = SdkMavenRepository.getHighestInstalledVersion(groupId, artifactId,
-                repository, null, false);
+        GradleCoordinate max = MavenRepositories.getHighestInstalledVersion(
+                groupId, artifactId, repository, null, false, FileOpUtils.create());
         if (max != null) {
             if (COMPARE_PLUS_HIGHER.compare(dependency, max) < 0
                     && context.isEnabled(DEPENDENCY)) {

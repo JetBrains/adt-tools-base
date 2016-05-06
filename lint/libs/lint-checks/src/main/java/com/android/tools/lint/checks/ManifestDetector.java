@@ -59,6 +59,7 @@ import com.android.builder.model.ProductFlavorContainer;
 import com.android.builder.model.SourceProviderContainer;
 import com.android.builder.model.Variant;
 import com.android.ide.common.repository.GradleCoordinate;
+import com.android.ide.common.repository.MavenRepositories;
 import com.android.ide.common.repository.SdkMavenRepository;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.resources.ResourceUrl;
@@ -721,7 +722,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                             " action is deprecated. Please upgrade to the latest version" +
                             " of play-services-wearable 8.2.0 or later";
                     if (repository != null) {
-                        GradleCoordinate max = SdkMavenRepository
+                        GradleCoordinate max = MavenRepositories
                                 .getHighestInstalledVersion("com.google.android.gms", //$NON-NLS-1$
                                         "play-services-wearable", //$NON-NLS-1$
                                         repository, null, false);
