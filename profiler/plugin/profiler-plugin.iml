@@ -55,6 +55,5 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="library" name="groovy" level="project" />
   </component>
 </module>

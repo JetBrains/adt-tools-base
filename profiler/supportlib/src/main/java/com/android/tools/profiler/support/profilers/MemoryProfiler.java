@@ -16,45 +16,7 @@
 
 package com.android.tools.profiler.support.profilers;
 
-import com.android.tools.profiler.support.profilerserver.MessageHeader;
 
-import android.os.Debug;
-
-import java.nio.ByteBuffer;
-
-public class MemoryProfiler extends AbstractProfilerComponent {
-    @Override
-    public byte getComponentId() {
-        return ProfilerRegistry.MEMORY;
-    }
-
-    @Override
-    public String configure(byte flags) {
-        return null;
-    }
-
-    @Override
-    public void onClientConnection() {
-
-    }
-
-    @Override
-    public void onClientDisconnection() {
-
-    }
-
-    @Override
-    public void initialize() {
-
-    }
-
-    @Override
-    public int receiveMessage(long frameStartTime, MessageHeader header, ByteBuffer input, ByteBuffer output) {
-        return RESPONSE_OK;
-    }
-
-    @Override
-    public int update(long frameStartTime, ByteBuffer output) {
-        return UPDATE_DONE;
-    }
+public class MemoryProfiler implements ProfilerComponent {
+    //TODO: Decide whether we need a Java side for memory profiling.
 }
