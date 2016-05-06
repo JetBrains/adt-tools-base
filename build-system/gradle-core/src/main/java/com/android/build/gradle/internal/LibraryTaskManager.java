@@ -21,7 +21,7 @@ import static com.android.SdkConstants.FD_RENDERSCRIPT;
 import static com.android.SdkConstants.FN_ANNOTATIONS_ZIP;
 import static com.android.SdkConstants.FN_CLASSES_JAR;
 import static com.android.SdkConstants.LIBS_FOLDER;
-import static com.android.builder.dependency.AbstractLibraryDependency.FN_PROGUARD_TXT;
+import static com.android.builder.dependency.AbstractBundleDependency.FN_PROGUARD_TXT;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -50,11 +50,8 @@ import com.android.build.gradle.tasks.ExtractAnnotations;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.BuilderConstants;
-import com.android.builder.dependency.AbstractLibraryDependency;
+import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.dependency.MavenCoordinatesImpl;
-import com.android.builder.model.AndroidLibrary;
-import com.android.builder.model.JavaLibrary;
-import com.android.builder.model.MavenCoordinates;
 import com.android.builder.model.SyncIssue;
 import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.Recorder;
@@ -509,10 +506,7 @@ public class LibraryTaskManager extends TaskManager {
                 });
     }
 
-    private static final class LocalTestedAarLibrary extends AbstractLibraryDependency {
-
-        @NonNull
-        private final String projectVariant;
+    private static final class LocalTestedAarLibrary extends LibraryDependency {
 
         LocalTestedAarLibrary(
                 @NonNull File bundle,
@@ -521,14 +515,25 @@ public class LibraryTaskManager extends TaskManager {
                 @Nullable String projectPath,
                 @NonNull String projectVariant,
                 boolean isProvided) {
-            super(bundle, bundleFolder, name, projectPath, isProvided);
-            this.projectVariant = projectVariant;
+            super(
+                    bundle,
+                    bundleFolder,
+                    ImmutableList.of(), /* androidDependencies */
+                    ImmutableList.of(), /* jarDependencies */
+                    name,
+                    projectPath,
+                    projectVariant,
+                    null, /* requestedCoordinates */
+                    new MavenCoordinatesImpl(
+                            "__tested_library__",
+                            bundle.getPath(),
+                            "unspecified"),
+                    isProvided);
         }
 
         @Override
-        @NonNull
-        public String getProjectVariant() {
-            return projectVariant;
+        public boolean isSkipped() {
+            return false;
         }
 
         @NonNull
@@ -539,38 +544,6 @@ public class LibraryTaskManager extends TaskManager {
             return getFolder();
         }
 
-        @NonNull
-        @Override
-        public List<? extends AndroidLibrary> getLibraryDependencies() {
-            // we don't want to include these since it's carried by the
-            // test configuration
-            return ImmutableList.of();
-        }
-
-        @NonNull
-        @Override
-        public Collection<? extends JavaLibrary> getJavaDependencies() {
-            // we don't want to include these since it's carried by the
-            // test configuration
-            return ImmutableList.of();
-        }
-
-        @Override
-        @Nullable
-        public MavenCoordinates getRequestedCoordinates() {
-            return null;
-        }
-
-        @Override
-        @NonNull
-        public MavenCoordinates getResolvedCoordinates() {
-            return new MavenCoordinatesImpl("__tested_library__", getBundle().getPath(), "unspecified");
-        }
-
-        @Override
-        public boolean isSkipped() {
-            return false;
-        }
     }
 
     private void excludeDataBindingClassesIfNecessary(final VariantScope variantScope,

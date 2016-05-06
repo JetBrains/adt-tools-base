@@ -91,7 +91,7 @@ public class DependencyManager {
     private final ExtraModelInfo extraModelInfo;
     private final ILogger logger;
 
-    final Map<String, PrepareLibraryTask> prepareTaskMap = Maps.newHashMap();
+    private final Map<String, PrepareLibraryTask> prepareLibTaskMap = Maps.newHashMap();
 
     public DependencyManager(@NonNull Project project, @NonNull ExtraModelInfo extraModelInfo) {
         this.project = project;
@@ -120,7 +120,7 @@ public class DependencyManager {
             @NonNull AndroidLibrary lib,
             @NonNull AndroidTask<PrepareDependenciesTask> prepareDependenciesTask,
             @NonNull AndroidTask<DefaultTask> preBuildTask) {
-        PrepareLibraryTask prepareLibTask = prepareTaskMap.get(lib.getResolvedCoordinates().toString());
+        PrepareLibraryTask prepareLibTask = prepareLibTaskMap.get(lib.getResolvedCoordinates().toString());
         if (prepareLibTask != null) {
             prepareDependenciesTask.dependsOn(tasks, prepareLibTask);
             prepareLibTask.dependsOn(preBuildTask.getName());
@@ -135,11 +135,11 @@ public class DependencyManager {
             @NonNull VariantDependencies variantDeps,
             @Nullable VariantDependencies testedVariantDeps,
             @Nullable String testedProjectPath) {
-        Multimap<AndroidLibrary, Configuration> reverseMap = ArrayListMultimap.create();
+        Multimap<AndroidLibrary, Configuration> reverseLibMap = ArrayListMultimap.create();
 
-        resolveDependencyForConfig(variantDeps, testedVariantDeps, testedProjectPath, reverseMap);
+        resolveDependencyForConfig(variantDeps, testedVariantDeps, testedProjectPath, reverseLibMap);
 
-        processLibraries(reverseMap);
+        processLibraries(reverseLibMap);
     }
 
     private void processLibraries(@NonNull Multimap<AndroidLibrary, Configuration> reverseMap) {
@@ -200,11 +200,11 @@ public class DependencyManager {
         // However there is a possible case of a rewritten dependencies (with resolution strategy)
         // where the aar here could have different dependencies, in which case we would still
         // need the same task.
-        // So we extract a AbstractLibraryDependency (no dependencies) from the LibraryDependency to
+        // So we extract a AbstractBundleDependency (no dependencies) from the LibraryDependency to
         // make the map key that doesn't take into account the dependencies.
         String key = library.getResolvedCoordinates().toString();
 
-        PrepareLibraryTask prepareLibraryTask = prepareTaskMap.get(key);
+        PrepareLibraryTask prepareLibraryTask = prepareLibTaskMap.get(key);
 
         if (prepareLibraryTask == null) {
             String bundleName = GUtil.toCamelCase(lib.getName().replaceAll("\\:", " "));
@@ -214,10 +214,10 @@ public class DependencyManager {
 
             prepareLibraryTask.setDescription("Prepare " + lib.getName());
             prepareLibraryTask.setBundle(lib.getBundle());
-            prepareLibraryTask.setExplodedDir(lib.getBundleFolder());
+            prepareLibraryTask.setExplodedDir(lib.getFolder());
             prepareLibraryTask.setVariantName("");
 
-            prepareTaskMap.put(key, prepareLibraryTask);
+            prepareLibTaskMap.put(key, prepareLibraryTask);
         }
 
         return prepareLibraryTask;
@@ -227,7 +227,7 @@ public class DependencyManager {
             @NonNull final VariantDependencies variantDeps,
             @Nullable VariantDependencies testedVariantDeps,
             @Nullable String testedProjectPath,
-            @NonNull Multimap<AndroidLibrary, Configuration> reverseMap) {
+            @NonNull Multimap<AndroidLibrary, Configuration> reverseLibMap) {
 
         Configuration compileClasspath = variantDeps.getCompileConfiguration();
         Configuration packageClasspath = variantDeps.getPackageConfiguration();
@@ -253,7 +253,7 @@ public class DependencyManager {
         DependencyContainer packagedDependencies = gatherDependencies(
                 packageClasspath,
                 variantDeps,
-                reverseMap,
+                reverseLibMap,
                 currentUnresolvedDependencies,
                 testedProjectPath,
                 artifactSet,
@@ -264,7 +264,7 @@ public class DependencyManager {
         DependencyContainer compileDependencies = gatherDependencies(
                 compileClasspath,
                 variantDeps,
-                reverseMap,
+                reverseLibMap,
                 currentUnresolvedDependencies,
                 testedProjectPath,
                 artifactSet,
@@ -323,7 +323,7 @@ public class DependencyManager {
     private DependencyContainer gatherDependencies(
             @NonNull Configuration configuration,
             @NonNull final VariantDependencies variantDeps,
-            @NonNull Multimap<AndroidLibrary, Configuration> reverseMap,
+            @NonNull Multimap<AndroidLibrary, Configuration> reverseLibMap,
             @NonNull Set<String> currentUnresolvedDependencies,
             @Nullable String testedProjectPath,
             @NonNull Set<String> artifactSet,
@@ -340,7 +340,7 @@ public class DependencyManager {
 
         // get the graph for the Android and Jar dependencies. This does not include
         // local jars.
-        List<LibraryDependency> androidDependencies = Lists.newArrayList();
+        List<LibraryDependency> libraryDependencies = Lists.newArrayList();
         List<JarDependency> jarDependencies = Lists.newArrayList();
 
         Set<? extends DependencyResult> dependencyResultSet = configuration.getIncoming()
@@ -352,12 +352,12 @@ public class DependencyManager {
                         ((ResolvedDependencyResult) dependencyResult).getSelected(),
                         variantDeps,
                         configuration,
-                        androidDependencies,
+                        libraryDependencies,
                         jarDependencies,
                         foundLibraries,
                         foundJars,
                         artifacts,
-                        reverseMap,
+                        reverseLibMap,
                         currentUnresolvedDependencies,
                         testedProjectPath,
                         Collections.emptyList(),
@@ -417,7 +417,7 @@ public class DependencyManager {
             }
         }
 
-        return new DependencyContainerImpl(androidDependencies, jarDependencies, localJars);
+        return new DependencyContainerImpl(libraryDependencies, jarDependencies, localJars);
     }
 
     private void ensureConfigured(Configuration config) {
@@ -482,7 +482,7 @@ public class DependencyManager {
             @NonNull Map<ModuleVersionIdentifier, List<LibraryDependency>> alreadyFoundLibraries,
             @NonNull Map<ModuleVersionIdentifier, List<JarDependency>> alreadyFoundJars,
             @NonNull Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts,
-            @NonNull Multimap<AndroidLibrary, Configuration> reverseMap,
+            @NonNull Multimap<AndroidLibrary, Configuration> reverseLibMap,
             @NonNull Set<String> currentUnresolvedDependencies,
             @Nullable String testedProjectPath,
             @NonNull List<String> projectChain,
@@ -511,7 +511,7 @@ public class DependencyManager {
             outLibraries.addAll(libsForThisModule);
 
             for (AndroidLibrary lib : libsForThisModule) {
-                reverseMap.put(lib, configuration);
+                reverseLibMap.put(lib, configuration);
             }
 
         } else if (jarsForThisModule != null) {
@@ -579,7 +579,7 @@ public class DependencyManager {
                             alreadyFoundLibraries,
                             alreadyFoundJars,
                             artifacts,
-                            reverseMap,
+                            reverseLibMap,
                             currentUnresolvedDependencies,
                             testedProjectPath,
                             newProjectChain,
@@ -632,7 +632,6 @@ public class DependencyManager {
                             printIndent(indent, "PATH: " + path);
                         }
 
-                        //def explodedDir = project.file("$project.rootProject.buildDir/${FD_INTERMEDIATES}/exploded-aar/$path")
                         File explodedDir = project.file(project.getBuildDir() + "/" + FD_INTERMEDIATES + "/exploded-aar/" + path);
 
                         @SuppressWarnings("unchecked")
@@ -650,7 +649,7 @@ public class DependencyManager {
 
                         libsForThisModule.add(LibraryDependency);
                         outLibraries.add(LibraryDependency);
-                        reverseMap.put(LibraryDependency, configuration);
+                        reverseLibMap.put(LibraryDependency, configuration);
 
                     } else if (EXT_JAR.equals(artifact.getExtension())) {
                         if (DEBUG_DEPENDENCY) {

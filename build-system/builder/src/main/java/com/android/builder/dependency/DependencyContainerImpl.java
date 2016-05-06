@@ -37,7 +37,7 @@ import java.util.Set;
 public class DependencyContainerImpl implements DependencyContainer {
 
     @NonNull
-    private final ImmutableList<AndroidLibrary> mAndroidDependencies;
+    private final ImmutableList<AndroidLibrary> mLibraryDependencies;
 
     @NonNull
     private final ImmutableList<JavaLibrary> mJavaDependencies;
@@ -49,7 +49,7 @@ public class DependencyContainerImpl implements DependencyContainer {
             @NonNull List<? extends AndroidLibrary> aars,
             @NonNull Collection<? extends JavaLibrary> jars,
             @NonNull Collection<? extends JavaLibrary> localJars) {
-        mAndroidDependencies = ImmutableList.copyOf(aars);
+        mLibraryDependencies = ImmutableList.copyOf(aars);
         mJavaDependencies = ImmutableList.copyOf(jars);
         mLocalJars = ImmutableList.copyOf(localJars);
     }
@@ -57,7 +57,7 @@ public class DependencyContainerImpl implements DependencyContainer {
     @NonNull
     @Override
     public ImmutableList<AndroidLibrary> getAndroidDependencies() {
-        return mAndroidDependencies;
+        return mLibraryDependencies;
     }
 
     @NonNull
@@ -107,7 +107,7 @@ public class DependencyContainerImpl implements DependencyContainer {
         List<AndroidLibrary> flatAndroidLibs = Lists.newArrayList();
         Set<JavaLibrary> flatJavaLibs = Sets.newIdentityHashSet();
 
-        computeFlatLibraryList(mAndroidDependencies, flatAndroidLibs, flatJavaLibs);
+        computeFlatLibraryList(mLibraryDependencies, flatAndroidLibs, flatJavaLibs);
 
         // add the tested libs after since it'll be added at the beginning of the list.
         if (testedLibrary != null) {
@@ -153,11 +153,11 @@ public class DependencyContainerImpl implements DependencyContainer {
         //        A
         //       / \
         //      B   C
-        //      \  /
+        //       \ /
         //        D
         //
         // Must give: A B C D
-        // So that both B and C override D (and B override C
+        // So that both B and C override D (and B overrides C)
         for (int i = androidLibs.size() - 1  ; i >= 0 ; i--) {
             computeFlatLibraryList(
                     androidLibs.get(i),
@@ -201,7 +201,7 @@ public class DependencyContainerImpl implements DependencyContainer {
     @Override
     public String toString() {
         return Objects.toStringHelper(this)
-                .add("mAndroidDependencies", mAndroidDependencies)
+                .add("mLibraryDependencies", mLibraryDependencies)
                 .add("mJavaDependencies", mJavaDependencies)
                 .add("mLocalJars", mLocalJars)
                 .toString();
