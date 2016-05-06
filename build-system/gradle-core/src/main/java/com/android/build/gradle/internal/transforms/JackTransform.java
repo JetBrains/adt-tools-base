@@ -268,7 +268,10 @@ public class JackTransform extends Transform {
                         globalScope.getExtension().getDexOptions().getOptimize(), !isDebuggable));
         options.setMultiDex(config.isMultiDexEnabled());
         options.setMinSdkVersion(config.getMinSdkVersion().getApiLevel());
-        options.setIncrementalDir(scope.getIncrementalDir(getName()));
+        if (Boolean.TRUE.equals(globalScope.getExtension().getCompileOptions().getIncremental())) {
+            // Default incremental compilation to false.
+            options.setIncrementalDir(scope.getIncrementalDir(getName()));
+        }
         options.setOutputFile(scope.getJackClassesZip());
         options.setResourceDirectories(ImmutableList.of(scope.getJavaResourcesDestinationDir()));
         options.setEcjOptionFile(scope.getJackEcjOptionsFile());
