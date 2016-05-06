@@ -774,7 +774,7 @@ public class VariantManager implements VariantModel {
         final boolean projectMatch;
         final String restrictedVariantName;
         if (restrictVariants) {
-            projectMatch = !variantFactory.isLibrary() &&
+            projectMatch = variantFactory.getVariantConfigurationType() != VariantType.LIBRARY &&
                     project.getPath().equals(AndroidGradleOptions.getRestrictVariantProject(project));
             restrictedVariantName = AndroidGradleOptions.getRestrictVariantName(project);
         } else {
@@ -793,7 +793,7 @@ public class VariantManager implements VariantModel {
                         productFlavorList);
 
                 if (restrictVariants) {
-                    if (variantFactory.isLibrary()) {
+                    if (variantFactory.getVariantConfigurationType() == VariantType.LIBRARY) {
                         // for a library, we can only safely remove variants if:
                         // 1. we're not publishing all of them
                         // 2. this is not the default variant.

@@ -51,8 +51,6 @@ public interface VariantFactory {
     @NonNull
     VariantType getVariantConfigurationType();
 
-    boolean isLibrary();
-
     boolean hasTestScope();
 
     /**
