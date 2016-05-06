@@ -16,8 +16,11 @@
 
 package com.android.build.gradle.internal.dsl;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.model.CoreNdkBuildOptions;
+
+import org.gradle.api.Project;
 
 import java.io.File;
 
@@ -33,6 +36,9 @@ import java.io.File;
  * }
  */
 public class NdkBuildOptions implements CoreNdkBuildOptions {
+    @NonNull
+    final Project project;
+
     @Nullable
     private File path;
 
@@ -42,13 +48,18 @@ public class NdkBuildOptions implements CoreNdkBuildOptions {
     @Nullable
     private String cppflags;
 
-    public NdkBuildOptions() {
+    public NdkBuildOptions(@NonNull Project project) {
+        this.project = project;
     }
 
     @Nullable
     @Override
     public File getPath() {
         return this.path;
+    }
+
+    public void setPath(Object path) {
+        this.path = project.file(path);
     }
 
     @Override

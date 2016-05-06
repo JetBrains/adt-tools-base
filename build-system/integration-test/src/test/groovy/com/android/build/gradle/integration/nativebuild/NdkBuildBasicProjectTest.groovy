@@ -25,6 +25,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
+
 /**
  * Assemble tests for ndk-build.
  */
@@ -70,7 +71,7 @@ $modelBefore
         defaultConfig {
             externalNativeBuild {
               ndkBuild {
-                path file("src/main/cxx/Android.mk")
+                path "src/main/cxx/Android.mk"
                 cFlags = "-DTEST_C_FLAG"
                 cppFlags = "-DTEST_CPP_FLAG"
               }

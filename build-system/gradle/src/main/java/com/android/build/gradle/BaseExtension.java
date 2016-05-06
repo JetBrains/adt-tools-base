@@ -180,7 +180,8 @@ public abstract class BaseExtension implements AndroidConfig {
         aaptOptions = instantiator.newInstance(AaptOptions.class);
         dexOptions = instantiator.newInstance(DexOptions.class, extraModelInfo);
         lintOptions = instantiator.newInstance(LintOptions.class);
-        externalNativeBuild = instantiator.newInstance(ExternalNativeBuild.class, instantiator);
+        externalNativeBuild = instantiator.newInstance(
+                ExternalNativeBuild.class, instantiator, project);
         testOptions = instantiator.newInstance(TestOptions.class);
         compileOptions = instantiator.newInstance(CompileOptions.class);
         packagingOptions = instantiator.newInstance(PackagingOptions.class);
