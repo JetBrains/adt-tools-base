@@ -17,12 +17,10 @@
 #define PROFILER_UTILS_ANDROID_STUDIO_VERSION_H_
 
 namespace profiler {
-namespace utils {
 
 // TODO: Make Android Studio automatically generate this header file.
 const char* const kAndroidStudioVersion = "15.1.876456";
 
-}  // namespace utils
 }  // namespace profiler
 
 #endif  // PROFILER_UTILS_ANDROID_STUDIO_VERSION_H_

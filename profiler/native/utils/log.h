@@ -13,23 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "profiler_service.h"
 
-#include <grpc++/grpc++.h>
+#ifndef PROFILER_LOG_H
+#define PROFILER_LOG_H
 
-#include "proto/profiler_service.grpc.pb.h"
-#include "utils/android_studio_version.h"
+#include <cstdio>
 
-using grpc::ServerContext;
-using grpc::Status;
+#define LOG(...) printf(__VA_ARGS__)
 
-namespace profiler {
-
-Status ProfilerServiceImpl::GetVersion(
-    ServerContext* context, const profiler::proto::VersionRequest* request,
-    profiler::proto::VersionResponse* response) {
-  response->set_version(profiler::kAndroidStudioVersion);
-  return Status::OK;
-}
-
-}  // namespace profiler
+#endif  // PROFILER_LOG_H

@@ -13,23 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "profiler_service.h"
 
-#include <grpc++/grpc++.h>
+#ifndef UTILS_PROFILER_FILE_H
+#define UTILS_PROFILER_FILE_H
 
-#include "proto/profiler_service.grpc.pb.h"
-#include "utils/android_studio_version.h"
-
-using grpc::ServerContext;
-using grpc::Status;
+#include <sys/types.h>
+#include <string>
 
 namespace profiler {
 
-Status ProfilerServiceImpl::GetVersion(
-    ServerContext* context, const profiler::proto::VersionRequest* request,
-    profiler::proto::VersionResponse* response) {
-  response->set_version(profiler::kAndroidStudioVersion);
-  return Status::OK;
-}
+// Class to manipulate filesystem.
+class ProfilerFile {
+ public:
+  explicit ProfilerFile(std::string path);
 
+  bool Exists() const;
+
+  size_t GetSize() const;
+
+  bool Delete() const;
+
+  const std::string& GetPath() const { return path_; }
+
+  const std::string GetFileName() const;
+
+ private:
+  std::string path_;
+};
 }  // namespace profiler
+
+#endif  // UTILS_PROFILER_FILE_H
