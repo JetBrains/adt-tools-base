@@ -161,7 +161,7 @@ public interface VariantScope extends TransformVariantScope, BaseScope {
     File getJarMergingOutputFile();
 
     @NonNull
-    File getManifestKeepListFile();
+    File getManifestKeepListProguardFile();
 
     @NonNull
     File getMainDexListFile();

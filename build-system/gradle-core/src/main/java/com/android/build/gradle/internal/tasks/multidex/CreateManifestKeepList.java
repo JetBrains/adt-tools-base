@@ -24,13 +24,10 @@ import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.io.Files;
 
 import org.gradle.api.tasks.InputFile;
-import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.TaskAction;
@@ -57,8 +54,6 @@ public class CreateManifestKeepList extends DefaultAndroidTask {
 
     private File outputFile;
 
-    private File proguardFile;
-
     private Filter filter;
 
     @InputFile
@@ -79,15 +74,6 @@ public class CreateManifestKeepList extends DefaultAndroidTask {
         this.outputFile = outputFile;
     }
 
-    @InputFile @Optional
-    public File getProguardFile() {
-        return proguardFile;
-    }
-
-    public void setProguardFile(File proguardFile) {
-        this.proguardFile = proguardFile;
-    }
-
     /**
      * Register the filter to remove classes that would otherwise be kept in the main dex by
      * the manifest.
@@ -105,37 +91,19 @@ public class CreateManifestKeepList extends DefaultAndroidTask {
     @TaskAction
     public void generateKeepListFromManifest()
             throws ParserConfigurationException, SAXException, IOException {
-        generateKeepListFromManifest(getManifest(), getOutputFile(), getProguardFile(), filter);
+        generateKeepListFromManifest(getManifest(), getOutputFile(), filter);
     }
 
     @VisibleForTesting
     static void generateKeepListFromManifest(
             @NonNull File manifest,
             @NonNull File outputFile,
-            @Nullable File proguardFile,
             @Nullable Filter filter) throws ParserConfigurationException, SAXException,
             IOException {
         SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
 
         try (Writer out = new BufferedWriter(new FileWriter(outputFile))) {
             parser.parse(manifest, new ManifestHandler(out, filter));
-
-            // add a couple of rules that cannot be easily parsed from the manifest.
-            out.write("-keep public class * extends android.app.backup.BackupAgent {\n"
-                    + "    <init>();\n"
-                    + "}\n"
-                    + "-keep public class * extends java.lang.annotation.Annotation {\n"
-                    + "    *;\n"
-                    + "}\n"
-                    + "-keep class com.android.tools.fd.** {\n"
-                    + "    *;\n"
-                    + "}\n"
-                    + "-dontnote com.android.tools.fd.**,"
-                    + "android.support.multidex.MultiDexExtractor\n");
-
-            if (proguardFile != null) {
-                out.write(Files.toString(proguardFile, Charsets.UTF_8));
-            }
         }
     }
 
@@ -200,7 +168,7 @@ public class CreateManifestKeepList extends DefaultAndroidTask {
 
     public static class ConfigAction implements TaskConfigAction<CreateManifestKeepList> {
 
-        private VariantScope scope;
+        private final VariantScope scope;
 
         public ConfigAction(@NonNull VariantScope scope) {
             this.scope = scope;
@@ -232,8 +200,7 @@ public class CreateManifestKeepList extends DefaultAndroidTask {
                 }
             });
 
-            manifestKeepListTask.proguardFile = scope.getVariantConfiguration().getMultiDexKeepProguard();
-            manifestKeepListTask.outputFile = scope.getManifestKeepListFile();
+            manifestKeepListTask.outputFile = scope.getManifestKeepListProguardFile();
         }
     }
 

@@ -1783,7 +1783,6 @@ public abstract class TaskManager {
             // create the transform that's going to take the code and the proguard keep list
             // from above and compute the main class list.
             MultiDexTransform multiDexTransform = new MultiDexTransform(
-                    variantScope.getManifestKeepListFile(),
                     variantScope,
                     null);
             multiDexClassListTask = transformManager.addTransform(
