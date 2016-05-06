@@ -1020,6 +1020,7 @@ public final class SdkConstants {
     public static final String ATTR_AUTO_TEXT = "autoText";            //$NON-NLS-1$
     public static final String ATTR_ENABLED = "enabled";               //$NON-NLS-1$
     public static final String ATTR_SINGLE_LINE = "singleLine";        //$NON-NLS-1$
+    public static final String ATTR_SELECT_ALL_ON_FOCUS = "selectAllOnFocus";  //$NON-NLS-1$
     public static final String ATTR_SCALE_TYPE = "scaleType";          //$NON-NLS-1$
     public static final String ATTR_VISIBILITY = "visibility";         //$NON-NLS-1$
     public static final String ATTR_TEXT_IS_SELECTABLE =
@@ -1155,6 +1156,13 @@ public final class SdkConstants {
     public static final String ATTR_LAYOUT_ANCHOR_GRAVITY = "layout_anchorGravity"; //$NON-NLS-1$
     public static final String ATTR_LAYOUT_BEHAVIOR = "layout_behavior";            //$NON-NLS-1$
     public static final String ATTR_LAYOUT_KEYLINE = "layout_keyline";              //$NON-NLS-1$
+
+    // Attributes: FloatingActionButton
+    public static final String ATTR_BACKGROUND_TINT = "backgroundTint";             //$NON-NLS-1$
+    public static final String ATTR_RIPPLE_COLOR = "rippleColor";                   //$NON-NLS-1$
+    public static final String ATTR_TINT = "tint";                                  //$NON-NLS-1$
+    public static final String ATTR_FAB_SIZE = "fabSize";                           //$NON-NLS-1$
+    public static final String ATTR_ELEVATION = "elevation";                        //$NON-NLS-1$
 
     // Values: Manifest
     public static final String VALUE_SPLIT_ACTION_BAR_WHEN_NARROW = "splitActionBarWhenNarrow"; // NON-NLS-$1
