@@ -67,7 +67,7 @@ public interface Library {
      * In the 'package' graph the value is always <code>false</code> since the provided dependencies
      * are not present
      *
-     * @return true id provided.
+     * @return true if provided.
      */
     boolean isProvided();
 }

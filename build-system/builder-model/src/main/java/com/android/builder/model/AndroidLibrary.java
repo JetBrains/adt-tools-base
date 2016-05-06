@@ -17,41 +17,14 @@
 package com.android.builder.model;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.List;
 
 /**
- * Represents an Android Library dependency, its content and its own dependencies
+ * Represents an Android Library dependency, its content and its own dependencies.
  */
-public interface AndroidLibrary extends Library {
-
-    /**
-     * Returns an optional configuration name if the library is output by a module
-     * that publishes more than one variant.
-     */
-    @Nullable
-    String getProjectVariant();
-
-    /**
-     * Returns the location of the library aar bundle.
-     */
-    @NonNull
-    File getBundle();
-
-    /**
-     * Returns the location of the unzipped bundle folder.
-     */
-    @NonNull
-    File getFolder();
-
-    /**
-     * Returns the direct dependency of this dependency. The order is important.
-     */
-    @NonNull
-    List<? extends AndroidLibrary> getLibraryDependencies();
+public interface AndroidLibrary extends AndroidBundle {
 
     /**
      * Returns the list of local Jar files that are included in the dependency.
@@ -60,28 +33,6 @@ public interface AndroidLibrary extends Library {
      */
     @NonNull
     Collection<File> getLocalJars();
-
-    /**
-     * Returns the collection of external Jar files that are included in the dependency.
-     * @return a list of JavaDependency. May be empty but not null.
-     */
-    @NonNull
-    Collection<? extends JavaLibrary> getJavaDependencies();
-
-    /**
-     * Returns the location of the manifest.
-     */
-    @NonNull
-    File getManifest();
-
-    /**
-     * Returns the location of the jar file to use for packaging.
-     *
-     * @return a File for the jar file. The file may not point to an existing file.
-     */
-    @NonNull
-    File getJarFile();
-
 
     /**
      * Returns the location of the res folder.
@@ -179,4 +130,5 @@ public interface AndroidLibrary extends Library {
      */
     @Deprecated
     boolean isOptional();
+
 }

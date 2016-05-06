@@ -30,7 +30,6 @@ import org.gradle.api.file.FileCopyDetails;
 import org.gradle.api.file.RelativePath;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
@@ -61,49 +60,6 @@ public class LibraryCache {
 
     @GuardedBy("this")
     private final Map<String, CountDownLatch> bundleLatches = Maps.newHashMap();
-
-    public void unzipLibrary(
-            @NonNull String taskName,
-            @NonNull Project project,
-            @NonNull File bundle,
-            @NonNull File folderOut) throws IOException {
-
-        // only synchronize access to the latch so that unzipping 2+ different
-        // libraries in parallel will work.
-        boolean newItem = false;
-        CountDownLatch latch;
-        synchronized (this) {
-            String path = bundle.getCanonicalPath();
-            latch = bundleLatches.get(path);
-            if (latch == null) {
-                latch = new CountDownLatch(1);
-                bundleLatches.put(path, latch);
-                newItem = true;
-            }
-        }
-
-        if (newItem) {
-            try {
-                project.getLogger().debug("$taskName: ERASE ${folderOut.getPath()}");
-
-                unzipAar(bundle, folderOut, project);
-
-                project.getLogger().debug(
-                        "$taskName: UNZIP ${bundle.getPath()} -> ${folderOut.getPath()}");
-            } finally {
-                latch.countDown();
-            }
-        } else {
-            while (true) {
-                try {
-                    latch.await();
-                    break;
-                } catch (InterruptedException e) {
-                    // Cycle again.
-                }
-            }
-        }
-    }
 
     public static void unzipAar(final File bundle, final File folderOut, final Project project) {
         for (File f : Files.fileTreeTraverser().postOrderTraversal(folderOut)) {
