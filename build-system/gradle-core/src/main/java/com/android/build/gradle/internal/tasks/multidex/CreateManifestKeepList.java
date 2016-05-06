@@ -47,6 +47,11 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+/**
+ * Generate the keep list from the manifest for build tools &lt; 24.
+ *
+ * <p>For build tools &ge; 24 aapt generates this file (-D flag).
+ */
 @ParallelizableTask
 public class CreateManifestKeepList extends DefaultAndroidTask {
 

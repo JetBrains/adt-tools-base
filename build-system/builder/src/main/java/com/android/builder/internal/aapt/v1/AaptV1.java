@@ -225,6 +225,13 @@ public class AaptV1 extends AbstractProcessExecutionAapt {
             builder.addArgs("-G", config.getProguardOutputFile().getAbsolutePath());
         }
 
+        if (config.getMainDexListProguardOutputFile() != null) {
+            Preconditions.checkState(
+                    mBuildToolInfo.getRevision().compareTo(VERSION_FOR_MAIN_DEX_LIST) >= 0,
+                    "AAPT<%s cannot compute the main dex list", VERSION_FOR_MAIN_DEX_LIST);
+            builder.addArgs("-D", config.getMainDexListProguardOutputFile().getAbsolutePath());
+        }
+
         if (config.getSplits() != null) {
             for (String split : config.getSplits()) {
                 builder.addArgs("--split", split);

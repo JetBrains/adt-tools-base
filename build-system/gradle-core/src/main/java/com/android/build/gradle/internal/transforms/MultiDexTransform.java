@@ -208,12 +208,18 @@ public class MultiDexTransform extends BaseProguardAction {
         dontwarn();
         dontnote();
         forceprocessing();
+
         applyConfigurationFile(manifestKeepListProguardFile);
         if (userMainDexKeepProguard != null) {
             applyConfigurationFile(userMainDexKeepProguard);
         }
 
         // add a couple of rules that cannot be easily parsed from the manifest.
+        keep("public class * extends android.app.Instrumentation { <init>(); }");
+        keep("public class * extends android.app.Application { "
+                + "  <init>(); "
+                + "  void attachBaseContext(android.content.Context);"
+                + "}");
         keep("public class * extends android.app.backup.BackupAgent { <init>(); }");
         keep("public class * extends java.lang.annotation.Annotation { *;}");
         keep("class com.android.tools.fd.** {*;}"); // Instant run.
