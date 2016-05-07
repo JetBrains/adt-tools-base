@@ -90,6 +90,8 @@ import java.util.Set;
 public class JackTransform extends Transform {
     public static final Revision JACK_MIN_REV = new Revision(24, 0, 0);
 
+    private Project project;
+
     private AndroidBuilder androidBuilder;
 
     private JackProcessOptions options;
@@ -192,17 +194,8 @@ public class JackTransform extends Transform {
             throws TransformException, InterruptedException, IOException {
         try {
             runJack(transformInvocation);
-        } catch (ProcessException e) {
-            throw new TransformException(e);
-        } catch (ConfigNotSupportedException e) {
-            throw new TransformException(e);
-        } catch (ClassNotFoundException e) {
-            throw new TransformException(e);
-        } catch (CompilationException e) {
-            throw new TransformException(e);
-        } catch (ConfigurationException e) {
-            throw new TransformException(e);
-        } catch (UnrecoverableException e) {
+        } catch (ProcessException | ConfigNotSupportedException | CompilationException
+                | ClassNotFoundException | UnrecoverableException | ConfigurationException e) {
             throw new TransformException(e);
         }
     }
@@ -241,6 +234,10 @@ public class JackTransform extends Transform {
         return options.getMappingFile();
     }
 
+    public void addSource(File sourceFolder) {
+        sourceFileTrees.add(project.fileTree(sourceFolder));
+    }
+
     public JackTransform(
             final VariantScope scope,
             final boolean isDebugLog,
@@ -253,15 +250,9 @@ public class JackTransform extends Transform {
 
         androidBuilder = globalScope.getAndroidBuilder();
 
-        Project project = globalScope.getProject();
+        project = globalScope.getProject();
         if (compileJavaSources) {
             sourceFileTrees.addAll(scope.getVariantData().getJavaSources());
-            if (scope.getVariantData().getExtraGeneratedSourceFolders() != null) {
-                for (File extraSourceFolder : scope.getVariantData()
-                        .getExtraGeneratedSourceFolders()) {
-                    sourceFileTrees.add(project.fileTree(extraSourceFolder));
-                }
-            }
         }
         final GradleVariantConfiguration config = scope.getVariantData().getVariantConfiguration();
         options.setJavaMaxHeapSize(globalScope.getExtension().getDexOptions().getJavaMaxHeapSize());
