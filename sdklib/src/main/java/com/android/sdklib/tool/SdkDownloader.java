@@ -15,6 +15,7 @@
  */
 package com.android.sdklib.tool;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.api.Channel;
 import com.android.repository.api.ConsoleProgressIndicator;
@@ -28,10 +29,10 @@ import com.android.repository.util.InstallerUtil;
 import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.installer.SdkInstallerUtil;
 import com.android.sdklib.repository.legacy.LegacyDownloader;
-import com.android.sdklib.repository.legacy.LegacyRemoteRepoLoader;
 import com.google.common.collect.Lists;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -45,30 +46,24 @@ import java.util.List;
  */
 public class SdkDownloader {
 
-    public static void main(String args[]) {
-        if (args.length < 2) {
+    public static void main(@NonNull String args[]) {
+        Settings settings = Settings.createSettings(args);
+        if (settings == null) {
             usageAndExit();
         }
-        String local = args[0];
-        File localPath = new File(local);
+
+        File localPath = settings.getLocalPath();
         ConsoleProgressIndicator progress = new ConsoleProgressIndicator();
-        if (!localPath.exists()) {
-            if (!localPath.mkdirs()) {
-                progress.logError("Failed to create SDK root dir: " + local);
-                usageAndExit();
-            }
-        }
-        Settings settingsController = new Settings();
         AndroidSdkHandler handler = AndroidSdkHandler.getInstance(localPath);
         RepoManager mgr = handler.getSdkManager(progress);
         LegacyDownloader downloader = new LegacyDownloader(handler.getFileOp());
-        mgr.loadSynchronously(0, progress, downloader, settingsController);
+        mgr.loadSynchronously(0, progress, downloader, settings);
         RepositoryPackages packages = mgr.getPackages();
         List<RemotePackage> remotes = Lists.newArrayList();
-        for (int i = 1; i < args.length; i++) {
-            RemotePackage p = packages.getRemotePackages().get(args[i]);
+        for (String path : settings.mPackages) {
+            RemotePackage p = packages.getRemotePackages().get(path);
             if (p == null) {
-                progress.logError("Failed to find package " + args[i]);
+                progress.logError("Failed to find package " + path);
                 usageAndExit();
             }
             remotes.add(p);
@@ -79,10 +74,10 @@ public class SdkDownloader {
             if (l != null) {
                 if (!l.checkAccepted(localPath, handler.getFileOp())) {
                     progress.logError(String.format(
-                            "License for %1$s (%2$s) is not accepted. Please install using "
-                                    + "studio, then copy <studio sdk path>/licenses/* to "
-                                    + "%3$s/licenses/",
-                            p.getDisplayName(), p.getPath(), localPath));
+                      "License for %1$s (%2$s) is not accepted. Please install using "
+                      + "studio, then copy <studio sdk path>/licenses/* to "
+                      + "%3$s/licenses/",
+                      p.getDisplayName(), p.getPath(), localPath));
                     System.exit(1);
                 }
             }
@@ -99,19 +94,60 @@ public class SdkDownloader {
     }
 
     private static void usageAndExit() {
-        System.out.println("Usage: java com.android.sdklib.tool.SdkDownloader <sdk path> "
-                + "<package path> <package path>...\n"
-                + "Where <package path> is a sdk-style path (e.g. build-tools;23.0.0 or "
-                + "platforms;android-23)");
+        System.out.println("Usage: java com.android.sdklib.tool.SdkDownloader "
+          + "[--channel=channelId] <sdk path> "
+          + "<package path> <package path>...\n"
+          + "    <package path> is a sdk-style path (e.g. build-tools;23.0.0 or "
+          + "platforms;android-23)\n"
+          + "    channelId is the id of the least stable channel to check.");
         System.exit(1);
     }
 
     private static class Settings implements SettingsController {
 
+        private static final String CHANNEL_ARG = "--channel=";
+
+        private File mLocalPath;
+        private List<String> mPackages = new ArrayList<>();
+        private int mChannel = 0;
+
+        @Nullable
+        public static Settings createSettings(@NonNull String[] args) {
+            Settings result = new Settings();
+            for (String arg : args) {
+                if (arg.startsWith(CHANNEL_ARG)) {
+                    try {
+                        result.mChannel = Integer.parseInt(arg.substring(CHANNEL_ARG.length()));
+                    }
+                    catch (NumberFormatException e) {
+                        return null;
+                    }
+                }
+                else if (result.mLocalPath == null) {
+                    File path = new File(arg);
+                    ConsoleProgressIndicator progress = new ConsoleProgressIndicator();
+                    if (!path.exists()) {
+                        if (!path.mkdirs()) {
+                            progress.logError("Failed to create SDK root dir: " + path);
+                            return null;
+                        }
+                    }
+                    result.mLocalPath = path;
+                }
+                else {
+                    result.mPackages.add(arg);
+                }
+            }
+            if (result.mLocalPath == null || result.mPackages.isEmpty()) {
+                return null;
+            }
+            return result;
+        }
+
         @Nullable
         @Override
         public Channel getChannel() {
-            return Channel.create(0);
+            return Channel.create(mChannel);
         }
 
         @Override
@@ -123,5 +159,17 @@ public class SdkDownloader {
         public void setForceHttp(boolean force) {
 
         }
+
+        @NonNull
+        public List<String> getPaths() {
+            return mPackages;
+        }
+
+        @NonNull
+        public File getLocalPath() {
+            return mLocalPath;
+        }
+
+        private Settings() {}
     }
 }
