@@ -616,11 +616,13 @@ public final class SdkConstants {
     public static final String CLASS_TAB_LAYOUT = "android.support.design.widget.TabLayout"; //$NON-NLS-1$
     public static final String CLASS_TEXT_INPUT_LAYOUT = "android.support.design.widget.TextInputLayout"; //$NON-NLS-1$
     public static final String CLASS_NESTED_SCROLL_VIEW = "android.support.v4.widget.NestedScrollView";  //$NON-NLS-1$
+    public static final String CLASS_VIEW_PAGER = "android.support.v4.view.ViewPager";  //$NON-NLS-1$
     public static final String CLASS_DRAWER_LAYOUT = "android.support.v4.widget.DrawerLayout";  //$NON-NLS-1$
     public static final String CLASS_GRID_LAYOUT_V7 = "android.support.v7.widget.GridLayout";  //$NON-NLS-1$
     public static final String CLASS_TOOLBAR_V7 = "android.support.v7.widget.Toolbar";  //$NON-NLS-1$
     public static final String CLASS_RECYCLER_VIEW = "android.support.v7.widget.RecyclerView";  //$NON-NLS-1$
     public static final String CLASS_CARD_VIEW = "android.support.v7.widget.CardView";  //$NON-NLS-1$
+    public static final String CLASS_ACTION_MENU_VIEW = "android.support.v7.widget.ActionMenuView";  //$NON-NLS-1$
     public static final String CLASS_AD_VIEW = "com.google.android.gms.ads.AdView";  //$NON-NLS-1$
     public static final String CLASS_MAP_FRAGMENT = "com.google.android.gms.maps.MapFragment";  //$NON-NLS-1$
     public static final String CLASS_MAP_VIEW = "com.google.android.gms.maps.MapView";  //$NON-NLS-1$
@@ -902,10 +904,13 @@ public final class SdkConstants {
     public static final String TAB_LAYOUT = CLASS_TAB_LAYOUT;
     public static final String TEXT_INPUT_LAYOUT = CLASS_TEXT_INPUT_LAYOUT;
     public static final String NESTED_SCROLL_VIEW = CLASS_NESTED_SCROLL_VIEW;
+    public static final String DRAWER_LAYOUT = CLASS_DRAWER_LAYOUT;
+    public static final String VIEW_PAGER = CLASS_VIEW_PAGER;
     public static final String GRID_LAYOUT_V7 = CLASS_GRID_LAYOUT_V7;
     public static final String TOOLBAR_V7 = CLASS_TOOLBAR_V7;
     public static final String RECYCLER_VIEW = CLASS_RECYCLER_VIEW;
     public static final String CARD_VIEW = CLASS_CARD_VIEW;
+    public static final String ACTION_MENU_VIEW = CLASS_ACTION_MENU_VIEW;
     public static final String AD_VIEW = CLASS_AD_VIEW;
     public static final String MAP_FRAGMENT = CLASS_MAP_FRAGMENT;
     public static final String MAP_VIEW = CLASS_MAP_VIEW;
@@ -1044,6 +1049,7 @@ public final class SdkConstants {
     // TextView attributes
     public static final String ATTR_TEXT_APPEARANCE = "textAppearance"; //$NON-NLS-1$
     public static final String ATTR_FONT_FAMILY = "fontFamily";        //$NON-NLS-1$
+    public static final String ATTR_TYPEFACE = "typeface";             //$NON-NLS-1$
     public static final String ATTR_LINE_SPACING_EXTRA = "lineSpacingExtra"; //$NON-NLS-1$
     public static final String ATTR_TEXT_STYLE = "textStyle";          //$NON-NLS-1$
     public static final String ATTR_TEXT_ALIGNMENT = "textAlignment";  //$NON-NLS-1$
@@ -1069,6 +1075,11 @@ public final class SdkConstants {
     public static final String ATTR_LAYOUT_ROW_SPAN = "layout_rowSpan";//$NON-NLS-1$
     public static final String ATTR_LAYOUT_COLUMN = "layout_column";   //$NON-NLS-1$
     public static final String ATTR_LAYOUT_COLUMN_SPAN = "layout_columnSpan";       //$NON-NLS-1$
+
+    // ProgressBar attributes
+    public static final String ATTR_MAXIMUM = "max";                    //$NON-NLS-1$
+    public static final String ATTR_PROGRESS = "progress";              //$NON-NLS-1$
+    public static final String ATTR_INDETERMINATE = "indeterminate";    //$NON-NLS-1$
 
     // ImageView attributes
     public static final String ATTR_ADJUST_VIEW_BOUNDS = "adjustViewBounds"; //$NON-NLS-1$
@@ -1151,18 +1162,53 @@ public final class SdkConstants {
     // Attributes: Drawables
     public static final String ATTR_TILE_MODE = "tileMode";            //$NON-NLS-1$
 
-    // Attributes: CoordinatorLayout
+    // Attributes: Design and support lib
     public static final String ATTR_LAYOUT_ANCHOR = "layout_anchor";                //$NON-NLS-1$
     public static final String ATTR_LAYOUT_ANCHOR_GRAVITY = "layout_anchorGravity"; //$NON-NLS-1$
     public static final String ATTR_LAYOUT_BEHAVIOR = "layout_behavior";            //$NON-NLS-1$
     public static final String ATTR_LAYOUT_KEYLINE = "layout_keyline";              //$NON-NLS-1$
-
-    // Attributes: FloatingActionButton
     public static final String ATTR_BACKGROUND_TINT = "backgroundTint";             //$NON-NLS-1$
     public static final String ATTR_RIPPLE_COLOR = "rippleColor";                   //$NON-NLS-1$
     public static final String ATTR_TINT = "tint";                                  //$NON-NLS-1$
     public static final String ATTR_FAB_SIZE = "fabSize";                           //$NON-NLS-1$
     public static final String ATTR_ELEVATION = "elevation";                        //$NON-NLS-1$
+    public static final String ATTR_FITS_SYSTEM_WINDOWS = "fitsSystemWindows";      //$NON-NLS-1$
+    public static final String ATTR_EXPANDED = "expanded";                          //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_SCROLL_FLAGS = "layout_scrollFlags";     //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_COLLAPSE_MODE = "layout_collapseMode";   //$NON-NLS-1$
+    public static final String ATTR_COLLAPSE_PARALLAX_MULTIPLIER = "layout_collapseParallaxMultiplier"; //$NON-NLS-1$
+    public static final String ATTR_SCROLLBAR_STYLE = "scrollbarStyle";             //$NON-NLS-1$
+    public static final String ATTR_FILL_VIEWPORT = "fillViewport";                 //$NON-NLS-1$
+    public static final String ATTR_CLIP_TO_PADDING = "clipToPadding";              //$NON-NLS-1$
+    public static final String ATTR_CLIP_CHILDREN = "clipChildren";                 //$NON-NLS-1$
+    public static final String ATTR_HEADER_LAYOUT = "headerLayout";                 //$NON-NLS-1$
+    public static final String ATTR_ITEM_BACKGROUND = "itemBackground";             //$NON-NLS-1$
+    public static final String ATTR_ITEM_ICON_TINT = "itemIconTint";                //$NON-NLS-1$
+    public static final String ATTR_ITEM_TEXT_APPEARANCE = "itemTextAppearance";    //$NON-NLS-1$
+    public static final String ATTR_ITEM_TEXT_COLOR = "itemTextColor";              //$NON-NLS-1$
+    public static final String ATTR_POPUP_THEME = "popupTheme";                     //$NON-NLS-1$
+    public static final String ATTR_MIN_HEIGHT = "minHeight";                       //$NON-NLS-1$
+    public static final String ATTR_ACTION_BAR = "actionBar";                       //$NON-NLS-1$
+    public static final String ATTR_CONTENT_SCRIM = "contentScrim";                 //$NON-NLS-1$
+    public static final String ATTR_TOOLBAR_ID = "toolbarId";                       //$NON-NLS-1$
+    public static final String ATTR_DIVIDER = "divider";                            //$NON-NLS-1$
+    public static final String ATTR_DIVIDER_PADDING = "dividerPadding";             //$NON-NLS-1$
+    public static final String ATTR_DIVIDER_HEIGHT = "dividerHeight";               //$NON-NLS-1$
+    public static final String ATTR_FOOTER_DIVIDERS_ENABLED = "footerDividersEnabled";//$NON-NLS-1$
+    public static final String ATTR_HEADER_DIVIDERS_ENABLED = "headerDividersEnabled";//$NON-NLS-1$
+    public static final String ATTR_CARD_BACKGROUND_COLOR = "cardBackgroundColor";  //$NON-NLS-1$
+    public static final String ATTR_CARD_CORNER_RADIUS = "cardCornerRadius";        //$NON-NLS-1$
+    public static final String ATTR_CONTENT_PADDING = "contentPadding";             //$NON-NLS-1$
+    public static final String ATTR_CARD_ELEVATION = "cardElevation";               //$NON-NLS-1$
+    public static final String ATTR_PREVENT_CORNER_OVERLAP = "preventCornerOverlap";//$NON-NLS-1$
+    public static final String ATTR_USE_COMPAT_PADDING = "useCompatPadding";        //$NON-NLS-1$
+    public static final String ATTR_SPINNER_MODE = "spinnerMode";                   //$NON-NLS-1$
+    public static final String ATTR_ENTRIES = "entries";                            //$NON-NLS-1$
+    public static final String ATTR_POPUP_BACKGROUND = "popupBackground";           //$NON-NLS-1$
+    public static final String ATTR_MIN_WIDTH = "minWidth";                         //$NON-NLS-1$
+    public static final String ATTR_DROPDOWN_WIDTH = "dropDownWidth";               //$NON-NLS-1$
+    public static final String ATTR_DRAW_SELECTOR_ON_TOP = "drawSelectorOnTop";     //$NON-NLS-1$
+    public static final String ATTR_SCROLLBARS = "scrollbars";                      //$NON-NLS-1$
 
     // Values: Manifest
     public static final String VALUE_SPLIT_ACTION_BAR_WHEN_NARROW = "splitActionBarWhenNarrow"; // NON-NLS-$1
@@ -1424,6 +1470,10 @@ public final class SdkConstants {
     public static final String ATTR_HANDLE = "handle";                  //$NON-NLS-1$
     public static final String ATTR_CONTENT = "content";                //$NON-NLS-1$
     public static final String ATTR_CHECKED = "checked";                //$NON-NLS-1$
+    public static final String ATTR_CHECK_MARK = "checkMark";           //$NON-NLS-1$
+    public static final String ATTR_CHECK_MARK_TINT = "checkMarkTint";  //$NON-NLS-1$
+    public static final String ATTR_TEXT_OFF = "textOff";               //$NON-NLS-1$
+    public static final String ATTR_TEXT_ON = "textOn";                 //$NON-NLS-1$
 
     // TextView
     public static final String ATTR_DRAWABLE_RIGHT = "drawableRight";              //$NON-NLS-1$
