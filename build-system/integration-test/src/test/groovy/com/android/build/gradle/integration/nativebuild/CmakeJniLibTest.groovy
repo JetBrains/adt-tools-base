@@ -55,7 +55,7 @@ android {
     defaultConfig {
         externalNativeBuild {
           cmake {
-            path file(".")
+            path "."
           }
         }
     }
