@@ -86,6 +86,7 @@ public class JackConversionCache extends PreProcessCache<DexKey> {
                 androidBuilder.getTargetInfo().getBuildTools().getRevision(),
                 options.getJumboMode(),
                 options.getDexOptimize(),
+                null,
                 Lists.newArrayList());
 
         Pair<PreProcessCache.Item, Boolean> pair = getItem(itemKey);

@@ -99,6 +99,7 @@ public class PreDexCache extends PreProcessCache<DexKey> {
                 builder.getTargetInfo().getBuildTools().getRevision(),
                 dexOptions.getJumboMode(),
                 optimize,
+                multiDex,
                 dexOptions.getAdditionalParameters());
 
         Pair<Item, Boolean> pair = getItem(itemKey);
@@ -142,7 +143,6 @@ public class PreDexCache extends PreProcessCache<DexKey> {
                         checkSame(sourceFile, destFile);
                         Files.copy(sourceFile, destFile);
                     }
-
                 } else {
                     // file already pre-dex, just copy the output.
                     if (item.getOutputFiles().isEmpty()) {
@@ -152,7 +152,6 @@ public class PreDexCache extends PreProcessCache<DexKey> {
                     Files.copy(item.getOutputFiles().get(0), outFile);
                 }
                 incrementHits();
-
             }
         }
     }
