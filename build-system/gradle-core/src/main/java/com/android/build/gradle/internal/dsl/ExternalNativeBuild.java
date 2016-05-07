@@ -21,6 +21,7 @@ import com.android.build.gradle.internal.model.CoreCmakeOptions;
 import com.android.build.gradle.internal.model.CoreExternalNativeBuild;
 
 import org.gradle.api.Action;
+import org.gradle.api.Project;
 import org.gradle.internal.reflect.Instantiator;
 
 /**
@@ -39,9 +40,9 @@ public class ExternalNativeBuild implements CoreExternalNativeBuild {
     private NdkBuildOptions ndkBuild;
     private CmakeOptions cmake;
 
-    public ExternalNativeBuild(@NonNull Instantiator instantiator) {
-        ndkBuild = instantiator.newInstance(NdkBuildOptions.class);
-        cmake = instantiator.newInstance(CmakeOptions.class);
+    public ExternalNativeBuild(@NonNull Instantiator instantiator, @NonNull Project project) {
+        ndkBuild = instantiator.newInstance(NdkBuildOptions.class, project);
+        cmake = instantiator.newInstance(CmakeOptions.class, project);
     }
 
     @NonNull

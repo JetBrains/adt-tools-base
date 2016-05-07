@@ -72,7 +72,7 @@ $modelBefore
         defaultConfig {
             externalNativeBuild {
               cmake {
-                path file(".")
+                path "."
                 cFlags = "-DTEST_C_FLAG"
                 cppFlags = "-DTEST_CPP_FLAG"
               }
