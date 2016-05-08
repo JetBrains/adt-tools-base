@@ -2191,6 +2191,62 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    @SuppressWarnings("all") // sample code
+    public void testRequiresApi() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/TestRequiresApi.java:9: Error: Call requires API level 21 (current min is 15): LollipopClass [NewApi]\n"
+                + "        LollipopClass lollipopClass = new LollipopClass();\n"
+                + "                                      ~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/TestRequiresApi.java:10: Error: Call requires API level 21 (current min is 15): requiresLollipop [NewApi]\n"
+                + "        lollipopClass.requiresLollipop(); // ERROR - requires 21\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "2 errors, 0 warnings\n",
+                lintProject(
+                        manifest().minSdk(15),
+                        java("src/test/pkg/TestRequiresApi.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.support.annotation.RequiresApi;\n"
+                                + "\n"
+                                + "@SuppressWarnings({\"WeakerAccess\", \"unused\"})\n"
+                                + "public class TestRequiresApi {\n"
+                                + "    public void caller() {\n"
+                                + "        equiresKitKat(); // ERROR - requires 19\n"
+                                + "        LollipopClass lollipopClass = new LollipopClass();\n"
+                                + "        lollipopClass.requiresLollipop(); // ERROR - requires 21\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    @RequiresApi(19)\n"
+                                + "    public void requiresKitKat() {\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    @RequiresApi(21)\n"
+                                + "    public class LollipopClass {\n"
+                                + "        LollipopClass() {\n"
+                                + "        }\n"
+                                + "\n"
+                                + "        public void requiresLollipop() {\n"
+                                + "            requiresKitKat(); // OK\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "}\n"),
+                        java("src/annotation/support/annotation/RequiresApi.java", ""
+                                + "package android.support.annotation;\n"
+                                + "\n"
+                                + "import java.lang.annotation.Retention;\n"
+                                + "import java.lang.annotation.Target;\n"
+                                + "\n"
+                                + "import static java.lang.annotation.ElementType.*;\n"
+                                + "import static java.lang.annotation.RetentionPolicy.*;\n"
+                                + "\n"
+                                + "@Retention(SOURCE)\n"
+                                + "@Target({TYPE,METHOD,CONSTRUCTOR,FIELD})\n"
+                                + "public @interface RequiresApi {\n"
+                                + "    int value();\n"
+                                + "}")
+                ));
+    }
+
     public void testDrawableThemeReferences() throws Exception {
         // Regression test for
         // https://code.google.com/p/android/issues/detail?id=199597
