@@ -27,7 +27,7 @@ import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
 import com.android.build.api.transform.JarInput;
 import com.android.build.api.transform.QualifiedContent;
-import com.android.build.api.transform.SecondaryFile;
+import com.android.build.api.transform.QualifiedContent.ContentType;
 import com.android.build.api.transform.Status;
 import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
@@ -42,7 +42,6 @@ import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.InstantRunVariantScope;
-import com.android.build.api.transform.QualifiedContent.ContentType;
 import com.android.ide.common.util.UrlClassLoaderUtil;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
@@ -346,8 +345,7 @@ public class InstantRunTransform extends Transform {
         List<URL> referencedInputUrls = new ArrayList<>();
 
         // add the bootstrap classpath for jars like android.jar
-        for (File file : transformScope.getBootClasspath(
-                true /* includeOptionalLibraries */)) {
+        for (File file : transformScope.getInstantRunBootClasspath()) {
             referencedInputUrls.add(file.toURI().toURL());
         }
 

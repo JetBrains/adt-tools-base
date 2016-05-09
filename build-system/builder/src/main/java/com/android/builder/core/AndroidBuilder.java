@@ -29,7 +29,6 @@ import static com.google.common.base.Preconditions.checkState;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.annotations.concurrency.GuardedBy;
 import com.android.builder.compiling.DependencyFileProcessor;
 import com.android.builder.core.BuildToolsServiceLoader.BuildToolServiceLoader;
 import com.android.builder.files.FileModificationType;
@@ -50,7 +49,6 @@ import com.android.builder.internal.compiler.SourceSearcher;
 import com.android.builder.internal.packaging.OldPackager;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.SigningConfig;
-import com.android.builder.model.SyncIssue;
 import com.android.builder.packaging.ApkCreatorFactory;
 import com.android.builder.packaging.PackagerException;
 import com.android.builder.packaging.SealedPackageException;
@@ -91,7 +89,6 @@ import com.android.manifmerger.PlaceholderHandler;
 import com.android.repository.Revision;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
-import com.android.sdklib.IAndroidTarget.OptionalLibrary;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.android.utils.LineCollector;
@@ -124,8 +121,6 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -156,29 +151,9 @@ public class AndroidBuilder {
     public static final Revision MIN_BUILD_TOOLS_REV = new Revision(19, 1, 0);
 
     /**
-     * Object used for locking when handling the {@link #sDexExecutorService}.
-     */
-    private static final Object LOCK_FOR_DEX = new Object();
-
-    /**
-     * Default number of dx "instances" running at once.
-     *
-     * <p>Remember to update the DSL javadoc when changing the default value.
-     */
-    private static final AtomicInteger DEX_PROCESS_COUNT = new AtomicInteger(4);
-
-    /**
      * API level for split APKs.
      */
     private static final int API_LEVEL_SPLIT_APK = 21;
-
-    /**
-     * {@link ExecutorService} used to run all dexing code (either in-process or out-of-process).
-     * Size of the underlying thread pool limits the number of parallel dex "invocations", even
-     * though every invocation can spawn many threads, depending on dexing options.
-     */
-    @GuardedBy("LOCK_FOR_DEX")
-    private static ExecutorService sDexExecutorService = null;
 
     @NonNull
     private final String mProjectId;
@@ -204,8 +179,6 @@ public class AndroidBuilder {
     private List<File> mBootClasspathAll;
     @NonNull
     private List<LibraryRequest> mLibraryRequests = ImmutableList.of();
-
-    private Boolean isDexInProcess = null;
 
     private DexByteCodeConverter mDexByteCodeConverter = null;
 
@@ -336,61 +309,18 @@ public class AndroidBuilder {
         if (mBootClasspathFiltered == null) {
             checkState(mTargetInfo != null,
                     "Cannot call getBootClasspath() before setTargetInfo() is called.");
-            List<File> classpath = Lists.newArrayList();
-            IAndroidTarget target = mTargetInfo.getTarget();
 
-            for (String p : target.getBootClasspath()) {
-                classpath.add(new File(p));
-            }
-
-            List<LibraryRequest> requestedLibs = Lists.newArrayList(mLibraryRequests);
-
-            // add additional libraries if any
-            List<OptionalLibrary> libs = target.getAdditionalLibraries();
-            for (OptionalLibrary lib : libs) {
-                // add it always for now
-                classpath.add(lib.getJar());
-
-                // remove from list of requested if match
-                LibraryRequest requestedLib = findMatchingLib(lib.getName(), requestedLibs);
-                if (requestedLib != null) {
-                    requestedLibs.remove(requestedLib);
-                }
-            }
-
-            // add optional libraries if needed.
-            List<OptionalLibrary> optionalLibraries = target.getOptionalLibraries();
-            for (OptionalLibrary lib : optionalLibraries) {
-                // search if requested
-                LibraryRequest requestedLib = findMatchingLib(lib.getName(), requestedLibs);
-                if (requestedLib != null) {
-                    // add to classpath
-                    classpath.add(lib.getJar());
-
-                    // remove from requested list.
-                    requestedLibs.remove(requestedLib);
-                }
-            }
-
-            // look for not found requested libraries.
-            for (LibraryRequest library : requestedLibs) {
-                mErrorReporter.handleSyncError(
-                        library.getName(),
-                        SyncIssue.TYPE_OPTIONAL_LIB_NOT_FOUND,
-                        "Unable to find optional library: " + library.getName());
-            }
-
-            // add annotations.jar if needed.
-            if (target.getVersion().getApiLevel() <= 15) {
-                classpath.add(mSdkInfo.getAnnotationsJar());
-            }
-
-            mBootClasspathFiltered = ImmutableList.copyOf(classpath);
+            mBootClasspathFiltered = BootClasspathBuilder.computeFilteredClasspath(
+                    mTargetInfo.getTarget(),
+                    mLibraryRequests,
+                    mErrorReporter,
+                    mSdkInfo.getAnnotationsJar());
         }
 
         return mBootClasspathFiltered;
     }
 
+    @NonNull
     private List<File> computeFullBootClasspath() {
         // computes and caches the full boot classpath.
         // Changes here should be applied to #computeFilteredClasspath()
@@ -399,46 +329,12 @@ public class AndroidBuilder {
             checkState(mTargetInfo != null,
                     "Cannot call getBootClasspath() before setTargetInfo() is called.");
 
-            List<File> classpath = Lists.newArrayList();
-
-            IAndroidTarget target = mTargetInfo.getTarget();
-
-            for (String p : target.getBootClasspath()) {
-                classpath.add(new File(p));
-            }
-
-            // add additional libraries if any
-            List<OptionalLibrary> libs = target.getAdditionalLibraries();
-            for (OptionalLibrary lib : libs) {
-                classpath.add(lib.getJar());
-            }
-
-            // add optional libraries if any
-            List<OptionalLibrary> optionalLibraries = target.getOptionalLibraries();
-            for (OptionalLibrary lib : optionalLibraries) {
-                classpath.add(lib.getJar());
-            }
-
-            // add annotations.jar if needed.
-            if (target.getVersion().getApiLevel() <= 15) {
-                classpath.add(mSdkInfo.getAnnotationsJar());
-            }
-
-            mBootClasspathAll = ImmutableList.copyOf(classpath);
+            mBootClasspathAll = BootClasspathBuilder.computeFullBootClasspath(
+                    mTargetInfo.getTarget(),
+                    mSdkInfo.getAnnotationsJar());
         }
 
         return mBootClasspathAll;
-    }
-
-    @Nullable
-    private static LibraryRequest findMatchingLib(@NonNull String name, @NonNull List<LibraryRequest> libraries) {
-        for (LibraryRequest library : libraries) {
-            if (name.equals(library.getName())) {
-                return library;
-            }
-        }
-
-        return null;
     }
 
     /**

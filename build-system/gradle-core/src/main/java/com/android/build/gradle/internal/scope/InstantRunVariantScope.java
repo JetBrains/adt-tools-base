@@ -18,9 +18,9 @@ package com.android.build.gradle.internal.scope;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.google.common.collect.ImmutableList;
 
 import java.io.File;
-import java.util.List;
 
 /**
  * Scope for all variant scoped information related to supporting the Instant Run features.
@@ -29,9 +29,6 @@ public interface InstantRunVariantScope {
 
     @NonNull
     TransformGlobalScope getGlobalScope();
-
-    @NonNull
-    List<File> getBootClasspath(boolean includeOptionalLibraries);
 
     @NonNull
     File getReloadDexOutputFolder();
@@ -48,4 +45,9 @@ public interface InstantRunVariantScope {
     @NonNull
     InstantRunBuildContext getInstantRunBuildContext();
 
+    /**
+     * Returns the boot class path which matches the target device API level.
+     */
+    @NonNull
+    ImmutableList<File> getInstantRunBootClasspath();
 }
