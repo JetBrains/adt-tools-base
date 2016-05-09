@@ -84,8 +84,10 @@ public enum InstantRunPatchingPolicy {
         if (version.compareTo(AndroidVersion.ART_RUNTIME) < 0) {
             return PRE_LOLLIPOP;
         } else {
-            // whe dealing with Lollipop and above, by default, we use MULTI_DEX.
-            InstantRunPatchingPolicy defaultModeForArchitecture = MULTI_DEX;
+            // whe dealing with Lollipop or Marshmallow, by default, we use MULTI_DEX
+            // , but starting with 24, use MULT_APK
+            InstantRunPatchingPolicy defaultModeForArchitecture =
+                    version.getFeatureLevel() < 24 ? MULTI_DEX : MULTI_APK;
 
             if (Strings.isNullOrEmpty(coldswapMode)) {
                 return defaultModeForArchitecture;
