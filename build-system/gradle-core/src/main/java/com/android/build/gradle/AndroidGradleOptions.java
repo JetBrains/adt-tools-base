@@ -66,6 +66,14 @@ public class AndroidGradleOptions {
             "android.androidTest.shardBetweenDevices";
     private static final String PROPERTY_SHARD_COUNT =
             "android.androidTest.numShards";
+    public static  final String PROPERTY_USE_SDK_DOWNLOAD =
+            "android.builder.sdkDownload";
+
+
+    @NonNull
+    public static boolean getUseSdkDownload(@NonNull Project project) {
+        return getBoolean(project, PROPERTY_USE_SDK_DOWNLOAD, false);
+    }
 
     @NonNull
     public static Map<String, String> getExtraInstrumentationTestRunnerArgs(@NonNull Project project) {

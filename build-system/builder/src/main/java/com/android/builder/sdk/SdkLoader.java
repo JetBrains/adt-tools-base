@@ -17,7 +17,10 @@
 package com.android.builder.sdk;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.repository.Revision;
+import com.android.repository.api.Downloader;
+import com.android.repository.api.SettingsController;
 import com.android.utils.ILogger;
 import com.google.common.collect.ImmutableList;
 
@@ -27,7 +30,8 @@ import java.io.File;
  * A loader for the SDK. It's able to provide general SDK information
  * ({@link #getSdkInfo(com.android.utils.ILogger)}, or {@link #getRepositories()}), or
  * target-specific information
- * ({@link #getTargetInfo(String, Revision, com.android.utils.ILogger)}).
+ * ({@link #getTargetInfo(String, Revision, com.android.utils.ILogger, SettingsController,
+ *      com.android.repository.api.Downloader, boolean)}).
  */
 public interface SdkLoader {
 
@@ -39,13 +43,19 @@ public interface SdkLoader {
      * @param targetHash the compilation target hash string.
      * @param buildToolRevision the build tools revision.
      * @param logger a logger to output messages.
+     * @param settings the download settings.
+     * @param downloader the downloader used to download the target and build tools.
+     * @param useGradleSdkDownload a boolean to determine if we should download missing components.
      * @return the target info.
      */
     @NonNull
     TargetInfo getTargetInfo(
             @NonNull String targetHash,
             @NonNull Revision buildToolRevision,
-            @NonNull ILogger logger);
+            @NonNull ILogger logger,
+            @Nullable SettingsController settings,
+            @Nullable Downloader downloader,
+            boolean useGradleSdkDownload);
 
     /**
      * Returns generic SDK information.
