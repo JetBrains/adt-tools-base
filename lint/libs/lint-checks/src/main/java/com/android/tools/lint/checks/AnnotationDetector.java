@@ -31,13 +31,11 @@ import static com.android.tools.lint.checks.SupportAnnotationDetector.ATTR_MIN;
 import static com.android.tools.lint.checks.SupportAnnotationDetector.ATTR_MULTIPLE;
 import static com.android.tools.lint.checks.SupportAnnotationDetector.ATTR_TO;
 import static com.android.tools.lint.checks.SupportAnnotationDetector.CHECK_RESULT_ANNOTATION;
-import static com.android.tools.lint.checks.SupportAnnotationDetector.COLOR_INT_ANNOTATION;
 import static com.android.tools.lint.checks.SupportAnnotationDetector.FLOAT_RANGE_ANNOTATION;
 import static com.android.tools.lint.checks.SupportAnnotationDetector.INT_RANGE_ANNOTATION;
 import static com.android.tools.lint.checks.SupportAnnotationDetector.PERMISSION_ANNOTATION;
 import static com.android.tools.lint.checks.SupportAnnotationDetector.PERMISSION_ANNOTATION_READ;
 import static com.android.tools.lint.checks.SupportAnnotationDetector.PERMISSION_ANNOTATION_WRITE;
-import static com.android.tools.lint.checks.SupportAnnotationDetector.RES_SUFFIX;
 import static com.android.tools.lint.checks.SupportAnnotationDetector.SIZE_ANNOTATION;
 import static com.android.tools.lint.checks.SupportAnnotationDetector.filterRelevantAnnotations;
 import static com.android.tools.lint.checks.SupportAnnotationDetector.getDoubleAttribute;
@@ -49,6 +47,9 @@ import static com.android.tools.lint.client.api.JavaParser.TYPE_LONG;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_STRING;
 import static com.android.tools.lint.detector.api.LintUtils.findSubstring;
 import static com.android.tools.lint.detector.api.LintUtils.getAutoBoxedType;
+import static com.android.tools.lint.detector.api.ResourceEvaluator.COLOR_INT_ANNOTATION;
+import static com.android.tools.lint.detector.api.ResourceEvaluator.PX_ANNOTATION;
+import static com.android.tools.lint.detector.api.ResourceEvaluator.RES_SUFFIX;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -141,6 +142,7 @@ public class AnnotationDetector extends Detector implements JavaPsiScanner {
             IMPLEMENTATION);
 
     /** Incorrectly using a support annotation */
+    @SuppressWarnings("WeakerAccess")
     public static final Issue ANNOTATION_USAGE = Issue.create(
             "SupportAnnotationUsage", //$NON-NLS-1$
             "Incorrect support annotation usage",
@@ -344,7 +346,7 @@ public class AnnotationDetector extends Detector implements JavaPsiScanner {
                         mContext.report(ANNOTATION_USAGE, annotation, mContext.getLocation(annotation),
                                 "The size can't be negative");
                     }
-                } else if (COLOR_INT_ANNOTATION.equals(type)) {
+                } else if (COLOR_INT_ANNOTATION.equals(type) || (PX_ANNOTATION.equals(type))) {
                     // Check that ColorInt applies to the right type
                     checkTargetType(annotation, TYPE_INT, TYPE_LONG, true);
                 } else if (INT_DEF_ANNOTATION.equals(type)) {

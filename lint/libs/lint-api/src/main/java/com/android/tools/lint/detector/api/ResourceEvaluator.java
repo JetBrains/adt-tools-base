@@ -63,8 +63,17 @@ public class ResourceEvaluator {
      * class (and ResourceType is an enum we can't just create new constants for.)
      */
     public static final ResourceType COLOR_INT_MARKER_TYPE = ResourceType.PUBLIC;
+    /**
+     * Marker ResourceType used to signify that an expression is of type {@code @Px},
+     * which isn't actually a ResourceType but one we want to specifically compare with.
+     * We're using {@link ResourceType#DECLARE_STYLEABLE} because that one doesn't
+     * have a corresponding {@code *Res} constant (and ResourceType is an enum we can't
+     * just create new constants for.)
+     */
+    public static final ResourceType PX_MARKER_TYPE = ResourceType.DECLARE_STYLEABLE;
 
     public static final String COLOR_INT_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "ColorInt"; //$NON-NLS-1$
+    public static final String PX_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "Px"; //$NON-NLS-1$
     public static final String RES_SUFFIX = "Res";
 
     private final JavaEvaluator mEvaluator;
@@ -368,6 +377,9 @@ public class ResourceEvaluator {
             if (signature.equals(COLOR_INT_ANNOTATION)) {
                 return EnumSet.of(COLOR_INT_MARKER_TYPE);
             }
+            if (signature.equals(PX_ANNOTATION)) {
+                return EnumSet.of(PX_MARKER_TYPE);
+            }
             if (signature.endsWith(RES_SUFFIX)
                     && signature.startsWith(SUPPORT_ANNOTATIONS_PREFIX)) {
                 String typeString = signature
@@ -437,6 +449,7 @@ public class ResourceEvaluator {
     private static EnumSet<ResourceType> getAnyRes() {
         EnumSet<ResourceType> types = EnumSet.allOf(ResourceType.class);
         types.remove(ResourceEvaluator.COLOR_INT_MARKER_TYPE);
+        types.remove(ResourceEvaluator.PX_MARKER_TYPE);
         return types;
     }
 }
