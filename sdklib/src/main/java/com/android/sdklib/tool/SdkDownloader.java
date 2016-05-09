@@ -28,7 +28,6 @@ import com.android.repository.util.InstallerUtil;
 import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.installer.SdkInstallerUtil;
 import com.android.sdklib.repository.legacy.LegacyDownloader;
-import com.android.sdklib.repository.legacy.LegacyRemoteRepoLoader;
 import com.google.common.collect.Lists;
 
 import java.io.File;
@@ -87,11 +86,11 @@ public class SdkDownloader {
                 }
             }
             Installer installer = SdkInstallerUtil.findBestInstallerFactory(p, handler)
-                    .createInstaller(p, mgr, handler.getFileOp());
-            if (!installer.prepareInstall(downloader, progress)) {
+                    .createInstaller(p, mgr, downloader, handler.getFileOp());
+            if (!installer.prepare(progress)) {
                 System.exit(1);
             }
-            if (!installer.completeInstall(progress)) {
+            if (!installer.complete(progress)) {
                 System.exit(1);
             }
         }

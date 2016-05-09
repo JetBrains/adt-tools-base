@@ -17,6 +17,7 @@
 package com.android.repository.impl.installer;
 
 import com.android.annotations.NonNull;
+import com.android.repository.api.Downloader;
 import com.android.repository.api.Installer;
 import com.android.repository.api.InstallerFactory;
 import com.android.repository.api.LocalPackage;
@@ -44,8 +45,8 @@ public abstract class AbstractInstallerFactory implements InstallerFactory {
     @NonNull
     @Override
     public final Installer createInstaller(@NonNull RemotePackage p, @NonNull RepoManager mgr,
-            @NonNull FileOp fop) {
-        Installer installer = doCreateInstaller(p, mgr, fop);
+            @NonNull Downloader downloader, @NonNull FileOp fop) {
+        Installer installer = doCreateInstaller(p, mgr, downloader, fop);
         registerListeners(installer);
         return installer;
     }
@@ -64,7 +65,7 @@ public abstract class AbstractInstallerFactory implements InstallerFactory {
      */
     @NonNull
     protected abstract Installer doCreateInstaller(@NonNull RemotePackage p,
-            @NonNull RepoManager mgr, @NonNull FileOp fop);
+            @NonNull RepoManager mgr, @NonNull Downloader downloader, @NonNull FileOp fop);
 
     @NonNull
     @Override

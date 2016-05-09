@@ -33,6 +33,8 @@ import com.android.repository.api.SchemaModule;
 import com.android.repository.api.SettingsController;
 import com.android.repository.impl.meta.Archive;
 import com.android.repository.impl.meta.CommonFactory;
+import com.android.repository.impl.meta.RemotePackageImpl;
+import com.android.repository.impl.meta.RepoPackageImpl;
 import com.android.repository.impl.meta.TypeDetails;
 import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.IAndroidTarget;
@@ -215,6 +217,12 @@ public class LegacyRemoteRepoLoader implements FallbackRemoteRepoLoader {
             return (CommonFactory) AndroidSdkHandler.getCommonModule().createLatestFactory();
         }
 
+        @NonNull
+        @Override
+        public RepoPackageImpl asMarshallable() {
+            return RemotePackageImpl.create(this);
+        }
+
         @Override
         public boolean obsolete() {
             return mWrapped.isObsolete();
@@ -301,12 +309,9 @@ public class LegacyRemoteRepoLoader implements FallbackRemoteRepoLoader {
         @NonNull
         @Override
         public File getInstallDir(@NonNull RepoManager manager,
-                @NonNull ProgressIndicator progress)
-                throws IOException {
+                @NonNull ProgressIndicator progress) {
             File localPath = manager.getLocalPath();
-            if (localPath == null) {
-                throw new IOException("manager doesn't have a local path specified");
-            }
+            assert localPath != null;
             return mWrapped.getPkgDesc().getCanonicalInstallFolder(localPath);
         }
 

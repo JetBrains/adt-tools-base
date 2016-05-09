@@ -34,13 +34,4 @@ public interface Uninstaller extends PackageOperation {
     @NonNull
     @Override
     LocalPackage getPackage();
-
-    /**
-     * Uninstall the package.
-     *
-     * @param progress A {@link ProgressIndicator}. Unused by this installer.
-     * @return {@code true} if the uninstall was successful, {@code false} otherwise.
-     */
-    boolean uninstall(@NonNull ProgressIndicator progress);
-
 }

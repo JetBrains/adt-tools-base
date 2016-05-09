@@ -21,6 +21,7 @@ import com.android.repository.api.Dependency;
 import com.android.repository.api.LocalPackage;
 import com.android.repository.api.RepoManager;
 import com.android.repository.api.RepoPackage;
+import com.android.repository.api.Repository;
 
 import java.io.File;
 
@@ -66,5 +67,16 @@ public abstract class LocalPackageImpl extends RepoPackageImpl implements LocalP
         result.setTypeDetails(p.getTypeDetails());
         result.setDisplayName(p.getDisplayName());
         return result;
+    }
+
+    @NonNull
+    @Override
+    public RepoPackageImpl asMarshallable() {
+        return this;
+    }
+
+    @Override
+    public void addTo(@NonNull Repository repo) {
+        repo.setLocalPackage(this);
     }
 }

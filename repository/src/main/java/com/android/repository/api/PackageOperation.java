@@ -19,6 +19,9 @@ package com.android.repository.api;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
+import java.io.File;
+import java.io.IOException;
+
 /**
  * An install or uninstall operation that affects the current SDK state.
  */
@@ -29,11 +32,11 @@ public interface PackageOperation {
      */
     enum InstallStatus {
         /**
-         * This installer hasn't started yet
+         * This operation hasn't started yet
          */
         NOT_STARTED,
         /**
-         * This installer is in the process of preparing the component for install. No changes are
+         * This operation is in the process of preparing the component. No changes are
          * made to the SDK during this phase.
          */
         PREPARING,
@@ -44,23 +47,15 @@ public interface PackageOperation {
         /**
          * The SDK is being modified.
          */
-        INSTALLING,
+        RUNNING,
         /**
-         * The installation has completed successfully.
+         * The operation has ended unsuccessfully.
          */
         FAILED,
         /**
-         * The installation has ended unsuccessfully.
+         * The operation has ended unsuccessfully.
          */
-        COMPLETE,
-        /**
-         * Uninstall is starting.
-         */
-        UNINSTALL_STARTING,
-        /**
-         * Uninstall has completed.
-         */
-        UNINSTALL_COMPLETE
+        COMPLETE;
     }
 
     /**
@@ -68,6 +63,34 @@ public interface PackageOperation {
      */
     @NonNull
     RepoPackage getPackage();
+
+    /**
+     * The filesystem path affected by this operation.
+     */
+    @NonNull
+    File getLocation(@NonNull ProgressIndicator progress);
+
+    /**
+     * Perform any preparatory work that can be done in the background prior to (un)installing a
+     * package.
+     *
+     * @return {@code true} if the preparation was successful, {@code false} otherwise.
+     */
+    boolean prepare(@NonNull ProgressIndicator progress);
+
+    /**
+     * Install/Uninstall the package.
+     *
+     * @param progress A {@link ProgressIndicator}.
+     * @return {@code true} if the install/uninstall was successful, {@code false} otherwise.
+     */
+    boolean complete(@NonNull ProgressIndicator progress);
+    
+    /**
+     * Gets the {@link RepoManager} for which we're installing/uninstalling a package.
+     */
+    @NonNull
+    RepoManager getRepoManager();
 
     /**
      * Registers a listener that will be called when the {@link InstallStatus} of this installer

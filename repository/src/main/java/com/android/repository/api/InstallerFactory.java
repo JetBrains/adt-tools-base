@@ -32,7 +32,7 @@ public interface InstallerFactory {
      */
     @NonNull
     Installer createInstaller(@NonNull RemotePackage p, @NonNull RepoManager mgr,
-            @NonNull FileOp fop);
+            @NonNull Downloader downloader, @NonNull FileOp fop);
 
     /**
      * Canonical way to create instances of {@link Uninstaller}.

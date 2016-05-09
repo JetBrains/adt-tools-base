@@ -32,7 +32,6 @@ import com.android.repository.api.SettingsController;
 import com.android.repository.impl.meta.SchemaModuleUtil;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
 
 import org.w3c.dom.ls.LSResourceResolver;
 

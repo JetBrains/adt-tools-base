@@ -17,14 +17,14 @@
 package com.android.sdklib.repository.installer;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.repository.Revision;
 import com.android.repository.api.LocalPackage;
+import com.android.repository.api.PackageOperation;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoPackage;
-import com.android.repository.api.PackageOperation;
 import com.android.repository.io.FileOp;
-import com.android.repository.util.InstallerUtil;
 import com.android.sdklib.repository.AndroidSdkHandler;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
@@ -54,13 +54,13 @@ import javax.xml.namespace.QName;
  * A {@link PackageOperation.StatusChangeListener} that knows how to install and uninstall Maven
  * packages.
  */
-public class MavenInstallListener implements PackageOperation.StatusChangeListener {
+class MavenInstallListener implements PackageOperation.StatusChangeListener {
 
     public static final String MAVEN_DIR_NAME = "m2repository";
 
     public static final String MAVEN_METADATA_FILE_NAME = "maven-metadata.xml";
 
-    public final AndroidSdkHandler mSdkHandler;
+    private final AndroidSdkHandler mSdkHandler;
 
     public MavenInstallListener(@NonNull AndroidSdkHandler sdkHandler) {
         mSdkHandler = sdkHandler;
@@ -70,87 +70,46 @@ public class MavenInstallListener implements PackageOperation.StatusChangeListen
     public void statusChanged(@NonNull PackageOperation installer,
             @NonNull ProgressIndicator progress)
             throws PackageOperation.StatusChangeListenerException {
-        RepoPackage p = installer.getPackage();
         switch (installer.getInstallStatus()) {
             case PREPARING:
-            case UNINSTALL_STARTING:
                 if (!installer.getPackage().getPath().startsWith(MAVEN_DIR_NAME)) {
                     progress.logError("Maven package paths must start with " + MAVEN_DIR_NAME);
                     throw new IllegalArgumentException();
                 }
                 break;
-            case UNINSTALL_COMPLETE:
-                if (!removeVersion((LocalPackage)p, progress)) {
+            case COMPLETE:
+                File dir = installer.getLocation(progress);
+                if (!updateMetadata(dir.getParentFile(), progress)) {
                     throw new PackageOperation.StatusChangeListenerException(
-                            "Failed to remove maven metadata for " + p.getDisplayName());
+                            "Failed to update maven metadata for " +
+                                    installer.getPackage().getDisplayName());
                 }
                 break;
-            case COMPLETE:
-                File dest;
-                try {
-                    dest = InstallerUtil.getInstallPath((RemotePackage)p,
-                            mSdkHandler.getSdkManager(progress), progress);
-                } catch (IOException e) {
-                    progress.logWarning("Failed to find install path", e);
-                    throw new PackageOperation.StatusChangeListenerException(e);
-                }
-                PackageInfo info = parsePackageInfo(dest, p);
-                addVersion(new File(dest.getParentFile(), MAVEN_METADATA_FILE_NAME), info,
-                        progress);
         }
     }
 
-
-    /**
-     * Remove the specified package from the corresponding metadata file.
-     */
-    private boolean removeVersion(@NonNull LocalPackage p, @NonNull ProgressIndicator progress) {
-        PackageInfo info = parsePackageInfo(p.getLocation(), p);
-        MavenMetadata metadata = parseMetadata(
-                new File(p.getLocation().getParent(), MAVEN_METADATA_FILE_NAME), info, progress,
-                mSdkHandler.getFileOp());
-        if (metadata == null) {
-            return false;
-        }
-        metadata.versioning.versions.version.remove(info.version);
-        return writeMetadata(new File(p.getLocation().getParentFile(), MAVEN_METADATA_FILE_NAME),
-                progress, mSdkHandler.getFileOp(), metadata);
-    }
-
-    /**
-     * Gets the version, artifact Id, and group Id from the given path and package.
-     */
-    private static PackageInfo parsePackageInfo(@NonNull File path, @NonNull RepoPackage p) {
-        PackageInfo result = new PackageInfo();
-        result.version = path.getName();
-        result.artifactId = path.getParentFile().getName();
-        result.groupId = p.getPath().substring(p.getPath().indexOf(RepoPackage.PATH_SEPARATOR) + 1,
-                p.getPath().lastIndexOf(result.artifactId) - 1)
-                .replace(RepoPackage.PATH_SEPARATOR, '.');
-        return result;
-    }
-
-    /**
-     * Adds the specified packageInfo to the corresponding maven metadata file.
-     */
-    private boolean addVersion(@NonNull File metadataFile, @NonNull PackageInfo info,
-            @NonNull ProgressIndicator progress) {
+    private boolean updateMetadata(File root, ProgressIndicator progress) {
         FileOp fileOp = mSdkHandler.getFileOp();
-        MavenMetadata metadata = parseMetadata(metadataFile, info, progress, fileOp);
-
-        if (metadata == null) {
-            return false;
+        MavenMetadata metadata = null;
+        for (File version : fileOp.listFiles(root)) {
+            if (fileOp.isDirectory(version)) {
+                metadata = createOrUpdateMetadata(version, metadata, progress, fileOp);
+            }
         }
-
-        metadata.versioning.versions.version.add(info.version);
-        return writeMetadata(metadataFile, progress, fileOp, metadata);
+        File metadataFile = new File(root, MAVEN_METADATA_FILE_NAME);
+        if (metadata != null) {
+            return writeMetadata(metadata, metadataFile, progress,
+                    fileOp);
+        }
+        // We didn't find anything. Delete the metadata file as well.
+        return fileOp.delete(metadataFile);
     }
 
     /**
      * Writes out a {@link MavenMetadata} to the specified location.
      */
-    private static boolean writeMetadata(@NonNull File file, @NonNull ProgressIndicator progress,
-            @NonNull FileOp fop, @NonNull MavenMetadata metadata) {
+    private static boolean writeMetadata(@NonNull MavenMetadata metadata, @NonNull File file,
+            @NonNull ProgressIndicator progress, @NonNull FileOp fop) {
         Revision max = null;
         for (String s : metadata.versioning.versions.version) {
             Revision rev = Revision.parseRevision(s);
@@ -181,7 +140,7 @@ public class MavenInstallListener implements PackageOperation.StatusChangeListen
         ByteArrayOutputStream metadataOutBytes = new ByteArrayOutputStream();
         try {
             marshaller.marshal(
-                    new JAXBElement<MavenMetadata>(new QName("metadata"), MavenMetadata.class,
+                    new JAXBElement<>(new QName("metadata"), MavenMetadata.class,
                             metadata), metadataOutBytes);
         } catch (JAXBException e) {
             progress.logWarning("Failed to write maven metadata: ", e);
@@ -217,57 +176,52 @@ public class MavenInstallListener implements PackageOperation.StatusChangeListen
     }
 
     /**
-     * Parses a {@link MavenMetadata} from the specified file, and verifies that it contains the
-     * specified artifact, or creates a new one if none exists.
+     * Adds the artifact version at the given {@code versionPath} to the given
+     * {@link MavenMetadata} (creating a new one if necessary).
      */
-    private static MavenMetadata parseMetadata(@NonNull File file, @NonNull PackageInfo info,
-            @NonNull ProgressIndicator progress, @NonNull FileOp fop) {
-        MavenMetadata metadata;
-        if (fop.exists(file)) {
-            metadata = unmarshalMetadata(file, progress, fop);
-            if (metadata == null) {
-                return null;
+    @Nullable
+    private static MavenMetadata createOrUpdateMetadata(@NonNull File versionPath,
+            @Nullable MavenMetadata metadata, @NonNull ProgressIndicator progress,
+            @NonNull FileOp fop) {
+        File pomFile = new File(versionPath,
+                String.format("%1$s-%2$s.pom", versionPath.getParentFile().getName(),
+                        versionPath.getName()));
+        if (fop.exists(pomFile)) {
+            PackageInfo info = unmarshal(pomFile, PackageInfo.class, progress, fop);
+            if (info != null) {
+                if (metadata == null) {
+                    metadata = new MavenMetadata();
+                    metadata.artifactId = info.artifactId;
+                    metadata.groupId = info.groupId;
+                    metadata.versioning = new MavenMetadata.Versioning();
+                    metadata.versioning.versions = new MavenMetadata.Versioning.Versions();
+                    metadata.versioning.versions.version = Lists.newArrayList();
+                }
+                metadata.versioning.versions.version.add(info.version);
             }
-            if (!metadata.artifactId.equals(info.artifactId)) {
-                progress.logWarning(
-                        "New artifact id '" + info.artifactId + "' doesn't match existing '"
-                                + metadata.artifactId);
-                return null;
-            }
-            if (!metadata.groupId.equals(info.groupId)) {
-                progress.logWarning("New group id '" + info.groupId + "' doesn't match existing '"
-                        + metadata.groupId);
-                return null;
-            }
-        } else {
-            metadata = new MavenMetadata();
-            metadata.artifactId = info.artifactId;
-            metadata.groupId = info.groupId;
-            metadata.versioning = new MavenMetadata.Versioning();
-            metadata.versioning.versions = new MavenMetadata.Versioning.Versions();
-            metadata.versioning.versions.version = Lists.newArrayList();
         }
         return metadata;
     }
 
     /**
-     * Attempts to read a {@link MavenMetadata} from the specified file.
+     * Attempts to unmarshal an object of the given type from the specified file.
      */
     @VisibleForTesting
-    static MavenMetadata unmarshalMetadata(@NonNull File metadataFile,
+    static <T> T unmarshal(@NonNull File f, @NonNull Class<T> clazz,
             @NonNull ProgressIndicator progress, @NonNull FileOp fop) {
         JAXBContext context;
         try {
-            context = JAXBContext.newInstance(MavenMetadata.class);
+            context = JAXBContext.newInstance(clazz);
         } catch (JAXBException e) {
             // Shouldn't happen
             progress.logError("Failed to create JAXBContext", e);
             return null;
         }
         Unmarshaller unmarshaller;
-        MavenMetadata result;
+        T result;
         try {
             unmarshaller = context.createUnmarshaller();
+            unmarshaller.setEventHandler(event -> true);
         } catch (JAXBException e) {
             // Shouldn't happen
             progress.logError("Failed to create unmarshaller", e);
@@ -275,15 +229,14 @@ public class MavenInstallListener implements PackageOperation.StatusChangeListen
         }
         InputStream metadataInputStream;
         try {
-            metadataInputStream = fop.newFileInputStream(metadataFile);
+            metadataInputStream = fop.newFileInputStream(f);
         } catch (FileNotFoundException e) {
-            progress.logWarning("Couldn't open metadata file", e);
             return null;
         }
         try {
-            result = (MavenMetadata) unmarshaller.unmarshal(metadataInputStream);
+            result = (T) unmarshaller.unmarshal(metadataInputStream);
         } catch (JAXBException e) {
-            progress.logWarning("Couldn't parse maven metadata file: " + metadataFile);
+            progress.logWarning("Couldn't parse maven metadata file: " + f, e);
             return null;
         }
         return result;
@@ -296,7 +249,7 @@ public class MavenInstallListener implements PackageOperation.StatusChangeListen
             @NonNull ProgressIndicator progress, @NonNull ByteArrayOutputStream metadataOutBytes,
             @NonNull FileOp fop) {
         File md5File = new File(file.getParent(),
-                                MAVEN_METADATA_FILE_NAME + "." + algorithm.toLowerCase());
+                MAVEN_METADATA_FILE_NAME + "." + algorithm.toLowerCase());
         MessageDigest digest;
         try {
             digest = MessageDigest.getInstance(algorithm);
@@ -361,8 +314,10 @@ public class MavenInstallListener implements PackageOperation.StatusChangeListen
     }
 
     /**
-     * Simple container for maven artifact version info.
+     * jaxb-usable class for unmarshalling maven artifact pom files.
      */
+    @XmlAccessorType(XmlAccessType.FIELD)
+    @XmlRootElement(name = "project", namespace = "http://maven.apache.org/POM/4.0.0")
     private static class PackageInfo {
 
         public String artifactId;
