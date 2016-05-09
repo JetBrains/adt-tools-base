@@ -27,7 +27,6 @@ project.buildscript { buildscript ->
     apply from: "$commonScriptFolder/commonLocalRepo.gradle", to:buildscript
     dependencies {
         classpath "com.android.tools.build:gradle:$env.buildVersion"
-        classpath "com.google.gms:google-services:$env.buildVersion"
         if (env.experimentalGradleVersion != null
                 && project.gradle.gradleVersion.startsWith(env.experimentalGradleVersion)) {
             classpath "com.android.tools.build:gradle-experimental:$env.experimentalVersion"

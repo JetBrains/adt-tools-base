@@ -21,9 +21,6 @@ version = rootProject.ext.buildVersion
 project.ext.pomName = 'Gradle Plug-in for Google Services'
 project.ext.pomDesc = 'Gradle plug-in for Google Services'
 
-apply from: "$rootDir/buildSrc/base/publish.gradle"
-apply from: "$rootDir/buildSrc/base/bintray.gradle"
-
 groovydoc {
     exclude     "**/internal/**"
     includePrivate false
