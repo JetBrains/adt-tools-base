@@ -281,6 +281,7 @@ public class JackTransform extends Transform {
             options.setAnnotationProcessorOptions(annotationProcessorOptions.getArguments());
         }
         options.setEcjOptionFile(scope.getJackEcjOptionsFile());
+        options.setAdditionalParameters(config.getJackOptions().getAdditionalParameters());
 
         jackInProcess = config.getJackOptions().isJackInProcess();
 

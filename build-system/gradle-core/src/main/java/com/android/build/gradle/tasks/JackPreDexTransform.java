@@ -26,6 +26,8 @@ import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInvocation;
 import com.android.build.api.transform.TransformOutputProvider;
+import com.android.build.gradle.internal.dsl.CoreJackOptions;
+import com.android.build.gradle.internal.dsl.JackOptions;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.transforms.TransformInputUtil;
 import com.android.builder.core.AndroidBuilder;
@@ -57,17 +59,18 @@ public class JackPreDexTransform extends Transform {
 
     private AndroidBuilder androidBuilder;
     private String javaMaxHeapSize;
-    private boolean jackInProcess;
     private boolean forPackagedLibs;
+    @NonNull
+    private CoreJackOptions coreJackOptions;
 
     public JackPreDexTransform(
             @NonNull AndroidBuilder androidBuilder,
             @Nullable String javaMaxHeapSize,
-            boolean jackInProcess,
+            @NonNull CoreJackOptions coreJackOptions,
             boolean forPackagedLibs) {
         this.androidBuilder = androidBuilder;
         this.javaMaxHeapSize = javaMaxHeapSize;
-        this.jackInProcess = jackInProcess;
+        this.coreJackOptions = coreJackOptions;
         this.forPackagedLibs = forPackagedLibs;
     }
 
@@ -142,13 +145,14 @@ public class JackPreDexTransform extends Transform {
                     Format.DIRECTORY);
             options.setDexOutputDirectory(outDirectory);
             options.setJavaMaxHeapSize(javaMaxHeapSize);
+            options.setAdditionalParameters(coreJackOptions.getAdditionalParameters());
 
             JackConversionCache.getCache().convertLibrary(
                     androidBuilder,
                     file,
                     outDirectory,
                     options,
-                    jackInProcess);
+                    coreJackOptions.isJackInProcess());
         }
 
         Iterable<File> jarInputs = forPackagedLibs
@@ -166,13 +170,14 @@ public class JackPreDexTransform extends Transform {
                     Format.JAR);
             options.setOutputFile(outFile);
             options.setJavaMaxHeapSize(javaMaxHeapSize);
+            options.setAdditionalParameters(coreJackOptions.getAdditionalParameters());
 
             JackConversionCache.getCache().convertLibrary(
                     androidBuilder,
                     file,
                     outFile,
                     options,
-                    jackInProcess);
+                    coreJackOptions.isJackInProcess());
         }
     }
 

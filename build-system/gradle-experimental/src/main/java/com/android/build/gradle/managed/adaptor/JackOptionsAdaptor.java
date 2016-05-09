@@ -19,6 +19,10 @@ package com.android.build.gradle.managed.adaptor;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.dsl.CoreJackOptions;
 import com.android.build.gradle.managed.JackOptions;
+import com.android.build.gradle.managed.KeyValuePair;
+
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * An adaptor to convert {@link JackOptions} to {@link CoreJackOptions}
@@ -40,5 +44,14 @@ public class JackOptionsAdaptor implements CoreJackOptions {
     @Override
     public Boolean isJackInProcess() {
         return jackOptions.getJackInProcess();
+    }
+
+    @NonNull
+    @Override
+    public Map<String, String> getAdditionalParameters() {
+        return jackOptions.getAdditionalParameters().values().stream()
+                .collect(Collectors.toMap(
+                        KeyValuePair::getName,
+                        KeyValuePair::getValue));
     }
 }

@@ -2163,14 +2163,14 @@ public abstract class TaskManager {
         JackPreDexTransform preDexPackagedTransform = new JackPreDexTransform(
                 androidBuilder,
                 globalScope.getExtension().getDexOptions().getJavaMaxHeapSize(),
-                scope.getVariantConfiguration().getJackOptions().isJackInProcess(),
+                scope.getVariantConfiguration().getJackOptions(),
                 true);
         scope.getTransformManager().addTransform(tasks, scope, preDexPackagedTransform);
 
         JackPreDexTransform preDexRuntimeTransform = new JackPreDexTransform(
                 androidBuilder,
                 globalScope.getExtension().getDexOptions().getJavaMaxHeapSize(),
-                scope.getVariantConfiguration().getJackOptions().isJackInProcess(),
+                scope.getVariantConfiguration().getJackOptions(),
                 false);
         scope.getTransformManager().addTransform(tasks, scope, preDexRuntimeTransform);
 

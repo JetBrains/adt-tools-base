@@ -21,15 +21,12 @@ import com.android.annotations.Nullable;
 import com.android.repository.Revision;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.util.concurrent.Callables;
-import com.google.common.util.concurrent.Futures;
+import com.google.common.collect.Maps;
 
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
 
 /**
  * Options for configuring Jack compilation.
@@ -76,6 +73,9 @@ public class JackProcessOptions {
     private List<File> mAnnotationProcessorClassPath = ImmutableList.of();
     @NonNull
     private Map<String, String> mAnnotationProcessorOptions = ImmutableMap.of();
+
+    @NonNull
+    private Map<String, String> mAdditionalParameters = Maps.newHashMap();
 
     public boolean isDebugLog() {
         return mDebugLog;
@@ -269,5 +269,13 @@ public class JackProcessOptions {
     public void setAnnotationProcessorOptions(
             @NonNull Map<String, String> annotationProcessorOptions) {
         mAnnotationProcessorOptions = annotationProcessorOptions;
+    }
+
+    public Map<String, String> getAdditionalParameters() {
+        return mAdditionalParameters;
+    }
+
+    public void setAdditionalParameters(@NonNull Map<String, String> additionalParameters) {
+        mAdditionalParameters = additionalParameters;
     }
 }
