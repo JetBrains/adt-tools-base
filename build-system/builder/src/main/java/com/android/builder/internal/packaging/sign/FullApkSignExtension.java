@@ -18,23 +18,25 @@ package com.android.builder.internal.packaging.sign;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.internal.packaging.sign.v2.ApkSignerV2;
+import com.android.builder.internal.packaging.sign.v2.ByteArrayDigestSource;
+import com.android.builder.internal.packaging.sign.v2.DigestSource;
+import com.android.builder.internal.packaging.sign.v2.SignatureAlgorithm;
+import com.android.builder.internal.packaging.sign.v2.ZFileDigestSource;
 import com.android.builder.internal.packaging.zip.StoredEntry;
 import com.android.builder.internal.packaging.zip.ZFile;
 import com.android.builder.internal.packaging.zip.ZFileExtension;
-import com.android.builder.internal.utils.IOExceptionFunction;
 import com.android.builder.internal.utils.IOExceptionRunnable;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Verify;
-import com.google.common.hash.Hashing;
-import com.google.common.io.ByteStreams;
-import com.google.common.io.Closeables;
-import com.google.common.primitives.Ints;
+import com.google.common.collect.ImmutableList;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.security.InvalidKeyException;
 import java.security.PrivateKey;
+import java.security.SignatureException;
 import java.security.cert.X509Certificate;
+import java.util.List;
 
 /**
  * Extension that adds full APK signing. This extension will:
@@ -62,20 +64,6 @@ public class FullApkSignExtension {
     private final ZFile mFile;
 
     /**
-     * {@code true} if the zip needs its signature to be updated, {@code false} if we do not know
-     * whether the signature needs to be updated.
-     */
-    private boolean mNeedsSignatureUpdate;
-
-    /**
-     * Computed signature if no signature has been computed. Being {@code null} doesn't mean there
-     * is no signature in the file. It means it has not been computed in the extension. We don't
-     * cache an existing signature here.
-     */
-    @Nullable
-    private byte[] mComputedSignature;
-
-    /**
      * Signer certificate.
      */
     @NonNull
@@ -88,6 +76,16 @@ public class FullApkSignExtension {
     private final PrivateKey mPrivateKey;
 
     /**
+     * APK Signature Scheme v2 algorithms to use for signing the APK.
+     */
+    private final List<SignatureAlgorithm> mV2SignatureAlgorithms;
+
+    /**
+     * {@code true} if the zip needs its signature to be updated.
+     */
+    private boolean mNeedsSignatureUpdate = true;
+
+    /**
      * The extension to register with the {@link ZFile}. {@code null} if not registered.
      */
     @Nullable
@@ -98,14 +96,22 @@ public class FullApkSignExtension {
      * {@link ZFile}. Until {@link #register()} is invoked, this extension is not used.
      *
      * @param file the zip file to register the extension with
+     * @param minSdkVersion minSdkVersion of the package
      * @param certificate sign certificate
      * @param privateKey the private key to sign the jar
+     *
+     * @throws InvalidKeyException if the signing key is not suitable for signing this APK.
      */
-    public FullApkSignExtension(@NonNull ZFile file, @NonNull X509Certificate certificate,
-            @NonNull PrivateKey privateKey) {
+    public FullApkSignExtension(@NonNull ZFile file,
+            int minSdkVersion,
+            @NonNull X509Certificate certificate,
+            @NonNull PrivateKey privateKey) throws InvalidKeyException {
         mFile = file;
         mCertificate = certificate;
         mPrivateKey = privateKey;
+        mV2SignatureAlgorithms =
+                ApkSignerV2.getSuggestedSignatureAlgorithms(
+                        certificate.getPublicKey(), minSdkVersion);
     }
 
     /**
@@ -117,22 +123,29 @@ public class FullApkSignExtension {
         mExtension = new ZFileExtension() {
             @Nullable
             @Override
+            public IOExceptionRunnable beforeUpdate() throws IOException {
+                mFile.setExtraDirectoryOffset(0);
+                return null;
+            }
+
+            @Nullable
+            @Override
             public IOExceptionRunnable added(@NonNull StoredEntry entry,
                     @Nullable StoredEntry replaced) {
-                zipChanged();
+                onZipChanged();
                 return null;
             }
 
             @Nullable
             @Override
             public IOExceptionRunnable removed(@NonNull StoredEntry entry) {
-                zipChanged();
+                onZipChanged();
                 return null;
             }
 
             @Override
             public void entriesWritten() throws IOException {
-                doEntriesWritten();
+                onEntriesWritten();
             }
         };
 
@@ -142,9 +155,8 @@ public class FullApkSignExtension {
     /**
      * Invoked when the zip file has been changed.
      */
-    private void zipChanged() {
+    private void onZipChanged() {
         mNeedsSignatureUpdate = true;
-        mComputedSignature = null;
     }
 
     /**
@@ -152,164 +164,50 @@ public class FullApkSignExtension {
      *
      * @throws IOException failed to perform the update
      */
-    private void doEntriesWritten() throws IOException {
-        if (mNeedsSignatureUpdate || !hasValidSignature()) {
-            mComputedSignature = generateSignature();
-            // FIXME: eventually, when the signature code is done, we can uncomment the verify.
-            // Verify.verify(mComputedSignature.length > 0, "mComputedSignature.length == 0");
-            mFile.setExtraDirectoryOffset(mComputedSignature.length);
-            mNeedsSignatureUpdate = false;
-            mFile.directWrite(mFile.getCentralDirectoryOffset() - mFile.getExtraDirectoryOffset(),
-                    mComputedSignature);
+    private void onEntriesWritten() throws IOException {
+        if (!mNeedsSignatureUpdate) {
+            return;
         }
+        mNeedsSignatureUpdate = false;
+
+        byte[] apkSigningBlock = generateApkSigningBlock();
+        Verify.verify(apkSigningBlock.length > 0, "apkSigningBlock.length == 0");
+        mFile.setExtraDirectoryOffset(apkSigningBlock.length);
+        long apkSigningBlockOffset =
+                mFile.getCentralDirectoryOffset() - mFile.getExtraDirectoryOffset();
+        mFile.directWrite(apkSigningBlockOffset, apkSigningBlock);
     }
 
     /**
-     * Checks whether the zip has a currently valid signature.
-     *
-     * @return does the zip have a valid signature?
-     * @throws IOException failed to verify
-     */
-    private boolean hasValidSignature() throws IOException {
-        final byte[] signature = readCurrentSignature();
-        if (signature == null) {
-            /*
-             * No signature block.
-             */
-            return false;
-        } else {
-            final byte[] centralDirectoryData = mFile.getCentralDirectoryBytes();
-            final byte[] eocdData = mFile.getEocdBytes();
-            Boolean hasValid = applyToAllEntries(
-                    new IOExceptionFunction<InputStream, Boolean>() {
-                @Nullable
-                @Override
-                public Boolean apply(@Nullable InputStream input) throws IOException {
-                    Verify.verifyNotNull(input);
-                    return verifySignature(input, centralDirectoryData, eocdData, signature);
-                }
-            });
-
-            Verify.verifyNotNull(hasValid);
-            return hasValid;
-        }
-    }
-
-    /**
-     * Reads the current zip file's signature, if any.
-     *
-     * @return the signature or {@code null} if there is no signature
-     * @throws IOException failed to read the signature
-     */
-    @Nullable
-    private byte[] readCurrentSignature() throws IOException {
-        int signatureBlockSize = Ints.checkedCast(mFile.getExtraDirectoryOffset());
-        if (signatureBlockSize == 0) {
-            return null;
-        }
-
-        long signatureStart = mFile.getCentralDirectoryOffset() - signatureBlockSize;
-        Verify.verify(signatureStart >= 0, "signatureStart < 0");
-
-        if (signatureStart + signatureBlockSize >= mFile.directSize()) {
-            /*
-             * Not enough contents in the zip file to read the signature.
-             */
-            return null;
-        }
-
-        byte[] signature = new byte[signatureBlockSize];
-
-        mFile.directFullyRead(signatureStart, signature);
-        return signature;
-    }
-
-    /**
-     * Applies a function that receives an input stream with the zip contents with all entries.
-     *
-     * @param function the function to apply
-     * @param <T> the return type
-     * @return the return value returned by the function
-     * @throws IOException failed to open or close the stream; also thrown by the function
-     */
-    private <T> T applyToAllEntries(@NonNull IOExceptionFunction<InputStream, T> function)
-            throws IOException {
-        long centralDirectoryStart = mFile.getCentralDirectoryOffset();
-        long entriesEnd = centralDirectoryStart - mFile.getExtraDirectoryOffset();
-        Verify.verify(entriesEnd >= 0);
-        Verify.verify(entriesEnd <= mFile.directSize());
-
-        InputStream allEntriesData = mFile.directOpen(0, entriesEnd);
-        boolean thrown = true;
-        try {
-            T result = function.apply(allEntriesData);
-            thrown = false;
-            return result;
-        } finally {
-            Closeables.close(allEntriesData, thrown);
-        }
-    }
-
-    /**
-     * Generates a signature for the zip.
+     * Generates a signature for the APK.
      *
      * @return the signature data block
      * @throws IOException failed to generate a signature
      */
     @NonNull
-    private byte[] generateSignature() throws IOException {
-        final byte[] centralDirectoryData = mFile.getCentralDirectoryBytes();
-        final byte[] eocdData = mFile.getEocdBytes();
+    private byte[] generateApkSigningBlock() throws IOException {
+        byte[] centralDirectoryData = mFile.getCentralDirectoryBytes();
+        byte[] eocdData = mFile.getEocdBytes();
 
-        return applyToAllEntries(new IOExceptionFunction<InputStream, byte[]>() {
-            @Nullable
-            @Override
-            public byte[] apply(@Nullable InputStream input) throws IOException {
-                Verify.verifyNotNull(input, "input == null");
-                return computeSignature(input, centralDirectoryData, eocdData);
-            }
-        });
-    }
-
-    /**
-     * Verifies that the zip signature is correct.
-     *
-     * @param zipEntriesContent a stream that reads the whole zip contents
-     * @param centralDirectoryData the data of the zip's central directory
-     * @param eocdData the data in the EOCD record
-     * @param signature the signature block to verify
-     * @return is the signature correct?
-     * @throws IOException failed to verify the signature
-     */
-    private static boolean verifySignature(@NonNull InputStream zipEntriesContent,
-            @NonNull byte[] centralDirectoryData, @NonNull byte[] eocdData,
-            @NonNull byte[] signature) throws IOException {
-        /*
-         * Currently, we do not implement "verifySignature" so we always act as if the signature
-         * is invalid.
-         */
-        return false;
-    }
-
-    /**
-     * Computes the zip file signature block.
-     *
-     * @param zipEntriesContent a stream that reads the whole zip contents, this may come directly
-     * disk or memory, depending on where the contents of the zip is.
-     * @param centralDirectoryData the data of the zip's central directory
-     * @param eocdData the data in the EOCD record
-     * @return the signature block
-     * @throws IOException failed to compute the signature or failed to read data from the
-     * zip file
-     */
-    @NonNull
-    private static byte[] computeSignature(@NonNull InputStream zipEntriesContent,
-            @NonNull byte[] centralDirectoryData, @NonNull byte[] eocdData) throws IOException {
-        // TODO: Implement a *real* signature here. This is just a hash...
-        ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
-        ByteStreams.copy(zipEntriesContent, bytesOut);
-        bytesOut.write(centralDirectoryData);
-        bytesOut.write(eocdData);
-        return Hashing.sha1().hashBytes(bytesOut.toByteArray()).asBytes();
+        ApkSignerV2.SignerConfig signerConfig = new ApkSignerV2.SignerConfig();
+        signerConfig.privateKey = mPrivateKey;
+        signerConfig.certificates = ImmutableList.of(mCertificate);
+        signerConfig.signatureAlgorithms = mV2SignatureAlgorithms;
+        DigestSource centralDir = new ByteArrayDigestSource(centralDirectoryData);
+        DigestSource eocd = new ByteArrayDigestSource(eocdData);
+        DigestSource zipEntries =
+                new ZFileDigestSource(
+                        mFile,
+                        0,
+                        mFile.getCentralDirectoryOffset() - mFile.getExtraDirectoryOffset());
+        try {
+            return ApkSignerV2.generateApkSigningBlock(
+                    zipEntries,
+                    centralDir,
+                    eocd,
+                    ImmutableList.of(signerConfig));
+        } catch (InvalidKeyException | SignatureException e) {
+            throw new IOException("Failed to sign APK using APK Signature Scheme v2", e);
+        }
     }
 }

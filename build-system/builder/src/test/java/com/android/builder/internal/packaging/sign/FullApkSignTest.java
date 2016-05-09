@@ -55,7 +55,7 @@ public class FullApkSignTest {
          * Generate a signed zip.
          */
         ZFile zf = new ZFile(out);
-        FullApkSignExtension signExtension = new FullApkSignExtension(zf, signData.getSecond(),
+        FullApkSignExtension signExtension = new FullApkSignExtension(zf, 13, signData.getSecond(),
                 signData.getFirst());
         signExtension.register();
         String f1Name = "abc";
