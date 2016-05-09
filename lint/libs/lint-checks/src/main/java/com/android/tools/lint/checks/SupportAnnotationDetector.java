@@ -20,6 +20,7 @@ import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_VALUE;
 import static com.android.SdkConstants.CLASS_INTENT;
+import static com.android.SdkConstants.CLASS_VIEW;
 import static com.android.SdkConstants.INT_DEF_ANNOTATION;
 import static com.android.SdkConstants.STRING_DEF_ANNOTATION;
 import static com.android.SdkConstants.SUPPORT_ANNOTATIONS_PREFIX;
@@ -71,6 +72,7 @@ import com.intellij.psi.JavaRecursiveElementVisitor;
 import com.intellij.psi.JavaTokenType;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiAnnotationMemberValue;
+import com.intellij.psi.PsiAnonymousClass;
 import com.intellij.psi.PsiArrayInitializerExpression;
 import com.intellij.psi.PsiArrayInitializerMemberValue;
 import com.intellij.psi.PsiArrayType;
@@ -118,6 +120,7 @@ import org.w3c.dom.NodeList;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
@@ -266,6 +269,7 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
     public static final String MAIN_THREAD_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "MainThread"; //$NON-NLS-1$
     public static final String WORKER_THREAD_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "WorkerThread"; //$NON-NLS-1$
     public static final String BINDER_THREAD_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "BinderThread"; //$NON-NLS-1$
+    public static final String ANY_THREAD_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "AnyThread"; //$NON-NLS-1$
     public static final String PERMISSION_ANNOTATION_READ = PERMISSION_ANNOTATION + ".Read"; //$NON-NLS-1$
     public static final String PERMISSION_ANNOTATION_WRITE = PERMISSION_ANNOTATION + ".Write"; //$NON-NLS-1$
 
@@ -293,7 +297,9 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
             @NonNull JavaContext context,
             @NonNull PsiMethod method,
             @NonNull PsiElement call,
-            @NonNull PsiAnnotation annotation) {
+            @NonNull PsiAnnotation annotation,
+            @NonNull PsiAnnotation[] allMethodAnnotations,
+            @NonNull PsiAnnotation[] allClassAnnotations) {
         String signature = annotation.getQualifiedName();
         if (signature == null) {
             return;
@@ -307,7 +313,8 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
             checkPermission(context, call, method, null, requirement);
         } else if (signature.endsWith(THREAD_SUFFIX)
                 && signature.startsWith(SUPPORT_ANNOTATIONS_PREFIX)) {
-            checkThreading(context, call, method, signature);
+            checkThreading(context, call, method, signature, annotation, allMethodAnnotations,
+                    allClassAnnotations);
         }
     }
 
@@ -777,48 +784,167 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
             @NonNull JavaContext context,
             @NonNull PsiElement node,
             @NonNull PsiMethod method,
-            @NonNull String annotation) {
-        String threadContext = getThreadContext(context, node);
-        if (threadContext != null && !isCompatibleThread(threadContext, annotation)
+            @NonNull String signature,
+            @NonNull PsiAnnotation annotation,
+            @NonNull PsiAnnotation[] allMethodAnnotations,
+            @NonNull PsiAnnotation[] allClassAnnotations) {
+        List<String> threadContext = getThreadContext(context, node);
+        if (threadContext != null && !isCompatibleThread(threadContext, signature)
                 && !isIgnoredInIde(THREAD, context, node)) {
-            String message = String.format("%1$s %2$s must be called from the `%3$s` thread, currently inferred thread is `%4$s` thread",
-                    method.isConstructor() ? "Constructor" : "Method",
-                    method.getName(), describeThread(annotation), describeThread(threadContext));
+            // If the annotation is specified on the class, ignore this requirement
+            // if there is another annotation specified on the method.
+            if (containsAnnotation(allClassAnnotations, annotation)) {
+                if (containsThreadingAnnotation(allMethodAnnotations)) {
+                    return;
+                }
+                // Make sure ALL the other context annotations are acceptable!
+            } else {
+                assert containsAnnotation(allMethodAnnotations, annotation);
+                // See if any of the *other* annotations are compatible.
+                Boolean isFirst = null;
+                for (PsiAnnotation other : allMethodAnnotations) {
+                    if (other == annotation) {
+                        if (isFirst == null) {
+                            isFirst = true;
+                        }
+                        continue;
+                    } else if (!isThreadingAnnotation(other)) {
+                        continue;
+                    }
+                    if (isFirst == null) {
+                        // We'll be called for each annotation on the method.
+                        // For each one we're checking *all* annotations on the target.
+                        // Therefore, when we're seeing the second, third, etc annotation
+                        // on the method we've already checked them, so return here.
+                        return;
+                    }
+                    String s = other.getQualifiedName();
+                    if (s != null && isCompatibleThread(threadContext, s)) {
+                        return;
+                    }
+                }
+            }
+
+            String name = method.getName();
+            if ((name.startsWith("post") )
+                && context.getEvaluator().isMemberInClass(method, CLASS_VIEW)) {
+                // The post()/postDelayed() methods are (currently) missing
+                // metadata (@AnyThread); they're on a class marked @UiThread
+                // but these specific methods are not @UiThread.
+                return;
+            }
+
+            List<String> targetThreads = getThreads(context, method);
+            if (targetThreads == null) {
+                targetThreads = Collections.singletonList(signature);
+            }
+
+            String message = String.format(
+                 "%1$s %2$s must be called from the `%3$s` thread, currently inferred thread is `%4$s` thread",
+                 method.isConstructor() ? "Constructor" : "Method",
+                 method.getName(), describeThreads(targetThreads, true),
+                 describeThreads(threadContext, false));
             context.report(THREAD, node, context.getLocation(node), message);
         }
+    }
+
+    public static boolean containsAnnotation(
+            @NonNull PsiAnnotation[] array,
+            @NonNull PsiAnnotation annotation) {
+        for (PsiAnnotation a : array) {
+            if (a == annotation) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static boolean containsThreadingAnnotation(@NonNull PsiAnnotation[] array) {
+        for (PsiAnnotation annotation : array) {
+            if (isThreadingAnnotation(annotation)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static boolean isThreadingAnnotation(@NonNull PsiAnnotation annotation) {
+        String signature = annotation.getQualifiedName();
+        return signature != null
+                && signature.endsWith(THREAD_SUFFIX)
+                && signature.startsWith(SUPPORT_ANNOTATIONS_PREFIX);
+    }
+
+    @NonNull
+    public static String describeThreads(@NonNull List<String> annotations, boolean any) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < annotations.size(); i++) {
+            if (i > 0) {
+                if (i == annotations.size() - 1) {
+                    if (any) {
+                        sb.append(" or ");
+                    } else {
+                        sb.append(" and ");
+                    }
+                } else {
+                    sb.append(", ");
+                }
+            }
+            sb.append(describeThread(annotations.get(i)));
+        }
+        return sb.toString();
     }
 
     @NonNull
     public static String describeThread(@NonNull String annotation) {
         if (UI_THREAD_ANNOTATION.equals(annotation)) {
             return "UI";
-        }
-        else if (MAIN_THREAD_ANNOTATION.equals(annotation)) {
+        } else if (MAIN_THREAD_ANNOTATION.equals(annotation)) {
             return "main";
-        }
-        else if (BINDER_THREAD_ANNOTATION.equals(annotation)) {
+        } else if (BINDER_THREAD_ANNOTATION.equals(annotation)) {
             return "binder";
-        }
-        else if (WORKER_THREAD_ANNOTATION.equals(annotation)) {
+        } else if (WORKER_THREAD_ANNOTATION.equals(annotation)) {
             return "worker";
+        } else if (ANY_THREAD_ANNOTATION.equals(annotation)) {
+            return "any";
         } else {
             return "other";
         }
     }
 
     /** returns true if the two threads are compatible */
-    public static boolean isCompatibleThread(@NonNull String thread1, @NonNull String thread2) {
-        if (thread1.equals(thread2)) {
+    public static boolean isCompatibleThread(@NonNull List<String> callers,
+            @NonNull String callee) {
+        // ALL calling contexts must be valid
+        assert !callers.isEmpty();
+        for (String caller : callers) {
+            if (!isCompatibleThread(caller, callee)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /** returns true if the two threads are compatible */
+    public static boolean isCompatibleThread(@NonNull String caller, @NonNull String callee) {
+        if (callee.equals(caller)) {
+            return true;
+        }
+
+        if (callee.equals(ANY_THREAD_ANNOTATION)) {
             return true;
         }
 
         // Allow @UiThread and @MainThread to be combined
-        if (thread1.equals(UI_THREAD_ANNOTATION)) {
-            if (thread2.equals(MAIN_THREAD_ANNOTATION)) {
+        if (callee.equals(UI_THREAD_ANNOTATION)) {
+            if (caller.equals(MAIN_THREAD_ANNOTATION)) {
                 return true;
             }
-        } else if (thread1.equals(MAIN_THREAD_ANNOTATION)) {
-            if (thread2.equals(UI_THREAD_ANNOTATION)) {
+        } else if (callee.equals(MAIN_THREAD_ANNOTATION)) {
+            if (caller.equals(UI_THREAD_ANNOTATION)) {
                 return true;
             }
         }
@@ -828,10 +954,20 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
 
     /** Attempts to infer the current thread context at the site of the given method call */
     @Nullable
-    private static String getThreadContext(@NonNull JavaContext context,
+    private static List<String> getThreadContext(@NonNull JavaContext context,
             @NonNull PsiElement methodCall) {
-        PsiMethod method = PsiTreeUtil.getParentOfType(methodCall, PsiMethod.class, true);
+        //noinspection unchecked
+        PsiMethod method = PsiTreeUtil.getParentOfType(methodCall, PsiMethod.class, true,
+                PsiAnonymousClass.class);
+        return getThreads(context, method);
+    }
+
+    /** Attempts to infer the current thread context at the site of the given method call */
+    @Nullable
+    private static List<String> getThreads(@NonNull JavaContext context,
+            @Nullable PsiMethod method) {
         if (method != null) {
+            List<String> result = null;
             PsiClass cls = method.getContainingClass();
 
             while (method != null) {
@@ -839,8 +975,16 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
                     String name = annotation.getQualifiedName();
                     if (name != null && name.startsWith(SUPPORT_ANNOTATIONS_PREFIX)
                             && name.endsWith(THREAD_SUFFIX)) {
-                        return name;
+                        if (result == null) {
+                            result = new ArrayList<>(4);
+                        }
+                        result.add(name);
                     }
+                }
+                if (result != null) {
+                    // We don't accumulate up the chain: one method replaces the requirements
+                    // of its super methods.
+                    return result;
                 }
                 method = context.getEvaluator().getSuperMethod(method);
             }
@@ -853,8 +997,16 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
                         String name = annotation.getQualifiedName();
                         if (name != null && name.startsWith(SUPPORT_ANNOTATIONS_PREFIX)
                                 && name.endsWith(THREAD_SUFFIX)) {
-                            return name;
+                            if (result == null) {
+                                result = new ArrayList<>(4);
+                            }
+                            result.add(name);
                         }
+                    }
+                    if (result != null) {
+                        // We don't accumulate up the chain: one class replaces the requirements
+                        // of its super classes.
+                        return result;
                     }
                 }
                 cls = cls.getSuperClass();
@@ -1788,20 +1940,30 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
 
         public void checkCall(PsiMethod method, PsiCall call) {
             JavaEvaluator evaluator = mContext.getEvaluator();
-            PsiAnnotation[] annotations = evaluator.getAllAnnotations(method, true);
-            annotations = filterRelevantAnnotations(annotations);
-            for (PsiAnnotation annotation : annotations) {
-                checkMethodAnnotation(mContext, method, call, annotation);
-            }
+
+            PsiAnnotation[] methodAnnotations = evaluator.getAllAnnotations(method, true);
+            methodAnnotations = filterRelevantAnnotations(methodAnnotations);
 
             // Look for annotations on the class as well: these trickle
             // down to all the methods in the class
             PsiClass containingClass = method.getContainingClass();
+            PsiAnnotation[] classAnnotations;
             if (containingClass != null) {
-                annotations = evaluator.getAllAnnotations(containingClass, true);
-                annotations = filterRelevantAnnotations(annotations);
-                for (PsiAnnotation annotation : annotations) {
-                    checkMethodAnnotation(mContext, method, call, annotation);
+                classAnnotations = evaluator.getAllAnnotations(containingClass, true);
+                classAnnotations = filterRelevantAnnotations(classAnnotations);
+            } else {
+                classAnnotations = PsiAnnotation.EMPTY_ARRAY;
+            }
+
+            for (PsiAnnotation annotation : methodAnnotations) {
+                checkMethodAnnotation(mContext, method, call, annotation, methodAnnotations,
+                        classAnnotations);
+            }
+
+            if (classAnnotations.length > 0) {
+                for (PsiAnnotation annotation : classAnnotations) {
+                    checkMethodAnnotation(mContext, method, call, annotation, methodAnnotations,
+                            classAnnotations);
                 }
             }
 
@@ -1810,6 +1972,7 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
                 PsiExpression[] arguments = argumentList.getExpressions();
                 PsiParameterList parameterList = method.getParameterList();
                 PsiParameter[] parameters = parameterList.getParameters();
+                PsiAnnotation[] annotations = null;
                 for (int i = 0, n = Math.min(parameters.length, arguments.length);
                         i < n;
                         i++) {
@@ -1819,10 +1982,12 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
                     annotations = filterRelevantAnnotations(annotations);
                     checkParameterAnnotations(mContext, argument, call, method, annotations);
                 }
-                // last parameter is varargs (same parameter annotations)
-                for (int i = parameters.length; i < arguments.length; i++) {
-                    PsiExpression argument = arguments[i];
-                    checkParameterAnnotations(mContext, argument, call, method, annotations);
+                if (annotations != null) {
+                    // last parameter is varargs (same parameter annotations)
+                    for (int i = parameters.length; i < arguments.length; i++) {
+                        PsiExpression argument = arguments[i];
+                        checkParameterAnnotations(mContext, argument, call, method, annotations);
+                    }
                 }
             }
         }
