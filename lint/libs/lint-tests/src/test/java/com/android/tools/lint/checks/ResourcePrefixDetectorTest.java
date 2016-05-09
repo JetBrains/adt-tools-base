@@ -118,6 +118,21 @@ public class ResourcePrefixDetectorTest extends AbstractCheckTest {
 
     }
 
+    public void testAndroidPrefix() throws Exception {
+        // Regression test for
+        // 208973: Lint check for resource prefix doesn't ignore android: attributes
+        assertEquals("No warnings.",
+                lintProject(xml("res/values/values.xml", ""
+                        + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                        + "<resources xmlns:tools=\"http://schemas.android.com/tools\">\n"
+                        + "  <declare-styleable name=\"Unit_test_prefix_MyView\">\n"
+                        + "    <attr name=\"android:textColor\"/>\n"
+                        + "    <attr name=\"unit_test_prefix_myAttribute\" format=\"reference\"/>\n"
+                        + "  </declare-styleable>\n"
+                        + "</resources>\n")
+                ));
+    }
+
     // TODO: Test suppressing root level tag
 
     @Override
