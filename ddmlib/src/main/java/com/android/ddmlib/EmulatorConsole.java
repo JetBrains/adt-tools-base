@@ -19,7 +19,11 @@ package com.android.ddmlib;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.GuardedBy;
+import com.android.prefs.AndroidLocation;
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
@@ -70,9 +74,12 @@ public final class EmulatorConsole {
     private static final String COMMAND_NETWORK_SPEED = "network speed %1$s\r\n"; //$NON-NLS-1$
     private static final String COMMAND_NETWORK_LATENCY = "network delay %1$s\r\n"; //$NON-NLS-1$
     private static final String COMMAND_GPS = "geo fix %1$f %2$f %3$f\r\n"; //$NON-NLS-1$
+    private static final String COMMAND_AUTH = "auth %1$s\r\n"; //$NON-NLS-1$
 
     private static final Pattern RE_KO = Pattern.compile("KO:\\s+(.*)"); //$NON-NLS-1$
+    private static final String RE_AUTH_REQUIRED = "Android Console: Authentication required"; //$NON-NLS-1$
 
+    private static final String EMULATOR_CONSOLE_AUTH_TOKEN = ".emulator_console_auth_token";
     /**
      * Array of delay values: no delay, gprs, edge/egprs, umts/3d
      */
@@ -304,9 +311,22 @@ public final class EmulatorConsole {
                 mSocketChannel = SocketChannel.open(socketAddr);
                 mSocketChannel.configureBlocking(false);
                 // read initial output from console
-                readLines();
+                String[] welcome = readLines();
+
+                // the first line starts with a bunch of telnet noise, just check the end
+                if (welcome[0].endsWith(RE_AUTH_REQUIRED)) {
+                    // we need to send an authentication message before any other
+                    if (RESULT_OK != sendAuthentication()) {
+                        closeConnection();
+                        Log.w(LOG_TAG, "Emulator console auth failed (is the emulator running as a different user?)");
+                        return false;
+                    }
+                }
             } catch (IOException e) {
                 Log.w(LOG_TAG, "Failed to start Emulator console for " + Integer.toString(mPort));
+                return false;
+            } catch (AndroidLocation.AndroidLocationException e) {
+                Log.w(LOG_TAG, "Failed to get emulator console auth token");
                 return false;
             }
         }
@@ -589,6 +609,14 @@ public final class EmulatorConsole {
         } finally {
             formatter.close();
         }
+    }
+
+    public synchronized String sendAuthentication() throws IOException, AndroidLocation.AndroidLocationException {
+        File emulatorConsoleAuthTokenFile = new File(AndroidLocation.getUserHomeFolder(), EMULATOR_CONSOLE_AUTH_TOKEN);
+        String authToken = Files.toString(emulatorConsoleAuthTokenFile, Charsets.UTF_8).trim();
+        String command = String.format(COMMAND_AUTH, authToken);
+
+        return processCommand(command);
     }
 
     /**
