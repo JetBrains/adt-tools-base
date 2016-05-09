@@ -27,7 +27,7 @@ import com.android.tools.lint.client.api.JavaParser.ResolvedAnnotation;
 import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
 import com.android.tools.lint.detector.api.Detector;
 
-@SuppressWarnings("ClassNameDiffersFromFileName") // For embedded unit tests
+@SuppressWarnings("all") // Lots of test sample projects with faulty code
 public class SupportAnnotationDetectorTest extends AbstractCheckTest {
     private static final boolean SDK_ANNOTATIONS_AVAILABLE =
             new SupportAnnotationDetectorTest().createClient().findResource(
@@ -279,47 +279,46 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
 
     public void testColorInt2() throws Exception {
         assertEquals(""
-                + "src/test/pkg/ColorTest.java:23: Error: Should pass resolved color instead of resource id here: getResources().getColor(actualColor) [ResourceAsColor]\n"
+                + "src/test/pkg/ColorTest.java:22: Error: Should pass resolved color instead of resource id here: getResources().getColor(actualColor) [ResourceAsColor]\n"
                 + "        setColor2(actualColor); // ERROR\n"
                 + "                  ~~~~~~~~~~~\n"
-                + "src/test/pkg/ColorTest.java:24: Error: Should pass resolved color instead of resource id here: getResources().getColor(getColor2()) [ResourceAsColor]\n"
-                + "        setColor2(getColor2()); // ERROR\n"
+                + "src/test/pkg/ColorTest.java:23: Error: Should pass resolved color instead of resource id here: getResources().getColor(getColor1()) [ResourceAsColor]\n"
+                + "        setColor2(getColor1()); // ERROR\n"
                 + "                  ~~~~~~~~~~~\n"
-                + "src/test/pkg/ColorTest.java:17: Error: Expected a color resource id (R.color.) but received an RGB integer [ResourceType]\n"
+                + "src/test/pkg/ColorTest.java:16: Error: Expected a color resource id (R.color.) but received an RGB integer [ResourceType]\n"
                 + "        setColor1(actualColor); // ERROR\n"
                 + "                  ~~~~~~~~~~~\n"
-                + "src/test/pkg/ColorTest.java:18: Error: Expected a color resource id (R.color.) but received an RGB integer [ResourceType]\n"
-                + "        setColor1(getColor1()); // ERROR\n"
+                + "src/test/pkg/ColorTest.java:17: Error: Expected a color resource id (R.color.) but received an RGB integer [ResourceType]\n"
+                + "        setColor1(getColor2()); // ERROR\n"
                 + "                  ~~~~~~~~~~~\n"
                 + "4 errors, 0 warnings\n",
 
                 lintProject(
                         java("src/test/pkg/ColorTest.java", ""
                                 + "package test.pkg;\n"
-                                + "import android.content.Context;\n"
-                                + "import android.content.res.Resources;\n"
+                                + "\n"
                                 + "import android.support.annotation.ColorInt;\n"
                                 + "import android.support.annotation.ColorRes;\n"
                                 + "\n"
                                 + "public abstract class ColorTest {\n"
-                                + "    @ColorInt\n"
+                                + "    @ColorRes\n"
                                 + "    public abstract int getColor1();\n"
                                 + "    public abstract void setColor1(@ColorRes int color);\n"
-                                + "    @ColorRes\n"
+                                + "    @ColorInt\n"
                                 + "    public abstract int getColor2();\n"
                                 + "    public abstract void setColor2(@ColorInt int color);\n"
                                 + "\n"
-                                + "    public void test1(Context context) {\n"
-                                + "        int actualColor = getColor1();\n"
-                                + "        setColor1(actualColor); // ERROR\n"
-                                + "        setColor1(getColor1()); // ERROR\n"
-                                + "        setColor1(getColor2()); // OK\n"
-                                + "    }\n"
-                                + "    public void test2(Context context) {\n"
+                                + "    public void test1() {\n"
                                 + "        int actualColor = getColor2();\n"
+                                + "        setColor1(actualColor); // ERROR\n"
+                                + "        setColor1(getColor2()); // ERROR\n"
+                                + "        setColor1(getColor1()); // OK\n"
+                                + "    }\n"
+                                + "    public void test2() {\n"
+                                + "        int actualColor = getColor1();\n"
                                 + "        setColor2(actualColor); // ERROR\n"
-                                + "        setColor2(getColor2()); // ERROR\n"
-                                + "        setColor2(getColor1()); // OK\n"
+                                + "        setColor2(getColor1()); // ERROR\n"
+                                + "        setColor2(getColor2()); // OK\n"
                                 + "    }\n"
                                 + "}\n"),
                         mColorResAnnotation,
@@ -355,6 +354,55 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                                 + "    }\n"
                                 + "}\n"),
                         mColorResAnnotation
+                ));
+    }
+
+    public void testPx() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/PxTest.java:22: Error: Should pass resolved pixel dimension instead of resource id here: getResources().getDimension*(actualSize) [ResourceAsColor]\n"
+                + "        setDimension2(actualSize); // ERROR\n"
+                + "                      ~~~~~~~~~~\n"
+                + "src/test/pkg/PxTest.java:23: Error: Should pass resolved pixel dimension instead of resource id here: getResources().getDimension*(getDimension1()) [ResourceAsColor]\n"
+                + "        setDimension2(getDimension1()); // ERROR\n"
+                + "                      ~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/PxTest.java:16: Error: Expected a dimension resource id (R.color.) but received a pixel integer [ResourceType]\n"
+                + "        setDimension1(actualSize); // ERROR\n"
+                + "                      ~~~~~~~~~~\n"
+                + "src/test/pkg/PxTest.java:17: Error: Expected a dimension resource id (R.color.) but received a pixel integer [ResourceType]\n"
+                + "        setDimension1(getDimension2()); // ERROR\n"
+                + "                      ~~~~~~~~~~~~~~~\n"
+                + "4 errors, 0 warnings\n",
+
+                lintProject(
+                        java("src/test/pkg/PxTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.support.annotation.Px;\n"
+                                + "import android.support.annotation.DimenRes;\n"
+                                + "\n"
+                                + "public abstract class PxTest {\n"
+                                + "    @DimenRes\n"
+                                + "    public abstract int getDimension1();\n"
+                                + "    public abstract void setDimension1(@DimenRes int dimension);\n"
+                                + "    @Px\n"
+                                + "    public abstract int getDimension2();\n"
+                                + "    public abstract void setDimension2(@Px int dimension);\n"
+                                + "\n"
+                                + "    public void test1() {\n"
+                                + "        int actualSize = getDimension2();\n"
+                                + "        setDimension1(actualSize); // ERROR\n"
+                                + "        setDimension1(getDimension2()); // ERROR\n"
+                                + "        setDimension1(getDimension1()); // OK\n"
+                                + "    }\n"
+                                + "    public void test2() {\n"
+                                + "        int actualSize = getDimension1();\n"
+                                + "        setDimension2(actualSize); // ERROR\n"
+                                + "        setDimension2(getDimension1()); // ERROR\n"
+                                + "        setDimension2(getDimension2()); // OK\n"
+                                + "    }\n"
+                                + "}\n"),
+                        mPxAnnotation,
+                        mDimenResAnnotation
                 ));
     }
 
@@ -684,6 +732,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
     private final TestFile mColorResAnnotation = createResAnnotation("Color");
     private final TestFile mStringResAnnotation = createResAnnotation("String");
     private final TestFile mStyleResAnnotation = createResAnnotation("Style");
+    private final TestFile mDimenResAnnotation = createResAnnotation("Dimen");
     private final TestFile mAnyResAnnotation = createResAnnotation("Any");
 
     private final TestFile mColorIntAnnotation = java("src/android/support/annotation/ColorInt.java", ""
@@ -698,6 +747,20 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
             + "@Retention(CLASS)\n"
             + "@Target({METHOD, PARAMETER, FIELD, LOCAL_VARIABLE})\n"
             + "public @interface ColorInt {\n"
+            + "}\n");
+
+    private final TestFile mPxAnnotation = java("src/android/support/annotation/Px.java", ""
+            + "package android.support.annotation;\n"
+            + "\n"
+            + "import java.lang.annotation.Retention;\n"
+            + "import java.lang.annotation.Target;\n"
+            + "\n"
+            + "import static java.lang.annotation.ElementType.*;\n"
+            + "import static java.lang.annotation.RetentionPolicy.CLASS;\n"
+            + "\n"
+            + "@Retention(CLASS)\n"
+            + "@Target({METHOD, PARAMETER, FIELD, LOCAL_VARIABLE})\n"
+            + "public @interface Px {\n"
             + "}\n");
 
     private TestFile getManifestWithPermissions(int targetSdk, String... permissions) {

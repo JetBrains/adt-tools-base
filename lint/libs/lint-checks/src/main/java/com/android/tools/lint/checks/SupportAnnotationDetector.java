@@ -30,6 +30,7 @@ import static com.android.SdkConstants.TAG_USES_PERMISSION_SDK_23;
 import static com.android.SdkConstants.TAG_USES_PERMISSION_SDK_M;
 import static com.android.SdkConstants.TYPE_DEF_FLAG_ATTRIBUTE;
 import static com.android.resources.ResourceType.COLOR;
+import static com.android.resources.ResourceType.DIMEN;
 import static com.android.resources.ResourceType.DRAWABLE;
 import static com.android.resources.ResourceType.MIPMAP;
 import static com.android.tools.lint.checks.PermissionFinder.Operation.ACTION;
@@ -42,6 +43,9 @@ import static com.android.tools.lint.checks.PermissionRequirement.getAnnotationD
 import static com.android.tools.lint.checks.PermissionRequirement.getAnnotationLongValue;
 import static com.android.tools.lint.checks.PermissionRequirement.getAnnotationStringValue;
 import static com.android.tools.lint.detector.api.LintUtils.skipParentheses;
+import static com.android.tools.lint.detector.api.ResourceEvaluator.COLOR_INT_ANNOTATION;
+import static com.android.tools.lint.detector.api.ResourceEvaluator.PX_ANNOTATION;
+import static com.android.tools.lint.detector.api.ResourceEvaluator.RES_SUFFIX;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -135,6 +139,7 @@ import java.util.Set;
  * specifying toInclusive without setting to, combining @ColorInt with any @ResourceTypeRes,
  * using @CheckResult on a void method, etc.
  */
+@SuppressWarnings("WeakerAccess")
 public class SupportAnnotationDetector extends Detector implements JavaPsiScanner {
 
     public static final Implementation IMPLEMENTATION
@@ -260,7 +265,6 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
                     "http://developer.android.com/guide/components/processes-and-threads.html#Threads");
 
     public static final String CHECK_RESULT_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "CheckResult"; //$NON-NLS-1$
-    public static final String COLOR_INT_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "ColorInt"; //$NON-NLS-1$
     public static final String INT_RANGE_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "IntRange"; //$NON-NLS-1$
     public static final String FLOAT_RANGE_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "FloatRange"; //$NON-NLS-1$
     public static final String SIZE_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "Size"; //$NON-NLS-1$
@@ -273,7 +277,6 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
     public static final String PERMISSION_ANNOTATION_READ = PERMISSION_ANNOTATION + ".Read"; //$NON-NLS-1$
     public static final String PERMISSION_ANNOTATION_WRITE = PERMISSION_ANNOTATION + ".Write"; //$NON-NLS-1$
 
-    public static final String RES_SUFFIX = "Res";
     public static final String THREAD_SUFFIX = "Thread";
     public static final String ATTR_SUGGEST = "suggest";
     public static final String ATTR_TO = "to";
@@ -333,6 +336,8 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
 
             if (COLOR_INT_ANNOTATION.equals(signature)) {
                 checkColor(context, argument);
+            } else if (signature.equals(PX_ANNOTATION)) {
+                checkPx(context, argument);
             } else if (signature.equals(INT_RANGE_ANNOTATION)) {
                 checkIntRange(context, annotation, argument, annotations);
             } else if (signature.equals(FLOAT_RANGE_ANNOTATION)) {
@@ -397,6 +402,7 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
     private static EnumSet<ResourceType> getAnyRes() {
         EnumSet<ResourceType> types = EnumSet.allOf(ResourceType.class);
         types.remove(ResourceEvaluator.COLOR_INT_MARKER_TYPE);
+        types.remove(ResourceEvaluator.PX_MARKER_TYPE);
         return types;
     }
 
@@ -446,6 +452,29 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
             String message = String.format(
                     "Should pass resolved color instead of resource id here: " +
                             "`getResources().getColor(%1$s)`", argument.getText());
+            context.report(COLOR_USAGE, argument, context.getLocation(argument), message);
+        }
+    }
+
+    private static void checkPx(@NonNull JavaContext context, @NonNull PsiElement argument) {
+        if (argument instanceof PsiConditionalExpression) {
+            PsiConditionalExpression expression = (PsiConditionalExpression) argument;
+            if (expression.getThenExpression() != null) {
+                checkPx(context, expression.getThenExpression());
+            }
+            if (expression.getElseExpression() != null) {
+                checkPx(context, expression.getElseExpression());
+            }
+            return;
+        }
+
+        EnumSet<ResourceType> types = ResourceEvaluator.getResourceTypes(context.getEvaluator(),
+          argument);
+
+        if (types != null && types.contains(DIMEN)) {
+            String message = String.format(
+              "Should pass resolved pixel dimension instead of resource id here: " +
+                "`getResources().getDimension*(%1$s)`", argument.getText());
             context.report(COLOR_USAGE, argument, context.getLocation(argument), message);
         }
     }
@@ -899,18 +928,19 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
 
     @NonNull
     public static String describeThread(@NonNull String annotation) {
-        if (UI_THREAD_ANNOTATION.equals(annotation)) {
-            return "UI";
-        } else if (MAIN_THREAD_ANNOTATION.equals(annotation)) {
-            return "main";
-        } else if (BINDER_THREAD_ANNOTATION.equals(annotation)) {
-            return "binder";
-        } else if (WORKER_THREAD_ANNOTATION.equals(annotation)) {
-            return "worker";
-        } else if (ANY_THREAD_ANNOTATION.equals(annotation)) {
-            return "any";
-        } else {
-            return "other";
+        switch (annotation) {
+            case UI_THREAD_ANNOTATION:
+                return "UI";
+            case MAIN_THREAD_ANNOTATION:
+                return "main";
+            case BINDER_THREAD_ANNOTATION:
+                return "binder";
+            case WORKER_THREAD_ANNOTATION:
+                return "worker";
+            case ANY_THREAD_ANNOTATION:
+                return "any";
+            default:
+                return "other";
         }
     }
 
@@ -1097,8 +1127,14 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
             message = "Expected a color resource id (`R.color.`) but received an RGB integer";
         } else if (expectedType.contains(ResourceEvaluator.COLOR_INT_MARKER_TYPE)) {
             message = String.format("Should pass resolved color instead of resource id here: " +
-                    "`getResources().getColor(%1$s)`", argument.getText());
-        } else if (expectedType.size() < ResourceType.getNames().length - 1) {
+              "`getResources().getColor(%1$s)`", argument.getText());
+        } else if (actual != null && actual.size() == 1 && actual.contains(
+          ResourceEvaluator.PX_MARKER_TYPE)) {
+            message = "Expected a dimension resource id (`R.color.`) but received a pixel integer";
+        } else if (expectedType.contains(ResourceEvaluator.PX_MARKER_TYPE)) {
+            message = String.format("Should pass resolved pixel size instead of resource id here: " +
+              "`getResources().getDimension*(%1$s)`", argument.getText());
+        } else if (expectedType.size() < ResourceType.getNames().length - 2) { // -2: marker types
             message = String.format("Expected resource of type %1$s",
                     Joiner.on(" or ").join(expectedType));
         } else {
@@ -1885,7 +1921,7 @@ public class SupportAnnotationDetector extends Detector implements JavaPsiScanne
                             return innerAnnotations;
                         }
                         if (result == null) {
-                            result = new ArrayList<PsiAnnotation>(2);
+                            result = new ArrayList<>(2);
                         }
                         result.add(inner);
                     }
