@@ -106,11 +106,6 @@ public class LibraryVariantFactory implements VariantFactory {
     }
 
     @Override
-    public boolean isLibrary() {
-        return true;
-    }
-
-    @Override
     public boolean hasTestScope() {
         return true;
     }

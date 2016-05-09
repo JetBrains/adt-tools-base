@@ -178,11 +178,6 @@ public class ApplicationVariantFactory implements VariantFactory {
     }
 
     @Override
-    public boolean isLibrary() {
-        return false;
-    }
-
-    @Override
     public boolean hasTestScope() {
         return true;
     }
