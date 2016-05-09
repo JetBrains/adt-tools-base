@@ -18,7 +18,6 @@ package com.google.devrel.gmscore.tools.apk.arsc;
 
 import com.google.common.base.Preconditions;
 import com.google.devrel.gmscore.tools.apk.arsc.ArscBlamer.ResourceEntry;
-import com.google.inject.Inject;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -60,7 +59,6 @@ public class ResourceEntryStatsCollector {
    * @param blamer The blamer that maps resource entries to what they use.
    * @param resourceTable The resource table that {@code blamer} is blamed on.
    */
-  @Inject
   public ResourceEntryStatsCollector(ArscBlamer blamer, ResourceTableChunk resourceTable) {
     this.resourceTable = resourceTable;
     this.blamer = blamer;

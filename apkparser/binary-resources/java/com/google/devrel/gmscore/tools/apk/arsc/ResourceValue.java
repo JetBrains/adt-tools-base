@@ -16,7 +16,6 @@
 
 package com.google.devrel.gmscore.tools.apk.arsc;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
@@ -25,10 +24,10 @@ import com.google.common.primitives.UnsignedBytes;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Map;
+import java.util.Objects;
 
 /** Represents a single typed resource value. */
-@AutoValue
-public abstract class ResourceValue implements SerializableResource {
+public class ResourceValue implements SerializableResource {
 
   /** Resource type codes. */
   public enum Type {
@@ -91,22 +90,32 @@ public abstract class ResourceValue implements SerializableResource {
   /** The serialized size in bytes of a {@link ResourceValue}. */
   public static final int SIZE = 8;
 
-  /** The length in bytes of this value. */
-  public abstract int size();
-
-  /** The raw data type of this value. */
-  public abstract Type type();
-
-  /** The actual 4-byte value; interpretation of the value depends on {@code dataType}. */
-  public abstract int data();
+  private final int size;
+  private final Type type;
+  private final int data;
 
   public static ResourceValue create(ByteBuffer buffer) {
     int size = (buffer.getShort() & 0xFFFF);
     buffer.get();  // Unused
     Type type = Type.fromCode(buffer.get());
     int data = buffer.getInt();
-    return new AutoValue_ResourceValue(size, type, data);
+    return new ResourceValue(size, type, data);
   }
+
+  public ResourceValue(int size, Type type, int data) {
+    this.size = size;
+    this.type = type;
+    this.data = data;
+  }
+
+  /** The length in bytes of this value. */
+  public int size() { return size; }
+
+  /** The raw data type of this value. */
+  public Type type() { return type; }
+
+  /** The actual 4-byte value; interpretation of the value depends on {@code dataType}. */
+  public int data() { return data; }
 
   @Override
   public byte[] toByteArray() {
@@ -121,5 +130,20 @@ public abstract class ResourceValue implements SerializableResource {
     buffer.put(type().code());
     buffer.putInt(data());
     return buffer.array();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    ResourceValue that = (ResourceValue)o;
+    return size == that.size &&
+           data == that.data &&
+           type == that.type;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(size, type, data);
   }
 }

@@ -16,14 +16,13 @@
 
 package com.google.devrel.gmscore.tools.apk.arsc;
 
-import com.google.auto.value.AutoValue;
-
 import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import javax.annotation.Nullable;
 
@@ -83,22 +82,29 @@ public final class LibraryChunk extends Chunk {
   }
 
   /** A shared library package-id to package name entry. */
-  @AutoValue
-  protected abstract static class Entry implements SerializableResource {
+  protected static class Entry implements SerializableResource {
 
     /** Library entries only contain a package ID (4 bytes) and a package name. */
     private static final int SIZE = 4 + PackageUtils.PACKAGE_NAME_SIZE;
 
+    private final int packageId;
+    private final String packageName;
+
+    public Entry(int packageId, String packageName) {
+      this.packageId = packageId;
+      this.packageName = packageName;
+    }
+
     /** The id assigned to the shared library at build time. */
-    public abstract int packageId();
+    public int packageId() { return packageId; }
 
     /** The package name of the shared library. */
-    public abstract String packageName();
+    public String packageName() { return packageName; }
 
     static Entry create(ByteBuffer buffer, int offset) {
       int packageId = buffer.getInt(offset);
       String packageName = PackageUtils.readPackageName(buffer, offset + 4);
-      return new AutoValue_LibraryChunk_Entry(packageId, packageName);
+      return new Entry(packageId, packageName);
     }
 
     @Override
@@ -112,6 +118,20 @@ public final class LibraryChunk extends Chunk {
       buffer.putInt(packageId());
       PackageUtils.writePackageName(buffer, packageName());
       return buffer.array();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      Entry entry = (Entry)o;
+      return packageId == entry.packageId &&
+             Objects.equals(packageName, entry.packageName);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(packageId, packageName);
     }
   }
 }

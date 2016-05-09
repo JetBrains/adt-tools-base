@@ -16,22 +16,13 @@
 
 package com.google.devrel.gmscore.tools.apk.arsc;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
-import com.google.inject.Inject;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 
 /**
  * Analyzes an APK to:
@@ -76,7 +67,6 @@ public class ArscBlamer {
    *
    * @param resourceTable The resources.arsc resource table to blame.
    */
-  @Inject
   public ArscBlamer(ResourceTableChunk resourceTable) {
     this.resourceTable = resourceTable;
     this.stringToBlame = createEntryListArray(resourceTable.getStringPool().getStringCount());
@@ -246,18 +236,42 @@ public class ArscBlamer {
   }
 
   /** Describes a single resource entry. */
-  @AutoValue
-  public abstract static class ResourceEntry {
-    public abstract String packageName();
-    public abstract String typeName();
-    public abstract String entryName();
+  public static class ResourceEntry {
+    private final String packageName;
+    private final String typeName;
+    private final String entryName;
 
     static ResourceEntry create(TypeChunk.Entry entry) {
       PackageChunk packageChunk = Preconditions.checkNotNull(entry.parent().getPackageChunk());
       String packageName = packageChunk.getPackageName();
       String typeName = entry.typeName();
       String entryName = entry.key();
-      return new AutoValue_ArscBlamer_ResourceEntry(packageName, typeName, entryName);
+      return new ResourceEntry(packageName, typeName, entryName);
+    }
+
+    public ResourceEntry(String packageName, String typeName, String entryName) {
+      this.packageName = packageName;
+      this.typeName = typeName;
+      this.entryName = entryName;
+    }
+
+    public String packageName() { return packageName; }
+    public String typeName() { return typeName; }
+    public String entryName() { return entryName; }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      ResourceEntry that = (ResourceEntry)o;
+      return Objects.equals(packageName, that.packageName) &&
+             Objects.equals(typeName, that.typeName) &&
+             Objects.equals(entryName, that.entryName);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(packageName, typeName, entryName);
     }
   }
 }

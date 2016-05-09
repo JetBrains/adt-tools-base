@@ -16,7 +16,6 @@
 
 package com.google.devrel.gmscore.tools.apk.arsc;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.base.Preconditions;
 import com.google.common.io.LittleEndianDataOutputStream;
 import com.google.common.primitives.UnsignedBytes;
@@ -26,10 +25,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 import javax.annotation.Nullable;
 
@@ -242,8 +238,7 @@ public final class TypeChunk extends Chunk {
   }
 
   /** An {@link Entry} in a {@link TypeChunk}. Contains one or more {@link ResourceValue}. */
-  @AutoValue
-  public abstract static class Entry implements SerializableResource {
+  public static class Entry implements SerializableResource {
 
     /** An entry offset that indicates that a given resource is not present. */
     public static final int NO_ENTRY = 0xFFFFFFFF;
@@ -254,30 +249,53 @@ public final class TypeChunk extends Chunk {
     /** Size of a single resource id + value mapping entry. */
     private static final int MAPPING_SIZE = 4 + ResourceValue.SIZE;
 
+    private final int headerSize;
+    private final int flags;
+    private final int keyIndex;
+    private final ResourceValue value;
+    private final Map<Integer, ResourceValue> values;
+    private final int parentEntry;
+    private final TypeChunk parent;
+
+    private Entry(int headerSize,
+                 int flags,
+                 int keyIndex,
+                 ResourceValue value,
+                 Map<Integer, ResourceValue> values,
+                 int parentEntry, TypeChunk parent) {
+      this.headerSize = headerSize;
+      this.flags = flags;
+      this.keyIndex = keyIndex;
+      this.value = value;
+      this.values = values;
+      this.parentEntry = parentEntry;
+      this.parent = parent;
+    }
+
     /** Number of bytes in the header of the {@link Entry}. */
-    public abstract int headerSize();
+    public int headerSize() { return headerSize; }
 
     /** Resource entry flags. */
-    public abstract int flags();
+    public int flags() { return flags; }
 
     /** Index into {@link PackageChunk#getKeyStringPool} identifying this entry. */
-    public abstract int keyIndex();
+    public int keyIndex() { return keyIndex; }
 
     /** The value of this resource entry, if this is not a complex entry. Else, null. */
     @Nullable
-    public abstract ResourceValue value();
+    public ResourceValue value() { return value; }
 
     /** The extra values in this resource entry if this {@link #isComplex}. */
-    public abstract Map<Integer, ResourceValue> values();
+    public Map<Integer, ResourceValue> values() { return values; }
 
     /**
      * Entry into {@link PackageChunk} that is the parent {@link Entry} to this entry.
      * This value only makes sense when this is complex ({@link #isComplex} returns true).
      */
-    public abstract int parentEntry();
+    public int parentEntry() { return parentEntry; }
 
     /** The {@link TypeChunk} that this resource entry belongs to. */
-    public abstract TypeChunk parent();
+    public TypeChunk parent() { return parent; }
 
     /** Returns the name of the type this chunk represents (e.g. string, attr, id). */
     public final String typeName() {
@@ -342,8 +360,7 @@ public final class TypeChunk extends Chunk {
       } else {
         value = ResourceValue.create(buffer);
       }
-      return new AutoValue_TypeChunk_Entry(
-          headerSize, flags, keyIndex, value, values, parentEntry, parent);
+      return new Entry(headerSize, flags, keyIndex, value, values, parentEntry, parent);
     }
 
     @Override
@@ -376,6 +393,25 @@ public final class TypeChunk extends Chunk {
     @Override
     public final String toString() {
       return String.format("Entry{key=%s}", key());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      Entry entry = (Entry)o;
+      return headerSize == entry.headerSize &&
+             flags == entry.flags &&
+             keyIndex == entry.keyIndex &&
+             parentEntry == entry.parentEntry &&
+             Objects.equals(value, entry.value) &&
+             Objects.equals(values, entry.values) &&
+             Objects.equals(parent, entry.parent);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(headerSize, flags, keyIndex, value, values, parentEntry, parent);
     }
   }
 }

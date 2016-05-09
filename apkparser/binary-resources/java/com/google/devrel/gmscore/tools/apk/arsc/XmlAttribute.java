@@ -16,32 +16,72 @@
 
 package com.google.devrel.gmscore.tools.apk.arsc;
 
-import com.google.auto.value.AutoValue;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Objects;
 
 /** Represents an XML attribute and value. */
-@AutoValue
-public abstract class XmlAttribute implements SerializableResource {
+public class XmlAttribute implements SerializableResource {
 
   /** The serialized size in bytes of an {@link XmlAttribute}. */
   public static final int SIZE = 12 + ResourceValue.SIZE;
 
+  private final int namespaceIndex;
+  private final int nameIndex;
+  private final int rawValueIndex;
+  private final ResourceValue typedValue;
+  private final XmlNodeChunk parent;
+
+  /**
+   * Creates a new {@link XmlAttribute} based on the bytes at the current {@code buffer} position.
+   *
+   * @param buffer A buffer whose position is at the start of a {@link XmlAttribute}.
+   * @param parent The parent chunk that contains this attribute; used for string lookups.
+   */
+  public static XmlAttribute create(ByteBuffer buffer, XmlNodeChunk parent) {
+    int namespace = buffer.getInt();
+    int name = buffer.getInt();
+    int rawValue = buffer.getInt();
+    ResourceValue typedValue = ResourceValue.create(buffer);
+    return new XmlAttribute(namespace, name, rawValue, typedValue, parent);
+  }
+
+  private XmlAttribute(int namespaceIndex,
+                      int nameIndex,
+                      int rawValueIndex,
+                      ResourceValue typedValue,
+                      XmlNodeChunk parent) {
+    this.namespaceIndex = namespaceIndex;
+    this.nameIndex = nameIndex;
+    this.rawValueIndex = rawValueIndex;
+    this.typedValue = typedValue;
+    this.parent = parent;
+  }
+
   /** A string reference to the namespace URI, or -1 if not present. */
-  public abstract int namespaceIndex();
+  public int namespaceIndex() {
+    return namespaceIndex;
+  }
 
   /** A string reference to the attribute name. */
-  public abstract int nameIndex();
+  public int nameIndex() {
+    return nameIndex;
+  }
 
   /** A string reference to a string containing the character value.  */
-  public abstract int rawValueIndex();
+  public int rawValueIndex() {
+    return rawValueIndex;
+  }
 
   /** A {@link ResourceValue} instance containing the parsed value. */
-  public abstract ResourceValue typedValue();
+  public ResourceValue typedValue() {
+    return typedValue;
+  }
 
   /** The parent of this XML attribute; used for dereferencing the namespace and name. */
-  public abstract XmlNodeChunk parent();
+  public XmlNodeChunk parent() {
+    return parent;
+  }
 
   /** The namespace URI, or the empty string if not present. */
   public final String namespace() {
@@ -56,20 +96,6 @@ public abstract class XmlAttribute implements SerializableResource {
   /** The raw character value. */
   public final String rawValue() {
     return getString(rawValueIndex());
-  }
-
-  /**
-   * Creates a new {@link XmlAttribute} based on the bytes at the current {@code buffer} position.
-   *
-   * @param buffer A buffer whose position is at the start of a {@link XmlAttribute}.
-   * @param parent The parent chunk that contains this attribute; used for string lookups.
-   */
-  public static XmlAttribute create(ByteBuffer buffer, XmlNodeChunk parent) {
-    int namespace = buffer.getInt();
-    int name = buffer.getInt();
-    int rawValue = buffer.getInt();
-    ResourceValue typedValue = ResourceValue.create(buffer);
-    return new AutoValue_XmlAttribute(namespace, name, rawValue, typedValue, parent);
   }
 
   private String getString(int index) {
@@ -89,6 +115,23 @@ public abstract class XmlAttribute implements SerializableResource {
     buffer.putInt(rawValueIndex());
     buffer.put(typedValue().toByteArray(shrink));
     return buffer.array();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    XmlAttribute that = (XmlAttribute)o;
+    return namespaceIndex == that.namespaceIndex &&
+           nameIndex == that.nameIndex &&
+           rawValueIndex == that.rawValueIndex &&
+           Objects.equals(typedValue, that.typedValue) &&
+           Objects.equals(parent, that.parent);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(namespaceIndex, nameIndex, rawValueIndex, typedValue, parent);
   }
 
   /**

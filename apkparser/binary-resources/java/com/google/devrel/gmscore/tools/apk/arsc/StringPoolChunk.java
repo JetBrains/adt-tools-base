@@ -16,7 +16,6 @@
 
 package com.google.devrel.gmscore.tools.apk.arsc;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.io.LittleEndianDataOutputStream;
@@ -26,10 +25,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import javax.annotation.Nullable;
 
@@ -287,13 +283,15 @@ public final class StringPoolChunk extends Chunk {
    * Represents all of the styles for a particular string. The string is determined by its index
    * in {@link StringPoolChunk}.
    */
-  @AutoValue
-  protected abstract static class StringPoolStyle implements SerializableResource {
+  public static class StringPoolStyle implements SerializableResource {
 
     // Styles are a list of integers with 0xFFFFFFFF serving as a sentinel value.
     static final int RES_STRING_POOL_SPAN_END = 0xFFFFFFFF;
+    private final List<StringPoolSpan> spans;
 
-    public abstract List<StringPoolSpan> spans();
+    private StringPoolStyle(List<StringPoolSpan> spans) {
+      this.spans = spans;
+    }
 
     static StringPoolStyle create(ByteBuffer buffer, int offset, StringPoolChunk parent) {
       Builder<StringPoolSpan> spans = ImmutableList.builder();
@@ -303,7 +301,7 @@ public final class StringPoolChunk extends Chunk {
         offset += StringPoolSpan.SPAN_LENGTH;
         nameIndex = buffer.getInt(offset);
       }
-      return new AutoValue_StringPoolChunk_StringPoolStyle(spans.build());
+      return new StringPoolStyle(spans.build());
     }
 
     @Override
@@ -316,7 +314,7 @@ public final class StringPoolChunk extends Chunk {
       ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
       try (LittleEndianDataOutputStream payload = new LittleEndianDataOutputStream(baos)) {
-        for (StringPoolSpan span : spans()) {
+        for (StringPoolSpan span : spans) {
           byte[] encodedSpan = span.toByteArray(shrink);
           if (encodedSpan.length != StringPoolSpan.SPAN_LENGTH) {
             throw new IllegalStateException("Encountered a span of invalid length.");
@@ -329,6 +327,19 @@ public final class StringPoolChunk extends Chunk {
       return baos.toByteArray();
     }
 
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      StringPoolStyle that = (StringPoolStyle)o;
+      return Objects.equals(spans, that.spans);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(spans);
+    }
+
     /**
      * Returns a brief description of the contents of this style. The representation of this
      * information is subject to change, but below is a typical example:
@@ -337,26 +348,31 @@ public final class StringPoolChunk extends Chunk {
      */
     @Override
     public String toString() {
-      return String.format("StringPoolStyle{spans=%s}", spans());
+      return String.format("StringPoolStyle{spans=%s}", spans);
     }
   }
 
   /** Represents a styled span associated with a specific string. */
-  @AutoValue
-  protected abstract static class StringPoolSpan implements SerializableResource {
-
+  private static class StringPoolSpan implements SerializableResource {
     static final int SPAN_LENGTH = 12;
 
-    public abstract int nameIndex();
-    public abstract int start();
-    public abstract int stop();
-    public abstract StringPoolChunk parent();
+    private final int nameIndex;
+    private final int start;
+    private final int stop;
+    private final StringPoolChunk parent;
 
     static StringPoolSpan create(ByteBuffer buffer, int offset, StringPoolChunk parent) {
       int nameIndex = buffer.getInt(offset);
       int start = buffer.getInt(offset + 4);
       int stop = buffer.getInt(offset + 8);
-      return new AutoValue_StringPoolChunk_StringPoolSpan(nameIndex, start, stop, parent);
+      return new StringPoolSpan(nameIndex, start, stop, parent);
+    }
+
+    private StringPoolSpan(int nameIndex, int start, int stop, StringPoolChunk parent) {
+      this.nameIndex = nameIndex;
+      this.start = start;
+      this.stop = stop;
+      this.parent = parent;
     }
 
     @Override
@@ -367,10 +383,26 @@ public final class StringPoolChunk extends Chunk {
     @Override
     public final byte[] toByteArray(boolean shrink) {
       ByteBuffer buffer = ByteBuffer.allocate(SPAN_LENGTH).order(ByteOrder.LITTLE_ENDIAN);
-      buffer.putInt(nameIndex());
-      buffer.putInt(start());
-      buffer.putInt(stop());
+      buffer.putInt(nameIndex);
+      buffer.putInt(start);
+      buffer.putInt(stop);
       return buffer.array();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      StringPoolSpan that = (StringPoolSpan)o;
+      return nameIndex == that.nameIndex &&
+             start == that.start &&
+             stop == that.stop &&
+             Objects.equals(parent, that.parent);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(nameIndex, start, stop, parent);
     }
 
     /**
@@ -382,7 +414,7 @@ public final class StringPoolChunk extends Chunk {
     @Override
     public String toString() {
       return String.format("StringPoolSpan{%s, start=%d, stop=%d}",
-          parent().getString(nameIndex()), start(), stop());
+          parent.getString(nameIndex), start, stop);
     }
   }
 }

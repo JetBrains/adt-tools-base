@@ -18,7 +18,6 @@ package com.google.devrel.gmscore.tools.apk.arsc;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -26,15 +25,84 @@ import com.google.common.primitives.UnsignedBytes;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 /** Describes a particular resource configuration. */
-@AutoValue
-public abstract class ResourceConfiguration implements SerializableResource {
+public class ResourceConfiguration implements SerializableResource {
+  private final int size;
+  private final int mcc;
+  private final int mnc;
+  private final byte[] language;
+  private final byte[] region;
+  private final int orientation;
+  private final int touchscreen;
+  private final int density;
+  private final int keyboard;
+  private final int navigation;
+  private final int inputFlags;
+  private final int screenWidth;
+  private final int screenHeight;
+  private final int sdkVersion;
+  private final int minorVersion;
+  private final int screenLayout;
+  private final int uiMode;
+  private final int smallestScreenWidthDp;
+  private final int screenWidthDp;
+  private final int screenHeightDp;
+  private final byte[] localeScript;
+  private final byte[] localeVariant;
+  private final int screenLayout2;
+  private final byte[] unknown;
+
+  private ResourceConfiguration(int size,
+                               int mcc,
+                               int mnc,
+                               byte[] language,
+                               byte[] region,
+                               int orientation,
+                               int touchscreen,
+                               int density,
+                               int keyboard,
+                               int navigation,
+                               int inputFlags,
+                               int screenWidth,
+                               int screenHeight,
+                               int sdkVersion,
+                               int minorVersion,
+                               int screenLayout,
+                               int uiMode,
+                               int smallestScreenWidthDp,
+                               int screenWidthDp,
+                               int screenHeightDp,
+                               byte[] localeScript,
+                               byte[] localeVariant,
+                               int screenLayout2,
+                               byte[] unknown) {
+    this.size = size;
+    this.mcc = mcc;
+    this.mnc = mnc;
+    this.language = language;
+    this.region = region;
+    this.orientation = orientation;
+    this.touchscreen = touchscreen;
+    this.density = density;
+    this.keyboard = keyboard;
+    this.navigation = navigation;
+    this.inputFlags = inputFlags;
+    this.screenWidth = screenWidth;
+    this.screenHeight = screenHeight;
+    this.sdkVersion = sdkVersion;
+    this.minorVersion = minorVersion;
+    this.screenLayout = screenLayout;
+    this.uiMode = uiMode;
+    this.smallestScreenWidthDp = smallestScreenWidthDp;
+    this.screenWidthDp = screenWidthDp;
+    this.screenHeightDp = screenHeightDp;
+    this.localeScript = localeScript;
+    this.localeVariant = localeVariant;
+    this.screenLayout2 = screenLayout2;
+    this.unknown = unknown;
+  }
 
   /** The different types of configs that can be present in a {@link ResourceConfiguration}. */
   public enum Type {
@@ -197,14 +265,14 @@ public abstract class ResourceConfiguration implements SerializableResource {
   private static final int SCREEN_CONFIG_EXTENSION_MIN_SIZE = 52;
 
   /** The number of bytes that this resource configuration takes up. */
-  public abstract int size();
+  public int size() { return size; }
 
-  public abstract int mcc();
-  public abstract int mnc();
+  public int mcc() { return mcc; }
+  public int mnc() { return mnc; }
 
   /** Returns a packed 2-byte language code. */
   @SuppressWarnings("mutable")
-  public abstract byte[] language();
+  public byte[] language() { return language; }
 
   /** Returns {@link #language} as an unpacked string representation. */
   public final String languageString() {
@@ -213,19 +281,19 @@ public abstract class ResourceConfiguration implements SerializableResource {
 
   /** Returns a packed 2-byte region code. */
   @SuppressWarnings("mutable")
-  public abstract byte[] region();
+  public byte[] region() { return region; }
 
   /** Returns {@link #region} as an unpacked string representation. */
   public final String regionString() {
     return unpackRegion();
   }
 
-  public abstract int orientation();
-  public abstract int touchscreen();
-  public abstract int density();
-  public abstract int keyboard();
-  public abstract int navigation();
-  public abstract int inputFlags();
+  public int orientation() { return orientation; }
+  public int touchscreen() { return touchscreen; }
+  public int density() { return density; }
+  public int keyboard() { return keyboard; }
+  public int navigation() { return navigation; }
+  public int inputFlags() { return inputFlags; }
 
   public final int keyboardHidden() {
     return inputFlags() & KEYBOARDHIDDEN_MASK;
@@ -235,9 +303,9 @@ public abstract class ResourceConfiguration implements SerializableResource {
     return inputFlags() & NAVIGATIONHIDDEN_MASK;
   }
 
-  public abstract int screenWidth();
-  public abstract int screenHeight();
-  public abstract int sdkVersion();
+  public int screenWidth() { return screenWidth; }
+  public int screenHeight() { return screenHeight; }
+  public int sdkVersion() { return sdkVersion; }
 
   /**
    * Returns a copy of this resource configuration with a different {@link #sdkVersion}, or this
@@ -246,19 +314,19 @@ public abstract class ResourceConfiguration implements SerializableResource {
    * @param sdkVersion The SDK version of the returned configuration.
    * @return A copy of this configuration with the only difference being #sdkVersion.
    */
-  public final ResourceConfiguration withSdkVersion(int sdkVersion) {
+  public final ResourceConfiguration withSdkVersion(int sdkVergiglgersion) {
     if (sdkVersion == sdkVersion()) {
       return this;
     }
-    return new AutoValue_ResourceConfiguration(size(), mcc(), mnc(), language(), region(),
+    return new ResourceConfiguration(size(), mcc(), mnc(), language(), region(),
         orientation(), touchscreen(), density(), keyboard(), navigation(), inputFlags(),
         screenWidth(), screenHeight(), sdkVersion, minorVersion(), screenLayout(), uiMode(),
         smallestScreenWidthDp(), screenWidthDp(), screenHeightDp(), localeScript(), localeVariant(),
         screenLayout2(), unknown());
   }
 
-  public abstract int minorVersion();
-  public abstract int screenLayout();
+  public int minorVersion() { return minorVersion; }
+  public int screenLayout() { return screenLayout; }
 
   public final int screenLayoutDirection() {
     return screenLayout() & SCREENLAYOUT_LAYOUTDIR_MASK;
@@ -276,7 +344,7 @@ public abstract class ResourceConfiguration implements SerializableResource {
     return screenLayout() & SCREENLAYOUT_ROUND_MASK;
   }
 
-  public abstract int uiMode();
+  public int uiMode() { return uiMode; }
 
   public final int uiModeType() {
     return uiMode() & UI_MODE_TYPE_MASK;
@@ -286,24 +354,24 @@ public abstract class ResourceConfiguration implements SerializableResource {
     return uiMode() & UI_MODE_NIGHT_MASK;
   }
 
-  public abstract int smallestScreenWidthDp();
-  public abstract int screenWidthDp();
-  public abstract int screenHeightDp();
+  public int smallestScreenWidthDp() { return smallestScreenWidthDp; }
+  public int screenWidthDp() { return screenWidthDp; }
+  public int screenHeightDp() { return screenHeightDp; }
 
   /** The ISO-15924 short name for the script corresponding to this configuration. */
   @SuppressWarnings("mutable")
-  public abstract byte[] localeScript();
+  public byte[] localeScript() { return localeScript; }
 
   /** A single BCP-47 variant subtag. */
   @SuppressWarnings("mutable")
-  public abstract byte[] localeVariant();
+  public byte[] localeVariant() { return localeVariant; }
 
   /** An extension to {@link #screenLayout}. Contains round/notround qualifier. */
-  public abstract int screenLayout2();
+  public int screenLayout2() { return screenLayout2; }
 
   /** Any remaining bytes in this resource configuration that are unaccounted for. */
   @SuppressWarnings("mutable")
-  public abstract byte[] unknown();
+  public byte[] unknown() { return unknown; }
 
   static ResourceConfiguration create(ByteBuffer buffer) {
     int startPosition = buffer.position();  // The starting buffer position to calculate bytes read.
@@ -364,7 +432,7 @@ public abstract class ResourceConfiguration implements SerializableResource {
     byte[] unknown = new byte[size - bytesRead];
     buffer.get(unknown);
 
-    return new AutoValue_ResourceConfiguration(size, mcc, mnc, language, region, orientation,
+    return new ResourceConfiguration(size, mcc, mnc, language, region, orientation,
         touchscreen, density, keyboard, navigation, inputFlags, screenWidth, screenHeight,
         sdkVersion, minorVersion, screenLayout, uiMode, smallestScreenWidthDp, screenWidthDp,
         screenHeightDp, localeScript, localeVariant, screenLayout2, unknown);
@@ -467,6 +535,47 @@ public abstract class ResourceConfiguration implements SerializableResource {
     buffer.put(unknown());
 
     return buffer.array();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    ResourceConfiguration that = (ResourceConfiguration)o;
+    return size == that.size &&
+           mcc == that.mcc &&
+           mnc == that.mnc &&
+           orientation == that.orientation &&
+           touchscreen == that.touchscreen &&
+           density == that.density &&
+           keyboard == that.keyboard &&
+           navigation == that.navigation &&
+           inputFlags == that.inputFlags &&
+           screenWidth == that.screenWidth &&
+           screenHeight == that.screenHeight &&
+           sdkVersion == that.sdkVersion &&
+           minorVersion == that.minorVersion &&
+           screenLayout == that.screenLayout &&
+           uiMode == that.uiMode &&
+           smallestScreenWidthDp == that.smallestScreenWidthDp &&
+           screenWidthDp == that.screenWidthDp &&
+           screenHeightDp == that.screenHeightDp &&
+           screenLayout2 == that.screenLayout2 &&
+           Arrays.equals(language, that.language) &&
+           Arrays.equals(region, that.region) &&
+           Arrays.equals(localeScript, that.localeScript) &&
+           Arrays.equals(localeVariant, that.localeVariant) &&
+           Arrays.equals(unknown, that.unknown);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects
+      .hash(size, mcc, mnc, language, region, orientation, touchscreen, density, keyboard, navigation, inputFlags, screenWidth,
+            screenHeight,
+            sdkVersion, minorVersion, screenLayout, uiMode, smallestScreenWidthDp, screenWidthDp, screenHeightDp, localeScript,
+            localeVariant,
+            screenLayout2, unknown);
   }
 
   @Override

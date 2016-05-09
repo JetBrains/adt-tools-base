@@ -16,16 +16,16 @@
 
 package com.google.devrel.gmscore.tools.apk.arsc;
 
-import com.google.auto.value.AutoValue;
 import com.google.common.base.Preconditions;
+
+import java.util.Objects;
 
 /**
  * Resources in a {@link ResourceTableChunk} are identified by an integer of the form 0xpptteeee,
  * where pp is the {@link PackageChunk} id, tt is the {@link TypeChunk} id, and eeee is the index of
  * the entry in the {@link TypeChunk}.
  */
-@AutoValue
-public abstract class ResourceIdentifier {
+public class ResourceIdentifier {
 
   /** The {@link PackageChunk} id mask for a packed resource id of the form 0xpptteeee. */
   private static final int PACKAGE_ID_MASK = 0xFF000000;
@@ -39,14 +39,24 @@ public abstract class ResourceIdentifier {
   private static final int ENTRY_ID_MASK = 0xFFFF;
   private static final int ENTRY_ID_SHIFT = 0;
 
+  private final int packageId;
+  private final int typeId;
+  private final int entryId;
+
+  public ResourceIdentifier(int packageId, int typeId, int entryId) {
+    this.packageId = packageId;
+    this.typeId = typeId;
+    this.entryId = entryId;
+  }
+
   /** The (1-based) id of the {@link PackageChunk} containing this resource. */
-  public abstract int packageId();
+  public int packageId() { return packageId; }
 
   /** The (1-based) id of the {@link TypeChunk} containing this resource. */
-  public abstract int typeId();
+  public int typeId() { return typeId; }
 
   /** The (0-based) index of the entry in a {@link TypeChunk} containing this resource. */
-  public abstract int entryId();
+  public int entryId() { return entryId; }
 
   /** Returns a {@link ResourceIdentifier} from a {@code resourceId} of the form 0xpptteeee. */
   public static ResourceIdentifier create(int resourceId) {
@@ -56,11 +66,26 @@ public abstract class ResourceIdentifier {
     return create(packageId, typeId, entryId);
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    ResourceIdentifier that = (ResourceIdentifier)o;
+    return packageId == that.packageId &&
+           typeId == that.typeId &&
+           entryId == that.entryId;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(packageId, typeId, entryId);
+  }
+
   /** Returns a {@link ResourceIdentifier} with the given identifiers. */
   public static ResourceIdentifier create(int packageId, int typeId, int entryId) {
     Preconditions.checkState((packageId & 0xFF) == packageId, "packageId must be <= 0xFF.");
     Preconditions.checkState((typeId & 0xFF) == typeId, "typeId must be <= 0xFF.");
     Preconditions.checkState((entryId & 0xFFFF) == entryId, "entryId must be <= 0xFFFF.");
-    return new AutoValue_ResourceIdentifier(packageId, typeId, entryId);
+    return new ResourceIdentifier(packageId, typeId, entryId);
   }
 }
