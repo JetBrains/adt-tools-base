@@ -30,12 +30,14 @@ import static com.android.SdkConstants.ATTR_PADDING_START;
 import static com.android.SdkConstants.ATTR_PARENT;
 import static com.android.SdkConstants.ATTR_TARGET_API;
 import static com.android.SdkConstants.ATTR_TEXT_IS_SELECTABLE;
+import static com.android.SdkConstants.ATTR_VALUE;
 import static com.android.SdkConstants.BUTTON;
 import static com.android.SdkConstants.CHECK_BOX;
 import static com.android.SdkConstants.CLASS_CONSTRUCTOR;
 import static com.android.SdkConstants.CONSTRUCTOR_NAME;
 import static com.android.SdkConstants.FQCN_TARGET_API;
 import static com.android.SdkConstants.PREFIX_ANDROID;
+import static com.android.SdkConstants.SUPPORT_ANNOTATIONS_PREFIX;
 import static com.android.SdkConstants.SWITCH;
 import static com.android.SdkConstants.TAG;
 import static com.android.SdkConstants.TAG_ITEM;
@@ -186,6 +188,8 @@ public class ApiDetector extends ResourceXmlDetector
     private static final boolean CHECK_DECLARATIONS = false;
 
     private static final boolean AOSP_BUILD = System.getenv("ANDROID_BUILD_TOP") != null; //$NON-NLS-1$
+
+    public static final String REQUIRES_API_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "RequiresApi"; //$NON-NLS-1$
 
     /** Accessing an unsupported API */
     @SuppressWarnings("unchecked")
@@ -1807,8 +1811,6 @@ public class ApiDetector extends ResourceXmlDetector
                 PsiReferenceExpression ref = (PsiReferenceExpression) element;
                 if ("TYPE_PARAMETER".equals(ref.getReferenceName())
                         || "TYPE_USE".equals(ref.getReferenceName())) {
-
-                    boolean isRuntime = false;
                     PsiAnnotation retention = modifierList
                             .findAnnotation("java.lang.annotation.Retention");
                     if (retention == null ||
@@ -1852,7 +1854,46 @@ public class ApiDetector extends ResourceXmlDetector
                         }
                     }
                 }
+
+                PsiModifierList modifierList = method.getModifierList();
+                if (!checkRequiresApi(expression, method, modifierList)) {
+                    PsiClass containingClass = method.getContainingClass();
+                    if (containingClass != null) {
+                        modifierList = containingClass.getModifierList();
+                        if (modifierList != null) {
+                            checkRequiresApi(expression, method, modifierList);
+                        }
+                    }
+                }
             }
+        }
+
+        // Look for @RequiresApi in modifier lists
+        private boolean checkRequiresApi(PsiCallExpression expression, PsiMethod method,
+                    PsiModifierList modifierList) {
+            for (PsiAnnotation annotation : modifierList.getAnnotations()) {
+                if (REQUIRES_API_ANNOTATION.equals(annotation.getQualifiedName())) {
+                    int api = (int) SupportAnnotationDetector.getLongAttribute(annotation,
+                        ATTR_VALUE, -1);
+                    int minSdk = getMinSdk(mContext);
+                    if (api > minSdk) {
+                        int target = getTargetApi(expression);
+                        if (target == -1 || api > target) {
+                            Location location;
+                            location = mContext.getLocation(expression);
+                            String fqcn = method.getName();
+                            String message = String.format(
+                              "Call requires API level %1$d (current min is %2$d): `%3$s`",
+                              api, minSdk, fqcn);
+                            mContext.report(UNSUPPORTED, location, message);
+                        }
+                    }
+
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         @Override
@@ -1963,10 +2004,8 @@ public class ApiDetector extends ResourceXmlDetector
                     return;
                 }
                 int target = getTargetApi(statement);
-                if (target != -1) {
-                    if (api <= target) {
-                        return;
-                    }
+                if (target != -1 && api <= target) {
+                    return;
                 }
 
                 Location location;
@@ -2116,7 +2155,7 @@ public class ApiDetector extends ResourceXmlDetector
 
         for (PsiAnnotation annotation : modifierList.getAnnotations()) {
             String fqcn = annotation.getQualifiedName();
-            if (fqcn != null && (fqcn.equals(FQCN_TARGET_API)
+            if (fqcn != null && (fqcn.equals(FQCN_TARGET_API) || fqcn.equals(REQUIRES_API_ANNOTATION)
                     || fqcn.equals(TARGET_API))) { // when missing imports
                 PsiAnnotationParameterList parameterList = annotation.getParameterList();
                 for (PsiNameValuePair pair : parameterList.getAttributes()) {
