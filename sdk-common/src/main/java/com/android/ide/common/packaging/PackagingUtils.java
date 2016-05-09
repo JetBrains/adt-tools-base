@@ -171,7 +171,7 @@ public class PackagingUtils {
      * However, we have much simpler needs: we just need a key that can't be guessed from
      * a hostile app on the developer's device, and it only has a few guesses (after providing
      * the wrong secret to the server a few times, the server will shut down.) We can't
-     * rely on the package name along, since the port number is known, and the package name is
+     * rely on the package name alone, since the port number is known, and the package name is
      * discoverable by the hostile app (by querying the contents of /data/data/*). Therefore
      * we also include facts that the hostile app can't know, such as as the path on the
      * developer's machine to the app project and the name of the developer's machine, etc.
