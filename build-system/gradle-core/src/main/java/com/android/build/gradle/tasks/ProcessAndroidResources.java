@@ -24,6 +24,7 @@ import com.android.build.gradle.internal.aapt.AaptGradleFactory;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
 import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
@@ -187,7 +188,10 @@ public class ProcessAndroidResources extends IncrementalTask {
                         // compare its content with the new binary file crc.
                         String previousIterationCRC = Files.readFirstLine(crcFile, Charsets.UTF_8);
                         if (!currentIterationCRC.equals(previousIterationCRC)) {
-                            instantRunBuildContext.abort();
+                            if (instantRunBuildContext.getPatchingPolicy()
+                                    != InstantRunPatchingPolicy.MULTI_APK) {
+                                instantRunBuildContext.abort();
+                            }
                             instantRunBuildContext.setVerifierResult(
                                     InstantRunVerifierStatus.BINARY_MANIFEST_FILE_CHANGE);
                         }

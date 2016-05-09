@@ -52,7 +52,7 @@ public class PrePackageApplication extends KickerTask {
         } else {
             // now the main apk is only necessary if we produced a RESOURCES file in a previous
             // build, let's check it out.
-            if (instantRunContext.getPastBuildsArtifactForType(
+            if (instantRunContext.getArtifactForType(
                     InstantRunBuildContext.FileType.RESOURCES) == null) {
                 MarkerFile.createMarkerFile(getMarkerFile(), MarkerFile.Command.BLOCK);
             } else {

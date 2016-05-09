@@ -23,13 +23,8 @@ import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.utils.FileUtils;
 import com.google.common.io.Files;
 
-import org.apache.log4j.Level;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.Logger;
-import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.InputFile;
-import org.gradle.api.tasks.Optional;
-import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
@@ -43,17 +38,16 @@ import java.io.File;
 public class BuildInfoLoaderTask extends BaseTask {
 
     // Outputs
-    File pastBuildsFolder;
+    private File pastBuildsFolder;
 
     // Inputs
-    String buildId;
-    File buildInfoFile;
-    File tmpBuildInfoFile;
+    private File buildInfoFile;
+    private File tmpBuildInfoFile;
 
-    Logger logger;
+    private Logger logger;
 
     // Variant state that is modified.
-    InstantRunBuildContext instantRunBuildContext;
+    private InstantRunBuildContext instantRunBuildContext;
 
     @TaskAction
     public void executeAction() {
@@ -144,7 +138,6 @@ public class BuildInfoLoaderTask extends BaseTask {
             task.pastBuildsFolder = variantScope.getInstantRunPastIterationsFolder();
             task.instantRunBuildContext = variantScope.getInstantRunBuildContext();
             task.logger = logger;
-            task.buildId = String.valueOf(task.instantRunBuildContext.getBuildId());
         }
     }
 }
