@@ -281,6 +281,7 @@ public class GradleTestProject implements TestRule {
     private File testDir;
     private File sourceDir;
     private File buildFile;
+    private File localProp;
     private final File ndkDir;
     private final File sdkDir;
 
@@ -468,7 +469,7 @@ public class GradleTestProject implements TestRule {
                     Charsets.UTF_8);
         }
 
-        createLocalProp(testDir, sdkDir, ndkDir);
+        localProp = createLocalProp(testDir, sdkDir, ndkDir);
         createGradleProp();
     }
 
@@ -848,6 +849,10 @@ public class GradleTestProject implements TestRule {
 
     boolean isMinifyEnabled() {
         return minifyEnabled;
+    }
+
+    public File getLocalProp() {
+        return localProp;
     }
 
 }
