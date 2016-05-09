@@ -28,6 +28,8 @@ import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RepoManager;
 import com.android.repository.api.RepoPackage;
 import com.android.repository.impl.meta.CommonFactory;
+import com.android.repository.impl.meta.LocalPackageImpl;
+import com.android.repository.impl.meta.RepoPackageImpl;
 import com.android.repository.impl.meta.TypeDetails;
 import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
@@ -218,6 +220,12 @@ public class LegacyLocalRepoLoader implements FallbackLocalRepoLoader {
         @NonNull
         public CommonFactory createFactory() {
             return (CommonFactory) RepoManager.getCommonModule().createLatestFactory();
+        }
+
+        @NonNull
+        @Override
+        public RepoPackageImpl asMarshallable() {
+            return LocalPackageImpl.create(this);
         }
 
         @Override

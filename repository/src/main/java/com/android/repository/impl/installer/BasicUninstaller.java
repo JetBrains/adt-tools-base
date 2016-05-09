@@ -29,11 +29,16 @@ import java.io.File;
 /**
  * A basic {@link Uninstaller} that just deletes the package.
  */
-public class BasicUninstaller extends AbstractPackageOperation.AbstractUninstaller {
+class BasicUninstaller extends AbstractPackageOperation.AbstractUninstaller {
 
     public BasicUninstaller(@NonNull LocalPackage p, @NonNull RepoManager mgr,
             @NonNull FileOp fop) {
         super(p, mgr, fop);
+    }
+
+    @Override
+    protected boolean doPrepare(@NonNull ProgressIndicator progress) {
+        return true;
     }
 
     /**
@@ -42,8 +47,7 @@ public class BasicUninstaller extends AbstractPackageOperation.AbstractUninstall
      * {@inheritDoc}
      */
     @Override
-    protected boolean doUninstall(@NonNull ProgressIndicator progress) {
-
+    protected boolean doComplete(@NonNull ProgressIndicator progress) {
         String path = getPackage().getPath();
         path = path.replace(RepoPackage.PATH_SEPARATOR, File.separatorChar);
         File location = new File(getRepoManager().getLocalPath(), path);

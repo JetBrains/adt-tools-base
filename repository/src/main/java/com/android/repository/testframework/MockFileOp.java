@@ -479,7 +479,7 @@ public class MockFileOp implements FileOp {
 
     @Override
     public long length(@NonNull File file) {
-        byte[] content = mExistingFiles.get(file.getPath()).getContent();
+        byte[] content = mExistingFiles.get(getAgnosticAbsPath(file)).getContent();
         return content == null ? 0 : content.length;
     }
 

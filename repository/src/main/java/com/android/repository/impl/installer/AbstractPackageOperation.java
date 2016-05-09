@@ -94,14 +94,20 @@ public abstract class AbstractPackageOperation implements PackageOperation {
         private final RemotePackage mPackage;
 
         /**
+         * The {@link Downloader} we'll use to download the archive.
+         */
+        private final Downloader mDownloader;
+
+        /**
          * Properties written to the final install folder, used to restart the installer if needed.
          */
         private Properties mInstallProperties;
 
         public AbstractInstaller(@NonNull RemotePackage p, @NonNull RepoManager mgr,
-                @NonNull FileOp fop) {
+                @NonNull Downloader downloader, @NonNull FileOp fop) {
             super(mgr, fop);
             mPackage = p;
+            mDownloader = downloader;
         }
 
         @Override
@@ -110,20 +116,33 @@ public abstract class AbstractPackageOperation implements PackageOperation {
             return mPackage;
         }
 
+        @Override
+        @NonNull
+        public final File getLocation(@NonNull ProgressIndicator progress) {
+            return mPackage.getInstallDir(getRepoManager(), progress);
+        }
+
+        protected Downloader getDownloader() {
+            return mDownloader;
+        }
 
         /**
          * Finds the prepared files using the installer metadata, calls {@link
-         * #doCompleteInstall(File, File, ProgressIndicator)}, and finally writes the package xml.
+         * #doComplete(File, File, ProgressIndicator)}, and finally writes the package xml.
          *
          * @param progress A {@link ProgressIndicator}, to show install progress and facilitate
          *                 logging.
          * @return {@code true} if the install was successful, {@code false} otherwise.
          */
         @Override
-        public final boolean completeInstall(@NonNull ProgressIndicator progress) {
-            if (!updateStatus(InstallStatus.INSTALLING, progress)) {
+        public final boolean complete(@NonNull ProgressIndicator progress) {
+            progress.logInfo(String.format("Finishing installation of %1$s.",
+                    getPackage().getDisplayName()));
+            if (!updateStatus(InstallStatus.RUNNING, progress)) {
                 progress.setFraction(1);
                 progress.setIndeterminate(false);
+                progress.logInfo(String.format("Installation of %1$s failed.",
+                        getPackage().getDisplayName()));
                 return false;
             }
             boolean result = false;
@@ -142,20 +161,16 @@ public abstract class AbstractPackageOperation implements PackageOperation {
             }
             File installTemp = installTempPath == null ? null : new File(installTempPath);
             try {
-                dest = InstallerUtil.getInstallPath(getPackage(), getRepoManager(), progress);
-                result = doCompleteInstall(installTemp, dest, progress);
-            } catch (IOException e) {
-                result = false;
+                dest = getPackage().getInstallDir(getRepoManager(), progress);
+                // Re-validate the install path, in case something was changed since prepare.
+                if (!InstallerUtil.checkValidPath(dest, getRepoManager(), progress)) {
+                    return false;
+                }
+
+                result = doComplete(installTemp, dest, progress);
             } finally {
                 if (!result && progress.isCanceled()) {
-                    try {
-                        cleanup(
-                                InstallerUtil
-                                        .getInstallPath(getPackage(), getRepoManager(), progress),
-                                mFop);
-                    } catch (IOException e) {
-                        // ignore
-                    }
+                    cleanup(getPackage().getInstallDir(getRepoManager(), progress), mFop);
                 }
                 result &= updateStatus(result ? InstallStatus.COMPLETE : InstallStatus.FAILED,
                         progress);
@@ -180,6 +195,8 @@ public abstract class AbstractPackageOperation implements PackageOperation {
             }
             progress.setFraction(1);
             progress.setIndeterminate(false);
+            progress.logInfo(String.format("Installation of %1$s %2$s.",
+                    getPackage().getDisplayName(), result ? "complete" : "failed"));
             return result;
         }
 
@@ -192,46 +209,53 @@ public abstract class AbstractPackageOperation implements PackageOperation {
          * @param dest        The destination into which to install the package.
          * @param progress    For logging and progress indication.
          * @return {@code true} if the install succeeded, {@code false} otherwise.
-         * @see #completeInstall(ProgressIndicator)
+         * @see #complete(ProgressIndicator)
          */
-        protected abstract boolean doCompleteInstall(@Nullable File installTemp, @NonNull File dest,
+        protected abstract boolean doComplete(@Nullable File installTemp, @NonNull File dest,
                 @NonNull ProgressIndicator progress);
 
         /**
          * Writes information used to restore the install process, then calls {@link
-         * #doPrepareInstall(File, Downloader, ProgressIndicator)}
+         * #doPrepare(File, ProgressIndicator)}
          *
-         * @param downloader The {@link Downloader} used to download the archive.
          * @param progress   A {@link ProgressIndicator}, to show install progress and facilitate
          *                   logging.
          * @return {@code true} if the operation succeeded, {@code false} otherwise.
          */
         @Override
-        public final boolean prepareInstall(@NonNull Downloader downloader,
-                @NonNull ProgressIndicator progress) {
+        public final boolean prepare(@NonNull ProgressIndicator progress) {
+            progress.logInfo(String.format("Preparing installation of %1$s.",
+                    getPackage().getDisplayName()));
             try {
-                File dest = InstallerUtil
-                        .getInstallPath(mPackage, getRepoManager(), progress);
+                File dest = mPackage.getInstallDir(getRepoManager(), progress);
+
                 mInstallProperties = readOrCreateInstallProperties(dest);
             } catch (IOException e) {
                 progress.logWarning("Failed to read or create install properties file.");
                 return false;
             }
             if (!updateStatus(InstallStatus.PREPARING, progress)) {
+                progress.logInfo(String.format("Installation of %1$s failed.",
+                        getPackage().getDisplayName()));
                 return false;
             }
             getRepoManager().installBeginning(mPackage, this);
             boolean result = false;
             try {
-                File installPath = InstallerUtil
-                        .getInstallPath(mPackage, getRepoManager(), progress);
+                File installPath = mPackage.getInstallDir(getRepoManager(), progress);
+                if (!InstallerUtil.checkValidPath(installPath, getRepoManager(), progress)) {
+                    return false;
+                }
+
                 File installTempPath = writeInstallerMetadata(installPath, progress);
                 if (installTempPath == null) {
+                    progress.logInfo(String.format("Installation of %1$s failed.",
+                            getPackage().getDisplayName()));
                     return false;
                 }
                 File prepareCompleteMarker = new File(installTempPath, PREPARE_COMPLETE_FN);
                 if (!mFop.exists(prepareCompleteMarker)) {
-                    if (doPrepareInstall(installTempPath, downloader, progress)) {
+                    if (doPrepare(installTempPath, progress)) {
                         mFop.createNewFile(prepareCompleteMarker);
                         result = updateStatus(InstallStatus.PREPARED, progress);
                     }
@@ -247,16 +271,12 @@ public abstract class AbstractPackageOperation implements PackageOperation {
                     updateStatus(InstallStatus.FAILED, progress);
                     // If there was a failure don't clean up the files, so we can continue if requested
                     if (progress.isCanceled()) {
-                        try {
-                            cleanup(InstallerUtil
-                                    .getInstallPath(mPackage, getRepoManager(),
-                                            progress), mFop);
-                        } catch (IOException e) {
-                            // ignore
-                        }
+                        cleanup(mPackage.getInstallDir(getRepoManager(), progress), mFop);
                     }
                 }
             }
+            progress.logInfo(String.format("Installation of %1$s %2$s.",
+                    getPackage().getDisplayName(), result ? "ready" : "failed"));
             return result;
         }
 
@@ -274,12 +294,9 @@ public abstract class AbstractPackageOperation implements PackageOperation {
 
             if (mFop.exists(dataFile)) {
                 Properties installProperties = new Properties();
-                InputStream inStream = mFop.newFileInputStream(dataFile);
-                try {
+                try (InputStream inStream = mFop.newFileInputStream(dataFile)) {
                     installProperties.load(inStream);
                     return installProperties;
-                } finally {
-                    inStream.close();
                 }
             }
             return null;
@@ -314,11 +331,8 @@ public abstract class AbstractPackageOperation implements PackageOperation {
             installProperties.put(PATH_KEY, installTempPath.getPath());
             installProperties.put(CLASSNAME_KEY, getClass().getName());
             mFop.createNewFile(dataFile);
-            OutputStream out = mFop.newFileOutputStream(dataFile);
-            try {
+            try (OutputStream out = mFop.newFileOutputStream(dataFile)) {
                 installProperties.store(out, null);
-            } finally {
-                out.close();
             }
             return installProperties;
         }
@@ -339,11 +353,10 @@ public abstract class AbstractPackageOperation implements PackageOperation {
          * modification to the actual SDK should happen during this time.
          *
          * @param installTempPath The dir that should be used for any intermediate processing.
-         * @param downloader      {@link Downloader} to use for fetching remote packages.
          * @param progress        For logging and progress display
          */
-        protected abstract boolean doPrepareInstall(@NonNull File installTempPath,
-                @NonNull Downloader downloader, @NonNull ProgressIndicator progress);
+        protected abstract boolean doPrepare(@NonNull File installTempPath,
+                @NonNull ProgressIndicator progress);
 
         @Nullable
         protected File writeInstallerMetadata(@NonNull File installPath,
@@ -382,34 +395,66 @@ public abstract class AbstractPackageOperation implements PackageOperation {
             return mPackage;
         }
 
-
-        /**
-         * Uninstall the package.
-         *
-         * @param progress A {@link ProgressIndicator}. Unused by this installer.
-         * @return {@code true} if the uninstall was successful, {@code false} otherwise.
-         */
+        @NonNull
         @Override
-        public final boolean uninstall(@NonNull ProgressIndicator progress) {
-            if (!updateStatus(InstallStatus.UNINSTALL_STARTING, progress)) {
-                return false;
-            }
+        public final File getLocation(@NonNull ProgressIndicator progress) {
+            return mPackage.getLocation();
+        }
 
-            boolean result = doUninstall(progress);
-            getRepoManager().markInvalid();
-
-            if (!updateStatus(InstallStatus.UNINSTALL_COMPLETE, progress)) {
-                return false;
+        @Override
+        public final boolean prepare(@NonNull ProgressIndicator progress) {
+            progress.logInfo(String.format("Preparing uninstall of %1$s.",
+                    getPackage().getDisplayName()));
+            boolean result;
+            result = updateStatus(InstallStatus.PREPARING, progress);
+            if (result && !doPrepare(progress)) {
+                updateStatus(InstallStatus.FAILED, progress);
+                result = false;
             }
+            if (result && !updateStatus(InstallStatus.PREPARED, progress)) {
+                result = false;
+            }
+            progress.logInfo(
+                    String.format("Uninstallation of %1$s %2$s.", getPackage().getDisplayName(),
+                            result ? "ready" : "failed"));
             return result;
         }
+
+        @Override
+        public final boolean complete(@NonNull ProgressIndicator progress) {
+            progress.logInfo(String.format("Uninstalling %1$s.",
+                    getPackage().getDisplayName()));
+            boolean result = updateStatus(InstallStatus.RUNNING, progress);
+
+            if (result) {
+                result = doComplete(progress);
+            }
+            getRepoManager().markInvalid();
+            if (!result) {
+                updateStatus(InstallStatus.FAILED, progress);
+            }
+            else if (!updateStatus(InstallStatus.COMPLETE, progress)) {
+                result = false;
+            }
+
+            progress.logInfo(String.format("Uninstallation of %1$s %2$s.",
+                    getPackage().getDisplayName(), result ? "complete" : "failed"));
+            return true;
+        }
+
+        /**
+         * Subclasses should implement this to do any preparation before uninstalling the package.
+         *
+         * @return {@code true} if the preparation succeeds, {@code false} otherwise.
+         */
+        protected abstract boolean doPrepare(@NonNull ProgressIndicator progress);
 
         /**
          * Subclasses should implement this to actually remove the files for this package.
          *
          * @return {@code true} if the uninstall succeeds, {@code false} otherwise.
          */
-        protected abstract boolean doUninstall(@NonNull ProgressIndicator progress);
+        protected abstract boolean doComplete(@NonNull ProgressIndicator progress);
     }
 
     protected AbstractPackageOperation(@NonNull RepoManager repoManager, @NonNull FileOp fop) {
@@ -417,11 +462,9 @@ public abstract class AbstractPackageOperation implements PackageOperation {
         mFop = fop;
     }
 
-    /**
-     * Gets the {@link RepoManager} for which we're installing/uninstalling a package.
-     */
     @NonNull
-    protected RepoManager getRepoManager() {
+    @Override
+    public RepoManager getRepoManager() {
         return mRepoManager;
     }
 

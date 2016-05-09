@@ -61,6 +61,5 @@ public interface RemotePackage extends RepoPackage {
      * a local repository.
      */
     @NonNull
-    File getInstallDir(@NonNull RepoManager manager, @NonNull ProgressIndicator progress)
-            throws IOException;
+    File getInstallDir(@NonNull RepoManager manager, @NonNull ProgressIndicator progress);
 }

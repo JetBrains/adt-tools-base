@@ -42,18 +42,18 @@ class BasicInstaller extends AbstractPackageOperation.AbstractInstaller {
     private static final String FN_UNZIP_DIR = "unzip";
 
     BasicInstaller(@NonNull RemotePackage p, @NonNull RepoManager mgr,
-            @NonNull FileOp fop) {
-        super(p, mgr, fop);
+      @NonNull Downloader downloader, @NonNull FileOp fop) {
+        super(p, mgr, downloader, fop);
     }
 
     /**
      * Downloads and unzips the complete archive for {@code p} into {@code installTempPath}.
      *
-     * @see #prepareInstall(Downloader, ProgressIndicator)
+     * @see #prepare(ProgressIndicator)
      */
     @Override
-    protected boolean doPrepareInstall(@NonNull File installTempPath,
-      @NonNull Downloader downloader, @NonNull ProgressIndicator progress) {
+    protected boolean doPrepare(@NonNull File installTempPath,
+      @NonNull ProgressIndicator progress) {
         URL url = InstallerUtil.resolveCompleteArchiveUrl(getPackage(), progress);
         if (url == null) {
             progress.logWarning("No compatible archive found!");
@@ -65,7 +65,7 @@ class BasicInstaller extends AbstractPackageOperation.AbstractInstaller {
             File downloadLocation = new File(installTempPath, url.getFile());
             // TODO: allow resuming of partial downloads
             String checksum = archive.getComplete().getChecksum();
-            downloader.downloadFully(url, downloadLocation, checksum, progress);
+            getDownloader().downloadFully(url, downloadLocation, checksum, progress);
             if (progress.isCanceled()) {
                 return false;
             }
@@ -86,7 +86,7 @@ class BasicInstaller extends AbstractPackageOperation.AbstractInstaller {
         } catch (IOException e) {
             String message = e.getMessage();
             progress.logWarning(String.format(
-              "An error occurred while preparing SDK package %1$s: %2$s",
+              "An error occurred while preparing SDK package %1$s%2$s",
               getPackage().getDisplayName(),
               (message.isEmpty() ? "." : ": " + message + ".")), e);
         }
@@ -101,10 +101,10 @@ class BasicInstaller extends AbstractPackageOperation.AbstractInstaller {
     /**
      * Just moves the prepared files into place.
      *
-     * @see #completeInstall(ProgressIndicator)
+     * @see #complete(ProgressIndicator)
      */
     @Override
-    protected boolean doCompleteInstall(@Nullable File installTempPath,
+    protected boolean doComplete(@Nullable File installTempPath,
       @NonNull File destination, @NonNull ProgressIndicator progress) {
         if (installTempPath == null) {
             return false;
