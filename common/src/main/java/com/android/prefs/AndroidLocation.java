@@ -211,6 +211,10 @@ public final class AndroidLocation {
         return sAvdLocation;
     }
 
+    public static String getUserHomeFolder() throws AndroidLocationException {
+        return findValidPath(EnvVar.USER_HOME, EnvVar.HOME);
+    }
+
     private static String findHomeFolder()
       throws AndroidLocationException {
         String home = findValidPath(EnvVar.ANDROID_SDK_HOME, EnvVar.USER_HOME, EnvVar.HOME);
