@@ -570,6 +570,7 @@ public class PreDexCacheTest {
                 new File(toolDir, "arm-linux-androideabi-ld"),
                 new File(toolDir, "aarch64-linux-android-ld"),
                 new File(toolDir, "i686-linux-android-ld"),
+                new File(toolDir, "x86_64-linux-android-ld"),
                 new File(toolDir, "mipsel-linux-android-ld"),
                 new File(toolDir, FN_ZIPALIGN));
     }

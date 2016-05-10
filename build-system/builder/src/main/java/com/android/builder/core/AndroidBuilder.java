@@ -1407,7 +1407,8 @@ public class AndroidBuilder {
                 optimLevel,
                 ndkMode,
                 supportMode,
-                abiFilters);
+                abiFilters,
+                mLogger);
         processor.build(mProcessExecutor, processOutputHandler);
     }
 

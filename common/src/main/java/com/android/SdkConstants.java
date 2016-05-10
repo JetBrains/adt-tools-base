@@ -196,6 +196,10 @@ public final class SdkConstants {
     public static final String FN_LD_X86 =
             "i686-linux-android-ld" + ext(".exe", "");   //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 
+    /** renderscript support linker for X86_64 (with extension for the current OS) */
+    public static final String FN_LD_X86_64 =
+            "x86_64-linux-android-ld" + ext(".exe", "");   //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+
     /** renderscript support linker for MIPS (with extension for the current OS) */
     public static final String FN_LD_MIPS =
             "mipsel-linux-android-ld" + ext(".exe", ""); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
