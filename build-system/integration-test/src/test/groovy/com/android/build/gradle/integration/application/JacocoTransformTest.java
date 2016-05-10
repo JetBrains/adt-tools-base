@@ -16,19 +16,23 @@
 
 package com.android.build.gradle.integration.application;
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
 
+import com.android.build.gradle.integration.common.category.DeviceTests;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification;
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
-import com.android.build.gradle.integration.common.truth.TruthHelper;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 
 import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.io.IOException;
 
@@ -51,8 +55,14 @@ public class JacocoTransformTest {
 
     @Before
     public void enableCodeCoverage() throws IOException {
-        Files.append("\nandroid.buildTypes.debug.testCoverageEnabled true",
+        Files.append("\nandroid.buildTypes.debug.testCoverageEnabled true\n",
                 mProject.getBuildFile(), Charsets.UTF_8);
+
+        if (GradleTestProject.USE_JACK) {
+            Files.append("\nandroid.buildToolsVersion \"" + "24.0.0 rc2" + "\"\n",
+                    mProject.getBuildFile(), Charsets.UTF_8);
+
+        }
     }
 
     @Test
@@ -73,5 +83,12 @@ public class JacocoTransformTest {
                 });
         mProject.execute("assembleDebug");
         assertThatApk(mProject.getApk("debug")).doesNotContainClass(CLASS_FULL_TYPE);
+    }
+
+    @Test
+    @Category(DeviceTests.class)
+    public void connectedCheck() {
+        mProject.executeConnectedCheck();
+        assertThat(mProject.file("build/reports/androidTests/device/devicePool/index.html")).exists();
     }
 }

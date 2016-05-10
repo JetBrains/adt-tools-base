@@ -55,7 +55,7 @@ public class JacocoAgentConfigAction implements TaskConfigAction<Copy> {
     }
 
     @Override
-    public void execute(Copy task) {
+    public void execute(@NonNull Copy task) {
         task.from(new Callable<List<FileTree>>() {
             @Override
             public List<FileTree> call() throws Exception {
@@ -67,8 +67,8 @@ public class JacocoAgentConfigAction implements TaskConfigAction<Copy> {
                 return fileTrees;
             }
         });
-        task.include(TaskManager.FILE_JACOCO_AGENT);
-        task.into(new File(scope.getIntermediatesDir(), "jacoco"));
+        task.include(scope.getJacocoAgent().getName());
+        task.into(scope.getJacocoAgentOutputDirectory());
     }
 
 }

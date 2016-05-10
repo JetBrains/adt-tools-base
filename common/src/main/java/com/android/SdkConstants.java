@@ -236,6 +236,8 @@ public final class SdkConstants {
     public static final String FN_JACK = "jack.jar";                                  //$NON-NLS-1$
     /** jill.jar */
     public static final String FN_JILL = "jill.jar";                                  //$NON-NLS-1$
+    /** jack-jacoco-report.jar */
+    public static final String FN_JACK_JACOCO_REPORTER = "jack-jacoco-reporter.jar";  //$NON-NLS-1$
 
     /** split-select */
     public static final String FN_SPLIT_SELECT = "split-select" + ext(".exe", "");

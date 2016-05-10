@@ -285,6 +285,10 @@ public class JackTransform extends Transform {
 
         jackInProcess = config.getJackOptions().isJackInProcess();
 
+        if (config.getBuildType().isTestCoverageEnabled()) {
+            options.setCoverageMetadataFile(scope.getJackCoverageMetadataFile());
+        }
+
         if (config.isMinifyEnabled()) {
             // since all the output use the same resources, we can use the first output
             // to query for a proguard file.

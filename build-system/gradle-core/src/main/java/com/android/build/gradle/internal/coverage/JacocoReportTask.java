@@ -15,9 +15,16 @@
  */
 package com.android.build.gradle.internal.coverage;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.scope.TaskConfigAction;
+import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.variant.TestVariantData;
+import com.android.builder.internal.testing.SimpleTestCallable;
 import com.android.builder.model.Version;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -25,6 +32,7 @@ import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 
 import org.gradle.api.DefaultTask;
+import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.tasks.Input;
@@ -55,6 +63,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 
 /**
@@ -273,6 +282,59 @@ public class JacocoReportTask extends DefaultTask {
             } finally {
                 Closeables.closeQuietly(in);
             }
+        }
+    }
+
+    public static class ConfigAction implements TaskConfigAction<JacocoReportTask> {
+        private VariantScope scope;
+
+        public ConfigAction (VariantScope scope) {
+            this.scope = scope;
+        }
+
+        @NonNull
+        @Override
+        public String getName() {
+            return scope.getTaskName("create", "CoverageReport");
+        }
+
+        @NonNull
+        @Override
+        public Class<JacocoReportTask> getType() {
+            return JacocoReportTask.class;
+        }
+
+        @Override
+        public void execute(@NonNull JacocoReportTask task) {
+
+            task.setDescription("Creates JaCoCo test coverage report from data gathered on the "
+                    + "device.");
+
+            task.setReportName(scope.getVariantConfiguration().getFullName());
+            final Project project = scope.getGlobalScope().getProject();
+
+            checkNotNull(scope.getTestedVariantData());
+            final VariantScope testedScope = scope.getTestedVariantData().getScope();
+
+            ConventionMappingHelper.map(
+                    task,
+                    "jacocoClasspath",
+                    () -> project.getConfigurations().getAt(JacocoPlugin.ANT_CONFIGURATION_NAME));
+            ConventionMappingHelper.map(
+                    task,
+                    "coverageDirectory",
+                    () -> ((TestVariantData) scope.getVariantData()).connectedTestTask
+                                    .getCoverageDir());
+            ConventionMappingHelper.map(
+                    task,
+                    "classDir",
+                    () -> testedScope.getVariantData().javacTask.getDestinationDir());
+            ConventionMappingHelper.map(
+                    task,
+                    "sourceDir",
+                    () -> testedScope.getVariantData().getJavaSourceFoldersForCoverage());
+
+            task.setReportDir(testedScope.getCoverageReportDir());
         }
     }
 }
