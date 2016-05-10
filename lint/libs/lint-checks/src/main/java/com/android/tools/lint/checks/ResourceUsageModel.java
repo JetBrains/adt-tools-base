@@ -37,6 +37,7 @@ import static com.android.SdkConstants.TAG_STYLE;
 import static com.android.SdkConstants.TOOLS_URI;
 import static com.android.SdkConstants.VALUE_SAFE;
 import static com.android.SdkConstants.VALUE_STRICT;
+import static com.android.SdkConstants.VIEW_FRAGMENT;
 import static com.android.utils.SdkUtils.endsWithIgnoreCase;
 import static com.google.common.base.Charsets.UTF_8;
 
@@ -826,6 +827,11 @@ public class ResourceUsageModel {
                                 if (!isId || !ANDROID_URI.equals(attr.getNamespaceURI())) {
                                     // Declaring an id is not a reference to that id
                                     from.addReference(resource);
+                                } else if (VIEW_FRAGMENT.equals(element.getTagName())) {
+                                    // ID's on fragments are used implicitly (they're used by
+                                    // the system to preserve fragments across configuration
+                                    // changes etc.
+                                    markReachable(resource);
                                 }
                             }
                         } else {
