@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.model;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.builder.model.NativeArtifact;
 import com.android.builder.model.NativeFile;
 import com.android.builder.model.NativeFolder;
@@ -48,6 +49,8 @@ public class NativeArtifactImpl implements NativeArtifact, Serializable {
     private final Collection<File> exportedHeaders;
     @NonNull
     private final File getOutputFile;
+    @NonNull
+    private final String abi;
 
     public NativeArtifactImpl(
             @NonNull String name,
@@ -57,7 +60,8 @@ public class NativeArtifactImpl implements NativeArtifact, Serializable {
             @NonNull Collection<NativeFolder> sourceFolders,
             @NonNull Collection<NativeFile> sourceFiles,
             @NonNull Collection<File> exportedHeaders,
-            @NonNull File getOutputFile) {
+            @NonNull File getOutputFile,
+            @NonNull String abi) {
         this.name = name;
         this.toolChain = toolChain;
         this.groupName = groupName;
@@ -66,6 +70,7 @@ public class NativeArtifactImpl implements NativeArtifact, Serializable {
         this.sourceFiles = sourceFiles;
         this.exportedHeaders = exportedHeaders;
         this.getOutputFile = getOutputFile;
+        this.abi = abi;
     }
 
     @Override
@@ -114,6 +119,12 @@ public class NativeArtifactImpl implements NativeArtifact, Serializable {
     @NonNull
     public File getOutputFile() {
         return getOutputFile;
+    }
+
+    @Override
+    @NonNull
+    public String getAbi() {
+        return abi;
     }
 
     @Override

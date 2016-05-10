@@ -130,6 +130,7 @@ echo '
             "buildCommand" : "touch foo.txt",
             "buildType" : "debug",
             "artifactName" : "foo",
+            "abi" : "x86",
             "toolchain" : "toolchain1",
             "output" : "build/debug/libfoo.so"
         }
@@ -149,6 +150,7 @@ echo '
             "buildCommand" : "touch foo.txt",
             "buildType" : "release",
             "artifactName" : "foo",
+            "abi" : "x86",
             "toolchain" : "toolchain1",
             "output" : "build/release/libfoo.so"
         }
@@ -171,6 +173,7 @@ echo '
             "buildCommand" : "touch bar.txt",
             "buildType" : "debug",
             "artifactName" : "bar",
+            "abi" : "x86",
             "toolchain" : "toolchain2",
             "output" : "build/debug/libbar.so"
         }
@@ -191,6 +194,7 @@ echo '
             "buildCommand" : "touch bar.txt",
             "buildType" : "release",
             "artifactName" : "bar",
+            "abi" : "x86",
             "toolchain" : "toolchain2",
             "output" : "build/release/libbar.so"
         }

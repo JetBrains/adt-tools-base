@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.internal.model;
 
+import static com.android.build.gradle.tasks.NativeBuildSystem.CMAKE;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.external.gson.NativeBuildConfigValue;
@@ -154,6 +156,7 @@ public class NativeModelBuilder implements ToolingModelBuilder {
                     info.toolChains,
                     ImmutableList.copyOf(info.settingsMap.values()),
                     info.extensions,
+                    ImmutableList.of(),  // TODO(chiur): put the actual build system.
                     com.android.builder.Version.BUILDER_MODEL_API_VERSION);
         }
 
@@ -194,6 +197,7 @@ public class NativeModelBuilder implements ToolingModelBuilder {
                 exportedHeaders = ImmutableList.copyOf(library.exportedHeaders);
             }
             Preconditions.checkNotNull(library.groupName);
+            Preconditions.checkNotNull(library.abi);
             return new NativeArtifactImpl(
                     name,
                     library.toolchain,
@@ -202,7 +206,8 @@ public class NativeModelBuilder implements ToolingModelBuilder {
                     folders,
                     files,
                     exportedHeaders,
-                    library.output);
+                    library.output,
+                    library.abi);
         }
 
         @NonNull

@@ -83,4 +83,10 @@ public interface NativeAndroidProject {
     */
    @NonNull
    Map<String, String> getFileExtensions();
+
+    /**
+     * Return the names of build systems used to create the native artifacts.
+     */
+   @NonNull
+   Collection<String> getBuildSystems();
 }
