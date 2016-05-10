@@ -17,6 +17,7 @@
 package com.android.builder.model;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 
 import java.io.File;
 import java.util.Collection;
@@ -71,6 +72,12 @@ public interface NativeArtifact {
      */
     @NonNull
     Collection<File> getExportedHeaders();
+
+    /**
+     * Return the target ABI of the artifact.
+     */
+    @NonNull
+    String getAbi();
 
     /**
      * Returns the output file.

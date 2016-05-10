@@ -49,6 +49,8 @@ public class NativeAndroidProjectImpl implements NativeAndroidProject, Serializa
     private Collection<NativeSettings> settings;
     @NonNull
     private Map<String, String> fileExtensions;
+    @NonNull
+    private Collection<String> buildSystems;
 
     public NativeAndroidProjectImpl(
             @NonNull String modelVersion,
@@ -58,6 +60,7 @@ public class NativeAndroidProjectImpl implements NativeAndroidProject, Serializa
             @NonNull Collection<NativeToolchain> toolChains,
             @NonNull Collection<NativeSettings> settings,
             @NonNull Map<String, String> fileExtensions,
+            @NonNull Collection<String> buildSystems,
             int apiVersion) {
         this.modelVersion = modelVersion;
         this.name = name;
@@ -66,6 +69,7 @@ public class NativeAndroidProjectImpl implements NativeAndroidProject, Serializa
         this.toolChains = toolChains;
         this.settings = settings;
         this.fileExtensions = fileExtensions;
+        this.buildSystems = buildSystems;
         this.apiVersion = apiVersion;
     }
 
@@ -114,5 +118,11 @@ public class NativeAndroidProjectImpl implements NativeAndroidProject, Serializa
     @NonNull
     public Map<String, String> getFileExtensions() {
         return fileExtensions;
+    }
+
+    @Override
+    @NonNull
+    public Collection<String> getBuildSystems() {
+        return buildSystems;
     }
 }

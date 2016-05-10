@@ -18,26 +18,26 @@ package com.android.build.gradle.model;
 
 import static com.android.build.gradle.model.ModelConstants.ARTIFACTS;
 import static com.android.build.gradle.model.ModelConstants.EXTERNAL_BUILD_CONFIG;
+import static com.android.build.gradle.model.ModelConstants.NATIVE_BUILD_SYSTEMS;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.external.gson.NativeBuildConfigValue;
 import com.android.build.gradle.internal.NativeBuildConfigGsonUtil;
 import com.android.build.gradle.internal.NativeDependencyLinkage;
 import com.android.build.gradle.internal.dependency.ArtifactContainer;
-import com.android.build.gradle.internal.dependency.NativeLibraryArtifact;
 import com.android.build.gradle.internal.gson.FileGsonTypeAdaptor;
-import com.android.build.gradle.external.gson.NativeBuildConfigValue;
 import com.android.build.gradle.managed.JsonConfigFile;
 import com.android.build.gradle.managed.NativeBuildConfig;
 import com.android.build.gradle.managed.NativeLibrary;
 import com.android.build.gradle.model.internal.DefaultExternalNativeBinarySpec;
 import com.android.build.gradle.model.internal.DefaultExternalNativeComponentSpec;
-import com.android.utils.StringHelper;
+import com.android.build.gradle.tasks.NativeBuildSystem;
 import com.android.utils.NativeSourceFileExtensions;
+import com.android.utils.StringHelper;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import org.gradle.api.Action;
 import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -109,6 +109,11 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
         @BinaryType
         public static void defineBinaryType(BinaryTypeBuilder<ExternalNativeBinarySpec> builder) {
             builder.defaultImplementation(DefaultExternalNativeBinarySpec.class);
+        }
+
+        @Model(NATIVE_BUILD_SYSTEMS)
+        public static List<String> createBuildSystemList() {
+            return Lists.newArrayList(NativeBuildSystem.UNKNOWN.getName());
         }
 
         @Model(EXTERNAL_BUILD_CONFIG)

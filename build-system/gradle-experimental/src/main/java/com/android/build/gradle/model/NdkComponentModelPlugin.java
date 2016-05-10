@@ -18,6 +18,7 @@ package com.android.build.gradle.model;
 
 import static com.android.build.gradle.model.ModelConstants.ARTIFACTS;
 import static com.android.build.gradle.model.ModelConstants.EXTERNAL_BUILD_CONFIG;
+import static com.android.build.gradle.model.ModelConstants.NATIVE_BUILD_SYSTEMS;
 import static com.android.build.gradle.model.ModelConstants.NATIVE_DEPENDENCIES;
 
 import com.android.annotations.NonNull;
@@ -44,6 +45,7 @@ import com.android.build.gradle.ndk.internal.NdkConfiguration;
 import com.android.build.gradle.ndk.internal.NdkExtensionConvention;
 import com.android.build.gradle.ndk.internal.NdkNamingScheme;
 import com.android.build.gradle.ndk.internal.ToolchainConfiguration;
+import com.android.build.gradle.tasks.NativeBuildSystem;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.VariantConfiguration;
 import com.android.utils.ImmutableCollectors;
@@ -433,9 +435,22 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                     });
         }
 
+        @Model(NATIVE_BUILD_SYSTEMS)
+        public static List<String> createBuildSystemList(
+                final ModelMap<NativeLibrarySpec> nativeComponents,
+                @Path("android.ndk") final NdkConfig ndkConfig) {
+            List<String> buildSystemsUsed = Lists.newArrayList();
+            String moduleName = ndkConfig.getModuleName();
+            if (!Strings.isNullOrEmpty(moduleName) && nativeComponents.containsKey(moduleName)) {
+                buildSystemsUsed.add(NativeBuildSystem.GRADLE.getName());
+            }
+            return buildSystemsUsed;
+        }
+
         /**
          * Create external build config to allow NativeComponentModelBuilder to create native model.
          */
+
         @Model(EXTERNAL_BUILD_CONFIG)
         public static void createNativeBuildModel(
                 NativeBuildConfig config,
@@ -500,11 +515,13 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
             @Override
             public void execute(NativeLibrary nativeLibrary) {
                 final Abi abi = Abi.getByName(nativeBinary.getTargetPlatform().getName());
+                Preconditions.checkNotNull(abi);
 
                 nativeLibrary.setOutput(nativeBinary.getSharedLibraryFile());
                 Set<File> srcFolders = Sets.newHashSet();
                 nativeLibrary.setGroupName(binary.getName());
                 nativeLibrary.setAssembleTaskName(nativeBinary.getBuildTask().getName());
+                nativeLibrary.setAbi(abi.getName());
 
                 final List<String> cFlags = nativeBinary.getcCompiler().getArgs();
                 final List<String> cppFlags = nativeBinary.getCppCompiler().getArgs();
