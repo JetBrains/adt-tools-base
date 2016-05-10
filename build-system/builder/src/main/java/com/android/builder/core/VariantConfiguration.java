@@ -543,7 +543,13 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         mFlavorSourceProviders.add(sourceProvider);
         mFlavorDimensionNames.add(dimensionName);
 
-        mMergedFlavor = DefaultProductFlavor.mergeFlavors(mMergedFlavor, productFlavor);
+        if (mFlavors.size() == 1) {
+            mMergedFlavor =
+                    DefaultProductFlavor.mergeWithDefaultConfig(mMergedFlavor, productFlavor);
+        } else {
+            mMergedFlavor =
+                    DefaultProductFlavor.mergeFlavors(productFlavor, mMergedFlavor);
+        }
 
         return this;
     }

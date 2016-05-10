@@ -459,6 +459,29 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
      */
     @NonNull
     static ProductFlavor mergeFlavors(@NonNull ProductFlavor base, @NonNull ProductFlavor overlay) {
+        return implMergeFlavors(base, overlay, false);
+    }
+
+    /**
+     * Merge the specified flavor with the defaultConfig one. All values from
+     * the specified flavor override the values specified in the defaultConfig one.
+     *
+     * @param defaultConfig defaultConfig flavor
+     * @param flavor flavor that overrides the defaultConfig one
+     * @return merged flavor
+     */
+    @NonNull
+    static ProductFlavor mergeWithDefaultConfig(
+            @NonNull ProductFlavor defaultConfig, @NonNull ProductFlavor flavor) {
+        return implMergeFlavors(defaultConfig, flavor, true);
+    }
+
+    /** Merges two flavors, and uses a flag to specify how suffixes are merged */
+    @NonNull
+    private static DefaultProductFlavor implMergeFlavors(
+            @NonNull ProductFlavor base,
+            @NonNull ProductFlavor overlay,
+            boolean baseSuffixesFirst) {
         DefaultProductFlavor flavor = new DefaultProductFlavor("");
 
         flavor.mMinSdkVersion = chooseNotNull(
@@ -483,13 +506,28 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
 
         flavor.mVersionCode = chooseNotNull(overlay.getVersionCode(), base.getVersionCode());
         flavor.mVersionName = chooseNotNull(overlay.getVersionName(), base.getVersionName());
-        flavor.setVersionNameSuffix(mergeVersionNameSuffix(
-                overlay.getVersionNameSuffix(), base.getVersionNameSuffix()));
+
+        String versionNameSuffix;
+        if (baseSuffixesFirst) {
+            versionNameSuffix = mergeVersionNameSuffix(
+                    overlay.getVersionNameSuffix(), base.getVersionNameSuffix());
+        } else {
+            versionNameSuffix = mergeVersionNameSuffix(
+                    base.getVersionNameSuffix(), overlay.getVersionNameSuffix());
+        }
+        flavor.setVersionNameSuffix(versionNameSuffix);
 
         flavor.mApplicationId = chooseNotNull(overlay.getApplicationId(), base.getApplicationId());
-        flavor.setApplicationIdSuffix(mergeApplicationIdSuffix(
-                overlay.getApplicationIdSuffix(), base.getApplicationIdSuffix()));
 
+        String applicationIdSuffix;
+        if (baseSuffixesFirst) {
+            applicationIdSuffix = mergeApplicationIdSuffix(
+                    overlay.getApplicationIdSuffix(), base.getApplicationIdSuffix());
+        } else {
+            applicationIdSuffix = mergeApplicationIdSuffix(
+                    base.getApplicationIdSuffix(), overlay.getApplicationIdSuffix());
+        }
+        flavor.setApplicationIdSuffix(applicationIdSuffix);
 
         flavor.mTestApplicationId = chooseNotNull(
                 overlay.getTestApplicationId(),
@@ -609,16 +647,16 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return overlay != null ? overlay : base;
     }
 
-    public static String mergeApplicationIdSuffix(@Nullable  String overlay, @Nullable String base){
+    public static String mergeApplicationIdSuffix(@Nullable String overlay, @Nullable String base){
         return Strings.nullToEmpty(joinWithSeparator(overlay, base, '.'));
     }
 
-    public static String mergeVersionNameSuffix(@Nullable  String overlay, @Nullable String base){
+    public static String mergeVersionNameSuffix(@Nullable String overlay, @Nullable String base){
         return Strings.nullToEmpty(joinWithSeparator(overlay, base, null));
     }
 
     @Nullable
-    private static String joinWithSeparator(@Nullable  String overlay, @Nullable String base,
+    private static String joinWithSeparator(@Nullable String overlay, @Nullable String base,
             @Nullable Character separator){
         if (!Strings.isNullOrEmpty(overlay)) {
             String baseSuffix = chooseNotNull(base, "");
