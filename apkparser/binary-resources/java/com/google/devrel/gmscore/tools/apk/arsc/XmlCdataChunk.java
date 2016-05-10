@@ -28,13 +28,13 @@ public final class XmlCdataChunk extends XmlNodeChunk {
   /** A string reference to a string containing the raw character data. */
   private final int rawValue;
 
-  /** A {@link ResourceValue} instance containing the parsed value. */
-  private final ResourceValue resourceValue;
+  /** A {@link BinaryResourceValue} instance containing the parsed value. */
+  private final BinaryResourceValue binaryResourceValue;
 
   protected XmlCdataChunk(ByteBuffer buffer, @Nullable Chunk parent) {
     super(buffer, parent);
     rawValue = buffer.getInt();
-    resourceValue = ResourceValue.create(buffer);
+    binaryResourceValue = BinaryResourceValue.create(buffer);
   }
 
   /** Returns a string containing the raw character data of this chunk. */
@@ -42,9 +42,9 @@ public final class XmlCdataChunk extends XmlNodeChunk {
     return getString(rawValue);
   }
 
-  /** Returns a {@link ResourceValue} instance containing the parsed cdata value. */
-  public ResourceValue getResourceValue() {
-    return resourceValue;
+  /** Returns a {@link BinaryResourceValue} instance containing the parsed cdata value. */
+  public BinaryResourceValue getResourceValue() {
+    return binaryResourceValue;
   }
 
   @Override
@@ -57,7 +57,7 @@ public final class XmlCdataChunk extends XmlNodeChunk {
       throws IOException {
     super.writePayload(output, header, shrink);
     output.writeInt(rawValue);
-    output.write(resourceValue.toByteArray());
+    output.write(binaryResourceValue.toByteArray());
   }
 
   /**

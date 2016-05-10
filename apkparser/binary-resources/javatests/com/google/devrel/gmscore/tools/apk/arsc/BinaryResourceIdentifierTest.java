@@ -26,7 +26,7 @@ import org.junit.runners.Parameterized.Parameters;
 import java.util.Arrays;
 
 @RunWith(Parameterized.class)
-public class ResourceIdentifierTest {
+public class BinaryResourceIdentifierTest {
 
   @Parameters
   public static Iterable<Object[]> data() {
@@ -39,10 +39,10 @@ public class ResourceIdentifierTest {
   private final int packageId;
   private final int typeId;
   private final int entryId;
-  private ResourceIdentifier resourceIdentifier;
+  private BinaryResourceIdentifier resourceIdentifier;
 
-  public ResourceIdentifierTest(int resourceId, int packageId, int typeId, int entryId) {
-    resourceIdentifier = ResourceIdentifier.create(resourceId);
+  public BinaryResourceIdentifierTest(int resourceId, int packageId, int typeId, int entryId) {
+    resourceIdentifier = BinaryResourceIdentifier.create(resourceId);
     this.packageId = packageId;
     this.typeId = typeId;
     this.entryId = entryId;

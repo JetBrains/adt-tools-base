@@ -25,7 +25,7 @@ import java.util.Objects;
  * where pp is the {@link PackageChunk} id, tt is the {@link TypeChunk} id, and eeee is the index of
  * the entry in the {@link TypeChunk}.
  */
-public class ResourceIdentifier {
+public class BinaryResourceIdentifier {
 
   /** The {@link PackageChunk} id mask for a packed resource id of the form 0xpptteeee. */
   private static final int PACKAGE_ID_MASK = 0xFF000000;
@@ -43,7 +43,7 @@ public class ResourceIdentifier {
   private final int typeId;
   private final int entryId;
 
-  public ResourceIdentifier(int packageId, int typeId, int entryId) {
+  public BinaryResourceIdentifier(int packageId, int typeId, int entryId) {
     this.packageId = packageId;
     this.typeId = typeId;
     this.entryId = entryId;
@@ -58,8 +58,8 @@ public class ResourceIdentifier {
   /** The (0-based) index of the entry in a {@link TypeChunk} containing this resource. */
   public int entryId() { return entryId; }
 
-  /** Returns a {@link ResourceIdentifier} from a {@code resourceId} of the form 0xpptteeee. */
-  public static ResourceIdentifier create(int resourceId) {
+  /** Returns a {@link BinaryResourceIdentifier} from a {@code resourceId} of the form 0xpptteeee. */
+  public static BinaryResourceIdentifier create(int resourceId) {
     int packageId = (resourceId & PACKAGE_ID_MASK) >>> PACKAGE_ID_SHIFT;
     int typeId = (resourceId & TYPE_ID_MASK) >>> TYPE_ID_SHIFT;
     int entryId = (resourceId & ENTRY_ID_MASK) >>> ENTRY_ID_SHIFT;
@@ -70,7 +70,7 @@ public class ResourceIdentifier {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    ResourceIdentifier that = (ResourceIdentifier)o;
+    BinaryResourceIdentifier that = (BinaryResourceIdentifier)o;
     return packageId == that.packageId &&
            typeId == that.typeId &&
            entryId == that.entryId;
@@ -87,11 +87,11 @@ public class ResourceIdentifier {
     return String.format("0x%1$08x", v);
   }
 
-  /** Returns a {@link ResourceIdentifier} with the given identifiers. */
-  public static ResourceIdentifier create(int packageId, int typeId, int entryId) {
+  /** Returns a {@link BinaryResourceIdentifier} with the given identifiers. */
+  public static BinaryResourceIdentifier create(int packageId, int typeId, int entryId) {
     Preconditions.checkState((packageId & 0xFF) == packageId, "packageId must be <= 0xFF.");
     Preconditions.checkState((typeId & 0xFF) == typeId, "typeId must be <= 0xFF.");
     Preconditions.checkState((entryId & 0xFFFF) == entryId, "entryId must be <= 0xFFFF.");
-    return new ResourceIdentifier(packageId, typeId, entryId);
+    return new BinaryResourceIdentifier(packageId, typeId, entryId);
   }
 }

@@ -108,7 +108,7 @@ public class ArscBlamer {
   }
 
   private void blameFromTypeChunkEntry(TypeChunk.Entry chunkEntry) {
-    for (ResourceValue value : getAllResourceValues(chunkEntry)) {
+    for (BinaryResourceValue value : getAllResourceValues(chunkEntry)) {
       for (ResourceEntry entry : typeEntryToBlame.get(chunkEntry)) {
         switch (value.type()) {
           case STRING:
@@ -121,14 +121,14 @@ public class ArscBlamer {
     }
   }
 
-  /** Returns all {@link ResourceValue} for a single {@code entry}. */
-  private Collection<ResourceValue> getAllResourceValues(TypeChunk.Entry entry) {
-    Set<ResourceValue> values = new HashSet<ResourceValue>();
-    ResourceValue resourceValue = entry.value();
-    if (resourceValue != null) {
-      values.add(resourceValue);
+  /** Returns all {@link BinaryResourceValue} for a single {@code entry}. */
+  private Collection<BinaryResourceValue> getAllResourceValues(TypeChunk.Entry entry) {
+    Set<BinaryResourceValue> values = new HashSet<BinaryResourceValue>();
+    BinaryResourceValue binaryResourceValue = entry.value();
+    if (binaryResourceValue != null) {
+      values.add(binaryResourceValue);
     }
-    for (ResourceValue value : entry.values().values()) {
+    for (BinaryResourceValue value : entry.values().values()) {
       values.add(value);
     }
     return values;
