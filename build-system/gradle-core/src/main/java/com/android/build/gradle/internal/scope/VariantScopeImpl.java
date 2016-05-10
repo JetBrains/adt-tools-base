@@ -22,6 +22,7 @@ import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.external.gson.NativeBuildConfigValue;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.coverage.JacocoReportTask;
@@ -43,6 +44,7 @@ import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.BinaryFileProviderTask;
 import com.android.build.gradle.tasks.ExternalNativeBuildTask;
+import com.android.build.gradle.tasks.ExternalNativeJsonGenerator;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.MergeResources;
@@ -55,8 +57,10 @@ import com.android.builder.core.VariantType;
 import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
 import com.google.common.base.Objects;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import org.gradle.api.DefaultTask;
@@ -88,11 +92,7 @@ public class VariantScopeImpl implements VariantScope {
     @Nullable
     private Collection<File> ndkSoFolder;
     @Nullable
-    private Collection<File> externalNativeBuildSoFolder;
-    @Nullable
     private File ndkObjFolder;
-    @Nullable
-    private File externalNativeBuildObjFolder;
     @NonNull
     private Map<Abi, File> ndkDebuggableLibraryFolders = Maps.newHashMap();
 
@@ -143,6 +143,12 @@ public class VariantScopeImpl implements VariantScope {
 
     @Nullable
     private AndroidTask<ExternalNativeBuildTask> externalNativeBuild;
+
+    @Nullable
+    private ExternalNativeJsonGenerator externalNativeJsonGenerator;
+
+    @NonNull
+    List<NativeBuildConfigValue> externalNativeBuildConfigValues = Lists.newArrayList();
 
     /**
      * This is an instance of {@link JacocoReportTask} in android test variants, an umbrella
@@ -259,18 +265,6 @@ public class VariantScopeImpl implements VariantScope {
         this.ndkSoFolder = ndkSoFolder;
     }
 
-    @Nullable
-    @Override
-    public Collection<File> getExternalNativeBuildSoFolder() {
-        return  externalNativeBuildSoFolder;
-    }
-
-    @Override
-    public void setExternalNativeBuildSoFolder(@NonNull Collection<File> folder) {
-        this.externalNativeBuildSoFolder = folder;
-
-    }
-
     @Override
     @Nullable
     public File getNdkObjFolder() {
@@ -280,17 +274,6 @@ public class VariantScopeImpl implements VariantScope {
     @Override
     public void setNdkObjFolder(@NonNull File ndkObjFolder) {
         this.ndkObjFolder = ndkObjFolder;
-    }
-
-    @Nullable
-    @Override
-    public File getExternalNativeBuildObjFolder() {
-        return externalNativeBuildObjFolder;
-    }
-
-    @Override
-    public void setExternalNativeBuildObjFolder(@NonNull File folder) {
-        this.externalNativeBuildObjFolder = folder;
     }
 
     /**
@@ -807,14 +790,6 @@ public class VariantScopeImpl implements VariantScope {
                         + "-report.txt");
     }
 
-    @NonNull
-    @Override
-    public File getExternalNativeBuildIntermediatesFolder() {
-        return new File(getGlobalScope().getIntermediatesDir(),
-                "external-native-build/" +
-                        variantData.getVariantConfiguration().getDirName());
-    }
-
     // Tasks getters/setters.
 
     @Override
@@ -1056,18 +1031,6 @@ public class VariantScopeImpl implements VariantScope {
     }
 
     @Override
-    public void setExternalNativeBuildTask(
-            AndroidTask<ExternalNativeBuildTask> task) {
-        this.externalNativeBuild = task;
-    }
-
-    @Override
-    public AndroidTask<ExternalNativeBuildTask> getExternalNativeBuildTask() {
-        return externalNativeBuild;
-    }
-
-
-    @Override
     public AndroidTask<?> getCoverageReportTask() {
         return coverageReportTask;
     }
@@ -1130,5 +1093,43 @@ public class VariantScopeImpl implements VariantScope {
     @Override
     public List<File> getBootClasspath(boolean includeOptionalLibraries) {
         return getGlobalScope().getAndroidBuilder().getBootClasspath(includeOptionalLibraries);
+    }
+
+    @Override
+    public void setExternalNativeBuildTask(
+            @NonNull AndroidTask<ExternalNativeBuildTask> task) {
+        this.externalNativeBuild = task;
+    }
+
+    @Nullable
+    @Override
+    public ExternalNativeJsonGenerator getExternalNativeJsonGenerator() {
+        return externalNativeJsonGenerator;
+    }
+
+    @Override
+    public void setExternalNativeJsonGenerator(@NonNull ExternalNativeJsonGenerator generator) {
+        Preconditions.checkState(this.externalNativeJsonGenerator == null,
+                "Unexpected overwrite of externalNativeJsonGenerator "
+                        + "may result in information loss");
+        this.externalNativeJsonGenerator = generator;
+    }
+
+    @Nullable
+    @Override
+    public AndroidTask<ExternalNativeBuildTask> getExternalNativeBuildTask() {
+        return externalNativeBuild;
+    }
+
+    @Override
+    @NonNull
+    public List<NativeBuildConfigValue> getExternalNativeBuildConfigValues() {
+        return externalNativeBuildConfigValues;
+    }
+
+    @Override
+    public void addExternalNativeBuildConfigValues(
+            @NonNull Collection<NativeBuildConfigValue> values) {
+        externalNativeBuildConfigValues.addAll(values);
     }
 }

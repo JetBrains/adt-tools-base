@@ -294,6 +294,7 @@ public class LibraryTaskManager extends TaskManager {
                 new Recorder.Block<Void>() {
                     @Override
                     public Void call() throws Exception {
+                        createExternalNativeBuildJsonGenerators(tasks, variantScope);
                         createExternalNativeBuildTasks(tasks, variantScope);
                         return null;
                     }

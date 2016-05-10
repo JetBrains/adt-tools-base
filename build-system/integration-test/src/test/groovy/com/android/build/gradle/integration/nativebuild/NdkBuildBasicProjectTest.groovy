@@ -15,8 +15,14 @@
  */
 
 package com.android.build.gradle.integration.nativebuild
+
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
+import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.builder.model.NativeAndroidProject
+import com.android.builder.model.NativeArtifact
+import com.google.common.collect.ArrayListMultimap
+import com.google.common.collect.Multimap
 import groovy.transform.CompileStatic
 import org.junit.Before
 import org.junit.Rule
@@ -24,8 +30,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
-
 /**
  * Assemble tests for ndk-build.
  */
@@ -45,7 +51,7 @@ class NdkBuildBasicProjectTest {
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(HelloWorldJniApp.builder()
-                .withJniDir("cxx")
+                .withNativeDir("cxx")
                 .build())
             .addFile(HelloWorldJniApp.androidMkC("src/main/cxx"))
             .useExperimentalGradleVersion(isModel)
@@ -80,7 +86,8 @@ $modelBefore
     }
 $modelAfter
 """;
-        project.execute("clean", "assembleDebug")
+        project.execute("clean", "assembleDebug",
+                "generateJsonModelDebug", "generateJsonModelRelease")
     }
 
     @Test
@@ -93,5 +100,33 @@ $modelAfter
         assertThatApk(project.getApk("debug")).contains("lib/armeabi-v7a/libhello-jni.so");
         assertThatApk(project.getApk("debug")).contains("lib/mips/libhello-jni.so");
         assertThatApk(project.getApk("debug")).contains("lib/mips64/libhello-jni.so");
+    }
+
+    @Test
+    public void checkModel() {
+        project.model().getSingle(); // Make sure we can successfully get AndroidProject
+        NativeAndroidProject model = project.model().getSingle(NativeAndroidProject.class);
+        assertThat(model.buildFiles).hasSize(1);
+
+        assertThat(model.name).isEqualTo("project");
+        assertThat(model).isNotNull();
+        assertThat(model.artifacts).hasSize(14);
+        assertThat(model.fileExtensions).hasSize(1);
+
+        for (File file : model.buildFiles) {
+            assertThat(file).isFile();
+        }
+
+        Multimap<String, NativeArtifact> groupToArtifacts = ArrayListMultimap.create();
+
+        for (NativeArtifact artifact : model.artifacts) {
+            List<String> pathElements = TestFileUtils.splitPath(artifact.getOutputFile());
+            assertThat(pathElements).contains("obj");
+            assertThat(pathElements).doesNotContain("lib");
+            groupToArtifacts.put(artifact.getGroupName(), artifact);
+        }
+
+        assertThat(groupToArtifacts.keySet()).containsExactly("debug", "release");
+        assertThat(groupToArtifacts.get("debug")).hasSize(groupToArtifacts.get("release").size());
     }
 }

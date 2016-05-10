@@ -81,9 +81,13 @@ public interface SyncIssue {
     // data is maven artifact coordinates.
     int TYPE_DEPENDENCY_INTERNAL_CONFLICT = 15;
 
+    // Errors configuring NativeConfigValues for individual individual variants
     int TYPE_EXTERNAL_NATIVE_BUILD_CONFIGURATION = 16;
 
-    int TYPE_MAX                      = 16; // increment when adding new types.
+    // Clashes between variants involving multiple Json originated NativeConfigValues
+    int TYPE_EXTERNAL_NATIVE_BUILD_COMBINED_CONFIGURATION = 17;
+
+    int TYPE_MAX                      = 17; // increment when adding new types.
 
     /**
      * Returns the severity of the issue.

@@ -44,6 +44,7 @@ public enum ExecutionType {
     FINAL_METADATA(101),
     GENERAL_CONFIG(102),
     VARIANT_CONFIG(103),
+    VARIANT_MANAGER_EXTERNAL_NATIVE_CONFIG_VALUES(104),
 
     // ApplicationTaskManager per variant tasks.
     APP_TASK_MANAGER_CREATE_MERGE_MANIFEST_TASK(1000),

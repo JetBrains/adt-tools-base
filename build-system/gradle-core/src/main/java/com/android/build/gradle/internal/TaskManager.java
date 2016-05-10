@@ -112,11 +112,12 @@ import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.tasks.AidlCompile;
-import com.android.build.gradle.tasks.CmakeJsonModelGenerationTask;
 import com.android.build.gradle.tasks.ColdswapArtifactsKickerTask;
 import com.android.build.gradle.tasks.CompatibleScreensManifest;
+import com.android.build.gradle.tasks.ExternalNativeBuildJsonTask;
 import com.android.build.gradle.tasks.ExternalNativeBuildTask;
 import com.android.build.gradle.tasks.ExternalNativeBuildTaskUtils;
+import com.android.build.gradle.tasks.ExternalNativeJsonGenerator;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.GenerateSplitAbiRes;
@@ -126,7 +127,6 @@ import com.android.build.gradle.tasks.ManifestProcessorTask;
 import com.android.build.gradle.tasks.MergeManifests;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.MergeSourceSetFolders;
-import com.android.build.gradle.tasks.NdkBuildJsonModelGenerationTask;
 import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.PackageAndroidArtifact;
 import com.android.build.gradle.tasks.PackageApplication;
@@ -346,16 +346,6 @@ public abstract class TaskManager {
                     new File(objFolder, "local/" + abi.getName()));
         }
 
-    }
-
-    /**
-     * Override to configure external native build data in the scope.
-     */
-    public void configureScopeForExternalNativeBuild(@NonNull VariantScope scope) {
-        scope.setExternalNativeBuildSoFolder(Collections.singleton(new File(
-                scope.getExternalNativeBuildIntermediatesFolder(),  "lib")));
-        File objFolder = new File(scope.getExternalNativeBuildIntermediatesFolder(),  "obj");
-        scope.setExternalNativeBuildObjFolder(objFolder);
     }
 
     protected AndroidConfig getExtension() {
@@ -744,11 +734,11 @@ public abstract class TaskManager {
                 .build());
 
         // create a stream that contains the content of the local external native build
-        if (variantScope.getExternalNativeBuildTask() != null) {
+        if (variantScope.getExternalNativeJsonGenerator() != null) {
             variantScope.getTransformManager().addStream(OriginalStream.builder()
                     .addContentType(ExtendedContentType.NATIVE_LIBS)
                     .addScope(Scope.PROJECT)
-                    .setFolders(Suppliers.ofInstance(variantScope.getExternalNativeBuildSoFolder()))
+                    .setFolder(variantScope.getExternalNativeJsonGenerator().getSoFolder())
                     .setDependency(variantScope.getExternalNativeBuildTask().getName())
                     .build());
         }
@@ -1140,56 +1130,49 @@ public abstract class TaskManager {
         scope.getResourceGenTask().dependsOn(tasks, generateMicroApkTask);
     }
 
-    public void createExternalNativeBuildTasks(TaskFactory tasks, @NonNull VariantScope scope) {
+    public void createExternalNativeBuildJsonGenerators(TaskFactory tasks, @NonNull VariantScope scope) {
         final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
 
         CoreExternalNativeBuild externalNativeBuild = extension.getExternalNativeBuild();
-
         ExternalNativeBuildTaskUtils.ExternalNativeBuildProjectPathResolution pathResolution =
-                ExternalNativeBuildTaskUtils.getProjectPath(project.getProjectDir(), extension);
+                ExternalNativeBuildTaskUtils.getProjectPath(externalNativeBuild);
         if (pathResolution.errorText != null) {
             androidBuilder.getErrorReporter().handleSyncError(
                     scope.getVariantConfiguration().getFullName(),
                     SyncIssue.TYPE_EXTERNAL_NATIVE_BUILD_CONFIGURATION,
-                    pathResolution.errorText );
+                    pathResolution.errorText);
             return;
         }
 
-        if (pathResolution.path == null) {
+        if (pathResolution.makeFile == null) {
             // No project
             return;
         }
 
-        AndroidTask<?> generateTask;
+        scope.setExternalNativeJsonGenerator(ExternalNativeJsonGenerator.create(
+                pathResolution.buildSystem,
+                pathResolution.makeFile,
+                androidBuilder,
+                sdkHandler,
+                scope
+        ));
+    }
 
-        if (pathResolution.taskClass == NdkBuildJsonModelGenerationTask.class) {
-            generateTask = androidTasks.create(
-                    tasks,
-                    new NdkBuildJsonModelGenerationTask.ConfigAction(
-                            pathResolution.path,
-                            externalNativeBuild.getNdkBuild(),
-                            androidBuilder,
-                            sdkHandler,
-                            scope));
-
-
-        } else if (pathResolution.taskClass == CmakeJsonModelGenerationTask.class) {
-            generateTask = androidTasks.create(
-                    tasks,
-                    new CmakeJsonModelGenerationTask.ConfigAction(
-                            pathResolution.path,
-                            externalNativeBuild.getCmake(),
-                            androidBuilder,
-                            sdkHandler,
-                            scope));
-        } else {
+    public void createExternalNativeBuildTasks(TaskFactory tasks, @NonNull VariantScope scope) {
+        ExternalNativeJsonGenerator generator = scope.getExternalNativeJsonGenerator();
+        if (generator == null) {
             return;
         }
+
+        AndroidTask<?> generateTask = androidTasks.create(tasks,
+                ExternalNativeBuildJsonTask.createTaskConfigAction(
+                        generator, scope));
+
         generateTask.dependsOn(tasks, scope.getPreBuildTask());
 
         AndroidTask<ExternalNativeBuildTask> buildTask = androidTasks.create(
                 tasks,
-                new ExternalNativeBuildTask.ConfigAction(scope, androidBuilder));
+                new ExternalNativeBuildTask.ConfigAction(generator, scope, androidBuilder));
 
         buildTask.dependsOn(tasks, generateTask);
         scope.setExternalNativeBuildTask(buildTask);
@@ -1350,9 +1333,6 @@ public abstract class TaskManager {
         }
         variantScope.setNdkBuildable(getNdkBuildable(variantData));
 
-        // Add ExternalNativeBuild tasks
-        createExternalNativeBuildTasks(tasks, variantScope);
-
         // add tasks to merge jni libs.
         createMergeJniLibFoldersTasks(tasks, variantScope);
 
@@ -1389,7 +1369,7 @@ public abstract class TaskManager {
 
 
     protected enum IncrementalMode {
-        NONE, FULL, LOCAL_JAVA_ONLY, LOCAL_RES_ONLY;
+        NONE, FULL, LOCAL_JAVA_ONLY, LOCAL_RES_ONLY
     }
 
     /**
