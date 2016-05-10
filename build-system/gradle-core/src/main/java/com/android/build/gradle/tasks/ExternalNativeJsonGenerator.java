@@ -56,7 +56,7 @@ public abstract class ExternalNativeJsonGenerator {
     @NonNull
     final AndroidBuilder androidBuilder;
     @NonNull
-    private final File makeFile;
+    private final File makeFileOrFolder;
     @NonNull
     private final File sdkFolder;
     @NonNull
@@ -84,7 +84,7 @@ public abstract class ExternalNativeJsonGenerator {
             @NonNull File soFolder,
             @NonNull File objFolder,
             @NonNull File jsonFolder,
-            @NonNull File makeFile,
+            @NonNull File makeFileOrFolder,
             boolean debuggable,
             @Nullable String cFlags,
             @Nullable String cppFlags) {
@@ -97,7 +97,7 @@ public abstract class ExternalNativeJsonGenerator {
         this.soFolder = soFolder;
         this.objFolder = objFolder;
         this.jsonFolder = jsonFolder;
-        this.makeFile = makeFile;
+        this.makeFileOrFolder = makeFileOrFolder;
         this.debuggable = debuggable;
         this.cFlags = cFlags == null ? "" : cFlags;
         this.cppFlags = cppFlags == null ? "" : cppFlags;
@@ -150,9 +150,6 @@ public abstract class ExternalNativeJsonGenerator {
      */
     abstract void createNativeBuildJson(@NonNull String abi, @NonNull File outputJson)
             throws ProcessException, IOException;
-
-    @NonNull
-    abstract NativeBuildSystem buildSystem();
 
     /**
      * Log low level diagnostic information.
@@ -259,8 +256,8 @@ public abstract class ExternalNativeJsonGenerator {
     @NonNull
     @SuppressWarnings("unused")
     @Input
-    public File getMakeFile() {
-        return makeFile;
+    public File getMakeFileOrFolder() {
+        return makeFileOrFolder;
     }
 
     @NonNull

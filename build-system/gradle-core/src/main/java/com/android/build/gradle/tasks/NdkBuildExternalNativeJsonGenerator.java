@@ -54,12 +54,12 @@ class NdkBuildExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
             @NonNull File soFolder,
             @NonNull File objFolder,
             @NonNull File jsonFolder,
-            @NonNull File projectPath,
+            @NonNull File makeFileOrFolder,
             boolean debuggable,
             @Nullable String cFlags,
             @Nullable String cppFlags) {
         super(variantName, abis, androidBuilder, sdkFolder, ndkFolder, soFolder, objFolder,
-                jsonFolder, projectPath, debuggable, cFlags, cppFlags);
+                jsonFolder, makeFileOrFolder, debuggable, cFlags, cppFlags);
     }
 
     @Override
@@ -101,12 +101,6 @@ class NdkBuildExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
         Files.write(actualResult, outputJson, Charsets.UTF_8);
     }
 
-    @NonNull
-    @Override
-    NativeBuildSystem buildSystem() {
-        return NativeBuildSystem.NDK_BUILD;
-    }
-
     /**
      * Get the path of the ndk-build script.
      */
@@ -116,6 +110,17 @@ class NdkBuildExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
             tool += ".cmd";
         }
         return new File(getNdkFolder(), tool).getAbsolutePath();
+    }
+
+    /**
+     * If the make file is a directory then get the implied file, otherwise return the path.
+     */
+    @NonNull
+    private File getMakeFile() {
+        if (getMakeFileOrFolder().isDirectory()) {
+            return new File(getMakeFileOrFolder(), "Android.mk");
+        }
+        return getMakeFileOrFolder();
     }
 
     /**
@@ -201,17 +206,18 @@ class NdkBuildExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
     @NonNull
     private List<String> getConfigurationErrors() {
         List<String> messages = Lists.newArrayList();
-        if (!getMakeFile().exists()) {
-            messages.add(
-                    String.format("Gradle project ndkBuild.path is %s but that file doesn't exist",
-                            getMakeFile()));
-        } else {
+        if (getMakeFileOrFolder().isDirectory()) {
             if (!getMakeFile().isFile()) {
                 messages.add(
-                        String.format("Gradle project ndkBuild.path %s is not a file in "
-                                        + "the style of Android.mk",
-                                getMakeFile()));
+                        String.format("Gradle project ndkBuild.path folder is %s but "
+                                + "there is no file named %s there",
+                                getMakeFileOrFolder(),
+                                getMakeFile().getName()));
             }
+        } else if (!getMakeFileOrFolder().exists()) {
+            messages.add(
+                    String.format("Gradle project ndkBuild.path is %s but that file doesn't exist",
+                            getMakeFileOrFolder()));
         }
 
         messages.addAll(getBaseConfigurationErrors());

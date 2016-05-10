@@ -38,6 +38,7 @@ import java.util.Set;
  * JSON can be generated during configuration.
  */
 class CmakeExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
+
     CmakeExternalNativeJsonGenerator(
             @Nullable File sdkDirectory,
             @NonNull String variantName,
@@ -48,12 +49,12 @@ class CmakeExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
             @NonNull File soFolder,
             @NonNull File objFolder,
             @NonNull File jsonFolder,
-            @NonNull File projectPath,
+            @NonNull File makeFileOrFolder,
             boolean debuggable,
             @Nullable String cFlags,
             @Nullable String cppFlags) {
         super(variantName, abis, androidBuilder, sdkFolder, ndkFolder, soFolder, objFolder,
-                jsonFolder, projectPath, debuggable, cFlags, cppFlags);
+                jsonFolder, makeFileOrFolder, debuggable, cFlags, cppFlags);
         Preconditions.checkNotNull(sdkDirectory);
     }
 
@@ -64,9 +65,14 @@ class CmakeExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
         checkConfiguration();
 
         ProcessInfoBuilder builder = new ProcessInfoBuilder();
+        File makeFile = getMakeFileOrFolder();
+        if (makeFile.isFile()) {
+            // If a file, trim the CMakeLists.txt so that we have the folder.
+            makeFile = makeFile.getParentFile();
+        }
 
         builder.setExecutable(getCmakeExecutable());
-        builder.addArgs(String.format("-H%s", getMakeFile()));
+        builder.addArgs(String.format("-H%s", makeFile));
         builder.addArgs(String.format("-B%s", outputJson.getParentFile()));
         builder.addArgs("-GAndroid Gradle - Ninja");
         builder.addArgs(String.format("-DANDROID_ABI=%s", abi));
@@ -106,12 +112,6 @@ class CmakeExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
                 builder.createProcess());
 
         diagnostic("done executing CMake");
-    }
-
-    @NonNull
-    @Override
-    NativeBuildSystem buildSystem() {
-        return NativeBuildSystem.CMAKE;
     }
 
     @NonNull
@@ -156,25 +156,38 @@ class CmakeExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
             throw new GradleException(Joiner.on("\n").join(configurationErrors));
         }
     }
-
+  
     /**
      * Construct list of errors that can be known at configuration time.
      */
     @NonNull
     private List<String> getConfigurationErrors() {
         List<String> messages = Lists.newArrayList();
-        if (!getMakeFile().exists()) {
-            messages.add(
-                    String.format("Gradle project cmake.path is %s but that folder doesn't exist",
-                            getMakeFile()));
-        } else {
-            File cmakeLists = new File(getMakeFile(), "CMakeLists.txt");
+
+        String cmakeListsTxt = "CMakeLists.txt";
+        if (getMakeFileOrFolder().isDirectory()) {
+            File cmakeLists = new File(getMakeFileOrFolder(), cmakeListsTxt);
             if (!cmakeLists.exists()) {
                 messages.add(String.format(
                         "Gradle project cmake.path specifies %s but there is"
-                                + " no CMakeLists.txt there",
-                        getMakeFile()));
+                                + " no %s there",
+                        getMakeFileOrFolder(),
+                        cmakeListsTxt));
             }
+        } else if (getMakeFileOrFolder().isFile()) {
+            String filename = getMakeFileOrFolder().getName();
+            if (!filename.equals(cmakeListsTxt)) {
+                messages.add(String.format(
+                        "Gradle project cmake.path specifies %s but there is"
+                                + " it must be %s",
+                        filename,
+                        cmakeListsTxt));
+            }
+        } else {
+            messages.add(
+                    String.format(
+                            "Gradle project cmake.path is %s but that folder or file doesn't exist",
+                            getMakeFileOrFolder()));
         }
 
         File cmakeExecutable = getCmakeExecutable();
