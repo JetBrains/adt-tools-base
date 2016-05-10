@@ -121,6 +121,10 @@ public class AndroidGradleOptions {
         return getBoolean(project, AndroidProject.PROPERTY_BUILD_MODEL_ONLY_ADVANCED);
     }
 
+    public static boolean generateSourcesOnly(@NonNull Project project) {
+        return getBoolean(project, AndroidProject.PROPERTY_GENERATE_SOURCES_ONLY);
+    }
+
     public static boolean useOldPackaging(@NonNull Project project) {
         return getBoolean(project, PROPERTY_USE_OLD_PACKAGING, DEFAULT_USE_OLD_PACKAGING);
     }

@@ -42,6 +42,7 @@ public interface AndroidProject {
     String PROPERTY_BUILD_DENSITY = "android.injected.build.density";
 
     String PROPERTY_INVOKED_FROM_IDE = "android.injected.invoked.from.ide";
+    String PROPERTY_GENERATE_SOURCES_ONLY = "android.injected.generateSourcesOnly";
 
     String PROPERTY_SIGNING_STORE_FILE = "android.injected.signing.store.file";
     String PROPERTY_SIGNING_STORE_PASSWORD = "android.injected.signing.store.password";
