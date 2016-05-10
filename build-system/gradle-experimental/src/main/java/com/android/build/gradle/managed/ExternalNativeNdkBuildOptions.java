@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.managed;
 
+import com.android.annotations.NonNull;
+
 import org.gradle.model.Managed;
 
 import java.util.Set;
@@ -28,8 +30,8 @@ public interface ExternalNativeNdkBuildOptions {
     /**
      * The ABI Filters.  Leave empty to include all supported ABI.
      */
+    @NonNull
     Set<String> getAbiFilters();
-    void setAbiFilters(Set<String> abiFilters);
 
     /**
      * The C Flags

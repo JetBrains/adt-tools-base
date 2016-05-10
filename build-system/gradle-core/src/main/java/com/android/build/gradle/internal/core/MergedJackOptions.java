@@ -34,7 +34,13 @@ public class MergedJackOptions implements CoreJackOptions {
     @NonNull
     private Map<String, String> additionalParameters = Maps.newHashMap();
 
-    public void merge(@NonNull CoreJackOptions that) {
+    public void reset() {
+        isEnabledFlag = false;
+        isJackInProcessFlag = true;
+        additionalParameters.clear();
+    }
+
+    public void append(@NonNull CoreJackOptions that) {
         if (that.isEnabled() != null) {
             //noinspection ConstantConditions - Idea unable to infer that RHS is @NonNull
             isEnabledFlag = that.isEnabled();
