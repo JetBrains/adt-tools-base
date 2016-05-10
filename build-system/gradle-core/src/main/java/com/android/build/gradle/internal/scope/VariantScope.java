@@ -219,6 +219,12 @@ public interface VariantScope extends TransformVariantScope, BaseScope {
     File getJackClassesZip();
 
     @NonNull
+    File getJackCoverageMetadataFile();
+
+    @NonNull
+    File getCoverageReportDir();
+
+    @NonNull
     File getClassOutputForDataBinding();
 
     @NonNull

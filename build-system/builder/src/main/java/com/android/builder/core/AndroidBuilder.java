@@ -23,13 +23,12 @@ import static com.android.SdkConstants.FD_RES_XML;
 import static com.android.builder.core.BuilderConstants.ANDROID_WEAR;
 import static com.android.builder.core.BuilderConstants.ANDROID_WEAR_MICRO_APK;
 import static com.android.manifmerger.ManifestMerger2.Invoker;
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.annotations.VisibleForTesting;
 import com.android.annotations.concurrency.GuardedBy;
 import com.android.builder.compiling.DependencyFileProcessor;
 import com.android.builder.core.BuildToolsServiceLoader.BuildToolServiceLoader;
@@ -43,7 +42,6 @@ import com.android.builder.internal.TestManifestGenerator;
 import com.android.builder.internal.aapt.Aapt;
 import com.android.builder.internal.aapt.AaptPackageConfig;
 import com.android.builder.internal.compiler.AidlProcessor;
-import com.android.builder.internal.compiler.DexWrapper;
 import com.android.builder.internal.compiler.LeafFolderGatherer;
 import com.android.builder.internal.compiler.PreDexCache;
 import com.android.builder.internal.compiler.RenderScriptProcessor;
@@ -98,15 +96,12 @@ import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.android.utils.LineCollector;
 import com.android.utils.Pair;
-import com.android.utils.SdkUtils;
 import com.android.xml.AndroidManifest;
 import com.google.common.base.Charsets;
 import com.google.common.base.Functions;
-import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
-import com.google.common.base.Stopwatch;
 import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
@@ -121,9 +116,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryPoolMXBean;
-import java.lang.management.MemoryType;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -132,9 +124,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -1679,6 +1669,15 @@ public class AndroidBuilder {
             FileUtils.mkdirs(options.getOutputFile().getParentFile());
         }
 
+        if (options.getCoverageMetadataFile() != null) {
+            try {
+                FileUtils.mkdirs(options.getCoverageMetadataFile().getParentFile());
+            } catch (RuntimeException ignored) {
+                getLogger().warning("Cannot create %1$s directory.", options.getCoverageMetadataFile().getParent());
+            }
+        }
+
+        // set the incremental dir if set and either already exists or can be created.
         if (options.getIncrementalDir() != null) {
             try {
                 FileUtils.mkdirs(options.getIncrementalDir());
@@ -1773,8 +1772,7 @@ public class AndroidBuilder {
                 }
                 config.setResourceDirs(resourcesDir.build());
 
-                config.setProperty(
-                        "jack.dex.forcejumbo", Boolean.toString(options.getJumboMode()));
+                config.setProperty("jack.dex.forcejumbo", Boolean.toString(options.getJumboMode()));
                 config.setProperty(
                         "jack.dex.optimize", Boolean.toString(options.getDexOptimize()));
 
@@ -1794,6 +1792,13 @@ public class AndroidBuilder {
                 for (String paramKey: options.getAdditionalParameters().keySet()) {
                     String paramValue = options.getAdditionalParameters().get(paramKey);
                     config.setProperty(paramKey, paramValue);
+                }
+
+                if (options.getCoverageMetadataFile() != null) {
+                    config.setProperty("jack.coverage", "true");
+                    config.setProperty(
+                            "jack.coverage.metadata.file",
+                            options.getCoverageMetadataFile().getAbsolutePath());
                 }
 
                 compilationTask = config.getTask();
@@ -1832,6 +1837,47 @@ public class AndroidBuilder {
         mJavaProcessExecutor.execute(
                 builder.build(mTargetInfo.getBuildTools()), processOutputHandler)
                 .rethrowFailure().assertNormalExitValue();
+    }
+
+    public void createJacocoReportWithJackReporter(
+            @NonNull File coverageFile,
+            @NonNull File reportDir,
+            @NonNull List<File> sourceDirs,
+            @NonNull String reportName,
+            @NonNull File metadataFile) throws ProcessException {
+
+        checkNotNull(coverageFile, "coverageFile cannot be null.");
+        checkNotNull(reportDir, "reportDir cannot be null.");
+        checkNotNull(sourceDirs, "sourceDir cannot be null.");
+        checkNotNull(reportName, "reportName cannot be null.");
+        checkNotNull(metadataFile, "metadataFile cannot be null.");
+
+        ProcessInfoBuilder builder = new ProcessInfoBuilder();
+
+        BuildToolInfo buildToolInfo = mTargetInfo.getBuildTools();
+        String jackLocation = System.getenv("USE_JACK_LOCATION");
+        String reporter = jackLocation != null
+                ? jackLocation + File.separator + SdkConstants.FN_JACK_JACOCO_REPORTER
+                : buildToolInfo.getPath(BuildToolInfo.PathId.JACK_JACOCO_REPORTER);
+        if (reporter == null || !new File(reporter).isFile()) {
+            throw new IllegalStateException("jack-jacoco-reporter.jar is missing: " + reporter);
+        }
+
+        builder.setClasspath(reporter);
+        builder.setMain("com.android.jack.tools.jacoco.Main");
+
+        builder.addArgs("--coverage-file", coverageFile.getAbsolutePath());
+        builder.addArgs("--metadata-file", metadataFile.getAbsolutePath());
+        builder.addArgs("--report-dir", reportDir.getAbsolutePath());
+        builder.addArgs("--report-name", reportName);
+        for (File sourceDir : sourceDirs) {
+            builder.addArgs("--source-dir", sourceDir.getAbsolutePath());
+        }
+        JavaProcessInfo javaProcessInfo = builder.createJavaProcess();
+        ProcessResult result = mJavaProcessExecutor.execute(
+                javaProcessInfo,
+                new LoggedProcessOutputHandler(getLogger()));
+        result.rethrowFailure().assertNormalExitValue();
     }
 
     /**

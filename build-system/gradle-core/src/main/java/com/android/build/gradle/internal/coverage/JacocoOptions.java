@@ -33,7 +33,7 @@ public class JacocoOptions {
                 + "add a buildscript dependency on a newer version, for example: "
                 + "buildscript{"
                 + "    dependencies {\n"
-                + "        classpath\"org.jacoco:org.jacoco.core:0.7.4.201502262128\""
+                + "        classpath \"org.jacoco:org.jacoco.core:0.7.5.201505241946\""
                 + "    }"
                 + "}");
     }

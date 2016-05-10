@@ -677,6 +677,18 @@ public class VariantScopeImpl implements VariantScope {
 
     @Override
     @NonNull
+    public File getJackCoverageMetadataFile() {
+        return new File(globalScope.getIntermediatesDir(), "jack/" + getDirName() + "/coverage.em");
+    }
+
+    @NonNull
+    @Override
+    public File getCoverageReportDir() {
+        return new File(globalScope.getReportsDir(), "coverage/" + getDirName());
+    }
+
+    @Override
+    @NonNull
     public File getClassOutputForDataBinding() {
         return new File(globalScope.getGeneratedDir(),
                 "source/dataBinding/" + getVariantConfiguration().getDirName());

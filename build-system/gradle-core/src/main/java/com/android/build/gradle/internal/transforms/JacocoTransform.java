@@ -62,12 +62,8 @@ public class JacocoTransform extends Transform {
     private final Supplier<Collection<File>> jacocoClasspath;
 
     public JacocoTransform(@NonNull  final ConfigurationContainer configurations) {
-        this.jacocoClasspath = Suppliers.memoize(new Supplier<Collection<File>>() {
-            @Override
-            public Collection<File> get() {
-                return configurations.getByName(JacocoPlugin.AGENT_CONFIGURATION_NAME).getFiles();
-            }
-        });
+        this.jacocoClasspath = Suppliers.memoize(
+                () -> configurations.getByName(JacocoPlugin.AGENT_CONFIGURATION_NAME).getFiles());
     }
 
     @NonNull

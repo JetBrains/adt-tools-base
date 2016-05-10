@@ -228,4 +228,9 @@ public class GlobalScope implements TransformGlobalScope {
     public File getJacocoAgentOutputDirectory() {
         return new File(getIntermediatesDir(), "jacoco");
     }
+
+    @NonNull
+    public File getJacocoAgent() {
+        return new File(getJacocoAgentOutputDirectory(), "jacocoagent.jar");
+    }
 }

@@ -73,6 +73,8 @@ public class JackProcessOptions {
     private List<File> mAnnotationProcessorClassPath = ImmutableList.of();
     @NonNull
     private Map<String, String> mAnnotationProcessorOptions = ImmutableMap.of();
+    @Nullable
+    private File coverageMetadataFile = null;
 
     @NonNull
     private Map<String, String> mAdditionalParameters = Maps.newHashMap();
@@ -271,11 +273,21 @@ public class JackProcessOptions {
         mAnnotationProcessorOptions = annotationProcessorOptions;
     }
 
+    @NonNull
     public Map<String, String> getAdditionalParameters() {
         return mAdditionalParameters;
     }
 
     public void setAdditionalParameters(@NonNull Map<String, String> additionalParameters) {
         mAdditionalParameters = additionalParameters;
+    }
+
+    @Nullable
+    public File getCoverageMetadataFile() {
+        return coverageMetadataFile;
+    }
+
+    public void setCoverageMetadataFile(@Nullable File coverageMetadataFile) {
+        this.coverageMetadataFile = coverageMetadataFile;
     }
 }
