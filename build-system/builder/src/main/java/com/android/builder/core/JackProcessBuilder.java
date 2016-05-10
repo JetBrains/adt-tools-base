@@ -79,7 +79,6 @@ public class JackProcessBuilder extends ProcessEnvBuilder<JackProcessBuilder> {
             builder.addJvmArg("-Xmx1024M");
         }
 
-        builder.addArgs("-D", "jack.dex.forcejumbo=" + Boolean.toString(options.getJumboMode()));
         builder.addArgs("-D", "jack.dex.optimize=" + Boolean.toString(options.getDexOptimize()));
 
         if (options.isDebugLog()) {
@@ -104,6 +103,7 @@ public class JackProcessBuilder extends ProcessEnvBuilder<JackProcessBuilder> {
             builder.addArgs("--output-jack", options.getOutputFile().getAbsolutePath());
         }
 
+        builder.addArgs("-D", "jack.import.type.policy=keep-first");
         builder.addArgs("-D", "jack.import.resource.policy=keep-first");
 
         for (File file : options.getProguardFiles()) {

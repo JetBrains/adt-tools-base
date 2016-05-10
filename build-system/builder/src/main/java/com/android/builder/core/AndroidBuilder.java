@@ -1749,6 +1749,7 @@ public class AndroidBuilder {
                     config.setObfuscationMappingOutputFile(options.getMappingFile());
                 }
 
+                config.setProperty("jack.import.type.policy", "keep-first");
                 config.setProperty("jack.import.resource.policy", "keep-first");
 
                 config.setReporter(ReporterKind.DEFAULT, outputStream);
@@ -1772,9 +1773,7 @@ public class AndroidBuilder {
                 }
                 config.setResourceDirs(resourcesDir.build());
 
-                config.setProperty("jack.dex.forcejumbo", Boolean.toString(options.getJumboMode()));
-                config.setProperty(
-                        "jack.dex.optimize", Boolean.toString(options.getDexOptimize()));
+                config.setProperty("jack.dex.optimize", Boolean.toString(options.getDexOptimize()));
 
                 if (!options.getAnnotationProcessorNames().isEmpty()) {
                     config.setProcessorNames(options.getAnnotationProcessorNames());

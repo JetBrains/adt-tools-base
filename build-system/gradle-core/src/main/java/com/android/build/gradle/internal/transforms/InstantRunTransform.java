@@ -135,7 +135,7 @@ public class InstantRunTransform extends Transform {
         // Force the instant run transform to re-run when the dex patching policy changes,
         // as the slicer will re-run.
         return ImmutableMap.of("dex patching policy",
-                variantScope.getInstantRunBuildContext().getPatchingPolicy()
+                transformScope.getInstantRunBuildContext().getPatchingPolicy()
                         .getDexPatchingPolicy().toString());
     }
 
