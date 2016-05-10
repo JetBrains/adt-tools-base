@@ -326,6 +326,9 @@ public class InstantRunClient {
             File file = artifact.file;
             switch (type) {
                 case MAIN:
+                    // Should never be used with this method: APKs should be pushed by DeployApkTask
+                    assert false : artifact;
+                    break;
                 case SPLIT_MAIN:
                     // Should only be used here when we're doing a *compatible*
                     // resource swap and also got an APK for split. Ignore here.
