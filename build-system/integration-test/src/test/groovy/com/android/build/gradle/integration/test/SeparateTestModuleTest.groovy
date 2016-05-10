@@ -85,8 +85,7 @@ android {
     @Test
     @Category(DeviceTests.class)
     public void "check will run without instrumentation in manifest"() throws Exception{
-        GradleTestProject testProject = project.getSubproject("test")
-        testProject.executeConnectedCheck()
+        project.execute(":test:deviceCheck")
     }
 
     @Test
