@@ -176,7 +176,7 @@ public class InstallerUtil {
     }
 
     @Nullable
-    public static RepoPackage readPendingPackageXml(@NonNull File containingDir,
+    public static Repository readPendingPackageXml(@NonNull File containingDir,
             @NonNull RepoManager manager, @NonNull FileOp fop,
             @NonNull ProgressIndicator progress) throws IOException {
         Repository repo;
@@ -192,11 +192,7 @@ public class InstallerUtil {
         } catch (JAXBException e) {
             throw new IOException("Failed to parse pending package xml", e);
         }
-        RepoPackage result = repo.getLocalPackage();
-        if (result == null) {
-            result = repo.getRemotePackage().get(0);
-        }
-        return result;
+        return repo;
     }
 
     /**

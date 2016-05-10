@@ -227,6 +227,7 @@ public final class FileOpUtils {
             File folder = new File(tempDir,
                     String.format("%1$s%2$02d", base, i));  //$NON-NLS-1$
             if (!fileOp.exists(folder)) {
+                fileOp.mkdirs(folder);
                 return folder;
             }
         }

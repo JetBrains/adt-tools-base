@@ -17,6 +17,7 @@
 package com.android.repository.impl.installer;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.repository.api.LocalPackage;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RepoManager;
@@ -29,7 +30,7 @@ import java.io.File;
 /**
  * A basic {@link Uninstaller} that just deletes the package.
  */
-class BasicUninstaller extends AbstractPackageOperation.AbstractUninstaller {
+class BasicUninstaller extends AbstractUninstaller {
 
     public BasicUninstaller(@NonNull LocalPackage p, @NonNull RepoManager mgr,
             @NonNull FileOp fop) {
@@ -37,7 +38,7 @@ class BasicUninstaller extends AbstractPackageOperation.AbstractUninstaller {
     }
 
     @Override
-    protected boolean doPrepare(@NonNull ProgressIndicator progress) {
+    protected boolean doPrepare(@NonNull File tempPath, @NonNull ProgressIndicator progress) {
         return true;
     }
 
@@ -47,7 +48,7 @@ class BasicUninstaller extends AbstractPackageOperation.AbstractUninstaller {
      * {@inheritDoc}
      */
     @Override
-    protected boolean doComplete(@NonNull ProgressIndicator progress) {
+    protected boolean doComplete(@Nullable File tempPath, @NonNull ProgressIndicator progress) {
         String path = getPackage().getPath();
         path = path.replace(RepoPackage.PATH_SEPARATOR, File.separatorChar);
         File location = new File(getRepoManager().getLocalPath(), path);

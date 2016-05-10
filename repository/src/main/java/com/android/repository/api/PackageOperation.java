@@ -127,4 +127,11 @@ public interface PackageOperation {
             super(reason);
         }
     }
+
+    /**
+     * Gets the name of this operation, suitable for using in user-facing messages.
+     * e.g. "Install Foo" or "Uninstall Bar".
+     */
+    @NonNull
+    String getName();
 }
