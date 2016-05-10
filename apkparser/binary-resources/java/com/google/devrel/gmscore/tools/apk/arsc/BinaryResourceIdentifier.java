@@ -43,7 +43,23 @@ public class BinaryResourceIdentifier {
   private final int typeId;
   private final int entryId;
 
-  public BinaryResourceIdentifier(int packageId, int typeId, int entryId) {
+  /** Returns a {@link BinaryResourceIdentifier} from a {@code resourceId} of the form 0xpptteeee. */
+  public static BinaryResourceIdentifier create(int resourceId) {
+    int packageId = (resourceId & PACKAGE_ID_MASK) >>> PACKAGE_ID_SHIFT;
+    int typeId = (resourceId & TYPE_ID_MASK) >>> TYPE_ID_SHIFT;
+    int entryId = (resourceId & ENTRY_ID_MASK) >>> ENTRY_ID_SHIFT;
+    return create(packageId, typeId, entryId);
+  }
+
+  /** Returns a {@link BinaryResourceIdentifier} with the given identifiers. */
+  public static BinaryResourceIdentifier create(int packageId, int typeId, int entryId) {
+    Preconditions.checkState((packageId & 0xFF) == packageId, "packageId must be <= 0xFF.");
+    Preconditions.checkState((typeId & 0xFF) == typeId, "typeId must be <= 0xFF.");
+    Preconditions.checkState((entryId & 0xFFFF) == entryId, "entryId must be <= 0xFFFF.");
+    return new BinaryResourceIdentifier(packageId, typeId, entryId);
+  }
+
+  private BinaryResourceIdentifier(int packageId, int typeId, int entryId) {
     this.packageId = packageId;
     this.typeId = typeId;
     this.entryId = entryId;
@@ -57,14 +73,6 @@ public class BinaryResourceIdentifier {
 
   /** The (0-based) index of the entry in a {@link TypeChunk} containing this resource. */
   public int entryId() { return entryId; }
-
-  /** Returns a {@link BinaryResourceIdentifier} from a {@code resourceId} of the form 0xpptteeee. */
-  public static BinaryResourceIdentifier create(int resourceId) {
-    int packageId = (resourceId & PACKAGE_ID_MASK) >>> PACKAGE_ID_SHIFT;
-    int typeId = (resourceId & TYPE_ID_MASK) >>> TYPE_ID_SHIFT;
-    int entryId = (resourceId & ENTRY_ID_MASK) >>> ENTRY_ID_SHIFT;
-    return create(packageId, typeId, entryId);
-  }
 
   @Override
   public boolean equals(Object o) {
@@ -85,13 +93,5 @@ public class BinaryResourceIdentifier {
   public String toString() {
     int v = packageId << PACKAGE_ID_SHIFT | typeId << TYPE_ID_SHIFT | entryId;
     return String.format("0x%1$08x", v);
-  }
-
-  /** Returns a {@link BinaryResourceIdentifier} with the given identifiers. */
-  public static BinaryResourceIdentifier create(int packageId, int typeId, int entryId) {
-    Preconditions.checkState((packageId & 0xFF) == packageId, "packageId must be <= 0xFF.");
-    Preconditions.checkState((typeId & 0xFF) == typeId, "typeId must be <= 0xFF.");
-    Preconditions.checkState((entryId & 0xFFFF) == entryId, "entryId must be <= 0xFFFF.");
-    return new BinaryResourceIdentifier(packageId, typeId, entryId);
   }
 }

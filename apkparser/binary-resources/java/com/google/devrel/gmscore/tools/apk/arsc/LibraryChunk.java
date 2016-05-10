@@ -90,7 +90,13 @@ public final class LibraryChunk extends Chunk {
     private final int packageId;
     private final String packageName;
 
-    public Entry(int packageId, String packageName) {
+    static Entry create(ByteBuffer buffer, int offset) {
+      int packageId = buffer.getInt(offset);
+      String packageName = PackageUtils.readPackageName(buffer, offset + 4);
+      return new Entry(packageId, packageName);
+    }
+
+    private Entry(int packageId, String packageName) {
       this.packageId = packageId;
       this.packageName = packageName;
     }
@@ -100,12 +106,6 @@ public final class LibraryChunk extends Chunk {
 
     /** The package name of the shared library. */
     public String packageName() { return packageName; }
-
-    static Entry create(ByteBuffer buffer, int offset) {
-      int packageId = buffer.getInt(offset);
-      String packageName = PackageUtils.readPackageName(buffer, offset + 4);
-      return new Entry(packageId, packageName);
-    }
 
     @Override
     public byte[] toByteArray() throws IOException {

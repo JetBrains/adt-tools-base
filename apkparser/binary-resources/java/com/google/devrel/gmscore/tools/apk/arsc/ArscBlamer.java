@@ -249,7 +249,7 @@ public class ArscBlamer {
       return new ResourceEntry(packageName, typeName, entryName);
     }
 
-    public ResourceEntry(String packageName, String typeName, String entryName) {
+    private ResourceEntry(String packageName, String typeName, String entryName) {
       this.packageName = packageName;
       this.typeName = typeName;
       this.entryName = entryName;

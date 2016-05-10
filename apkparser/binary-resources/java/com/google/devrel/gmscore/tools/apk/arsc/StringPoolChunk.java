@@ -289,10 +289,6 @@ public final class StringPoolChunk extends Chunk {
     static final int RES_STRING_POOL_SPAN_END = 0xFFFFFFFF;
     private final List<StringPoolSpan> spans;
 
-    private StringPoolStyle(List<StringPoolSpan> spans) {
-      this.spans = spans;
-    }
-
     static StringPoolStyle create(ByteBuffer buffer, int offset, StringPoolChunk parent) {
       Builder<StringPoolSpan> spans = ImmutableList.builder();
       int nameIndex = buffer.getInt(offset);
@@ -302,6 +298,10 @@ public final class StringPoolChunk extends Chunk {
         nameIndex = buffer.getInt(offset);
       }
       return new StringPoolStyle(spans.build());
+    }
+
+    private StringPoolStyle(List<StringPoolSpan> spans) {
+      this.spans = spans;
     }
 
     @Override
