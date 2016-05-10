@@ -20,6 +20,8 @@ import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.dsl.AnnotationProcessorOptions;
 import com.android.build.gradle.internal.dsl.CoreAnnotationProcessorOptions;
 import com.android.build.gradle.internal.dsl.CoreJavaCompileOptions;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -39,7 +41,12 @@ public class MergedJavaCompileOptions implements CoreJavaCompileOptions {
         return annotationProcessorOptions;
     }
 
-    public void merge(@NonNull CoreJavaCompileOptions javaCompileOptions) {
+    public void reset() {
+        annotationProcessorOptions.getClassNames().clear();
+        annotationProcessorOptions.getArguments().clear();
+    }
+
+    public void append(@NonNull CoreJavaCompileOptions javaCompileOptions) {
         annotationProcessorOptions.classNames(
                 javaCompileOptions.getAnnotationProcessorOptions().getClassNames());
         annotationProcessorOptions.arguments(

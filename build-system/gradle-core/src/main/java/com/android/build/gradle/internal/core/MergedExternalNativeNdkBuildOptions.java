@@ -16,32 +16,34 @@
 
 package com.android.build.gradle.internal.core;
 
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.dsl.CoreExternalNativeCmakeOptions;
+import com.android.build.gradle.internal.dsl.CoreExternalNativeNdkBuildOptions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 
 import java.util.Set;
 
 /**
- * Implementation of CoreExternalNativeCmakeOptions used to merge multiple configs together.
+ * Implementation of CoreExternalNativeNdkBuildOptions used to merge multiple configs together.
  */
-public class MergedCoreExternalNativeCmakeOptions implements CoreExternalNativeCmakeOptions {
+public class MergedExternalNativeNdkBuildOptions implements CoreExternalNativeNdkBuildOptions {
 
-    private String cFlags;
-    private String cppFlags;
+    @Nullable
+    private String cFlags = null;
+    @Nullable
+    private String cppFlags = null;
     @NonNull
     private Set<String> abiFilters = Sets.newHashSet();
 
-    public void append(@NonNull CoreExternalNativeCmakeOptions options) {
-        if (options.getAbiFilters() != null) {
-            Set<String> abis = Sets.newHashSet();
-            abis.addAll(abiFilters);
-            abis.addAll(options.getAbiFilters());
-            abiFilters = abis;
-        }
+    public void reset() {
+        cFlags = null;
+        cppFlags = null;
+        abiFilters.clear();
+    }
 
+    public void append(@NonNull CoreExternalNativeNdkBuildOptions options) {
         if (cFlags == null) {
             cFlags = options.getcFlags();
         } else if (!Strings.isNullOrEmpty(options.getcFlags())) {
@@ -53,6 +55,8 @@ public class MergedCoreExternalNativeCmakeOptions implements CoreExternalNativeC
         } else if (!Strings.isNullOrEmpty(options.getCppFlags())) {
             cppFlags = cppFlags + " " + options.getCppFlags();
         }
+        abiFilters.addAll(options.getAbiFilters());
+
     }
 
     @Nullable
@@ -67,10 +71,9 @@ public class MergedCoreExternalNativeCmakeOptions implements CoreExternalNativeC
         return cppFlags;
     }
 
-    @Nullable
+    @NonNull
     @Override
     public Set<String> getAbiFilters() {
         return abiFilters;
     }
 }
-
