@@ -879,6 +879,7 @@ public final class SdkConstants {
     public static final String CHECK_BOX = "CheckBox";                 //$NON-NLS-1$
     public static final String ABS_LIST_VIEW = "AbsListView";          //$NON-NLS-1$
     public static final String PROGRESS_BAR = "ProgressBar";           //$NON-NLS-1$
+    public static final String RATING_BAR = "RatingBar";               //$NON-NLS-1$
     public static final String ABS_SPINNER = "AbsSpinner";             //$NON-NLS-1$
     public static final String ABS_SEEK_BAR = "AbsSeekBar";            //$NON-NLS-1$
     public static final String VIEW_ANIMATOR = "ViewAnimator";         //$NON-NLS-1$
@@ -1076,10 +1077,15 @@ public final class SdkConstants {
     public static final String ATTR_LAYOUT_COLUMN = "layout_column";   //$NON-NLS-1$
     public static final String ATTR_LAYOUT_COLUMN_SPAN = "layout_columnSpan";       //$NON-NLS-1$
 
-    // ProgressBar attributes
+    // ProgressBar/RatingBar attributes
     public static final String ATTR_MAXIMUM = "max";                    //$NON-NLS-1$
     public static final String ATTR_PROGRESS = "progress";              //$NON-NLS-1$
     public static final String ATTR_INDETERMINATE = "indeterminate";    //$NON-NLS-1$
+    public static final String ATTR_RATING = "rating";                  //$NON-NLS-1$
+    public static final String ATTR_NUM_STARS = "numStars";             //$NON-NLS-1$
+    public static final String ATTR_STEP_SIZE = "stepSize";             //$NON-NLS-1$
+    public static final String ATTR_IS_INDICATOR = "isIndicator";       //$NON-NLS-1$
+    public static final String ATTR_THUMB = "thumb";                    //$NON-NLS-1$
 
     // ImageView attributes
     public static final String ATTR_ADJUST_VIEW_BOUNDS = "adjustViewBounds"; //$NON-NLS-1$
@@ -1191,6 +1197,7 @@ public final class SdkConstants {
     public static final String ATTR_ACTION_BAR = "actionBar";                       //$NON-NLS-1$
     public static final String ATTR_CONTENT_SCRIM = "contentScrim";                 //$NON-NLS-1$
     public static final String ATTR_TOOLBAR_ID = "toolbarId";                       //$NON-NLS-1$
+    public static final String ATTR_CACHE_COLOR_HINT = "cacheColorHint";            //$NON-NLS-1$
     public static final String ATTR_DIVIDER = "divider";                            //$NON-NLS-1$
     public static final String ATTR_DIVIDER_PADDING = "dividerPadding";             //$NON-NLS-1$
     public static final String ATTR_DIVIDER_HEIGHT = "dividerHeight";               //$NON-NLS-1$
@@ -1206,9 +1213,11 @@ public final class SdkConstants {
     public static final String ATTR_ENTRIES = "entries";                            //$NON-NLS-1$
     public static final String ATTR_POPUP_BACKGROUND = "popupBackground";           //$NON-NLS-1$
     public static final String ATTR_MIN_WIDTH = "minWidth";                         //$NON-NLS-1$
+    public static final String ATTR_DROPDOWN_HEIGHT = "dropDownHeight";             //$NON-NLS-1$
     public static final String ATTR_DROPDOWN_WIDTH = "dropDownWidth";               //$NON-NLS-1$
     public static final String ATTR_DRAW_SELECTOR_ON_TOP = "drawSelectorOnTop";     //$NON-NLS-1$
     public static final String ATTR_SCROLLBARS = "scrollbars";                      //$NON-NLS-1$
+    public static final String ATTR_COMPLETION_HINT = "completionHint";             //$NON-NLS-1$
 
     // Values: Manifest
     public static final String VALUE_SPLIT_ACTION_BAR_WHEN_NARROW = "splitActionBarWhenNarrow"; // NON-NLS-$1
@@ -1468,12 +1477,26 @@ public final class SdkConstants {
     public static final String QUICK_CONTACT_BADGE = "QuickContactBadge";//$NON-NLS-1$
 
     public static final String ATTR_HANDLE = "handle";                  //$NON-NLS-1$
+    public static final String ATTR_BUTTON = "button";                  //$NON-NLS-1$
+    public static final String ATTR_BUTTON_TINT = "buttonTint";         //$NON-NLS-1$
     public static final String ATTR_CONTENT = "content";                //$NON-NLS-1$
     public static final String ATTR_CHECKED = "checked";                //$NON-NLS-1$
     public static final String ATTR_CHECK_MARK = "checkMark";           //$NON-NLS-1$
     public static final String ATTR_CHECK_MARK_TINT = "checkMarkTint";  //$NON-NLS-1$
+    public static final String ATTR_DUPLICATE_PARENT_STATE = "duplicateParentState";  //$NON-NLS-1$
+    public static final String ATTR_FOCUSABLE = "focusable";            //$NON-NLS-1$
+    public static final String ATTR_CLICKABLE = "clickable";            //$NON-NLS-1$
     public static final String ATTR_TEXT_OFF = "textOff";               //$NON-NLS-1$
     public static final String ATTR_TEXT_ON = "textOn";                 //$NON-NLS-1$
+    public static final String ATTR_CHECKED_BUTTON = "checkedButton";   //$NON-NLS-1$
+    public static final String ATTR_SWITCH_TEXT_APPEARANCE = "switchTextAppearance"; //$NON-NLS-1$
+    public static final String ATTR_SWITCH_MIN_WIDTH = "switchMinWidth";//$NON-NLS-1$
+    public static final String ATTR_SWITCH_PADDING = "switchPadding";   //$NON-NLS-1$
+    public static final String ATTR_THUMB_TINT = "thumbTint";           //$NON-NLS-1$
+    public static final String ATTR_TRACK = "track";                    //$NON-NLS-1$
+    public static final String ATTR_TRACK_TINT = "trackTint";           //$NON-NLS-1$
+    public static final String ATTR_SHOW_TEXT = "showText";             //$NON-NLS-1$
+    public static final String ATTR_SPLIT_TRACK = "splitTrack";         //$NON-NLS-1$
 
     // TextView
     public static final String ATTR_DRAWABLE_RIGHT = "drawableRight";              //$NON-NLS-1$
