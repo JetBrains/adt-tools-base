@@ -13,6 +13,7 @@ android {
 
         beta {
             dimension "releaseType"
+            maxSdkVersion 19
         }
 
         normal {
@@ -21,6 +22,7 @@ android {
 
         free {
             dimension "pricing"
+            maxSdkVersion 18
         }
 
         paid {
