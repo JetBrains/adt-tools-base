@@ -42,6 +42,8 @@ class SigningConfigImpl implements SigningConfig, Serializable {
     private final String keyPassword;
     @Nullable
     private final String storeType;
+    private final boolean v1SigningEnabled;
+    private final boolean v2SigningEnabled;
     private final boolean signingReady;
 
     @NonNull
@@ -53,6 +55,8 @@ class SigningConfigImpl implements SigningConfig, Serializable {
                 signingConfig.getKeyAlias(),
                 signingConfig.getKeyPassword(),
                 signingConfig.getStoreType(),
+                signingConfig.isV1SigningEnabled(),
+                signingConfig.isV2SigningEnabled(),
                 signingConfig.isSigningReady());
     }
 
@@ -63,6 +67,8 @@ class SigningConfigImpl implements SigningConfig, Serializable {
             @Nullable String keyAlias,
             @Nullable String keyPassword,
             @Nullable String storeType,
+            boolean v1SigningEnabled,
+            boolean v2SigningEnabled,
             boolean signingReady) {
         this.name = name;
         this.storeFile = storeFile;
@@ -70,6 +76,8 @@ class SigningConfigImpl implements SigningConfig, Serializable {
         this.keyAlias = keyAlias;
         this.keyPassword = keyPassword;
         this.storeType = storeType;
+        this.v1SigningEnabled = v1SigningEnabled;
+        this.v2SigningEnabled = v2SigningEnabled;
         this.signingReady = signingReady;
     }
 
@@ -107,6 +115,16 @@ class SigningConfigImpl implements SigningConfig, Serializable {
     @Override
     public String getStoreType() {
         return storeType;
+    }
+
+    @Override
+    public boolean isV1SigningEnabled() {
+        return v1SigningEnabled;
+    }
+
+    @Override
+    public boolean isV2SigningEnabled() {
+        return v2SigningEnabled;
     }
 
     @Override

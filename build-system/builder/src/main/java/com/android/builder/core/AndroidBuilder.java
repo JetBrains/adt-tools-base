@@ -1953,6 +1953,8 @@ public class AndroidBuilder {
 
         PrivateKey key;
         X509Certificate certificate;
+        boolean v1SigningEnabled;
+        boolean v2SigningEnabled;
 
         if (signingConfig != null && signingConfig.isSigningReady()) {
             CertificateInfo certificateInfo = KeystoreHelper.getCertificateInfo(
@@ -1963,9 +1965,13 @@ public class AndroidBuilder {
                     Preconditions.checkNotNull(signingConfig.getKeyAlias()));
             key = certificateInfo.getKey();
             certificate = certificateInfo.getCertificate();
+            v1SigningEnabled = signingConfig.isV1SigningEnabled();
+            v2SigningEnabled = signingConfig.isV2SigningEnabled();
         } else {
             key = null;
             certificate = null;
+            v1SigningEnabled = false;
+            v2SigningEnabled = false;
         }
 
         ApkCreatorFactory.CreationData creationData =
@@ -1973,6 +1979,8 @@ public class AndroidBuilder {
                         outApkLocation,
                         key,
                         certificate,
+                        v1SigningEnabled,
+                        v2SigningEnabled,
                         null,   // BuiltBy
                         mCreatedBy,
                         minSdkVersion);
@@ -2019,6 +2027,8 @@ public class AndroidBuilder {
 
         PrivateKey key;
         X509Certificate certificate;
+        boolean v1SigningEnabled;
+        boolean v2SigningEnabled;
 
         if (signingConfig != null && signingConfig.isSigningReady()) {
             CertificateInfo certificateInfo = KeystoreHelper.getCertificateInfo(
@@ -2029,14 +2039,19 @@ public class AndroidBuilder {
                     Preconditions.checkNotNull(signingConfig.getKeyAlias()));
             key = certificateInfo.getKey();
             certificate = certificateInfo.getCertificate();
+            v1SigningEnabled = signingConfig.isV1SigningEnabled();
+            v2SigningEnabled = signingConfig.isV2SigningEnabled();
         } else {
             key = null;
             certificate = null;
+            v1SigningEnabled = false;
+            v2SigningEnabled = false;
         }
 
         ApkCreatorFactory.CreationData
                 creationData = new ApkCreatorFactory.CreationData(outApkLocation,
-                key, certificate, null, mCreatedBy, API_LEVEL_SPLIT_APK);
+                key, certificate, v1SigningEnabled, v2SigningEnabled,
+                null, mCreatedBy, API_LEVEL_SPLIT_APK);
 
         try (OldPackager packager = new OldPackager(creationData, androidResPkgLocation, mLogger)) {
             packager.addFile(dexFile, "classes.dex");
@@ -2068,6 +2083,8 @@ public class AndroidBuilder {
 
         PrivateKey key;
         X509Certificate certificate;
+        boolean v1SigningEnabled;
+        boolean v2SigningEnabled;
 
         if (signingConfig != null && signingConfig.isSigningReady()) {
             CertificateInfo certificateInfo = KeystoreHelper.getCertificateInfo(
@@ -2078,14 +2095,19 @@ public class AndroidBuilder {
                     Preconditions.checkNotNull(signingConfig.getKeyAlias()));
             key = certificateInfo.getKey();
             certificate = certificateInfo.getCertificate();
+            v1SigningEnabled = signingConfig.isV1SigningEnabled();
+            v2SigningEnabled = signingConfig.isV2SigningEnabled();
         } else {
             key = null;
             certificate = null;
+            v1SigningEnabled = false;
+            v2SigningEnabled = false;
         }
 
         ApkCreatorFactory.CreationData
                 creationData = new ApkCreatorFactory.CreationData(out,
-                key, certificate, null, null, 1);
+                key, certificate, v1SigningEnabled, v2SigningEnabled,
+                null, null, 1);
 
         try (SignedJarApkCreator signedJarBuilder = new SignedJarApkCreator(creationData)) {
             signedJarBuilder.writeZip(in);

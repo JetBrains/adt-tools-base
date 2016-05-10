@@ -80,6 +80,18 @@ public class SigningConfigAdaptor implements CoreSigningConfig {
     }
 
     @Override
+    @Input
+    public boolean isV1SigningEnabled() {
+        return signingConfig.isV1SigningEnabled();
+    }
+
+    @Override
+    @Input
+    public boolean isV2SigningEnabled() {
+        return signingConfig.isV2SigningEnabled();
+    }
+
+    @Override
     public boolean isSigningReady() {
         return signingConfig.getStoreFile() != null &&
                 signingConfig.getStorePassword() != null &&

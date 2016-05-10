@@ -320,8 +320,12 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         @Defaults
         public static void initSigningConfigs(
                 @Path("android.signingConfigs") ModelMap<SigningConfig> signingConfigs) {
-            signingConfigs.beforeEach(
-                    signingConfig -> signingConfig.setStoreType(KeyStore.getDefaultType()));
+            signingConfigs.beforeEach(signingConfig -> {
+                signingConfig.setStoreType(KeyStore.getDefaultType());
+                signingConfig.setV1SigningEnabled(true);
+                signingConfig.setV2SigningEnabled(true);
+            });
+
             signingConfigs.create(DEBUG, signingConfig -> {
                 try {
                     signingConfig.setStoreFile(

@@ -412,6 +412,8 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
 
         PrivateKey key;
         X509Certificate certificate;
+        boolean v1SigningEnabled;
+        boolean v2SigningEnabled;
 
         Closer closer = Closer.create();
         try {
@@ -424,9 +426,13 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
                         Preconditions.checkNotNull(signingConfig.getKeyAlias()));
                 key = certificateInfo.getKey();
                 certificate = certificateInfo.getCertificate();
+                v1SigningEnabled = signingConfig.isV1SigningEnabled();
+                v2SigningEnabled = signingConfig.isV2SigningEnabled();
             } else {
                 key = null;
                 certificate = null;
+                v1SigningEnabled = false;
+                v2SigningEnabled = false;
             }
 
             ApkCreatorFactory.CreationData creationData =
@@ -434,6 +440,8 @@ public abstract class PackageAndroidArtifact extends IncrementalTask implements 
                             getOutputFile(),
                             key,
                             certificate,
+                            v1SigningEnabled,
+                            v2SigningEnabled,
                             null,   // BuiltBy
                             getBuilder().getCreatedBy(),
                             getMinSdkVersion());

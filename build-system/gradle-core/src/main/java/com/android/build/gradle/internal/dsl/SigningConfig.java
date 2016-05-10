@@ -61,6 +61,8 @@ public class SigningConfig extends DefaultSigningConfig implements Serializable,
         setStorePassword(that.getStorePassword());
         setKeyAlias(that.getKeyAlias());
         setKeyPassword(that.getKeyPassword());
+        setV1SigningEnabled(that.isV1SigningEnabled());
+        setV2SigningEnabled(that.isV2SigningEnabled());
         return this;
     }
 
@@ -129,6 +131,32 @@ public class SigningConfig extends DefaultSigningConfig implements Serializable,
         return super.getStoreType();
     }
 
+    /**
+     * Whether signing using JAR Signature Scheme (aka v1 signing) is enabled.
+     *
+     * <p>See <a href="https://developer.android.com/tools/publishing/app-signing.html">
+     * Signing Your Applications</a>
+     */
+    @Override
+    @Input
+    public boolean isV1SigningEnabled() {
+        // Getter override to annotate it with Gradle's input annotation.
+        return super.isV1SigningEnabled();
+    }
+
+    /**
+     * Whether signing using APK Signature Scheme v2 (aka v2 signing) is enabled.
+     *
+     * <p>See <a href="https://developer.android.com/tools/publishing/app-signing.html">
+     * Signing Your Applications</a>
+     */
+    @Override
+    @Input
+    public boolean isV2SigningEnabled() {
+        // Getter override to annotate it with Gradle's input annotation.
+        return super.isV2SigningEnabled();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -158,6 +186,8 @@ public class SigningConfig extends DefaultSigningConfig implements Serializable,
                 .add("keyAlias", getKeyAlias())
                 .add("keyPassword", getKeyPassword())
                 .add("storeType", getStoreFile())
+                .add("v1SigningEnabled", isV1SigningEnabled())
+                .add("v2SigningEnabled", isV2SigningEnabled())
                 .toString();
     }
 }

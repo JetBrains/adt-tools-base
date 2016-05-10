@@ -347,4 +347,53 @@ class SigningTest {
                 GradleTestProject.DEVICE_TEST_TASK)
     }
 
+    @Test
+    public void 'signing scheme toggle'() throws Exception {
+        File apk = project.getApk("debug")
+
+        // Toggles not specified -- testing their default values
+        project.execute("clean", "assembleDebug")
+        assertThatApk(apk).contains("META-INF/CERT.SF")
+        assertThatApk(apk).containsApkSigningBlock()
+
+        // Specified: v1SigningEnabled false, v2SigningEnabled false
+        TestFileUtils.searchAndReplace(
+                project.buildFile,
+                "customDebug \\{",
+                "customDebug {\nv1SigningEnabled false\nv2SigningEnabled false")
+        project.execute("clean", "assembleDebug")
+        assertThatApk(apk).doesNotContain("META-INF/CERT.SF")
+        assertThatApk(apk).doesNotContainApkSigningBlock()
+
+        // Specified: v1SigningEnabled true, v2SigningEnabled false
+        TestFileUtils.searchAndReplace(
+                project.buildFile,
+                "v1SigningEnabled false",
+                "v1SigningEnabled true")
+        project.execute("clean", "assembleDebug")
+        assertThatApk(apk).contains("META-INF/CERT.SF")
+        assertThatApk(apk).doesNotContainApkSigningBlock()
+
+        // Specified: v1SigningEnabled false, v2SigningEnabled true
+        TestFileUtils.searchAndReplace(
+                project.buildFile,
+                "v1SigningEnabled true",
+                "v1SigningEnabled false")
+        TestFileUtils.searchAndReplace(
+                project.buildFile,
+                "v2SigningEnabled false",
+                "v2SigningEnabled true")
+        project.execute("clean", "assembleDebug")
+        assertThatApk(apk).doesNotContain("META-INF/CERT.SF")
+        assertThatApk(apk).containsApkSigningBlock()
+
+        // Specified: v1SigningEnabled true, v2SigningEnabled true
+        TestFileUtils.searchAndReplace(
+                project.buildFile,
+                "v1SigningEnabled false",
+                "v1SigningEnabled true")
+        project.execute("clean", "assembleDebug")
+        assertThatApk(apk).contains("META-INF/CERT.SF")
+        assertThatApk(apk).containsApkSigningBlock()
+    }
 }

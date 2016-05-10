@@ -23,6 +23,7 @@ import com.android.builder.internal.packaging.sign.ManifestGenerationExtension;
 import com.android.builder.internal.packaging.sign.SignatureExtension;
 import com.android.builder.internal.packaging.zip.AlignmentRule;
 import com.android.builder.internal.packaging.zip.AlignmentRules;
+import com.android.builder.internal.packaging.zip.StoredEntry;
 import com.android.builder.internal.packaging.zip.ZFile;
 import com.android.builder.internal.packaging.zip.ZFileOptions;
 
@@ -86,6 +87,10 @@ public class ZFiles {
      * @param key the {@link PrivateKey} used to sign the archive, or {@code null}.
      * @param certificate the {@link X509Certificate} used to sign the archive, or
      * {@code null}.
+     * @param v1SigningEnabled whether signing with JAR Signature Scheme (aka v1 signing) is
+     *        enabled.
+     * @param v2SigningEnabled whether signing with APK Signature Scheme v2 (aka v2 signing) is
+     *        enabled.
      * @param builtBy who to mark as builder in the manifest
      * @param createdBy who to mark as creator in the manifest
      * @param minSdkVersion minimum SDK version supported
@@ -95,6 +100,7 @@ public class ZFiles {
     @NonNull
     public static ZFile apk(@NonNull File f, @NonNull ZFileOptions options,
             @Nullable PrivateKey key, @Nullable X509Certificate certificate,
+            boolean v1SigningEnabled, boolean v2SigningEnabled,
             @Nullable String builtBy, @Nullable String createdBy, int minSdkVersion)
             throws IOException {
         options.setAlignmentRule(
@@ -115,17 +121,35 @@ public class ZFiles {
 
         if (key != null && certificate != null) {
             try {
-                SignatureExtension jarSignatureSchemeExt = new SignatureExtension(manifestExt,
-                        minSdkVersion, certificate, key,
-                        SignatureExtension.SIGNATURE_ANDROID_APK_SIGNER_VALUE_WHEN_V2_SIGNED);
-                jarSignatureSchemeExt.register();
-                FullApkSignExtension apkSignatureSchemeV2Ext =
-                        new FullApkSignExtension(
-                                zfile,
-                                minSdkVersion,
-                                certificate,
-                                key);
-                apkSignatureSchemeV2Ext.register();
+                if (v1SigningEnabled) {
+                    String apkSignedHeaderValue =
+                            (v2SigningEnabled)
+                                    ? SignatureExtension
+                                            .SIGNATURE_ANDROID_APK_SIGNER_VALUE_WHEN_V2_SIGNED
+                                    : null;
+                    SignatureExtension jarSignatureSchemeExt = new SignatureExtension(manifestExt,
+                            minSdkVersion, certificate, key,
+                            apkSignedHeaderValue);
+                    jarSignatureSchemeExt.register();
+                }
+                if (v2SigningEnabled) {
+                    FullApkSignExtension apkSignatureSchemeV2Ext =
+                            new FullApkSignExtension(
+                                    zfile,
+                                    minSdkVersion,
+                                    certificate,
+                                    key);
+                    apkSignatureSchemeV2Ext.register();
+                }
+                if (!v1SigningEnabled) {
+                    // Remove v1 signature files from the APK
+                    for (StoredEntry entry : zfile.entries()) {
+                        if (SignatureExtension.isIgnoredFile(
+                                entry.getCentralDirectoryHeader().getName())) {
+                            entry.delete();
+                        }
+                    }
+                }
             } catch (NoSuchAlgorithmException | InvalidKeyException e) {
                 throw new IOException("Failed to create signature extensions", e);
             }
