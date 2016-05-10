@@ -16,6 +16,7 @@
 
 package com.google.devrel.gmscore.tools.apk.arsc;
 
+import com.google.common.base.Preconditions;
 import com.google.common.primitives.UnsignedBytes;
 
 import java.io.DataOutput;
@@ -61,6 +62,25 @@ public final class TypeSpecChunk extends Chunk {
   @Override
   protected Type getType() {
     return Chunk.Type.TABLE_TYPE_SPEC;
+  }
+
+  /** Returns the name of the type this chunk represents (e.g. string, attr, id). */
+  public String getTypeName() {
+    PackageChunk packageChunk = getPackageChunk();
+    Preconditions.checkNotNull(packageChunk, "%s has no parent package.", getClass());
+    StringPoolChunk typePool = packageChunk.getTypeStringPool();
+    Preconditions.checkNotNull(typePool, "%s's parent package has no type pool.", getClass());
+    return typePool.getString(getId() - 1);  // - 1 here to convert to 0-based index
+  }
+
+  /** Returns the package enclosing this chunk, if any. Else, returns null. */
+  @Nullable
+  private PackageChunk getPackageChunk() {
+    Chunk chunk = getParent();
+    while (chunk != null && !(chunk instanceof PackageChunk)) {
+      chunk = chunk.getParent();
+    }
+    return chunk != null ? (PackageChunk) chunk : null;
   }
 
   @Override

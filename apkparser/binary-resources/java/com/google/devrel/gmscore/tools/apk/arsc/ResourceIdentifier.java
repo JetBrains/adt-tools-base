@@ -81,6 +81,12 @@ public class ResourceIdentifier {
     return Objects.hash(packageId, typeId, entryId);
   }
 
+  @Override
+  public String toString() {
+    int v = packageId << PACKAGE_ID_SHIFT | typeId << TYPE_ID_SHIFT | entryId;
+    return String.format("0x%1$08x", v);
+  }
+
   /** Returns a {@link ResourceIdentifier} with the given identifiers. */
   public static ResourceIdentifier create(int packageId, int typeId, int entryId) {
     Preconditions.checkState((packageId & 0xFF) == packageId, "packageId must be <= 0xFF.");

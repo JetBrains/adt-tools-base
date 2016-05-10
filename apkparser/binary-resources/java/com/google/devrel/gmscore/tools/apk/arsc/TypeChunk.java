@@ -175,7 +175,7 @@ public final class TypeChunk extends Chunk {
     while (chunk != null && !(chunk instanceof ResourceTableChunk)) {
       chunk = chunk.getParent();
     }
-    return chunk != null && chunk instanceof ResourceTableChunk ? (ResourceTableChunk) chunk : null;
+    return chunk != null ? (ResourceTableChunk) chunk : null;
   }
 
   /** Returns the package enclosing this chunk, if any. Else, returns null. */
@@ -185,7 +185,7 @@ public final class TypeChunk extends Chunk {
     while (chunk != null && !(chunk instanceof PackageChunk)) {
       chunk = chunk.getParent();
     }
-    return chunk != null && chunk instanceof PackageChunk ? (PackageChunk) chunk : null;
+    return chunk != null ? (PackageChunk) chunk : null;
   }
 
   @Override
