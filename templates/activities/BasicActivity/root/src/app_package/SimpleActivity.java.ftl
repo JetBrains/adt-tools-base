@@ -65,4 +65,5 @@ public class ${activityClass} extends ${superClass} {
         return super.onOptionsItemSelected(item);
     }
 </#if>
+<#include "../../../../common/jni_code_snippet.java.ftl">
 }

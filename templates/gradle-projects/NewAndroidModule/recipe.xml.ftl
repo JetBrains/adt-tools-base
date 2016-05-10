@@ -71,5 +71,12 @@
     <instantiate from="root/test/app_package/ExampleUnitTest.java.ftl"
                    to="${escapeXmlAttribute(unitTestOut)}/ExampleUnitTest.java" />
 </#if>
+<#if includeCppSupport!false>
+    <instantiate from="root/CMakeLists.txt.ftl"
+                   to="${escapeXmlAttribute(projectOut)}/CMakeLists.txt" />
+
+    <mkdir at="${nativeSrcOut}" />
+    <instantiate from="root/native-lib.cpp.ftl" to="${nativeSrcOut}/native-lib.cpp" />
+</#if>
 
 </recipe>
