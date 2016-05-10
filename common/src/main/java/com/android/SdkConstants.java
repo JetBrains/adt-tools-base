@@ -1112,10 +1112,6 @@ public final class SdkConstants {
     public static final String ATTR_LAYOUT_CENTER_CREATOR = "layout_constraintCenter_creator";
     public static final String ATTR_LAYOUT_CENTER_X_CREATOR = "layout_constraintCenterX_creator";
     public static final String ATTR_LAYOUT_CENTER_Y_CREATOR = "layout_constraintCenterY_creator";
-    public static final String ATTR_LAYOUT_LEFT_MARGIN = "layout_constraintLeft_margin";
-    public static final String ATTR_LAYOUT_RIGHT_MARGIN = "layout_constraintRight_margin";
-    public static final String ATTR_LAYOUT_TOP_MARGIN = "layout_constraintTop_margin";
-    public static final String ATTR_LAYOUT_BOTTOM_MARGIN = "layout_constraintBottom_margin";
     public static final String ATTR_LAYOUT_LEFT_STRENGTH = "layout_constraintLeft_strength";
     public static final String ATTR_LAYOUT_RIGHT_STRENGTH = "layout_constraintRight_strength";
     public static final String ATTR_LAYOUT_TOP_STRENGTH = "layout_constraintTop_strength";
@@ -1133,6 +1129,7 @@ public final class SdkConstants {
     public static final String ATTR_LAYOUT_CENTER_Y_TO_CENTER_Y_OF = "layout_constraintCenterY_toCenterY";
     public static final String ATTR_LAYOUT_HORIZONTAL_BIAS = "layout_constraintHorizontal_Bias";
     public static final String ATTR_LAYOUT_VERTICAL_BIAS = "layout_constraintVertical_Bias";
+    public static final String ATTR_LAYOUT_DIMENSION_RATIO = "layout_constraintDimensionRatio";
     public static final String ATTR_GUIDELINE_ORIENTATION = "orientation"; //$NON-NLS-1$
     public static final String ATTR_GUIDELINE_ORIENTATION_HORIZONTAL = "horizontal"; //$NON-NLS-1$
     public static final String ATTR_GUIDELINE_ORIENTATION_VERTICAL = "vertical"; //$NON-NLS-1$
