@@ -18,6 +18,8 @@ package com.android.build.gradle.internal.model;
 
 import com.android.annotations.NonNull;
 import com.android.builder.model.NativeSettings;
+import com.google.common.base.Joiner;
+import com.google.common.base.Objects;
 
 import java.io.Serializable;
 import java.util.List;
@@ -48,5 +50,13 @@ public class NativeSettingsImpl implements NativeSettings, Serializable {
     @NonNull
     public List<String> getCompilerFlags() {
         return compilerFlags;
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(getClass())
+                .add("name", name)
+                .add("flags", Joiner.on(" ").join(compilerFlags))
+                .toString();
     }
 }

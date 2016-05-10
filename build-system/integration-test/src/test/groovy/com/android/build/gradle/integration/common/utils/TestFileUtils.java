@@ -22,6 +22,7 @@ import static org.junit.Assert.assertTrue;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
@@ -31,6 +32,7 @@ import com.google.common.io.Files;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -117,5 +119,14 @@ public class TestFileUtils {
 
     public static void appendToFile(@NonNull File file, @NonNull String content) throws IOException {
         Files.append(content, file, Charset.defaultCharset());
+    }
+
+    /**
+     * Return a list of path folders and file (if applicable)
+     */
+    public static List<String> splitPath(@NonNull File path) {
+        return Arrays.asList(
+                FileUtils.toSystemIndependentPath(
+                        path.getPath()).split("/"));
     }
 }

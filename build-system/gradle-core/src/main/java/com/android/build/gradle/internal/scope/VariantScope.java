@@ -18,9 +18,9 @@ package com.android.build.gradle.internal.scope;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.external.gson.NativeBuildConfigValue;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.incremental.InstantRunAnchorTask;
-import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.pipeline.TransformTask;
@@ -30,7 +30,17 @@ import com.android.build.gradle.internal.tasks.databinding.DataBindingExportBuil
 import com.android.build.gradle.internal.tasks.databinding.DataBindingProcessLayoutsTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.build.gradle.tasks.*;
+import com.android.build.gradle.tasks.AidlCompile;
+import com.android.build.gradle.tasks.ExternalNativeBuildTask;
+import com.android.build.gradle.tasks.ExternalNativeJsonGenerator;
+import com.android.build.gradle.tasks.GenerateBuildConfig;
+import com.android.build.gradle.tasks.GenerateResValues;
+import com.android.build.gradle.tasks.MergeResources;
+import com.android.build.gradle.tasks.MergeSourceSetFolders;
+import com.android.build.gradle.tasks.ProcessAndroidResources;
+import com.android.build.gradle.tasks.RenderscriptCompile;
+import com.android.build.gradle.tasks.ShaderCompile;
+
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Task;
 import org.gradle.api.file.FileCollection;
@@ -63,20 +73,9 @@ public interface VariantScope extends TransformVariantScope, BaseScope {
     void setNdkSoFolder(@NonNull Collection<File> ndkSoFolder);
 
     @Nullable
-    Collection<File> getExternalNativeBuildSoFolder();
-
-    void setExternalNativeBuildSoFolder(@NonNull Collection<File> folder);
-
-    @Nullable
     File getNdkObjFolder();
 
     void setNdkObjFolder(@NonNull File ndkObjFolder);
-
-    @Nullable
-    File getExternalNativeBuildObjFolder();
-
-    void setExternalNativeBuildObjFolder(@NonNull File folder);
-
 
     @Nullable
     File getNdkDebuggableLibraryFolders(@NonNull Abi abi);
@@ -265,9 +264,6 @@ public interface VariantScope extends TransformVariantScope, BaseScope {
     @NonNull
     File  getManifestReportFile();
 
-    @NonNull
-    File getExternalNativeBuildIntermediatesFolder();
-
     AndroidTask<DefaultTask> getAssembleTask();
 
     void setAssembleTask(@NonNull AndroidTask<DefaultTask> assembleTask);
@@ -368,10 +364,6 @@ public interface VariantScope extends TransformVariantScope, BaseScope {
     AndroidTask<Task> getCompileTask();
     void setCompileTask(AndroidTask<Task> compileTask);
 
-    @Nullable
-    AndroidTask<ExternalNativeBuildTask> getExternalNativeBuildTask();
-    void setExternalNativeBuildTask(AndroidTask<ExternalNativeBuildTask> task);
-
     AndroidTask<?> getCoverageReportTask();
 
     void setCoverageReportTask(AndroidTask<?> coverageReportTask);
@@ -386,4 +378,16 @@ public interface VariantScope extends TransformVariantScope, BaseScope {
 
     AndroidTask<TransformTask> getInstantRunVerifierTask();
     void setInstantRunVerifierTask(AndroidTask<TransformTask> verifierTask);
+
+    @Nullable
+    AndroidTask<ExternalNativeBuildTask> getExternalNativeBuildTask();
+    void setExternalNativeBuildTask(@NonNull AndroidTask<ExternalNativeBuildTask> task);
+
+    @Nullable
+    ExternalNativeJsonGenerator getExternalNativeJsonGenerator();
+    void setExternalNativeJsonGenerator(@NonNull ExternalNativeJsonGenerator generator);
+
+    @NonNull
+    Collection<NativeBuildConfigValue> getExternalNativeBuildConfigValues();
+    void addExternalNativeBuildConfigValues(@NonNull Collection<NativeBuildConfigValue> values);
 }

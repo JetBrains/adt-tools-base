@@ -1,10 +1,7 @@
 {
   "buildFiles": [
     {
-      "path": "{testPath}/jni/Android.mk"
-    },
-    {
-      "path": "{testPath}/jni/Application.mk"
+      "path": "{testPath}"
     }
   ],
   "libraries": {
@@ -439,7 +436,7 @@
     }
   },
   "cFileExtensions": [
-    ".c"
+    "c"
   ],
   "cppFileExtensions": []
 }
