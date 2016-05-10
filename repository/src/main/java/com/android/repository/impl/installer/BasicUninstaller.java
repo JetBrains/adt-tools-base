@@ -55,7 +55,11 @@ class BasicUninstaller extends AbstractPackageOperation.AbstractUninstaller {
         mFop.deleteFileOrFolder(location);
         getRepoManager().markInvalid();
 
-        return !mFop.exists(location);
+        boolean successfullyDeleted = !mFop.exists(location);
+        if (!successfullyDeleted) {
+            progress.logWarning(String.format("Failed to delete package location: %1$s", location));
+        }
+        return successfullyDeleted;
     }
 
 }
