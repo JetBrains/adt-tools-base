@@ -25,8 +25,10 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
 import com.google.common.io.Files;
 
+import org.gradle.api.logging.Logging;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -263,7 +265,9 @@ public class InstantRunBuildContext {
     private final long[] taskStartTime = new long[TaskType.values().length];
     private final long[] taskDurationInMs = new long[TaskType.values().length];
     private InstantRunPatchingPolicy patchingPolicy;
-    private AndroidVersion apiLevel = AndroidVersion.DEFAULT;
+    /** Null until setApiLevel is called. */
+    @Nullable
+    private AndroidVersion apiLevel = null;
     private String density = null;
     private String abi = null;
     private final Build currentBuild = new Build(
@@ -330,8 +334,10 @@ public class InstantRunBuildContext {
         this.abi = targetAbi;
     }
 
+    @NonNull
     public AndroidVersion getApiLevel() {
-        return apiLevel;
+        return Preconditions.checkNotNull(apiLevel,
+                "setApiLevel should be called before any other actions.");
     }
 
     @Nullable
@@ -414,8 +420,9 @@ public class InstantRunBuildContext {
 
             // since the main APK is produced, no need to keep the RESOURCES record around.
             Artifact resourcesApFile = currentBuild.getArtifactForType(FileType.RESOURCES);
-            if (resourcesApFile != null) {
+            while (resourcesApFile != null) {
                 currentBuild.artifacts.remove(resourcesApFile);
+                resourcesApFile = currentBuild.getArtifactForType(FileType.RESOURCES);
             }
         }
         currentBuild.artifacts.add(new Artifact(fileType, file));
@@ -551,6 +558,15 @@ public class InstantRunBuildContext {
 
     private void loadFromDocument(@NonNull Document document) {
         Element instantRun = document.getDocumentElement();
+
+        if (!String.valueOf(getApiLevel().getApiLevel())
+                .equals(instantRun.getAttribute(ATTR_API_LEVEL))) {
+            // Don't load if we've changed api level.
+            Logging.getLogger(InstantRunBuildContext.class)
+                    .quiet("Instant Run: Target device API level has changed.");
+            return;
+        }
+
         Build lastBuild = Build.fromXml(instantRun);
         previousBuilds.put(lastBuild.buildId, lastBuild);
         NodeList buildNodes = instantRun.getChildNodes();
@@ -597,10 +613,24 @@ public class InstantRunBuildContext {
         mergeFrom(XmlUtils.parseDocument(tmpBuildInfo, false));
     }
 
-    private void mergeFrom(@NonNull Document document) {
+    private void mergeFrom(@NonNull Document document) throws IOException {
         Element instantRun = document.getDocumentElement();
         Build lastBuild = Build.fromXml(instantRun);
-        currentBuild.artifacts.addAll(lastBuild.artifacts);
+        for (Artifact previousArtifact: lastBuild.getArtifacts()) {
+            mergeArtifact(previousArtifact);
+        }
+    }
+
+    private void mergeArtifact(@NonNull Artifact stashedArtifact) {
+        for (Artifact artifact : currentBuild.artifacts) {
+            if (artifact.getType() == stashedArtifact.getType()
+                    && artifact.getLocation().getAbsolutePath().equals(
+                    stashedArtifact.getLocation().getAbsolutePath())) {
+                return;
+            }
+        }
+
+        currentBuild.getArtifacts().add(stashedArtifact);
     }
 
     /**
@@ -701,7 +731,7 @@ public class InstantRunBuildContext {
         }
 
         currentBuild.toXml(document, instantRun);
-        instantRun.setAttribute(ATTR_API_LEVEL, String.valueOf(apiLevel.getApiLevel()));
+        instantRun.setAttribute(ATTR_API_LEVEL, String.valueOf(getApiLevel().getApiLevel()));
         if (density != null) {
             instantRun.setAttribute(ATTR_DENSITY, density);
         }

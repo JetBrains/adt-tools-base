@@ -68,7 +68,8 @@ class ColdSwapTester {
                 .withInstantRun(apiLevel, coldswapMode)
                 .run(instantRunModel.getIncrementalAssembleTaskName());
 
-        InstantRunBuildContext buildContext = InstantRunTestUtils.loadBuildContext(instantRunModel);
+        InstantRunBuildContext buildContext =
+                InstantRunTestUtils.loadBuildContext(apiLevel, instantRunModel);
 
 
         assertThat(buildContext.getLastBuild().getBuildId()).isNotEqualTo(startBuildId);

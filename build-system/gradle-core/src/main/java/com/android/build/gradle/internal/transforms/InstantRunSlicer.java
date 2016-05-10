@@ -49,6 +49,7 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
@@ -67,6 +68,7 @@ import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -140,6 +142,16 @@ public class InstantRunSlicer extends Transform {
     @Override
     public boolean isIncremental() {
         return true;
+    }
+
+    @NonNull
+    @Override
+    public Map<String, Object> getParameterInputs() {
+        // Force the instant run transform to re-run when the dex patching policy changes,
+        // as the slicer will re-run.
+        return ImmutableMap.of("dex patching policy",
+                variantScope.getInstantRunBuildContext().getPatchingPolicy()
+                        .getDexPatchingPolicy().toString());
     }
 
     @Override
