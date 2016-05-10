@@ -49,4 +49,12 @@ public interface CoreSigningConfig extends SigningConfig {
     @Nullable
     @Input
     String getStoreType();
+
+    @Override
+    @Input
+    boolean isV1SigningEnabled();
+
+    @Override
+    @Input
+    boolean isV2SigningEnabled();
 }

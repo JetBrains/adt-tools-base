@@ -41,4 +41,10 @@ public interface SigningConfig extends Named {
 
     String getStoreType();
     void setStoreType(String storeType);
+
+    boolean isV1SigningEnabled();
+    void setV1SigningEnabled(boolean enabled);
+
+    boolean isV2SigningEnabled();
+    void setV2SigningEnabled(boolean enabled);
 }
