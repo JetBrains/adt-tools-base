@@ -45,7 +45,7 @@ import java.io.FileNotFoundException;
 public class NativeBuildConfigValueBuilderTest {
 
     private void assertThatNativeBuildConfigEquals(String string, String expected) {
-        String projectPath = "/projects/MyProject";
+        String projectPath = "/projects/MyProject/jni/Android.mk";
 
         NativeBuildConfigValue actualValue =
                 new NativeBuildConfigValueBuilder(new File(projectPath))
@@ -72,9 +72,6 @@ public class NativeBuildConfigValueBuilderTest {
                 + "  \"buildFiles\": [\n"
                 + "    {\n"
                 + "      \"path\": \"/projects/MyProject/jni/Android.mk\"\n"
-                + "    },\n"
-                + "    {\n"
-                + "      \"path\": \"/projects/MyProject/jni/Application.mk\"\n"
                 + "    }\n"
                 + "  ],\n"
                 + "  \"libraries\": {\n"
@@ -124,7 +121,7 @@ public class NativeBuildConfigValueBuilderTest {
                 + "    }\n"
                 + "  },\n"
                 + "  \"cFileExtensions\": [\n"
-                + "    \".c\"\n"
+                + "    \"c\"\n"
                 + "  ],\n"
                 + "  \"cppFileExtensions\": []\n"
                 + "}");
@@ -138,9 +135,6 @@ public class NativeBuildConfigValueBuilderTest {
                 + "  \"buildFiles\": [\n"
                 + "    {\n"
                 + "      \"path\": \"/projects/MyProject/jni/Android.mk\"\n"
-                + "    },\n"
-                + "    {\n"
-                + "      \"path\": \"/projects/MyProject/jni/Application.mk\"\n"
                 + "    }\n"
                 + "  ],\n"
                 + "  \"libraries\": {\n"
@@ -175,8 +169,8 @@ public class NativeBuildConfigValueBuilderTest {
                 + "    }\n"
                 + "  },\n"
                 + "  \"cFileExtensions\": [\n"
-                + "    \".S\",\n"
-                + "    \".c\"\n"
+                + "    \"S\",\n"
+                + "    \"c\"\n"
                 + "  ],\n"
                 + "  \"cppFileExtensions\": []\n"
                 + "}");
@@ -190,9 +184,6 @@ public class NativeBuildConfigValueBuilderTest {
                 + "  \"buildFiles\": [\n"
                 + "    {\n"
                 + "      \"path\": \"/projects/MyProject/jni/Android.mk\"\n"
-                + "    },\n"
-                + "    {\n"
-                + "      \"path\": \"/projects/MyProject/jni/Application.mk\"\n"
                 + "    }\n"
                 + "  ],\n"
                 + "  \"libraries\": {\n"
@@ -227,8 +218,8 @@ public class NativeBuildConfigValueBuilderTest {
                 + "    }\n"
                 + "  },\n"
                 + "  \"cFileExtensions\": [\n"
-                + "    \".c\",\n"
-                + "    \".S\"\n"
+                + "    \"c\",\n"
+                + "    \"S\"\n"
                 + "  ],\n"
                 + "  \"cppFileExtensions\": []\n"
                 + "}");

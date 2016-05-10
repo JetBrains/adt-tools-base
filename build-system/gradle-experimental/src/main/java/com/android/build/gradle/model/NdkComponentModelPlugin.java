@@ -442,15 +442,13 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 ModelMap<AndroidBinaryInternal> binaries,
                 @Path("android.abis") ModelMap<NdkAbiOptions> abiConfigs,
                 final NdkHandler ndkHandler) {
-
-            config.getcFileExtensions().addAll(NativeSourceFileExtensions.C_FILE_EXTENSIONS);
-            config.getCppFileExtensions().addAll(NativeSourceFileExtensions.CPP_FILE_EXTENSIONS);
-
+            boolean atLeastOneNativeBinarySpec = false;
             for (final AndroidBinaryInternal binary : binaries.values()) {
                 for (final NativeLibraryBinarySpec nativeBinary : binary.getNativeBinaries()) {
                     if (!(nativeBinary instanceof SharedLibraryBinarySpec)) {
                         continue;
                     }
+                    atLeastOneNativeBinarySpec = true;
                     final String abi = nativeBinary.getTargetPlatform().getName();
                     config.getLibraries().create(
                             binary.getName() + '-' + abi,
@@ -461,14 +459,21 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                                     ndkHandler));
                 }
             }
-            for (final Abi abi : ndkHandler.getSupportedAbis()) {
-                config.getToolchains().create("ndk-" + abi.getName(),
-                        nativeToolchain -> {
-                            nativeToolchain.setCCompilerExecutable(
-                                    ndkHandler.getCCompiler(abi));
-                            nativeToolchain.setCppCompilerExecutable(
-                                    ndkHandler.getCppCompiler(abi));
-                        });
+
+            if (atLeastOneNativeBinarySpec) {
+                config.getcFileExtensions().addAll(NativeSourceFileExtensions.C_FILE_EXTENSIONS);
+                config.getCppFileExtensions().addAll(
+                        NativeSourceFileExtensions.CPP_FILE_EXTENSIONS);
+
+                for (final Abi abi : ndkHandler.getSupportedAbis()) {
+                    config.getToolchains().create("ndk-" + abi.getName(),
+                            nativeToolchain -> {
+                                nativeToolchain.setCCompilerExecutable(
+                                        ndkHandler.getCCompiler(abi));
+                                nativeToolchain.setCppCompilerExecutable(
+                                        ndkHandler.getCppCompiler(abi));
+                            });
+                }
             }
         }
         private static class CreateNativeLibraryAction implements Action<NativeLibrary> {

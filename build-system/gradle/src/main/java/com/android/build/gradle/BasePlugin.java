@@ -45,6 +45,7 @@ import com.android.build.gradle.internal.dsl.ProductFlavorFactory;
 import com.android.build.gradle.internal.dsl.SigningConfig;
 import com.android.build.gradle.internal.dsl.SigningConfigFactory;
 import com.android.build.gradle.internal.model.ModelBuilder;
+import com.android.build.gradle.internal.model.NativeModelBuilder;
 import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor;
@@ -53,6 +54,7 @@ import com.android.build.gradle.internal.profile.RecordingBuildListener;
 import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.VariantFactory;
+import com.android.build.gradle.tasks.ExternalNativeJsonGenerator;
 import com.android.build.gradle.tasks.JackPreDexTransform;
 import com.android.builder.Version;
 import com.android.builder.core.AndroidBuilder;
@@ -521,6 +523,10 @@ public abstract class BasePlugin {
                 AndroidProject.GENERATION_ORIGINAL);
         registry.register(modelBuilder);
 
+        // Register a builder for the native tooling model
+        NativeModelBuilder nativeModelBuilder = new NativeModelBuilder(variantManager);
+        registry.register(nativeModelBuilder);
+
         // map the whenObjectAdded callbacks on the containers.
         signingConfigContainer.whenObjectAdded(new Action<SigningConfig>() {
             @Override
@@ -686,6 +692,28 @@ public abstract class BasePlugin {
                         return null;
                     }
                 }, new Recorder.Property("project", project.getName()));
+
+        // If we're building the model right now then generate and on-disk JSON files and then
+        // deserialize them into ExternalNativeBuildConfigValues for consumption in
+        // NativeModelBuilder.
+        if (AndroidGradleOptions.buildModelOnly(project)) {
+            ThreadRecorder.get().record(ExecutionType.VARIANT_MANAGER_EXTERNAL_NATIVE_CONFIG_VALUES,
+                    new Recorder.Block<Void>() {
+                        @Override
+                        public Void call() throws Exception {
+                            for (BaseVariantData variantData : variantManager
+                                    .getVariantDataList()) {
+                                ExternalNativeJsonGenerator generator =
+                                        variantData.getScope().getExternalNativeJsonGenerator();
+                                if (generator != null) {
+                                    variantData.getScope().addExternalNativeBuildConfigValues(
+                                            generator.readExistingNativeBuildConfigurations());
+                                }
+                            }
+                            return null;
+                        }
+                    }, new Recorder.Property("project", project.getName()));
+        }
     }
 
     private boolean isVerbose() {

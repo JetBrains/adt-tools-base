@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.builder.model.NativeArtifact;
 import com.android.builder.model.NativeFile;
 import com.android.builder.model.NativeFolder;
+import com.google.common.base.Objects;
 
 import java.io.File;
 import java.io.Serializable;
@@ -113,5 +114,19 @@ public class NativeArtifactImpl implements NativeArtifact, Serializable {
     @NonNull
     public File getOutputFile() {
         return getOutputFile;
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(getClass())
+                .add("Name", name)
+                .add("ToolChain", toolChain)
+                .add("GroupName", groupName)
+                .add("AssembleTaskName", assembleTaskName)
+                .add("SourceFoldersCount", sourceFolders.size())
+                .add("SourceFilesCount", sourceFiles.size())
+                .add("ExportedHeadersSize", exportedHeaders.size())
+                .add("OutputFile", getOutputFile)
+                .toString();
     }
 }

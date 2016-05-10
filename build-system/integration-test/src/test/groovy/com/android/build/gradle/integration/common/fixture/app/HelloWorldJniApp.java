@@ -152,14 +152,27 @@ public class HelloWorldJniApp extends AbstractAndroidTestApp implements AndroidT
     public static final TestSourceFile androidMkC(String folder) {
         return new TestSourceFile(
                 folder, "Android.mk",
-                "LOCAL_PATH := \\$(call my-dir)\n"
+                "LOCAL_PATH := $(call my-dir)\n"
                         + "\n"
-                        + "include \\$(CLEAR_VARS)\n"
+                        + "include $(CLEAR_VARS)\n"
                         + "\n"
                         + "LOCAL_MODULE    := hello-jni\n"
                         + "LOCAL_SRC_FILES := hello-jni.c\n"
                         + "\n"
-                        + "include \\$(BUILD_SHARED_LIBRARY)");
+                        + "include $(BUILD_SHARED_LIBRARY)");
+    }
+
+    public static final TestSourceFile androidMkCpp(String folder) {
+        return new TestSourceFile(
+                folder, "Android.mk",
+                "LOCAL_PATH := $(call my-dir)\n"
+                        + "\n"
+                        + "include $(CLEAR_VARS)\n"
+                        + "\n"
+                        + "LOCAL_MODULE    := hello-jni\n"
+                        + "LOCAL_SRC_FILES := hello-jni.cpp\n"
+                        + "\n"
+                        + "include $(BUILD_SHARED_LIBRARY)");
     }
 
     public static final TestSourceFile cmakeLists(String folder) {
@@ -170,6 +183,7 @@ public class HelloWorldJniApp extends AbstractAndroidTestApp implements AndroidT
                         "# Compile all source files under this tree into a single shared library\n" +
                         "file(GLOB_RECURSE SRC src/*.c src/*.cpp src/*.cc src/*.cxx src/*.c++ src/*.C)\n" +
                         "message(\"${SRC}\")\n" +
+                        "set(CMAKE_VERBOSE_MAKEFILE ON)\n" +
                         "add_library(hello-jni SHARED ${SRC})\n" +
                         "\n" +
                         "# Include a nice standard set of libraries to link against by default\n" +
@@ -198,13 +212,18 @@ public class HelloWorldJniApp extends AbstractAndroidTestApp implements AndroidT
         private String jniDir = "jni";
         private boolean useCppSource = false;
 
-        public Builder withJniDir(@NonNull String jniDir) {
+        public Builder withNativeDir(@NonNull String jniDir) {
             this.jniDir = jniDir;
             return this;
         }
 
         public Builder useCppSource() {
             this.useCppSource = true;
+            return this;
+        }
+
+        public Builder useCppSource(boolean useCppSource) {
+            this.useCppSource = useCppSource;
             return this;
         }
 

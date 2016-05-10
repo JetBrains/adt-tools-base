@@ -25,6 +25,7 @@ import com.android.utils.StringHelper;
 import com.google.common.base.Strings;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
+import com.google.common.io.Files;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -107,9 +108,7 @@ public class NativeBuildConfigValueBuilder {
         findToolChainCompilers();
 
         NativeBuildConfigValue config = new NativeBuildConfigValue();
-        config.buildFiles = Lists.newArrayList(
-                getAndroidMkFile(projectRootPath),
-                getApplicationMkFile(projectRootPath));
+        config.buildFiles = Lists.newArrayList(projectRootPath);
         config.libraries = generateLibraries();
         config.toolchains = generateToolchains();
         config.cFileExtensions = generateExtensions(cFileExtensions);
@@ -122,14 +121,6 @@ public class NativeBuildConfigValueBuilder {
         Collections.sort(extensionList);
 
         return extensionList;
-    }
-
-    private static File getAndroidMkFile(File projectRootPath) {
-        return new File(projectRootPath, "jni/Android.mk");
-    }
-
-    private static File getApplicationMkFile(File projectRootPath) {
-        return new File(projectRootPath, "jni/Application.mk");
     }
 
     private boolean areLibraryNamesUnique() {
@@ -186,17 +177,12 @@ public class NativeBuildConfigValueBuilder {
             Map<String, Set<String>> compilerToWeirdExtensions = new HashMap<>();
             for (BuildStepInfo command : output.commandInputs) {
                 String compilerCommand = command.getCommand().command;
-                int extensionIndex = command.getOnlyInput().lastIndexOf('.');
-                String extension = "";
-                if (extensionIndex != -1) {
-                    extension = command.getOnlyInput().substring(extensionIndex);
-                }
-                String extensionNoDot = extension.substring(1);
+                String extension = Files.getFileExtension(command.getOnlyInput());
 
-                if (NativeSourceFileExtensions.C_FILE_EXTENSIONS.contains(extensionNoDot)) {
+                if (NativeSourceFileExtensions.C_FILE_EXTENSIONS.contains(extension)) {
                     cFileExtensions.add(extension);
                     cCompilers.add(compilerCommand);
-                } else if (NativeSourceFileExtensions.CPP_FILE_EXTENSIONS.contains(extensionNoDot)) {
+                } else if (NativeSourceFileExtensions.CPP_FILE_EXTENSIONS.contains(extension)) {
                     cppFileExtensions.add(extension);
                     cppCompilers.add(compilerCommand);
                 } else {

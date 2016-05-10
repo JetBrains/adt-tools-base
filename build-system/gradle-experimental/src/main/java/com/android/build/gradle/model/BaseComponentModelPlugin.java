@@ -27,12 +27,14 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 import com.android.annotations.NonNull;
 import com.android.build.api.transform.Transform;
 import com.android.build.gradle.AndroidGradleOptions;
+import com.android.build.gradle.external.gson.NativeBuildConfigValue;
 import com.android.build.gradle.internal.AndroidConfigHelper;
 import com.android.build.gradle.internal.ExecutionConfigurationUtil;
 import com.android.build.gradle.internal.ExtraModelInfo;
 import com.android.build.gradle.internal.JniLibsLanguageTransform;
 import com.android.build.gradle.internal.LibraryCache;
 import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.NativeBuildConfigGsonUtil;
 import com.android.build.gradle.internal.NativeDependencyLinkage;
 import com.android.build.gradle.internal.NdkOptionsHelper;
 import com.android.build.gradle.internal.ProductFlavorCombo;
@@ -44,18 +46,24 @@ import com.android.build.gradle.internal.dependency.AndroidNativeDependencySpec;
 import com.android.build.gradle.internal.dependency.NativeDependencyResolveResult;
 import com.android.build.gradle.internal.dependency.NativeDependencyResolver;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
+import com.android.build.gradle.internal.model.CoreExternalNativeBuild;
 import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor;
 import com.android.build.gradle.internal.process.GradleProcessExecutor;
 import com.android.build.gradle.internal.profile.RecordingBuildListener;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.DependencyReportTask;
 import com.android.build.gradle.internal.tasks.SigningReportTask;
 import com.android.build.gradle.internal.transforms.DexTransform;
+import com.android.build.gradle.internal.variant.BaseVariantData;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.VariantFactory;
 import com.android.build.gradle.managed.AndroidConfig;
 import com.android.build.gradle.managed.BuildType;
 import com.android.build.gradle.managed.DataBindingOptions;
+import com.android.build.gradle.managed.NativeBuildConfig;
+import com.android.build.gradle.managed.NativeLibrary;
 import com.android.build.gradle.managed.NdkConfig;
 import com.android.build.gradle.managed.NdkOptions;
 import com.android.build.gradle.managed.ProductFlavor;
@@ -67,6 +75,8 @@ import com.android.build.gradle.managed.adaptor.DataBindingOptionsAdapter;
 import com.android.build.gradle.managed.adaptor.ProductFlavorAdaptor;
 import com.android.build.gradle.model.internal.AndroidBinaryInternal;
 import com.android.build.gradle.model.internal.AndroidComponentSpecInternal;
+import com.android.build.gradle.tasks.ExternalNativeBuildTaskUtils;
+import com.android.build.gradle.tasks.ExternalNativeJsonGenerator;
 import com.android.build.gradle.tasks.JackPreDexTransform;
 import com.android.builder.Version;
 import com.android.builder.core.AndroidBuilder;
@@ -595,6 +605,67 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                         new TaskModelMapAdaptor(tasks),
                         binary.getVariantData());
             }
+        }
+
+        @Model("nativeBuildConfigValues")
+        public static List<NativeBuildConfigValue> createExternalNativeBuildJsonGenerators(
+                AndroidConfig androidExtension,
+                AndroidBuilder androidBuilder,
+                SdkHandler sdkHandler,
+                ModelMap<AndroidComponentSpec> specs) throws IOException {
+            CoreExternalNativeBuild externalNativeBuild = androidExtension.getExternalNativeBuild();
+            ExternalNativeBuildTaskUtils.ExternalNativeBuildProjectPathResolution pathResolution =
+                    ExternalNativeBuildTaskUtils.getProjectPath(externalNativeBuild);
+            if (pathResolution.makeFile == null) {
+                // There is no external native build system.
+                return Lists.newArrayList();
+            }
+
+            final VariantManager variantManager =
+                    ((AndroidComponentSpecInternal) specs.get(COMPONENT_NAME)).getVariantManager();
+            List<NativeBuildConfigValue> configValues = Lists.newArrayList();
+
+            for (BaseVariantData<? extends BaseVariantOutputData> variantData
+                    : variantManager.getVariantDataList()) {
+                if (variantData.getType().isForTesting()) {
+                    continue;
+                }
+                VariantScope scope = variantData.getScope();
+                ExternalNativeJsonGenerator generator = ExternalNativeJsonGenerator.create(
+                        pathResolution.buildSystem,
+                        pathResolution.makeFile,
+                        androidBuilder,
+                        sdkHandler,
+                        scope
+                );
+
+                if (generator == null) {
+                    continue;
+                }
+                configValues.addAll(generator.readExistingNativeBuildConfigurations());
+            }
+
+            return configValues;
+        }
+
+        @Mutate
+        public static void modifyNativeBuildModel(
+                @Path(ModelConstants.EXTERNAL_BUILD_CONFIG)
+                NativeBuildConfig config,
+                @Path("nativeBuildConfigValues")
+                List<NativeBuildConfigValue> configValues) {
+            for (NativeBuildConfigValue configValue : configValues) {
+                NativeBuildConfigGsonUtil.copyToNativeBuildConfig(configValue, config);
+            }
+
+            config.getLibraries().afterEach(new Action<NativeLibrary>() {
+                @Override
+                public void execute(NativeLibrary nativeLibrary) {
+                    nativeLibrary.setAssembleTaskName(
+                            String.format("%sExternalNativeBuild",
+                                    nativeLibrary.getGroupName()));
+                }
+            });
         }
 
         /**

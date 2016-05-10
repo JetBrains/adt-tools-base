@@ -15,23 +15,29 @@
  */
 
 package com.android.build.gradle.integration.nativebuild
+
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
+import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.builder.model.AndroidProject
+import com.android.builder.model.NativeAndroidProject
+import com.android.builder.model.NativeArtifact
+import com.google.common.collect.ArrayListMultimap
+import com.google.common.collect.Multimap
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 /**
  * Assemble tests for CMake.
  */
 @CompileStatic
-@Ignore("Waiting for CMake in SDK")
 class CmakeJniLibTest {
 
     @ClassRule
@@ -61,7 +67,8 @@ android {
     }
 }
 """
-        project.execute("clean", "assembleDebug")
+        project.execute("clean", "assembleDebug",
+                "generateJsonModelDebug", "generateJsonModelRelease")
     }
 
     @AfterClass
@@ -79,6 +86,35 @@ android {
         assertThatApk(app.getApk("gingerbread", "universal", "debug")).contains("lib/armeabi-v7a/libhello-jni.so");
         assertThatApk(app.getApk("icecreamSandwich", "armeabi-v7a", "debug")).contains("lib/armeabi-v7a/libhello-jni.so");
         assertThatApk(app.getApk("icecreamSandwich", "x86", "debug")).doesNotContain("lib/armeabi-v7a/libhello-jni.so");
+    }
+
+    @Test
+    public void checkModel() {
+        // Make sure we can successfully get AndroidProject
+        project.model()
+                .getMulti(AndroidProject.class).get(":app");
+        NativeAndroidProject model = project.model()
+                .getMulti(NativeAndroidProject.class).get(":lib");
+        assertThat(model).isNotNull();
+        assertThat(model.buildFiles).hasSize(1);
+        assertThat(model.name).isEqualTo("lib");
+        assertThat(model.artifacts).hasSize(14);
+        assertThat(model.fileExtensions).hasSize(1);
+
+        for (File file : model.buildFiles) {
+            assertThat(file).isFile();
+        }
+
+        Multimap<String, NativeArtifact> groupToArtifacts = ArrayListMultimap.create();
+
+        for (NativeArtifact artifact : model.artifacts) {
+            List<String> pathElements = TestFileUtils.splitPath(artifact.getOutputFile());
+            assertThat(pathElements).contains("obj");
+            groupToArtifacts.put(artifact.getGroupName(), artifact);
+        }
+
+        assertThat(groupToArtifacts.keySet()).containsExactly("debug", "release");
+        assertThat(groupToArtifacts.get("debug")).hasSize(groupToArtifacts.get("release").size());
     }
 
     @Test

@@ -15,13 +15,20 @@
  */
 
 package com.android.build.gradle.integration.nativebuild
+
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
+import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.builder.model.NativeAndroidProject
+import com.android.builder.model.NativeArtifact
+import com.google.common.collect.ArrayListMultimap
+import com.google.common.collect.Multimap
 import groovy.transform.CompileStatic
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 /**
  * Assemble tests for ndk-build splits.
@@ -31,7 +38,7 @@ class NdkBuildSplitTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(HelloWorldJniApp.builder()
-                .withJniDir("cxx")
+                .withNativeDir("cxx")
                 .build())
             .addFile(HelloWorldJniApp.androidMkC("src/main/cxx"))
             .create();
@@ -100,7 +107,13 @@ android {
     }
 }
 """
-        project.execute("clean", "assembleDebug")
+        project.execute("clean", "assembleDebug",
+                "generateJsonModelcurrentDebug",
+                "generateJsonModelicecreamSandwichDebug",
+                "generateJsonModelcurrentRelease",
+                "generateJsonModelgingerbreadRelease",
+                "generateJsonModelicecreamSandwichRelease",
+                "generateJsonModelgingerbreadDebug");
     }
 
     @Test
@@ -109,5 +122,37 @@ android {
         assertThatApk(project.getApk("current", "debug_armeabi-v7a")).contains("lib/armeabi-v7a/libhello-jni.so");
         assertThatApk(project.getApk("current", "debug_mips64")).hasVersionCode(3000123);
         assertThatApk(project.getApk("current", "debug_mips64")).contains("lib/mips64/libhello-jni.so");
+    }
+
+
+    @Test
+    public void checkModel() {
+        project.model().getSingle(); // Make sure we can get the AndroidProject
+        NativeAndroidProject model = project.model().getSingle(NativeAndroidProject.class);
+        assertThat(model.buildFiles).hasSize(1);
+
+        assertThat(model).isNotNull();
+        assertThat(model.name).isEqualTo("project");
+        assertThat(model.artifacts).hasSize(42);
+        assertThat(model.fileExtensions).hasSize(1);
+
+
+        for (File file : model.buildFiles) {
+            assertThat(file).isFile();
+        }
+
+        Multimap<String, NativeArtifact> groupToArtifacts = ArrayListMultimap.create();
+
+        for (NativeArtifact artifact : model.artifacts) {
+            List<String> pathElements = TestFileUtils.splitPath(artifact.getOutputFile());
+            assertThat(pathElements).contains("obj");
+            groupToArtifacts.put(artifact.getGroupName(), artifact);
+        }
+
+        assertThat(groupToArtifacts.keySet()).containsExactly("currentDebug",
+                "icecreamSandwichDebug", "currentRelease", "gingerbreadRelease",
+                "icecreamSandwichRelease", "gingerbreadDebug");
+        assertThat(groupToArtifacts.get("currentDebug"))
+                .hasSize(groupToArtifacts.get("currentRelease").size());
     }
 }
