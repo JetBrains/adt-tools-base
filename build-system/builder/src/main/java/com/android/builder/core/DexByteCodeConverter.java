@@ -59,6 +59,18 @@ import java.util.zip.ZipFile;
  */
 public class DexByteCodeConverter {
 
+    /**
+     * Amount of heap size that an "average" project needs for dexing in-process.
+     */
+    @VisibleForTesting
+    static final long DEFAULT_DEX_HEAP_SIZE = 1024 * 1024 * 1024; // 1 GiB
+
+    /**
+     * Approximate amount of heap space necessary for non-dexing steps of the build process.
+     */
+    @VisibleForTesting
+    static final long NON_DEX_HEAP_SIZE = 512 * 1024 * 1024; // 0.5 GiB
+
     private static final Object LOCK_FOR_DEX = new Object();
 
     /**
@@ -156,15 +168,12 @@ public class DexByteCodeConverter {
         final String submission = Joiner.on(',').join(builder.getInputs());
         mLogger.info("Dexing in-process.");
         try {
-            sDexExecutorService.submit(new Callable<Void>() {
-                @Override
-                public Void call() throws Exception {
-                    Stopwatch stopwatch = Stopwatch.createStarted();
-                    ProcessResult result = DexWrapper.run(builder, dexOptions, outputHandler);
-                    result.assertNormalExitValue();
-                    mLogger.info("Dexing %s took %s.", submission, stopwatch.toString());
-                    return null;
-                }
+            sDexExecutorService.submit(() -> {
+                Stopwatch stopwatch = Stopwatch.createStarted();
+                ProcessResult result = DexWrapper.run(builder, dexOptions, outputHandler);
+                result.assertNormalExitValue();
+                mLogger.info("Dexing %s took %s.", submission, stopwatch.toString());
+                return null;
             }).get();
         } catch (Exception e) {
             throw new ProcessException(e);
@@ -260,7 +269,6 @@ public class DexByteCodeConverter {
 
         // Requested memory for dex.
         long requestedHeapSize = parseHeapSize(dexOptions.getJavaMaxHeapSize(), mLogger);
-        final long NON_DEX_HEAP_SIZE = 1024 * 1024 * 1024;
         // Approximate heap size requested.
         long requiredHeapSizeHeuristic = requestedHeapSize + NON_DEX_HEAP_SIZE;
         // Get the approximate heap size that was specified by the user.
@@ -277,15 +285,22 @@ public class DexByteCodeConverter {
         // slightly lower than the Xmx setting specified by the user.
         final long EXTRA_HEAP_OVERHEAD =  50 * 1024 * 1024;
         if (requiredHeapSizeHeuristic > maxMemory + EXTRA_HEAP_OVERHEAD) {
-            mLogger.warning("Running dex as a separate process.\n\n"
+            String dexOptionsComment = "";
+            if (dexOptions.getJavaMaxHeapSize() != null) {
+                dexOptionsComment = String.format(
+                        " (based on the dexOptions.javaMaxHeapSize = %s)",
+                        dexOptions.getJavaMaxHeapSize());
+            }
+
+            mLogger.warning("\nRunning dex as a separate process.\n\n"
                             + "To run dex in process, the Gradle daemon needs a larger heap.\n"
                             + "It currently has approximately %1$d MB.\n"
                             + "For faster builds, increase the maximum heap size for the "
-                            + "Gradle daemon to more than %2$s MB.\n"
+                            + "Gradle daemon to more than %2$s MB" + dexOptionsComment + ".\n"
                             + "To do this set org.gradle.jvmargs=-Xmx%2$sM in the "
                             + "project gradle.properties.\n"
                             + "For more information see "
-                            + "https://docs.gradle.org/current/userguide/build_environment.html",
+                            + "https://docs.gradle.org/current/userguide/build_environment.html\n",
                     maxMemory / (1024 * 1024),
                     requiredHeapSizeHeuristic / (1024 * 1024));
             mIsDexInProcess = false;
@@ -295,8 +310,6 @@ public class DexByteCodeConverter {
         return true;
 
     }
-
-    private static final long DEFAULT_DEX_HEAP_SIZE = 1024 * 1024 * 1024; // 1 GiB
 
     @VisibleForTesting
     static long parseHeapSize(@Nullable String sizeParameter, @NonNull ILogger logger) {
