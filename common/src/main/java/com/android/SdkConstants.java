@@ -1080,14 +1080,18 @@ public final class SdkConstants {
     public static final String ATTR_LAYOUT_COLUMN_SPAN = "layout_columnSpan";       //$NON-NLS-1$
 
     // ProgressBar/RatingBar attributes
-    public static final String ATTR_MAXIMUM = "max";                    //$NON-NLS-1$
-    public static final String ATTR_PROGRESS = "progress";              //$NON-NLS-1$
-    public static final String ATTR_INDETERMINATE = "indeterminate";    //$NON-NLS-1$
-    public static final String ATTR_RATING = "rating";                  //$NON-NLS-1$
-    public static final String ATTR_NUM_STARS = "numStars";             //$NON-NLS-1$
-    public static final String ATTR_STEP_SIZE = "stepSize";             //$NON-NLS-1$
-    public static final String ATTR_IS_INDICATOR = "isIndicator";       //$NON-NLS-1$
-    public static final String ATTR_THUMB = "thumb";                    //$NON-NLS-1$
+    public static final String ATTR_MAXIMUM = "max";                                    //$NON-NLS-1$
+    public static final String ATTR_PROGRESS = "progress";                              //$NON-NLS-1$
+    public static final String ATTR_PROGRESS_DRAWABLE = "progressDrawable";             //$NON-NLS-1$
+    public static final String ATTR_PROGRESS_TINT = "progressTint";                     //$NON-NLS-1$
+    public static final String ATTR_INDETERMINATE = "indeterminate";                    //$NON-NLS-1$
+    public static final String ATTR_INDETERMINATE_DRAWABLE = "indeterminateDrawable";   //$NON-NLS-1$
+    public static final String ATTR_INDETERMINATE_TINT = "indeterminateTint";           //$NON-NLS-1$
+    public static final String ATTR_RATING = "rating";                                  //$NON-NLS-1$
+    public static final String ATTR_NUM_STARS = "numStars";                             //$NON-NLS-1$
+    public static final String ATTR_STEP_SIZE = "stepSize";                             //$NON-NLS-1$
+    public static final String ATTR_IS_INDICATOR = "isIndicator";                       //$NON-NLS-1$
+    public static final String ATTR_THUMB = "thumb";                                    //$NON-NLS-1$
 
     // ImageView attributes
     public static final String ATTR_ADJUST_VIEW_BOUNDS = "adjustViewBounds"; //$NON-NLS-1$
