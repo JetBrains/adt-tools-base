@@ -102,7 +102,8 @@ public class Multiplexer {
 
   private void closeAllChannels() {
     synchronized (mChannelMap) {
-      for (Channel c : mChannelMap.values()) {
+      // we take an array copy, otherwise we will get ConcurrentModificationException as closing the channel will call deleteChannel
+      for (Channel c : mChannelMap.values().toArray(new Channel[mChannelMap.size()])) {
         try {
           c.close();
         }
