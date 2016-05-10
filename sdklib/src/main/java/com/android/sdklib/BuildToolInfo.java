@@ -30,6 +30,7 @@ import static com.android.SdkConstants.FN_LD_ARM;
 import static com.android.SdkConstants.FN_LD_ARM64;
 import static com.android.SdkConstants.FN_LD_MIPS;
 import static com.android.SdkConstants.FN_LD_X86;
+import static com.android.SdkConstants.FN_LD_X86_64;
 import static com.android.SdkConstants.FN_RENDERSCRIPT;
 import static com.android.SdkConstants.FN_SPLIT_SELECT;
 import static com.android.SdkConstants.FN_ZIPALIGN;
@@ -50,6 +51,7 @@ import static com.android.sdklib.BuildToolInfo.PathId.LD_ARM;
 import static com.android.sdklib.BuildToolInfo.PathId.LD_ARM64;
 import static com.android.sdklib.BuildToolInfo.PathId.LD_MIPS;
 import static com.android.sdklib.BuildToolInfo.PathId.LD_X86;
+import static com.android.sdklib.BuildToolInfo.PathId.LD_X86_64;
 import static com.android.sdklib.BuildToolInfo.PathId.LLVM_RS_CC;
 import static com.android.sdklib.BuildToolInfo.PathId.SPLIT_SELECT;
 import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN;
@@ -126,8 +128,10 @@ public class BuildToolInfo {
         LD_ARM64("23.0.3"),
 
         // --- NEW IN 24.0.0 ---
-        JACK_JACOCO_REPORTER("24.0.0");
+        JACK_JACOCO_REPORTER("24.0.0"),
 
+        /** OS Path to the ARM64 linker. */
+        LD_X86_64("24.0.0");
 
         /**
          * min revision this element was introduced.
@@ -188,6 +192,7 @@ public class BuildToolInfo {
             @Nullable File ldArm,
             @Nullable File ldArm64,
             @Nullable File ldX86,
+            @Nullable File ldX86_64,
             @Nullable File ldMips,
             @NonNull File zipAlign) {
         BuildToolInfo result = new BuildToolInfo(revision, mainPath);
@@ -221,6 +226,12 @@ public class BuildToolInfo {
             result.add(LD_X86, ldX86);
         } else if (LD_X86.isPresentIn(revision)) {
             throw new IllegalArgumentException("LD_X86 required in " + revision.toString());
+        }
+
+        if (ldX86_64 != null) {
+            result.add(LD_X86_64, ldX86_64);
+        } else if (LD_X86_64.isPresentIn(revision)) {
+            throw new IllegalArgumentException("LD_X86_64 required in " + revision.toString());
         }
 
         if (ldMips != null) {
@@ -275,6 +286,7 @@ public class BuildToolInfo {
         add(LD_ARM, FN_LD_ARM);
         add(LD_ARM64, FN_LD_ARM64);
         add(LD_X86, FN_LD_X86);
+        add(LD_X86_64, FN_LD_X86_64);
         add(LD_MIPS, FN_LD_MIPS);
         add(ZIP_ALIGN, FN_ZIPALIGN);
         add(JACK, FN_JACK);
