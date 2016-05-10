@@ -258,11 +258,12 @@ public final class TypeChunk extends Chunk {
     private final TypeChunk parent;
 
     private Entry(int headerSize,
-                 int flags,
-                 int keyIndex,
-                 BinaryResourceValue value,
-                 Map<Integer, BinaryResourceValue> values,
-                 int parentEntry, TypeChunk parent) {
+                  int flags,
+                  int keyIndex,
+                  BinaryResourceValue value,
+                  Map<Integer, BinaryResourceValue> values,
+                  int parentEntry,
+                  TypeChunk parent) {
       this.headerSize = headerSize;
       this.flags = flags;
       this.keyIndex = keyIndex;

@@ -54,6 +54,71 @@ public class BinaryResourceConfiguration implements SerializableResource {
   private final int screenLayout2;
   private final byte[] unknown;
 
+  static BinaryResourceConfiguration create(ByteBuffer buffer) {
+    int startPosition = buffer.position();  // The starting buffer position to calculate bytes read.
+    int size = buffer.getInt();
+    int mcc = buffer.getShort() & 0xFFFF;
+    int mnc = buffer.getShort() & 0xFFFF;
+    byte[] language = new byte[2];
+    buffer.get(language);
+    byte[] region = new byte[2];
+    buffer.get(region);
+    int orientation = UnsignedBytes.toInt(buffer.get());
+    int touchscreen = UnsignedBytes.toInt(buffer.get());
+    int density = buffer.getShort() & 0xFFFF;
+    int keyboard = UnsignedBytes.toInt(buffer.get());
+    int navigation = UnsignedBytes.toInt(buffer.get());
+    int inputFlags = UnsignedBytes.toInt(buffer.get());
+    buffer.get();  // 1 byte of padding
+    int screenWidth = buffer.getShort() & 0xFFFF;
+    int screenHeight = buffer.getShort() & 0xFFFF;
+    int sdkVersion = buffer.getShort() & 0xFFFF;
+    int minorVersion = buffer.getShort() & 0xFFFF;
+
+    // At this point, the configuration's size needs to be taken into account as not all
+    // configurations have all values.
+    int screenLayout = 0;
+    int uiMode = 0;
+    int smallestScreenWidthDp = 0;
+    int screenWidthDp = 0;
+    int screenHeightDp = 0;
+    byte[] localeScript = new byte[4];
+    byte[] localeVariant = new byte[8];
+    int screenLayout2 = 0;
+
+    if (size >= SCREEN_CONFIG_MIN_SIZE) {
+      screenLayout = UnsignedBytes.toInt(buffer.get());
+      uiMode = UnsignedBytes.toInt(buffer.get());
+      smallestScreenWidthDp = buffer.getShort() & 0xFFFF;
+    }
+
+    if (size >= SCREEN_DP_MIN_SIZE) {
+      screenWidthDp = buffer.getShort() & 0xFFFF;
+      screenHeightDp = buffer.getShort() & 0xFFFF;
+    }
+
+    if (size >= LOCALE_MIN_SIZE) {
+      buffer.get(localeScript);
+      buffer.get(localeVariant);
+    }
+
+    if (size >= SCREEN_CONFIG_EXTENSION_MIN_SIZE) {
+      screenLayout2 = UnsignedBytes.toInt(buffer.get());
+      buffer.get();  // Reserved padding
+      buffer.getShort();  // More reserved padding
+    }
+
+    // After parsing everything that's known, account for anything that's unknown.
+    int bytesRead = buffer.position() - startPosition;
+    byte[] unknown = new byte[size - bytesRead];
+    buffer.get(unknown);
+
+    return new BinaryResourceConfiguration(size, mcc, mnc, language, region, orientation,
+                                           touchscreen, density, keyboard, navigation, inputFlags, screenWidth, screenHeight,
+                                           sdkVersion, minorVersion, screenLayout, uiMode, smallestScreenWidthDp, screenWidthDp,
+                                           screenHeightDp, localeScript, localeVariant, screenLayout2, unknown);
+  }
+
   private BinaryResourceConfiguration(int size,
                                       int mcc,
                                       int mnc,
@@ -208,9 +273,9 @@ public class BinaryResourceConfiguration implements SerializableResource {
       SCREENLAYOUT_LONG_NO, "notlong",
       SCREENLAYOUT_LONG_YES, "long");
 
-  private static final int SCREENLAYOUT_ROUND_MASK = 0x0300;
-  private static final int SCREENLAYOUT_ROUND_NO   = 0x0100;
-  private static final int SCREENLAYOUT_ROUND_YES  = 0x0200;
+  private static final int SCREENLAYOUT_ROUND_MASK = 0x03;
+  private static final int SCREENLAYOUT_ROUND_NO   = 0x01;
+  private static final int SCREENLAYOUT_ROUND_YES  = 0x02;
   private static final Map<Integer, String> SCREENLAYOUT_ROUND_VALUES = ImmutableMap.of(
       SCREENLAYOUT_ROUND_NO, "notround",
       SCREENLAYOUT_ROUND_YES, "round");
@@ -314,7 +379,7 @@ public class BinaryResourceConfiguration implements SerializableResource {
    * @param sdkVersion The SDK version of the returned configuration.
    * @return A copy of this configuration with the only difference being #sdkVersion.
    */
-  public final BinaryResourceConfiguration withSdkVersion(int sdkVergiglgersion) {
+  public final BinaryResourceConfiguration withSdkVersion(int sdkVersion) {
     if (sdkVersion == sdkVersion()) {
       return this;
     }
@@ -341,7 +406,7 @@ public class BinaryResourceConfiguration implements SerializableResource {
   }
 
   public final int screenLayoutRound() {
-    return screenLayout() & SCREENLAYOUT_ROUND_MASK;
+    return screenLayout2() & SCREENLAYOUT_ROUND_MASK;
   }
 
   public int uiMode() { return uiMode; }
@@ -372,71 +437,6 @@ public class BinaryResourceConfiguration implements SerializableResource {
   /** Any remaining bytes in this resource configuration that are unaccounted for. */
   @SuppressWarnings("mutable")
   public byte[] unknown() { return unknown; }
-
-  static BinaryResourceConfiguration create(ByteBuffer buffer) {
-    int startPosition = buffer.position();  // The starting buffer position to calculate bytes read.
-    int size = buffer.getInt();
-    int mcc = buffer.getShort() & 0xFFFF;
-    int mnc = buffer.getShort() & 0xFFFF;
-    byte[] language = new byte[2];
-    buffer.get(language);
-    byte[] region = new byte[2];
-    buffer.get(region);
-    int orientation = UnsignedBytes.toInt(buffer.get());
-    int touchscreen = UnsignedBytes.toInt(buffer.get());
-    int density = buffer.getShort() & 0xFFFF;
-    int keyboard = UnsignedBytes.toInt(buffer.get());
-    int navigation = UnsignedBytes.toInt(buffer.get());
-    int inputFlags = UnsignedBytes.toInt(buffer.get());
-    buffer.get();  // 1 byte of padding
-    int screenWidth = buffer.getShort() & 0xFFFF;
-    int screenHeight = buffer.getShort() & 0xFFFF;
-    int sdkVersion = buffer.getShort() & 0xFFFF;
-    int minorVersion = buffer.getShort() & 0xFFFF;
-
-    // At this point, the configuration's size needs to be taken into account as not all
-    // configurations have all values.
-    int screenLayout = 0;
-    int uiMode = 0;
-    int smallestScreenWidthDp = 0;
-    int screenWidthDp = 0;
-    int screenHeightDp = 0;
-    byte[] localeScript = new byte[4];
-    byte[] localeVariant = new byte[8];
-    int screenLayout2 = 0;
-
-    if (size >= SCREEN_CONFIG_MIN_SIZE) {
-      screenLayout = UnsignedBytes.toInt(buffer.get());
-      uiMode = UnsignedBytes.toInt(buffer.get());
-      smallestScreenWidthDp = buffer.getShort() & 0xFFFF;
-    }
-
-    if (size >= SCREEN_DP_MIN_SIZE) {
-      screenWidthDp = buffer.getShort() & 0xFFFF;
-      screenHeightDp = buffer.getShort() & 0xFFFF;
-    }
-
-    if (size >= LOCALE_MIN_SIZE) {
-      buffer.get(localeScript);
-      buffer.get(localeVariant);
-    }
-
-    if (size >= SCREEN_CONFIG_EXTENSION_MIN_SIZE) {
-      screenLayout2 = UnsignedBytes.toInt(buffer.get());
-      buffer.get();  // Reserved padding
-      buffer.getShort();  // More reserved padding
-    }
-
-    // After parsing everything that's known, account for anything that's unknown.
-    int bytesRead = buffer.position() - startPosition;
-    byte[] unknown = new byte[size - bytesRead];
-    buffer.get(unknown);
-
-    return new BinaryResourceConfiguration(size, mcc, mnc, language, region, orientation,
-                                           touchscreen, density, keyboard, navigation, inputFlags, screenWidth, screenHeight,
-                                           sdkVersion, minorVersion, screenLayout, uiMode, smallestScreenWidthDp, screenWidthDp,
-                                           screenHeightDp, localeScript, localeVariant, screenLayout2, unknown);
-  }
 
   private String unpackLanguage() {
     return unpackLanguageOrRegion(language(), 0x61);

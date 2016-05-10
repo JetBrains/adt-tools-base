@@ -102,7 +102,7 @@ public class BinaryResourceValue implements SerializableResource {
     return new BinaryResourceValue(size, type, data);
   }
 
-  public BinaryResourceValue(int size, Type type, int data) {
+  private BinaryResourceValue(int size, Type type, int data) {
     this.size = size;
     this.type = type;
     this.data = data;
