@@ -42,7 +42,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 @RunWith(Parameterized.class)
 class NativeModelTest {
     private static enum Config {
-        ANDROID_MK_C("""
+        ANDROID_MK_FILE_C("""
             apply plugin: 'com.android.application'
 
             android {
@@ -61,7 +61,7 @@ class NativeModelTest {
                 }
             }
             """, HelloWorldJniApp.androidMkC("src/main/cxx"), false),
-        ANDROID_MK_CPP("""
+        ANDROID_MK_FILE_CPP("""
             apply plugin: 'com.android.application'
 
             android {
@@ -80,7 +80,45 @@ class NativeModelTest {
                 }
             }
             """, HelloWorldJniApp.androidMkCpp("src/main/cxx"), true),
-        CMAKELISTS_CPP("""
+        ANDROID_MK_FOLDER_C("""
+            apply plugin: 'com.android.application'
+
+            android {
+                compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+                buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+                externalNativeBuild {
+                    ndkBuild {
+                        path file("src/main/cxx")
+                    }
+                }
+                defaultConfig {
+                      ndkBuild {
+                        cFlags = "-DTEST_C_FLAG"
+                        cppFlags = "-DTEST_CPP_FLAG"
+                      }
+                }
+            }
+            """, HelloWorldJniApp.androidMkC("src/main/cxx"), false),
+        ANDROID_MK_FOLDER_CPP("""
+            apply plugin: 'com.android.application'
+
+            android {
+                compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+                buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+                externalNativeBuild {
+                    ndkBuild {
+                        path file("src/main/cxx")
+                    }
+                }
+                defaultConfig {
+                      ndkBuild {
+                        cFlags = "-DTEST_C_FLAG"
+                        cppFlags = "-DTEST_CPP_FLAG"
+                      }
+                }
+            }
+            """, HelloWorldJniApp.androidMkCpp("src/main/cxx"), true),
+        CMAKELISTS_FILE_CPP("""
             apply plugin: 'com.android.application'
 
             android {
@@ -99,7 +137,7 @@ class NativeModelTest {
                 }
             }
             """, HelloWorldJniApp.cmakeLists("."), true),
-        CMAKELISTS_C("""
+        CMAKELISTS_FILE_C("""
             apply plugin: 'com.android.application'
 
             android {
@@ -107,7 +145,7 @@ class NativeModelTest {
                 buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
                 externalNativeBuild {
                     cmake {
-                        path "."
+                        path "CMakeLists.txt"
                     }
                 }
                 defaultConfig {
@@ -118,35 +156,41 @@ class NativeModelTest {
                 }
             }
             """, HelloWorldJniApp.cmakeLists("."), false),
-        CMAKELISTS_CPP_IMPLICIT_PROJECT("""
+        CMAKELISTS_FOLDER_CPP("""
             apply plugin: 'com.android.application'
 
             android {
                 compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
                 buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+                externalNativeBuild {
+                    cmake {
+                        path "CMakeLists.txt"
+                    }
+                }
                 defaultConfig {
-                    externalNativeBuild {
                       cmake {
                         cFlags = "-DTEST_C_FLAG"
                         cppFlags = "-DTEST_CPP_FLAG"
                       }
-                    }
                 }
             }
             """, HelloWorldJniApp.cmakeLists("."), true),
-        CMAKELISTS_C_IMPLICIT_PROJECT("""
+        CMAKELISTS_FOLDER_C("""
             apply plugin: 'com.android.application'
 
             android {
                 compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
                 buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+                externalNativeBuild {
+                    cmake {
+                        path "."
+                    }
+                }
                 defaultConfig {
-                    externalNativeBuild {
                       cmake {
                         cFlags = "-DTEST_C_FLAG"
                         cppFlags = "-DTEST_CPP_FLAG"
                       }
-                    }
                 }
             }
             """, HelloWorldJniApp.cmakeLists("."), false);
@@ -181,13 +225,14 @@ class NativeModelTest {
     @Parameterized.Parameters(name = "model = {0}")
     public static Collection<Object[]> data() {
         return [
-                [Config.ANDROID_MK_C].toArray(),
-                [Config.ANDROID_MK_CPP].toArray(),
-                [Config.CMAKELISTS_C].toArray(),
-                [Config.CMAKELISTS_CPP].toArray(),
-                // TODO(jomo) -- reenable implicit project
-//                [Config.CMAKELISTS_C_IMPLICIT_PROJECT].toArray(),
-//                [Config.CMAKELISTS_CPP_IMPLICIT_PROJECT].toArray(),
+                [Config.ANDROID_MK_FILE_C].toArray(),
+                [Config.ANDROID_MK_FILE_CPP].toArray(),
+                [Config.ANDROID_MK_FOLDER_C].toArray(),
+                [Config.ANDROID_MK_FOLDER_CPP].toArray(),
+                [Config.CMAKELISTS_FILE_C].toArray(),
+                [Config.CMAKELISTS_FILE_CPP].toArray(),
+                [Config.CMAKELISTS_FOLDER_C].toArray(),
+                [Config.CMAKELISTS_FOLDER_CPP].toArray()
         ];
     }
 
