@@ -138,8 +138,8 @@ public final class StringPoolChunk extends Chunk {
   }
 
   /** Returns the type of strings in this pool. */
-  public ResourceString.Type getStringType() {
-    return isUTF8() ? ResourceString.Type.UTF8 : ResourceString.Type.UTF16;
+  public BinaryResourceString.Type getStringType() {
+    return isUTF8() ? BinaryResourceString.Type.UTF8 : BinaryResourceString.Type.UTF16;
   }
 
   @Override
@@ -176,7 +176,7 @@ public final class StringPoolChunk extends Chunk {
     // After the header, we now have an array of offsets for the strings in this pool.
     for (int i = 0; i < count; ++i) {
       int stringOffset = offset + buffer.getInt();
-      result.add(ResourceString.decodeString(buffer, stringOffset, getStringType()));
+      result.add(BinaryResourceString.decodeString(buffer, stringOffset, getStringType()));
       if (stringOffset <= previousOffset) {
         isOriginalDeduped = true;
       }
@@ -206,7 +206,7 @@ public final class StringPoolChunk extends Chunk {
         Integer offset = used.get(string);
         offsets.putInt(offset == null ? 0 : offset);
       } else {
-        byte[] encodedString = ResourceString.encodeString(string, getStringType());
+        byte[] encodedString = BinaryResourceString.encodeString(string, getStringType());
         payload.write(encodedString);
         used.put(string, stringOffset);
         offsets.putInt(stringOffset);

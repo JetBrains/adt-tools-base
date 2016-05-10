@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /** Represents a single typed resource value. */
-public class ResourceValue implements SerializableResource {
+public class BinaryResourceValue implements SerializableResource {
 
   /** Resource type codes. */
   public enum Type {
@@ -87,22 +87,22 @@ public class ResourceValue implements SerializableResource {
     }
   }
 
-  /** The serialized size in bytes of a {@link ResourceValue}. */
+  /** The serialized size in bytes of a {@link BinaryResourceValue}. */
   public static final int SIZE = 8;
 
   private final int size;
   private final Type type;
   private final int data;
 
-  public static ResourceValue create(ByteBuffer buffer) {
+  public static BinaryResourceValue create(ByteBuffer buffer) {
     int size = (buffer.getShort() & 0xFFFF);
     buffer.get();  // Unused
     Type type = Type.fromCode(buffer.get());
     int data = buffer.getInt();
-    return new ResourceValue(size, type, data);
+    return new BinaryResourceValue(size, type, data);
   }
 
-  public ResourceValue(int size, Type type, int data) {
+  public BinaryResourceValue(int size, Type type, int data) {
     this.size = size;
     this.type = type;
     this.data = data;
@@ -136,7 +136,7 @@ public class ResourceValue implements SerializableResource {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    ResourceValue that = (ResourceValue)o;
+    BinaryResourceValue that = (BinaryResourceValue)o;
     return size == that.size &&
            data == that.data &&
            type == that.type;

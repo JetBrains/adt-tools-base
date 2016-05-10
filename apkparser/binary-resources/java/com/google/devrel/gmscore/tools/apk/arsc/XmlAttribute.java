@@ -24,12 +24,12 @@ import java.util.Objects;
 public class XmlAttribute implements SerializableResource {
 
   /** The serialized size in bytes of an {@link XmlAttribute}. */
-  public static final int SIZE = 12 + ResourceValue.SIZE;
+  public static final int SIZE = 12 + BinaryResourceValue.SIZE;
 
   private final int namespaceIndex;
   private final int nameIndex;
   private final int rawValueIndex;
-  private final ResourceValue typedValue;
+  private final BinaryResourceValue typedValue;
   private final XmlNodeChunk parent;
 
   /**
@@ -42,14 +42,14 @@ public class XmlAttribute implements SerializableResource {
     int namespace = buffer.getInt();
     int name = buffer.getInt();
     int rawValue = buffer.getInt();
-    ResourceValue typedValue = ResourceValue.create(buffer);
+    BinaryResourceValue typedValue = BinaryResourceValue.create(buffer);
     return new XmlAttribute(namespace, name, rawValue, typedValue, parent);
   }
 
   private XmlAttribute(int namespaceIndex,
                       int nameIndex,
                       int rawValueIndex,
-                      ResourceValue typedValue,
+                      BinaryResourceValue typedValue,
                       XmlNodeChunk parent) {
     this.namespaceIndex = namespaceIndex;
     this.nameIndex = nameIndex;
@@ -73,8 +73,8 @@ public class XmlAttribute implements SerializableResource {
     return rawValueIndex;
   }
 
-  /** A {@link ResourceValue} instance containing the parsed value. */
-  public ResourceValue typedValue() {
+  /** A {@link BinaryResourceValue} instance containing the parsed value. */
+  public BinaryResourceValue typedValue() {
     return typedValue;
   }
 

@@ -17,8 +17,8 @@
 package com.google.devrel.gmscore.tools.apk.arsc;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.devrel.gmscore.tools.apk.arsc.ResourceString.Type.UTF16;
-import static com.google.devrel.gmscore.tools.apk.arsc.ResourceString.Type.UTF8;
+import static com.google.devrel.gmscore.tools.apk.arsc.BinaryResourceString.Type.UTF16;
+import static com.google.devrel.gmscore.tools.apk.arsc.BinaryResourceString.Type.UTF8;
 
 import com.google.common.base.Strings;
 
@@ -31,7 +31,7 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 
 @RunWith(JUnit4.class)
-public class ResourceStringTest {
+public class BinaryResourceStringTest {
 
   /**
    * A special string chosen because it contains a different encoding length compared to its
@@ -68,24 +68,24 @@ public class ResourceStringTest {
   @Test
   public void decodeUtf8String() {
     ByteBuffer utf8 = ByteBuffer.wrap(UTF8_STRING).order(ByteOrder.LITTLE_ENDIAN);
-    assertThat(ResourceString.decodeString(utf8, 0, UTF8)).isEqualTo(TEST_STRING);
+    assertThat(BinaryResourceString.decodeString(utf8, 0, UTF8)).isEqualTo(TEST_STRING);
   }
 
   @Test
   public void decodeUtf16String() {
     ByteBuffer utf16 = ByteBuffer.wrap(UTF16_STRING).order(ByteOrder.LITTLE_ENDIAN);
-    assertThat(ResourceString.decodeString(utf16, 0, UTF16)).isEqualTo(TEST_STRING);
+    assertThat(BinaryResourceString.decodeString(utf16, 0, UTF16)).isEqualTo(TEST_STRING);
   }
 
   @Test
   public void encodeUtf8String() {
-    byte[] utf8 = ResourceString.encodeString(TEST_STRING, UTF8);
+    byte[] utf8 = BinaryResourceString.encodeString(TEST_STRING, UTF8);
     assertThat(utf8).isEqualTo(UTF8_STRING);
   }
 
   @Test
   public void encodeUtf16String() {
-    byte[] utf16 = ResourceString.encodeString(TEST_STRING, UTF16);
+    byte[] utf16 = BinaryResourceString.encodeString(TEST_STRING, UTF16);
     assertThat(utf16).isEqualTo(UTF16_STRING);
   }
 
@@ -104,11 +104,11 @@ public class ResourceStringTest {
     parseString(LENGTH_WORD_STRING, UTF16, UTF16_LENGTH_WORD);
   }
 
-  private void parseString(String str, ResourceString.Type type, byte[] prefix) {
-    byte[] utf = ResourceString.encodeString(str, type);
+  private void parseString(String str, BinaryResourceString.Type type, byte[] prefix) {
+    byte[] utf = BinaryResourceString.encodeString(str, type);
     byte[] utfPrefix = Arrays.copyOf(utf, prefix.length);
     assertThat(utfPrefix).isEqualTo(prefix);
     ByteBuffer buffer = ByteBuffer.wrap(utf).order(ByteOrder.LITTLE_ENDIAN);
-    assertThat(ResourceString.decodeString(buffer, 0, type)).isEqualTo(str);
+    assertThat(BinaryResourceString.decodeString(buffer, 0, type)).isEqualTo(str);
   }
 }

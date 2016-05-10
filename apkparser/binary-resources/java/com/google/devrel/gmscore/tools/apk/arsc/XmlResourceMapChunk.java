@@ -67,8 +67,8 @@ public class XmlResourceMapChunk extends Chunk {
   }
 
   /** Returns the resource ID that this {@code attributeId} maps to. */
-  public ResourceIdentifier getResourceId(int attributeId) {
-    return ResourceIdentifier.create(resources.get(attributeId));
+  public BinaryResourceIdentifier getResourceId(int attributeId) {
+    return BinaryResourceIdentifier.create(resources.get(attributeId));
   }
 
   @Override

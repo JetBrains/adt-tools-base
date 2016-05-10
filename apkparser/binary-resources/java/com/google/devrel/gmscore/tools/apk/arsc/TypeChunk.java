@@ -49,7 +49,7 @@ public final class TypeChunk extends Chunk {
   private final int entriesStart;
 
   /** The resource configuration that these resource entries correspond to. */
-  private ResourceConfiguration configuration;
+  private BinaryResourceConfiguration configuration;
 
   /** A sparse list of resource entries defined by this chunk. */
   private final Map<Integer, Entry> entries = new TreeMap<>();
@@ -60,7 +60,7 @@ public final class TypeChunk extends Chunk {
     buffer.position(buffer.position() + 3);  // Skip 3 bytes for packing
     entryCount = buffer.getInt();
     entriesStart = buffer.getInt();
-    configuration = ResourceConfiguration.create(buffer);
+    configuration = BinaryResourceConfiguration.create(buffer);
   }
 
   @Override
@@ -89,7 +89,7 @@ public final class TypeChunk extends Chunk {
   }
 
   /** Returns the resource configuration that these resource entries correspond to. */
-  public ResourceConfiguration getConfiguration() {
+  public BinaryResourceConfiguration getConfiguration() {
     return configuration;
   }
 
@@ -98,7 +98,7 @@ public final class TypeChunk extends Chunk {
    *
    * @param configuration The new configuration.
    */
-  public void setConfiguration(ResourceConfiguration configuration) {
+  public void setConfiguration(BinaryResourceConfiguration configuration) {
     this.configuration = configuration;
   }
 
@@ -113,7 +113,7 @@ public final class TypeChunk extends Chunk {
   }
 
   /** Returns true if this chunk contains an entry for {@code resourceId}. */
-  public boolean containsResource(ResourceIdentifier resourceId) {
+  public boolean containsResource(BinaryResourceIdentifier resourceId) {
     PackageChunk packageChunk = Preconditions.checkNotNull(getPackageChunk());
     int packageId = packageChunk.getId();
     int typeId = getId();
@@ -237,7 +237,7 @@ public final class TypeChunk extends Chunk {
     output.write(baos.toByteArray());
   }
 
-  /** An {@link Entry} in a {@link TypeChunk}. Contains one or more {@link ResourceValue}. */
+  /** An {@link Entry} in a {@link TypeChunk}. Contains one or more {@link BinaryResourceValue}. */
   public static class Entry implements SerializableResource {
 
     /** An entry offset that indicates that a given resource is not present. */
@@ -247,21 +247,21 @@ public final class TypeChunk extends Chunk {
     private static final int FLAG_COMPLEX = 0x0001;
 
     /** Size of a single resource id + value mapping entry. */
-    private static final int MAPPING_SIZE = 4 + ResourceValue.SIZE;
+    private static final int MAPPING_SIZE = 4 + BinaryResourceValue.SIZE;
 
     private final int headerSize;
     private final int flags;
     private final int keyIndex;
-    private final ResourceValue value;
-    private final Map<Integer, ResourceValue> values;
+    private final BinaryResourceValue value;
+    private final Map<Integer, BinaryResourceValue> values;
     private final int parentEntry;
     private final TypeChunk parent;
 
     private Entry(int headerSize,
                  int flags,
                  int keyIndex,
-                 ResourceValue value,
-                 Map<Integer, ResourceValue> values,
+                 BinaryResourceValue value,
+                 Map<Integer, BinaryResourceValue> values,
                  int parentEntry, TypeChunk parent) {
       this.headerSize = headerSize;
       this.flags = flags;
@@ -283,10 +283,10 @@ public final class TypeChunk extends Chunk {
 
     /** The value of this resource entry, if this is not a complex entry. Else, null. */
     @Nullable
-    public ResourceValue value() { return value; }
+    public BinaryResourceValue value() { return value; }
 
     /** The extra values in this resource entry if this {@link #isComplex}. */
-    public Map<Integer, ResourceValue> values() { return values; }
+    public Map<Integer, BinaryResourceValue> values() { return values; }
 
     /**
      * Entry into {@link PackageChunk} that is the parent {@link Entry} to this entry.
@@ -304,7 +304,7 @@ public final class TypeChunk extends Chunk {
 
     /** The total number of bytes that this {@link Entry} takes up. */
     public final int size() {
-      return headerSize() + (isComplex() ? values().size() * MAPPING_SIZE : ResourceValue.SIZE);
+      return headerSize() + (isComplex() ? values().size() * MAPPING_SIZE : BinaryResourceValue.SIZE);
     }
 
     /** Returns the key name identifying this resource entry. */
@@ -348,17 +348,17 @@ public final class TypeChunk extends Chunk {
       int headerSize = buffer.getShort() & 0xFFFF;
       int flags = buffer.getShort() & 0xFFFF;
       int keyIndex = buffer.getInt();
-      ResourceValue value = null;
-      Map<Integer, ResourceValue> values = new LinkedHashMap<>();
+      BinaryResourceValue value = null;
+      Map<Integer, BinaryResourceValue> values = new LinkedHashMap<>();
       int parentEntry = 0;
       if ((flags & FLAG_COMPLEX) != 0) {
         parentEntry = buffer.getInt();
         int valueCount = buffer.getInt();
         for (int i = 0; i < valueCount; ++i) {
-          values.put(buffer.getInt(), ResourceValue.create(buffer));
+          values.put(buffer.getInt(), BinaryResourceValue.create(buffer));
         }
       } else {
-        value = ResourceValue.create(buffer);
+        value = BinaryResourceValue.create(buffer);
       }
       return new Entry(headerSize, flags, keyIndex, value, values, parentEntry, parent);
     }
@@ -378,12 +378,12 @@ public final class TypeChunk extends Chunk {
       if (isComplex()) {
         buffer.putInt(parentEntry());
         buffer.putInt(values().size());
-        for (Map.Entry<Integer, ResourceValue> entry : values().entrySet()) {
+        for (Map.Entry<Integer, BinaryResourceValue> entry : values().entrySet()) {
           buffer.putInt(entry.getKey());
           buffer.put(entry.getValue().toByteArray(shrink));
         }
       } else {
-        ResourceValue value = value();
+        BinaryResourceValue value = value();
         Preconditions.checkNotNull(value, "A non-complex TypeChunk entry must have a value.");
         buffer.put(value.toByteArray());
       }
