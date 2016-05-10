@@ -126,7 +126,33 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
                 "res/layout/accessibility.xml"));
     }
 
+    public void testImplicitFragmentUsage() throws Exception {
+        mEnableIds = true;
+        // Regression test for https://code.google.com/p/android/issues/detail?id=209393
+        // Ensure fragment id's aren't deleted.
+        assertEquals("No warnings.",
+
+                lintProject(
+                        xml("res/layout/has_fragment.xml", ""
+                                + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
+                                + "<fragment\n"
+                                + "    android:id=\"@+id/viewer\"\n"
+                                + "    android:name=\"package.name.MyFragment\"\n"
+                                + "    android:layout_width=\"match_parent\"\n"
+                                + "    android:layout_height=\"match_parent\"/>\n"
+                                + "</LinearLayout>\n"),
+                        java("src/test/pkg/Test.java", ""
+                                + "package test.pkg;\n"
+                                + "public class Test {\n"
+                                + "    public void test() {"
+                                + "        int used = R.layout.has_fragment;\n"
+                                + "    }"
+                                + "}")
+                ));
+    }
+
     public void testArrayReference() throws Exception {
+        mEnableIds = false;
         assertEquals(""
                 // The string is unused, but only because the array referencing it is unused too.
                 + "res/values/arrayusage.xml:2: Warning: The resource R.string.my_item appears to be unused [UnusedResources]\n"
@@ -149,6 +175,7 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
     }
 
     public void testArrayReferenceIncluded() throws Exception {
+        mEnableIds = false;
         assertEquals("No warnings.",
 
                 lintProject(
