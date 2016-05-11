@@ -115,6 +115,13 @@ public class ProductFlavorAdaptor extends BaseConfigAdaptor implements CoreProdu
 
     @Nullable
     @Override
+    public Boolean getRenderscriptSupportModeBlasEnabled() {
+        return productFlavor.getRenderscriptSupportModeBlasEnabled();
+    }
+
+
+    @Nullable
+    @Override
     public Boolean getRenderscriptNdkModeEnabled() {
         return productFlavor.getRenderscriptNdkModeEnabled();
     }
