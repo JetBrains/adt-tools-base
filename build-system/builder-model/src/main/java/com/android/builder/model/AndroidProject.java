@@ -36,6 +36,9 @@ public interface AndroidProject {
     // see MODEL_LEVEL_* constants
     String PROPERTY_BUILD_MODEL_ONLY_VERSIONED =  "android.injected.build.model.only.versioned";
 
+    // Sent in when external native projects models requires a refresh.
+    String PROPERTY_REFRESH_EXTERNAL_NATIVE_MODEL = "android.injected.refresh.external.native.model";
+
     // Sent by Studio 1.5+
     String PROPERTY_BUILD_API = "android.injected.build.api";
     String PROPERTY_BUILD_ABI = "android.injected.build.abi";
