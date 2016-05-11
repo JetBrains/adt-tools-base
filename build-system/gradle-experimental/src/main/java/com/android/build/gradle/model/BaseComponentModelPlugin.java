@@ -88,6 +88,7 @@ import com.android.builder.profile.ThreadRecorder;
 import com.android.builder.sdk.TargetInfo;
 import com.android.builder.signing.DefaultSigningConfig;
 import com.android.ide.common.internal.ExecutorSingleton;
+import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.signing.KeystoreHelper;
 import com.android.prefs.AndroidLocation;
 import com.android.resources.Density;
@@ -613,10 +614,11 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
         @Model("nativeBuildConfigValues")
         public static List<NativeBuildConfigValue> createExternalNativeBuildJsonGenerators(
+                Project project,
                 AndroidConfig androidExtension,
                 AndroidBuilder androidBuilder,
                 SdkHandler sdkHandler,
-                ModelMap<AndroidComponentSpec> specs) throws IOException {
+                ModelMap<AndroidComponentSpec> specs) throws IOException, ProcessException {
             CoreExternalNativeBuild externalNativeBuild = androidExtension.getExternalNativeBuild();
             ExternalNativeBuildTaskUtils.ExternalNativeBuildProjectPathResolution pathResolution =
                     ExternalNativeBuildTaskUtils.getProjectPath(externalNativeBuild);
@@ -625,6 +627,32 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 return Lists.newArrayList();
             }
 
+
+            // Create and read external native build JSON files depending on what's happening right
+            // now.
+            //
+            // CREATE PHASE:
+            // Creates JSONs by shelling out to external build system when:
+            //   - Any one of AndroidProject.PROPERTY_INVOKED_FROM_IDE,
+            //      AndroidProject.PROPERTY_BUILD_MODEL_ONLY_ADVANCED,
+            //      AndroidProject.PROPERTY_BUILD_MODEL_ONLY,
+            //      AndroidProject.PROPERTY_REFRESH_EXTERNAL_NATIVE_MODEL are set.
+            //   - *and* AndroidProject.PROPERTY_REFRESH_EXTERNAL_NATIVE_MODEL is set
+            //      or JSON files don't exist or are out-of-date.
+            // Create phase may cause ProcessException (from cmake.exe for example)
+            //
+            // READ PHASE:
+            // Reads and deserializes JSONs when:
+            //   - Any one of AndroidProject.PROPERTY_INVOKED_FROM_IDE,
+            //      AndroidProject.PROPERTY_BUILD_MODEL_ONLY_ADVANCED,
+            //      AndroidProject.PROPERTY_BUILD_MODEL_ONLY,
+            //      AndroidProject.PROPERTY_REFRESH_EXTERNAL_NATIVE_MODEL are set.
+            // Read phase may produce IOException if the file can't be read for standard IO reasons.
+            // Read phase may produce JsonSyntaxException in the case that the content of the file is
+            // corrupt.
+            boolean createJsons =
+                    ExternalNativeBuildTaskUtils.shouldRegenerateOutOfDateJsons(project);
+            boolean forceRegeneration = AndroidGradleOptions.refreshExternalNativeModel(project);
             final VariantManager variantManager =
                     ((AndroidComponentSpecInternal) specs.get(COMPONENT_NAME)).getVariantManager();
             List<NativeBuildConfigValue> configValues = Lists.newArrayList();
@@ -646,6 +674,11 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 if (generator == null) {
                     continue;
                 }
+
+                if (createJsons) {
+                    generator.build(forceRegeneration);
+                }
+
                 configValues.addAll(generator.readExistingNativeBuildConfigurations());
             }
 

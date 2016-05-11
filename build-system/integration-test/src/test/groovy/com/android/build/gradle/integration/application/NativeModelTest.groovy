@@ -245,7 +245,6 @@ class NativeModelTest {
     @Before
     public void setup() {
         project.buildFile << config.buildGradle;
-        project.execute("generateJsonModelDebug", "generateJsonModelRelease")
     }
 
     @Test

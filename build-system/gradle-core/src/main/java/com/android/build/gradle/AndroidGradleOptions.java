@@ -121,6 +121,10 @@ public class AndroidGradleOptions {
         return getBoolean(project, AndroidProject.PROPERTY_BUILD_MODEL_ONLY);
     }
 
+    public static boolean refreshExternalNativeModel(@NonNull Project project) {
+        return getBoolean(project, AndroidProject.PROPERTY_REFRESH_EXTERNAL_NATIVE_MODEL);
+    }
+
     public static boolean buildModelOnlyAdvanced(@NonNull Project project) {
         return getBoolean(project, AndroidProject.PROPERTY_BUILD_MODEL_ONLY_ADVANCED);
     }
