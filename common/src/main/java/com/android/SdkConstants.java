@@ -1134,6 +1134,8 @@ public final class SdkConstants {
     public static final String ATTR_GUIDELINE_ORIENTATION_HORIZONTAL = "horizontal"; //$NON-NLS-1$
     public static final String ATTR_GUIDELINE_ORIENTATION_VERTICAL = "vertical"; //$NON-NLS-1$
     public static final String ATTR_GUIDELINE_RELATIVE_BEGIN = "relativeBegin"; //$NON-NLS-1$
+    public static final String ATTR_GUIDELINE_RELATIVE_END = "relativeEnd"; //$NON-NLS-1$
+    public static final String ATTR_GUIDELINE_RELATIVE_PERCENT = "relativePercent"; //$NON-NLS-1$
 
     // TableRow
     public static final String ATTR_LAYOUT_SPAN = "layout_span";       //$NON-NLS-1$
