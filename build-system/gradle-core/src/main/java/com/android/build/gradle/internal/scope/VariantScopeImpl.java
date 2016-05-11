@@ -27,6 +27,7 @@ import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.coverage.JacocoReportTask;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
+import com.android.build.gradle.internal.dsl.CoreSigningConfig;
 import com.android.build.gradle.internal.incremental.InstantRunAnchorTask;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
@@ -40,6 +41,7 @@ import com.android.build.gradle.internal.tasks.databinding.DataBindingProcessLay
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.LibraryVariantData;
+import com.android.build.gradle.internal.variant.SplitHandlingPolicy;
 import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.BinaryFileProviderTask;
@@ -50,10 +52,12 @@ import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.build.gradle.tasks.NdkCompile;
+import com.android.build.gradle.tasks.PackageAndroidArtifact;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.build.gradle.tasks.ShaderCompile;
 import com.android.builder.core.VariantType;
+import com.android.builder.model.ApiVersion;
 import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
 import com.google.common.base.Objects;
@@ -187,6 +191,70 @@ public class VariantScopeImpl implements VariantScope {
     @NonNull
     public GradleVariantConfiguration getVariantConfiguration() {
         return variantData.getVariantConfiguration();
+    }
+
+    @NonNull
+    @Override
+    public String getFullName() {
+        return getVariantConfiguration().getFullName();
+    }
+
+    @Override
+    public boolean isMinifyEnabled() {
+        return getVariantConfiguration().getBuildType().isMinifyEnabled();
+    }
+
+    @Override
+    public boolean isShrinkResources() {
+        return getVariantConfiguration().getBuildType().isShrinkResources();
+    }
+
+    @Override
+    public boolean isJackEnabled() {
+        return getVariantConfiguration().getJackOptions().isEnabled();
+    }
+
+    @Override
+    public boolean isJniDebuggable() {
+        return getVariantConfiguration().getBuildType().isJniDebuggable();
+    }
+
+    @Override
+    public Set<File> getDexFolders() {
+        return getTransformManager().getPipelineOutput(PackageAndroidArtifact.DEX_FILTER).keySet();
+    }
+
+    @Override
+    public Set<File> getJavaResources() {
+        return getTransformManager().getPipelineOutput(PackageAndroidArtifact.RES_FILTER).keySet();
+    }
+
+    @Override
+    public Set<File> getJniFolders() {
+        return getTransformManager().getPipelineOutput(PackageAndroidArtifact.JNI_FILTER).keySet();
+    }
+
+    @Override
+    public CoreSigningConfig getSigningConfig() {
+        return (CoreSigningConfig) getVariantConfiguration().getSigningConfig();
+    }
+
+    @Nullable
+    @Override
+    public Set<String> getSupportedAbis() {
+        return getVariantConfiguration().getSupportedAbis();
+    }
+
+    @NonNull
+    @Override
+    public ApiVersion getMinSdkVersion() {
+        return getVariantConfiguration().getMinSdkVersion();
+    }
+
+    @NonNull
+    @Override
+    public SplitHandlingPolicy getSplitHandlingPolicy() {
+        return getVariantData().getSplitHandlingPolicy();
     }
 
     @NonNull

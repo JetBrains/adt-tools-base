@@ -229,7 +229,8 @@ public class PackageApplication extends PackageAndroidArtifact {
 
     // ----- ConfigAction -----
 
-    public static class ConfigAction extends PackageAndroidArtifact.ConfigAction<PackageApplication> {
+    public static class ConfigAction
+            extends PackageAndroidArtifact.ConfigAction<PackageApplication> {
 
         public ConfigAction(
                 @NonNull VariantOutputScope scope,
@@ -240,7 +241,7 @@ public class PackageApplication extends PackageAndroidArtifact {
         @NonNull
         @Override
         public String getName() {
-            return scope.getTaskName("package");
+            return variantOutputScope.getTaskName("package");
         }
 
         @NonNull
@@ -251,9 +252,10 @@ public class PackageApplication extends PackageAndroidArtifact {
 
         @Override
         public void execute(@NonNull final PackageApplication packageApplication) {
-            final VariantScope variantScope = scope.getVariantScope();
+            final VariantScope variantScope = variantOutputScope.getVariantScope();
 
-            ConventionMappingHelper.map(packageApplication, "outputFile", scope::getPackageApk);
+            ConventionMappingHelper.map(
+                    packageApplication, "outputFile", variantOutputScope::getPackageApk);
 
             packageApplication.markerFile =
                     PrePackageApplication.ConfigAction.getMarkerFile(variantScope);

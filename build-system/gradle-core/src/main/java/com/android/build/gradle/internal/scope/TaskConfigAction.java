@@ -20,6 +20,8 @@ import com.android.annotations.NonNull;
 
 import org.gradle.api.Action;
 
+import java.util.function.Consumer;
+
 /**
  * Interface of Task configuration Actions.
  */
@@ -42,4 +44,30 @@ public interface TaskConfigAction<T> extends Action<T> {
      */
     @Override
     void execute(@NonNull T task);
+
+    /**
+     * Returns a new {@link TaskConfigAction} which executes additional steps after this action
+     * is done.
+     */
+    default TaskConfigAction<T> andThen(Consumer<T> additionalActions) {
+        return new TaskConfigAction<T>() {
+            @NonNull
+            @Override
+            public String getName() {
+                return TaskConfigAction.this.getName();
+            }
+
+            @NonNull
+            @Override
+            public Class<T> getType() {
+                return TaskConfigAction.this.getType();
+            }
+
+            @Override
+            public void execute(@NonNull T task) {
+                TaskConfigAction.this.execute(task);
+                additionalActions.accept(task);
+            }
+        };
+    }
 }

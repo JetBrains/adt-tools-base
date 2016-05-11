@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.external.gson.NativeBuildConfigValue;
 import com.android.build.gradle.internal.core.Abi;
+import com.android.build.gradle.internal.dsl.CoreSigningConfig;
 import com.android.build.gradle.internal.incremental.InstantRunAnchorTask;
 import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.pipeline.TransformManager;
@@ -30,6 +31,7 @@ import com.android.build.gradle.internal.tasks.databinding.DataBindingExportBuil
 import com.android.build.gradle.internal.tasks.databinding.DataBindingProcessLayoutsTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.build.gradle.internal.variant.SplitHandlingPolicy;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.ExternalNativeBuildTask;
 import com.android.build.gradle.tasks.ExternalNativeJsonGenerator;
@@ -40,6 +42,7 @@ import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.build.gradle.tasks.ShaderCompile;
+import com.android.builder.model.ApiVersion;
 
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Task;
@@ -50,6 +53,7 @@ import org.gradle.api.tasks.compile.JavaCompile;
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 /**
  * A scope containing data for a specific variant.
@@ -58,6 +62,34 @@ public interface VariantScope extends TransformVariantScope, BaseScope {
 
     @NonNull
     BaseVariantData<? extends BaseVariantOutputData> getVariantData();
+
+    @NonNull
+    String getFullName();
+
+    boolean isMinifyEnabled();
+
+    boolean isShrinkResources();
+
+    boolean isJackEnabled();
+
+    boolean isJniDebuggable();
+
+    Set<File> getDexFolders();
+
+    Set<File> getJavaResources();
+
+    Set<File> getJniFolders();
+
+    CoreSigningConfig getSigningConfig();
+
+    @Nullable
+    Set<String> getSupportedAbis();
+
+    @NonNull
+    ApiVersion getMinSdkVersion();
+
+    @NonNull
+    SplitHandlingPolicy getSplitHandlingPolicy();
 
     @NonNull
     TransformManager getTransformManager();

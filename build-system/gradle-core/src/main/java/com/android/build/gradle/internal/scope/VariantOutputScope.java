@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.scope;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidGradleOptions;
+import com.android.build.gradle.api.ApkOutputFile;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.variant.ApkVariantData;
@@ -236,4 +237,10 @@ public class VariantOutputScope implements BaseScope {
             AndroidTask<SplitZipAlign> splitZipAlignTask) {
         this.splitZipAlignTask = splitZipAlignTask;
     }
+
+    @NonNull
+    public ApkOutputFile getMainOutputFile() {
+        return getVariantOutputData().getMainOutputFile();
+    }
+
 }

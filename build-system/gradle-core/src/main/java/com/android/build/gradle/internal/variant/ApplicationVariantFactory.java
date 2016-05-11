@@ -95,7 +95,7 @@ public class ApplicationVariantFactory implements VariantFactory {
 
         // create its outputs
         if (variant.getSplitHandlingPolicy() ==
-                BaseVariantData.SplitHandlingPolicy.PRE_21_POLICY) {
+                SplitHandlingPolicy.PRE_21_POLICY) {
 
             // Always dd an entry with no filter for universal and add it FIRST,
             // since code assume that the first variant output will be the universal one.
