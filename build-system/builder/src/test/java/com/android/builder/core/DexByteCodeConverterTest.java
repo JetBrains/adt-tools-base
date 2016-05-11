@@ -67,7 +67,7 @@ public class DexByteCodeConverterTest {
         assertEquals(2048L, parseHeapSize("2K", logger));
         assertEquals(1024L * 1024L * 7L, parseHeapSize("7M", logger));
         assertEquals(1024L * 1024L * 1024L * 17L, parseHeapSize("17g", logger));
-        assertEquals(1024L * 1024L * 1024L, parseHeapSize("foo", logger));
+        assertEquals(DexByteCodeConverter.DEFAULT_DEX_HEAP_SIZE, parseHeapSize("foo", logger));
     }
 
     @Test
@@ -96,7 +96,10 @@ public class DexByteCodeConverterTest {
         // a very large number to ensure dex in process is disabled due to memory needs.
         when(dexOptions.getJavaMaxHeapSize()).thenReturn("10000G");
         assertFalse(dexByteCodeConverter.shouldDexInProcess(dexOptions, new Revision(23, 0, 2)));
-        verify(logger).warning(contains("org.gradle.jvmargs=-Xmx"), any(), eq(10241024L));
+        verify(logger).warning(
+                contains("org.gradle.jvmargs=-Xmx"),
+                any(),
+                eq(10000 * 1024 + DexByteCodeConverter.NON_DEX_HEAP_SIZE / 1024 / 1024));
         verifyNoMoreInteractions(logger);
     }
 
