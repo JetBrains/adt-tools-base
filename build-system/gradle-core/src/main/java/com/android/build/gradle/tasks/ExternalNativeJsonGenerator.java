@@ -160,6 +160,11 @@ public abstract class ExternalNativeJsonGenerator {
             throws ProcessException, IOException;
 
     /**
+     * @return the native build system that is used to generate the JSON.
+     */
+    public abstract NativeBuildSystem getNativeBuildSystem();
+
+    /**
      * Log low level diagnostic information.
      */
     void diagnostic(String format, Object... args) {

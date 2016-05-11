@@ -21,6 +21,8 @@ import static com.android.build.gradle.model.ModelConstants.ANDROID_BUILDER;
 import static com.android.build.gradle.model.ModelConstants.ANDROID_CONFIG_ADAPTOR;
 import static com.android.build.gradle.model.ModelConstants.EXTRA_MODEL_INFO;
 import static com.android.build.gradle.model.ModelConstants.JNILIBS_DEPENDENCIES;
+import static com.android.build.gradle.model.ModelConstants.NATIVE_BUILD_CONFIG_VALUES;
+import static com.android.build.gradle.model.ModelConstants.NATIVE_BUILD_SYSTEMS;
 import static com.android.builder.core.BuilderConstants.DEBUG;
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
@@ -140,9 +142,9 @@ import groovy.lang.Closure;
 
 public class BaseComponentModelPlugin implements Plugin<Project> {
 
-    private ToolingModelBuilderRegistry toolingRegistry;
+    private final ToolingModelBuilderRegistry toolingRegistry;
 
-    private ModelRegistry modelRegistry;
+    private final ModelRegistry modelRegistry;
 
     @Inject
     protected BaseComponentModelPlugin(ToolingModelBuilderRegistry toolingRegistry,
@@ -612,7 +614,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             }
         }
 
-        @Model("nativeBuildConfigValues")
+        @Model(NATIVE_BUILD_CONFIG_VALUES)
         public static List<NativeBuildConfigValue> createExternalNativeBuildJsonGenerators(
                 Project project,
                 AndroidConfig androidExtension,
@@ -686,10 +688,22 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         }
 
         @Mutate
+        public static void modifyBuildSystemList(
+                @Path(NATIVE_BUILD_SYSTEMS) List<String> buildSystems,
+                AndroidConfig androidExtension) {
+            CoreExternalNativeBuild externalNativeBuild = androidExtension.getExternalNativeBuild();
+            ExternalNativeBuildTaskUtils.ExternalNativeBuildProjectPathResolution pathResolution =
+                    ExternalNativeBuildTaskUtils.getProjectPath(externalNativeBuild);
+            if (pathResolution.buildSystem != null) {
+                buildSystems.add(pathResolution.buildSystem.getName());
+            }
+        }
+
+        @Mutate
         public static void modifyNativeBuildModel(
                 @Path(ModelConstants.EXTERNAL_BUILD_CONFIG)
                 NativeBuildConfig config,
-                @Path("nativeBuildConfigValues")
+                @Path(NATIVE_BUILD_CONFIG_VALUES)
                 List<NativeBuildConfigValue> configValues) {
             for (NativeBuildConfigValue configValue : configValues) {
                 NativeBuildConfigGsonUtil.copyToNativeBuildConfig(configValue, config);

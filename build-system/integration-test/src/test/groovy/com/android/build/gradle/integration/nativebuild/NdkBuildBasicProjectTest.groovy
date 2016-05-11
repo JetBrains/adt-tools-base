@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.nativebuild
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.tasks.NativeBuildSystem
 import com.android.builder.model.NativeAndroidProject
 import com.android.builder.model.NativeArtifact
 import com.google.common.collect.ArrayListMultimap
@@ -105,10 +106,11 @@ $modelAfter
     public void checkModel() {
         project.model().getSingle(); // Make sure we can successfully get AndroidProject
         NativeAndroidProject model = project.model().getSingle(NativeAndroidProject.class);
-        assertThat(model.buildFiles).hasSize(1);
-
-        assertThat(model.name).isEqualTo("project");
         assertThat(model).isNotNull();
+        assertThat(model.getBuildSystems())
+          .containsExactly(NativeBuildSystem.NDK_BUILD.getName());
+        assertThat(model.buildFiles).hasSize(1);
+        assertThat(model.name).isEqualTo("project");
         assertThat(model.artifacts).hasSize(14);
         assertThat(model.fileExtensions).hasSize(1);
 

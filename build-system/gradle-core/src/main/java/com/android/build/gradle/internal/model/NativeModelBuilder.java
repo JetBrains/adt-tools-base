@@ -16,16 +16,16 @@
 
 package com.android.build.gradle.internal.model;
 
-import static com.android.build.gradle.tasks.NativeBuildSystem.CMAKE;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.external.gson.NativeBuildConfigValue;
 import com.android.build.gradle.external.gson.NativeLibraryValue;
 import com.android.build.gradle.internal.VariantManager;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.ndk.internal.NativeCompilerArgsUtil;
+import com.android.build.gradle.tasks.ExternalNativeJsonGenerator;
 import com.android.builder.model.NativeAndroidProject;
 import com.android.builder.model.NativeArtifact;
 import com.android.builder.model.NativeFile;
@@ -70,7 +70,7 @@ public class NativeModelBuilder implements ToolingModelBuilder {
         return modelName.equals(NativeAndroidProject.class.getName());
     }
 
-    @NonNull
+    @Nullable
     @Override
     public Object buildAll(String modelName, @NonNull Project project) {
         return NativeAndroidProjectBuilder.build(project, variantManager);
@@ -89,16 +89,22 @@ public class NativeModelBuilder implements ToolingModelBuilder {
         @NonNull private final Map<List<String>, NativeSettings> settingsMap = Maps.newHashMap();
 
         @Nullable
-        static NativeAndroidProject build(
+        private static NativeAndroidProject build(
                 @NonNull Project project,
                 @NonNull VariantManager variantManager) {
 
             NativeAndroidProjectBuilder info = new NativeAndroidProjectBuilder();
 
+            Set<String> buildSystems = Sets.newHashSet();
             for (BaseVariantData<? extends BaseVariantOutputData> variantData
                     : variantManager.getVariantDataList()) {
+                VariantScope scope = variantData.getScope();
+                ExternalNativeJsonGenerator generator = scope.getExternalNativeJsonGenerator();
+                if (generator != null) {
+                    buildSystems.add(generator.getNativeBuildSystem().getName());
+                }
                 for (NativeBuildConfigValue configValue :
-                        variantData.getScope().getExternalNativeBuildConfigValues()) {
+                        scope.getExternalNativeBuildConfigValues()) {
 
                     // Record build files
                     if (configValue.buildFiles != null) {
@@ -156,7 +162,7 @@ public class NativeModelBuilder implements ToolingModelBuilder {
                     info.toolChains,
                     ImmutableList.copyOf(info.settingsMap.values()),
                     info.extensions,
-                    ImmutableList.of(),  // TODO(chiur): put the actual build system.
+                    buildSystems,
                     com.android.builder.Version.BUILDER_MODEL_API_VERSION);
         }
 

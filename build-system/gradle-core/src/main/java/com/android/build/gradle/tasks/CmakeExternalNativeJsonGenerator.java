@@ -114,6 +114,11 @@ class CmakeExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
         diagnostic("done executing CMake");
     }
 
+    @Override
+    public NativeBuildSystem getNativeBuildSystem() {
+        return NativeBuildSystem.CMAKE;
+    }
+
     @NonNull
     private File getToolChainFile() {
         return new File(getCmakeFolder(), "android.toolchain.cmake");
