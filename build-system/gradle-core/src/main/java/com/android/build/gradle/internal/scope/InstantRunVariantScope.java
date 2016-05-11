@@ -18,6 +18,8 @@ package com.android.build.gradle.internal.scope;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.build.gradle.internal.pipeline.TransformTask;
+import com.android.build.gradle.tasks.PackageApplication;
 import com.google.common.collect.ImmutableList;
 
 import java.io.File;
@@ -26,6 +28,12 @@ import java.io.File;
  * Scope for all variant scoped information related to supporting the Instant Run features.
  */
 public interface InstantRunVariantScope {
+
+    @NonNull
+    String getFullVariantName();
+
+    @NonNull
+    TransformVariantScope getTransformVariantScope();
 
     @NonNull
     TransformGlobalScope getGlobalScope();
@@ -45,9 +53,30 @@ public interface InstantRunVariantScope {
     @NonNull
     InstantRunBuildContext getInstantRunBuildContext();
 
+    @NonNull
+    File getInstantRunPastIterationsFolder();
+
+    @NonNull
+    File getInstantRunSliceSupportDir();
+
+    @NonNull
+    File getIncrementalRuntimeSupportJar();
+
+    @NonNull
+    File getIncrementalApplicationSupportDir();
+
     /**
      * Returns the boot class path which matches the target device API level.
      */
     @NonNull
     ImmutableList<File> getInstantRunBootClasspath();
+
+    AndroidTask<TransformTask> getInstantRunVerifierTask();
+    void setInstantRunVerifierTask(AndroidTask<TransformTask> verifierTask);
+
+    AndroidTask<TransformTask> getInstantRunSlicerTask();
+    void setInstantRunSlicerTask(AndroidTask<TransformTask> slicerTask);
+
+    AndroidTask<PackageApplication> getPackageApplicationTask();
+    void setPackageApplicationTask(AndroidTask<PackageApplication> packageApplicationTask);
 }

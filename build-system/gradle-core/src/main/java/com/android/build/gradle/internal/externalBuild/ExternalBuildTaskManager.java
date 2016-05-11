@@ -19,27 +19,33 @@ package com.android.build.gradle.internal.externalBuild;
 import com.android.annotations.NonNull;
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.gradle.internal.ExtraModelInfo;
+import com.android.build.gradle.internal.InstantRunTaskManager;
 import com.android.build.gradle.internal.TaskContainerAdaptor;
-import com.android.build.gradle.internal.incremental.ColdswapMode;
+import com.android.build.gradle.internal.dsl.DexOptions;
+import com.android.build.gradle.internal.incremental.BuildInfoLoaderTask;
+import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
+import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
+import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.OriginalStream;
+import com.android.build.gradle.internal.pipeline.StreamFilter;
 import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.android.build.gradle.internal.pipeline.TransformStream;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.AndroidTaskRegistry;
-import com.android.build.gradle.internal.transforms.InstantRunTransform;
-import com.android.sdklib.AndroidVersion;
-import com.google.devtools.build.lib.rules.android.apkmanifest.ExternalBuildApkManifest;
+import com.android.build.gradle.internal.scope.PackagingScope;
+import com.android.build.gradle.internal.transforms.DexTransform;
+import com.android.build.gradle.internal.transforms.ExtractJarsTransform;
+import com.android.build.gradle.tasks.PackageApplication;
+import com.android.build.gradle.tasks.PrePackageApplication;
+import com.android.builder.core.DefaultDexOptions;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.io.Files;
 
-import org.gradle.api.Action;
 import org.gradle.api.Project;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.EnumSet;
 
 /**
  * Task Manager for External Build system integration.
@@ -66,7 +72,7 @@ class ExternalBuildTaskManager {
 
         File file = project.file(externalBuildExtension.buildManifestPath);
         ExternalBuildManifestLoader.loadAndPopulateContext(
-                file, project.getProjectDir(), externalBuildContext);
+                file, project, externalBuildContext);
 
         ExtraModelInfo modelInfo = new ExtraModelInfo(project, false /* isLibrary */);
         TransformManager transformManager = new TransformManager(androidTasks, modelInfo);
@@ -77,22 +83,115 @@ class ExternalBuildTaskManager {
                 .setJars(externalBuildContext::getInputJarFiles)
                 .build());
 
+        // add an empty java resources directory for now.
+        transformManager.addStream(OriginalStream.builder()
+                .addContentType(QualifiedContent.DefaultContentType.RESOURCES)
+                .addScope(QualifiedContent.Scope.PROJECT)
+                .setFolder(Files.createTempDir())
+                .build());
+
+        // add an empty native libraries resources directory for now.
+        transformManager.addStream(OriginalStream.builder()
+                .addContentType(ExtendedContentType.NATIVE_LIBS)
+                .addScope(QualifiedContent.Scope.PROJECT)
+                .setFolder(Files.createTempDir())
+                .build());
+
         ExternalBuildGlobalScope globalScope = new ExternalBuildGlobalScope(project);
         ExternalBuildVariantScope variantScope = new ExternalBuildVariantScope(globalScope,
                 project.getBuildDir(),
                 externalBuildContext);
 
-        variantScope.getInstantRunBuildContext().setApiLevel(
-                AndroidVersion.ART_RUNTIME, ColdswapMode.AUTO.toString(), "arm");
+        // massage the manifest file.
 
-        // register transform.
-        InstantRunTransform instantRunTransform = new InstantRunTransform(variantScope);
-        AndroidTask<TransformTask> instantRunTransformTask =
-                transformManager.addTransform(tasks, variantScope, instantRunTransform);
 
-        if (instantRunTransformTask == null) {
-            throw new RuntimeException("Unable to set up InstantRun related transforms");
+        // Extract the passed jars into folders as the InstantRun transforms can only handle folders.
+        ExtractJarsTransform extractJarsTransform = new ExtractJarsTransform(
+                ImmutableSet.of(QualifiedContent.DefaultContentType.CLASSES),
+                ImmutableSet.of(QualifiedContent.Scope.PROJECT));
+        AndroidTask<TransformTask> extractJarsTask = transformManager
+                .addTransform(tasks, variantScope, extractJarsTransform);
+        assert extractJarsTask != null;
+
+        InstantRunTaskManager instantRunTaskManager = new InstantRunTaskManager(project.getLogger(),
+                variantScope, transformManager, androidTasks, tasks);
+
+        AndroidTask<BuildInfoLoaderTask> buildInfoLoaderTask =
+                instantRunTaskManager.createInstantRunAllTasks(
+                        new DexOptions(modelInfo),
+                        () -> null,
+                        extractJarsTask,
+                        externalBuildAnchorTask,
+                        EnumSet.of(QualifiedContent.Scope.PROJECT),
+                        () -> project.file(
+                                externalBuildContext
+                                        .getBuildManifest()
+                                        .getAndroidManifest()
+                                        .getExecRootPath()),
+                        false /* addResourceVerifier */);
+
+        extractJarsTask.dependsOn(tasks, buildInfoLoaderTask);
+
+        AndroidTask<InstantRunWrapperTask> incrementalBuildWrapperTask =
+                instantRunTaskManager.createInstantRunIncrementalTasks(project);
+
+        externalBuildAnchorTask.dependsOn(tasks, incrementalBuildWrapperTask);
+
+        // TODO: support multi-dex.
+        DexTransform dexTransform =
+                new DexTransform(
+                        new DefaultDexOptions(),
+                        true,
+                        false,
+                        null,
+                        variantScope.getPreDexOutputDir(),
+                        externalBuildContext.getAndroidBuilder(),
+                        project.getLogger(),
+                        variantScope.getInstantRunBuildContext());
+
+        AndroidTask<TransformTask> dexTask =
+                transformManager.addTransform(tasks, variantScope, dexTransform);
+
+        // if we are in instant-run mode and the patching policy is relying on multi-dex shards,
+        // we should run the dexing as part of the incremental build.
+        if (InstantRunPatchingPolicy.PRE_LOLLIPOP
+                != variantScope.getInstantRunBuildContext().getPatchingPolicy()) {
+            incrementalBuildWrapperTask.dependsOn(tasks, dexTask);
         }
-        externalBuildAnchorTask.dependsOn(tasks, instantRunTransformTask);
+
+        AndroidTask<PrePackageApplication> prePackageApp =
+                androidTasks.create(
+                        tasks,
+                        new PrePackageApplication.ConfigAction(
+                                "prePackageMarkerFor", variantScope, variantScope));
+
+        // TODO: what's the equivalent?
+        // prePackageApp.dependsOn(tasks, variantScope.getInstantRunAnchorTask());
+
+        PackagingScope packagingScope =
+                new ExternalBuildPackagingScope(
+                        project, externalBuildContext, variantScope, transformManager);
+
+        AndroidTask<PackageApplication> packageApp =
+                androidTasks.create(
+                        tasks,
+                        new PackageApplication.ConfigAction(
+                                packagingScope,
+                                variantScope.getInstantRunBuildContext().getPatchingPolicy()));
+
+        for (TransformStream stream : transformManager.getStreams(StreamFilter.DEX)) {
+            packageApp.dependsOn(tasks, stream.getDependencies());
+        }
+
+        for (TransformStream stream : transformManager.getStreams(StreamFilter.RESOURCES)) {
+            packageApp.dependsOn(tasks, stream.getDependencies());
+        }
+        for (TransformStream stream : transformManager.getStreams(StreamFilter.NATIVE_LIBS)) {
+            packageApp.dependsOn(tasks, stream.getDependencies());
+        }
+
+        externalBuildAnchorTask.dependsOn(tasks, packageApp);
+
+        // TODO: build info?
     }
 }

@@ -20,10 +20,11 @@ import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.scope.AndroidTask;
+import com.android.build.gradle.internal.scope.InstantRunVariantScope;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
+import com.android.build.gradle.internal.scope.TransformVariantScope;
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
 import com.android.builder.model.OptionalCompilationStep;
-import com.android.build.gradle.internal.scope.VariantScope;
 
 import org.gradle.api.Task;
 import org.gradle.api.tasks.TaskAction;
@@ -36,16 +37,16 @@ import java.io.IOException;
  */
 public class ColdswapArtifactsKickerTask extends DefaultAndroidTask {
 
-    private VariantScope variantScope;
+    private TransformVariantScope transformVariantScope;
+    private InstantRunVariantScope instantRunVariantScope;
     private InstantRunBuildContext instantRunContext;
 
     @TaskAction
     public void doFullTaskAction() throws IOException {
         // if the restart flag is set, we should allow for downstream tasks to execute.
         boolean restartDexRequested =
-                variantScope.getGlobalScope().isActive(OptionalCompilationStep.RESTART_ONLY);
-        boolean changesAreCompatible =
-                variantScope.getInstantRunBuildContext().hasPassedVerification();
+                transformVariantScope.getGlobalScope().isActive(OptionalCompilationStep.RESTART_ONLY);
+        boolean changesAreCompatible = instantRunContext.hasPassedVerification();
 
         // so if the restart artifacts are requested or the changes are incompatible
         // we should always run, otherwise it can wait.
@@ -53,9 +54,9 @@ public class ColdswapArtifactsKickerTask extends DefaultAndroidTask {
             // We can hot swap, don't produce the apk
             if (instantRunContext.getPatchingPolicy() == InstantRunPatchingPolicy.PRE_LOLLIPOP) {
                 // TODO: disable multidex too
-                disableTask(variantScope.getPackageApplicationTask());
+                disableTask(instantRunVariantScope.getPackageApplicationTask());
             } else {
-                disableTask(variantScope.getInstantRunSlicerTask());
+                disableTask(instantRunVariantScope.getInstantRunSlicerTask());
             }
         } else { //Cold swap
             if (instantRunContext.getPatchingPolicy() == InstantRunPatchingPolicy.PRE_LOLLIPOP) {
@@ -65,26 +66,31 @@ public class ColdswapArtifactsKickerTask extends DefaultAndroidTask {
     }
 
     private <T extends Task> void disableTask(AndroidTask<T> task) {
-        variantScope.getGlobalScope().getProject().getTasks().getByName(task.getName())
+        transformVariantScope.getGlobalScope().getProject().getTasks().getByName(task.getName())
                 .setEnabled(false);
     }
 
     public static class ConfigAction implements TaskConfigAction<ColdswapArtifactsKickerTask> {
 
         @NonNull
-        protected final VariantScope scope;
+        protected final TransformVariantScope transformVariantScope;
+        @NonNull
+        protected final InstantRunVariantScope instantRunVariantScope;
         @NonNull
         protected final String name;
 
-        public ConfigAction(@NonNull String name, @NonNull VariantScope scope) {
-            this.scope = scope;
+        public ConfigAction(@NonNull String name,
+                @NonNull TransformVariantScope transformVariantScope,
+                @NonNull InstantRunVariantScope instantRunVariantScope) {
             this.name = name;
+            this.transformVariantScope = transformVariantScope;
+            this.instantRunVariantScope = instantRunVariantScope;
         }
 
         @Override
         @NonNull
         public String getName() {
-            return scope.getTaskName(name);
+            return transformVariantScope.getTaskName(name);
         }
 
         @NonNull
@@ -95,9 +101,10 @@ public class ColdswapArtifactsKickerTask extends DefaultAndroidTask {
 
         @Override
         public void execute(@NonNull ColdswapArtifactsKickerTask task) {
-            task.setVariantName(scope.getVariantConfiguration().getFullName());
-            task.variantScope = scope;
-            task.instantRunContext = scope.getInstantRunBuildContext();
+            task.setVariantName(instantRunVariantScope.getFullVariantName());
+            task.transformVariantScope = transformVariantScope;
+            task.instantRunVariantScope = instantRunVariantScope;
+            task.instantRunContext = instantRunVariantScope.getInstantRunBuildContext();
         }
     }
 }

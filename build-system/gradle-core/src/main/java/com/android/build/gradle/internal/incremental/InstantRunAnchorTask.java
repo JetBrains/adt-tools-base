@@ -18,8 +18,10 @@ package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
+import com.android.build.gradle.internal.scope.TransformVariantScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
+
 import org.gradle.api.tasks.TaskAction;
 
 
@@ -38,14 +40,14 @@ public class InstantRunAnchorTask extends BaseTask {
         /**
          * Task name for Instant Run incremental build external anchor task.
          */
-        public static String getName(VariantScope scope) {
+        public static String getName(TransformVariantScope scope) {
             return scope.getTaskName("incremental", "SupportDex");
         }
 
         private final String taskName;
-        private final VariantScope variantScope;
+        private final TransformVariantScope variantScope;
 
-        public ConfigAction(VariantScope scope) {
+        public ConfigAction(TransformVariantScope scope) {
             this.taskName = ConfigAction.getName(scope);
             this.variantScope = scope;
         }
@@ -73,7 +75,7 @@ public class InstantRunAnchorTask extends BaseTask {
         @Override
         public void execute(@NonNull InstantRunAnchorTask task) {
             task.setDescription("InstantRun task to build incremental artifacts");
-            task.setVariantName(variantScope.getVariantConfiguration().getFullName());
+            task.setVariantName(variantScope.getFullVariantName());
         }
     }
 }

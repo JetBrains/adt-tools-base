@@ -28,10 +28,8 @@ import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.utils.FileUtils;
-import com.google.common.collect.ImmutableList;
 
 import java.io.File;
-import java.util.List;
 
 /**
  * Helper for SDK related functions.
@@ -58,24 +56,34 @@ public class SdkHelper {
     }
 
     @NonNull
-    public static File getAapt() {
-        return getBuildTool(
-                Revision.parseRevision(
-                        GradleTestProject.DEFAULT_BUILD_TOOL_VERSION, Revision.Precision.MICRO),
-                BuildToolInfo.PathId.AAPT);
+    public static File getAdb() {
+        File adb = FileUtils.join(findSdkDir(), FD_PLATFORM_TOOLS, FN_ADB);
+        if (!adb.exists()) {
+            throw new RuntimeException("Unable to find adb.");
+        }
+        return adb;
     }
 
     @NonNull
-    public static File getAapt(@NonNull Revision revision) {
-        return getBuildTool(revision, BuildToolInfo.PathId.AAPT);
+    public static File getAapt() {
+        return getBuildTool(BuildToolInfo.PathId.AAPT);
     }
 
     @NonNull
     public static File getDexDump() {
-        return getBuildTool(
-                Revision.parseRevision(
-                        GradleTestProject.DEFAULT_BUILD_TOOL_VERSION, Revision.Precision.MICRO),
-                BuildToolInfo.PathId.DEXDUMP);
+        return getBuildTool(BuildToolInfo.PathId.DEXDUMP);
+    }
+
+    @NonNull
+    public static File getDxJar() {
+        return getBuildTool(BuildToolInfo.PathId.DX_JAR);
+    }
+
+    @NonNull
+    public static File getBuildTool(@NonNull BuildToolInfo.PathId pathId) {
+        Revision revision = Revision.parseRevision(
+                GradleTestProject.DEFAULT_BUILD_TOOL_VERSION, Revision.Precision.MICRO);
+        return getBuildTool(revision, pathId);
     }
 
     @NonNull
@@ -89,15 +97,6 @@ public class SdkHelper {
             throw new RuntimeException("Test requires build-tools " + revision.toString());
         }
         return new File(buildToolInfo.getPath(pathId));
-    }
-
-    @NonNull
-    public static File getAdb() {
-        File adb = FileUtils.join(findSdkDir(), FD_PLATFORM_TOOLS, FN_ADB);
-        if (!adb.exists()) {
-            throw new RuntimeException("Unable to find adb.");
-        }
-        return adb;
     }
 
     /**

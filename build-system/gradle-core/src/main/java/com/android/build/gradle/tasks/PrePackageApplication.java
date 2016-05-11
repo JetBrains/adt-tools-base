@@ -19,7 +19,9 @@ package com.android.build.gradle.tasks;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
+import com.android.build.gradle.internal.scope.InstantRunVariantScope;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
+import com.android.build.gradle.internal.scope.TransformVariantScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
 import com.android.builder.model.OptionalCompilationStep;
@@ -40,7 +42,7 @@ import java.io.IOException;
 public class PrePackageApplication extends DefaultAndroidTask {
 
     InstantRunBuildContext instantRunContext;
-    VariantScope variantScope;
+    InstantRunVariantScope variantScope;
 
     @TaskAction
     public void doFullTaskAction() throws IOException {
@@ -66,26 +68,34 @@ public class PrePackageApplication extends DefaultAndroidTask {
 
     private void disablePackageTask() {
         variantScope.getGlobalScope().getProject().getTasks().getByName(
-                variantScope.getPackageApplicationTask().getName())
-                .setEnabled(false);
+                variantScope.getPackageApplicationTask().getName()).setEnabled(false);
     }
 
     public static class ConfigAction implements TaskConfigAction<PrePackageApplication> {
 
         @NonNull
-        protected final VariantScope scope;
+        protected final InstantRunVariantScope instantRunVariantScope;
+        @NonNull
+        protected final TransformVariantScope transformVariantScope;
         @NonNull
         protected final String name;
 
-        public ConfigAction(@NonNull String name, @NonNull VariantScope scope) {
-            this.scope = scope;
+        public ConfigAction(@NonNull String name, @NonNull VariantScope variantScope) {
+            this(name, variantScope, variantScope);
+        }
+
+        public ConfigAction(@NonNull String name,
+                @NonNull TransformVariantScope transformVariantScope,
+                @NonNull InstantRunVariantScope instantRunVariantScope) {
             this.name = name;
+            this.transformVariantScope = transformVariantScope;
+            this.instantRunVariantScope = instantRunVariantScope;
         }
 
         @Override
         @NonNull
         public String getName() {
-            return scope.getTaskName(name);
+            return transformVariantScope.getTaskName(name);
         }
 
         @NonNull
@@ -96,9 +106,8 @@ public class PrePackageApplication extends DefaultAndroidTask {
 
         @Override
         public void execute(@NonNull PrePackageApplication task) {
-            task.setVariantName(scope.getVariantConfiguration().getFullName());
-            task.variantScope = scope;
-            task.instantRunContext = scope.getInstantRunBuildContext();
+            task.setVariantName(transformVariantScope.getFullVariantName());
+            task.instantRunContext = instantRunVariantScope.getInstantRunBuildContext();
         }
     }
 }

@@ -25,6 +25,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.external.gson.NativeBuildConfigValue;
+import com.android.build.gradle.internal.InstantRunTaskManager;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.SdkHandler;
 import com.android.build.gradle.internal.core.Abi;
@@ -94,7 +95,7 @@ import java.util.stream.Collectors;
 /**
  * A scope containing data for a specific variant.
  */
-public class VariantScopeImpl implements VariantScope {
+public class VariantScopeImpl extends GenericVariantScopeImpl implements VariantScope {
 
     private static final ILogger LOGGER = LoggerWrapper.getLogger(VariantScopeImpl.class);
 
@@ -174,6 +175,8 @@ public class VariantScopeImpl implements VariantScope {
     private AndroidTask<?> coverageReportTask;
 
     private File resourceOutputDir;
+
+    private InstantRunTaskManager instantRunTaskManager;
 
     public VariantScopeImpl(
             @NonNull GlobalScope globalScope,
@@ -671,7 +674,6 @@ public class VariantScopeImpl implements VariantScope {
                 "source/aidl/" + getVariantConfiguration().getDirName());
     }
 
-    @Override
     @NonNull
     public File getIncrementalDir(String name) {
         return FileUtils.join(
@@ -1115,19 +1117,6 @@ public class VariantScopeImpl implements VariantScope {
         this.coverageReportTask = coverageReportTask;
     }
 
-    private AndroidTask<PackageApplication> packageApplicationTask;
-
-    @Override
-    public AndroidTask<PackageApplication> getPackageApplicationTask() {
-        return packageApplicationTask;
-    }
-
-    @Override
-    public void setPackageApplicationTask(
-            AndroidTask<PackageApplication> packageApplicationTask) {
-        this.packageApplicationTask = packageApplicationTask;
-    }
-
     @NonNull
     private InstantRunBuildContext instantRunBuildContext = new InstantRunBuildContext();
 
@@ -1163,31 +1152,6 @@ public class VariantScopeImpl implements VariantScope {
     public void setInstantRunAnchorTask(
             @NonNull AndroidTask<InstantRunAnchorTask> instantAllActionsTask) {
         this.instantRunAllActions = instantAllActionsTask;
-    }
-
-    private AndroidTask<TransformTask> instantRunVerifierTask;
-
-    @Override
-    public AndroidTask<TransformTask> getInstantRunVerifierTask() {
-        return instantRunVerifierTask;
-    }
-
-    @Override
-    public void setInstantRunVerifierTask(AndroidTask<TransformTask> verifierTask) {
-        instantRunVerifierTask = verifierTask;
-    }
-
-    private AndroidTask<TransformTask> instantRunSlicerTask;
-
-    @Override
-    public AndroidTask<TransformTask> getInstantRunSlicerTask() {
-        return instantRunSlicerTask;
-    }
-
-    @Override
-    public void setInstantRunSlicerTask(
-            AndroidTask<TransformTask> instantRunSlicerTask) {
-        this.instantRunSlicerTask = instantRunSlicerTask;
     }
 
     @NonNull
@@ -1293,5 +1257,22 @@ public class VariantScopeImpl implements VariantScope {
     public void addExternalNativeBuildConfigValues(
             @NonNull Collection<NativeBuildConfigValue> values) {
         externalNativeBuildConfigValues.addAll(values);
+    }
+
+    @Nullable
+    @Override
+    public InstantRunTaskManager getInstantRunTaskManager() {
+        return instantRunTaskManager;
+    }
+
+    @Override
+    public void setInstantRunTaskManager(InstantRunTaskManager instantRunTaskManager) {
+        this.instantRunTaskManager = instantRunTaskManager;
+    }
+
+    @NonNull
+    @Override
+    public TransformVariantScope getTransformVariantScope() {
+        return this;
     }
 }
