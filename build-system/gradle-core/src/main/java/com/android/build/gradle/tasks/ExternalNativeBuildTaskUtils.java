@@ -256,12 +256,13 @@ public class ExternalNativeBuildTaskUtils {
         try {
             androidBuilder.executeProcess(process,
                     new LoggedProcessOutputHandler(
-                            new ExecuteBuildProcessLogger(all, info)))
+                            new ExecuteBuildProcessLogger(all, info, androidBuilder.getLogger())))
                     .rethrowFailure().assertNormalExitValue();
             return info.toString();
         } catch (ProcessException e) {
-            // Log the output to STDOUT so it will appear in gradle logs and Android Studio errors.
-            System.out.printf(all.toString());
+            // In the case of error, print to STDERR so it can be seen by Android Studio and
+            // from command-line build
+            System.err.print(all.toString());
             throw e;
         }
     }
@@ -270,10 +271,12 @@ public class ExternalNativeBuildTaskUtils {
 
         private final StringBuilder all;
         private final StringBuilder info;
+        private final ILogger logger;
 
-        public ExecuteBuildProcessLogger(StringBuilder all, StringBuilder info) {
+        public ExecuteBuildProcessLogger(StringBuilder all, StringBuilder info, ILogger logger) {
             this.all = all;
             this.info = info;
+            this.logger = logger;
         }
 
         @Override
@@ -282,24 +285,30 @@ public class ExternalNativeBuildTaskUtils {
                 @Nullable String msgFormat,
                 Object... args) {
             if (msgFormat != null) {
-                all.append(String.format(msgFormat, args));
+                all.append(msgFormat);
             }
+            logger.error(t, msgFormat, args);
         }
 
         @Override
         public void warning(@NonNull String msgFormat, Object... args) {
-            all.append(String.format(msgFormat, args));
+            all.append(msgFormat);
+            logger.warning(msgFormat, args);
         }
 
         @Override
         public void info(@NonNull String msgFormat, Object... args) {
-            all.append(String.format(msgFormat, args));
-            info.append(String.format(msgFormat, args));
+            // Cannot String.format(msgFormat, args) or printf or similar because compiler output
+            // may produce msgFormat with embedded percent (%)
+            all.append(msgFormat);
+            info.append(msgFormat);
+            logger.info(msgFormat, args);
         }
 
         @Override
         public void verbose(@NonNull String msgFormat, Object... args) {
-            all.append(String.format(msgFormat, args));
+            all.append(msgFormat);
+            logger.verbose(msgFormat, args);
         }
     }
 }
