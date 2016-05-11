@@ -50,8 +50,10 @@ import org.gradle.language.cpp.tasks.CppCompile;
 import org.gradle.language.nativeplatform.DependentSourceSet;
 import org.gradle.model.ModelMap;
 import org.gradle.nativeplatform.NativeBinarySpec;
+import org.gradle.nativeplatform.NativeLibraryBinary;
 import org.gradle.nativeplatform.NativeLibraryBinarySpec;
 import org.gradle.nativeplatform.NativeLibrarySpec;
+import org.gradle.nativeplatform.SharedLibraryBinary;
 import org.gradle.nativeplatform.SharedLibraryBinarySpec;
 import org.gradle.nativeplatform.StaticLibraryBinarySpec;
 import org.gradle.nativeplatform.internal.resolve.DefaultNativeDependencySet;
@@ -263,6 +265,11 @@ public class NdkConfiguration {
                 binary.lib(new DefaultNativeDependencySet(new NativeLibraryArtifactAdaptor(artifacts)));
             }
         }
+        for (NativeLibraryBinary prebuiltLib : dependency.getPrebuiltLibraries()) {
+            if (binary.getTargetPlatform().getName().equals(prebuiltLib.getTargetPlatform().getName())) {
+                binary.lib(new DefaultNativeDependencySet(prebuiltLib));
+            }
+        }
     }
 
     /**
@@ -390,13 +397,22 @@ public class NdkConfiguration {
         final Collection<NativeDependencyResolveResult> dependencies =
                 dependencyMap.get(binary.getName());
         for (NativeDependencyResolveResult dependency : dependencies) {
-            Collection<NativeLibraryArtifact> artifacts = dependency.getNativeArtifacts();
-            for (NativeLibraryArtifact artifact : artifacts) {
+            for (NativeLibraryArtifact artifact : dependency.getNativeArtifacts()) {
                 if (binary.getTargetPlatform().getName().equals(artifact.getAbi())) {
                     for (File lib : artifact.getLibraries()) {
                         if (lib.getName().endsWith(".so")) {
                             libs.add(lib);
                         }
+                    }
+                }
+            }
+            for (NativeLibraryBinary prebuiltLib : dependency.getPrebuiltLibraries()) {
+                // We only need to strip shared libraries that are packaged into the apk.  Static
+                // libraries do not need to be stripped.
+                if (prebuiltLib instanceof SharedLibraryBinary) {
+                    if (binary.getTargetPlatform().getName().equals(
+                            prebuiltLib.getTargetPlatform().getName())) {
+                        libs.addAll(prebuiltLib.getRuntimeFiles().getFiles());
                     }
                 }
             }
