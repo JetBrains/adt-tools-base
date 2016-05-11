@@ -38,6 +38,8 @@ public class AndroidGradleOptions {
 
     private static final boolean DEFAULT_USE_OLD_PACKAGING = false;
 
+    private static final boolean DEFAULT_ENABLE_AAPT2 = false;
+
     private static final String PROPERTY_TEST_RUNNER_ARGS =
             "android.testInstrumentationRunnerArguments.";
 
@@ -59,6 +61,8 @@ public class AndroidGradleOptions {
     private static final String PROPERTY_USE_OLD_PACKAGING = "android.useOldPackaging";
 
     private static final String PROPERTY_KEEP_TIMESTAMPS_IN_APK = "android.keepTimestampsInApk";
+
+    private static final String PROPERTY_ENABLE_AAPT2 = "android.enableAapt2";
 
     private static final String ANDROID_ADDITIONAL_PLUGINS = "android.additional.plugins";
 
@@ -127,6 +131,10 @@ public class AndroidGradleOptions {
 
     public static boolean keepTimestampsInApk(@NonNull Project project) {
         return getBoolean(project, PROPERTY_KEEP_TIMESTAMPS_IN_APK);
+    }
+
+    public static boolean isAapt2Enabled(@NonNull Project project) {
+        return getBoolean(project, PROPERTY_ENABLE_AAPT2, DEFAULT_ENABLE_AAPT2);
     }
 
     /**

@@ -71,11 +71,8 @@ public class InstantRunSplitApkBuilder extends BaseTask {
     private SigningConfig signingConf;
     private String applicationId;
     private InstantRunBuildContext instantRunBuildContext;
-    private File zipAlignExe;
-    private AaptOptions aaptOptions;
     private File supportDir;
     private File incrementalDir;
-
     private ApkVariantOutputData variantOutputData;
 
     @Input
@@ -109,9 +106,10 @@ public class InstantRunSplitApkBuilder extends BaseTask {
         return outputDirectory;
     }
 
+    // Method is here to allow being overridden through convention mapping.
     @Input
     public File getZipAlignExe() {
-        return zipAlignExe;
+        return null;
     }
 
     @TaskAction
@@ -225,7 +223,10 @@ public class InstantRunSplitApkBuilder extends BaseTask {
 
         File resFilePackageFile = new File(supportDir, "resources_ap");
 
-        Aapt aapt = AaptGradleFactory.make(getBuilder());
+        Aapt aapt =
+                AaptGradleFactory.make(
+                        getBuilder(),
+                        variantOutputData.getScope().getVariantScope());
         AaptPackageConfig.Builder aaptConfig = new AaptPackageConfig.Builder()
                 .setManifestFile(androidManifest)
                 .setOptions(getAaptOptions())
@@ -241,8 +242,9 @@ public class InstantRunSplitApkBuilder extends BaseTask {
         return resFilePackageFile;
     }
 
+    // Method is here to allow being overridden through convention mapping.
     public AaptOptions getAaptOptions() {
-        return aaptOptions;
+        return null;
     }
 
     private static class DexFile {

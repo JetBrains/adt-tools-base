@@ -17,6 +17,7 @@
 package com.android.builder.internal.compiler;
 
 import static com.android.SdkConstants.FN_AAPT;
+import static com.android.SdkConstants.FN_AAPT2;
 import static com.android.SdkConstants.FN_AIDL;
 import static com.android.SdkConstants.FN_BCC_COMPAT;
 import static com.android.SdkConstants.FN_DX;
@@ -572,6 +573,7 @@ public class PreDexCacheTest {
                 new File(toolDir, "i686-linux-android-ld"),
                 new File(toolDir, "x86_64-linux-android-ld"),
                 new File(toolDir, "mipsel-linux-android-ld"),
-                new File(toolDir, FN_ZIPALIGN));
+                new File(toolDir, FN_ZIPALIGN),
+                new File(toolDir, FN_AAPT2));
     }
 }

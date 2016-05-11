@@ -17,15 +17,10 @@
 package com.android.builder.internal.packaging.zfile;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.builder.internal.packaging.zip.ZFileOptions;
 import com.android.builder.packaging.ApkCreator;
 import com.android.builder.packaging.ApkCreatorFactory;
 import com.android.builder.packaging.PackagerException;
-
-import java.io.File;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
 
 /**
  * Creates instances of {@link ApkZFileCreator}.

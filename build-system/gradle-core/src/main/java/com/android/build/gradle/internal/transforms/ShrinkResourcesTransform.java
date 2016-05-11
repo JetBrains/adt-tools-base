@@ -32,7 +32,6 @@ import com.android.build.gradle.tasks.ResourceUsageAnalyzer;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.internal.aapt.Aapt;
 import com.android.builder.internal.aapt.AaptPackageConfig;
-import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -223,7 +222,10 @@ public class ShrinkResourcesTransform extends Transform {
                 String sourceOutputPath = null;
 
                 // Repackage the resources:
-                Aapt aapt = AaptGradleFactory.make(androidBuilder);
+                Aapt aapt =
+                        AaptGradleFactory.make(
+                                androidBuilder,
+                                variantOutputData.getScope().getVariantScope());
                 AaptPackageConfig.Builder aaptPackageConfig = new AaptPackageConfig.Builder()
                         .setManifestFile(mergedManifest)
                         .setOptions(processResourcesTask.getAaptOptions())

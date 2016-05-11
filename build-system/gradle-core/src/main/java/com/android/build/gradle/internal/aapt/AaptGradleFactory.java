@@ -18,9 +18,12 @@ package com.android.build.gradle.internal.aapt;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.AndroidGradleOptions;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.internal.aapt.Aapt;
 import com.android.builder.internal.aapt.v1.AaptV1;
+import com.android.builder.internal.aapt.v2.OutOfProcessAaptV2;
 import com.android.builder.sdk.TargetInfo;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessOutputHandler;
@@ -29,6 +32,8 @@ import com.android.utils.ILogger;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
+
+import org.gradle.api.Project;
 
 import java.util.List;
 import java.util.regex.Pattern;
@@ -45,11 +50,12 @@ public final class AaptGradleFactory {
      * Creates a new {@link Aapt} instance based on project configuration.
      *
      * @param builder the android builder project model
+     * @param scope the scope of the variant to use {@code aapt2} with
      * @return the newly-created instance
      */
     @NonNull
-    public static Aapt make(@NonNull AndroidBuilder builder) {
-        return make(builder, true, true);
+    public static Aapt make(@NonNull AndroidBuilder builder, @NonNull VariantScope scope) {
+        return make(builder, true, true, scope);
     }
 
     /**
@@ -58,18 +64,21 @@ public final class AaptGradleFactory {
      * @param builder the android builder project model
      * @param crunchPng should PNGs be crunched?
      * @param process9Patch should 9-patch be processed even if PNGs are not crunched?
+     * @param scope the scope of the variant to use {@code aapt2} with
      * @return the newly-created instance
      */
     @NonNull
     public static Aapt make(
             @NonNull AndroidBuilder builder,
             boolean crunchPng,
-            boolean process9Patch) {
+            boolean process9Patch,
+            @NonNull VariantScope scope) {
         return make(
                 builder,
                 new LoggedProcessOutputHandler(new FilteringLogger(builder.getLogger())),
                 crunchPng,
-                process9Patch);
+                process9Patch,
+                scope);
     }
 
     /**
@@ -77,13 +86,15 @@ public final class AaptGradleFactory {
      *
      * @param builder the android builder project model
      * @param outputHandler the output handler to use
+     * @param scope the scope of the variant to use {@code aapt2} with
      * @return the newly-created instance
      */
     @NonNull
     public static Aapt make(
             @NonNull AndroidBuilder builder,
-            @NonNull ProcessOutputHandler outputHandler) {
-        return make(builder, outputHandler, true, true);
+            @NonNull ProcessOutputHandler outputHandler,
+            @NonNull VariantScope scope) {
+        return make(builder, outputHandler, true, true, scope);
     }
 
     /**
@@ -93,6 +104,7 @@ public final class AaptGradleFactory {
      * @param outputHandler the output handler to use
      * @param crunchPng should PNGs be crunched?
      * @param process9Patch should 9-patch be processed even if PNGs are not crunched?
+     * @param scope the scope of the variant to use {@code aapt2} with
      * @return the newly-created instance
      */
     @NonNull
@@ -100,26 +112,37 @@ public final class AaptGradleFactory {
             @NonNull AndroidBuilder builder,
             @NonNull ProcessOutputHandler outputHandler,
             boolean crunchPng,
-            boolean process9Patch) {
+            boolean process9Patch,
+            @NonNull VariantScope scope) {
         TargetInfo target = builder.getTargetInfo();
         Preconditions.checkNotNull(target, "target == null");
         BuildToolInfo buildTools = target.getBuildTools();
+        Project project = scope.getGlobalScope().getProject();
 
-
-        AaptV1.PngProcessMode processMode;
-        if (crunchPng && process9Patch) {
-            processMode = AaptV1.PngProcessMode.ALL;
-        } else if (process9Patch) {
-            processMode = AaptV1.PngProcessMode.NINE_PATCH_ONLY;
+        if (AndroidGradleOptions.isAapt2Enabled(project) &&
+                BuildToolInfo.PathId.AAPT2.isPresentIn(buildTools.getRevision())) {
+            return new OutOfProcessAaptV2(
+                    builder.getProcessExecutor(),
+                    outputHandler,
+                    buildTools,
+                    new FilteringLogger(builder.getLogger()));
         } else {
-            processMode = AaptV1.PngProcessMode.NONE;
-        }
+            AaptV1.PngProcessMode processMode;
+            if (crunchPng && process9Patch) {
+                processMode = AaptV1.PngProcessMode.ALL;
+            } else if (process9Patch) {
+                processMode = AaptV1.PngProcessMode.NINE_PATCH_ONLY;
+            } else {
+                processMode = AaptV1.PngProcessMode.NONE;
+            }
 
-        return new AaptV1(
-                builder.getProcessExecutor(),
-                outputHandler, buildTools,
-                new FilteringLogger(builder.getLogger()),
-                processMode);
+            return new AaptV1(
+                    builder.getProcessExecutor(),
+                    outputHandler,
+                    buildTools,
+                    new FilteringLogger(builder.getLogger()),
+                    processMode);
+        }
     }
 
     /**
