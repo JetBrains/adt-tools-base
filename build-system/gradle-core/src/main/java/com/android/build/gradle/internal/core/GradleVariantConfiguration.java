@@ -329,18 +329,18 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
      * @param reset A method to return 'option' to its default state.
      * @param append A BiConsumer to combine two options into one.  Option in second input argument
      *               takes priority and overwrite option in the first input argument.
-     * @param <CORE_OPTION> The core type of the option being merge.
-     * @param <MERGED_OPTION> The merge option type.
+     * @param <CoreOptionT> The core type of the option being merge.
+     * @param <MergedOptionT> The merge option type.
      */
-    private <CORE_OPTION, MERGED_OPTION> void computeMergedOptions(
-            @NonNull MERGED_OPTION option,
-            @NonNull Function<CoreProductFlavor, CORE_OPTION> productFlavorOptionGetter,
-            @NonNull Function<CoreBuildType, CORE_OPTION> buildTypeOptionGetter,
-            @NonNull Consumer<MERGED_OPTION> reset,
-            @NonNull BiConsumer<MERGED_OPTION, CORE_OPTION> append) {
+    private <CoreOptionT, MergedOptionT> void computeMergedOptions(
+            @NonNull MergedOptionT option,
+            @NonNull Function<CoreProductFlavor, CoreOptionT> productFlavorOptionGetter,
+            @NonNull Function<CoreBuildType, CoreOptionT> buildTypeOptionGetter,
+            @NonNull Consumer<MergedOptionT> reset,
+            @NonNull BiConsumer<MergedOptionT, CoreOptionT> append) {
         reset.accept(option);
 
-        CORE_OPTION defaultOption = productFlavorOptionGetter.apply(getDefaultConfig());
+        CoreOptionT defaultOption = productFlavorOptionGetter.apply(getDefaultConfig());
         if (defaultOption != null) {
             append.accept(option, defaultOption);
         }
@@ -348,13 +348,13 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
         // reverse loop for proper order
         final List<CoreProductFlavor> flavors = getProductFlavors();
         for (int i = flavors.size() - 1 ; i >= 0 ; i--) {
-            CORE_OPTION flavorOption = productFlavorOptionGetter.apply(flavors.get(i));
+            CoreOptionT flavorOption = productFlavorOptionGetter.apply(flavors.get(i));
             if (flavorOption != null) {
                 append.accept(option, flavorOption);
             }
         }
 
-        CORE_OPTION buildTypeOption = buildTypeOptionGetter.apply(getBuildType());
+        CoreOptionT buildTypeOption = buildTypeOptionGetter.apply(getBuildType());
         if (buildTypeOption != null) {
             append.accept(option, buildTypeOption);
         }
