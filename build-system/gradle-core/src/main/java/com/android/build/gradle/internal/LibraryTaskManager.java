@@ -29,6 +29,7 @@ import com.android.annotations.Nullable;
 import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.api.transform.Transform;
 import com.android.build.gradle.AndroidConfig;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
 import com.android.build.gradle.internal.ndk.NdkHandler;
@@ -114,6 +115,7 @@ public class LibraryTaskManager extends TaskManager {
     public void createTasksForVariantData(
             @NonNull final TaskFactory tasks,
             @NonNull final BaseVariantData<? extends BaseVariantOutputData> variantData) {
+        final boolean generateSourcesOnly = AndroidGradleOptions.generateSourcesOnly(project);
         final LibraryVariantData libVariantData = (LibraryVariantData) variantData;
         final GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
         final CoreBuildType buildType = variantConfig.getBuildType();
@@ -353,7 +355,7 @@ public class LibraryTaskManager extends TaskManager {
             libVariantData.generateAnnotationsTask =
                     createExtractAnnotations(project, variantData);
         }
-        if (libVariantData.generateAnnotationsTask != null) {
+        if (libVariantData.generateAnnotationsTask != null && !generateSourcesOnly) {
             bundle.dependsOn(libVariantData.generateAnnotationsTask);
         }
 
@@ -433,23 +435,37 @@ public class LibraryTaskManager extends TaskManager {
 
                         AndroidTask<TransformTask> jarPackagingTask = transformManager
                                 .addTransform(tasks, variantScope, transform);
-                        bundle.dependsOn(jarPackagingTask.getName());
-
+                        if (!generateSourcesOnly) {
+                            bundle.dependsOn(jarPackagingTask.getName());
+                        }
                         // now add a transform that will take all the native libs and package
                         // them into the libs folder of the bundle.
                         LibraryJniLibsTransform jniTransform = new LibraryJniLibsTransform(
                                 new File(variantBundleDir, FD_JNI));
                         AndroidTask<TransformTask> jniPackagingTask = transformManager
                                 .addTransform(tasks, variantScope, jniTransform);
-                        bundle.dependsOn(jniPackagingTask.getName());
-
+                        if (!generateSourcesOnly) {
+                            bundle.dependsOn(jniPackagingTask.getName());
+                        }
                         return null;
                     }
                 });
 
-        bundle.dependsOn(packageRes.getName(), packageRenderscript, lintCopy,
-                mergeProGuardFileTask);
-        bundle.dependsOn(variantScope.getNdkBuildable());
+
+        bundle.dependsOn(
+                packageRes.getName(),
+                packageRenderscript,
+                lintCopy,
+                mergeProGuardFileTask,
+                // The below dependencies are redundant in a normal build as
+                // generateSources depends on them. When generateSourcesOnly is injected they are
+                // needed explicitly, as bundle no longer depends on compileJava
+                variantScope.getAidlCompileTask().getName(),
+                variantScope.getMergeAssetsTask().getName(),
+                variantData.getOutputs().get(0).getScope().getManifestProcessorTask().getName());
+        if (!generateSourcesOnly) {
+            bundle.dependsOn(variantScope.getNdkBuildable());
+        }
 
         bundle.setDescription("Assembles a bundle containing the library in " +
                 variantConfig.getFullName() + ".");

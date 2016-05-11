@@ -113,7 +113,10 @@ public class RunGradleTasks extends BaseGradleExecutor<RunGradleTasks> {
 
     /** Execute the specified tasks */
     public GradleBuildResult run(@NonNull String... tasks) {
-        List<String> tasksList = ImmutableList.copyOf(tasks);
+        return run(ImmutableList.copyOf(tasks));
+    }
+
+    public GradleBuildResult run(@NonNull List<String> tasksList) {
         assertThat(tasksList).named("tasks list").isNotEmpty();
 
         ReferenceHolder<GradleConnectionException> result = ReferenceHolder.empty();

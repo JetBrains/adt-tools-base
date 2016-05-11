@@ -192,13 +192,15 @@ public class ModelHelper {
     public static Variant getVariant(
             @NonNull Collection<Variant> items,
             @NonNull String name) {
-        for (Variant item : items) {
-            if (name.equals(item.getName())) {
-                return item;
-            }
-        }
-        fail("Unable to find variant '" + name + "'.");
-        return null;
+        return items.stream()
+                .filter(item -> name.equals(item.getName()))
+                .findAny()
+                .orElseThrow(() ->  new AssertionError("Unable to find variant '" + name + "'."));
+    }
+
+    @NonNull
+    public static Variant getDebugVariant(@NonNull AndroidProject project) {
+        return getVariant(project.getVariants(), "debug");
     }
 
     @Nullable
