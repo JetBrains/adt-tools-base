@@ -79,20 +79,6 @@ import java.util.Set;
  */
 public abstract class BaseVariantData<T extends BaseVariantOutputData> {
 
-    public enum SplitHandlingPolicy {
-        /**
-         * Any release before L will create fake splits where each split will be the entire
-         * application with the split specific resources.
-         */
-        PRE_21_POLICY,
-
-        /**
-         * Android L and after, the splits are pure splits where splits only contain resources
-         * specific to the split characteristics.
-         */
-        RELEASE_21_AND_AFTER_POLICY
-    }
-
 
     @NonNull
     protected final AndroidConfig androidConfig;

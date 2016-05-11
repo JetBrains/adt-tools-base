@@ -110,6 +110,7 @@ import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.ApplicationVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.build.gradle.internal.variant.SplitHandlingPolicy;
 import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.ColdswapArtifactsKickerTask;
@@ -868,7 +869,7 @@ public abstract class TaskManager {
         BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
 
         checkState(variantData.getSplitHandlingPolicy().equals(
-                        BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY),
+                        SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY),
                 "Can only create split resources tasks for pure splits.");
 
         List<? extends BaseVariantOutputData> outputs = variantData.getOutputs();
@@ -894,7 +895,7 @@ public abstract class TaskManager {
         ApplicationVariantData variantData = (ApplicationVariantData) scope.getVariantData();
 
         checkState(variantData.getSplitHandlingPolicy().equals(
-                BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY),
+                SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY),
                 "split ABI tasks are only compatible with pure splits.");
 
         Set<String> filters = AbiSplitOptions.getAbiFilters(
@@ -930,7 +931,7 @@ public abstract class TaskManager {
 
         // set up dependency on the jni merger.
         for (TransformStream stream : scope.getTransformManager().getStreams(
-                PackageAndroidArtifact.sNativeLibsFilter)) {
+                PackageAndroidArtifact.JNI_FILTER)) {
             packageSplitAbiTask.dependsOn(tasks, stream.getDependencies());
         }
         return packageSplitAbiTask;
@@ -2229,8 +2230,12 @@ public abstract class TaskManager {
             InstantRunPatchingPolicy patchingPolicy =
                     variantScope.getInstantRunBuildContext().getPatchingPolicy();
 
-            AndroidTask<PackageApplication> packageApp = androidTasks.create(tasks,
-                    new PackageApplication.ConfigAction(variantOutputScope, patchingPolicy));
+            PackageApplication.ConfigAction packageConfigAction =
+                    new PackageApplication.ConfigAction(variantOutputScope, patchingPolicy);
+
+            AndroidTask<PackageApplication> packageApp =
+                    androidTasks.create(tasks, packageConfigAction.andThen(
+                            t -> variantOutputData.packageAndroidArtifactTask = t));
 
             packageApp.dependsOn(tasks, prePackageApp, variantOutputScope.getProcessResourcesTask());
 
@@ -2247,18 +2252,18 @@ public abstract class TaskManager {
             TransformManager transformManager = variantScope.getTransformManager();
 
             for (TransformStream stream : transformManager
-                    .getStreams(PackageAndroidArtifact.sDexFilter)) {
+                    .getStreams(PackageAndroidArtifact.DEX_FILTER)) {
                 // TODO Optimize to avoid creating too many actions
                 packageApp.dependsOn(tasks, stream.getDependencies());
             }
 
             for (TransformStream stream : transformManager.getStreams(
-                    PackageAndroidArtifact.sResFilter)) {
+                    PackageAndroidArtifact.RES_FILTER)) {
                 // TODO Optimize to avoid creating too many actions
                 packageApp.dependsOn(tasks, stream.getDependencies());
             }
             for (TransformStream stream : transformManager.getStreams(
-                    PackageAndroidArtifact.sNativeLibsFilter)) {
+                    PackageAndroidArtifact.JNI_FILTER)) {
                 // TODO Optimize to avoid creating too many actions
                 packageApp.dependsOn(tasks, stream.getDependencies());
             }

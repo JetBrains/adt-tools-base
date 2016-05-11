@@ -24,7 +24,6 @@ import com.android.build.gradle.api.ApkOutputFile;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.tasks.FileSupplier;
-import com.android.build.gradle.tasks.PackageAndroidArtifact;
 import com.android.build.gradle.tasks.SplitZipAlign;
 import com.android.build.gradle.tasks.ZipAlign;
 import com.google.common.base.Supplier;

@@ -34,6 +34,7 @@ import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.IncrementalTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.build.gradle.internal.variant.SplitHandlingPolicy;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.VariantType;
 import com.android.builder.internal.aapt.Aapt;
@@ -267,7 +268,7 @@ public class ProcessAndroidResources extends IncrementalTask {
             processResources.variantScope = scope.getVariantScope();
 
             if (variantData.getSplitHandlingPolicy() ==
-                    BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY) {
+                    SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY) {
                 Set<String> allFilters = new HashSet<>();
                 allFilters.addAll(
                         variantData.getFilters(com.android.build.OutputFile.FilterType.DENSITY));

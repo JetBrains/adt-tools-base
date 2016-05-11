@@ -35,7 +35,6 @@ import org.gradle.api.Task;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.concurrent.Callable;
 
 /**
  * Base output data about a variant.
@@ -72,8 +71,7 @@ public abstract class BaseVariantOutputData implements VariantOutput {
             @NonNull Collection<FilterData> filters,
             @NonNull BaseVariantData<?> variantData) {
         this.variantData = variantData;
-        this.mainApkOutputFile = new ApkOutputFile(
-                outputType, filters, getOutputFilePromise());
+        this.mainApkOutputFile = new ApkOutputFile(outputType, filters, this::getOutputFile);
         scope = new VariantOutputScope(variantData.getScope(), this);
     }
 
@@ -81,15 +79,6 @@ public abstract class BaseVariantOutputData implements VariantOutput {
     @Override
     public ApkOutputFile getMainOutputFile() {
         return mainApkOutputFile;
-    }
-
-    private Callable<File> getOutputFilePromise() {
-        return new Callable<File>() {
-            @Override
-            public File call() throws Exception {
-                return getOutputFile();
-            }
-        };
     }
 
 
