@@ -1,5 +1,8 @@
 package com.android.build.gradle;
 
+import static com.android.builder.core.VariantType.ANDROID_TEST;
+import static com.android.builder.core.VariantType.UNIT_TEST;
+
 import com.android.annotations.NonNull;
 import com.android.build.gradle.api.TestVariant;
 import com.android.build.gradle.api.UnitTestVariant;
@@ -15,9 +18,6 @@ import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.internal.DefaultDomainObjectSet;
 import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.internal.reflect.Instantiator;
-
-import static com.android.builder.core.VariantType.ANDROID_TEST;
-import static com.android.builder.core.VariantType.UNIT_TEST;
 
 /**
  * base 'android' extension for plugins that have a test component.
@@ -60,7 +60,7 @@ public abstract class TestedExtension extends BaseExtension implements TestedAnd
     }
 
     /**
-     * Returns the list of (Android) test variants. Since the collections is built after evaluation,
+     * Returns the list of unit test variants. Since the collections is built after evaluation,
      * it should be used with Gradle's <code>all</code> iterator to process future items.
      */
     @Override
