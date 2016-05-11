@@ -37,6 +37,7 @@ public abstract class KickerTask extends IncrementalTask {
     long buildId;
 
     @Input
+    @SuppressWarnings("unused")
     public long getBuildId() {
         return buildId;
     }
@@ -51,8 +52,7 @@ public abstract class KickerTask extends IncrementalTask {
     InstantRunBuildContext instantRunContext;
     VariantScope variantScope;
 
-    public abstract static class ConfigAction<T extends KickerTask>
-            implements TaskConfigAction<T> {
+    public abstract static class ConfigAction<T extends KickerTask> implements TaskConfigAction<T> {
 
         @NonNull
         protected final VariantScope scope;
@@ -73,7 +73,7 @@ public abstract class KickerTask extends IncrementalTask {
 
         @Override
         public void execute(@NonNull T task) {
-            task.setVariantName(scope.getVariantConfiguration().getFullName());
+            task.setVariantName(scope.getFullVariantName());
             task.buildId = scope.getInstantRunBuildContext().getBuildId();
             task.variantScope = scope;
             task.instantRunContext = scope.getInstantRunBuildContext();

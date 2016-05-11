@@ -41,8 +41,10 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.coverage.JacocoReportTask;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
+import com.android.build.gradle.internal.dsl.CoreBuildType;
 import com.android.build.gradle.internal.dsl.CoreJackOptions;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
+import com.android.build.gradle.internal.dsl.CoreSigningConfig;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.incremental.BuildInfoLoaderTask;
 import com.android.build.gradle.internal.incremental.DexPackagingPolicy;
@@ -55,6 +57,7 @@ import com.android.build.gradle.internal.model.CoreExternalNativeBuild;
 import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.OriginalStream;
+import com.android.build.gradle.internal.pipeline.StreamFilter;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.pipeline.TransformStream;
 import com.android.build.gradle.internal.pipeline.TransformTask;
@@ -65,6 +68,7 @@ import com.android.build.gradle.internal.publishing.MetadataPublishArtifact;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.AndroidTaskRegistry;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.scope.DefaultGradlePackagingScope;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
@@ -84,6 +88,7 @@ import com.android.build.gradle.internal.tasks.SigningReportTask;
 import com.android.build.gradle.internal.tasks.SourceSetsTask;
 import com.android.build.gradle.internal.tasks.TestServerTask;
 import com.android.build.gradle.internal.tasks.UninstallTask;
+import com.android.build.gradle.internal.tasks.ValidateSigningTask;
 import com.android.build.gradle.internal.tasks.databinding.DataBindingExportBuildInfoTask;
 import com.android.build.gradle.internal.tasks.databinding.DataBindingProcessLayoutsTask;
 import com.android.build.gradle.internal.tasks.multidex.CreateManifestKeepList;
@@ -129,7 +134,6 @@ import com.android.build.gradle.tasks.MergeManifests;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.build.gradle.tasks.NdkCompile;
-import com.android.build.gradle.tasks.PackageAndroidArtifact;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.PackageSplitAbi;
 import com.android.build.gradle.tasks.PackageSplitRes;
@@ -931,7 +935,7 @@ public abstract class TaskManager {
 
         // set up dependency on the jni merger.
         for (TransformStream stream : scope.getTransformManager().getStreams(
-                PackageAndroidArtifact.JNI_FILTER)) {
+                StreamFilter.NATIVE_LIBS)) {
             packageSplitAbiTask.dependsOn(tasks, stream.getDependencies());
         }
         return packageSplitAbiTask;
@@ -1659,10 +1663,14 @@ public abstract class TaskManager {
      * proguard and jacoco
      *
      */
-    public void createPostCompilationTasks(@NonNull TaskFactory tasks,
+    public void createPostCompilationTasks(
+            @NonNull TaskFactory tasks,
             @NonNull final VariantScope variantScope) {
 
         checkNotNull(variantScope.getJavacTask());
+
+        variantScope.getInstantRunBuildContext().setInstantRunMode(
+                getIncrementalMode(variantScope.getVariantConfiguration()) != IncrementalMode.NONE);
 
         final BaseVariantData<? extends BaseVariantOutputData> variantData = variantScope.getVariantData();
         final GradleVariantConfiguration config = variantData.getVariantConfiguration();
@@ -1721,7 +1729,7 @@ public abstract class TaskManager {
         // ----- 10x support
 
         AndroidTask<InstantRunWrapperTask> incrementalBuildWrapperTask = null;
-        if (getIncrementalMode(variantScope.getVariantConfiguration()) != IncrementalMode.NONE) {
+        if (variantScope.getInstantRunBuildContext().isInInstantRunMode()) {
 
             variantScope.getInstantRunBuildContext().setInstantRunMode(true);
 
@@ -2229,15 +2237,31 @@ public abstract class TaskManager {
             InstantRunPatchingPolicy patchingPolicy =
                     variantScope.getInstantRunBuildContext().getPatchingPolicy();
 
+            DefaultGradlePackagingScope packagingScope =
+                    new DefaultGradlePackagingScope(variantOutputScope);
             PackageApplication.ConfigAction packageConfigAction =
-                    new PackageApplication.ConfigAction(variantOutputScope, patchingPolicy);
-
+                    new PackageApplication.ConfigAction(packagingScope, patchingPolicy);
             AndroidTask<PackageApplication> packageApp =
                     androidTasks.create(tasks, packageConfigAction);
 
             packageApp.configure(
                     tasks,
                     task -> variantOutputData.packageAndroidArtifactTask = task);
+
+            CoreSigningConfig signingConfig = packagingScope.getSigningConfig();
+
+            //noinspection VariableNotUsedInsideIf - we use the whole packaging scope below.
+            if (signingConfig != null) {
+                ValidateSigningTask.ConfigAction configAction =
+                        new ValidateSigningTask.ConfigAction(packagingScope);
+
+                AndroidTask<?> validateSigningTask = androidTasks.get(configAction.getName());
+                if (validateSigningTask == null) {
+                    validateSigningTask = androidTasks.create(tasks, configAction);
+                }
+
+                packageApp.dependsOn(tasks, validateSigningTask);
+            }
 
             packageApp.dependsOn(tasks, prePackageApp, variantOutputScope.getProcessResourcesTask());
 
@@ -2253,19 +2277,16 @@ public abstract class TaskManager {
 
             TransformManager transformManager = variantScope.getTransformManager();
 
-            for (TransformStream stream : transformManager
-                    .getStreams(PackageAndroidArtifact.DEX_FILTER)) {
+            for (TransformStream stream : transformManager.getStreams(StreamFilter.DEX)) {
                 // TODO Optimize to avoid creating too many actions
                 packageApp.dependsOn(tasks, stream.getDependencies());
             }
 
-            for (TransformStream stream : transformManager.getStreams(
-                    PackageAndroidArtifact.RES_FILTER)) {
+            for (TransformStream stream : transformManager.getStreams(StreamFilter.RESOURCES)) {
                 // TODO Optimize to avoid creating too many actions
                 packageApp.dependsOn(tasks, stream.getDependencies());
             }
-            for (TransformStream stream : transformManager.getStreams(
-                    PackageAndroidArtifact.JNI_FILTER)) {
+            for (TransformStream stream : transformManager.getStreams(StreamFilter.NATIVE_LIBS)) {
                 // TODO Optimize to avoid creating too many actions
                 packageApp.dependsOn(tasks, stream.getDependencies());
             }
@@ -2651,24 +2672,34 @@ public abstract class TaskManager {
     private void createShrinkResourcesTransform(
             @NonNull TaskFactory taskFactory,
             @NonNull VariantScope scope) {
-        if (!scope.getVariantConfiguration().getBuildType().isShrinkResources()) {
+        CoreBuildType buildType = scope.getVariantConfiguration().getBuildType();
+
+        if (!buildType.isShrinkResources()) {
+            // The user didn't enable resource shrinking, silently move on.
             return;
         }
 
-        if (getIncrementalMode(scope.getVariantConfiguration()) != IncrementalMode.NONE) {
-            logger.warn("Instant Run: Resource shrinker automatically disabled for {}",
-                    scope.getVariantConfiguration().getFullName());
-            // Disabled for instant run, as shrinking is automatically disabled.
+        if (!scope.useResourceShrinker()) {
+            // The user enabled resource shrinking, but we disabled it for some reason. Try to
+            // explain.
+
+            if (getIncrementalMode(scope.getVariantConfiguration()) != IncrementalMode.NONE) {
+                logger.warn("Instant Run: Resource shrinker automatically disabled for {}",
+                        scope.getVariantConfiguration().getFullName());
+                return;
+            }
+
+            if (buildType.isMinifyEnabled() && !buildType.isUseProguard()) {
+                androidBuilder.getErrorReporter().handleSyncError(
+                        null,
+                        SyncIssue.TYPE_GENERIC,
+                        "Built-in class shrinker and resource shrinking are not supported yet.");
+                return;
+            }
+
             return;
         }
 
-        if (!scope.getVariantConfiguration().getBuildType().isUseProguard()) {
-            androidBuilder.getErrorReporter().handleSyncError(
-                    null,
-                    SyncIssue.TYPE_GENERIC,
-                    "Build-in class shrinker and resource shrinking are not supported yet.");
-            return;
-        }
 
         // if resources are shrink, insert a no-op transform per variant output
         // to transform the res package into a stripped res package
@@ -2678,7 +2709,7 @@ public abstract class TaskManager {
             ShrinkResourcesTransform shrinkResTransform = new ShrinkResourcesTransform(
                     variantOutputData,
                     variantOutputScope.getProcessResourcePackageOutputFile(),
-                    variantOutputScope.getCompressedResourceFile(),
+                    variantOutputScope.getShrinkedResourcesFile(),
                     androidBuilder,
                     logger);
             AndroidTask<TransformTask> shrinkTask = scope.getTransformManager()

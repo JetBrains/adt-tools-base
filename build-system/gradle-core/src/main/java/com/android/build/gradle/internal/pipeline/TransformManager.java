@@ -199,7 +199,7 @@ public class TransformManager extends FilterableStreamCollection {
                     SyncIssue.TYPE_GENERIC,
                     String.format(
                             "Unable to add Transform '%s' on variant '%s': requested streams not available: %s+%s / %s",
-                            transform.getName(), scope.getFullName(),
+                            transform.getName(), scope.getFullVariantName(),
                             transform.getScopes(), transform.getReferencedScopes(),
                             transform.getInputTypes()));
             return null;
@@ -207,9 +207,7 @@ public class TransformManager extends FilterableStreamCollection {
 
         //noinspection PointlessBooleanExpression
         if (DEBUG && logger.isEnabled(LogLevel.DEBUG)) {
-            logger.debug(
-                    "ADDED TRANSFORM(" + scope.getFullName()
-                            + "):");
+            logger.debug("ADDED TRANSFORM(" + scope.getFullVariantName() + "):");
             logger.debug("\tName: " + transform.getName());
             logger.debug("\tTask: " + taskName);
             for (TransformStream sd : inputStreams) {
@@ -229,7 +227,7 @@ public class TransformManager extends FilterableStreamCollection {
         AndroidTask<TransformTask> task = taskRegistry.create(
                 taskFactory,
                 new TransformTask.ConfigAction<>(
-                        scope.getFullName(),
+                        scope.getFullVariantName(),
                         taskName,
                         transform,
                         inputStreams,

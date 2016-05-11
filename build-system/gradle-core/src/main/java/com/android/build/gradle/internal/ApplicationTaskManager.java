@@ -24,6 +24,7 @@ import com.android.build.gradle.internal.dsl.CoreJackOptions;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.ndk.NdkHandler;
+import com.android.build.gradle.internal.pipeline.StreamFilter;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.pipeline.TransformStream;
 import com.android.build.gradle.internal.pipeline.TransformTask;
@@ -35,7 +36,6 @@ import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.SplitHandlingPolicy;
 import com.android.build.gradle.tasks.AndroidJarTask;
-import com.android.build.gradle.tasks.PackageAndroidArtifact;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.Recorder;
@@ -323,8 +323,7 @@ public class ApplicationTaskManager extends TaskManager {
                                     variantScope));
 
             TransformManager transformManager = variantScope.getTransformManager();
-            for (TransformStream stream : transformManager.getStreams(
-                    PackageAndroidArtifact.DEX_FILTER)) {
+            for (TransformStream stream : transformManager.getStreams(StreamFilter.DEX)) {
                 // TODO Optimize to avoid creating too many actions
                 splitApk.dependsOn(tasks, stream.getDependencies());
             }

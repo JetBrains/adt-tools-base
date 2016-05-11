@@ -18,7 +18,6 @@ package com.android.build.gradle.internal.packaging;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.AndroidGradleOptions;
-import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.builder.internal.packaging.zfile.ApkZFileCreatorFactory;
 import com.android.builder.internal.packaging.zip.ZFileOptions;
 import com.android.builder.internal.packaging.zip.compress.BestAndDefaultDeflateExecutorCompressor;
@@ -60,18 +59,20 @@ public final class ApkCreatorFactories {
     /**
      * Creates an {@link ApkCreatorFactory} based on the definitions in the project.
      *
-     * @param variantScope the variant scope used to obtain the project properties
+     * @param project the project whose properties will be checked
+     * @param debuggableBuild whether the {@link ApkCreatorFactory} will be used to create a
+     *                        debuggable archive
      * @return the factory
      */
     @NonNull
-    public static ApkCreatorFactory fromProjectProperties(@NonNull VariantScope variantScope) {
-        Project project = variantScope.getGlobalScope().getProject();
+    public static ApkCreatorFactory fromProjectProperties(
+            @NonNull Project project,
+            boolean debuggableBuild) {
         boolean useOldPackaging = AndroidGradleOptions.useOldPackaging(project);
         if (useOldPackaging) {
             return new SignedJarApkCreatorFactory();
         } else {
-            boolean keepTimestamps = AndroidGradleOptions.keepTimestampsInApk(
-                    variantScope.getGlobalScope().getProject());
+            boolean keepTimestamps = AndroidGradleOptions.keepTimestampsInApk(project);
 
             ZFileOptions options = new ZFileOptions();
             options.setNoTimestamps(!keepTimestamps);
@@ -85,7 +86,7 @@ public final class ApkCreatorFactories {
                             TimeUnit.MILLISECONDS,
                             new LinkedBlockingDeque<>());
 
-            if (variantScope.getVariantConfiguration().getBuildType().isDebuggable()) {
+            if (debuggableBuild) {
                 options.setCompressor(
                         new DeflateExecutionCompressor(
                                 compressionExecutor,

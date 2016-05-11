@@ -23,8 +23,7 @@ import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
-import com.android.build.gradle.internal.scope.VariantOutputScope;
-import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.scope.PackagingScope;
 import com.android.builder.packaging.DuplicateFileException;
 import com.android.ide.common.res2.FileStatus;
 import com.google.common.base.Throwables;
@@ -58,10 +57,7 @@ public class PackageApplication extends PackageAndroidArtifact {
 
     @Override
     protected boolean isIncremental() {
-        if (inOldMode) {
-            return false;
-        }
-        return true;
+        return !inOldMode;
     }
 
     @Override
@@ -233,7 +229,7 @@ public class PackageApplication extends PackageAndroidArtifact {
             extends PackageAndroidArtifact.ConfigAction<PackageApplication> {
 
         public ConfigAction(
-                @NonNull VariantOutputScope scope,
+                @NonNull PackagingScope scope,
                 @Nullable InstantRunPatchingPolicy patchingPolicy) {
             super(scope, patchingPolicy);
         }
@@ -241,7 +237,7 @@ public class PackageApplication extends PackageAndroidArtifact {
         @NonNull
         @Override
         public String getName() {
-            return variantOutputScope.getTaskName("package");
+            return packagingScope.getTaskName("package");
         }
 
         @NonNull
@@ -252,15 +248,15 @@ public class PackageApplication extends PackageAndroidArtifact {
 
         @Override
         public void execute(@NonNull final PackageApplication packageApplication) {
-            final VariantScope variantScope = variantOutputScope.getVariantScope();
-
             ConventionMappingHelper.map(
-                    packageApplication, "outputFile", variantOutputScope::getPackageApk);
+                    packageApplication, "outputFile", packagingScope::getPackageApk);
 
-            packageApplication.markerFile =
-                    PrePackageApplication.ConfigAction.getMarkerFile(variantScope);
+            packageApplication.markerFile = PrePackageApplication.ConfigAction.getMarkerFile(
+                    packagingScope.getInstantRunSupportDir());
+
             packageApplication.inOldMode = AndroidGradleOptions.useOldPackaging(
-                    variantScope.getGlobalScope().getProject());
+                    packagingScope.getProject());
+
             super.execute(packageApplication);
         }
     }

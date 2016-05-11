@@ -17,10 +17,10 @@
 package com.android.build.gradle.tasks;
 
 import com.android.annotations.NonNull;
-import com.android.builder.model.OptionalCompilationStep;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.builder.model.OptionalCompilationStep;
 
 import java.io.File;
 import java.io.IOException;
@@ -68,8 +68,8 @@ public class PrePackageApplication extends KickerTask {
         }
 
         @NonNull
-        public static File getMarkerFile(@NonNull VariantScope scope) {
-            return new File(scope.getInstantRunSupportDir(), "package.marker");
+        public static File getMarkerFile(@NonNull File instantRunSupportDir) {
+            return new File(instantRunSupportDir, "package.marker");
         }
 
         @NonNull
@@ -81,7 +81,7 @@ public class PrePackageApplication extends KickerTask {
         @Override
         public void execute(@NonNull PrePackageApplication task) {
             super.execute(task);
-            task.markerFile = getMarkerFile(scope);
+            task.markerFile = getMarkerFile(scope.getInstantRunSupportDir());
         }
     }
 }

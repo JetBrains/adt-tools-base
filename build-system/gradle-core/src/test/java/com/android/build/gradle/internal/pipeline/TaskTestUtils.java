@@ -204,7 +204,7 @@ public class TaskTestUtils {
             }
 
             ImmutableList<TransformStream> streams = streamCollection
-                    .getStreams(new TransformManager.StreamFilter() {
+                    .getStreams(new StreamFilter() {
                         @Override
                         public boolean accept(@NonNull Set<QualifiedContent.ContentType> types,
                                 @NonNull Set<QualifiedContent.Scope> scopes) {

@@ -35,6 +35,7 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
+import com.android.build.gradle.internal.dsl.CoreSigningConfig;
 import com.android.build.gradle.internal.profile.SpanRecorders;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -111,7 +112,7 @@ public class VariantManager implements VariantModel {
     @NonNull
     private final List<BaseVariantData<? extends BaseVariantOutputData>> variantDataList = Lists.newArrayList();
     @Nullable
-    private SigningConfig signingOverride;
+    private CoreSigningConfig signingOverride;
 
     public VariantManager(
             @NonNull Project project,
@@ -892,7 +893,7 @@ public class VariantManager implements VariantModel {
         }
     }
 
-    private SigningConfig createSigningOverride() {
+    private CoreSigningConfig createSigningOverride() {
         AndroidGradleOptions.SigningOptions signingOptions =
                 AndroidGradleOptions.getSigningOptions(project);
         if (signingOptions != null) {

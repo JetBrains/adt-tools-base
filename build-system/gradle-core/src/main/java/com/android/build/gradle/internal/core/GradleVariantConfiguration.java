@@ -29,9 +29,9 @@ import com.android.build.gradle.internal.dsl.CoreJackOptions;
 import com.android.build.gradle.internal.dsl.CoreJavaCompileOptions;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
+import com.android.build.gradle.internal.dsl.CoreSigningConfig;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
-import com.android.builder.model.SigningConfig;
 import com.android.builder.model.SourceProvider;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
@@ -77,7 +77,7 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
             @NonNull CoreBuildType buildType,
             @Nullable SourceProvider buildTypeSourceProvider,
             @NonNull VariantType type,
-            @Nullable SigningConfig signingConfigOverride) {
+            @Nullable CoreSigningConfig signingConfigOverride) {
         super(defaultConfig, defaultSourceProvider, buildType, buildTypeSourceProvider, type,
                 testedConfig, signingConfigOverride);
         mergeOptions();
@@ -112,7 +112,7 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
                 @NonNull CoreBuildType buildType,
                 @Nullable SourceProvider buildTypeSourceProvider,
                 @NonNull VariantType type,
-                @Nullable SigningConfig signingConfigOverride);
+                @Nullable CoreSigningConfig signingConfigOverride);
     }
 
     /** Builder for non-testing variant configurations */
@@ -125,7 +125,7 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
                 @NonNull CoreBuildType buildType,
                 @Nullable SourceProvider buildTypeSourceProvider,
                 @NonNull VariantType type,
-                @Nullable SigningConfig signingConfigOverride){
+                @Nullable CoreSigningConfig signingConfigOverride){
             return new GradleVariantConfiguration(
                     null /*testedConfig*/,
                     defaultConfig,
@@ -155,7 +155,7 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
                 @NonNull CoreBuildType buildType,
                 @Nullable SourceProvider buildTypeSourceProvider,
                 @NonNull VariantType type,
-                @Nullable SigningConfig signingConfigOverride) {
+                @Nullable CoreSigningConfig signingConfigOverride) {
             return new GradleVariantConfiguration(
                     null /*testedConfig*/,
                     defaultConfig,
@@ -312,6 +312,12 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
 
     public CoreJackOptions getJackOptions() {
         return mergedJackOptions;
+    }
+
+    @Nullable
+    @Override
+    public CoreSigningConfig getSigningConfig() {
+        return (CoreSigningConfig) super.getSigningConfig();
     }
 
     /**

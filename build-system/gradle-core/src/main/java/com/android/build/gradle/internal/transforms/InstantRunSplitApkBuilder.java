@@ -24,12 +24,12 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext.FileType;
+import com.android.build.gradle.internal.pipeline.StreamFilter;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
-import com.android.build.gradle.tasks.PackageAndroidArtifact;
 import com.android.builder.core.VariantType;
 import com.android.builder.internal.aapt.Aapt;
 import com.android.builder.internal.aapt.AaptPackageConfig;
@@ -324,7 +324,7 @@ public class InstantRunSplitApkBuilder extends BaseTask {
                             }
 
                             return variantScope.getTransformManager()
-                                    .getPipelineOutput(PackageAndroidArtifact.DEX_FILTER).keySet();
+                                    .getPipelineOutput(StreamFilter.DEX).keySet();
                         }
                     });
             ConventionMappingHelper.map(task, "aaptOptions",

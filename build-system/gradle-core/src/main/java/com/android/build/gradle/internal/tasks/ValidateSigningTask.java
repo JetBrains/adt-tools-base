@@ -18,6 +18,9 @@ package com.android.build.gradle.internal.tasks;
 
 import static com.google.common.base.Preconditions.checkState;
 
+import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.scope.PackagingScope;
+import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.builder.model.SigningConfig;
 import com.android.ide.common.signing.KeystoreHelper;
 import com.android.ide.common.signing.KeytoolException;
@@ -108,4 +111,33 @@ public class ValidateSigningTask extends BaseTask {
             }
         }
     }
+
+    public static class ConfigAction implements TaskConfigAction<ValidateSigningTask> {
+
+        private PackagingScope mPackagingScope;
+
+        public ConfigAction(PackagingScope packagingScope) {
+            mPackagingScope = packagingScope;
+        }
+
+        @NonNull
+        @Override
+        public String getName() {
+            return mPackagingScope.getTaskName("validateSigning");
+        }
+
+        @NonNull
+        @Override
+        public Class<ValidateSigningTask> getType() {
+            return ValidateSigningTask.class;
+        }
+
+        @Override
+        public void execute(@NonNull ValidateSigningTask task) {
+            task.setAndroidBuilder(mPackagingScope.getAndroidBuilder());
+            task.setVariantName(mPackagingScope.getFullVariantName());
+            task.setSigningConfig(mPackagingScope.getSigningConfig());
+        }
+    }
+
 }
