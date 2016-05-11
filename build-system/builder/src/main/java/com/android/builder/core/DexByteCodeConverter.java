@@ -296,13 +296,14 @@ public class DexByteCodeConverter {
                             + "To run dex in process, the Gradle daemon needs a larger heap.\n"
                             + "It currently has approximately %1$d MB.\n"
                             + "For faster builds, increase the maximum heap size for the "
-                            + "Gradle daemon to more than %2$s MB" + dexOptionsComment + ".\n"
+                            + "Gradle daemon to more than %2$s MB%3$s.\n"
                             + "To do this set org.gradle.jvmargs=-Xmx%2$sM in the "
                             + "project gradle.properties.\n"
                             + "For more information see "
                             + "https://docs.gradle.org/current/userguide/build_environment.html\n",
                     maxMemory / (1024 * 1024),
-                    requiredHeapSizeHeuristic / (1024 * 1024));
+                    requiredHeapSizeHeuristic / (1024 * 1024),
+                    dexOptionsComment);
             mIsDexInProcess = false;
             return false;
         }

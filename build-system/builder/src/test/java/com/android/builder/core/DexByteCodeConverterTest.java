@@ -93,13 +93,17 @@ public class DexByteCodeConverterTest {
     @Test
     public void checkDexInProcessWithNotEnoughMemoryIsDisabled() {
         when(dexOptions.getDexInProcess()).thenReturn(true);
+
         // a very large number to ensure dex in process is disabled due to memory needs.
-        when(dexOptions.getJavaMaxHeapSize()).thenReturn("10000G");
+        String heapSizeSetting = "10000G";
+        
+        when(dexOptions.getJavaMaxHeapSize()).thenReturn(heapSizeSetting);
         assertFalse(dexByteCodeConverter.shouldDexInProcess(dexOptions, new Revision(23, 0, 2)));
         verify(logger).warning(
                 contains("org.gradle.jvmargs=-Xmx"),
                 any(),
-                eq(10000 * 1024 + DexByteCodeConverter.NON_DEX_HEAP_SIZE / 1024 / 1024));
+                eq(10000 * 1024 + DexByteCodeConverter.NON_DEX_HEAP_SIZE / 1024 / 1024),
+                contains(heapSizeSetting));
         verifyNoMoreInteractions(logger);
     }
 
