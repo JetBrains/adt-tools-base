@@ -133,6 +133,16 @@ import java.util.concurrent.Future;
  * alignment that forces an empty space before that can be occupied by {@code b}. Sorting can be
  * used to minimize the changes between two zips.
  *
+ * <p>Sorting in {@code ZFile} can be done manually or automatically. Manual sorting is done by
+ * invoking {@link #sortZipContents()}. Automatic sorting is done by setting the
+ * {@link ZFileOptions#getAutoSortFiles()} option when creating the {@code ZFile}. Automatic
+ * sorting invokes {@link #sortZipContents()} immediately when doing an {@link #update()} after
+ * all extensions have processed the {@link ZFileExtension#beforeUpdate()}. This has the guarantee
+ * that files added by extensions will be sorted, something that does not happen if the invocation
+ * is sequential, <i>i.e.</i>, {@link #sortZipContents()} called before {@link #update()}. The
+ * drawback of automatic sorting is that sorting will happen every time {@link #update()} is
+ * called and the file is dirty having a possible penalty in performance.
+ *
  * <p>To allow whole-apk signing, the {@code ZFile} allows the central directory location to be
  * offset by a fixed amount. This amount can be set using the {@link #setExtraDirectoryOffset(long)}
  * method. Setting a non-zero value will add extra (unused) space in the zip file before the
@@ -319,6 +329,11 @@ public class ZFile implements Closeable {
      */
     private boolean mUseExtraFieldForAlignment;
 
+    /**
+     * Should files be automatically sorted when updating?
+     */
+    private boolean mAutoSortFiles;
+
 
     /**
      * Creates a new zip file. If the zip file does not exist, then no file is created at this
@@ -355,6 +370,7 @@ public class ZFile implements Closeable {
         mTracker = options.getTracker();
         mCompressor = options.getCompressor();
         mUseExtraFieldForAlignment = options.getUseExtraFieldForAlignment();
+        mAutoSortFiles = options.getAutoSortFiles();
 
         /*
          * These two values will be overwritten by openReadOnly() below if the file exists.
@@ -756,6 +772,10 @@ public class ZFile implements Closeable {
         }
 
         reopenRw();
+
+        if (mAutoSortFiles) {
+            sortZipContents();
+        }
 
         /*
          * We're going to change the file so delete the central directory and the EOCD as they
