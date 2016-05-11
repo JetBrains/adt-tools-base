@@ -50,4 +50,6 @@ public class ModelConstants {
     public static final String NDK_HANDLER = "ndkHandler";
 
     public static final String TASK_MANAGER = "taskManager";
+
+    public static final String NATIVE_BUILD_CONFIG_VALUES = "nativeBuildConfigValues";
 }

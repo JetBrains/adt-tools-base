@@ -101,6 +101,11 @@ class NdkBuildExternalNativeJsonGenerator extends ExternalNativeJsonGenerator {
         Files.write(actualResult, outputJson, Charsets.UTF_8);
     }
 
+    @Override
+    public NativeBuildSystem getNativeBuildSystem() {
+        return NativeBuildSystem.NDK_BUILD;
+    }
+
     /**
      * Get the path of the ndk-build script.
      */
