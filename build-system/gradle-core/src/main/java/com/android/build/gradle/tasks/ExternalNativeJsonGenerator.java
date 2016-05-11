@@ -114,17 +114,25 @@ public abstract class ExternalNativeJsonGenerator {
     }
 
     public void build() throws IOException, ProcessException {
-        diagnostic("starting build\n");
-        diagnostic("bringing JSONs up-to-date\n");
+        build(false);
+    }
+
+    public void build(boolean forceJsonGeneration) throws IOException, ProcessException {
+        diagnostic("starting build");
+        diagnostic("bringing JSONs up-to-date");
         for (String abi : abis) {
             File expectedJson = ExternalNativeBuildTaskUtils
                 .getOutputJson(getJsonFolder(), abi);
-            if (ExternalNativeBuildTaskUtils
+            if (forceJsonGeneration || ExternalNativeBuildTaskUtils
                     .shouldRebuildJson(expectedJson, variantName)) {
-                diagnostic("rebuilding json '%s'\n", expectedJson);
+                if (forceJsonGeneration) {
+                    diagnostic("force rebuilding json '%s'", expectedJson);
+
+                } else {
+                    diagnostic("rebuilding json '%s'", expectedJson);
+                }
                 if (expectedJson.getParentFile().mkdirs()) {
-                    diagnostic("created folder '%s'\n",
-                            expectedJson.getParentFile());
+                    diagnostic("created folder '%s'", expectedJson.getParentFile());
                 }
 
                 createNativeBuildJson(abi, expectedJson);
@@ -139,7 +147,7 @@ public abstract class ExternalNativeJsonGenerator {
                 diagnostic("json '%s' was up-to-date", expectedJson);
             }
         }
-        diagnostic("build complete\n");
+        diagnostic("build complete");
     }
 
     /**

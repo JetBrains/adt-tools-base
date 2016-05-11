@@ -86,8 +86,7 @@ $modelBefore
     }
 $modelAfter
 """;
-        project.execute("clean", "assembleDebug",
-                "generateJsonModelDebug", "generateJsonModelRelease")
+        project.execute("clean", "assembleDebug")
     }
 
     @Test

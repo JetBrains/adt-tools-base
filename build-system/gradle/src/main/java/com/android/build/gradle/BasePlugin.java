@@ -54,6 +54,7 @@ import com.android.build.gradle.internal.profile.RecordingBuildListener;
 import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.VariantFactory;
+import com.android.build.gradle.tasks.ExternalNativeBuildTaskUtils;
 import com.android.build.gradle.tasks.ExternalNativeJsonGenerator;
 import com.android.build.gradle.tasks.JackPreDexTransform;
 import com.android.builder.Version;
@@ -693,10 +694,31 @@ public abstract class BasePlugin {
                     }
                 }, new Recorder.Property("project", project.getName()));
 
-        // If we're building the model right now then generate and on-disk JSON files and then
-        // deserialize them into ExternalNativeBuildConfigValues for consumption in
-        // NativeModelBuilder.
-        if (AndroidGradleOptions.buildModelOnly(project)) {
+        // Create and read external native build JSON files depending on what's happening right
+        // now.
+        //
+        // CREATE PHASE:
+        // Creates JSONs by shelling out to external build system when:
+        //   - Any one of AndroidProject.PROPERTY_INVOKED_FROM_IDE,
+        //      AndroidProject.PROPERTY_BUILD_MODEL_ONLY_ADVANCED,
+        //      AndroidProject.PROPERTY_BUILD_MODEL_ONLY,
+        //      AndroidProject.PROPERTY_REFRESH_EXTERNAL_NATIVE_MODEL are set.
+        //   - *and* AndroidProject.PROPERTY_REFRESH_EXTERNAL_NATIVE_MODEL is set
+        //      or JSON files don't exist or are out-of-date.
+        // Create phase may cause ProcessException (from cmake.exe for example)
+        //
+        // READ PHASE:
+        // Reads and deserializes JSONs when:
+        //   - Any one of AndroidProject.PROPERTY_INVOKED_FROM_IDE,
+        //      AndroidProject.PROPERTY_BUILD_MODEL_ONLY_ADVANCED,
+        //      AndroidProject.PROPERTY_BUILD_MODEL_ONLY,
+        //      AndroidProject.PROPERTY_REFRESH_EXTERNAL_NATIVE_MODEL are set.
+        // Read phase may produce IOException if the file can't be read for standard IO reasons.
+        // Read phase may produce JsonSyntaxException in the case that the content of the file is
+        // corrupt.
+        boolean forceRegeneration = AndroidGradleOptions.refreshExternalNativeModel(project);
+
+        if (ExternalNativeBuildTaskUtils.shouldRegenerateOutOfDateJsons(project)) {
             ThreadRecorder.get().record(ExecutionType.VARIANT_MANAGER_EXTERNAL_NATIVE_CONFIG_VALUES,
                     new Recorder.Block<Void>() {
                         @Override
@@ -706,6 +728,11 @@ public abstract class BasePlugin {
                                 ExternalNativeJsonGenerator generator =
                                         variantData.getScope().getExternalNativeJsonGenerator();
                                 if (generator != null) {
+                                    // This will generate any out-of-date or non-existent JSONs.
+                                    // When refreshExternalNativeModel() is true it will also
+                                    // force update all JSONs.
+                                    generator.build(forceRegeneration);
+
                                     variantData.getScope().addExternalNativeBuildConfigValues(
                                             generator.readExistingNativeBuildConfigurations());
                                 }

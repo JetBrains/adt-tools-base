@@ -18,6 +18,7 @@ package com.android.build.gradle.tasks;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.external.gson.NativeBuildConfigValue;
 import com.android.build.gradle.external.gson.NativeLibraryValue;
 import com.android.build.gradle.external.gson.PlainFileGsonTypeAdaptor;
@@ -39,6 +40,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import org.gradle.api.GradleException;
+import org.gradle.api.Project;
 
 import java.io.File;
 import java.io.IOException;
@@ -163,6 +165,16 @@ public class ExternalNativeBuildTaskUtils {
                     "expected abis to be specific, at least one is 'all'");
         }
         return abis;
+    }
+
+    /**
+     * Return true if we should regenerate out-of-date JSON files.
+     */
+    public static boolean shouldRegenerateOutOfDateJsons(Project project) {
+        return AndroidGradleOptions.buildModelOnly(project)
+                || AndroidGradleOptions.buildModelOnlyAdvanced(project)
+                || AndroidGradleOptions.invokedFromIde(project)
+                || AndroidGradleOptions.refreshExternalNativeModel(project);
     }
 
     public static class ExternalNativeBuildProjectPathResolution {
