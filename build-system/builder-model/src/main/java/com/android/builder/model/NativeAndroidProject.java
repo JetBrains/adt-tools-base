@@ -26,6 +26,10 @@ import java.util.Map;
  * Entry point for the model of the Android native support.
  */
 public interface NativeAndroidProject {
+   String BUILD_SYSTEM_UNKNOWN = "unknown";
+   String BUILD_SYSTEM_GRADLE = "gradle";
+   String BUILD_SYSTEM_CMAKE = "cmake";
+   String BUILD_SYSTEM_NDK_BUILD = "ndk-build";
 
    /**
     * Returns the model version. This is a string in the format X.Y.Z
