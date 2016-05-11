@@ -1227,6 +1227,12 @@ public final class SdkConstants {
     public static final String ATTR_DRAW_SELECTOR_ON_TOP = "drawSelectorOnTop";     //$NON-NLS-1$
     public static final String ATTR_SCROLLBARS = "scrollbars";                      //$NON-NLS-1$
     public static final String ATTR_COMPLETION_HINT = "completionHint";             //$NON-NLS-1$
+    public static final String ATTR_TAB_MODE = "tabMode";                           //$NON-NLS-1$
+    public static final String ATTR_TAB_GRAVITY = "tabGravity";                     //$NON-NLS-1$
+    public static final String ATTR_TAB_CONTENT_START = "tabContentStart";          //$NON-NLS-1$
+    public static final String ATTR_TAB_INDICATOR_COLOR = "tabIndicatorColor";      //$NON-NLS-1$
+    public static final String ATTR_TAB_SELECTED_TEXT_COLOR = "tabSelectedTextColor";//$NON-NLS-1$
+    public static final String ATTR_TAB_TEXT_APPEARANCE = "tabTextAppearance";      //$NON-NLS-1$
 
     // Values: Manifest
     public static final String VALUE_SPLIT_ACTION_BAR_WHEN_NARROW = "splitActionBarWhenNarrow"; // NON-NLS-$1
@@ -1568,8 +1574,25 @@ public final class SdkConstants {
     }
 
     public static final class PreferenceAttributes {
-        public static final String DEFAULT_VALUE = "defaultValue";
-        public static final String KEY = "key";
+        public static final String ATTR_DEFAULT_VALUE = "defaultValue";
+        public static final String ATTR_DEPENDENCY = "dependency";
+        public static final String ATTR_DIALOG_ICON = "dialogIcon";
+        public static final String ATTR_DISABLE_DEPENDENTS_STATE = "disableDependentsState";
+        public static final String ATTR_ENTRIES = "entries";
+        public static final String ATTR_ENTRY_VALUES = "entryValues";
+        public static final String ATTR_ICON = "icon";
+        public static final String ATTR_KEY = "key";
+        public static final String ATTR_PERSISTENT = "persistent";
+        public static final String ATTR_RINGTONE_TYPE = "ringtoneType";
+        public static final String ATTR_SHOW_DEFAULT = "showDefault";
+        public static final String ATTR_SHOW_SILENT = "showSilent";
+        public static final String ATTR_SINGLE_LINE = "singleLine";
+        public static final String ATTR_SUMMARY = "summary";
+        public static final String ATTR_SUMMARY_ON = "summaryOn";
+        public static final String ATTR_SUMMARY_OFF = "summaryOff";
+        public static final String ATTR_SWITCH_TEXT_ON = "switchTextOn";
+        public static final String ATTR_SWITCH_TEXT_OFF = "switchTextOff";
+        public static final String ATTR_TITLE = "title";
     }
 
     // Text Alignment values.
