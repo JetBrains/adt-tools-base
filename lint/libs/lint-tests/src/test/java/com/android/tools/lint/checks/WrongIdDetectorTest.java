@@ -229,7 +229,7 @@ public class WrongIdDetectorTest extends AbstractCheckTest {
                 + "2 errors, 0 warnings\n",
                 lintProject(xml("res/layout/constraint.xml", ""
                         + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-                        + "<android.support.constraint.ConstraintLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "<android.constraint.ConstraintLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    xmlns:app=\"http://schemas.android.com/apk/res-auto\"\n"
                         + "    android:layout_width=\"800dp\" android:layout_height=\"1143dp\"\n"
                         + "    android:id=\"@+id/com.google.tnt.sherpa.ConstraintLayout\">\n"
@@ -252,6 +252,6 @@ public class WrongIdDetectorTest extends AbstractCheckTest {
                         + "        app:layout_editor_absoluteX=\"150dp\"\n"
                         + "        app:layout_editor_absoluteY=\"94dp\"\n"
                         + "        android:id=\"@+id/button5\" />\n"
-                        + "</android.support.constraint.ConstraintLayout>")));
+                        + "</android.constraint.ConstraintLayout>")));
     }
 }
