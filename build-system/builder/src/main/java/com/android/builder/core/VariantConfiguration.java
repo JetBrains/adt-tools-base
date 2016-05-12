@@ -1842,9 +1842,9 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     @NonNull
     public List<File> getProvidedOnlyJars() {
         Set<File> jars = Sets.newHashSetWithExpectedSize(
-                mFlatCompileDependencies.getAndroidDependencies().size() +
-                        mFlatCompileDependencies.getJarDependencies().size() +
-                        mFlatCompileDependencies.getLocalDependencies().size());
+                mFlatPackageDependencies.getAndroidDependencies().size() +
+                        mFlatPackageDependencies.getJarDependencies().size() +
+                        mFlatPackageDependencies.getLocalDependencies().size());
 
         // TODO: we might want to cache this somehow, or precompute during dependency manager.
         Set<MavenCoordinates> packageArtifacts = Sets.newHashSet();
@@ -1871,7 +1871,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             }
         }
 
-        for (JavaLibrary javaLibrary : mFlatPackageDependencies.getLocalDependencies()) {
+        for (JavaLibrary javaLibrary : mFlatCompileDependencies.getLocalDependencies()) {
             if (!packageArtifacts.contains(javaLibrary.getResolvedCoordinates())) {
                 File jarFile = javaLibrary.getJarFile();
                 if (jarFile.exists()) {
@@ -1880,7 +1880,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             }
         }
 
-        for (AndroidLibrary androidLibrary : mFlatPackageDependencies.getAndroidDependencies()) {
+        for (AndroidLibrary androidLibrary : mFlatCompileDependencies.getAndroidDependencies()) {
             if (!packageArtifacts.contains(androidLibrary.getResolvedCoordinates())) {
                 File libJar = androidLibrary.getJarFile();
                 if (libJar.exists()) {
