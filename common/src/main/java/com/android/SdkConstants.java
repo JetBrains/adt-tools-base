@@ -1514,6 +1514,7 @@ public final class SdkConstants {
     public static final String ATTR_TRACK_TINT = "trackTint";           //$NON-NLS-1$
     public static final String ATTR_SHOW_TEXT = "showText";             //$NON-NLS-1$
     public static final String ATTR_SPLIT_TRACK = "splitTrack";         //$NON-NLS-1$
+    public static final String ATTR_STATE_LIST_ANIMATOR = "stateListAnimator"; //$NON-NLS-1$
 
     // TextView
     public static final String ATTR_DRAWABLE_RIGHT = "drawableRight";              //$NON-NLS-1$
