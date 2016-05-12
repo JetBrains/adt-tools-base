@@ -21,15 +21,32 @@ import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.builder.internal.packaging.zfile.ApkZFileCreatorFactory;
 import com.android.builder.internal.packaging.zip.ZFileOptions;
+import com.android.builder.internal.packaging.zip.compress.BestAndDefaultDeflateExecutorCompressor;
+import com.android.builder.internal.packaging.zip.compress.DeflateExecutionCompressor;
 import com.android.builder.packaging.ApkCreatorFactory;
 import com.android.builder.signing.SignedJarApkCreatorFactory;
 
 import org.gradle.api.Project;
 
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.zip.Deflater;
+
 /**
  * Constructs a {@link ApkCreatorFactory} based on gradle options.
  */
 public final class ApkCreatorFactories {
+
+    /**
+     * Time after which background compression threads should be discarded.
+     */
+    private static final long BACKGROUND_THREAD_DISCARD_TIME_MS = 100;
+
+    /**
+     * Maximum number of compression threads.
+     */
+    private static final int MAXIMUM_COMPRESSION_THREADS = 2;
 
     /**
      * Utility class: no constructor.
@@ -59,6 +76,30 @@ public final class ApkCreatorFactories {
             ZFileOptions options = new ZFileOptions();
             options.setNoTimestamps(!keepTimestamps);
             options.setUseExtraFieldForAlignment(true);
+
+            ThreadPoolExecutor compressionExecutor =
+                    new ThreadPoolExecutor(
+                            0, /* Number of always alive threads */
+                            MAXIMUM_COMPRESSION_THREADS,
+                            BACKGROUND_THREAD_DISCARD_TIME_MS,
+                            TimeUnit.MILLISECONDS,
+                            new LinkedBlockingDeque<>());
+
+            if (variantScope.getVariantConfiguration().getBuildType().isDebuggable()) {
+                options.setCompressor(
+                        new DeflateExecutionCompressor(
+                                compressionExecutor,
+                                options.getTracker(),
+                                Deflater.BEST_SPEED));
+            } else {
+                options.setCompressor(
+                        new BestAndDefaultDeflateExecutorCompressor(
+                                compressionExecutor,
+                                options.getTracker(),
+                                1.0));
+                options.setAutoSortFiles(true);
+            }
+
             return new ApkZFileCreatorFactory(options);
         }
     }
