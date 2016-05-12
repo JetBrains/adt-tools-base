@@ -1,0 +1,10 @@
+task build {}
+
+cmake {
+    name 'perfd'
+    abis 'armeabi-v7a', 'arm64-v8a', 'host'
+    projectDir "$rootDir/perfd"
+}
+
+// Linking "perfd" to "build" will trigger it's build from IntelliJ, we don't want to do that just yet
+// build.dependsOn perfd
