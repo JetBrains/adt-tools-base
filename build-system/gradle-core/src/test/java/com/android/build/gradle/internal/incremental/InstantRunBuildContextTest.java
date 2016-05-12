@@ -391,35 +391,31 @@ public class InstantRunBuildContextTest {
         List<Element> builds = getElementsByName(document.getFirstChild(),
                 InstantRunBuildContext.TAG_BUILD);
         // initial builds are never removed.
-        assertThat(builds).hasSize(3);
-        assertThat(builds.get(0).getAttribute(InstantRunBuildContext.ATTR_TIMESTAMP)).isEqualTo(
-                String.valueOf(initial.getBuildId()));
-        List<Element> artifacts = getElementsByName(builds.get(0),
-                InstantRunBuildContext.TAG_ARTIFACT);
-        assertThat(artifacts).hasSize(2);
-        // split-2 changes on first build is overlapped by third change.
-        assertThat(artifacts.get(0).getAttribute(InstantRunBuildContext.ATTR_LOCATION))
-                .isEqualTo(new File("/tmp/main.apk").getAbsolutePath());
-        assertThat(artifacts.get(1).getAttribute(InstantRunBuildContext.ATTR_LOCATION))
-                .isEqualTo(new File("/tmp/split-0.apk").getAbsolutePath());
-
+        // first build should have only have split-main remaining.
+        assertThat(builds).hasSize(4);
         assertThat(builds.get(1).getAttribute(InstantRunBuildContext.ATTR_TIMESTAMP)).isEqualTo(
                 String.valueOf(first.getBuildId()));
-        artifacts = getElementsByName(builds.get(0),
+        List<Element> artifacts = getElementsByName(builds.get(1),
                 InstantRunBuildContext.TAG_ARTIFACT);
         assertThat(artifacts).hasSize(2);
         // split-2 changes on first build is overlapped by third change.
         assertThat(artifacts.get(0).getAttribute(InstantRunBuildContext.ATTR_LOCATION))
                 .isEqualTo(new File("/tmp/main.apk").getAbsolutePath());
         assertThat(artifacts.get(1).getAttribute(InstantRunBuildContext.ATTR_LOCATION))
-                .isEqualTo(new File("/tmp/split-0.apk").getAbsolutePath());
+                .isEqualTo(new File("/tmp/split-1.apk").getAbsolutePath());
 
-        // second is removed.
-
-        // third has not only split-main remaining.
+        // second has not only split-main remaining.
         assertThat(builds.get(2).getAttribute(InstantRunBuildContext.ATTR_TIMESTAMP)).isEqualTo(
-                String.valueOf(third.getBuildId()));
+                String.valueOf(second.getBuildId()));
         artifacts = getElementsByName(builds.get(2), InstantRunBuildContext.TAG_ARTIFACT);
+        assertThat(artifacts).hasSize(1);
+        // split-2 changes on first build is overlapped by third change.
+        assertThat(artifacts.get(0).getAttribute(InstantRunBuildContext.ATTR_LOCATION))
+                .isEqualTo(new File("/tmp/main.apk").getAbsolutePath());
+
+        assertThat(builds.get(3).getAttribute(InstantRunBuildContext.ATTR_TIMESTAMP)).isEqualTo(
+                String.valueOf(third.getBuildId()));
+        artifacts = getElementsByName(builds.get(3), InstantRunBuildContext.TAG_ARTIFACT);
         assertThat(artifacts).hasSize(3);
         // split-2 changes on first build is overlapped by third change.
         assertThat(artifacts.get(0).getAttribute(InstantRunBuildContext.ATTR_LOCATION))
