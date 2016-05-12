@@ -21,6 +21,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.android.annotations.Nullable;
+import com.android.utils.FileUtils;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -47,18 +50,41 @@ public class ZFileSortTest {
     @Before
     public final void before() throws Exception {
         mFile = new File(mTemporaryFolder.getRoot(), "a.zip");
-        mZFile = new ZFile(mFile);
+        setupZFile(null);
+    }
+
+    @After
+    public final void after() throws Exception {
+        mZFile.close();
+    }
+
+    /**
+     * Recreates the zip file, if one already exist.
+     *
+     * @param options the options for the file, may be {@code null} in which case the default
+     * options will be used
+     * @throws Exception failed to re-create the file
+     */
+    private void setupZFile(@Nullable ZFileOptions options) throws Exception {
+        if (mZFile != null) {
+            mZFile.close();
+        }
+
+        if (mFile.exists()) {
+            FileUtils.delete(mFile);
+        }
+
+        if (options == null) {
+            options = new ZFileOptions();
+        }
+
+        mZFile = new ZFile(mFile, options);
 
         mZFile.add("Mary.so", new ByteArrayInputStream(new byte[] { 1, 2, 3 }));
         mZFile.add("Andrew.txt", new ByteArrayInputStream(new byte[] { 4, 5 }));
         mZFile.add("Beth.png", new ByteArrayInputStream(new byte[] { 6, 7, 8, 9 }));
         mZFile.add("Peter.html", new ByteArrayInputStream(new byte[] { 10 }));
         mZFile.finishAllBackgroundTasks();
-    }
-
-    @After
-    public final void after() throws Exception {
-        mZFile.close();
     }
 
     private void readEntries() throws Exception {
@@ -106,6 +132,24 @@ public class ZFileSortTest {
     public void sortFilesBeforeUpdate() throws Exception {
         readEntries();
         mZFile.sortZipContents();
+
+        mZFile.update();
+
+        readEntries();
+
+        assertTrue(mAndrewOffset >= 0);
+        assertTrue(mBethOffset > mAndrewOffset);
+        assertTrue(mMaryOffset > mBethOffset);
+        assertTrue(mPeterOffset > mMaryOffset);
+    }
+
+    @Test
+    public void autoSort() throws Exception {
+        ZFileOptions options = new ZFileOptions();
+        options.setAutoSortFiles(true);
+        setupZFile(options);
+
+        readEntries();
 
         mZFile.update();
 

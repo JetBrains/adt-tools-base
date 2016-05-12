@@ -57,6 +57,11 @@ public class ZFileOptions {
     private boolean mUseExtraFieldForAlignment;
 
     /**
+     * Should files be automatically sorted before update?
+     */
+    private boolean mAutoSortFiles;
+
+    /**
      * Creates a new options object. All options are set to their defaults.
      */
     public ZFileOptions() {
@@ -160,5 +165,25 @@ public class ZFileOptions {
      */
     public void setUseExtraFieldForAlignment(boolean useExtraFieldForAlignment) {
         mUseExtraFieldForAlignment = useExtraFieldForAlignment;
+    }
+
+    /**
+     * Obtains whether files should be automatically sorted before updating the zip file. See
+     * {@link ZFile} for an explanation on automatic sorting.
+     *
+     * @return should the file be automatically sorted?
+     */
+    public boolean getAutoSortFiles() {
+        return mAutoSortFiles;
+    }
+
+    /**
+     * Sets whether files should be automatically sorted before updating the zip file. See
+     * {@link ZFile} for an explanation on automatic sorting.
+     *
+     * @param autoSortFiles should the file be automatically sorted?
+     */
+    public void setAutoSortFiles(boolean autoSortFiles) {
+        mAutoSortFiles = autoSortFiles;
     }
 }
