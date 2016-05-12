@@ -138,9 +138,9 @@ public class InstantRunChangeDeviceTest {
             case INSTANT_RUN_MULTI_DEX:
                 checkMultidexApk(getMainApk(context.getArtifacts()));
                 break;
-            case INSTANT_RUN_MULTI_APK:
-                checkSplitApk(context.getArtifacts());
-                break;
+            //case INSTANT_RUN_MULTI_APK:
+            //    checkSplitApk(context.getArtifacts());
+            //    break;
             default:
                 throw new AssertionError("Should have called checkNormalApk directly");
 
@@ -200,8 +200,8 @@ public class InstantRunChangeDeviceTest {
     private enum BuildTarget {
         NO_INSTANT_RUN(23),
         INSTANT_RUN_NO_COLD_SWAP(19),
-        INSTANT_RUN_MULTI_DEX(23),
-        INSTANT_RUN_MULTI_APK(24);
+        INSTANT_RUN_MULTI_DEX(23);
+        //INSTANT_RUN_MULTI_APK(24);
 
         private final int apiLevel;
 
