@@ -140,11 +140,13 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
 
         private final VariantOutputScope scope;
 
+        @NonNull
         @Override
         public String getName() {
             return scope.getTaskName("zipalign");
         }
 
+        @NonNull
         @Override
         public Class<ZipAlign> getType() {
             return ZipAlign.class;
@@ -155,7 +157,7 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
         }
 
         @Override
-        public void execute(ZipAlign zipAlign) {
+        public void execute(@NonNull ZipAlign zipAlign) {
             ApkVariantOutputData variantData = (ApkVariantOutputData) scope.getVariantOutputData();
             variantData.zipAlignTask = zipAlign;
 

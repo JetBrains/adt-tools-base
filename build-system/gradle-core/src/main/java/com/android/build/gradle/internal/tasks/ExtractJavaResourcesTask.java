@@ -175,7 +175,7 @@ public class ExtractJavaResourcesTask extends DefaultAndroidTask {
             }
         }
     }
-    
+
     /**
      * Define all possible actions for a Jar file entry.
      */
@@ -236,18 +236,20 @@ public class ExtractJavaResourcesTask extends DefaultAndroidTask {
             this.scope = scope;
         }
 
+        @NonNull
         @Override
         public String getName() {
             return scope.getTaskName("extract", "PackagedLibrariesJavaResources");
         }
 
+        @NonNull
         @Override
         public Class<ExtractJavaResourcesTask> getType() {
             return ExtractJavaResourcesTask.class;
         }
 
         @Override
-        public void execute(ExtractJavaResourcesTask extractJavaResourcesTask) {
+        public void execute(@NonNull ExtractJavaResourcesTask extractJavaResourcesTask) {
             ConventionMappingHelper.map(extractJavaResourcesTask, "jarInputFiles",
                     new Callable<Set<File>>() {
 

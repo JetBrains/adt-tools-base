@@ -384,7 +384,7 @@ public class AidlCompile extends IncrementalTask {
         }
 
         @Override
-        public void execute(AidlCompile compileTask) {
+        public void execute(@NonNull AidlCompile compileTask) {
             final VariantConfiguration<?,?,?> variantConfiguration = scope.getVariantConfiguration();
 
             scope.getVariantData().aidlCompileTask = compileTask;

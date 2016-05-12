@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.tasks.databinding;
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 
@@ -142,18 +143,20 @@ public class DataBindingProcessLayoutsTask extends DefaultTask {
             this.variantScope = variantScope;
         }
 
+        @NonNull
         @Override
         public String getName() {
             return variantScope.getTaskName("dataBindingProcessLayouts");
         }
 
+        @NonNull
         @Override
         public Class<DataBindingProcessLayoutsTask> getType() {
             return DataBindingProcessLayoutsTask.class;
         }
 
         @Override
-        public void execute(DataBindingProcessLayoutsTask task) {
+        public void execute(@NonNull DataBindingProcessLayoutsTask task) {
             task.setXmlProcessor(variantScope.getVariantData().getLayoutXmlProcessor());
             task.setSdkDir(variantScope.getGlobalScope().getSdkHandler().getSdkFolder());
             task.setMinSdk(variantScope.getVariantConfiguration().getMinSdkVersion().getApiLevel());
